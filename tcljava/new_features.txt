@@ -1,4 +1,5 @@
 <HTML><BODY BGCOLOR=#FFFFFF><PRE>
+RCS: @(#) $Id: new_features.txt,v 1.3 1999/05/17 04:13:39 dejong Exp $
 
 What's new in Tcl/Java 1.1?
 
@@ -154,7 +155,6 @@ command in Tcl. The command can also be used to catch Tcl errors and
 Java exceptions independently. See the docs on the java::try command
 for more information.
 
-
 (NEW COMMAND FOR JACL AND TCLBLEND)
 
 The new java::autolock command can be used in interactive
@@ -162,39 +162,11 @@ sessions to keep java object references from being garbage
 collected. This can be really handy when you want to quickly
 test out a java class without the hassle of garbage collection.
 
+(TCL BLEND NOW SUPPORTS TCL 8.1)
 
-(TCL BLEND NOW SUPPORTS TCL 8.1 and Tcl 8.2)
-
-The new 8.1 and 8.2 versions of the Tcl core can now be used
-with Tcl Blend. Support is still at an early stage and more
-feedback is needed but this is still an exciting development
-for users of Tcl Blend.
-
-
-(JACL NOW SUPPORTS NAMESPACES)
-
-The namespace features from the Tcl 8.1 core have been ported
-over to Jacl. This adds the "namespace" command and the "variable"
-command. Support is still at an early stage and more feedback
-is needed but this is still an exciting development for Jacl.
-
-
-(JACL AND TCLBLEND NOW SUPPORT UNICODE)
-
-Unicode support has been added to the Jacl parser. Users should now
-be able to pass and unicode string form Java to Jacl and vice versa.
-Tcl Blend will also support Unicode strings (encoded as UTF-8) when
-compiled with Tcl 8.1 or better.
-
-
-(NEW COMMAND FOR JACL AND TCLBLEND)
-
-A new java::import command has been added. This command is like
-the import statement in the Java language, it provides a means
-to specify Java class names in a shortened format. For example,
-one could import the class java.util.Hashtable and then use
-the simple class name Hashtable instead of the fully qualified
-name java.util.Hashtable.
+The new 8.1 version of the Tcl core can now be used with Tcl Blend.
+Support is still at an early stage and more feedback is needed but
+this is still an exciting development for users of Tcl Blend.
 
 
 </PRE></BODY></HTML>

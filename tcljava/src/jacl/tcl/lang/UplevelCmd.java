@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: UplevelCmd.java,v 1.3 1999/07/12 02:38:53 mo Exp $
+ * RCS: @(#) $Id: UplevelCmd.java,v 1.1 1998/10/14 21:09:20 cvsadmin Exp $
  *
  */
 
@@ -26,7 +26,7 @@ class UplevelCmd implements Command {
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_UplevelObjCmd -> UplevelCmd.cmdProc
+ * cmdProc --
  *
  *	This procedure is invoked as part of the Command interface to
  *	process the "uplevel" Tcl command.  See the user documentation
@@ -44,58 +44,57 @@ class UplevelCmd implements Command {
 public void
 cmdProc(
     Interp interp,		// Current interpreter.
-    TclObject[] objv)		// Argument list.
+    TclObject argv[])		// Argument list.
 throws 
     TclException 		// A standard Tcl exception.
 {
-    String optLevel;
-    int result;
-    CallFrame savedVarFrame, frame;
-    int objc = objv.length;
-    int objv_index;
+    if (argv.length < 2) {
+	throw new TclNumArgsException(interp, 1, argv, 
+		"?level? command ?arg ...?");
+    }
+
+    CallFrame savedVarFrame;
+    CallFrame frame = interp.varFrame.getFrame(argv[1].toString());
     TclObject cmd;
-    
-    if (objv.length < 2) {
-	throw new TclNumArgsException(interp, 1, objv, 
-		"?level? command ?arg ...?");
-    }
+    int startIdx;
 
-    // Find the level to use for executing the command.
+    if (frame != null) {
+	/*
+	 * The level is specified.
+	 */
 
-    optLevel = objv[1].toString();
-    // Java does not support passing a reference by refernece so use an array
-    CallFrame[] frameArr = new CallFrame[1];
-    result = CallFrame.getFrame(interp, optLevel, frameArr);
-    frame = frameArr[0];
-
-    objc -= (result+1);
-    if (objc == 0) {
-	throw new TclNumArgsException(interp, 1, objv, 
-		"?level? command ?arg ...?");
-    }
-    objv_index = (result+1);
-    
-    // Modify the interpreter state to execute in the given frame.
-    
-    savedVarFrame = interp.varFrame;
-    interp.varFrame = frame;
-    
-    // Execute the residual arguments as a command.
-    
-    if (objc == 1) {
-	cmd = objv[objv_index];
+	if (argv.length < 3) {
+	    throw new TclNumArgsException(interp, 1, argv, 
+		    "?level? command ?arg ...?");
+	}
+	startIdx = 2;
     } else {
-	cmd = TclString.newInstance(Util.concat(objv_index, objv.length-1,
-						objv));
+	/*
+	 * The level is not specified. We are not in the global frame
+	 * (otherwise getFrame() would have thrown an exception).
+	 */
+
+	startIdx = 1;
+	frame = interp.varFrame.callerVar;
+    }
+
+    if (startIdx == argv.length -1) {
+	cmd = argv[startIdx];
+    } else {
+	cmd = TclString.newInstance(Util.concat(startIdx, argv.length-1,
+		argv));
     }
     cmd.preserve();
-    
+
+    savedVarFrame = interp.varFrame;
+    interp.varFrame = frame;
+
     try {
 	interp.eval(cmd, 0);
     } catch (TclException e) {
 	if (e.getCompletionCode() == TCL.ERROR) {
 	    interp.addErrorInfo("\n    (\"uplevel\" body line " +	
-				interp.errorLine + ")");
+		    interp.errorLine + ")");
 	}
 	throw e;
     } finally {

@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaInvoke.java,v 1.10 1999/08/15 19:38:47 mo Exp $
+ * RCS: @(#) $Id: JavaInvoke.java,v 1.8 1999/05/15 23:48:01 dejong Exp $
  *
  */
 
@@ -627,26 +627,15 @@ throws
 	    try {
 		result = tclClassLoader.loadClass(prefix_buf + clsName + suffix_buf);
 	    } catch (ClassNotFoundException e) {
-		// If the class loader can not find the class then check with
-		// the "import" feature to see if the given clsName maps to
-		// a fully qualified class name.
-
-		String fullyqualified = JavaImportCmd.getImport(interp, clsName);
-
-		// If we do not find a fully qualified name in the import table
-		// then try to fully qualify the class with the java.lang prefix 
-		
-		if (fullyqualified == null) {
-		    fullyqualified = "java.lang." + clsName;
-		}
-
-		// If the system class loader cannot resolve the class, than a
-		// SecurityException is thrown, catch this and 
+		// The code below should really be in a java::import command.
+		// Since we dont have one yet, do a simple check for the class
+		// in java.lang.  If the system class loader cannot resolve the
+		// class, than a SecurityException is thrown, catch this and 
 		// throw the standard error.
-
+	    
 		try {
-		    result = tclClassLoader.loadClass(prefix_buf +
-			        fullyqualified +  suffix_buf);
+		    result = tclClassLoader.loadClass(prefix_buf + "java.lang." +
+			    clsName + suffix_buf);
 		} catch (SecurityException e2) {
 		    result = null;
 		}
@@ -820,7 +809,7 @@ throws
 
 	} else if ((type == Byte.TYPE) || (type == Byte.class)) {
 	    int i = TclInteger.get(interp, tclObj);
-	    if ((i < Byte.MIN_VALUE) || (i > Byte.MAX_VALUE)) {
+	    if ((i < -128) || (i > 127)) {
 		throw new TclException(interp,
 		   "integer value too large to represent in a byte");
 	    }
@@ -828,7 +817,7 @@ throws
 
 	} else if ((type == Short.TYPE) || (type == Short.class)) {
 	    int i = TclInteger.get(interp, tclObj);
-	    if ((i < Short.MIN_VALUE) || (i > Short.MAX_VALUE)) {
+	    if ((i < -32768) || (i > 32767)) {
 		throw new TclException(interp,
 		    "integer value too large to represent in a short");
 	    }

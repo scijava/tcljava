@@ -14,7 +14,7 @@
 #
 # Copyright (c) 1998 by Sun Microsystems, Inc.
 #
-# RCS: @(#) $Id: javalock.tcl,v 1.3 1999/08/27 23:50:50 mo Exp $
+# RCS: @(#) $Id: javalock.tcl,v 1.2 1999/05/16 00:02:37 dejong Exp $
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -110,32 +110,39 @@ proc java::unlock { javaObj } {
 
 proc java::autolock { {activate 1} } {
 
+  # watch out for namespace issues!
+  global tcljava
+  set pre ""
+  if {$tcljava(tcljava) == "tclblend"} {
+      set pre ::
+  }
+
   if {$activate} {
-    if {[::info commands ::java::autolock_new] != ""} {
+    if {[${pre}info commands ${pre}java::autolock_new] != ""} {
       error "autolocking has already been activated"
     }
 
     foreach cmd {new call field getinterp cast defineclass prop} {
-      rename ::java::$cmd ::java::autolock_$cmd
+      rename ${pre}java::$cmd ${pre}java::autolock_$cmd
 
-      proc ::java::$cmd { args } "
+      proc ${pre}java::$cmd { args } "
         java::autolock_create_instance \[eval java::autolock_$cmd \$args\]
       "
     }
 
   } else {
-    if {[::info commands ::java::autolock_new] == ""} {
+    if {[${pre}info commands ${pre}java::autolock_new] == ""} {
       error "autolocking has not been activated"
     }
 
     # restore names of the java commands
     foreach cmd {new call field getinterp cast defineclass prop} {
-        rename ::java::$cmd {}
-        rename ::java::autolock_$cmd ::java::$cmd
+        rename ${pre}java::$cmd {}
+        rename ${pre}java::autolock_$cmd ${pre}java::$cmd
     }
 
     # unlock each instance that we autolocked earlier
-    foreach cmd [::info commands ::java::autolock_java*] {
+    foreach cmd [${pre}info commands ${pre}java::autolock_java*] {
       set javaObj [lindex [split $cmd _] 1]
       #puts "javaObj instance to destroy is \"$javaObj\""
       java::autolock_destroy_instance $javaObj
@@ -163,10 +170,17 @@ proc java::autolock_create_instance { javaObj } {
     }
   }
 
-  # do nothing is object is already autolocked
-  set cmd ::java::autolock_$javaObj
+  # watch out for namespace issues!
+  global tcljava
+  set pre ""
+  if {$tcljava(tcljava) == "tclblend"} {
+      set pre ::
+  }
 
-  if {[::info commands $cmd] == $cmd} {
+  # do nothing is object is already autolocked
+  set cmd ${pre}java::autolock_$javaObj
+
+  if {[${pre}info commands $cmd] == $cmd} {
     #puts "autolock instance command already exists, returning $javaObj"
     return $javaObj
   }
@@ -175,10 +189,10 @@ proc java::autolock_create_instance { javaObj } {
   java::lock $javaObj
 
   # rename the java instance command to the locked command
-  rename ::$javaObj $cmd
+  rename ${pre}$javaObj $cmd
 
   # create the locked instance command
-  proc ::$javaObj { args } "
+  proc ${pre}$javaObj { args } "
     java::autolock_create_instance \[eval $cmd \$args\]
   "
 
@@ -191,15 +205,23 @@ proc java::autolock_create_instance { javaObj } {
 
 proc java::autolock_destroy_instance { javaObj } {
 
-  set cmd ::java::autolock_$javaObj
+  # watch out for namespace issues!
+  global tcljava
+  set pre ""
+  if {$tcljava(tcljava) == "tclblend"} {
+      set pre ::
+  }
 
-  if {[::info commands $cmd] != $cmd} {
+  set cmd ${pre}java::autolock_$javaObj
+
+  if {[${pre}info commands $cmd] != $cmd} {
     error "can not find autolock instance command for $javaObj"
   }
 
-  rename ::$javaObj {}
-  rename $cmd ::$javaObj
+  rename ${pre}$javaObj {}
+  rename $cmd ${pre}$javaObj
 
   # unlock the object reference
   java::unlock $javaObj
 }
+

@@ -1,4 +1,4 @@
-# This file is just to keep track of changes and TODOs
+# This file is just to keep track of changes and TODOs for MO
 
 (TODO)
 Make sure to change the test cases (or perhaps add a test case) so that
@@ -108,10 +108,41 @@ It must have something to do with loading libtclblend.so out of the current dire
 
 
 
+
+
+
+(TODO)
+Do we need to use SHLIB_PATH instead of LD_LIBRARY path
+in the Makefile when building and testing on HPUX?
+
 (TODO)
 Why can't the 1.1 vm use the tcl_blend init thing like the
 1.2 vm. Is there any reason this option can only be used in
 a 1.2 JVM?
+
+(TODO)
+the gluepkg demo has some strange code in it for AWT event
+management. This code needs to be updated to use the
+Notifier class and the java::event system.
+
+(TODO)
+the package test cases (in tcl/pkg.test) really need to be fixed
+so that they are not destructive. Perhaps the packages could be
+stored at the top of the file and then restored when done.
+
+
+(TODO)
+Something needs to be done during the install in case the configure
+script was not able to find a working tclsh8.0 installed on the
+system. Perhaps if one can not be found on the PATH then the
+"make install" will warn the person before testing with the
+Test.tcl file. In fact perhaps there should a "test_install"
+rule which runs the post install test so that folks can change
+that and rerun. Another possibility is to warn and tell them that
+the may need to go back and run "make install" in the Tcl source
+distro if they compiled with Tcl Blend. Jacl would not be affected.
+
+
 
 (TODO)
 ParseResult object may also need to be cached by the ParseAdaptor
@@ -172,9 +203,15 @@ These should be removed if possible.
 
 
 (TODO)
+Util.java says \v can not be used in java. Do they mean \u for
+unicode stuff?
+
+
+(TODO)
 The string trimleft and trim right code could be speeded up by using
 the labeled breaks in java. Right now they use a var in the loop.
 They could also use a second array for searching (mem cost).
+
 
 
 (TODO)
@@ -343,9 +380,13 @@ set in Jacl and there is a spot in the -native test that it is used.
 
 
 (TODO)
-The test cases have some serious problems in how they attempt to
+The test cases have some serious problems in how the attempt to
 figure out what platform jacl is running under. These need to
 be fixed.
+
+(TODO)
+Check that perms on open command are correct in jacl. Is "rw" a
+valid mode? (set fd [open tmpf rw])
 
 
 (TODO)
@@ -358,12 +399,57 @@ we want to delete it from the interp.
 
 
 (TODO)
+figure out why reflected null objects do not come up as typed
+in an automated signature. AutoSig 4.5 is a good example of this.
+It only happend when java::autolock is on. Later, it looks like
+the eval command is to blame as it converts in the concat.
+
+
+
+(TODO)
+
+Can the auto name stuff be fixed for null??
+
+# This is like eval except that it does not convert java variables
+# into strings so it will keep java references alive unlike eval.
+
+proc java::seval { args } {
+  set num 0
+  set cmd {}
+  set copies {}
+
+  foreach arg $args {
+    if {! [catch {java::isnull $arg} err]} {
+          java::lock $arg
+    }
+
+    foreach subarg $arg {
+      incr num
+
+      if {! [catch {java::isnull $subarg} err]} {
+          java::lock $subarg
+      }
+
+      set $num $subarg
+      #puts "$num is [set $num]"
+      append cmd "\$[set num] "
+    }
+  }
+  #puts "cmd is \{$cmd\}"
+  eval $cmd
+}
+
+
+
+
+(TODO)
 
 The "compressed jar hack" issue needs to be examined again. It looks
 like Sun does not want to change the 1.2 way of doing things and I
 am not sure if it is possible to find out the uncompressed size
 of an entry from the header info. Perhaps this is why the Sun JVM
 imple wants the size entry for uncompressed files before writing.
+
 
 
 (TODO)
@@ -374,6 +460,7 @@ use a MAX_VALUE and MIN_VALUE argument for each class and then
 call a Java method that takes the MAX and MIN to make sure that
 values are getting passed correctly. Also things like infinity
 for Double calculation and the like need to be done.
+
 
 
 
@@ -402,8 +489,6 @@ would work better.
 The Tcl Blend demos should not include the pyramid demo because it will
 only work with Jacl.
 
-The pyramid demo also needs to have its eval() usage fixed.
-
 
 (TODO)
 There seems to be a problem running gridDemo.tcl in Tcl Blend, it gives
@@ -417,10 +502,6 @@ invoke-10.1.25
 
       unknown floating-point error, errno = 84
 
-(UPDATE)
-(JavaInvoke.test seems to be working for me!)
-
-
 
 
 
@@ -431,20 +512,27 @@ then using those renamed command names in other java methods. Would
 it be a good solution to also check for a command that has an
 internal rep of a ReflectObject inside ReflectObject.convert().
 
->      % package require java
->      % set o [java::new Object]
->      java0x1
->      % java::info methods java0x1
+>      % set o [createRect 0 0 10 10]
+>      java0xc7
+>      % java::info methods java0xc7
 >      {equals java.lang.Object} ......
->      % rename java0x1 poly1
+>      % rename java0xc7 poly1
 >      % java::info methods poly1
 >      java::info: unknown java class or object "poly1"
->      % java::info methods java0x1
+>      % java::info methods java0xc7
 >      {equals java.lang.Object} ......
 
 
 
 
+
+(TODO)
+
+There seems to be a big performance drop in Jacl 1.2. Users report
+a slowdown of about 4x. Run some tests to see what is going on here.
+Could this be related to the expr problems?
+
+(test run on solaris 2.5.1, native threads, 1.1a1 3.4sec, 1.2.2 13 sec)
 
 
 (TODO)
@@ -456,6 +544,8 @@ exec command. Could adding the message to the error help?
 (TODO)
 Look into a class file flushing system so that classes that
 are not being used can be removed from the cache at runtime.
+
+
 
 
 
@@ -479,6 +569,11 @@ inprogress/ExprCmd.test
 
 
 
+(REMOVE FROM CVS)
+
+src/jacl 800K
+tcljava/tests/jacl/FileCmd.test,v      133 k
+tcljava/unix/configure,v            120 k
 
 
 
@@ -491,228 +586,13 @@ that would be enough!
 
 
 (TODO)
+Tcl 8.1 seems to have added a new "package present" command. This should
+also be added to the Jacl implementation when I get some time.
+
+
+(TODO)
 
 There seems to be some problem with the positive and negative infinity
 description string on different platforms. If Tcl should have one or
 the other then Tcl may need to be fixed. The test cases in the regular
 Tcl dist does not check for this.
-
-(TODO)
-
-There is a problem with the configure script in places where it checks
-for the JAVA_VERISON variable. This variable is only set by the check
-done in Tcl Blend. In Jacl there are some tests that need to use
-this var but it is not set. See the tests related to the -native
-flag under Linux for a specific example.
-
-
-(TODO)
-
-Take a look at the Tcl Blend method tcl.lang.Interp.create(). The C
-implementation says that it is the primary entry point when a JVM
-loads Tcl Blend but whenever I tried that I got a "not monitor owner"
-error. Could this be because the method is not synchronized? If the
-Java method was synchronised would that matter? Can one even synchronize
-a native method like that? If not would it be possible to synchronize
-the method that calls create to get the same effect?
-
-
-(TODO)
-
-I added the "package present" subcommand but there is no binding to the
-Jacl interp itself. If a public API is added to the interp class then
-Tcl Blend will also need to have this method implemented. When this
-is done we also need to update the docs.
-
-
-(TODO)
-
-Make sure to check into the CallFrame.chain() method so that commands
-that are defined but are not actually procs really push the namespace
-that they will execute in. I think this is broken currently.
-
-(TODO)
-
-Check the Procedure class. Do we really need to have a namespace member
-in the procedure class when there is already one in the CommandWrapper?
-This is related to the earlier TODO.
-
-
-(TODO)
-
-Check the implementation of the test command. The command really should
-print the header info before actually calling the command. If the command
-crashes at least we will know which test was running when it crashed.
-
-
-(TODO)
-
-Check into problem with the java::bind command which breaks when there
-are not enough arguments given to the method. I think there is a deadlock
-problem here that needs to be addressed. (see tclblend_bug).
-
-(TODO)
-
-Double check all the source code for places where interp.getVar() is
-called. We no longer support the "return null" on error. When a var
-is not found we always throw an exception. This might also need a
-recheck of the documentation and an entry in the changes.txt file.
-
-(TODO)
-
-Is there a caching system for class names that needs to be invalidated
-when making calls to java::import. We do not want a cached value to
-be reused after a java::import -forget and so on.
-
-(TODO)
-
-Need to check into updated to the Tcl 8.1.1 test case info.test. These
-tests should be ported over to Jacl.
-
-(TODO)
-
-Why isnt interp.setVar(TclObject, TclObject, int) public?
-
-(TODO)
-
-There seems to be a problem with the SHLIB_LD_LIBS var under
-Linux with Tcl 8.1.1 again. This was fixed in Tcl 8.0.5 but
-it seems to have been broken again in Tcl 8.1.
-
-(TODO)
-
-There seems to be a problem with the interp.getVar method. Under Tcl Blend
-it seems like there are different signatures than under Jacl.
-
-In Jacl:
-set x str
-set i [java::getinterp]
-set o [$i getVar ::x 0]
-ambiguous method signature, could not choose between {getVar java.lang.String int} {getVar tcl.lang.TclObject int}
-
-This works just fine in Tcl Blend.
-
-
-(TODO)
-
-Why does the TclVarException set the interp result when it is just going
-to throw an exception anyway. This can lead to a problem with any method
-that calls interp.getVar() but does not set a result object.
-
-
-(TODO)
-
-The docs for the C impl of TclGetNamespaceForQualName talks about
-returning TCL_ERROR but I can not see any case where there is
-an error in that method is this a misprint?
-
-
-(NOTE)
-
-It looks like the SHLIB_LD_LIBS problem was fixed under Linux for
-Tcl 8.2.0, but I think the IRIX build will still have problems.
-
-
-There is another linking problem, this time it is on solaris.
-
-I configured with --enable-gcc --enable-shared --enable-threads.
-
-This showed up in the tclConfig.sh file.
-
-TCL_LD_SEARCH_FLAGS='-Wl,-R,${LIB_RUNTIME_DIR}'
-
-This really needs to be:
-
-TCL_LD_SEARCH_FLAGS='-R ${LIB_RUNTIME_DIR}'
-
-Without this change Tcl Blend will not compile, it will generate this error.
-
-/usr/ccs/bin/ld -G -z text -o libtclblend.so javaCmd.o javaIdle.o javaInterp.o javaObj.o javaList.o javaNotifier.o javaTimer.o javaUtil.o tclResult.o unixNotifier.o -Wl,-R,/soft/java/JDK-1.1.6/lib/sparc/native_threads:/project/neon/users/mo/tcl8.2.0/unix -L/soft/java/JDK-1.1.6/lib/sparc/native_threads -lthread -ljava -L/project/neon/users/mo/tcl8.2.0/unix -ltcl8.2g -ldl  -lsocket -lnsl -lpthread -lm
-/usr/ccs/bin/ld: illegal option -- W
-usage: ld [-abd:e:f:h:il:mo:rstu:z:B:D:F:GI:L:M:N:Q:R:S:VY:] file(s)
-
-
-
-This same problem seems to exist in the Tcl 8.1.1 release for Solaris.
-The real problem here seems to be that the Tcl configure script seems to
-think that TCL_LD_SEARCH_FLAGS is to be used by the compiler not the linker.
-I do not think it should use compiler flags as the other parts of the script
-invoke the linker directly. Perhaps this will all be fixed by TEA?
-
-
-Here is a patch that should fix this problem under Solaris.
-
---- copy_aclocal.m4     Sun Aug 29 04:37:44 1999
-+++ aclocal.m4  Sun Aug 29 04:36:35 1999
-@@ -878,7 +878,7 @@
-            DL_OBJS="tclLoadDl.o"
-            DL_LIBS="-ldl"
-            LDFLAGS=""
--           LD_SEARCH_FLAGS='-Wl,-R,${LIB_RUNTIME_DIR}'
-+           LD_SEARCH_FLAGS='-R ${LIB_RUNTIME_DIR}'
-            ;;
-        SunOS-5*)
-            SHLIB_CFLAGS="-KPIC"
-@@ -908,11 +908,7 @@
-            SHLIB_SUFFIX=".so"
-            DL_OBJS="tclLoadDl.o"
-            DL_LIBS="-ldl"
--           if test "$CC" = "gcc" -o `$CC -v 2>&1 | grep -c gcc` != "0" ; then
--               LD_SEARCH_FLAGS='-Wl,-R,${LIB_RUNTIME_DIR}'
--           else
--               LD_SEARCH_FLAGS='-R ${LIB_RUNTIME_DIR}'
--           fi
-+           LD_SEARCH_FLAGS='-R ${LIB_RUNTIME_DIR}'
-            ;;
-        ULTRIX-4.*)
-            SHLIB_CFLAGS="-G 0"
-
-
-
-Link line after the patch.
-
-/usr/ccs/bin/ld -G -z text -o libtclblend.so javaCmd.o javaIdle.o javaInterp.o javaObj.
-o javaList.o javaNotifier.o javaTimer.o javaUtil.o tclResult.o unixNotifier.o -R /soft/
-java/JDK-1.1.6/lib/sparc/native_threads:/project/neon/users/mo/tcl8.2.0/unix -L/soft/ja
-va/JDK-1.1.6/lib/sparc/native_threads -lthread -ljava -L/project/neon/users/mo/tcl8.2.0
-/unix -ltcl8.2g -ldl  -lsocket -lnsl -lpthread -lm
-
-
-
-
-
-(TESTING)
-
-Tcl Blend 1.2.4 ----------------------------
-
-RedHat 5.2, Kernel 2.2.9, on Intel chip:
-Blackdown JDK 1.1.7 v3 and Tcl 8.0.5 : PASSED
-Blackdown JDK 1.1.7 v3 and Tcl 8.1.1 : PASSED
-Blackdown JDK 1.1.7 v3 and Tcl 8.2.0 : PASSED
-
-Solaris 5.6 on Sparc chip (built with gcc)
-Sun JDK 1.1.6 (reference release) with Tcl 8.0.5 : PASSED
-Sun JDK 1.1.6 (reference release) with Tcl 8.1.1 : PASSED
-Sun JDK 1.1.6 (reference release) with Tcl 8.2.0 : PASSED
-
-IRIX 6.2 on MIPS (built with gcc)
-SGI JDK 3.1.1  (Sun 1.1.6N) and Tcl 8.0.5 : PASSED (tclevent tests freeze up)
-SGI JDK 3.1.1  (Sun 1.1.6N) and Tcl 8.1.1 : PASSED
-SGI JDK 3.1.1  (Sun 1.1.6N) and Tcl 8.2.0 : PASSED
-
-Win95 with IBM JDK 1.1.7 and Tcl 8.0.5 : PASSED
-Win95 with IBM JDK 1.1.7 and Tcl 8.2.0 : PASSED
-
-Jacl 1.2.4 --------------------------------
-
-RedHat 5.2, Kernel 2.2.9, on Intel chip:
-Linux with Blackdown JDK 1.1.7 v3 : PASSED
-
-Solaris 5.6 on Sparc chip
-Sun JDK 1.1.6 (reference release) : PASSED
-
-IRIX 6.2 on MIPS
-SGI JDK 3.1.1  (Sun 1.1.6N) : PASSED
-
-Win95 with IBM JDK 1.1.7 : PASSED
-

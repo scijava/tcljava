@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Util.java,v 1.4 1999/08/27 23:50:47 mo Exp $
+ * RCS: @(#) $Id: Util.java,v 1.2 1999/05/09 01:38:44 dejong Exp $
  */
 
 package tcl.lang;
@@ -19,9 +19,9 @@ import java.util.*;
 
 public class Util {
 
-static final int TCL_DONT_USE_BRACES     = 1;
-static final int USE_BRACES              = 2;
-static final int BRACES_UNMATCHED        = 4;
+static final int TCL_DONT_USE_BRACES = 1;
+static final int USE_BRACES		 = 2;
+static final int BRACES_UNMATCHED	 = 4;
 
 // Some error messages.
 
@@ -551,8 +551,8 @@ throws
 static String 
 concat(
     int from, 		// The starting index.
-    int to,  		// The ending index (inclusive).
-    TclObject[] argv) 	// The CmdArgs.
+    int to,  		// The endinf index (inclusive).
+    TclObject argv[]) 	// The CmdArgs.
 {
     StringBuffer sbuf;
 
@@ -973,7 +973,7 @@ throws
 /*
  *----------------------------------------------------------------------
  *
- *  Tcl_ScanElement -> scanElement
+ * scanElement --
  *
  *	This procedure is a companion procedure to convertElement.
  *	It scans a string to see what needs to be done to it (e.g.
@@ -1118,7 +1118,7 @@ throws
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_ConvertElement -> convertElement
+ * convertElement --
  *
  *	This is a companion procedure to scanElement.  Given the
  * 	information produced by scanElement, this procedure converts
@@ -1737,13 +1737,8 @@ throws
     // safe interpreters messing up the precision of other
     // interpreters).
 
-    TclObject tobj = null;
-    try {
-	tobj = interp.getVar(name1, name2, (flags & TCL.GLOBAL_ONLY));
-    } catch (TclException e) {
-	// Do nothing when var does not exist.
-    }
-
+    TclObject tobj = interp.getVar(name1, name2, 
+	    (flags & TCL.GLOBAL_ONLY) | TCL.DONT_THROW_EXCEPTION);
     String value;
 
     if (tobj != null) {

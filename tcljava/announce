@@ -1,36 +1,34 @@
-This message is to announce the new 1.2.5 release of Jacl and
+This message is to announce the new 1.2.3 release of Jacl and
 Tcl Blend.  These releases are the result of a joint effort by
-Mo DeJong, Christopher Hylands, Bryan Surles, and Scott Redman. 
-The goal of this project is to extend and improve the 1.0 release 
-of Jacl and Tcl Blend which was originally started by the Sun Tcl team.
+Christopher Hylands, Mo DeJong, and Bryan Surles. The goal of
+this project is to extend and improve the 1.0 release of Jacl
+and Tcl Blend which was originally started by the Sun Tcl team.
 
-The 1.2.5 release of Jacl and Tcl Blend are available for
+The 1.2.3 Developers release of Jacl and Tcl Blend are available for
 downloading at the following URL:
 
-    http://www.scriptics.com/java
+    http://www.cs.umn.edu/~dejong/tcl/tcljava
 
-The 1.2 version is a "production" release, it is considered
-stable enough to be used on an everyday basis.This is the
-first stable release of the 1.2 tree after a year in
-development.
+The 1.2 release is a developers release and should be considered alpha
+quality. Version 1.2.3 includes lots of bug fixes and some new features
+that make it even easier to use Tcl and Java together
 
-What's New in the 1.2.5 Release?
+
+What's New in the 1.2.3 Release?
 ----------------------------------
 
-The new release includes no new features, but it does fix
-a couple of bugs present in the 1.2.4 release. The new
-release also includes an experimental new build system that
-is TEA compliant and should work on both Unix and Windows
-systems. The existing build system which uses configure
-under windows and VC++ makefiles under Windows is still
-supported.
-
-See the new_features.txt and changes.txt files for more info.
+Tcl Blend now works with Tcl 8.1! Support for Motif libs in
+the Linux port of Tcl Blend has been added. Some documentation
+errors have been fixed. A number of bugs in the implementation
+of the read and gets commands for Jacl have been fixed. A bug
+in Jacl's exec command under windows was fixed. Fixes for printing
+of -0.0, positive infinity, and negative for Jacl infinity were
+also added. See the changes.txt file for additional info.
 
 What is Jacl?
 ----------------
 
-Jacl is a 100% Java implementation of Tcl 8.  This allows Tcl to run
+Jacl is a 100% Java implementation of Tcl 8.0.  This allows Tcl to run
 in more environments and also brings the power of scripting to Java
 developers.  Jacl only implements a subset of the Tcl language (the C
 version of Tcl has a lot of features!).  However, the core of the
@@ -42,10 +40,10 @@ What is Tcl Blend?
 Tcl Blend is a Tcl Extension that allows you to have access to the
 Java VM from the Tcl interpreter.  The goal here is to allow Tcl
 developers to write new Tcl extensions in Java rather then C or C++
-for better portability.  Tcl Blend is known to work on Solaris,
-Windows 95/NT, IRIX, and Linux. Other systems have not been tested
-but it should be easy to port Tcl Blend to any system that supports
-dynamic loading and the Java JNI interface.
+for better portability.  Currently, Tcl Blend is only known to work
+with Solaris and Windows 95/NT.  However, it should be easy to port
+Tcl Blend to any system that supports dynamic loading and the Java JNI
+interface.
 
 For additional information:
 ---------------------------------
@@ -68,20 +66,20 @@ found at the following URL:
 Comments and questions can be sent to the Tcl & Java integration
 mailing list at:
 
-    tcljava@scriptics.com
+    tcljava@tclconsortium.org
 
 Of course, you will need to join the mailing list first. You can do
 so by sending an email to this address.
 
-    tcljava-request@scriptics.com
+    tcljava-request@tclconsortium.org
 
 Scriptics support for Jacl and Tcl Blend:
 -------------------------------------------------
 
 It is important to understand that this release is due entirely to the
 efforts of Christopher Hylands and Mo DeJong. Scriptics currently has
-a minor, facilitating role in Jacl and Tcl Blend. Scriptics does provide
-enterprise support for Tcl Blend through negotiable support agreements.
+a minor, facilitating role in Jacl and Tcl Blend and is not officially
+supporting these releases.
 
 If you have a problem with Jacl or Tcl Blend or you think you have
 a great idea for a feature, you should send an email to the tcljava
@@ -93,7 +91,6 @@ The Jacl and Tcl Blend releases are brought to you by:
 
  Mo DeJong
  Christopher Hylands
- Scott Redman
  Bryan Surles
 
 We would like to thank the Jacl and Tcl Blend 1.0 team:

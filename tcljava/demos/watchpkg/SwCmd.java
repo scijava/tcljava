@@ -12,41 +12,43 @@
 
 import tcl.lang.*;
 
-/**
+/*
  * This class implements the "sw" command in StopWatchPackage.
  */
 
 class SwCmd implements Command {
     
-    StopWatchThread swThread = null;  // GUI and internal time monitor
+    StopWatchThread swThread = null;  /* GUI and internal time monitor */
 
-    // This procedure is invoked to process the "sw" Tcl command
-    // -- it takes the following subcommands:  new, set, stop, resume,
-    //    and die
-    //
-    // sw new       --> starts a new stopwatch at time 0
-    //
-    // sw set [sec] --> sets the stopwatch to specified time,
-    //                  starts counting down
-    //
-    // sw stop      --> returns current time, halts the stopwatch
-    //
-    // sw resume    --> returns current time, starts counting down
-    //
-    // sw die       --> kills the stopwatch (by hiding the frame and
-    //                     stopping the StopWatchThread)
+    /*
+     * This procedure is invoked to process the "sw" Tcl command
+     * -- it takes the following subcommands:  new, set, stop, resume,
+     *    and die
+     *
+     * sw new       --> starts a new stopwatch at time 0
+     *
+     * sw set [sec] --> sets the stopwatch to specified time,
+     *                  starts counting down
+     *
+     * sw stop      --> returns current time, halts the stopwatch
+     *
+     * sw resume    --> returns current time, starts counting down
+     *
+     * sw die       --> kills the stopwatch (by hiding the frame and
+     *                     stopping the StopWatchThread)
+     */
 
-    public void cmdProc(Interp interp, TclObject[] objv)
+    public void cmdProc(Interp interp, TclObject argv[])
 	    throws TclException {
 
-	if (objv.length < 2) {
-	    throw new TclNumArgsException(interp, 1, objv, 
+	if (argv.length < 2) {
+	    throw new TclNumArgsException(interp, 1, argv, 
 		    "[new|set seconds|stop|resume|die]");
 	}
 
-	if (objv[1].toString().equals("new")) {
-	    if (objv.length != 2) {
-		throw new TclNumArgsException(interp, 2, objv, "");
+	if("new".compareTo(argv[1].toString()) == 0) {
+	    if (argv.length != 2) {
+		throw new TclNumArgsException(interp, 2, argv, "");
 	    }
 	    if (swThread != null) {
 		throw new TclException(interp, 
@@ -63,34 +65,34 @@ class SwCmd implements Command {
 		    "error:  no stopwatch currently running");
 	}
 
-	if (objv[1].toString().equals("set")) {
-	    if (objv.length != 3) {
-		throw new TclNumArgsException(interp, 2, objv, "seconds");
+	if("set".compareTo(argv[1].toString()) == 0) {
+	    if (argv.length != 3) {
+		throw new TclNumArgsException(interp, 2, argv, "seconds");
 	    }
-	    swThread.setTime(TclInteger.get(interp, objv[2]));
+	    swThread.setTime(TclInteger.get(interp, argv[2]));
 	    return;
 	}
-	if (objv.length != 2) {
-	    throw new TclNumArgsException(interp, 1, objv, 
+	if (argv.length != 2) {
+	    throw new TclNumArgsException(interp, 1, argv, 
 		    "[set seconds|stop|resume|die]");
 	}
-	if (objv[1].toString().equals("stop")) {
+	if("stop".compareTo(argv[1].toString()) == 0) {
 	    int sec = swThread.stopCountdown();
 	    interp.setResult(sec);
 	    return;
 	}
-	if (objv[1].toString().equals("resume")) {
+	if("resume".compareTo(argv[1].toString()) == 0) {
 	    int sec = swThread.resumeCountdown();
 	    interp.setResult(sec);
 	    return;
 	}
-	if (objv[1].toString().equals("die")) {
+	if("die".compareTo(argv[1].toString()) == 0) {
 	    swThread.die();
 	    swThread = null;
 	    return;
 	}
 	throw new TclException(interp, "bad sw option \""
-                    + objv[1].toString() 
+                    + argv[1].toString() 
                     + "\": must be new, set, stop, resume, or die");
     }
 }

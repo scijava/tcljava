@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: if.test,v 1.2 1999/08/15 19:39:03 mo Exp $
+# RCS: @(#) $Id: if.test,v 1.1 1998/10/14 21:09:26 cvsadmin Exp $
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 
@@ -146,22 +146,3 @@ test if-4.10 {error conditions} {
 test if-4.11 {error conditions} {
     list [catch {if 0 then foo elseif 0 bar else {[error "error in else clause"]}} msg] $msg
 } {1 {error in else clause}}
-
-
-test if-5.1 {true and false} {
-    set bool true
-    set result 0
-    if {1 && $bool} {
-        set result 1
-    }
-    set result
-} {1}
-
-test if-5.1 {true and false} {
-    set bool false
-    set result 0
-    if {1 && $bool} {
-        set result 1
-    }
-    set result
-} {0}

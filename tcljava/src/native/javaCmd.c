@@ -10,7 +10,7 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  *
- * RCS: @(#) $Id: javaCmd.c,v 1.7 1999/08/31 00:46:37 redman Exp $
+ * RCS: @(#) $Id: javaCmd.c,v 1.4 1999/05/17 02:33:51 dejong Exp $
  */
 
 /*
@@ -46,6 +46,8 @@ ENHANCEMENTS, OR MODIFICATIONS.
 #include <stdlib.h>
 #include <stdarg.h>
 #include <errno.h>
+
+extern void panic(char *, ...);
 
 /*
  * Exported state variables.
@@ -298,16 +300,6 @@ EXPORT(int,Tclblend_Init)(
 #ifdef TCLBLEND_DEBUG
     fprintf(stderr, "Tcl Blend debug: Tclblend_Init finished in javaCmd.c:\n");
     fprintf(stderr, "Tcl Blend debug: CLASSPATH is \"%s\"\n", getenv("CLASSPATH"));
-    fprintf(stderr, "Tcl Blend debug: JavaInitBlend() returned \"");
-    if (result == TCL_ERROR) {
-      fprintf(stderr, "TCL_ERROR");
-    } else if (result == TCL_OK) {
-      fprintf(stderr, "TCL_OK");
-    } else {
-      fprintf(stderr, "%d", result);
-    }
-    fprintf(stderr, "\"\n");
-
 #endif /* TCLBLEND_DEBUG */
 
     return result;
@@ -728,8 +720,7 @@ JavaInitBlend(
     Tcl_Interp *interp,		/* Interpreter to intialize. */
     jobject interpObj)		/* Handle to Interp object. */
 {
-    Tcl_Obj *obj;
-    jobject blend, exception;
+    jobject blend;
     int result;
 
 #ifdef TCLBLEND_DEBUG
@@ -749,27 +740,12 @@ JavaInitBlend(
 
     blend = (*env)->NewObject(env, java.BlendExtension, java.blendC);
     (*env)->CallVoidMethod(env, blend, java.init, interpObj);
-    if (exception = (*env)->ExceptionOccurred(env)) {
-      (*env)->ExceptionDescribe(env);
-      (*env)->ExceptionClear(env);
-      obj = Tcl_GetObjResult(interp);
-      ToString(env, obj, exception);
-
-#ifdef TCLBLEND_DEBUG
-    fprintf(stderr, "Tcl Blend debug: Exception in init() method during JavaInitBlend() in javaCmd.c:\n");
-#endif /* TCLBLEND_DEBUG */
-
+    if ((*env)->ExceptionOccurred(env)) {
 	result = TCL_ERROR;
     } else {
 	result = TCL_OK;
     }
     (*env)->DeleteLocalRef(env, blend);
-
-
-#ifdef TCLBLEND_DEBUG
-    fprintf(stderr, "Tcl Blend debug: JavaInitBlend returning in javaCmd.c:\n");
-#endif /* TCLBLEND_DEBUG */
-
     return result;
 }
 
@@ -1088,15 +1064,8 @@ JavaGetString(
     char *buf;
     int i;
 
-#if (TCL_MAJOR_VERSION == 8 && TCL_MINOR_VERSION != 0) /* Tcl 8.1 or above */
-    char *p;
-    Tcl_DString ds;
-#endif
-
     ustr = (*env)->GetStringChars(env, str, NULL);
     length = (*env)->GetStringLength(env, str);
-
-#if (TCL_MAJOR_VERSION == 8 && TCL_MINOR_VERSION == 0) /* Tcl 8.0 */
 
     /*
      * Copy the Unicode characters into an 8-bit character array
@@ -1105,40 +1074,9 @@ JavaGetString(
 
     buf = ckalloc(length+1);
     for (i = 0; i < length; i++) {
-	buf[i] = ustr[i] & 0xFF;
+	buf[i] = ustr[i] & 0xff;
     }
     buf[length] = 0;
-
-#else /* it is Tcl 8.1 or above */
-
-    /*
-     * Convert the Unicode string into a UTF-8 encoded string. This
-     * could require a buffer larger than the number of unicode chars.
-     */
-
-    Tcl_DStringInit(&ds);
-    Tcl_UniCharToUtfDString(ustr, length, &ds);
-
-    /*
-     * Now get the UTF-8 encoded string from the DString
-     * along with the number of encoded bytes (the length).
-     */
-
-    p = Tcl_DStringValue(&ds);
-    length = Tcl_DStringLength(&ds);
-
-    buf = ckalloc(length+1);
-    
-    /*
-     * Copy the UTF-8 chars from the DString into the newely
-     * allocated buffer and make sure it is null terminated.
-     */
-
-    memcpy((VOID *) buf, (VOID *) p, (size_t) (length * sizeof(char)));
-    buf[length] = 0;
-
-    Tcl_DStringFree(&ds);
-#endif /* Tcl 8.0 */
 
     (*env)->ReleaseStringChars(env, str, ustr);
 

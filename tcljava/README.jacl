@@ -1,6 +1,6 @@
 Jacl
 
-RCS: @(#) $Id: README.jacl,v 1.7 1999/10/21 20:01:40 redman Exp $
+RCS: @(#) $Id: README.jacl,v 1.5 1999/05/16 07:59:24 dejong Exp $
  
 1. Introduction
 ---------------
@@ -35,7 +35,7 @@ http://www.scriptics.com/java for other useful information.
 
 The Jacl distribution requires the Java Development Kit 1.1 or
 greater. Jacl has been tested on Win95, WinNT, Solaris, IRIX,
-and Linux. It should also work on other systems that
+Linux, and the Mac. It should also work on other systems that
 have a correctly implemented Java VM.
 
 Jacl works under JDK1.2, see known_issues.txt for
@@ -75,11 +75,11 @@ many avid users of Tcl Blend & Jacl use comp.lang.tcl as a forum.
 
 If you are interested in a more detailed forum focused in issues
 related to Jacl and Tcl Blend you might want to subscribe to the
-tcljava mailing list maintained by Scriptics. You can
+tcljava mailing list maintained by the Tcl Consortium. You can
 subscribe to the list by sending mail to this address
-tcljava-request@scriptics.com. Once you have subscribed you
-can send mail to the list at tcljava@scriptics.com. The mailing
-list is archived here http://www.mail-archive.com/tcljava@scriptics.com.
+tcljava-request@tclconsortium.org. Once you have subscribed you
+can send mail to the list at tcljava@tclconsortium.org. The mailing
+list is archived here http://www.mail-archive.com/tcljava@tclconsortium.org.
 
 8. Support and bug fixes
 ------------------------
