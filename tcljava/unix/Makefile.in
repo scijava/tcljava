@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.39 2000/05/13 23:49:30 mo Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.40 2000/05/14 23:35:05 mo Exp $
 
 # The directory containing the Tcl sources and headers appropriate
 # for this version of Tk ("srcdir" will be replaced or has already
@@ -675,11 +675,10 @@ tcljava.check:
 #----------------------------------------------------------------
 
 check: test
-test: test_$(TCLJAVA)
+
+test: test_$(TCLJAVA).check test_$(TCLJAVA).exec
 
 test.build: test.clean test_tcljava.build test_$(TCLJAVA).build
-
-test_$(TCLJAVA): test_$(TCLJAVA).check test_$(TCLJAVA).exec
 
 test_tcljava.check:
 	@if test ! -f $(BUILD_DIR)/tests/.tcljava ; then \
@@ -798,12 +797,14 @@ test_tclblend.exec: test_tclblend.check
 shell: shell_$(TCLJAVA)
 
 shell_jacl: jacl.check
+	@echo "To run test: cd $(TOP_DIR)/tests ; source all"
 	CLASSPATH=$(TEST_CLASSPATH) \
 	$(JAVA) $(JAVA_FLAGS) \
 		-DBUILD_DIR=$(BUILD_DIR) -DJAVA=$(JAVA) tcl.lang.Shell
 
 
 shell_tclblend: tclblend.check
+	@echo "To run test: cd $(TOP_DIR)/tests ; source all"
 	LD_PRELOAD=$(TCLBLEND_LD_PRELOAD) \
 	LD_BIND_NOW=$(TCLBLEND_LD_BIND_NOW) \
 	LD_LIBRARY_PATH=$(BUILD_DIR):$(TCL_BIN_DIR):$(JAVA_ARCH_NATIVE_RUNTIME_LIBS):$(LD_LIBRARY_PATH) \

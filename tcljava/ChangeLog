@@ -1,5 +1,11 @@
 2000-05-14  Mo DeJong  <mdejong@redhat.com>
 
+	* unix/Makefile.in: Fixed up "make test"
+	rules, added output that makes it easy
+	to run the tests from "make shell".
+
+2000-05-14  Mo DeJong  <mdejong@redhat.com>
+
 	* src/tclblend/tcl/lang/Interp.java: Fixed
 	up comments about flags argument, for instance
 	GLOBAL_ONLY was changed to TCL.GLOBAL_ONLY.
