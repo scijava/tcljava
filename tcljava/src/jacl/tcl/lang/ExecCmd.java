@@ -2,7 +2,7 @@
  * ExecCmd.java --
  *
  *	This file contains the Jacl implementation of the built-in Tcl "exec"
- *	command.
+ *	command. The exec command is not available on the Mac.
  *
  * Copyright (c) 1997 Sun Microsystems, Inc.
  *
@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ExecCmd.java,v 1.1 1998/10/14 21:09:19 cvsadmin Exp $
+ * RCS: @(#) $Id: ExecCmd.java,v 1.2 1998/11/04 22:36:00 hylands Exp $
  */
 
 package tcl.lang;
@@ -334,14 +334,12 @@ private Process
   execWin (Interp interp, TclObject argv[], int first, int last) 
     throws IOException, InterruptedException {
 
-    //are you ready for the hack of the Year? If so then read on.
-
-    //when running on NT we need to write out two files
-    //the fist is in C:/TEMP/jacl.bat and the second is C:/TEMP/jacl2.bat
-    //we exec command.com on jacl.bat which will invoke cmd.exe on jacl2.bat
+    // when running on NT we need to write out two files
+    // the first is in C:/TEMP/jacl1.bat and the second is C:/TEMP/jacl2.bat
+    // we exec command.com on jacl1.bat which will invoke cmd.exe on jacl2.bat
     
-    //if we are not running under NT then we just write out the jacl.bat file
-    //and invoke that with command.com which should work on 95 and DOS
+    // if we are not running under NT then we just write out the jacl1.bat file
+    // and invoke that with command.com which should work on 95
 
     String jacl1 = "C:\\TEMP\\jacl1.bat";
     String jacl2 = "C:\\TEMP\\jacl2.bat";
@@ -350,56 +348,57 @@ private Process
     
     File jacl1_file = new File(jacl1);
     File jacl2_file = new File(jacl2);
-    
 
-    //if we are running the NT version then we need to write out to jacl2 but
-    //if not then we write out to jacl, we also need to check to make sure jacl
-    //exists before each exec on NT because it might get removed by the user 
+
+    // if we are running the NT version then we need to write out to jacl2 but
+    // if not then we write out to jacl, we also need to check to make sure jacl
+    // exists before each exec on NT because it might get removed by the user 
 
     File out_file;
 
     if (isNT) {
 
-      if (! jacl1_file.exists()) {
-	//we must rewrite the file because it has been deleted
-
-	PrintWriter jacl_out = new PrintWriter(new BufferedWriter(new FileWriter( jacl1_file )));
-
+	if ( jacl1_file.exists() ) {
+	    jacl1_file.delete();
+	}
+	
+	PrintWriter jacl_out = new PrintWriter(new BufferedWriter(
+					       new FileWriter( jacl1_file )));
+	
 	jacl_out.println("@echo off");
 	jacl_out.println("cmd.exe /C " + jacl2);
 	jacl_out.close();
-      }
-
-      out_file = jacl2_file;
+	
+	out_file = jacl2_file;
     } else {
-      out_file = jacl1_file;
+	out_file = jacl1_file;
     }
 
 
     if ( out_file.exists() ) {
-      out_file.delete();
+	out_file.delete();
     }
 
     PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter( out_file )));
 
 
-    //now we write out the .BAT script to the current output file and run it
+    // now we write out the .BAT script to the current output file and run it
 
-    //remove .bat file cmd echoing
+    // remove .bat file cmd echoing
     out.println("@echo off");
 
-    //from the path we get the "DRIVE" and the current directory
+    // from the path we get the "DRIVE" and the current directory
     String path = interp.getWorkingDir().toString();
     
-    //write out the drive id
+    // write out the drive id
     out.println( path.substring(0,2) );
 
-    //write out the path without double quotes but with % subst
+    // write out the path without double quotes but with % subst
     out.println( "cd " + escapeWinString(path.substring(2)) );
 
 
-    //we must take special care not to quote the program name
-    //we must also take care to ensure that each "%" becomes a "%%"
+    // we must take special care not to quote the program name
+    // we must also take care to ensure that each "%" becomes a "%%"
     out.print( escapeWinString(argv[first].toString()) );
     out.print(' ');
 
@@ -429,7 +428,8 @@ private Process
  *
  *	This procedure is invoked to process the "exec" call for an unknown
  *	a system. This happens when we do not have special exec code for a
- *      system that the code is running under.
+ *      system that the code is running under. It should never get used as
+ *      unix and windows are supported and Mac has no exec.
  *
  * Results:
  *	Returns the new process.
