@@ -1,5 +1,14 @@
 2001-11-20  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/jacl/tcl/lang/SocketCmd.java (cmdProc): Use the
+	Util.getInt() method to parse socket port numbers so
+	that we are compatible with Tcl error messages.
+	Avoid wrapping code in try blocks that catch Exception.
+	Set the interpreter result to String directly
+	instead of creating a TclString inline.
+
+2001-11-20  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/jacl/tcl/lang/StdChannel.java (open): Set
 	channel names to stdin, stdout, and stderr instead
 	of file0, file1, and file2.

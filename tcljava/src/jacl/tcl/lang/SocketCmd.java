@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: SocketCmd.java,v 1.4 2001/11/20 18:45:42 mdejong Exp $
+ * RCS: @(#) $Id: SocketCmd.java,v 1.5 2001/11/21 09:25:10 mdejong Exp $
  *
  */
 
@@ -88,15 +88,7 @@ class SocketCmd implements Command {
 		        throw new TclException(interp,
 			        "no argument given for -myport option");
 		    }
-		    try
-		    {
-		        myport = Integer.parseInt(argv[i].toString());
-		    }
-		    catch (Exception e)
-		    {
-		        throw new TclException(interp, e.getMessage(),
-		            TCL.ERROR);
-		    }
+		    myport = Util.getInt(interp, argv[i].toString());
 		    break; 
 		}
 	        case OPT_SERVER: {
@@ -136,33 +128,20 @@ class SocketCmd implements Command {
 	}
 
 	if (i == argv.length-1) {
-            try
-            {
-                port = Integer.parseInt(argv[i].toString());
-            }
-            catch (Exception e)
-            {
-                throw new TclException(interp, e.getMessage(), TCL.ERROR);
-            }
+	    port = Util.getInt(interp, argv[i].toString());
 	} else {
 	    errorWrongNumArgs(interp, argv[0].toString());
 	}
 
 	if (server) {
-            try
-            {
-                TclObject scr = TclString.newInstance(script);
-                ServerSocketChannel sock =
-                    new ServerSocketChannel(interp, myaddr, port, scr);
-                TclIO.registerChannel(interp, sock);
-                interp.setResult(TclString.newInstance(sock.getChanName()));
-            }
-            catch (Exception e)
-            {
-                throw new TclException(interp,
-                    "cannot create server socket: "
-                    + e.getMessage());
-            }
+            TclObject scr = TclString.newInstance(script);
+            ServerSocketChannel sock =
+                new ServerSocketChannel(interp, myaddr, port, scr);
+
+            TclIO.registerChannel(interp, sock);
+            interp.setResult(sock.getChanName());
+
+            // FIXME: Comments from the C implementation below ...
 
 	    // Register with the interpreter to let us know when the
 	    // interpreter is deleted (by having the callback set the
@@ -174,22 +153,13 @@ class SocketCmd implements Command {
 	    // need to be informed when the interpreter is deleted.
 
 	} else {
-            try
-            {
-                // Provide client side socket support here.
-                SocketChannel sock = new SocketChannel(
-                    interp, 
-                    TclIO.RDWR,
-                    myaddr, myport, async, host, port);
+            SocketChannel sock = new SocketChannel(
+                interp, 
+                TclIO.RDWR,
+                myaddr, myport, async, host, port);
 
-                TclIO.registerChannel(interp, sock);
-                interp.setResult(TclString.newInstance(sock.getChanName()));
-            }
-            catch (Exception e)
-            {
-                throw new TclException(interp, "cannot open socket: " +
-                    e.getMessage());
-            }
+            TclIO.registerChannel(interp, sock);
+            interp.setResult(sock.getChanName());
 	}
     }
 
