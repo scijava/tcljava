@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Parser.java,v 1.16 2003/02/05 09:51:07 mdejong Exp $
+ * RCS: @(#) $Id: Parser.java,v 1.17 2003/07/25 17:41:53 mdejong Exp $
  */
 
 package tcl.lang;
@@ -766,8 +766,7 @@ throws
     // If the interpreter was deleted, return an error.
     
     if (interp.deleted){
-	TclString.append(interp.getResult(),
-		"attempt to call eval in deleted interpreter");
+	interp.setResult("attempt to call eval in deleted interpreter");
 	interp.setErrorCode(TclString.newInstance(
 		"CORE IDELETE {attempt to call eval in deleted interpreter}"));
 	throw new TclException(TCL.ERROR);

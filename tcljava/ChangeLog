@@ -1,5 +1,12 @@
 2003-07-25  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/jacl/tcl/lang/Parser.java: Set the
+	interp result directly instead of trying
+	to append to the result object since appending
+	is known to not work.
+
+2003-07-25  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/pkgIndex.tcl:
 	* src/jacl/tcl/lang/Interp.java:
 	* src/tcljava/tcl/lang/BlendExtension.java:
