@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclObject.java,v 1.5 2002/12/10 00:55:37 mdejong Exp $
+ * RCS: @(#) $Id: TclObject.java,v 1.6 2002/12/10 01:53:24 mdejong Exp $
  *
  */
 
@@ -206,10 +206,6 @@ public final class TclObject {
      */
     public final void preserve() throws TclRuntimeError {
 	disposedCheck();
-	if (internalRep == null) {
-	    throw new TclRuntimeError("Attempting to preserve object " +
-		    "after it was deallocated");
-	} 
 	refCount++;
     }
 
