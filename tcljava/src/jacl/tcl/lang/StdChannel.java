@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: StdChannel.java,v 1.5 2000/08/01 06:50:49 mo Exp $
+ * RCS: @(#) $Id: StdChannel.java,v 1.6 2000/11/19 17:13:53 krischan Exp $
  *
  */
 
@@ -307,30 +307,6 @@ class StdChannel extends Channel {
     long tell()  throws IOException {
         return((long) -1);
     }
-
-    /** 
-     * Gets the chanName that is the key for the chanTable hashtable.
-     * @return channelId
-     */
-
-    String getChanName() {
-        switch (stdType) {
-            case STDIN: {
-	        return "stdin";
-	    }
-            case STDOUT: {
-		return "stdout";
-	    } 
-	    case STDERR: {
-		return "stderr";
-	    }
-	    default: {
-	        throw new TclRuntimeError(
-                        "Error: unexpected stdType for StdChannel");
-	    }
-	}
-    }
-
 
     /**
      * Return true if EOF has been read from stdin
