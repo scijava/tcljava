@@ -5,7 +5,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: JavaInvoke.test,v 1.9 2002/12/29 02:10:43 mdejong Exp $
+# RCS: @(#) $Id: JavaInvoke.test,v 1.10 2002/12/31 23:29:05 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -642,12 +642,77 @@ test invoke-10.8 {convertTclObject} {
 } [list 1 "expected object of type java.lang.Integer but got \"$value\" (tests.JavaTest)"]
 
 set value [java::new {Short short} 123]
-test invoke-10.8 {convertTclObject} {
+
+test invoke-10.9 {convertTclObject} {
     set cls [java::field Integer class]
     list [catch {
 	java::call -noconvert $INVCLS convertTclObject $interp $cls                       [jtest getobject $value]
     } msg] $msg
 } [list 1 "expected object of type java.lang.Integer but got \"$value\" (java.lang.Short)"]
+
+test invoke-10.10 {convertTclObject} {
+    set cls [java::field tcl.lang.TclObject class]
+    set str "mystr"
+    set tobj_in [jtest getobject $str]
+    set tobj_out [java::call -noconvert $INVCLS convertTclObject $interp $cls \
+        $tobj_in]
+    set tobj_out [java::cast tcl.lang.TclObject $tobj_out]
+    string compare $tobj_in $tobj_out
+} 0
+
+test invoke-10.11 {convertTclObject} {
+    set cls [java::field tcl.lang.TclObject class]
+    set str [java::new String "mystr"]
+    set tobj_in [jtest getobject $str]
+    set tobj_out [java::call -noconvert $INVCLS convertTclObject $interp $cls \
+        $tobj_in]
+    set tobj_out [java::cast tcl.lang.TclObject $tobj_out]
+    string compare $tobj_in $tobj_out
+} 0
+
+test invoke-10.12 {convertTclObject} {
+    set cls [java::field tcl.lang.TclObject class]
+    # Get a ReflectObject that wraps a TclObject
+    set tobj [java::call tcl.lang.TclString newInstance "mystr"]
+    set wrap [java::call tcl.lang.ReflectObject newInstance \
+        $interp $cls $tobj]
+    set wrap_out [java::call -noconvert $INVCLS convertTclObject $interp $cls \
+        $wrap]
+    set wrap_out [java::cast tcl.lang.TclObject $wrap_out]
+    string compare $tobj $wrap_out
+} 0
+
+test invoke-10.13 {convertTclObject} {
+    set results [list]
+    set str mystr
+    lappend results \
+        [java::call tests.signature.PassTclObject getTclObjectString $str]
+    lappend results \
+        [java::call tests.signature.PassTclObject {getTclObjectString tcl.lang.TclObject} $str]
+    set str [java::new String mystr]
+    lappend results [string compare $str \
+    [java::call tests.signature.PassTclObject getTclObjectString $str]]
+    lappend results [string compare $str \
+    [java::call tests.signature.PassTclObject {getTclObjectString tcl.lang.TclObject} $str]]
+} {mystr mystr 0 0}
+
+
+# This next test is commented out because the automatic
+# method resolver does not know how to treat a TclObject
+# as a generic argument. It just considers Tcl object
+# as Java Strings and fails to match for this reason.
+
+if 0 {
+test invoke-10.14 {convertTclObject} {
+    set results [list]
+    set str mystr
+    lappend results \
+        [java::call tests.signature.PassTclObject getTclObjectString2 $str]
+    set str [java::new String mystr]
+    lappend results [string compare $str \
+    [java::call tests.signature.PassTclObject getTclObjectString2 $str]]
+} {mystr 0}
+}
 
 #----------------------------------------------------------------------
 #

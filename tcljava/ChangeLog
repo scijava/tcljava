@@ -1,5 +1,19 @@
 2002-12-31  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* new_features.txt: Add note about TclObject passing.
+	* src/tcljava/tcl/lang/JavaInvoke.java (convertTclObject):
+	Add support for passing a TclObject directly to a
+	Java method. If the TclObject contains a ReflectObject
+	that contains a TclObject, then the TclObject inside
+	the ReflectObject is passed for backwards compatibility.
+	* src/tests/tcljava/tests/signature/PassTclObject.java:
+	Add helper class for test cases.
+	* tests/tcljava/JavaInvoke.test:
+	Test implementation of convertTclObject as it applies
+	to passing of a TclObject.
+
+2002-12-31  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/native/javaInterp.c (
 	Java_tcl_lang_Interp_evalNative,
 	Java_tcl_lang_Interp_evalString,

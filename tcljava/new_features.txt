@@ -307,4 +307,13 @@ have been added to each of the java methods. An exception
 will now be raised on any attempt to interact with an
 inaccessible class.
 
+(PASSING TCL OBJECTS TO JAVA)
+
+It is now possible to pass a TclObject directly to a Java method.
+In previous versions it was possible to pass a TclObject contained
+in a ReflectObject, but it was not possible to pass the actual
+TclObject that contained the ReflectObject. The new implementation
+makes it possible to directly pass the containing TclObject assuming
+it is not a ReflectObject that contains a TclObject.
+
 </PRE></BODY></HTML>

@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaInvoke.java,v 1.17 2002/12/30 06:28:06 mdejong Exp $
+ * RCS: @(#) $Id: JavaInvoke.java,v 1.18 2002/12/31 23:29:05 mdejong Exp $
  *
  */
 
@@ -895,6 +895,9 @@ throws
 	        throw new TclException(interp, "expected character but got \""
 		    + tclObj + "\"");
 	    }
+	} else if (type == TclObject.class) {
+	    // Pass a non ReflectObject TclObject directly to a Java method.
+	    return tclObj;
 	} else {
 	    throw new TclException(interp, "\"" + tclObj +
 		    "\" is not an object handle of class \"" +
@@ -959,6 +962,11 @@ throws
 	    else if (type == Void.TYPE) {
 	        // void is not a valid type for conversions
 	    }
+	}
+
+	// Pass TclObject that contains the ReflectObject directly.
+	if (type == TclObject.class) {
+	    return tclObj;
 	}
 
 	throw new TclException(interp, "expected object of type " +
