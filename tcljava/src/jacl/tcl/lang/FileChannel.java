@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FileChannel.java,v 1.4 1999/05/24 11:47:50 mo Exp $
+ * RCS: @(#) $Id: FileChannel.java,v 1.5 1999/05/24 12:44:49 mo Exp $
  *
  */
 
@@ -28,6 +28,7 @@ class FileChannel extends Channel {
      * that allows this behavior.
      */
     private RandomAccessFile file = null;
+    private BufferedReader reader = null;
 
     /**
      * Buffer size used when reading large files
@@ -177,62 +178,43 @@ class FileChannel extends Channel {
 	        getChanName() + "\"wasn't opened for reading");
 	}
 
+	// Create the Buffered Reader if it does not already exist
+	if (reader == null) {
+	    reader = new BufferedReader( new FileReader(file.getFD()) );
+	}
+
+	eofCond = false;
+
 	switch (readType) {
 	    case TclIO.READ_ALL: {
-	        int    bytesRead  = 0;
-		long   fileSize   = file.length();
-		byte[] byteArr    = new byte[BUF_SIZE];
-		StringBuffer sbuf = new StringBuffer((int)fileSize);
-		
-		while((fileSize - (long)bytesRead) > BUF_SIZE) {
-		    bytesRead += file.read(byteArr);
-		    sbuf.append(byteArr);
+		char[] charArr = new char[BUF_SIZE];
+		StringBuffer sbuf = new StringBuffer((int) file.length());
+		int numRead;
+		    
+		while((numRead = reader.read(charArr, 0, BUF_SIZE)) != -1) {
+		    sbuf.append(charArr,0, numRead);
 		}
-		bytesRead = file.read(byteArr);
-		if (bytesRead == -1) {
-		    return("");
-		}
-		sbuf.append(new String(byteArr, 0, bytesRead));
 		eofCond = true;
-
-		return sbuf.toString();
-	    } 
-	    case TclIO.READ_LINE: {
-	        int    byteRead   = 0;
-		char   ch;
-		StringBuffer sbuf = new StringBuffer();
-		eofCond = false;
-
-		// The readXXX interface is inconsistent w/ the basic
-		// read() in that readXXX throws EOFException when it
-		// reaches the EOF, while read() returns -1.
-
-		try {
-		    while ((ch = (char)file.readByte()) != -1) {
-			if ((ch == '\n') || (ch == '\r')) {
-			    break;
-			} else {
-			    sbuf.append(ch);
-			    byteRead++;
-			}
-		    }
-		} catch (EOFException e) {
-		    eofCond = true;
-		}
-
 		return sbuf.toString();
 	    }
-	    case TclIO.READ_N_BYTES: {
-	        byte[] byteArr = new byte[numBytes];
-		int bytesRead  = file.read(byteArr);
-
-		if (bytesRead == -1) {
+	    case TclIO.READ_LINE: {
+		String line = reader.readLine();
+		if (line == null) {
 		    eofCond = true;
-		    return ("");
+		    return "";
 		} else {
-		    eofCond = false;
-		    return (new String(byteArr));
+		    return line;
 		}
+	    }
+	    case TclIO.READ_N_BYTES: {
+		char[] charArr = new char[numBytes];
+		int numRead;
+		numRead = reader.read(charArr, 0, numBytes);
+		if (numRead == -1) {
+		    eofCond = true;
+		    return "";
+		}
+		return( new String(charArr,0,numRead) );
 	    }
 	    default: {
 	        throw new TclRuntimeError(
