@@ -1,3 +1,10 @@
+2002-01-02  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/jacl/tcl/lang/SocketCmd.java (cmdProc, getPort):
+	Call new helper method to get port number passed in
+	by the user and check that it is valid. Raise error
+	if the port number is too large.
+
 2002-01-02  Bruce Johnson  <bruce_johnson@merck.com>,
             Mo DeJong  <mdejong@users.sourceforge.net>
 

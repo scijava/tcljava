@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: SocketCmd.java,v 1.5 2001/11/21 09:25:10 mdejong Exp $
+ * RCS: @(#) $Id: SocketCmd.java,v 1.6 2002/01/03 03:48:46 mdejong Exp $
  *
  */
 
@@ -88,7 +88,7 @@ class SocketCmd implements Command {
 		        throw new TclException(interp,
 			        "no argument given for -myport option");
 		    }
-		    myport = Util.getInt(interp, argv[i].toString());
+		    myport = getPort(interp, argv[i]);
 		    break; 
 		}
 	        case OPT_SERVER: {
@@ -128,7 +128,7 @@ class SocketCmd implements Command {
 	}
 
 	if (i == argv.length-1) {
-	    port = Util.getInt(interp, argv[i].toString());
+	    port = getPort(interp, argv[i]);
 	} else {
 	    errorWrongNumArgs(interp, argv[0].toString());
 	}
@@ -180,4 +180,23 @@ class SocketCmd implements Command {
 		cmdName +
                 " -server command ?-myaddr addr? port");
     }
+
+    /**
+     * TclSockGetPort -> getPort
+     *
+     * Maps from a string, which could be a service name, to a port.
+     * Unfortunately, Java does not provide any way to access the
+     * getservbyname functionality so we are limited to port numbers.
+     *
+     */
+
+    private static int getPort(Interp interp, TclObject tobj)
+            throws TclException {
+        int num = Util.getInt(interp, tobj.toString());
+        if (num > 0xFFFF)
+            throw new TclException(interp,
+                "couldn't open socket: port number too high");
+        return num;
+    }
+
 }
