@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.16 2000/12/22 09:47:13 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.17 2002/01/09 11:01:03 mdejong Exp $
 
 SHELL = /bin/sh
 
@@ -53,6 +53,7 @@ JAR_EXTRACT_FLAGS	= @JAR_EXTRACT_FLAGS@
 JAR_COMPRESS_FLAGS	= @JAR_COMPRESS_FLAGS@
 JAR_NOCOMPRESS_FLAGS	= @JAR_NOCOMPRESS_FLAGS@
 JDB_FLAGS		=
+JDB_ATTACH_FLAGS	= @JDB_ATTACH_FLAGS@
 DDD_FLAGS		=
 JAVA_CLASSPATH		= @JAVA_CLASSPATH@
 
@@ -491,7 +492,7 @@ jacl.build: jacl.clean tcljava.check
 
 # Only use this if you are developing jacl code and you need to recompile
 # a lot. It will not clean up before building and jacl.jar will not be
-# created you really need to know what you are doing to use this rule
+# created. You really need to know what you are doing to use this rule.
 jacl.fastbuild:
 	@if test ! -d $(JACL_BUILD_DIR); then \
 		echo "jacl must be built normally before a fastbuild" ; \
@@ -826,10 +827,10 @@ shell_tclblend: tclblend.check
 jdb_jacl: jacl.check
 	@rm -f tmp.*
 	@echo "echo \"Type Jacl comamnds into this shell, output will go to jdb shell.\"" >> tmp.run_jacl
+	@echo "CLASSPATH=$(JACL_DEBUG_CLASSPATH) ; export CLASSPATH" >> tmp.run_jacl
 	@echo "$(JAVA_G) $(JAVA_G_FLAGS) -DBUILD_DIR=$(BUILD_DIR) \
 		-DJAVA=$(JAVA) tcl.lang.Shell | tee tmp.out" >> tmp.run_jacl
-	@CLASSPATH=$(JACL_DEBUG_CLASSPATH) \
-	    $(XTERM) -T Jacl -e /bin/sh tmp.run_jacl &
+	@$(XTERM) -T Jacl -e /bin/sh tmp.run_jacl &
 	@echo "Waiting for Java to initialize"
 	@sleep 5
 	@if test ! -s tmp.out ; then \
@@ -843,9 +844,9 @@ jdb_jacl: jacl.check
 	@if test -s tmp.out ; then \
 	    echo "Starting JDB, type commands into the xterms" ;\
 	    echo "echo \"JDB command shell\"" >> tmp.run_jdb ;\
-	    echo "grep password tmp.out | sed 's/[A-Z|a-z| ]*=//' > tmp.password" >> tmp.run_jdb ;\
 	    echo "CLASSPATH=$(JACL_DEBUG_CLASSPATH) ; export CLASSPATH" >> tmp.run_jdb ;\
-	    echo "$(JDB) $(JDB_FLAGS) -host localhost -password \`cat tmp.password\` 2> tmp.err_jdb" >> tmp.run_jdb ;\
+	    echo "grep password tmp.out | sed 's/[A-Z|a-z| ]*=//' > tmp.password" >> tmp.run_jdb ;\
+	    echo "$(JDB) $(JDB_FLAGS) $(JDB_ATTACH_FLAGS)" >> tmp.run_jdb ;\
 	    $(XTERM) -T JDB-Jacl -e /bin/sh tmp.run_jdb & \
 	else \
 	    echo "Giving Up" ; \
@@ -861,12 +862,15 @@ jdb_local_jacl: jacl.check
 
 
 gdb_jacl: jacl.check
-	echo "NOT IMPLEMENTED"
+	@echo "NOT IMPLEMENTED"
 
 
 # Invoke remote (two process) DDD-jdb debug session for Jacl.
 # This will fire off an Xterm that Jacl will actually run in
 # and it will invoke DDD-jdb to debug that interactive session
+
+# FIXME: This target is currently broken on JDK 1.3 systems, needs to be
+# fixed and tested so that the implementation matches the jdb_jacl target
 
 ddd_jacl: jacl.check
 	@rm -f tmp.*

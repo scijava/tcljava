@@ -519,8 +519,11 @@ AC_DEFUN([AC_JAVA_TOOLS], [
     AC_JAVA_TOOLS_CHECK(JAVA, java, $ac_java_jvm_dir/bin)
 
     # Don't error if java_g can not be found
-    JAVA_G_FLAGS=-debug
     AC_JAVA_TOOLS_CHECK(JAVA_G, java_g, $ac_java_jvm_dir/bin, 1)
+
+    if test "x$JAVA_G" = "x" ; then
+        JAVA_G=$JAVA
+    fi
 
     TOOL=javah
     if test "$ac_java_jvm_name" = "kaffe" ; then
@@ -533,6 +536,17 @@ AC_DEFUN([AC_JAVA_TOOLS], [
 
     # Don't error if jdb can not be found
     AC_JAVA_TOOLS_CHECK(JDB, jdb, $ac_java_jvm_dir/bin, 1)
+
+    case "$ac_java_jvm_version" in
+        1.1|1.2)
+            JAVA_G_FLAGS=-debug
+            JDB_ATTACH_FLAGS="-host localhost -password \\\`cat tmp.password\\\`"
+            ;;
+        1.3)
+            JAVA_G_FLAGS="-Xdebug -Xrunjdwp:transport=dt_socket,address=8757,server=y,suspend=n -Xbootclasspath/a:$ac_java_jvm_dir/lib/tools.jar"
+            JDB_ATTACH_FLAGS="-attach 8757"
+            ;;
+    esac
 ])
 
 #------------------------------------------------------------------------

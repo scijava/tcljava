@@ -1,5 +1,18 @@
 2002-01-08  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* Makefile.in: Add JDB_ATTACH_FLAGS to deal
+	with version specific arguments for jdb.
+	Rework the jdb_jacl rule so that it uses
+	these new command line arguments.
+	* configure: Regen.
+	* configure.in: Subst JDB_ATTACH_FLAGS.
+	* tcljava.m4 (AC_JAVA_TOOLS): Set JAVA_G_FLAGS
+	and JDB_ATTACH_FLAGS based on JDK version.
+	If a java_g executable can't be found use
+	the java executable in its place.
+
+2002-01-08  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* aclocal.m4: Removed.
 	* configure: Regen with autoconf 2.52.
 	* configure.in: Require autoconf 2.50 or newer.

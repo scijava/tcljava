@@ -265,6 +265,12 @@ if test "$ac_java_jvm_name" = "kaffe"; then
     TCL_CFLAGS="$TCL_CFLAGS -DTCLBLEND_KAFFE"
 fi
 
+# Avoid silly make warnings about duplicate targets
+# by setting SHLIB_PREFIX to a non-empty value.
+if test "$TCLJAVA" = "jacl" ; then
+    SHLIB_PREFIX=dummy
+fi
+
 AC_SUBST(CC)
 AC_SUBST(SHLIB_CFLAGS)
 AC_SUBST(SHLIB_LD)
@@ -328,6 +334,7 @@ AC_SUBST(JAVA_FLAGS)
 AC_SUBST(JAVAC_FLAGS)
 AC_SUBST(JAVAC_D_FLAG)
 AC_SUBST(JAVA_G_FLAGS)
+AC_SUBST(JDB_ATTACH_FLAGS)
 
 AC_SUBST(JAR_EXTRACT_FLAGS)
 AC_SUBST(JAR_COMPRESS_FLAGS)
