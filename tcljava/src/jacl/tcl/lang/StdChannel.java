@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: StdChannel.java,v 1.2 1999/05/09 01:29:48 dejong Exp $
+ * RCS: @(#) $Id: StdChannel.java,v 1.3 1999/05/16 06:21:28 dejong Exp $
  *
  */
 
@@ -23,18 +23,21 @@ import java.io.*;
 class StdChannel extends Channel {
   
     /**
-     * System.in is wrapped around this class to access a better API 
+     * This class is wrapped around System.in to access the readLine() API
      */
+
     private static BufferedReader in = null;
 
     /**
      * stdType store which type, of the three below, this StdChannel is.
      */
-    private int stdType;
+
+    private int stdType = -1;
 
     /**
      * Flags indicating the type of this StdChannel.
      */
+
     static final int STDIN    = 0;
     static final int STDOUT   = 1; 
     static final int STDERR   = 2; 
@@ -42,19 +45,21 @@ class StdChannel extends Channel {
     /**
      * The buffer size when reading in large files
      */
+
     private static final int BUF_SIZE = 1024;
 
+    /**
+     * Used to keep track of EOF on System.in.
+     */
+
+    private static boolean eofCond = false;
 
     /**
      * Constructor that does nothing.  Open() must be called before
      * any of the subsequent read, write, etc calls can be made.
      */
 
-    StdChannel() {
-        in      = null;
-	stdType = -1;
-    }
-
+    StdChannel() {}
 
     /**
      * Constructor that will automatically call open.
@@ -109,6 +114,9 @@ class StdChannel extends Channel {
 	    case STDERR:
 	        mode = TclIO.WRONLY;
 		break;
+	    default:
+		throw new RuntimeException(
+		    "type does not match one of STDIN, STDOUT, or STDERR");
 	}
 
         stdType = type;
@@ -128,7 +136,7 @@ class StdChannel extends Channel {
      *            TclIO class for more information on read types.
      * @param numBytes Number of bytes to read.  Only used when the readType
      *            is TclIO.READ_N_BYTES.
-     * @return String of data that was read from file.
+     * @return String of data that was read from the Channel (can not be null)
      * @exception TclException is thrown if read occurs on WRONLY channel.
      * @exception IOException is thrown when an IO error occurs that was not
      *                correctly tested for.  Most cases should be caught.
@@ -136,6 +144,8 @@ class StdChannel extends Channel {
 
     String read(Interp interp, int readType, int numBytes) 
             throws IOException, TclException {
+
+	eofCond = false;
 
         if (stdType != STDIN) {
 	      throw new TclException(interp, "channel \"" +
@@ -146,19 +156,32 @@ class StdChannel extends Channel {
 	    case TclIO.READ_ALL: {
 		char[] charArr = new char[BUF_SIZE];
 		StringBuffer sbuf = new StringBuffer();
+		int numRead;
 		    
-		while((in.read(charArr, 0, BUF_SIZE)) != -1) {
-		    sbuf.append(charArr);
+		while((numRead = in.read(charArr, 0, BUF_SIZE)) != -1) {
+		    sbuf.append(charArr,0, numRead);
 		}
+		eofCond = true;
 		return sbuf.toString();
 	    } 
 	    case TclIO.READ_LINE: {
-	        return(in.readLine());
+		String line = in.readLine();
+		if (line == null) {
+		    eofCond = true;
+		    return "";
+		} else {
+		    return line;
+		}
 	    }
 	    case TclIO.READ_N_BYTES: {
 		char[] charArr = new char[numBytes];
-		in.read(charArr, 0, numBytes);
-		return( new String(charArr) );
+		int numRead;
+		numRead = in.read(charArr, 0, numBytes);
+		if (numRead == -1) {
+		    eofCond = true;
+		    return "";
+		}
+		return( new String(charArr,0,numRead) );
 	    }
 	    default : {
 	        throw new TclRuntimeError(
@@ -287,11 +310,10 @@ class StdChannel extends Channel {
 
 
     /**
-     * Not sure what this means on stdio channels???
+     * Return true if EOF has been read from stdin
      * 
-     * @return For now just return false
      */
     boolean eof() {
-        return false;
+	return eofCond;
     }
 }
