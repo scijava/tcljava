@@ -1,3 +1,11 @@
+2000-03-14  Mo DeJong  <mdejong@redhat.com>
+
+	* demos/packDemo/StringSplitter.java: Removed file.
+	* demos/packDemo/PackerLayout.java: Added split()
+	method that was implemented in StringSplitter. Also
+	added a method to query the current pack settings.
+	The ability to "update" a widget was also added.
+
 2000-03-10  Mo DeJong  <mdejong@redhat.com>
 
 	* src/jacl/tcl/lang/Expression.java:

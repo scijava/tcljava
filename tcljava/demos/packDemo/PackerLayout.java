@@ -1,7 +1,8 @@
 /*
  * PackerLayout.java
  *
- * Copyright (c) 1998 Mo Dejong, U of MN
+ * Copyright (c) 2000 Mo DeJong, Red Hat, Inc.
+ * Copyright (c) 1998 Mo DeJong, U of MN
  * Copyright (c) 1997 Daeron Meyer, U of MN
  * Copyright (c) 1996 Sun Microsystems, Inc.
  *
@@ -9,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: PackerLayout.java,v 1.1 1999/05/08 05:08:03 dejong Exp $
+ * RCS: @(#) $Id: PackerLayout.java,v 1.2 2000/03/15 04:30:35 mo Exp $
  *
  */
 
@@ -61,6 +62,17 @@ public class PackerLayout implements LayoutManager
   
   private static Hashtable value_object_table;
 
+  // This is kind of wacky, but there does not seem to
+  // be any way to "update" the options of a component
+  // in a Java layout manager. To implement "update",
+  // we just call add() again except that we set
+  // the special ignore_next_remove flag. Then on
+  // the next call to add(), removeLayoutComponent()
+  // will be invoked but we will not actually remove
+  // the component. When addLayoutComponent() is called
+  // we can then update the component's pack record.
+
+  private boolean ignore_next_remove = false;
 
 
 
@@ -151,8 +163,59 @@ public class PackerLayout implements LayoutManager
 
   private static final Dimension RetDimension = new Dimension(0,0);
 
+  //this helper method is used to split up an input string
+  //based on a single splitchar. It returns an array of strings.
+  // split("one two  three", ' ') -> {"one", "two", "three"}
 
+  private static String[] split(String in, char splitchar) {
+    // first we copy the contents of the string into
+    // an array for quick processing
+    
+    int i;
+    
+    // create an array that is as big as the input
+    // str plus one for an extra split char
+    
+    int len = in.length();
+    char[] str = new char[len + 1];
+    in.getChars(0,len,str,0);
+    str[len++] = splitchar;
+    
+    int wordstart = 0;
+    
+    // make a vector that will hold our elements
+    Vector words = new Vector(3);
 
+    //for (i=0; i < len; i++) {
+    //  System.out.println(str[i] + " : " + i );
+    //}
+    
+    for (i=0; i < len; i++) {      
+      // compare this char to the split char
+      // if they are the same the we need to
+      // add the last word to the array
+      
+      if (str[i] == splitchar) {
+	//System.out.println("split char found at " + i);
+	
+	if (wordstart <= (i-1)) {
+	  words.addElement( new String(str, wordstart, i - wordstart) );
+	}
+
+	wordstart = i + 1;
+	
+      }
+    }
+    
+    
+    // create an array that is as big as the number
+    // of elements in the vector and copy over and return
+    
+    String[] ret = new String[ words.size() ];
+    words.copyInto(ret);  
+    return ret;
+  }
+  
 
 
   //in the init block we create the entries for the
@@ -319,13 +382,18 @@ public class PackerLayout implements LayoutManager
     
     if (comp == null)
       return;
-   
-    //this widget gets mapped to this pack record struct
-    PackRecord pr = new PackRecord();
-    
+
+    boolean new_record = false;
+
+    PackRecord pr = (PackRecord) component_table.get(comp);
+    if (pr == null) {
+	pr = new PackRecord();
+	new_record = true;
+	System.out.println("adding new record");
+    }
 
     //System.out.println("input str is \"" + spec + "\"");    
-    String[] args = StringSplitter.split(spec,' ');
+    String[] args = split(spec,' ');
     
 
     //in the default case we will not add an element
@@ -425,6 +493,8 @@ public class PackerLayout implements LayoutManager
 	//that was just given does not match
 	//any of the predefined option types
 
+	// unknown or ambiguous option "-foll": must be -after, -anchor, -before, -expand, -fill, -in, -ipadx, -ipady, -padx, -pady, or -side
+
 	throw new PackingException("error : option \"" + args[i]
 				   + "\" does not match any of " +
 				   OPT_ANCHOR + " " +
@@ -489,24 +559,25 @@ public class PackerLayout implements LayoutManager
       
     }
     
+    // If we created a new record, add a mapping from the component
+    // to the pack record to our component_table
 
+    if (new_record) {
+	component_table.put(comp, pr);
 
-    //now we parsed all the arguments so we can put
-    //this pack record into the hash table of valid components
-    
-    component_table.put(comp, pr);
+	System.out.println("put pack record in table");
 
+	// now add the component to the display list
 
-    //now add the component to the display list
-
-    if (firstcomp == null) {
-      firstcomp = comp;
-      lastcomp = comp;
-    } else {
-      PackRecord lpr = (PackRecord) component_table.get(lastcomp);
-      lpr.next = comp;
-      lpr.prev = lastcomp;
-      lastcomp = comp;
+	if (firstcomp == null) {
+	    firstcomp = comp;
+	    lastcomp = comp;
+	} else {
+	    PackRecord lpr = (PackRecord) component_table.get(lastcomp);
+	    lpr.next = comp;
+	    lpr.prev = lastcomp;
+	    lastcomp = comp;
+	}
     }
 
   }
@@ -519,7 +590,13 @@ public class PackerLayout implements LayoutManager
    * @param comp the component to remove
    */
   public void removeLayoutComponent(Component comp) {
-    
+
+    // Wacky "update" workaround, see above for comments
+    if (ignore_next_remove) {
+	ignore_next_remove = false;
+	return;
+    }
+
     PackRecord pr = (PackRecord) component_table.get(comp);
     Component prev = pr.prev, next = pr.next;
     
@@ -538,6 +615,7 @@ public class PackerLayout implements LayoutManager
     }
 
     //remove this component from the component table
+    System.out.println("removing pack record from table");
     component_table.remove(comp);    
     return;
 
@@ -925,8 +1003,156 @@ public class PackerLayout implements LayoutManager
       return minExpand;
     
   }
+
+
+  // This method will return the current packing properties
+  // of a specific widget like the following format
+  // -anchor center -expand 0 -fill none -ipadx 0 -ipady 0 -padx 0 -pady 0 -side top
   
-  
+  public String getComponentSettings(Component comp) {
+    StringBuffer sb = new StringBuffer();
+
+    PackRecord pr = (PackRecord) component_table.get(comp);
+
+    if (pr == null)
+	return null; // The widget is not managed by this PackerLayout
+
+    // -anchor
+
+    sb.append(OPT_ANCHOR);
+    sb.append(' ');
+
+    Object anchor = pr.anchor;
+
+    if (anchor == ANCHOR_OBJ_N) {
+	sb.append(ANCHOR_OPT_N);
+    }
+    else if (anchor == ANCHOR_OBJ_NE) {
+	sb.append(ANCHOR_OPT_NE);
+    }
+    else if (anchor == ANCHOR_OBJ_E) {
+	sb.append(ANCHOR_OPT_E);
+    }
+    else if (anchor == ANCHOR_OBJ_SE) {
+	sb.append(ANCHOR_OPT_SE);
+    }
+    else if (anchor == ANCHOR_OBJ_S) {
+	sb.append(ANCHOR_OPT_S);
+    }
+    else if (anchor == ANCHOR_OBJ_SW) {
+	sb.append(ANCHOR_OPT_SW);
+    }
+    else if (anchor == ANCHOR_OBJ_W) {
+	sb.append(ANCHOR_OPT_W);
+    }
+    else if (anchor == ANCHOR_OBJ_NW) {
+	sb.append(ANCHOR_OPT_NW);
+    }
+    else if (anchor == ANCHOR_OBJ_C) {
+	sb.append(ANCHOR_OPT_C);
+    } else {
+	throw new RuntimeException("no match for ANCHOR type");
+    }
+
+    sb.append(' ');
+
+    // -expand
+
+    sb.append(OPT_EXPAND);
+    sb.append(' ');
+
+    if (pr.expand == EXPAND_OBJ_TRUE) {
+	sb.append(EXPAND_OPT_YES);
+    }
+    else if (pr.expand == EXPAND_OBJ_FALSE) {
+	sb.append(EXPAND_OPT_NO);
+    }
+    else {
+	throw new RuntimeException("no match for EXPAND type");
+    }
+
+    sb.append(' ');
+
+    // -fill
+
+    sb.append(OPT_FILL);
+    sb.append(' ');
+
+    if (pr.fill == FILL_OBJ_NONE) {
+	sb.append(FILL_OPT_NONE);
+    }
+    else if (pr.fill == FILL_OBJ_X) {
+	sb.append(FILL_OPT_X);
+    }
+    else if (pr.fill == FILL_OBJ_Y) {
+	sb.append(FILL_OPT_Y);
+    }
+    else if (pr.fill == FILL_OBJ_BOTH) {
+	sb.append(FILL_OPT_BOTH);
+    }
+    else {
+	throw new RuntimeException("no match for FILL type");
+    }
+
+    sb.append(' ');
+    
+
+    // -ipadx -ipady -padx -pady
+
+    sb.append(OPT_IPADX);
+    sb.append(' ');
+    sb.append(pr.ipadx);
+
+    sb.append(' ');
+
+    sb.append(OPT_IPADY);
+    sb.append(' ');
+    sb.append(pr.ipady);
+
+    sb.append(' ');
+
+    sb.append(OPT_PADX);
+    sb.append(' ');
+    sb.append(pr.padx);
+
+    sb.append(' ');
+
+    sb.append(OPT_PADY);
+    sb.append(' ');
+    sb.append(pr.pady);
+
+    sb.append(' ');
+
+
+    // -side
+
+    sb.append(OPT_SIDE);
+    sb.append(' ');
+
+    if (pr.side == SIDE_OBJ_TOP) {
+	sb.append(SIDE_OPT_TOP);
+    }
+    else if (pr.side == SIDE_OBJ_BOTTOM) {
+	sb.append(SIDE_OPT_BOTTOM);
+    }
+    else if (pr.side == SIDE_OBJ_LEFT) {
+	sb.append(SIDE_OPT_LEFT);
+    }
+    else if (pr.side == SIDE_OBJ_RIGHT) {
+	sb.append(SIDE_OPT_RIGHT);
+    } else {
+	throw new RuntimeException("no match for SIDE type");
+    }
+    
+    return sb.toString();
+  }
+
+
+  // "update" functionality workaround
+
+  public void setIgnoreNextRemove(boolean bool) {
+      ignore_next_remove = bool;
+  }
 
 
   /**
