@@ -10,13 +10,12 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.3 2000/08/20 06:08:44 mo Exp $
+# RCS: @(#) $Id: interp.test,v 1.4 2000/12/28 07:11:50 mdejong Exp $
 
-if {[string compare test [info procs test]] == 1} then {source defs}
-#if {[lsearch [namespace children] ::tcltest] == -1} {
-#    package require tcltest
-#    namespace import ::tcltest::*
-#}
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
 
 # The set of hidden commands is platform dependent:
 
@@ -90,7 +89,7 @@ test interp-2.6 {basic interpreter creation} {
 } d
 test interp-2.7 {basic interpreter creation} {
     list [catch {interp create -froboz} msg] $msg
-} {1 {bad option "-froboz": must be -safe, or --}}
+} {1 {bad option "-froboz": must be -safe or --}}
 test interp-2.8 {basic interpreter creation} {
     interp create -- -froboz
 } -froboz
@@ -545,6 +544,7 @@ catch {removeFile file-15.8}
 # Torture tests for interpreter deletion order
 #
 proc kill {} {interp delete xxx}
+
 test interp-15.9 {testing deletion order} {
     catch {interp delete xxx}
     interp create xxx
@@ -586,7 +586,7 @@ test interp-16.4 {testing deletion order} {
     interp delete ddd
     set x
 } ""
-test interp-16.5 {testing deletion order, bgerror} {jaclCanFree} {
+test interp-16.5 {testing deletion order, bgerror} {
     catch {interp delete xxx}
     interp create xxx
     xxx eval {proc bgerror {args} {exit}}
@@ -814,21 +814,6 @@ test interp-20.1 {interp hide, interp expose and interp invokehidden} {
     interp delete a
     set msg
 } {invalid command name "foo"}
-test interp-20.1a {interp hide, interp expose and interp invokehidden} {
-    catch {interp delete a}
-    interp create a
-    a eval {proc unknown {x args} {error "invalid command name \"$x\""}}
-    a eval {proc foo {} {return 1}}
-    a hide foo
-    set l ""
-    lappend l [catch {a eval {foo}} msg]
-    lappend l $msg
-    a expose foo
-    lappend l [catch {a eval {foo}} msg]
-    lappend l $msg
-    interp delete a
-    set l
-} {1 {invalid command name "foo"} 0 1}
 test interp-20.2 {interp hide, interp expose and interp invokehidden} {
     catch {interp delete a}
     interp create a
@@ -1684,7 +1669,7 @@ test interp-23.1 {testing hiding vs aliases} {
     interp delete a
     set l
 } {{} bar {} bar bar {} {}}
-test interp-23.2 {testing hiding vs aliases} {
+test interp-23.2 {testing hiding vs aliases} {unixOrPc} {
     catch {interp delete a}
     interp create a -safe
     set l ""
@@ -1700,7 +1685,25 @@ test interp-23.2 {testing hiding vs aliases} {
     lappend l [lsort [interp hidden a]]
     interp delete a
     set l
-} [list $hidden_cmds bar $hidden_cmds bar [linsert $hidden_cmds 0 bar] {} $hidden_cmds]
+} {{cd encoding exec exit fconfigure file glob load open pwd socket source} bar {cd encoding exec exit fconfigure file glob load open pwd socket source} bar {bar cd encoding exec exit fconfigure file glob load open pwd socket source} {} {cd encoding exec exit fconfigure file glob load open pwd socket source}} 
+
+test interp-23.3 {testing hiding vs aliases} {macOnly} {
+    catch {interp delete a}
+    interp create a -safe
+    set l ""
+    lappend l [lsort [interp hidden a]]
+    a alias bar bar
+    lappend l [interp aliases a]
+    lappend l [lsort [interp hidden a]]
+    a hide bar
+    lappend l [interp aliases a]
+    lappend l [lsort [interp hidden a]]
+    a alias bar {}
+    lappend l [interp aliases a]
+    lappend l [lsort [interp hidden a]]
+    interp delete a
+    set l
+} {{beep cd echo encoding exit fconfigure file glob load ls open pwd socket source} bar {beep cd echo encoding exit fconfigure file glob load ls open pwd socket source} bar {bar beep cd echo encoding exit fconfigure file glob load ls open pwd socket source} {} {beep cd echo encoding exit fconfigure file glob load ls open pwd socket source}} 
 
 test interp-24.1 {result resetting on error} {
     catch {interp delete a}
@@ -2356,5 +2359,5 @@ test interp-31.1 {alias invocation scope} {
 foreach i [interp slaves] {
   interp delete $i
 }
-#::tcltest::cleanupTests
-#return
+::tcltest::cleanupTests
+return

@@ -1,3 +1,24 @@
+2000-12-27  Mo DeJong  <mdejong@redhat.com>
+
+	* tests/tcl/error.test:
+	* tests/tcl/eval.test:
+	* tests/tcl/execute.test:
+	* tests/tcl/expr-old.test:
+	* tests/tcl/expr.test:
+	* tests/tcl/fileName.test:
+	* tests/tcl/for-old.test:
+	* tests/tcl/for.test:
+	* tests/tcl/foreach.test:
+	* tests/tcl/format.test:
+	* tests/tcl/get.test:
+	* tests/tcl/history.test:
+	* tests/tcl/if-old.test:
+	* tests/tcl/if.test:
+	* tests/tcl/incr-old.test:
+	* tests/tcl/incr.test:
+	* tests/tcl/interp.test: Add or update tests
+	to match the ones in Tcl 8.3.
+
 2000-12-23  Mo DeJong  <mdejong@redhat.com>
 
 	* tests/tcl/append.test:
@@ -6,7 +27,7 @@
 	* tests/tcl/case.test:
 	* tests/tcl/clock.test:
 	* tests/tcl/compile.test:
-	* tests/tcl/concat.test: Added or updated tests
+	* tests/tcl/concat.test: Add or update tests
 	to match the ones in Tcl 8.3. Some tests expose
 	minor formatting issues for test arguments.
 

@@ -11,13 +11,17 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: history.test,v 1.3 2000/04/03 08:47:56 mo Exp $
+# RCS: @(#) $Id: history.test,v 1.4 2000/12/28 07:11:50 mdejong Exp $
   
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
 
 if {[catch {history}]} {
     puts stdout "This version of Tcl was built without the history command;\n"
     puts stdout "history tests will be skipped.\n"
+    ::tcltest::cleanupTests
     return
 }
 
@@ -209,3 +213,19 @@ test history-9.2 {miscellaneous} {
     catch {history gorp} msg
     set msg
 } {bad option "gorp": must be add, change, clear, event, info, keep, nextid, or redo}
+
+# cleanup
+::tcltest::cleanupTests
+return
+
+
+
+
+
+
+
+
+
+
+
+

@@ -11,12 +11,12 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: error.test,v 1.3 1999/08/03 03:34:58 mo Exp $
+# RCS: @(#) $Id: error.test,v 1.4 2000/12/28 07:11:49 mdejong Exp $
 
-#FIXME : add back in when namespaces are finished
-#if {[lsearch [namespace children] ::tcltest] == -1} {
-#    source [file join [pwd] [file dirname [info script]] defs.tcl]
-#}
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
 
 proc foo {} {
     global errorInfo
@@ -177,5 +177,5 @@ test error-6.1 {catch must reset error state} {
 
 # cleanup
 catch {rename p ""}
-#::tcltest::cleanupTests
+::tcltest::cleanupTests
 return 

@@ -10,12 +10,12 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: foreach.test,v 1.2 1999/08/05 03:46:53 mo Exp $
+# RCS: @(#) $Id: foreach.test,v 1.3 2000/12/28 07:11:49 mdejong Exp $
 
-# Removede for now
-#if {[lsearch [namespace children] ::tcltest] == -1} {
-#    source [file join [pwd] [file dirname [info script]] defs.tcl]
-#}
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
 
 catch {unset a}
 catch {unset x}
@@ -227,6 +227,17 @@ test foreach-6.1 {delayed substitution of body} {knownBug} {
 # cleanup
 catch {unset a}
 catch {unset x}
-#::tcltest::cleanupTests
+::tcltest::cleanupTests
 return
+
+
+
+
+
+
+
+
+
+
+
 
