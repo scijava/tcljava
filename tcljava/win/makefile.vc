@@ -403,7 +403,7 @@ shell_tclblend.exec: tclblend.check
 # Build rules for the Demo files
 #----------------------------------------------------------------
 
-demos: $(TCLJAVA).check demos.build
+demos: $(TCLJAVA).check demos.build demos_$(TCLJAVA).build
 
 demos.build:
 	-mkdir $(DEMOS_BUILD_DIR)
@@ -413,8 +413,6 @@ demos.build:
 		$(DEMOS_BUILD_DIR)\gridDemo
 	$(COPYDIR) $(DEMOS_SRC_DIR)\packDemo \
 		$(DEMOS_BUILD_DIR)\packDemo
-	$(COPYDIR) $(DEMOS_SRC_DIR)\pyramidpkg \
-		$(DEMOS_BUILD_DIR)\pyramidpkg
 	$(COPYDIR) $(DEMOS_SRC_DIR)\simplepkg \
 		$(DEMOS_BUILD_DIR)\simplepkg
 	$(COPYDIR) $(DEMOS_SRC_DIR)\watchpkg \
@@ -425,19 +423,22 @@ demos.build:
 	cd $(DEMOS_BUILD_DIR)\packDemo
 	set CLASSPATH=$(DEMOS_CLASSPATH)
 	$(JAVAC) $(JAVAC_FLAGS) *.java
-	cd $(DEMOS_BUILD_DIR)\pyramidpkg
-	set CLASSPATH=$(DEMOS_CLASSPATH)
-	$(JAVAC) $(JAVAC_FLAGS) *.java
 	cd $(DEMOS_BUILD_DIR)\simplepkg
 	set CLASSPATH=$(DEMOS_CLASSPATH)
 	$(JAVAC) $(JAVAC_FLAGS) *.java
 	cd $(DEMOS_BUILD_DIR)\watchpkg
-	set CLASSPATH=$(DEMO_CLASSPATH)
+	set CLASSPATH=$(DEMOS_CLASSPATH)
 	$(JAVAC) $(JAVAC_FLAGS) *.java
 
+# This rule must be run after the demos.build rule
+demos_jacl.build:
+	$(COPYDIR) $(DEMOS_SRC_DIR)\pyramidpkg \
+		$(DEMOS_BUILD_DIR)\pyramidpkg
+	cd $(DEMOS_BUILD_DIR)\pyramidpkg
+	set CLASSPATH=$(DEMOS_CLASSPATH)
+	$(JAVAC) $(JAVAC_FLAGS) *.java
 
-
-
+demos_tclblend.build:
 
 #-------------------------------------------------------------------
 # Build rules for the tcljava package
