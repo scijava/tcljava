@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclOutputStream.java,v 1.1 2003/03/08 03:42:44 mdejong Exp $
+ * RCS: @(#) $Id: TclOutputStream.java,v 1.2 2004/09/28 19:27:35 mdejong Exp $
  */
 
 // A TclOutputStream is a cross between a Java OutputStream and
@@ -23,6 +23,7 @@ import sun.io.UnknownCharacterException;
 import java.io.IOException;
 import java.io.EOFException;
 import java.io.OutputStream;
+import java.io.FileOutputStream;
 import java.io.UnsupportedEncodingException;
 
 class TclOutputStream {
@@ -415,6 +416,8 @@ class TclOutputStream {
         boolean wroteSome = false;      // Set to true if any data was
                                         // written to the driver.
 
+        try {
+
         // Prevent writing on a dead channel -- a channel that has been closed
         // but not yet deallocated. This can occur if the exit handler for the
         // channel deallocation runs before all channels are deregistered in
@@ -573,6 +576,17 @@ class TclOutputStream {
             return closeChannel(interp, errorCode);
         }
         return errorCode;
+
+        } finally {
+            output.flush();
+
+            // In some implementations (Sun JDK 1.4 on Win32)
+            // the flush method above does not actually sync
+            // output data. Call sync explicitly to make sure.
+            if (output instanceof FileOutputStream) {
+                ((FileOutputStream) output).getFD().sync();
+            }
+        }
     }
 
     void setEncoding(String inEncoding) {
