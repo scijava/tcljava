@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: BinaryCmd.java,v 1.1 2000/03/02 04:08:34 mo Exp $
+ * RCS: @(#) $Id: BinaryCmd.java,v 1.2 2002/05/07 06:58:06 mdejong Exp $
  *
  */
 
@@ -246,7 +246,7 @@ throws
 		switch (cmd) {
 		    case 'a':
 		    case 'A': {
-			byte pad = cmd == 'a' ? 0 : (byte) ' ';
+			byte pad = (cmd == 'a') ? (byte) 0 : (byte) ' ';
 			byte[] bytes = TclByteArray.getBytes(interp,
 					   argv[arg++]);
 			length = bytes.length;

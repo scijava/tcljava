@@ -1,3 +1,9 @@
+2002-05-06  Maurice Diamantini  <diam@ensta.fr>
+
+	* src/jacl/tcl/lang/BinaryCmd.java (cmdProc): Cast argument to
+	?: operator to avoid compiler error from Jikes. Add parens
+	to make precedence clear.
+
 2002-05-02  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* new_features.txt: Add notes about the new features
