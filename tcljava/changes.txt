@@ -1,6 +1,6 @@
 Recent user-visible changes to Jacl & Tcl Blend:
 
-RCS: @(#) $Id: changes.txt,v 1.18 1999/05/17 04:15:15 dejong Exp $
+RCS: @(#) $Id: changes.txt,v 1.19 1999/05/24 12:59:27 mo Exp $
 
 ----------------- Released 1.0a1, 10/22/97 -----------------------
 
@@ -850,3 +850,21 @@ version will only need to be set in the configure.in script. (Mo)
 Jacl's exec command would not work on a windows machine if
 the directory C:\Temp did not exist. Now, if the directory
 does not exist it will be created by the exec command.
+
+5/24/99 (fixed auto_path bug in Makefile.in and makefile.vc)
+A small bug in the makefiles would cause a "package require java"
+to fail if there was an older version on Jacl or Tcl Blend already
+installed on the machine. Instead of appending to the auto_path
+we no prepend to the auto_path inside the makefiles. (Mo)
+
+5/24/99 (fixes for -0.0, -Inf, and Inf values in Jacl)
+Fixes for problems in Jacl's formatting of values like -0.0
+and negative or positive infinity. A couple of test cases
+were also added to JavaFieldCmd.test. (CXH)
+
+5/24/99 (fixed bugs Jacl's read and gets commands)
+The implementation of the read command in Jacl was
+badly broken. Fixes to the FileChannel class were
+added and some test cases were created to check the
+return value of each use of the read command. This
+should also fix the bug in the gets command for files. (Mo)
