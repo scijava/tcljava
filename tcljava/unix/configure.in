@@ -2,7 +2,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run to configure the
 dnl	Makefile in this directory.
 AC_INIT(../src/tcljava/tcl/lang/InternalRep.java)
-# RCS: @(#) $Id: configure.in,v 1.26 2000/01/25 21:48:59 mo Exp $
+# RCS: @(#) $Id: configure.in,v 1.27 2000/02/01 03:44:06 mo Exp $
 
 
 #--------------------------------------------------------------------
@@ -652,8 +652,18 @@ See http://www.sgi.com/Products/Evaluation/#jdk.])
 
             ;;
 	Linux)
+	    # Ok, this is getting wacky. the Blackdown JVM
+	    # includes include/native_threads/include/mutex_md.h
+	    # But the IBM 1.1.8 port for the JDK does not
+	    # put this file in its own native_threads directory
+	    # (I presume because they only support native threads)
+	    # The IBM JDK includes this file in this location
+	    # include/linux/mutex_md.h, so to make this test
+	    # work for both we only fail if native_threads is
+	    # not a directory and mutex_md.h is not found
 	    if test "$JAVA_VERSION" = "1.1" && \
-                test ! -d $JAVA_INCLUDE/native_threads; then
+                test ! -d $JAVA_INCLUDE/native_threads && \
+                test ! -f $JAVA_INCLUDE/linux/mutex_md.h; then
                 AC_MSG_ERROR(['$JAVA_INCLUDE/native_threads'
 does not exist. You must install the JDK Native Threads Pack to use tclblend.
 See http://www.blackdown.org/java-linux.html.])
@@ -677,6 +687,13 @@ See http://www.blackdown.org/java-linux.html.])
 
             ARCH_LIBNAME=lib
             ARCH_LIB=${ARCH_LIBNAME}/${ARCH}
+            # The ibm JDK uses the arch name linux not i386
+            if  test ! -d $JAVA_DIR/$ARCH_LIB && \
+                test -d $JAVA_DIR/${ARCH_LIBNAME}/linux; then
+                MSG="IBM JDK Release Detected."
+                echo $MSG >&5
+                ARCH_LIB=${ARCH_LIBNAME}/linux
+            fi
 
             JAVA_SHLIB=libjava.so
             TCLBLEND_LIBS="-lpthread -ljava"
