@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.3 1998/11/06 22:38:15 hylands Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.4 1998/11/16 06:04:20 hylands Exp $
  *
  */
 
@@ -2088,7 +2088,27 @@ evalResource(
 throws 
     TclException
 {
-    InputStream stream = Class.class.getResourceAsStream(resName);
+    InputStream stream = null;
+
+    try {
+        stream = getClass().getResourceAsStream(resName);
+    } catch (SecurityException e2) {
+        // This catch is necessary if Jacl is to work in an applet
+        // at all. Note that java::new will not work from within Jacl
+        // in an applet.
+        // FIXME: we should be able to download the resource properly
+        // here.  
+        System.err.println("evalResource: Ignoring SecurityException, " +
+                "it is likely we are running in an applet: " +
+                "cannot read resource \"" + resName
+    		+ "\"" + e2);
+
+        return;
+    } catch (Exception e) {
+        throw new TclException(this, "cannot read resource \"" + resName
+    		+ "\"" + e);
+    }
+
     if (stream == null) {
 	throw new TclException(this, "cannot read resource \"" + resName
 		+ "\"");
