@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Util.java,v 1.3 1999/08/03 03:16:33 mo Exp $
+ * RCS: @(#) $Id: Util.java,v 1.4 1999/08/27 23:50:47 mo Exp $
  */
 
 package tcl.lang;
@@ -19,9 +19,9 @@ import java.util.*;
 
 public class Util {
 
-static final int TCL_DONT_USE_BRACES = 1;
-static final int USE_BRACES		 = 2;
-static final int BRACES_UNMATCHED	 = 4;
+static final int TCL_DONT_USE_BRACES     = 1;
+static final int USE_BRACES              = 2;
+static final int BRACES_UNMATCHED        = 4;
 
 // Some error messages.
 
