@@ -1,5 +1,14 @@
 2002-12-17  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/native/javaObj.c (Java_tcl_lang_CObject_makeRef,
+	Java_tcl_lang_CObject_newCObject): Return after
+	raising exception to avoid crash in some strange
+	situations. Zero out 64 bit structure before
+	assigning 32 bit value to make debugging of
+	newCObject easier.
+
+2002-12-17  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* tests/all.tcl: Run tests names through
 	lsort -dictionary so that they always
 	get run in the same order.
