@@ -15,15 +15,25 @@ tcljava/JavaLoadCmd.test
 to get around this you can disable the jit (-Djava.compiler=)
 or use the native version (pass in the -native flag).
 
+(Windows)
+There is a very strange bug in the JDK1.1 series that causes
+the exec command to fail on some NT machines. An example
+from the test cases is an exec of java with some argument.
+The exec command will report that "java" can not be found
+even if it is in the users PATH. This problem has been
+fixed in the JDK1.2 series but still haunts the JDK1.1 code.
+
 
 (Windows)
 compiling jacl with jikes (the IBM java compiler) and then
 running jacl on a 1.1.6 sun VM with the jit on will crash the JVM.
+Update:
+This jit compiler bug has been fixed in Sun jdk1.1.7.
 
 
 (Windows)
-Compiling under windows requires tclRegExp.h because tclInt.h includes
-it. tclRegExp.h is not shipped with 8.0.3 Tcl Blast.
+Compiling under windows using the Tcl Blast 8.0.3 dist
+requires tclRegExp.h because tclInt.h includes it.
 
 
 (Solaris Tcl Blend tests)
@@ -34,22 +44,25 @@ message:
 	called Tcl_Close on channel with refCount > 0 
 This problem only seems to appear under Tcl8.0.3
 
+
 (Solaris Jacl tests)
 If you configure with --srcdir, and don't have write permission in
 the source directory, then some of the Jacl tests in tcl/fileName.test
 will fail.  Also, tcl/info.test will fail with a message
 about 'cannot open file: gorp.info'
 
-(Windows JDK1.2beta4)
-To use JDK1.2beta4, add the following to your path:
-c:\jdk1.2beta4\bin;c:\jdk1.2beta4\jre\bin;c:\Program Files\Tcl\lib\tclblend1.1
+(Windows JDK1.2beta4 and JDK1.2fcs)
+To use tclblend with JDK1.2beta4 or JDK1.2fcs, add the following to your path:
+c:\jdk1.2beta4\bin;c:\jdk1.2beta4\jre\bin;c:\jdk1.2beta4\jre\bin\classic;c:\Program Files\Tcl\lib\tclblend1.1
 
 
 (JDK1.2beta4 tests)
 tests/tcljava/PkgInvoker.tcl fails.  The cause seems to be connected
 with the forName method in java.lang.Class
+Update:
+This JDK bug has been fixed for JDK1.2fcs on Solaris but not for Windows.
 
-	
+
 (JDK1.2beta4 tests)
 ReflectObject-3.1 fails when run after AmbiguousSignature
 
@@ -59,6 +72,7 @@ When running the tests under JDK1.2beta4 under NT4.0sp3, the TCLSH
 makefile variable must not be an absolute pathname.  If it is
 an absolute pathname, then tclsh80 will crash with a segfault
 
+
 (Tcl Blend guiDemo)
 Under Tcl Blend with Tcl 8.0.3, guiDemo sometimes does not work,
 especially when run on a remote display over the network.
@@ -66,6 +80,7 @@ The problem is that employees cannot be moved over.
 When the arrow is clicked on, the message:
 	can't wait for variable "done":  would wait forever
 appears
+
 
 (Tcl 8.1)
 src/native/javaInterp.c produces a warning while compiling because
