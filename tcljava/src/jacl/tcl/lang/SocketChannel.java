@@ -246,26 +246,14 @@ public class SocketChannel extends Channel {
     void write(Interp interp, String outStr)
         throws IOException, TclException
     {
-        if ((mode & (TclIO.WRONLY|TclIO.RDWR)) == 0)
-            throw new TclException(interp, "channel " + getChanName() +
-                    " wasn't opened for writing.");
-        // Write to the Socket
         try
         {
-            writer.write(outStr, 0, outStr.length());
-        }
-        catch (EOFException e)
-        {
-            eofCond = true;
-            errorMsg = e.getMessage();
+            super.write(interp, outStr);
         }
         catch (IOException e)
         {
             errorMsg = e.getMessage();
-        }
-        catch (Exception e)
-        {
-            throw new IOException(e.getMessage());
+            throw e;
         }
     }
         

@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Channel.java,v 1.6 2001/11/18 06:21:02 mdejong Exp $
+ * RCS: @(#) $Id: Channel.java,v 1.7 2001/11/18 07:14:47 mdejong Exp $
  */
 
 package tcl.lang;
@@ -87,9 +87,27 @@ abstract class Channel {
      * @param outStr the string to write to the sub-classed channel.
      */
 
-    abstract void write(Interp interp, String outStr) 
-            throws IOException, TclException;
+    void write(Interp interp, String outStr)
+	throws IOException, TclException {
 
+        if ((mode & (TclIO.WRONLY|TclIO.RDWR)) == 0)
+            throw new TclException(interp, "channel \"" + getChanName() +
+                "\" wasn't opened for writing.");
+
+        if (writer != null) {
+            eofCond = false;
+
+            try
+            {
+                writer.write(outStr);
+            }
+            catch (EOFException e)
+            {
+                eofCond = true;
+                throw e;
+            }
+        }
+    }
 
     /** 
      * Close the Channel.  The channel is only closed, it is 

@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FileChannel.java,v 1.9 2001/11/18 06:21:02 mdejong Exp $
+ * RCS: @(#) $Id: FileChannel.java,v 1.10 2001/11/18 07:14:48 mdejong Exp $
  *
  */
 
@@ -221,11 +221,13 @@ class FileChannel extends Channel {
 	    throw new TclRuntimeError(
                     "FileChannel.write(): null file object");
 	}
-        // FIXME: Is this broken in the case of RDWR? Testcase?
-	if ((mode & TclIO.RDONLY) != 0) {
-	    throw new TclException(interp, "channel \"" +
-	        getChanName() + "\" wasn't opened for writing");
-	}
+
+        // Invoke super.write() to check for a channel that
+        // was not opened for writing. It does nothing else
+        // since the writer member is null.
+
+        super.write(interp, s);
+
         file.writeBytes(s);
     }
 
@@ -257,6 +259,7 @@ class FileChannel extends Channel {
 	    throw new TclRuntimeError("FileChannel.flush(): null file object");
 	}
 
+        // Raise TclException if Channel was not opened for writing.
         super.flush(interp);
     }
 

@@ -1,5 +1,18 @@
 2001-11-17  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/jacl/tcl/lang/Channel.java (write): Turn
+	the write method into a concrete implementation
+	instead of an abstract method.
+	* src/jacl/tcl/lang/FileChannel.java (write): Invoke
+	Channel's write method to check for error writing to
+	a read only channel.
+	* src/jacl/tcl/lang/SocketChannel.java (write): Use
+	new write method in Channel class.
+	* src/jacl/tcl/lang/StdChannel.java (write): Use
+	new write method in Channel class.
+
+2001-11-17  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/jacl/tcl/lang/Shell.java (ConsoleThread, putLine,
 	put): Make use of Tcl Channels instead of writing to
 	System.out and System.err directly. This avoids buffering

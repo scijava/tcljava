@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: StdChannel.java,v 1.9 2001/11/18 06:21:02 mdejong Exp $
+ * RCS: @(#) $Id: StdChannel.java,v 1.10 2001/11/18 07:14:48 mdejong Exp $
  *
  */
 
@@ -195,12 +195,7 @@ class StdChannel extends Channel {
     void write(Interp interp, String s) 
             throws IOException, TclException {
 
-	if (stdType != STDOUT && stdType != STDERR) {
-	    throw new TclException(interp, "channel \"" +
-	        getChanName() + "\" wasn't opened for writing");
-	}
-
-        writer.write(s);
+        super.write(interp, s);
 
         // The OutputStreamWriter class will buffer even if you don't
         // wrap it in a BufferedWriter. The stderr file object must
