@@ -1,3 +1,9 @@
+2002-12-17  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* tests/all.tcl: Run tests names through
+	lsort -dictionary so that they always
+	get run in the same order.
+
 2002-12-15  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* src/native/javaList.c: Add checks for deallocated

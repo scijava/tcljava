@@ -7,7 +7,7 @@
 # Copyright (c) 1998-2000 Ajuba Solutions.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: all.tcl,v 1.1 2000/12/23 23:40:29 mdejong Exp $
+# RCS: @(#) $Id: all.tcl,v 1.2 2002/12/18 01:48:33 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
 
@@ -25,7 +25,7 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 }
 
 # Set verbose to max
-#set ::tcltest::verbose pb
+#configure -verbose pb
 
 
 set ::tcltest::testSingleFile false
@@ -67,7 +67,7 @@ puts stdout "Tests began at [eval $timeCmd]"
 if {$tcl_platform(platform) == "java"} {
     # run the Jacl tests
 
-    eval lappend tests [glob -nocomplain tcljava/*.test \
+    set tests [glob -nocomplain tcljava/*.test \
 	jacl/*.test inprogress/*.test tcl/*.test]
 
 } elseif {[info exists env(TCLBLEND_RUN_ALL_TESTS)]} {
@@ -81,6 +81,8 @@ if {$tcl_platform(platform) == "java"} {
     set tests [glob -nocomplain tcljava/*.test \
 	tclblend/*.test ]
 }
+
+set tests [lsort -dictionary $tests]
 
 foreach i $tests {
 
