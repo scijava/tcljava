@@ -1,3 +1,11 @@
+2002-12-23  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* tests/tcljava/JavaInfoCmd.test (Button_properties_check):
+	Add a testing proc that checks java.awt.Button props
+	vs a known JDK 1.1 list of props. This will avoid
+	a bunch of error messages from later JDK versions
+	which add additional properties.
+
 2002-12-20  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* configure: Regen.

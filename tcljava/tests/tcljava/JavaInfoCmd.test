@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: JavaInfoCmd.test,v 1.4 2000/12/22 09:47:15 mdejong Exp $
+# RCS: @(#) $Id: JavaInfoCmd.test,v 1.5 2002/12/23 09:54:26 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -17,6 +17,36 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 }
 
 setupJavaPackage
+
+# The exact properties returned for java.awt.Button differ from one JVM
+# version to another. This proc checks for the properties known to exist
+# as of JDK 1.1 and returns 1 if they are all found.
+
+proc Button_properties_check { props {checktype 0} } {
+    set known_props {actionCommand background enabled font foreground label name visible}
+    set known_tprops [list \
+        {java.lang.String actionCommand} \
+        {java.awt.Color background} \
+        {boolean enabled} \
+        {java.awt.Font font} \
+        {java.awt.Color foreground} \
+        {java.lang.String label} \
+        {java.lang.String name} \
+        {boolean visible}]
+
+    if {$checktype} {
+        foreach ktp $known_tprops {
+            set ind [lsearch -exact $props $ktp]
+            if {$ind == -1} {return -1}
+        }
+    } else {
+        foreach kp $known_props {
+            set ind [lsearch -exact $props $kp]
+            if {$ind == -1} {return -1}
+        }
+    }
+    return 1
+}
 
 test javaInfoCmd-1.1 {basics} {
     list [catch {java::info} msg] $msg
@@ -525,16 +555,16 @@ test javaInfoCmd-8.3 {properties} {
 
 test javaInfoCmd-8.4 {properties} {
     list [catch {
-	lsort [java::info properties java.awt.Button]
+	Button_properties_check [java::info properties java.awt.Button]
     } msg] $msg
-} {0 {actionCommand background enabled font foreground label name visible}}
+} {0 1}
 
 test javaInfoCmd-8.5 {properties} {
     list [catch {
 	set handle [java::new java.awt.Button]
-	lsort [java::info properties $handle]
+	Button_properties_check [java::info properties $handle]
     } msg] $msg
-} {0 {actionCommand background enabled font foreground label name visible}}
+} {0 1}
 
 test javaInfoCmd-8.6 {properties} {
     list [catch {
@@ -554,22 +584,22 @@ test javaInfoCmd-8.8 {properties -type} {
 
 test javaInfoCmd-8.9 {properties -type} {
     list [catch {
-	lsort [java::info properties -t java.awt.Button]
+	Button_properties_check [java::info properties -t java.awt.Button] 1
     } msg] $msg
-} {0 {{boolean enabled} {boolean visible} {java.awt.Color background} {java.awt.Color foreground} {java.awt.Font font} {java.lang.String actionCommand} {java.lang.String label} {java.lang.String name}}}
+} {0 1}
 
 test javaInfoCmd-8.10 {properties -type} {
     list [catch {
-	lsort [java::info properties -type java.awt.Button]
+	Button_properties_check [java::info properties -type java.awt.Button] 1
     } msg] $msg
-} {0 {{boolean enabled} {boolean visible} {java.awt.Color background} {java.awt.Color foreground} {java.awt.Font font} {java.lang.String actionCommand} {java.lang.String label} {java.lang.String name}}}
+} {0 1}
 
 test javaInfoCmd-8.11 {properties -type} {
     list [catch {
 	set handle [java::new java.awt.Button]
-	lsort [java::info properties -type $handle]
+	Button_properties_check [java::info properties -type $handle] 1
     } msg] $msg
-} {0 {{boolean enabled} {boolean visible} {java.awt.Color background} {java.awt.Color foreground} {java.awt.Font font} {java.lang.String actionCommand} {java.lang.String label} {java.lang.String name}}}
+} {0 1}
 
 test javaInfoCmd-8.12 {properties -type} {
     list [catch {
