@@ -4565,13 +4565,7 @@ else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-{ { echo "$as_me:$LINENO: error: could not link file that includes jni.h
-        Either the configure script does not know how to deal with
-        this JVM configuration or the JVM install is broken or corrupted." >&5
-echo "$as_me: error: could not link file that includes jni.h
-        Either the configure script does not know how to deal with
-        this JVM configuration or the JVM install is broken or corrupted." >&2;}
-   { (exit 1); exit 1; }; }
+ac_java_jvm_working_jni_link=no
 fi
 rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
         ac_ext=c
@@ -4586,6 +4580,87 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 fi
 echo "$as_me:$LINENO: result: $ac_java_jvm_working_jni_link" >&5
 echo "${ECHO_T}$ac_java_jvm_working_jni_link" >&6
+
+    # gcc can't link with some JDK .lib files under Win32.
+    # Work around this problem by linking with win/libjvm.dll.a
+
+    if test "$ac_java_jvm_working_jni_link" != "yes" &&
+      test "$ac_cv_tcl_win32" = "yes"; then
+        ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+        ac_saved_cflags=$CFLAGS
+        ac_saved_libs=$LIBS
+        CFLAGS="$CFLAGS $ac_java_jvm_jni_include_flags"
+        LIBS="$LIBS -L$srcdir/win -ljvm"
+        cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+            #include <jni.h>
+
+int
+main ()
+{
+JNI_GetCreatedJavaVMs(NULL,0,NULL);
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_java_jvm_working_jni_link=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_java_jvm_working_jni_link=no
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+        ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+        CFLAGS=$ac_saved_cflags
+        LIBS=$ac_saved_libs
+
+        if test "$ac_java_jvm_working_jni_link" = "yes"; then
+
+    echo Using custom JNI link lib >&5
+    echo Using custom JNI link lib
+
+            ac_java_jvm_jni_lib_flags="-L$srcdir/win -ljvm"
+        fi
+    fi
+
+    if test "$ac_java_jvm_working_jni_link" != "yes"; then
+        { { echo "$as_me:$LINENO: error: could not link file that includes jni.h
+        Either the configure script does not know how to deal with
+        this JVM configuration or the JVM install is broken or corrupted." >&5
+echo "$as_me: error: could not link file that includes jni.h
+        Either the configure script does not know how to deal with
+        this JVM configuration or the JVM install is broken or corrupted." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
 
 
 fi

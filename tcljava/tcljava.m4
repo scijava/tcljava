@@ -982,14 +982,43 @@ AC_DEFUN([AC_JAVA_JNI_LIBS], [
         AC_TRY_LINK([
             #include <jni.h>
         ],[JNI_GetCreatedJavaVMs(NULL,0,NULL);],
-        ac_java_jvm_working_jni_link=yes,
-        AC_MSG_ERROR([could not link file that includes jni.h
-        Either the configure script does not know how to deal with
-        this JVM configuration or the JVM install is broken or corrupted.]))
+            ac_java_jvm_working_jni_link=yes,
+            ac_java_jvm_working_jni_link=no)
         AC_LANG_POP()
         CFLAGS=$ac_saved_cflags
         LIBS=$ac_saved_libs
     ])
+
+    # gcc can't link with some JDK .lib files under Win32.
+    # Work around this problem by linking with win/libjvm.dll.a
+
+    if test "$ac_java_jvm_working_jni_link" != "yes" &&
+      test "$ac_cv_tcl_win32" = "yes"; then
+        AC_LANG_PUSH(C)
+        ac_saved_cflags=$CFLAGS
+        ac_saved_libs=$LIBS
+        CFLAGS="$CFLAGS $ac_java_jvm_jni_include_flags"
+        LIBS="$LIBS -L$srcdir/win -ljvm"
+        AC_TRY_LINK([
+            #include <jni.h>
+        ],[JNI_GetCreatedJavaVMs(NULL,0,NULL);],
+            ac_java_jvm_working_jni_link=yes,
+            ac_java_jvm_working_jni_link=no)
+        AC_LANG_POP()
+        CFLAGS=$ac_saved_cflags
+        LIBS=$ac_saved_libs
+
+        if test "$ac_java_jvm_working_jni_link" = "yes"; then
+            AC_MSG_LOG([Using custom JNI link lib])
+            ac_java_jvm_jni_lib_flags="-L$srcdir/win -ljvm"
+        fi
+    fi
+
+    if test "$ac_java_jvm_working_jni_link" != "yes"; then
+        AC_MSG_ERROR([could not link file that includes jni.h
+        Either the configure script does not know how to deal with
+        this JVM configuration or the JVM install is broken or corrupted.])
+    fi
 ])
 
 

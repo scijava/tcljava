@@ -1,3 +1,13 @@
+2003-07-07  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* configure: Regen.
+	* tcljava.m4 (AC_JAVA_JNI_LIBS): If linking
+	with the jvm.lib from the JDK fails, link
+	with our own import lib for jvm.dll.
+	* win/libjvm.dll.a: Add import lib created
+	using instructions from the following URL:
+	http://www.inonit.com/cygwin/jni/invocationApi/archive.html
+
 2003-05-30  Kenneth H. Cox  <tclunit@attbi.com>
 
 	* src/native/javaInterp.c (BTestCmd): Change
