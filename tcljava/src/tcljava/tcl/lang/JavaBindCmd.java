@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaBindCmd.java,v 1.2 1999/05/09 21:43:54 dejong Exp $
+ * RCS: @(#) $Id: JavaBindCmd.java,v 1.3 1999/05/09 21:44:48 dejong Exp $
  */
 
 package tcl.lang;
@@ -18,30 +18,26 @@ import java.lang.reflect.*;
 import java.beans.*;
 import java.util.*;
 
-/*
+/**
  * This class implements the built-in "java::bind" command in Tcl.
  */
 
 class JavaBindCmd implements Command {
 
-/*
- * The Bean Event Manager associated with the interp that owns this
- * BindCmd instance.
- */
+// The Bean Event Manager associated with the interp that owns this
+// BindCmd instance.
 
 BeanEventMgr eventMgr = null;
 
-/*
- * Caches the BeanInfo for each Java class. The
- * Introspector.getBeanInfo class in JDK 1.2 returns new instances of
- * BeanInfo for each call.  That causes a lot of problems in Jacl,
- * which assumes that there is the BeanInfo (and EventSetDescriptor,
- * etc) associated with each class is always constant (i.e., always the
- * same object).
- *
- * This cache allows us to always use the same BeanInfo instance for each
- * Java class.
- */
+// Caches the BeanInfo for each Java class. The
+// Introspector.getBeanInfo class in JDK 1.2 returns new instances of
+// BeanInfo for each call.  That causes a lot of problems in Jacl,
+// which assumes that there is the BeanInfo (and EventSetDescriptor,
+// etc) associated with each class is always constant (i.e., always the
+// same object).
+//
+// This cache allows us to always use the same BeanInfo instance for each
+// Java class.
 
 private Hashtable beanInfoCache = new Hashtable();
 
@@ -83,9 +79,7 @@ throws
     }
 
     if (argv.length == 2) {
-	/*
-	 * Return the list of all events handled by this widget.
-	 */
+	// Return the list of all events handled by this widget.
 
 	interp.setResult(eventMgr.getHandledEvents(robj));
     } else {
@@ -107,9 +101,7 @@ throws
 	method = (Method)arr[1];
 
 	if (argv.length == 3) {
-	    /*
-	     * Return the script for the given event.
-	     */
+	    // Return the script for the given event.
 
 	    TclObject script = eventMgr.getBinding(interp, robj, eventDesc,
 		    method);
@@ -120,9 +112,7 @@ throws
 		interp.resetResult();
 	    }
 	} else {
-	    /*
-	     * Set the script for the given event.
-	     */
+	    // Set the script for the given event.
 
 	    eventMgr.setBinding(interp, robj, eventDesc, method, argv[3]);
 	}
