@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaInvoke.java,v 1.6 1999/05/15 23:44:24 dejong Exp $
+ * RCS: @(#) $Id: JavaInvoke.java,v 1.7 1999/05/15 23:45:25 dejong Exp $
  *
  */
 
@@ -700,7 +700,8 @@ throws TclException
 	return TclInteger.newInstance(((Integer) javaObj).intValue());
 
     } else if ((cls == Long.TYPE) || (cls == Long.class)) {
-	return TclInteger.newInstance(((Long) javaObj).intValue());
+	// A long can not be represented as a TclInteger
+	return TclString.newInstance(javaObj.toString());
 
     } else if ((cls == Short.TYPE) || (cls == Short.class)) {
 	return TclInteger.newInstance(((Short) javaObj).intValue());
@@ -784,7 +785,21 @@ throws
 	    return new Boolean(TclBoolean.get(interp, tclObj));
 
 	} else if ((type == Long.TYPE) || (type == Long.class)) {
-	    return new Long((long) TclInteger.get(interp, tclObj));
+	    // A tcl integer can be converted a long (widening conversion)
+	    // and a Java long may be represented as a tcl integer if it
+	    // is small enogh, so we try to convert the string to a
+	    // tcl integer and if that fails we try to convert to a
+	    // java long. If both of these fail throw original Tcl error.
+
+	    try {
+	        return new Long(TclInteger.get(interp, tclObj));
+	    } catch (TclException e1) {
+	        try {
+	            return new Long( tclObj.toString() );
+	        } catch (NumberFormatException e2) {
+	            throw e1;
+	        }
+	    }
 
 	} else if ((type == Float.TYPE) || (type == Float.class)) {
 	    return new Float((float) TclDouble.get(interp, tclObj));
