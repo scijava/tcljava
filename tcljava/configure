@@ -2046,6 +2046,15 @@ echo "$as_me: error: javac '$JAVAC' does not exist.
    { (exit 1); exit 1; }; }
     fi
 
+    # Check for Solaris install which uses a symlink in /usr/bin to /usr/java/bin
+    if test -h "$JAVAC" ; then
+        BASE=`basename $JAVAC`
+        DIR=`dirname $JAVAC`
+        if test -f $DIR/../java/bin/$BASE ; then
+            JAVAC=`cd $DIR/../java/bin;pwd`/$BASE
+        fi
+    fi
+
     # If we were searching for javac, then set ac_java_jvm_dir
     if test "x$ac_java_jvm_dir" = "x"; then
         TMP=`dirname $JAVAC`
@@ -2157,7 +2166,7 @@ echo "${ECHO_T}$ac_java_classpath" >&6
 echo $ECHO_N "checking to see if the java compiler works... $ECHO_C" >&6
 
     cat << \EOF > conftest.java
-// #line 2160 "configure"
+// #line 2169 "configure"
 
 
 public class conftest {
@@ -2202,7 +2211,7 @@ echo $ECHO_N "checking type of jvm... $ECHO_C" >&6
     if test "x$ac_java_jvm_name" = "x" ; then
 
     cat << \EOF > conftest.java
-// #line 2205 "configure"
+// #line 2214 "configure"
 import kaffe.lang.Application;
 
 public class conftest {
@@ -2229,7 +2238,7 @@ EOF
     if test "x$ac_java_jvm_name" = "x" ; then
 
     cat << \EOF > conftest.java
-// #line 2232 "configure"
+// #line 2241 "configure"
 import gnu.java.io.EncodingManager;
 
 public class conftest {
@@ -2278,7 +2287,7 @@ echo $ECHO_N "checking java API version... $ECHO_C" >&6
 
 
     cat << \EOF > conftest.java
-// #line 2281 "configure"
+// #line 2290 "configure"
 import java.lang.StrictMath;
 
 public class conftest {
@@ -2306,7 +2315,7 @@ EOF
     if test "x$ac_java_jvm_version" = "x" ; then
 
     cat << \EOF > conftest.java
-// #line 2309 "configure"
+// #line 2318 "configure"
 import java.lang.Package;
 
 public class conftest {
@@ -2335,7 +2344,7 @@ EOF
     if test "x$ac_java_jvm_version" = "x" ; then
 
     cat << \EOF > conftest.java
-// #line 2338 "configure"
+// #line 2347 "configure"
 import java.lang.reflect.Method;
 
 public class conftest {
@@ -3732,7 +3741,7 @@ echo "$as_me: error: Could not locate Java's jni.h include file" >&2;}
     if test -f "$F" ; then
         ac_java_jvm_jni_include_flags="$ac_java_jvm_jni_include_flags -I`dirname $F`"
     else
-        F=`ls $ac_java_jvm_dir/include/kaffe/jtypes.h`
+        F=`ls $ac_java_jvm_dir/include/kaffe/jtypes.h 2>/dev/null`
         if test -f "$F" ; then
             ac_java_jvm_jni_include_flags="$ac_java_jvm_jni_include_flags -I`dirname $F`"
         fi
@@ -3821,7 +3830,7 @@ echo "${ECHO_T}$ac_java_jvm_jni_working" >&6
     # Find out where the JNI native thread libraries live
 
 
-    machine=`uname --machine`
+    machine=`uname -m`
     case "$machine" in
         i?86)
           machine=i386
@@ -4019,7 +4028,13 @@ echo "${ECHO_T}$ac_java_jvm_jni_working" >&6
                     ac_java_jvm_jni_lib_runtime_path="${ac_java_jvm_jni_lib_runtime_path}:$D"
                 fi
 
-                ac_java_jvm_jni_lib_flags="$ac_java_jvm_jni_lib_flags -ljvm -lhpi"
+                ac_java_jvm_jni_lib_flags="$ac_java_jvm_jni_lib_flags -ljvm"
+
+                # Some Solaris Java installs have no -lhpi
+                F=jre/lib/sparc/libhpi.so
+                if test -f $ac_java_jvm_dir/$F ; then
+                    ac_java_jvm_jni_lib_flags="$ac_java_jvm_jni_lib_flags -lhpi"
+                fi
             fi
         fi
 
@@ -4086,7 +4101,7 @@ echo "$as_me: error: Unable to locate directory for -ljvm" >&2;}
             fi
 
 
-            F=lib/`uname --machine`/native_threads/libjava.so
+            F=lib/`uname -m`/native_threads/libjava.so
 
     echo Looking for $ac_java_jvm_dir/$F >&5
 
@@ -4201,10 +4216,8 @@ else
   echo "$as_me: failed program was:" >&5
 cat conftest.$ac_ext >&5
 { { echo "$as_me:$LINENO: error: could not link file that includes jni.h
-        It is likely that your JVM install is broken or corrupted." >&5
-echo "$as_me: error: could not link file that includes jni.h
-        It is likely that your JVM install is broken or corrupted." >&2;}
-   { (exit 1); exit 1; }; }
+        Either the configure script does not know how to deal with
+        this JVM configuration
 fi
 rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
         ac_ext=c

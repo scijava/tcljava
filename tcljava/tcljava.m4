@@ -255,6 +255,15 @@ AC_DEFUN([AC_PROG_JAVAC], [
         Perhaps Java is not installed or you passed a bad dir to a --with option.])
     fi
 
+    # Check for Solaris install which uses a symlink in /usr/bin to /usr/java/bin
+    if test -h "$JAVAC" ; then
+        BASE=`basename $JAVAC`
+        DIR=`dirname $JAVAC`
+        if test -f $DIR/../java/bin/$BASE ; then
+            JAVAC=`cd $DIR/../java/bin;pwd`/$BASE
+        fi
+    fi
+
     # If we were searching for javac, then set ac_java_jvm_dir
     if test "x$ac_java_jvm_dir" = "x"; then
         TMP=`dirname $JAVAC`
@@ -677,7 +686,7 @@ AC_DEFUN([AC_JAVA_JNI_INCLUDE], [
 #------------------------------------------------------------------------
 
 AC_DEFUN([AC_JAVA_JNI_LIBS], [
-    machine=`uname --machine`
+    machine=`uname -m`
     case "$machine" in
         i?86)
           machine=i386
@@ -821,7 +830,13 @@ AC_DEFUN([AC_JAVA_JNI_LIBS], [
                     ac_java_jvm_jni_lib_runtime_path="${ac_java_jvm_jni_lib_runtime_path}:$D"
                 fi
 
-                ac_java_jvm_jni_lib_flags="$ac_java_jvm_jni_lib_flags -ljvm -lhpi"
+                ac_java_jvm_jni_lib_flags="$ac_java_jvm_jni_lib_flags -ljvm"
+
+                # Some Solaris Java installs have no -lhpi
+                F=jre/lib/sparc/libhpi.so
+                if test -f $ac_java_jvm_dir/$F ; then
+                    ac_java_jvm_jni_lib_flags="$ac_java_jvm_jni_lib_flags -lhpi"
+                fi
             fi
         fi
 
@@ -863,7 +878,7 @@ AC_DEFUN([AC_JAVA_JNI_LIBS], [
             # Figure out if it is 1.1.8 and not 1.1.7
             AC_GREP_FILE([JDK 1.1.8], $ac_java_jvm_dir/$F, IS118=1)
 
-            F=lib/`uname --machine`/native_threads/libjava.so
+            F=lib/`uname -m`/native_threads/libjava.so
             AC_MSG_LOG([Looking for $ac_java_jvm_dir/$F], 1)
             if test -f $ac_java_jvm_dir/$F ; then
                 AC_MSG_LOG([Found $ac_java_jvm_dir/$F], 1)
@@ -912,7 +927,8 @@ AC_DEFUN([AC_JAVA_JNI_LIBS], [
         ],[JNI_GetCreatedJavaVMs(NULL,0,NULL);],
         ac_java_jvm_working_jni_link=yes,
         AC_MSG_ERROR([could not link file that includes jni.h
-        It is likely that your JVM install is broken or corrupted.]))
+        Either the configure script does not know how to deal with
+        this JVM configuration, or the JVM install is broken or corrupted.]))
         AC_LANG_POP()
         CFLAGS=$ac_saved_cflags
     ])

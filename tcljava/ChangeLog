@@ -1,5 +1,17 @@
 2002-12-18  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* configure: Regen.
+	* tcljava.m4 (AC_PROG_JAVAC, AC_JAVA_JNI_LIBS):
+	Check for Solaris javac install in /usr/bin
+	that is actually a link into /usr/java/bin.
+	Use uname -m instead of uname --machine.
+	Check for libhpi.so on sparc systems and
+	don't link to it if it is not there.
+	Fixup error message displayed when something
+	goes wrong with the JNI link test.
+
+2002-12-18  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/native/java.h: Add decl for JavaNotifierInDoOneEvent.
 	* src/native/javaIdle.c (Java_tcl_lang_IdleHandler_doWhenIdle,
 	Java_tcl_lang_IdleHandler_cancelIdleCall, JavaIdleProc):
