@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: Interp.test,v 1.3 1999/08/03 03:33:03 mo Exp $
+# RCS: @(#) $Id: Interp.test,v 1.4 1999/08/07 06:46:37 mo Exp $
 
 # Note: This test file must be sourced from the parent directory
 #       or else the defs file may not be properly loaded.
@@ -90,7 +90,7 @@ test Interp-1.2 {dispose, variables are freed} {
     set list
 } {{} {x(null) y(null) z(null)}}
 
-test Interp-1.2 {dispose, commands are deleted} {
+test Interp-1.3 {dispose, commands are deleted} {
     set cmd1 [java::new tests.JavaTest]
     set cmd2 [java::new tests.JavaTest]
     set interp [java::new tcl.lang.Interp]
