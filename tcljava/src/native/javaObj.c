@@ -9,11 +9,11 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaObj.c,v 1.12 2002/12/18 10:50:14 mdejong Exp $
+ * RCS: @(#) $Id: javaObj.c,v 1.13 2002/12/21 04:02:53 mdejong Exp $
  */
 
 #include "java.h"
-#include "javaNative.h"
+#include "javaNative.h" 
 
 static void		DupJavaCmdInternalRep(Tcl_Obj *srcPtr,
 			    Tcl_Obj *dupPtr);
@@ -188,6 +188,8 @@ DupTclObject(
  * FreeTclObject --
  *
  *	Free the internal representation for a TclObject.
+ *	This method is invoked by Tcl when a Tcl_Obj that
+ *	wraps a TclObject has its ref count decremented to zero.
  *
  * Results:
  *	None.
@@ -513,8 +515,7 @@ void JNICALL Java_tcl_lang_CObject_decrRefCount(
  *	None.
  *
  * Side effects:
- *	Modifies the internal representation of the object, and
- *	adds a reference to the TclObject.
+ *	Modifies the internal representation of the object.
  *
  *----------------------------------------------------------------------
  */
@@ -555,11 +556,12 @@ Java_tcl_lang_CObject_makeRef(
     objPtr->internalRep.twoPtrValue.ptr2 = (VOID*) object;
 
     /*
-     * Increment the reference count on the TclObject since this object
-     * now represents and additional reference.
+     * Note that we don't change the TclObject ref count or
+     * the Tcl_Obj ref count here. We expect that FreeTclObject
+     * will be invoked when the ref count of this Tcl_Obj
+     * reaches zero, and a CObject begins life with a
+     * ref count of 1, so we are covered.
      */
-
-    (*env)->CallVoidMethod(env, object, jcache->preserve);
 }
 
 /*
@@ -674,13 +676,14 @@ Java_tcl_lang_CObject_newCObject(
  *	to the given Tcl_Obj, unless the Tcl_Obj is a TclObject already.
  *
  * Results:
- *	Returns the TclObject associated with the Tcl_Obj.
+ *	Returns a TclObject associated with the Tcl_Obj.
  *
  * Side effects:
- *	May add a reference to the Tcl_Obj.  May allocate a new local
- *	reference.  Note that if this routine is not called as
- *	a result of a native method invocation, the caller is responsible
- *	for deleting the local reference explicitly.
+ *	May allocate a new local reference in the JVM. Note that
+ *	if this routine is not called as a result of a native method
+ *	invocation, the caller is responsible for deleting the local
+ *	reference explicitly. Will increment the TclObject.refCount
+ *	for a newely created CObject wrapper.
  *
  *----------------------------------------------------------------------
  */
@@ -759,6 +762,16 @@ JavaGetTclObject(
 	    (*env)->ExceptionDescribe(env);
 	    panic("JavaGetTclObject : exception in newInstance()");
 	}
+
+	/*
+	 * Increment the ref count of the new TclObject so that
+	 * it starts life with a ref count of 1. This operation
+	 * does not change the ref count of the Tcl_Obj.
+	 * We expect to be able to drop a ref to a CObject
+	 * with a ref count of 1 without leaking memory in C.
+	 */
+
+	(*env)->CallVoidMethod(env, object, jcache->preserve);
 
 	if (isLocalPtr) {
 	    *isLocalPtr = 1;

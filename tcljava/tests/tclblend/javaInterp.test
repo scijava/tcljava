@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: javaInterp.test,v 1.4 2002/12/11 02:11:09 mdejong Exp $
+# RCS: @(#) $Id: javaInterp.test,v 1.5 2002/12/21 04:03:35 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -56,7 +56,9 @@ test javaInterp-5.1 {Java_tcl_lang_Interp_eval} {
 } {1 {java.lang.NullPointerException: Invalid interpreter.}}
 test javaInterp-5.2 {Java_tcl_lang_Interp_eval} {
     set i [java::new tcl.lang.Interp]
-    list [catch {$i {eval java.lang.String} [java::null]} msg] $msg
+    set result [list [catch {$i {eval java.lang.String} [java::null]} msg] $msg]
+    $i dispose
+    set result
 } {1 {java.lang.NullPointerException: No string to evaluate.}}
 test javaInterp-5.3 {Java_tcl_lang_Interp_eval} {
     set i [java::getinterp]
@@ -194,8 +196,11 @@ test javaInterp-9.8 {Java_tcl_lang_Interp_setVar: different result} {
     set i [java::getinterp]
     set value [java::call tcl.lang.TclString {newInstance String} baz]
     set r [$i {setVar java.lang.String tcl.lang.TclObject int} x $value 0]
+    $r preserve
     unset x
-    $r toString
+    set str [$r toString]
+    $r release
+    set str
 } 42
 test javaInterp-9.9 {Java_tcl_lang_Interp_setVar: memory leak} {
     set interp [java::getinterp]
@@ -209,6 +214,7 @@ test javaInterp-9.9 {Java_tcl_lang_Interp_setVar: memory leak} {
     $interp {setVar String tcl.lang.TclObject int} \
         "copy" [jtest getobject $obj] $append
     unset copy
+    unset append
     unset obj
     unset interp
     set nothing ok
@@ -251,6 +257,18 @@ test javaInterp-10.6 {Java_tcl_lang_Interp_getVar} {
     $i dispose
     set result
 } {1 {tcl.lang.TclException: can't read "foo(bar)": no such variable}}
+test javaInterp-10.7 {Java_tcl_lang_Interp_getVar} {
+    set i [java::getinterp]
+    set x [java::new String 42]
+    set tobj [$i getVar x [java::null] 0]
+    $tobj preserve
+    unset x
+    set xobj [$tobj toString]
+    set result [$xobj toString]
+    $tobj release
+    unset tobj
+    lappend result [catch {$xobj toString}]
+} {42 1}
 
 test javaInterp-11.1 {Java_tcl_lang_Interp_unsetVar} {
     set i [java::new tcl.lang.Interp]

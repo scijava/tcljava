@@ -24,10 +24,11 @@ The object handle associated with a Java object is considered to be an
 object reference by the Java VM, ensuring that the Java object is not
 garbage collected while Tcl is using it.  Tcl will release the object
 handle when the last reference to the handle in a Tcl script goes
-away.  A handle is considered to be active as long as at least one
-<B>Tcl_Obj</B> points to the handle.  In practice this means that Java
-object handles must be stored in Tcl variables or passed as arguments
-to other commands to keep them from being released.  Constructing a
+away. In practice this means that Java object handles must be stored
+in Tcl variables or passed as arguments to other commands to keep
+them from being released. See the <A HREF="JavaRefCount.html">Reference Counting</A>
+section for a detailed description of how Jacl and Tcl Blend implement
+reference counting. Constructing a
 Java object handle using <B>concat</B> or some other string
 manipulation command will produce a string that can be used where a
 Java object handle is expected, but it will not count as a reference

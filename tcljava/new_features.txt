@@ -62,7 +62,6 @@ to invoke based on the types of the arguments to method. In version
 overloaded method invocations.
 
 
-
 What's new in Tcl/Java 1.2?
 
 
@@ -196,6 +195,7 @@ one could import the class java.util.Hashtable and then use
 the simple class name Hashtable instead of the fully qualified
 name java.util.Hashtable.
 
+
 What's new in Tcl/Java 1.3?
 
 (NEW REGULAR EXPRESSION PACKAGE FOR JACL)
@@ -265,5 +265,20 @@ implementation makes use of the File.listRoots() method
 introduced in JDK 1.2, so a newer JDK is required to
 make use of this functionality. Thanks go to Shawn Boyce
 for providing the initial implementation of this command.
+
+(NEW REF COUNT SYSTEM FOR TCL BLEND)
+
+A new reference counting system has been implemented for
+Tcl Blend. A newly created CObject or TclList no longer
+increments the ref count the native Tcl_Obj. Instead,
+the ref count for a Tcl_Obj is incremented when
+TclObject.preserve() is invoked and decremented
+when TclObject.release() is invoked. If a TclList
+created inside a Java method is never released,
+it will be cleaned up when the Java method returns.
+This new ref counting system does not depend on the
+Java garbage collector and should not suffer from
+the memory leaks or shutdown issues that plagued
+the previous implementation.
 
 </PRE></BODY></HTML>

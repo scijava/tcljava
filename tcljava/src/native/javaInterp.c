@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaInterp.c,v 1.15 2002/12/18 10:50:14 mdejong Exp $
+ * RCS: @(#) $Id: javaInterp.c,v 1.16 2002/12/21 04:02:53 mdejong Exp $
  */
 
 #include "java.h"
@@ -1024,7 +1024,11 @@ JavaCmdProc(
     interpObj = (jobject) Tcl_GetAssocData(interp, "java", NULL);
 
     /*
-     * Construct the argument array.
+     * Construct the argument array. Note that we invoke
+     * Tcl_Object._preserve() once for each argument object.
+     * This keeps the TclObject.refCount in line with how
+     * Tcl works but does not change the Tcl_Obj.refCount of
+     * a CObject since Tcl would have already incremented it.
      */
 
     args = (*env)->NewObjectArray(env, objc, jcache->TclObject, NULL);
@@ -1033,6 +1037,7 @@ JavaCmdProc(
 
 	value = JavaGetTclObject(env, objv[i], &isLocal);
 	(*env)->SetObjectArrayElement(env, args, i, value);
+	(*env)->CallVoidMethod(env, value, jcache->preserve);
 
 	/*
 	 * Delete a newly created local ref expliticly since it may have
@@ -1042,6 +1047,9 @@ JavaCmdProc(
 
 	if (isLocal) {
 	    (*env)->DeleteLocalRef(env, value);
+            /*fprintf(stderr, "created new CObject or TclList for \"%s\" at index %d\n", Tcl_GetString(objv[i]), i);*/
+	} else {
+	    /*fprintf(stderr, "found existing TclObject \"%s\" at index %d\n", Tcl_GetString(objv[i]), i);*/
 	}
     }
 
@@ -1060,17 +1068,25 @@ JavaCmdProc(
     /*
      * Make sure none of the argument Tcl_Objs have
      * an invalid ref to a TclObject that has a
-     * CObject or TclList internal rep.
+     * CObject or TclList internal rep. Decrement
+     * the ref count for each TclObject argument.
      */
 
     for (i = 0; i < objc; i++) {
 	JavaBreakRef(env, objv[i]);
+	value = (*env)->GetObjectArrayElement(env, args, i);
+	(*env)->CallVoidMethod(env, value, jcache->release);
+	(*env)->DeleteLocalRef(env, value);
     }
 
     (*env)->DeleteLocalRef(env, args);
 
     if (exception) {
 	result = TCL_ERROR;
+	/*
+	 * FIXME: We really should not rethrow this exception
+	 * if called from Tcl (not via a JNI method call).
+	 */
 	(*env)->Throw(env, exception);
 	(*env)->DeleteLocalRef(env, exception);
     }

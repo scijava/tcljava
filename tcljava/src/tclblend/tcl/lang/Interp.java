@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.20 2002/12/18 07:07:18 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.21 2002/12/21 04:02:54 mdejong Exp $
  *
  */
 
@@ -81,6 +81,8 @@ Hashtable assocDataTab;
 // Used ONLY by JavaImportCmd
 Hashtable[] importTable = {new Hashtable(), new Hashtable()};
 
+// Used ONLY by CObject
+Vector cobjCleanup = new Vector();
 
 
 /*
@@ -991,6 +993,7 @@ callCommand(
     TclObject argv[])		// Argument array for command.
 {
     try {
+	CObject.cleanupPush(this);
 	cmd.cmdProc(this, argv);
 	return TCL.OK;
     } catch (TclException e) {
@@ -998,6 +1001,8 @@ callCommand(
     } catch (Throwable t) {
 	t.printStackTrace();
 	throw new TclRuntimeError("Error in command implementation");
+    } finally {
+	CObject.cleanupPop(this);
     }
 }
 

@@ -1,3 +1,91 @@
+2002-12-20  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	Implement new ref count system for Tcl Blend,
+	see JavaRefCount.html for complete description.
+
+	* new_features.txt: Mention new ref count impl.
+	* docs/TclJava/JavaGC.html: Move info to the new
+	JavaRefCount.html page and add link.
+	* docs/TclJava/JavaRefCount.html: Add new page
+	that describes how Jacl and Tcl Blend increment
+	ref counting. The description of Tcl Blend's
+	ref count approach corresponds to the new
+	implementation.
+	* docs/TclJava/contents.html: Add link to new
+	JavaRefCount.html page.
+	* src/empty/empty.jar: Regen.
+	* src/empty/tcl/lang/CObject.java: Add decls for
+	decrRefCount() and incrRefCount().
+	* src/empty/tcl/lang/Interp.java: Use RuntimeException
+	not RuntimeError.
+	* src/native/javaCmd.c (JavaSetupJava): Link
+	jcache->preserve to TclObject._preserve() to avoid
+	incrementing the Tcl_Obj count from JNI code.
+	* src/native/javaInterp.c (JavaCmdProc): Invoke
+	jcache->preserve and jcache->release for each
+	TclObject argument passed to a Java method.
+	* src/native/javaList.c (Java_tcl_lang_TclList_append,
+	Java_tcl_lang_TclList_replace): Don't implicitly
+	increment a newly allocated Tcl_Obj in list
+	methods that can modify a Tcl_Obj.
+	* src/native/javaObj.c (Java_tcl_lang_CObject_makeRef,
+	JavaGetTclObject):
+	Don't increment the ref count for a TclObject when
+	converting from a CObject to a non-CObject internal
+	rep. Increment the ref count of a new CObject or
+	TclList when it is created.
+	* src/tclblend/tcl/lang/CObject.java (CObject,
+	dispose, duplicate, toString, decrRefCount, incrRefCount,
+	makeReference, cleanupAdd, cleanupPush, cleanupPop, dump,
+	finalize): Completely reimplement CObject so that
+	a ref count is not implicitly held for a Tcl_Obj.
+	This gets rid of the need to try to send an object
+	back to the thread it came from for cleanup and means
+	we don't have to depend on the Java garbage collector.
+	See JavaRefCount.html for a more detailed description
+	of how the new ref count approach works.
+	* src/tclblend/tcl/lang/Interp.java (callCommand):
+	Invoke CObject.cleanupPush() before calling a Java
+	method and CObject.cleanupPop() when finished. Add
+	new cobjCleanup member to interp.
+	* src/tclblend/tcl/lang/TclList.java (setListFromAny,
+	append, replace): Invoke cleanupAdd() when allocating
+	a TclList in Java code. Check for an empty list and
+	invoke cleanupAdd() for it as well.
+	* src/tcljava/tcl/lang/EventAdaptor.java (setCallback,
+	deleteCallback): Copy a CObject into a TclString
+	to avoid a memory leak when running in Tcl Blend.
+	An event adaptor has no dispose() method so there
+	was no place to release the held ref count.
+	* src/tcljava/tcl/lang/TclObject.java (preserve,
+	_preserve, release, _release, getRefCount):
+	Create new private methods that will be invoked
+	from JNI code. The preserve and release methods
+	will modify the ref count of a contained CObject
+	or TclList while _preserve and _release will not.
+	Make it possible to call getRefCount from the package.
+	* src/tcljava/tcl/lang/library/java/javalock.tcl:
+	Remove unneeded llength and fixup comments.
+	* src/tests/tclblend/tcl/lang/ArgConvertCmd.java:
+	* src/tests/tclblend/tcl/lang/IntListAppendCmd.java:
+	* src/tests/tclblend/tcl/lang/IntLostListCmd.java:
+	* src/tests/tcljava/tests/HoldRefCmd.java:
+	* src/tests/tcljava/tests/ListReplaceCmd.java:
+	* src/tests/tcljava/tests/LostListCmd.java:
+	* src/tests/tcljava/tests/ReRepCmd.java:
+	* src/tests/tcljava/tests/ReleaseNewListCmd.java:
+	* src/tests/tcljava/tests/StringListStringCmd.java:
+	Add test cases that are run in refCount.test.
+	* tests/jacl/refCount.test: Add Jacl specific
+	ref count tests.
+	* tests/tclblend/javaInterp.test: Dispose of
+	interp in javaInterp-5.2. Call preserve and
+	release in javaInterp-9.8 since a reflected
+	TclObject is not automatically preserved.
+	* tests/tclblend/refCount.test: Add Tcl Blend
+	specific ref count tests.
+	* tests/tcljava/FuncSig.test: Reformat test.
+
 2002-12-18  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* configure: Regen.

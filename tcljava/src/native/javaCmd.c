@@ -10,7 +10,7 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  *
- * RCS: @(#) $Id: javaCmd.c,v 1.18 2002/12/18 10:50:14 mdejong Exp $
+ * RCS: @(#) $Id: javaCmd.c,v 1.19 2002/12/21 04:02:53 mdejong Exp $
  */
 
 /*
@@ -1080,9 +1080,9 @@ JavaSetupJava(
                                       &jcache->CObject, "(J)Ltcl/lang/TclObject;", 1) ||
 	AddToMethodCache(env, interp, &jcache->newTclListInstance, "newInstance",
                                       &jcache->TclList, "(J)Ltcl/lang/TclObject;", 1) ||
-	AddToMethodCache(env, interp, &jcache->preserve, "preserve",
+	AddToMethodCache(env, interp, &jcache->preserve, "_preserve",
                                       &jcache->TclObject, "()V", 0) ||
-	AddToMethodCache(env, interp, &jcache->release, "release",
+	AddToMethodCache(env, interp, &jcache->release, "_release",
                                       &jcache->TclObject, "()V", 0) ||
 	AddToMethodCache(env, interp, &jcache->getInternalRep, "getInternalRep",
                                       &jcache->TclObject, "()Ltcl/lang/InternalRep;", 0) ||

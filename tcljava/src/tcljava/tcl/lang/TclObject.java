@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclObject.java,v 1.6 2002/12/10 01:53:24 mdejong Exp $
+ * RCS: @(#) $Id: TclObject.java,v 1.7 2002/12/21 04:04:04 mdejong Exp $
  *
  */
 
@@ -99,7 +99,10 @@ public final class TclObject {
 	// we want to call the special interface to convert the underlying
 	// native object into a reference to the Java TclObject.  Note that
 	// this test will always fail if we are not using the native
-	// implementation.
+	// implementation. Also note that the makeReference method
+	// will do nothing in the case where the Tcl_Obj inside the
+	// CObject was originally allocated in Java. When converting
+	// to a CObject we need to break the link made earlier.
 
 	if ((internalRep instanceof CObject) && !(rep instanceof CObject)) {
 	    // We must ensure that the string rep is copied into Java
@@ -112,6 +115,10 @@ public final class TclObject {
 	    }
 	    ((CObject) internalRep).makeReference(this);
 	}
+
+        //System.out.println("TclObject setInternalRep for \"" + stringRep + "\"");
+        //System.out.println("from \"" + internalRep.getClass().getName() +
+        //    "\" to \"" + rep.getClass().getName() + "\"");
 	internalRep.dispose();
 	internalRep = rep;
     }
@@ -206,6 +213,21 @@ public final class TclObject {
      */
     public final void preserve() throws TclRuntimeError {
 	disposedCheck();
+	if (internalRep instanceof CObject) {
+	    ((CObject) internalRep).incrRefCount();
+	}
+        _preserve();
+    }
+
+    /**
+     * _preserve
+     *
+     * Private implementation of preserve() method.
+     * This method will be invoked from Native code
+     * to change the TclObject's ref count without
+     * effecting the ref count of a CObject.
+     */
+    private final void _preserve() throws TclRuntimeError {
 	refCount++;
     }
 
@@ -218,8 +240,22 @@ public final class TclObject {
      */
     public final void release() {
 	disposedCheck();
-	refCount--;
+	if (internalRep instanceof CObject) {
+	    ((CObject) internalRep).decrRefCount();
+	}
+	_release();
+    }
 
+    /**
+     * _release
+     *
+     * Private implementation of preserve() method.
+     * This method will be invoked from Native code
+     * to change the TclObject's ref count without
+     * effecting the ref count of a CObject.
+     */
+    private final void _release() {
+	refCount--;
 	if (refCount <= 0) {
 	    internalRep.dispose();
 
@@ -232,12 +268,11 @@ public final class TclObject {
     }
 
     /**
-     * Returns the refCount of this object. This is used only fot debugging
-     * purposes by JavainfoCmd.
+     * Returns the refCount of this object.
      *
      * @return refCount.
      */
-    protected final int getRefCount() {
+    final int getRefCount() {
 	return refCount;
     }
 

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaList.c,v 1.7 2002/12/18 10:50:14 mdejong Exp $
+ * RCS: @(#) $Id: javaList.c,v 1.8 2002/12/21 04:02:53 mdejong Exp $
  */
 
 #include "java.h"
@@ -75,15 +75,11 @@ Java_tcl_lang_TclList_append(
     objPtr = JavaGetTclObj(env, element);
     
     /*
-     * Copy the list if it is shared.  Note that we have to adjust the
-     * refcount since we will be replacing the reference from the
-     * TclObject in Java.
+     * Copy the list if it is shared.
      */
 
     if (Tcl_IsShared(oldListPtr)) {
 	listPtr = Tcl_DuplicateObj(oldListPtr);
-	Tcl_IncrRefCount(listPtr);
-	Tcl_DecrRefCount(oldListPtr);
     } else {
 	listPtr = oldListPtr;
     }
@@ -352,15 +348,11 @@ Java_tcl_lang_TclList_replace(
     }
 
     /*
-     * Copy the list if it is shared.  Note that we have to adjust the
-     * refcount since we will be replacing the reference from the
-     * TclObject in Java.
+     * Copy the list if it is shared.
      */
 
     if (Tcl_IsShared(oldListPtr)) {
 	listPtr = Tcl_DuplicateObj(oldListPtr);
-	Tcl_IncrRefCount(listPtr);
-	Tcl_DecrRefCount(oldListPtr);
     } else {
 	listPtr = oldListPtr;
     }

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: TclList.java,v 1.3 2002/12/18 07:07:18 mdejong Exp $
+ * RCS: @(#) $Id: TclList.java,v 1.4 2002/12/21 04:02:54 mdejong Exp $
  */
 
 package tcl.lang;
@@ -39,6 +39,7 @@ public class TclList extends CObject {
  *----------------------------------------------------------------------
  */
 
+protected
 TclList()
 {
     super();
@@ -60,6 +61,7 @@ TclList()
  *----------------------------------------------------------------------
  */
 
+protected
 TclList(
     long objPtr)		// Tcl_Obj* from C.
 {
@@ -142,7 +144,10 @@ throws
     /*
      * If the object is already a Tcl_Obj reference, then we only need to check
      * to see if it is a valid list and copy the reference into a new TclList.
-     * Otherwise we need to create a new Tcl_Obj to hold the list.
+     * Otherwise we need to create a new Tcl_Obj to hold the list. Note that
+     * this newly allocated list needs to be queued for cleanup. If tobj is
+     * already a TclList just check to see if it was allocated by newInstance()
+     * and needs to be added to the cleanup queue.
      */
 
     if (!(rep instanceof TclList)) {
@@ -155,8 +160,15 @@ throws
 	    tlist = new TclList(cobj.objPtr);
 	} else {
 	    tlist = new TclList(splitList(interpPtr, tobj.toString()));
+	    cleanupAdd(interp, tlist);
 	}
 	tobj.setInternalRep(tlist);
+    } else {
+	TclList tlist = (TclList) rep;
+	if (interp != null && tlist.emptyNeedsCleanup) {
+	    cleanupAdd(interp, tlist);
+	    tlist.emptyNeedsCleanup = false;
+	}
     }
 }
 
@@ -189,15 +201,19 @@ throws
 
     TclList tlist = (TclList)tobj.getInternalRep();
 
-    /*
-     * We have to update the objPtr after the append, because the append may
-     * duplicate the Tcl_Obj if it was shared at the C level.  Because the
-     * TclList acts as an extra reference on the Tcl_Obj, we are guaranteed
-     * that there will be no circular references when we are done.  After
-     * append returns, the refcount on the Tcl_Obj will be 1.
-     */
+    // If the append command duplicated a shared C list
+    // then create a new internal rep to hold the
+    // new pointer from C. A duplicated C list will have
+    // a ref count of 0 when append returns. Avoid a
+    // memory leak in C by adding to the cleanup queue.
 
-    tlist.objPtr = append(tlist.objPtr, elemObj);
+    long newPtr = append(tlist.objPtr, elemObj);
+
+    if (tlist.objPtr != newPtr) {
+        TclList newList = new TclList(newPtr);
+        tobj.setInternalRep(newList);
+        cleanupAdd(interp, newList);
+    }
 }
 
 /*
@@ -294,7 +310,6 @@ throws
     TclException		// If tobj is not a valid list.
 {
     setListFromAny(interp, tobj);
-
     TclList tlist = (TclList)tobj.getInternalRep();
     return index(tlist.objPtr, index);
 }
@@ -339,7 +354,20 @@ throws
     setListFromAny(interp, tobj);
     tobj.invalidateStringRep();
     TclList tlist = (TclList)tobj.getInternalRep();
-    tlist.objPtr = replace(tlist.objPtr, index, count, elements, from, to);
+
+    // If the replace command duplicated a shared C list
+    // then create a new internal rep to hold the
+    // new pointer from C. A duplicated C list will have
+    // a ref count of 0 when append returns. Avoid a
+    // memory leak in C by adding to the cleanup queue.
+
+    long newPtr = replace(tlist.objPtr, index, count, elements, from, to);
+
+    if (tlist.objPtr != newPtr) {
+        TclList newList = new TclList(newPtr);
+        tobj.setInternalRep(newList);
+        cleanupAdd(interp, newList);
+    }
 }
 
 /*

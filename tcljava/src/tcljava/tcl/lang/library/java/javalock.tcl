@@ -14,7 +14,7 @@
 #
 # Copyright (c) 1998 by Sun Microsystems, Inc.
 #
-# RCS: @(#) $Id: javalock.tcl,v 1.3 1999/08/27 23:50:50 mo Exp $
+# RCS: @(#) $Id: javalock.tcl,v 1.4 2002/12/21 04:04:04 mdejong Exp $
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -38,13 +38,10 @@
 proc java::lock { javaObj } {
     global java::objLockedList
 
-    # Make a copy of the object.
-
+    # Copy string data into new object
     set copy [format %s $javaObj]
-    llength $copy
     
-    # Store the object internally.
-
+    # Convert copy into a ReflectObject
     if {! [java::isnull $copy]} {
         lappend java::objLockedList $copy
     }

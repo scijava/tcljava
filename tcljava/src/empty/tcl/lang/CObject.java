@@ -11,4 +11,7 @@ public InternalRep duplicate() { return null; }
 
 void makeReference(TclObject object) {}
 
+final void decrRefCount() {}
+final void incrRefCount() {}
+
 } // end CObject
