@@ -296,20 +296,6 @@ public class SocketChannel extends Channel {
     }
 
     /**
-     * Move the current Channel pointer.
-     * Undefined behaviour for sockets.
-     *
-     * @param offset The number of bytes to move the pointer.
-     * @param mode where to begin incrementing the file pointer; beginning,
-     *              current, end.
-     */
-
-    void seek(long offset, int mode) throws IOException
-    {
-        throw new IOException("seek is not supported for socket channels");
-    }
-
-    /**
      * Tell the value of the Channel pointer.
      * Undefined in sockets.
      **/

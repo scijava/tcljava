@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Channel.java,v 1.7 2001/11/18 07:14:47 mdejong Exp $
+ * RCS: @(#) $Id: Channel.java,v 1.8 2001/11/20 00:08:29 mdejong Exp $
  */
 
 package tcl.lang;
@@ -88,7 +88,7 @@ abstract class Channel {
      */
 
     void write(Interp interp, String outStr)
-	throws IOException, TclException {
+	    throws IOException, TclException {
 
         if ((mode & (TclIO.WRONLY|TclIO.RDWR)) == 0)
             throw new TclException(interp, "channel \"" + getChanName() +
@@ -143,7 +143,7 @@ abstract class Channel {
      */
 
     void flush(Interp interp) 
-        throws IOException, TclException {
+            throws IOException, TclException {
 
         if ((mode & (TclIO.WRONLY|TclIO.RDWR)) == 0)
             throw new TclException(interp, "channel \"" + getChanName() +
@@ -164,13 +164,17 @@ abstract class Channel {
      * Interface move the current Channel pointer.
      * Used in file channels to move the file pointer.
      * 
+     * @param interp currrent interpreter.
      * @param offset The number of bytes to move the file pointer.
      * @param mode where to begin incrementing the file pointer; beginning,
      *             current, end.
      */
 
-    abstract void seek(long offset, int mode) throws IOException;
-
+    void seek(Interp interp, long offset, int mode)
+            throws IOException, TclException {
+        throw new TclPosixException(interp, TclPosixException.EINVAL, true,
+		"error during seek on \"" + getChanName() + "\"");
+    }
 
     /** 
      * Interface to tell the value for the Channel pointer.

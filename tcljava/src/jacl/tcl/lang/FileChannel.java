@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FileChannel.java,v 1.10 2001/11/18 07:14:48 mdejong Exp $
+ * RCS: @(#) $Id: FileChannel.java,v 1.11 2001/11/20 00:08:29 mdejong Exp $
  *
  */
 
@@ -273,7 +273,8 @@ class FileChannel extends Channel {
      * current, or end of the file.
      */
 
-    void seek(long offset, int mode)  throws IOException {
+    void seek(Interp interp, long offset, int mode)
+            throws IOException, TclException {
 
 	if (file == null) {
 	    throw new TclRuntimeError("FileChannel.seek(): null file object");

@@ -1,3 +1,26 @@
+2001-11-19  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/jacl/tcl/lang/Channel.java (seek): Properly indent
+	some throws clauses on methods. Turn the seek method into
+	a concrete implementation instead of an abstract method.
+	By default seek will set the posix error code EINVAL
+	to indicate that seeking is not supported. Pass interp
+	argument to seek method so we can raise TclExceptions.
+	* src/jacl/tcl/lang/FileChannel.java (seek): Update
+	method signature to account for changes in Channel class.
+	* src/jacl/tcl/lang/SeekCmd.java (cmdProc): Pass interp
+	argument to channel's seek command. Don't attempt to
+	handle seek not supported case since that will
+	be done by the driver.
+	* src/jacl/tcl/lang/ServerSocketChannel.java (seek):
+	Update method signature to account for changes in Channel
+	class. Raise a EACCES posix error code if seek is invoked
+	on a server socket so we match Tcl.
+	* src/jacl/tcl/lang/SocketChannel.java (seek): Remove
+	seek method since this is taken care of in the super class.
+	* src/jacl/tcl/lang/StdChannel.java (seek): Remove
+	seek method since this is taken care of in the super class.
+
 2001-11-17  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* src/jacl/tcl/lang/Channel.java (write): Turn

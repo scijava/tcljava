@@ -159,9 +159,10 @@ public class ServerSocketChannel extends Channel {
         throw new TclException(interp, "cannot flush a server socket");
     }
 
-    void seek(long offset, int mode) throws IOException
-    {
-        throw new IOException("seek is not supported for socket channels");
+    void seek(Interp interp, long offset, int mode)
+            throws IOException, TclException {
+        throw new TclPosixException(interp, TclPosixException.EACCES, true,
+		"error during seek on \"" + getChanName() + "\"");
     }
 
     long tell() throws IOException

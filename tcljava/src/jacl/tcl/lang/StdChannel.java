@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: StdChannel.java,v 1.10 2001/11/18 07:14:48 mdejong Exp $
+ * RCS: @(#) $Id: StdChannel.java,v 1.11 2001/11/20 00:08:29 mdejong Exp $
  *
  */
 
@@ -203,31 +203,6 @@ class StdChannel extends Channel {
         if (stdType == STDERR)
             flush(interp);
     }
-
-    /**
-     * Not sure what this means on stdio channels???
-     *
-     * @param offset The number of bytes to move the stream pointer.
-     * @param where to begin incrementing the stream pointer; beginning,
-     * current, or end of the file.
-     */
-
-    void seek(long offset, int mode)  throws IOException {
-      
-        switch(mode) {
-
-	    case TclIO.SEEK_SET: {
-		break;
-	    }
-	    case TclIO.SEEK_CUR: {
-		break;
-	    }
-	    case TclIO.SEEK_END: {
-		break;
-	    }
-	}
-    }
-
 
     /**
      * Not sure what this means on stdio channels???

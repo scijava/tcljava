@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: SeekCmd.java,v 1.1 1998/10/14 21:09:18 cvsadmin Exp $
+ * RCS: @(#) $Id: SeekCmd.java,v 1.2 2001/11/20 00:08:29 mdejong Exp $
  *
  */
 
@@ -65,10 +65,13 @@ class SeekCmd implements Command {
 	long offset = TclInteger.get(interp, argv[2]);
 
 	try {
-	    chan.seek(offset, mode);
-	} catch ( IOException e ) {
-	    throw new TclException(interp, "error during seek on \"" +
-                    chan.getChanName() + "\": invalid argument");
-	}
+	    chan.seek(interp, offset, mode);
+	} catch (IOException e) {
+	    // FIXME: Need to figure out Tcl specific error conditions.
+	    // Should we also wrap an IOException in a ReflectException?
+	    throw new TclRuntimeError(
+	        "SeekCmd.cmdProc() Error: IOException when seeking " +
+	        chan.getChanName());
+        }
     }
 }
