@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaInterp.c,v 1.1 1998/10/14 21:09:18 cvsadmin Exp $
+ * RCS: @(#) $Id: javaInterp.c,v 1.2 1999/05/09 01:55:01 dejong Exp $
  */
 
 #include "java.h"
@@ -498,7 +498,17 @@ Java_tcl_lang_Interp_setVar(
 	part2Ptr = NULL;
     }
 
+#if (TCL_MAJOR_VERSION == 8 && TCL_MINOR_VERSION == 0) /* Tcl 8.0 */
+
     resultPtr = Tcl_ObjSetVar2(interp, part1Ptr, part2Ptr, valuePtr, flags);
+
+#else /* it is Tcl 8.1 or above */
+
+    resultPtr = Tcl_SetObjVar2(interp, Tcl_GetStringFromObj(part1Ptr, (int *) NULL),
+			               Tcl_GetStringFromObj(part2Ptr, (int *) NULL),
+			               valuePtr, flags);
+#endif /* Tcl 8.0 */
+
 
     Tcl_DecrRefCount(part1Ptr);
     if (part2Str) {
@@ -584,7 +594,18 @@ Java_tcl_lang_Interp_getVar(
 	part2Ptr = NULL;
     }
 
+
+#if (TCL_MAJOR_VERSION == 8 && TCL_MINOR_VERSION == 0) /* Tcl 8.0 */
+
     valuePtr = Tcl_ObjGetVar2(interp, part1Ptr, part2Ptr, flags);
+
+#else /* it is Tcl 8.1 or above */
+
+    valuePtr = Tcl_GetObjVar2(interp, Tcl_GetStringFromObj(part1Ptr, (int *) NULL),
+			               Tcl_GetStringFromObj(part2Ptr, (int *) NULL),
+			               flags);
+#endif /* Tcl 8.0 */
+
 
     Tcl_DecrRefCount(part1Ptr);
     if (part2Str) {
