@@ -1,6 +1,6 @@
 Recent user-visible changes to Jacl & Tcl Blend:
 
-RCS: @(#) $Id: changes.txt,v 1.23 1999/07/28 02:52:31 mo Exp $
+RCS: @(#) $Id: changes.txt,v 1.24 1999/08/09 08:38:38 mo Exp $
 
 ----------------- Released 1.0a1, 10/22/97 -----------------------
 
@@ -887,4 +887,45 @@ subcommand has now been added to Jacl. (Mo)
 The Jacl parser would raise an error if unicode characters
 appeared in a Jacl script. This problem has been fixed and
 Jacl should now support all unicode characters. (Mo)
+
+8/7/99 (added namespace features to Jacl)
+
+Jacl now supports all the namespace features of Tcl 8.1. The
+"namespace" command and the "variable" command are now fully
+implemented. Almost all of the Jacl core has been rewritten
+to make Jacl commands "namespace aware". The following files
+were added or modified to support namespaces.
+
+src/jacl/tcl/lang/ArrayCmd.java
+src/jacl/tcl/lang/BgErrorMgr.java
+src/jacl/tcl/lang/CallFrame.java
+src/jacl/tcl/lang/ForeachCmd.java
+src/jacl/tcl/lang/GlobalCmd.java
+src/jacl/tcl/lang/ImportRef.java
+src/jacl/tcl/lang/ImportedCmdData.java
+src/jacl/tcl/lang/IncrCmd.java
+src/jacl/tcl/lang/InfoCmd.java
+src/jacl/tcl/lang/Interp.java
+src/jacl/tcl/lang/NamespaceCmd.java
+src/jacl/tcl/lang/Parser.java
+src/jacl/tcl/lang/ProcCmd.java
+src/jacl/tcl/lang/Procedure.java
+src/jacl/tcl/lang/RenameCmd.java
+src/jacl/tcl/lang/Shell.java
+src/jacl/tcl/lang/TraceCmd.java
+src/jacl/tcl/lang/UplevelCmd.java
+src/jacl/tcl/lang/UpvarCmd.java
+src/jacl/tcl/lang/Util.java
+src/jacl/tcl/lang/Var.java
+src/jacl/tcl/lang/VwaitCmd.java
+src/tcljava/tcl/lang/BeanEvent.java
+src/tcljava/tcl/lang/BlendExtension.java
+src/tcljava/tcl/lang/JavaTryCmd.java
+src/tcljava/tcl/lang/TCL.java
+src/tcljava/tcl/lang/TclClassLoader.java
+src/jacl/tcl/lang/VariableCmd.java
+src/jacl/tcl/lang/WrappedCommand.java
+
+Namespace test cases were also added.
+
 
