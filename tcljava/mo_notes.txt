@@ -217,7 +217,8 @@ They could also use a second array for searching (mem cost).
 (TODO)
 The get boolean code seem to indicate that sub string matches
 for boolean conditions are allowed "tru" == "true". Does this
-jive with tclsh?
+jive with tclsh? Also how do we use true in a expr condition?
+expr {"true" == 1} does not seem to work.
 
 
 (TODO)
@@ -303,6 +304,7 @@ in the "exact" method match is there any way someone could create
 an "ambiguous" signature with a full method signature??
 
 
+
 (TODO)
 need to add test cases to the AmbiguousSignature tests so that they
 also test out Constructor signatures as well as method signatures!
@@ -348,7 +350,7 @@ is public so any code that calls setVar needs to do a stupid
 TclString.newInstance(str) call.
 
 
-Is TclString not suppossed to be in the TclBlend package?
+Is TclString not supposed to be in the TclBlend package?
 Currently TclString is part of the tcljava set of classes.
 
 
@@ -382,31 +384,6 @@ looks like Sun is using Jacl in a product called "Embeded Server".
 http://www.sun.com/software/embeddedserver/techinfo/relnotes.html#300
 
 
-
-
-(TODO)
-Check out conversion code to make sure String objects are getting
-converted correctly when they are typed as Object.
-
-package require java
-
-set hash [java::new java.util.Hashtable]
-
-$hash put key1 val1
-
-(should the return type be Object or String ???)
-
-puts "key1 value is [$hash get key1]"
-
-
-
-
-
-
-(CHANGED)
-replaced old ORO code with new version 1.1 code.
-
-
 (TODO)
 Fix a problem with the configure script. The JAVA_VERISON is not
 set in Jacl and there is a spot in the -native test that it is used.
@@ -417,12 +394,80 @@ The test cases have some serious problems in how the attempt to
 figure out what platform jacl is running under. These need to
 be fixed.
 
-
-(CHANGED)
-fixed small problem in jaclsh where CLASSPATH was not getting set
-correctly when CLASSPATH was already set in the shell.
-
-
 (TODO)
 Check that perms on open command are correct in jacl. Is "rw" a
 valid mode? (set fd [open tmpf rw])
+
+(TODO)
+How does the CommandWithDispose interface work when there is
+no way to find out the name of the command, For instance if
+a command is renamed how will an extension know the new name?
+This problem shows up in the reflect object class because
+there is no way to know the current name of the command when
+we want to delete it from the interp.
+
+
+(TODO)
+figure out why reflected null objects do not come up as typed
+in an automated signature. AutoSig 4.5 is a good example of this.
+It only happend when java::autolock is on. LAter, it looks like
+the eval command is to blame as it converts in the concat.
+
+
+
+(TODO)
+
+Can the auto name stuff be fixed for null??
+
+# This is like eval except that it does not convert java variables
+# into strings so it will keep java references alive unlike eval.
+
+proc java::seval { args } {
+  set num 0
+  set cmd {}
+  set copies {}
+
+  foreach arg $args {
+    if {! [catch {java::isnull $arg} err]} {
+          java::lock $arg
+    }
+
+    foreach subarg $arg {
+      incr num
+
+      if {! [catch {java::isnull $subarg} err]} {
+          java::lock $subarg
+      }
+
+      set $num $subarg
+      #puts "$num is [set $num]"
+      append cmd "\$[set num] "
+    }
+  }
+  #puts "cmd is \{$cmd\}"
+  eval $cmd
+}
+
+
+
+
+(TODO)
+
+The "compressed jar hack" issue needs to be examined again. It looks
+like Sun does not want to change the 1.2 way of doing things and I
+am not sure if it is possible to find out the uncompressed size
+of an entry from the header info. Perhaps this is why the Sun JVM
+imple wants the size entry for uncompressed files before writing.
+
+
+
+(TODO)
+
+Add test cases to make sure that basic types are getting passed
+using reflection without loss. The best way to test this is to
+use a MAX_VALUE and MIN_VALUE argument for each class and then
+call a Java method that takes the MAX and MIN to make sure that
+values are getting passed correctly. Also things like infinity
+for Double calculation and the like need to be done.
+
+
