@@ -1,5 +1,12 @@
 2000-08-20  Christian Krone  <krischan@sql.de>
 
+	* src/jacl/tcl/lang/LsearchCmd.java: Update
+	lsearch command to be 8.4 compatible.
+	* tests/tcl/LsearchCmd.test: Remove.
+	* tests/tcl/lsearch.test: Add 8.4 test cases.
+
+2000-08-20  Christian Krone  <krischan@sql.de>
+
 	* src/jacl/tcl/lang/Expression.java (ExprGetValue):
 	Expressions with &&, || or ?: now accept boolean string values.
 
