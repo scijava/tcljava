@@ -1,6 +1,6 @@
 # Cross platform init script for Tcl Blend. Known to work on unix and windows.
 # Author:  Christopher Hylands, Mo Dejong
-# RCS: @(#) $Id: pkgIndex.tcl,v 1.17 1999/11/18 22:54:52 stanton Exp $
+# RCS: @(#) $Id: pkgIndex.tcl,v 1.18 1999/12/08 00:08:09 redman Exp $
 
 proc loadtclblend {dir} {
     global tcl_platform env tclblend_init
@@ -318,9 +318,9 @@ proc loadtclblend {dir} {
 	
 	foreach shlib $shlibs {
 	    if {$shlibloc($shlib) == ""} {
-		error "could not find $shlib, you may need to add the\
-			directory where $shlib lives to your $envvar\
-			environmental variable."
+		puts "could not find $shlib, you may need to add the\
+                        directory where $shlib lives to your $envvar\
+                        environmental variable."
 	    } else {
 		if {$debug_loadtclblend} {
 		    puts "found $shlib on $envvar at \"$shlibloc($shlib)\"."
