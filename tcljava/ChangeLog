@@ -1,5 +1,10 @@
 2003-07-25  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* configure: Regen.
+	* configure.in: Update version number to 1.3.1.
+
+2003-07-25  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* README.jacl:
 	* README.tclblend: Update to mention that scripts
 	need to be installed before running and that
