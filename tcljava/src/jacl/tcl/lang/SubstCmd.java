@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: SubstCmd.java,v 1.1 1998/10/14 21:09:19 cvsadmin Exp $
+ * RCS: @(#) $Id: SubstCmd.java,v 1.2 2001/01/28 23:13:55 mdejong Exp $
  *
  */
 
@@ -46,7 +46,7 @@ class SubstCmd implements Command {
 	boolean doBackslashes = true;
 	boolean doCmds = true;
 	boolean doVars = true;
-	String result = "";
+	StringBuffer result = new StringBuffer();
 	String s;
 	char c;
 
@@ -100,7 +100,7 @@ class SubstCmd implements Command {
 		    throw e;
 		}
 		i = res.nextIndex + 2;
-		result = result + res.value.toString();
+		result.append( res.value.toString() );
 		
 	    } else if (c == '\r') {
 		/*
@@ -112,25 +112,22 @@ class SubstCmd implements Command {
 		ParseResult vres = Parser.parseVar(interp,
 			s.substring(i, len));
 		i += vres.nextIndex;
-		result = result + vres.value.toString();
+		result.append( vres.value.toString() );
 	    } else if ((c == '\\') && doBackslashes) {
 		BackSlashResult bs = interp.backslash(s, i, len);
 		i = bs.nextIndex;
 		if (bs.isWordSep) {
 		    break;
 		} else {
-		    result = result + bs.c;
+		    result.append( bs.c );
 		}
 	    } else {
-		result = result + c;
+		result.append( c );
 		i++;
-	    }
-	    if (i >= len) {
-		break;
 	    }
 	}
 
-	interp.setResult(result);
+	interp.setResult(result.toString());
     }
 }
 

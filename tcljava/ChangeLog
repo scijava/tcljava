@@ -1,5 +1,14 @@
 2001-01-28  Mo DeJong  <mdejong@redhat.com>
 
+	* src/jacl/tcl/lang/SubstCmd.java:
+	Use a StringBuffer instead of repeatedly
+	concatenating strings together. Remove
+	unneeded if block. These changes should
+	improve the execution time of the
+	subst command.
+
+2001-01-28  Mo DeJong  <mdejong@redhat.com>
+
 	* tests/tcl/join.test:
 	* tests/tcl/lindex.test:
 	* tests/tcl/link.test:
