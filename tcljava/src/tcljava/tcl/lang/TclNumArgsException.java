@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclNumArgsException.java,v 1.2 1999/05/10 02:36:28 dejong Exp $
+ * RCS: @(#) $Id: TclNumArgsException.java,v 1.3 2003/01/12 02:44:28 mdejong Exp $
  *
  */
 
@@ -46,23 +46,24 @@ public class TclNumArgsException extends TclException {
 	super(TCL.ERROR);
 
 	if (interp != null) {
-	    String s = "wrong # args: should be \"";
+	    StringBuffer buff = new StringBuffer(50);
+	    buff.append("wrong # args: should be \"");
 
 	    for (int i = 0; i < argc; i++) {
 		if (argv[i].getInternalRep() instanceof TclIndex) {
-		    s = s.concat(argv[i].getInternalRep().toString());
+		    buff.append(argv[i].getInternalRep().toString());
 		} else {
-		    s = s.concat(argv[i].toString());
+		    buff.append(argv[i].toString());
 		}
 		if (i < (argc - 1)) {
-		    s = s.concat(" ");
+		    buff.append(" ");
 		}
 	    }
 	    if ((message != null) && (message.length() != 0)) {
-		s = s.concat(" " + message);
+		buff.append(" " + message);
 	    }
-	    s = s.concat("\"");
-	    interp.setResult(s);
+	    buff.append("\"");
+	    interp.setResult(buff.toString());
 	}
     }
 }

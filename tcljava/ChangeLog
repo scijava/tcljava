@@ -1,3 +1,9 @@
+2003-01-11  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/tcljava/tcl/lang/TclNumArgsException.java
+	(TclNumArgsException): Use a StringBuffer instead
+	of allocating a string over and over again.
+
 2003-01-10  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* configure: Regen.
