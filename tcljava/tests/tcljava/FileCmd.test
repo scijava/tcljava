@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: FileCmd.test,v 1.1 1999/05/24 12:53:31 mo Exp $
+# RCS: @(#) $Id: FileCmd.test,v 1.2 1999/05/24 15:28:06 mo Exp $
 
 # Note: This test file must be sourced from the parent directory
 #       or else the defs file may not be properly loaded.
@@ -41,6 +41,7 @@ test FileCmd-1.1 {read all bytes from a file} {
   writeZero $fname 10
   set fd [open $fname r]
   set data [read $fd]
+  close $fd
   string length $data
 } 10
 
@@ -49,6 +50,7 @@ test FileCmd-1.2 {read bytes from a file} {
   writeZero $fname 10
   set fd [open $fname r]
   set data [read $fd 10]
+  close $fd
   string length $data
 } 10
 
@@ -58,6 +60,7 @@ test FileCmd-1.3 {read all data in one line} {
   writeZero $fname 10
   set fd [open $fname r]
   set numbytes [gets $fd data]
+  close $fd
   list \
   [string length $data] \
   $numbytes
@@ -69,6 +72,7 @@ test FileCmd-1.4 {read size bigger that buffer size in source code} {
   writeZero $fname 1025
   set fd [open $fname r]
   set data [read $fd]
+  close $fd
   string length $data
 } 1025
 
@@ -78,7 +82,8 @@ test FileCmd-1.5 {read size bigger that buffer size in source code} {
   writeZero $fname 1025
   set fd [open $fname r]
   set data [read $fd 1025]
-  string length $data
+  close $fd
+ string length $data
 } 1025
 
 test FileCmd-1.6 {read size bigger that buffer size in source code} {
@@ -87,6 +92,7 @@ test FileCmd-1.6 {read size bigger that buffer size in source code} {
   writeZero $fname 1025
   set fd [open $fname r]
   set numbytes [gets $fd data]
+  close $fd
   list \
   [string length $data] \
   $numbytes
@@ -98,6 +104,7 @@ test FileCmd-1.7 {read size bigger than that buffer size in source code} {
   writeZero $fname 2000
   set fd [open $fname r]
   set data [read $fd]
+  close $fd
   string length $data
 } 2000
 
@@ -107,6 +114,7 @@ test FileCmd-1.8 {read size bigger than that buffer size in source code} {
   writeZero $fname 2000
   set fd [open $fname r]
   set data [read $fd]
+  close $fd
   string length $data
 } 2000
 
@@ -116,6 +124,7 @@ test FileCmd-1.9 {read size bigger than that buffer size in source code} {
   writeZero $fname 2000
   set fd [open $fname r]
   set numbytes [gets $fd data]
+  close $fd
   list \
   [string length $data] \
   $numbytes
@@ -127,6 +136,7 @@ test FileCmd-1.10 {read more bytes than the file size} {
   writeZero $fname 2000
   set fd [open $fname r]
   set data [read $fd 3000]
+  close $fd
   string length $data
 } 2000
 
