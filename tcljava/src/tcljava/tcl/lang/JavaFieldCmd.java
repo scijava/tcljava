@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaFieldCmd.java,v 1.1 1998/10/14 21:09:14 cvsadmin Exp $
+ * RCS: @(#) $Id: JavaFieldCmd.java,v 1.2 1999/05/09 21:53:38 dejong Exp $
  *
  */
 
@@ -55,10 +55,9 @@ throws
 	throw new TclException(interp, usage(argv[0]));
     }
 
-    /*
-     * Check the validity of the arguments. N.B., the -noconvert flag
-     * is allowed only in value query.
-     */
+    // Check the validity of the arguments. N.B., the -noconvert flag
+    // is allowed only in value query.
+
     String arg1 = argv[1].toString();
     if ((arg1.length() >= 2) && ("-noconvert".startsWith(arg1))) {
 	convert = false;
@@ -83,16 +82,12 @@ throws
     }
 
     if (query) {
-	/*
-	 * Query one field.
-	 */
+	// Query one field.
 
 	interp.setResult(JavaInvoke.getField(interp, argv[objIndex],
 		argv[objIndex+1], convert));
     } else {
-	/*
-	 * Set one or more fields.
-	 */
+	// Set one or more fields.
 
 	for (int i = objIndex + 1; i < argv.length; i += 2) {
 	    JavaInvoke.setField(interp, argv[objIndex], argv[i], argv[i+1]);
@@ -121,9 +116,28 @@ private static final String
 usage(
     TclObject cmd)		// The command name.
 {
+    // FIXME : unneeded extra code
+
+
+    // This does not conform to docs
+    /*
     return "wrong # args: should be \"" +
 	    cmd + " ?-noconvert? object field\" or \"" + 
 	    cmd + " object field value ?field value ...?\"";
+    */
+
+
+    /*
+    return "wrong # args: should be \"" + cmd +
+	" ?-noconvert? objOrClass fieldSignature" +
+	" ?value fieldSignature value ...?";
+    */
+
+    return "wrong # args: should be \"" + cmd +
+	" ?-noconvert? objOrClass field" +
+	" ?value field value ...?";
+
+
 }
 
 } // end JavaFieldCmd
