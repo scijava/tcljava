@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.13 2000/05/14 23:30:44 mo Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.14 2000/05/24 08:07:49 mo Exp $
  *
  */
 
@@ -879,7 +879,7 @@ evalResource(
 throws 
     TclException
 {
-    InputStream stream = this.getClass().getResourceAsStream(resName);
+    InputStream stream = Interp.class.getResourceAsStream(resName);
     if (stream == null) {
 	throw new TclException(this, "cannot read resource \"" + resName
 		+ "\"");
