@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Procedure.java,v 1.3 1999/07/06 12:19:34 mo Exp $
+ * RCS: @(#) $Id: Procedure.java,v 1.4 1999/08/05 03:40:31 mo Exp $
  *
  */
 
@@ -41,10 +41,6 @@ int body_length;
 
 // The namespace that the Command is defined in
 NamespaceCmd.Namespace ns;
-
-// FIXME : remove later
-// Hash lookup key that defines this command's name
-//String hashKey;
 
 // Name of the source file that contains this procedure. May be null, which
 // indicates that the source file is unknown.
@@ -242,6 +238,95 @@ disposeCmd()
     }
   }
   argList = null;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclIsProc -- isProc
+ *
+ *	Tells whether a command is a Tcl procedure or not.
+ *
+ * Results:
+ *	If the given command is actually a Tcl procedure, the
+ *	return value is true. Otherwise the return value is false.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static boolean isProc(WrappedCommand cmd)
+{
+    return (cmd.cmd instanceof Procedure);
+
+    /*
+    // FIXME: do we really want to get the original command
+    // and test that? Methods like InfoCmd.InfoProcsCmd seem
+    // to do this already.
+
+    WrappedCommand origCmd;
+
+    origCmd = NamespaceCmd.getOriginalCommand(cmd);
+    if (origCmd != null) {
+	cmd = origCmd;
+    }
+    return (cmd.cmd instanceof Procedure);
+    */
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclFindProc -- findProc
+ *
+ *	Given the name of a procedure, return a reference to the
+ *	Command instance for the given Procedure. The procedure will be
+ *	looked up using the usual rules: first in the current
+ *	namespace and then in the global namespace.
+ *
+ * Results:
+ *	null is returned if the name doesn't correspond to any
+ *	procedure. Otherwise, the return value is a pointer to
+ *	the procedure's Command. If the name is found but refers
+ *	to an imported command that points to a "real" procedure
+ *	defined in another namespace, a pointer to that "real"
+ *	procedure's structure is returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Procedure
+findProc(Interp interp, String procName)
+{
+    WrappedCommand cmd;
+    WrappedCommand origCmd;
+    
+    try {
+	cmd = NamespaceCmd.findCommand(interp, procName, null, 0);
+    } catch (TclException e) {
+	// This should never happen
+	throw new TclRuntimeError("unexpected TclException: " + e);
+    }
+
+    if (cmd == null) {
+        return null;
+    }
+
+    origCmd = NamespaceCmd.getOriginalCommand(cmd);
+    if (origCmd != null) {
+	cmd = origCmd;
+    }
+    if (! (cmd.cmd instanceof Procedure)) {
+	return null;
+    }
+    return (Procedure) cmd.cmd;
 }
 
 } // end Procedure
