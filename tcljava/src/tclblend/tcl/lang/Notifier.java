@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Notifier.java,v 1.5 2003/03/10 10:52:41 mdejong Exp $
+ * RCS: @(#) $Id: Notifier.java,v 1.6 2003/03/11 01:45:53 mdejong Exp $
  *
  */
 
@@ -75,12 +75,6 @@ private static Hashtable notifierTable = new Hashtable();
 // tcl ThreadId
 
 private long tclThreadId;
-
-// Mutex used to protect concurrent access to the internals of this Notifier
-// object.  For example, the queueing and dequeueing of objects from the
-// event list.
-
-private final Object notifierMutex = new Object();
 
 
 /*
@@ -156,16 +150,14 @@ getNotifierForThread(
  *----------------------------------------------------------------------
  */
 
-public void
+public synchronized void
 preserve()
 {
-    synchronized (notifierMutex) {
-        if (refCount < 0) {
-	    throw new TclRuntimeError(
-	        "Attempting to preserve a freed Notifier");
-        }
-        ++refCount;
+    if (refCount < 0) {
+        throw new TclRuntimeError(
+                "Attempting to preserve a freed Notifier");
     }
+    ++refCount;
 }
 
 /*
@@ -187,11 +179,9 @@ preserve()
  *----------------------------------------------------------------------
  */
 
-public void
+public synchronized void
 release()
 {
-    synchronized (notifierMutex) {
-// FIXME: indent this block properly later.
     if ((refCount == 0) && (primaryThread != null)) {
 	throw new TclRuntimeError(
 		"Attempting to release a Notifier before it's preserved");
@@ -204,7 +194,6 @@ release()
 	notifierTable.remove(primaryThread);
 	primaryThread = null;
 	dispose();
-    }
     }
 }
 
@@ -232,7 +221,7 @@ release()
  *----------------------------------------------------------------------
  */
 
-public void
+public synchronized void
 queueEvent(
     TclEvent evt,		// The event to put in the queue.
     int position)		// One of TCL.QUEUE_TAIL,
@@ -240,8 +229,6 @@ queueEvent(
 {
     evt.notifier = this;
 
-    synchronized (notifierMutex) {
-//FIXME: indent this block properly
     if (position == TCL.QUEUE_TAIL) {
 	// Append the event on the end of the queue.
 	evt.next = null;
@@ -278,7 +265,6 @@ queueEvent(
 	throw new TclRuntimeError("wrong position \"" + position +
 	       "\", must be TCL.QUEUE_HEAD, TCL.QUEUE_TAIL or TCL.QUEUE_MARK");
     }
-    }
 
     if (Thread.currentThread() != primaryThread) {
 	alertNotifier(tclThreadId);
@@ -306,16 +292,13 @@ queueEvent(
  *----------------------------------------------------------------------
  */
 
-public void
+public synchronized void
 deleteEvents(
     EventDeleter deleter)	// The deleter that checks whether an event
 				// should be removed.
 {
     TclEvent evt, prev;
     TclEvent servicedEvent = null;
-
-    synchronized (notifierMutex) {
-//FIXME: indent this block properly
 
     // Handle the special case of deletion of a single event that was just
     // processed by the serviceEvent() method.
@@ -354,7 +337,6 @@ deleteEvents(
         throw new TclRuntimeError(
                 "servicedEvent was not removed from the queue");
     }
-    }
 }
 
 /*
@@ -388,7 +370,8 @@ deleteEvent(
  * serviceEvent --
  *
  *	Process one event from the event queue.  This method is concurrent 
- *	safe and can be reentered recursively.
+ *	safe and can be reentered recursively. This method is invoked
+ *	only from C code.
  *
  * Results:
  *	The return value is 1 if the procedure actually found an event
@@ -410,7 +393,7 @@ serviceEvent(
 				// matching this will be skipped for processing
 				// later.
 {
-    TclEvent evt, prev;
+    TclEvent evt;
 
     // No event flags is equivalent to TCL_ALL_EVENTS.
     
@@ -437,16 +420,18 @@ serviceEvent(
 	//    can't depend on pointers found now still being valid when
 	//    the handler returns.
 
-// FIXME: Why does this synchronized block differ from the Jacl impl?
-	synchronized (evt) {
-//FIXME: indent this properly
 	boolean b = evt.isProcessing;
 	evt.isProcessing = true;
 
 	if ((b == false) && (evt.processEvent(flags) != 0)) {
 	    evt.isProcessed = true;
+	    // Don't allocate/grab the monitor for the event unless sync()
+	    // has been called in another thread. This is thread safe
+	    // since sync() checks the isProcessed flag before calling wait.
 	    if (evt.needsNotify) {
-	        evt.notifyAll();
+	        synchronized (evt) {
+	            evt.notifyAll();
+	        }
 	    }
 	    // Remove this specific event from the queue
 	    servicedEvent = evt;
@@ -462,7 +447,6 @@ serviceEvent(
 	    // The handler for this event asked to defer it.  Just go on to
 	    // the next event.  we will try to find another event to
 	    // process when the while loop continues
-	}
 	}
     }
 
@@ -489,20 +473,17 @@ serviceEvent(
  *----------------------------------------------------------------------
  */
     
-private TclEvent
+private synchronized TclEvent
 getAvailableEvent(
     TclEvent    skipEvent)	// Indicates that the given event should not
 				// be returned.  This argument can be null.
 {
     TclEvent evt;
-    
-    synchronized(notifierMutex) {
-	for (evt = firstEvent ; evt != null ; evt = evt.next) {
-	    if ((evt.isProcessing == false) &&
-		(evt.isProcessed  == false) &&
-		(evt != skipEvent)) {
-		return evt;
-	    }
+    for (evt = firstEvent ; evt != null ; evt = evt.next) {
+	if ((evt.isProcessing == false) &&
+	        (evt.isProcessed  == false) &&
+	        (evt != skipEvent)) {
+	    return evt;
 	}
     }
     return null;

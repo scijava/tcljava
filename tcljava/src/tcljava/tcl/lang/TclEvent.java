@@ -11,7 +11,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclEvent.java,v 1.2 2000/01/25 03:42:26 mo Exp $
+ * RCS: @(#) $Id: TclEvent.java,v 1.3 2003/03/11 01:45:53 mdejong Exp $
  *
  */
 
@@ -107,7 +107,7 @@ processEvent(
  *----------------------------------------------------------------------
  */
 
-public synchronized final void
+public final void
 sync()
 {
     if (notifier == null) {
@@ -120,16 +120,18 @@ sync()
 	    notifier.serviceEvent(0);
 	}
     } else {
-	needsNotify = true;
-	while (!isProcessed) {
-	    try {
-		wait(0);
-	    } catch (InterruptedException e) {
-		// Another thread has sent us an "interrupt"
-		// signal. We ignore it and continue waiting until
-		// the event is processed.
+	synchronized (this) {
+	    needsNotify = true;
+	    while (!isProcessed) {
+	        try {
+		    wait(0);
+	        } catch (InterruptedException e) {
+		    // Another thread has sent us an "interrupt"
+		    // signal. We ignore it and continue waiting until
+		    // the event is processed.
 
-		continue;
+		    continue;
+	        }
 	    }
 	}
     }

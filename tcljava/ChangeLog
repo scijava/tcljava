@@ -1,5 +1,31 @@
 2003-03-10  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/jacl/tcl/lang/Notifier.java (serviceEvent):
+	Rework synchronization on a TclEvent inside
+	serviceEvent. Now the monitor on the TclEvent
+	object is only locked if the sync() method
+	has been invoked on the TclEvent. This should
+	speed things up since a monitor lock is no
+	longer needed in the common case where the
+	event is processed without a call to sync().
+	* src/tclblend/tcl/lang/Notifier.java (preserve,
+	release, queueEvent, deleteEvents, serviceEvent,
+	getAvailableEvent): Implement TclEvent change
+	to serviceEvent as described above. Undo the
+	"notifierMutex" changes made on 2000-08-23,
+	it is not clear why a separate object used
+	as a mutex is preferable to just synchronizing
+	the methods. Just make sure that the serviceEvent
+	method is not synchronized since that is what
+	was causing the deadlocking problem.
+	* src/tcljava/tcl/lang/TclEvent.java (sync):
+	Don't synchronize the entire sync() method since
+	there is no need to do that when sync() is called
+	from the primary thread. Instead, grab the
+	monitor before calling wait.
+
+2003-03-10  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/jacl/tcl/lang/Notifier.java (deleteEvents,
 	deleteEvent, serviceEvent): Have the Notifier
 	class implement the EventDeleter interface

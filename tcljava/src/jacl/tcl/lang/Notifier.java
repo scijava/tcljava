@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Notifier.java,v 1.6 2003/03/10 10:52:41 mdejong Exp $
+ * RCS: @(#) $Id: Notifier.java,v 1.7 2003/03/11 01:45:53 mdejong Exp $
  *
  */
 
@@ -412,7 +412,7 @@ serviceEvent(
 				// matching this will be skipped for processing
 				// later.
 {
-    TclEvent evt, prev;
+    TclEvent evt;
 
     // No event flags is equivalent to TCL_ALL_EVENTS.
     
@@ -444,10 +444,13 @@ serviceEvent(
 
 	if ((b == false) && (evt.processEvent(flags) != 0)) {
 	    evt.isProcessed = true;
-	    synchronized(evt) {
-		if (evt.needsNotify) {
-		    evt.notifyAll();
-		}
+	    // Don't allocate/grab the monitor for the event unless sync()
+	    // has been called in another thread. This is thread safe
+	    // since sync() checks the isProcessed flag before calling wait.
+	    if (evt.needsNotify) {
+	        synchronized (evt) {
+	            evt.notifyAll();
+	        }
 	    }
 	    // Remove this specific event from the queue
 	    servicedEvent = evt;
