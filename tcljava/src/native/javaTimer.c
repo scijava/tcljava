@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaTimer.c,v 1.2 2000/06/15 09:47:07 mo Exp $
+ * RCS: @(#) $Id: javaTimer.c,v 1.2.2.1 2000/07/30 07:17:09 mo Exp $
  */
 
 #include "java.h"
@@ -53,15 +53,12 @@ Java_tcl_lang_TimerHandler_createTimerHandler(
     jint ms)
 {
     jlong lvalue;
-    JNIEnv *oldEnv;
     TimerInfo *infoPtr;
 
-    PUSH_JAVA_ENV();
     infoPtr = (TimerInfo *) ckalloc(sizeof(TimerInfo));
     infoPtr->obj = (*env)->NewGlobalRef(env, timer);
     infoPtr->token = Tcl_CreateTimerHandler(ms, JavaTimerProc,
 	    (ClientData) infoPtr);
-    POP_JAVA_ENV();
 
     *(TimerInfo**)&lvalue = infoPtr;
     return lvalue;
@@ -90,15 +87,10 @@ Java_tcl_lang_TimerHandler_deleteTimerHandler(
     jlong info)			/* TimerInfo of timer to delete. */
 {
     TimerInfo *infoPtr = *(TimerInfo**)&info;
-    JNIEnv *oldEnv;
-
-    PUSH_JAVA_ENV();
     
     Tcl_DeleteTimerHandler(infoPtr->token);
     (*env)->DeleteGlobalRef(env, infoPtr->obj);
     ckfree((char *)infoPtr);
-
-    POP_JAVA_ENV();
 }
 
 /*
@@ -129,11 +121,9 @@ JavaTimerProc(
      * Call TimerHandler.invoke.
      */
 
-    JAVA_UNLOCK();
     (*env)->CallVoidMethod(env, infoPtr->obj, java.invokeTimer);
     exception = (*env)->ExceptionOccurred(env);
     (*env)->ExceptionClear(env);
-    JAVA_LOCK();
 
     /*
      * Cean up the timer info since the timer has fired.

@@ -1,3 +1,24 @@
+2000-07-30  Mo DeJong  <mdejong@redhat.com>
+
+	* src/native/java.h:
+	* src/native/javaCmd.c:
+	* src/native/javaIdle.c:
+	* src/native/javaInterp.c:
+	* src/native/javaList.c:
+	* src/native/javaNotifier.c:
+	* src/native/javaObj.c:
+	* src/native/javaTimer.c:
+	* src/native/javaUtil.c: Put the JNIEnv
+	pointer in thread local storage. Create
+	a per JVM init flag and a per thread init
+	flag. Tcl interps in other threads can
+	communicate with the JVM in the main
+	thread using the synchronization
+	primitives project by the JNI. Remove
+	JAVA_LOCK, JAVA_UNLOCK, PUSH_JAVA_ENV,
+	and POP_JAVA_ENV macros and associated
+	Java monitor. Remove JavaSetEnv function.
+
 2000-07-29  Jiang Wu  <jwu@cs.stanford.edu>
 	* win/makefile.vc:
 	Fix the makefile.vc to install the new xputil package, remove

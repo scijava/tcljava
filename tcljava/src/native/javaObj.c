@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaObj.c,v 1.4 2000/06/15 09:47:07 mo Exp $
+ * RCS: @(#) $Id: javaObj.c,v 1.4.2.1 2000/07/30 07:17:09 mo Exp $
  */
 
 #include "java.h"
@@ -316,7 +316,6 @@ Java_tcl_lang_CObject_getString(
     char *str;
     jstring result;
     int length, i;
-    JNIEnv *oldEnv;
     char *p, *end;
     Tcl_UniChar *w;
 
@@ -326,7 +325,6 @@ Java_tcl_lang_CObject_getString(
 	(*env)->ThrowNew(env, nullClass, "Invalid CObject.");
     }
 
-    PUSH_JAVA_ENV();
     /*
      * Convert the string rep into a Unicode string.
      */
@@ -365,7 +363,6 @@ Java_tcl_lang_CObject_getString(
     } else {
 	result = (*env)->NewString(env, NULL, 0);
     }
-    POP_JAVA_ENV();
     return result;
 }
 
@@ -396,16 +393,13 @@ Java_tcl_lang_CObject_incrRefCount(
     jlong obj)			/* Value of CObject.objPtr. */
 {
     Tcl_Obj *objPtr = *(Tcl_Obj **) &obj;
-    JNIEnv *oldEnv;
 
     if (!objPtr) {
 	jclass nullClass = (*env)->FindClass(env,
 		"java/lang/NullPointerException");
 	(*env)->ThrowNew(env, nullClass, "Invalid CObject.");
     }
-    PUSH_JAVA_ENV();
     Tcl_IncrRefCount(objPtr);
-    POP_JAVA_ENV();
 }
 
 /*
@@ -434,16 +428,13 @@ void JNICALL Java_tcl_lang_CObject_decrRefCount(
     jlong obj)			/* Value of CObject.objPtr. */
 {
     Tcl_Obj *objPtr = *(Tcl_Obj **) &obj;
-    JNIEnv *oldEnv;
 
     if (!objPtr) {
 	jclass nullClass = (*env)->FindClass(env,
 		"java/lang/NullPointerException");
 	(*env)->ThrowNew(env, nullClass, "Invalid CObject.");
     }
-    PUSH_JAVA_ENV();
     Tcl_DecrRefCount(objPtr);
-    POP_JAVA_ENV();
 }
 
 /*
@@ -476,7 +467,6 @@ Java_tcl_lang_CObject_makeRef(
 {
     Tcl_Obj *objPtr = *(Tcl_Obj **) &obj;
     Tcl_ObjType *oldTypePtr;
-    JNIEnv *oldEnv;
 
     if (!objPtr) {
 	jclass nullClass = (*env)->FindClass(env,
@@ -484,7 +474,6 @@ Java_tcl_lang_CObject_makeRef(
 	(*env)->ThrowNew(env, nullClass, "Invalid CObject.");
     }
 
-    PUSH_JAVA_ENV();
     /*
      * Free the old internalRep before setting the new one.
      */
@@ -504,7 +493,6 @@ Java_tcl_lang_CObject_makeRef(
      */
 
     (*env)->CallVoidMethod(env, object, java.preserve);
-    POP_JAVA_ENV();
 }
 
 /*
@@ -535,15 +523,12 @@ Java_tcl_lang_CObject_newCObject(
 {
     Tcl_Obj *objPtr;
     jlong obj;
-    JNIEnv *oldEnv;
 
-    PUSH_JAVA_ENV();
     objPtr = Tcl_NewObj();
     if (string) {
 	objPtr->bytes = JavaGetString(env, string, &objPtr->length);
     }
     *(Tcl_Obj **)&obj = objPtr;
-    POP_JAVA_ENV();
     return obj;	
 }
 

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaNotifier.c,v 1.2 2000/06/15 09:47:07 mo Exp $
+ * RCS: @(#) $Id: javaNotifier.c,v 1.2.2.1 2000/07/30 07:17:09 mo Exp $
  */
 
 #include "java.h"
@@ -50,18 +50,15 @@ Java_tcl_lang_Notifier_init(
     JNIEnv *env,		/* Java environment. */
     jobject notifierObj)	/* Handle to Notifier object. */
 {
-    JNIEnv *oldEnv;
 
     /* If we segfault near here under Windows, try removing tclblend.dll
      * from the current directory.  Tcl Blend has problems loading
      * dlls from a remote directory if there is a dll with the
      * same name in the local directory.
      */
-    PUSH_JAVA_ENV();
     Tcl_CreateEventSource(NotifierSetup, NotifierCheck, NULL);
     JavaInitNotifier();
     globalNotifierObj = (*env)->NewGlobalRef(env, notifierObj);
-    POP_JAVA_ENV();
 }
 
 /*
@@ -85,14 +82,10 @@ Java_tcl_lang_Notifier_dispose(
     JNIEnv *env,		/* Java environment. */
     jobject notifierObj)	/* Handle to Notifier object. */
 {
-    JNIEnv *oldEnv;
-
-    PUSH_JAVA_ENV();
     Tcl_DeleteEventSource(NotifierSetup, NotifierCheck, NULL);
     JavaDisposeNotifier();
     (*env)->DeleteGlobalRef(env, globalNotifierObj);
     globalNotifierObj = NULL;
-    POP_JAVA_ENV();
 }
 
 /*
@@ -122,11 +115,8 @@ Java_tcl_lang_Notifier_doOneEvent(
 				 * or others defined by event sources. */
 {
     int result;
-    JNIEnv *oldEnv;
 
-    PUSH_JAVA_ENV();
     result = Tcl_DoOneEvent(flags);
-    POP_JAVA_ENV();
     return result;
 }
 
@@ -265,10 +255,8 @@ JavaEventProc(
      * state of the world after we return.
      */
     
-    JAVA_UNLOCK();
     (void) (*env)->CallIntMethod(env, globalNotifierObj, java.serviceEvent,
 	    flags);
-    JAVA_LOCK();
     return 1;
 }
 

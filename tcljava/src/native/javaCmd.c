@@ -10,7 +10,7 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  *
- * RCS: @(#) $Id: javaCmd.c,v 1.9 2000/06/15 09:47:06 mo Exp $
+ * RCS: @(#) $Id: javaCmd.c,v 1.9.2.1 2000/07/30 07:17:08 mo Exp $
  */
 
 /*
@@ -61,21 +61,37 @@ JavaInfo java;		/* Cached class & method ids. */
  * be null if the Blend pacakge is initialized from Java, otherwise it
  * will contain the environment for the default thread.
  */
+typedef struct ThreadSpecificData {
+    /*
+     * This flag indicates whether the Tcl Blend module has been initialized inside this interp/thread.
+     */
 
-static JNIEnv *currentEnv = NULL; /* JNI pointer for current thread. */
+    int initialized_currentEnv;
+
+    /*
+     * JNI pointer for the current thread, functions invoked throught the env are thread safe.
+     */
+
+    JNIEnv *currentEnv;
+
+} ThreadSpecificData;
+
+static Tcl_ThreadDataKey dataKey;
+
+/* Define this here so that we do not need to include tclInt.h */
+#define TCL_TSD_INIT(keyPtr)	(ThreadSpecificData *)Tcl_GetThreadData((keyPtr), sizeof(ThreadSpecificData))
+
 
 /*
  * The following variable contains the pointer to the current Java VM,
- * if it was created or attached to by Tcl.
+ * if it was created or attached to by Tcl. We only support a single
+ * JVM, but this VM can be accessed from multiple Tcl threads. We need
+ * to keep track of initilizaiton of a JVM differently that initinizilation
+ * of a per thread JNIEnv pointer.
  */
 
 static JavaVM *javaVM = NULL;
-
-/*
- * This flag indicates whether the Blend module has been initialized.
- */
-
-static int initialized = 0;
+static int initialized_javaVM = 0;
 
 /*
  * The following array contains the class names and jclass pointers for
@@ -250,7 +266,7 @@ EXPORT(int,Tclblend_Init)(
      * Make sure the global VM information is properly intialized.
      */
 
-    if (!initialized) {
+    if (!initialized_javaVM) {
 
         
 #ifdef TCLBLEND_DEBUG
@@ -261,13 +277,6 @@ EXPORT(int,Tclblend_Init)(
 	if (JavaSetupJava(env, interp) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	/*
-	 * Since we entered from C, we need to grab the global monitor
-	 * right away.  We will give it up whenever we enter Java code
-	 * in a safe place.
-	 */
-
-	JAVA_LOCK();
     }
 
     /*
@@ -389,9 +398,13 @@ JavaGetEnv(
     JavaVMOption *options;
     JavaVMInitArgs vm_args;
 
-    if (currentEnv != NULL) {
-	return currentEnv;
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+
+    if (tsdPtr->initialized_currentEnv) {
+	return tsdPtr->currentEnv;
     }
+
+    /* FIXME  : we need to put a mutex around this create JVM/attach step */
 
 #ifdef TCLBLEND_DEBUG
     fprintf(stderr, "Tcl Blend debug: init 1.2 JVM in javaCmd.c\n");
@@ -497,7 +510,7 @@ JavaGetEnv(
     fprintf(stderr, "Tcl Blend debug: now to call to JNI_CreateJavaVM for 1.2 JVM in javaCmd.c\n");
 #endif /* TCLBLEND_DEBUG */
 
-	if (JNI_CreateJavaVM(&javaVM, (void **) &currentEnv, &vm_args) < 0){
+	if (JNI_CreateJavaVM(&javaVM, (void **) &tsdPtr->currentEnv, &vm_args) < 0){
 
 #ifdef TCLBLEND_DEBUG
     fprintf(stderr, "Tcl Blend debug: call to JNI_CreateJavaVM for 1.2 JVM failed in javaCmd.c\n");
@@ -519,7 +532,7 @@ JavaGetEnv(
     fprintf(stderr, "Tcl Blend debug: a 1.2 JVM already existed in the process, now to attach in javaCmd.c\n");
 #endif /* TCLBLEND_DEBUG */
 
-	if ((*javaVM)->AttachCurrentThread(javaVM, (void **) &currentEnv, (long)NULL) != 0) {
+	if ((*javaVM)->AttachCurrentThread(javaVM, (void **) &tsdPtr->currentEnv, (long)NULL) != 0) {
 
 #ifdef TCLBLEND_DEBUG
     fprintf(stderr, "Tcl Blend debug: attach to 1.2 JVM failed in javaCmd.c\n");
@@ -534,7 +547,9 @@ JavaGetEnv(
 #endif /* TCLBLEND_DEBUG */
 
     }
-    return currentEnv;
+
+    tsdPtr->initialized_currentEnv = 1;
+    return tsdPtr->currentEnv;
 }
 #else /* not JDK1_2, so it is a 1.1 JDK */
 TCLBLEND_EXTERN JNIEnv *
@@ -551,9 +566,13 @@ JavaGetEnv(
     JDK1_1InitArgs vm_args;
 #endif
 
-    if (currentEnv != NULL) {
-	return currentEnv;
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+
+    if (tsdPtr->initialized_currentEnv) {
+	return tsdPtr->currentEnv;
     }
+
+    /* FIXME: need to put a mutex around this create/attach step */
 
 #ifdef TCLBLEND_DEBUG
     fprintf(stderr, "Tcl Blend debug: init 1.1 JVM in javaCmd.c: \n");
@@ -629,7 +648,7 @@ JavaGetEnv(
     fprintf(stderr, "Tcl Blend debug: now to call to JNI_CreateJavaVM for 1.1 JVM in javaCmd.c\n");
 #endif /* TCLBLEND_DEBUG */
 
-	if (JNI_CreateJavaVM(&javaVM, &currentEnv, &vm_args) < 0) {
+	if (JNI_CreateJavaVM(&javaVM, &tsdPtr->currentEnv, &vm_args) < 0) {
 
 #ifdef TCLBLEND_DEBUG
     fprintf(stderr, "Tcl Blend debug: call to JNI_CreateJavaVM for 1.1 JVM failed in javaCmd.c\n");
@@ -644,7 +663,6 @@ JavaGetEnv(
 	    return NULL;
 	}
 
-
 #ifdef TCLBLEND_DEBUG
     fprintf(stderr, "Tcl Blend debug: call to JNI_CreateJavaVM for 1.1 JVM worked in javaCmd.c\n");
 #endif /* TCLBLEND_DEBUG */
@@ -656,7 +674,7 @@ JavaGetEnv(
     fprintf(stderr, "Tcl Blend debug: a 1.1 JVM already existed in the process, now to attach in javaCmd.c\n");
 #endif /* TCLBLEND_DEBUG */
 
-	if ((*javaVM)->AttachCurrentThread(javaVM, &currentEnv, NULL) != 0) {
+	if ((*javaVM)->AttachCurrentThread(javaVM, &tsdPtr->currentEnv, NULL) != 0) {
 
 #ifdef TCLBLEND_DEBUG
     fprintf(stderr, "Tcl Blend debug: attach to 1.1 JVM failed in javaCmd.c\n");
@@ -671,40 +689,13 @@ JavaGetEnv(
 #endif /* TCLBLEND_DEBUG */
 
     }
-    return currentEnv;
+
+    tsdPtr->initialized_currentEnv = 1;
+    return tsdPtr->currentEnv;
 }
 #endif /* JDK1_2, so it is a 1.1 JDK */
 
 
-
-/*
- *----------------------------------------------------------------------
- *
- * JavaSetEnv --
- *
- *	Update the currentEnv pointer.  This routine should be called
- *	whenever a native method is invoked in order to guarantee that
- *	the right JNI pointer is used for creating objects and
- *	throwing exceptions.  The returned value should be restored
- *	before returning control to Java.
- *
- * Results:
- *	Returns the previous value of the currentEnv pointer.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-TCLBLEND_EXTERN JNIEnv *
-JavaSetEnv(
-    JNIEnv *newEnv)		/* New JNI handle. */
-{
-    JNIEnv *oldEnv = currentEnv;
-    currentEnv = newEnv;
-    return oldEnv;
-}
 
 /*
  *----------------------------------------------------------------------
@@ -814,6 +805,7 @@ JavaInterpDeleted(
     (*env)->CallVoidMethod(env, interpObj, java.dispose);
     (*env)->DeleteGlobalRef(env, interpObj);
 
+    /* FIXME : detach the JNIEnv */
 
 #ifdef TCLBLEND_DEBUG
     fprintf(stderr, "Tcl Blend debug: called JavaInterpDeleted in javaCmd.c:\n");
@@ -853,7 +845,8 @@ JavaSetupJava(
 #endif /* TCLBLEND_DEBUG */
 
 
-    if (initialized) {
+    /* FIXME : we need to put a mutex around this test/set */
+    if (initialized_javaVM) {
 	return TCL_OK;
     }
     
@@ -964,7 +957,7 @@ JavaSetupJava(
 
     JavaObjInit();
 
-    initialized = 1;
+    initialized_javaVM = 1;
     return TCL_OK;
 
     error:

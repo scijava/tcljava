@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaList.c,v 1.2 2000/06/15 09:47:07 mo Exp $
+ * RCS: @(#) $Id: javaList.c,v 1.2.2.1 2000/07/30 07:17:09 mo Exp $
  */
 
 #include "java.h"
@@ -45,7 +45,6 @@ Java_tcl_lang_TclList_append(
 {
     Tcl_Obj *oldListPtr = *(Tcl_Obj **)&list;
     Tcl_Obj *objPtr, *listPtr;
-    JNIEnv *oldEnv;
 
     if (!oldListPtr || !element) {
 	jclass nullClass = (*env)->FindClass(env,
@@ -53,8 +52,6 @@ Java_tcl_lang_TclList_append(
 	(*env)->ThrowNew(env, nullClass, "Invalid TclList.");
 	return list;
     }
-
-    PUSH_JAVA_ENV();
 
     objPtr = JavaGetTclObj(env, element);
     
@@ -82,9 +79,6 @@ Java_tcl_lang_TclList_append(
     }
     
     *(Tcl_Obj **)&list = listPtr;
-
-    POP_JAVA_ENV();
-
     return list;
 }
 
@@ -119,7 +113,6 @@ Java_tcl_lang_TclList_getElements(
     Tcl_Obj **objvPtr;
     int objc, i;
     jarray array;
-    JNIEnv *oldEnv;
 
     if (!listPtr) {
 	jclass nullClass = (*env)->FindClass(env,
@@ -128,7 +121,6 @@ Java_tcl_lang_TclList_getElements(
 	return NULL;
     }
 
-    PUSH_JAVA_ENV();
     /*
      * This should never fail, because the calling code converts the object to
      * a list before calling this routine.
@@ -143,7 +135,6 @@ Java_tcl_lang_TclList_getElements(
 	(*env)->SetObjectArrayElement(env, array, i,
 		JavaGetTclObject(env, objvPtr[i], NULL));
     }
-    POP_JAVA_ENV();
     return array;
 }
 
@@ -176,7 +167,6 @@ Java_tcl_lang_TclList_index(
 {
     Tcl_Obj *listPtr = *(Tcl_Obj **)&list;
     Tcl_Obj *objPtr;
-    JNIEnv *oldEnv;
     jobject obj;
 
     if (!listPtr) {
@@ -186,7 +176,6 @@ Java_tcl_lang_TclList_index(
 	return NULL;
     }
 
-    PUSH_JAVA_ENV();
     /*
      * This should never fail, because the calling code converts the object to
      * a list before calling this routine.
@@ -197,7 +186,6 @@ Java_tcl_lang_TclList_index(
     }
 
     obj = JavaGetTclObject(env, objPtr, NULL); 
-    POP_JAVA_ENV();
     return obj;
 }
 
@@ -232,7 +220,6 @@ Java_tcl_lang_TclList_listLength(
     Tcl_Obj *listPtr = *(Tcl_Obj **)&list;
     Tcl_Interp *interp = *(Tcl_Interp **)&interpPtr;
     int length;
-    JNIEnv *oldEnv;
 
     if (!listPtr) {
 	jclass nullClass = (*env)->FindClass(env,
@@ -246,11 +233,9 @@ Java_tcl_lang_TclList_listLength(
 	return 0;
     }
 
-    PUSH_JAVA_ENV();
     if (Tcl_ListObjLength(interp, listPtr, &length) == TCL_ERROR) {
 	JavaThrowTclException(env, interp, TCL_ERROR);
     }
-    POP_JAVA_ENV();
     return length;
 }
 
@@ -289,7 +274,6 @@ Java_tcl_lang_TclList_replace(
     Tcl_Obj **objv, *listPtr;
     int objc, i;
     jobject element;
-    JNIEnv *oldEnv;
 
     if (!oldListPtr) {
 	jclass nullClass = (*env)->FindClass(env,
@@ -298,7 +282,6 @@ Java_tcl_lang_TclList_replace(
 	return list;
     }
 
-    PUSH_JAVA_ENV();
     if (!elements || (to < from)) {
 	objv = NULL;
 	objc = 0;
@@ -326,7 +309,6 @@ Java_tcl_lang_TclList_replace(
 		    Tcl_DecrRefCount(objv[i]);
 		}
 		ckfree((char *)objv);
-		POP_JAVA_ENV();
 		return list;
 	    }
 	    objv[i] = JavaGetTclObj(env, element);
@@ -377,8 +359,6 @@ Java_tcl_lang_TclList_replace(
      */
 
     *(Tcl_Obj **)&list = listPtr;
-
-    POP_JAVA_ENV();
     return list;
 }
 
@@ -413,13 +393,11 @@ Java_tcl_lang_TclList_splitList(
     Tcl_Obj *listPtr;
     int length;
     jlong list;
-    JNIEnv *oldEnv;
     
     /*
      * Copy the string into a new Tcl_Obj and convert it to a list.
      */
 
-    PUSH_JAVA_ENV();
     listPtr = Tcl_NewObj();
     if (string) {
 	listPtr->bytes = JavaGetString(env, string, &listPtr->length);
@@ -432,7 +410,6 @@ Java_tcl_lang_TclList_splitList(
 	*(Tcl_Obj **)&list = listPtr;
     }
 
-    POP_JAVA_ENV();
     return list;
 }
 
