@@ -1,0 +1,146 @@
+#! /bin/sh
+# Wrapper script to start up Tcl/Tk 8.x shell with tcl blend
+
+# Do not edit this script unless it is called jtclsh.in.
+# tclBlend/unix/configure takes jtclsh.in, substitutes the @xx@
+# fields and creates jtclsh.
+
+# Author:  Christopher Hylands
+# Version: @(#) jtclsh.in 1.9 08/07/98
+#
+# Copyright (c) 1997-1998 The Regents of the University of California.
+# 	All Rights Reserved.
+#
+# Permission is hereby granted, without written agreement and without
+# license or royalty fees, to use, copy, modify, and distribute this
+# software and its documentation for any purpose, provided that the
+# above copyright notice and the following two paragraphs appear in all
+# copies of this software.
+# 
+# IN NO EVENT SHALL THE UNIVERSITY OF CALIFORNIA BE LIABLE TO ANY PARTY
+# FOR DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+# ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN IF
+# THE UNIVERSITY OF CALIFORNIA HAS BEEN ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+# 
+# THE UNIVERSITY OF CALIFORNIA SPECIFICALLY DISCLAIMS ANY WARRANTIES,
+# INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+# MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. THE SOFTWARE
+# PROVIDED HEREUNDER IS ON AN "AS IS" BASIS, AND THE UNIVERSITY OF
+# CALIFORNIA HAS NO OBLIGATION TO PROVIDE MAINTENANCE, SUPPORT, UPDATES,
+# ENHANCEMENTS, OR MODIFICATIONS.
+# 
+# 						PT_COPYRIGHT_VERSION_2
+# 						COPYRIGHTENDKEY
+
+# Install prefix and binary prefix for tclblend, defaults to /usr/local
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+
+# Platform dependent binary location
+LIB_INSTALL_DIR=${exec_prefix}/lib
+
+# Location of tclBlend distribution
+TCLBLEND=${prefix}/lib/tclblend
+
+# Fully qualified path name of wish and tclsh
+WISH80=@WISH80@
+TCLSH80=@TCLSH80@
+
+# Setting for CLASSPATH determined by configure
+JAVA_CLASSPATH=@JAVA_CLASSPATH@
+
+# Colon seperated list of shared lib directories to search
+JAVA_ARCH_GREEN_RUNTIME_LIBS=@JAVA_ARCH_GREEN_RUNTIME_LIBS@:${LIB_INSTALL_DIR}
+JAVA_ARCH_NATIVE_RUNTIME_LIBS=@JAVA_ARCH_NATIVE_RUNTIME_LIBS@:${LIB_INSTALL_DIR}
+
+# Can be set to JAVA_ARCH_GREEN_RUNTIME_LIBS if you know what you are doing
+JAVA_ARCH_RUNTIME_LIBS=${JAVA_ARCH_NATIVE_RUNTIME_LIBS}
+
+# extra shared lib stuff
+TCLBLEND_LD_PRELOAD="@TCLBLEND_LD_PRELOAD@"
+TCLBLEND_LD_BIND_NOW=@TCLBLEND_LD_BIND_NOW@
+TCLBLEND_SHLIB_NAMES="@TCLBLEND_SHLIB_NAMES@"
+
+
+# Tcl Blend under Linux AWT Workaround!
+#
+# If you want to use the AWT in Tcl Blend on a Linux system with
+# the Blackdown port of the JDK then you should uncomment the
+# next command. It will preload the X toolkit and Motif libs into your
+# Tcl Blend shell so that you will not get a "no awt in shared lib path"
+# error when displaying a Java GUI component. This should also work
+# with LessTif but it has not been tested.
+ 
+#TCLBLEND_LD_PRELOAD="${TCLBLEND_LD_PRELOAD} libXt.so libXm.so libXext.so"
+
+
+
+
+#######################################################################
+# You probably don't want to edit below here
+########################################################################
+
+
+# Make sure we can find the tclblend directory
+
+if test ! -d ${TCLBLEND} ; then
+    echo "$0: TCLBLEND was set to ${TCLBLEND}, which does not exist."
+    echo " Please check the tclblend instalation for possible corruption."
+    exit 3
+fi
+
+# Set up our LD_LIBRARY_PATH or SHLIB_PATH
+
+if test "`uname -s`" = "HP-UX" ; then
+    SHLIB_PATH=${JAVA_ARCH_RUNTIME_LIBS}:${SHLIB_PATH}
+    export SHLIB_PATH
+else
+    LD_LIBRARY_PATH=${JAVA_ARCH_RUNTIME_LIBS}:${LD_LIBRARY_PATH}
+    export LD_LIBRARY_PATH
+fi    
+
+# Extra shared lib stuff
+
+LD_PRELOAD=${TCLBLEND_LD_PRELOAD}
+export LD_PRELOAD
+
+LD_BIND_NOW=${TCLBLEND_LD_BIND_NOW}
+export LD_BIND_NOW
+
+export TCLBLEND_SHLIB_NAMES
+
+# set up the CLASSPATH environmental variable
+
+if test "${JAVA_CLASSPATH}" != ""; then
+    if test "${CLASSPATH}" = ""; then
+        CLASSPATH=${JAVA_CLASSPATH}
+    else
+        CLASSPATH=${JAVA_CLASSPATH}:${CLASSPATH}
+    fi
+    export CLASSPATH
+fi
+
+# Set up TCLLIBPATH which becomes the default setting for the auto_path
+# in the Tcl shell. Tcl uses this when doing a "package require java".
+
+if test "$TCLLIBPATH" = ""; then
+    TCLLIBPATH=${TCLBLEND}
+else
+    TCLLIBPATH="${TCLBLEND} ${TCLLIBPATH}"
+fi
+export TCLLIBPATH
+
+
+# If the script is called as jtclsh, then use tclsh8.0, otherwise, use wish8.0
+case "`basename $0`" in
+    jtclsh) WISH_OR_TCLSH=${TCLSH80} ;;
+    jwish) WISH_OR_TCLSH=${WISH80} ;;
+    *)
+    echo "The wrapper script must be named jtclsh or jwish."
+    exit 3
+    ;;
+esac
+        
+# exec wish of tclsh with the env vars already set up
+exec $WISH_OR_TCLSH ${1+"$@"}
