@@ -1,6 +1,6 @@
 Recent user-visible changes to Jacl & Tcl Blend:
 
-RCS: @(#) $Id: changes.txt,v 1.11 1999/05/08 22:54:37 dejong Exp $
+RCS: @(#) $Id: changes.txt,v 1.12 1999/05/08 22:56:23 dejong Exp $
 
 ----------------- Released 1.0a1, 10/22/97 -----------------------
 
@@ -408,7 +408,7 @@ will compile with tcl8.1b1. It compiles but crashes when run. (Mo)
 
 12/22/98 (exec tests)
 Moved the compiled of jacl/tests/exec/*.java over to
-tcljava/exec/*.java so that the exec tests will be run in tclblend too. (Mo)
+tcljava/exec/*.java so that the exec tests run in Tcl Blend too. (Mo)
 
 12/23/98 (jwish and jtclsh)
 Changed jwish to jtclsh in the makefiles and the configure script.
@@ -504,7 +504,9 @@ libraries are loaded by Tcl. Before this fix IRIX would
 print an error like "can not map libjava.so under ...". (Mo)
 
 1/14/99 (kaffe support)
-Added a call to flush() stdout to the file
+configure.in and Makefile.in changed to add
+support for the --with-kaffe option. Also
+added a call to flush() stdout to the file
 jacl/tcl/lang/Shell.java so that jacl would
 work with the Kaffe JVM. I also made some changes
 to the way System.in is read that were not being
@@ -658,9 +660,27 @@ Made sure all the demo README files and the makefiles used
 the same build target name for building demos. A user should
 run "make demos" in the build directory to build the demos. (Mo)
 
+2/20/99 (Jacl's unknown + exec command)
+The unknown command suffered from a really nasty bug which
+was triggered when a program that was exec'ed from unknown
+raised an error. The output of the program was only returned
+if the program exited with a non zero status. This bug
+is related to the auto_execok command which requires the
+env(PATH) var to be set. This bug has been fixed for UNIX
+systems but there is still no fix for Windows systems. (Mo)
 
+2/20/99 ("class" field support for the java::field command)
+Java users have had a quick and easy way to access the
+java.lang.Class object for a given class by simply using
+the "class" field on a given class. For instance, in Java
+you can access the Integer classes Class object using the
+filed name Integer.class. Now TclJava users can do the same
+thing like so [java::field Integer class]. (Mo)
 
-
-
-
-
+2/20/99 (rewrite of reflect table implementation)
+Finished up a complete rewrite of the reflect table. The
+new implementation uses string based hashing of reflect
+ids to reflect objects. This works around some really
+nasty bugs in the JDK1.2 implementation of Hashtable.
+It should also be a lot faster, use less memory, and
+be 100% backward compatible with the old implementation. (Mo)
