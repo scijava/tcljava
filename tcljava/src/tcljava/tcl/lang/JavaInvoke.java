@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaInvoke.java,v 1.9 1999/08/09 08:52:36 mo Exp $
+ * RCS: @(#) $Id: JavaInvoke.java,v 1.10 1999/08/15 19:38:47 mo Exp $
  *
  */
 
@@ -820,7 +820,7 @@ throws
 
 	} else if ((type == Byte.TYPE) || (type == Byte.class)) {
 	    int i = TclInteger.get(interp, tclObj);
-	    if ((i < -128) || (i > 127)) {
+	    if ((i < Byte.MIN_VALUE) || (i > Byte.MAX_VALUE)) {
 		throw new TclException(interp,
 		   "integer value too large to represent in a byte");
 	    }
@@ -828,7 +828,7 @@ throws
 
 	} else if ((type == Short.TYPE) || (type == Short.class)) {
 	    int i = TclInteger.get(interp, tclObj);
-	    if ((i < -32768) || (i > 32767)) {
+	    if ((i < Short.MIN_VALUE) || (i > Short.MAX_VALUE)) {
 		throw new TclException(interp,
 		    "integer value too large to represent in a short");
 	    }
