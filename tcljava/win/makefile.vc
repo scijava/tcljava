@@ -46,36 +46,31 @@
 #                   This directory is under the tcl\lib directory
 
 # Root directory of the distribution
-ROOT_DIR	= d:\users\cxh\src\tcljava
-#ROOT_DIR	= G:\mo\software\test_tcl\src\tclBlend1.1a1
+ROOT_DIR	= C:\src\tcljava
 
-TOOLS32		= d:\Progra~1\Micros~2\VC98
-#TOOLS32	= G:\mo\software\msdev
+TOOLS32		= C:\Progra~1\Micros~2\VC98
 
 # JDK1.1 users should uncomment this section
-JAVA_DIR	= D:\jdk1.1.6
-#JAVA_DIR	= G:\mo\software\java\jdk1.1.6
+JAVA_DIR	= C:\jdk1.1.6
 JAVA_VERSION	= 1.1
 JAVA_CLASSPATH	= $(JAVA_DIR)\lib\classes.zip;.
 
 # JDK1.2 users should uncomment this section
-#JAVA_DIR	= D:\jdk1.2
-#JAVA_DIR	= G:\mo\software\java\jdk1.1.2b4
+#JAVA_DIR	= C:\jdk1.2
 #JAVA_VERSION	= 1.2
 #JAVA_CLASSPATH	= $(JAVA_DIR)\lib\tools.jar;$(JAVA_DIR)\jre\lib\rt.jar;.
 
 # Tcl version info needed by the rest of the scripts
 TCL_DOTVERSION	= 8.0.3
-#TCL_DOTVERSION	= 8.0
 TCL_VERSION	= 80
-TCL_DIR		= D:\progra~1\tcl
-#TCL_DIR	= G:\mo\software\test_tcl
+TCL_DIR		= C:\progra~1\tcl
+
 # If you are compiling from the Tcl Blast 8.0.3 cd, then uncomment these lines
 #TCLSH		= tclsh80.exe
 #TCLLIB		= $(TCL_DIR)\lib\tcl$(TCL_VERSION)VC.LIB
 
 TCL_SRC		= ..\..\tcl$(TCL_DOTVERSION)
-STUDIO_LIB_DIR	= c:\JavaStudio1.0\JS\classes.zip
+STUDIO_LIB_DIR	= C:\JavaStudio1.0\JS\classes.zip
 
 TCLJAVA_VERSION = 1.1
 TCLJAVA_PATCHLEVEL = a1
@@ -130,7 +125,7 @@ DBGX			= d
 
 # If you compile 8.0.3 from scratch, then executables in a sub dir of win.
 # If you use the prebuilt libs from the Tcl Blast CD, the library
-# is in c:\Program Files\Tcl\lib
+# is in C:\Program Files\Tcl\lib
 
 !IF "$(TCL_DOTVERSION)" == "8.0"
 TMPDIRNAME	=
