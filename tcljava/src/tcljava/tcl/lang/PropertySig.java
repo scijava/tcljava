@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: PropertySig.java,v 1.2 1999/05/09 22:27:33 dejong Exp $
+ * RCS: @(#) $Id: PropertySig.java,v 1.3 1999/05/09 22:28:28 dejong Exp $
  *
  */
 
@@ -116,11 +116,11 @@ throws
     InternalRep rep = signature.getInternalRep();
 
     if ((rep instanceof PropertySig) &&
-		(targetCls == ((PropertySig)rep).targetCls)) {
+		(targetCls == ((PropertySig) rep).targetCls)) {
 	// The cached internal rep is a valid property signature for
 	// the given targetCls. Return it.
 
-	return (PropertySig)rep;
+	return (PropertySig) rep;
     }
 
     String propName = signature.toString();
@@ -144,6 +144,17 @@ throws
 	// Search for a property that has the same name as propName.
 
 	for (int i = 0; i < descriptors.length; i++) {
+	    // FIXME : null tests are just for debugging
+	    if (descriptors[i] == null) {
+		throw new NullPointerException("descriptor is null");
+	    }
+	    if (descriptors[i].getName() == null) {
+		throw new NullPointerException("descriptor.getName() is null");
+	    }
+	    if (propName == null) {
+		throw new NullPointerException("propName is null");
+	    }
+
 	    if (descriptors[i].getName().equals(propName)) {
 		if (descriptors[i] instanceof IndexedPropertyDescriptor) {
 		    throw new TclException(interp,
@@ -161,8 +172,9 @@ throws
 		"\"");
     }
 
-    PropertySig sig = new PropertySig(targetCls, PkgInvoker.getPkgInvoker(
-	    targetCls), desc);
+    PropertySig sig = new PropertySig(targetCls,
+			      PkgInvoker.getPkgInvoker(targetCls), desc);
+
     signature.setInternalRep(sig);
 
     return sig;
