@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: PutsCmd.java,v 1.3 2001/11/20 19:07:30 mdejong Exp $
+ * RCS: @(#) $Id: PutsCmd.java,v 1.4 2001/11/20 19:12:15 mdejong Exp $
  *
  */
 
@@ -33,12 +33,12 @@ class PutsCmd implements Command {
     public void cmdProc(Interp interp, TclObject argv[])
 	    throws TclException {
 
-	Channel chan;        /* The channel being operated on this method */
-	String  channelId;   /* String containing the key to chanTable */
-	String  arg;         /* Argv[i] converted to a string */
-	int     i = 1;       /* Index to the next arg in argv */
+	Channel chan;        // The channel being operated on this method
+	String  channelId;   // String containing the key to chanTable
+	String  arg;         // Argv[i] converted to a string
+	int     i = 1;       // Index to the next arg in argv
 	boolean newline = true;
-                             /* Indicates to print a newline in result */
+                             // Indicates to print a newline in result
 
 	if ((argv.length >= 2) && (argv[1].toString().equals("-nonewline"))) {
 	    newline = false;
@@ -49,10 +49,8 @@ class PutsCmd implements Command {
 		    "?-nonewline? ?channelId? string");
 	}
 
-	/*
-	 * The code below provides backwards compatibility with an old
-	 * form of the command that is no longer recommended or documented.
-	 */
+	// The code below provides backwards compatibility with an old
+	// form of the command that is no longer recommended or documented.
 
 	if (i == (argv.length-3)) {
 	    arg = argv[i+2].toString();

@@ -1,5 +1,11 @@
 2001-11-20  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/jacl/tcl/lang/PutsCmd.java:
+	* src/jacl/tcl/lang/ReadCmd.java: Reformat comments
+	to make use Java style // instead of C style /**/.
+
+2001-11-20  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/jacl/tcl/lang/Channel.java (write): Remove
 	trailing "." from error message since it is not
 	compatible with Tcl error message.

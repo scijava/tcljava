@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ReadCmd.java,v 1.5 2001/11/20 19:07:30 mdejong Exp $
+ * RCS: @(#) $Id: ReadCmd.java,v 1.6 2001/11/20 19:12:15 mdejong Exp $
  *
  */
 
@@ -32,12 +32,12 @@ class ReadCmd implements Command {
     public void cmdProc(Interp interp, TclObject argv[])
             throws TclException {
 
-	Channel chan;              /* The channel being operated on this 
-				    * method */
-	int     i         = 1;     /* Index to the next arg in argv */
-	int     numBytes  = 0;     /* Num of bytes to read from channel */
-	boolean readAll   = true;  /* If true read-all else numBytes */
-	boolean noNewline = false; /* If true, strip the newline if there */
+	Channel chan;              // The channel being operated on this 
+				   // method 
+	int     i         = 1;     // Index to the next arg in argv
+	int     numBytes  = 0;     // Num of bytes to read from channel
+	boolean readAll   = true;  // If true read-all else numBytes
+	boolean noNewline = false; // If true, strip the newline if there
 
 
 	if ((argv.length != 2) && (argv.length != 3)) {
@@ -59,16 +59,12 @@ class ReadCmd implements Command {
                     + argv[i].toString() + "\"");
 	}
 
-	/* 
-	 * Consumed channel name. 
-	 */
+	// Consumed channel name. 
 
 	i++;	
 
-	/*
-	 * Compute how many bytes to read, and see whether the final
-	 * noNewline should be dropped.
-	 */
+	// Compute how many bytes to read, and see whether the final
+	// noNewline should be dropped.
 	
 	if (i < argv.length) {
 	    String arg = argv[i].toString();
@@ -89,10 +85,8 @@ class ReadCmd implements Command {
 	    if (readAll) {
 	        inStr = chan.read(interp, TclIO.READ_ALL, 0);
 
-		/* 
-		 * If -nonewline was specified, the inStr is not "" and
-		 * the last char is a "\n", then remove it and return.
-		 */
+		// If -nonewline was specified, the inStr is not "" and
+		// the last char is a "\n", then remove it and return.
 
 		if ((noNewline) && (inStr.length() != 0) &&
 		        (inStr.charAt(inStr.length() - 1)) == '\n') {
