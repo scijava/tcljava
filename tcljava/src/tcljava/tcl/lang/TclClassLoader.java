@@ -24,7 +24,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: TclClassLoader.java,v 1.8 2000/01/06 01:30:50 mo Exp $
+ * RCS: @(#) $Id: TclClassLoader.java,v 1.9 2003/02/14 23:27:00 mdejong Exp $
  */
 
 
@@ -325,7 +325,7 @@ getClassFromPath(
 	// foo.bar.name and it needs to be foo/bar/name.  Convert to 
 	// proper format.
 
-	className = className.replace('.', File.separatorChar) + ".class";
+	className = className.replace('.', '/') + ".class";
 	
 	for (i = 0; i < paths.length; i++) {
 	    curDir = paths[i].toString();

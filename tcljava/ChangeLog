@@ -1,3 +1,20 @@
+2003-02-14  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* Makefile.in: Build a jar file named hello.jar
+	for use in test that loads class file out of
+	a jar. Also copy new directory to dist file.
+	* src/tcljava/tcl/lang/TclClassLoader.java
+	(getClassFromPath): Use '/' character instead of
+	File.separatorChar as the separator when constructing
+	a class file name to be searched for in the .jar
+	file. A jar file always uses '/' as the separator.
+	* src/tests/tcljava/hello/SayHello.java: Add test
+	source code.
+	* tests/tcljava/JavaCallCmd.test: Add test
+	case that loads a class file out of a jar
+	on the TCL_CLASSPATH.
+	[Bug 225612]
+
 2003-02-06  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* src/jacl/tcl/lang/IfCmd.java (cmdProc):

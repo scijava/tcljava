@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.25 2003/01/27 23:47:47 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.26 2003/02/14 23:26:56 mdejong Exp $
 
 SHELL = /bin/sh
 
@@ -770,6 +770,14 @@ test_tcljava.build: $(TCLJAVA).check
 	CLASSPATH=$(JAVA_CLASSPATH) \
 	$(JAR) $(JAR_NOCOMPRESS_FLAGS) test10.jar Test10Extension.class; \
 	rm Test10Extension.class
+	mkdir -p $(TEST_BUILD_DIR)/hello
+	cd $(TEST_TCLJAVA_SRC_DIR) ;\
+	CLASSPATH=$(JAVA_CLASSPATH) \
+	$(JAVAC) $(JAVAC_FLAGS) \
+		$(JAVAC_D_FLAG) $(TEST_BUILD_DIR)/hello hello/*.java
+	cd $(TEST_BUILD_DIR)/hello ;\
+	$(JAR) $(JAR_NOCOMPRESS_FLAGS) hello.jar hello; \
+	rm -rf hello
 	@touch $(TEST_BUILD_DIR)/.tcljava
 
 
@@ -1205,6 +1213,10 @@ tcljavaDist: Makefile
 	mkdir -p $(DISTDIR)/src/tests/tcljava/tests/signature
 	cp -p $(TOP_DIR)/src/tests/tcljava/tests/signature/*.java \
 		$(DISTDIR)/src/tests/tcljava/tests/signature
+
+	mkdir -p $(DISTDIR)/src/tests/tcljava/hello
+	cp -p $(TOP_DIR)/src/tests/tcljava/hello/*.java \
+		$(DISTDIR)/src/tests/tcljava/hello
 
 	mkdir -p $(DISTDIR)/src/tests/tcljava/javaload
 	cp -p $(TOP_DIR)/src/tests/tcljava/javaload/*.java \

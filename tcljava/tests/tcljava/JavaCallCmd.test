@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: JavaCallCmd.test,v 1.5 2002/12/30 06:28:06 mdejong Exp $
+# RCS: @(#) $Id: JavaCallCmd.test,v 1.6 2003/02/14 23:27:00 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -99,6 +99,13 @@ test javaCall-7.1 {throw TclException in a Java method} {
     list [catch {java::call tests.JavaTest \
         throwTclException [java::getinterp]} err] $err $errorCode
 } {1 {no nuts in my fudge please!} NONE}
+
+test javaCall-8.0 {load class from a jar on the TCL_CLASSPATH} {
+    set env(TCL_CLASSPATH) [file join $env(BUILD_DIR) btests hello hello.jar]
+    set result [java::call hello.SayHello hello]
+    unset env(TCL_CLASSPATH)
+    set result
+} {hello}
 
 # cleanup
 ::tcltest::cleanupTests
