@@ -225,6 +225,16 @@ you need to apply this patch to tcl8.2.0/unix/aclocal.m4.
             SHLIB_CFLAGS="-G 0"
 
 
+(Tcl Blend with Tcl 8.2.0 under Windows)
+I ran into a really strange error when I tried to compile Tcl 8.2.0 on
+a Win95 system with visual C++. When I tried to compile Tcl, I got
+some errors that said "file create error". What was going on was that
+the makefile was not able to create the Debug and Release build dirs.
+The makefile exec'ed a file called mkd.bat (also in the win directory)
+to actually create these dirs. This mkd.bar program did not work as
+shipped in the tcl82.zip file. I then opened the mkd.bar file with
+edit and save it, which fixed the problem (don't ask me why). After
+doing that, I was able to compile Tcl 8.2.0 with no problems.
 
 
 (Tcl Blend under IRIX)
