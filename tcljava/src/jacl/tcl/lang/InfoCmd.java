@@ -8,13 +8,15 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: InfoCmd.java,v 1.8 2001/11/16 23:57:13 mdejong Exp $
+ * RCS: @(#) $Id: InfoCmd.java,v 1.9 2004/09/18 22:28:29 mdejong Exp $
  *
  */
 
 package tcl.lang;
 
 import java.util.*;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 /**
  * This class implements the built-in "info" command in Tcl.
@@ -602,15 +604,15 @@ class InfoCmd implements Command {
 
     private static void InfoHostnameCmd(Interp interp, TclObject[] objv)
 	    throws TclException {
-	String name;
+	String name = null;
 
 	if (objv.length != 2) {
 	    throw new TclNumArgsException(interp, 2, objv, null);
 	}
 
-	// FIXME : how can we find the hostname
-
-	name = null;
+	try {
+	    name = InetAddress.getLocalHost().getHostName();
+	} catch (UnknownHostException ex) {}
 
 	if (name != null) {
 	    interp.setResult(name);

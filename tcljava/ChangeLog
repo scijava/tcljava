@@ -1,5 +1,11 @@
 2004-09-18  Alexander James Pasadyn  <ajpasadyn@users.sourceforge.net>
 
+	* src/jacl/tcl/lang/InfoCmd.java (InfoHostnameCmd): Implement
+	info hostname command for Jacl.
+	[Patch 1017119]
+
+2004-09-18  Alexander James Pasadyn  <ajpasadyn@users.sourceforge.net>
+
 	* src/jacl/tcl/lang/Shell.java (main): If the main eval()
 	returns TCL.ERROR or some unknown error code, exit with
 	a non-zero status.
