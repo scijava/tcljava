@@ -1,4 +1,4 @@
-2000-10-27  Daniel Wickstrom <danw@rtp.ericsson.se>
+2000-10-27  Daniel Wickstrom  <danw@rtp.ericsson.se>
 
 	* Makefile.in: Don't build unixNotifier.o.
 	* src/jacl/tcl/lang/Notifier.java: Minor
