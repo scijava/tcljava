@@ -17,13 +17,6 @@ if {[string compare test [info procs test]] == 1} then {source defs}
 
 setupJavaPackage
 
-# FIXME : these tests are currently skipped because of a small
-# problem with the sorted methods names implementation
-# they will be added back in later.
-
-return
-
-
 test AutomaticSignature-1.0 {error conditions} {
     set o [java::new Object]
     list [catch {$o {} [java::null]} err] $err
