@@ -69,10 +69,46 @@ callback scripts.
 
 </DL>
 
+<DL>
+
+<H3>
+Example:
+</H3>
+
+<DD>
+
+This example creates a frame containing a single button widget. It then
+uses the <B>java::bind</B> command to associate a Tcl script that will
+be invoked when the ActionListener.actionPerformed interface method
+is invoked by the user pressing the button.
+
+<P>
+
+<code>
+<pre>
+package require java
+java::import -package java.awt Frame Button
+
+set f [java::new Frame]
+set b [java::new Button "Hi"]
+$f setSize 70 70
+$f add $b
+$f show
+
+java::bind $b actionPerformed {
+    puts "Hi there"
+}
+</pre>
+</code>
+
+<P>
+
+
+</DL>
+
 <PRE>
 <A HREF="../license.html">Copyright</A> &#169; 1997-1998 Sun Microsystems, Inc.
 </PRE>
-
 
 </BODY>
 </HTML>
