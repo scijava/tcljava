@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Var.java,v 1.8 1999/08/07 06:45:30 mo Exp $
+ * RCS: @(#) $Id: Var.java,v 1.9 1999/08/15 19:38:42 mo Exp $
  *
  */
 package tcl.lang;
@@ -214,15 +214,34 @@ class Var {
 
     Var() {
 	value    = null;
-	//name     = null;
+	//name     = null; // Like hashKey in Jacl
 	ns       = null;
 	hashKey  = null;  // Like hPtr in the C implementation
-	table    = null;
+	table    = null;  // Like hPtr in the C implementation
 	refCount = 0;
 	traces   = null;
 	//search   = null;
 	sidVec   = null; // Like search in the C implementation
 	flags    = (SCALAR | UNDEFINED | IN_HASHTABLE);
+    }
+
+    /**
+     * Used to create a String that describes this variable
+     *
+     */
+
+    public String toString() {
+	StringBuffer sb = new StringBuffer();
+	sb.append(ns);
+	if (sb.length() == 2) {
+	    // It is in the global namespace
+	    sb.append(hashKey);
+	} else {
+	    // It is not in the global namespaces
+	     sb.append("::");
+	     sb.append(hashKey);
+	}
+	return sb.toString();
     }
 
     /**
@@ -519,9 +538,10 @@ class Var {
 		    var = new Var();
 		    varNs.varTable.put(tail, var);
 
-		    // There is no hPtr member in Jacl, use the hashKey instead
-		    //varPtr->hPtr = hPtr;
+		    // There is no hPtr member in Jacl, The hPtr combines the table
+		    // and the key used in a table lookup.
 		    var.hashKey = tail;
+		    var.table   = varNs.varTable;
 
 		    var.ns = varNs;
 		} else {		// var wasn't found and not to create it
@@ -547,9 +567,10 @@ class Var {
 			var = new Var();
 			table.put(part1, var);
 
-			// There is no hPtr member in Jacl, use the hashKey instead
-			//varPtr->hPtr = hPtr;
+		        // There is no hPtr member in Jacl, The hPtr combines
+			// the table and the key used in a table lookup.
 			var.hashKey = part1;
+			var.table   = table;
 
 			var.ns = null; // a local variable
 		    }
@@ -600,7 +621,7 @@ class Var {
 	    // Make sure we are not resurrecting a namespace variable from a
 	    // deleted namespace!
 
-	    if (((var.flags & IN_HASHTABLE) != 0) && (var.hashKey == null)) {
+	    if (((var.flags & IN_HASHTABLE) != 0) && (var.table == null)) {
 		if ((flags & TCL.LEAVE_ERR_MSG) != 0) {
 		    throw new TclVarException(interp,
 		        part1, part2, msg, danglingVar);
@@ -631,7 +652,12 @@ class Var {
 
 		var = new Var();
 		arrayTable.put(elName, var);
+
+		// There is no hPtr member in Jacl, The hPtr combines the table
+		// and the key used in a table lookup.
 		var.hashKey = elName;
+		var.table   = arrayTable;
+
 		var.ns = varNs;
 		var.setVarArrayElement();
 	    } else {
@@ -916,13 +942,13 @@ class Var {
 	var   = result[0];
 	array = result[1];
 
-	// If the variable is in a hashtable and its hashKey field is null, then we
+	// If the variable is in a hashtable and its table field is null, then we
 	// may have an upvar to an array element where the array was deleted
 	// or an upvar to a namespace variable whose namespace was deleted.
 	// Generate an error (allowing the variable to be reset would screw up
 	// our storage allocation and is meaningless anyway).
 
-	if (((var.flags & IN_HASHTABLE) != 0) && (var.hashKey == null)) {
+	if (((var.flags & IN_HASHTABLE) != 0) && (var.table == null)) {
 	    if ((flags & TCL.LEAVE_ERR_MSG) != 0) {
 		if (var.isVarArrayElement()) {
 		    throw new TclVarException(interp, part1, part2, "set",
@@ -1261,7 +1287,7 @@ class Var {
 	Var[] lookup_result = lookupVar(interp, part1, part2, flags, "unset",
 				 false, false);
 	if (lookup_result == null) {
-	    throw new TclException(interp, "");
+	    throw new TclRuntimeError("unexpected null reference");
 	}
 
 	var = lookup_result[0];
@@ -1284,13 +1310,9 @@ class Var {
 	// 3. If at the end of this the original variable is still
 	//    undefined and has no outstanding references, then delete
 	//	  it (but it could have gotten recreated by a trace).
-	
-	if ((var.value != null) && (var.value instanceof TclObject)) {
-	    ((TclObject) var.value).release();
-	    var.value = null;
-	}
 
 	dummyVar          = new Var();
+	//FIXME: Var class really should implement clone to make a bit copy. 
 	dummyVar.value    = var.value;
 	dummyVar.traces   = var.traces;
 	dummyVar.flags    = var.flags;
@@ -1741,9 +1763,10 @@ class Var {
 		var = new Var();
 		ns.varTable.put(tail, var);
 
-		// There is no hPtr member in Jacl, use the hashKey instead
-		//varPtr->hPtr = hPtr;
+		// There is no hPtr member in Jacl, The hPtr combines the table
+		// and the key used in a table lookup.
 		var.hashKey = tail;
+		var.table   = ns.varTable;
 		
 		var.ns = ns;
 	    }
@@ -1763,9 +1786,10 @@ class Var {
 		    var = new Var();
 		    table.put(myName, var);
 		    
-		    // There is no hPtr member in Jacl, use the hashKey instead
-		    //varPtr->hPtr = hPtr;
+		    // There is no hPtr member in Jacl, The hPtr combines the table
+		    // and the key used in a table lookup.
 		    var.hashKey = myName;
+		    var.table   = table;
 
 		    var.ns = varFrame.ns;
 		}
@@ -2050,9 +2074,7 @@ class Var {
 		    
 		    if (link.hashKey == null) {
 			var.value = null; // Drops reference to the link Var
-		    // FIXME: in Jacl, can table be null when hashKay is not? 
-		    //} else if (link.table != table) { // From C version!
-		    } else if ((link.table != null) && (link.table != table)) {
+		    } else if (link.table != table) {
 			link.table.remove(link.hashKey);
 			link.table = null; // Drops the link var's table reference
 			var.value = null;  // Drops reference to the link Var
@@ -2087,7 +2109,11 @@ class Var {
 		obj.release();
 		var.value = null;
 	    }
+
+	    // There is no hPtr member in Jacl, The hPtr combines the table
+	    // and the key used in a table lookup.
 	    var.hashKey = null;
+	    var.table   = null;
 	    var.traces = null;
 	    var.setVarUndefined();
 	    var.setVarScalar();
@@ -2158,7 +2184,10 @@ class Var {
 	    }
 
 	    String tmpkey = (String) el.hashKey;
+	    // There is no hPtr member in Jacl, The hPtr combines the table
+	    // and the key used in a table lookup.
 	    el.hashKey = null;
+	    el.table   = null;
 	    if (el.traces != null) {
 		el.flags &= ~TRACE_ACTIVE;
 		// FIXME : Old Jacl impl passed a dummy var to callTraces, should we?
