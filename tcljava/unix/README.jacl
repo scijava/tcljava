@@ -1,5 +1,5 @@
 Jacl
-RCS: @(#) $Id: README.jacl,v 1.2 1998/11/04 22:45:09 hylands Exp $
+RCS: @(#) $Id: README.jacl,v 1.3 1998/11/16 06:11:06 hylands Exp $
 
 This is the directory where you configure, compile, test, and install 
 UNIX versions of Jacl.
@@ -20,10 +20,10 @@ How To Install Jacl (Binary Release Only):
     Set your CLASSPATH environment variable to include jacl.jar and
     tclblend.jar 
 
-    For example, if the Jacl distribution was at /usr/local/jacl1.1a1,
+    For example, if the Jacl distribution was at /usr/local/jacl1.1b1,
     and you had not set CLASSPATH previously:
 
-    setenv CLASSPATH /usr/local/jacl1.1a1/jacl.jar:/usr/local/jacl1.1a1/tclblend.jar
+    setenv CLASSPATH /usr/local/jacl1.1b1/jacl.jar:/usr/local/jacl1.1b1/tclblend.jar
 
 (b) At this point you can play with Jacl by typing "java tcl.lang.Shell".  
     If you haven't set the CLASSPATH variable correctly, you will see a 
@@ -49,10 +49,10 @@ How To Compile And Install Jacl (Source Release Only):
 (e) Set your CLASSPATH environment variable to include jacl.jar and
     tclblend.jar 
 
-    For example, if the Jacl distribution was at /usr/local/jacl1.1a1,
+    For example, if the Jacl distribution was at /usr/local/jacl1.1b1,
     and you had not set CLASSPATH previously:
 
-    setenv CLASSPATH /usr/local/jacl1.1a1/jacl.jar:/usr/local/jacl1.1a1/tclblend.jar
+    setenv CLASSPATH /usr/local/jacl1.1b1/jacl.jar:/usr/local/jacl1.1b1/tclblend.jar
 
 (f) At this point you can play with Jacl by typing "java tcl.lang.Shell".  
     If you haven't set the CLASSPATH variable correctly, you will see a 
