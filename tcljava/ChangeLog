@@ -1,3 +1,11 @@
+2002-12-15  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/native/javaList.c: Add checks for deallocated
+	Tcl objects when TCL_MEM_DEBUG is defined.
+	* src/native/javaObj.c (JavaObjInit): Use  Tcl_GetObjType
+	to lookup the tcl list type pointer. Add checks for
+	deallocated Tcl objects when TCL_MEM_DEBUG is defined.
+
 2002-12-10  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* src/native/javaInterp.c (Java_tcl_lang_Interp_setVar):

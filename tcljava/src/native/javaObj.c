@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaObj.c,v 1.7 2002/12/07 08:51:03 mdejong Exp $
+ * RCS: @(#) $Id: javaObj.c,v 1.8 2002/12/16 02:01:40 mdejong Exp $
  */
 
 #include "java.h"
@@ -42,7 +42,7 @@ Tcl_ObjType tclObjectType = {
 
 static Tcl_ObjType oldCmdType;
 static Tcl_ObjType *cmdTypePtr = NULL;
-static Tcl_ObjType *Java_tclListTypePtr;
+static Tcl_ObjType *listTypePtr = NULL;
 
 /*
  * Mutex to serialize access to cmdTypePtr.
@@ -94,21 +94,9 @@ JavaObjInit()
 
         /*
          * Grab a pointer to the Tcl list type.
-         * We can't simply use &tclListType because
-         * pulling in a ref to a global symbol
-         * breaks loading of shared libs.
          */
 
-	{
-            Tcl_Obj* elemPtr = Tcl_NewStringObj("",-1);
-            Tcl_Obj* listPtr = Tcl_NewListObj(1, &elemPtr);
-
-            if (listPtr->typePtr == NULL)
-                panic("list typePtr is null");
-
-            Java_tclListTypePtr = listPtr->typePtr;
-            Tcl_DecrRefCount(listPtr);
-        }
+        listTypePtr = Tcl_GetObjType("list");
     }
 
     Tcl_MutexUnlock(&cmdTypePtrLock);
@@ -305,6 +293,11 @@ JavaGetTclObj(
 	objRef = (*env)->GetLongField(env, internalRep, jcache->objPtr);
 	objPtr = *(Tcl_Obj**)&objRef;
 
+#ifdef TCL_MEM_DEBUG
+	if (objPtr->refCount == 0x61616161) {
+	    panic("JavaGetTclObj : disposed object");
+	}
+#endif
     } else {
 	/*
 	 * This object is of an unknown type so we create a new Tcl object to
@@ -365,7 +358,14 @@ Java_tcl_lang_CObject_getString(
 	jclass nullClass = (*env)->FindClass(env,
 		"java/lang/NullPointerException");
 	(*env)->ThrowNew(env, nullClass, "Invalid CObject.");
+	return NULL;
     }
+
+#ifdef TCL_MEM_DEBUG
+    if (objPtr->refCount == 0x61616161) {
+	panic("Java_tcl_lang_CObject_getString : disposed object");
+    }
+#endif
 
     /*
      * Convert the string rep into a Unicode string.
@@ -440,6 +440,7 @@ Java_tcl_lang_CObject_incrRefCount(
 	jclass nullClass = (*env)->FindClass(env,
 		"java/lang/NullPointerException");
 	(*env)->ThrowNew(env, nullClass, "Invalid CObject.");
+	return;
     }
     Tcl_IncrRefCount(objPtr);
 }
@@ -475,6 +476,7 @@ void JNICALL Java_tcl_lang_CObject_decrRefCount(
 	jclass nullClass = (*env)->FindClass(env,
 		"java/lang/NullPointerException");
 	(*env)->ThrowNew(env, nullClass, "Invalid CObject.");
+	return;
     }
     Tcl_DecrRefCount(objPtr);
 }
@@ -516,6 +518,12 @@ Java_tcl_lang_CObject_makeRef(
 		"java/lang/NullPointerException");
 	(*env)->ThrowNew(env, nullClass, "Invalid CObject.");
     }
+
+#ifdef TCL_MEM_DEBUG
+    if (objPtr->refCount == 0x61616161) {
+	panic("Java_tcl_lang_CObject_makeRef : disposed object");
+    }
+#endif
 
     /*
      * Free the old internalRep before setting the new one.
@@ -650,7 +658,7 @@ JavaGetTclObject(
 	 *
 	 */
 
-	if (objPtr->typePtr == Java_tclListTypePtr) {
+	if (objPtr->typePtr == listTypePtr) {
 	    object = (*env)->CallStaticObjectMethod(env, jcache->TclList,
 	        jcache->newTclListInstance, lvalue);
 	} else {

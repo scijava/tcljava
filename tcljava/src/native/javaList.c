@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaList.c,v 1.4 2002/08/12 07:12:10 mdejong Exp $
+ * RCS: @(#) $Id: javaList.c,v 1.5 2002/12/16 02:01:40 mdejong Exp $
  */
 
 #include "java.h"
@@ -52,6 +52,12 @@ Java_tcl_lang_TclList_append(
 	(*env)->ThrowNew(env, nullClass, "Invalid TclList.");
 	return list;
     }
+
+#ifdef TCL_MEM_DEBUG
+    if (oldListPtr->refCount == 0x61616161) {
+	panic("Java_tcl_lang_TclList_append : disposed object");
+    }
+#endif
 
     objPtr = JavaGetTclObj(env, element);
     
@@ -122,6 +128,12 @@ Java_tcl_lang_TclList_getElements(
 	(*env)->ThrowNew(env, nullClass, "Invalid TclList.");
 	return NULL;
     }
+
+#ifdef TCL_MEM_DEBUG
+    if (listPtr->refCount == 0x61616161) {
+	panic("Java_tcl_lang_TclList_getElements : disposed object");
+    }
+#endif
 
     /*
      * This should never fail, because the calling code converts the object to
@@ -235,6 +247,12 @@ Java_tcl_lang_TclList_listLength(
 	return 0;
     }
 
+#ifdef TCL_MEM_DEBUG
+    if (listPtr->refCount == 0x61616161) {
+	panic("Java_tcl_lang_TclList_listLength : disposed object");
+    }
+#endif
+
     if (Tcl_ListObjLength(interp, listPtr, &length) == TCL_ERROR) {
 	JavaThrowTclException(env, interp, TCL_ERROR);
     }
@@ -283,6 +301,12 @@ Java_tcl_lang_TclList_replace(
 	(*env)->ThrowNew(env, nullClass, "Invalid TclList.");
 	return list;
     }
+
+#ifdef TCL_MEM_DEBUG
+    if (oldListPtr->refCount == 0x61616161) {
+	panic("Java_tcl_lang_TclList_replace : disposed object");
+    }
+#endif
 
     if (!elements || (to < from)) {
 	objv = NULL;
