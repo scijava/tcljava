@@ -25,6 +25,7 @@
 </DL>
 <DD><A HREF="java.htm#M4" NAME="L4">DESCRIPTION</A>
 <DL>
+<DD><A HREF="java.htm#M4_1" NAME="L5"><B>package require java ?1.1?</B></A>
 <DD><A HREF="java.htm#M5" NAME="L5"><B>java::new</B></A>
 <DD><A HREF="java.htm#M6" NAME="L6"><B>java::call</B></A>
 <DD><A HREF="java.htm#M7" NAME="L7"><B>java::field</B></A>
@@ -92,18 +93,56 @@ java - Java method invocation package
 <I>javaObj</I> ?<B>-noconvert</B>? <I>signature</I> ?<I>arg arg ...</I>?<BR>
 <I>javaArrayObj</I> ?<B>-noconvert</B>? <I>option</I> ?<I>arg arg ...</I>?<BR>
 <H3><A NAME="M4">DESCRIPTION</A></H3>
-The <B>java</B> package provides an interface for creating and
+<P>
+<DL>
+<P><DT><A NAME="M4_1"><B>package require java ?1.1?</B></A><DD>
+<B>package require java</B> loads the <B>java</B> package which
+provides an interface for creating and
 manipulating Java objects via <I>oject handles</I>.  Object handles are
 references to Java objects in Tcl.  Many of the commands in the java
 package take arguments and return values that are object handles.
 
-The <B>java</B> package is automatically included in Jacl,
+ <p>The <B>java</B> package is automatically included in Jacl,
 but needs to be loaded in Tcl Blend.  When the package is loaded in
 Tcl Blend, Tcl will use an existing Java VM or initialize a new one as
 needed.  Note that <B>tcl.lang</B> and the JDK 1.1 need to be on the
 class path.
-<P>
-<DL>
+
+<P> When Tcl Blend under JDK1.2 is initializing the <CODE>java</CODE>
+package, it reads the <B>tclblend_init</B>
+Tcl global variable, and passes its value along to the Java Virtual
+Machine upon initialization.
+Example values include:
+<dl>
+<dt><B>-Djava.compiler=NONE </B>
+<dd> disable Just In Time Compiler
+
+<dt> <B>-Djava.library.path=c:&#92jdk&#92lib&#92tools.jar</B>
+<dd> set native library path
+
+<dt> <B>-verbose:jni</B>
+<dd>print debugging messages
+
+</dl>
+
+For <B>-verbose</B>, the value should be a string with one or
+more comma separated names (i.e. <B>class,jni</B>).  In JDK1.2
+the standard names are:
+	 <B>class</B>, <B>gc</B>, <B>jni</B>
+To see what other options are available, run <B>java -help</B>
+from the command line.
+A Tcl Blend extension is that if the value is <B>help</B>, then
+JVM initialization stops and a help message is printed.
+To use <B>tclblend_init</B>, set it before loading the <B>java</B>
+package:
+<pre>
+set tclblend_init -verbose:jni
+package require java
+</pre>
+
+Note that <B>tclblend_init</B> is only read if the Tcl Blend C shared
+library was compiled with JDK1.2.
+
 <P><DT><A NAME="M5"><B>java::new</B></A><DD>
 The <B>java::new</B> command is used to create new instances of Java
 objects from Tcl.  The <I>signature</I> argument specifies which class
