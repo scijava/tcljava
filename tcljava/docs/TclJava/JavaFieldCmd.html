@@ -22,7 +22,7 @@ Usage:
 
 <P>
 
-The <B>java::field</B> command is used to manipulate public fields from
+The <B>java::field</B> command is used to manipulate accessible fields from
 Tcl. The <I>objOrClass</I> argument specifies either a fully qualified
 name of the declaring class of the field to access, or an object
 handle. The <I>field</I> argument specifies which field to
@@ -47,7 +47,7 @@ Examples:
 <DD>
 
 The <B>java::field</B> command can be used to get the value of
-a class or instance variable. In this example, we query the
+a static class variable. In this example, we query the
 static variable <B>java.lang.Integer.MAX_VALUE</B>, which
 has the value 2147483647.
 
@@ -63,10 +63,29 @@ has the value 2147483647.
 
 <P>
 
+The <B>java::field</B> command can be used to set the value of
+an instance field. In this example, it is assumed that
+the class APublic has a public <B>java.lang.String</B> field
+named foo. The value is queried after being set.
+
+<P>
+
+<code>
+<pre>
+% set obj [java::new APublic]
+% java::field $obj foo bar
+% java::field $obj foo
+bar
+</pre>
+</code>
+
+<P>
+
 The <B>java::field</B> command also supports getting the compiler
 simulated <B>class</B> field for a Class. This is the preferred method
 of getting a handle to a <code>java.lang.Class</code>
 object given a class name.
+
 <P>
 
 <code>

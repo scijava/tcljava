@@ -297,4 +297,14 @@ The tclblend_init variable has provided a means to pass a single
 JVM option to a JDK 1.2 or newer JVM. This support has been
 improved so that multiple JVM options can now be passed.
 
+(NEW REFLECTED OBJECT ACCESS)
+
+A new approach to reflected object access has been implemented.
+In the previous implementation, inaccessible objects could
+be reflected in the interpreter. This type of access would
+be illegal in Java code, so new Class accessibility checks
+have been added to each of the java methods. An exception
+will now be raised on any attempt to interact with an
+inaccessible class.
+
 </PRE></BODY></HTML>

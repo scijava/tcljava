@@ -1,3 +1,72 @@
+2002-12-27  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* new_features.txt: Add note about accessibility
+	checks for reflected objects.
+	* DOS/TclJava/JavaCastCmd.html:
+	* docs/TclJava/JavaFieldCmd.html:
+	* docs/TclJava/JavaImportCmd.html:
+	* docs/TclJava/JavaInfoCmd.html:
+	* docs/TclJava/JavaInstanceOfCmd.html:
+	* docs/TclJava/JavaNewCmd.html:
+	* docs/TclJava/JavaPackage.html:
+	Use the term "accessible" instead of "public" when
+	talking about Java objects we can reflect. Add
+	a couple of additional examples. Add note about
+	loading into Java to Java package section.
+	* src/tcljava/tcl/lang/FieldSig.java (get):
+	Add accessibility check.
+	* src/tcljava/tcl/lang/FuncSig.java (get):
+	Add accessibility check.
+	Add abstract class check.
+	* src/tcljava/tcl/lang/JavaCastCmd.java (cmdProc):
+	Add accessibility check.
+	* src/tcljava/tcl/lang/JavaImportCmd.java (cmdProc):
+	* src/tcljava/tcl/lang/JavaInfoCmd.java (cmdProc):
+	Add accessibility checks to the events, fields,
+	methods, constructors, and properties methods.
+	* src/tcljava/tcl/lang/JavaInstanceofCmd.java (cmdProc):
+	Add accessibility check.
+	* src/tcljava/tcl/lang/JavaInvoke.java (callMethod,
+	callStaticMethod, call, getsetField, getProperty,
+	setProperty): Catch known exceptions that should
+	not occur and raise a TclRuntimeError if they do.
+	Add accessibility checks so that a method with a
+	return type that cannot be reflected is not invoked.
+	Add accessibility check so that a field with
+	an inaccessible type will not be reflected.
+	* src/tcljava/tcl/lang/JavaNewCmd.java (cmdProc,
+	ArraySig, get): Rename componentType member to arrayType.
+	Add accessibility check.
+	Rewrite poor use of String class.
+	* src/tcljava/tcl/lang/JavaTryCmd.java: Fix typo.
+	* src/tcljava/tcl/lang/ReflectObject.java (makeReflectObject):
+	Add accessibility check.
+	* src/tcljava/tcl/lang/reflect/PkgInvoker.java (isAccessible):
+	Add method to check accessibility of a Class.
+	* src/tests/tcljava/tests/invoke/PublicTester.java (getNonPublicTester,
+	getCNonPublicTester, getNonPublicTesterI, nptf): Add methods
+	and fields to test inaccessible type errors.
+	* src/tests/tcljava/tests/signature/MethodFailure1.java:
+	* src/tests/tcljava/tests/signature/MethodFailure2.java:
+	* src/tests/tcljava/tests/signature/MethodFailure3.java:
+	* src/tests/tcljava/tests/signature/MethodFailure4.java:
+	* src/tests/tcljava/tests/signature/MethodInvoker4.java:
+	* src/tests/tcljava/tests/signature/MethodInvoker5.java:
+	* src/tests/tcljava/tests/signature/MethodInvoker6.java:
+	Mark those inner classes that will be reflected inside
+	the interpreter as public instead of private to account
+	for accessibility changes.
+	* tests/tcljava/FuncSig.test: Update test FuncSig-2.5
+	to account for changes in PublicTester.java.
+	Cast to interface in FuncSig-3.3, this is what the original
+	test should have done since reflecting an inaccessible
+	type is not really correct. Add abstract class test.
+	* tests/tcljava/JavaNewCmd.test: Change componentType to
+	arrayType in test case.
+	* tests/tcljava/PkgInvoker.test: Add a series of tests
+	for inaccessible class errors. Test that casting to
+	an accessible protected class works as expected.
+
 2002-12-26  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* docs/TclJava/JavaCallCmd.html: Use the

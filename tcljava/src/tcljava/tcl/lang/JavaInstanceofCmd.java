@@ -8,10 +8,11 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: JavaInstanceofCmd.java,v 1.1 1998/10/14 21:09:14 cvsadmin Exp $
+ * RCS: @(#) $Id: JavaInstanceofCmd.java,v 1.2 2002/12/27 14:33:19 mdejong Exp $
  */
 
 package tcl.lang;
+import tcl.lang.reflect.PkgInvoker;
 
 class JavaInstanceofCmd implements Command {
 
@@ -49,7 +50,13 @@ throws
     
     obj = ReflectObject.get(interp, argv[1]);
     cls = ClassRep.get(interp, argv[2]);
-    
+
+    // instanceof an inaccessible type is not legal in Java.
+    if (!PkgInvoker.isAccessible(cls)) {
+        throw new TclException(interp, "Class \"" + cls.getName() +
+            "\" is not accessible");
+    }
+
     if (obj == null) {
 	interp.setResult(false);
     } else {

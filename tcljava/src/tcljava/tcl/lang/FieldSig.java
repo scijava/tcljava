@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: FieldSig.java,v 1.5 2002/12/23 20:38:11 mdejong Exp $
+ * RCS: @(#) $Id: FieldSig.java,v 1.6 2002/12/27 14:33:18 mdejong Exp $
  *
  */
 
@@ -161,6 +161,10 @@ throws
 	    throw new TclException(interp, "\"" + sigCls.getName() +
 		    "\" is not a superclass of \"" + targetCls.getName() +
 		    "\"");
+	}
+	if (!PkgInvoker.isAccessible(sigCls)) {
+	    throw new TclException(interp, "Class \"" + sigCls.getName() +
+	            "\" is not accessible");
 	}
     } else {
 	sigCls = targetCls;

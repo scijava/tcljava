@@ -8,11 +8,13 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: ReflectObject.java,v 1.14 2002/12/07 20:46:58 mdejong Exp $
+ * RCS: @(#) $Id: ReflectObject.java,v 1.15 2002/12/27 14:33:19 mdejong Exp $
  *
  */
 
 package tcl.lang;
+
+import tcl.lang.reflect.PkgInvoker;
 
 import java.lang.reflect.*;
 import java.util.*;
@@ -449,6 +451,11 @@ makeReflectObject(
 {
     //final boolean debug = false;
 
+    if (cl != null && !PkgInvoker.isAccessible(cl)) {
+	throw new TclException(interp, "Class \"" + cl.getName() +
+	        "\" is not accessible");
+    }
+
     if (obj == null) {
         // this is the null reflect object case
 
@@ -460,7 +467,7 @@ makeReflectObject(
 	    System.out.println("non null class with null object");
 	    System.out.println("non null class was " + cl);
 	}
-	
+
 	// null objects are not added to the reflect table like other instances
 
 	return makeNullObject(interp,cl);

@@ -10,10 +10,11 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaInfoCmd.java,v 1.5 2002/12/27 02:44:41 mdejong Exp $
+ * RCS: @(#) $Id: JavaInfoCmd.java,v 1.6 2002/12/27 14:33:19 mdejong Exp $
  */
 
 package tcl.lang;
+import tcl.lang.reflect.PkgInvoker;
 import java.util.*;
 import java.beans.*;
 import java.lang.reflect.*;
@@ -127,7 +128,11 @@ throws
 	if (c == null) {
 	    interp.resetResult();
 	    return;
-	} 
+	}
+ 	if (!PkgInvoker.isAccessible(c)) {
+	    throw new TclException(interp, "Class \"" + c.getName() +
+	        "\" is not accessible");
+	}
 	lookup: {
 	    BeanInfo beanInfo;
 
@@ -173,6 +178,10 @@ throws
 	}
 	c = getClassFromObj(interp, argv[lastArg]);
 	if (c != null) {
+	    if (!PkgInvoker.isAccessible(c)) {
+	        throw new TclException(interp, "Class \"" + c.getName() +
+	            "\" is not accessible");
+	    }
 	    resultListObj = getFieldInfoList(interp, c, statOpt, typeOpt);
 	    interp.setResult(resultListObj);
 	}
@@ -195,6 +204,10 @@ throws
 	}
 	c = getClassFromObj(interp, argv[lastArg]);
         if (c != null) {
+	    if (!PkgInvoker.isAccessible(c)) {
+	        throw new TclException(interp, "Class \"" + c.getName() +
+	            "\" is not accessible");
+	    }
 	    resultListObj = getMethodInfoList(interp, c, statOpt, typeOpt);
 	    interp.setResult(resultListObj);
         }
@@ -205,6 +218,10 @@ throws
 	}
 	c = getClassFromObj(interp, argv[lastArg]);
         if (c != null) {
+	    if (!PkgInvoker.isAccessible(c)) {
+	        throw new TclException(interp, "Class \"" + c.getName() +
+	            "\" is not accessible");
+	    }
 	    resultListObj = getConstructorInfoList(interp, c);
 	    interp.setResult(resultListObj);
         }
@@ -225,6 +242,10 @@ throws
 	}
 	c = getClassFromObj(interp, argv[lastArg]);
         if (c != null) {
+	    if (!PkgInvoker.isAccessible(c)) {
+	        throw new TclException(interp, "Class \"" + c.getName() +
+	            "\" is not accessible");
+	    }
 	    resultListObj = getPropInfoList(interp, c, typeOpt);
 	    interp.setResult(resultListObj);
         }

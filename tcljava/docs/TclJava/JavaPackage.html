@@ -15,7 +15,7 @@ Java Package
 <DL>
 
 <H3>
-About:
+Loading into Tcl interpreter:
 </H3>
 
 <DD>
@@ -36,8 +36,8 @@ package by executing a <B>package require java</B> command.
 
 <P>
 
-When the <B>java</B> package is loaded into Tcl Blend, Tcl will create
-a JVM in Tcl's process space.
+When the <B>java</B> package is loaded into a Tcl interpreter (Tcl Blend),
+a JVM will be created in Tcl's process space.
 
 <P>
 
@@ -48,20 +48,16 @@ commands will be created inside the Jacl interpreter.
 
 
 When a JDK 1.2 JVM is created by Tcl Blend, the global variable
-<B>tclblend_init</B> is read and passed to the Java Virtual Machine.
-
-Example values include:
-<dl>
-<dt><B>-Djava.compiler=NONE </B>
-<dd> disable Just In Time Compiler
-
-<dt> <B>-Djava.library.path=c:&#92jdk&#92lib&#92tools.jar</B>
-<dd> set native library path on a Windows system
-
-<dt> <B>-verbose:jni</B>
-<dd>print debugging messages
-</dl>
-
+<B>tclblend_init</B> is read and each list element is passed as
+an option to the Java Virtual Machine.
+<p>
+Example values include:<br>
+<B>-Djava.compiler=NONE </B><br>
+disable Just In Time Compiler<br>
+<B>-Djava.library.path=c:&#92jdk&#92lib&#92tools.jar</B><br>
+set native library path on a Windows system<br>
+<B>-verbose:jni</B><br>
+print debugging messages<br>
 <P>
 
 For <B>-verbose</B>, the value should be a string with one or
@@ -72,13 +68,12 @@ To see what other options are available, run <B>java -help</B>
 from the command line.
  <p>
 In addition <B>tclblend_init</B> can have the following values:
-<dl>
-<dt> <B>help</B>
-<dd> Print a help message and then stop JVM initialization.
-<dt> <B>debug</B>
-<dd> Print out debugging messages while start up.
-</dl>
-
+<p>
+<B>help</B><br>
+Print a help message and then stop JVM initialization.<br>
+<B>debug</B><br>
+Print out debugging messages when the package is loaded.<br>
+<p>
 To use <B>tclblend_init</B>, set it before loading the <B>java</B>
 package:
 
@@ -89,10 +84,33 @@ package require java
 </pre>
 </code>
 
-Note that <B>tclblend_init</B> is only read if the Tcl Blend C shared
+Note that <B>tclblend_init</B> is read only if the Tcl Blend C shared
 library was compiled with JDK1.2.  
 
 <P>
+
+</DL>
+
+<DL>
+
+<H3>
+Loading into Java:
+</H3>
+
+<DD>
+
+<P>
+
+Tcl Blend can now be loaded into an existing JVM. When an
+instance of the <B>tcl.lang.Interp</B> class is created
+from Java, the shared libraries for both Tcl and Tcl Blend
+will be loaded into the JVM's process. All that is
+required is to make sure that the system shared library
+paths are set properly and that both tclblend.jar and
+tcljava.jar appear on the classpath. This exciting new
+functionality was one of the most commonly requested
+features. Supporting it required re-implementation of
+most of Tcl Blend, so we hope you enjoy it.
 
 </DL>
 

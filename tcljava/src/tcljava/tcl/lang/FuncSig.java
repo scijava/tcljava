@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: FuncSig.java,v 1.9 2002/12/27 02:44:41 mdejong Exp $
+ * RCS: @(#) $Id: FuncSig.java,v 1.10 2002/12/27 14:33:18 mdejong Exp $
  *
  */
 
@@ -137,11 +137,12 @@ public void dispose() {}
  *	or method that matches with the signature and the parameters.
  *
  * Results:
- *	The FuncSig given by the signature.
+ *	The FuncSig given by the signature. An exception will be
+ *	raised if the constructor provided is for an abstract
+ *	class, or if the class is not accessible.
  *
  * Side effects:
- *	When successful, the internalRep of the signature object is
- *	converted to FuncSig.
+ *	None.
  *
  *----------------------------------------------------------------------
  */
@@ -215,6 +216,16 @@ throws
 	cls = JavaInvoke.getClassByName(interp, class_or_method.toString() );
     } else {
 	methodName = class_or_method.toString();
+    }
+
+    if ((isConstructor || isStatic) && !PkgInvoker.isAccessible(cls)) {
+        throw new TclException(interp, "Class \"" + cls.getName() +
+	    "\" is not accessible");
+    }
+
+    if (isConstructor && Modifier.isAbstract(cls.getModifiers())) {
+        throw new TclException(interp, "Class \"" + cls.getName() +
+	    "\" is abstract");
     }
 
     if ((sigLength > 1) || (sigLength == 1 && count == 0)) {

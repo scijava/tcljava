@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaInvoke.java,v 1.13 2002/12/27 02:44:41 mdejong Exp $
+ * RCS: @(#) $Id: JavaInvoke.java,v 1.14 2002/12/27 14:33:19 mdejong Exp $
  *
  */
 
@@ -111,7 +111,13 @@ throws
     FuncSig sig = FuncSig.get(interp, javaCl, signature, argv,
                                                startIdx, count, false);
     Method method = (Method) sig.func;
-	
+
+    if (!PkgInvoker.isAccessible(method.getReturnType())) {
+	throw new TclException(interp, "Return type \"" +
+	        method.getReturnType().getName() +
+	        "\" is not accessible");
+    }
+
     Object result = call(interp, sig.pkgInvoker, signature, method, javaObj,
 	    argv, startIdx, count);
 
@@ -160,9 +166,11 @@ throws
 	    startIdx, count, true);
 
     Method method = (Method) sig.func;
-    if (!Modifier.isStatic(method.getModifiers())) {
-	throw new TclException(interp, "\"" + signature +
-		"\" is not a static method of class \"" + classObj + "\"");
+
+    if (!PkgInvoker.isAccessible(method.getReturnType())) {
+	throw new TclException(interp, "Return type \"" +
+	        method.getReturnType().getName() +
+	        "\" is not accessible");
     }
 
     Object result = call(interp, sig.pkgInvoker, signature, method, null,
@@ -261,6 +269,12 @@ throws
 	}
 
 	return result;
+    } catch (InstantiationException e) {
+        throw new TclRuntimeError("unexpected abstract class");
+    } catch (IllegalAccessException e) {
+        throw new TclRuntimeError("unexpected inaccessible ctor or method");
+    } catch (IllegalArgumentException e) {
+        throw new TclRuntimeError("unexpected IllegalArgumentException");
     } catch (Exception e) {
 	throw new ReflectException(interp, e);
     }
@@ -367,6 +381,11 @@ throws
 		classOrObj  + "\"");
 	}
 	isStatic = true;
+
+	if (!PkgInvoker.isAccessible(cls)) {
+	    throw new TclException(interp, "Class \"" + cls.getName() +
+	            "\" is not accessible");
+	}
     }
 
     if (!isStatic) {
@@ -392,6 +411,12 @@ throws
 		"can't access an instance field without an object");
     }
 
+    if (!PkgInvoker.isAccessible(field.getType())) {
+	throw new TclException(interp, "Field type \"" +
+	        field.getType().getName() +
+	        "\" is not accessible");
+    }
+
     try {
 	if (isget) {
 	    return wrap(interp, field.getType(),
@@ -404,6 +429,8 @@ throws
 	}
     } catch (TclException e1) {
 	throw e1;
+    } catch (IllegalArgumentException e) {
+	throw new TclRuntimeError("unexpected IllegalArgumentException");
     } catch (IllegalAccessException e2) {
 	throw new TclException(interp, "can't access field \"" +
 		signature + "\": " + e2);
@@ -458,9 +485,14 @@ throws
 	return wrap(interp, readMethod.getReturnType(),
 		sig.pkgInvoker.invokeMethod(readMethod, javaObj,
 		EMPTY_ARGS), convert);
+    } catch (IllegalAccessException e) {
+	throw new TclRuntimeError("unexpected inaccessible readMethod");
+    } catch (IllegalArgumentException e) {
+	throw new TclRuntimeError("unexpected IllegalArgumentException");
     } catch (Exception e) {
 	throw new ReflectException(interp, e);
     }
+
 }
 
 /*
@@ -511,6 +543,10 @@ throws
 
     try {
 	sig.pkgInvoker.invokeMethod(writeMethod, javaObj, args);
+    } catch (IllegalAccessException e) {
+	throw new TclRuntimeError("unexpected inaccessible writeMethod");
+    } catch (IllegalArgumentException e) {
+	throw new TclRuntimeError("unexpected IllegalArgumentException");
     } catch (Exception e) {
 	throw new ReflectException(interp, e);
     }

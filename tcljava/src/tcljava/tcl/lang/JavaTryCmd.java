@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaTryCmd.java,v 1.3 1999/08/03 03:26:28 mo Exp $
+ * RCS: @(#) $Id: JavaTryCmd.java,v 1.4 2002/12/27 14:33:19 mdejong Exp $
  *
  */
 
@@ -209,7 +209,7 @@ public class JavaTryCmd implements Command
 	    int end_loop = argv.length;
 
 	    // If there is a finally block then do not check it
-	    // in ths catch block processing loop
+	    // in this catch block processing loop
 	    if (try_catch_finally) {
 		end_loop -= 2;
 	    }

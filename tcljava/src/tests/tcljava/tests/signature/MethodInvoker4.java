@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: MethodInvoker4.java,v 1.1 1999/05/10 04:09:09 dejong Exp $
+ * RCS: @(#) $Id: MethodInvoker4.java,v 1.2 2002/12/27 14:33:20 mdejong Exp $
  *
  */
 
@@ -25,9 +25,9 @@ public class MethodInvoker4 {
     return "I";
   }
   
-  private static interface I {}
-  private static class A {}
-  private static class B implements I {}
+  public static interface I {}
+  public static class A {}
+  public static class B implements I {}
   
 
   public static A getA() {

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: MethodInvoker6.java,v 1.1 1999/05/10 04:09:09 dejong Exp $
+ * RCS: @(#) $Id: MethodInvoker6.java,v 1.2 2002/12/27 14:33:20 mdejong Exp $
  *
  */
 
@@ -17,7 +17,7 @@ package tests.signature;
 public class MethodInvoker6 {
 
   private static interface I {}
-  private static class A extends Object implements I {}
+  public static class A extends Object implements I {}
   
   public static String call(Object obj) {
     return "O";

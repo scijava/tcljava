@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: PkgInvoker.test,v 1.7 2002/12/23 20:38:11 mdejong Exp $
+# RCS: @(#) $Id: PkgInvoker.test,v 1.8 2002/12/27 14:33:20 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -42,10 +42,70 @@ test PkgInvoker-1.5 {getPkgInvoker} {
     list [catch {[java::new pkg2.MyClass] someMethod} msg] $msg
 } {1 {no accessible method "someMethod" in class pkg2.MyClass}}
 
-test PkgInvoker-1.6 {getPkgInvoker} {
+test PkgInvoker-1.6 {new inaccessible class} {
     list [catch {java::new pkg2.ProtectedClass} msg] $msg
-} {1 {java.lang.IllegalAccessException: pkg2/ProtectedClass}}
+} {1 {Class "pkg2.ProtectedClass" is not accessible}}
 
+test PkgInvoker-1.7 {new array of inaccessible class} {
+    list [catch {java::new {pkg2.ProtectedClass[]} 1} msg] $msg
+} {1 {Class "pkg2.ProtectedClass" is not accessible}}
+
+test PkgInvoker-1.8 {cast to inaccessible class} {
+    list [catch {java::cast tests.invoke.NonPublicTester java0x0} msg] $msg
+} {1 {Class "tests.invoke.NonPublicTester" is not accessible}}
+
+test PkgInvoker-1.9 {field of inaccessible class} {
+    list [catch {java::field tests.invoke.NonPublicTester doesnotexist} msg] $msg
+} {1 {Class "tests.invoke.NonPublicTester" is not accessible}}
+
+test PkgInvoker-1.10 {fields of inaccessible class} {
+    list [catch {java::info fields tests.invoke.NonPublicTester} msg] $msg
+} {1 {Class "tests.invoke.NonPublicTester" is not accessible}}
+
+test PkgInvoker-1.11 {methods of inaccessible class} {
+    list [catch {java::info methods tests.invoke.NonPublicTester} msg] $msg
+} {1 {Class "tests.invoke.NonPublicTester" is not accessible}}
+
+test PkgInvoker-1.12 {constructors of inaccessible class} {
+    list [catch {java::info constructors tests.invoke.NonPublicTester} msg] $msg
+} {1 {Class "tests.invoke.NonPublicTester" is not accessible}}
+
+test PkgInvoker-1.13 {instance of inaccessible class} {
+    list [catch {java::instanceof java0x0 tests.invoke.NonPublicTester} msg] $msg
+} {1 {Class "tests.invoke.NonPublicTester" is not accessible}}
+
+test PkgInvoker-1.14 {call static method of inaccessible class} {
+    list [catch {java::call tests.invoke.NonPublicTester doesnotexist} msg] $msg
+} {1 {Class "tests.invoke.NonPublicTester" is not accessible}}
+
+test PkgInvoker-1.15 {import inaccessible class} {
+    list [catch {java::import tests.invoke.NonPublicTester} msg] $msg
+} {1 {Class "tests.invoke.NonPublicTester" is not accessible}}
+
+test PkgInvoker-1.16 {invoke static method that returns inaccessible class} {
+    list [catch {java::call tests.invoke.PublicTester getNonPublicTester} msg] $msg
+} {1 {Return type "tests.invoke.NonPublicTester" is not accessible}}
+
+test PkgInvoker-1.17 {invoke method that returns inaccessible class} {
+    list [catch {[java::new tests.invoke.PublicTester] getNonPublicTesterI} msg] $msg
+} {1 {Return type "tests.invoke.NonPublicTester" is not accessible}}
+
+test PkgInvoker-1.18 {get field that has inaccessible type} {
+    list [catch {java::field tests.invoke.PublicTester nptf} msg] $msg
+} {1 {Field type "tests.invoke.NonPublicTester" is not accessible}}
+
+test PkgInvoker-1.19 {set field that has inaccessible type} {
+    list [catch {java::field tests.invoke.PublicTester nptf java0x0} msg] $msg
+} {1 {Field type "tests.invoke.NonPublicTester" is not accessible}}
+
+test PkgInvoker-1.20 {create ReflectObject for inaccessible type} {
+    set c [java::call Class forName tests.invoke.NonPublicTester]
+    list [catch {java::call tcl.lang.ReflectObject newInstance\
+            [java::getinterp] $c java0x0} msg] $msg
+} {1 {tcl.lang.TclException: Class "tests.invoke.NonPublicTester" is not accessible}}
+
+# Note: We don't currently check for accessibility of exceptions
+# used in catch blocks of the java::try command.
 
 foreach CLS {pkg1.MyClass pkg1.ProtectedClass} {
 
@@ -132,6 +192,13 @@ foreach CLS {pkg1.MyClass pkg1.ProtectedClass} {
         set fields [java::info fields $x]
         set ind [lsearch $fields foo]
         expr {$ind != -1}
+    } 1
+
+    test PkgInvoker-$CLS-2.21 {casting} {
+	set x [java::new $CLS]
+	set o [java::cast Object $x]
+	set x [java::cast $CLS $o]
+	$o equals $x
     } 1
 }
 

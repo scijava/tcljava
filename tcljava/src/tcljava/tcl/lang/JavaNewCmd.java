@@ -9,11 +9,13 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaNewCmd.java,v 1.4 2002/12/07 13:14:36 mdejong Exp $
+ * RCS: @(#) $Id: JavaNewCmd.java,v 1.5 2002/12/27 14:33:19 mdejong Exp $
  *
  */
 
 package tcl.lang;
+
+import tcl.lang.reflect.PkgInvoker;
 
 /*
  * This class implements the built-in "java::new" command.
@@ -70,7 +72,7 @@ throws
 	}
 
 	ArraySig sig = ArraySig.get(interp, argv[1]);
-	Class componentType = sig.componentType;
+	Class arrayType = sig.arrayType;
 	int dimensions = sig.dimensions;
 
 	TclObject sizeListObj = argv[2];
@@ -91,9 +93,9 @@ throws
 	// sizeListObj and valueListObj.
 
 	Object obj = ArrayObject.initArray(interp, sizeListObj, 
-		sizeListLen,  0, dimensions, componentType, valueListObj);
+		sizeListLen,  0, dimensions, arrayType, valueListObj);
 
-	interp.setResult(ReflectObject.newInstance(interp,componentType,obj));
+	interp.setResult(ReflectObject.newInstance(interp,arrayType,obj));
     } else {
 	// Create a new (scalar) Java object.
 
@@ -115,10 +117,8 @@ throws
 
 class ArraySig implements InternalRep {
 
-// The base component type of the array. For example, the component
-// type for int[][][] is int.
-
-Class componentType;
+// The Class object for the array (for example int[][][])
+Class arrayType;
 
 // The number of dimensions specified by the signature. For example, 
 // int[][][] has a dimension of 3.
@@ -140,10 +140,10 @@ int dimensions;
  */
 
 ArraySig(
-    Class cType,		// Initial value for componentType.
+    Class type,		// Initial value for arrayType.
     int n)			// Initial value for dimensions.
 {
-    componentType = cType;
+    arrayType = type;
     dimensions = n;
 }
 
@@ -165,7 +165,7 @@ ArraySig(
 
 public InternalRep duplicate()
 {
-    return new ArraySig(componentType, dimensions);
+    return new ArraySig(arrayType, dimensions);
 }
 
 /**
@@ -273,27 +273,39 @@ throws
 	if (!(clsName.endsWith("[]")) && !(clsName.startsWith("["))) {
 	    break trying;
 	}
-	Class componentType = JavaInvoke.getClassByName(interp, clsName);
+	Class arrayType = JavaInvoke.getClassByName(interp, clsName);
+
+	Class componentType = arrayType;
+	while (componentType.isArray()) {
+	    componentType = componentType.getComponentType();
+	}
+
+	if (!PkgInvoker.isAccessible(componentType)) {
+	    throw new TclException(interp, "Class \"" + componentType.getName() +
+	        "\" is not accessible");
+	}
+
 	int dimensions = 0;
 
 	if (clsName.charAt(0) == '[') {
 	    // If the string begins with '[', count the leading '['s.
     
-	    String tmp = clsName;
-	    while (tmp.charAt(++dimensions) == '[') {
+	    while (clsName.charAt(++dimensions) == '[') {
 	    }
 
 	} else {
 	    // If the string is of the form className[][]..., count
 	    // the trailing "[]"s.
     
-	    String tmp = clsName;
-	    for (; tmp.endsWith("[]"); dimensions++) {
-		tmp = tmp.substring(0, tmp.length() - 2);
+	    int end = clsName.length()-1;
+	    while ((end > 0) && (clsName.charAt(end-1) == '[') &&
+	            (clsName.charAt(end) == ']')) {
+		dimensions++;
+		end -= 2;;
 	    }
 	}
 
-	ArraySig sigRep = new ArraySig(componentType, dimensions);
+	ArraySig sigRep = new ArraySig(arrayType, dimensions);
 
 	signature.setInternalRep(sigRep);
 	return sigRep;

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: PublicTester.java,v 1.2 2002/12/23 20:38:11 mdejong Exp $
+ * RCS: @(#) $Id: PublicTester.java,v 1.3 2002/12/27 14:33:20 mdejong Exp $
  */
 
 package tests.invoke;
@@ -30,13 +30,23 @@ public String publicFunc() {
     return "access ok: Tester.publicFunc()";
 }
 
-public static PublicTester getNonPublicTester() {
+public static PublicTester getCNonPublicTester() {
+    return (PublicTester) new NonPublicTester();
+}
+
+public static NonPublicTester getNonPublicTester() {
+    return new NonPublicTester();
+}
+
+public NonPublicTester getNonPublicTesterI() {
     return new NonPublicTester();
 }
 
 String noAccess() {
     return "can't call this one";
 }
+
+public static NonPublicTester nptf = null;
 
 }
 
