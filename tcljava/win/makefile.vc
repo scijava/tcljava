@@ -139,8 +139,8 @@ TCLLIB	= $(TCL_SRC)\win$(TMPDIRNAME)\tcl$(TCL_VERSION)$(DBGX).lib
 
 
 
-# If you are running under JDK1.2 then include some extra
-# directories at runtime so that the java .dlls can be found
+# These directories are added to the PATH so that the java dlls
+# can be found at runtime.
 
 !IF "$(JAVA_VERSION)" == "1.2"
 JAVA_RUNTIME_LIBS=$(JAVA_DIR)\jre\bin;$(JAVA_DIR)\jre\bin\classic
