@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: BlendExtension.java,v 1.18 2000/04/08 04:25:38 mo Exp $
+ * RCS: @(#) $Id: BlendExtension.java,v 1.19 2000/05/14 23:21:46 mo Exp $
  */
 
 package tcl.lang;
@@ -56,6 +56,11 @@ throws TclException
     loadOnDemand(interp, "java::throw",       "tcl.lang.JavaThrowCmd");
     loadOnDemand(interp, "java::try",         "tcl.lang.JavaTryCmd");
 
+
+    // Set up namespace exporting of these java commands.
+    // FIXME : double check that this works with one demand loaded clases.
+
+    interp.eval("namespace eval ::java {namespace export bind call cast defineclass event field getinterp import info instanceof isnull load new null prop throw try}");
 
 
     // load unsupported command(s)
