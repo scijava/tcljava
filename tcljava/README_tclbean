@@ -1,5 +1,5 @@
 Tcl Bean
-RCS: @(#) $Id: README_tclbean,v 1.1 1998/10/14 21:09:07 cvsadmin Exp $
+RCS: @(#) $Id: README_tclbean,v 1.2 1999/03/02 15:23:48 hylands Exp $
  
 1. Introduction
 ---------------
@@ -55,7 +55,7 @@ Tcl Bean 1.0 was released by the now defunct SunScript group at Sun Labs.
 the majority of the Jacl/Tcl Blend developers spun out of Sun Labs
 into Scriptics.
 
-Tcl Bean 1.1 has not been particularly well tested, and we are considering
+Tcl Bean 1.1.1 has not been particularly well tested, and we are considering
 dropping it from future releases.
 
 7. Tcl newsgroup

@@ -1,6 +1,6 @@
 Jacl
 
-RCS: @(#) $Id: README.jacl,v 1.2 1998/11/04 22:22:29 hylands Exp $
+RCS: @(#) $Id: README.jacl,v 1.3 1999/03/02 15:23:47 hylands Exp $
  
 1. Introduction
 ---------------
@@ -39,7 +39,7 @@ greater. Jacl has been tested on Win95, WinNt, Solaris, IRIX,
 Linux, and Mac. It should work on any other systems that have
 a correctly implemented Java VM.
 
-Jacl 1.1 will run under JDK1.2fcs, see known_issues.txt for
+Jacl 1.1.1 will run under JDK1.2fcs, see known_issues.txt for
 a list of known problems and bugs.
 
 4. Installation
@@ -66,7 +66,7 @@ Jacl 1.0 was released by the now defunct SunScript group at Sun Labs.
 The majority of the Jacl/Tcl Blend developers spun out of Sun Labs
 into Scriptics.
 
-Jacl 1.1 was developed primarily by people outside of Scriptics, with
+Jacl 1.1.1 was developed primarily by people outside of Scriptics, with
 assistance by Scriptics.  Currently, the Jacl is available
 via the Scriptics CVS repository at
 http://www.scriptics.com/software/netcvs.html
@@ -123,7 +123,7 @@ constructs will not be portable between Jacl and the C version of
 Tcl.  It is our plan to eventually do a full port of the Tcl regular
 expression package for complete compatibility.
 
-Between the Jacl 1.0 release, and the Jacl 1.1 release, it looks
+Between the Jacl 1.0 release, and the Jacl 1.1.1 release, it looks
 like ORO, Inc. went out of business.  Formerly, their website was
 http://www.oroinc.com/
 
@@ -164,7 +164,7 @@ Bryan Surles
 Special thanks to Scott Stanton who implemented Tcl Blend.
 
 
-The Jacl 1.1 & Tcl Blend 1.1 team
+The Jacl 1.1.1 & Tcl Blend 1.1.1 team
 ---------------------------------
 Mo DeJong (University of Minnesota)
 Christopher Hylands (UC Berkeley)

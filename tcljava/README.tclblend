@@ -1,6 +1,6 @@
 Tcl Blend
 
-RCS: @(#) $Id: README.tclblend,v 1.2 1998/11/04 22:22:52 hylands Exp $
+RCS: @(#) $Id: README.tclblend,v 1.3 1999/03/02 15:23:48 hylands Exp $
 
 1. Introduction
 ---------------
@@ -35,7 +35,7 @@ several patches, must be installed on top of JDK1.1.  The
 package, necessary patches, and installation instructions can 
 be found at http://www.javasoft.com/products/jdk/1.1/index.html.
 
-Tcl Blend 1.1 will run under JDK1.2fcs, see known_issues.txt for
+Tcl Blend 1.1.1 will run under JDK1.2fcs, see known_issues.txt for
 a list of bugs.
 
 4. Installation
@@ -59,7 +59,7 @@ Tcl Blend 1.0 was released by the now defunct SunScript group at Sun Labs.
 the majority of the Jacl/Tcl Blend developers spun out of Sun Labs
 into Scriptics.
 
-Tcl Blend 1.1 was developed primarily by people outside of Scriptics, with
+Tcl Blend 1.1.1 was developed primarily by people outside of Scriptics, with
 assistance by Scriptics.  Currently, the Tcl Blend tree is
 available via the Scriptics CVS repository at
 http://www.scriptics.com/software/netcvs.html
@@ -106,7 +106,7 @@ Bryan Surles
 Special thanks to Scott Stanton who implemented Tcl Blend.
 
 
-The Jacl 1.1 & Tcl Blend 1.1 team
+The Jacl 1.1.1 & Tcl Blend 1.1.1 team
 ---------------------------------
 Mo DeJong (University of Minnesota)
 Christopher Hylands (UC Berkeley)
