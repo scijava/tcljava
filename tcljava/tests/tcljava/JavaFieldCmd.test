@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: JavaFieldCmd.test,v 1.6 1999/10/15 22:17:21 redman Exp $
+# RCS: @(#) $Id: JavaFieldCmd.test,v 1.4 1999/05/24 11:41:04 mo Exp $
 
 # Note: This test file must be sourced from the parent directory
 #       or else the defs file may not be properly loaded.
@@ -268,63 +268,24 @@ test javaFieldCmd-6.5 {get class field} {
 } 1
 
 test javaFieldCmd-6.6 {test NaN} {
-    set result [java::field java.lang.Double NaN]
-
-    if {[string compare $result NaN] == 0 || \
-	    [string compare $result nan] == 0 || \
-	    [string compare $result 1.#QNAN] == 0} {
-	set result pass
-    } else {
-	set result [list fail $result]
-    }
-
-    set result
-} pass
+    java::field java.lang.Double NaN
+} NaN
 
 test javaFieldCmd-6.7 {test -Inf} {
-    set result [java::field java.lang.Double NEGATIVE_INFINITY]
-
-    if {[string compare $result -Inf] == 0 || \
-	    [string compare $result -Infinity] == 0 || \
-	    [string compare $result -inf] == 0 || \
-	    [string compare $result -1.#INF] == 0} {
-	set result pass
-    } else {
-	set result [list fail $result]
-    }
-
-    set result
-} pass
+    java::field java.lang.Double NEGATIVE_INFINITY
+} -Inf
 
 test javaFieldCmd-6.8 {test Inf} {
-    set result [java::field java.lang.Double POSITIVE_INFINITY]
-
-    if {[string compare $result Inf] == 0 || \
-	    [string compare $result Infinity] == 0 || \
-	    [string compare $result inf] == 0 || \
-	    [string compare $result 1.#INF] == 0} {
-	set result pass
-    } else {
-	set result [list fail $result]
-    }
-
-    set result
-} pass
+    java::field java.lang.Double POSITIVE_INFINITY
+} Inf
 
 test javaFieldCmd-6.9 {test formatting of -0.0 and +0.0} {
     set nzero [java::new Double -0.0]
     set pzero [java::new Double +0.0]
 
-    if {[string compare [$nzero doubleValue] -0.0] == 0 || \
-	    [string compare [$nzero doubleValue] 0.0] == 0} {
-	set nzeroDblOK 1
-    } else {
-	set nzeroDblOK 0
-    }
-    list [$nzero toString] $nzeroDblOK \
+    list [$nzero toString] [$nzero doubleValue] \
 	 [$pzero toString] [$pzero doubleValue] \
 	 [$nzero equals $pzero]
-
-} [list -0.0 1 \
+} [list -0.0 -0.0 \
 	 0.0  0.0 \
 	 0]

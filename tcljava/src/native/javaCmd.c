@@ -10,7 +10,7 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  *
- * RCS: @(#) $Id: javaCmd.c,v 1.7 1999/08/31 00:46:37 redman Exp $
+ * RCS: @(#) $Id: javaCmd.c,v 1.6 1999/08/27 23:50:48 mo Exp $
  */
 
 /*
@@ -46,6 +46,8 @@ ENHANCEMENTS, OR MODIFICATIONS.
 #include <stdlib.h>
 #include <stdarg.h>
 #include <errno.h>
+
+extern void panic(char *, ...);
 
 /*
  * Exported state variables.
