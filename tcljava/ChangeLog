@@ -1,3 +1,23 @@
+2003-03-17  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* docs/cFunctions.html:
+	* docs/contents.html:
+	* docs/TclJava/contents.html:
+	* docs/TclJavaLib/contents.htm:
+	* docs/website/download.html:
+	* docs/website/faq.html:
+	* docs/website/getstart.html:
+	* docs/website/index.html:
+	* docs/website/links.html:
+	* docs/website/logo100.gif:
+	* docs/website/mail.html:
+	* docs/website/manual.html:
+	* docs/website/matchmadeforscripting.html: Add new
+	web interface that will be available via
+	tcljava.sourceforge.net. Pull in content from
+	previous FAQ, add new getting started page along
+	with other new content.
+
 2003-03-13  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* extras/GuiShell/GuiShell.java (processCommand):
