@@ -9,11 +9,26 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaList.c,v 1.6 2002/12/18 07:07:18 mdejong Exp $
+ * RCS: @(#) $Id: javaList.c,v 1.7 2002/12/18 10:50:14 mdejong Exp $
  */
 
 #include "java.h"
 #include "javaNative.h"
+
+static void
+ThrowNullPointerException(
+    JNIEnv *env,		/* Java environment pointer. */
+    char *msg)			/* Message to include in exception. */
+{
+    jclass nullClass = (*env)->FindClass(env,
+	    "java/lang/NullPointerException");
+    if (!msg) {
+	msg = "Invalid TclList.";
+    }
+    (*env)->ThrowNew(env, nullClass, msg);
+    (*env)->DeleteLocalRef(env, nullClass);
+}
+
 
 
 /*
@@ -47,9 +62,7 @@ Java_tcl_lang_TclList_append(
     Tcl_Obj *objPtr, *listPtr;
 
     if (!oldListPtr || !element) {
-	jclass nullClass = (*env)->FindClass(env,
-		"java/lang/NullPointerException");
-	(*env)->ThrowNew(env, nullClass, "Invalid TclList.");
+	ThrowNullPointerException(env, NULL);
 	return list;
     }
 
@@ -123,9 +136,7 @@ Java_tcl_lang_TclList_getElements(
     JavaInfo* jcache = JavaGetCache();
 
     if (!listPtr) {
-	jclass nullClass = (*env)->FindClass(env,
-		"java/lang/NullPointerException");
-	(*env)->ThrowNew(env, nullClass, "Invalid TclList.");
+	ThrowNullPointerException(env, NULL);
 	return NULL;
     }
 
@@ -184,9 +195,7 @@ Java_tcl_lang_TclList_index(
     jobject obj;
 
     if (!listPtr) {
-	jclass nullClass = (*env)->FindClass(env,
-		"java/lang/NullPointerException");
-	(*env)->ThrowNew(env, nullClass, "Invalid TclList.");
+	ThrowNullPointerException(env, NULL);
 	return NULL;
     }
 
@@ -242,14 +251,10 @@ Java_tcl_lang_TclList_listLength(
     int length;
 
     if (!listPtr) {
-	jclass nullClass = (*env)->FindClass(env,
-		"java/lang/NullPointerException");
-	(*env)->ThrowNew(env, nullClass, "Invalid TclList.");
+	ThrowNullPointerException(env, NULL);
 	return 0;
     } else if (!interp) {
-	jclass nullClass = (*env)->FindClass(env,
-		"java/lang/NullPointerException");
-	(*env)->ThrowNew(env, nullClass, "Invalid Interp.");
+	ThrowNullPointerException(env, "Invalid Interp.");
 	return 0;
     }
 
@@ -302,9 +307,7 @@ Java_tcl_lang_TclList_replace(
     jobject element;
 
     if (!oldListPtr) {
-	jclass nullClass = (*env)->FindClass(env,
-		"java/lang/NullPointerException");
-	(*env)->ThrowNew(env, nullClass, "Invalid TclList.");
+	ThrowNullPointerException(env, NULL);
 	return list;
     }
 

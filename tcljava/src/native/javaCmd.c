@@ -10,7 +10,7 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  *
- * RCS: @(#) $Id: javaCmd.c,v 1.17 2002/12/11 01:19:51 mdejong Exp $
+ * RCS: @(#) $Id: javaCmd.c,v 1.18 2002/12/18 10:50:14 mdejong Exp $
  */
 
 /*
@@ -720,6 +720,7 @@ JavaInitBlend(
       (*env)->ExceptionClear(env);
       obj = Tcl_GetObjResult(interp);
       ToString(env, obj, exception);
+      (*env)->DeleteLocalRef(env, exception);
 
 #ifdef TCLBLEND_DEBUG
     fprintf(stderr, "TCLBLEND_DEBUG: Exception in init() method\n");
@@ -1376,10 +1377,10 @@ JavaThrowTclException(
     exc = (*env)->NewObject(env, jcache->TclException, jcache->tclexceptionC, NULL, msg,
 	    result);
     (*env)->Throw(env, exc);
+    (*env)->DeleteLocalRef(env, exc);
     if (msg) {
 	(*env)->DeleteLocalRef(env, msg);
     }
-    (*env)->DeleteLocalRef(env, exc);
 }
 
 /*
@@ -1410,6 +1411,9 @@ JavaGetString(
     char *buf;
     char *p;
     Tcl_DString ds;
+    
+    if (!str)
+	panic("JavaGetString : null str argument");
 
     ustr = (*env)->GetStringChars(env, str, NULL);
     length = (*env)->GetStringLength(env, str);

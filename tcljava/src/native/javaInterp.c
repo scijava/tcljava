@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaInterp.c,v 1.14 2002/12/18 07:39:40 mdejong Exp $
+ * RCS: @(#) $Id: javaInterp.c,v 1.15 2002/12/18 10:50:14 mdejong Exp $
  */
 
 #include "java.h"
@@ -80,6 +80,7 @@ ThrowNullPointerException(
 	msg = "Invalid interpreter.";
     }
     (*env)->ThrowNew(env, nullClass, msg);
+    (*env)->DeleteLocalRef(env, nullClass);
 }
 
 /*
@@ -116,6 +117,7 @@ Java_tcl_lang_Interp_create(
 	jclass err = (*env)->FindClass(env, "tcl/lang/TclRuntimeError");
 	if (err) {
 	    (*env)->ThrowNew(env, err, Tcl_GetStringResult(interp));
+	    (*env)->DeleteLocalRef(env, err);
 	}
 	Tcl_DeleteInterp(interp);
 	lvalue = 0;
@@ -281,6 +283,7 @@ Java_tcl_lang_Interp_eval(
 
     if (exception) {
 	(*env)->Throw(env, exception);
+	(*env)->DeleteLocalRef(env, exception);
     } else if (result != TCL_OK) {
 	JavaThrowTclException(env, interp, result);
     }
@@ -1069,6 +1072,7 @@ JavaCmdProc(
     if (exception) {
 	result = TCL_ERROR;
 	(*env)->Throw(env, exception);
+	(*env)->DeleteLocalRef(env, exception);
     }
 
     return result;

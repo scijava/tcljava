@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaObj.c,v 1.11 2002/12/18 07:39:40 mdejong Exp $
+ * RCS: @(#) $Id: javaObj.c,v 1.12 2002/12/18 10:50:14 mdejong Exp $
  */
 
 #include "java.h"
@@ -23,6 +23,20 @@ static void		FreeTclObject(Tcl_Obj *objPtr);
 static int		SetJavaCmdFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static int		SetTclObject(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		UpdateTclObject(Tcl_Obj *objPtr);
+
+static void
+ThrowNullPointerException(
+    JNIEnv *env,		/* Java environment pointer. */
+    char *msg)			/* Message to include in exception. */
+{
+    jclass nullClass = (*env)->FindClass(env,
+	    "java/lang/NullPointerException");
+    if (!msg) {
+	msg = "Invalid CObject.";
+    }
+    (*env)->ThrowNew(env, nullClass, msg);
+    (*env)->DeleteLocalRef(env, nullClass);
+}
 
 /*
  * TclObject type information.
@@ -129,6 +143,7 @@ printString(
     const char *str = (*env)->GetStringUTFChars(env, string, NULL);
     printf("toString: %x '%s'\n", (unsigned int) object, str);
     (*env)->ReleaseStringUTFChars(env, string, str);
+    (*env)->DeleteLocalRef(env, string);
 }
 
 /*
@@ -250,6 +265,10 @@ UpdateTclObject(Tcl_Obj *objPtr)
     JavaInfo* jcache = JavaGetCache();
 
     string = (*env)->CallObjectMethod(env, object, jcache->toString);
+    if ((*env)->ExceptionOccurred(env)) {
+        (*env)->ExceptionDescribe(env);
+	panic("UpdateTclObject : exception in TclObject.toString()");
+    }
     objPtr->bytes = JavaGetString(env, string, &objPtr->length);
     (*env)->DeleteLocalRef(env, string);
 }
@@ -283,6 +302,10 @@ JavaGetTclObj(
     JavaInfo* jcache = JavaGetCache();
     
     internalRep = (*env)->CallObjectMethod(env, object, jcache->getInternalRep);
+    if ((*env)->ExceptionOccurred(env)) {
+	(*env)->ExceptionDescribe(env);
+	panic("JavaGetTclObj : exception in TclObject.getInternalRep()");
+    }
 
     if ((*env)->IsInstanceOf(env, internalRep, jcache->CObject) == JNI_TRUE) {
 	/*
@@ -304,11 +327,11 @@ JavaGetTclObj(
 	 * hold the object reference.
 	 */
 
+	object = (*env)->NewGlobalRef(env, object);
 	objPtr = Tcl_NewObj();
 	objPtr->bytes = NULL;
 	objPtr->typePtr = &tclObjectType;
-	objPtr->internalRep.twoPtrValue.ptr2
-	    = (VOID*) (*env)->NewGlobalRef(env, object);
+	objPtr->internalRep.twoPtrValue.ptr2 = (VOID*) object;
 
 	/*
 	 * Increment the reference count on the TclObject.
@@ -355,9 +378,7 @@ Java_tcl_lang_CObject_getString(
     Tcl_UniChar *w;
 
     if (!objPtr) {
-	jclass nullClass = (*env)->FindClass(env,
-		"java/lang/NullPointerException");
-	(*env)->ThrowNew(env, nullClass, "Invalid CObject.");
+	ThrowNullPointerException(env, NULL);
 	return NULL;
     }
 
@@ -437,9 +458,7 @@ Java_tcl_lang_CObject_incrRefCount(
     Tcl_Obj *objPtr = *(Tcl_Obj **) &obj;
 
     if (!objPtr) {
-	jclass nullClass = (*env)->FindClass(env,
-		"java/lang/NullPointerException");
-	(*env)->ThrowNew(env, nullClass, "Invalid CObject.");
+	ThrowNullPointerException(env, NULL);
 	return;
     }
     Tcl_IncrRefCount(objPtr);
@@ -473,9 +492,7 @@ void JNICALL Java_tcl_lang_CObject_decrRefCount(
     Tcl_Obj *objPtr = *(Tcl_Obj **) &obj;
 
     if (!objPtr) {
-	jclass nullClass = (*env)->FindClass(env,
-		"java/lang/NullPointerException");
-	(*env)->ThrowNew(env, nullClass, "Invalid CObject.");
+	ThrowNullPointerException(env, NULL);
 	return;
     }
     Tcl_DecrRefCount(objPtr);
@@ -514,9 +531,7 @@ Java_tcl_lang_CObject_makeRef(
     JavaInfo* jcache = JavaGetCache();
 
     if (!objPtr) {
-	jclass nullClass = (*env)->FindClass(env,
-		"java/lang/NullPointerException");
-	(*env)->ThrowNew(env, nullClass, "Invalid CObject.");
+	ThrowNullPointerException(env, NULL);
 	return;
     }
 
@@ -535,9 +550,9 @@ Java_tcl_lang_CObject_makeRef(
 	oldTypePtr->freeIntRepProc(objPtr);
     }
 
+    object = (*env)->NewGlobalRef(env, object);
     objPtr->typePtr = &tclObjectType;
-    objPtr->internalRep.twoPtrValue.ptr2
-	= (VOID*) (*env)->NewGlobalRef(env, object);
+    objPtr->internalRep.twoPtrValue.ptr2 = (VOID*) object;
 
     /*
      * Increment the reference count on the TclObject since this object
@@ -589,6 +604,10 @@ JavaBreakRef(
         object = (jobject)(objPtr->internalRep.twoPtrValue.ptr2);
         internalRep = (*env)->CallObjectMethod(env, object,
 	        jcache->getInternalRep);
+	if ((*env)->ExceptionOccurred(env)) {
+	    (*env)->ExceptionDescribe(env);
+	    panic("JavaBreakRef : exception in TclObject.getInternalRep()");
+	}
 	isCObject = (*env)->IsInstanceOf(env, internalRep,
 	        jcache->CObject) == JNI_TRUE;
 	if (isCObject) {
@@ -652,7 +671,7 @@ Java_tcl_lang_CObject_newCObject(
  *
  *	Retrieve the Java TclObject that shadows the given Tcl_Obj.
  *	Creates a new TclObject of type CObject or TclObject that refers
- *	to thegiven Tcl_Obj, unless the Tcl_Obj is a TclObject already.
+ *	to the given Tcl_Obj, unless the Tcl_Obj is a TclObject already.
  *
  * Results:
  *	Returns the TclObject associated with the Tcl_Obj.
@@ -734,6 +753,11 @@ JavaGetTclObject(
 	} else {
 	    object = (*env)->CallStaticObjectMethod(env, jcache->CObject,
 	        jcache->newCObjectInstance, lvalue);
+	}
+	
+	if ((*env)->ExceptionOccurred(env)) {
+	    (*env)->ExceptionDescribe(env);
+	    panic("JavaGetTclObject : exception in newInstance()");
 	}
 
 	if (isLocalPtr) {

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaTimer.c,v 1.4 2002/08/12 07:12:10 mdejong Exp $
+ * RCS: @(#) $Id: javaTimer.c,v 1.5 2002/12/18 10:50:14 mdejong Exp $
  */
 
 #include "java.h"
@@ -140,6 +140,7 @@ JavaTimerProc(
 
     if (exception) {
 	(*env)->Throw(env, exception);
+	(*env)->DeleteLocalRef(env, exception);
     }
 }
 

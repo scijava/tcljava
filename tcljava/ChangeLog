@@ -1,3 +1,39 @@
+2002-12-18  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	Invoke JNI DeleteLocalRef method to cleanup
+	exception and object pointers. This is handled
+	by default for JNI methods but it can't hurt
+	so cleanup after ourselves everywhere we can.
+	Check ExceptionOccurred after JNI methods
+	even if we can't recover from the error.
+
+	* src/native/javaCmd.c (JavaInitBlend,
+	JavaThrowTclException, JavaGetString):
+ 	Panic if JavaGetString is passed a null string.
+	* src/native/javaIdle.c (JavaIdleProc):
+	* src/native/javaInterp.c (ThrowNullPointerException,
+	Java_tcl_lang_Interp_create, Java_tcl_lang_Interp_eval):
+	* src/native/javaList.c (ThrowNullPointerException,
+	Java_tcl_lang_TclList_append, Java_tcl_lang_TclList_getElements,
+	Java_tcl_lang_TclList_index, Java_tcl_lang_TclList_listLength,
+	Java_tcl_lang_TclList_replace): Replace inlined exception
+	raising code with ThrowNullPointerException function.
+	* src/native/javaObj.c (ThrowNullPointerException,
+	printString, UpdateTclObject, JavaGetTclObj,
+	Java_tcl_lang_CObject_getString,
+	Java_tcl_lang_CObject_incrRefCount,
+	Java_tcl_lang_CObject_decrRefCount,
+	Java_tcl_lang_CObject_makeRef, JavaBreakRef,
+	JavaGetTclObject):
+	Check for exception in JNI method and panic if
+	we can't do anything to handle it. Replace inlined
+	exception raising code with ThrowNullPointerException.
+	Reset object to the value returned by NewGlobalRef
+	instead of directly setting the pointer, this should
+	not matter but is done for consistency.
+	* src/native/javaTimer.c (JavaTimerProc): Invoke
+	DeleteLocalRef to cleanup memory.
+
 2002-12-17  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* src/native/java.h (JavaIsRef):

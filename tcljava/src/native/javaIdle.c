@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaIdle.c,v 1.3 2000/10/29 06:00:42 mdejong Exp $
+ * RCS: @(#) $Id: javaIdle.c,v 1.4 2002/12/18 10:50:14 mdejong Exp $
  */
 
 #include "java.h"
@@ -143,6 +143,7 @@ JavaIdleProc(
 
     if (exception) {
 	(*env)->Throw(env, exception);
+	(*env)->DeleteLocalRef(env, exception);
     }
 }
 
