@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: InfoCmd.java,v 1.6 1999/08/03 02:20:59 mo Exp $
+ * RCS: @(#) $Id: InfoCmd.java,v 1.7 1999/08/05 03:35:03 mo Exp $
  *
  */
 
@@ -19,9 +19,6 @@ import java.util.*;
 /**
  * This class implements the built-in "info" command in Tcl.
  */
-
-// FIXME : need to port over the Tcl 8.1 implementation of "info"
-// from the file generic/tclCmdIL.c file!
 
 class InfoCmd implements Command {
     static final private String validCmds[] = {
@@ -78,382 +75,1147 @@ class InfoCmd implements Command {
      * @param argv command arguments.
      * @exception TclException if wrong # of args or invalid argument(s).
      */
-    public void cmdProc(Interp interp, TclObject argv[])
+    public void cmdProc(Interp interp, TclObject[] objv)
 	    throws TclException {
-	Command cmd;
-	Procedure proc;
+	int index;
 
-	if (argv.length < 2) {
-	    throw new TclNumArgsException(interp, 1, argv, 
-		    "option ?arg arg ...?");
+	if (objv.length < 2) {
+	    throw new TclNumArgsException(interp, 1, objv, 
+					  "option ?arg arg ...?");
 	}
-	int index = TclIndex.get(interp, argv[1], validCmds, "option", 0);
+	index = TclIndex.get(interp, objv[1], validCmds, "option", 0);
 
 	switch (index) {
 	    case OPT_ARGS:
-		if (argv.length != 3) {
-		    throw new TclNumArgsException(interp, 2, argv, 
-			    "procname");
-		}
-		cmd = interp.getCommand(argv[2].toString());
-		if ((cmd == null) || !(cmd instanceof Procedure)) {
-		    throw new TclException(interp, "\"" + argv[2] + 
-			    "\" isn't a procedure");
-		}
-		proc = (Procedure) cmd;
-		TclObject list = TclList.newInstance();
-		for (int i = 0; i < proc.argList.length; i++) {
-		    TclObject s = TclString.newInstance(proc.argList[i][0]);
-		    TclList.append(interp, list, s);
-		}
-		interp.setResult(list);
-		return;
+		InfoArgsCmd(interp, objv);
+		break;
 	    case OPT_BODY:
-		if (argv.length != 3) {
-		    throw new TclNumArgsException(interp, 2, argv, 
-			    "procname");
-		}
-		cmd = interp.getCommand(argv[2].toString());
-		if ((cmd == null) || !(cmd instanceof Procedure)) {
-		    throw new TclException(interp, "\"" + argv[2] + 
-			    "\" isn't a procedure");
-		}
-		proc = (Procedure) cmd;
-		TclObject s = TclString.newInstance(proc.body);
-		interp.setResult(s);
-		return;
+		InfoBodyCmd(interp, objv);
+		break;
 	    case OPT_CMDCOUNT:
-		if (argv.length != 2) {
-		    throw new TclNumArgsException(interp, 2, argv, null);
-		}
-		interp.setResult(interp.cmdCount);
-		return;
+		InfoCmdCountCmd(interp, objv);
+		break;
 	    case OPT_COMMANDS:
-		if (argv.length != 2 && argv.length != 3) {
-		    throw new TclNumArgsException(interp, 2, argv, 
-			    "?pattern?");
-		}
-		// FIXME: fix this interp.cmdTable stuff later
-		if (argv.length == 2) {
-		    //matchAndAppend(interp, interp.cmdTable.keys(), null);
-		    matchAndAppend(interp, interp.globalNs.cmdTable.keys(), null);
-		} else {
-		    matchAndAppend(interp, interp.globalNs.cmdTable.keys(),
-				   argv[2].toString());
-
-		    //matchAndAppend(interp, interp.cmdTable.keys(),
-		    //argv[2].toString());
-		}
-		return;
+		InfoCommandsCmd(interp, objv);
+		break;
 	    case OPT_COMPLETE:
-		if (argv.length != 3) {
-		    throw new TclNumArgsException(interp, 2, argv, 
-			    "command");
-		}
-		interp.setResult(TclBoolean.newInstance(
-			interp.commandComplete(argv[2].toString())));
-		return;
+		InfoCompleteCmd(interp, objv);
+		break;
 	    case OPT_DEFAULT:
-		if (argv.length != 5) {
-		    throw new TclNumArgsException(interp, 2, argv, 
-			    "procname arg varname");
-		}
-
-		String procName = argv[2].toString();
-		String argName = argv[3].toString();
-		cmd = interp.getCommand(argv[2].toString());
-		if ((cmd == null) || !(cmd instanceof Procedure)) {
-		    throw new TclException(interp, "\"" + argv[2] + 
-			    "\" isn't a procedure");
-		}
-
-		proc = (Procedure) cmd;
-		for (int i = 0; i < proc.argList.length; i++) {
-		    if (argName.equals(proc.argList[i][0].toString())) {
-			String varName = argv[4].toString();
-			try {
-			    if (proc.argList[i][1] != null) {
-				interp.setVar(varName, proc.argList[i][1], 0);
-				interp.setResult(1);
-			    } else {
-				s = TclString.newInstance("");
-				interp.setVar(varName, s, 0);
-				interp.setResult(0);
-			    }
-			} catch (TclException excp) {
-			    throw new TclException(interp, 
-				 "couldn't store default value in variable \""
-				 + varName + "\"");
-			}
-			return;
-		    }
-		}
-		throw new TclException(interp, "procedure \"" + procName +
-			"\" doesn't have an argument \"" + argName + "\"");
+		InfoDefaultCmd(interp, objv);
+		break;
 	    case OPT_EXISTS:
-		if (argv.length != 3) {
-		    throw new TclNumArgsException(interp, 2, argv, 
-			    "varName");
-		}
-
-		// FIXME : double check, should this just check the var frame?
-		boolean exists = CallFrame.exists(interp, argv[2].toString());
-		interp.setResult(TclBoolean.newInstance(exists));
-		return;
+		InfoExistsCmd(interp, objv);
+		break;
 	    case OPT_GLOBALS:
-		if (argv.length != 2 && argv.length != 3) {
-		    throw new TclNumArgsException(interp, 2, argv, 
-			    "?pattern?");
-		}
-
-		if (argv.length == 2) {
-		    matchAndAppend(interp, interp.globalNs.varTable.keys(), 
-			    null);
-		} else {
-		    matchAndAppend(interp, interp.globalNs.varTable.keys(),
-			    argv[2].toString());
-		}
-		return;
+		InfoGlobalsCmd(interp, objv);
+		break;
 	    case OPT_HOSTNAME:
-		if (argv.length != 2) {
-		    throw new TclNumArgsException(interp, 2, argv, null);
-		}
-		interp.setResult("no host info");
-		return;
+		InfoHostnameCmd(interp, objv);
+		break;
 	    case OPT_LEVEL:
-		if (argv.length != 2 && argv.length != 3) {
-		    throw new TclNumArgsException(interp, 2, argv, 
-			    "?number?");
-		}
-		if (argv.length == 2) {
-		    if (interp.varFrame == null) {
-			interp.setResult(0);
-		    } else {
-			interp.setResult(interp.varFrame.level);
-		    }
-		    return;
-		} else {
-		    int level = TclInteger.get(interp, argv[2]);
-		    if (level > 0) {
-			if (interp.varFrame == null) {
-			    throw new TclException(interp, "bad level \""
-				    + level + "\"");
-			}
-			level -= interp.varFrame.level;
-		    }
-
-		    CallFrame currentFrame = interp.varFrame;
-		    int counter = level;
-		    while (counter != 0) {
-			if (currentFrame == null) {
-			    break;
-			}
-			currentFrame = currentFrame.callerVar;
-			counter++;
-		    }
-		    if ((currentFrame == null) ||
-			    (currentFrame.objv == null)) {
-			throw new TclException(interp, "bad level \"" +
-				level + "\"");
-		    }
-		    list = TclList.newInstance();
-		    for (int i = 0; i < currentFrame.objv.length; i++) {
-			s = TclString.newInstance(currentFrame.objv[i]);
-			TclList.append(interp, list, s);
-		    }
-		    interp.setResult(list);
-		    return;
-		}
+		InfoLevelCmd(interp, objv);
+		break;
 	    case OPT_LIBRARY:
-		if (argv.length != 2) {
-		    throw new TclNumArgsException(interp, 2, argv, null);
-		}
-		try {		
-		    interp.setResult(
-		        interp.getVar("tcl_library", TCL.GLOBAL_ONLY));
-		    return;
-		} catch (TclException e) {
-		    // If the variable has not been defined
-		    throw new TclException(interp,
-		        "no library has been specified for Tcl");
-		}
+		InfoLibraryCmd(interp, objv);
+		break;
 	    case OPT_LOADED:
-		if (argv.length != 2 && argv.length != 3) {
-		    throw new TclNumArgsException(interp, 2, argv, 
-			    "?interp?");
-		}
-		throw new TclException(interp,
-			"info loaded not implemented");
+		InfoLoadedCmd(interp, objv);
+		break;
 	    case OPT_LOCALS:
-		if (argv.length != 2 && argv.length != 3) {
-		    throw new TclNumArgsException(interp, 2, argv, 
-			    "?pattern?");
-		}
-
-		if (interp.varFrame == null || !interp.varFrame.isProcCallFrame) {
-		    return;
-		}
-
-		if (argv.length == 2) {
-		    matchAndAppend(interp, interp.varFrame.getLocalVarNames(), 
-			    null);
-		} else {
-		    matchAndAppend(interp, interp.varFrame.getLocalVarNames(),
-			    argv[2].toString());
-		}
-		return;
+		InfoLocalsCmd(interp, objv);
+		break;
 	    case OPT_NAMEOFEXECUTABLE:
-		if (argv.length != 2) {
-		    throw new TclNumArgsException(interp, 2, argv, null);
-		}
-		interp.setResult(TclString.newInstance(""));
-		return;
+		InfoNameOfExecutableCmd(interp, objv);
+		break;
 	    case OPT_PATCHLEVEL:
-		if (argv.length != 2) {
-		    throw new TclNumArgsException(interp, 2, argv, null);
-		}
-		interp.setResult(interp.getVar("tcl_patchLevel", 
-			TCL.GLOBAL_ONLY));
-		return;
+		InfoPatchLevelCmd(interp, objv);
+		break;
 	    case OPT_PROCS:
-		String pattern = null;
-		if (argv.length != 2 && argv.length != 3) {
-		    throw new TclNumArgsException(interp, 2, argv, 
-			    "?pattern?");
-		}
-		if (argv.length == 3) {
-		    pattern = argv[2].toString();
-		}
+		InfoProcsCmd(interp, objv);
+		break;
+	    case OPT_SCRIPT:
+		InfoScriptCmd(interp, objv);
+		break;
+	    case OPT_SHAREDLIBEXTENSION:
+		InfoSharedlibCmd(interp, objv);
+		break;
+	    case OPT_TCLVERSION:
+		InfoTclVersionCmd(interp, objv);
+		break;
+	    case OPT_VARS:
+		InfoVarsCmd(interp, objv);
+		break;
+	}
+	return;
+    }
 
-		StringBuffer sbuf = new StringBuffer();
-		// FIXME: fix this interp.cmdTable stuff later
-		//for (Enumeration e = interp.cmdTable.keys();
-		for (Enumeration e = interp.globalNs.cmdTable.keys();
-		     e.hasMoreElements(); ) {
-		    String key = (String) e.nextElement();
+    /*
+     *----------------------------------------------------------------------
+     *
+     * InfoArgsCmd --
+     *
+     *      Called to implement the "info args" command that returns the
+     *      argument list for a procedure. Handles the following syntax:
+     *
+     *          info args procName
+     *
+     * Results:
+     *      Returns if successful, raises TclException otherwise.
+     *
+     * Side effects:
+     *      Returns a result in the interpreter's result object.
+     *
+     *----------------------------------------------------------------------
+     */
 
-		    if (pattern != null) {
-			if (!Util.stringMatch(key, pattern)) {
-			    continue;
+    private static void InfoArgsCmd(Interp interp, TclObject[] objv)
+	    throws TclException {
+	String name;
+	Procedure proc;
+	TclObject listObj;
+
+	if (objv.length != 3) {
+	    throw new TclNumArgsException(interp, 2, objv, 
+					  "procname");
+	}
+	name = objv[2].toString();
+	proc = Procedure.findProc(interp, name);
+	if (proc == null) {
+	    throw new TclException(interp,
+		          "\"" + name + "\" isn't a procedure");
+	}
+
+	// Build a return list containing the arguments.
+
+	listObj = TclList.newInstance();
+	for (int i = 0; i < proc.argList.length; i++) {
+	    TclObject s = TclString.newInstance(proc.argList[i][0]);
+	    TclList.append(interp, listObj, s);
+	}
+	interp.setResult(listObj);
+	return;
+    }
+
+    /*
+     *----------------------------------------------------------------------
+     *
+     * InfoBodyCmd --
+     *
+     *      Called to implement the "info body" command that returns the body
+     *      for a procedure. Handles the following syntax:
+     *
+     *          info body procName
+     *
+     * Results:
+     *      Returns if successful, raises TclException otherwise.
+     *
+     * Side effects:
+     *      Returns a result in the interpreter's result object.
+     *
+     *----------------------------------------------------------------------
+     */
+
+    private static void InfoBodyCmd(Interp interp, TclObject[] objv)
+	    throws TclException {
+	String name;
+	Procedure proc;
+	TclObject body, result;
+
+	if (objv.length != 3) {
+	    throw new TclNumArgsException(interp, 2, objv, 
+					  "procname");
+	}
+	name = objv[2].toString();
+	proc = Procedure.findProc(interp, name);
+	if (proc == null) {
+	    throw new TclException(interp,
+		          "\"" + name + "\" isn't a procedure");
+	}
+
+	interp.setResult(proc.body.toString());
+	return;
+    }
+
+    /*
+     *----------------------------------------------------------------------
+     *
+     * InfoCmdCountCmd --
+     *
+     *      Called to implement the "info cmdcount" command that returns the
+     *      number of commands that have been executed. Handles the following
+     *      syntax:
+     *
+     *          info cmdcount
+     *
+     * Results:
+     *      Returns if successful, raises TclException otherwise.
+     *
+     * Side effects:
+     *      Returns a result in the interpreter's result object.
+     *
+     *----------------------------------------------------------------------
+     */
+
+    private static void InfoCmdCountCmd(Interp interp, TclObject[] objv)
+	    throws TclException {
+	if (objv.length != 2) {
+	    throw new TclNumArgsException(interp, 2, objv, null);
+	}
+	interp.setResult(interp.cmdCount);
+	return;
+    }
+
+    /*
+     *----------------------------------------------------------------------
+     *
+     * InfoCommandsCmd --
+     *
+     *	Called to implement the "info commands" command that returns the
+     *	list of commands in the interpreter that match an optional pattern.
+     *	The pattern, if any, consists of an optional sequence of namespace
+     *	names separated by "::" qualifiers, which is followed by a
+     *	glob-style pattern that restricts which commands are returned.
+     *	Handles the following syntax:
+     *
+     *          info commands ?pattern?
+     *
+     * Results:
+     *      Returns if successful, raises TclException otherwise.
+     *
+     * Side effects:
+     *      Returns a result in the interpreter's result object.
+     *
+     *----------------------------------------------------------------------
+     */
+
+    private static void InfoCommandsCmd(Interp interp, TclObject[] objv)
+	    throws TclException {
+	String cmdName, pattern, simplePattern;
+	Enumeration search;
+	NamespaceCmd.Namespace ns;
+	NamespaceCmd.Namespace globalNs = NamespaceCmd.getGlobalNamespace(interp);
+	NamespaceCmd.Namespace currNs   = NamespaceCmd.getCurrentNamespace(interp);
+	TclObject list, elemObj;
+	boolean specificNsInPattern = false;  // Init. to avoid compiler warning.
+	WrappedCommand cmd;
+
+	// Get the pattern and find the "effective namespace" in which to
+	// list commands.
+
+	if (objv.length == 2) {
+	    simplePattern = null;
+	    ns = currNs;
+	    specificNsInPattern = false;
+	} else if (objv.length == 3) {
+	    // From the pattern, get the effective namespace and the simple
+	    // pattern (no namespace qualifiers or ::'s) at the end. If an
+	    // error was found while parsing the pattern, return it. Otherwise,
+	    // if the namespace wasn't found, just leave ns NULL: we will
+	    // return an empty list since no commands there can be found.
+
+	    pattern = objv[2].toString();
+
+	    // Java does not support passing an address so we pass
+	    // an array of size 1 and then assign arr[0] to the value
+	    NamespaceCmd.Namespace[] nsArr     = new NamespaceCmd.Namespace[1];
+	    NamespaceCmd.Namespace[] dummy1Arr = new NamespaceCmd.Namespace[1];
+	    NamespaceCmd.Namespace[] dummy2Arr = new NamespaceCmd.Namespace[1];
+	    String[]     simplePatternArr  = new String[1];
+
+	    NamespaceCmd.getNamespaceForQualName(interp, pattern, null,
+	        0, nsArr, dummy1Arr, dummy2Arr, simplePatternArr);
+
+	    // Get the values out of the arrays!
+	    ns  = nsArr[0];
+	    simplePattern = simplePatternArr[0];
+
+	    if (ns != null) {	// we successfully found the pattern's ns
+		specificNsInPattern = (simplePattern.compareTo(pattern) != 0);
+	    }
+	} else {
+	    throw new TclNumArgsException(interp, 2, objv, "?pattern?");
+	}
+
+	// Scan through the effective namespace's command table and create a
+	// list with all commands that match the pattern. If a specific
+	// namespace was requested in the pattern, qualify the command names
+	// with the namespace name.
+
+	list = TclList.newInstance();
+
+	if (ns != null) {
+	    search = ns.cmdTable.keys();
+	    while ( search.hasMoreElements() ) {
+		cmdName = (String) search.nextElement();
+		if ((simplePattern == null)
+		    || Util.stringMatch(cmdName, simplePattern)) {
+		    if (specificNsInPattern) {
+			cmd = (WrappedCommand) ns.cmdTable.get(cmdName);
+			elemObj = TclString.newInstance(
+				      interp.getCommandFullName(cmd) );
+		    } else {
+			elemObj = TclString.newInstance(cmdName);
+		    }
+		    TclList.append(interp, list, elemObj);
+		}
+	    }
+
+	    // If the effective namespace isn't the global :: namespace, and a
+	    // specific namespace wasn't requested in the pattern, then add in
+	    // all global :: commands that match the simple pattern. Of course,
+	    // we add in only those commands that aren't hidden by a command in
+	    // the effective namespace.
+	
+	    if ((ns != globalNs) && !specificNsInPattern) {
+		search = globalNs.cmdTable.keys();
+		while ( search.hasMoreElements() ) {
+		    cmdName = (String) search.nextElement();
+		    if ((simplePattern == null)
+			|| Util.stringMatch(cmdName, simplePattern)) {
+			if (ns.cmdTable.get(cmdName) == null) {
+			    TclList.append(interp, list,
+					   TclString.newInstance(cmdName));
 			}
 		    }
+		}
+	    }
+	}
 
-		    cmd = interp.getCommand(key);
-		    if (cmd instanceof Procedure) {
-			Util.appendElement(interp, sbuf, key);
-		    }
-		}
+	interp.setResult(list);
+	return;
+    }
 
-		interp.setResult(TclString.newInstance(sbuf));
-		return;
-	    case OPT_SCRIPT:
-		if (argv.length != 2) {
-		    throw new TclNumArgsException(interp, 2, argv, null);
-		}
-		interp.setResult(TclString.newInstance(interp.scriptFile));
-		return;
-	    case OPT_SHAREDLIBEXTENSION:
-		if (argv.length != 2) {
-		    throw new TclNumArgsException(interp, 2, argv, null);
-		}
-		interp.setResult(".class");
-		return;
-	    case OPT_TCLVERSION:
-		if (argv.length != 2) {
-		    throw new TclNumArgsException(interp, 2, argv, null);
-		}
-		interp.setResult(interp.getVar("tcl_version", 
-			TCL.GLOBAL_ONLY));
-		return;
-	    case OPT_VARS:
-		if (argv.length != 2 && argv.length != 3) {
-		    throw new TclNumArgsException(interp, 2, argv, 
-			    "?pattern?");
-		}
+    /*
+     *----------------------------------------------------------------------
+     *
+     * InfoCompleteCmd --
+     *
+     *      Called to implement the "info complete" command that determines
+     *      whether a string is a complete Tcl command. Handles the following
+     *      syntax:
+     *
+     *          info complete command
+     *
+     * Results:
+     *      Returns if successful, raises TclException otherwise.
+     *
+     * Side effects:
+     *      Returns a result in the interpreter's result object.
+     *
+     *----------------------------------------------------------------------
+     */
 
-		if (argv.length == 2) {
-		    // FIXME : hack to avoid null pointer exception
-		    // We still need to port the 8.1 info command over
-		    // to add namespace support for the info command
-		    if (interp.varFrame != null) {
-		    matchAndAppend(interp, interp.varFrame.getVarNames(),null);
+    private static void InfoCompleteCmd(Interp interp, TclObject[] objv)
+	    throws TclException {
+	if (objv.length != 3) {
+	    throw new TclNumArgsException(interp, 2, objv, "command");
+	}
+
+	interp.setResult(interp.commandComplete(objv[2].toString()));
+	return;
+    }
+
+    /*
+     *----------------------------------------------------------------------
+     *
+     * InfoDefaultCmd --
+     *
+     *      Called to implement the "info default" command that returns the
+     *      default value for a procedure argument. Handles the following
+     *      syntax:
+     *
+     *          info default procName arg varName
+     *
+     * Results:
+     *      Returns if successful, raises TclException otherwise.
+     *
+     * Side effects:
+     *      Returns a result in the interpreter's result object.
+     *
+     *----------------------------------------------------------------------
+     */
+
+    private static void InfoDefaultCmd(Interp interp, TclObject[] objv)
+	    throws TclException {
+	String procName, argName, varName;
+	Procedure proc;
+	TclObject valueObj;
+
+	if (objv.length != 5) {
+	    throw new TclNumArgsException(interp, 2, objv, 
+					  "procname arg varname");
+	}
+
+	procName = objv[2].toString();
+	argName = objv[3].toString();
+	proc = Procedure.findProc(interp, procName);
+	if (proc == null) {
+	    throw new TclException(interp,
+		          "\"" + procName + "\" isn't a procedure");
+	}
+
+	for (int i = 0; i < proc.argList.length; i++) {
+	    if (argName.equals(proc.argList[i][0].toString())) {
+		varName = objv[4].toString();
+		try {
+		    if (proc.argList[i][1] != null) {
+			interp.setVar(varName, proc.argList[i][1], 0);
+			interp.setResult(1);
+		    } else {
+			interp.setVar(varName, "", 0);
+			interp.setResult(0);
 		    }
-		} else {
-		    // FIXME : hack to avoid null pointer exception
-		    if (interp.varFrame != null) {
-		    matchAndAppend(interp, interp.varFrame.getVarNames(),
-			    argv[2].toString());
-		    }
+		} catch (TclException excp) {
+		    throw new TclException(interp, 
+		        "couldn't store default value in variable \""
+					   + varName + "\"");
 		}
 		return;
-	    default:
-		throw new TclException(interp, argv[0] + " " + argv[1] + 
-			" function not yet implemented");
+	    }
+	}
+	throw new TclException(interp, "procedure \"" + procName +
+		      "\" doesn't have an argument \"" + argName + "\"");
+    }
+
+    /*
+     *----------------------------------------------------------------------
+     *
+     * InfoExistsCmd --
+     *
+     *      Called to implement the "info exists" command that determines
+     *      whether a variable exists. Handles the following syntax:
+     *
+     *          info exists varName
+     *
+     * Results:
+     *      Returns if successful, raises TclException otherwise.
+     *
+     * Side effects:
+     *      Returns a result in the interpreter's result object.
+     *
+     *----------------------------------------------------------------------
+     */
+
+    private static void InfoExistsCmd(Interp interp, TclObject[] objv)
+	    throws TclException {
+	String varName;
+	Var var = null;
+
+	if (objv.length != 3) {
+	    throw new TclNumArgsException(interp, 2, objv, 
+					  "varName");
+	}
+
+	varName = objv[2].toString();
+	Var[] result = Var.lookupVar(interp, varName, null, 0, "access",
+				 false, false);
+	if (result != null) {
+	    var = result[0];
+	}
+
+	if ((var != null) && !var.isVarUndefined()) {
+	    interp.setResult(true);
+	} else {
+	    interp.setResult(false);
+	}
+
+	return;
+    }
+
+    /*
+     *----------------------------------------------------------------------
+     *
+     *  InfoGlobalsCmd --
+     *
+     *      Called to implement the "info globals" command that returns the list
+     *      of global variables matching an optional pattern. Handles the
+     *      following syntax:
+     *
+     *          info globals ?pattern?*
+     *
+     * Results:
+     *      Returns if successful, raises TclException otherwise.
+     *
+     * Side effects:
+     *      Returns a result in the interpreter's result object.
+     *
+     *----------------------------------------------------------------------
+     */
+
+    private static void InfoGlobalsCmd(Interp interp, TclObject[] objv)
+	    throws TclException {
+	String varName, pattern;
+	NamespaceCmd.Namespace globalNs = NamespaceCmd.getGlobalNamespace(interp);
+	Enumeration search;
+	Var var;
+	TclObject list;
+
+	if (objv.length == 2) {
+	    pattern = null;
+	} else if (objv.length == 3) {
+	    pattern = objv[2].toString();
+	} else {
+	    throw new TclNumArgsException(interp, 2, objv, "?pattern?");
+	}
+
+	// Scan through the global :: namespace's variable table and create a
+	// list of all global variables that match the pattern.
+
+	list = TclList.newInstance();
+
+	for (search = globalNs.varTable.keys();
+	     search.hasMoreElements();) {
+	    varName = (String) search.nextElement();
+	    var = (Var) globalNs.varTable.get(varName);
+	    if (var.isVarUndefined()) {
+		continue;
+	    }
+	    if ((pattern == null) || Util.stringMatch(varName, pattern)) {
+		TclList.append(interp, list,
+			       TclString.newInstance(varName));
+	    }
+	}
+
+	interp.setResult(list);
+	return;
+    }
+
+    /*
+     *----------------------------------------------------------------------
+     *
+     * InfoHostnameCmd --
+     *
+     *      Called to implement the "info hostname" command that returns the
+     *      host name. Handles the following syntax:
+     *
+     *          info hostname
+     *
+     * Results:
+     *      Returns if successful, raises TclException otherwise.
+     *
+     * Side effects:
+     *      Returns a result in the interpreter's result object.
+     *
+     *----------------------------------------------------------------------
+     */
+
+    private static void InfoHostnameCmd(Interp interp, TclObject[] objv)
+	    throws TclException {
+	String name;
+
+	if (objv.length != 2) {
+	    throw new TclNumArgsException(interp, 2, objv, null);
+	}
+
+	// FIXME : how can we find the hostname
+
+	name = null;
+
+	if (name != null) {
+	    interp.setResult(name);
+	    return;
+	} else {
+	    interp.setResult("unable to determine name of host");
+	    return;
 	}
     }
 
-    /**
-     * Set to interp.result a Tcl list that contains all the elements in the
-     * Enumeration that match the pattern.
+    /*
+     *----------------------------------------------------------------------
      *
-     * @param interp current interpreter.
-     * @param e the enumeration, usually the keys of a hashtable.
-     * @param pattern a "glob" pattern to match the element with.
+     * InfoLevelCmd --
+     *
+     *      Called to implement the "info level" command that returns
+     *      information about the call stack. Handles the following syntax:
+     *
+     *          info level ?number?
+     *
+     * Results:
+     *      Returns if successful, raises TclException otherwise.
+     *
+     * Side effects:
+     *      Returns a result in the interpreter's result object.
+     *
+     *----------------------------------------------------------------------
      */
 
-    private void matchAndAppend(Interp interp, Enumeration e,
-	    String pattern) {
-	StringBuffer sbuf = new StringBuffer();
-	while (e.hasMoreElements()) {
-	    String key = (String)e.nextElement();
+    private static void InfoLevelCmd(Interp interp, TclObject[] objv)
+	    throws TclException {
+	int level;
+	CallFrame frame;
+	TclObject list;
 
-	    if (pattern != null) {
-		if (!Util.stringMatch(key, pattern)) {
-		    continue;
+	if (objv.length == 2) {		// just "info level"
+	    if (interp.varFrame == null) {
+		interp.setResult(0);
+	    } else {		
+		interp.setResult(interp.varFrame.level);
+	    }
+	    return;
+	} else if (objv.length == 3) {
+	    level = TclInteger.get(interp, objv[2]);
+
+	    if (level <= 0) {
+		if (interp.varFrame == null) {
+		    throw new TclException(interp, "bad level \"" +
+					  objv[2].toString() + "\"");
+		}
+
+		level += interp.varFrame.level;
+	    }
+
+	    for (frame = interp.varFrame; frame != null;
+		 frame = frame.callerVar) {
+		if (frame.level == level) {
+		    break;
 		}
 	    }
-
-	    try {
-		Util.appendElement(interp, sbuf, key);
-	    } catch (TclException excp) {
-		throw new TclRuntimeError("unexpected TclException: " + excp);
+	    if ((frame == null) || frame.objv == null) {
+		throw new TclException(interp, "bad level \"" +
+				      objv[2].toString()  + "\"");
 	    }
+
+	    list = TclList.newInstance();
+	    for (int i = 0; i < frame.objv.length; i++) {
+		TclList.append(interp, list,
+			       TclString.newInstance(frame.objv[i]));
+	    }
+	    interp.setResult(list);
+	    return;
 	}
 
-	interp.setResult(TclString.newInstance(sbuf));
+	throw new TclNumArgsException(interp, 2, objv, "?number?");
     }
 
-    /**
-     * Set to interp.result a Tcl list that contains all the elements in the
-     * Vector that match the pattern.
+    /*
+     *----------------------------------------------------------------------
      *
-     * @param interp current interpreter.
-     * @param v the vector that contains the elements.
-     * @param pattern a "glob" pattern to match the element with.
+     * InfoLibraryCmd --
+     *
+     *      Called to implement the "info library" command that returns the
+     *      library directory for the Tcl installation. Handles the following
+     *      syntax:
+     *
+     *          info library
+     *
+     * Results:
+     *      Returns if successful, raises TclException otherwise.
+     *
+     * Side effects:
+     *      Returns a result in the interpreter's result object.
+     *
+     *----------------------------------------------------------------------
      */
 
-    private void matchAndAppend(Interp interp, Vector v,
-	    String pattern) {
+    private static void InfoLibraryCmd(Interp interp, TclObject[] objv)
+	    throws TclException {
+	if (objv.length != 2) {
+	    throw new TclNumArgsException(interp, 2, objv, null);
+	}
+	try {		
+	    interp.setResult(
+	        interp.getVar("tcl_library", TCL.GLOBAL_ONLY));
+	    return;
+	} catch (TclException e) {
+	    // If the variable has not been defined
+	    throw new TclException(interp,
+	        "no library has been specified for Tcl");
+	}
+    }
 
-	StringBuffer sbuf = new StringBuffer();
-	int length = v.size();
-	for (int i=0; i<length; i++) {
-	    String key = (String)v.elementAt(i);
+    /*
+     *----------------------------------------------------------------------
+     *
+     * InfoLoadedCmd --
+     *
+     *      Called to implement the "info loaded" command that returns the
+     *      packages that have been loaded into an interpreter. Handles the
+     *      following syntax:
+     *
+     *          info loaded ?interp?
+     *
+     * Results:
+     *      Returns if successful, raises TclException otherwise.
+     *
+     * Side effects:
+     *      Returns a result in the interpreter's result object.
+     *
+     *----------------------------------------------------------------------
+     */
 
-	    if (pattern != null) {
-		if (!Util.stringMatch(key, pattern)) {
-		    continue;
+    private static void InfoLoadedCmd(Interp interp, TclObject[] objv)
+	    throws TclException {
+	if (objv.length != 2 && objv.length != 3) {
+	    throw new TclNumArgsException(interp, 2, objv, 
+					  "?interp?");
+	}
+	// FIXME : what should "info loaded" return?
+	throw new TclException(interp,
+			       "info loaded not implemented");
+    }
+
+    /*
+     *----------------------------------------------------------------------
+     *
+     * InfoLocalsCmd --
+     *
+     *      Called to implement the "info locals" command to return a list of
+     *      local variables that match an optional pattern. Handles the
+     *      following syntax:
+     *
+     *          info locals ?pattern?
+     *
+     * Results:
+     *      Returns if successful, raises TclException otherwise.
+     *
+     * Side effects:
+     *      Returns a result in the interpreter's result object.
+     *
+     *----------------------------------------------------------------------
+     */
+
+    private static void InfoLocalsCmd(Interp interp, TclObject[] objv)
+	    throws TclException {
+	String pattern;
+	TclObject list;
+
+	if (objv.length == 2) {
+	    pattern = null;
+	} else if (objv.length == 3) {
+	    pattern = objv[2].toString();
+	} else {
+	    throw new TclNumArgsException(interp, 2, objv, "?pattern?");
+	}
+	
+	if (interp.varFrame == null || !interp.varFrame.isProcCallFrame) {
+	    return;
+	}
+
+	// Return a list containing names of first the compiled locals (i.e. the
+	// ones stored in the call frame), then the variables in the local hash
+	// table (if one exists).
+
+	list = TclList.newInstance();
+	AppendLocals(interp, list, pattern, false);
+	interp.setResult(list);
+	return;
+    }
+
+    /*
+     *----------------------------------------------------------------------
+     *
+     * AppendLocals --
+     *
+     *	Append the local variables for the current frame to the
+     *	specified list object.
+     *
+     * Results:
+     *	None.
+     *
+     * Side effects:
+     *	None.
+     *
+     *----------------------------------------------------------------------
+     */
+
+    private static void AppendLocals(
+			  Interp interp,        // Current interp
+			  TclObject list,       // list to append to
+			  String pattern,       // Pattern to match against.
+			  boolean includeLinks) // true if upvars should be included
+	throws TclException
+    {
+	Var var;
+	String varName;
+	Hashtable localVarTable;
+	Enumeration search;
+
+	localVarTable = interp.varFrame.varTable;
+
+	// Compiled locals do not exist in Jacl
+
+	if (localVarTable != null) {
+	    for (search = localVarTable.keys();
+		 search.hasMoreElements() ; ) {
+		varName = (String) search.nextElement();
+		var = (Var) localVarTable.get(varName);
+		if (!var.isVarUndefined()
+		    && (includeLinks || !var.isVarLink())) {
+		    if ((pattern == null)
+		        || Util.stringMatch(varName, pattern)) {
+			TclList.append(interp, list,
+				       TclString.newInstance(varName));
+		    }
 		}
 	    }
+	}
+    }
 
-	    try {
-		Util.appendElement(interp, sbuf, key);
-	    } catch (TclException excp) {
-		throw new TclRuntimeError("unexpected TclException: " + excp);
+    /*
+     *----------------------------------------------------------------------
+     *
+     * InfoNameOfExecutableCmd --
+     *
+     *      Called to implement the "info nameofexecutable" command that returns
+     *      the name of the binary file running this application. Handles the
+     *      following syntax:
+     *
+     *          info nameofexecutable
+     *
+     * Results:
+     *      Returns if successful, raises TclException otherwise.
+     *
+     * Side effects:
+     *      Returns a result in the interpreter's result object.
+     *
+     *----------------------------------------------------------------------
+     */
+
+    private static void InfoNameOfExecutableCmd(Interp interp, TclObject[] objv)
+	    throws TclException {
+	String nameOfExecutable;
+	
+	if (objv.length != 2) {
+	    throw new TclNumArgsException(interp, 2, objv, null);
+	}
+
+	// FIXME : implement something for this later
+	// "$PATH/java tcl.lang.Shell"
+	// $PATH/jtclsh
+
+	//nameOfExecutable = Tcl_GetNameOfExecutable();
+	nameOfExecutable = null;
+
+	if (nameOfExecutable != null) {
+	    interp.setResult(nameOfExecutable);
+	}
+	return;
+    }
+
+    /*
+     *----------------------------------------------------------------------
+     *
+     * InfoPatchLevelCmd --
+     *
+     *      Called to implement the "info patchlevel" command that returns the
+     *      default value for an argument to a procedure. Handles the following
+     *      syntax:
+     *
+     *          info patchlevel
+     *
+     * Results:
+     *      Returns if successful, raises TclException otherwise.
+     *
+     * Side effects:
+     *      Returns a result in the interpreter's result object.
+     *
+     *----------------------------------------------------------------------
+     */
+
+    private static void InfoPatchLevelCmd(Interp interp, TclObject[] objv)
+	    throws TclException {
+	if (objv.length != 2) {
+	    throw new TclNumArgsException(interp, 2, objv, null);
+	}
+
+	interp.setResult(interp.getVar("tcl_patchLevel", 
+				       TCL.GLOBAL_ONLY));
+	return;
+    }
+
+    /*
+     *----------------------------------------------------------------------
+     *
+     * InfoProcsCmd --
+     *
+     *      Called to implement the "info procs" command that returns the
+     *      procedures in the current namespace that match an optional pattern.
+     *      Handles the following syntax:
+     *
+     *          info procs ?pattern?
+     *
+     * Results:
+     *      Returns if successful, raises TclException otherwise.
+     *
+     * Side effects:
+     *      Returns a result in the interpreter's result object.
+     *
+     *----------------------------------------------------------------------
+     */
+
+    private static void InfoProcsCmd(Interp interp, TclObject[] objv)
+	    throws TclException {
+	String cmdName, pattern;
+	NamespaceCmd.Namespace currNs = NamespaceCmd.getCurrentNamespace(interp);
+	Enumeration search;
+	WrappedCommand cmd, realCmd;
+	TclObject list;
+
+	if (objv.length == 2) {
+	    pattern = null;
+	} else if (objv.length == 3) {
+	    pattern = objv[2].toString();
+	} else {
+	    throw new TclNumArgsException(interp, 2, objv, "?pattern?");
+	}
+
+	// Scan through the current namespace's command table and return a list
+	// of all procs that match the pattern.
+
+	list = TclList.newInstance();
+	for (search = currNs.cmdTable.keys();
+	     search.hasMoreElements() ; ) {
+	    cmdName = (String) search.nextElement();
+	    cmd = (WrappedCommand) currNs.cmdTable.get(cmdName);
+	    
+	    // If the command isn't itself a proc, it still might be an
+	    // imported command that points to a "real" proc in a different
+	    // namespace.
+
+	    realCmd = NamespaceCmd.getOriginalCommand(cmd);
+
+	    if (Procedure.isProc(cmd)
+	        || ((realCmd != null) && Procedure.isProc(realCmd))) {
+		if ((pattern == null) || Util.stringMatch(cmdName, pattern)) {
+		    TclList.append(interp, list,
+				   TclString.newInstance(cmdName));
+		}
 	    }
 	}
 
-	interp.setResult(TclString.newInstance(sbuf));
+	interp.setResult(list);
+	return;
+    }
+
+    /*
+     *----------------------------------------------------------------------
+     *
+     * InfoScriptCmd --
+     *
+     *      Called to implement the "info script" command that returns the
+     *      script file that is currently being evaluated. Handles the
+     *      following syntax:
+     *
+     *          info script
+     *
+     * Results:
+     *      Returns if successful, raises TclException otherwise.
+     *
+     * Side effects:
+     *      Returns a result in the interpreter's result object.
+     *
+     *----------------------------------------------------------------------
+     */
+
+    private static void InfoScriptCmd(Interp interp, TclObject[] objv)
+	    throws TclException {
+	if (objv.length != 2) {
+	    throw new TclNumArgsException(interp, 2, objv, null);
+	}
+
+	interp.setResult(interp.scriptFile);
+	return;
+    }
+
+    /*
+     *----------------------------------------------------------------------
+     *
+     * InfoSharedlibCmd --
+     *
+     *      Called to implement the "info sharedlibextension" command that
+     *      returns the file extension used for shared libraries. Handles the
+     *      following syntax:
+     *
+     *          info sharedlibextension
+     *
+     * Results:
+     *      Returns if successful, raises TclException otherwise.
+     *
+     * Side effects:
+     *      Returns a result in the interpreter's result object.
+     *
+     *----------------------------------------------------------------------
+     */
+
+    private static void InfoSharedlibCmd(Interp interp, TclObject[] objv)
+	    throws TclException {
+	if (objv.length != 2) {
+	    throw new TclNumArgsException(interp, 2, objv, null);
+	}
+	interp.setResult(".jar");
+	return;
+    }
+
+    /*
+     *----------------------------------------------------------------------
+     *
+     * InfoTclVersionCmd --
+     *
+     *      Called to implement the "info tclversion" command that returns the
+     *      version number for this Tcl library. Handles the following syntax:
+     *
+     *          info tclversion
+     *
+     * Results:
+     *      Returns if successful, raises TclException otherwise.
+     *
+     * Side effects:
+     *      Returns a result in the interpreter's result object.
+     *
+     *----------------------------------------------------------------------
+     */
+
+    private static void InfoTclVersionCmd(Interp interp, TclObject[] objv)
+	    throws TclException {
+	if (objv.length != 2) {
+	    throw new TclNumArgsException(interp, 2, objv, null);
+	}
+
+	interp.setResult(interp.getVar("tcl_version", 
+				       TCL.GLOBAL_ONLY));
+	return;
+    }
+
+    /*
+     *----------------------------------------------------------------------
+     *
+     * InfoVarsCmd --
+     *
+     *	Called to implement the "info vars" command that returns the
+     *	list of variables in the interpreter that match an optional pattern.
+     *	The pattern, if any, consists of an optional sequence of namespace
+     *	names separated by "::" qualifiers, which is followed by a
+     *	glob-style pattern that restricts which variables are returned.
+     *	Handles the following syntax:
+     *
+     *          info vars ?pattern?
+     *
+     * Results:
+     *      Returns if successful, raises TclException otherwise.
+     *
+     * Side effects:
+     *      Returns a result in the interpreter's result object.
+     *
+     *----------------------------------------------------------------------
+     */
+
+    private static void InfoVarsCmd(Interp interp, TclObject[] objv)
+	    throws TclException {
+	String varName, pattern, simplePattern;
+	Enumeration search;
+	Var var;
+	NamespaceCmd.Namespace ns;
+	NamespaceCmd.Namespace globalNs = NamespaceCmd.getGlobalNamespace(interp);
+	NamespaceCmd.Namespace currNs   = NamespaceCmd.getCurrentNamespace(interp);
+	TclObject list, elemObj;
+	boolean specificNsInPattern = false; // Init. to avoid compiler warning.
+
+	// Get the pattern and find the "effective namespace" in which to
+	// list variables. We only use this effective namespace if there's
+	// no active Tcl procedure frame.
+	
+	if (objv.length == 2) {
+	    simplePattern = null;
+	    ns = currNs;
+	    specificNsInPattern = false;
+	} else if (objv.length == 3) {
+	    // From the pattern, get the effective namespace and the simple
+	    // pattern (no namespace qualifiers or ::'s) at the end. If an
+	    // error was found while parsing the pattern, return it. Otherwise,
+	    // if the namespace wasn't found, just leave ns = null: we will
+	    // return an empty list since no variables there can be found.
+
+	    pattern = objv[2].toString();
+
+	    // Java does not support passing an address so we pass
+	    // an array of size 1 and then assign arr[0] to the value
+	    NamespaceCmd.Namespace[] nsArr     = new NamespaceCmd.Namespace[1];
+	    NamespaceCmd.Namespace[] dummy1Arr = new NamespaceCmd.Namespace[1];
+	    NamespaceCmd.Namespace[] dummy2Arr = new NamespaceCmd.Namespace[1];
+	    String[]     simplePatternArr  = new String[1];
+
+	    NamespaceCmd.getNamespaceForQualName(interp, pattern, null,
+	        0, nsArr, dummy1Arr, dummy2Arr, simplePatternArr);
+
+	    // Get the values out of the arrays!
+	    ns  = nsArr[0];
+	    simplePattern = simplePatternArr[0];
+
+	    if (ns != null) {	// we successfully found the pattern's ns
+		specificNsInPattern = (simplePattern.compareTo(pattern) != 0);
+	    }
+	} else {
+	    throw new TclNumArgsException(interp, 2, objv, "?pattern?");
+	}
+
+	// If the namespace specified in the pattern wasn't found, just return.
+
+	if (ns == null) {
+	    return;
+	}
+    
+	list = TclList.newInstance();
+    
+	if ((interp.varFrame == null)
+	    || !interp.varFrame.isProcCallFrame
+	    || specificNsInPattern) {
+	    // There is no frame pointer, the frame pointer was pushed only
+	    // to activate a namespace, or we are in a procedure call frame
+	    // but a specific namespace was specified. Create a list containing
+	    // only the variables in the effective namespace's variable table.
+
+	    search = ns.varTable.keys();
+	    while (  search.hasMoreElements() ) {
+		varName = (String) search.nextElement();
+		var = (Var) ns.varTable.get(varName);
+		if (!var.isVarUndefined()
+		    || ((var.flags & Var.NAMESPACE_VAR) != 0)) {
+		    if ((simplePattern == null)
+	                || Util.stringMatch(varName, simplePattern)) {
+			if (specificNsInPattern) {
+			    elemObj = TclString.newInstance(
+					 Var.getVariableFullName(interp, var));
+			} else {
+			    elemObj = TclString.newInstance(varName);
+			}
+			TclList.append(interp, list, elemObj);
+		    }
+		}
+	    }
+
+	    // If the effective namespace isn't the global :: namespace, and a
+	    // specific namespace wasn't requested in the pattern (i.e., the
+	    // pattern only specifies variable names), then add in all global ::
+	    // variables that match the simple pattern. Of course, add in only
+	    // those variables that aren't hidden by a variable in the effective
+	    // namespace.
+
+	    if ((ns != globalNs) && !specificNsInPattern) {
+		search = globalNs.varTable.keys();
+		while (  search.hasMoreElements() ) {
+		    varName = (String) search.nextElement();
+		    var = (Var) globalNs.varTable.get(varName);
+		    if (!var.isVarUndefined()
+			|| ((var.flags & Var.NAMESPACE_VAR) != 0)) {
+			if ((simplePattern == null)
+			    || Util.stringMatch(varName, simplePattern)) {
+
+			    // Skip vars defined in current namespace
+			    if (ns.varTable.get(varName) == null) {
+				TclList.append(interp, list,
+					       TclString.newInstance(varName));
+			    }
+			}
+		    }
+		}
+	    }
+	} else {
+	    AppendLocals(interp, list, simplePattern, true);
+	}
+    
+	interp.setResult(list);
+	return;
     }
 }
 
