@@ -623,6 +623,11 @@ AC_DEFUN([AC_JAVA_JNI_INCLUDE], [
     F=`ls $ac_java_jvm_dir/include/*/jni_md.h 2>/dev/null`
     if test -f "$F" ; then
         ac_java_jvm_jni_include_flags="$ac_java_jvm_jni_include_flags -I`dirname $F`"
+    else
+        F=`ls $ac_java_jvm_dir/include/kaffe/jtypes.h 2>/dev/null`
+        if test -f "$F" ; then
+            ac_java_jvm_jni_include_flags="$ac_java_jvm_jni_include_flags -I`dirname $F`"
+        fi
     fi
 
 
@@ -672,8 +677,12 @@ AC_DEFUN([AC_JAVA_JNI_INCLUDE], [
 #------------------------------------------------------------------------
 
 AC_DEFUN([AC_JAVA_JNI_LIBS], [
-    # Check for Kaffe install directory location. Thankfully, Kaffe
-    # uses a rather standard install lib location across systems
+    machine=`uname --machine`
+    case "$machine" in
+        i?86)
+          machine=i386
+          ;;
+    esac
 
     if test "$ac_java_jvm_name" = "kaffe" ; then
         # Kaffe JVM under Cygwin (untested, is -lpthread needed?)
@@ -702,6 +711,17 @@ AC_DEFUN([AC_JAVA_JNI_LIBS], [
                 # Kaffe requires lib/kaffe on the lib path or it fails to load
                 D=$ac_java_jvm_dir/lib/kaffe
                 ac_java_jvm_jni_lib_runtime_path="${ac_java_jvm_jni_lib_runtime_path}:$D"
+            else
+                F=jre/lib/$machine/libkaffevm.so
+                AC_MSG_LOG([Looking for $ac_java_jvm_dir/$F], 1)
+                if test -f $ac_java_jvm_dir/$F ; then
+                    AC_MSG_LOG([Found $ac_java_jvm_dir/$F], 1)
+                    D=`dirname $ac_java_jvm_dir/$F`
+                    ac_java_jvm_jni_lib_runtime_path=$D
+                    ac_java_jvm_jni_lib_flags="-lpthread -L$D -lkaffevm -ldl"
+                    # Kaffe needs the machine dir on the lib path
+                    ac_java_jvm_jni_lib_runtime_path="${ac_java_jvm_jni_lib_runtime_path}:$D"
+                fi
             fi
         fi
     fi
@@ -811,12 +831,6 @@ AC_DEFUN([AC_JAVA_JNI_LIBS], [
         # when loading the java package. Use the "client" vm
         # unless "classic" is the only one available.
 
-        machine=`uname --machine`
-        case "$machine" in
-            i?86)
-              machine=i386
-              ;;
-        esac
 
         F=jre/lib/$machine/libjava.so
         if test "x$ac_java_jvm_jni_lib_flags" = "x" ; then

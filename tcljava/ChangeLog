@@ -1,5 +1,12 @@
 2002-07-23  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* Makefile.in: Write out an init file that sets
+	env vars in for the gdb_tclblend target.
+	* tcljava.m4 (AC_JAVA_JNI_INCLUDE, AC_JAVA_JNI_LIBS):
+	Support newer Kaffe include/library layout.
+
+2002-07-23  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/tclblend/tcl/lang/Interp.java (finalize):
 	* tests/tclblend/javaInterp.test: Print an
 	error message to stderr if the Java GC
