@@ -70,6 +70,7 @@
          <LI><A HREF="#array">How do I create an array of Java objects?</A>
          <LI><A HREF="#64bit">How are 64 bit values handled?</A>
          <LI><A HREF="#threads">Does Tcl Blend work with green threads on Solaris or Linux?</A>
+         <LI><A HREF="#stubs">Is Tcl Blend stubs enabled?</A>
          <LI><A HREF="#browser">Does Jacl or Tcl Blend work inside a web browser?</A>
          <LI><A HREF="#mac">Is there a Mac port?</A>
          </UL>
@@ -168,6 +169,18 @@
          intended to make Tcl Blend work with a green threads JVM,
          but there are just too many problems to justify supporting
          this configuration.
+         </P>
+
+         <P>
+         <A NAME="stubs">
+         <B>Is Tcl Blend stubs enabled?</B><BR>
+         No, Tcl's stubs mechanism does not work with Tcl Blend. As
+         of version 1.3, Tcl Blend supports loading of both Tcl Blend
+         and Tcl into an existing JVM. To implement this feature,
+         the Tcl Blend shared library needs to know the specific
+         version of Tcl it was compiled with. Tcl's stubs mechanism
+         is designed to support loading an extension into multiple
+         versions of Tcl without the need for a recompile.
          </P>
 
          <P>
