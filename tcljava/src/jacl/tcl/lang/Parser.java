@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Parser.java,v 1.13 2003/01/09 23:07:21 mdejong Exp $
+ * RCS: @(#) $Id: Parser.java,v 1.14 2003/02/03 11:07:23 mdejong Exp $
  */
 
 package tcl.lang;
@@ -825,7 +825,7 @@ throws
 /*
  *----------------------------------------------------------------------
  *
- * logCommandInfo --
+ * Tcl_LogCommandInfo -> logCommandInfo
  *
  *	This procedure is invoked after an error occurs in an interpreter.
  *	It adds information to the "errorInfo" variable to describe the
@@ -1228,15 +1228,15 @@ throws
 		if ( e.getCompletionCode()== TCL.ERROR &&
 		     !(interp.errAlreadyLogged)) {
 		    commandLength = parse.commandSize;
-		    if ((parse.commandStart + commandLength) 
-			    != (script_index + numBytes)) {
-
+		    char term = script_array[parse.commandStart+commandLength-1];
+		    int type = charType(term);
+		    if (type == TYPE_COMMAND_END) {
 			// The command where the error occurred didn't end 
 			// at the end of the script (i.e. it ended at a 
 			// terminator character such as ";".  Reduce the 
 			// length by one so that the error message
 			// doesn't include the terminator character.
-			
+
 			commandLength -= 1;
 		    }
 		    interp.varFrame = savedVarFrame;

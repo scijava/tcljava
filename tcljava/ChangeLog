@@ -1,3 +1,11 @@
+2003-02-03  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/jacl/tcl/lang/Parser.java (eval2): Check to
+	see if the character just before the end of the
+	returned script is a terminator and don't include
+	it in the error message if it is. This fixes
+	a test case in error.test.
+
 2003-02-02  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* src/jacl/tcl/lang/ClockCmd.java (GetDate):
