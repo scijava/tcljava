@@ -12,7 +12,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaImportCmd.java,v 1.2 2000/01/10 23:43:18 mo Exp $
+ * RCS: @(#) $Id: JavaImportCmd.java,v 1.3 2001/01/29 04:32:25 mdejong Exp $
  *
  */
 
@@ -163,7 +163,7 @@ public class JavaImportCmd implements Command {
 		    // does not have any classes imported from it
 
 		    throw new TclException(interp,
-		        "can not forget package \"" + pkg +
+		        "cannot forget package \"" + pkg +
 			"\", no classes were imported from it");
 		}
 		
@@ -258,7 +258,7 @@ public class JavaImportCmd implements Command {
 		elem.equals("short") ||
 		elem.equals("char")) {
 		throw new TclException(interp,
-			  "can not " + operation +
+			  "cannot " + operation +
 			  " primitive type \"" + elem + "\"");
 	    }
 
@@ -281,7 +281,7 @@ public class JavaImportCmd implements Command {
 	    int ind = fullyqualified.lastIndexOf('.');
 	    if (ind == -1) {
 		throw new TclException(interp,
-		    "can not " + operation +
+		    "cannot " + operation +
                     " from global package");
 	    }
 
@@ -292,7 +292,7 @@ public class JavaImportCmd implements Command {
 	    // Make sure the class is not in the java.lang package
 	    if (class_package.equals("java.lang")) {
 		throw new TclException(interp,
-		    "can not " + operation + " class \"" +
+		    "cannot " + operation + " class \"" +
 		    fullyqualified + "\", it is in the java.lang package");
 	    }
 
@@ -313,7 +313,7 @@ public class JavaImportCmd implements Command {
 
 		if (inGlobal) {
 		    throw new TclException(interp,
-		        "can not import \"" + fullyqualified +
+		        "cannot import \"" + fullyqualified +
 		        "\" it conflicts with a class with the same name" +
 			" in the global package");
 		}
@@ -321,7 +321,7 @@ public class JavaImportCmd implements Command {
 		// Make sure the class can be loaded (using the fully qualified name)
 
 		TclException notfound = new TclException(interp,
-		        "can not import class \"" +
+		        "cannot import class \"" +
 			fullyqualified +
 			"\", it does not exist");
 
@@ -331,7 +331,7 @@ public class JavaImportCmd implements Command {
 		    throw notfound;
 		} catch (SecurityException e) {
 		    // The tcljava loader throws a SecurityException when
-		    // a class can not be loaded and it is in any of the
+		    // a class cannot be loaded and it is in any of the
 		    // java.* packages or tcl.* packages. We catch that
 		    // exception here and treat it like ClassNotFoundException
 
@@ -346,7 +346,7 @@ public class JavaImportCmd implements Command {
 	    if (forget) {
 		if (classTable.get(class_name) == null) {
 		    throw new TclException(interp,
-		        "can not forget class \"" + fullyqualified +
+		        "cannot forget class \"" + fullyqualified +
                         "\", it was never imported");
 		}
 	    }

@@ -1,5 +1,10 @@
 2001-01-28  Mo DeJong  <mdejong@redhat.com>
 
+	* src/tcljava/tcl/lang/JavaImportCmd.java:
+	Fix up diction of error messages.
+
+2001-01-28  Mo DeJong  <mdejong@redhat.com>
+
 	* src/jacl/tcl/lang/SubstCmd.java:
 	Use a StringBuffer instead of repeatedly
 	concatenating strings together. Remove
