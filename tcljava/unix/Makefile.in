@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.33 2000/03/20 17:51:30 mo Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.34 2000/04/01 09:12:41 mo Exp $
 
 # The directory containing the Tcl sources and headers appropriate
 # for this version of Tk ("srcdir" will be replaced or has already
@@ -1052,11 +1052,12 @@ tcljavaDist: Makefile
 	@echo "#"
 	rm -rf $(DISTDIR)
 	mkdir -p $(DISTDIR)
-	$(MAKE) TCLJAVA=$(TCLJAVA) DISTDIR=$(DISTDIR) tcljavaDemoDist 
+	$(MAKE) TCLJAVA=$(TCLJAVA) DISTDIR=$(DISTDIR) tcljavaDemoDist
 
 	cp -p $(TOP_DIR)/license.terms \
 		$(TOP_DIR)/license.ucb \
 		$(TOP_DIR)/changes.txt \
+		$(TOP_DIR)/ChangeLog \
 		$(TOP_DIR)/diffs.txt \
 		$(TOP_DIR)/known_issues.txt \
 		$(DISTDIR)
@@ -1237,9 +1238,6 @@ jaclDist: $(UNIX_DIR)/configure Makefile
 	@echo "#"
 	$(MAKE) tcljavaDist DISTDIR=$(JACL_DISTDIR) TCLJAVA=jacl
 
-	cp -p $(TOP_DIR)/license.oro \
-		$(JACL_DISTDIR)
-
 	cp -p $(TOP_DIR)/README.jacl \
 		$(JACL_DISTDIR)/README
 	cp -p $(TOP_DIR)/unix/README.jacl \
@@ -1251,8 +1249,9 @@ jaclDist: $(UNIX_DIR)/configure Makefile
 	cp -p $(TOP_DIR)/src/tests/jacl/tcl/lang/*.java \
 		$(JACL_DISTDIR)/src/tests/jacl/tcl/lang
 
-	mkdir -p $(JACL_DISTDIR)/src/jacl
-	cp $(JACL_SRC_DIR)/oro.jar $(JACL_DISTDIR)/src/jacl
+	mkdir -p $(JACL_DISTDIR)/src/jacl/sunlabs/brazil/util/regexp
+	cp -p $(TOP_DIR)/src/jacl/sunlabs/brazil/util/regexp/*.java \
+		$(JACL_DISTDIR)/src/jacl/sunlabs/brazil/util/regexp
 
 	mkdir -p $(JACL_DISTDIR)/src/jacl/tcl/lang
 	cp -p $(TOP_DIR)/src/jacl/tcl/lang/*.java \
@@ -1264,10 +1263,6 @@ jaclDist: $(UNIX_DIR)/configure Makefile
 		$(JACL_SRC_DIR)/tcl/lang/library/tclIndex \
 		$(TOP_DIR)/license.terms \
 		$(JACL_DISTDIR)/src/jacl/tcl/lang/library
-
-	mkdir -p $(JACL_DISTDIR)/src/jacl/tcl/regex
-	cp -p $(TOP_DIR)/src/jacl/tcl/regex/*.java \
-		$(JACL_DISTDIR)/src/jacl/tcl/regex
 
 	mkdir -p $(JACL_DISTDIR)/tests/jacl
 	cp -p $(TOP_DIR)/tests/jacl/*.test \
