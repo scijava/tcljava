@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Shell.java,v 1.5 2000/04/03 14:09:11 mo Exp $
+ * RCS: @(#) $Id: Shell.java,v 1.6 2000/05/13 09:15:16 mo Exp $
  */
 
 package tcl.lang;
@@ -183,9 +183,8 @@ StringBuffer sbuf;
 
 // Used to for interactive input/output
 
-private Channel in;
-private Channel out;
-private Channel err;
+private PrintStream out;
+private PrintStream err;
 
 // set to true to get extra debug output
 private static final boolean debug = false;
@@ -247,8 +246,8 @@ ConsoleThread(
     sbuf = new StringBuffer(100);
     historyObjs = new Vector();
 
-    out = new StdChannel("stdout");
-    err = new StdChannel("stderr");
+    out = System.out;
+    err = System.err;
 }
 
 /*
@@ -547,11 +546,11 @@ private void getLine() {
 
 private void
 putLine(
-    Channel chan, 		// The channel to print to.
+    PrintStream stream,		// The stream to print to.
     String s)			// The string to print.
 {
-    put(chan, s);
-    put(chan, "\n");
+    stream.println(s);
+    stream.flush();
 }
 
 /*
@@ -573,14 +572,10 @@ putLine(
 
 private
 void put(
-    Channel chan,  		// The channel to print to.
+    PrintStream stream,		// The stream to print to.
     String s)			// The string to print.
 {
-    try {
-	out.write(interp, s);
-        out.flush(interp);
-    } catch (Exception  e) {
-	throw new TclRuntimeError("unexpected Exception " + e);
-    }
+    stream.print(s);
+    stream.flush();
 }
 } // end of class ConsoleThread

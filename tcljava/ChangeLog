@@ -1,3 +1,10 @@
+2000-05-13  Mo DeJong  <mdejong@redhat.com>
+
+	* src/jacl/tcl/lang/Shell.java:
+	Dropped use of Jacl Channel objects in
+	favor of directly calling System.in and
+	System.out.
+
 2000-04-07  Mo DeJong  <mdejong@redhat.com>
 
 	* README.jacl:
