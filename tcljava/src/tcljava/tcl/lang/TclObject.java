@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclObject.java,v 1.4 2000/10/29 06:00:42 mdejong Exp $
+ * RCS: @(#) $Id: TclObject.java,v 1.5 2002/12/10 00:55:37 mdejong Exp $
  *
  */
 
@@ -43,6 +43,9 @@ public final class TclObject {
      * @param rep the initial InternalRep for this object.
      */
     public TclObject(InternalRep rep) {
+	if (rep == null) {
+	    throw new TclRuntimeError("null InternalRep");
+	}
 	internalRep = rep;
 	stringRep = null;
 	refCount = 0;
@@ -57,6 +60,9 @@ public final class TclObject {
      * @param s the initial string rep for this object.
      */
     protected TclObject(TclString rep, String s) {
+	if (rep == null) {
+	    throw new TclRuntimeError("null InternalRep");
+	}
 	internalRep = rep;
 	stringRep = s;
 	refCount = 0;
@@ -69,6 +75,7 @@ public final class TclObject {
      * @return the handle to the current internal rep.
      */
     public final InternalRep getInternalRep() {
+	disposedCheck();
 	return internalRep;
     }
 
@@ -80,6 +87,10 @@ public final class TclObject {
      * @param rep the new internal rep.
      */
     public final void setInternalRep(InternalRep rep) {
+	disposedCheck();
+	if (rep == null) {
+	    throw new TclRuntimeError("null InternalRep");
+	}
 	if (rep == internalRep) {
 	    return;
 	}
@@ -111,6 +122,7 @@ public final class TclObject {
      * @return the string representation of the object.
      */
     public final String toString() {
+	disposedCheck();
 	if (stringRep == null) {
 	    stringRep = internalRep.toString();
 	}
@@ -126,6 +138,7 @@ public final class TclObject {
      * @exception TclRuntimeError if object is not exclusively owned.
      */
     public final void invalidateStringRep() throws TclRuntimeError {
+	disposedCheck();
 	if (refCount > 1) {
 	    throw new TclRuntimeError("string representation of object \"" +
 		    toString() + "\" cannot be invalidated: refCount = " +
@@ -139,6 +152,7 @@ public final class TclObject {
      * @return true if the TclObject is shared, false otherwise.
      */
     public final boolean isShared() {
+	disposedCheck();
 	return (refCount > 1);
     }
 
@@ -161,6 +175,7 @@ public final class TclObject {
      * @exception TclRuntimeError if the refCount <= 0
      */
     public final TclObject takeExclusive() throws TclRuntimeError {
+	disposedCheck();
 	if (refCount == 1) {
 	    return this;
 	} else if (refCount > 1) {
@@ -190,6 +205,7 @@ public final class TclObject {
      * @exception TclRuntimeError if the object has already been deallocated.
      */
     public final void preserve() throws TclRuntimeError {
+	disposedCheck();
 	if (internalRep == null) {
 	    throw new TclRuntimeError("Attempting to preserve object " +
 		    "after it was deallocated");
@@ -205,6 +221,7 @@ public final class TclObject {
      * the obejct will be deallocated.
      */
     public final void release() {
+	disposedCheck();
 	refCount--;
 
 	if (refCount <= 0) {
@@ -226,6 +243,17 @@ public final class TclObject {
      */
     protected final int getRefCount() {
 	return refCount;
+    }
+
+    /**
+     * Raise a TclRuntimeError if this TclObject has been
+     * disposed of because the last ref was released.
+     */
+
+    private final void disposedCheck() {
+	if (internalRep == null) {
+	    throw new TclRuntimeError("TclObject has been deallocated");
+	}
     }
 }
 
