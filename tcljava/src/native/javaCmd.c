@@ -10,7 +10,7 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  *
- * RCS: @(#) $Id: javaCmd.c,v 1.19 2002/12/21 04:02:53 mdejong Exp $
+ * RCS: @(#) $Id: javaCmd.c,v 1.20 2002/12/25 00:01:16 mdejong Exp $
  */
 
 /*
@@ -390,10 +390,12 @@ JavaInitEnv(
 {
     jsize nVMs;
     char *path, *newPath;
-    int oldSize, size, maxOptions = 2;
+    int oldSize, size;
 #ifdef JDK1_2
     JavaVMOption *options;
     JavaVMInitArgs vm_args;
+    Tcl_Obj *tclblend_init;
+    int i, tclblend_init_len;
 #elif defined TCLBLEND_KAFFE /* FIXME: Can we pass options to Kaffe ?? */
     JavaVMInitArgs vm_args;
 #else
@@ -458,7 +460,23 @@ JavaInitEnv(
 
         memset(&vm_args, 0, sizeof(vm_args));
 #ifdef JDK1_2
-        options = (JavaVMOption *) ckalloc(sizeof(JavaVMOption) * maxOptions);
+        /*
+         * If the global tcl_variable tclblend_init is set,
+         * we will pass each element to the JVM as an option.
+         */
+
+        tclblend_init = Tcl_GetVar2Ex(interp, "tclblend_init", NULL,
+                TCL_GLOBAL_ONLY);
+        if (tclblend_init == NULL) {
+            tclblend_init_len = 0;
+        } else {
+            if (Tcl_ListObjLength(interp, tclblend_init,
+                    &tclblend_init_len) != TCL_OK) {
+                goto error;
+            }
+        }
+
+        options = (JavaVMOption *) ckalloc(sizeof(JavaVMOption) * (tclblend_init_len+1));
         vm_args.version = 0x00010002;
         vm_args.options = options;
         vm_args.ignoreUnrecognized= 1;
@@ -495,11 +513,11 @@ JavaInitEnv(
 # define JAVA_CLASS_PATH_ARG "-Djava.class.path="
 	if (path) {
 	    size = strlen(path) + strlen(JAVA_CLASS_PATH_ARG);
-            options[0].optionString = ckalloc(size+2);
-            vm_args.nOptions++;
+	    options[0].optionString = ckalloc(size+2);
 	    strcpy(options[0].optionString, JAVA_CLASS_PATH_ARG);
 	    strcat(options[0].optionString, path);
 	    options[0].extraInfo = (void *)NULL;
+	    vm_args.nOptions++;
 	}
 #else
 	if (path && vm_args.classpath) {
@@ -531,20 +549,10 @@ JavaInitEnv(
 
 
 #ifdef JDK1_2
-        /*
-         * If the global tcl_variable tclblend_init is set, then pass its
-         * value to the JVM. 
-         * If the value of the string is "help", then initialization
-         * of the JVM does not occur and a usage string is returned.
-         */
-
-        if ((options[vm_args.nOptions].optionString = 
-                 (void *) Tcl_GetVar(interp, "tclblend_init",
-                            TCL_GLOBAL_ONLY)) != NULL) {
-            if ( !strcmp((char *)options[vm_args.nOptions].optionString, "help")) {
-                Tcl_AppendResult(interp,
-    "The value of the global tcl variable 'tclblend_init' is passed to the\n "
-    "Java virtual machine upon initialization.\n "
+        if (tclblend_init && !strcmp(Tcl_GetString(tclblend_init),"help")) {
+            Tcl_AppendResult(interp,
+    "Each list element of the global tcl variable 'tclblend_init' is passed\n "
+    "as a JVM option upon initialization.\n "
     "Example values include:\n"
     "  -Djava.compiler=NONE   - disable Just In Time Compiler\n"
     "  -Djava.library.path=c:\\jdk\\lib\\tools.jar - set native library path\n"
@@ -555,30 +563,35 @@ JavaInitEnv(
     "To see what other options are available, run 'java -help'.\n"
     "Tcl Blend only: If the value is 'help', then JVM initialization stop\n",
     "and this message is returned.",
-                                NULL);
-                goto error;
-            }
-	    options[vm_args.nOptions].extraInfo = (void *)NULL;
+                    NULL);
+            goto error;
+        }
+
+        for (i=0; i < tclblend_init_len; i++) {
+            Tcl_Obj *elemPtr;
+            char *elem;
+            Tcl_ListObjIndex(NULL, tclblend_init, i, &elemPtr);
+            elem = Tcl_GetString(elemPtr);
+            size = strlen(elem);
+            options[vm_args.nOptions].optionString = ckalloc(size+2);
+            strcpy(options[vm_args.nOptions].optionString, elem);
+            options[vm_args.nOptions].extraInfo = (void *)NULL;
             vm_args.nOptions++;
+        }
 
 #ifdef TCLBLEND_DEBUG
-            {
-            int i;
-            fprintf(stderr, "TCLBLEND_DEBUG: tclblend_init set\n"
+        fprintf(stderr, "TCLBLEND_DEBUG: JVM options\n"
                 " vm_args.version: %x\n"
                 " vm_args.nOptions: %d\n",
                 vm_args.version, vm_args.nOptions);
-            for( i = 0; i < maxOptions; i++) {
-                fprintf(stderr, 
+        for (i = 0; i < vm_args.nOptions; i++) {
+            fprintf(stderr, 
                     " options[%d].optionString = '%s', "
                     " options.[%d].extraInfo = '%s'\n",
                     i, options[i].optionString, i, 
                     options[i].extraInfo ? (char *)options[i].extraInfo : "NULL");
-            }
-            }
-#endif /* TCLBLEND_DEBUG */
-           
         }
+#endif /* TCLBLEND_DEBUG */
 #endif /* JDK1_2 */
 
 #ifdef TCLBLEND_DEBUG
