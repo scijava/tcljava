@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: CaseCmd.java,v 1.1 1998/10/14 21:09:18 cvsadmin Exp $
+ * RCS: @(#) $Id: CaseCmd.java,v 1.2 1999/05/08 23:52:18 dejong Exp $
  *
  */
 
@@ -34,7 +34,7 @@ class CaseCmd implements Command {
 		    "string ?in? patList body ... ?default body?");
         }
 
-	int i, result;
+	int i;
 	int body;
 	TclObject caseArgv[];
 	String string;
