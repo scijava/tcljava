@@ -1,5 +1,15 @@
 2001-11-20  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/jacl/tcl/lang/StdChannel.java (open): Set
+	channel names to stdin, stdout, and stderr instead
+	of file0, file1, and file2.
+	* src/jacl/tcl/lang/TclIO.java (getChannel,
+	getNextDescriptor): Remove aliases for stdin, stdout,
+	and stderr. When getting a descriptor prefixed with
+	"file" but sure the first one we return is "file3".
+
+2001-11-20  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/jacl/tcl/lang/PutsCmd.java:
 	* src/jacl/tcl/lang/ReadCmd.java: Reformat comments
 	to make use Java style // instead of C style /**/.

@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: StdChannel.java,v 1.13 2001/11/20 04:31:14 mdejong Exp $
+ * RCS: @(#) $Id: StdChannel.java,v 1.14 2001/11/20 20:32:23 mdejong Exp $
  *
  */
 
@@ -86,6 +86,7 @@ class StdChannel extends Channel {
         switch (type) {
 	    case STDIN:
 	        mode = TclIO.RDONLY;
+	        setChanName("stdin");
 		if (reader == null) {
 		    reader = new BufferedReader(
                         new InputStreamReader(System.in)); 
@@ -93,6 +94,7 @@ class StdChannel extends Channel {
 		break;
 	    case STDOUT:
 	        mode = TclIO.WRONLY;
+	        setChanName("stdout");
 		if (writer == null) {
 		    writer = new BufferedWriter(
                         new OutputStreamWriter(System.out)); 
@@ -100,6 +102,7 @@ class StdChannel extends Channel {
 		break;
 	    case STDERR:
 	        mode = TclIO.WRONLY;
+	        setChanName("stderr");
 		if (writer == null) {
 		    writer = new BufferedWriter(
                         new OutputStreamWriter(System.err)); 
@@ -111,7 +114,6 @@ class StdChannel extends Channel {
 	}
 
         stdType = type;
-	setChanName("file" + type);
 	
 	return getChanName();
     }

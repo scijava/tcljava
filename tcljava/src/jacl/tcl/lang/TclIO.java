@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclIO.java,v 1.3 2001/11/20 18:01:52 mdejong Exp $
+ * RCS: @(#) $Id: TclIO.java,v 1.4 2001/11/20 20:32:23 mdejong Exp $
  *
  */
 
@@ -42,24 +42,7 @@ class TclIO {
     private static StdChannel stderrChan = null;
 
     static Channel getChannel(Interp interp, String chanName) {
-        Hashtable chanTable;
-	Channel   chan = null;
-
-	if ((chanName.length() > 0) && (chanName.charAt(0) == 's')) {
-	    if (chanName.equals("stdin")) {
-	        chan = getStdChannel(StdChannel.STDIN);
-	    } else if (chanName.equals("stdout")) {
-	        chan = getStdChannel(StdChannel.STDOUT);
-	    } else if (chanName.equals("stderr")) {
-	        chan = getStdChannel(StdChannel.STDERR);
-	    }
-	    if (chan != null) {
-	        chanName = chan.getChanName();
-	    }
-	}
-
-	chanTable = getInterpChanTable(interp);
-        return((Channel)chanTable.get(chanName));
+        return((Channel) getInterpChanTable(interp).get(chanName));
     }
 
 
@@ -154,7 +137,13 @@ class TclIO {
         int i;
 	Hashtable htbl = getInterpChanTable(interp);
 
-        for (i = 0; (htbl.get(prefix + i)) != null; i++) {
+        // The first available file identifier in Tcl is "file3"
+        if (prefix.equals("file"))
+            i = 3;
+        else
+            i = 0;
+
+        for ( ; (htbl.get(prefix + i)) != null; i++) {
 	    // Do nothing...
 	}
 	return prefix + i;
