@@ -1,0 +1,143 @@
+# ReturnCmd.test --
+#
+#	Tests the implementation of the ReturnCmd.java file.
+#
+# Copyright (c) 1997 by Sun Microsystems, Inc.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+#
+# SCCS: @(#) ReturnCmd.test 1.2 98/01/14 16:38:57
+
+
+# Note: This test file must be sourced from the parent directory
+#       or else the defs file may not be properly loaded.
+
+if {[string compare test [info procs test]] == 1} then {source defs}
+
+setupJavaPackage
+
+test ReturnCmd-1.1 {ReturnCmd.cmdProc} {
+    proc foo {} {
+	return -code ok
+    }
+    list [catch {foo} msg] $msg
+} {0 {}}
+test ReturnCmd-1.2 {ReturnCmd.cmdProc} {
+    proc foo {} {
+	return -code error
+    }
+    list [catch {foo} msg] $msg
+} {1 {}}
+test ReturnCmd-1.3 {ReturnCmd.cmdProc} {
+    proc foo {} {
+	return -code return
+    }
+    list [catch {foo} msg] $msg
+} {2 {}}
+test ReturnCmd-1.4 {ReturnCmd.cmdProc} {
+    proc foo {} {
+	return -code break
+    }
+    list [catch {foo} msg] $msg
+} {3 {}}
+test ReturnCmd-1.5 {ReturnCmd.cmdProc} {
+    proc foo {} {
+	return -code continue
+    }
+    list [catch {foo} msg] $msg
+} {4 {}}
+test ReturnCmd-1.6 {ReturnCmd.cmdProc} {
+    proc foo {} {
+	return -code 1234
+    }
+    list [catch {foo} msg] $msg
+} {1234 {}}
+test ReturnCmd-1.7 {ReturnCmd.cmdProc} {
+    proc foo {} {
+	return -code bar
+    }
+    list [catch {foo} msg] $msg
+} {1 {bad completion code "bar": must be ok, error, return, break, continue, or an integer}}
+
+# -errorinfo and -errorcode used only when -code is TCL.ERROR
+
+test ReturnCmd-2.1 {ReturnCmd.cmdProc} {
+    proc foo {} {
+	return -errorcode foo 1234
+    }
+    set errorCode ""
+    set errorInfo ""
+    list [catch {foo} msg] $msg $errorCode $errorInfo
+} {0 1234 {} {}}
+
+test ReturnCmd-2.2 {ReturnCmd.cmdProc} {
+    proc foo {} {
+	return -errorinfo foo 1234
+    }
+    set errorCode ""
+    set errorInfo ""
+    list [catch {foo} msg] $msg $errorCode $errorInfo
+} {0 1234 {} {}}
+
+test ReturnCmd-2.3 {ReturnCmd.cmdProc} {
+    proc foo {} {
+	return -bar foo 1234
+    }
+    set errorCode ""
+    set errorInfo ""
+    list [catch {foo} msg] $msg $errorCode $errorInfo
+} {1 {bad option "-bar": must be -code, -errorcode, or -errorinfo} NONE {bad option "-bar": must be -code, -errorcode, or -errorinfo
+    while executing
+"return -bar foo 1234"
+    (procedure "foo" line 2)
+    invoked from within
+"foo"}}
+
+test ReturnCmd-2.4 {ReturnCmd.cmdProc} {
+    proc foo {} {
+	return -code
+    }
+    set errorCode ""
+    set errorInfo ""
+    list [catch {foo} msg] $msg $errorCode $errorInfo
+} {0 -code {} {}}
+test ReturnCmd-2.5 {ReturnCmd.cmdProc} {
+    proc foo {} {
+	return -errorinfo
+    }
+    set errorCode ""
+    set errorInfo ""
+    list [catch {foo} msg] $msg $errorCode $errorInfo
+} {0 -errorinfo {} {}}
+test ReturnCmd-2.6 {ReturnCmd.cmdProc} {
+    proc foo {} {
+	return -errorcode
+    }
+    set errorCode ""
+    set errorInfo ""
+    list [catch {foo} msg] $msg $errorCode $errorInfo
+} {0 -errorcode {} {}}
+test ReturnCmd-2.7 {ReturnCmd.cmdProc} {
+    proc foo {} {
+	return -bar
+    }
+    set errorCode ""
+    set errorInfo ""
+    list [catch {foo} msg] $msg $errorCode $errorInfo
+} {0 -bar {} {}}
+
+test ReturnCmd-3.1 {ReturnCmd.cmdProc} {
+    proc foo {} {
+	return foo
+    }
+    set errorCode ""
+    set errorInfo ""
+    list [catch {foo} msg] $msg $errorCode $errorInfo
+} {0 foo {} {}}
+test ReturnCmd-3.2 {ReturnCmd.cmdProc} {
+    list [catch {return} msg] $msg
+} {2 {}}
+test ReturnCmd-3.3 {ReturnCmd.cmdProc} {
+    list [catch {return -code 123} msg] $msg
+} {2 {}}
