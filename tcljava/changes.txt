@@ -1,6 +1,6 @@
 Recent user-visible changes to Jacl & Tcl Blend:
 
-RCS: @(#) $Id: changes.txt,v 1.32 1999/10/29 01:46:10 redman Exp $
+RCS: @(#) $Id: changes.txt,v 1.33 1999/10/29 22:19:00 redman Exp $
 
 ----------------- Released 1.0a1, 10/22/97 -----------------------
 
@@ -983,4 +983,6 @@ currently only support Tcl Blend building on all previously
 supported OSes and JDKs, including WinNT using Sun or IBM
 JDKs.  Support for building Jacl will be added soon.
 (Scott Redman)
+
+----------------- Released 1.2.5, 10/29/99 -----------------------
 

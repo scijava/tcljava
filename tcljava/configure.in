@@ -1366,9 +1366,6 @@ if test $TCLJAVA = "tclblend" || test $BOTH = "true"; then
    # link against the non-stubbed Tcl library.
    #--------------------------------------------------------------------
 
-   # However, TclBlend allows Java to create an interp, and the DLL is
-   # really a custom shell in that respect.  Do not use stubs.
-
    #AC_DEFINE(USE_TCL_STUBS)
 
    #--------------------------------------------------------------------
@@ -1402,7 +1399,11 @@ if test $TCLJAVA = "tclblend" || test $BOTH = "true"; then
 	;;
         *)
 	   if test "${SHARED_BUILD}" = "1" ; then
-	       SHLIB_LD_LIBS=""
+	       if test ! -f "${TCL_LIB_PATH}" ; then
+	           SHLIB_LD_LIBS="${TCL_BUILD_LIB_SPEC}"
+	       else
+	           SHLIB_LD_LIBS="${TCL_LIB_SPEC}"
+	       fi
 	       eval "TCLBLEND_LIB_FILE=lib${PACKAGE}${SHARED_LIB_SUFFIX}"
 	       RANLIB=:
 	   else
