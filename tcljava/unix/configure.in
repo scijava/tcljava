@@ -2,7 +2,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run to configure the
 dnl	Makefile in this directory.
 AC_INIT(../src/tcljava/tcl/lang/InternalRep.java)
-# RCS: @(#) $Id: configure.in,v 1.3 1998/11/13 05:17:35 hylands Exp $
+# RCS: @(#) $Id: configure.in,v 1.4 1998/11/16 05:58:17 hylands Exp $
 
 
 #--------------------------------------------------------------------
@@ -233,7 +233,7 @@ of the architecture dependent include files in the JDK.])
 	    ;;
 	*)TMP_JAVA_ARCH_LIB=$JAVA_DIR/lib/idontknow;;
     esac
-
+echo "TMP: $TMP_JAVA_ARCH_LIB"
     #
     # User specified Java architecture, used to find the jdk shared libs
     #
@@ -251,7 +251,21 @@ Use the --with-javaarchlib= configure flag to specify the location of the
 architecture dependent library files in the JDK.])
     fi
 
-    AC_HEADER_STDC
+    JAVA_ARCH_LIB_PARENT_DIR=`basename $JAVA_ARCH_LIB`
+
+    if test "$JAVA_ARCH_LIB_PARENT_DIR" = "green_threads"; then
+	TMP_JAVA_ARCH_LIB=`dirname $JAVA_ARCH_LIB`/native_threads
+	if test -d $TMP_JAVA_ARCH_LIB; then
+		AC_MSG_WARN([ Note that '$TMP_JAVA_ARCH_LIB' exists,
+but you chose '$JAVA_ARCH_LIB' instead.]);
+	fi
+	AC_MSG_ERROR([Tcl Blend require JDK native threads, 
+Tcl Blend cannot use JDK green_threads, the JDK shared libs 
+were found in $JAVA_ARCH_LIB,
+which ends in 'green_threads'.])
+    fi
+
+   AC_HEADER_STDC
     # generic/javaCmd.c calls memset
     AC_CHECK_FUNCS(memset)
 
