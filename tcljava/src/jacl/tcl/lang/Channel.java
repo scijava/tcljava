@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Channel.java,v 1.16 2001/12/24 05:51:48 mdejong Exp $
+ * RCS: @(#) $Id: Channel.java,v 1.17 2001/12/24 06:04:35 mdejong Exp $
  */
 
 package tcl.lang;
@@ -85,6 +85,13 @@ abstract class Channel {
      */
     
     protected String encoding = "iso8859-1";
+
+    /**
+     * Translation mode for end-of-line character
+     */
+
+    protected int inputTranslation = TclIO.TRANS_AUTO;
+    protected int outputTranslation = TclIO.TRANS_PLATFORM;
 
     /**
      * Read data from the Channel.
@@ -387,4 +394,35 @@ abstract class Channel {
             encoding = en;
     }
 
+    /** 
+     * Query input translation
+     */
+
+    int getInputTranslation() {
+        return inputTranslation;
+    }
+
+    /** 
+     * Set new input translation
+     */
+
+    void setInputTranslation(int translation) {
+        inputTranslation = translation;
+    }
+
+    /** 
+     * Query output translation
+     */
+
+    int getOutputTranslation() {
+        return outputTranslation;
+    }
+
+    /** 
+     * Set new output translation
+     */
+
+    void setOutputTranslation(int translation) {
+        outputTranslation = translation;
+    }
 }

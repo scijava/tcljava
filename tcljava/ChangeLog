@@ -1,3 +1,16 @@
+2001-12-23  Bruce Johnson  <bruce_johnson@merck.com>,
+            Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/jacl/tcl/lang/Channel.java (getInputTranslation,
+	setInputTranslation, getOutputTranslation, setOutputTranslation):
+	Add new input and output translations fields and accessors.
+	These fields are not actually used yet.
+	* src/jacl/tcl/lang/FconfigureCmd.java (cmdProc): Implement
+	the -translation option for the fconfigure command.
+	* src/jacl/tcl/lang/TclIO.java (getTranslationString,
+	getTranslationID): Add new methods and fields to support
+	the -translation option for fconfigure.
+
 2001-12-23  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* src/jacl/tcl/lang/Channel.java (getMode, isReadOnly,
@@ -10,7 +23,7 @@
 	with inherited mode field.
 
 2001-11-27  Bruce Johnson  <bruce_johnson@merck.com>,
-	Mo DeJong  <mdejong@users.sourceforge.net>
+            Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* src/jacl/tcl/lang/Channel.java (buffering, getBuffering,
 	setBuffering, BUF_SIZE, bufferSize, getBufferSize,
@@ -23,7 +36,7 @@
 	BUFF_NONE): Add new fields for use in Channel code.
 
 2001-11-27  Bruce Johnson  <bruce_johnson@merck.com>,
-	Mo DeJong  <mdejong@users.sourceforge.net>
+            Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* src/jacl/tcl/lang/Channel.java (blocking, getBlocking,
 	setBlocking): Add new blocking state.

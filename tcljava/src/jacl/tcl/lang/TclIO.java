@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclIO.java,v 1.5 2001/11/27 18:05:25 mdejong Exp $
+ * RCS: @(#) $Id: TclIO.java,v 1.6 2001/12/24 06:04:35 mdejong Exp $
  *
  */
 
@@ -34,6 +34,23 @@ class TclIO {
     static final int BUFF_FULL  = 0;
     static final int BUFF_LINE  = 1;
     static final int BUFF_NONE  = 2;
+
+    static final int TRANS_AUTO  = 0;
+    static final int TRANS_BINARY  = 1;
+    static final int TRANS_LF  = 2;
+    static final int TRANS_CR  = 3;
+    static final int TRANS_CRLF  = 4;
+
+    static int TRANS_PLATFORM;
+
+    static {
+        if (Util.isWindows())
+            TRANS_PLATFORM = TRANS_CRLF;
+        else if (Util.isMac())
+            TRANS_PLATFORM = TRANS_CR;
+        else
+            TRANS_PLATFORM = TRANS_LF;
+    }
 
     /**
      * Table of channels currently registered for all interps.  The 
@@ -152,5 +169,46 @@ class TclIO {
 	}
 	return prefix + i;
     }
-}
 
+    /*
+     * Return a string description for a translation id defined above.
+     */
+
+    static String getTranslationString(int translation) {
+        switch (translation) {
+            case TRANS_AUTO:
+                return "auto";
+            case TRANS_CR:
+                return "cr";
+            case TRANS_CRLF:
+                return "crlf";
+            case TRANS_LF:
+                return "lf";
+            case TRANS_BINARY:
+                return "lf";
+            default:
+                throw new TclRuntimeError("bad translation id");
+        }
+    }
+
+    /*
+     * Return a numerical identifier for the given translation string.
+     */
+
+    static int getTranslationID(String translation) {
+        if (translation.equals("auto"))
+            return TRANS_AUTO;
+        else if (translation.equals("cr"))
+            return TRANS_CR;
+        else if (translation.equals("crlf"))
+            return TRANS_CRLF;
+        else if (translation.equals("lf"))
+            return TRANS_LF;
+        else if (translation.equals("binary"))
+            return TRANS_LF;
+        else if (translation.equals("platform"))
+            return TRANS_PLATFORM;
+        else
+            return -1;
+    }
+}

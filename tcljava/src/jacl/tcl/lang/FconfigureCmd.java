@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FconfigureCmd.java,v 1.5 2001/11/27 18:05:25 mdejong Exp $
+ * RCS: @(#) $Id: FconfigureCmd.java,v 1.6 2001/12/24 06:04:35 mdejong Exp $
  *
  */
 
@@ -101,7 +101,33 @@ class FconfigureCmd implements Command {
             TclList.append(interp, list, TclString.newInstance(""));
 
             TclList.append(interp, list, TclString.newInstance("-translation"));
-            TclList.append(interp, list, TclString.newInstance("auto"));
+
+            if (chan.isReadOnly()) {
+                TclList.append(interp, list,
+                    TclString.newInstance(
+                        TclIO.getTranslationString(
+                            chan.getInputTranslation())));
+            } else if (chan.isWriteOnly()) {
+                TclList.append(interp, list,
+                    TclString.newInstance(
+                        TclIO.getTranslationString(
+                            chan.getOutputTranslation())));
+            } else if (chan.isReadWrite()) {
+                TclObject translation_pair = TclList.newInstance();
+
+                TclList.append(interp, translation_pair,
+                    TclString.newInstance(
+                        TclIO.getTranslationString(
+                            chan.getInputTranslation())));
+                TclList.append(interp, translation_pair,
+                    TclString.newInstance(
+                        TclIO.getTranslationString(
+                            chan.getOutputTranslation())));
+
+                TclList.append(interp, list, translation_pair);
+            } else {
+                throw new TclRuntimeError("Invalid channel mode");
+            }
 
             interp.setResult(list);
         }
@@ -144,6 +170,31 @@ class FconfigureCmd implements Command {
                     break;
                 }
                 case OPT_TRANSLATION: {    // -translation
+                    if (chan.isReadOnly()) {
+                        interp.setResult(
+                            TclIO.getTranslationString(
+                                chan.getInputTranslation()));
+                    } else if (chan.isWriteOnly()) {
+                        interp.setResult(
+                            TclIO.getTranslationString(
+                                chan.getOutputTranslation()));
+                    } else if (chan.isReadWrite()) {
+                        TclObject translation_pair = TclList.newInstance();
+
+                        TclList.append(interp, translation_pair,
+                            TclString.newInstance(
+                                TclIO.getTranslationString(
+                                    chan.getInputTranslation())));
+                        TclList.append(interp, translation_pair,
+                            TclString.newInstance(
+                                TclIO.getTranslationString(
+                                    chan.getOutputTranslation())));
+
+                        interp.setResult(translation_pair);
+                    } else {
+                        throw new TclRuntimeError("Invalid channel mode");
+                    }
+
                     break;
                 }
                 default: {
@@ -191,22 +242,50 @@ class FconfigureCmd implements Command {
                     break;
                 }
                 case OPT_TRANSLATION: {    // -translation
-                    String arg = argv[i].toString();
-                    if (arg.equals("auto")) {
+                    TclList.setListFromAny(interp, argv[i]);
+                    int length = TclList.getLength(interp, argv[i]);
 
-                    } else if (arg.equals("binary")) {
-
-                    } else if (arg.equals("cr")) {
-
-                    } else if (arg.equals("crlf")) {
-
-                    } else if (arg.equals("lf")) {
-
-                    } else {
+                    if (length < 1 || length > 2) {
                         throw new TclException(interp,
-                            "bad value for -translation: must be one " +
-                            "of auto, binary, cr, lf, crlf, or platform");
+                            "bad value for -translation: " +
+                            "must be a one or two element list");
                     }
+
+                    int inputTranslation, outputTranslation;
+
+                    if (length == 2) {
+                        inputTranslation = TclIO.getTranslationID(
+                            TclList.index(interp, argv[i], 0).toString());
+
+                        outputTranslation = TclIO.getTranslationID(
+                            TclList.index(interp, argv[i], 1).toString());
+                    } else {
+                        outputTranslation = inputTranslation = 
+                            TclIO.getTranslationID(argv[i].toString());
+                    }
+
+                    if ((inputTranslation == -1) ||
+                            (outputTranslation == -1)) {
+                        throw new TclException(interp,
+                            "bad value for -translation: " +
+                            "must be one of auto, binary, cr, lf," +
+                            "crlf, or platform");
+                    }
+
+                    if (outputTranslation == TclIO.TRANS_AUTO)
+                        outputTranslation = TclIO.TRANS_PLATFORM;
+
+                    if (chan.isReadOnly()) {
+                        chan.setInputTranslation(inputTranslation);
+                    } else if (chan.isWriteOnly()) {
+                        chan.setOutputTranslation(outputTranslation);
+                    } else if (chan.isReadWrite()) {
+                        chan.setInputTranslation(inputTranslation);
+                        chan.setOutputTranslation(outputTranslation);
+                    } else {
+                        throw new TclRuntimeError("Invalid channel mode");
+                    }
+
                     break;
                 }
                 default: {
