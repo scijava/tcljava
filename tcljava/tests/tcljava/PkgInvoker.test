@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: PkgInvoker.test,v 1.1 1998/10/14 21:09:24 cvsadmin Exp $
+# RCS: @(#) $Id: PkgInvoker.test,v 1.2 1998/10/29 23:23:32 hylands Exp $
 
 # Note: This test file must be sourced from the parent directory
 #       or else the defs file may not be properly loaded.
@@ -23,12 +23,14 @@ proc forName {clsName} {
 set PkgInvoker tcl.lang.reflect.PkgInvoker
 
 test PkgInvoker-1.1 {getPkgInvoker} {
+    # Note that this test fails with JDK1.2beta4, bug seems to be 'forName'
     set x1 [java::call $PkgInvoker getPkgInvoker [forName pkg1.MyClass]]
     set x2 [java::call $PkgInvoker getPkgInvoker [forName pkg1.MyClass]]
     string compare $x1 $x2
 } 0
 
 test PkgInvoker-1.2 {getPkgInvoker} {
+    # Note that this test fails with JDK1.2beta4, bug seems to be 'for Name'
     set x1 [java::call $PkgInvoker getPkgInvoker [forName pkg2.MyClass]]
     set x2 [java::call $PkgInvoker getPkgInvoker [forName java.lang.Object]]
     string compare $x1 $x2
