@@ -508,75 +508,8 @@ would work better.
 
 
 (TODO)
-possible problem in the parser class. (this is a 1.1.1 line number listing in eval2().
-The problem is that the parse reference could end up being null which would generate
-a null pointer exception like this. A null check might be needed here!
-
-> Exception in thread "main" java.lang.NullPointerException:
->         at tcl.lang.Parser.eval2(Parser.java:1205)
->         at tcl.lang.Procedure.cmdProc(Procedure.java:175)
->         at tcl.lang.Parser.evalObjv(Parser.java:740)
-
-
-    } finally {
-      parse.release(); //let go of parser resources          <- line 1205
-      releaseObjv(interp, objv); //let go of objv buffer
-    }
-
-
-
-
-
-(TODO - Tcl Blend with Tcl 8.1b3 diffs)
-diff -r -u tclBlend1.2.2/src/native/javaInterp.c ../tclBlend1.2.2/src/native/javaInterp.c
---- tclBlend1.2.2/src/native/javaInterp.c       Wed Mar 17 00:36:57 1999
-+++ ../tclBlend1.2.2/src/native/javaInterp.c    Wed Apr 14 02:09:26 1999
-@@ -282,7 +282,7 @@
-        result = Tcl_GlobalEvalObj(interp, objPtr);
-     }
- #else 
--    result = Tcl_EvalObj(interp, objPtr, TCL_EVAL_GLOBAL);
-+    result = Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_GLOBAL);
- #endif /* TCL8.0 */
- 
-     exception = (*env)->ExceptionOccurred(env);
-@@ -504,7 +504,7 @@
- 
- #else /* it is Tcl 8.1 or above */
- 
--    resultPtr = Tcl_SetObjVar2(interp, Tcl_GetStringFromObj(part1Ptr, (int *) NULL),
-+    resultPtr = Tcl_SetVar2Ex(interp, Tcl_GetStringFromObj(part1Ptr, (int *) NULL),
-                                       Tcl_GetStringFromObj(part2Ptr, (int *) NULL),
-                                       valuePtr, flags);
- #endif /* Tcl 8.0 */
-@@ -601,7 +601,7 @@
- 
- #else /* it is Tcl 8.1 or above */
- 
--    valuePtr = Tcl_GetObjVar2(interp, Tcl_GetStringFromObj(part1Ptr, (int *) NULL),
-+    valuePtr = Tcl_GetVar2Ex(interp, Tcl_GetStringFromObj(part1Ptr, (int *) NULL),
-                                       Tcl_GetStringFromObj(part2Ptr, (int *) NULL),
-                                       flags);
- #endif /* Tcl 8.0 */
-
-
-
-
-(TODO)
-To run TclBlend with Motif under Linux these shared libraries need
-to be pre loaded.
-
-
-TCLBLEND_LD_PRELOAD="${TCLBLEND_LD_PRELOAD} libXm.so libXpm.so libXt.so libSM.so libICE.so libXext.so libX11.so"
-
-
-TCLBLEND_LD_BIND_NOW=1
-
-
-
-(TODO)
 The Tcl Blend demos should not include the pyramid demo because it will
-only work with Jacl currently.
+only work with Jacl.
 
 
 (TODO)
@@ -629,14 +562,14 @@ Could this be related to the expr problems?
 
 Look into problems reading files bigger than the buffer size with the read
 command. This seems to be related to the other IO problems I have been
-running into.
+running into. The fix seems to be related to the stdin fixes that were
+created a little while back.
 
 
 (TODO)
 
-There is a problem with the Jacl exec if C:\Temp does not already exist
-on the machine. Add in some code to create that directory if it does
-not already exists before doing the exec().
+Check into problem with exec messages getting tossed out by Jacl
+exec command. Could adding the message to the error help?
 
 
 (TODO)
@@ -645,54 +578,6 @@ are not being used can be removed from the cache at runtime.
 
 
 
-
-
-
-
-
-
-(Fix these problems in 1.2.3 release!)
-
-
-fix misspelling in 1.2.3 release of tclblend interp code
-!!! fix misspelled comment in Interp "Unoknown" -> "Unknown"
-
-
-Remove this fixme note in src/tcljava/tcl/lang/BlendExtension.java
-after fixing the auto number system.
-
-// FIXME : provide automatic way to set java package version
-
-
-
-
-
-
-Add a note to the docs for the java::field method about the "class"
-feature that was added to 1.2.1.
-
-
-
-
-(TODO)
-Configure script gives an error!
-
-done with version substitutions
-dist version number was updated, please run configure again.
-./configure: -1: bad number
-
-
-this really should be fixed by fixing the whole version number thing !!!
-
-it should be "exit 1" or something!
-
-
-
-
-
-
-JavaFieldCmd.test
-Add newline at end of file!
 
 
 
@@ -719,14 +604,7 @@ inprogress/ExprCmd.test
 
 
 
-
-(Add #define TCLBLEND_DEBUG)
-The new "extra stack space" code in src/native/javaCmd.c might need this.
-
-
-
-
-
+(TODO)
 (make sure license files get copied into dists!)
 Make sure the license.oro and license.ucb files are added!.
 
@@ -763,3 +641,8 @@ inprogress/CdCmd.test should be move into a the working set (as of 8.0.5)
 
 
 
+
+
+(TODO)
+Tcl 8.1 seems to have added a new "package present" command. This should
+also be added to the Jacl implementation when I get some time.
