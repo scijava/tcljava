@@ -172,4 +172,3 @@ Mo DeJong writes:
   very good solution for everyone. There really is no reason swing and Tk
   will not work in the same process but they will not be able to "share" a
   window if that is what you mean.
-

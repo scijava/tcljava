@@ -2,11 +2,11 @@
 # This file need not be shipped with Jacl or Tcl Blend, it should
 # only be in the tcljava tar file that includes both Jacl and Tcl Blend.
 
-# RCS: @(#) $Id: testbuild.mk,v 1.6 1998/11/16 06:10:24 hylands Exp $
+# RCS: @(#) $Id: testbuild.mk,v 1.7 1999/01/15 03:06:54 hylands Exp $
 
 # To run these tests, do
 # cd ../unix 
-# configure --with-tcl=/users/cxh/pt/obj.sol2.5/tcltk/tcl8.0.3/unix/ `/users/cxh/pt/src/tcltk/java_studio`
+# configure --with-tcl=/users/cxh/pt/obj.sol2.5/tcltk/tcl8.0.5/unix/ `/users/cxh/pt/src/tcltk/java_studio`
 # make dists
 # make -f ../tests/testbuild.mk buildtest
 
@@ -33,9 +33,11 @@ include ../unix/Makefile
 # Edit these to suit yourself.
 
 GTAR =		gtar
-WITH_TCL = 	/users/cxh/pt/obj.sol2.5/tcltk/tcl8.0.3/unix
-TCLSH = 	/users/cxh/pt/bin.sol2.5/tclsh
-WISH =		/users/cxh/pt/bin.sol2.5/wish
+WITH_TCL = 	/users/cxh/pt/obj.sol2.5/tcltk/tcl8.0.5/unix
+# Directory that contains tclsh and wish
+TCLBINDIR =	/users/cxh/pt/bin.sol2.5
+TCLSH = 	$(TCLBINDIR)/tclsh
+WISH =		$(TCLBINDIR)/wish
 
 # Values for JDK1.1
 JDK =		/opt/jdk1.1.6
@@ -47,7 +49,7 @@ JDK_VERSION =	1.1.6
 #JDK_LD_LIBRARY_PATH =	$(JDK1.2)/jre/lib/sparc:$(JDK1.2)/jre/lib/sparc/native_threads
 #JDK_VERSION =	1.2fcs
 
-TMPPATH =	$(JDK)/bin:/usr/bin:/usr/local/bin:/usr/ccs/bin:.
+TMPPATH =	$(JDK)/bin:/usr/bin:/usr/local/bin:/usr/ccs/bin:$(TCLBINDIR):.:
 
 # Cleanup
 testbuild_clean: clean_jaclSrcBuild clean_blendSrcBuild \
@@ -71,10 +73,10 @@ SMOKETEST_RESULTS_FILE =	$(DISTDIR)/smoketest_results
 OK_SMOKETEST_RESULTS_FILE =	$(DISTDIR)/ok_smoketest_results
 
 # Correct output for Jacl
-JACL_GOOD_SMOKETEST_RESULTS =	"% java package: 1.1, jdkVersion: $(JDK_VERSION), patchLevel: 1.1b1 "
+JACL_GOOD_SMOKETEST_RESULTS =	"% java package: 1.1, jdkVersion: $(JDK_VERSION), patchLevel: 1.1 "
 
 # Correct output for Tcl Blend
-BLEND_GOOD_SMOKETEST_RESULTS =	"java package: 1.1, jdkVersion: $(JDK_VERSION), patchLevel: 1.1b1 "
+BLEND_GOOD_SMOKETEST_RESULTS =	"java package: 1.1, jdkVersion: $(JDK_VERSION), patchLevel: 1.1 "
 
 
 ######################################################################
@@ -177,6 +179,8 @@ blendSrcSmokeTest: $(BLENDSRCTEST_DIR)/blendtest.exec/bin/jtclsh
 	@echo "#"
 	@echo "# Smoke testing jtclsh built from sources"
 	@echo "#"
+	@echo "# If this seg faults, check for a libtclblend.so in "
+	@echo "# the current directory"
 	rm -f $(SMOKETEST_RESULTS_FILE) $(OK_SMOKETEST_RESULTS_FILE)
 	echo $(BLEND_GOOD_SMOKETEST_RESULTS) > $(OK_SMOKETEST_RESULTS_FILE)
 	PATH=$(TMPPATH) \

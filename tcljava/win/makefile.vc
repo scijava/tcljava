@@ -73,7 +73,7 @@ TCL_SRC		= ..\..\tcl$(TCL_DOTVERSION)
 STUDIO_LIB_DIR	= C:\JavaStudio1.0\JS\classes.zip
 
 TCLJAVA_VERSION = 1.1
-TCLJAVA_PATCHLEVEL = b1
+TCLJAVA_PATCHLEVEL =
 
 # Specify which system to build.  (either jacl or tclblend)
 TCLJAVA		= tclblend

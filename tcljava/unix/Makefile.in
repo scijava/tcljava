@@ -1,6 +1,6 @@
 # This Makefile is used to the java loadable module.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.15 1998/11/24 04:59:43 hylands Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.16 1999/01/15 03:06:55 hylands Exp $
 
 # The version of TclJava, used in this Makefile
 VERSION = @TCLJAVA_VERSION@
@@ -61,7 +61,7 @@ JAVA_ARCH_LIB		= @JAVA_ARCH_LIB@
 JAVA_ARCH_RUNTIME_LIBS	= @JAVA_ARCH_RUNTIME_LIBS@
 
 # Colon separated list of directories to search for libraries at runtime 
-LIB_RUNTIME_DIR		= $(JAVA_ARCH_LIB):$(TCL_BIN_DIR)
+LIB_RUNTIME_DIR		= $(JAVA_ARCH_RUNTIME_LIBS):$(TCL_BIN_DIR)
 TCL_LD_SEARCH_FLAGS 	= @TCL_LD_SEARCH_FLAGS@
 
 UNIX_DIR		= $(TOP_DIR)/unix
@@ -1377,7 +1377,7 @@ $(SRCEX): Makefile.in
 
 jaclBinDist: $(UNIX_DIR)/configure Makefile
 	$(MAKE) clean_jacl clean_bean clean_demos
-	$(MAKE) jacl.jar demos
+	$(MAKE) jacl.jar demos TCLJAVA=jacl 
 	$(MAKE) bean TCLJAVA=jacl
 
 	$(MAKE) tcljavaBinDist DISTDIR=$(JACL_DISTDIR) TCLJAVA=jacl
