@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaUtil.c,v 1.2 1999/05/09 01:57:15 dejong Exp $
+ * RCS: @(#) $Id: javaUtil.c,v 1.3 1999/05/17 02:18:15 dejong Exp $
  */
 
 #include "java.h"
@@ -238,6 +238,10 @@ Java_tcl_lang_Util_getCwd(
     JNIEnv *oldEnv;
     jobject obj;
 
+#if (TCL_MAJOR_VERSION == 8 && TCL_MINOR_VERSION != 0) /* Tcl 8.1 or above */
+    Tcl_DString ds;
+#endif
+
     JAVA_LOCK();
     obj = (*env)->NewStringUTF(env,
 
@@ -247,8 +251,9 @@ Java_tcl_lang_Util_getCwd(
 
 #else /* it is Tcl 8.1 or above */
 
-                                   TclpGetCwd(NULL));
+                                   Tcl_GetCwd(NULL,&ds));
 
+     Tcl_DStringFree(&ds);
 #endif /* Tcl 8.0 */
 
 
