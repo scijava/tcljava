@@ -10,7 +10,7 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  *
- * RCS: @(#) $Id: javaCmd.c,v 1.9.2.6 2000/08/27 05:08:59 mo Exp $
+ * RCS: @(#) $Id: javaCmd.c,v 1.9.2.7 2000/08/27 08:07:40 mo Exp $
  */
 
 /*
@@ -49,12 +49,6 @@ ENHANCEMENTS, OR MODIFICATIONS.
 #include <assert.h>
 
 /*
- * Exported state variables.
- */
-
-static JavaInfo javaCMF;		/* Cached class & method & field ids. */
-
-/*
  * The following pointer is used to keep track of the current Java
  * thread information.  It is set on each entry from Java and is restored
  * to its previous value before returning to Java.  This discipline will
@@ -64,16 +58,22 @@ static JavaInfo javaCMF;		/* Cached class & method & field ids. */
  */
 typedef struct ThreadSpecificData {
     /*
-     * This flag indicates whether the Tcl Blend module has been initialized inside this interp/thread.
+     * This flag indicates that thread local data has been initialized for this thread.
      */
 
-    int initialized_currentEnv;
+    int initialized;
 
     /*
      * JNI pointer for the current thread, functions invoked throught the env are thread safe.
      */
 
-    JNIEnv *currentEnv;
+    JNIEnv* currentEnv;
+
+    /*
+     * Cache for class, method, and filed info for this JNIEnv.
+     */
+
+    JavaInfo jcache;
 
 } ThreadSpecificData;
 
@@ -86,26 +86,11 @@ static Tcl_ThreadDataKey dataKey;
 /*
  * The following variable contains the pointer to the current Java VM,
  * if it was created or attached to by Tcl. We only support a single
- * JVM, but this VM can be accessed from multiple Tcl threads. We need
- * to keep track of initilizaiton of a JVM differently that initinizilation
- * of a per thread JNIEnv pointer.
+ * JVM, but this VM can be accessed from multiple Tcl threads. We
+ * depend on JNI to access this global in a thread safe way.
  */
 
 static JavaVM *javaVM = NULL;
-static int initialized_javaVM = 0;
-
-/*
- * Declare a global mutex to protect the creation and initialization of the
- * JVM from mutiple threads.  This mutex is used in conjunction with the
- * 'initialized_javaVM' flag.  This mutex is used in javaCmd.c as well as
- * javaInterp.c.
- *
- * FIXME: don't want to use the flag TCL_THREADS explicitly.  This may be
- * better if in the future the same TclBlend binary can be made to work with
- * both threaded and non-threaded Tcl libraries.  For now, we will use accessor
- * functions lockJVMInitMutex() and unlockJVMInitMutex().
- */
-TCL_DECLARE_MUTEX(javaVM_init_mutex)
 
 /*
  * Declarations of functions used only in this file.
@@ -118,7 +103,7 @@ static int		AddToMethodCache(JNIEnv *env, Tcl_Interp *interp, jmethodID *addr,
                             char *name, jclass *class, char *sig, int isStatic);
 static int		AddToFieldCache(JNIEnv *env, Tcl_Interp *interp, jfieldID *addr,
                             char *name, jclass *class, char *sig);
-
+static void		TclThreadCleanup(ClientData clientData);
 
 /*
  *----------------------------------------------------------------------
@@ -175,7 +160,7 @@ EXPORT(int,Tclblend_Init)(
     jlong lvalue;
     jobject interpObj, local;
     JNIEnv *env;
-    JavaInfo* jcache = JavaGetCache();
+    JavaInfo* jcache;
 
 #ifdef TCLBLEND_DEBUG
     fprintf(stderr, "TCLBLEND_DEBUG: Tclblend_Init\n");
@@ -196,6 +181,8 @@ EXPORT(int,Tclblend_Init)(
      */
 
     env = JavaGetEnv();
+    jcache = JavaGetCache();
+
     *(Tcl_Interp**)&lvalue = interp;
     local = (*env)->NewObject(env, jcache->Interp,
 	    jcache->interpC, lvalue);
@@ -301,7 +288,7 @@ JavaGetEnv()
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-    assert(tsdPtr->initialized_currentEnv);
+    assert(tsdPtr->initialized);
 
     return tsdPtr->currentEnv;
 }
@@ -323,19 +310,15 @@ JavaGetEnv()
  *----------------------------------------------------------------------
  */
 
-TCLBLEND_EXTERN JavaInfo *
+TCLBLEND_EXTERN JavaInfo*
 JavaGetCache()
 {
-/*
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-    assert(tsdPtr->initialized_currentEnv);
+    assert(tsdPtr->initialized);
 
-    return tsdPtr->currentEnv;
-*/
-    return &javaCMF;
+    return &(tsdPtr->jcache);
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -356,7 +339,8 @@ JavaGetCache()
  *----------------------------------------------------------------------
  */
 
-JNIEnv *
+static
+JNIEnv*
 JavaInitEnv(
     JNIEnv *env,        /* JNIEnv pointer, NULL if loaded from Tcl Blend */
     Tcl_Interp *interp	/* Interp for error reporting. */
@@ -389,21 +373,6 @@ JavaInitEnv(
 #endif /* TCLBLEND_DEBUG */
 
     /*
-     * If init was already called for this thread, do nothing.
-     * This can happen if multiple interpreters are created in
-     * the same thread.
-     */
-
-    if (tsdPtr->initialized_currentEnv) {
-
-#ifdef TCLBLEND_DEBUG
-    fprintf(stderr, "TCLBLEND_DEBUG: returning currentEnv\n");
-#endif /* TCLBLEND_DEBUG */
-
-        return tsdPtr->currentEnv;
-    }
-
-    /*
      * If we were called with a non-NULL JNIEnv argument, it means
      * Tcl Blend was loaded from Java. In this case, the JNIEnv is
      * already attached to the JVM because it was created in Java.
@@ -417,7 +386,6 @@ JavaInitEnv(
     fprintf(stderr, "TCLBLEND_DEBUG: setting currentEnv from Java\n");
 #endif /* TCLBLEND_DEBUG */
 
-        tsdPtr->initialized_currentEnv = 1;
         return (tsdPtr->currentEnv = env);
     }
 
@@ -610,13 +578,16 @@ JavaInitEnv(
 	    Tcl_AppendResult(interp, "AttachCurrentThread failed", NULL);
 	    goto error;
 	}
+	
+	/* Create a thread exit handler to detach this Tcl thread from the JVM */
+	
+	Tcl_CreateThreadExitHandler(TclThreadCleanup, NULL);
     }
 
 #ifdef TCLBLEND_DEBUG
     fprintf(stderr, "TCLBLEND_DEBUG: JavaInitEnv returning successfully\n");
 #endif /* TCLBLEND_DEBUG */
 
-    tsdPtr->initialized_currentEnv = 1;
     return tsdPtr->currentEnv;
 
     error:
@@ -738,13 +709,40 @@ JavaInterpDeleted(
     (*env)->CallVoidMethod(env, interpObj, jcache->dispose);
     (*env)->DeleteGlobalRef(env, interpObj);
 
-    /* FIXME : detach the JNIEnv, but only if this is the last interp in the thread ??? */
-
 #ifdef TCLBLEND_DEBUG
     fprintf(stderr, "TCLBLEND_DEBUG: called JavaInterpDeleted\n");
 #endif /* TCLBLEND_DEBUG */
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclThreadCleanup --
+ *
+ *	This method will be called when a Tcl thread is getting finalized.
+ *	It needs to detach the Tcl thread from the current JVM, note that
+ *	this method is not called for a Java thread that loaded Tcl Blend.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+TclThreadCleanup(ClientData clientData)
+{
+    JNIEnv* env;
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-  
+#ifdef TCLBLEND_DEBUG
+    fprintf(stderr, "TCLBLEND_DEBUG: called TclThreadCleanup\n");
+#endif /* TCLBLEND_DEBUG */
+
+    env = tsdPtr->currentEnv;
+    (*javaVM)->DetachCurrentThread(javaVM);
 }
 
 /*
@@ -774,20 +772,27 @@ JavaSetupJava(
 {
     jfieldID field;
     JavaInfo* jcache;
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
 #ifdef TCLBLEND_DEBUG
     fprintf(stderr, "TCLBLEND_DEBUG: called JavaSetupJava\n");
 #endif /* TCLBLEND_DEBUG */
 
     /*
-     * Acquire the init lock, we do not care if it is slow to call
-     * JavaSetupJava, it is only called when an Interp is created.
+     * Check to see if the thread local data has already been
+     * initialized for this thread. Do nothing if it has been.
      */
 
-    Tcl_MutexLock(&javaVM_init_mutex);
+    if (tsdPtr->initialized) {
+
+#ifdef TCLBLEND_DEBUG
+    fprintf(stderr, "TCLBLEND_DEBUG: thread specific data has already been initialized\n");
+#endif /* TCLBLEND_DEBUG */
+
+        goto ok;
+    }
 
     /*
-     * Check that the JNIEnv for this thread has been initialized.
      * If Tcl Blend is getting loaded from Tcl, then the env argument
      * would be passed as NULL.
      */
@@ -796,15 +801,11 @@ JavaSetupJava(
 	goto error;
     }
 
-    /*
-     * If the global java struct was already initialized, just return
-     */
+#ifdef TCLBLEND_DEBUG
+    fprintf(stderr, "TCLBLEND_DEBUG: initializing jcache\n");
+#endif /* TCLBLEND_DEBUG */
 
-    if (initialized_javaVM) {
-        goto ok;
-    }
-
-    jcache = JavaGetCache();
+    jcache = &(tsdPtr->jcache);
     memset(jcache, 0, sizeof(JavaInfo));
 
     /*
@@ -887,21 +888,20 @@ JavaSetupJava(
 
     field = (*env)->GetStaticFieldID(env, jcache->Void, "TYPE", "Ljava/lang/Class;");
     jcache->voidTYPE = (*env)->GetStaticObjectField(env, jcache->Void, field);
-        
+
     /*
      * Register the Java object types.
      */
 
     JavaObjInit();
 
-    initialized_javaVM = 1;
+    tsdPtr->initialized = 1;
 
     ok:
 #ifdef TCLBLEND_DEBUG
     fprintf(stderr, "TCLBLEND_DEBUG: JavaSetupJava returning successfully\n");
 #endif /* TCLBLEND_DEBUG */
 
-    Tcl_MutexUnlock(&javaVM_init_mutex);
     return TCL_OK;
 
     error:
@@ -909,7 +909,6 @@ JavaSetupJava(
     fprintf(stderr, "TCLBLEND_DEBUG: JavaSetupJava returning TCL_ERROR\n");
 #endif /* TCLBLEND_DEBUG */
 
-    Tcl_MutexUnlock(&javaVM_init_mutex);
     if (env) {
         (*env)->ExceptionClear(env);
     }
@@ -934,6 +933,7 @@ JavaSetupJava(
  *----------------------------------------------------------------------
  */
 
+static
 int
 AddToClassCache(
     JNIEnv *env,		/* JNI pointer for current thread. */
@@ -992,6 +992,7 @@ AddToClassCache(
  *----------------------------------------------------------------------
  */
 
+static
 int
 AddToMethodCache(
     JNIEnv *env,		/* JNI pointer for current thread. */
@@ -1041,6 +1042,7 @@ AddToMethodCache(
  *----------------------------------------------------------------------
  */
 
+static
 int
 AddToFieldCache(
     JNIEnv *env,		/* JNI pointer for current thread. */

@@ -1,5 +1,12 @@
 2000-08-26  Mo DeJong  <mdejong@redhat.com>
 
+	* src/native/javaCmd.c (JavaSetupJava, TclThreadCleanup):
+	Move JavaInfo cache into thread local storage. Removed
+	javaVM_init_mutex. Create thread exit handler that
+	will detach a Tcl thread from the JVM.
+
+2000-08-26  Mo DeJong  <mdejong@redhat.com>
+
 	* src/native/java.h (java, JavaGetCache): Remove
 	global java variable, replaced it with JavaGetCache().
 	* src/native/javaCmd.c:
