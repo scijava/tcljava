@@ -1,5 +1,15 @@
 2002-12-30  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/native/javaInterp.c (JavaCmdProc):
+	Scan the Tcl_Obj array passed into JavaCmdProc,
+	if the same Tcl_Obj is passed more than once,
+	don't try to convert it to a TclObject again.
+	* src/tests/tcljava/tests/SameArgumentObjectsCmd.java:
+	* tests/tcljava/JavaCmd.test: Add test case
+	for duplicated arguments on the command line.
+
+2002-12-30  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/native/java.h: Add JavaObjType decl.
 	* src/native/javaInterp.c (BTestCmd): Add
 	btest type subcommand, used for testing.

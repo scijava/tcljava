@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaInterp.c,v 1.19 2002/12/31 05:22:15 mdejong Exp $
+ * RCS: @(#) $Id: javaInterp.c,v 1.20 2002/12/31 05:37:16 mdejong Exp $
  */
 
 #include "java.h"
@@ -1107,7 +1107,7 @@ JavaCmdProc(
     jobject cmd = (jobject)clientData;
     jarray args;
     jobject value, exception, interpObj;
-    int i, result;
+    int i, j, result;
     JNIEnv *env = JavaGetEnv();
     JavaInfo* jcache = JavaGetCache();
 
@@ -1130,7 +1130,25 @@ JavaCmdProc(
     for (i = 0; i < objc; i++) {
 	int isLocal;
 
-	value = JavaGetTclObject(env, objv[i], &isLocal);
+	/*
+	 * Check to see if this Tcl_Obj has already appeared in
+	 * the argument array. If it has, we don't want to
+	 * call JavaGetTclObject() for it again since that
+	 * would create two TclObject wrappers in the CObject case.
+	 */
+
+	Tcl_Obj *arg = objv[i];
+	for (j = i-1 ; j >= 0 ; j--) {
+	    if (arg == objv[j])
+	        break;
+	}
+	if (j >= 0) {
+	    value = (*env)->GetObjectArrayElement(env, args, j);
+	    isLocal = 1;
+	} else {
+	    value = JavaGetTclObject(env, objv[i], &isLocal);
+	}
+
 	(*env)->SetObjectArrayElement(env, args, i, value);
 	(*env)->CallVoidMethod(env, value, jcache->preserve);
 	if ((*env)->ExceptionOccurred(env)) {
