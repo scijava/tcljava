@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.23 1999/07/26 01:53:12 mo Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.24 1999/07/28 04:08:59 mo Exp $
 
 # The directory containing the Tcl sources and headers appropriate
 # for this version of Tk ("srcdir" will be replaced or has already
@@ -28,16 +28,20 @@ TOP_DIR			= @srcdir@/..
 
 # Fully qualified paths for programs used in build process
 JAVA			= @JAVA@
+JAVA_G			= @JAVA_G@
 JAVAC			= @JAVAC@
 JAVAH			= @JAVAH@
 JAR			= @JAR@
 JDB			= @JDB@
+DDD			= @DDD@
+XTERM			= xterm
 JAVA_FLAGS		= @JAVA_FLAGS@
+JAVA_G_FLAGS		= -debug
 JAVAC_FLAGS		= -g
 JAR_COMPRESS_FLAGS	= -cf0M
 JAR_EXTRACT_FLAGS	= -xf
 JDB_FLAGS		=
-
+DDD_FLAGS		=
 
 # Java include dir, such as /opt/jdk1.1.4/include
 JAVA_INCLUDE		= @JAVA_INCLUDE@
@@ -102,7 +106,7 @@ TCLBLEND_LIBS		= @TCLBLEND_LIBS@
 
 #TCLBLEND_LD_PRELOAD="@TCLBLEND_LD_PRELOAD@ libXt.so libXm.so libXext.so"
 
-# If you are using Motif or LessTif then comment out this line
+# If you are using neither Motif nor LessTif then comment out this line
 
 TCLBLEND_LD_PRELOAD	= "@TCLBLEND_LD_PRELOAD@"
 
@@ -157,6 +161,8 @@ DEMOS_CLASSPATH		= $(BUILD_DIR)/$(TCLJAVA).jar:$(BUILD_DIR)/tcljava.jar:$(JAVA_C
 
 TEST_CLASSPATH		= $(JAVA_CLASSPATH):$(TEST_BUILD_DIR):$(BUILD_DIR)/$(TCLJAVA).jar:$(BUILD_DIR)/tcljava.jar$(AUX_CLASSPATH)
 
+JACL_DEBUG_CLASSPATH	=  $(TEST_CLASSPATH):$(TCLJAVA_SRC_DIR):$(JACL_SRC_DIR)
+TCLBLEND_DEBUG_CLASSPATH = $(TEST_CLASSPATH):$(TCLJAVA_SRC_DIR):$(TCLBLEND_SRC_DIR)
 
 # Libraries to use when linking: (used by SHLIB_LD_LIBS)
 LIBS			= $(TCL_LD_SEARCH_FLAGS) -L$(JAVA_ARCH_NATIVE_LIB) \
@@ -772,10 +778,103 @@ shell_tclblend: tclblend.check
 	$(TCL_BIN_DIR)/tclsh
 
 
-debug_jacl: jacl.check
-	CLASSPATH=$(TEST_CLASSPATH) \
+#----------------------------------------------------------------
+# debug : run a Jacl or Tcl Blend session inside a debugger
+#----------------------------------------------------------------
+
+
+# Invoke remote (two process) jdb debug session for Jacl.
+# This will fire off an Xterm that Jacl will actually run in
+# and it will invoke DDD-jdb to debug that interactive session
+
+jdb_jacl: jacl.check
+	@rm -f tmp.*
+	@echo "echo \"Type Jacl comamnds into this shell, output will go to jdb shell.\"" >> tmp.run_jacl
+	@echo "$(JAVA_G) $(JAVA_G_FLAGS) -DBUILD_DIR=$(BUILD_DIR) \
+		-DJAVA=$(JAVA) tcl.lang.Shell | tee tmp.out" >> tmp.run_jacl
+	@CLASSPATH=$(JACL_DEBUG_CLASSPATH) \
+	    $(XTERM) -T Jacl -e /bin/sh tmp.run_jacl &
+	@echo "Waiting for Java to initialize"
+	@sleep 5
+	@if test ! -s tmp.out ; then \
+	    echo "Still waiting" ;\
+	    sleep 10 ;\
+	fi
+	@if test ! -s tmp.out ; then \
+	    echo "Still waiting" ;\
+	    sleep 5 ;\
+	fi
+	@if test -s tmp.out ; then \
+	    echo "Starting JDB, type commands into the xterms" ;\
+	    echo "echo \"JDB command shell\"" >> tmp.run_jdb ;\
+	    echo "grep password tmp.out | sed 's/[A-Z|a-z| ]*=//' > tmp.password" >> tmp.run_jdb ;\
+	    echo "CLASSPATH=$(JACL_DEBUG_CLASSPATH) ; export CLASSPATH" >> tmp.run_jdb ;\
+	    echo "$(JDB) $(JDB_FLAGS) -host localhost -password \`cat tmp.password\` 2> tmp.err_jdb" >> tmp.run_jdb ;\
+	    $(XTERM) -T JDB-Jacl -e /bin/sh tmp.run_jdb & \
+	else \
+	    echo "Giving Up" ; \
+	fi
+
+
+# Invoke local (single process) jdb debug session for Jacl
+
+jdb_local_jacl: jacl.check
+	CLASSPATH=$(JACL_DEBUG_CLASSPATH) \
 	$(JDB) $(JDB_FLAGS) \
 		-DBUILD_DIR=$(BUILD_DIR) -DJAVA=$(JAVA) tcl.lang.Shell
+
+
+
+
+# Invoke remote (two process) DDD-jdb debug session for Jacl.
+# This will fire off an Xterm that Jacl will actually run in
+# and it will invoke DDD-jdb to debug that interactive session
+
+ddd_jacl: jacl.check
+	@rm -f tmp.*
+	@echo "echo \"Type Jacl comamnds into this shell, output will go to DDD.\"" >> tmp.run_jacl
+	@echo "$(JAVA_G) $(JAVA_G_FLAGS) -DBUILD_DIR=$(BUILD_DIR) \
+		-DJAVA=$(JAVA) tcl.lang.Shell | tee tmp.out" >> tmp.run_jacl
+	@CLASSPATH=$(JACL_DEBUG_CLASSPATH) \
+	    $(XTERM) -T Jacl -e /bin/sh tmp.run_jacl &
+	@echo "Waiting for Java to initialize"
+	@sleep 5
+	@if test ! -s tmp.out ; then \
+	    echo "Still waiting" ;\
+	    sleep 10 ;\
+	fi
+	@if test ! -s tmp.out ; then \
+	    echo "Still waiting" ;\
+	    sleep 5 ;\
+	fi
+	@if test -s tmp.out ; then \
+	    echo "Starting DDD, type commands into the debugger" ;\
+	    grep password tmp.out | sed 's/[A-Z|a-z| ]*=//' > tmp.password ;\
+	    CLASSPATH=$(JACL_DEBUG_CLASSPATH) \
+	    $(DDD) $(DDD_FLAGS) \
+	        --jdb --debugger "$(JDB) -host localhost -password `cat tmp.password` \
+	        -DBUILD_DIR=$(BUILD_DIR) -DJAVA=$(JAVA)" tcl.lang.Shell & \
+	else \
+	    echo "Giving Up" ; \
+	fi
+
+
+
+# Invoke local (single process) DDD-jdb debug session for Jacl
+
+ddd_local_jacl : jacl.check
+	CLASSPATH=$(JACL_DEBUG_CLASSPATH) \
+	$(DDD) $(DDD_FLAGS) \
+		--jdb --debugger "$(JDB) -DBUILD_DIR=$(BUILD_DIR) -DJAVA=$(JAVA)" \
+		tcl.lang.Shell &
+
+
+
+# Invoke ddd to debug Tcl Blend session (you still will need to attach inside DDD)
+
+ddd_tclblend : tclblend.check
+	$(DDD) $(DDD_FLAGS) --gdb $(TCL_BIN_DIR)/tclsh &
+	@$(MAKE) TCLJAVA=tclblend shell
 
 
 #----------------------------------------------------------------
@@ -862,7 +961,7 @@ test.clean:
 	rm -rf $(TEST_BUILD_DIR)
 
 tmp.clean:
-	rm -rf META-INF so_locations
+	rm -rf META-INF so_locations tmp.*
 
 distclean: clean
 	rm -f config.cache config.log config.status
