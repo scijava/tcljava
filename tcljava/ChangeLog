@@ -1,3 +1,10 @@
+2004-09-18  Alexander James Pasadyn  <ajpasadyn@users.sourceforge.net>
+
+	* src/jacl/tcl/lang/library/init.tcl: Loop over
+	path value list in env(TCLLIBPATH) instead of
+	incorrectly assuming that it is a single value.
+	[Bug 979897]
+
 2003-09-30  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* README.jacl:

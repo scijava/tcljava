@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.5 2001/05/05 22:38:13 mdejong Exp $
+# RCS: @(#) $Id: init.tcl,v 1.6 2004/09/18 21:29:58 mdejong Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -25,7 +25,10 @@ package require -exact Tcl 8.0
 # (auto_path could be already set, in safe interps for instance)
 
 if {[info exists env(TCLLIBPATH)]} {
-    lappend auto_path $env(TCLLIBPATH)
+    foreach path $env(TCLLIBPATH) {
+        lappend auto_path $path
+    }
+    if {[info exists path]} {unset path}
 }
 
 #if {![info exists auto_path]} {
