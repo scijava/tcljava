@@ -31,9 +31,32 @@ Update:
 This jit compiler bug has been fixed in Sun jdk1.1.7.
 
 
-(Windows)
+(Tcl Blend Windows)
 Compiling under windows using the Tcl Blast 8.0.3 dist
 requires tclRegExp.h because tclInt.h includes it.
+
+
+(Tcl Blend Windows)
+If, under Windows, you compile and install Tcl8.0.3 yourself instead 
+of using the prebuilt binaries from Scriptics or the Tcl Blast CD,
+then 'package require java' may fail to find the java package.
+     
+The problem is that if you install Tcl8.0.3 yourself, then the
+Software\Scriptics\Tcl Registry key is not set, so auto_path is
+not set to include the C:\Program Files\Tcl\lib directory, instead it
+only includes C:\Program Files\Tcl\lib\tcl8.0.
+
+If the Tcl Blend1.1 pkgIndex.tcl file is in 
+C:\Program Files\Tcl\lib\tclblend1.1, then as a workaround, you
+can append the parent directory to auto_path:
+    lappend auto_path "C:/Program Files/Tcl/lib"
+    package require java
+
+Another workaround is to set the TCLLIBPATH environment variable to
+C:\Program Files\Tcl\lib.
+
+The problem stems from a bug in tcl8.0.3/library/init.tcl, and the bug
+has been fixed in the CVS sources at Scriptics.
 
 
 (Solaris Tcl Blend tests)
