@@ -5,7 +5,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: JavaInvoke.test,v 1.8 2002/12/27 02:44:41 mdejong Exp $
+# RCS: @(#) $Id: JavaInvoke.test,v 1.9 2002/12/29 02:10:43 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -52,7 +52,7 @@ test invoke-2.1 {callMethod} {
     set argvobj [java::new {tcl.lang.TclObject[]} 1]
     list [catch {
 	java::call $INVCLS callMethod [java::getinterp] $t1 $t2 $argvobj 0 0 false} msg] $msg
-} {1 {tcl.lang.TclException: unknown java object "blah"}}
+} {1 {unknown java object "blah"}}
 
 test invoke-2.2 {callMethod} {
     set x [java::new Object]
@@ -332,7 +332,7 @@ test invoke-8.10 {getClassByName} {
     list [catch {
 	java::call $INVCLS getClassByName [java::getinterp] {foo.bar}
     } msg] $msg
-} {1 {tcl.lang.TclException: unknown class "foo.bar"}}
+} {1 {unknown class "foo.bar"}}
 
 test invoke-8.11 {getClassByName} {
     list [catch {
@@ -456,53 +456,53 @@ set clsdata(java.lang.Integer) {
     {1 {0 1}}
     {0x100 {0 256}}
     {0x1000000000 
-	{1 {tcl.lang.TclException: integer value too large to represent}}}
+	{1 {integer value too large to represent}}}
 }
 set clsdata(java.lang.Boolean) {
     {0 {0 false}}
     {1 {0 true}}
     {false {0 false}}
     {true {0 true}}
-    {duh {1 {tcl.lang.TclException: expected boolean value but got "duh"}}}
+    {duh {1 {expected boolean value but got "duh"}}}
 }
 set clsdata(java.lang.Long) {
     {0 {0 0}}
     {1 {0 1}}
     {0x100 {0 256}}
     {0x1000000000 
-	{1 {tcl.lang.TclException: integer value too large to represent}}}
+	{1 {integer value too large to represent}}}
 }
 set clsdata(java.lang.Float) {
     {0.0 {0 0.0}}
     {1.0 {0 1.0}}
     {123.1 {0 123.1}}
     {1.5.6
-   {1 {tcl.lang.TclException: expected floating-point number but got "1.5.6"}}}
+   {1 {expected floating-point number but got "1.5.6"}}}
 }
 set clsdata(java.lang.Double) {
     {0.0 {0 0.0}}
     {1.0 {0 1.0}}
     {123.1 {0 123.1}}
     {1.5.6
-   {1 {tcl.lang.TclException: expected floating-point number but got "1.5.6"}}}
+   {1 {expected floating-point number but got "1.5.6"}}}
 }
 set clsdata(java.lang.Byte) {
     {0 {0 0}}
     {1 {0 1}}
     {0x100
-	{1 {tcl.lang.TclException: integer value too large to represent in a byte}}}
+	{1 {integer value too large to represent in a byte}}}
 }
 set clsdata(java.lang.Short) {
     {0 {0 0}}
     {1 {0 1}}
     {0x10000
-	{1 {tcl.lang.TclException: integer value too large to represent in a short}}}
+	{1 {integer value too large to represent in a short}}}
 }
 set clsdata(java.lang.Character) {
     {0 {0 0}}
     {1 {0 1}}
     {k {0 k}}
-    {kk {1 {tcl.lang.TclException: expected character but got "kk"}}}
+    {kk {1 {expected character but got "kk"}}}
 }
 set clsdata(java.lang.Object) {
     {0 {0 0}}
@@ -597,7 +597,7 @@ test invoke-10.3 {convertTclObject} {
     list [catch {
 	[java::call -noconvert $INVCLS convertTclObject $interp $cls                       [jtest getobject $value]] toString
     } msg] $msg
-} {1 {tcl.lang.TclException: "foobar" is not an object handle of class "tests.JavaTest"}}
+} {1 {"foobar" is not an object handle of class "tests.JavaTest"}}
 
 test invoke-10.4 {convertTclObject} {
     set cls [java::field tests.JavaTest class]
@@ -605,7 +605,7 @@ test invoke-10.4 {convertTclObject} {
     list [catch {
 	[java::call -noconvert $INVCLS convertTclObject $interp $cls                       [jtest getobject $value]] toString
     } msg] $msg
-} {1 {tcl.lang.TclException: "java0x1000000" is not an object handle of class "tests.JavaTest"}}
+} {1 {"java0x1000000" is not an object handle of class "tests.JavaTest"}}
 
 test invoke-10.5 {convertTclObject} {
     set cls [java::field tests.JavaTest class]
@@ -639,7 +639,7 @@ test invoke-10.8 {convertTclObject} {
     list [catch {
 	java::call -noconvert $INVCLS convertTclObject $interp $cls                       [jtest getobject $value]
     } msg] $msg
-} [list 1 "tcl.lang.TclException: expected object of type java.lang.Integer but got \"$value\" (tests.JavaTest)"]
+} [list 1 "expected object of type java.lang.Integer but got \"$value\" (tests.JavaTest)"]
 
 set value [java::new {Short short} 123]
 test invoke-10.8 {convertTclObject} {
@@ -647,7 +647,7 @@ test invoke-10.8 {convertTclObject} {
     list [catch {
 	java::call -noconvert $INVCLS convertTclObject $interp $cls                       [jtest getobject $value]
     } msg] $msg
-} [list 1 "tcl.lang.TclException: expected object of type java.lang.Integer but got \"$value\" (java.lang.Short)"]
+} [list 1 "expected object of type java.lang.Integer but got \"$value\" (java.lang.Short)"]
 
 #----------------------------------------------------------------------
 #

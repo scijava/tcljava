@@ -86,12 +86,12 @@ test CallFrame-2.3 {lookUp} {
 test CallFrame-2.4 {lookUp} {
     catch {unset x}
     list [catch {testLookUp x(3) a 56} msg] $msg
-} {1 tcl.lang.TclVarException}
+} {1 {}}
 
 test CallFrame-2.5 {lookUp} {
     catch {unset x}
     list [catch {testLookUp x() a 56} msg] $msg
-} {1 tcl.lang.TclVarException}
+} {1 {}}
 
 test CallFrame-2.6 {lookUp} {
     catch {unset x)}

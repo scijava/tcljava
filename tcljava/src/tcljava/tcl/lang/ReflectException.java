@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ReflectException.java,v 1.2 1999/05/09 22:29:36 dejong Exp $
+ * RCS: @(#) $Id: ReflectException.java,v 1.3 2002/12/29 02:10:43 mdejong Exp $
  *
  */
 package tcl.lang;
@@ -90,7 +90,13 @@ ReflectException(
 	interp.setErrorCode(errCode);
 	errCode.release();
 
-	interp.setResult(t.toString());
+	// We don't want a TclException error message to
+	// show up as "TclException : ..."
+
+	if (t instanceof TclException)
+	    interp.setResult(t.getMessage());
+	else
+	    interp.setResult(t.toString());
     }
 }
 

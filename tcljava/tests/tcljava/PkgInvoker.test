@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: PkgInvoker.test,v 1.8 2002/12/27 14:33:20 mdejong Exp $
+# RCS: @(#) $Id: PkgInvoker.test,v 1.9 2002/12/29 02:10:43 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -102,7 +102,7 @@ test PkgInvoker-1.20 {create ReflectObject for inaccessible type} {
     set c [java::call Class forName tests.invoke.NonPublicTester]
     list [catch {java::call tcl.lang.ReflectObject newInstance\
             [java::getinterp] $c java0x0} msg] $msg
-} {1 {tcl.lang.TclException: Class "tests.invoke.NonPublicTester" is not accessible}}
+} {1 {Class "tests.invoke.NonPublicTester" is not accessible}}
 
 # Note: We don't currently check for accessibility of exceptions
 # used in catch blocks of the java::try command.

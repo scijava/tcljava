@@ -153,7 +153,7 @@ test EventAdaptor-2.4 {EventAdaptor._wrongException} {
     catch {$x fire4 [java::null] yes 0 [java::null]}
     update
     list [lindex $info 0] [lindex $info 2]
-} {{tcl.lang.TclException: blahblahblah} {tcl.lang.TclException: blahblahblah
+} {blahblahblah {blahblahblah
     while executing
 "java::throw [java::new tcl.lang.TclException [java::getinterp] blahblahblah]"
     (command bound to event)}}

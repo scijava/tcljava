@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: JavaNewCmd.test,v 1.4 2002/12/27 14:33:20 mdejong Exp $
+# RCS: @(#) $Id: JavaNewCmd.test,v 1.5 2002/12/29 02:10:43 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -126,7 +126,7 @@ test javaNewCmd-3.3 {ArraySig.get} {
     list [catch {
 	java::call tcl.lang.ArraySig get [java::getinterp] $robj
     } msg] $msg
-} {1 {tcl.lang.TclException: bad array signature "xyz"}}
+} {1 {bad array signature "xyz"}}
 
 test javaNewCmd-3.4 {ArraySig.get} {
     set m "\{"
@@ -134,7 +134,7 @@ test javaNewCmd-3.4 {ArraySig.get} {
     list [catch {
 	java::call tcl.lang.ArraySig get [java::getinterp] $robj
     } msg] $msg
-} {1 {tcl.lang.TclException: unmatched open brace in list}}
+} {1 {unmatched open brace in list}}
 
 test javaNewCmd-3.5 {ArraySig.get} {
     set m {int[] a}
@@ -142,7 +142,7 @@ test javaNewCmd-3.5 {ArraySig.get} {
     list [catch {
 	java::call tcl.lang.ArraySig get [java::getinterp] $robj
     } msg] $msg
-} {1 {tcl.lang.TclException: bad array signature "int[] a"}}
+} {1 {bad array signature "int[] a"}}
 
 test javaNewCmd-3.6 {ArraySig.get} {
     set m {blah}
@@ -150,7 +150,7 @@ test javaNewCmd-3.6 {ArraySig.get} {
     list [catch {
 	java::call tcl.lang.ArraySig get [java::getinterp] $robj
     } msg] $msg
-} {1 {tcl.lang.TclException: bad array signature "blah"}}
+} {1 {bad array signature "blah"}}
 
 test javaNewCmd-3.7 {ArraySig.get} {
     set m {blah[]}
@@ -158,7 +158,7 @@ test javaNewCmd-3.7 {ArraySig.get} {
     list [catch {
 	java::call tcl.lang.ArraySig get [java::getinterp] $robj
     } msg] $msg
-} {1 {tcl.lang.TclException: unknown class "blah"}}
+} {1 {unknown class "blah"}}
 
 #
 # Black-box tests

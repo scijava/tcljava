@@ -5,7 +5,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: FuncSig.test,v 1.10 2002/12/27 14:33:20 mdejong Exp $
+# RCS: @(#) $Id: FuncSig.test,v 1.11 2002/12/29 02:10:43 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -66,7 +66,7 @@ test FuncSig-1.7 {get, errors} {
             [jtest getobject $sig] [java::new {tcl.lang.TclObject[]} 2] \
             0 2 true
     } msg] $msg
-} {1 {tcl.lang.TclException: unknown class "foo"}}
+} {1 {unknown class "foo"}}
 
 test FuncSig-1.8 {get, errors} {
     list [catch {java::call Object "\{"} msg] $msg

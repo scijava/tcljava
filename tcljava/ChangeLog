@@ -1,5 +1,23 @@
 2002-12-28  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/tcljava/tcl/lang/ReflectException.java
+	(ReflectException): Set the interp result to
+	the exception message instead of the result
+	of a toString() call when wrapping a TclException.
+	* tests/inprogress/CallFrame.test:
+	* tests/inprogress/EventAdaptor.test:
+	* tests/tclblend/javaInterp.test:
+	* tests/tclblend/javaUtil.test:
+	* tests/tcljava/FuncSig.test:
+	* tests/tcljava/JavaInvoke.test:
+	* tests/tcljava/JavaNewCmd.test:
+	* tests/tcljava/PkgInvoker.test: Update error
+	messages so that they do not include
+	"tcl.lang.TclException: " before the
+	actual error message.
+
+2002-12-28  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/native/java.h:
 	* src/native/javaCmd.c (FreeJavaCache, JavaSetupJava,
 	AddToClassCache, AddToMethodCache, AddToFieldCache):

@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: javaInterp.test,v 1.6 2002/12/25 08:29:31 mdejong Exp $
+# RCS: @(#) $Id: javaInterp.test,v 1.7 2002/12/29 02:10:43 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -86,7 +86,7 @@ test javaInterp-5.5 {Java_tcl_lang_Interp_eval} {
     set result [list [catch {$i {eval java.lang.String} {set x}} msg] $msg]
     $i dispose
     set result
-} {1 {tcl.lang.TclException: can't read "x": no such variable}}
+} {1 {can't read "x": no such variable}}
 
 test javaInterp-6.1 {Java_tcl_lang_Interp_getResult} {
     set i [java::new tcl.lang.Interp]
@@ -222,7 +222,7 @@ test javaInterp-9.7 {Java_tcl_lang_Interp_setVar: error result} {
     } msg] $msg]
     $i dispose
     set result
-} {1 {tcl.lang.TclException: can't set "foo(bar)": variable isn't array}}
+} {1 {can't set "foo(bar)": variable isn't array}}
 test javaInterp-9.8 {Java_tcl_lang_Interp_setVar: different result} {
     trace var x w foo
     proc foo {var1 var2 op} {
@@ -291,7 +291,7 @@ test javaInterp-10.6 {Java_tcl_lang_Interp_getVar} {
     } msg] $msg]
     $i dispose
     set result
-} {1 {tcl.lang.TclException: can't read "foo(bar)": no such variable}}
+} {1 {can't read "foo(bar)": no such variable}}
 test javaInterp-10.7 {Java_tcl_lang_Interp_getVar} {
     set i [java::getinterp]
     set x [java::new String 42]
@@ -344,7 +344,7 @@ test javaInterp-11.6 {Java_tcl_lang_Interp_unsetVar} {
     } msg] $msg]
     $i dispose
     set result
-} {1 {tcl.lang.TclException: can't unset "foo(bar)": no such variable}}
+} {1 {can't unset "foo(bar)": no such variable}}
 
 
 test javaInterp-12.1 {Java_tcl_lang_Interp_traceVar} {
@@ -572,7 +572,7 @@ test javaInterp-21.3 {Java_tcl_lang_Interp_pkgProvide} {
     set result [list [catch {$i pkgProvide blah 1.1} msg] $msg]
     $i dispose
     set result
-} {1 {tcl.lang.TclException: conflicting versions provided for package "blah": 1.0, then 1.1}}
+} {1 {conflicting versions provided for package "blah": 1.0, then 1.1}}
 test javaInterp-21.4 {Java_tcl_lang_Interp_pkgProvide} {
     set i [java::new tcl.lang.Interp]
     $i pkgProvide blah 1.0
@@ -603,21 +603,21 @@ test javaInterp-22.4 {Java_tcl_lang_Interp_pkgRequire} {
     set result [list [catch {$i pkgRequire blah 1.4 0} msg] $msg]
     $i dispose
     set result
-} {1 {tcl.lang.TclException: version conflict for package "blah": have 1.3, need 1.4}}
+} {1 {version conflict for package "blah": have 1.3, need 1.4}}
 test javaInterp-22.5 {Java_tcl_lang_Interp_pkgRequire} {
     set i [java::new tcl.lang.Interp]
     $i pkgProvide blah 1.3  
     set result [list [catch {$i pkgRequire blah 1.2 1} msg] $msg]
     $i dispose
     set result
-} {1 {tcl.lang.TclException: version conflict for package "blah": have 1.3, need 1.2}}
+} {1 {version conflict for package "blah": have 1.3, need 1.2}}
 test javaInterp-22.6 {Java_tcl_lang_Interp_pkgRequire} {
     set i [java::new tcl.lang.Interp]
     $i pkgProvide blah 1.3  
     set result [list [catch {$i pkgRequire blah 1.4 1} msg] $msg]
     $i dispose
     set result
-} {1 {tcl.lang.TclException: version conflict for package "blah": have 1.3, need 1.4}}
+} {1 {version conflict for package "blah": have 1.3, need 1.4}}
 test javaInterp-22.7 {Java_tcl_lang_Interp_pkgRequire} {
     set i [java::new tcl.lang.Interp]
     $i pkgProvide blah 1.3  
