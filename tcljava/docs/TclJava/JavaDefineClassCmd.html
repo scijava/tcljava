@@ -60,18 +60,19 @@ and then defined using the <b>java::defineclass</b> command.
 <pre>
 set file [open Foo.class r]
 
-# Tcl Blend users must call 'fconfigure $file -translate binary'
+# Tcl Blend users must call 'fconfigure $file -translation binary'
 set data [read $file]
 close $file
 
-# This returns a Java Class object.
+# This returns a java.lang.Class object.
 set class [java::defineclass $data]
 
-# Get an instance of the object.
+# Get an instance of the object by invoking the
+# java.lang.Class.newInstance() method.
 set object [$class newInstance]
 
 # The class is now loaded into the VM, so we
-# can create instances of it
+# can also create instances of it by name
 set object [java::new Foo]
 
 </pre>
