@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: JavaFieldCmd.test,v 1.9 2002/12/23 20:38:11 mdejong Exp $
+# RCS: @(#) $Id: JavaFieldCmd.test,v 1.10 2002/12/27 22:19:11 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -98,7 +98,7 @@ test javaFieldCmd-2.9 {static fields} {
 
 test javaFieldCmd-3.1 {setting fields} {
     list [catch {java::field tests.JavaTest JT1 5} msg] $msg
-} {1 {can't access field "JT1": java.lang.IllegalAccessException: field is final}}
+} {1 {can't set final field "JT1"}}
 
 test javaFieldCmd-3.2 {setting fields} {
     list [catch {java::field tests.JavaTest JT2 5} msg] $msg
@@ -107,7 +107,7 @@ test javaFieldCmd-3.2 {setting fields} {
 test javaFieldCmd-3.3 {setting fields} {
     set o [java::new tests.JavaTest]
     list [catch {java::field $o JT2 5} msg] $msg
-} {1 {can't access field "JT2": java.lang.IllegalAccessException: field is final}}
+} {1 {can't set final field "JT2"}}
 
 test javaFieldCmd-3.4 {setting fields} {
     set o [java::new tests.JavaTest]

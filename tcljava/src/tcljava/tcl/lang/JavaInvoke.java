@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaInvoke.java,v 1.14 2002/12/27 14:33:19 mdejong Exp $
+ * RCS: @(#) $Id: JavaInvoke.java,v 1.15 2002/12/27 22:19:11 mdejong Exp $
  *
  */
 
@@ -270,11 +270,14 @@ throws
 
 	return result;
     } catch (InstantiationException e) {
-        throw new TclRuntimeError("unexpected abstract class");
+        throw new TclRuntimeError("unexpected abstract class: " +
+                e.getMessage());
     } catch (IllegalAccessException e) {
-        throw new TclRuntimeError("unexpected inaccessible ctor or method");
+        throw new TclRuntimeError("unexpected inaccessible ctor or method: " +
+                e.getMessage());
     } catch (IllegalArgumentException e) {
-        throw new TclRuntimeError("unexpected IllegalArgumentException");
+        throw new TclRuntimeError("unexpected IllegalArgumentException: " +
+                e.getMessage());
     } catch (Exception e) {
 	throw new ReflectException(interp, e);
     }
@@ -417,6 +420,11 @@ throws
 	        "\" is not accessible");
     }
 
+    if (!isget && Modifier.isFinal(field.getModifiers())) {
+	throw new TclException(interp, "can't set final field \"" +
+	        signature + "\"");
+    }
+
     try {
 	if (isget) {
 	    return wrap(interp, field.getType(),
@@ -430,10 +438,11 @@ throws
     } catch (TclException e1) {
 	throw e1;
     } catch (IllegalArgumentException e) {
-	throw new TclRuntimeError("unexpected IllegalArgumentException");
-    } catch (IllegalAccessException e2) {
-	throw new TclException(interp, "can't access field \"" +
-		signature + "\": " + e2);
+	throw new TclRuntimeError("unexpected IllegalArgumentException: " +
+	        e.getMessage());
+    } catch (IllegalAccessException e) {
+	throw new TclRuntimeError("unexpected IllegalAccessException: " +
+	        e.getMessage());
     } catch (Exception e) {
 	throw new ReflectException(interp, e);
     }
@@ -486,9 +495,11 @@ throws
 		sig.pkgInvoker.invokeMethod(readMethod, javaObj,
 		EMPTY_ARGS), convert);
     } catch (IllegalAccessException e) {
-	throw new TclRuntimeError("unexpected inaccessible readMethod");
+	throw new TclRuntimeError("unexpected inaccessible readMethod: " +
+	        e.getMessage());
     } catch (IllegalArgumentException e) {
-	throw new TclRuntimeError("unexpected IllegalArgumentException");
+	throw new TclRuntimeError("unexpected IllegalArgumentException: " +
+	        e.getMessage());
     } catch (Exception e) {
 	throw new ReflectException(interp, e);
     }
@@ -544,9 +555,11 @@ throws
     try {
 	sig.pkgInvoker.invokeMethod(writeMethod, javaObj, args);
     } catch (IllegalAccessException e) {
-	throw new TclRuntimeError("unexpected inaccessible writeMethod");
+	throw new TclRuntimeError("unexpected inaccessible writeMethod: " +
+	        e.getMessage());
     } catch (IllegalArgumentException e) {
-	throw new TclRuntimeError("unexpected IllegalArgumentException");
+	throw new TclRuntimeError("unexpected IllegalArgumentException: " +
+	        e.getMessage());
     } catch (Exception e) {
 	throw new ReflectException(interp, e);
     }

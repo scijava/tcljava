@@ -1,5 +1,14 @@
 2002-12-27  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/tcljava/tcl/lang/JavaInvoke.java (getsetField):
+	Check to see is a field is final before setting it.
+	Add previous exception error message when creating
+	an unexpected exception.
+	* tests/tcljava/JavaFieldCmd.test: Test for error
+	on attempt to set a final field.
+
+2002-12-27  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* new_features.txt: Add note about accessibility
 	checks for reflected objects.
 	* DOS/TclJava/JavaCastCmd.html:
