@@ -5,7 +5,9 @@ from the "normal" make process which uses dependencies. The
 up side to this process is that the Makefiles are a less complex
 and easier to modify. Running make targets like "make shell",
 "make test", or "make demos" will only recompile the core files
-if they have not been compiled already.
+if they have not been compiled already. If you think this is
+a bad idea because it takes too long to recompile all the .java
+files, just download the jikes compiler.
 
 
 (Jacl under Solaris)
@@ -141,6 +143,8 @@ Update:
 TclBlend under Linux has been fixed. The native version now runs but
 it still fails some test cases. TclBlend will also work under JDK1.2
 from Blackdown.
+Update:
+These problems have been fixed in the JDK 1.1.8 release.
 
 
 (Tcl Blend under Linux with the JDK)
@@ -153,6 +157,8 @@ the instructions given about how to modify script. If you want to
 run the Tcl Blend tests that use AWT code you will need to modify
 the Makefile too. You should also be able to use LessTif in place
 of Motif but this option has not been tested.
+Update:
+This problem has been fixed in the Blackdown JDK version 1.1.8.
 
 
 (Linux with the JDK 1.2)
