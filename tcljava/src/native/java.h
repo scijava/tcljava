@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: java.h,v 1.6.2.1 2000/07/30 07:17:08 mo Exp $
+ * RCS: @(#) $Id: java.h,v 1.6.2.2 2000/08/07 00:50:09 mo Exp $
  */
 
 #ifndef _JAVA
@@ -126,7 +126,6 @@ typedef struct JavaInfo {
     jclass Notifier;
     jmethodID serviceEvent;
     jmethodID hasEvents;
-    jclass NativeLock;
     jclass IdleHandler;
     jmethodID invokeIdle;
     jclass TimerHandler;

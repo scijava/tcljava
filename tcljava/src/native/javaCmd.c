@@ -10,7 +10,7 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  *
- * RCS: @(#) $Id: javaCmd.c,v 1.9.2.1 2000/07/30 07:17:08 mo Exp $
+ * RCS: @(#) $Id: javaCmd.c,v 1.9.2.2 2000/08/07 00:50:09 mo Exp $
  */
 
 /*
@@ -115,7 +115,6 @@ static struct {
     { &java.Void, "java/lang/Void" },
     { &java.BlendExtension, "tcl/lang/BlendExtension" },
     { &java.Notifier, "tcl/lang/Notifier" },
-    { &java.NativeLock, "tcl/lang/NativeLock" },
     { &java.IdleHandler, "tcl/lang/IdleHandler" },
     { &java.TimerHandler, "tcl/lang/TimerHandler" },
     { NULL, NULL }

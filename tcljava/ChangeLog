@@ -1,3 +1,12 @@
+2000-08-06  Mo DeJong  <mdejong@redhat.com>
+
+	* src/native/java.h:
+	* src/native/javaCmd.c:
+	* src/native/javaInterp.c:
+	* src/tclblend/tcl/lang/NativeLock.java: Remove
+	the tcl.lang.NativeLock class, it is not needed
+	since we removed the big global lock.
+
 2000-07-30  Mo DeJong  <mdejong@redhat.com>
 
 	* src/native/java.h:

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaInterp.c,v 1.7.2.1 2000/07/30 07:17:09 mo Exp $
+ * RCS: @(#) $Id: javaInterp.c,v 1.7.2.2 2000/08/07 00:50:09 mo Exp $
  */
 
 #include "java.h"
@@ -848,10 +848,7 @@ JavaTraceProc(
 	Tcl_SaveResult(interp, &state);
 	
 	/*
-	 * Invoke the command and check for an exception.  Note that at this
-	 * point, Tcl should already be inside the NativeLock monitor so we
-	 * need to release it since we are leaving the C code and are not
-	 * assuming anything about the state of Tcl when we return.
+	 * Invoke the command and check for an exception.
 	 */
 
 	(*env)->CallVoidMethod(env, tPtr->trace, java.traceProc,
