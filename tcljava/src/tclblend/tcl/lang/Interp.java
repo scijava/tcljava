@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.12 2000/04/08 04:25:37 mo Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.13 2000/05/14 23:30:44 mo Exp $
  *
  */
 
@@ -275,9 +275,9 @@ setVar(
 				// null.
     TclObject value,		// New value for variable.
     int flags)			// Various flags that tell how to set value:
-				// any of GLOBAL_ONLY, NAMESPACE_ONLY,
-				// APPEND_VALUE, LIST_ELEMENT, LEAVE_ERR_MSG,
-				// or PARSE_PART1. 
+				// any of TCL.GLOBAL_ONLY, TCL.NAMESPACE_ONLY,
+				// TCL.APPEND_VALUE, TCL.LIST_ELEMENT, TCL.LEAVE_ERR_MSG,
+				// or TCL.PARSE_PART1. 
 throws
     TclException;
 
@@ -303,9 +303,9 @@ setVar(
 				// to set.
     TclObject value,		// New value for variable.
     int flags)			// Various flags that tell how to set value:
-				// any of GLOBAL_ONLY, NAMESPACE_ONLY,
-				// APPEND_VALUE, LIST_ELEMENT, or
-				// LEAVE_ERR_MSG. 
+				// any of TCL.GLOBAL_ONLY, TCL.NAMESPACE_ONLY,
+				// TCL.APPEND_VALUE, TCL.LIST_ELEMENT, or
+				// TCL.LEAVE_ERR_MSG. 
 throws
     TclException
 {
@@ -336,8 +336,8 @@ getVar(
     String name2,		// Name of an element within an array, or
 				// null.
     int flags)			// Various flags that tell how to get value:
-				// any of GLOBAL_ONLY, NAMESPACE_ONLY,
-				// LEAVE_ERR_MSG, or PARSE_PART1. 
+				// any of TCL.GLOBAL_ONLY, TCL.NAMESPACE_ONLY,
+				// TCL.LEAVE_ERR_MSG, or TCL.PARSE_PART1. 
 throws
     TclException;
 
@@ -362,8 +362,8 @@ getVar(
     String name,		// The name of a variable, array, or array
 				// element.
     int flags)			// Various flags that tell how to get value:
-				// any of GLOBAL_ONLY, NAMESPACE_ONLY,
-				// or LEAVE_ERR_MSG.
+				// any of TCL.GLOBAL_ONLY, TCL.NAMESPACE_ONLY,
+				// or TCL.LEAVE_ERR_MSG.
 throws TclException
 {
     return getVar(name, null, (flags | TCL.PARSE_PART1));
@@ -390,8 +390,8 @@ unsetVar(
     String name,		// The name of a variable, array, or array
 				// element.
     int flags)			// Various flags that tell how to get value:
-				// any of GLOBAL_ONLY, NAMESPACE_ONLY,
-				// or LEAVE_ERR_MSG.
+				// any of TCL.GLOBAL_ONLY, TCL.NAMESPACE_ONLY,
+				// or TCL.LEAVE_ERR_MSG.
 throws
     TclException
 {
@@ -422,8 +422,8 @@ unsetVar(
     String name2,		// Name of an element within an array, or
 				// null.
     int flags)			// Various flags that tell how to get value:
-				// any of GLOBAL_ONLY, NAMESPACE_ONLY,
-				// LEAVE_ERR_MSG, or PARSE_PART1. 
+				// any of TCL.GLOBAL_ONLY, TCL.NAMESPACE_ONLY,
+				// TCL.LEAVE_ERR_MSG, or TCL.PARSE_PART1. 
 throws
     TclException;
 

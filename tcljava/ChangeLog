@@ -1,5 +1,11 @@
 2000-05-14  Mo DeJong  <mdejong@redhat.com>
 
+	* src/tclblend/tcl/lang/Interp.java: Fixed
+	up comments about flags argument, for instance
+	GLOBAL_ONLY was changed to TCL.GLOBAL_ONLY.
+
+2000-05-14  Mo DeJong  <mdejong@redhat.com>
+
 	* src/jacl/tcl/lang/Shell.java: Added calls
 	to preserve() and release() on cmd object being
 	passed to recordAndEval() to avoid a null
