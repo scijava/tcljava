@@ -1,6 +1,6 @@
 Recent user-visible changes to Jacl & Tcl Blend:
 
-RCS: @(#) $Id: changes.txt,v 1.13 1999/05/08 23:03:08 dejong Exp $
+RCS: @(#) $Id: changes.txt,v 1.14 1999/05/08 23:08:56 dejong Exp $
 
 ----------------- Released 1.0a1, 10/22/97 -----------------------
 
@@ -136,12 +136,12 @@ TimerHandler constructor has been changed from "long" to "int", so
 that the API is compatible with Tcl 8.x.
 *** POTENTIAL INCOMPATIBILITY *** (IL)
 
-2/11/97 (bug fix) Added "BUILD_DIR=$(BUILD_DIR)" to the target for to
+2/11/98 (bug fix) Added "BUILD_DIR=$(BUILD_DIR)" to the target for to
 the tclblendtest.exec rule so --src-dir works when running tests. (BS)
 
 2/18/98 (bug fix) Made the Shell class public. (BS)
 
------------------ Released 1.0, 10/22/97 -----------------------
+----------------- Released 1.0, 2/20/98 -----------------------
 
 8/26/98 (bug fix)  Tcl8.1: Fixes for generic/javaInterp.c: In function
 `Java_tcl_lang_Interp_eval': generic/javaInterp.c:277: too few arguments to
@@ -250,7 +250,7 @@ version number from 1.1.1 to 1.1 and set java::PatchLevel to 1.1a1. (CXH)
 
 9/21/98 (error message) TclClassLoader.java: If we attempt to load
 a package that starts with tcl or java, we throw a security exception.
-Now we include a detail message that describes why. (CXH)
+Now we include a detailed message that describes why. (CXH)
 
 9/21/98 (error message) JavaLoadCmd.java: if we get a security exception,
 print the detail message. (CXH)
@@ -329,6 +329,11 @@ are more up to date. (Mo)
 Catch SecurityException if getResourceAsStream() throws it.  This is
 likely to happen if we run Jacl from within an applet. (CXH)
 
+11/15/98 (configure) If the JDK_ARCH_LIB directory ends in
+'green_threads', then configure checks to see if there is an adjacent
+native_threads directory, prints a message if there is, and then exits
+with an error.
+
 11/15/98 (configure) We need not set TCL_SRC_DIR by running make
 topDirName, TCL_SRC_DIR is set in tclConfig.sh.  Running
 'make topDirName' can sometimes generate text like 'make[4] . . .'
@@ -336,7 +341,7 @@ so it should be avoided.  (CXH)
 
 11/15/98 (windows pkgindex change)
 Under Windows, if tclblend.dll can be found with an absolute path,
-the use it. If not try to locate tclblend.dll on the users PATH.
+then use it. If not try to locate tclblend.dll on the users PATH.
 We need to do this because JDK1.2 is really picky about finding .dlls (CXH)
 
 11/16/98 (jwish)
@@ -357,6 +362,9 @@ Changes for Digital Unix:  JDK1.1.4 under Digital Unix V4.0B is installed
 in /usr/bin, and we need to look in /usr/include/java and
 /usr/include/java/alpha. Substitute in $JAVA_INC_DIR instead of hardwiring
 in $(JAVA_DIR)/include. (CXH)
+
+1/7/99 (unix configure)
+Search for tcl8.0.4 instead of tcl8.0.3 (CXH) 
 
 1/7/99 (line numbers in interp.evalFile() method)
 The Line number of errors in a file evaled with Interp.evalFile() were not
@@ -709,3 +717,16 @@ because the old name did not describe what the tests do. (Mo)
 Changed the usage message for the java::prop command. The message
 produced by the command now matches the docs. Usage message also
 updated in tests/tcljava/JavaPropCmd.test. (Mo)
+
+3/6/99 (JDK 1.2 on Linux support added)
+Fixed configure.in Makefile.in to add support for JDK 1.2 on Linux.
+I also added some usage notes to known_issues.txt.
+
+3/6/99 (added unsupported::jdetachcall command)
+Added the AWT modal dialog workaround command using the name
+unsupported::jdetachcall. This method is loaded by doing
+a "package require java" just like the java methods.
+It works just like the java::call method except that it
+can also be used on instance methods. There is no
+documentation for this class and you should only use this
+command if "you know that you need it".
