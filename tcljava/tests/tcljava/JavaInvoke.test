@@ -5,7 +5,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: JavaInvoke.test,v 1.4 1999/05/16 00:15:38 dejong Exp $
+# RCS: @(#) $Id: JavaInvoke.test,v 1.5 2000/08/23 05:54:31 mo Exp $
 
 # Note: This test file must be sourced from the parent directory
 #       or else the defs file may not be properly loaded.
@@ -418,6 +418,12 @@ test invoke-9.15 {convertJavaObject} {
     set x [java::new tests.JavaTest]
     jtest type [java::field $x iobj3]
 } tcl.lang.ReflectObject
+
+set str [java::new String hello]
+test invoke-9.16 {convertJavaObject: Check passing of java.lang.String} {
+    java::call tests.JavaTest retStr $str
+} $str
+unset str
 
 #
 # convertTclObject

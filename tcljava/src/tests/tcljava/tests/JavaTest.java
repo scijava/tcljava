@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: JavaTest.java,v 1.2 1999/05/16 00:06:03 dejong Exp $
+ * RCS: @(#) $Id: JavaTest.java,v 1.3 2000/08/23 05:54:31 mo Exp $
  */
 
 package tests;
@@ -104,6 +104,13 @@ public class JavaTest implements CommandWithDispose {
     
     public void disposeCmd() {
 	istr = "disposed";
+    }
+
+    // Returns the java.lang.String that was passed in
+    // used to test argument conversion.
+
+    public static String retStr(String str) {
+        return str;
     }
 }
 
