@@ -11,14 +11,12 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: lreplace.test,v 1.3 2000/08/21 04:48:11 mo Exp $
+# RCS: @(#) $Id: lreplace.test,v 1.4 2001/01/28 21:55:16 mdejong Exp $
 
-#if {[lsearch [namespace children] ::tcltest] == -1} {
-#    package require tcltest
-#    namespace import -force ::tcltest::*
-#}
-
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
 
 test lreplace-1.1 {lreplace command} {
     lreplace {1 2 3 4 5} 0 0 a
@@ -136,5 +134,5 @@ test lreplace-3.1 {lreplace won't modify shared argument objects} {
 
 # cleanup
 catch {unset foo}
-#::tcltest::cleanupTests
-#return
+::tcltest::cleanupTests
+return

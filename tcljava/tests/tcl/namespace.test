@@ -11,12 +11,12 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: namespace.test,v 1.4 2000/01/10 23:44:16 mo Exp $
+# RCS: @(#) $Id: namespace.test,v 1.5 2001/01/28 21:55:16 mdejong Exp $
 
-# Removed for now
-#if {[lsearch [namespace children] ::tcltest] == -1} {
-#    source [file join [pwd] [file dirname [info script]] defs.tcl]
-#}
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
 
 # Clear out any namespaces called test_ns_*
 catch {eval namespace delete [namespace children :: test_ns_*]}
@@ -81,14 +81,14 @@ test namespace-5.2 {Tcl_PopCallFrame, local vars must be deleted} {
 test namespace-6.1 {Tcl_CreateNamespace} {
     catch {eval namespace delete [namespace children :: test_ns_*]}
     list [lsort [namespace children :: test_ns_*]] \
-	 [namespace eval test_ns_1 {namespace current}] \
-	 [namespace eval test_ns_2 {namespace current}] \
-	 [namespace eval ::test_ns_3 {namespace current}] \
-	 [namespace eval ::test_ns_4 \
-             {namespace eval foo {namespace current}}] \
-	 [namespace eval ::test_ns_5 \
-             {namespace eval ::test_ns_6 {namespace current}}] \
-         [lsort [namespace children :: test_ns_*]]
+        [namespace eval test_ns_1 {namespace current}] \
+	[namespace eval test_ns_2 {namespace current}] \
+	[namespace eval ::test_ns_3 {namespace current}] \
+	[namespace eval ::test_ns_4 \
+            {namespace eval foo {namespace current}}] \
+	[namespace eval ::test_ns_5 \
+            {namespace eval ::test_ns_6 {namespace current}}] \
+        [lsort [namespace children :: test_ns_*]]
 } {{} ::test_ns_1 ::test_ns_2 ::test_ns_3 ::test_ns_4::foo ::test_ns_6 {::test_ns_1 ::test_ns_2 ::test_ns_3 ::test_ns_4 ::test_ns_5 ::test_ns_6}}
 test namespace-6.2 {Tcl_CreateNamespace, odd number of :'s in name is okay} {
     list [namespace eval :::test_ns_1::::foo {namespace current}] \
@@ -134,10 +134,10 @@ test namespace-7.2 {Tcl_DeleteNamespace, no active call frames in ns} {
     list [test_ns_2::p] [namespace delete test_ns_2]
 } {::test_ns_2 {}}
 
-test namespace-8.1 {TclTeardownNamespace, delete global namespace, rewritten for TclJava} {
-    package require java
-    set interp [java::new tcl.lang.Interp]
-    $interp eval {
+test namespace-8.1 {TclTeardownNamespace, delete global namespace} {
+    catch {interp delete test_interp}
+    interp create test_interp
+    interp eval test_interp {
         namespace eval test_ns_1 {
             namespace export p
             proc p {} {
@@ -155,12 +155,11 @@ test namespace-8.1 {TclTeardownNamespace, delete global namespace, rewritten for
         set x [test_ns_2::q]
         catch {set xxxx}
     }
-    list [$interp eval {test_ns_2::q} ; [$interp getResult] toString] \
-         [$interp eval {namespace delete ::}] \
-         [catch {$interp eval {set a 123}} msg] $msg \
-         [$interp dispose]
-} {{::test_ns_1 27} {} 1 {tcl.lang.TclException: invalid command name "set"} {}}
-
+    list [interp eval test_interp {test_ns_2::q}] \
+         [interp eval test_interp {namespace delete ::}] \
+         [catch {interp eval test_interp {set a 123}} msg] $msg \
+         [interp delete test_interp]
+} {{::test_ns_1 27} {} 1 {invalid command name "set"} {}}
 test namespace-8.2 {TclTeardownNamespace, remove deleted ns from parent} {
     catch {eval namespace delete [namespace children :: test_ns_*]}
     namespace eval test_ns_1::test_ns_2::test_ns_3a {proc p {} {}}
@@ -266,7 +265,7 @@ test namespace-10.3 {Tcl_ForgetImport, deletes matching imported cmds} {
         set l {}
         lappend l [lsort [info commands ::test_ns_import::*]]
         namespace forget ::test_ns_export::cmd1
-        lappend l [lsort [info commands ::test_ns_import::*]]
+        lappend l [info commands ::test_ns_import::*]
         lappend l [catch {cmd1 777} msg] $msg
     }
 } [list [lsort {::test_ns_import::p ::test_ns_import::cmd1}] ::test_ns_import::p 1 {invalid command name "cmd1"}]
@@ -327,7 +326,7 @@ test namespace-14.1 {TclGetNamespaceForQualName, absolute names} {
     }
     namespace eval test_ns_1 {
         list $::v $::test_ns_2::v $::test_ns_1::test_ns_2::v \
-             [lsort [namespace children :: test_ns_*]]
+		[lsort [namespace children :: test_ns_*]]
     }
 } [list 10 30 20 [lsort {::test_ns_1 ::test_ns_2}]]
 test namespace-14.2 {TclGetNamespaceForQualName, invalid absolute names} {
@@ -804,11 +803,11 @@ test namespace-26.5 {NamespaceExportCmd, sequence of patterns, patterns accumula
     }
     list [lsort [info commands test_ns_2::*]] [test_ns_2::cmd3 hello]
 } [list [lsort {::test_ns_2::cmd1 ::test_ns_2::cmd3}] {cmd3: hello}]
-test namespace-26.6 {NamespaceExportCmd, no patterns means return export list} {
+test namespace-26.6 {NamespaceExportCmd, no patterns means return uniq'ed export list} {
     namespace eval test_ns_1 {
         namespace export
     }
-} {cmd1 cmd1 cmd3}
+} {cmd1 cmd3}
 test namespace-26.7 {NamespaceExportCmd, -clear resets export list} {
     namespace eval test_ns_1 {
         namespace export -clear cmd4
@@ -1101,7 +1100,7 @@ catch {unset l}
 catch {unset msg}
 catch {unset trigger}
 eval namespace delete [namespace children :: test_ns_*]
-#::tcltest::cleanupTests
+::tcltest::cleanupTests
 return
 
 

@@ -1,3 +1,50 @@
+2001-01-28  Mo DeJong  <mdejong@redhat.com>
+
+	* tests/tcl/join.test:
+	* tests/tcl/lindex.test:
+	* tests/tcl/link.test:
+	* tests/tcl/linsert.test:
+	* tests/tcl/list.test:
+	* tests/tcl/listObj.test:
+	* tests/tcl/llength.test:
+	* tests/tcl/lrange.test:
+	* tests/tcl/lreplace.test:
+	* tests/tcl/lsearch.test:
+	* tests/tcl/misc.test:
+	* tests/tcl/namespace-old.test:
+	* tests/tcl/namespace.test:
+	* tests/tcl/obj.test:
+	* tests/tcl/parse.test:
+	* tests/tcl/parseExpr.test:
+	* tests/tcl/parseOld.test:
+	* tests/tcl/pkg.test:
+	* tests/tcl/platform.test:
+	* tests/tcl/proc-old.test:
+	* tests/tcl/proc.test:
+	* tests/tcl/pwd.test:
+	* tests/tcl/regexp.test:
+	* tests/tcl/rename.test:
+	* tests/tcl/scan.test:
+	* tests/tcl/security.test:
+	* tests/tcl/set-old.test:
+	* tests/tcl/set.test:
+	* tests/tcl/split.test:
+	* tests/tcl/stack.test:
+	* tests/tcl/string.test:
+	* tests/tcl/stringObj.test:
+	* tests/tcl/subst.test:
+	* tests/tcl/switch.test:
+	* tests/tcl/timer.test:
+	* tests/tcl/trace.test:
+	* tests/tcl/unknown.test:
+	* tests/tcl/uplevel.test:
+	* tests/tcl/upvar.test:
+	* tests/tcl/util.test:
+	* tests/tcl/var.test:
+	* tests/tcl/while-old.test:
+	* tests/tcl/while.test: Add or update tests
+	to match the ones in Tcl 8.3.
+
 2000-12-27  Mo DeJong  <mdejong@redhat.com>
 
 	* tests/tcl/error.test:

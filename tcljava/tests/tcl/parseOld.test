@@ -8,13 +8,17 @@
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: parseOld.test,v 1.1 1998/10/14 21:09:25 cvsadmin Exp $
+# RCS: @(#) $Id: parseOld.test,v 1.2 2001/01/28 21:55:16 mdejong Exp $
 
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
 
 proc fourArgs {a b c d} {
     global arg1 arg2 arg3 arg4
@@ -181,10 +185,9 @@ test parseOld-5.11 {array variable substitution} {
     set b a$!
     set b
 } {a$!}
-test parseOld-5.12 {array variable substitution} {
-    set b a$()
-    set b
-} {a$()}
+test parseOld-5.12 {empty array name support} {
+    list [catch {set b a$()} msg] $msg
+} {1 {can't read "()": no such variable}}
 catch {unset a}
 test parseOld-5.13 {array variable substitution} {
     catch {unset a}
@@ -209,56 +212,6 @@ test parseOld-5.14 {array variable substitution} {
     set b
 } bar
 catch {unset a}; catch {unset a1}
-
-# Backslash substitution.
-
-set errNum 1
-proc bsCheck {char num} {
-    global errNum
-    test parseOld-6.$errNum {backslash substitution} {
-	scan $char %c value
-	set value
-    } $num
-    set errNum [expr $errNum+1]
-}
-
-bsCheck \b	8
-bsCheck \e	101
-bsCheck \f	12
-bsCheck \n	10
-bsCheck \r	13
-bsCheck \t	9
-bsCheck \v	11
-bsCheck \{	123
-bsCheck \}	125
-bsCheck \[	91
-bsCheck \]	93
-bsCheck \$	36
-bsCheck \ 	32
-bsCheck \;	59
-bsCheck \\	92
-bsCheck \Ca	67
-bsCheck \Ma	77
-bsCheck \CMa	67
-bsCheck \8a	8
-bsCheck \14	12
-bsCheck \141	97
-bsCheck \340	224
-bsCheck b\0	98
-bsCheck \x	120
-bsCheck \xa	10
-bsCheck \x41	65
-bsCheck \x541	65
-bsCheck \u	117
-bsCheck \uk	117
-bsCheck \u41	65
-
-# scan is still broken now, and only returns the first byte of a
-# utf character.  The expected result will change when scan is fixed.
-
-# bsCheck \ua1	194
-# bsCheck \u4e21	228
-
 
 test parseOld-7.1 {backslash substitution} {
     set a "\a\c\n\]\}"
@@ -304,15 +257,20 @@ test parseOld-7.10 {backslash substitution} {
 test parseOld-7.11 {backslash substitution} {
     eval "list a \"b c\"\\\nd e"
 } {a {b c} d e}
-test parseOld-7.12 {backslash substitution} {tempNotJacl} {
+if {[info commands encoding] == ""} {
+    puts "This application has not been compiled with the encoding command"
+    puts "so the tests that require it will be skipped"
+} else {
+test parseOld-7.12 {backslash substitution} {
     list \ua2
-} {[bytestring "\xc2\xa2"]}
-test parseOld-7.13 {backslash substitution} {tempNotJacl} {
+} [bytestring "\xc2\xa2"]
+test parseOld-7.13 {backslash substitution} {
     list \u4e21
-} {[bytestring "\xe4\xb8\xa1"]}
-test parseOld-7.14 {backslash substitution} {tempNotJacl} {
+} [bytestring "\xe4\xb8\xa1"]
+test parseOld-7.14 {backslash substitution} {
     list \u4e2k
-} {[bytestring "\xd3\xa2k"]}
+} [bytestring "\xd3\xa2k"]
+}
 
 # Semi-colon.
 
@@ -387,10 +345,15 @@ test parseOld-10.13 {syntax errors} {
  {b}]
     set a
 } {a b}
-test parseOld-10.14 {syntax errors} {tempNotJacl} {
+
+# The next test will fail on the Mac, 'cause the MSL uses a fixed sized
+# buffer for %d conversions (LAME!).  I won't leave the test out, however,
+# since MetroWerks may some day fix this.
+
+test parseOld-10.14 {syntax errors} {
     list [catch {eval \$x[format "%01000d" 0](} msg] $msg $errorInfo
 } {1 {missing )} {missing )
-    while compiling
+    while executing
 "$x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000..."
     ("eval" body line 1)
     invoked from within
@@ -411,7 +374,9 @@ test parseOld-10.16 {syntax errors, missplaced braces} {
     } msg
     set msg
 } {extra characters after close-brace}
-
+test parseOld-10.17 {syntax errors, unusual spacing} {
+    list [catch {return [ [1]]} msg] $msg
+} {1 {invalid command name "1"}}
 # Long values (stressing storage management)
 
 set a {1111 2222 3333 4444 5555 6666 7777 8888 9999 aaaa bbbb cccc dddd eeee ffff gggg hhhh iiii jjjj kkkk llll mmmm nnnn oooo pppp qqqq rrrr ssss tttt uuuu vvvv wwww xxxx yyyy zzzz AAAA BBBB CCCC DDDD EEEE FFFF GGGG HHHH}
@@ -490,7 +455,10 @@ expr 1+1
 ]"
 } {2}
 
-if {[info command testwordend] == "testwordend"} {
+if {[info command testwordend] == ""} {
+    puts "This application hasn't been compiled with the testwordend command"
+    puts "therefore I am skipping the tests that require it."
+} else {
     test parseOld-14.1 {TclWordEnd procedure} {
 	testwordend " 	\n abc"
     } {c}
@@ -573,3 +541,19 @@ test parseOld-15.4 {TclScriptEnd procedure} {
 test parseOld-15.5 {TclScriptEnd procedure} {
     info complete "xyz \[abc"
 } {0}
+
+# cleanup
+::tcltest::cleanupTests
+return
+
+
+
+
+
+
+
+
+
+
+
+

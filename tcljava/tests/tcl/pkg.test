@@ -4,43 +4,46 @@
 # built-in commands.  Sourcing this file into Tcl runs the tests and
 # generates output for errors.  No output means no errors were found.
 #
-# Copyright (c) 1995 Sun Microsystems, Inc.
+# Copyright (c) 1995-1996 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: pkg.test,v 1.3 1999/08/15 19:39:18 mo Exp $
+# RCS: @(#) $Id: pkg.test,v 1.4 2001/01/28 21:55:16 mdejong Exp $
 
-if {[string compare test [info procs test]] == 1} then {source defs}
-
-
-# To ensure that these tests do not destroy interp state that other
-# tests might need access to we save the package info and restore it.
-
-catch {unset packages}
-
-# Ensure that the java package has been loaded
-package require java
-
-foreach pkg [package names] {
-  set vers [package versions $pkg]
-
-  if {[llength $vers] == 0} {
-    # empty built in package (like Tcl)
-    set packages($pkg) ""
-  } else {
-    foreach ver $vers {
-      set packages($pkg,$ver) [package ifneeded $pkg $ver]
-    }
-  }
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
 }
 
-# delete all currently known packages
-eval package forget [package names]
+# Do all this in a slave interp to avoid garbaging the
+# package list
+set i [interp create]
+interp eval $i [list set argv $argv]
 
-set savedUnknown [package unknown]
+# FIXME: Jacl local hack needed because "package require tcltest" don't work!
+# also note that we need to cd to $parentpwd first because current
+# directory does not get inherited by a child interp in Jacl.
+
+#interp eval $i [list package require tcltest]
+#interp eval $i [list namespace import -force ::tcltest::*]
+interp eval $i [list set parentpwd [pwd]]
+interp eval $i {
+    cd $parentpwd
+    cd ..
+    #puts "pwd is [pwd]"
+    source tcltest.tcl
+    namespace import -force ::tcltest::*
+    cd $parentpwd
+}
+
+interp eval $i {
+
+eval package forget [package names]
+set oldPkgUnknown [package unknown]
 package unknown {}
-set oldPath auto_path
+set oldPath $auto_path
 set auto_path ""
 
 test pkg-1.1 {Tcl_PkgProvide procedure} {
@@ -503,7 +506,7 @@ test pkg-3.53 {Tcl_PackageCmd procedure, "versions" option} {
 # No tests for FindPackage;  can't think up anything detectable
 # errors.
 
-test pkg-4.1 {TclFreePackageInfo procedure} {tempNotJacl} {
+test pkg-4.1 {TclFreePackageInfo procedure} {
     interp create foo
     foo eval {
 	package ifneeded t 2.3 x
@@ -514,7 +517,7 @@ test pkg-4.1 {TclFreePackageInfo procedure} {tempNotJacl} {
     }
     interp delete foo
 } {}
-test pkg-4.2 {TclFreePackageInfo procedure} {tempNotJacl} {
+test pkg-4.2 {TclFreePackageInfo procedure} {
     interp create foo
     foo eval {
 	package ifneeded t 2.3 x
@@ -541,6 +544,9 @@ test pkg-5.3 {CheckVersion procedure} {
 test pkg-5.4 {CheckVersion procedure} {
     list [catch {package vcompare 1.2.3. 2.1} msg] $msg
 } {1 {expected version number but got "1.2.3."}}
+test pkg-5.5 {CheckVersion procedure} {
+    list [catch {package vcompare 1.2..3 2.1} msg] $msg
+} {1 {expected version number but got "1.2..3"}}
 
 test pkg-6.1 {ComparePkgVersions procedure} {
     package vcompare 1.23 1.22
@@ -569,7 +575,6 @@ test pkg-6.8 {ComparePkgVersions procedure} {
 test pkg-6.9 {ComparePkgVersions procedure} {
     package vsatisfies 2 1
 } {0}
-
 
 test pkg-7.1 {Tcl_PkgPresent procedure, any version} {
     package forget t
@@ -643,35 +648,25 @@ test pkg-7.18 {Tcl_PackageCmd procedure, "present" option} {
     list [catch {package present -exact} msg] $msg
 } {1 {wrong # args: should be "package present ?-exact? package ?version?"}}
 
-
-set auto_path oldPath
+set auto_path $oldPath
+package unknown $oldPkgUnknown
 concat
-package unknown $savedUnknown
-unset savedUnknown
 
-# restore old packages
-foreach pkg [array names packages] {
-  #see if this is a built in package
-  set pair [split $pkg ,]
-  if {[llength $pair] == 1} {
-    # it is a built in package
-    set name [lindex $pair 0]
-    package ifneeded $name 1 "package provide $name 1"
-  } else {
-    # it is not a built in package
-    set name [lindex $pair 0]
-    set ver  [lindex $pair 1]
-    package ifneeded $name $ver $packages($name,$ver)
-  }
 }
 
-# Special hack to recreate the jaclloadjava command
-# which is deleted from the interp after the java
-# package is loaded into Jacl for the first time.
-# Doing a package forget means that future calls to
-# "package require java" will generate an error
-# because the jaclloadjava command can not be found.
+# cleanup
+interp delete $i
+::tcltest::cleanupTests
+return
 
-if {$tcljava(tcljava) == "jacl"} {
-[java::getinterp] createCommand jaclloadjava [java::new tcl.lang.JaclLoadJavaCmd]
-}
+
+
+
+
+
+
+
+
+
+
+

@@ -14,15 +14,13 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: var.test,v 1.2 1999/08/05 03:46:54 mo Exp $
+# RCS: @(#) $Id: var.test,v 1.3 2001/01/28 21:55:16 mdejong Exp $
 #
 
-#if {[lsearch [namespace children] ::tcltest] == -1} {
-#    source [file join [pwd] [file dirname [info script]] defs.tcl]
-#}
-
-if {[string compare test [info procs test]] == 1} then {source defs}
-
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
 
 catch {rename p ""}
 catch {namespace delete test_ns_var}
@@ -126,7 +124,7 @@ test var-1.15 {TclLookupVar, resurrect variable via upvar to deleted namespace: 
     proc p {} {
 	variable ::test_ns_var::foo
 	lappend result [catch {set foo} msg] $msg
-	namespace delete ::test_ns_var
+        namespace delete ::test_ns_var
 	lappend result [catch {set foo 3} msg] $msg
 	lappend result [catch {set foo(3) 3} msg] $msg
     }
@@ -135,15 +133,15 @@ test var-1.15 {TclLookupVar, resurrect variable via upvar to deleted namespace: 
 test var-1.16 {TclLookupVar, resurrect variable via upvar to deleted namespace: uncompiled code path} {
     namespace eval test_ns_var {
 	variable result
-	namespace eval subns {
+        namespace eval subns {
 	    variable foo 2
 	}
 	upvar 0 subns::foo foo
 	lappend result [catch {set foo} msg] $msg
-	namespace delete subns
+        namespace delete subns
 	lappend result [catch {set foo 3} msg] $msg
 	lappend result [catch {set foo(3) 3} msg] $msg
-	namespace delete [namespace current]
+        namespace delete [namespace current]
 	set result
     }
 } {0 2 1 {can't set "foo": upvar refers to variable in deleted namespace} 1 {can't set "foo(3)": upvar refers to variable in deleted namespace}}
@@ -158,7 +156,7 @@ test var-1.17 {TclLookupVar, resurrect array element via upvar to deleted array:
 	    lappend result [catch {set foo 3} msg] $msg
 	}
 	set result [p]
-	namespace delete [namespace current]
+        namespace delete [namespace current]
 	set result
     }
 } {0 2 1 {can't set "foo": upvar refers to element in deleted array}}
@@ -171,7 +169,7 @@ test var-1.18 {TclLookupVar, resurrect array element via upvar to deleted array:
 	lappend result [catch {set foo} msg] $msg
 	unset x
 	lappend result [catch {set foo 3} msg] $msg
-	namespace delete [namespace current]
+        namespace delete [namespace current]
 	set result
     }
 } {0 2 1 {can't set "foo": upvar refers to element in deleted array}}
@@ -418,13 +416,13 @@ test var-7.9 {Tcl_VariableObjCmd, mark as namespace var so var persists until na
     lappend a [namespace delete test_ns_var2]
     set a
 } [list [lsort {::test_ns_var2::x ::test_ns_var2::y ::test_ns_var2::z}] 1 0 0\
-{1 {can't read "test_ns_var2::y": no such variable}}\
-[lsort {::test_ns_var2::x ::test_ns_var2::y ::test_ns_var2::z}] 0 0\
-hello 1 0\
-{0 {}}\
-[lsort {::test_ns_var2::x ::test_ns_var2::z}] 0 0\
-{1 {can't unset "test_ns_var2::z": no such variable}}\
-{}]
+	{1 {can't read "test_ns_var2::y": no such variable}}\
+	[lsort {::test_ns_var2::x ::test_ns_var2::y ::test_ns_var2::z}] 0 0\
+	hello 1 0\
+	{0 {}}\
+	[lsort {::test_ns_var2::x ::test_ns_var2::z}] 0 0\
+	{1 {can't unset "test_ns_var2::z": no such variable}}\
+	{}]
 test var-7.10 {Tcl_VariableObjCmd, variable cmd inside proc creates local link var} {
     namespace eval test_ns_var {
         proc p {} {
@@ -461,6 +459,20 @@ test var-7.13 {Tcl_VariableObjCmd, variable named ":"} {
 	p
     }
 } {{My name is ":"} :}
+test var-7.14 {Tcl_VariableObjCmd, array element parameter} {
+    catch {namespace eval test_ns_var { variable arrayvar(1) }} res
+    set res
+} "can't define \"arrayvar(1)\": name refers to an element in an array"
+test var-7.15 {Tcl_VariableObjCmd, array element parameter} {
+    catch {
+	namespace eval test_ns_var { 
+	    variable arrayvar
+	    set arrayvar(1) x
+	    variable arrayvar(1) y
+	}   
+    } res
+    set res
+} "can't define \"arrayvar(1)\": name refers to an element in an array"
 
 test var-8.1 {TclDeleteVars, "unset" traces are called with fully-qualified var names} {
     catch {namespace delete test_ns_var}
@@ -579,7 +591,59 @@ test var-9.12 {behaviour of TclSetVar write trace error} {
 test var-10.1 {can't nest arrays with array set} {
    catch {unset arr}
    list [catch {array set arr(x) {a 1 b 2}} res] $res
-} {1 {can't set "arr(x)(a)": variable isn't array}}
+} {1 {can't set "arr(x)": variable isn't array}}
+
+test var-10.2 {can't nest arrays with array set} {
+   catch {unset arr}
+   list [catch {array set arr(x) {}} res] $res
+} {1 {can't set "arr(x)": variable isn't array}}
+
+test var-11.1 {array unset} {
+    catch {unset a}
+    array set a { 1,1 a 1,2 b 2,1 c 2,3 d }
+    array unset a 1,*
+    lsort -dict [array names a]
+} {2,1 2,3}
+test var-11.2 {array unset} {
+    catch {unset a}
+    array set a { 1,1 a 1,2 b }
+    array unset a
+    array exists a
+} 0
+test var-11.3 {array unset errors} {
+    catch {unset a}
+    array set a { 1,1 a 1,2 b }
+    list [catch {array unset a pattern too} msg] $msg
+} {1 {wrong # args: should be "array unset arrayName ?pattern?"}}
+
+test var-12.1 {TclFindCompiledLocals, {} array name} {
+    namespace eval n {
+	proc p {} {
+	    variable {}
+	    set (0) 0
+	    set (1) 1
+	    set n 2
+	    set ($n) 2
+	    set ($n,foo) 2
+	}
+	p
+	lsort -dictionary [array names {}]
+    }
+} {0 1 2 2,foo}
+
+test var-13.1 {Tcl_UnsetVar2, unset array with trace set on element} {
+    catch {unset t}
+    proc foo {var ind op} {
+	global t
+	set foo bar
+    }
+    namespace eval :: {
+	set t(1) 1
+	trace variable t(1) u foo
+	unset t
+    }
+    set x "If you see this, it worked"
+} "If you see this, it worked"
 
 catch {namespace delete ns}
 catch {unset arr}
@@ -597,17 +661,5 @@ catch {unset xxxxx}
 catch {unset aaaaa}
 
 # cleanup
-#::tcltest::cleanupTests
+::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
-

@@ -6,13 +6,17 @@
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: upvar.test,v 1.1 1998/10/14 21:09:25 cvsadmin Exp $
+# RCS: @(#) $Id: upvar.test,v 1.2 2001/01/28 21:55:16 mdejong Exp $
 
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
 
 test upvar-1.1 {reading variables with upvar} {
     proc p1 {a b} {set c 22; set d 33; p2}
@@ -139,7 +143,7 @@ test upvar-3.5 {unsetting array elements with upvar} {
 	set a(1) first
 	set a(2) second
 	p2
-	lsort [array names a]
+	array names a
     }
     proc p2 {} {upvar a(0) x; unset x}
     p1
@@ -150,7 +154,7 @@ test upvar-3.6 {unsetting then resetting array elements with upvar} {
 	set a(1) first
 	set a(2) second
 	p2
-	list [lsort [array names a]] [catch {set a(0)} msg] $msg
+	list [array names a] [catch {set a(0)} msg] $msg
     }
     proc p2 {} {upvar a(0) x; unset x; set x 12345}
     p1
@@ -310,6 +314,28 @@ test upvar-8.7 {errors in upvar command} {
     proc p1 {} {trace variable a w foo; upvar b a}
     list [catch p1 msg] $msg
 } {1 {variable "a" has traces: can't use for upvar}}
+test upvar-8.8 {create nested array with upvar} {
+    proc p1 {} {upvar x(a) b; set b(2) 44}
+    catch {unset x}
+    list [catch p1 msg] $msg
+} {1 {can't set "b(2)": variable isn't array}}
+test upvar-8.9 {upvar won't create namespace variable that refers to procedure variable} {
+    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {rename MakeLink ""}
+    namespace eval ::test_ns_1 {}
+    proc MakeLink {a} {
+        namespace eval ::test_ns_1 {
+	    upvar a a
+        }
+        unset ::test_ns_1::a
+    }
+    list [catch {MakeLink 1} msg] $msg
+} {1 {bad variable name "a": upvar won't create namespace variable that refers to procedure variable}}
+test upvar-8.10 {upvar will create element alias for new array element} {
+    catch {unset upvarArray}
+    array set upvarArray {}
+    catch {upvar 0 upvarArray(elem) upvarArrayElemAlias}
+} {0}
 
 if {[info commands testupvar] != {}} {
     test upvar-9.1 {Tcl_UpVar2 procedure} {
@@ -374,4 +400,18 @@ if {[info commands testupvar] != {}} {
 }
 catch {unset a}
 
-concat
+# cleanup
+::tcltest::cleanupTests
+return
+
+
+
+
+
+
+
+
+
+
+
+
