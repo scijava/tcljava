@@ -1,5 +1,10 @@
 2003-03-17  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	Add tcljava-130-2003-03-17 tag to mark the
+	1.3.0 release.
+
+2003-03-17  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* tests/tcl/get.test: Fix syntax error and
 	add knownbug constraint to test that fails.
 	* tests/tcljava/FuncSig.test: Comment out
