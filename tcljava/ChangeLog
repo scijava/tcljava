@@ -1,5 +1,12 @@
 2000-08-23  Mo DeJong  <mdejong@redhat.com>
 
+	* src/tests/tcljava/tests/AppendEventQueueThread.java: Add source
+	for enqueue of event that does a vwait test.
+	* tests/tcljava/TclEvent.test: Add test case for notifier
+	queue bug.
+
+2000-08-23  Mo DeJong  <mdejong@redhat.com>
+
 	* configure: Regen.
 	* tcljava.m4: Reject Tcl build that does not
 	include thread support.

@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: TclEvent.test,v 1.1 1998/10/14 21:09:24 cvsadmin Exp $
+# RCS: @(#) $Id: TclEvent.test,v 1.1.1.1.10.1 2000/08/24 06:44:35 mo Exp $
 
 # Note: This test file must be sourced from the parent directory
 #       or else the defs file may not be properly loaded.
@@ -46,4 +46,19 @@ test TclEvent-1.3 {sync(), in non-primary thread} {
     vwait testEvtReply
     set testEvtReply
 } 1
+
+test TclEvent-1.4 { enqueue of a vwait event should still allow
+        other events to be enqueued, was a bug in Tcl Blend Notifier } {
+    set AQT [java::new tests.AppendEventQueueThread [java::getinterp]]
+    $AQT start
+
+    java::call tests.AppendEventQueueThread queueVwaitEvent [java::getinterp]
+    update
+
+    set numQueued [java::field $AQT numQueued]
+    set expectedNumQueued [java::field $AQT expectedNumQueued]
+    set numProcessed [java::field $AQT numProcessed]
+
+    list $numQueued $expectedNumQueued $numProcessed
+} {5 5 5}
 
