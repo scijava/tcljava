@@ -7,12 +7,13 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: SocketCmd.java,v 1.6 2002/01/03 03:48:46 mdejong Exp $
+ * RCS: @(#) $Id: SocketCmd.java,v 1.7 2002/01/21 01:59:35 mdejong Exp $
  *
  */
 
 package tcl.lang;
 import java.util.*;
+import java.io.IOException;
 
 /**
  * This class implements the built-in "socket" command in Tcl.
@@ -153,13 +154,18 @@ class SocketCmd implements Command {
 	    // need to be informed when the interpreter is deleted.
 
 	} else {
-            SocketChannel sock = new SocketChannel(
-                interp, 
-                TclIO.RDWR,
-                myaddr, myport, async, host, port);
+            try {
+                SocketChannel sock = new SocketChannel(
+                    interp, 
+                    TclIO.RDWR,
+                    myaddr, myport, async, host, port);
 
-            TclIO.registerChannel(interp, sock);
-            interp.setResult(sock.getChanName());
+                TclIO.registerChannel(interp, sock);
+                interp.setResult(sock.getChanName());
+            } catch (IOException e) {
+                throw new TclException(interp, "cannot open socket: " +
+                    e.getMessage());
+            }
 	}
     }
 

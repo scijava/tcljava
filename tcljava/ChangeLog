@@ -1,3 +1,11 @@
+2002-01-20  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/jacl/tcl/lang/SocketChannel.java (SocketChannel): Raise
+	an IOException instead of catching it and raising a TclException.
+	* src/jacl/tcl/lang/SocketCmd.java (cmdProc): Catch an
+	IOException and instead raise a TclException when something
+	goes wrong in the SocketChannel constructor.
+
 2002-01-18  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* new_features.txt: Add note about new socket

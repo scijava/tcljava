@@ -30,7 +30,7 @@ public class SocketChannel extends Channel {
 
     public SocketChannel(Interp interp, int mode, String localAddr,
             int localPort, boolean async, String address, int port)
-        throws TclException
+        throws IOException, TclException
     {
         InetAddress localAddress = null;
         InetAddress addr = null;
@@ -68,38 +68,18 @@ public class SocketChannel extends Channel {
         this.mode = mode;
 
         // Create the Socket object
-        try
-        {
-            if ((localAddress != null) && (localPort != 0))
-                sock = new Socket(addr, port, localAddress, localPort);
-            else
-                sock = new Socket(addr, port);
-        }
-        catch (IOException ex)
-        {
-            throw new TclException(interp, ex.getMessage());
-        }
+
+        if ((localAddress != null) && (localPort != 0))
+            sock = new Socket(addr, port, localAddress, localPort);
+        else
+            sock = new Socket(addr, port);
 
         // Get the Input and Output streams
-        try
-        {
-            reader = new BufferedReader(
-                    new InputStreamReader(sock.getInputStream()));
-        }
-        catch (IOException ex)
-        {
-            throw new TclException(interp, ex.getMessage());
-        }
+        reader = new BufferedReader(
+            new InputStreamReader(sock.getInputStream()));
 
-        try
-        {
-            writer = new BufferedWriter(
-                    new OutputStreamWriter(sock.getOutputStream()));
-        }
-        catch (IOException ex)
-        {
-            throw new TclException(interp, ex.getMessage());
-        }
+        writer = new BufferedWriter(
+            new OutputStreamWriter(sock.getOutputStream()));
 
         // If we got this far, then the socket has been created.
         // Create the channel name
@@ -111,30 +91,17 @@ public class SocketChannel extends Channel {
      * made to a ServerSocket.
      **/
 
-    public SocketChannel(Interp interp, Socket s) throws TclException
+    public SocketChannel(Interp interp, Socket s)
+        throws IOException, TclException
     {
         this.mode = TclIO.RDWR;
         this.sock = s;
 
-        try
-        {
-            reader = new BufferedReader(
-                    new InputStreamReader(sock.getInputStream()));
-        }
-        catch (IOException ex)
-        {
-            throw new TclException(interp, ex.getMessage());
-        }
+        reader = new BufferedReader(
+            new InputStreamReader(sock.getInputStream()));
 
-        try
-        {
-            writer = new BufferedWriter(
-                    new OutputStreamWriter(sock.getOutputStream()));
-        }
-        catch (IOException ex)
-        {
-            throw new TclException(interp, ex.getMessage());
-        }
+        writer = new BufferedWriter(
+            new OutputStreamWriter(sock.getOutputStream()));
 
         // If we got this far, then the socket has been created.
         // Create the channel name
