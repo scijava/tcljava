@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: InfoCmd.java,v 1.4 1999/07/06 12:19:34 mo Exp $
+ * RCS: @(#) $Id: InfoCmd.java,v 1.5 1999/07/21 04:20:14 mo Exp $
  *
  */
 
@@ -296,7 +296,7 @@ class InfoCmd implements Command {
 			    "?pattern?");
 		}
 
-		if (interp.varFrame == null) {
+		if (interp.varFrame == null || !interp.varFrame.isProcCallFrame) {
 		    return;
 		}
 
@@ -380,10 +380,18 @@ class InfoCmd implements Command {
 		}
 
 		if (argv.length == 2) {
+		    // FIXME : hack to avoid null pointer exception
+		    // We still need to port the 8.1 info command over
+		    // to add namespace support for the info command
+		    if (interp.varFrame != null) {
 		    matchAndAppend(interp, interp.varFrame.getVarNames(),null);
+		    }
 		} else {
+		    // FIXME : hack to avoid null pointer exception
+		    if (interp.varFrame != null) {
 		    matchAndAppend(interp, interp.varFrame.getVarNames(),
 			    argv[2].toString());
+		    }
 		}
 		return;
 	    default:

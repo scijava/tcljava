@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: CallFrame.java,v 1.7 1999/07/16 05:41:37 mo Exp $
+ * RCS: @(#) $Id: CallFrame.java,v 1.8 1999/07/21 04:19:31 mo Exp $
  *
  */
 
@@ -221,6 +221,10 @@ class CallFrame {
     Vector getVarNames() {
 	Vector vector = new Vector();
 
+	if (varTable == null) {
+	    return vector;
+	}
+
 	for (Enumeration e1 = varTable.elements();
 		e1.hasMoreElements(); ) {
 	    Var v = (Var) e1.nextElement();
@@ -238,6 +242,10 @@ class CallFrame {
 
     Vector getLocalVarNames() {
 	Vector vector = new Vector();
+
+	if (varTable == null) {
+	    return vector;
+	}
 
 	for (Enumeration e1 = varTable.elements();
 		e1.hasMoreElements(); ) {
@@ -332,7 +340,9 @@ class CallFrame {
 	caller = null;
 	callerVar = null;
 
-	Var.deleteVars(interp, varTable);
+	if (varTable != null) {
+	    Var.deleteVars(interp, varTable);
+	}
 	varTable = null;
     }
 

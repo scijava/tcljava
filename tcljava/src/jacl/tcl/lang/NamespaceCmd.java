@@ -15,7 +15,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: NamespaceCmd.java,v 1.6 1999/07/16 05:50:01 mo Exp $
+ * RCS: @(#) $Id: NamespaceCmd.java,v 1.7 1999/07/21 04:20:14 mo Exp $
  */
 
 package tcl.lang;
@@ -213,9 +213,9 @@ public class NamespaceCmd extends InternalRep implements Command {
 
 	// FIXME : this was causing crashes in var lookup code, Need to
 	// Look at the code in CallFrame to keep trace of null varFrame case!
-	//frame.varTable = null;       // and no local variables
+	frame.varTable = null;       // and no local variables
 
-	// Not part of Jacl CallFrame implementation (usedonly in tcl compiler)
+	// Not part of Jacl CallFrame implementation (used only in tcl compiler)
 	//framePtr.numCompiledLocals = 0;
 	//framePtr.compiledLocals = null;
 	
