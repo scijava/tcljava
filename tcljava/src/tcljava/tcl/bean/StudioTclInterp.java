@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: StudioTclInterp.java,v 1.1 1998/10/14 21:09:16 cvsadmin Exp $
+ * RCS: @(#) $Id: StudioTclInterp.java,v 1.2 1998/11/04 22:39:17 hylands Exp $
  */
 
 package tcl.bean;
@@ -663,7 +663,8 @@ throws
 	    throw new TclNumArgsException(interp, 1, argv, "getPanel");
 	}
 	interp.setResult(
-             ReflectObject.newInstance(interp, Panel.class, getCustomPanel()));
+                ReflectObject.newInstance(interp, Panel.class,
+                        getCustomPanel()));
 	break;
     case 1:		/* getBeanData */
 	if (argv.length != 2) {
