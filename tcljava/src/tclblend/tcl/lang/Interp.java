@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.6 1999/05/17 03:01:16 dejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.7 1999/05/17 03:52:36 dejong Exp $
  *
  */
 
@@ -34,7 +34,7 @@ static {
         System.out.println("System.loadLibrary(\"tclblend\") failed because of UnsatisfiedLinkError");
         e.printStackTrace(System.out);
     } catch (Throwable t) {
-        System.out.println("System.loadLibrary(\"tclblend\") failed because of Unoknown Throwable");
+        System.out.println("System.loadLibrary(\"tclblend\") failed because of Unknown Throwable");
         t.printStackTrace(System.out);
     }
 }
