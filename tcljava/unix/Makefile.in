@@ -1,6 +1,6 @@
 # This Makefile is used to the java loadable module.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.13 1998/11/16 08:04:52 hylands Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.14 1998/11/24 04:35:54 hylands Exp $
 
 # The version of TclJava, used in this Makefile
 VERSION = @TCLJAVA_VERSION@
@@ -1219,6 +1219,12 @@ jaclSrcDist: $(UNIX_DIR)/configure Makefile
 	cp -p $(TOP_DIR)/unix/jaclsh.in \
 		$(JACL_DISTDIR)/unix
 
+	cp -p $(UNIX_DIR)/README.jacl \
+		$(BLEND_DISTDIR)/unix/README
+
+	cp -p $(WIN_DIR)/README.jacl \
+		$(BLEND_DISTDIR)/win/README
+
 	mkdir -p $(JACL_DISTDIR)/win
 	cp -p $(TOP_DIR)/win/jaclsh.bat \
 		$(JACL_DISTDIR)/win
@@ -1263,6 +1269,12 @@ tclblendSrcDist: $(UNIX_DIR)/configure Makefile
 	cp -p $(UNIX_DIR)/green.c \
 		$(UNIX_DIR)/unixNotifier.c \
 		$(BLEND_DISTDIR)/unix
+
+	cp -p $(UNIX_DIR)/README.tclblend \
+		$(BLEND_DISTDIR)/unix/README
+
+	cp -p $(WIN_DIR)/README.tclblend \
+		$(BLEND_DISTDIR)/win/README
 
 	cp -p $(WIN_DIR)/winNotifier.c \
 		$(WIN_DIR)/tclRegexp.h \
