@@ -10,7 +10,7 @@ downloading at the following URL:
     http://www.cs.umn.edu/~dejong/tcl/tcljava
 
 The 1.2 version is a developers release and should be considered alpha
-quality. Version 1.2.4 includes lots of bug fixes and some new features
+quality. Version 1.2.4 includes lots of bug fixes and new features
 that make it even easier to use Tcl and Java together.
 
 
@@ -20,13 +20,14 @@ What's New in the 1.2.4 Release?
 Jacl now includes the namespace command! All the namespace
 features included in Tcl 8.1 should be working in this
 release. Unicode support has been added to the Jacl parser.
-Tcl Blend also supports Unicode characters (encoded as UTF-8)
-when compiled with Tcl 8.1 or better. Jacl now supports the
-"package present" subcommand from Tcl 8.1's package command.
-A new java::import command which supports using shortened
-class names has been added to Jacl and Tcl Blend. A number
-of bugs in Jacl have been fixed and a host of new regression
-tests from the Tcl 8.1 dist have been added to Jacl.
+Tcl Blend works with Tcl 8.2 and supports Unicode characters
+(encoded as UTF-8) when compiled with Tcl 8.1 or Tcl 8.2.
+Jacl now supports the "package present" subcommand from
+Tcl 8.1's package command.  A new java::import command
+which supports using shortened class names has been added
+to Jacl and Tcl Blend. A number of bugs in Jacl have been
+fixed and a host of new regression tests from the Tcl 8.1
+dist have been added to Jacl.
 
 See the new_features.txt and changes.txt files for more info.
 
