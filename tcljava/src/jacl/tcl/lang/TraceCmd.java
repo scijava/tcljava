@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TraceCmd.java,v 1.5 1999/08/03 02:37:01 mo Exp $
+ * RCS: @(#) $Id: TraceCmd.java,v 1.6 1999/08/15 19:38:36 mo Exp $
  *
  */
 
@@ -108,7 +108,7 @@ throws
 
     if (objv.length < 2) {
 	throw new TclNumArgsException(interp, 1, objv, 
-		"option arg ?arg ...?");
+		"option [arg arg ...]");
     }
     int opt = TclIndex.get(interp, objv[1], validCmds, "option", 0);
 
