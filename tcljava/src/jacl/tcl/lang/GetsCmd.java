@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: GetsCmd.java,v 1.3 2000/11/19 17:17:17 krischan Exp $
+ * RCS: @(#) $Id: GetsCmd.java,v 1.4 2001/11/20 19:07:30 mdejong Exp $
  *
  */
 
@@ -50,11 +50,6 @@ class GetsCmd implements Command {
 	if (chan == null) {
 	    throw new TclException(interp, "can not find channel named \""
                     + argv[1].toString() + "\"");
-	}
-
-	if ((chan.getMode() & TclIO.WRONLY) != 0) {
-	    throw new TclException(interp, "channel \"" + argv[1].toString()
-		    + "\" wasn't opened for reading");
 	}
 
 	try {

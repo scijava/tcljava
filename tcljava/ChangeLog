@@ -1,5 +1,16 @@
 2001-11-20  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/jacl/tcl/lang/Channel.java (write): Remove
+	trailing "." from error message since it is not
+	compatible with Tcl error message.
+	* src/jacl/tcl/lang/FblockedCmd.java (cmdProc):
+	* src/jacl/tcl/lang/GetsCmd.java (cmdProc):
+	* src/jacl/tcl/lang/PutsCmd.java (cmdProc):
+	* src/jacl/tcl/lang/ReadCmd.java (cmdProc):
+	Remove mode check that belongs in Channel methods.
+
+2001-11-20  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/jacl/tcl/lang/ServerSocketChannel.java (errorMsg)
 	Remove unused errorMsg member.
 	* src/jacl/tcl/lang/SocketChannel.java (SocketChannel,

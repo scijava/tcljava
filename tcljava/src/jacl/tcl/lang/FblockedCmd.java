@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FblockedCmd.java,v 1.2 1999/05/09 00:09:07 dejong Exp $
+ * RCS: @(#) $Id: FblockedCmd.java,v 1.3 2001/11/20 19:07:30 mdejong Exp $
  *
  */
 
@@ -41,11 +41,6 @@ class FblockedCmd implements Command {
 	if (chan == null) {
 	    throw new TclException(interp, "can not find channel named \""
                     + argv[1].toString() + "\"");
-	}
-
-	if ((chan.getMode() & TclIO.WRONLY) != 0) {
-	    throw new TclException(interp, "channel \"" + chan.getChanName() 
-	            + "\" wasn't opened for reading");
 	}
 
 	// Java only has synchronous io so always return 0

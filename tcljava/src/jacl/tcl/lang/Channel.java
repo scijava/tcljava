@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Channel.java,v 1.12 2001/11/20 18:01:52 mdejong Exp $
+ * RCS: @(#) $Id: Channel.java,v 1.13 2001/11/20 19:07:30 mdejong Exp $
  */
 
 package tcl.lang;
@@ -140,7 +140,7 @@ abstract class Channel {
 
         if ((mode & (TclIO.WRONLY|TclIO.RDWR)) == 0)
             throw new TclException(interp, "channel \"" + getChanName() +
-                "\" wasn't opened for writing.");
+                "\" wasn't opened for writing");
 
         if (writer != null) {
             eofCond = false;
