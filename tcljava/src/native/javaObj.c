@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaObj.c,v 1.3 2000/05/13 23:49:30 mo Exp $
+ * RCS: @(#) $Id: javaObj.c,v 1.4 2000/06/15 09:47:07 mo Exp $
  */
 
 #include "java.h"
@@ -326,7 +326,7 @@ Java_tcl_lang_CObject_getString(
 	(*env)->ThrowNew(env, nullClass, "Invalid CObject.");
     }
 
-    JAVA_LOCK();
+    PUSH_JAVA_ENV();
     /*
      * Convert the string rep into a Unicode string.
      */
@@ -365,7 +365,7 @@ Java_tcl_lang_CObject_getString(
     } else {
 	result = (*env)->NewString(env, NULL, 0);
     }
-    JAVA_UNLOCK();
+    POP_JAVA_ENV();
     return result;
 }
 
@@ -403,9 +403,9 @@ Java_tcl_lang_CObject_incrRefCount(
 		"java/lang/NullPointerException");
 	(*env)->ThrowNew(env, nullClass, "Invalid CObject.");
     }
-    JAVA_LOCK();
+    PUSH_JAVA_ENV();
     Tcl_IncrRefCount(objPtr);
-    JAVA_UNLOCK();
+    POP_JAVA_ENV();
 }
 
 /*
@@ -441,9 +441,9 @@ void JNICALL Java_tcl_lang_CObject_decrRefCount(
 		"java/lang/NullPointerException");
 	(*env)->ThrowNew(env, nullClass, "Invalid CObject.");
     }
-    JAVA_LOCK();
+    PUSH_JAVA_ENV();
     Tcl_DecrRefCount(objPtr);
-    JAVA_UNLOCK();
+    POP_JAVA_ENV();
 }
 
 /*
@@ -484,7 +484,7 @@ Java_tcl_lang_CObject_makeRef(
 	(*env)->ThrowNew(env, nullClass, "Invalid CObject.");
     }
 
-    JAVA_LOCK();
+    PUSH_JAVA_ENV();
     /*
      * Free the old internalRep before setting the new one.
      */
@@ -504,7 +504,7 @@ Java_tcl_lang_CObject_makeRef(
      */
 
     (*env)->CallVoidMethod(env, object, java.preserve);
-    JAVA_UNLOCK();
+    POP_JAVA_ENV();
 }
 
 /*
@@ -537,13 +537,13 @@ Java_tcl_lang_CObject_newCObject(
     jlong obj;
     JNIEnv *oldEnv;
 
-    JAVA_LOCK();
+    PUSH_JAVA_ENV();
     objPtr = Tcl_NewObj();
     if (string) {
 	objPtr->bytes = JavaGetString(env, string, &objPtr->length);
     }
     *(Tcl_Obj **)&obj = objPtr;
-    JAVA_UNLOCK();
+    POP_JAVA_ENV();
     return obj;	
 }
 

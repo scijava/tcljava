@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: java.h,v 1.5 2000/06/03 13:03:43 mo Exp $
+ * RCS: @(#) $Id: java.h,v 1.6 2000/06/15 09:47:06 mo Exp $
  */
 
 #ifndef _JAVA
@@ -141,17 +141,35 @@ extern JavaInfo java;
  * pointer.
  */
 
-#define JAVA_LOCK()	\
+/* Uncomment these macros and comment the other ones to
+   completely avoid using the global Java monitor.
+
+#define JAVA_LOCK()
+#define JAVA_UNLOCK()
+*/
+
+#define JAVA_LOCK() \
 { \
     (*env)->MonitorEnter(env, java.NativeLock); \
+}
+
+#define JAVA_UNLOCK() \
+{ \
+    (*env)->MonitorExit(env, java.NativeLock); \
+}
+
+#define PUSH_JAVA_ENV()	\
+{ \
+    JAVA_LOCK(); \
     oldEnv = JavaSetEnv(env); \
 }
 
-#define JAVA_UNLOCK()	\
+#define POP_JAVA_ENV()	\
 { \
     JavaSetEnv(oldEnv); \
-    (*env)->MonitorExit(env, java.NativeLock); \
+    JAVA_UNLOCK(); \
 }
+
 
 /*
  * Declarations for functions shared across files.

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaIdle.c,v 1.1 1998/10/14 21:09:18 cvsadmin Exp $
+ * RCS: @(#) $Id: javaIdle.c,v 1.2 2000/06/15 09:47:06 mo Exp $
  */
 
 #include "java.h"
@@ -43,9 +43,9 @@ Java_tcl_lang_IdleHandler_doWhenIdle(
 {
     JNIEnv *oldEnv;
 
-    JAVA_LOCK();
+    PUSH_JAVA_ENV();
     Tcl_DoWhenIdle(JavaIdleProc, (ClientData) (*env)->NewGlobalRef(env, idle));
-    JAVA_UNLOCK();
+    POP_JAVA_ENV();
 }
 
 /*
@@ -80,9 +80,9 @@ Java_tcl_lang_IdleHandler_cancelIdleCall(
     jobject tmpIdle;
 
     tmpIdle = (*env)->NewGlobalRef(env, idle);
-    JAVA_LOCK();
+    PUSH_JAVA_ENV();
     Tcl_CancelIdleCall(JavaIdleProc, (ClientData) tmpIdle); 
-    JAVA_UNLOCK();
+    POP_JAVA_ENV();
 
     /*
      * Delete the ref in the local scope.
@@ -94,9 +94,9 @@ Java_tcl_lang_IdleHandler_cancelIdleCall(
 #else
     /* This code causes tests/native/javaIdle.c to fail under JDK1.2 */
     idle = (*env)->NewGlobalRef(env, idle);
-    JAVA_LOCK();
+    PUSH_JAVA_ENV();
     Tcl_CancelIdleCall(JavaIdleProc, (ClientData) idle);
-    JAVA_UNLOCK();
+    POP_JAVA_ENV();
 
     /*
      * Delete both the ref in the local scope and the one that was used
@@ -136,11 +136,11 @@ JavaIdleProc(
      * Call IdleHandler.invoke.
      */
 
-    (*env)->MonitorExit(env, java.NativeLock);
+    JAVA_UNLOCK();
     (*env)->CallVoidMethod(env, idle, java.invokeIdle);
     exception = (*env)->ExceptionOccurred(env);
     (*env)->ExceptionClear(env);
-    (*env)->MonitorEnter(env, java.NativeLock);
+    JAVA_LOCK();
 
     /*
      * Release the ref to the idle object now that it has fired.

@@ -1,3 +1,21 @@
+2000-06-15  Mo DeJong  <mdejong@redhat.com>
+
+	* src/native/java.h:
+	* src/native/javaCmd.c:
+	* src/native/javaIdle.c:
+	* src/native/javaInterp.c:
+	* src/native/javaList.c:
+	* src/native/javaNotifier.c:
+	* src/native/javaObj.c:
+	* src/native/javaTimer.c:
+	* src/native/javaUtil.c:
+	Rename JAVA_LOCK/JAVA_UNLOCK to
+	PUSH_JAVA_ENV/POP_JAVA_ENV, create
+	new JAVA_LOCK and JAVA_UNLOCK macros
+	that just grab the monitor, use these
+	new JAVA_LOCK/JAVA_UNLOCK macros in
+	the rest of the code.
+
 2000-06-03  Mo DeJong  <mdejong@redhat.com>
 
 	* demos/pyramidpkg/AppletConsole.java:

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaNotifier.c,v 1.1 1998/10/14 21:09:18 cvsadmin Exp $
+ * RCS: @(#) $Id: javaNotifier.c,v 1.2 2000/06/15 09:47:07 mo Exp $
  */
 
 #include "java.h"
@@ -57,11 +57,11 @@ Java_tcl_lang_Notifier_init(
      * dlls from a remote directory if there is a dll with the
      * same name in the local directory.
      */
-    JAVA_LOCK();
+    PUSH_JAVA_ENV();
     Tcl_CreateEventSource(NotifierSetup, NotifierCheck, NULL);
     JavaInitNotifier();
     globalNotifierObj = (*env)->NewGlobalRef(env, notifierObj);
-    JAVA_UNLOCK();
+    POP_JAVA_ENV();
 }
 
 /*
@@ -87,12 +87,12 @@ Java_tcl_lang_Notifier_dispose(
 {
     JNIEnv *oldEnv;
 
-    JAVA_LOCK();
+    PUSH_JAVA_ENV();
     Tcl_DeleteEventSource(NotifierSetup, NotifierCheck, NULL);
     JavaDisposeNotifier();
     (*env)->DeleteGlobalRef(env, globalNotifierObj);
     globalNotifierObj = NULL;
-    JAVA_UNLOCK();
+    POP_JAVA_ENV();
 }
 
 /*
@@ -124,9 +124,9 @@ Java_tcl_lang_Notifier_doOneEvent(
     int result;
     JNIEnv *oldEnv;
 
-    JAVA_LOCK();
+    PUSH_JAVA_ENV();
     result = Tcl_DoOneEvent(flags);
-    JAVA_UNLOCK();
+    POP_JAVA_ENV();
     return result;
 }
 
@@ -265,10 +265,10 @@ JavaEventProc(
      * state of the world after we return.
      */
     
-    (*env)->MonitorExit(env, java.NativeLock);
+    JAVA_UNLOCK();
     (void) (*env)->CallIntMethod(env, globalNotifierObj, java.serviceEvent,
 	    flags);
-    (*env)->MonitorEnter(env, java.NativeLock);
+    JAVA_LOCK();
     return 1;
 }
 
