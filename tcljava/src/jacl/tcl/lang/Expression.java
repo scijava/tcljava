@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Expression.java,v 1.8 2003/01/09 02:15:39 mdejong Exp $
+ * RCS: @(#) $Id: Expression.java,v 1.9 2003/02/04 00:15:18 mdejong Exp $
  *
  */
 
@@ -537,6 +537,9 @@ class Expression {
 		    }
 		}
 		gotOp = true;
+	    } else if (m_token == CLOSE_PAREN) {
+	        // Caller needs to deal with close paren token.
+	        return null;
 	    } else if (m_token != VALUE) {
 		SyntaxError(interp);
 	    }
@@ -1263,6 +1266,18 @@ class Expression {
 
 	    for (int i = 0; ; i++) {
 		value = ExprGetValue(interp, -1);
+
+		// Handle close paren with no value
+		// % expr {srand()}
+
+		if ((value == null) && (m_token == CLOSE_PAREN)) {
+		    if (i == numArgs)
+		        break;
+                    else
+		        throw new TclException(interp,
+		            "too few arguments for math function");
+		}
+
 		if (value.type == ExprValue.STRING) {
 		    throw new TclException(interp,
 			"argument to math function didn't have numeric value");

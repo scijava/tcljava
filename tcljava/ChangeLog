@@ -1,5 +1,12 @@
 2003-02-03  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/jacl/tcl/lang/Expression.java (ExprGetValue,
+	mathFunction): Return null from ExprGetValue when
+	a CLOSE_PAREN is found and check for this special
+	case so that the proper error message is returned.
+
+2003-02-03  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/jacl/tcl/lang/Parser.java (eval2): Check to
 	see if the character just before the end of the
 	returned script is a terminator and don't include
