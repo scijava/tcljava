@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: javaInterp.test,v 1.3 2002/07/23 10:19:53 mdejong Exp $
+# RCS: @(#) $Id: javaInterp.test,v 1.4 2002/12/11 02:11:09 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -197,6 +197,22 @@ test javaInterp-9.8 {Java_tcl_lang_Interp_setVar: different result} {
     unset x
     $r toString
 } 42
+test javaInterp-9.9 {Java_tcl_lang_Interp_setVar: memory leak} {
+    set interp [java::getinterp]
+    set obj [java::new Object]
+    set append [java::field tcl.lang.TCL APPEND_VALUE]
+    set copy ""
+    append copy "hi "
+    # The following set command does not incr the ref
+    # count of the Tcl_Obj created in Java_tcl_lang_Interp_setVar.
+    # This used to leak memory.
+    $interp {setVar String tcl.lang.TclObject int} \
+        "copy" [jtest getobject $obj] $append
+    unset copy
+    unset obj
+    unset interp
+    set nothing ok
+} {ok}
 
 test javaInterp-10.1 {Java_tcl_lang_Interp_getVar} {
     set i [java::new tcl.lang.Interp]

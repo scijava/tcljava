@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaInterp.c,v 1.10 2002/08/12 07:12:10 mdejong Exp $
+ * RCS: @(#) $Id: javaInterp.c,v 1.11 2002/12/11 02:11:09 mdejong Exp $
  */
 
 #include "java.h"
@@ -453,6 +453,7 @@ Java_tcl_lang_Interp_setVar(
      */
 
     valuePtr = JavaGetTclObj(env, value);
+    Tcl_IncrRefCount(valuePtr);
 
     part1Ptr = Tcl_NewObj();
     part1Ptr->bytes = JavaGetString(env, part1Str, &part1Ptr->length);
@@ -472,6 +473,7 @@ Java_tcl_lang_Interp_setVar(
     if (part2Str) {
 	Tcl_DecrRefCount(part2Ptr);
     }
+    Tcl_DecrRefCount(valuePtr);
 
     /*
      * If the result is the same as the value, return the same TclObject.

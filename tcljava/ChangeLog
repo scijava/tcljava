@@ -1,5 +1,13 @@
 2002-12-10  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/native/javaInterp.c (Java_tcl_lang_Interp_setVar):
+	* tests/tclblend/javaInterp.test:
+	Plug a memory leak in Interp.setVar when
+	appending to a string variable. Add test
+	case that demonstrates the memory leak.
+
+2002-12-10  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/native/javaCmd.c (JavaInitEnv): Comment
 	out code that deallocated JVM options. It seems
 	that some buggy JVMs don't copy the arguments
