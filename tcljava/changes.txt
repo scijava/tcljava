@@ -1,6 +1,6 @@
 Recent user-visible changes to Jacl & Tcl Blend:
 
-RCS: @(#) $Id: changes.txt,v 1.40.2.7 2000/04/29 00:25:25 mo Exp $
+RCS: @(#) $Id: changes.txt,v 1.40.2.8 2000/05/01 09:00:29 mo Exp $
 
 ----------------- Released 1.0a1, 10/22/97 -----------------------
 
@@ -1056,6 +1056,19 @@ where it was built. This fix has been back ported.
 04/28/2000 (improved error message for "load tclblend.dll")
 Fixed error message displayed when the "load tclblend.dll"
 command fails. It now tell them what to do to fix the problem.
+
+04/29/2000 (improved README, removed jaclsh.bat, fixed makefile.vc)
+The install instructions in the README files were improved.
+The jacl bat file jaclsh.bat was removed because it did not
+really work and it was likely to confuse. The variables
+in the makefile.vc file were updated so that they would work
+with Tcl 8.3.1.
+
+05/30/2000 (fixed bug in pkgIndex.tcl when env(CLASSPATH) was not set)
+There is a bug in the windows version of Tcl which causes a
+set env(VAR) "" command to actually unset the env var. I worked
+around this in the pkgIndex.tcl file so that no error is generated
+when the user does not set the CLASSPATH env var.
 
 ----------------- Released 1.2.6, XX/XX/XX -----------------------
 
