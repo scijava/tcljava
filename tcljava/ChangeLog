@@ -1,3 +1,14 @@
+2001-12-23  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/jacl/tcl/lang/Channel.java (getMode, isReadOnly,
+	isWriteOnly, isReadWrite): Add new methods to check mode
+	status without having to deal with TclIO flags directly.
+  	Use these new methods throughout the class. Remove
+	the getMode method.
+	* src/jacl/tcl/lang/FileChannel.java: Rename input
+	parameter mode to inmode to avoid possible confusion
+	with inherited mode field.
+
 2001-11-27  Bruce Johnson  <bruce_johnson@merck.com>,
 	Mo DeJong  <mdejong@users.sourceforge.net>
 

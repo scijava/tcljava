@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FileChannel.java,v 1.13 2001/11/20 18:01:52 mdejong Exp $
+ * RCS: @(#) $Id: FileChannel.java,v 1.14 2001/12/24 05:51:48 mdejong Exp $
  *
  */
 
@@ -228,18 +228,18 @@ class FileChannel extends Channel {
      * The file MUST be open or a TclRuntimeError is thrown.
      * 
      * @param offset The number of bytes to move the file pointer.
-     * @param where to begin incrementing the file pointer; beginning,
+     * @param inmode to begin incrementing the file pointer; beginning,
      * current, or end of the file.
      */
 
-    void seek(Interp interp, long offset, int mode)
+    void seek(Interp interp, long offset, int inmode)
             throws IOException, TclException {
 
 	if (file == null) {
 	    throw new TclRuntimeError("FileChannel.seek(): null file object");
 	}
 
-        switch (mode) {
+        switch (inmode) {
 	    case TclIO.SEEK_SET: {
 	        file.seek(offset);
 		break;
@@ -290,25 +290,25 @@ class FileChannel extends Channel {
 
 
     /**
-     * Checks the read/write permissions on the File object.  If mode less
+     * Checks the read/write permissions on the File object.  If inmode is less
      * than 0 it checks for read permissions, if mode greater than 0 it checks
-     *  for write permissions, and if it equals 0 then it checks both.
+     * for write permissions, and if it equals 0 then it checks both.
      *
      * @param interp currrent interpreter.
      * @param fileObj a java.io.File object of the file for this channel.
-     * @param mode what permissions to check for.
+     * @param inmode what permissions to check for.
      */
 
-    private void checkReadWritePerm(Interp interp, File fileObj, int mode) 
+    private void checkReadWritePerm(Interp interp, File fileObj, int inmode) 
         throws TclException {
 	boolean error = false;
 
-	if (mode <= 0) {
+	if (inmode <= 0) {
 	    if (!fileObj.canRead()) {
 	        error = true;
 	    } 
 	}
-	if (mode >= 0) {
+	if (inmode >= 0) {
 	    if (!fileObj.canWrite()) {
 	        error = true;
 	    }

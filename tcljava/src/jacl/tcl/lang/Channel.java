@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Channel.java,v 1.15 2001/11/27 18:05:25 mdejong Exp $
+ * RCS: @(#) $Id: Channel.java,v 1.16 2001/12/24 05:51:48 mdejong Exp $
  */
 
 package tcl.lang;
@@ -101,7 +101,7 @@ abstract class Channel {
     String read(Interp interp, int readType, int numBytes) 
             throws IOException, TclException {
 
-        if ((mode & (TclIO.RDONLY|TclIO.RDWR)) == 0)
+        if (isWriteOnly())
             throw new TclException(interp, "channel \"" + getChanName() +
                 "\" wasn't opened for reading");
 
@@ -157,7 +157,7 @@ abstract class Channel {
     void write(Interp interp, String outStr)
 	    throws IOException, TclException {
 
-        if ((mode & (TclIO.WRONLY|TclIO.RDWR)) == 0)
+        if (isReadOnly())
             throw new TclException(interp, "channel \"" + getChanName() +
                 "\" wasn't opened for writing");
 
@@ -210,7 +210,7 @@ abstract class Channel {
     void flush(Interp interp) 
             throws IOException, TclException {
 
-        if ((mode & (TclIO.WRONLY|TclIO.RDWR)) == 0)
+        if (isReadOnly())
             throw new TclException(interp, "channel \"" + getChanName() +
                     "\" wasn't opened for writing");
 
@@ -279,16 +279,20 @@ abstract class Channel {
         chanName = chan;
     }
 
+    // FIXME: Could we check that 1 of these returns true
+    // after the channel is created for consistency?
 
-    /** 
-     * Gets the mode that is the read-write etc settings for this channel.
-     * @return mode
-     */
-
-    int getMode() {
-        return mode;
+    boolean isReadOnly() {
+        return ((mode & TclIO.RDONLY) != 0);
     }
 
+    boolean isWriteOnly() {
+        return ((mode & TclIO.WRONLY) != 0);
+    }
+
+    boolean isReadWrite() {
+        return ((mode & TclIO.RDWR) != 0);
+    }
 
     /** 
      * Query blocking mode.
