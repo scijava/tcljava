@@ -10,7 +10,7 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  *
- * RCS: @(#) $Id: javaCmd.c,v 1.5 1999/07/28 03:36:58 mo Exp $
+ * RCS: @(#) $Id: javaCmd.c,v 1.6 1999/08/27 23:50:48 mo Exp $
  */
 
 /*
@@ -1090,8 +1090,15 @@ JavaGetString(
     char *buf;
     int i;
 
+#if (TCL_MAJOR_VERSION == 8 && TCL_MINOR_VERSION != 0) /* Tcl 8.1 or above */
+    char *p;
+    Tcl_DString ds;
+#endif
+
     ustr = (*env)->GetStringChars(env, str, NULL);
     length = (*env)->GetStringLength(env, str);
+
+#if (TCL_MAJOR_VERSION == 8 && TCL_MINOR_VERSION == 0) /* Tcl 8.0 */
 
     /*
      * Copy the Unicode characters into an 8-bit character array
@@ -1100,9 +1107,40 @@ JavaGetString(
 
     buf = ckalloc(length+1);
     for (i = 0; i < length; i++) {
-	buf[i] = ustr[i] & 0xff;
+	buf[i] = ustr[i] & 0xFF;
     }
     buf[length] = 0;
+
+#else /* it is Tcl 8.1 or above */
+
+    /*
+     * Convert the Unicode string into a UTF-8 encoded string. This
+     * could require a buffer larger than the number of unicode chars.
+     */
+
+    Tcl_DStringInit(&ds);
+    Tcl_UniCharToUtfDString(ustr, length, &ds);
+
+    /*
+     * Now get the UTF-8 encoded string from the DString
+     * along with the number of encoded bytes (the length).
+     */
+
+    p = Tcl_DStringValue(&ds);
+    length = Tcl_DStringLength(&ds);
+
+    buf = ckalloc(length+1);
+    
+    /*
+     * Copy the UTF-8 chars from the DString into the newely
+     * allocated buffer and make sure it is null terminated.
+     */
+
+    memcpy((VOID *) buf, (VOID *) p, (size_t) (length * sizeof(char)));
+    buf[length] = 0;
+
+    Tcl_DStringFree(&ds);
+#endif /* Tcl 8.0 */
 
     (*env)->ReleaseStringChars(env, str, ustr);
 

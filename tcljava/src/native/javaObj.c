@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaObj.c,v 1.1 1998/10/14 21:09:18 cvsadmin Exp $
+ * RCS: @(#) $Id: javaObj.c,v 1.2 1999/08/27 23:50:49 mo Exp $
  */
 
 #include "java.h"
@@ -318,6 +318,10 @@ Java_tcl_lang_CObject_getString(
     int length, i;
     JNIEnv *oldEnv;
 
+#if (TCL_MAJOR_VERSION == 8 && TCL_MINOR_VERSION != 0) /* Tcl 8.1 or above */
+    char *p, *end;
+    Tcl_UniChar *w;
+#endif
 
     if (!objPtr) {
 	jclass nullClass = (*env)->FindClass(env,
@@ -332,12 +336,46 @@ Java_tcl_lang_CObject_getString(
 
     str = Tcl_GetStringFromObj(objPtr, &length);
     if (length > 0) {
-	buf = (jchar*) ckalloc(length*sizeof(jchar));
+        buf = (jchar*) ckalloc(length*sizeof(jchar));
+
+#if (TCL_MAJOR_VERSION == 8 && TCL_MINOR_VERSION == 0) /* Tcl 8.0 */
+
 	for (i = 0; i < length; i++) {
-	    buf[i] = ((short) str[i]) & 0x00ff;
+	    buf[i] = ((short) str[i]) & 0x00FF;
 	}
+
+#else /* it is Tcl 8.1 or above */
+
+	w = buf;
+	end = str + length;
+	for (p = str; p < end; ) {
+	  /*
+	  fprintf(stderr, "UTF index %d is %d -> '%c'\n",
+		  ((int) (p - str)), ((int) *p), *p);
+	  */
+
+	  p += Tcl_UtfToUniChar(p, w);
+	  /*
+	  if (((unsigned int) *w) > ((unsigned int) 254)) {
+	    fprintf(stderr, "unicode char %d added\n", *w);
+	  }
+	  */
+	  w++;
+	}
+
+	/*
+	 * The UTF-8 encoded string length could be larger
+	 * than the unicode version (in chars not bytes),
+	 * so we need to set the length to the number of
+	 * unicode chars that were converted from UTF-8
+	 */
+
+	length = (w - buf);
+
+#endif /* Tcl 8.0 */
+
 	result = (*env)->NewString(env, buf, length);
-	ckfree((char*)buf);
+	ckfree((char*) buf);
     } else {
 	result = (*env)->NewString(env, NULL, 0);
     }
