@@ -335,6 +335,7 @@ distclean: clean
 
 test_tclblend.exec: test_tclblend.check
 	cd $(BUILD_DIR)
+	set TCL_LIBRARY=$(TCL_SRC)/library
 	set JAVA=$(JAVA)
 	set BUILD_DIR=$(BUILD_DIR)
 	set CLASSPATH=$(TEST_CLASSPATH)
@@ -393,6 +394,7 @@ shell_jacl.exec: jacl.check
 shell_tclblend.exec: tclblend.check
 	cd $(BUILD_DIR)
 	set TCLLIBPATH={$(BUILD_DIR)}
+	set TCL_LIBRARY=$(TCL_SRC)/library
 	set JAVA=$(JAVA)
 	set BUILD_DIR=$(BUILD_DIR)
 	set CLASSPATH=$(TEST_CLASSPATH)
@@ -440,6 +442,7 @@ demos_jacl.build:
 	$(JAVAC) $(JAVAC_FLAGS) *.java
 
 demos_tclblend.build:
+
 
 #-------------------------------------------------------------------
 # Build rules for the tcljava package
@@ -646,7 +649,8 @@ link32		= "$(TOOLS32)\bin\link.exe"
 include32	= -I"$(TOOLS32)\include"
 
 INCLUDES	= -I$(TCL_DIR)\include -I$(TCL_SRC)\generic -I$(WIN_DIR)  \
-		  -I$(NATIVE_SRC_DIR) -I$(JAVA_DIR)\include -I$(JAVA_DIR)\include\win32 
+		  -I$(NATIVE_SRC_DIR) -I$(JAVA_DIR)\include \
+		  -I$(JAVA_DIR)\include\win32 -I$(BUILD_DIR)
 DEFINES		= $(DEBUGDEFINES) -DWIN32 -D_WIN32 -D_MT -D_DLL
 
 CFLAGS		= $(cdebug) $(cflags) $(include32) $(INCLUDES) $(DEFINES) 
@@ -767,3 +771,19 @@ $(BUILD_DIR)\javaNative.h:
 	-@cd $(BUILD_DIR)
 	$(cc32) $(CFLAGS) /Fo$(BUILD_DIR)\ $<
 
+
+
+# A simple example of a JNI class that is loaded into a JVM.
+
+JNI_example.dll:
+	set CLASSPATH=$(JAVA_CLASSPATH)
+	$(JAVAC) $(JAVAC_FLAGS) -d . $(TOP_DIR)/extras/JNI_example/JNI_example.java
+	$(cc32) $(CFLAGS) /Fo$(BUILD_DIR) \
+	    $(TOP_DIR)/extras/JNI_example/JNI_example.c
+	set LIB=$(TOOLS32)\lib
+        $(link32) $(ldebug) $(dlllflags) /out:$@ \
+		$(JAVA_LIB) $(guilibsdll) JNI_example.obj
+
+jni_example: $(SHLIB_PREFIX)JNI_example$(SHLIB_SUFFIX)
+	set CLASSPATH=$(JAVA_CLASSPATH);.
+	$(JAVA) $(JAVA_FLAGS) JNI_example

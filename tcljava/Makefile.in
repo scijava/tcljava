@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.21 2002/08/12 07:12:03 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.22 2003/01/20 21:04:44 mdejong Exp $
 
 SHELL = /bin/sh
 
@@ -387,6 +387,19 @@ custom_shell_native:
 	./custom
 
 
+# A simple example of a JNI class that is loaded into a JVM.
+
+$(SHLIB_PREFIX)JNI_example$(SHLIB_SUFFIX):
+	CLASSPATH=$(JAVA_CLASSPATH) \
+	$(JAVAC) $(JAVAC_D_FLAG) . $(TOP_DIR)/extras/JNI_example/JNI_example.java
+	$(SHLIB_LD) -o $(SHLIB_PREFIX)JNI_example$(SHLIB_SUFFIX) \
+	    $(JAVA_INCLUDE_FLAGS) \
+	    $(TOP_DIR)/extras/JNI_example/JNI_example.c \
+	    $(JAVA_LIB_FLAGS)
+
+jni_example: $(SHLIB_PREFIX)JNI_example$(SHLIB_SUFFIX)
+	CLASSPATH=$(JAVA_CLASSPATH):. \
+	$(JAVA) $(JAVA_FLAGS) JNI_example
 
 #
 # This rule is run before installing, it is used to do any checks that

@@ -39,9 +39,10 @@ test 1.6 {incorrect usage : -dirs followed by string with - is not correct} {
   list [catch {XpUtils::iload -dirs -foo libname} err] $err
 } [list 1 $usage]
 
-test 1.8 {incorrect usage : can not have more than 3 regular arguments} {
+test 1.7 {incorrect usage : can not have more than 3 regular arguments} {
   list [catch {XpUtils::iload -dirs /tmp libname name interp foo} err] $err
 } [list 1 $usage]
+
 
 
 # Test series 2, check things related to the -extdbg argument
@@ -130,17 +131,17 @@ proc XpUtils::getHook { } {
 test 5.1 {basic usage} {
   XpUtils::iload tclblend
   XpUtils::getHook
-} [list {} 1 tclblend {} {}]
+} [list {} 1 tclblend DEFAULT {}]
 
 test 5.2 {basic usage} {
   XpUtils::iload -d /tmp tclblend
   XpUtils::getHook
-} [list /tmp 1 tclblend {} {}]
+} [list /tmp 1 tclblend DEFAULT {}]
 
 test 5.3 {basic usage} {
   XpUtils::iload -d {/tmp /f} tclblend
   XpUtils::getHook
-} [list {/tmp /f} 1 tclblend {} {}]
+} [list {/tmp /f} 1 tclblend DEFAULT {}]
 
 test 5.4 {basic usage} {
   XpUtils::iload -extdbg _g tclblend
@@ -150,7 +151,7 @@ test 5.4 {basic usage} {
 test 5.5 {basic usage} {
   XpUtils::iload -d {/tmp} -nopath tclblend
   XpUtils::getHook
-} [list /tmp 0 tclblend {} {}]
+} [list /tmp 0 tclblend DEFAULT {}]
 
 test 5.6 {basic usage} {
   XpUtils::iload -d {/tmp} -nopath -extdbg _f tclblend
@@ -165,12 +166,18 @@ test 5.7 {basic usage} {
 test 5.8 {basic usage} {
   XpUtils::iload -d {/tmp} tclblend package
   XpUtils::getHook
-} [list /tmp 1 tclblend {} {package}]
+} [list /tmp 1 tclblend DEFAULT {package}]
 
 test 5.9 {basic usage} {
   XpUtils::iload -d {/tmp} tclblend package interp
   XpUtils::getHook
-} [list /tmp 1 tclblend {} {package interp}]
+} [list /tmp 1 tclblend DEFAULT {package interp}]
+
+test 5.10 {basic usage} {
+  XpUtils::iload -d [list {D:\tmp}] tclblend
+  XpUtils::getHook
+} [list {{D:\tmp}} 1 tclblend DEFAULT {}]
+
 
 
 # Clean up after test series 5

@@ -1,5 +1,19 @@
 2003-01-20  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* Makefile.in: Add jni_example target, this
+	provides a very simple test case to ensure
+	that the JVM can load a generated shared lib.
+	* extras/JNI_example/JNI_example.c: New file
+	* extras/JNI_example/JNI_example.java: New file.
+	* src/xputils/iload.test: Fixup some test case
+	results to match the current implementation
+	which passes a DEFAULT token.
+	* win/makefile.vc: Fixup support for building
+	in a build dir that is not tcljava/win.
+	Add jni_example target.
+
+2003-01-20  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/native/javaCmd.c (Tclblend_Init): Add
 	additional TCLBLEND_DEBUG output.
 	If an exception is raised during the Interp
