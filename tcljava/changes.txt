@@ -1,6 +1,6 @@
 Recent user-visible changes to Jacl & Tcl Blend:
 
-RCS: @(#) $Id: changes.txt,v 1.33 1999/10/29 22:19:00 redman Exp $
+RCS: @(#) $Id: changes.txt,v 1.34 1999/11/18 22:55:26 stanton Exp $
 
 ----------------- Released 1.0a1, 10/22/97 -----------------------
 
@@ -986,3 +986,9 @@ JDKs.  Support for building Jacl will be added soon.
 
 ----------------- Released 1.2.5, 10/29/99 -----------------------
 
+11/18/99 (bug fix) The pkgIndex.tcl file generated an error if the
+CLASSPATH environment variable was spelled ClassPath or any other
+combination of case.  This causes problems on Windows, where mixed
+case is commonly used in enviroment variables.  Instead of generating
+an error, we now copy the variant into env(CLASSPATH) if necessary.
+(Scott Stanton)
