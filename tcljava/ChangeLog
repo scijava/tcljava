@@ -1,5 +1,10 @@
 2001-05-12  Christian Krone  <christian.krone@softwareag.com>
 
+	* tests/jacl/Interp.test: Add braces around the result
+	for the Interp-5.1 test.
+
+2001-05-12  Christian Krone  <christian.krone@softwareag.com>
+
 	* src/jacl/tcl/lang/Interp.java (removeInterpResolver):
 	Use Vector.removeElement()instead of Vector.remove()
 	which is not supported by JDK 1.1.
