@@ -10,7 +10,7 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  *
- * RCS: @(#) $Id: javaCmd.c,v 1.9.2.7 2000/08/27 08:07:40 mo Exp $
+ * RCS: @(#) $Id: javaCmd.c,v 1.9.2.8 2000/10/23 01:05:31 mdejong Exp $
  */
 
 /*
@@ -103,7 +103,9 @@ static int		AddToMethodCache(JNIEnv *env, Tcl_Interp *interp, jmethodID *addr,
                             char *name, jclass *class, char *sig, int isStatic);
 static int		AddToFieldCache(JNIEnv *env, Tcl_Interp *interp, jfieldID *addr,
                             char *name, jclass *class, char *sig);
-static void		TclThreadCleanup(ClientData clientData);
+static void		DestroyJVM(ClientData clientData);
+static void		DetachTclThread(ClientData clientData);
+static void		FreeJavaCache(ClientData clientData);
 
 /*
  *----------------------------------------------------------------------
@@ -558,6 +560,10 @@ JavaInitEnv(
             goto error;
 	}
 
+        /* Create a thread exit handler that will destroy the JVM */
+
+	Tcl_CreateThreadExitHandler(DestroyJVM, NULL);
+
     } else {
 
 #ifdef TCLBLEND_DEBUG
@@ -581,7 +587,7 @@ JavaInitEnv(
 	
 	/* Create a thread exit handler to detach this Tcl thread from the JVM */
 	
-	Tcl_CreateThreadExitHandler(TclThreadCleanup, NULL);
+	Tcl_CreateThreadExitHandler(DetachTclThread, NULL);
     }
 
 #ifdef TCLBLEND_DEBUG
@@ -717,11 +723,12 @@ JavaInterpDeleted(
 /*
  *----------------------------------------------------------------------
  *
- * TclThreadCleanup --
+ * DestroyJVM --
  *
- *	This method will be called when a Tcl thread is getting finalized.
- *	It needs to detach the Tcl thread from the current JVM, note that
- *	this method is not called for a Java thread that loaded Tcl Blend.
+ *	This method will be called when the "main" Tcl thread (the
+ *	one that first loaded the JVM) is getting finalized.
+ *	Note that this method would never get called in the case
+ *	where Tcl Blend is loaded into an existing JVM.
  *
  * Results:
  *	None.
@@ -732,17 +739,137 @@ JavaInterpDeleted(
  *----------------------------------------------------------------------
  */
 static void
-TclThreadCleanup(ClientData clientData)
+DestroyJVM(ClientData clientData)
 {
-    JNIEnv* env;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
 #ifdef TCLBLEND_DEBUG
-    fprintf(stderr, "TCLBLEND_DEBUG: called TclThreadCleanup\n");
+    fprintf(stderr, "TCLBLEND_DEBUG: called DestroyJVM\n");
 #endif /* TCLBLEND_DEBUG */
 
-    env = tsdPtr->currentEnv;
-    (*javaVM)->DetachCurrentThread(javaVM);
+    /*
+     * The DestroyJavaVM() JNI method has never worked
+     * properly, and in some cases it can crash.
+     * For this reason, we do not actually call it here.
+     * One of the enhancements made to JNI in 1.2 was to
+     * support detaching of the "main" thread, so use it.
+     */
+
+#ifdef JDK1_2
+    if ((*javaVM)->DetachCurrentThread(javaVM) != 0) {
+#ifdef TCLBLEND_DEBUG
+    fprintf(stderr, "TCLBLEND_DEBUG: error calling jvm->DetachCurrentThread()\n");
+#endif /* TCLBLEND_DEBUG */
+    }
+#else
+    /*
+     * This method always returns an error. It does nothing
+     * and can generate an illegal instruction if called
+     * from a second Tcl thread (not the "main" thread in 1.1)
+     */
+
+    /* (*javaVM)->DestroyJavaVM(javaVM); */
+#endif
+
+    /*
+     * One should not call JavaGetEnv() or JavaGetCache()
+     * after this method has finished. Setting initialized
+     * to zero will raise an assert on such a call.
+     */
+
+    tsdPtr->initialized = 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DetachTclThread --
+ *
+ *	This method will be called when a Tcl thread that was attached
+ *	to a JVM is getting finalized. Note that this method is not
+ *	called for a thread that originated in the JVM, because the
+ *	JVM would handle attaching and detaching of such a thread.
+ *	Also note that this method is not called for the "main"
+ *	thread, meaning the Tcl thread that first loaded the JVM.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+DetachTclThread(ClientData clientData)
+{
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+
+#ifdef TCLBLEND_DEBUG
+    fprintf(stderr, "TCLBLEND_DEBUG: called DetachTclThread\n");
+#endif /* TCLBLEND_DEBUG */
+
+    if ((*javaVM)->DetachCurrentThread(javaVM) != 0) {
+#ifdef TCLBLEND_DEBUG
+    fprintf(stderr, "TCLBLEND_DEBUG: error calling jvm->DetachCurrentThread()\n");
+#endif /* TCLBLEND_DEBUG */
+    }
+
+    /*
+     * After detaching this Tcl thread from the JVM, one can not
+     * call JavaGetEnv() or JavaGetCache(). Setting initialized
+     * to zero will raise an assert on such a call.
+     */
+
+    tsdPtr->initialized = 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FreeJavaCache --
+ *
+ *	This method will be called when a Tcl or Java thread is finished.
+ *	It needs to remove any global cache references so that the
+ *	classes and methods can be cleaned up by the JVM.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+FreeJavaCache(ClientData clientData)
+{
+    JNIEnv* env = JavaGetEnv();
+    JavaInfo* jcache = JavaGetCache();
+
+#ifdef TCLBLEND_DEBUG
+    fprintf(stderr, "TCLBLEND_DEBUG: called FreeJavaCache\n");
+#endif /* TCLBLEND_DEBUG */
+
+    /* We need to delete any global refs to Java classes */
+    
+    (*env)->DeleteGlobalRef(env, jcache->Object);
+    (*env)->DeleteGlobalRef(env, jcache->Interp);
+    (*env)->DeleteGlobalRef(env, jcache->Command);
+    (*env)->DeleteGlobalRef(env, jcache->TclObject);
+    (*env)->DeleteGlobalRef(env, jcache->TclException);
+    (*env)->DeleteGlobalRef(env, jcache->CommandWithDispose);
+    (*env)->DeleteGlobalRef(env, jcache->CObject);
+    (*env)->DeleteGlobalRef(env, jcache->Extension);
+    (*env)->DeleteGlobalRef(env, jcache->VarTrace);
+    (*env)->DeleteGlobalRef(env, jcache->Void);
+    (*env)->DeleteGlobalRef(env, jcache->BlendExtension);
+    (*env)->DeleteGlobalRef(env, jcache->Notifier);
+    (*env)->DeleteGlobalRef(env, jcache->IdleHandler);
+    (*env)->DeleteGlobalRef(env, jcache->TimerHandler);
+
+     /* FIXME : we dont add or release a global ref for jcache->Void
+        or jcache->VoidTYPE class, should we ? */
 }
 
 /*
@@ -830,6 +957,19 @@ JavaSetupJava(
     }
 
     /*
+     * Get the Void.TYPE class.
+     */
+
+    field = (*env)->GetStaticFieldID(env, jcache->Void, "TYPE", "Ljava/lang/Class;");
+    jcache->voidTYPE = (*env)->GetStaticObjectField(env, jcache->Void, field);
+
+    /*
+     * Create a thread exit handler that will clean up the cache.
+     */
+
+    Tcl_CreateThreadExitHandler(FreeJavaCache, NULL);
+
+    /*
      * Load methods needed by this module.
      */
 
@@ -881,13 +1021,6 @@ JavaSetupJava(
         AddToFieldCache(env, interp, &jcache->objPtr, "objPtr", &jcache->CObject, "J")) {
 	goto error;
     }
-
-    /*
-     * Get the Void.TYPE value.
-     */
-
-    field = (*env)->GetStaticFieldID(env, jcache->Void, "TYPE", "Ljava/lang/Class;");
-    jcache->voidTYPE = (*env)->GetStaticObjectField(env, jcache->Void, field);
 
     /*
      * Register the Java object types.

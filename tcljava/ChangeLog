@@ -1,3 +1,11 @@
+2000-10-22  Mo DeJong  <mdejong@redhat.com>
+
+	* src/native/javaCmd.c (TclThreadCleanup, DestroyJVM,
+	DetachTclThread, FreeJavaCache): Rename TclThreadCleanup
+	to DetachTclThread. Add DestroyJVM callback to cleanup
+	the thread that creates the JVM. Add FreeJavaCache,
+	this method releases any global references in the JVM.
+
 2000-10-21  Mo DeJong  <mdejong@redhat.com>
 
 	* src/native/javaObj.c (JavaObjInit): Fix
