@@ -15,7 +15,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: NamespaceCmd.java,v 1.8 1999/08/03 02:29:25 mo Exp $
+ * RCS: @(#) $Id: NamespaceCmd.java,v 1.9 1999/08/05 03:39:22 mo Exp $
  */
 
 package tcl.lang;
@@ -211,13 +211,9 @@ public class NamespaceCmd extends InternalRep implements Command {
 	// FIXME : does Jacl need a procPtr in the CallFrame class?
 	//frame.procPtr = null; 	   // no called procedure
 
-	// FIXME : this was causing crashes in var lookup code, Need to
-	// Look at the code in CallFrame to keep trace of null varFrame case!
 	frame.varTable = null;       // and no local variables
 
-	// Not part of Jacl CallFrame implementation (used only in tcl compiler)
-	//framePtr.numCompiledLocals = 0;
-	//framePtr.compiledLocals = null;
+	// Compiled locals are not part of Jacl's CallFrame
 	
 	// Push the new call frame onto the interpreter's stack of procedure
 	// call frames making it the current frame.
@@ -328,7 +324,7 @@ public class NamespaceCmd extends InternalRep implements Command {
 	)
     {
 	Namespace ns, ancestor;
-	Namespace parent, dummy1, dummy2;
+	Namespace parent;
 	Namespace globalNs = getGlobalNamespace(interp);
 	String simpleName;
 	StringBuffer buffer1, buffer2;
@@ -360,18 +356,15 @@ public class NamespaceCmd extends InternalRep implements Command {
 	    // Java does not support passing an address so we pass
 	    // an array of size 1 and then assign arr[0] to the value
 	    Namespace[] parentArr     = new Namespace[1];
-	    Namespace[] dummy1Arr = new Namespace[1];
-	    Namespace[] dummy2Arr = new Namespace[1];
+	    Namespace[] dummyArr = new Namespace[1];
 	    String[]    simpleArr  = new String[1];
 	    	    
 	    getNamespaceForQualName(interp, name, null,
 				    (CREATE_NS_IF_UNKNOWN | TCL.LEAVE_ERR_MSG),
-				    parentArr, dummy1Arr, dummy2Arr, simpleArr);
+				    parentArr, dummyArr, dummyArr, simpleArr);
 
-	    // Get the parent, dummy1, dummy2, and simpleName values out of the arrays!
+	    // Get the values out of the arrays!
 	    parent = parentArr[0];
-	    dummy1 = dummy1Arr[0];
-	    dummy2 = dummy2Arr[0];
 	    simpleName = simpleArr[0];
 	    
 
@@ -434,6 +427,7 @@ public class NamespaceCmd extends InternalRep implements Command {
 	// Jacl does not use these tcl compiler specific members
 	//ns.cmdRefEpoch        = 0;
 	//ns.resolverEpoch      = 0;
+
 	// FIXME : if cmdResProc or varResProc is used we need to uncomment these
 	//ns.cmdResProc         = null;
 	//ns.varResProc         = null;
@@ -674,7 +668,6 @@ public class NamespaceCmd extends InternalRep implements Command {
 	    ns.deleteProc.delete();
 	}
 	ns.deleteProc = null;
-	//ns.clientData = null;
 	
 	// Reset the namespace's id field to ensure that this namespace won't
 	// be interpreted as valid by, e.g., the cache validation code for
@@ -750,7 +743,78 @@ public class NamespaceCmd extends InternalRep implements Command {
 	)
 	throws TclException
     {
-	//FIXME : add impl
+	final int INIT_EXPORT_PATTERNS = 5;
+	Namespace ns, exportNs;
+	Namespace currNs = getCurrentNamespace(interp);
+	String simplePattern, patternCpy;
+	int neededElems, len, i;
+
+	// If the specified namespace is null, use the current namespace.
+	
+	if (namespace == null) {
+	    ns = currNs;
+	} else {
+	    ns = namespace;
+	}
+
+	// If resetListFirst is true (nonzero), clear the namespace's export
+	// pattern list.
+
+	if (resetListFirst) {
+	    if (ns.exportArray != null) {
+		for (i = 0;  i < ns.numExportPatterns;  i++) {
+		    ns.exportArray[i] = null;
+		}
+		ns.exportArray = null;
+		ns.numExportPatterns = 0;
+		ns.maxExportPatterns = 0;
+	    }
+	}
+
+	// Check that the pattern doesn't have namespace qualifiers.
+	
+	// Java does not support passing an address so we pass
+	// an array of size 1 and then assign arr[0] to the value
+	Namespace[] exportNsArr       = new Namespace[1];
+	Namespace[] dummyArr          = new Namespace[1];
+	String[]    simplePatternArr  = new String[1];
+
+	getNamespaceForQualName(interp, pattern, ns,
+	    TCL.LEAVE_ERR_MSG, exportNsArr, dummyArr,
+	    dummyArr, simplePatternArr);
+
+	// get the values out of the arrays
+
+	exportNs      = exportNsArr[0];
+	simplePattern = simplePatternArr[0];
+
+	if ((exportNs != ns) || (pattern.compareTo(simplePattern) != 0)) {
+	    throw new TclException(interp,
+	        "invalid export pattern \"" + pattern +
+		"\": pattern can't specify a namespace");
+	}
+
+	// Make sure there is room in the namespace's pattern array for the
+	// new pattern.
+
+	neededElems = ns.numExportPatterns + 1;
+	if (ns.exportArray == null) {
+	    ns.exportArray = new String[INIT_EXPORT_PATTERNS];
+	    ns.numExportPatterns = 0;
+	    ns.maxExportPatterns = INIT_EXPORT_PATTERNS;
+	} else if (neededElems > ns.maxExportPatterns) {
+	    int numNewElems = 2 * ns.maxExportPatterns;
+	    String[] newArray = new String[numNewElems];
+	    System.arraycopy(ns.exportArray, 0, newArray, 0, ns.numExportPatterns);
+	    ns.exportArray = newArray;
+	    ns.maxExportPatterns = numNewElems;
+	}
+
+	// Add the pattern to the namespace's array of export patterns.
+    
+	ns.exportArray[ns.numExportPatterns] = pattern;
+	ns.numExportPatterns++;
+	return;
     }
 
 
@@ -785,7 +849,24 @@ public class NamespaceCmd extends InternalRep implements Command {
 	)
 	throws TclException
     {
-	//FIXME : add impl
+	Namespace  ns   ;
+	int i;
+
+	// If the specified namespace is null, use the current namespace.
+
+	if (namespace == null) {
+	    ns = getCurrentNamespace(interp);
+	} else {
+	    ns = namespace;
+	}
+
+	// Append the export pattern list onto objPtr.
+
+	for (i = 0;  i < ns.numExportPatterns;  i++) {
+	    TclList.append(interp, obj,
+			   TclString.newInstance(ns.exportArray[i]));
+	}
+	return;
     }
 
 
@@ -830,9 +911,184 @@ public class NamespaceCmd extends InternalRep implements Command {
 	)
 	throws TclException
     {
-	//FIXME : add impl
-    }
+	Namespace ns, importNs;
+	Namespace currNs = getCurrentNamespace(interp);
+	String simplePattern, cmdName;
+	Enumeration search;
+	WrappedCommand cmd, realCmd;
+	ImportRef ref;
+	WrappedCommand autoCmd, importedCmd;
+	ImportedCmdData data;
+	boolean wasExported;
+	int i, result;
 
+	// If the specified namespace is null, use the current namespace.
+
+	if (namespace == null) {
+	    ns = currNs;
+	} else {
+	    ns = namespace;
+	}
+
+	// First, invoke the "auto_import" command with the pattern
+	// being imported.  This command is part of the Tcl library.
+	// It looks for imported commands in autoloaded libraries and
+	// loads them in.  That way, they will be found when we try
+	// to create links below.
+    
+	autoCmd = findCommand(interp, "auto_import",
+			      null, TCL.GLOBAL_ONLY);
+ 
+	if (autoCmd != null) {
+	    TclObject[] objv = new TclObject[2];
+ 
+	    objv[0] = TclString.newInstance("auto_import");
+	    objv[0].preserve();
+	    objv[1] = TclString.newInstance(pattern);
+	    objv[1].preserve();
+ 
+	    cmd = autoCmd;
+	    try {
+		// Invoke the command with the arguments
+		cmd.cmd.cmdProc(interp, objv);
+	    } finally {
+		objv[0].release();
+		objv[1].release();
+	    }
+
+	    interp.resetResult();
+	}
+
+	// From the pattern, find the namespace from which we are importing
+	// and get the simple pattern (no namespace qualifiers or ::'s) at
+	// the end.
+
+	if (pattern.length() == 0) {
+	    throw new TclException(interp, "empty import pattern");
+	}
+
+	// Java does not support passing an address so we pass
+	// an array of size 1 and then assign arr[0] to the value
+	Namespace[] importNsArr       = new Namespace[1];
+	Namespace[] dummyArr          = new Namespace[1];
+	String[]    simplePatternArr  = new String[1];
+
+	getNamespaceForQualName(interp, pattern, ns,
+	    TCL.LEAVE_ERR_MSG, importNsArr, dummyArr,
+	    dummyArr, simplePatternArr);
+
+	importNs      = importNsArr[0];
+	simplePattern = simplePatternArr[0];
+
+	if (importNs == null) {
+	    throw new TclException(interp,
+	        "unknown namespace in import pattern \"" + pattern + "\"");
+	}
+	if (importNs == ns) {
+	    if (pattern == simplePattern) {
+		throw new TclException(interp,
+	            "no namespace specified in import pattern \"" + pattern + "\"");
+	    } else {
+		throw new TclException(interp,
+		    "import pattern \"" + pattern +
+		    "\" tries to import from namespace \"" +
+		    importNs.name + "\" into itself");
+	    }
+	}
+
+	// Scan through the command table in the source namespace and look for
+	// exported commands that match the string pattern. Create an "imported
+	// command" in the current namespace for each imported command; these
+	// commands redirect their invocations to the "real" command.
+
+	for (search = importNs.cmdTable.keys();
+	     search.hasMoreElements() ; ) {
+	    cmdName = (String) search.nextElement();
+	    if (Util.stringMatch(cmdName, simplePattern)) {
+		// The command cmdName in the source namespace matches the
+		// pattern. Check whether it was exported. If it wasn't,
+		// we ignore it.
+
+		wasExported = false;
+		for (i = 0;  i < importNs.numExportPatterns;  i++) {
+		    if (Util.stringMatch(cmdName, importNs.exportArray[i])) {
+			wasExported = true;
+			break;
+		    }
+		}
+		if (!wasExported) {
+		    continue;
+		}
+
+		// Unless there is a name clash, create an imported command
+		// in the current namespace that refers to cmdPtr.
+	    
+		if ((ns.cmdTable.get(cmdName) == null)
+		    || allowOverwrite) {
+		    // Create the imported command and its client data.
+		    // To create the new command in the current namespace, 
+		    // generate a fully qualified name for it.
+
+		    StringBuffer ds;
+
+		    ds = new StringBuffer();
+		    ds.append(ns.fullName);
+		    if (ns != interp.globalNs) {
+			ds.append("::");
+		    }
+		    ds.append(cmdName);
+
+		    // Check whether creating the new imported command in the
+		    // current namespace would create a cycle of imported->real
+		    // command references that also would destroy an existing
+		    // "real" command already in the current namespace.
+
+		    cmd = (WrappedCommand) importNs.cmdTable.get(cmdName);
+
+		    if (cmd.cmd instanceof ImportedCmdData) {
+			// This is actually an imported command, find
+			// the real command it references
+			realCmd = getOriginalCommand(cmd);
+			if ((realCmd != null)
+			    && (realCmd.ns == currNs)
+			    && (currNs.cmdTable.get(cmdName) != null)) {
+			    throw new TclException(interp,
+			        "import pattern \"" + pattern +
+				"\" would create a loop containing command \"" +
+                                ds.toString() + "\"");
+			}
+		    }
+
+		    data = new ImportedCmdData();
+
+		    // Create the imported command inside the interp
+		    interp.createCommand(ds.toString(), data);
+
+		    // Lookup in the namespace for the new WrappedCommand
+		    importedCmd = findCommand(interp, ds.toString(),
+				      ns,
+				      (TCL.NAMESPACE_ONLY | TCL.LEAVE_ERR_MSG));
+
+		    data.realCmd = cmd;
+		    data.self = importedCmd;
+
+		    // Create an ImportRef structure describing this new import
+		    // command and add it to the import ref list in the "real"
+		    // command.
+
+		    ref = new ImportRef();
+		    ref.importedCmd = importedCmd;
+		    ref.next = cmd.importRef;
+		    cmd.importRef = ref;
+		} else {
+		    throw new TclException(interp,
+		        "can't import command \"" + cmdName +
+			"\": already exists");
+		}
+	    }
+	}
+	return;
+    }
 
     /*
      *----------------------------------------------------------------------
@@ -868,9 +1124,66 @@ public class NamespaceCmd extends InternalRep implements Command {
 	)
 	throws TclException
     {
-	//FIXME : add impl
-    }
+	Namespace ns, importNs, actualCtx;
+	String simplePattern, cmdName;
+	Enumeration search;
+	WrappedCommand cmd;
 
+	// If the specified namespace is null, use the current namespace.
+
+	if (namespace == null) {
+	    ns = getCurrentNamespace(interp);
+	} else {
+	    ns = namespace;
+	}
+
+	// From the pattern, find the namespace from which we are importing
+	// and get the simple pattern (no namespace qualifiers or ::'s) at
+	// the end.
+
+	// Java does not support passing an address so we pass
+	// an array of size 1 and then assign arr[0] to the value
+	Namespace[] importNsArr      = new Namespace[1];
+	Namespace[] dummyArr         = new Namespace[1];
+	Namespace[] actualCtxArr     = new Namespace[1];
+	String[]    simplePatternArr = new String[1];
+	
+	getNamespaceForQualName(interp, pattern, ns,
+	    TCL.LEAVE_ERR_MSG, importNsArr, dummyArr,
+	    actualCtxArr, simplePatternArr);
+
+	// get the values out of the arrays
+	importNs      = importNsArr[0];
+	actualCtx     = actualCtxArr[0];
+	simplePattern = simplePatternArr[0];
+
+	// FIXME : the above call passes TCL.LEAVE_ERR_MSG, but
+	// it seems like this will be a problem when exception is raised!
+	if (importNs == null) {
+	    throw new TclException(interp,
+		          "unknown namespace in namespace forget pattern \"" +
+			  pattern + "\"");
+	}
+
+	// Scan through the command table in the source namespace and look for
+	// exported commands that match the string pattern. If the current
+	// namespace has an imported command that refers to one of those real
+	// commands, delete it.
+
+	for (search = importNs.cmdTable.keys();
+	     search.hasMoreElements(); ) {
+	    cmdName = (String) search.nextElement();
+	    if (Util.stringMatch(cmdName, simplePattern)) {
+		cmd = (WrappedCommand) ns.cmdTable.get(cmdName);
+		if (cmd != null) { // cmd of same name in current namespace
+		    if (cmd.cmd instanceof ImportedCmdData) {
+			interp.deleteCommandFromToken(cmd);
+		    }
+		}
+	    }
+	}
+	return;
+    }
 
 
     /*
@@ -896,13 +1209,23 @@ public class NamespaceCmd extends InternalRep implements Command {
      *----------------------------------------------------------------------
      */
 
-    static Command getOriginalCommand(
-        Command command 	// The imported command for which the original
+    static WrappedCommand getOriginalCommand(
+        WrappedCommand command 	// The imported command for which the original
 				// command should be returned.
 	)
     {
-	//FIXME : add impl
-	return null;
+	WrappedCommand cmd = command;
+	ImportedCmdData data;
+
+	if (! (cmd.cmd instanceof ImportedCmdData)) {
+	    return null;
+	}
+    
+	while (cmd.cmd instanceof ImportedCmdData) {
+	    data = (ImportedCmdData) cmd.cmd;
+	    cmd = data.realCmd;
+	}
+	return cmd;
     }
 
 
@@ -927,11 +1250,13 @@ public class NamespaceCmd extends InternalRep implements Command {
 
     static void invokeImportedCmd(
         Interp interp,		// Current interpreter.
-        TclObject objv          // Argument objects
+	ImportedCmdData data,   // The data object for this imported command
+        TclObject[] objv          // Argument objects
 	)
 	throws TclException
     {
-	//FIXME : add impl
+	WrappedCommand realCmd = data.realCmd;
+	realCmd.cmd.cmdProc(interp,objv);
     }
 
 
@@ -956,9 +1281,34 @@ public class NamespaceCmd extends InternalRep implements Command {
      *----------------------------------------------------------------------
      */
 
-    static void deleteImportedCmd()
+    static void deleteImportedCmd(
+	ImportedCmdData data)   // The data object for this imported command
     {
-        //FIXME : add impl
+	WrappedCommand realCmd = data.realCmd;
+	WrappedCommand self    = data.self;
+	ImportRef ref, prev;
+
+	prev = null;
+	for (ref = realCmd.importRef;  ref != null;
+	     ref = ref.next) {
+	    if (ref.importedCmd == self) {
+		// Remove ref from real command's list of imported commands
+		// that refer to it.
+	    
+		if (prev == null) { // ref is first in list
+		    realCmd.importRef = ref.next;
+		} else {
+		    prev.next = ref.next;
+		}
+		ref = null;
+		data = null;
+		return;
+	    }
+	    prev = ref;
+	}
+	
+	throw new TclRuntimeError(
+	"DeleteImportedCmd: did not find cmd in real cmd's list of import references");
     }
 
     /*
@@ -1332,29 +1682,24 @@ public class NamespaceCmd extends InternalRep implements Command {
 	)
 	throws TclException
     {
-	Namespace ns, dummy1, dummy2;
-	String dummy;
+	Namespace ns;
 
 	// Java does not support passing an address so we pass
 	// an array of size 1 and then assign arr[0] to the value
 	Namespace[] nsArr     = new Namespace[1];
 	Namespace[] dummy1Arr = new Namespace[1];
-	Namespace[] dummy2Arr = new Namespace[1];
-	String[]    dummyArr  = new String[1];
+	String[]    dummy2Arr  = new String[1];
 
 	// Find the namespace(s) that contain the specified namespace name.
 	// Add the FIND_ONLY_NS flag to resolve the name all the way down
 	// to its last component, a namespace.
 
 	getNamespaceForQualName(interp, name, contextNs,
-	      (flags | FIND_ONLY_NS), nsArr, dummy1Arr, dummy2Arr, dummyArr);
+	      (flags | FIND_ONLY_NS), nsArr, dummy1Arr, dummy1Arr, dummy2Arr);
 
 
-	// Get the ns, dummy1, dummy2, and dummy values out of the arrays!
-	ns     = nsArr[0];
-	dummy1 = dummy1Arr[0];
-	dummy2 = dummy2Arr[0];
-	dummy  = dummyArr[0];
+	// Get the values out of the arrays!
+	ns = nsArr[0];
 
 	if (ns != null) {
 	    return ns;
@@ -1865,9 +2210,6 @@ public class NamespaceCmd extends InternalRep implements Command {
 	    whichCmd(interp, objv);
 	    return;
 	}
-	default: { 
-	    throw new TclRuntimeError("TclIndex.get() error");
-	}
 	} // end switch(opt)
 
     }
@@ -1901,8 +2243,6 @@ public class NamespaceCmd extends InternalRep implements Command {
 	Namespace globalNs = getGlobalNamespace(interp);
 	String pattern = null;
 	StringBuffer buffer;
-	//Tcl_HashEntry entryPtr;
-	//Tcl_HashSearch search;
 	Enumeration search;
 	TclObject list, elem;
 
@@ -2044,7 +2384,6 @@ public class NamespaceCmd extends InternalRep implements Command {
 	return;
     }
 
-
     /*
      *----------------------------------------------------------------------
      *
@@ -2065,7 +2404,6 @@ public class NamespaceCmd extends InternalRep implements Command {
      *
      *----------------------------------------------------------------------
      */
-    
     
     private static void currentCmd(Interp interp, TclObject[] objv)
 	throws TclException {
@@ -2095,7 +2433,6 @@ public class NamespaceCmd extends InternalRep implements Command {
 	    interp.setResult(currNs.fullName);
 	}
     }
-    
     
     /*
      *----------------------------------------------------------------------
@@ -2128,7 +2465,6 @@ public class NamespaceCmd extends InternalRep implements Command {
      *
      *----------------------------------------------------------------------
      */
-    
 
     private static void deleteCmd(Interp interp, TclObject[] objv)
 	throws TclException
@@ -2167,8 +2503,6 @@ public class NamespaceCmd extends InternalRep implements Command {
 	    }
 	}
     }
-
-
 
     /*
      *----------------------------------------------------------------------
@@ -2295,9 +2629,51 @@ public class NamespaceCmd extends InternalRep implements Command {
     
     private static void exportCmd(Interp interp, TclObject[] objv)
 	throws TclException {
-	// FIXME : add impl
-    }
+	Namespace currNs = getCurrentNamespace(interp);
+	String pattern, string;
+	boolean resetListFirst = false;
+	int firstArg, patternCt, i;
+	
+	if (objv.length < 2) {
+	    throw new TclNumArgsException(interp, 2, objv,
+					  "?-clear? ?pattern pattern...?");
+	}
 
+	// Process the optional "-clear" argument.
+
+	firstArg = 2;
+	if (firstArg < objv.length) {
+	    string = objv[firstArg].toString();
+	    if (string.equals("-clear")) {
+		resetListFirst = true;
+		firstArg++;
+	    }
+	}
+
+	// If no pattern arguments are given, and "-clear" isn't specified,
+	// return the namespace's current export pattern list.
+
+	patternCt = (objv.length - firstArg);
+	if (patternCt == 0) {
+	    if (firstArg > 2) {
+		return;
+	    } else {		// create list with export patterns
+		TclObject list = TclList.newInstance();
+		appendExportList(interp, currNs, list);
+		interp.setResult(list);
+		return;
+	    }
+	}
+
+	// Add each pattern to the namespace's export pattern list.
+    
+	for (i = firstArg;  i < objv.length;  i++) {
+	    pattern = objv[i].toString();
+	    exportList(interp, currNs, pattern,
+		       ((i == firstArg)? resetListFirst : false));
+	}
+	return;
+    }
 
 
     /*
@@ -2557,7 +2933,33 @@ public class NamespaceCmd extends InternalRep implements Command {
     
     private static void originCmd(Interp interp, TclObject[] objv)
 	    throws TclException {
-	// FIXME : add impl	
+	WrappedCommand command, origCommand;
+
+	if (objv.length != 3) {
+	    throw new TclNumArgsException(interp, 2, objv, "name");
+	}
+
+	// FIXME : is this the right way to search for a command?
+
+	//command = Tcl_GetCommandFromObj(interp, objv[2]);
+	command = NamespaceCmd.findCommand(interp, objv[2].toString(), null, 0);
+
+	if (command == null) {
+	    throw new TclException(interp, 
+		      "invalid command name \"" + objv[2].toString() + "\"");
+	}
+
+	origCommand = getOriginalCommand(command);
+	if (origCommand == null) {
+	    // The specified command isn't an imported command. Return the
+	    // command's name qualified by the full name of the namespace it
+	    // was defined in.
+	
+	    interp.setResult( interp.getCommandFullName(command) );
+	} else {
+	    interp.setResult( interp.getCommandFullName(origCommand) );
+	}
+	return;
     }
 
 
@@ -2664,7 +3066,6 @@ public class NamespaceCmd extends InternalRep implements Command {
 	// When no result is set the empty string is the result
 	return;
     }
-
     
 
     /*
@@ -2721,7 +3122,6 @@ public class NamespaceCmd extends InternalRep implements Command {
 	}
 	return;
     }
-    
 
 
     /*
@@ -2784,17 +3184,16 @@ public class NamespaceCmd extends InternalRep implements Command {
 
 	switch (lookup) {
 	case 0:			// -command
-	    // FIXME : is this the right way to lookup a Command token?
-	    // It was grabbed form interp.getCommand()
-
 	    arg = objv[argIndex].toString();
-	    cmd = NamespaceCmd.findCommand(interp, arg, null, 0);
+
+	    // FIXME : is this the right way to lookup a Command token?
 	    //cmd = Tcl_GetCommandFromObj(interp, objv[argIndex]);
+	    cmd = NamespaceCmd.findCommand(interp, arg, null, 0);
 
 	    if (cmd == null) {	
 		return;	        // cmd not found, just return (no error)
 	    }
-	    interp.setResult(interp.getCommandFullName(interp, cmd));
+	    interp.setResult(interp.getCommandFullName(cmd));
 	    return;
 
 	case 1:			// -variable
@@ -2808,7 +3207,6 @@ public class NamespaceCmd extends InternalRep implements Command {
 
 	return;
     }
-    
 
     
     /*
@@ -2837,8 +3235,6 @@ public class NamespaceCmd extends InternalRep implements Command {
 	    System.out.println("dispose() called for namespace object " +
 			     (otherValue == null ? null : otherValue.ns));
 	}
-	
-	// FIXME : double check this impl if NS structures change
 	
 	ResolvedNsName resName = otherValue;
 	Namespace ns;
@@ -2933,16 +3329,15 @@ public class NamespaceCmd extends InternalRep implements Command {
 	)
 	throws TclException	// If object could not be converted
     {
-	String name, dummy;
-	Namespace ns, dummy1, dummy2;
+	String name;
+	Namespace ns;
 	ResolvedNsName resName;
 
 	// Java does not support passing an address so we pass
 	// an array of size 1 and then assign arr[0] to the value
 	Namespace[] nsArr     = new Namespace[1];
 	Namespace[] dummy1Arr = new Namespace[1];
-	Namespace[] dummy2Arr = new Namespace[1];
-	String[]    dummyArr  = new String[1];
+	String[]    dummy2Arr  = new String[1];
 
 	// Get the string representation.
 	name = tobj.toString();
@@ -2953,15 +3348,11 @@ public class NamespaceCmd extends InternalRep implements Command {
 	// object with a null ResolvedNsName internal rep.
 
 	getNamespaceForQualName(interp, name, null,
-	      FIND_ONLY_NS, nsArr, dummy1Arr, dummy2Arr, dummyArr);
+	      FIND_ONLY_NS, nsArr, dummy1Arr, dummy1Arr, dummy2Arr);
 
 
-	// Get the ns, dummy1, dummy2, and dummy values out of the arrays!
+	// Get the values out of the arrays!
 	ns     = nsArr[0];
-	dummy1 = dummy1Arr[0];
-	dummy2 = dummy2Arr[0];
-	dummy  = dummyArr[0];
-
 
 	// If we found a namespace, then create a new ResolvedNsName structure
 	// that holds a reference to it.
