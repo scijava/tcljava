@@ -1,3 +1,10 @@
+2000-10-21  Mo DeJong  <mdejong@redhat.com>
+
+	* src/native/javaObj.c (JavaObjInit): Fix
+	JavaObjInit so that it only inits the global
+	data once. Add cmdTypePtrLock mutex to
+	protect the global data from multiple threads.
+
 2000-10-09  Mo DeJong  <mdejong@redhat.com>
 
 	* src/xputils/xputils.tcl (appendpath, prependpath):

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaObj.c,v 1.4.2.3 2000/08/27 05:09:00 mo Exp $
+ * RCS: @(#) $Id: javaObj.c,v 1.4.2.4 2000/10/21 14:49:28 mdejong Exp $
  */
 
 #include "java.h"
@@ -43,6 +43,12 @@ Tcl_ObjType tclObjectType = {
 static Tcl_ObjType oldCmdType;
 static Tcl_ObjType *cmdTypePtr = NULL;
 
+/*
+ * Mutex to serialize access to cmdTypePtr.
+ */
+
+static Tcl_Mutex cmdTypePtrLock;
+
 
 /*
  *----------------------------------------------------------------------
@@ -63,18 +69,30 @@ static Tcl_ObjType *cmdTypePtr = NULL;
 void
 JavaObjInit()
 {
-    Tcl_RegisterObjType(&tclObjectType);
-    
     /*
-     * Interpose on the "cmdName" type to preserve 
-     * java objects.
+     * The JavaObjInit method could get called
+     * from multiple threads. We only want to
+     * init the object type once.
      */
 
-    cmdTypePtr = Tcl_GetObjType("cmdName");
-    oldCmdType = *cmdTypePtr;
-    cmdTypePtr->freeIntRepProc = FreeJavaCmdInternalRep;
-    cmdTypePtr->dupIntRepProc = DupJavaCmdInternalRep;
-    cmdTypePtr->setFromAnyProc = SetJavaCmdFromAny;
+    Tcl_MutexLock(&cmdTypePtrLock);
+
+    if (cmdTypePtr == NULL) {
+        Tcl_RegisterObjType(&tclObjectType);
+    
+        /*
+         * Interpose on the "cmdName" type to preserve 
+         * java objects.
+         */
+
+        cmdTypePtr = Tcl_GetObjType("cmdName");
+        oldCmdType = *cmdTypePtr;
+        cmdTypePtr->freeIntRepProc = FreeJavaCmdInternalRep;
+        cmdTypePtr->dupIntRepProc = DupJavaCmdInternalRep;
+        cmdTypePtr->setFromAnyProc = SetJavaCmdFromAny;
+    }
+
+    Tcl_MutexUnlock(&cmdTypePtrLock);
 }
 
 /*
