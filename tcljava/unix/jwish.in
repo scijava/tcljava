@@ -6,7 +6,7 @@
 # fields and creates jwish.
 
 # Author:  Christopher Hylands
-# Version: $Id: jwish.in,v 1.6 1998/11/07 02:17:16 hylands Exp $
+# Version: $Id: jwish.in,v 1.7 1998/11/16 08:06:24 hylands Exp $
 #
 # Copyright (c) 1997-1998 The Regents of the University of California.
 # 	All Rights Reserved.
@@ -91,7 +91,7 @@ fi
 
 
 # Set up our LD_LIBRARY_PATH or SHLIB_PATH
-if test "`arch -s`" = "HP-UX" ; then
+if test "`uname -s`" = "HP-UX" ; then
     SHLIB_PATH=${JAVA_ARCH_RUNTIME_LIBS}:${SHLIB_PATH}
     # Export these variables so the wish process can get at them. 
     export SHLIB_PATH CLASSPATH
