@@ -318,7 +318,7 @@ it is not a ReflectObject that contains a TclObject.
 
 (CHANGE TO TCL OBJECT API)
 
-The TclObject.takeExclusive() method has a number problems, and has
+The TclObject.takeExclusive() method has a number of problems, and has
 been deprecated in favor of the new TclObject.duplicate() method.
 This new duplicate method works identically to Tcl_DuplicateObj.
 Old code that makes used of the takeExclusive method will still
@@ -330,5 +330,12 @@ new duplicate method.
 
 The array unset subcommand has been added to the Jacl's array command.
 
+(NEW WINDOWS BUILD SUPPORT)
+
+Both Tcl Blend and Jacl can now be built under Windows using the
+msys_mingw package. Users no longer need to have VC++ installed
+to build binaries of Jacl or Tcl Blend. See the supplied README
+file for Jacl or Tcl Blend for more information about how to
+build under Windows.
 
 </PRE></BODY></HTML>

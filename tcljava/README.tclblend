@@ -1,6 +1,6 @@
 Tcl Blend
 
-RCS: @(#) $Id: README.tclblend,v 1.9 2002/12/25 06:17:11 mdejong Exp $
+RCS: @(#) $Id: README.tclblend,v 1.10 2003/01/28 03:08:00 mdejong Exp $
 
 1. Introduction
 ---------------
@@ -44,8 +44,95 @@ known_issues.txt for a list of problems and bugs.
 4. Installation
 ---------------
 
-Follow the instructions in unix/README if you're compiling under UNIX,
-or win/README if you're compiling under Windows.
+A unified build system that works under both Unix and Windows
+is used to build Tcl Blend. To build on UNIX, just run the
+supplied configure script in a shell. To build on Windows,
+you will first need to build the Tcl and Thread packages
+using the msys_mingw package. See the Tcl win/README file
+for more information about how to install and build Tcl
+and the Thread package with msys_mingw.
+
+Tcl 8.3.2 or newer is required when building under UNIX.
+Tcl 8.4.2 or newer is required when building under Windows.
+In either case, the most recent release of the Thread package
+is strongly suggested. Tcl must be built as a shared library
+with threads enabled.
+
+To run the configure script, just type ./configure in the
+toplevel directory. This runs a configuration script created
+by GNU autoconf, which configures Tcl Blend for your system and
+creates a Makefile. The configure script allows you to customize
+the Tcl Blend configuration for your site; for details on how you can
+do this, type "./configure --help" or refer to the autoconf
+documentation (not included here). The most commonly used
+arguments to the configure script are as follows:
+
+	--prefix=DIR		By default, the configure script will
+                                assume that you want to install into
+                                /usr/local. Under Windows, the /usr/local
+                                directory is mapped to a Windows path
+                                based on where you installed mingw_msys.
+				One can specify a specific install
+                                directory by passing the directory name
+                                as an argument to the prefix option.
+                                For example, --prefix=/opt/jacl or
+                                or --prefix=D:/jacl under Windows.
+
+	--with-tcl=DIR		Pass the absolute unix path name of the
+				directory where Tcl has been build
+				as the value of DIR.
+
+	--with-thread=DIR	Pass the absolute unix path name of the
+				directory where the Tcl thread
+				extension has been build as the
+				value of DIR.
+
+	--with-jdk=DIR		By default, the configure script will
+                                attempt to find the JDK by searching on
+                                the PATH for the javac program. If the
+                                javac program can not be found on the
+                                PATH or if you do not want to use the
+				JDK that it finds, you will need to use
+                                this switch to tell configure where
+                                it should look for the JDK binaries.
+
+	--with-jikes=PROG	The JDK ships with a java compiler called
+				javac. This compiler works but it is very
+				slow. Many people would rather use the
+				jikes compiler from IBM because it is much
+				faster than javac and it produces better code.
+				On my system, a compile with javac takes
+				1 minute while a compile with jikes
+                                takes less than 3 seconds. If this switch is
+                                given with no PROG argument then the configure
+                                script will search for jikes on the PATH.
+                                If a PROG argument is provided it must be the
+                                absolute path name of your jikes executable.
+                                See www.research.ibm.com/jikes for more info.
+
+Running the configure script will generate a Makefile, assuming that
+no errors occurred during the configure process. You should now
+type "make", this will create two library files called tclblend.jar and
+tcljava.jar. The tclblend.jar library file stores the class files that
+are only used by Tcl Blend. The tcljava.jar library file stores the class
+files that are shared between jacl and tclblend. Make will also create
+a Tcl Blend shared library, libtclblend.so under UNIX or tclblend.dll
+under Windows.
+
+After the make finishes you can quickly test out Tcl Blend by typing
+"make shell" which will drop you into a running Tcl Blend shell where
+you can type in commands. Type "package require java" in the shell
+to load the Tcl Blend shared library. You can also run the regression
+tests by typing "make test". See tests/README for more information
+about the regression test suite.
+
+When you are ready to install type "make install" to install
+the Tcl Blend libraries on your system. Doing the install will
+also create a pair of wrapper scripts called jtclsh and jwish
+which you can use to run Tcl Blend without setting lots of
+environmental variables by hand. After the wrapper script has
+been installed a test program will be run to ensure that
+the installed program is working correctly.
 
 5. License Agreement
 ---------------------
@@ -60,8 +147,10 @@ Tcl Blend 1.0 was released by the now defunct SunScript group at Sun Labs.
 The majority of the Jacl/Tcl Blend developers spun out of Sun Labs
 into Scriptics.
 
-Newer version of Tcl Blend were developed primarily by people outside of
-Scriptics, with assistance from Scriptics.
+Jacl 1.1 and 1.2 were primarily by people outside of Scriptics,
+with assistance from Scriptics.
+
+Newer versions of Jacl are crafted by independent developers.
 
 7. Getting Help
 ----------------

@@ -1,5 +1,18 @@
 2003-01-27  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* README.jacl: Document shared UNIX/Windows
+	build for Jacl.
+	* README.tclblend: Document shared UNIX/Windows
+	build for Tcl Blend.
+	* new_features.txt: Added note about new
+	Windows build system.
+	* unix/README.jacl: Removed.
+	* unix/README.tclblend: Removed.
+	* win/README.jacl: Removed.
+	* win/README.tclblend: Removed.
+
+2003-01-27  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* bsjavac.sh: Add script that works around path
 	separator issues under Win32.
 	* configure: Regen.
