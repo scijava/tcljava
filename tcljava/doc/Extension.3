@@ -1,0 +1,72 @@
+'\"
+'\" Copyright (c) 1998 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+'\" RCS: @(#) $Id: Extension.3,v 1.1 1998/10/14 21:09:09 cvsadmin Exp $
+'\" 
+.so man.macros
+.TH Extension 3 1.0 Jacl "Jacl Library Procedures"
+.BS
+.SH CLASS
+tcl.lang.Extension -- The base class for building dynamically loadable Tcl
+extensions.
+
+.SH METHODS
+.sp
+void \fBinit\fR(Interp \fIinterp\fR)
+.sp
+void \fBsafeInit\fR(Interp \fIsafeInterp\fR)
+.sp
+static void \fBloadOnDemand\fR(Interp \fIinterp\fR, String
+\fIcmdName\fR, String \fIclsName\fR)
+
+.SH ARGUMENTS
+.AS TclObject "table[]" .
+.AP Interp interp
+The interpreter in which the extension is to be loaded.
+.AP Interp safeInterp
+The interpreter in which the extension is to be loaded safely.
+.AP String cmdName
+Name of the Tcl command to be loaded.
+.AP String clsName
+The full pathname of the Java class to load as a Tcl command. The
+class should implement the \fBCommand\fR interface.
+.BE
+
+.SH DESCRIPTION
+
+The Extension class is used to create dynamic Tcl extension, which can
+be loaded into a running Jacl interpreter with the \fBjava::load\fR
+Tcl command
+
+.TP
+\fBinit\fR
+A dynamic Tcl extension should override the \fBinit\fR method to to
+perform initialization specific to the given extension. Usually, this
+means creating new commands inside the interpreter.
+.TP
+\fBsafeInit\fR
+The \fBsafeInit\fR method is similar to \fBinit\fR, but it's used to
+perform initializations when the package is loaded into a safe
+interpreter. It should only enable features that are deemed "safe" to
+be executed by untrusted Tcl scripts.
+.sp
+Note: safe interpreters are not currently implemented in Jacl and this
+function is currently only for future compatibility.
+
+.TP
+\fBloadOnDemand\fR
+The \fBloadOnDemand\fR method arranges a \fBCommand\fR implementation
+class, specified by \fIclsName\fR, to be loaded into the JVM the first
+time the command \fIcmdName\fR is executed; this can reduce the time
+it takes to initialize an Extension. The class must implement either
+the \fBCommand\fR interface or the \fBCommandWithDispose\fR interface.
+
+.SH "SEE ALSO"
+Interp, Command, CommandWithDispose
+
+.SH KEYWORDS
+loading, dynamic extension, safe interpreter
+

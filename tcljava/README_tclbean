@@ -1,0 +1,102 @@
+Tcl Bean
+RCS: @(#) $Id: README_tclbean,v 1.1 1998/10/14 21:09:07 cvsadmin Exp $
+ 
+1. Introduction
+---------------
+
+The current release of Jacl and Tcl Blend are shipped with a Java Bean
+built for Java Studio, the Tcl Bean.  With the Tcl Bean, Java Studio
+developers can create new components for Java Studio directly with
+Tcl.  Java Studio users can use the new components directly without
+ever knowing that the components are written in Tcl.  
+
+The Tcl Bean contains new commands to access Java Studio features from
+Tcl.  One command creates Java Studio ports and defines the port's
+interaction with other components.  Another command defines the
+callback executed when a message is received.  The Tcl bean, like all Java
+Studio components, implements a Customizer for setting component
+properties.  However, a user-defined Customizer can be created
+directly from Tcl, overriding the default Customizer.  This interface
+to Java Studio makes it is possible to mimic almost any component
+using the interfaces provided by Tcl Bean.
+
+2. Documentation
+----------------
+
+The Tcl Bean has help files available from the Tcl Bean Customizer.
+The Customizer is displayed whenever a Tcl Bean is created in Java
+Studio.  From the Customizer window, press the "Help" button.  A
+hyperlinked Help file browser will pop up, giving you access to
+documentation on the Tcl Bean.
+
+3. Requirements
+---------------
+
+Java Studio 1.0 and the Java Development Kit version 1.1.  The Tcl
+Bean works with either Jacl or Tcl Blend.  See the corresponding
+README files for additional requirements of Jacl or Tcl Blend.
+
+4. Installation
+---------------
+
+Follow the instructions in the TCLBEAN_INSTALL.txt file located in
+this directory.
+
+5. License Agreement
+---------------------
+
+See the file "license.terms" for information on usage and 
+redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+6. Contact Information
+----------------------
+
+Tcl Bean 1.0 was released by the now defunct SunScript group at Sun Labs.
+the majority of the Jacl/Tcl Blend developers spun out of Sun Labs
+into Scriptics.
+
+Tcl Bean 1.1 has not been particularly well tested, and we are considering
+dropping it from future releases.
+
+7. Tcl newsgroup
+----------------
+
+There is a network news group "comp.lang.tcl" intended for the exchange
+of information about Tcl, Tk, and related applications.  You should
+use this newsgroup to ask questions, give bug reports, or post fixes
+for Jacl & Tcl Blend.   The developers of Jacl & Tcl Blend as well as
+many avid users of Tcl Blend & Jacl use comp.lang.tcl as a forum.
+
+8. Support and bug fixes
+------------------------
+
+Unfortunately, we cannot offer direct technical support for Jacl and
+Tcl Blend.  We prefer that you send bug reports and fixes to the
+comp.lang.tcl newsgroup rather than to any one individually.  We'll see
+anything on comp.lang.tcl, and in addition, someone else who reads
+comp.lang.tcl may be able to offer a solution.
+
+When reporting bugs, please provide a short Tcl script that we can use
+to reproduce the bug.  Make sure that the script runs with bare-bones
+Tcl and doesn't depend on any extensions or other programs,
+particularly those that exist only at your site.  Also, please include
+five additional pieces of information with the script:
+    (a) How do we use the script to make the problem happen (e.g.
+	what things do we click on, in what order)?
+    (b) What happens when you do these things (presumably this is
+        undesirable)?
+    (c) What did you expect to happen instead?
+    (d) What platform are you running on (Machine, OS, etc.)?
+    (e) What releases of Tcl products are you using?
+
+Bugs related to Java Studio should be submitted to SunSoft directly
+via the Web at "http://sunservice.sun.com/studio".
+
+The Jacl & Tcl Blend team
+-------------------------
+
+Ray Johnson - Project Manager
+Melissa Hirschl
+Ioi Lam
+Bryan Surles
+Special thanks to Scott Stanton who implemented Tcl Blend.

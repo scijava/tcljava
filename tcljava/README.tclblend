@@ -1,0 +1,114 @@
+Tcl Blend
+
+RCS: @(#) $Id: README.tclblend,v 1.1 1998/10/14 21:09:07 cvsadmin Exp $
+
+1. Introduction
+---------------
+
+Tcl Blend provides two new capabilities to the Tcl system.  First, 
+Tcl Blend provides Java classes that expose key pieces of the 
+interfaces that are available to extension writers who currently
+use C.  Using these classes, extension writers can create new 
+commands for the Tcl interpreter.  In addition, Tcl Blend provides 
+commands that allow script writers to directly manipulate Java 
+objects without having to write any Java code.  The reflection 
+classes in JDK 1.1 make it possible to invoke methods and access 
+fields on arbitrary objects.  Tcl Blend takes advantage of these 
+capabilities to provide a dynamic interface to Java.
+
+2. Documentation
+----------------
+
+The best way to get started with Tcl Blend is to look at the demos
+provided in this release.  See the "diffs.txt" file in this directory
+for a list of Java Package features and the extent to which they are
+implemented in Tcl Blend. 
+Also, look at the Scriptics Jacl and Tcl Blend page at
+http://www.scriptics.com/java for other useful information.
+
+3. Requirements
+---------------
+
+Tcl8.0 and the Java Development Kit 1.1 or greater is required.
+
+For building Tcl Blend on Solaris the Native Threads Pack, and 
+several patches, must be installed on top of JDK1.1.  The 
+package, necessary patches, and installation instructions can 
+be found at http://www.javasoft.com/products/jdk/1.1/index.html.
+
+Tcl Blend 1.1 will run under JDK1.2beta4, see known_issues.txt for
+a list of bugs.
+
+4. Installation
+---------------
+
+Change to the "unix" subdirectory if you're compiling under UNIX,
+or "win" if you're compiling under Windows.  Then follow the 
+instructions in the README file in that directory for compiling 
+Tcl, installing it, and running the test suite.
+
+5. License Agreement
+---------------------
+
+See the file "license.terms" for information on usage and 
+redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+6. Contact Information
+----------------------
+
+Tcl Blend 1.0 was released by the now defunct SunScript group at Sun Labs.
+the majority of the Jacl/Tcl Blend developers spun out of Sun Labs
+into Scriptics.
+
+Tcl Blend 1.1 was developed primarily by people outside of Scriptics, with
+assistance by Scriptics.  In the future, Scriptics is planning on
+hosting a CVS tree for Jacl and Tcl Blend.
+
+7. Tcl newsgroup
+----------------
+
+There is a network news group "comp.lang.tcl" intended for the exchange
+of information about Tcl, Tk, and related applications.  You should
+use this newsgroup to ask questions, give bug reports, or post fixes
+for Jacl & Tcl Blend.   The developers of Jacl & Tcl Blend as well as
+many avid users of Tcl Blend & Jacl use comp.lang.tcl as a forum.
+
+8. Support and bug fixes
+------------------------
+
+Unfortunately, Scriptics, University of Minnesota and UC Berkeley
+cannot offer direct technical support for Jacl and Tcl Blend.  We
+prefer that you send bug reports and fixes to the comp.lang.tcl
+newsgroup rather than to any one individually.  We'll see anything on
+comp.lang.tcl, and in addition, someone else who reads comp.lang.tcl
+may be able to offer a solution.
+
+When reporting bugs, please provide a short Tcl script that we can use
+to reproduce the bug.  Make sure that the script runs with bare-bones
+Tcl and doesn't depend on any extensions or other programs,
+particularly those that exist only at your site.  Also, please include
+five additional pieces of information with the script:
+    (a) How do we use the script to make the problem happen (e.g.
+	what things do we click on, in what order)?
+    (b) What happens when you do these things (presumably this is
+        undesirable)?
+    (c) What did you expect to happen instead?
+    (d) What platform are you running on (Machine, OS, etc.)?
+    (e) What releases of Tcl products are you using?
+
+The Jacl 1.0 & Tcl Blend 1.0 team at Sun Script
+-----------------------------------------------
+
+Ray Johnson - Project Manager
+Melissa Hirschl
+Ioi Lam
+Bryan Surles
+Special thanks to Scott Stanton who implemented Tcl Blend.
+
+
+The Jacl 1.1 & Tcl Blend 1.1 team
+---------------------------------
+Mo DeJong (University of Minnesota)
+Christopher Hylands (UC Berkeley)
+John Reekie (UC Berkeley)
+Bryan Surles (Scriptics)

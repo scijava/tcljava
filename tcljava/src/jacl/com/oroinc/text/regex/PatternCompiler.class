@@ -1,0 +1,2 @@
+Êþº¾-compile3(Ljava/lang/String;)Lcom/oroinc/text/regex/Pattern;
+Exceptions4(Ljava/lang/String;I)Lcom/oroinc/text/regex/Pattern;#([C)Lcom/oroinc/text/regex/Pattern;$([CI)Lcom/oroinc/text/regex/Pattern;PWARNING: Decompilation of this software is a violation of the license agreement%com/oroinc/text/regex/PatternCompilerjava/lang/Object/com/oroinc/text/regex/MalformedPatternException	

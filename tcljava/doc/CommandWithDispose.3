@@ -1,0 +1,42 @@
+'\"
+'\" Copyright (c) 1998 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+'\" RCS: @(#) $Id: CommandWithDispose.3,v 1.1 1998/10/14 21:09:08 cvsadmin Exp $
+'\" 
+.so man.macros
+.TH CommandWithDispose 3 1.0 Jacl "Jacl Library Procedures"
+.BS
+.SH INTERFACE
+tcl.lang.CommandWithDispose -- interface for defining new
+Tcl commands that requires clean-up.
+
+.SH EXTENDS
+Command
+
+.SH METHODS
+.sp
+abstract void \fBdisposeCmd\fR()
+
+.SH DESCRIPTION
+
+This interface is used to define more sophisticated commands that
+require clean-up when the command is deleted from an interpreter.
+When the command represented by the CommandWithDispose instance is
+deleted from an interpreter, either via the \fIinterp\fR.\fBdeleteCommand\fR
+method or when the interpreter itself is deleted, the \fBdisposeCmd\fR
+method is invoked to free any resources that were allocated when the
+command was created.
+
+.SH "EQUIVALENT C FUNCTIONS"
+Tcl_CmdDeleteProc
+
+.SH "SEE ALSO"
+Interp, Command
+
+.SH KEYWORDS
+command, create, delete, interpreter
+
+

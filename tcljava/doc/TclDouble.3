@@ -1,0 +1,68 @@
+'\"
+'\" Copyright (c) 1996-1998 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+'\" RCS: @(#) $Id: TclDouble.3,v 1.1 1998/10/14 21:09:09 cvsadmin Exp $
+'\" 
+.so man.macros
+.TH TclDouble 3 1.0 Jacl "Jacl Library Procedures"
+.BS
+.SH CLASS
+tcl.lang.TclDouble -- This class is used to create, read, and modify double
+objects from Java code.
+
+.SH EXTENDS
+tcl.lang.InternalRep
+
+.SH METHODS
+.sp
+static TclObject \fBnewInstance\fR(double \fIdoubleValue\fR)
+.sp
+static double \fBget\fR(Interp \fIinterp\fR, TclObject \fItobj\fR) throws TclException
+.sp
+static void \fBset\fR(TclObject \fItobj\fR, double \fIdoubleValue\fR)
+
+.SH ARGUMENTS
+.AS TclObject "doubleValue" .
+.AP double doubleValue
+New value for internal double representation.
+.AP Interp interp
+If an error occurs while converting an object to be a double object,
+an error message is left in the interpreter's result object
+unless \fIinterp\fR is NULL.
+.AP TclObject tobj
+TclObject to manipulate.  If the internal representation of
+\fItobj\fR is not TclDouble, the method converts it to TclDouble.
+.BE
+
+.SH DESCRIPTION
+.TP
+\fBnewInstance\fR
+The \fBnewInstance\fR method creates and returns a new TclObject whose internal
+representation is the double \fIdoubleValue\fR.  The precision of
+\fIdoubleValue\fR is controlled by the global Tcl variable
+tcl_precision, whose default value is 12.
+
+.TP
+\fBget\fR
+The \fBget\fR method returns a double value from the \fItobj\fR.  If an error
+occurs while converting \fItobj\fR to be a double object, an error
+message is left in the \fIinterp\fR's result object unless
+\fIinterp\fR is NULL.
+.TP
+\fBset\fR
+The \fBset\fR method sets \fItobj\fR to have the double value of \fIdoubleValue\fR.
+When this method returns, the internal representation of \fItobj\fR
+is TclDouble.
+
+.SH "EQUIVALENT C FUNCTIONS"
+Tcl_NewDoubleObj, Tcl_GetDoubleFromObj, Tcl_SetDoubleObj
+
+.SH "SEE ALSO"
+InternalRep, TclObject, TclList, TclIndex, TclString, TclInteger,
+TclBoolean, ReflectObject
+
+.SH KEYWORDS
+double, internal representation, object, object type, precision, tcl_precision

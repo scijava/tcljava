@@ -1,0 +1,256 @@
+# This file tests FuncSig.test.
+#
+# Copyright (c) 1997 by Sun Microsystems, Inc.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+#
+# RCS: @(#) $Id: FuncSig.test,v 1.1 1998/10/14 21:09:24 cvsadmin Exp $
+
+# Note: This test file must be sourced from the parent directory
+#       or else the defs file may not be properly loaded.
+
+if {[string compare test [info procs test]] == 1} then {source defs}
+
+setupJavaPackage
+
+#
+# get
+#
+
+test FuncSig-1.1 {get} {
+    set m Object
+    java::new $m
+    jtest type $m
+} tcl.lang.FuncSig
+
+test FuncSig-1.2 {get} {
+    set m toString
+    [java::new Object] $m
+    jtest type $m
+} tcl.lang.FuncSig
+
+test FuncSig-1.3 {get, overloaded methods} {
+    set m imethod
+    [java::new tests.JavaTest] $m
+    set k1 [[jtest getobject $m] getInternalRep]
+
+    [java::new tests.JavaTest] $m 123
+    set k2 [[jtest getobject $m] getInternalRep]
+
+    expr {$k1 == $k2}
+} 0
+test FuncSig-1.4 {get, cache correctness} {
+    set c tests.JavaTest
+    java::new $c
+    java::new $c a 1
+    catch {java::new $c}
+} {0}
+test FuncSig-1.5 {get, errors} {
+    list [catch {java::call Object "\{"} msg] $msg
+} {1 {unmatched open brace in list}}
+
+test FuncSig-1.6 {get, errors} {
+    list [catch {java::call Object ""} msg] $msg
+} {1 {bad signature ""}}
+
+test FuncSig-1.7 {get, errors} {
+    set sig "foo"
+    list [catch {
+	java::call tcl.lang.FuncSig get [java::getinterp] [java::null]                     [jtest getobject $sig] [java::new {tcl.lang.TclObject[]} 2] 0 2
+    } msg] $msg
+} {1 {tcl.lang.TclException: unknown class "foo"}}
+
+test FuncSig-1.8 {get, errors} {
+    list [catch {java::call Object "\{"} msg] $msg
+} {1 {unmatched open brace in list}}
+
+test FuncSig-1.9 {get, constructor full signature} {
+    list [catch {java::new {tests.JavaTest int int}} msg] $msg    
+} {1 {no such constructor "tests.JavaTest int int"}}
+
+test FuncSig-1.10 {get} {
+    list [catch {java::new {java.lang.Integer}} msg] $msg    
+} {1 {can't find constructor with 0 argument(s) for class "java.lang.Integer"}}
+
+test FuncSig-1.11 {get} {
+    list [catch {java::new {tests.JavaTest String}} msg] $msg    
+} {1 {wrong # args for calling constructor "tests.JavaTest String"}}
+
+test FuncSig-1.12 {get} {
+    [java::new {Integer int} 1234] toString
+} 1234
+
+test FuncSig-1.13 {get, method full signature} {
+    list [catch {
+	[java::new {tests.JavaTest}] {imethod int int}
+    } msg] $msg    
+} {1 {no such method "imethod int int" in class tests.JavaTest}}
+
+test FuncSig-1.14 {get, method full signature} {
+    list [catch {
+	[java::new String] charAt
+    } msg] $msg    
+} {1 {can't find method "charAt" with 0 argument(s) for class "java.lang.String"}}
+
+test FuncSig-1.15 {get, constructor short signature} {
+    catch {
+	java::new Integer 1
+    }
+} {0}
+
+test FuncSig-1.16 {get, constructor short signature} {
+    list [catch {
+	java::new Integer 1 2
+    } msg] $msg    
+} {1 {can't find constructor with 2 argument(s) for class "java.lang.Integer"}}
+
+test FuncSig-1.17 {get, constructor short signature} {
+    list [catch {
+	java::new Integer 1 2 3
+    } msg] $msg    
+} {1 {can't find constructor with 3 argument(s) for class "java.lang.Integer"}}
+
+test FuncSig-1.18 {get, constructor short signature} {
+    list [catch {
+	java::new Integer 1 2 3 4
+    } msg] $msg    
+} {1 {can't find constructor with 4 argument(s) for class "java.lang.Integer"}}
+
+test FuncSig-1.19 {get, constructor short signature} {
+    list [catch {
+	java::new Integer 1 2 3 4 5
+    } msg] $msg    
+} {1 {can't find constructor with 5 argument(s) for class "java.lang.Integer"}}
+
+test FuncSig-1.20 {get, method short signature} {
+    java::info class [java::new tests.JavaTest foo 123]
+} {tests.JavaTest}
+
+test FuncSig-1.21 {get, method short signature} {
+    list [catch {
+	[java::new String] indexOf 1 2 3 4
+    } msg] $msg    
+} {1 {can't find method "indexOf" with 4 argument(s) for class "java.lang.String"}}
+
+test FuncSig-1.22 {get, method short signature} {
+    list [catch {
+	[java::new String] indexOf foo
+    } msg] $msg    
+} {0 -1}
+
+test FuncSig-1.23 {get, method short signature} {
+    [java::new tests.JavaTest] imethod
+} 6
+
+test FuncSig-1.24 {get, method short signature} {
+    [java::new tests.JavaTest] imethod 12345
+} 12346
+
+#
+# getAllDeclaredMethods
+#
+
+test FuncSig-2.1 {getAllDeclaredMethods, caching} {
+    set c [java::call Class forName java.lang.Object]
+    set m1 [java::call tcl.lang.FuncSig getAllDeclaredMethods $c]
+    set m2 [java::call tcl.lang.FuncSig getAllDeclaredMethods $c]
+    string compare $m1 $m2
+} 0
+
+if { [regexp {^1.2.*} $java::jdkVersion] } {
+    set FuncSig1_2 \
+	    {clone equals finalize getClass hashCode notify notifyAll registerNatives toString wait wait wait}
+} else {
+    set FuncSig1_2 \
+	    {clone equals finalize getClass hashCode notify notifyAll toString wait wait wait}
+}
+
+test FuncSig-1.2 {getAllDeclaredMethods, caching} {
+    set c [java::call Class forName java.lang.Object]
+    set m [java::call tcl.lang.FuncSig getAllDeclaredMethods $c]
+
+    set list ""
+    for {set i 0} {$i < [$m length]} {incr i} {
+	lappend list [[$m get $i] getName]
+    }
+
+    lsort $list
+} $FuncSig1_2
+
+if { [regexp {^1.2.*} $java::jdkVersion] } {
+    set FuncSig1_3 \
+	    {{clone java.lang.Object 0 4 0} {equals java.lang.Object 1 0 0} {finalize java.lang.Object 0 4 0} {getClass java.lang.Object 1 0 0} {getNonPublicTester tests.invoke.PublicTester 1 0 0} {getStringA tests.invoke.IntA 1 0 0} {getStringC tests.invoke.PublicTester 1 0 0} {hashCode java.lang.Object 1 0 0} {noAccess tests.invoke.PublicTester 0 0 0} {noAccess2 tests.invoke.NonPublicTester 0 0 0} {noAccess3 tests.invoke.NonPublicTester 1 0 0} {notify java.lang.Object 1 0 0} {notifyAll java.lang.Object 1 0 0} {publicFunc tests.invoke.PublicTester 1 0 0} {registerNatives java.lang.Object 0 0 2} {toString java.lang.Object 1 0 0} {wait java.lang.Object 1 0 0} {wait java.lang.Object 1 0 0} {wait java.lang.Object 1 0 0}}
+} else  {
+    set FuncSig1_3 \
+	    {{clone java.lang.Object 0 4 0} {equals java.lang.Object 1 0 0} {finalize java.lang.Object 0 4 0} {getClass java.lang.Object 1 0 0} {getNonPublicTester tests.invoke.PublicTester 1 0 0} {getStringA tests.invoke.IntA 1 0 0} {getStringC tests.invoke.PublicTester 1 0 0} {hashCode java.lang.Object 1 0 0} {noAccess tests.invoke.PublicTester 0 0 0} {noAccess2 tests.invoke.NonPublicTester 0 0 0} {noAccess3 tests.invoke.NonPublicTester 1 0 0} {notify java.lang.Object 1 0 0} {notifyAll java.lang.Object 1 0 0} {publicFunc tests.invoke.PublicTester 1 0 0} {toString java.lang.Object 1 0 0} {wait java.lang.Object 1 0 0} {wait java.lang.Object 1 0 0} {wait java.lang.Object 1 0 0}}
+}
+test FuncSig-1.3 {getAllDeclaredMethods, caching} {
+    set a [java::call tests.invoke.PublicTester getNonPublicTester]
+    set m [java::call tcl.lang.FuncSig getAllDeclaredMethods [$a getClass]]
+
+    set list ""
+
+    set public    [java::field java.lang.reflect.Modifier PUBLIC]
+    set protected [java::field java.lang.reflect.Modifier PROTECTED]
+    set private   [java::field java.lang.reflect.Modifier PRIVATE]
+
+    for {set i 0} {$i < [$m length]} {incr i} {
+	set method [$m get $i]
+	lappend list [list [$method getName]                                               [[$method getDeclaringClass] getName]                                          [expr [$method getModifiers] & $public]                                        [expr [$method getModifiers] & $protected]                                     [expr [$method getModifiers] & $private]]
+   }
+
+    lsort $list
+} $FuncSig1_3
+
+#foreach k [lsort $list] {puts $k}
+
+# Black box tests
+#
+
+test FuncSig-3.1 {getAllDeclaredMethods, public method} {
+    set a [java::new tests.invoke.PublicTester]
+    $a publicFunc
+} "access ok: Tester.publicFunc()"
+
+test FuncSig-3.2 {getAllDeclaredMethods, public method} {
+    set a [java::call tests.invoke.PublicTester getNonPublicTester]
+    $a publicFunc
+} "access ok: NonPublicTester.publicFunc() overrides Tester.publicFunc()"
+
+test FuncSig-3.3 {getAllDeclaredMethods, public method} {
+    catch {unset results}
+    set a [java::call tests.invoke.PublicTester getNonPublicTester]
+    lappend results [list [catch {$a getStringA} err] $err]
+    set a [java::cast tests.invoke.NonPublicTester $a]
+    lappend results [list [catch {$a getStringA} err] $err]
+} {{1 {no such method "getStringA" in class tests.invoke.PublicTester}}\
+   {0 {access ok: NonPublicTester.getStringA() implements IntA.getStringA()}}}
+
+test FuncSig-3.4 {getAllDeclaredMethods, public method} {
+    set a [java::call tests.invoke.PublicTester getNonPublicTester]
+    $a getStringC
+} "access ok: NonPublicTester.getStringC() implements IntC.getStringC()"
+
+test FuncSig-3.5 {getAllDeclaredMethods, non public method} {
+    set a [java::new tests.invoke.PublicTester]
+    list [catch {$a noAccess} msg] $msg
+} {1 {java.lang.IllegalAccessException: tests/invoke/PublicTester}}
+
+test FuncSig-3.6 {getAllDeclaredMethods, non public method} {
+    set a [java::call tests.invoke.PublicTester getNonPublicTester]
+    list [catch {$a noAccess} msg] $msg
+} {1 {java.lang.IllegalAccessException: tests/invoke/PublicTester}}
+
+test FuncSig-3.7 {getAllDeclaredMethods, non public method} {
+    set a [java::call tests.invoke.PublicTester getNonPublicTester]
+    set a [java::cast {tests.invoke.NonPublicTester} $a]
+    list [catch {$a noAccess2} msg] $msg
+} {1 {java.lang.IllegalAccessException: tests/invoke/NonPublicTester}}
+
+test FuncSig-3.8 {getAllDeclaredMethods, non public method} {
+    set a [java::call tests.invoke.PublicTester getNonPublicTester]
+    set a [java::cast {tests.invoke.NonPublicTester} $a]
+    list [catch {$a noAccess3} msg] $msg
+} {1 {java.lang.IllegalAccessException: tests/invoke/NonPublicTester}}
+

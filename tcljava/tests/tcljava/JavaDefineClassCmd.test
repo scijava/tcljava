@@ -1,0 +1,86 @@
+# JavaDefineClassCmd.test --
+#
+#	Tests the JavaIsNullCmd class.
+#
+# Copyright (c) 1998 by Sun Microsystems, Inc.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+#
+# RCS: @(#) $Id: JavaDefineClassCmd.test,v 1.1 1998/10/14 21:09:24 cvsadmin Exp $
+
+# Note: This test file must be sourced from the parent directory
+#       or else the defs file may not be properly loaded.
+
+if {[string compare test [info procs test]] == 1} then {source defs}
+setupJavaPackage
+
+# This code is necessary to locate the class file 
+# that are loaded as part of the testing.
+
+if { $tcl_platform(platform) == "java" } {
+    set system jacl
+} else {
+    set system tclblend
+}
+
+set platform [testgetplatform]
+
+if {[info exists env(BUILD_DIR)]} {
+    set root_path [file join $env(BUILD_DIR) tests]
+} elseif {$platform == "windows"} {
+    set root_path [file join .. win tests]
+} else {
+    set root_path [file join .. $platform tests]
+}
+
+if {! [file isdirectory $root_path]} {
+    puts "Unable to find directory \"$root_path\".  Cannot run tests."	
+    return
+}
+
+set javaload_path [file join $root_path javaload]
+if {! [file isdirectory $javaload_path]} {
+    puts "Unable to find directory \"$javaload_path\".  Cannot run tests."
+    return
+}
+
+# Tests begin here.
+
+test java::defineclass-1.1 {error checking} {
+    list [catch {java::defineclass} msg] $msg
+} {1 {wrong # args: should be "java::defineclass classbytes"}}
+test java::defineclass-1.2 {error checking} {
+    list [catch {java::defineclass a b} msg] $msg
+} {1 {wrong # args: should be "java::defineclass classbytes"}}
+test java::defineclass-1.3 {error checking} {
+    set x [java::defineclass tclbabe]
+    java::isnull $x
+} {1}
+test java::defineclass-2.1 {loading a class} {
+    set javaload_full_path [file join $javaload_path tests javaload]
+    if {! [file isdirectory $javaload_full_path]} {
+	error "Unable to find directory \"$javaload_full_path\".  Cannot run tests."
+    }
+    set file  [open [file join $javaload_full_path Test1Cmd.class]]
+    if {$system == "tclblend"} {
+	fconfigure $file -translation binary
+    }
+    set bytes [read $file]
+    close $file
+    set class [java::defineclass $bytes]
+    java::isnull $class
+} {0}
+test java::defineclass-2.2 {instantiating a loaded class} {
+    set file  [open [file join $javaload_path Test2Cmd.class]]
+    if {$system == "tclblend"} {
+	fconfigure $file -translation binary
+    }
+    set bytes [read $file]
+    close $file
+    set class [java::defineclass $bytes]
+    set obj   [java::new Test2Cmd]
+    java::isnull $obj
+} {0}
+
+

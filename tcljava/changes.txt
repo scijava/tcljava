@@ -1,0 +1,325 @@
+Recent user-visible changes to Jacl & Tcl Blend:
+
+RCS: @(#) $Id: changes.txt,v 1.1 1998/10/14 21:09:07 cvsadmin Exp $
+
+----------------- Released 1.0a1, 10/22/97 -----------------------
+
+10/23/97 (new feature) Added changes file to document user visable
+changes made between releases. (RJ)
+
+11/02/97 (bug fix) Makefile/Configure Updates: (BS)
+- The tclblendTest target now has a dependency of $(TCLTEST).
+- Changed the Tcl Blend binary dist name to tclBlend1.0a1_solaris.tar.Z/gz
+- Removed the pyramidpkg demo from the Tcl Blend dists.
+- Added the changes file to the dist targets.
+- Added most of Christopher Hylands changes to configure.in and 
+  Makefile.in files.  
+	- Added JAVAC and JAVAH variables
+	- Added support for --src-dir, --with-javaarchinclude, 
+	  and --with-javaarchlib.
+	- Look at Christophers page for more info:
+	  http://ptolemy.eecs.berkeley.edu/~cxh/ptpub/tclBlend.html
+
+11/02/97 (bug fix) unix/README.tclblend now states that the LD_LIBRARY_PATH 
+must include the path to the java lib dir. (BS)
+
+11/03/97 (reorganize) Changed the classes dir to src. (BS)
+
+11/03/97 (bug fix) Added the man.macros to the docs directory. (BS)
+
+11/03/97 (new feature) Added the java::defineclass command to the Jacl 
+interp.  Added the ability for java::new and java::call to look in the 
+env(TCL_CLASSPATH) variable for additional paths to search when loading
+classes.  Updated the java.n man page.  (BS)
+
+11/11/97 (new feature) New Notifier API implemented for Jacl. See the
+classes Notifier, IdleHandler, TimerHandler. (IL)
+
+12/2/97 (bug fix) Tcl Blend crashed if Java object handles were used from
+within namespaces. (SS)
+
+12/2/97 (bug fix) Tcl Blend allowed Java object handles to cross
+between interpreters under some circumstances. (SS)
+
+12/2/97 (new feature) New commands for handling JavaBean events:
+java::bind, java::event, java::throw and "java::info events". (IL)
+
+12/3/97 (new feature) Added basic support for Java Studio. (RJ)
+
+12/3/97 (new feature) Changed Makefile.in to build the Tcl Bean when 
+making a binary release.  Added targets for building the bean.
+Updated the release names to b1.  Changed the name of the binary
+release for blend that denotes a Solaris release. (BS)
+
+12/3/97 (new feature) Added the Parser class, which is a direct port of
+the 8.1 parser. (BS)
+
+12/3/97 (new feature) java::new can initialize Java array objects.
+Added new ArrayObject command to manipulate Java array objects. (MH)
+
+12/15/97 (bug fix) Fixed a bug in Util.trimLeft().  If string " " was
+passed, the resulting string would still be " ". (BS)
+
+12/15/97 (new feature) added regexp package to binary release.  regex,
+regesub, switch -regexp, and lsearch -regesp now work in Jacl's binary
+release. (MH)
+
+12/17/97 (new feature) gets is now implemented in Jacl. (MH)
+
+12/17/97 (bug fix) cd command does tilde substitution now. (MH)
+
+12/17/97 (bug fix) On Windows, pwd returns directory names with
+forward slashes now. (MH)
+
+----------------- Released 1.0b1, 12/19/97 -----------------------
+
+1/5/98 (bug fix) On Windows, cd called with no argument changes to the
+env(HOME) directory. (MH)
+
+1/6/98 (bug fix) gets command checks for eof. (MH)
+
+1/13/98 (new feature) Added the java::isnull command as an easier way
+to test for null Java objects. (RJ)
+
+1/27/98 (bug fix) glob command now works on both unix and windows. (MH)
+
+1/27/98 (new feature) Added the PackageCmd, thanks to efforts by Moses
+DeJong to port command to Java. (BS)
+
+1/27/98 (bug fix) The TclToken class was caching the entire script in
+the getTokenString method.  I removed the cache alltogether, because
+it was only being called once per TclToken anyway. (BS)
+
+1/28/98 (new feature) Added new functionality to the Tcl Bean.  Ports
+can be created from Tcl.  The Studio Customizer can also be scripted
+from the Tcl Bean. (BS)
+
+1/28/98 (bug fix) Updated the Makefile.in to build the Tcl Bean and
+include it in the binary and source distributions. (BS)
+
+2/2/98 (bug fix) The Parser.logCommandInfo method was making an out of
+bounds array access. (BS)
+
+2/2/98 (new feature) Added the java::lock and java::unlock commands to
+preserve a Java Object even if the variable's internal rep is
+intermediately altered. (BS)
+
+2/3/98 (bug fix) The java::defineclass interface was changed.  If the
+className argument did not match the class name contained in the
+bytestream, the class was not loaded.  We removed the necessity to
+pass the className arg, removed anonymous classes (since they were not
+anon.) and are automatically inferring the name from the Class
+object. (BS)
+
+2/3/98 (bug fix) The java::load command now loads classes from jar
+files, if the jar file are on the -classpath or env(TCL_CLASSPATH)
+explicitly. (BS)
+
+2/3/98 (bug fix) The java::load command kept classes loaded even if
+all of the classes couldnt be resolved.  The correct behavior is to
+remove the class from the TclClassLoader's cache. (BS)
+
+2/7/98 (bug fix) Tcl Blend crashed intermittently on multiprocessor
+machines because the finalizer methods on Interp and CObject were
+running in a different thread than the rest of the Tcl library. (SS)
+
+2/9/98 (bug fix) Changed the public variable compCode to package
+protected, and added the public method getCompletionCode() to retrieve
+the current compCode. (BS)
+
+2/9/98 (new feature) The javaAPI.txt file was replaced with
+independent *.3 man pages.  All of the man pages have been converted
+to HTML, a are available in the doc/html subdirectory. (BS)
+
+2/10/98 (feature change) The milliseconds parameter in the
+TimerHandler constructor has been changed from "long" to "int", so
+that the API is compatible with Tcl 8.x.
+*** POTENTIAL INCOMPATIBILITY *** (IL)
+
+2/11/97 (bug fix) Added "BUILD_DIR=$(BUILD_DIR)" to the target for to
+the tclblendtest.exec rule so --src-dir works when running tests. (BS)
+
+2/18/98 (bug fix) Made the Shell class public. (BS)
+
+----------------- Released 1.0, 10/22/97 -----------------------
+Changes between TclBlend 1.0 and 1.0up1
+
+8/26/98 (bug fix)  Tcl8.1: Fixes for generic/javaInterp.c: In function
+`Java_tcl_lang_Interp_eval': generic/javaInterp.c:277: too few arguments to
+function `Tcl_EvalObj' TclBlend apparently has problems with the threading
+changes in Tcl8.1.  Apparently Tcl Blend has problems under Tcl8.1, but without
+this change it won't even compile. 
+*** POTENTIAL INCOMPATIBILITY *** (CXH)
+
+8/26/98 (Unix Makefile change) Uncommented install rule. Now we create
+a hard link from jtclsh to jwish.  Added rules to build green.purify,
+which is a Purified version of green. See
+http://ptolemy.eecs.berkeley.edu/~cxh/java/purify/index.html#PurifyJNITcl
+for details.  (CXH)
+
+8/26/98 (new feature) Added jwish and init.tcl 
+The init.tcl Tcl script sets the CLASSPATH properly.  init.tcl.in gets
+processed by configure, which creates init.tcl.  "make install" installs
+init.tcl.  jwish is a Bourne shell script which will start up a wish with
+tclBlend loaded in.  The key thing is that jwish sets the LD_LIBRARY_PATH or
+SHLIB_PATH.  jwish.in gets processed by configure, which creates jwish.  make
+install installs jwish  (CXH)
+
+8/26/98 (Unix Makefile change)  Added install-sh, copied from Tcl8.0 tree.
+
+8/26/98 (UNIX Makefile change)  Added rules to run Tcl Blend tests under Java
+Scope to generate test coverage info.  Currently, about 80% of the methods in
+common/tcl/lang are called by the test suite.  For a complete summary, see:
+http://ptolemy.eecs.berkeley.edu/~cxh/java/tclblend/js/coverage.html
+tclblendtest.exec rule: prepend the BUILD_DIR to auto_path so that we don't get
+an installed libtclblend.so instead of the one in BUILD_DIR. (CXH)
+
+8/26/98 (UNIX configure change) Fix a problem with missing backquotes in the
+lines that used uname.  Many thanks to Christian Krone for pointing this out.  (CXH)
+
+8/26/98 (test change)  JDK1.2 returns slightly different values for FuncSig-1.2
+and FunSig-1.3  (CXH)
+
+8/26/98 (new feature) JavaGetEnv(): #ifdefd for use with JDK1.2
+JavaGetEnv(): Added tclblend_init Tcl #variable which can be used to under
+JDK1.2 to set flags in the JVM while it is #being initialized.  (CXH)
+
+8/26/98 (new feature)  Provide more information when doing a package require
+on the java package. If you set "tclblend_init" to "help" before doing the
+package require, you will get more feedback.  Note that tclblend_init does not
+do anything under JDK1.x  (CXH)
+
+8/26/98 (new feature) appendClasspathMessage(): new function that adds info
+about the CLASSPATH to the Tcl result.* (CXH)
+
+8/26/98 (bug fix) Java_tcl_lang_IdleHandler_cancelIdleCall(): #ifdef for JDK1_2
+#to fix Java segfault in tests/native/javaIdle.c (CXH)
+
+8/26/98 (Window Makefile change) Use $(jar) instead of jar.  Don't call jar
+with the v flag, it causes too much clutter.  (CXH)
+
+8/26/98 (Window Makefile change) Added support for JDK1.2: JDKVERSION variable
+is set to 1.1 or 1.2 JAVALIB is changed according to the JDKVERSION Added
+install rule clean rule removed .class .pdb and .pch files Use / for cl and
+link flags instead of -  (CXH)
+
+8/26/98 (Window Makefile change)  Moved pyramid demos to JAVA_DEMO_CLASSES as
+the demo/pyramid directory is not shipped with Tcl Blend (CXH)
+
+8/26/98 (pkgIndex change)  Added ::java::jdkVersion variable that is set to the
+version of the runntime JDK.  Added ::java::patchLevel variable, currently set
+to 1.0up2  (CXH)
+
+8/26/98 (pkgIndex change)  Expand the pathname in case it is something like
+c:/Progra~1/Tcl/lib/tclblend1.0 Without this expansion we have problems loading
+tclblend.dll  (CXH))
+
+8/26/98 (new feature) New tcl command for Tcl Blend and Jacl:  java::cast.
+The command casts the type of object "s" to the class Object.  It does not
+change the type of the ref of "s" it simply makes a new reflected object with
+the Object type and the instance "s".  This command is just a tcl binding to
+the standard casting functionality in the Java language. (MD)
+
+8/26/98 (new feature) All objects are typed and arrays keep track of the types
+in the array.  If old code did something that violates the JavaLangSpec then
+it could break the users code.
+*** POTENTIAL INCOMPATIBILITY *** (MD)
+
+8/26/98 (new feature) Added tcl command "file nativename" to Jacl. (MD)
+
+8/26/98 (new feature) The java object representation has been changed (in
+ReflectObject.java) so that it holds the type of the object as well as the
+Object ref.
+*** POTENTIAL INCOMPATIBILITY *** (MD)
+
+8/26/98 (new feature) The Parser classes (Parser ParseAdaptor TclParse ...)
+were changed to remove allocation of CharPointer objects as well as TclToken
+objects.  The parser is now much faster and less memory hungry. (MD)
+
+9/21/98 (renamed file) changes is now changes.txt (CXH)
+
+9/21/98 (jdk1.2beta4 port) java.h now defines TCLBLEND_EXTERN.  See tcl.h
+for more information.  We now use TCLBLEND_EXTERN everywhere. (CXH)
+
+9/21/98 (bug fix) src/native/javaCmd.c now has trailing NULLs in
+Tcl_AppendResults calls (CXH)
+
+9/21/98 (bug fix) src/native/javaCmd.c JavaSetupJava() now prints more
+information if a class cannot be found (CXH)
+
+9/21/98 (comment) src/native/javaNotifier.c: Added comment about 
+what causes crashes near the comment. (CXH)
+
+9/21/98 (version number) BlendExtension.java, pkgIndex.tcl: Changed 
+version number from 1.1.1 to 1.1 and set java::PatchLevel to 1.1a1. (CXH)
+
+9/21/98 (error message) TclClassLoader.java: If we attempt to load
+a package that starts with tcl or java, we throw a security exception.
+Now we include a detail message that describes why.
+
+9/21/98 (error message) JavaLoadCmd.java: if we get a security exception,
+print the detail message. (CXH)
+
+9/21/98 (file reorganization) moved win/pkgIndex.tcl to
+src/pkgIndex.tcl.  Removed unix/pkgIndex.tcl. Modified makefiles. (CXH)
+
+9/21/98 (file reorganization) makefile.vc no longer uses version numbers
+in directory above javalock.tcl (CXH) 
+
+9/23/98 (bug fix) pkgIndex.tcl needs to find both tclblend.jar
+and tcljava.jar (CXH)
+
+9/23/98 (bug fix) Removed Control-Ms from java.h (CXH)
+
+9/23/98 (enhancement) If the java package cannot be found, the
+test/defs file prints $errorInfo (CXH)
+
+9/23/98 (bug fix) unix/Makefile now supports configure --srcdir.
+Fixed code coverage rules, removed Control-Ms (CXH)
+
+9/23/98 (bug fix) unix/jwish.tcl no longer sources init.tcl,
+instead it just does package require java.  Removed init.tcl.in (CXH)
+
+9/29/98 (file reorganization) Created 
+src/tests/{invoke,exec,javainfo,signature,tcl} directories and moved 
+tests into them so that they are in directories that match
+their package names.  Modified makefiles. (CXH)
+
+9/29/98 (feature modification) Formerly, pkgindex.tcl would
+throw an error if it found two tclblend.jar or tcljava.jar files.
+Now it prints a warning message that includes the names of the two
+files. (CXH)
+
+9/30/98 (test suite) JavaLoadCmd.test: Updated tests that load tcl.xxx
+classes which expect a SecurityException.  The message had changed on
+9/21. (CXH)
+
+9/30/98 (bug fix) Under Tcl Blend, some of the Signature tests
+were failing.  The fix was to comment out a section of code
+that is caching internal reps in src/tcljava/tcl/lang/FuncSig.java (MD)
+
+9/30/98 (porting) unix/configure.in now sets JAVA_CLASSPATH properly
+for JDK1.2beta4 (CXH)
+
+10/4/98 (test suite) tests/javaload should not be in the CLASSPATH.
+If it is, we never test the Tcl Java loader because the primordial
+Java loader find the test files.  All the test .class files end up
+under the tests directory. (CXH)
+
+10/4/98 (dist rules) Updated rules that make distributions, added a
+rule that builds a combined Jacl and Tcl Blend distribution called 
+tcljava1.1a1.  tcljava1.1a1 is probably of little use to most users,
+it is primarily for people interested in rereleasing Jacl and Tcl
+Blend. (CXH)
+
+10/8/98 (jacl tests) Don't ship the exec tests with Tcl Blend.
+TimerHandlerTest.java,VarTraceTest.java,IdleHandlerTest.java,
+TestObjectCmd.java should only be shipped with Tcl Blend.
+TestgetplatformCmd.java and NonPublic.java are junk and should not
+be shipped.
+
+10/8/98 (jacl regular expressions) Pulled class files out of ORO inc
+regular expression code so we can ship them. (MD) 
+
+10/9/98 (configure) Properly handle configuring both Jacl and Tcl Blend
+at the same time. (MD)

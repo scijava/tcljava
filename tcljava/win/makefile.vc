@@ -1,0 +1,563 @@
+# Windows makefile for tclblend and jacl
+# the tclblend target requires Visual C++
+#
+# Copyright (c) 1998 by Mo DeJong
+
+# Modify the settings below to match your system
+#
+# ROOT_DIR       -  Full path for root directory of the whole dist (ie ..)
+# TOOLS32	 -  The location of the VC++ 32-bit development tools.
+# JAVA_DIR	 -  The location of the JDK top directory.
+# TCL		 -  The location of the Tcl binary installation.
+#
+# STUDIO_LIB_DIR -  The location of the JavaStudio class files.
+#                   (you only need this if building the studio bean)
+
+# LIB_INSTALL_DIR - The directory to install tclblend.dll.  Usually
+#                   This directory is under the tcl\lib directory
+
+# Root directory of the distribution
+ROOT_DIR	= c:\users\cxh\java\tb\tclBlend1.1a1
+#ROOT_DIR	= G:\mo\software\test_tcl\src\tclBlend1.1a1
+
+TOOLS32		= c:\Progra~1\DevStudio\Vc
+#TOOLS32	= G:\mo\software\msdev
+
+# JDK1.1 users should uncomment this section
+JAVA_DIR	= C:\jdk1.1.6
+#JAVA_DIR	= G:\mo\software\java\jdk1.1.6
+JAVA_VERSION	= 1.1
+JAVA_CLASSPATH	= $(JAVA_DIR)\lib\classes.zip;.
+
+# JDK1.2 users should uncomment this section
+#JAVA_DIR	= C:\jdk1.2beta4
+#JAVA_DIR	= G:\mo\software\java\jdk1.1.2b4
+#JAVA_VERSION	= 1.2
+#JAVA_CLASSPATH	= $(JAVA_DIR)\lib\tools.jar;$(JAVA_DIR)\jre\lib\rt.jar;.
+
+# Tcl version info needed by the rest of the scripts
+TCL_DOTVERSION	= 8.0.3
+#TCL_DOTVERSION	= 8.0
+TCL_VERSION	= 80
+
+
+TCL_DIR		= c:\progra~1\tcl
+#TCL_DIR	= G:\mo\software\test_tcl
+# If you are compiling from the Tcl Blast 8.0.3 cd, then uncomment these lines
+TCLSH		= tclsh80.exe
+TCLLIB		= $(TCL_DIR)\lib\tcl$(TCL_VERSION)VC.LIB
+
+TCL_SRC		= ..\..\tcl$(TCL_DOTVERSION)
+STUDIO_LIB_DIR	= c:\JavaStudio1.0\JS\classes.zip
+
+TCLBLEND_VERSION = 1.1
+TCLBLEND_PATCHLEVEL = a1
+
+# Specify which system to build.  (either jacl or tclblend)
+TCLJAVA		= tclblend
+
+# Comment the following line to compile with symbols (java and C symbols)
+NODEBUG=1
+
+# uncomment the following line to compile with TCL_MEM_DEBUG
+#DEBUGDEFINES	=-DTCL_MEM_DEBUG
+
+# Set this to the appropriate value of /MACHINE: for your platform
+MACHINE	= IX86
+
+
+######################################################################
+# You should not have to modify below here
+######################################################################
+
+
+TCL_LIB_INSTALL_DIR 	= $(TCL_DIR)\lib
+TCL_BIN_INSTALL_DIR 	= $(TCL_DIR)\bin
+
+TOP_DIR			= ..
+JAVA_INC_DIR		= $(JAVA_DIR)\include
+JAVA_BIN_DIR		= $(JAVA_DIR)\bin
+JAVA_LIB_DIR		= $(JAVA_DIR)\lib
+
+
+# Location of java, javac, and javah
+JAVA			= $(JAVA_BIN_DIR)\java
+JAVAC			= $(JAVA_BIN_DIR)\javac
+JAVAH			= $(JAVA_BIN_DIR)\javah
+JAR			= $(JAVA_BIN_DIR)\jar
+JAVA_FLAGS		=
+JAR_FLAGS		= -cf0
+
+
+
+!IFDEF NODEBUG
+JAVAC_FLAGS		= -O
+TMPDIRNAME		= \Release
+DBGX			=	
+!ELSE
+JAVAC_FLAGS		= -g
+TMPDIRNAME		= \Debug
+DBGX			= d
+!ENDIF
+
+
+# If you compile 8.0.3 from scratch, then executables in a sub dir of win.
+# If you use the prebuilt libs from the Tcl Blast CD, the library
+# is in c:\Program Files\Tcl\lib
+
+!IF "$(TCL_DOTVERSION)" == "8.0"
+TMPDIRNAME	=
+DBGX		=
+!ENDIF
+
+!IF "$(TCLLIB)"  == ""
+TCLSH   = $(TCL_SRC)\win$(TMPDIRNAME)\tclsh$(TCL_VERSION)$(DBGX).exe
+TCLLIB	= $(TCL_SRC)\win$(TMPDIRNAME)\tcl$(TCL_VERSION)$(DBGX).lib
+!ENDIF
+
+TOOLS_DIR		= $(ROOT_DIR)\tools
+DOC_DIR			= $(ROOT_DIR)\doc
+WIN_DIR			= $(ROOT_DIR)\win
+SRC_DIR			= $(ROOT_DIR)\src
+TCLBLEND_SRC_DIR	= $(ROOT_DIR)\src\tclblend
+JACL_SRC_DIR		= $(ROOT_DIR)\src\jacl
+TCLJAVA_SRC_DIR		= $(ROOT_DIR)\src\tcljava
+NATIVE_SRC_DIR		= $(ROOT_DIR)\src\native
+SWITCHED_SRC_DIR	= $(ROOT_DIR)\src\$(TCLJAVA)
+DEMO_SRC_DIR		= $(ROOT_DIR)\demos
+TEST_SRC_DIR		= $(ROOT_DIR)\src\tests
+CLASS_DIR		= $(WIN_DIR)
+TEST_CLASS_DIR		= $(CLASS_DIR)\tests
+
+
+
+TCLBLEND_CLASSPATH	= "$(TCLJAVA_SRC_DIR);$(TCLBLEND_SRC_DIR);$(JAVA_CLASSPATH)"
+JACL_CLASSPATH		= "$(TCLJAVA_SRC_DIR);$(JACL_SRC_DIR);$(JAVA_CLASSPATH)"
+TCLJAVA_CLASSPATH	= "$(TCLJAVA_SRC_DIR);$(SWITCHED_SRC_DIR);$(JAVA_CLASSPATH)"
+BEAN_CLASSPATH		= "$(STUDIO_LIB_DIR)"
+
+DEMO_CLASSPATH		= "$(CLASS_DIR)\$(TCLJAVA).jar;$(CLASS_DIR)\tcljava.jar;$(JAVA_CLASSPATH)"
+
+# Don't add the javaload directory to TEST_CLASSPATH.   The point
+# of the javaload tests is to test out the tcljava loader, which is
+# run after the primoridial java loader fails to find a class.
+# If you add javaload to TEST_CLASSPATH, then the primordial java loader
+# will find the classes, and the tcljava loader will not be tested.
+TEST_CLASSPATH		= ".;$(TEST_CLASS_DIR);$(CLASS_DIR)\$(TCLJAVA).jar;$(CLASS_DIR)\tcljava.jar;$(JAVA_CLASSPATH)"
+
+
+
+#----------------------------------------------------------------
+# Rules that are commonly called
+#----------------------------------------------------------------
+
+# Default is to build whatever is specified by the
+# TCLJAVA variable (jacl or tclblend).
+all: $(TCLJAVA) tcljava test_$(TCLJAVA).build
+
+test: test_$(TCLJAVA).exec
+
+clean: 	clean_bean clean_$(TCLJAVA) clean_tcljava clean_demo \
+	clean_test clean_temp
+
+#----------------------------------------------------------------
+# Build tests
+#----------------------------------------------------------------
+COMMON_TCL_LANG_TESTS = \
+	$(TEST_SRC_DIR)\tcl\lang\AdaptorGenTest.java \
+	$(TEST_SRC_DIR)\tcl\lang\JtestCmd.java \
+	$(TEST_SRC_DIR)\tcl\lang\NoEventBean.java \
+	$(TEST_SRC_DIR)\tcl\lang\TclPkgInvoker.java \
+	$(TEST_SRC_DIR)\tcl\lang\TestcompcodeCmd.java \
+	$(TEST_SRC_DIR)\tcl\lang\TestEvent.java \
+	$(TEST_SRC_DIR)\tcl\lang\Tester1Event.java \
+	$(TEST_SRC_DIR)\tcl\lang\Tester1Listener.java \
+	$(TEST_SRC_DIR)\tcl\lang\Tester2Event.java \
+	$(TEST_SRC_DIR)\tcl\lang\Tester2Listener.java \
+	$(TEST_SRC_DIR)\tcl\lang\TesterBean.java \
+
+JACL_TCL_LANG_TESTS = \
+	$(TEST_SRC_DIR)\tcl\lang\JavaTestExtension.java \
+	$(TEST_SRC_DIR)\tcl\lang\TestEval2Cmd.java \
+	$(TEST_SRC_DIR)\tcl\lang\TestEvalObjvCmd.java \
+	$(TEST_SRC_DIR)\tcl\lang\TestsetplatformCmd.java \
+	$(TEST_SRC_DIR)\tcl\lang\TesttranslatefilenameCmd.java \
+	$(TEST_SRC_DIR)\tcl\lang\TestParserCmd.java \
+	$(TEST_SRC_DIR)\tcl\lang\TestParsevarCmd.java \
+	$(TEST_SRC_DIR)\tcl\lang\TestParsevarnameCmd.java \
+
+BLEND_TCL_LANG_TESTS = \
+	$(TEST_SRC_DIR)\tcl\lang\NativeTestExtension.java \
+
+test_jacl.build: test.build
+	cd $(TEST_SRC_DIR)
+	$(JAVAC) $(JAVAC_FLAGS) -classpath $(TEST_CLASSPATH) \
+		-d $(TEST_CLASS_DIR) $(JACL_TCL_LANG_TESTS) \
+		tests\exec\*.java
+
+test_tclblend.build: test.build
+
+test.build: clean_test
+	-mkdir $(TEST_CLASS_DIR)
+	cd $(TEST_SRC_DIR)
+	$(JAVAC) $(JAVAC_FLAGS) -classpath $(TEST_CLASSPATH) \
+		-d $(TEST_CLASS_DIR) \
+		pkg1\*.java pkg2\*.java \
+		tcl\lang\*.java tests\*.java tests\invoke\*.java \
+		tests\javainfo\*.java tests\signature\*.java
+	-mkdir $(TEST_CLASS_DIR)\javaload
+	$(JAVAC) $(JAVAC_FLAGS) -classpath $(TEST_CLASSPATH) \
+		-d $(TEST_CLASS_DIR)\javaload \
+		javaload\*.java
+	cd $(TEST_CLASS_DIR)\javaload
+	$(JAR) $(JAR_FLAGS) test9.jar Test9Extension.class
+	-@del Test9Extension.class;
+	$(JAR) $(JAR_FLAGS) test10.jar Test10Extension.class
+	-@del Test10Extension.class
+
+clean_bean:
+	-@del $(CLASS_DIR)\tclbean 2> NUL
+
+clean_tclblend: clean_temp
+	-@del javaNative.h 2> NUL
+	del $(TCLBLEND_SRC_DIR)\tcl\lang\*.class 2> NUL
+
+clean_jacl:
+	del $(JACL_SRC_DIR)\tcl\lang\*.class 2> NUL
+
+clean_tcljava:
+	del $(TCLJAVA_SRC_DIR)\tcl\lang\*.class 2> NUL
+	-del $(TCLJAVA_SRC_DIR)\tcl\lang\reflect\*.class 2> NUL
+
+clean_demo: 
+	-del $(DEMO_SRC_DIR)\*\*.class 2> NUL
+
+clean_test:
+	-rd /S /Q $(TEST_CLASS_DIR)/tests 2> NUL
+	-rd /S /Q $(TEST_CLASS_DIR)/pkg1 2> NUL
+	-rd /S /Q $(TEST_CLASS_DIR)/pkg2 2> NUL
+	-rd /S /Q $(TEST_CLASS_DIR)/tcl 2> NUL
+
+distclean: clean
+
+clean_temp:
+	-@cd $(CLASS_DIR)
+	-@del pkgIndex.tcl jwish.tcl 2> NUL
+	-@del *.class 2> NUL
+	del   *.jar 2> NUL
+	-@del *.exp 2> NUL
+	-@del *.lib 2> NUL
+	del   *.dll 2> NUL
+	del   *.exe 2> NUL
+        del   *.obj 2> NUL
+        -@del *.res 2> NUL
+        -@del *.class 2> NUL
+        -@del *.pdb 2> NUL
+        -@del *.pch 2> NUL
+
+
+
+install: install_$(TCLJAVA) install_tcljava
+
+
+#----------------------------------------------------------------------
+# Running the Tcl Blend test suite
+#----------------------------------------------------------------------
+
+# Note that if TCLSH is an absolute path, then under JDK1.2beta4
+# your are likely to get a crash.  Instead, set TCLSH = tclsh80.exe
+test_tclblend.exec:
+	cd $(WIN_DIR)
+	copy $(SRC_DIR)\pkgIndex.tcl .
+	copy $(SRC_DIR)\jwish.tcl .
+	set CLASSPATH=$(TEST_CLASSPATH)
+	set PATH=$(WIN_DIR);$(PATH)
+	$(TCLSH) <<
+		puts "pwd is [pwd]"
+		puts "CLASSPATH is [set env(CLASSPATH)]"
+		lappend auto_path [pwd]
+		cd ../tests
+		source all
+<<
+
+
+#----------------------------------------------------------------------
+# Running the Jacl test suite
+#----------------------------------------------------------------------
+
+test_jacl.exec:
+	cd $(WIN_DIR)
+	set CLASSPATH=$(TEST_CLASSPATH)
+	$(JAVA) $(JAVA_FLAGS) tcl.lang.Shell <<
+		puts "pwd is [pwd]"
+		puts "CLASSPATH is [set env(CLASSPATH)]"
+		lappend auto_path [pwd]
+		cd ../tests
+		source all
+<<
+
+
+
+
+
+#----------------------------------------------------------------
+# Build rules for the Demos
+#----------------------------------------------------------------
+
+demos: demos.build
+
+demos.build:
+	cd $(DEMO_SRC_DIR)\simplepkg
+	$(JAVAC) $(JAVAC_FLAGS) -classpath $(DEMO_CLASSPATH) *.java
+	cd $(DEMO_SRC_DIR)\watchpkg
+	$(JAVAC) $(JAVAC_FLAGS) -classpath $(DEMO_CLASSPATH) *.java
+	cd $(DEMO_SRC_DIR)\gluepkg
+	$(JAVAC) $(JAVAC_FLAGS) -classpath $(DEMO_CLASSPATH) *.java
+	cd $(DEMO_SRC_DIR)\pyramidpkg
+	$(JAVAC) $(JAVAC_FLAGS) -classpath $(DEMO_CLASSPATH) *.java
+
+
+
+
+#----------------------------------------------------------------
+# Tcl Bean
+#----------------------------------------------------------------
+
+bean: bean.jar
+
+bean.build:
+	cd $(TCLJAVA_SRC_DIR)
+	$(JAVAC) $(JAVAC_FLAGS) tcl\bean\*.java
+
+bean.jar: bean.build
+	cd $(TCLJAVA_SRC_DIR)
+	$(JAR) $(JAR_FLAGS)m $(CLASS_DIR)\tclbean.jar \
+		tcl\bean\bean.manifest tcl\bean\*.class \
+		tcl\bean\scripts tcl\bean\images tcl\bean\html
+
+
+
+
+
+#-------------------------------------------------------------------
+# Build rules for the tcljava package
+#-------------------------------------------------------------------
+
+tcljava: tcljava.build tcljava.jar
+
+tcljava.build:
+	cd $(TCLJAVA_SRC_DIR)
+	$(JAVAC) $(JAVAC_FLAGS) -classpath $(TCLJAVA_CLASSPATH) \
+		tcl\lang\*.java tcl\lang\reflect\*.java
+
+tcljava.jar:
+	cd $(TCLJAVA_SRC_DIR)
+	$(JAR) $(JAR_FLAGS) $(CLASS_DIR)\tcljava.jar tcl\lang\*.class \
+		tcl\lang\reflect\*.class tcl\lang\library
+
+install_tcljava:
+	echo "Installing tcljava.jar in $(TCL_LIB_INSTALL_DIR)"
+	copy $(CLASS_DIR)\tcljava.jar $(TCL_LIB_INSTALL_DIR)
+
+
+
+#-------------------------------------------------------------------
+# Build rules for the jacl package
+#-------------------------------------------------------------------
+
+jacl: jacl.build jacl.jar
+
+jacl.build:
+	cd $(JACL_SRC_DIR)
+	$(JAVAC) $(JAVAC_FLAGS) -classpath $(JACL_CLASSPATH) \
+		tcl\lang\*.java tcl\regex\*.java
+
+jacl.jar:
+	cd $(JACL_SRC_DIR)
+	$(JAR) $(JAR_FLAGS) $(CLASS_DIR)\jacl.jar tcl\lang\*.class \
+		tcl\lang\library tcl\regex\*.class com
+
+install_jacl:
+	-mkdir $(TCL_LIB_INSTALL_DIR)
+	echo "Installing jacl.jar in $(TCL_LIB_INSTALL_DIR)"
+	copy $(CLASS_DIR)\jacl.jar $(TCL_LIB_INSTALL_DIR)
+	echo "Installing jaclsh.bat in $(TCL_BIN_INSTALL_DIR)"
+	copy $(CLASS_DIR)\jaclsh.bat $(TCL_BIN_INSTALL_DIR)
+
+
+
+#-------------------------------------------------------------------
+# Build rules for the tclblend package
+#-------------------------------------------------------------------
+
+tclblend: tclblend.classes tclblend.lib tclblend.jar
+
+
+tclblend.classes:
+	cd $(TCLBLEND_SRC_DIR)
+	$(JAVAC) $(JAVAC_FLAGS) -classpath $(TCLBLEND_CLASSPATH) \
+		tcl\lang\*.java
+
+tclblend.jar:
+	cd $(TCLBLEND_SRC_DIR)
+	$(JAR) $(JAR_FLAGS) $(CLASS_DIR)\tclblend.jar tcl\lang\*.class
+
+
+install_tclblend:
+	-@mkdir $(TCL_LIB_INSTALL_DIR)
+	-@echo Installing tclblend.dll in $(TCL_BIN_INSTALL_DIR)
+	-@copy $(CLASS_DIR)\tclblend.dll $(TCL_BIN_INSTALL_DIR)
+	-@echo Installing tclblend.jar in $(TCL_LIB_INSTALL_DIR)
+	-@copy $(CLASS_DIR)\tclblend.jar $(TCL_LIB_INSTALL_DIR)
+	-@mkdir $(TCL_LIB_INSTALL_DIR)\tclblend
+	-@echo Installing pkgIndex.tcl in $(TCL_LIB_INSTALL_DIR)\tclblend
+	-@copy $(SRC_DIR)\pkgIndex.tcl $(TCL_LIB_INSTALL_DIR)\tclblend
+
+
+TCLBLEND_OBJS = \
+	$(WIN_DIR)\javaCmd.obj \
+	$(WIN_DIR)\javaIdle.obj \
+	$(WIN_DIR)\javaInterp.obj \
+	$(WIN_DIR)\javaNotifier.obj \
+	$(WIN_DIR)\javaObj.obj \
+	$(WIN_DIR)\javaList.obj \
+	$(WIN_DIR)\javaTimer.obj \
+	$(WIN_DIR)\javaUtil.obj \
+	$(WIN_DIR)\tclResult.obj \
+	$(WIN_DIR)\winNotifier.obj
+
+
+TCLBLEND_CLASS_NAMES = \
+	tcl.lang.CObject \
+	tcl.lang.IdleHandler \
+	tcl.lang.Interp \
+	tcl.lang.Notifier \
+	tcl.lang.TclList \
+	tcl.lang.TimerHandler \
+	tcl.lang.Util
+
+
+cc32		= $(TOOLS32)\bin\cl.exe
+link32		= $(TOOLS32)\bin\link.exe
+include32	= -I$(TOOLS32)\include
+
+INCLUDES	= -I$(TCL_DIR)\include -I$(TCL_SRC)\generic -I$(WIN_DIR)  \
+		  -I$(NATIVE_SRC_DIR) -I$(JAVA_DIR)\include -I$(JAVA_DIR)\include\win32 
+DEFINES		= $(DEBUGDEFINES) -DWIN32 -D_WIN32 -D_MT -D_DLL
+
+CFLAGS		= $(cdebug) $(cflags) $(include32) $(INCLUDES) $(DEFINES) 
+
+
+
+
+#----------------------------------------------------------------------
+# Tcl Blend link flags
+#----------------------------------------------------------------------
+
+!IFDEF NODEBUG
+ldebug = /RELEASE
+!ELSE
+ldebug = /debug:full /debugtype:cv
+!ENDIF
+
+# declarations common to all linker options
+lcommon = /NODEFAULTLIB /RELEASE /NOLOGO
+
+# declarations for use on Intel i386, i486, and Pentium systems
+!IF "$(MACHINE)" == "IX86"
+DLLENTRY = @12
+lflags   = $(lcommon) /align:0x1000 /MACHINE:$(MACHINE)
+!ELSE
+lflags   = $(lcommon) /MACHINE:$(MACHINE)
+!ENDIF
+
+conlflags = $(lflags) /subsystem:console /entry:mainCRTStartup
+guilflags = $(lflags) /subsystem:windows /entry:WinMainCRTStartup
+dlllflags = $(lflags) /entry:_DllMainCRTStartup$(DLLENTRY) /dll
+
+!IF "$(MACHINE)" == "PPC"
+libc = libc.lib
+libcdll = crtdll.lib
+!ELSE
+libc = libc.lib oldnames.lib
+libcdll = msvcrt.lib oldnames.lib
+!ENDIF
+
+baselibs   = kernel32.lib $(optlibs) advapi32.lib
+winlibs    = $(baselibs) user32.lib gdi32.lib comdlg32.lib winspool.lib
+guilibs	   = $(libc) $(winlibs)
+
+guilibsdll = $(libcdll) $(winlibs)
+
+#----------------------------------------------------------------------
+# Tcl Blend compile flags
+#----------------------------------------------------------------------
+
+!IFDEF NODEBUG
+cdebug =
+!ELSE
+#cdebug = /Z7 /Od /WX
+cdebug = /Z7 /Od
+!ENDIF
+
+# declarations common to all compiler options
+ccommon = /c /W3 /nologo /YX
+
+!IF "$(MACHINE)" == "IX86"
+cflags = $(ccommon) /D_X86_=1
+!ELSE
+!IF "$(MACHINE)" == "MIPS"
+cflags = $(ccommon) /D_MIPS_=1
+!ELSE
+!IF "$(MACHINE)" == "PPC"
+cflags = $(ccommon) /D_PPC_=1
+!ELSE
+!IF "$(MACHINE)" == "ALPHA"
+cflags = $(ccommon) /D_ALPHA_=1
+!ENDIF
+!ENDIF
+!ENDIF
+!ENDIF
+
+
+
+
+#----------------------------------------------------------------------
+# Building the Tcl Blend library.
+#----------------------------------------------------------------------
+
+tclblend.lib: tclblend.dll
+
+!IF "$(JAVA_VERSION)" == "1.1"
+JAVA_LIB = 	$(JAVA_LIB_DIR)\javai.lib
+!ELSE
+JAVA_LIB = 	$(JAVA_LIB_DIR)\jvm.lib
+!ENDIF
+
+tclblend.dll: $(TCLBLEND_OBJS)
+	-@cd $(WIN_DIR)
+	set LIB=$(TOOLS32)\lib
+        $(link32) $(ldebug) $(dlllflags) /out:$@ $(TCLLIB) \
+		$(JAVA_LIB) $(guilibsdll) @<<
+			$(TCLBLEND_OBJS)
+<<
+
+$(TCLBLEND_OBJS): $(WIN_DIR)\javaNative.h
+
+$(WIN_DIR)\javaNative.h:
+	-@del $(WIN_DIR)\javaNative.h
+	$(JAVAH) -classpath $(TCLBLEND_CLASSPATH) -jni \
+		-o $(WIN_DIR)\javaNative.h $(TCLBLEND_CLASS_NAMES)
+
+
+#----------------------------------------------------------------------
+# Tcl Blend implicit targets
+#----------------------------------------------------------------------
+
+{$(NATIVE_SRC_DIR)}.c{$(WIN_DIR)}.obj:
+	-@cd $(WIN_DIR)
+	$(cc32) $(CFLAGS) /Fo$(WIN_DIR)\ $<
+
+{$(WIN_DIR)}.c{$(WIN_DIR)}.obj:
+	-@cd $(WIN_DIR)
+	$(cc32) $(CFLAGS) /Fo$(WIN_DIR)\ $<

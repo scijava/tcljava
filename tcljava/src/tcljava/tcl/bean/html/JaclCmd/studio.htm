@@ -1,0 +1,287 @@
+<HTML><HEAD><TITLE>Tcl Bean Commands - Studio manual page</TITLE></HEAD><BODY TEXT="#000000" BGCOLOR="#FFFFFF" LINK="#0000EE" VLINK="#551A8B" ALINK="#FF0000">
+<DL>
+<DD><A HREF="studio.htm#M2" NAME="L60">NAME</A>
+<DL><DD>studio - Tcl Bean method invocation package for Java Studio.</DL>
+<DD><A HREF="studio.htm#M3" NAME="L61">SYNOPSIS</A>
+<DL>
+<DD><B>studio::port </B><I>portType varName</I> ?<I>options</I>?
+<DD><B>studio::bind </B><I>varName script</I>
+</DL>
+<DD><A HREF="studio.htm#M4" NAME="L62">DESCRIPTION</A>
+<DD><A HREF="studio.htm#M5" NAME="L63">COMMANDS</A>
+<DL>
+<DD><A HREF="studio.htm#M6" NAME="L64"><B>studio::port</B> <I>portType varName</I> ?<I>options</I>?</A>
+<DL>
+<DD><A HREF="studio.htm#M7" NAME="L65"><B>-portname</B> <I>name</I></A>
+<DD><A HREF="studio.htm#M8" NAME="L66"><B>-transfer</B> <I>messageType</I></A>
+<DL>
+<DD><A HREF="studio.htm#M9" NAME="L67">In ports:</A>
+<DD><A HREF="studio.htm#M10" NAME="L68">Out ports:</A>
+<DD><A HREF="studio.htm#M11" NAME="L69">Twoway ports:</A>
+</DL>
+<DD><A HREF="studio.htm#M12" NAME="L70"><B>-location</B> <I>locStr</I></A>
+<DD><A HREF="studio.htm#M13" NAME="L71"><B>-description</B> <I>descStr</I></A>
+</DL>
+<DD><A HREF="studio.htm#M14" NAME="L72"><B>studio::bind</B> <I>varName</I> ?<I>script</I>?</A>
+</DL>
+<DD><A HREF="studio.htm#M15" NAME="L73">TRANSFER TYPES</A>
+<DL>
+<DD><A HREF="studio.htm#M16" NAME="L74"><B>doubleToBasic</B> (Out)</A>
+<DD><A HREF="studio.htm#M17" NAME="L75"><B>floatToBasic</B> (Out)</A>
+<DD><A HREF="studio.htm#M18" NAME="L76"><B>integerToBasic</B> (Out)</A>
+<DD><A HREF="studio.htm#M19" NAME="L77"><B>longToBasic</B> (Out)</A>
+<DD><A HREF="studio.htm#M20" NAME="L78"><B>booleanToBasic</B> (Out)</A>
+<DD><A HREF="studio.htm#M21" NAME="L79"><B>stringToBasic</B> (Out)</A>
+<DD><A HREF="studio.htm#M22" NAME="L80"><B>basicTo</B>&lt;<B>suffix</B>&gt; (In)</A>
+<DD><A HREF="studio.htm#M23" NAME="L81"><B>numberTo</B>&lt;<B>suffix</B>&gt; (In)</A>
+<DD><A HREF="studio.htm#M24" NAME="L82"><B>trigger</B> (In)</A>
+<DD><A HREF="studio.htm#M25" NAME="L83"><B>object</B> (In or Out)</A>
+<DD><A HREF="studio.htm#M26" NAME="L84"><B>dynamic</B> (In or Out)</A>
+</DL>
+<DD><A HREF="studio.htm#M27" NAME="L85">LOCATION OPTIONS</A>
+<DD><A HREF="studio.htm#M28" NAME="L86">TRACES</A>
+<DD><A HREF="studio.htm#M29" NAME="L87">EXAMPLE</A>
+<DD><A HREF="studio.htm#M30" NAME="L88">SEE ALSO</A>
+<DD><A HREF="studio.htm#M31" NAME="L89">KEYWORDS</A>
+</DL><HR>
+<H3><A NAME="M2">NAME</A></H3>
+studio - Tcl Bean method invocation package for Java Studio.
+<H3><A NAME="M3">SYNOPSIS</A></H3>
+<B>studio::port </B><I>portType varName</I> ?<I>options</I>?<BR>
+<B>studio::bind </B><I>varName script</I><BR>
+<H3><A NAME="M4">DESCRIPTION</A></H3>
+The <B>studio</B> package provides an interface to access Java Studio
+functionality from the Tcl Bean.  Java Studio is a graphical
+development environment for gluing together Java Beans in order to
+create applets, applications or other compound Java Beans.  Java
+Studio uses &quot;ports&quot; to graphically represent Java Bean
+events.  Ports send events, called &quot;messages&quot;, to another port that
+has been &quot;wired&quot; together in the Java Studio Design Environment.  The
+Tcl Bean is a Java Bean built for Java Studio, and uses the
+<B>studio</B> package to create ports and generate messages.
+<P>
+Three types of ports can be created in Java Studio.  &quot;Out ports&quot; are
+responsible for sending messages to other components.  &quot;In ports&quot;
+receive the messages and perform actions defined by the component
+creator or user.  &quot;Twoway ports&quot; combine the functionality of In ports
+and Out ports.  In the rest of this document, the term &quot;In port&quot;
+refers to any port that can receive messages; that is, both a Twoway
+port and an In port.  Similarly, &quot;Out port&quot; refers to both Twoway ports
+and Out ports.
+<P>
+The Tcl Bean binds the sending and receiving of messages to Java
+Studio ports via the Tcl trace facility.  Every port created with
+the <B>studio</B> package has a Tcl variable, <I>varName</I>, associated
+with it.  Traces are placed on <I>varName</I> that evaluate scripts or
+send messages whenever the variable's value is set.  See the section
+on TRACES for more detail.
+<H3><A NAME="M5">COMMANDS</A></H3>
+<P>
+<DL>
+<P><DT><A NAME="M6"><B>studio::port</B> <I>portType varName</I> ?<I>options</I>?</A><DD>
+Create a Java Studio port of type <I>portType</I> to be accessed by
+the variable <I>varName</I>.  <I>PortType</I> must be one of the
+following values: <B>in, out</B> or
+<B>twoway</B>.  Out ports automatically send a message whenever
+<I>varName</I> is written.  The value of the message sent is the value
+of <I>varName</I>.  In ports do not implicitly respond to the message they
+receive like Out ports.  They must be bound to a Tcl script using the
+<B>studio::bind</B> command.  The value of the message received by an
+In port is stored in <I>varName</I>.
+<P>
+A Twoway port has the combined functionality of an In and Out port.  The
+<I>varName</I> argument must be a Tcl list containing two variable names:
+{<I>inVarName outVarName</I>}.  <I>InVarName</I> accesses the In port,
+and <I>outVarName</I> accesses the Out port.  A message will be sent
+out the port whenever <I>outVarName</I> is written.  To bind the Twoway
+port to a script, pass <I>inVarName</I> as the <I>varName</I> argument
+to the <B>studio::bind</B> command.
+<P>
+One or more of the following options may be set to override the default
+settings:
+<P>
+<DL>
+<P><DT><A NAME="M7"><B>-portname</B> <I>name</I></A><DD>
+Specify the <I>name</I> of the port that appears as the label for the
+port in the Design Window.  For In and Out ports the default portname
+is identical to the <I>varName</I>.  For Twoway ports the default value
+is the first variable name in the <I>varName</I> list.
+<P><DT><A NAME="M8"><B>-transfer</B> <I>messageType</I></A><DD>
+Specify the <I>messageType</I> of message to send or accept.  The default
+option is <B>dynamic</B> for any <I>portType</I>.  See the section on
+TRANSFER TYPES for more detail on the semantics each type.  The valid
+<I>messageType</I>s for each port are as followed:
+<P>
+<DL>
+<P><DT><A NAME="M9">In ports:</A><DD>
+<B>basicToDouble, basicToFloat, basicToInteger,
+basicToLong, basicToString, basicToBoolean, numberToDouble,
+numberToFloat, numberToInteger, numberToLong, dynamic, object,</B> or
+<B>trigger</B>.
+<P><DT><A NAME="M10">Out ports:</A><DD>
+<B>doubleToBasic, floatToBasic,
+integerToBasic, longToBasic, stringToBasic, booleanToBasic, dynamic,
+object</B> or <B>trigger</B>.
+<P><DT><A NAME="M11">Twoway ports:</A><DD>
+The <I>messageType</I> must be a Tcl list of two elements:
+{<I>inMessageType outMessageType</I>}.  <I>InMessageType</I> takes any In
+port options, and <I>outMessageType</I> takes any Out port options.
+<P></DL>
+<P><DT><A NAME="M12"><B>-location</B> <I>locStr</I></A><DD>
+Specify the location of the port on the icon representing the
+Java Studio Bean.  The default location for an In port is west, an Out
+port is east and a Twoway port is north.  See the section on
+LOCATION OPTIONS for a list of valid locations.
+<P><DT><A NAME="M13"><B>-description</B> <I>descStr</I></A><DD>
+Specify an internal description of the Java Studio port.  If two or
+more ports have identical parts, this option distinguishes the ports
+without altering their appearance or behavior.
+<P></DL>
+<P>
+A port created by the Tcl Bean is uniquely identified by the sum of
+all its parts:  <I>portType, varName</I>, <B>portname, transfer,
+location</B> and <B>description</B>.  As long as one of the parts is
+different, one port can be distinguished from another.  
+In some situations, it is desirable to have two or more ports with
+identical behavior and appearance.  The <B>description</B>
+option allows the ports to remain unique.  The
+value of <B>description</B> does not affect the behavior or appearance
+of the port.  If the user attempts to create a port that is
+identical to an existing port, an error is generated and the port is
+not created.
+<P><DT><A NAME="M14"><B>studio::bind</B> <I>varName</I> ?<I>script</I>?</A><DD>
+The studio::bind command is used to associate a Tcl <I>script</I> with the
+reception of a message by a Java Studio In port.  The
+<I>varName</I> argument is the Tcl variable assigned to one or more ports.
+When a message is received by a port, <I>varName</I> is set to the
+value of the message and the <I>script</I> is evaluated in the
+interpreter associated with the Tcl Bean.  See the TRACES section for
+more detail on how messages are generated.
+<P>
+If the <I>script</I> argument is not passed, the command returns the
+existing script bound to <I>varName</I>, or an empty string if no
+script is bound.  If the <B>studio::bind</B> command is called with the
+<I>script</I> argument, and <I>varName</I> is already bound to another
+script, the new script replaces the old script.
+
+<P></DL>
+<H3><A NAME="M15">TRANSFER TYPES</A></H3>
+All messages are sent and received as Java Objects.  When a user
+connects two ports, Java Studio must determine if the data type of the
+message sent is accepted by the receiving port.    The
+<I>messageType</I> for an Out port specifies an ordered list of data
+types that can be sent, based on the original data type of the
+message.  The <I>messageType</I> for an In port specifies an ordered
+list of data types that can be received, and how to convert the
+message to a single data type.  If a common data type is found between
+an In port and Out port, a connection is made.   Below is a
+description of each <I>messageType</I>, and what <I>portType</I> it may
+be used with:
+<DL><P><DD>
+<P>
+<P>
+<DL>
+<P><DT><A NAME="M16"><B>doubleToBasic</B> (Out)</A><DD>
+Converts a Double to the first match of the following options: Double,
+Float, Integer, Long or String.
+<P><DT><A NAME="M17"><B>floatToBasic</B> (Out)</A><DD>
+Converts a Float to the first match of the following options: Float,
+Double, Integer, Long or String.
+<P><DT><A NAME="M18"><B>integerToBasic</B> (Out)</A><DD>
+Converts an Integer to the first match of the following options:
+Integer, Long, Float, Double or String.
+<P><DT><A NAME="M19"><B>longToBasic</B> (Out)</A><DD>
+Converts a Long to the first match of the following options: Long,
+Integer, Float, Double or String.
+<P><DT><A NAME="M20"><B>booleanToBasic</B> (Out)</A><DD>
+Converts a Boolean to the first match of the following options: Boolean,
+String, Integer, Long, Float, Double or String
+<P><DT><A NAME="M21"><B>stringToBasic</B> (Out)</A><DD>
+Converts a String to the first match of the following options: String,
+Integer, Long, Float or Double.
+<P><DT><A NAME="M22"><B>basicTo</B>&lt;<B>suffix</B>&gt; (In)</A><DD>
+Converts a Double, Float, Integer, Long or String to the suffix type.
+Valid <B>suffix</B> types are: Double, Float, Integer, Long, String or
+Boolean.  A Boolean object is only accepted if the suffix is Boolean.
+<P><DT><A NAME="M23"><B>numberTo</B>&lt;<B>suffix</B>&gt; (In)</A><DD>
+Converts a Double, Float, Integer or Long to the suffix type.  Valid
+<B>suffix</B> types are: Double, Float, Integer or Long.
+<P><DT><A NAME="M24"><B>trigger</B> (In)</A><DD>
+Receive a VJTriggerObject, Object or String.  The trigger object is used
+to simply cause an event to occur.
+<P><DT><A NAME="M25"><B>object</B> (In or Out)</A><DD>
+Send or receive a Java Object without any conversion.
+<P><DT><A NAME="M26"><B>dynamic</B> (In or Out)</A><DD>
+All of the previous options specify the data type at design time.  This
+option does not specify a data type and defers the validation process
+to runtime.  Connections to this type are always accepted during
+design time and leave the conversion up to the Java Bean implementation. 
+<P></DL>
+</DL>
+<H3><A NAME="M27">LOCATION OPTIONS</A></H3>
+The valid location options are:
+<B>anywhere, north, northLeft, northCenter, northRight, south,
+southLeft, southCenter, southRight, west, westTop, westCenter,
+westBottom, east, eastTop, eastCenter,</B> or <B>eastBottom</B>.
+<P>
+The <B>anywhere</B> option places ports in the least populated side,
+which may change as ports with sides specified are added to the
+component. Currently, this behavior is not documented by Java Studio,
+and may change in the future.
+<H3><A NAME="M28">TRACES</A></H3>
+Putting a trace on a variable causes a Tcl command to be evaluated
+whenever a variable is read, written or unset.  Ports created by the
+Tcl Bean use the Tcl <B>trace</B> command to control the flow of
+messages through ports.  Out ports create a trace on <I>varName</I>
+automatically when the port is created.  When the Out port's
+<I>varName</I> is set, a message is generated with the new value of
+this variable.  If two or more Out ports use the same <I>varName</I>,
+then a message is sent to every port associated with <I>varName</I>.
+When an In port is created, no traces are automatically put on
+<I>varName</I>.  Rather, traces are placed on the port explicitly by
+using the <B>studio::bind</B> command.
+<P>
+Note: You can also set variable traces on ports using the Tcl trace
+command.  The studio::bind command is just a simplier interface.  To
+learn more about the trace command, see the Tcl documentation.
+<H3><A NAME="M29">EXAMPLE</A></H3>
+<PRE># Create an In port called foo.  Notice that all of the options are 
+# unnecessary because they are identical to the defaults.
+
+studio::port in foo &#92;
+	-location west &#92;
+	-transfer dynamic &#92;
+	-portname foo
+
+# Create a Twoway port called twoWayPort.  Here all of the options are 
+# necessary because they override the defaults.
+
+studio::port twoway {inBar outBar} &#92;
+	-location northRight &#92;
+	-transfer {basicToString stringToBasic} &#92;
+	-portname twoWayPort
+
+# Create the binding of the In port (foo) to the Out port (outBar).
+# In this example, the varName for the Out port is set with the
+# String representation of any Java object that is sent to the 
+# In port.
+
+studio::bind foo {
+    global inBar
+    set inBar [$foo toString]
+}
+
+# Create a similar binding on the In port of the Twoway port.
+
+studio::bind inBar {
+    global outBar
+    set outBar ${inBar}PlusMoreData
+}</PRE>
+<H3><A NAME="M30">SEE ALSO</A></H3>
+<B><A HREF="../JaclCmd/studiocustom.htm">studio::custom</A></B>, <B><A HREF="../JaclCmd/java.htm">java</A></B>
+<H3><A NAME="M31">KEYWORDS</A></H3>
+Java Beans, Java Studio, studio, ports, trace
+<HR><PRE>
+<A HREF="../copyright.htm">Copyright</A> &#169; 1997 by Sun Microsystems, Inc.
+<A HREF="../copyright.htm">Copyright</A> &#169; 1995-1997 Roger E. Critchlow Jr.</PRE>
+</BODY></HTML>

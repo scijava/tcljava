@@ -1,0 +1,64 @@
+'\"
+'\" Copyright (c) 1996-1998 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+'\" RCS: @(#) $Id: Util.3,v 1.1 1998/10/14 21:09:08 cvsadmin Exp $
+'\" 
+.so man.macros
+.TH Util 3 1.0 Tcl "Jacl Library Procedures"
+.BS
+.SH CLASS
+tcl.lang.Util -- This class contains static utility routines.
+
+.SH METHODS
+.sp
+static boolean \fBstringMatch\fR(String \fIstring\fR, String \fIpattern\fR)
+
+.SH ARGUMENTS
+.AS String pattern .
+.AP String string
+String to check for a match with \fIpattern\fR.
+.AP String pattern
+Pattern to match \fIstring\fR against.
+.BE
+
+.SH DESCRIPTION
+This class contains utility routines that do not naturally fit into
+other classes in the tcl.lang package.  Currently, only one method is
+public.  However, more are likely to be offered in the future.
+.TP
+\fBstringMatch\fR
+The \fBstringMatch\fR method returns a boolean depending on whether
+\fIstring\fR matches with the \fIpattern\fR according to Tcl's "glob"
+rules.  For the two strings to match, their contents must be identical
+except that the following special sequences may appear in
+\fIpattern\fR:
+.RS
+.RS
+.IP \fB*\fR 10
+Matches any sequence of characters in \fIstring\fR,
+including a null string.
+.IP \fB?\fR 10
+Matches any single character in \fIstring\fR.
+.IP \fB[\fIchars\fB]\fR 10
+Matches any character in the set given by \fIchars\fR.  If a sequence
+of the form
+\fIx\fB\-\fIy\fR appears in \fIchars\fR, then any character
+between \fIx\fR and \fIy\fR, inclusive, will match.
+.IP \fB\e\fIx\fR 10
+Matches the single character \fIx\fR.  This provides a way of
+avoiding the special interpretation of the characters
+\fB*?[]\e\fR in \fIpattern\fR.
+.RE
+.RE
+
+.SH "EQUIVALENT C FUNCTIONS"
+Tcl_StringMatch
+
+.SH "SEE ALSO"
+string, glob, regexp
+
+.SH KEYWORDS
+glob, regexp, string, string match, utility

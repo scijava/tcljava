@@ -1,0 +1,33 @@
+README
+RCS: @(#) $Id: README,v 1.1 1998/10/14 21:09:23 cvsadmin Exp $
+
+
+Abstract
+--------
+
+      This demo shows how to write a simple Tcl extension in Java.  
+      The SimpleExtension contains one Tcl command, "sayhello",
+      which returns the string "Hello World!" when invoked.
+
+Why Bother?
+-----------
+
+      The purpose of this demo is to acquaint the user with a Jacl
+      interface mechanism.
+
+Running the Demo
+----------------
+
+      Start either the Jacl Shell or the tclsh with the Tcl Blend library 
+      loaded.
+
+      Load the SimpleExtension into the interperter by typing	
+      "java::load -classpath . SimpleExtension"
+      
+      Now you can execute the "sayhello" command.
+
+Source Files
+------------
+
+    * SimpleExtension.java
+    * SayhelloCmd.java

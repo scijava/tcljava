@@ -1,0 +1,74 @@
+'\"
+'\" Copyright (c) 1998 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+'\" RCS: @(#) $Id: TimerHandler.3,v 1.1 1998/10/14 21:09:08 cvsadmin Exp $
+'\" 
+.so man.macros
+.TH TimerHandler 3 1.0 Jacl "Jacl Library Procedures"
+.BS
+.SH CLASS
+tcl.lang.TimerHandler -- Subclass from this abstract base class to
+create timer event handlers.
+
+.SH METHODS
+.sp
+\fBTimerhandler\fR(Notifier \fInotifier\fR, int \fImilliseconds\fR)
+.sp
+synchronized void \fBcancel\fR()	
+.sp
+abstract void \fBprocessTimerEvent\fR()
+
+.SH ARGUMENTS
+.AS TclObject "table[]" .
+.AP Notifier notifier
+The Notifier in which to register the new TimerHandler.
+.sp
+.AP int milliseconds
+How many milliseconds should be elapsed before the timer is fired.
+.BE
+
+.SH DESCRIPTION
+
+The \fBTimerHandler\fR class is used to schedule code to be executed in a
+future time. To write your own timer handler, subclass from
+TimerHandler and override the \fBprocessTimerEvent\fR method.
+.sp
+The callback to \fBprocessTimerEvent\fR will be made by the \fInotifier\fR,
+so the \fBTimerHandler\fR class is only useful in programs that
+dispatch events through \fInotifier\fR.\fBdoOneEvent\fR or through Tcl
+commands such as \fBvwait\fR. The call to \fBprocessTimerEvent\fR may
+not be made at the exact time given by \fImilliseconds\fR: it will be
+made at the next opportunity after that time.  For example, if
+\fInotifier\fR.\fBdoOneEvent\fR isn't called until long after the time has
+elapsed, or if there are other pending events to process before the
+call to \fBprocessTimerEvent\fR, then the call to
+\fBprocessTimerEvent\fR will be delayed.
+
+.TP
+\fBTimerHandler\fR
+This constructor creates a TimerHandler instance and register it
+inside the given \fInotifier\fR.
+.TP
+\fBcancel\fR
+If the \fBprocessTimerEvent\fR method has not been invoked yet,
+cancels this timer handler. If the \fBprocessTimerEvent\fR method has
+already been invoked by the \fInotifier\fR, this call has no effect.
+.TP
+\fBprocessTimerEvent\fR
+You can override this method to perform the desired actions when the
+timer is fired. The TimerHandler instance can be created in any
+thread. However, \fBprocessTimerEvent\fR is always called in the
+primary thread of the \fInotifier\fR that was specified in the
+TimerHandler constructor.
+
+.SH "EQUIVALENT C FUNCTIONS"
+Tcl_CreateTimerHandler
+
+.SH "SEE ALSO"
+Notifier, IdleHandler
+
+.SH KEYWORDS
+timer, event, event queue

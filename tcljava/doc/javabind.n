@@ -1,0 +1,199 @@
+'\"
+'\" Copyright (c) 1998 by Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+'\" RCS: @(#) $Id: javabind.n,v 1.1 1998/10/14 21:09:09 cvsadmin Exp $
+'\" 
+.so man.macros
+.TH "java" n 1.0 Tcl "Java Package Commands"
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+java::bind \- Handling JavaBean events.
+.SH SYNOPSIS
+\fBpackage require java ?1.0?\fP
+.sp
+\fBjava::bind \fIjavaObj\fR
+.sp
+\fBjava::bind \fIjavaObj eventName\fR
+.sp
+\fBjava::bind \fIjavaObj eventName script\fR
+.sp
+\fBjava::event \fR?\fB\-index \fInum\fR? ?\fIpropertyName\fR?
+.sp
+\fBjava::throw \fIthrowableObj\fR
+.sp
+.BE
+
+.SH DESCRIPTION
+.PP
+This group of commands are used to handle events fired by Java
+objects.
+.SH java::bind
+.PP
+The \fBjava::bind\fR command is used to associate scripts with events
+fired by Java objects. The \fIjavaObj\fR argument specifies a Java
+object. The \fIeventName\fR argument identifies an event fired by the
+object.
+.PP
+The events fired by Java objects are divided into \fIevent
+interfaces\fR. Each event is represented by an \fIevent method\fR in
+an event interface. For example, objects of the \fBjava.awt.Button\fR
+class can fire events in the \fBActionListener\fR,
+\fBComponentListener\fR, \fBFocusListener\fR, \fBKeyListener\fR,
+\fBMouseListener\fR and \fBMouseMotionListener\fR interfaces (all
+these interfaces are defined in the JDK package \fBjava.awt.event\fR.)
+The \fBKeyListener\fR interface in turn contains the event methods
+\fBkeyPressed\fR, \fBkeyReleased\fR and \fBkeyTyped\fR. To find out
+what events are fired by different Java classes, please consult their
+API documentation.
+.PP
+The \fIeventName\fR argument for the \fBjava::bind\fR command is the
+full or abbreviated name of the event. The full event name is the name
+of an event interface, followed by the character "\fB.\fR", followed
+by the name of the event method. For example,
+\fBjava.awt.event.KeyListener.keyTyped\fR.  The abbreviated event name
+is just the name of the event method. For example, \fBkeyTyped\fR.
+Abbreviated event names may be used only if the event method name
+appears in exactly one of the event interfaces of the object.
+.PP
+If the \fIscript\fR argument is given, it specifies a \fIcallback
+script\fR to to be executed when the given event is fired in the
+\fIjavaObj\fR. If a callback script already exists for the given event
+in \fIjavaObj\fR, it will be replaced by \fIscript\fR. If \fIscript\fR
+is the empty string, any previously installed callback
+scripts for the given event in \fIjavaObj\fR will be removed.
+.PP
+If the \fIscript\fR argument is not given, the \fBjava::bind\fR
+command returns the current callback script, if any, for the given
+event in \fIjavaObj\fR.
+.PP
+If the \fIeventName\fR and \fIscript\fR arguments are both omitted,
+the \fBjava::bind\fR command returns a Tcl list of the the full names
+of all the events of \fIjavaObj\fR that are currently associated with
+callback scripts.
+.PP
+.SH java::event
+.PP
+When a callback script is invoked due to the firing of a Java event,
+some \fIevent parameters\fR may be passed to the script to give
+detailed description of the event. The \fBjava::event\fR command is
+used to query the values of these parameters. The \fB\-index\fR option
+specifies which event parameter to quety: \fInum\fR is equal to
+\fB0\fR for the first parameter, \fB1\fR for the second parameter, and
+so on. If the \fB\-index\fR option is omitted, the first event
+paramater is queried by default. In most cases, there is exactly one
+event parameter passed to the callback script and the \fB\-index\fR
+may thus be safely omitted.
+.PP
+If \fIpropertyName\fR is not given, \fBjava::event\fR returns the
+value of the specified event paramater. If the specified event
+parameter is a Java object, then its object handle is returned. If
+\fIpropertyName\fR is given, and the specified event parameter is a
+Java object, \fBjava::event\fR returns the value of the given property
+of the event parameter. The second form is used mainly for
+convenience. For example, the following two statements are equivalent:
+.PP
+.CS
+java::bind $b keyTyped {
+    puts [java::prop [java::event] keyCode]
+}
+
+java::bind $b keyTyped {
+    puts [java::event keyCode]
+}
+.CE
+.PP
+Event handling may be nested if the Tcl event loop is re-entered
+during the execution of a callback script (e.g, when a callback script
+executes the \fBupdate\fR command.) In that case, \fBjava::event\fR
+always returns the paramaters of the inner-most event whose callback
+script is currently being executed.
+.PP
+.SH java::throw
+.PP
+The \fBjava::throw\fR command throws a Java
+exception. \fIThrowableObj\fR must be a valid Java object handle and
+must be an instance of \fBjava.lang.Throwable\fR.  Internally, the
+\fBjava::throw\fR command sets the \fBerrorCode\fR global variable to
+a list whose first element is the string "JAVA" and whose second
+element is \fIthrowableObj\fR. Then, it generates a Tcl error to cause
+the script to return abruptly. The effect of calling the
+\fBjava::throw\fR command is exactly the same as calling a Java method
+which throws a Java exception (see section \fBRETURN VALUES AND
+EXCEPTIONS\fR in \fBjava(n)\fR.)
+.PP
+.SH DETERMINING THE EVENT PARAMETERS
+.PP
+An event callback script can query the event parameters using the
+\fBjava::event\fR command. Usually, there is only one event parameter
+-- the \fIevent object\fR, which stores various information about the
+event as its properties. For example, when the \fBmouseClicked\fR
+event occurs inside an AWT Button, the \fBx\fR and \fBy\fR properties
+of the event object contains the location of the mouse cursor. The
+following script prints out the location of the mouse cursor:
+.PP
+.CS
+set button [java::new jawa.awt.Button]
+java::bind $button mouseClicked {
+    puts "mouse is at ([java::event x],[java::event y])"
+}
+.CE
+.PP
+.SH RETURNING VALUES FROM CALLBACK SCRIPTS
+.PP
+When a Java object fires an event, it may expect the callback script
+to return a value. In this case, the event method corresponding to the
+event has a non-\fBvoid\fR return type. The callback script should
+use the \fBreturn\fR command to return the desired value.
+.PP
+The return value must be convertible to the declared return type of
+the event method. Otherwise, a Tcl background error is generated and
+an undefined value (usually 0, false or null) is returned to the Java
+object.
+.PP
+.SH THROWING EXCEPTIONS 
+.PP
+When a Java object fires an event, it may expect the callback script
+to throw an exception to indicate certain conditions. This can be done
+using the \fBjava::throw\fR command. For example: the
+\fBvetoableChange\fR event requires the callback script to throw a
+\fBPropertyVetoException\fR if the script deems the new value of a
+property unaccecptable, as in the following code fragment:
+.PP
+.CS
+java::bind $b vetoableChange {
+    if {[java::event propertyName] == "size"} {
+        if {[java::event newValue] > 10} {
+            java::throw PropertyVetoException "value too large" [java::event]
+        }
+    }
+}
+.CE
+.PP
+The callback script can throw any unchecked exception object (e.g.,
+instances of \fBjava.lang.Error\fR or
+\fBjava.lang.RuntimeException\fR.) The callback script can also throw
+any checked exception allowed by the signature of the event method.
+.PP
+If the callback script throws a checked exception which is not allowed
+for the event, a Tcl background error is generated. If the callback
+script is expected to return a value, an undefined value is returned
+to the Java object.
+.PP
+.SH ERRORS IN CALLBACK SCRIPTS
+.PP
+If the callback script causes a Tcl error, a Tcl background error is
+generated. If the callback script is expected to return a value, an
+undefined value is returned to the Java object.
+.PP
+
+.SH SEE ALSO
+\fBjava\fR, \fBjava::load\fR
+
+.SH KEYWORDS
+java, tcl, beans
+
+ 

@@ -1,0 +1,86 @@
+'\"
+'\" Copyright (c) 1998 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+'\" RCS: @(#) $Id: Command.3,v 1.1 1998/10/14 21:09:08 cvsadmin Exp $
+'\" 
+.so man.macros
+.TH Command 3 1.0 Jacl "Jacl Library Procedures"
+.BS
+.SH INTERFACE
+tcl.lang.Command -- The interface for defining new Tcl commands.
+
+.SH METHODS
+.sp
+abstract void \fBcmdProc\fR(Interp \fIinterp\fR, TclObject \fIargv[]\fR)
+
+.SH ARGUMENTS
+.AS TclObject "table[]" .
+.AP Interp interp
+The interpreter in which the command is executed.
+.AP TclObject argv[]
+The array of argument objects passed to the command.
+.BE
+
+.SH DESCRIPTION
+
+To write a new Tcl command in Java, you write a class that implement
+the \fBCommand\fR interface and its \fBcmdProc\fR method. Then,
+register the command using the \fIinterp\fR.\fBcreateCommand\fR method.
+.sp
+\fBcmdProc\fR is invoked to process a Tcl command for
+\fIinterp\fR. The \fIargv\fR array contains the arguments passed to
+the command: \fIargv\fR[0] is the name of the command and the rest of
+the array contains the rest of the arguments.
+.sp
+If the command execution completes normally, this method should pass
+the result object back to the interpreter by calling
+\fIinterp\fR.\fBsetResult\fR and then return normally. If an error
+occurs during the command execution, \fBcmdProc\fR should throw a
+\fBTclException\fR with appropriate completion code and error messages
+(see the manual entry of \fBTclException\fR for details.)
+.sp
+If your command requires clean-up when it's removed from the
+interpreter, use the \fBCommandWithDispose\fR interface instead of the
+\fBCommand\fR interface. See the \fBCommandWithDispose\fR manual entry
+for details.
+
+
+.SH EXAMPLE
+
+Here is an example of a Tcl command that adds two integers and returns
+the result.
+.CS
+import tcl.lang;
+
+class AddCmd implements Command {
+    public cmdProc(Interp interp, TclObject argv[])
+            throws TclException {
+        if (argv.length != 3) {
+            throw new TclNumArgsException(interp, 1, argv,
+                "num1 num2");
+        }
+
+        int num1 = TclInteger.get(interp, argv[1]);
+        int num2 = TclInteger.get(interp, argv[2]);
+
+        TclObject result =
+            TclInteger.newInstance(num1 + num2);
+        interp.setResult(result);
+    }
+}
+.CE
+
+.SH "EQUIVALENT C FUNCTIONS"
+Tcl_CommandProc
+
+.SH "SEE ALSO"
+Interp, TclException, TclInteger, TclNumArgsException, TclObject,
+CommandWithDispose
+
+.SH KEYWORDS
+command, create, interpreter, exception
+
+

@@ -1,0 +1,190 @@
+# Command covered: java::load
+#
+# This file contains a collection of tests for the java package.
+# Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 1997 by Sun Microsystems, Inc.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+#
+# RCS: @(#) $Id: JavaLoadCmd.test,v 1.1 1998/10/14 21:09:24 cvsadmin Exp $
+
+# Note: This test file must be sourced from the parent directory
+#       or else the defs file may not be properly loaded.
+
+if {[string compare test [info procs test]] == 1} then {source defs}
+setupJavaPackage
+
+# Attempt to locate the Class files that are used to 
+# test the java::load command.
+
+set platform [testgetplatform]
+
+if {[info exists env(BUILD_DIR)]} {
+    set root_path [file join $env(BUILD_DIR) tests]
+} elseif {$platform == "windows"} {
+    set root_path [file join .. win tests]
+} else {
+    set root_path [file join .. $platform tests]
+}
+
+if {! [file isdirectory $root_path]} {
+    puts "Unable to find directory \"$root_path\".  Cannot run tests."
+    puts "Try setting the BUILD_DIR environment variable to the directory"
+    puts "where Tcl Blend or Jacl was built"
+    return
+}
+
+set javaload_path [file join $root_path javaload]
+if {! [file isdirectory $javaload_path]} {
+    puts "Unable to find directory \"$javaload_path\".  Cannot run tests."
+    return
+}
+
+
+
+test javaLoadCmd-1.1 {error conditions} {
+    catch {unset msg}
+    catch {java::load -classpath {list} foo} msg
+    set msg
+} {package "foo" not found}
+test javaLoadCmd-1.2 {error conditions} {
+    catch {unset msg}
+    catch {java::load -classpath {itema itemb itemc} foo} msg
+    set msg
+} {package "foo" not found}
+test javaLoadCmd-1.3 {error conditions} {
+    catch {unset msg}
+    lappend list "itema"
+    lappend list "itemb"
+    lappend list "itemc"
+    catch {java::load -classpath $list foo} msg
+    unset list
+    set msg
+} {package "foo" not found}
+test javaLoadCmd-1.4 {error conditions} {
+    catch {unset msg}
+    catch {java::load foo} msg
+    set msg
+} {package "foo" not found}
+test javaLoadCmd-1.5 {error conditions} {
+    catch {unset msg}
+    catch {java::load -cl list foo} msg
+    set msg
+} {package "foo" not found}
+test javaLoadCmd-1.6 {error conditions} {
+    catch {unset msg}
+    catch {java::load -classpath foo} msg
+    set msg
+} {wrong # args: should be "java::load ?-classpath arg? packageName"}
+test javaLoadCmd-1.7 {error conditions} {
+    catch {unset msg}
+    catch {java::load -classpath} msg
+    set msg
+} {package "-classpath" not found}
+test javaLoadCmd-1.8 {error conditions} {
+    catch {unset msg}
+    catch {java::load -cl list} msg
+    set msg
+} {wrong # args: should be "java::load ?-classpath arg? packageName"}
+test javaLoadCmd-1.9 {error conditions} {
+    catch {unset msg}
+    catch {java::load -cl} msg
+    set msg
+} {package "-cl" not found}
+test javaLoadCmd-1.10 {error in tcl.lang.Extension structure} {
+    catch {unset msg}
+    set javaload_full_path [file join $javaload_path tests javaload]
+    if {! [file isdirectory $javaload_full_path]} {
+	error "Unable to find directory \"$javaload_full_path\".  Cannot run tests."
+    }
+    catch {java::load -classpath $javaload_full_path Test1Extension} msg
+    set msg
+} {load "Test1Extension" failed: use the fully qualified package name}
+
+test javaLoadCmd-2.1 {security violation conditions} {
+    catch {unset msg}
+    catch {java::load -classpath foo tcl.lang.foo} msg
+    set msg
+} {load "tcl.lang.foo" failed: java.lang.SecurityException: Java loader failed to load the class and the Tcl Java loader is not permitted to load classes in the tcl or java package at runtime, check your CLASSPATH.}
+
+test javaLoadCmd-2.2 {security violation conditions} {
+    catch {unset msg}
+    catch {java::load tcl.lang.foo} msg
+    set msg
+} {load "tcl.lang.foo" failed: java.lang.SecurityException: Java loader failed to load the class and the Tcl Java loader is not permitted to load classes in the tcl or java package at runtime, check your CLASSPATH.}
+
+test javaLoadCmd-2.3 {security violation conditions} {
+    catch {unset msg}
+    catch {java::load -classpath foo java.lang.foo} msg
+    set msg
+} {load "java.lang.foo" failed: java.lang.SecurityException: Java loader failed to load the class and the Tcl Java loader is not permitted to load classes in the tcl or java package at runtime, check your CLASSPATH.}
+
+test javaLoadCmd-2.4 {security violation conditions} {
+    catch {unset msg}
+    catch {java::load java.lang.foo} msg
+    set msg
+} {load "java.lang.foo" failed: java.lang.SecurityException: Java loader failed to load the class and the Tcl Java loader is not permitted to load classes in the tcl or java package at runtime, check your CLASSPATH.}
+
+test javaLoadCmd-3.1 {error in tcl.lang.Extension structure} {
+    catch {unset msg}
+    catch {java::load -classpath $javaload_path Test3Extension} msg
+    set msg
+} {load "Test3Extension" failed: not a subclass of tcl.lang.Extension}
+test javaLoadCmd-3.2 {error in tcl.lang.Extension structure} {
+    catch {unset msg}
+    catch {java::load -classpath $javaload_path Test7Extension} msg
+    set msg
+} {load "Test7Extension" failed: object instantiation failure}
+test javaLoadCmd-3.3 {error in tcl.lang.Extension structure} {
+    catch {unset msg}
+    catch {java::load -classpath $javaload_path Test8Extension} msg
+    set msg
+} {load "Test8Extension" failed: class or initializer is not accessible}
+test javaLoadCmd-4.1 {test loading of valid packages} {
+    java::load -classpath $javaload_path tests.javaload.Test1Extension.class 
+    test1
+} {test works}
+test javaLoadCmd-4.1 {test loading of valid packages} {
+    java::load -classpath $javaload_path Test2Extension
+    test2
+} {test works}
+test javaLoadCmd-4.2 {test loading of valid packages} {
+    java::load -classpath $javaload_path Test4Extension
+    test4
+} {test works}
+test javaLoadCmd-4.3 {test loading of valid packages} {
+    java::load -classpath $javaload_path Test5Extension
+    set a "[test5] [test5b]"
+} {test works test works}
+test javaLoadCmd-4.4 {test loading of valid packages} {
+    set env(TCL_CLASSPATH) $javaload_path
+    java::load Test6Extension
+    unset env(TCL_CLASSPATH)
+    test6
+} {test works}
+test javaLoadCmd-4.5 {test loading of valid packages} {
+    java::load -classpath $javaload_path Test9Extension
+    test9
+} {test works}
+test javaLoadCmd-5.0 {test loading of valid package from a jar} {
+    java::load -classpath $javaload_path/test10.jar Test10Extension
+} {Test10 Loaded}
+
+catch {
+    unset testpath;
+    unset root_path;
+    unset javaload_path;
+    rename test1 "";
+    rename test2 "";
+    rename test3 "";
+    rename test4 "";
+    rename test5 "";
+    rename test5b "";
+    rename test6 "";
+    rename bad   "";
+}
+return
+

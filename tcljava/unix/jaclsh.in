@@ -1,0 +1,28 @@
+#! /bin/sh
+# Wrapper script to start up Jacl
+
+# Do not edit this script unless it is called jaclsh.in.
+# configure takes jaclsh.in, substitutes the @xx@
+# fields and creates jaclsh.
+
+# Author:  Moses DeJong
+# Version: @(#)jwish.in	1.1 08/07/98
+#
+# Copyright (c) 1997-1998 by Moses DeJong
+# 	All Rights Reserved, but you can use this file.
+
+# The next two lines gets substituted by configure
+prefix=@prefix@
+LIB_INSTALL_DIR=@exec_prefix@/lib
+
+#add you .jar files to the CLASSPATH
+CLASSPATH=${LIB_INSTALL_DIR}/jacl.jar:${LIB_INSTALL_DIR}/tcljava.jar:${CLASSPATH}
+export CLASSPATH
+
+JAVA=@JAVA_DIR@/bin/java
+
+#start Java runtime with 5 Meg Min Heap and 20 Meg Max Heap
+JAVA_FLAGS="@JAVA_FLAGS@ -ms5m -mx20m"
+
+#run java with the args passed in from the calling environment
+eval env ${JAVA} ${JAVA_FLAGS} tcl.lang.Shell '"$@"'

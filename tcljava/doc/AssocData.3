@@ -1,0 +1,45 @@
+'\"
+'\" Copyright (c) 1998 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+'\" RCS: @(#) $Id: AssocData.3,v 1.1 1998/10/14 21:09:09 cvsadmin Exp $
+'\" 
+.so man.macros
+.TH AssocData 3 1.0 Jacl "Jacl Library Procedures"
+.BS
+.SH INTERFACE
+tcl.lang.AssocData -- Used by extensions to associate their own
+data with a Tcl interpreter.
+
+.SH METHODS
+.sp
+abstract void \fBdisposeAssocData\fR(Interp interp)
+
+.SH ARGUMENTS
+.AS TclObject "table[]" .
+.AP Interp interp
+The interpreter from which the association is deleted.
+.BE
+
+.SH DESCRIPTION
+
+The \fBAssocData\fR interface is used by extensions to associate
+their own data with a Tcl interpreter.  When the interpreter is
+disposed via \fIinterp\fR.\fBdispose\fR, the \fBdisposeAssocData\fR
+methods of all the registered AssocData instances are called to
+perform the necessary clean up.  Note that if an association is
+removed as a result of the \fIinterp\fR.\fBsetAssocData\fR or
+\fIinterp\fR.\fBdeleteAssocData\fR calls, the \fBdisposeAssocData\fR
+method of the removed AssocData instance is \fINOT\fR called.
+
+.SH "EQUIVALENT C FUNCTIONS"
+Tcl_CmdDeleteProc
+
+.SH "SEE ALSO"
+Interp, setAssocData
+
+.SH KEYWORDS
+association, data, deletion procedure, interpreter
+

@@ -1,0 +1,219 @@
+'\"
+'\" Copyright (c) 1997-1998 by Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+'\" RCS: @(#) $Id: studiocustom.n,v 1.1 1998/10/14 21:09:08 cvsadmin Exp $
+'\" 
+.so man.macros
+.TH "studio::custom" n 1.0 Tcl "Tcl Bean Commands"
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+studio::custom \- Scripting a Java Studio Customizer with the Tcl Bean.
+.SH SYNOPSIS
+\fBstudio::custom getPanel\fP 
+.sp
+\fBstudio::custom commitScript\fP \fIcallbackScript\fR
+.sp
+\fBstudio::custom getBeanData\fP
+.BE
+.SH DESCRIPTION
+.PP
+The \fBstudio::custom\fR command provides the interface to create a
+Java Studio Customizer from the Tcl Bean.  Java Studio is a graphical
+development environment for gluing together Java Beans in order to
+create applets, applications or other compound Java Beans.  Java
+Studio creates a graphical interface, called a Customizer, to
+manipulate Java Bean properties.  Every Tcl Bean contains a default
+Customizer that displays the contents of the Tcl script.  However, the
+\fBstudio::custom\fR command and the \fBjava\fR package provide the
+interface to override the default Customizer and define a Customizer from Tcl.
+.PP
+The Customizer for all Tcl Beans, default or user defined, consists of
+two components.  The first component in every Tcl Bean Customizer is
+an interface for loading Tcl scripts from the local file system.  The
+second component in every Tcl Bean Customizer is a Choice Box for 
+selecting from a list of scripts contained in the Tcl Bean jar file.
+The default Customizer displays the contents of the Tcl script for the
+Tcl Bean.  If the Customizer is defined by the Tcl script, the
+component that displays the contents of the Tcl script is replaced
+with the user defined Customizer.
+.PP
+Every time a script is loaded into the Tcl Bean (from the local file
+system or selecting a built-in script), the Tcl Bean examines the
+contents of the script.  If the script does \fBnot\fR begin with
+#CUSTOM_BEGIN, a default Customizer is constructed and the contents of
+the file are displayed.  Otherwise, the file is considered to contain
+a user-defined Customizer, and the Tcl Bean parses the file
+into two separate scripts based on the following file format:
+.DS
+#CUSTOM_BEGIN
+<\fIcustomizerScript\fR>
+#CUSTOM_END
+<\fIbeanScript\fR>
+.DE
+The \fIcustomizerScript\fR and \fIbeanScript\fR are distinct scripts
+evaluated in separate interpreters and share no common data.  The Tcl
+Bean stores a copy of both scripts, and evaluates them when needed.
+The \fIcustomizerScript\fR's primary function is to the define the
+Customizer.  Every time Java Studio requests that the Tcl Bean Customizer be
+displayed, a new interpreter is created and the \fIcustomizerScript\fR is
+evaluated.  The \fIbeanScript\fR's primary function is to initialize
+the Tcl Bean by creating Java Studio ports and defining the bindings
+on the ports.  Every time the Customizer commit phase begins (described
+below),the \fIbeanScript\fR is evaluated in a new interp.  See the
+\fBstudio\fR man page for more information on writing the \fIbeanScript\fR.
+.PP
+The Customizer is re-initialized by a new interp each time it is
+displayed.  The runtime state of the widget (e.g. text entered into an
+Entry component) must be preserved so it is not lost when the
+Customizer is destroyed.  All of the Customizer's state, referred to as
+\fIbeanData\fR, is stored in the Tcl Bean.  The \fIbeanData\fR is also
+used to define Tcl Bean properties and must be
+passed from the \fIcustomizerScript\fR's interp to the \fIbeanScript\fR's
+interp.  The \fBcommitScript\fR and \fBgetBeanData\fR sub commands
+store, retrieve and pass \fIbeanData\fR between interps and the Tcl
+Bean.
+.PP
+The Customizer initialization phase begins whenever Java Studio
+requests a new Customizer be displayed.  The phase starts by creating
+a new interp and evaluating the \fIcustomizerScript\fR.  Every
+\fIcustomizerScript\fR must perform the following steps to properly
+initialize the Customizer:
+.IP [1]
+The Customizer's graphical interface must be defined.  Use the
+\fBstudio::custom getPanel\fR command and the \fBjava\fR package, to
+create the interface.
+.IP [2]
+The \fIcustomizerScript\fR must register a \fIcallbackScript\fR.  The
+\fIcallbackScript\fR defines how to preserve the Customizer state and
+store data needed by the \fIbeanScript\fR.  The result of
+evaluating \fIcallbackScript\fR is stored in \fIbeanData\fR.  Use
+the \fBstudio::custom commitScript\fR command to register the
+\fIcallbackScript\fR.
+.IP [3]
+Retrieve the \fIbeanData\fR and restore the state of the
+Customizer.  If the Customizer was previously displayed, then
+\fIbeanData\fR may contain information on the state of the Customizer
+before it was destroyed.  The content of \fIbeanData\fR will be
+reflected in the Customizer.  Use the \fBstudio::custom getBeanData\fR
+to retrieve \fIbeanData\fR. 
+.PP
+The Customizer commit phase starts whenever the Customizer's 'OK' or 'Apply'
+buttons are pressed.  The Customizer commit phase performs the
+following tasks:
+.IP [1]
+Evaluate the \fIcallbackScript\fR, defined by the command 
+\fBstudio::custom commitScript\fR, in the \fIcustomizerScript\fR's interp.
+The \fIcallbackScript\fR is evaluated at the global scope, and has
+access to all of the state defined when the \fIcustomizerScript\fR was
+evaluated.
+.IP [2]
+Store the result of evaluating the \fIcallbackScript\fR in the Tcl
+Bean's \fIbeanData\fR.  At this point, the \fIcustomizerScript\fR's
+interp stops running, and the Customizer disappears.
+.IP [3]
+Create a new interp, and evaluate the \fIbeanScript\fR.  The
+\fIbeanScript\fR should call the \fBstudio::custom getBeanData\fR command
+to retrieve the data from the Tcl Bean.  After this step, the Tcl Bean
+is initialized according to the \fIbeanScript\fR and the \fIbeanData\fR.
+.SH COMMANDS
+.PP
+.TP
+\fBstudio::custom getPanel\fR
+Return the Java object handle for the AWT Panel component contained in
+the Customizer window.  Components packed into this Panel create
+the Customizer's graphical interface.  When the Customizer window is
+removed, the Panel and all of its sub-components are destroyed.  The
+persistent state of each component must be preserved, to restore
+the interface the next time the Customizer is displayed.  Use the
+\fBstudio::custom commitScript\fR command to preserve the state and the
+\fBstudio::custom getBeanData\fR command to retrieve the state.
+.TP
+\fBstudio::custom commitScript \fIcallbackScript\fR
+Specifies the \fIcallbackScript\fR that should be invoked when the
+Customizer commit phase begins.  The return value of
+\fIcallbackScript\fR is stored in the Tcl Bean, and can be retrieved
+by using the \fBstudio::custom getBeanData\fR command.  The
+\fIcallbackScript\fR is evaluated in the \fIcustomScript\fR's
+interpreter, and is evaluated at the global scope.  In general the
+\fIcallbackScript\fR should perform the following steps:
+.RS
+.IP [1]
+Extract persistent data from the Customizer's Panel in order to restore
+the interface to its identical state (e.g. The Text of an Entry component.)
+.IP [2]
+Gather information needed by the bean script.
+.IP [3]
+Marshall all of the above data into an ordered Tcl list so the data
+can be used to re-initialize the Customizer, or be used to set Tcl
+Bean properties.
+.IP [4]
+Return the ordered list from step 3.
+.RE
+.TP
+\fBstudio::custom getBeanData\fR
+This option returns Customizer data contained in the Tcl Bean.  The
+data consists of the return value of the \fIscript\fR that
+was defined by the \fBcallbackScript\fR option.  If the Tcl Bean does
+not have any data stored when this command is called, an empty string
+is returned.  This command should be used in the custom script to
+retrieve data needed to restore the Customizer to its previous state.  The
+bean script should call this command to retrieve the information from
+the Customizer.
+.SH EXAMPLE
+.CS
+#CUSTOM_BEGIN
+
+# Get the panel to pack the components into.
+
+set customPanel [studio::custom getPanel]
+
+# Get any data that may have been previously set.
+# If there is no data, customData is ""
+
+set customData  [studio::custom getBeanData]
+
+# Create two Java AWT components that make the 
+# custom interface.
+
+set scriptLabel [java::new {java.awt.Label String} "Script:"]
+set scriptArea  [java::new {java.awt.TextArea int int} 10 40]
+
+# If customData is not an empty string, we 
+# have defined it to contain a script.  Put
+# the script back into the scriptArea.
+ 
+if {$customData != ""} {
+    $scriptArea setText $customData
+}
+
+# Add the components to the Customizer.
+
+$customPanel {add java.awt.Component} $scriptLabel
+$customPanel {add java.awt.Component} $scriptArea
+
+# Define the callback that marshalls data into 
+# the Tcl Bean.  The return value of the script
+# becomes the return value of calls to 
+# studio::custom getBeanData
+
+studio::custom commitScript {
+    set data [$scriptArea getText]
+    return $data
+}
+#CUSTOM_END
+
+# Get the data set by the studio::custom callbackScript 
+# command.  For this example, the data is a script
+# to be evaluated.
+
+set beanData [studio::custom getBeanData]
+eval $beanData
+.CE
+.SH SEE ALSO
+\fBstudio\fR, \fBjava\fR
+.SH KEYWORDS
+studio, Customizer, Java Beans, Java Studio

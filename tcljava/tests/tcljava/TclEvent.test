@@ -1,0 +1,49 @@
+# TclEvent.test --
+#
+#	Tests the implementation of the TclEvent.java file.
+#
+# Copyright (c) 1997 by Sun Microsystems, Inc.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+#
+# RCS: @(#) $Id: TclEvent.test,v 1.1 1998/10/14 21:09:24 cvsadmin Exp $
+
+# Note: This test file must be sourced from the parent directory
+#       or else the defs file may not be properly loaded.
+
+if {[string compare test [info procs test]] == 1} then {source defs}
+
+setupJavaPackage
+
+set notifier [java::call tcl.lang.Notifier getNotifierForThread \
+	[java::call Thread currentThread]]
+set TAIL [java::field tcl.lang.TCL QUEUE_TAIL]
+
+test TclEvent-1.1 {sync()} {
+    set evt [java::new tcl.lang.TestEvent [java::getinterp] {
+	set testEvtReply 1
+    }]
+    list [catch {$evt sync} msg] $msg
+} {1 {tcl.lang.TclRuntimeError: TclEvent is not queued when sync() is called}}
+
+test TclEvent-1.2 {sync(), in primary thread} {
+    set evt [java::new tcl.lang.TestEvent [java::getinterp] {
+	set testEvtReply 1
+    }]
+    $notifier queueEvent $evt $TAIL
+    set testEvtReply ""
+    list [catch {$evt sync} msg] $msg $testEvtReply
+} {0 {} 1}
+
+test TclEvent-1.3 {sync(), in non-primary thread} {
+    set testEvtReply 0
+    set thread [java::new tcl.lang.TestEventThread1 [java::getinterp] {
+	set testEvtReply 1
+    }]
+    update
+    $thread start
+    vwait testEvtReply
+    set testEvtReply
+} 1
+

@@ -1,0 +1,69 @@
+Jacl
+RCS: @(#) $Id: README.jacl,v 1.1 1998/10/14 21:09:22 cvsadmin Exp $
+
+This is the directory where you configure, compile, test, and install 
+UNIX versions of Jacl.
+
+The rest of this file contains instructions on how to do this.  The 
+release should compile and run either "out of the box" or with trivial 
+changes on any UNIX-like system that approximates POSIX, BSD, or 
+System V.  We know that it runs on workstations from Sun.  To compile 
+for a PC running Windows, see the README file in the directory ../win.
+
+
+How To Install Jacl (Binary Release Only):
+------------------------------------------
+
+(a) In the top-level directory there is a file named jacl.jar.  Set your
+    CLASSPATH environment variable to point to the Java jar file, jacl.jar.  
+    On some versions of UNIX this can be done by typing "setenv CLASSPATH 
+    ${CLASSPATH}:/home/user/jacl1.0/jacl.jar".
+
+(b) At this point you can play with Jacl by typing "java tcl.lang.Shell".  
+    If you haven't set the CLASSPATH variable correctly, you will see a 
+    java error "Can't find class tcl.lang.Shell.
+
+
+How To Compile And Install Jacl (Source Release Only):
+------------------------------------------------------
+
+(a) Check for patches as described in ../README.
+
+(b) Create a Makefile by typing "./configure".
+
+(c) Type "make".  This will create a directory called jacl that will
+    contain all of the Java class files needed to use Jacl.
+
+(d) If the make fails then you'll have to personalize the Makefile
+    for your site or possibly modify the distribution in other ways.
+    If you need to modify Makefile, there are comments at the beginning 
+    of it that describe the things you might want to change and how to 
+    change them.
+
+(e) Set your CLASSPATH environment variable to include the jacl directory.  
+    On some versions of UNIX this can be done by typing "setenv CLASSPATH 
+    ${CLASSPATH}:/home/user/jacl1.0/unix/jacl".
+
+(f) At this point you can play with Jacl by typing "java tcl.lang.Shell".  
+    If you haven't set the CLASSPATH variable correctly, you will see a 
+    java error "Can't find class tcl.lang.Shell.
+
+Test suite:
+-----------
+
+There is a relatively complete test suite for all of the Tcl core in the 
+subdirectory "tests".  To use it just type "make test" in this directory.  
+You should then see a printout of the test files processed.  If any errors 
+occur, you'll see a much more substantial printout for each error.  See the 
+README file in the "tests" directory for more information on the test suite.  
+Note: don't run the tests as superuser: this will cause several of them to 
+fail.
+
+The Jacl & Tcl Blend team
+-------------------------
+
+Ray Johnson - Project Manager
+Melissa Hirschl
+Ioi Lam
+Bryan Surles
+Special thanks to Scott Stanton who implemented Tcl Blend.

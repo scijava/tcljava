@@ -1,0 +1,169 @@
+'\"
+'\" Copyright (c) 1998 by Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+'\" RCS: @(#) $Id: setVar.3,v 1.1 1998/10/14 21:09:09 cvsadmin Exp $
+'\" 
+.so man.macros
+.TH setVar 3 1.0 Jacl "Jacl Library Procedures"
+.BS
+.SH CLASS
+tcl.lang.Interp -- This manual entry contains Interp methods that manipulate
+Tcl variables.
+
+.SH METHODS
+.sp
+void \fBsetVar\fR(String \fIname\fR, TclObject \fIvalue\fR, int \fIflags\fR) throws TclException
+.sp
+void \fBsetVar\fR(String \fIpart1\fR, String \fIpart2\fR, TclObject\fIvalue\fR, int \fIflags\fR) throws TclException
+.sp
+TclObject \fBgetVar\fR(String \fIname\fR, int \fIflags\fR) throws TclException
+.sp
+TclObject \fBgetVar\fR(String \fIpart1\fR, String \fIpart2\fR, int \fIflags\fR) throws TclException
+.sp
+void \fBunsetVar\fR(String \fIname\fR, int \fIflags\fR) throws TclException
+.sp
+void \fBunsetVar\fR(String \fIpart1\fR, String \fIpart2\fR, int \fIflags\fR) throws TclException
+
+.SH OTHER METHODS
+\fBcreateCommand\fR,
+\fBtraceVar\fR, 
+\fBeval\fR, 
+\fBsetResult\fR, 
+\fBbackgroundError\fR,
+.br
+\fBgetNotifier\fR, 
+\fBsetAssocData\fR, 
+\fBdispose\fR, 
+\fBpkgRequire\fR
+
+.SH ARGUMENTS
+.AS TclObject value .
+.AP String name
+Name of variable.  May refer to a scalar variable or an array variable
+with a parenthesized index.
+.AP String part1
+Name of scalar or array variable.  If \fIpart2\fR
+is null, \fIpart1\fR is treated like \fIname\fR.  Otherwise,
+\fIpart1\fR must be an array variable with no index.
+.AP String part2
+If not null, gives name of element within array; in this
+case \fIpart1\fR must refer to an array variable with no index.
+.AP TclObject value
+The TclObject containing the new value for the variable.
+.AP int flags
+OR-ed combination of bits providing additional information. See below
+for valid values.
+.BE
+
+.SH DESCRIPTION
+These methods are used to create, modify, read, and delete
+Tcl variables from Java code.
+.TP
+\fBsetVar\fR
+The \fBsetVar\fR methods create a new variable or modify the existing
+variable whose name is \fIname\fR or the combination of \fIpart1\fR
+and \fIpart2\fR.  See the \fBOVERLOADING\fR section below to learn how
+arguments \fIpart1\fR
+and \fIpart2\fR are combined to form a valid variable name.  These
+methods set the given variable to the value given by \fIvalue\fR and
+return void.  If an error occurs in setting the variable (e.g. an
+array variable is referenced without giving an index into the array) a
+\fBTclException\fR is generated and an error message is left in
+\fIinterp\fR's result unless the \fBTCL.DONT_THROW_EXCEPTION\fR
+\fIflag\fR bit is set.
+.TP
+\fBgetVar\fR
+The \fBgetVar\fR methods return the current value of the variable
+whose name is \fIname\fR or the combination of \fIpart1\fR and
+\fIpart2\fR (as described for the \fBsetVar\fR method above).  The
+return value is a
+\fBTclObject\fR containing the variable's value.  If an error occurs
+while reading the variable (e.g. the variable doesn't exist or an
+array element is specified for a scalar variable), then a
+\fBTclException\fR is generated and an error message is left in
+\fIinterp\fR's result unless the \fBTCL.DONT_THROW_EXCEPTION\fR
+\fIflag\fR bit is set.
+.TP
+\fBunsetVar\fR
+The \fBunsetVar\fR methods may be used to remove a variable, so that
+future attempts to read the variable will generate exceptions.  The
+arguments to these methods are treated in the same way as the
+arguments to the methods above.  If the variable cannot be removed
+because it doesn't exist then a \fBTclException\fR is generated and an
+error message is left in \fIinterp\fR's result unless the
+\fBTCL.DONT_THROW_EXCEPTION\fR \fIflag\fR bit is set.  If an array
+element is specified, the given element is removed but the array
+remains.  If an array name is specified without an index, then the
+entire array is removed.
+
+.SH OVERLOADING
+These methods are overloaded to allow three different ways to specify
+variable names.
+.IP [1]
+If \fBsetVar\fR, \fBgetVar\fR, or \fBunsetVar\fR is invoked with the
+\fIname\fR argument, the variable name is given as a single string,
+\fIname\fR.  If \fIname\fR contains an open parenthesis and ends with
+a close parenthesis, then the value between the parentheses is treated
+as an index (which can have any string value) and the characters
+before the first open parenthesis are treated as the name of an array
+variable.  If \fIname\fR doesn't have parentheses as described above,
+then the entire string is treated as the name of a scalar variable.
+.IP [2]
+If the \fIpart1\fR and \fIpart2\fR arguments are provided and
+\fIpart2\fR is not null, then the variable \fIpart1\fR(\fIpart2\fR) is
+specified.  The \fIpart1\fR argument contains the array name, and the
+\fIpart2\fR argument contains the index.
+.IP [3]
+If the \fIpart1\fR and \fIpart2\fR arguments are provided and
+\fIpart2\fR is null, then \fIpart1\fR is treated the same as the
+\fIname\fR argument in step [1].
+
+.SH FLAGS
+The \fIflags\fR argument may be used to specify any of several options
+to the methods.  It consists of an OR-ed combination of the following
+bits.
+.TP
+\fBTCL.GLOBAL_ONLY\fR
+Under normal circumstances, the procedures look up variables as follows.
+If a procedure call is active in \fBInterp\fR,
+the variable is looked up at the current level of procedure call.
+Otherwise, the variable is looked up first in the current namespace,
+then in the global namespace.
+However, if this bit is set in \fIflags\fR then the variable
+is looked up only in the global namespace,
+even if there is an active procedure call.
+If both \fBTCL.GLOBAL_ONLY\fR and \fBTCL.NAMESPACE_ONLY\fR are given,
+\fBTCL.GLOBAL_ONLY\fR is ignored.
+.TP
+\fBTCL.NAMESPACE_ONLY\fR
+If this bit is set in \fIflags\fR then the variable
+is looked up only in the current namespace; if a procedure is active,
+its variables are ignored, and the global namespace is also ignored unless
+it is the current namespace.
+.TP
+\fBTCL.APPEND_VALUE\fR
+If this bit is set then \fIvalue\fR is appended to variable's the
+current value instead of replacing it.  If the variable is currently
+undefined, then the bit is ignored.  This bit is only used by the
+\fBsetVar\fR methods.
+.TP
+\fBTCL.LIST_ELEMENT\fR
+If this bit is set, then \fIvalue\fR is converted to a valid
+Tcl list element before setting (or appending to) the variable.
+A separator space is appended before the new list element unless
+the list element is going to be the first element in a list or
+sublist (i.e. the variable's current value is empty, or contains
+the single character ``{'', or ends in `` }'').
+
+.SH EQUIVALENT C FUNCTIONS
+Tcl_SetVar, Tcl_SetVar2, Tcl_GetVar, Tcl_GetVar2, Tcl_UnsetVar,
+Tcl_UnsetVar2 
+
+.SH "SEE ALSO"
+Interp, setResult, traceVar
+
+.SH KEYWORDS
+array, get, interpreter, object, scalar, set, unset, variable

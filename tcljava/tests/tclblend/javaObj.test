@@ -1,0 +1,162 @@
+# This file tests javaObj.c.
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 1997 by Sun Microsystems, Inc.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+#
+# RCS: @(#) $Id: javaObj.test,v 1.1 1998/10/14 21:09:24 cvsadmin Exp $
+
+# Note: This test file must be sourced from the parent directory
+#       or else the defs file may not be properly loaded.
+
+if {[string compare test [info procs test]] == 1} then {source defs}
+
+setupJavaPackage
+
+
+proc setupInterp {name} {
+    catch {interp delete $name}
+    interp create $name
+    $name eval [list set ::auto_path $::auto_path]
+    $name eval {
+	package require java
+    }
+}
+
+# JavaObjInit is not tested directly
+
+test javaObj-1.1 {DupTclObject} {
+    set o [java::new tests.JavaTest]
+    set o2 $o
+    lappend o foobar
+    java::field [format %s $o2] JT2
+} 4
+
+test javaObj-2.1 {FreeTclObject} {
+    set o [java::new tests.JavaTest]
+    set result [java::field [format %s $o] JT2]
+    set name [format %s $o]
+    lappend o foobar
+    [java::call java.lang.Runtime getRuntime] gc
+    [java::call java.lang.Runtime getRuntime] runFinalization
+    lappend result [catch {java::field $name JT2} msg] $msg
+    string compare $result \
+	[list 4 1 "unknown class or object \"$name\""]
+} 0
+
+# There is no test for SetTclObject, it should never be called
+
+test javaObj-3.1 {UpdateTclObject} {
+    # This test depends on the format of the java object handle
+    # and the fact that the counter starts at java0x1 in each interp
+    setupInterp y
+    interp alias y doit {} doit
+    set result [y eval { set x [java::new tests.JavaTest] }]
+    interp delete y
+    set result
+} java0x1
+
+test javaObj-4.1 {JavaGetTclObj: unknown type} {
+    set i [java::getinterp]
+    set o [java::call tcl.lang.TclDouble newInstance 4.2]
+    $i setVar ::x $o 0
+    set x
+} 4.2
+test javaObj-4.2 {JavaGetTclObj: CObject type} {
+    set i [java::getinterp]
+    set x [list foo bar]
+    set o [$i getVar ::x 0]
+    set ir [java::cast tcl.lang.CObject [$o getInternalRep]]
+    set result [java::info class $ir]
+    $i setVar ::y $o 0
+    lappend result [lappend y baz]
+} {tcl.lang.CObject {foo bar baz}}
+
+test javaObj-5.1 {Java_tcl_lang_CObject_getString} {
+    set x foobar\xff
+    set i [java::getinterp]
+    set o [$i getVar ::x 0]
+    set ir [java::cast tcl.lang.CObject [$o getInternalRep]]
+    set result [java::info class $ir]
+    lappend result [$o toString]
+} "tcl.lang.CObject foobar\xff"
+test javaObj-5.2 {Java_tcl_lang_CObject_getString} {
+    set x {}
+    set i [java::getinterp]
+    set o [$i getVar ::x 0]
+    set ir [java::cast tcl.lang.CObject [$o getInternalRep]]
+    set result [java::info class $ir]
+    lappend result [$o toString]
+} {tcl.lang.CObject {}}
+
+# There is no explicit test for Java_tcl_lang_CObject_incrRefCount,
+# Java_tcl_lang_CObject_decrRefCount, Java_tcl_lang_CObject_makeRef,
+# Java_tcl_lang_CObject_newCObject, or JavaGetTclObject
+
+test javaObj-6.1 {FreeJavaCmdInternalRep} {
+    set o [java::new tests.JavaTest]
+    set result [$o imethod]
+    set name [format %s $o]
+    lappend o foobar
+    [java::call java.lang.Runtime getRuntime] gc
+    [java::call java.lang.Runtime getRuntime] runFinalization
+    lappend result [catch {$name imethod} msg] $msg
+    string compare $result \
+	[list 6 1 "invalid command name \"$name\""]
+} 0
+
+test javaObj-7.1 {DupJavaCmdInternalRep} {
+    set o [java::new tests.JavaTest]
+    set result [$o imethod]
+    set o2 $o
+    lappend o foobar
+    lappend result [$o2 imethod]
+} {6 6}
+ 
+test javaObj-8.1 {Copying objects between interpreters} {
+    proc doit {obj} {
+	set ::o $obj
+    }
+    setupInterp y
+    interp alias y doit {} doit
+    set obj [y eval { set x [java::new tests.JavaTest] }]
+    catch {rename $obj {}}
+    y eval {doit $x}
+    set result [list [catch {$o} msg] $msg]
+    lappend result [list [catch {java::info class $o} msg] $msg]
+    interp delete y
+
+    set result2 [list 1 "invalid command name \"$o\""]
+    lappend result2 [list 1 "unknown java object \"$o\""]
+    unset o
+    string compare $result $result2
+} 0
+
+test javaObj-9.1 {SetJavaCmdFromAny} {
+    namespace eval foo {
+	proc test {obj} {
+	    $obj imethod
+	}
+    }
+    set o [java::new tests.JavaTest]
+    list [foo::test $o] [$o imethod]
+} {6 6}
+test javaObj-9.2 {SetJavaCmdFromAny} {
+    set o [java::new tests.JavaTest]
+    namespace eval foo "
+        proc $o {arg} {return 42}
+	proc test {obj} {
+	    \$obj imethod
+	}
+    "
+    list [foo::test $o] [$o imethod]
+} {42 6}
+
+
+catch {interp delete [interp slaves]}
+

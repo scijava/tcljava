@@ -1,0 +1,291 @@
+# This file tests JavaNewCmd.java.
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 1997 by Sun Microsystems, Inc.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+#
+# RCS: @(#) $Id: JavaNewCmd.test,v 1.1 1998/10/14 21:09:24 cvsadmin Exp $
+
+# Note: This test file must be sourced from the parent directory
+#       or else the defs file may not be properly loaded.
+
+if {[string compare test [info procs test]] == 1} then {source defs}
+
+setupJavaPackage
+
+#
+# JavaNewCmd.cmdProc
+#
+
+test javaNewCmd-1.1 {JavaNewCmd.cmdProc} {
+    list [catch {java::new} msg] $msg
+} {1 {wrong # args: should be "java::new signature ?arg arg ...?"}}
+
+test javaNewCmd-1.2 {JavaNewCmd.cmdProc} {
+    list [catch {java::new {int[]}} msg] $msg
+} {1 {wrong # args: should be "java::new int[] sizeList ?valueList?"}}
+
+test javaNewCmd-1.3 {JavaNewCmd.cmdProc} {
+    list [catch {java::new {blah[]} \{\{\}} msg] $msg
+} {1 {unknown class "blah"}}
+
+test javaNewCmd-1.4 {JavaNewCmd.cmdProc} {
+    list [catch {java::new {blah[[]} \{\{\}} msg] $msg
+} {1 {unknown class "blah["}}
+
+test javaNewCmd-1.5 {JavaNewCmd.cmdProc} {
+    list [catch {java::new {int[]} \{\{\}} msg] $msg
+} {1 {unmatched open brace in list}}
+
+test javaNewCmd-1.6 {JavaNewCmd.cmdProc} {
+    set x [java::new {int[]} {} {0 1 2 3 4}]
+    list [$x get 0] [$x get 4]
+} {0 4}
+
+test javaNewCmd-1.7 {JavaNewCmd.cmdProc} {
+    set x [java::new {int[]} {} {0 1 2 3 4}]
+    list [$x get 0] [$x get 4]
+} {0 4}
+
+test javaNewCmd-1.8 {cmdProc} {
+    list [catch {java::new {}} msg] $msg
+} {1 {bad signature ""}}
+
+test javaNewCmd-1.9 {cmdProc} {
+    [java::new tests.JavaTest] imethod
+} 6
+
+test javaNewCmd-1.10 {cmdProc} {
+    list [catch {java::new {int[]} {1 2 3} {1 2 3}} msg] $msg
+} {1 {size list "1 2 3" doesn't match array dimension (1)}}
+test javaNewCmd-1.12 {cmdProc} {
+    list [catch {java::new {int[][]} {1 2 3} {1 2 3}} msg] $msg
+} {1 {size list "1 2 3" doesn't match array dimension (2)}}
+test javaNewCmd-1.12 {cmdProc} {
+    set a [java::new {int[][]} {2} {{11 22 33} {21 32 43}}]
+    $a getrange {0 0}
+} {11 22 33}
+
+#
+# ArraySig.looksLikeArraySig
+#
+
+test javaNewCmd-2.1 {ArraySig.looksLikeArraySig} {
+    set info ""
+    set m imethod
+    set x [java::new {tests.JavaTest String} foo]
+    $x $m
+    set info [jtest type $m]
+    list $info [catch {java::new $m} msg] $msg
+} {tcl.lang.FuncSig 1 {unknown class "imethod"}}
+
+test javaNewCmd-2.2 {ArraySig.looksLikeArraySig} {
+    set info ""
+    set m {int[]}
+    set x [java::new $m 10]
+    set info [jtest type $m]
+    list $info [catch {java::new $m yyy} msg] $msg
+} {tcl.lang.ArraySig 1 {expected integer but got "yyy"}}
+
+test javaNewCmd-2.3 {ArraySig.looksLikeArraySig} {
+    list [catch {java::new \{} msg] $msg
+} {1 {unmatched open brace in list}}
+
+test javaNewCmd-2.4 {ArraySig.looksLikeArraySig} {
+    list [catch {java::new {blah blah blah}} msg] $msg
+} {1 {unknown class "blah"}}
+
+#
+# ArraySig.get
+#
+
+test javaNewCmd-3.1 {ArraySig.get} {
+    set m {int[]}
+    set x [java::new $m 10]
+    set robj [jtest getobject $m]
+    set internalRep [java::call tcl.lang.ArraySig get [java::getinterp] $robj]
+    set internalRep [java::cast tcl.lang.InternalRep $internalRep]
+    string compare [$robj getInternalRep] $internalRep
+} {0}
+
+test javaNewCmd-3.2 {ArraySig.get} {
+    set m {int[]}
+    set robj [jtest getobject $m]
+    set internalRep [java::call tcl.lang.ArraySig get [java::getinterp] $robj]
+    [java::field $internalRep componentType] getName
+} {[I}
+
+test javaNewCmd-3.3 {ArraySig.get} {
+    set m {xyz}
+    set robj [jtest getobject $m]
+    list [catch {
+	java::call tcl.lang.ArraySig get [java::getinterp] $robj
+    } msg] $msg
+} {1 {tcl.lang.TclException: bad array signature "xyz"}}
+
+test javaNewCmd-3.4 {ArraySig.get} {
+    set m "\{"
+    set robj [jtest getobject $m]
+    list [catch {
+	java::call tcl.lang.ArraySig get [java::getinterp] $robj
+    } msg] $msg
+} {1 {tcl.lang.TclException: unmatched open brace in list}}
+
+test javaNewCmd-3.5 {ArraySig.get} {
+    set m {int[] a}
+    set robj [jtest getobject $m]
+    list [catch {
+	java::call tcl.lang.ArraySig get [java::getinterp] $robj
+    } msg] $msg
+} {1 {tcl.lang.TclException: bad array signature "int[] a"}}
+
+test javaNewCmd-3.6 {ArraySig.get} {
+    set m {blah}
+    set robj [jtest getobject $m]
+    list [catch {
+	java::call tcl.lang.ArraySig get [java::getinterp] $robj
+    } msg] $msg
+} {1 {tcl.lang.TclException: bad array signature "blah"}}
+
+test javaNewCmd-3.7 {ArraySig.get} {
+    set m {blah[]}
+    set robj [jtest getobject $m]
+    list [catch {
+	java::call tcl.lang.ArraySig get [java::getinterp] $robj
+    } msg] $msg
+} {1 {tcl.lang.TclException: unknown class "blah"}}
+
+#
+# Black-box tests
+#
+
+test javaNewCmd-4.1 {java::new} {
+    [java::new {tests.JavaTest String} foo] imethod
+} 6
+test javaNewCmd-4.2 {java::new} {
+    [java::new {tests.JavaTest String int} foo 3] imethod
+} 6
+test javaNewCmd-4.3 {java::new} {
+    [java::new {tests.JavaTest String int} foo 3] imethod
+} 6
+test javaNewCmd-4.4 {java::new: exception in constructor} {
+    list [catch {java::new {tests.JavaTest boolean} true} msg] $msg
+} {1 java.lang.NullPointerException}
+
+test javaNewCmd-5.1 {array case} {
+    list [catch {
+	set handle [java::new {int[]}]
+    } msg] $msg
+} {1 {wrong # args: should be "java::new int[] sizeList ?valueList?"}}
+test javaNewCmd-5.2 {array case} {
+    list [catch {
+	set handle [java::new {int[]} 5 {6 7 8 9 10} junk]
+    } msg] $msg
+} {1 {wrong # args: should be "java::new int[] sizeList ?valueList?"}}
+
+test javaNewCmd-5.3 {array case, no valueList} {
+    list [catch {
+	set handle [java::new {Integer[]} 5]
+	list [java::info cl $handle] [java::info ba $handle] \
+	    [java::info di $handle] [$handle length]
+    } msg] $msg
+} {0 {{java.lang.Integer[]} java.lang.Integer 1 5}}
+test javaNewCmd-5.4 {array case, no valueList} {
+    list [catch {
+	set handle [java::new {Integer[][][]} {2 4 6}]
+	list [java::info cl $handle] [java::info ba $handle] \
+	    [java::info di $handle] [$handle length]
+    } msg] $msg
+} {0 {{java.lang.Integer[][][]} java.lang.Integer 3 2}}
+test javaNewCmd-5.5 {array case, no valueList} {
+    list [catch {
+	set handle [java::new {tests.javainfo.InfoTestClass[]} 4]
+	list [java::info cl $handle] [java::info ba $handle] \
+	    [java::info di $handle] [$handle length]
+    } msg] $msg
+} {0 {{tests.javainfo.InfoTestClass[]} tests.javainfo.InfoTestClass 1 4}}
+test javaNewCmd-5.6 {array case, no valueList} {
+    list [catch {
+	set handle [java::new {tests.javainfo.InfoTestClass[][][][]} {2 5 3 3}]
+	list [java::info cl $handle] [java::info ba $handle] \
+	    [java::info di $handle] [$handle length]
+    } msg] $msg
+} {0 {{tests.javainfo.InfoTestClass[][][][]} tests.javainfo.InfoTestClass 4 2}}
+test javaNewCmd-5.7 {array case, no valueList} {
+    list [catch {
+	set handle [java::new {int[]} 5]
+	list [java::info cl $handle] [java::info ba $handle] \
+	    [java::info di $handle] [$handle length]
+    } msg] $msg
+} {0 {{int[]} int 1 5}}
+test javaNewCmd-5.8 {array case, no valueList} {
+    list [catch {
+	set handle [java::new {int[][]} {3 3}]
+	list [java::info cl $handle] [java::info ba $handle] \
+	    [java::info di $handle] [$handle length]
+    } msg] $msg
+} {0 {{int[][]} int 2 3}}
+test javaNewCmd-5.9 {array case, no valueList} {
+    list [catch {
+	set handle [java::new {int[][][]} 5]
+    } msg] $msg
+} {1 {cannot initialize a 3 dimensional array with zero size in dimension 1}}
+test javaNewCmd-5.10 {array case, no valueList} {
+    list [catch {
+	set handle [java::new {int[][]} {4 6}]
+	list [java::info cl $handle] [java::info ba $handle] \
+	    [java::info di $handle] [$handle length] \
+	    [[$handle get 0] length]
+    } msg] $msg
+} {0 {{int[][]} int 2 4 6}}
+
+test javaNewCmd-5.11 {array case, empty sizeList} {
+    list [catch {
+	set handle [java::new {int[]} {}]
+	list [java::info cl $handle] [java::info ba $handle] \
+	    [java::info di $handle] [$handle length]
+    } msg] $msg
+} {0 {{int[]} int 1 0}}
+test javaNewCmd-5.12 {array case, empty sizeList} {
+    list [catch {
+	set handle [java::new {int[]} {} {2 3 4 5}]
+	list [java::info cl $handle] [java::info ba $handle] \
+	    [java::info di $handle] [$handle length] [$handle getrange]
+    } msg] $msg
+} {0 {{int[]} int 1 4 {2 3 4 5}}}
+test javaNewCmd-5.13 {array case, empty sizeList} {
+    list [catch {
+	set handle [java::new {int[][][]} {} {{{1 2} {3 4}} {{5 6} {7 8}}}]
+	list [java::info cl $handle] [java::info ba $handle] \
+	    [java::info di $handle] [$handle length] [$handle getrange {0 1 0}]
+    } msg] $msg
+} {0 {{int[][][]} int 3 2 {3 4}}}
+
+test javaNewCmd-5.14 {array case, test classname} {
+    list [catch {
+	set handle [java::new {junk[][][]} {}]
+    } msg] $msg
+} {1 {unknown class "junk"}}
+test javaNewCmd-5.15 {array case, test classname} {
+    list [catch {
+	set handle [java::new {[int} {}]
+    } msg] $msg
+} {1 {unknown class "[int"}}
+test javaNewCmd-5.16 {array case, test classname} {
+    list [catch {
+	set handle [java::new {[int[][][]} {}]
+    } msg] $msg
+} {1 {unknown class "[int"}}
+test javaNewCmd-5.17 {array case, test classname} {
+    list [catch {
+	set handle [java::new {\[I} {}]
+	list [java::info cl $handle] [java::info ba $handle] \
+	    [java::info di $handle] [$handle length]
+    } msg] $msg
+} {0 {{int[]} int 1 0}}
+

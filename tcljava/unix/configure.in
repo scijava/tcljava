@@ -1,0 +1,517 @@
+dnl	This file is an input file used by the GNU "autoconf" program to
+dnl	generate the file "configure", which is run to configure the
+dnl	Makefile in this directory.
+AC_INIT(../src/tcljava/tcl/lang/InternalRep.java)
+# RCS: @(#) $Id: configure.in,v 1.1 1998/10/14 21:09:22 cvsadmin Exp $
+
+
+#--------------------------------------------------------------------
+#	Locate which java tool to build.  If the --with-build option
+#	is used, that overides everthing.  Otherwise look for Tcl Blend
+#	first then tclBlend.
+#--------------------------------------------------------------------
+
+AC_ARG_WITH(build, [  --with-build=DIR       select which system to build],
+	TCLJAVA=$withval, TCLJAVA=NONE)
+
+if test $TCLJAVA != "NONE"; then
+    if test $TCLJAVA != "jacl" && test $TCLJAVA != "tclblend"; then 
+	AC_MSG_ERROR(Cannot build '${TCLJAVA}': use 'jacl' or 'tclblend')
+    fi
+fi
+
+#convert srcdir into full path name
+srcdir=`cd $srcdir;pwd`
+
+# Set BOTH to true if we are configuring both Jacl and Tcl Blend
+BOTH=false
+
+echo "srcdir is $srcdir"
+if test $TCLJAVA = "NONE"; then 
+    if test -f $srcdir/../src/tclblend/tcl/lang/Interp.java; then
+	TCLJAVA=tclblend
+    elif test -f $srcdir/../src/jacl/tcl/lang/Interp.java; then 
+	TCLJAVA=jacl
+    else
+	AC_MSG_ERROR(Cannot find source files to build either Jacl or Tcl Blend)
+    fi
+    if test -f $srcdir/../src/jacl/tcl/lang/Interp.java && test $TCLJAVA = "tclblend"; then
+        echo "configuring for both jacl and tcl blend"
+        BOTH=true
+    fi
+
+fi
+
+#--------------------------------------------------------------------
+#	See if there was a command-line option for where Java is;  if
+#	not, check to see if the JAVA_HOME environment variable is set;
+#       if it is not, look for javac on the path.
+#--------------------------------------------------------------------
+
+AC_ARG_WITH(java, [  --with-java=DIR           use Java binaries from DIR, defaults to the value of the JAVA_HOME environment variable],
+    JAVA_DIR=$withval, JAVA_DIR=$JAVA_HOME)
+
+if test ! -d "$JAVA_DIR"; then
+    AC_MSG_WARN(['${JAVA_DIR}' is not a directory, so we search for the java compiler.])
+    AC_PATH_PROG(JAVAC, javac)
+    if test -x "$JAVAC"; then	
+	JAVABIN=`dirname $JAVAC`
+	JAVA_DIR=`dirname $JAVABIN`
+    else
+        AC_MSG_WARN([ Failed to find javac, perhaps Java is not installed?])
+    fi
+
+    # The default location that we look for the JDK.  This should probably
+    # be a list that includes /usr/local/jdk and /opt/jdk
+    DEFAULT_JDK=/opt/jdk1.1.6
+    if test ! -d "$JAVA_DIR"; then
+	AC_MSG_WARN(['${JAVA_DIR}' is not a directory, using the default '${DEFAULT_JDK}'])
+	if test -d "$DEFAULT_JDK"; then
+	    JAVA_DIR=`cd $DEFAULT_JDK; pwd`	
+	else
+			    AC_MSG_ERROR([
+Java directory $DEFAULT_JDK doesn't exist.
+Try --with-java=DIR, or set the JAVA_HOME environment variable.])
+	fi	
+    fi	
+fi
+
+#
+# Check that we have the javac that corresponds with JAVA_DIR in our path
+#
+AC_MSG_CHECKING([for the java runtime in $JAVA_DIR/bin])
+if test -f $JAVA_DIR/bin/java; then
+    AC_MSG_RESULT($JAVA_DIR/bin/java)
+    AC_MSG_CHECKING([that you have the right java in your path.])
+    AC_PATH_PROG(JAVA, java)
+    if test "$JAVA_DIR/bin/java" = "$JAVA"; then
+	AC_MSG_RESULT([  You have the right java in your path, $JAVA_DIR/bin/java = $JAVA])
+    else
+	AC_MSG_WARN([$JAVA_DIR/bin/java is not the same as $JAVA.
+Be sure that you don't have a mismatch in JDK versions.])
+	JAVA=$JAVA_DIR/bin/java
+    fi
+else
+    AC_MSG_ERROR([
+  Cannot find $JAVA_DIR/bin/java.
+  Try --with-java=DIR, or set the JAVA_HOME environment variable.]) 
+fi
+
+
+#
+# Check that we have the javac that corresponds with JAVA_DIR in our path
+#
+AC_MSG_CHECKING([for the java compiler in $JAVA_DIR/bin])
+if test -f $JAVA_DIR/bin/javac; then
+    AC_MSG_RESULT($JAVA_DIR/bin/javac)
+    AC_MSG_CHECKING([that you have the right javac in your path.])
+    AC_PATH_PROG(JAVAC, javac)
+    if test "$JAVA_DIR/bin/javac" = "$JAVAC"; then
+        AC_MSG_RESULT([  You have the right javac in your path, $JAVA_DIR/bin/javac = $JAVAC])
+    else
+        AC_MSG_WARN([$JAVA_DIR/bin/javac is not the same as $JAVAC.
+Be sure that you don't have a mismatch in JDK versions.])
+	JAVAC=$JAVA_DIR/bin/javac
+    fi
+else
+    AC_MSG_ERROR([
+  Cannot find $JAVA_DIR/bin/javac.
+  Try --with-java=DIR, or set the JAVA_HOME environment variable.])
+fi
+
+
+
+#
+# If we are compiling tclBlend, then we need to:
+# 1. Check that we have native threads if we are under Solaris.
+# 2. Find the platform dependent include files
+# 3. Find the platform dependent libraries
+#
+if test $TCLJAVA = "tclblend" || test $BOTH = "true"; then
+    JDK1_2BETA3=no
+    #
+    # Check to see that we can find the right pieces
+    #
+    if test ! -f $JAVA_DIR/include/StubPreamble.h; then
+	    if test ! -f $JAVA_DIR/include/jni.h; then
+		AC_MSG_ERROR([There's no StubPreamble.h in $JAVA_DIR/include.
+		Try --with-java=DIR, or set the JAVA_HOME environment variable.])
+	    else 
+		JDK1_2BETA3=yes
+		echo "Looks like you are running jdk1.2beta3 or later"
+	    fi	
+    fi
+
+    #
+    # Platform dependent checks go here
+    #
+    case "`uname -s`" in
+	HP-UX) ;;
+	Linux) ;;
+	IRIX) ;;
+	SunOS) 
+	    if test ! -d $JAVA_DIR/include/native_threads; then
+		if test "$JDK1_2BETA3" = "no"; then
+		    if test -r $JAVA_DIR/lib/sparc/native_threads; then
+			AC_MSG_RESULT([ '$JAVA_DIR/include/native_threads'
+does not exist, but '$JAVA_DIR/lib/sparc/native_threads' is readable,
+so you are probably running the production JDK.])
+		    else	
+			AC_MSG_ERROR(['${JAVA_DIR}/include/native_threads'
+does not exist.
+You must install the Solaris JDK Native Threads Pack to use tclBlend.
+See http://www.javasoft.com/products/jdk/1.1/index.html.])
+		    fi
+		fi
+	    fi
+	    AUX_LIBS="-lthread"
+	    ;;
+	*);;
+    esac
+
+    #
+    # Find the proper platform include directory
+    #
+    case "`uname -s`" in
+	HP-UX) TMP_JAVA_ARCH_INCLUDE=$JAVA_DIR/include/hp-ux;;
+	Linux) TMP_JAVA_ARCH_INCLUDE=$JAVA_DIR/include/linux;;
+	IRIX)  TMP_JAVA_ARCH_INCLUDE=$JAVA_DIR/include/irix;;
+	SunOS) TMP_JAVA_ARCH_INCLUDE=$JAVA_DIR/include/solaris;;
+	    *) TMP_JAVA_ARCH_INCLUDE=$JAVA_DIR/include/idontknow;;
+    esac
+    #
+    # User specified Java architecture, used to find the jdk include files
+    #
+    AC_ARG_WITH(javaarchinclude, [  --with-javaarchinclude=DIR        use Java arch dependent includes from DIR],
+	JAVA_ARCH_INCLUDE=$withval, JAVA_ARCH_INCLUDE="$TMP_JAVA_ARCH_INCLUDE")
+    if test ! -d $JAVA_ARCH_INCLUDE; then
+	AC_MSG_ERROR(Java directory $JAVA_ARCH_INCLUDE doesn't exist)
+    fi
+    AC_MSG_CHECKING([for the java jni_md.h include file])
+    if test -f $JAVA_ARCH_INCLUDE/jni_md.h; then
+	AC_MSG_RESULT($JAVA_ARCH_INCLUDE/jni_md.h)
+    else
+	AC_MSG_ERROR([There's no jni_md.h in $JAVA_ARCH_INCLUDE/include;
+use the --with-javaarchinclude= configure flag to specify the location
+of the architecture dependent include files in the JDK.])
+    fi
+
+    case "`uname -s`" in
+	HP-UX) TMP_JAVA_ARCH_LIB=$JAVA_DIR/lib/PA_RISC/green_threads
+	    JAVA_ARCH_LIB_CHK=libjava.sl
+	    ;;
+	Linux) TMP_JAVA_ARCH_LIB=$JAVA_DIR/lib/linux/green_threads
+	    JAVA_ARCH_LIB_CHK=libjava.so
+	    ;;
+	IRIX) TMP_JAVA_ARCH_LIB=$JAVA_DIR/lib32/sgi/green_threads
+	    JAVA_ARCH_LIB_CHK=libjava.so
+	    ;;
+	SunOS) 
+	    TMP_JAVA_ARCH_LIB=$JAVA_DIR/lib/sparc/native_threads
+	    JAVA_ARCH_LIB_CHK=libjava.so
+
+	    if test ! -f $TMP_JAVA_ARCH_LIB/$JAVA_ARCH_LIB_CHK; then
+		# Could be JDK1.2beta3 or later, which does not have libjava.so
+		# in lib/sparc/native_threads
+		TMP_JAVA_ARCH_LIB=$JAVA_DIR/lib/sparc
+	        if test ! -f $TMP_JAVA_ARCH_LIB/$JAVA_ARCH_LIB_CHK; then
+			TMP_JAVA_ARCH_LIB=$JAVA_DIR/jre/lib/sparc
+		fi
+	    fi	
+	    ;;
+	*)TMP_JAVA_ARCH_LIB=$JAVA_DIR/lib/idontknow;;
+    esac
+
+    #
+    # User specified Java architecture, used to find the jdk shared libs
+    #
+    AC_ARG_WITH(javaarchlib, [  --with-javaarchlib=DIR        use Java architecture dependent libraries from DIR],
+	JAVA_ARCH_LIB=$withval, JAVA_ARCH_LIB="$TMP_JAVA_ARCH_LIB")
+    if test ! -d $JAVA_ARCH_LIB; then
+	AC_MSG_ERROR(Java directory $JAVA_ARCH_LIB doesn't exist)
+    fi
+    AC_MSG_CHECKING([for the java $JAVA_ARCH_LIB_CHK library file])
+    if test -f $JAVA_ARCH_LIB/$JAVA_ARCH_LIB_CHK; then
+	AC_MSG_RESULT($JAVA_ARCH_LIB/$JAVA_ARCH_LIB_CHK)
+    else
+	AC_MSG_ERROR([There's no $JAVA_ARCH_LIB_CHK in $JAVA_ARCH_LIB.
+Use the --with-javaarchlib= configure flag to specify the location of the
+architecture dependent library files in the JDK.])
+    fi
+
+    AC_HEADER_STDC
+    # generic/javaCmd.c calls memset
+    AC_CHECK_FUNCS(memset)
+
+fi
+# End of tclBlend section
+
+
+
+
+
+#
+# Check to make sure we know the names of the .zip or .jar files
+# that need to be included in the CLASSPATH
+#
+
+AC_MSG_CHECKING([for the classes.zip or classes.jar file in $JAVA_DIR/lib])
+
+if test -f $JAVA_DIR/lib/classes.zip; then
+    # JDK1.1.6 under Solaris and Windows
+    JAVA_CLASSPATH=$JAVA_DIR/lib/classes.zip
+    AC_MSG_RESULT($JAVA_DIR/lib/classes.zip)
+elif test -f $JAVA_DIR/jre/lib/rt.jar; then
+    # JDK1.2beta4 under Solaris and Windows
+    JAVA_CLASSPATH=$JAVA_DIR/jre/lib/rt.jar
+    AC_MSG_RESULT($JAVA_DIR/jre/lib/rt.jar)
+elif test "`uname -s`" = "IRIX"; then
+    # JDK1.1.5 under IRIX
+    if test -f $JAVA_DIR/lib/rt.jar; then
+	JAVA_CLASSPATH=$JAVA_DIR/lib/rt.jar
+    else
+	AC_MSG_ERROR([could not find $JAVA_DIR/lib/rt.jar for IRIX system])
+    fi
+    if test -f $JAVA_DIR/lib/dev.jar; then
+	JAVA_CLASSPATH=$JAVA_CLASSPATH:$JAVA_DIR/lib/dev.jar
+    fi
+    AC_MSG_RESULT($JAVA_CLASSPATH)
+fi
+
+
+
+
+
+AC_MSG_CHECKING([the java runtime])
+
+if env $JAVAC -d . $srcdir/Test.java ; then
+    AC_MSG_RESULT([the java compiler works])
+    AC_MSG_CHECKING([the -native flag to the Java runtime])
+    if env $JAVA -native Test ; then
+        JAVA_FLAGS=-native
+	AC_MSG_RESULT([the -native flag works])
+    else
+        #if -native did not work then make sure it works with no args
+        if env $JAVA Test ; then
+            JAVA_FLAGS=""
+	    AC_MSG_RESULT([the -native flag does not work])
+        else
+            AC_MSG_ERROR([could not run simple test program Test.class with $JAVA, you need to check the java runtime to make sure it is installed correctly and that . is in your CLASSPATH])
+        fi
+    fi
+else
+    AC_MSG_ERROR([Could not compile simple test program Test.java with $JAVAC])
+fi
+
+
+
+#--------------------------------------------------------------------
+# 	TclJAVA Specific Substitutions
+#--------------------------------------------------------------------
+TCLJAVA_VERSION=1.1
+TCLJAVA_MAJOR_VERSION=1
+TCLJAVA_MINOR_VERSION=1
+TCLJAVA_PATCHLEVEL=a1
+
+#--------------------------------------------------------------------
+#	If the TCLJAVA variable equals tclblend then we need to
+#	grab some variables from the tclConfig.sh
+#--------------------------------------------------------------------
+
+if test $TCLJAVA = "tclblend" || test $BOTH = "true"; then
+
+    #--------------------------------------------------------------------
+    #	See if there was a command-line option for where Tcl is;  if
+    #	not, assume that its top-level directory is a sibling of ours.
+    #--------------------------------------------------------------------
+    
+    AC_ARG_WITH(tcl, [  --with-tcl=DIR          use Tcl 8.0 binaries from DIR],
+    	TCL_BIN_DIR=$withval, TCL_BIN_DIR="$srcdir/../../tcl8.0.3/unix")
+    
+    if test ! -d $TCL_BIN_DIR; then
+	TCL_BIN_DIR="$srcdir/../../tcl8.0/unix"
+    fi
+
+    if test ! -d $TCL_BIN_DIR; then
+        AC_MSG_ERROR([Tcl directory $TCL_BIN_DIR could not be located.
+Use the --with-tcl=<dirName> configure flag to specify the location.])
+    else
+	TCL_BIN_DIR=`cd $TCL_BIN_DIR; pwd`
+    fi
+
+    echo "checking for Tcl build in $TCL_BIN_DIR"
+
+    TCL_SRC_DIR=`cd $TCL_BIN_DIR; make topDirName`
+    if test ! -f $TCL_BIN_DIR/tclConfig.sh; then
+	AC_MSG_ERROR([Tcl was not configured.])
+    fi
+
+    echo "Tcl found at $TCL_SRC_DIR"
+
+    #--------------------------------------------------------------------
+    #	Read in configuration information generated by Tcl for shared
+    #	libraries, and arrange for it to be substituted into our
+    #	Makefile.
+    #--------------------------------------------------------------------
+
+    file=$TCL_BIN_DIR/tclConfig.sh
+    . $file
+    if test $TCL_SHARED_BUILD -eq 0 ; then
+	AC_MSG_ERROR([Tcl was not built correctly.  
+Make sure Tcl was configured with --enable-shared.])
+    fi
+
+    CC=$TCL_CC
+    SHLIB_CFLAGS=$TCL_SHLIB_CFLAGS
+    SHLIB_LD=$TCL_SHLIB_LD
+    SHLIB_LD_LIBS=$TCL_SHLIB_LD_LIBS
+    SHLIB_SUFFIX=$TCL_SHLIB_SUFFIX
+    SHLIB_VERSION=$TCL_SHLIB_VERSION
+    TCL_LIBS=$TCL_LIBS
+    TCL_VERSION=$TCL_VERSION
+
+
+    AC_SUBST(AUX_LIBS)	
+    AC_SUBST(CC)
+    AC_SUBST(SHLIB_CFLAGS)
+    AC_SUBST(SHLIB_LD)
+    AC_SUBST(SHLIB_LD_LIBS)
+    AC_SUBST(SHLIB_SUFFIX)
+    AC_SUBST(SHLIB_VERSION)
+    AC_SUBST(TCL_BUILD_LIB_SPEC)
+    AC_SUBST(TCL_LIBS)
+    AC_SUBST(TCL_VERSION)
+    AC_SUBST(TCL_SRC_DIR)
+    AC_SUBST(TCL_BIN_DIR)
+    AC_SUBST(JAVA_ARCH_INCLUDE)
+    AC_SUBST(JAVA_ARCH_LIB)
+    AC_SUBST(TCL_LD_SEARCH_FLAGS)
+fi
+
+
+#--------------------------------------------------------------------
+#
+#	Specify the classpath for Java Studio
+#
+#--------------------------------------------------------------------
+
+AC_ARG_WITH(studio, [  --with-studio=DIR       store where studio is],
+	STUDIO_LIB_DIR=$withval, STUDIO_LIB_DIR=NONE)
+
+if test $STUDIO_LIB_DIR != "NONE"; then 
+
+    #
+    # If it is not NONE then test to see if it is valid.
+    #
+    if test ! -d $STUDIO_LIB_DIR/com; then
+	AC_MSG_ERROR(Cannot locate the /com directory in $STUDIO_LIB_DIR.)
+    fi
+
+elif test -f $srcdir/../tools/checkMak.tcl; then
+
+    #
+    # Hack for internal development.  We know where our 
+    # Studio class files are located.
+    
+    STUDIO_LIB_DIR=/proj/tcl/install/Java-Studio1.0/JS/classes
+fi
+
+
+#
+# try to find tclsh8.0 or wish8.0 in the path if we are running tclblend
+#
+
+TCLSH80=tclsh8.0
+WISH80=wish8.0
+
+if test $TCLJAVA = "tclblend" || test $BOTH = "true"; then
+
+  AC_PATH_PROG(TCLSH_LOC, tclsh8.0)
+  if test -x "$TCLSH_LOC"; then
+      echo 'puts [[info tclversion]] ; exit 0' > tcl_version.tcl
+      if test "`$TCLSH_LOC tcl_version.tcl`" = "8.0"; then
+          TCLSH80=$TCLSH_LOC
+          AC_MSG_RESULT([ found tcl version 8.0 at $TCLSH80])
+      else
+          AC_MSG_WARN([ could not find working tclsh8.0]);
+      fi
+      rm -f tcl_version.tcl
+  else
+      #if we did not find tclsh8.0 then try tclsh
+      AC_PATH_PROG(TCLSH_LOC, tclsh)
+      if test -x "$TCLSH_LOC"; then
+          echo 'puts [[info tclversion]] ; exit 0' > tcl_version.tcl
+          if test "`$TCLSH_LOC tcl_version.tcl`" = "8.0"; then
+              TCLSH80=$TCLSH_LOC
+              AC_MSG_RESULT([found tcl version 8.0 at $TCLSH80])
+	  else
+              AC_MSG_WARN([ $TCLSH_LOC is not tcl version 8.0])
+	  fi
+          rm -f tcl_version.tcl
+      else
+          AC_MSG_WARN([ Failed to find a tcl shell version 8.0])
+      fi
+  fi
+
+  AC_PATH_PROG(WISH_LOC, wish8.0)
+  if test -x "$WISH_LOC"; then
+      echo 'puts [[info tclversion]] ; exit 0' > tcl_version.tcl
+      if test "`$WISH_LOC tcl_version.tcl`" = "8.0"; then
+          WISH80=$WISH_LOC
+          AC_MSG_RESULT([ found wish version 8.0 at $WISH80])
+      else
+          AC_MSG_WARN([ could not find working wish8.0]);
+      fi
+      rm -f tcl_version.tcl
+  else
+      #if we did not find wish8.0 then try wish
+      AC_PATH_PROG(WISH_LOC, wish)
+      if test -x "$WISH_LOC"; then
+          echo 'puts [[info tclversion]] ; exit 0' > tcl_version.tcl
+          if test "`$WISH_LOC -f tcl_version.tcl`" = "8.0"; then
+              WISH80=$WISH_LOC
+              AC_MSG_RESULT([ found wish version 8.0 at $WISH80])
+          else
+              AC_MSG_WARN([ $WISH_LOC is not wish version 8.0])
+          fi
+          rm -f tcl_version.tcl
+      else
+          AC_MSG_WARN([ Failed to find a wish shell version 8.0])
+      fi
+  fi
+
+fi
+
+
+
+
+
+#do variable substs into the *.in files
+
+# Directory where we are building, used for CLASSPATH when we test
+BUILD_DIR=`pwd`
+AC_SUBST(BUILD_DIR)
+
+AC_SUBST(JAVA_DIR)
+AC_SUBST(JAVA_CLASSPATH)
+AC_SUBST(JAVA_FLAGS)
+AC_SUBST(TCLJAVA_VERSION)
+AC_SUBST(TCLJAVA_MAJOR_VERSION)
+AC_SUBST(TCLJAVA_MINOR_VERSION)
+AC_SUBST(TCLJAVA_PATCHLEVEL)
+AC_SUBST(TCLJAVA)
+AC_SUBST(STUDIO_LIB_DIR)
+AC_SUBST(WISH80)
+AC_SUBST(TCLSH80)
+
+
+if test $TCLJAVA = "jacl"; then 
+    PROCESS_FILES="Makefile jaclsh"
+elif test $TCLJAVA = "tclblend" && test $BOTH != "true"; then
+    PROCESS_FILES="Makefile jwish"
+else
+    PROCESS_FILES="Makefile jwish jaclsh"
+fi
+
+AC_OUTPUT([$PROCESS_FILES])
+

@@ -1,0 +1,134 @@
+Tcl Bean
+RCS: @(#) $Id: tclbean_install.jacl,v 1.1 1998/10/14 21:09:07 cvsadmin Exp $
+
+This is the directory where you configure, compile, and install 
+the Tcl Bean for Java Studio.
+
+The rest of this file contains instructions on how to do this.  The 
+release should compile and run either "out of the box" or with trivial 
+changes on WindowsNT, Windows95 and most flavors of UNIX.
+
+
+======================================================================
+INSTALLATION FOR WINDOWS
+======================================================================
+
+How To Install The Tcl Bean (Binary Release Only):
+-------------------------------------------------
+
+If you run the Jacl installer program for Windows (jacl10.exe,
+downloadable from our web site), it will automatically install the Tcl
+Bean for JavaStudio. Alternatively, you can install the Tcl Bean by
+hand following these steps:
+
+(a) Locate the "JS10" directory created when Java Studio was
+    installed.   For the rest of this example, this is assumed to be
+    "C:\JS10", but may be different on your machine.
+
+(b) Make a directory called C:\JS10\PlugIns\classes
+
+(c) Copy the jacl.jar file to the C:\JS10\PlugIns\classes directory.
+
+(d) The contents of jacl.jar must be extracted from the jar file.
+    To do this type "cd C:\JS10\PlugIns\classes" then "jar xf jacl.jar".
+
+(e) Start Java Studio and import the "tclbean.jar" file using the
+    standard Java Studio import wizard.  If an error occurs, check
+    the C:\JS10\VJ\VJLog file for details on how to fix the problem.
+
+
+How To Compile And Install The Tcl Bean (Source Release Only):
+-------------------------------------------------------------
+
+(a) Build Jacl according to the supplied instructions.
+
+(b) You must have the JavaStudio class files installed on your
+    machine. These class files are usually installed when you run the
+    JavaStudio installer program. I am not sure where the exact
+    location is, but on my machine they are at
+
+	c:\JavaStudio1.0\JS\classes.zip
+
+    If the class files are installed differently on your machine, edit
+    the line STUDIO_LIB_DIR in the win\makefile.vc file.
+
+(c) In the win sub directory, type "nmake -f makefile.vc bean".  This
+    will create two jar files; tclbean.jar and jacl.jar.
+
+(d) Locate the "JS10" directory created when Java Studio was
+    installed.   For the rest of this example, this is assumed to be
+    "C:\JS10", but may be different on your machine.
+
+(e) Make a directory called C:\JS10\PlugIns\classes.
+
+(f) Copy the jacl.jar file to the C:\JS10\PlugIns\classes directory.
+
+(g) The contents of jacl.jar must be extracted from the jar file.
+    To do this type "cd C:\JS10\PlugIns\classes" then "jar xf jacl.jar".
+
+(h) Start Java Studio and import the "tclbean.jar" file using the
+    standard Java Studio import wizard.  If an error occurs, check
+    the C:\JS10\VJ\VJLog file for details on how to fix the problem.
+
+
+======================================================================
+INSTALLATION FOR UNIX
+======================================================================
+
+How To Install The Tcl Bean (Binary Release Only):
+-------------------------------------------------
+
+(a) Locate the "~/.js1.0" directory created in your home directory.  If
+    Java Studio has never been run in your environment, the "~/.js1.0"
+    directory will not exist.  Either run Java Studio once or create this
+    directory yourself.  For the rest of this example, the install
+    directory is assumed to be "~/.js1.0", but may be different on
+    your machine. 
+
+(b) Make a directory called ~/.js1.0/PlugIns/classes
+
+(c) Copy the jacl.jar file to the ~/.js1.0/PlugIns/classes directory.
+
+(d) The contents of jacl.jar must be extracted from the jar file.  To
+    do this type "cd ~/.js1.0/PlugIns/classes" then "jar xf jacl.jar".
+
+(e) Start Java Studio and import the "tclbean.jar" file using the
+    standard Java Studio import wizard.  If an error occurs, check
+    the ~/.js1.0/vj/VJLog file for details on how to fix the problem.
+
+
+How To Compile And Install The Tcl Bean (Source Release Only):
+-------------------------------------------------------------
+
+(a) Build Jacl according to the supplied instructions.
+
+(b) In the unix sub directory, type "make bean".  This will create two
+    jar files; tclbean.jar and jacl.jar.
+
+(c) Locate the "~/.js1.0" directory created in your home directory.  If
+    Java Studio has never been run in your environment, the "~/.js1.0"
+    directory will not exist.  Either run Java Studio once or create this
+    directory yourself.  For the rest of this example, the install
+    directory is assumed to be "~/.js1.0", but may be different on
+    your machine. 
+
+(d) Make a directory called ~/.js1.0/PlugIns/classes
+
+(e) Copy the jacl.jar file to the ~/.js1.0/PlugIns/classes directory.
+
+(f) The contents of jacl.jar must be extracted from the jar file.  To
+    do this type "cd ~/.js1.0/PlugIns/classes" then "jar xf jacl.jar".
+
+(g) Start Java Studio and import the "tclbean.jar" file using the
+    standard Java Studio import wizard.  If an error occurs, check
+    the ~/.js1.0/vj/VJLog file for details on how to fix the problem.
+
+
+The Jacl & Tcl Blend team
+-------------------------
+
+Ray Johnson - Project Manager
+Melissa Hirschl
+Ioi Lam
+Bryan Surles
+Special thanks to Scott Stanton who implemented Tcl Blend.

@@ -1,0 +1,113 @@
+'\"
+'\" Copyright (c) 1998 by Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+'\" RCS: @(#) $Id: javaload.n,v 1.1 1998/10/14 21:09:09 cvsadmin Exp $
+'\" 
+.so man.macros
+.TH "java::load" n 1.0 Tcl "Java Package Commands"
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+java::load \- Load a new extension into the current interpreter.
+.SH SYNOPSIS
+\fBjava::load\fR ?\fI\-classpath pathList\fR? \fIextensionName\fR
+.sp
+.BE
+.SH DESCRIPTION
+.PP
+The \fBjava::load\fR command loads extensions into the Java VM.  An
+extension is a Java class that specifies a set of class files to load
+into the VM, as well as specifying how the Tcl interpreter should
+interact with these classes.  The primary use for this function is to
+load additional functionality (i.e. new commands) into the Tcl
+interpreter, but it may also be used to load classes into the VM that
+can be used by the Reflection API.  
+.PP
+The argument \fIextensionName\fR is the name of the class file to load
+into the VM.  The class referenced by \fIextensionName\fR must be a
+subclass of \fItcl.lang.Extension\fR.  All subclasses of Extension
+must implement the abstract init method, which is responsible for
+loading commands into the Tcl interpreter or loading any additional
+classes into the java VM.  To load classes that do not subclass
+Extension into the VM, use the \fBjava::new, java::class\fR or
+\fBjava::defineclass\fR.  See the \fBJava\fR package documentation for
+more detail.
+.PP
+The CLASS LOADING section below describes the order in which the class
+loader searches for classes on the file system and how additional
+classes are automatically loaded.  The CLASS LOADING section is also
+relevant to any command in the java package that makes a reference to
+a java class (i.e. \fBjava::new\fR.)  References to unresolved classes will
+implicitly use the TclClassLoader to find unresolved classes.
+
+.SH CLASS LOADING
+.PP
+The process of resolving the class is done by searching, in order, one
+of the following locations.
+.IP [1]
+Search the cache of previously loaded classes. 
+.IP [2]
+Search the CLASSPATH list.
+.IP [3]
+Search the \fIpathList\fR list, looking only in directories or jar
+files specified by \fIpathList\fR.  (Available only for the \fBjava::load\fR command.)
+.IP [4]
+Search \fIpathList\fR again, inspecting all jar files found in
+each directory.  (Available only for the \fBjava::load\fR command.)
+.IP [5]
+Search the \fBenv(TCL_CLASSPATH)\fR list, looking only in directories or jar
+files specified by \fBenv(TCL_CLASSPATH)\fR.
+.IP [6]
+Search \fBenv(TCL_CLASSPATH)\fR again, inspecting all jar files found in
+each directory.
+.PP
+If a path in \fIpathList\fR or \fBenv(TCL_CLASSPATH)\fR is not an
+absolute path, it is assumed to be a relative path from the
+interpreter's current directory.
+.PP
+If the system class loader fails to load the class (step [2]),
+then the class was not found in the CLASSPATH list.  A security check is done
+to assure that the class does not have access to package-protected
+variables.  If the extension name begins with "java." or "tcl.", a Tcl
+error is generated.
+.PP
+Steps [3] and [5] only use the paths in \fIpathList\fR or
+\fBenv(TCL_CLASSPATH)\fR to locate the class file.  If the path is a
+directory, the loader looks in that directory for the class file.  If
+the path is a jar file, the jar file is inspected to see if it
+contains the class.  Steps [4] and [6] search \fIpathList\fR and
+\fBenv(TCL_CLASSPATH)\fR again.  If a path in the list is a directory,
+the loader looks for jar files in that directory, inspecting any jar
+files found to locate the class.  The loader is capable of extracting
+files from a compressed jar file.
+.PP
+Any class referenced by \fIextensionName\fR will also be loaded into
+the VM.  This includes classes used in new expressions as well as
+those whose instances are reported (i.e. the use of static methods.)
+Due to the recursive nature of class loading, any class referenced
+must be located in the CLASSPATH, \fBenv(TCL_CLASSPATH)\fR or
+\fIpathList\fR.  If a class cannot be located in one of the three
+locations, a Tcl error is generated.
+.PP
+Currently it is not possible to unload or reload an extension.
+
+.SH EXAMPLE
+.PP
+Load an extension stored in /proj/Jacl/Foo.class;
+.CS
+java::load \-classpath /home/user/Jacl Foo
+.CE
+
+.SH BUGS
+.PP
+Currently '~' substitution is not performed on Unix systems.  The path 
+must be absolute or relative from the current directory.  
+
+.SH SEE ALSO
+\fBjava\fR, \fBjava::bind\fR
+
+.SH KEYWORDS
+java, tcl, classloader

@@ -1,0 +1,272 @@
+'\"
+'\" Copyright (c) 1997-1998 by Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+'\" RCS: @(#) $Id: studio.n,v 1.1 1998/10/14 21:09:08 cvsadmin Exp $
+'\" 
+.so man.macros
+.TH "Studio" n 1.0 Tcl "Tcl Bean Commands"
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+studio \- Tcl Bean method invocation package for Java Studio.
+.SH SYNOPSIS
+\fBstudio::port \fIportType varName\fR ?\fIoptions\fR?
+.sp
+\fBstudio::bind \fIvarName script\fR
+.BE
+.SH DESCRIPTION
+.PP
+The \fBstudio\fR package provides an interface to access Java Studio
+functionality from the Tcl Bean.  Java Studio is a graphical
+development environment for gluing together Java Beans in order to
+create applets, applications or other compound Java Beans.  Java
+Studio uses "ports" to graphically represent Java Bean
+events.  Ports send events, called "messages", to another port that
+has been "wired" together in the Java Studio Design Environment.  The
+Tcl Bean is a Java Bean built for Java Studio, and uses the
+\fBstudio\fR package to create ports and generate messages.
+.PP
+Three types of ports can be created in Java Studio.  "Out ports" are
+responsible for sending messages to other components.  "In ports"
+receive the messages and perform actions defined by the component
+creator or user.  "Twoway ports" combine the functionality of In ports
+and Out ports.  In the rest of this document, the term "In port"
+refers to any port that can receive messages; that is, both a Twoway
+port and an In port.  Similarly, "Out port" refers to both Twoway ports
+and Out ports.
+.PP
+The Tcl Bean binds the sending and receiving of messages to Java
+Studio ports via the Tcl trace facility.  Every port created with
+the \fBstudio\fR package has a Tcl variable, \fIvarName\fR, associated
+with it.  Traces are placed on \fIvarName\fR that evaluate scripts or
+send messages whenever the variable's value is set.  See the section
+on TRACES for more detail.
+.SH COMMANDS
+.PP
+.TP
+\fBstudio::port\fP \fIportType varName\fR ?\fIoptions\fR?
+Create a Java Studio port of type \fIportType\fR to be accessed by
+the variable \fIvarName\fR.  \fIPortType\fR must be one of the
+following values: \fBin, out\fR or
+\fBtwoway\fR.  Out ports automatically send a message whenever
+\fIvarName\fR is written.  The value of the message sent is the value
+of \fIvarName\fR.  In ports do not implicitly respond to the message they
+receive like Out ports.  They must be bound to a Tcl script using the
+\fBstudio::bind\fR command.  The value of the message received by an
+In port is stored in \fIvarName\fR.
+.sp
+A Twoway port has the combined functionality of an In and Out port.  The
+\fIvarName\fR argument must be a Tcl list containing two variable names:
+{\fIinVarName outVarName\fR}.  \fIInVarName\fR accesses the In port,
+and \fIoutVarName\fR accesses the Out port.  A message will be sent
+out the port whenever \fIoutVarName\fR is written.  To bind the Twoway
+port to a script, pass \fIinVarName\fR as the \fIvarName\fR argument
+to the \fBstudio::bind\fR command.
+.sp
+One or more of the following options may be set to override the default
+settings:
+.RS
+.TP
+\fB\-portname\fP \fIname\fP
+Specify the \fIname\fR of the port that appears as the label for the
+port in the Design Window.  For In and Out ports the default portname
+is identical to the \fIvarName\fR.  For Twoway ports the default value
+is the first variable name in the \fIvarName\fR list.
+.TP
+\fB\-transfer\fP \fImessageType\fP
+Specify the \fImessageType\fR of message to send or accept.  The default
+option is \fBdynamic\fR for any \fIportType\fR.  See the section on
+TRANSFER TYPES for more detail on the semantics each type.  The valid
+\fImessageType\fRs for each port are as followed:
+.RS
+.TP
+In ports:
+\fBbasicToDouble, basicToFloat, basicToInteger,
+basicToLong, basicToString, basicToBoolean, numberToDouble,
+numberToFloat, numberToInteger, numberToLong, dynamic, object,\fR or
+\fBtrigger\fR.
+.TP
+Out ports:
+\fBdoubleToBasic, floatToBasic,
+integerToBasic, longToBasic, stringToBasic, booleanToBasic, dynamic,
+object\fR or \fBtrigger\fR.
+.TP
+Twoway ports:
+The \fImessageType\fR must be a Tcl list of two elements:
+{\fIinMessageType outMessageType\fR}.  \fIInMessageType\fR takes any In
+port options, and \fIoutMessageType\fR takes any Out port options.
+.RE
+.TP
+\fB\-location\fP \fIlocStr\fP
+Specify the location of the port on the icon representing the
+Java Studio Bean.  The default location for an In port is west, an Out
+port is east and a Twoway port is north.  See the section on
+LOCATION OPTIONS for a list of valid locations.
+.TP
+\fB\-description\fP \fIdescStr\fP
+Specify an internal description of the Java Studio port.  If two or
+more ports have identical parts, this option distinguishes the ports
+without altering their appearance or behavior.
+.RE
+.sp
+A port created by the Tcl Bean is uniquely identified by the sum of
+all its parts:  \fIportType, varName\fR, \fBportname, transfer,
+location\fR and \fBdescription\fR.  As long as one of the parts is
+different, one port can be distinguished from another.  
+In some situations, it is desirable to have two or more ports with
+identical behavior and appearance.  The \fBdescription\fR
+option allows the ports to remain unique.  The
+value of \fBdescription\fR does not affect the behavior or appearance
+of the port.  If the user attempts to create a port that is
+identical to an existing port, an error is generated and the port is
+not created.
+.TP
+\fBstudio::bind\fP \fIvarName\fR ?\fIscript\fR?
+The studio::bind command is used to associate a Tcl \fIscript\fR with the
+reception of a message by a Java Studio In port.  The
+\fIvarName\fR argument is the Tcl variable assigned to one or more ports.
+When a message is received by a port, \fIvarName\fR is set to the
+value of the message and the \fIscript\fR is evaluated in the
+interpreter associated with the Tcl Bean.  See the TRACES section for
+more detail on how messages are generated.
+.sp
+If the \fIscript\fR argument is not passed, the command returns the
+existing script bound to \fIvarName\fR, or an empty string if no
+script is bound.  If the \fBstudio::bind\fR command is called with the
+\fIscript\fR argument, and \fIvarName\fR is already bound to another
+script, the new script replaces the old script.
+
+.SH TRANSFER TYPES
+.PP
+All messages are sent and received as Java Objects.  When a user
+connects two ports, Java Studio must determine if the data type of the
+message sent is accepted by the receiving port.    The
+\fImessageType\fR for an Out port specifies an ordered list of data
+types that can be sent, based on the original data type of the
+message.  The \fImessageType\fR for an In port specifies an ordered
+list of data types that can be received, and how to convert the
+message to a single data type.  If a common data type is found between
+an In port and Out port, a connection is made.   Below is a
+description of each \fImessageType\fR, and what \fIportType\fR it may
+be used with:
+.RS
+.PP
+.TP
+\fBdoubleToBasic\fR (Out)
+Converts a Double to the first match of the following options: Double,
+Float, Integer, Long or String.
+.TP
+\fBfloatToBasic\fR (Out)
+Converts a Float to the first match of the following options: Float,
+Double, Integer, Long or String.
+.TP
+\fBintegerToBasic\fR (Out)
+Converts an Integer to the first match of the following options:
+Integer, Long, Float, Double or String.
+.TP
+\fBlongToBasic\fR (Out)
+Converts a Long to the first match of the following options: Long,
+Integer, Float, Double or String.
+.TP
+\fBbooleanToBasic\fR (Out)
+Converts a Boolean to the first match of the following options: Boolean,
+String, Integer, Long, Float, Double or String
+.TP
+\fBstringToBasic\fR (Out)
+Converts a String to the first match of the following options: String,
+Integer, Long, Float or Double.
+.TP
+\fBbasicTo\fR<\fBsuffix\fR> (In)
+Converts a Double, Float, Integer, Long or String to the suffix type.
+Valid \fBsuffix\fR types are: Double, Float, Integer, Long, String or
+Boolean.  A Boolean object is only accepted if the suffix is Boolean.
+.TP
+\fBnumberTo\fR<\fBsuffix\fR> (In)
+Converts a Double, Float, Integer or Long to the suffix type.  Valid
+\fBsuffix\fR types are: Double, Float, Integer or Long.
+.TP
+\fBtrigger\fR (In)
+Receive a VJTriggerObject, Object or String.  The trigger object is used
+to simply cause an event to occur.
+.TP
+\fBobject\fR (In or Out)
+Send or receive a Java Object without any conversion.
+.TP
+\fBdynamic\fR (In or Out)
+All of the previous options specify the data type at design time.  This
+option does not specify a data type and defers the validation process
+to runtime.  Connections to this type are always accepted during
+design time and leave the conversion up to the Java Bean implementation. 
+.RE
+.SH LOCATION OPTIONS
+.PP
+The valid location options are:
+\fBanywhere, north, northLeft, northCenter, northRight, south,
+southLeft, southCenter, southRight, west, westTop, westCenter,
+westBottom, east, eastTop, eastCenter,\fR or \fBeastBottom\fR.
+.sp
+The \fBanywhere\fR option places ports in the least populated side,
+which may change as ports with sides specified are added to the
+component. Currently, this behavior is not documented by Java Studio,
+and may change in the future.
+.SH TRACES
+.PP
+Putting a trace on a variable causes a Tcl command to be evaluated
+whenever a variable is read, written or unset.  Ports created by the
+Tcl Bean use the Tcl \fBtrace\fR command to control the flow of
+messages through ports.  Out ports create a trace on \fIvarName\fR
+automatically when the port is created.  When the Out port's
+\fIvarName\fR is set, a message is generated with the new value of
+this variable.  If two or more Out ports use the same \fIvarName\fR,
+then a message is sent to every port associated with \fIvarName\fR.
+When an In port is created, no traces are automatically put on
+\fIvarName\fR.  Rather, traces are placed on the port explicitly by
+using the \fBstudio::bind\fR command.
+.sp
+Note: You can also set variable traces on ports using the Tcl trace
+command.  The studio::bind command is just a simplier interface.  To
+learn more about the trace command, see the Tcl documentation.
+.SH EXAMPLE
+.PP
+.CS
+# Create an In port called foo.  Notice that all of the options are 
+# unnecessary because they are identical to the defaults.
+
+studio::port in foo \\
+	-location west \\
+	-transfer dynamic \\
+	-portname foo
+
+# Create a Twoway port called twoWayPort.  Here all of the options are 
+# necessary because they override the defaults.
+
+studio::port twoway {inBar outBar} \\
+	-location northRight \\
+	-transfer {basicToString stringToBasic} \\
+	-portname twoWayPort
+
+# Create the binding of the In port (foo) to the Out port (outBar).
+# In this example, the varName for the Out port is set with the
+# String representation of any Java object that is sent to the 
+# In port.
+
+studio::bind foo {
+    global inBar
+    set inBar [$foo toString]
+}
+
+# Create a similar binding on the In port of the Twoway port.
+
+studio::bind inBar {
+    global outBar
+    set outBar ${inBar}PlusMoreData
+}
+	
+.CE
+.SH "SEE ALSO"
+\fBstudio::custom\fR, \fBjava\fR
+.SH KEYWORDS
+studio, ports, trace, Java Beans, Java Studio
