@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ArrayCmd.java,v 1.3 1999/08/03 02:48:26 mo Exp $
+ * RCS: @(#) $Id: ArrayCmd.java,v 1.4 2003/01/10 01:57:57 mdejong Exp $
  *
  */
 
@@ -30,7 +30,8 @@ class ArrayCmd implements Command {
 	"nextelement",
 	"set",
 	"size",
-	"startsearch"
+	"startsearch",
+	"unset"
     };
 
     static final int OPT_ANYMORE 	= 0;
@@ -42,6 +43,7 @@ class ArrayCmd implements Command {
     static final int OPT_SET 		= 6;
     static final int OPT_SIZE 		= 7;
     static final int OPT_STARTSEARCH 	= 8;
+    static final int OPT_UNSET 		= 9;
 
     /**
      * This procedure is invoked to process the "array" Tcl command.
@@ -358,6 +360,38 @@ class ArrayCmd implements Command {
 		Enumeration e = ((Hashtable)var.value).keys();
 		var.sidVec.addElement(new SearchId(e,s,i));
 		interp.setResult(s);
+		break;
+	    }
+	    case OPT_UNSET: {
+	        String pattern;
+	        String name;
+
+	        if ((objv.length != 3) && (objv.length != 4)) {
+		    throw new TclNumArgsException(interp, 2, objv, 
+		            "arrayName ?pattern?");
+	        }
+	        if (notArray) {
+	            errorNotArray(interp, objv[2].toString());
+	        }
+	        if (objv.length == 3) {
+	            // When no pattern is given, just unset the whole array
+
+	            interp.unsetVar(objv[2], 0);
+	        } else {
+	            pattern = objv[3].toString();
+	            Hashtable table = (Hashtable) var.value;
+	            for (Enumeration e = table.keys();
+	                    e.hasMoreElements(); ) {
+	                name = (String) e.nextElement();
+			Var elem = (Var)table.get(name);
+			if (var.isVarUndefined()) {
+			    continue;
+			}
+			if (Util.stringMatch(name, pattern)) {
+			    interp.unsetVar(varName, name, 0);
+			}
+		    }
+	        }
 		break;
 	    }
 	}

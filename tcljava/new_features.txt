@@ -326,4 +326,9 @@ work, but it should be updated to use duplicate as time permits.
 See the TclObject manual entry for an example of how to use this
 new duplicate method.
 
+(NEW COMMAND FOR JACL)
+
+The array unset subcommand has been added to the Jacl's array command.
+
+
 </PRE></BODY></HTML>

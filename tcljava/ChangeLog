@@ -1,5 +1,11 @@
 2003-01-09  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* new_features.txt: Mention array unset addition.
+	* src/jacl/tcl/lang/ArrayCmd.java (cmdProc):
+	Add array unset subcommand.
+
+2003-01-09  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/tcljava/tcl/lang/TclIndex.java (get): Don't
 	add a comma to the error message when there are
 	only two items. This matches the Tcl 8.3 impl.
