@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: SocketCmd.java,v 1.2 1999/05/09 01:28:41 dejong Exp $
+ * RCS: @(#) $Id: SocketCmd.java,v 1.3 2001/11/16 09:39:18 mdejong Exp $
  *
  */
 
@@ -50,7 +50,8 @@ class SocketCmd implements Command {
 	String  myaddr    = "";       // DNS or IP address of the server
 	String  script    = "";       // Script for server to run
 	String  host      = "";       // The server fot the client
-	int     myport    = 0;        // The port to connect to
+	int     myport    = 0;        // The port to connect from
+	int     port      = 0;        // The port to connect to
 	int     index;                // Index to the correct cmd
 	int     i;                    // Index to the current arg from argv
 	
@@ -87,8 +88,16 @@ class SocketCmd implements Command {
 		        throw new TclException(interp,
 			        "no argument given for -myport option");
 		    }
-		    //myport = get a valid port from argv[i]
-		    break;
+		    try
+		    {
+		        myport = Integer.parseInt(argv[i].toString());
+		    }
+		    catch (Exception e)
+		    {
+		        throw new TclException(interp, e.getMessage(),
+		            TCL.ERROR);
+		    }
+		    break; 
 		}
 	        case OPT_SERVER: {
 		    if (async) {
@@ -119,7 +128,7 @@ class SocketCmd implements Command {
 	        throw new TclException(interp,
 		        "Option -myport is not valid for servers");
 	    }
-	} else if (i < argv.length) {
+	} else if ((i+1) < argv.length) {
 	    host = argv[i].toString();
 	    i++;
 	} else {
@@ -127,12 +136,34 @@ class SocketCmd implements Command {
 	}
 
 	if (i == argv.length-1) {
-	    //myport = get a valid port
+            try
+            {
+                port = Integer.parseInt(argv[i].toString());
+            }
+            catch (Exception e)
+            {
+                throw new TclException(interp, e.getMessage(), TCL.ERROR);
+            }
 	} else {
 	    errorWrongNumArgs(interp, argv[0].toString());
 	}
 
 	if (server) {
+            try
+            {
+                TclObject scr = TclString.newInstance(script);
+                ServerSocketChannel sock =
+                    new ServerSocketChannel(interp, myaddr, port, scr);
+                TclIO.registerChannel(interp, sock);
+                interp.setResult(TclString.newInstance(sock.getChanName()));
+            }
+            catch (Exception e)
+            {
+                throw new TclException(interp,
+                    "cannot create server socket: "
+                    + e.getMessage());
+            }
+
 	    // Register with the interpreter to let us know when the
 	    // interpreter is deleted (by having the callback set the
 	    // acceptCallbackPtr->interp field to NULL). This is to
@@ -143,13 +174,27 @@ class SocketCmd implements Command {
 	    // need to be informed when the interpreter is deleted.
 
 	} else {
-      
+            try
+            {
+                // Provide client side socket support here.
+                SocketChannel sock = new SocketChannel(
+                    interp, 
+                    (TclIO.RDWR|TclIO.RDONLY|TclIO.WRONLY), 
+                    myaddr, myport, async, host, port);
+
+                TclIO.registerChannel(interp, sock);
+                interp.setResult(TclString.newInstance(sock.getChanName()));
+            }
+            catch (Exception e)
+            {
+                throw new TclException(interp, "cannot open socket: " +
+                    e.getMessage());
+            }
 	}
-	throw new TclException(interp, "socket command not implemented yet");
     }
 
     /**
-     * A unique error msg is printed for socket, therefore dont call this 
+     * A unique error msg is printed for socket. Call this methods
      * instead of the standard TclException.wrongNumArgs().
      *
      * @param interp the current interpreter.

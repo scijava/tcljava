@@ -1,3 +1,15 @@
+2001-11-15  Neil Madden  <neil@tallniel.co.uk>
+
+	* src/jacl/tcl/lang/ServerSocketChannel.java:
+	* src/jacl/tcl/lang/SocketChannel.java:
+	* src/jacl/tcl/lang/SocketCmd.java:
+	* src/jacl/tcl/lang/SocketConnectionEvent.java:
+	Add initial socket implementation for both client
+	and server sockets. The code does not work with
+	async sockets and its functionality is limited
+	because of the lack of fconfigure and fileevent
+	commands in Jacl.
+
 2001-11-15  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* src/jacl/tcl/lang/ExecCmd.java (cmdProc): If an
