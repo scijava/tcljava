@@ -1,6 +1,6 @@
 Jacl
 
-RCS: @(#) $Id: README.jacl,v 1.9 2000/03/02 03:40:04 mo Exp $
+RCS: @(#) $Id: README.jacl,v 1.10 2000/04/08 04:25:36 mo Exp $
  
 1. Introduction
 ---------------
@@ -8,7 +8,7 @@ RCS: @(#) $Id: README.jacl,v 1.9 2000/03/02 03:40:04 mo Exp $
 Jacl (which stands for Java Application Command Language) is a
 platform independent scripting language for Java. The feature set and
 functionality of Jacl are structured to mirror the scripting language
-Tcl version 8.0. In addition to the write-once-run-anywhere
+Tcl version 8. In addition to the write-once-run-anywhere
 philosophy, Jacl provides it's user with two other key concepts.
 First, Jacl enables users to write Tcl extensions entirely in Java.
 Extension writers can use the classes supplied in tcl.lang.*, as well
@@ -61,8 +61,8 @@ Jacl 1.0 was released by the now defunct SunScript group at Sun Labs.
 The majority of the Jacl/Tcl Blend developers spun out of Sun Labs
 into Scriptics.
 
-Jacl 1.1 was developed primarily by people outside of Scriptics, with
-assistance from Scriptics.
+Newer version of Jacl were developed primarily by people outside of Scriptics,
+with assistance from Scriptics.
 
 7. Getting Help
 ----------------
@@ -73,7 +73,7 @@ use this newsgroup to ask questions, give bug reports, or post fixes
 for Jacl & Tcl Blend. The developers of Jacl & Tcl Blend as well as
 many avid users of Tcl Blend & Jacl use comp.lang.tcl as a forum.
 
-If you are interested in a more detailed forum focused in issues
+If you are interested in a more detailed forum focused on issues
 related to Jacl and Tcl Blend you might want to subscribe to the
 tcljava mailing list maintained by Scriptics. You can
 subscribe to the list by sending mail to this address

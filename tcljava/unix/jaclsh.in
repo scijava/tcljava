@@ -8,17 +8,21 @@
 # Author:  Moses DeJong
 # Version: @(#)jaclsh.in	1.1 08/07/98
 #
-# Copyright (c) 1998 by Moses DeJong
+# Copyright (c) 1998, 1999, 2000 Moses DeJong
 # All Rights Reserved, see license.term for license information.
 
 # Install prefix for jacl package, defaults to /usr/local
 prefix=@prefix@
 
-# Cross platform location of library files
-XP_LIB_INSTALL_DIR=${prefix}/lib
+# Tcl/Java version number
+TCLJAVA_VERSION=@TCLJAVA_VERSION@
+
+# Directory where platform independent files live. This
+# includes the .jar files and any .tcl files
+XP_TCLJAVA_INSTALL_DIR=${prefix}/lib/tcljava${TCLJAVA_VERSION}
 
 # Add the .jar library files to the CLASSPATH
-JACL_CLASSPATH=@JAVA_CLASSPATH@:${XP_LIB_INSTALL_DIR}/tcljava.jar:${XP_LIB_INSTALL_DIR}/jacl.jar:
+JACL_CLASSPATH=@JAVA_CLASSPATH@:${XP_TCLJAVA_INSTALL_DIR}/tcljava.jar:${XP_TCLJAVA_INSTALL_DIR}/jacl.jar:
 
 # Fully qualified path name of JVM executable
 JAVA=@JAVA@

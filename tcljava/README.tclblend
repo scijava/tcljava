@@ -1,6 +1,6 @@
 Tcl Blend
 
-RCS: @(#) $Id: README.tclblend,v 1.7 2000/03/02 03:40:04 mo Exp $
+RCS: @(#) $Id: README.tclblend,v 1.8 2000/04/08 04:25:36 mo Exp $
 
 1. Introduction
 ---------------
@@ -61,8 +61,8 @@ Tcl Blend 1.0 was released by the now defunct SunScript group at Sun Labs.
 The majority of the Jacl/Tcl Blend developers spun out of Sun Labs
 into Scriptics.
 
-Tcl Blend 1.1 was developed primarily by people outside of Scriptics, with
-assistance from Scriptics.
+Newer version of Tcl Blend were developed primarily by people outside of
+Scriptics, with assistance from Scriptics.
 
 7. Getting Help
 ----------------
@@ -73,7 +73,7 @@ use this newsgroup to ask questions, give bug reports, or post fixes
 for Jacl & Tcl Blend. The developers of Jacl & Tcl Blend as well as
 many avid users of Tcl Blend & Jacl use comp.lang.tcl as a forum.
 
-If you are interested in a more detailed forum focused in issues
+If you are interested in a more detailed forum focused on issues
 related to Jacl and Tcl Blend you might want to subscribe to the
 tcljava mailing list maintained by Scriptics. You can
 subscribe to the list by sending mail to this address

@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclInteger.java,v 1.3 2000/03/17 23:31:31 mo Exp $
+ * RCS: @(#) $Id: TclInteger.java,v 1.4 2000/04/08 04:25:38 mo Exp $
  *
  */
 
@@ -63,6 +63,8 @@ public class TclInteger extends InternalRep {
     }
 
     /**
+     * Tcl_NewIntObj -> TclInteger.newInstance
+     *
      * Creates a new instance of a TclObject with a TclInteger internal
      * representation.
      *
@@ -75,6 +77,8 @@ public class TclInteger extends InternalRep {
     }
 
     /**
+     * SetIntFromAny -> TclInteger.setIntegerFromAny
+     *
      * Called to convert the other object's internal rep to this type.
      *
      * @param interp current interpreter.
@@ -104,6 +108,8 @@ public class TclInteger extends InternalRep {
     }
 
     /**
+     * Tcl_GetIntFromObj -> TclInteger.get
+     *
      * Returns the integer value of the object.
      *
      * @param interp current interpreter.

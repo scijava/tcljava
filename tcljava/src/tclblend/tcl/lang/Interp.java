@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.11 2000/04/03 12:36:16 mo Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.12 2000/04/08 04:25:37 mo Exp $
  *
  */
 
@@ -27,14 +27,15 @@ public class Interp {
 // Initialize the Interp class by loading the native methods.
 
 static {
+    String shlibname = "tclblend";
 
     try {
-        System.loadLibrary("tclblend");
+        System.loadLibrary(shlibname);
     } catch (UnsatisfiedLinkError e) {
-        System.out.println("System.loadLibrary(\"tclblend\") failed because of UnsatisfiedLinkError");
+        System.out.println("System.loadLibrary(\"" + shlibname + "\") failed because of UnsatisfiedLinkError");
         e.printStackTrace(System.out);
     } catch (Throwable t) {
-        System.out.println("System.loadLibrary(\"tclblend\") failed because of Unknown Throwable");
+        System.out.println("System.loadLibrary(\"" + shlibname + "\") failed because of Unknown Throwable");
         t.printStackTrace(System.out);
     }
 }

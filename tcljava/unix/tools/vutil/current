@@ -3,5 +3,5 @@
 # or it differs from the RCS version in the files then the
 # version numbers in all the files will be updated.
 
-TCLJAVA_VERSION=1.2.6
+TCLJAVA_VERSION=1.3.0
 

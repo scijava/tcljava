@@ -1,3 +1,42 @@
+2000-04-07  Mo DeJong  <mdejong@redhat.com>
+
+	* README.jacl:
+	* README.tclblend: Fixed up README files
+	for the 1.3 version.
+	* src/pkgIndex.tcl: Major overhaul of
+	the tclblend package loading process, we
+	now make use of the XpUtils package.
+	* src/jacl/tcl/lang/Interp.java: Updated
+	Java package version to 1.3.0.
+	* src/tclblend/tcl/lang/Interp.java: Moved
+	name of tclblend shared lib into a variable.
+	* src/tcljava/tcl/lang/BlendExtension.java:
+	Updated Java package version to 1.3.0.
+	* src/tcljava/tcl/lang/TclInteger.java:
+	Added Tcl C function names to documentation.
+	* src/xputils/iload.tcl:
+	* src/xputils/iload.test:
+	* src/xputils/pkgIndex.tcl:
+	* src/xputils/xputils.tcl:
+	* src/xputils/xputils.test:
+	Added XpUtils package for Tcl Blend.
+	* unix/Makefile.in: Added tcljavaConfig.sh support.
+	Fixed runtime linker search path so that it checks
+	where the tcl lib will be installed not where it was
+	built. Fixed install so that all tcljava libraries
+	are installed into a common Tcl/lib/tcljava${VERSION}
+	directory. Added support for XpUtils package.
+	* unix/configure.in: Updated Java package version
+	to 1.3.0. Added tcljavaConfig.sh support.
+	Set minimum supported Tcl version to 8.3.
+	* unix/jaclsh.in:
+	* unix/jtclsh.in:
+	Updated to account for new lib install location.
+	* unix/tcljavaConfig.sh.in: New file.
+	* unix/tools/vutil/current:
+	* win/makefile.vc:
+	Updated Java package version to 1.3.0.
+
 2000-04-03  Mo DeJong  <mdejong@redhat.com>
 
 	* src/jacl/tcl/lang/ConsoleEvent.java:
