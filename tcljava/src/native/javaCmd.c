@@ -10,7 +10,7 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  *
- * RCS: @(#) $Id: javaCmd.c,v 1.16 2002/12/10 04:15:56 mdejong Exp $
+ * RCS: @(#) $Id: javaCmd.c,v 1.17 2002/12/11 01:19:51 mdejong Exp $
  */
 
 /*
@@ -641,12 +641,17 @@ JavaInitEnv(
     fprintf(stderr, "TCLBLEND_DEBUG: JavaInitEnv returning successfully\n");
 #endif /* TCLBLEND_DEBUG */
 
+
+/*
+JVM arg cleanup commented out because of bug, it seems the JVM
+does not make its own copies of the options we pass in so we
+can't free the memory here.
 #ifdef JDK1_2
     ckfree((char *) options[0].optionString);
     ckfree((char *) options);
 #else
     ckfree((char *) vm_args.classpath);
-#endif /* JDK1_2 */
+#endif*/ /* JDK1_2 */
 
     return tsdPtr->currentEnv;
 

@@ -1,3 +1,10 @@
+2002-12-10  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/native/javaCmd.c (JavaInitEnv): Comment
+	out code that deallocated JVM options. It seems
+	that some buggy JVMs don't copy the arguments
+ 	passed into JNI_CreateJavaVM.
+
 2002-12-09  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* src/native/javaCmd.c (JavaInitEnv): Free memory
