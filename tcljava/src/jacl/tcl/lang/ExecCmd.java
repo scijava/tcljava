@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ExecCmd.java,v 1.10 2004/11/18 04:02:22 mdejong Exp $
+ * RCS: @(#) $Id: ExecCmd.java,v 1.11 2004/11/18 07:06:49 mdejong Exp $
  */
 
 package tcl.lang;
@@ -132,6 +132,16 @@ throws
 	} else {
 	    p = execDefault(interp, argv, firstWord, argLen);
 	}
+
+        // If user wanted to run in the background, then
+        // don't wait for or attach to the stdout or stderr
+        // streams. We don't actually know what the pid is
+        // so just return a placeholder.
+
+        if (background) {
+            interp.setResult( "pid0" );
+            return;
+        }
 
         // When running under a pre JDK 1.3 system, read data
         // in the same thread. Some JDKs newer than 1.3 require

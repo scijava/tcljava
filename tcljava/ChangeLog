@@ -1,5 +1,12 @@
 2004-11-17  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/jacl/tcl/lang/ExecCmd.java (cmdProc):
+	Add ability to exec a process in the background
+	by passing the & flag to the exec command.
+	[Patch 500880]
+
+2004-11-17  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* Makefile.in:
 	* src/tcljava/tcl/lang/JavaLoadCmd.java:
 	* src/tests/tcljava/javaload/Test11Extension.java:
