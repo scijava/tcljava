@@ -598,3 +598,58 @@ Check into problem with the java::bind command which breaks when there
 are not enough arguments given to the method. I think there is a deadlock
 problem here that needs to be addressed. (see tclblend_bug).
 
+
+(TODO)
+
+The java::autolock implementation had some nasty hacks to make it work
+with and without namespaces. This needs to be fixed now that Jacl does
+namespaces. FIX BEFORE 1.2.4 is released!
+
+
+(TODO)
+
+Double check all the source code for places where interp.getVar() is
+called. We no longer support the "return null" on error. When a var
+is not found we always throw an exception. This might also need a
+recheck of the documentation and an entry in the chages.txt file.
+
+(TODO)
+
+Is there a caching system for class names that needs to be invalidated
+when making calls to java::import. We do not want a cached value to
+be reused after a java::import -forget and so on.
+
+
+(TODO)
+
+Check the env array in Tcl Blend for the string "classpath" that may
+not match the "all uppercase" spelling. For instance env(ClassPath)
+should generate an error.
+
+
+
+(TODO)
+
+Got error from JDK 1.2 v2 port from the blackdown port.
+
+Warning: opcode 212 not implemented yet
+Warning: JIT compiler failed for java/lang/ref/SoftReference.get()Ljava/lang/Object;
+
+
+
+(TODO)
+
+What is going on in the Var.java class in this piece of code. This code does
+not appear in the C version of the code. Why is this part of the Jacl impl.
+Was this a holdover that is now incorrect?
+
+
+
+(TODO)
+
+Need to check into updated to the Tcl 8.1.1 test case info.test. These
+tests should be ported over to Jacl.
+
+(TODO)
+
+Why isnt interp.setVar(TclObject, TclObject, int) public?
