@@ -1389,6 +1389,9 @@ if test $TCLJAVA = "tclblend" || test $BOTH = "true"; then
 
    case "`uname -s`" in
        *win32* | *WIN32* | *CYGWIN_NT*)
+           if test "${SHARED_LIB_SUFFIX}" = "" ; then
+	      SHARED_LIB_SUFFIX=".dll"
+	   fi
            if test "${SHARED_BUILD}" = "1" ; then
 	       SHLIB_LD_LIBS="\"`cygpath -w ${TCL_BIN_DIR}/${TCL_LIB_FILE}`\" ${TCL_SHLIB_LD_LIBS}"
 	       eval "TCLBLEND_LIB_FILE=${PACKAGE}${SHARED_LIB_SUFFIX}"
