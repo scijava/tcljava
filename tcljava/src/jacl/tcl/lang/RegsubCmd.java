@@ -1,18 +1,22 @@
 /*
  * RegsubCmd.java
  *
- * 	This contains Jacl implementation of the built-in Tcl "regsub" command.
+ * 	This contains the Jacl implementation of the built-in Tcl
+ *	"regsub" command.
  *
- * Copyright (c) 1997 Sun Microsystems, Inc.
+ * Copyright (c) 1997-1999 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: RegsubCmd.java,v 1.3 1999/05/09 01:20:28 dejong Exp $
+ * RCS: @(#) $Id: RegsubCmd.java,v 1.4 2000/02/23 22:07:23 mo Exp $
  */
 
 package tcl.lang;
+
+import sunlabs.brazil.util.regexp.Regexp;
+import sunlabs.brazil.util.regexp.Regsub;
 
 /**
  * This class implements the built-in "regsub" command in Tcl.
@@ -20,7 +24,7 @@ package tcl.lang;
 
 class RegsubCmd implements Command {
 
-static final private String validCmds[] = {
+static final private String validOpts[] = {
     "-all",
     "-nocase",
     "--"
@@ -34,16 +38,14 @@ static final private int OPT_LAST 	= 2;
  *
  * cmdProc --
  *
- *	This procedure is invoked to load the RegsubCmd class on demand.  If
- *	the tcl.regexp.RegsubCmd exists, use that version.  Otherwise, use the
- *	tcl.lang.RegsubCmd stub class.
+ *	This procedure is invoked to process the "regsub" Tcl command.
+ *	See the user documentation for details on what it does.
  *
  * Results:
- *	None.
+ *	A standard Tcl result.
  *
  * Side effects:
- *	Connects the "regsub" command in the given interp to the cmdProc of the
- *	RegsubCmd class in the appropriate package.
+ *	See the user documentation.
  *
  *-----------------------------------------------------------------------------
  */
@@ -54,117 +56,73 @@ cmdProc(
     TclObject argv[])			// Arguments to "regsub" command.
 throws TclException 
 {
-    Class cmdClass = null;
-    Command cmd = null;
-    try {
-	cmdClass = Class.forName("tcl.regex.OroRegsubCmd");
-    } catch (ClassNotFoundException e) {
-	stubCmdProc(interp, argv);
-	return;
-    }
-
-    try {
-	cmd = (Command) cmdClass.newInstance();
-    } catch (IllegalAccessException e1) {
-	throw new TclException(interp,
-		"IllegalAccessException for class \"" + cmdClass.getName()
-		+ "\"");
-    } catch (InstantiationException e2) {
-	throw new TclException(interp,
-		"InstantiationException for class \"" + cmdClass.getName()
-		+ "\"");
-    } catch (ClassCastException e3) {
-	throw new TclException(interp,
-		"ClassCastException for class \"" + cmdClass.getName()
-		+ "\"");
-    }
-    interp.createCommand("regsub", cmd);
-    cmd.cmdProc(interp, argv);
-}
-
-/*
- *-----------------------------------------------------------------------------
- *
- * stubCmdProc --
- *
- *	This procedure is invoked to process the "regsub" Tcl command in the
- *	event that the tcl.regexp.RegsubCmd class cannot be found.  This method
- *	is just a stub which throws a TclException indicating that "regsub is
- *	not yet implemented". 
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	See the user documentation.
- *
- *-----------------------------------------------------------------------------
- */
-
-private static void 
-stubCmdProc(
-    Interp interp,  			// Current interp to eval the file cmd.
-    TclObject argv[])			// Args passed to the file command.
-throws TclException 
-{
-    int currentObjIndex, stringObjIndex, matchIndex;
-    int objc = argv.length - 1;
-    boolean noCase = false;
     boolean all = false;
-    boolean last = false;
-    String pattern, string;
+    boolean nocase = false;
 
-    if (argv.length < 3) {
-	throw new TclNumArgsException(interp, 1, argv, 
-	        "?switches? exp string subSpec varName");
-    }
-    for (currentObjIndex = 1; (objc > 0) && (!last); 
-	 currentObjIndex++, objc--) {
-	if (!argv[currentObjIndex].toString().startsWith("-")) {
-	    break;
+    try {
+	int i = 1;
+opts:
+	while (argv[i].toString().startsWith("-")) {
+	    int index = TclIndex.get(interp, argv[i], validOpts, "switch", 0);
+	    i++;
+	    switch (index) {
+		case OPT_ALL: {
+		    all = true;
+		    break;
+		}
+		case OPT_NOCASE: {
+		    nocase = true;
+		    break;
+		}
+		case OPT_LAST: {
+		    break opts;
+		}
+	    }
 	}
-	int opt = TclIndex.get(interp, argv[currentObjIndex],
-		validCmds, "switch", 1);
-	switch (opt) {
-	case OPT_ALL:
-	    all = true;
-	    break;
-	case OPT_NOCASE:
-	    noCase = true;
-	    break;
-	case OPT_LAST:
-	    last = true;
-	    break;
-	default:
-	    throw new TclException(interp, 
-		    "RegsubCmd.cmdProc: bad option " + opt 
-		    + " index to cmds");
+
+	TclObject exp = argv[i++];
+	String string = argv[i++].toString();
+	String subSpec = argv[i++].toString();
+	String varName = argv[i++].toString();
+	if (i != argv.length) {
+	    throw new IndexOutOfBoundsException();
 	}
-    }
-    if (objc != 4) {
-	throw new TclNumArgsException(interp, 1, argv, 
-	        "?switches? exp string subSpec varName");
-    }
-    
-    // Convert the string and pattern to lower case, if desired.
 
-    stringObjIndex = currentObjIndex + 1;
-    matchIndex = stringObjIndex + 1;
-    if (noCase) {
-	pattern = argv[currentObjIndex].toString().toLowerCase();
-	string = argv[stringObjIndex].toString().toLowerCase();
-    } else {
-	pattern = argv[currentObjIndex].toString();
-	string = argv[stringObjIndex].toString();
+	Regexp r = TclRegexp.compile(interp, exp, nocase);
+
+	int count = 0;
+	String result;
+
+	if (all == false) {
+	    result = r.sub(string, subSpec);
+	    if (result == null) {
+		result = string;
+	    } else {
+		count++;
+	    } 
+	} else {
+	    StringBuffer sb = new StringBuffer();
+	    Regsub s = new Regsub(r, string);
+	    while (s.nextMatch()) {
+		count++;
+		sb.append(s.skipped());
+		Regexp.applySubspec(s, subSpec, sb);
+	    }
+	    sb.append(s.rest());
+	    result = sb.toString();
+	}
+
+	TclObject obj = TclString.newInstance(result);
+	try {
+	    interp.setVar(varName, obj, 0);
+	} catch (TclException e) {
+	    throw new TclException(interp,
+		    "couldn't set variable \"" + varName + "\"");
+	}
+	interp.setResult(count);
+    } catch (IndexOutOfBoundsException e) {
+	throw new TclNumArgsException(interp, 1, argv,
+		"?switches? exp string subSpec varName");
     }
-
-    String subSpec = argv[stringObjIndex + 1].toString();
-    String varName = argv[stringObjIndex + 2].toString();
-
-    throw new TclException(interp,
-	    "Can't execute regsub \"" + pattern + " " + string + " "
-            + subSpec + " " + varName + "\": not yet implemented");
 }
 } // end RegsubCmd
-
-

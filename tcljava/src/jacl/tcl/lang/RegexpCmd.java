@@ -1,19 +1,21 @@
 /*
  * RegexpCmd.java --
  *
- * 	This file contains Jacl implementation of the built-in Tcl "regexp"
- * 	command. 
+ * 	This file contains the Jacl implementation of the built-in Tcl
+ *	"regexp" command. 
  *
- * Copyright (c) 1997 Sun Microsystems, Inc.
+ * Copyright (c) 1997-1999 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: RegexpCmd.java,v 1.2 1999/05/09 01:18:56 dejong Exp $
+ * RCS: @(#) $Id: RegexpCmd.java,v 1.3 2000/02/23 22:07:23 mo Exp $
  */
 
 package tcl.lang;
+
+import sunlabs.brazil.util.regexp.Regexp;
 
 /**
  * This class implements the built-in "regexp" command in Tcl.
@@ -21,7 +23,7 @@ package tcl.lang;
 
 class RegexpCmd implements Command {
 
-static final private String validCmds[] = {
+static final private String validOpts[] = {
     "-indices",
     "-nocase",
     "--"
@@ -64,16 +66,14 @@ init(
  *
  * cmdProc --
  *
- *	This procedure is invoked to load the RegexpCmd class on demand.  If
- *	the tcl.regexp.RegexpCmd exists, use that version.  Otherwise, use the
- *	tcl.lang.RegexpCmd stub class.
+ *	This procedure is invoked to process the "regexp" Tcl command.
+ *	See the user documentation for details on what it does.
  *
  * Results:
- *	None.
+ *	A standard Tcl result.
  *
  * Side effects:
- *	Connects the "regexp" command in the given interp to the cmdProc of the
- *	RegexpCmd class in the appropriate package.
+ *	See the user documentation.
  *
  *-----------------------------------------------------------------------------
  */
@@ -84,113 +84,71 @@ cmdProc(
     TclObject argv[])			// Arguments to "regexp" command.
 throws TclException 
 {
-    Class cmdClass = null;
-    Command cmd = null;
-    try {
-	cmdClass = Class.forName("tcl.regex.OroRegexpCmd");
-    } catch (ClassNotFoundException e) {
-	stubCmdProc(interp, argv);
-	return;
-    }
-
-    try {
-	cmd = (Command) cmdClass.newInstance();
-    } catch (IllegalAccessException e1) {
-	throw new TclException(interp,
-		"IllegalAccessException for class \"" + cmdClass.getName()
-		+ "\"");
-    } catch (InstantiationException e2) {
-	throw new TclException(interp,
-		"InstantiationException for class \"" + cmdClass.getName()
-		+ "\"");
-    } catch (ClassCastException e3) {
-	throw new TclException(interp,
-		"ClassCastException for class \"" + cmdClass.getName()
-		+ "\"");
-    }
-    interp.createCommand("regexp", cmd);
-    cmd.cmdProc(interp, argv);
-}
-
-/*
- *-----------------------------------------------------------------------------
- *
- * stubCmdProc --
- *
- *	This procedure is invoked to process the "regexp" Tcl command in the
- *	event that the tcl.regexp.RegexpCmd class cannot be found.  This method
- *	is just a stub which throws a TclException indicating that "regexp is
- *	not yet implemented". 
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	See the user documentation.
- *
- *-----------------------------------------------------------------------------
- */
-
-private static void 
-stubCmdProc(
-    Interp interp,  			// Current interp to eval the file cmd.
-    TclObject argv[])			// Args passed to the file command.
-throws TclException 
-{
-    int currentObjIndex, stringObjIndex, matchIndex;
-    int objc = argv.length - 1;
-    boolean noCase = false;
+    boolean nocase = false;
     boolean indices = false;
-    boolean last = false;
-    String pattern, string;
 
-    if (argv.length < 3) {
-	throw new TclNumArgsException(interp, 1, argv, 
-	     "?switches? exp string ?matchVar? ?subMatchVar subMatchVar ...?");
-    }
-    for (currentObjIndex = 1; (objc > 0) && (!last); 
-	 objc--, currentObjIndex++) {
-	if (!argv[currentObjIndex].toString().startsWith("-")) {
-	    break;
+    try {
+	int i = 1;
+opts:
+	while (argv[i].toString().startsWith("-")) {
+	    int index = TclIndex.get(interp, argv[i], validOpts, "switch", 0);
+	    i++;
+	    switch (index) {
+		case OPT_INDICES: {
+		    indices = true;
+		    break;
+		}
+		case OPT_NOCASE: {
+		    nocase = true;
+		    break;
+		}
+		case OPT_LAST: {
+		    break opts;
+		}
+	    }
 	}
-	int opt = TclIndex.get(interp, argv[currentObjIndex],
-		validCmds, "switch", 1);
-	switch (opt) {
-	case OPT_INDICES:
-	    indices = true;
-	    break;
-	case OPT_NOCASE:
-	    noCase = true;
-	    break;
-	case OPT_LAST:
-	    last = true;
-	    break;
-	default:
-	    throw new TclException(interp, 
-		    "RegexpCmd.cmdProc: bad option " + opt 
-		    + " index to validCmds");
+
+	TclObject exp = argv[i++];
+	String string = argv[i++].toString();
+
+	int matches = argv.length - i;
+
+	Regexp r = TclRegexp.compile(interp, exp, nocase);
+
+	int[] args = new int[matches * 2];
+	boolean matched = r.match(string, args);
+	if (matched) {
+	    for (int match = 0; i < argv.length; i++) {
+		TclObject obj;
+
+		int start = args[match++];
+		int end = args[match++];
+		if (indices) {
+		    if (end >= 0) {
+			end--;
+		    }
+		    obj = TclList.newInstance();
+		    TclList.append(interp, obj, TclInteger.newInstance(start));
+		    TclList.append(interp, obj, TclInteger.newInstance(end));
+		} else {
+		    String range = (start >= 0)
+			    ? string.substring(start, end)
+			    : "";
+		    obj = TclString.newInstance(range);
+		}
+		try {
+		    interp.setVar(argv[i].toString(), obj, 0);
+		} catch (TclException e) {
+		    throw new TclException(interp,
+			    "couldn't set variable \"" + argv[i] + "\"");
+		}
+	    }
 	}
+	interp.setResult(matched);
+    } catch (IndexOutOfBoundsException e) {
+	throw new TclNumArgsException(interp, 1, argv,
+		"?switches? exp string ?matchVar? ?subMatchVar subMatchVar ...?");
     }
-    if (objc < 2) {
-	throw new TclNumArgsException(interp, 1, argv, 
-	        "?switches? exp string ?matchVar? ?subMatchVar subMatchVar ...?");
-    }
-
-    // Convert the string and pattern to lower case, if desired.
-
-    stringObjIndex = currentObjIndex + 1;
-    matchIndex = stringObjIndex + 1;
-    if (noCase) {
-	pattern = argv[currentObjIndex].toString().toLowerCase();
-	string = argv[stringObjIndex].toString().toLowerCase();
-    } else {
-	pattern = argv[currentObjIndex].toString();
-	string = argv[stringObjIndex].toString();
-    }
-    throw new TclException(interp,
-	    "Can't execute regexp \"" + pattern + " " + string
-	    + "\": not yet implemented");
 }
+
 } // end RegexpCmd
-
-

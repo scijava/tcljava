@@ -1,0 +1,24 @@
+2000-02-23  Mo DeJong  <mdejong@redhat.com>
+
+	* README.jacl:
+	* diffs.txt:
+	* new_features.txt:
+	* unix/Makefile.in:
+	* src/jacl/tcl/lang/RegexpCmd.java:
+	* src/jacl/tcl/lang/RegsubCmd.java:
+	* src/jacl/tcl/lang/Util.java:
+	* src/jacl/sunlabs/brazil/util/regexp/Regexp.java:
+	* src/jacl/sunlabs/brazil/util/regexp/Regsub.java:
+	* src/jacl/tcl/lang/TclRegexp.java: Added new regular
+	expression implementation for Jacl donated by
+	Colin Stevens <colin.stevens@sun.com>.
+
+2000-02-23  Mo DeJong  <mdejong@redhat.com>
+
+	* license.oro:
+	* src/jacl/oro.jar:
+	* src/jacl/tcl/regex/OroRegexMatcher.java:
+	* src/jacl/tcl/regex/OroRegexpCmd.java:
+	* src/jacl/tcl/regex/OroRegsubCmd.java:
+	* src/jacl/tcl/lang/RegexMatcher.java: Removed all files
+	that were part of the ORO regexp implementation for Jacl.

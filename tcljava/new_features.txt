@@ -196,5 +196,14 @@ one could import the class java.util.Hashtable and then use
 the simple class name Hashtable instead of the fully qualified
 name java.util.Hashtable.
 
+What's new in Tcl/Java 1.3?
+
+(NEW REGULAR EXPRESSION PACKAGE FOR JACL)
+
+A new implementation of the regexp and regsub commands has been
+donated by Colin Stevens. This replaces the Oro regexp
+implementation that was binary only and no longer supported.
+Jacl is now 100% Open Source.
+
 
 </PRE></BODY></HTML>

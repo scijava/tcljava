@@ -4,15 +4,17 @@
  *	This class handles Tcl expressions.
  *
  * Copyright (c) 1997 Cornell University.
- * Copyright (c) 1997-1998 by Sun Microsystems, Inc.
+ * Copyright (c) 1997-1999 by Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Util.java,v 1.4 1999/08/27 23:50:47 mo Exp $
+ * RCS: @(#) $Id: Util.java,v 1.5 2000/02/23 22:07:23 mo Exp $
  */
 
 package tcl.lang;
+
+import sunlabs.brazil.util.regexp.Regexp;
 
 import java.io.*;
 import java.util.*;
@@ -68,10 +70,6 @@ static final double powersOf10[] = {
     1.0e128,
     1.0e256
 };
-
-// Used in the regex Methods below.
-
-static RegexMatcher regexMatcher = checkRegexPackage();
 
 // Determines if the VM has a broken implementation of this method.
 
@@ -430,13 +428,15 @@ strtod(
  *
  * CharAt --
  *
- *	|>description<|
+ *	This simply calls String.charAt() with an extra check to
+ *	make sure the index is bigger than 0 and smaller than
+ *	the length of the string.
  *
  * Results:
- *	|>None.<|
+ *	If the the index is out of range, \0 is returned.
  *
  * Side effects:
- *	|>None.<|
+ *	None.
  *
  *----------------------------------------------------------------------
  */
@@ -744,19 +744,6 @@ stringMatch(
  *-----------------------------------------------------------------------------
  */
 
-// Checks if regex package exists.
-
-static final RegexMatcher
-checkRegexPackage()
-{
-    try {
-	Class cls = Class.forName("tcl.regex.OroRegexMatcher");
-	return (RegexMatcher)cls.newInstance();
-    } catch (Exception e) {
-	return null;
-    }
-}
-
 static final boolean
 regExpMatch(
     Interp interp,   			// Current interpreter.
@@ -764,15 +751,8 @@ regExpMatch(
     TclObject pattern)   		// The regular expression.
 throws TclException
 {
-    // If the regex package is available, the following code will call
-    // tcl.regex.OroRegexMatche.match(). Otherwise, return false
-    // because this function is not implemented internally.
-
-    if (regexMatcher != null) {
-	return regexMatcher.match(interp, string, pattern.toString());
-    } else {
-	return false;
-    }
+    Regexp r = TclRegexp.compile(interp, pattern, false);
+    return r.match(string, (String[]) null);
 }
 
 /*

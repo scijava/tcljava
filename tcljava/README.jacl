@@ -1,6 +1,6 @@
 Jacl
 
-RCS: @(#) $Id: README.jacl,v 1.7 1999/10/21 20:01:40 redman Exp $
+RCS: @(#) $Id: README.jacl,v 1.8 2000/02/23 22:07:22 mo Exp $
  
 1. Introduction
 ---------------
@@ -104,27 +104,7 @@ these additional pieces of information with the script:
     (d) What platform are you running on (Machine, OS, etc.)?
     (e) What releases of Tcl products are you using?
 
-9. Regular expressions
-----------------------
-
-The regular expression features of Tcl are available in Jacl.
-We actually used a commercial regular expression package from ORO,
-Inc. While this resulted in our ability to give you regular expression
-features well ahead of schedule, it unfortunantly means we can't offer
-source for the regular expression code.
-
-Please note that there are certain differences between how Tcl regular
-expressions are supposed to work and how the ORO package works.  As a
-result some scripts that rely on certain regular expression
-constructs will not be portable between Jacl and the C version of
-Tcl. It is our plan to eventually do a full port of the Tcl regular
-expression package for complete compatibility.
-
-Between the Jacl 1.0 release, and the Jacl 1.1 release, it looks
-like ORO, Inc. went out of business.  Formerly, their website was
-http://www.oroinc.com/.
-
-10. Using Jacl in applets
+9. Using Jacl in applets
 -------------------------
 
 Currently there are many issues that make it difficult to run Jacl as

@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.31 1999/11/02 02:41:47 redman Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.32 2000/02/23 22:07:23 mo Exp $
 
 # The directory containing the Tcl sources and headers appropriate
 # for this version of Tk ("srcdir" will be replaced or has already
@@ -467,14 +467,11 @@ jacl: jacl.jar
 
 jacl.build: jacl.clean tcljava.check
 	mkdir -p $(JACL_BUILD_DIR)
-	cd $(JACL_BUILD_DIR) ;\
-	CLASSPATH=$(JAVA_CLASSPATH) \
-	$(JAR) $(JAR_EXTRACT_FLAGS) $(JACL_SRC_DIR)/oro.jar
 	cd $(JACL_SRC_DIR) ;\
 	CLASSPATH=$(JACL_CLASSPATH) \
 	$(JAVAC) $(JAVAC_FLAGS) \
 		-d $(JACL_BUILD_DIR) \
-                tcl/lang/*.java tcl/regex/*.java
+                tcl/lang/*.java sunlabs/brazil/util/regexp/*.java
 	cp -fr $(JACL_SRC_DIR)/tcl/lang/library\
 		$(JACL_BUILD_DIR)/tcl/lang/library
 
@@ -491,14 +488,14 @@ jacl.fastbuild:
 	CLASSPATH=$(JACL_CLASSPATH) \
 	$(JAVAC) $(JAVAC_FLAGS) \
 		-d $(JACL_BUILD_DIR) \
-                tcl/lang/*.java tcl/regex/*.java
+                tcl/lang/*.java sunlabs/brazil/util/regexp/*.java
 
 # jacl.jar needs to depend on jacl.build so that the
 # classfiles get rebuilt each time the jar is built
 jacl.jar: jacl.build
 	cd $(JACL_BUILD_DIR) ;\
 	CLASSPATH=$(JAVA_CLASSPATH) \
-	$(JAR) $(JAR_COMPRESS_FLAGS) $(BUILD_DIR)/jacl.jar tcl com
+	$(JAR) $(JAR_COMPRESS_FLAGS) $(BUILD_DIR)/jacl.jar tcl sunlabs
 
 
 #
