@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Channel.java,v 1.10 2001/11/20 01:01:23 mdejong Exp $
+ * RCS: @(#) $Id: Channel.java,v 1.11 2001/11/20 04:31:14 mdejong Exp $
  */
 
 package tcl.lang;
@@ -76,9 +76,54 @@ abstract class Channel {
      *                correctly tested for.  Most cases should be caught.
      */
 
-    abstract String read(Interp interp, int readType, int numBytes) 
-            throws IOException, TclException;
+    String read(Interp interp, int readType, int numBytes) 
+            throws IOException, TclException {
 
+        if ((mode & (TclIO.RDONLY|TclIO.RDWR)) == 0)
+            throw new TclException(interp, "channel \"" + getChanName() +
+                "\" wasn't opened for reading");
+
+        eofCond = false;
+
+        switch (readType) {
+            case TclIO.READ_ALL: {
+                char[] charArr = new char[BUF_SIZE];
+                StringBuffer sbuf = new StringBuffer(BUF_SIZE);
+                int numRead;
+
+                while((numRead = reader.read(charArr, 0, BUF_SIZE)) != -1) {
+                    sbuf.append(charArr,0, numRead);
+                }
+                eofCond = true;
+                return sbuf.toString();
+            }
+            case TclIO.READ_LINE: {
+                String line = reader.readLine();
+                if (line == null) {
+                    eofCond = true;
+                    return "";
+                } else {
+                    // FIXME: Is it possible to check for EOF using
+                    // reader.ready() when a whole line is returned
+                    // but we ran into an EOF (no newline termination)?
+                    return line;
+                }
+            }
+            case TclIO.READ_N_BYTES: {
+                char[] charArr = new char[numBytes];
+                int numRead = reader.read(charArr, 0, numBytes);
+                if (numRead == -1) {
+                    eofCond = true;
+                    return "";
+                }
+                return new String(charArr,0,numRead);
+            }
+            default : {
+                throw new TclRuntimeError(
+                    "Channel.read: Invalid read mode.");
+            }
+        }
+    }
 
     /** 
      * Interface to write data to the Channel

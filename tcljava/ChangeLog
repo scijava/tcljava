@@ -1,5 +1,17 @@
 2001-11-19  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/jacl/tcl/lang/Channel.java (read): Turn the
+	read method into a concrete implementation instead
+	of an abstract method.
+	* src/jacl/tcl/lang/FileChannel.java (read):
+	* src/jacl/tcl/lang/ServerSocketChannel.java (read):
+	* src/jacl/tcl/lang/SocketChannel.java (read):
+	* src/jacl/tcl/lang/StdChannel.java (read): Make use
+	of super class read method instead of including
+	read logic in each Channel subclass.
+
+2001-11-19  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/jacl/tcl/lang/Channel.java (close): Fix silly
 	cut and paste error that was closing the underlying
 	channel twice.

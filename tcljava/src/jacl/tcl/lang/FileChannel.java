@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FileChannel.java,v 1.11 2001/11/20 00:08:29 mdejong Exp $
+ * RCS: @(#) $Id: FileChannel.java,v 1.12 2001/11/20 04:31:14 mdejong Exp $
  *
  */
 
@@ -152,54 +152,13 @@ class FileChannel extends Channel {
 	if (file == null) {
 	    throw new TclRuntimeError("FileChannel.read: null file object");
 	}
-	if ((mode & TclIO.WRONLY) != 0) {
-	    throw new TclException(interp, "channel \"" +
-	        getChanName() + "\" wasn't opened for reading");
-	}
 
 	// Create the Buffered Reader if it does not already exist
 	if (reader == null) {
 	    reader = new BufferedReader( new FileReader(file.getFD()) );
 	}
 
-	eofCond = false;
-
-	switch (readType) {
-	    case TclIO.READ_ALL: {
-		char[] charArr = new char[BUF_SIZE];
-		StringBuffer sbuf = new StringBuffer((int) file.length());
-		int numRead;
-		    
-		while((numRead = reader.read(charArr, 0, BUF_SIZE)) != -1) {
-		    sbuf.append(charArr,0, numRead);
-		}
-		eofCond = true;
-		return sbuf.toString();
-	    }
-	    case TclIO.READ_LINE: {
-		String line = reader.readLine();
-		if (line == null) {
-		    eofCond = true;
-		    return "";
-		} else {
-		    return line;
-		}
-	    }
-	    case TclIO.READ_N_BYTES: {
-		char[] charArr = new char[numBytes];
-		int numRead;
-		numRead = reader.read(charArr, 0, numBytes);
-		if (numRead == -1) {
-		    eofCond = true;
-		    return "";
-		}
-		return( new String(charArr,0,numRead) );
-	    }
-	    default: {
-	        throw new TclRuntimeError(
-                        "FileChannel.read(): Incorrect read mode.");
-	    }
-	}
+        return super.read(interp, readType, numBytes);
     }
 
 

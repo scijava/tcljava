@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: StdChannel.java,v 1.12 2001/11/20 00:53:07 mdejong Exp $
+ * RCS: @(#) $Id: StdChannel.java,v 1.13 2001/11/20 04:31:14 mdejong Exp $
  *
  */
 
@@ -115,73 +115,6 @@ class StdChannel extends Channel {
 	
 	return getChanName();
     }
-
-
-    /**
-     * Read data from a stdio channel. The read can be for the entire buffer,
-     * line or a specified number of bytes.
-     *
-     * @param interp The currrent interpreter.
-     * @param readType Specifies if the read should read the entire buffer, 
-     *            the next line, or a specified number of bytes.  See the 
-     *            TclIO class for more information on read types.
-     * @param numBytes Number of bytes to read.  Only used when the readType
-     *            is TclIO.READ_N_BYTES.
-     * @return String of data that was read from the Channel (can not be null)
-     * @exception TclException is thrown if read occurs on WRONLY channel.
-     * @exception IOException is thrown when an IO error occurs that was not
-     *                correctly tested for.  Most cases should be caught.
-     */
-
-    String read(Interp interp, int readType, int numBytes) 
-            throws IOException, TclException {
-
-        if (stdType != STDIN) {
-	      throw new TclException(interp, "channel \"" +
-	        getChanName() + "\" wasn't opened for reading");
-	}
-
-	eofCond = false;
-
-	switch (readType) {
-	    case TclIO.READ_ALL: {
-		char[] charArr = new char[BUF_SIZE];
-		StringBuffer sbuf = new StringBuffer();
-		int numRead;
-		    
-		while((numRead = reader.read(charArr, 0, BUF_SIZE)) != -1) {
-		    sbuf.append(charArr,0, numRead);
-		}
-		eofCond = true;
-		return sbuf.toString();
-	    } 
-	    case TclIO.READ_LINE: {
-                // FIXME: Can we check for EOF using reader.ready() ???
-		String line = reader.readLine();
-		if (line == null) {
-		    eofCond = true;
-		    return "";
-		} else {
-		    return line;
-		}
-	    }
-	    case TclIO.READ_N_BYTES: {
-		char[] charArr = new char[numBytes];
-		int numRead;
-		numRead = reader.read(charArr, 0, numBytes);
-		if (numRead == -1) {
-		    eofCond = true;
-		    return "";
-		}
-		return( new String(charArr,0,numRead) );
-	    }
-	    default : {
-	        throw new TclRuntimeError(
-                        "StdChannel.read: Incorrect read mode.");
-	    }
-	}
-    }
-
 
     /**
      * Write to stdout or stderr.  If the stdType is not set to 

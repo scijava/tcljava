@@ -116,19 +116,7 @@ public class ServerSocketChannel extends Channel {
                 s.getPort());
         cbInterp.getNotifier().queueEvent((TclEvent)evt,TCL.QUEUE_TAIL);
     }
-                
         
-
-    /**
-     * Perform a read on the ServerSocket - not allowed.
-     **/
-
-    String read(Interp interp, int readType, int numBytes)
-        throws IOException, TclException
-    {
-        throw new TclException(interp, "cannot read from a server socket");
-    }
-
     /**
      * Write to the channel - not allowed.
      **/

@@ -165,74 +165,35 @@ public class SocketChannel extends Channel {
     String read(Interp interp, int readType, int numBytes)
         throws IOException, TclException
     {
-        // Check mode.
-        if ((mode & (TclIO.RDONLY|TclIO.RDWR)) == 0)
-            throw new TclException(interp, "channel " + getChanName() +
-                    " wasn't opened for reading");
+        String returnStr;
 
-        if ((numBytes < 1) || (readType == TclIO.READ_ALL))
-            numBytes = BUF_SIZE;
-
-        char[] buf = new char[numBytes]; // Buffer to read into
-        int ret = 0;
-
-        // FIXME: This needs to be a StringBuffer for += all case!
-        String returnStr = new String();
-
-        // FIXME: Where does eofCond get set to false before a read?
+        // FIXME: Why are we catching these exceptions here?
+        // Why can we just delete this whole method and
+        // depend on the super.read() method to take care of it?
+        // Also, why are they not thrown again?
 
         try
         {
-            // Decide what type of read we are doing.
-            switch (readType) {
-                case TclIO.READ_ALL:
-                    // Try and read the whole stream at once.
-                    while ((ret = reader.read(buf, 0, BUF_SIZE)) != -1)
-                        returnStr += new String(buf);
-                    eofCond = true; // We read to eof, so this must be true
-                    break;
-                case TclIO.READ_LINE:
-                    // Try and read a line. Must assume character data
-                    // and that this stream is configured non-binary.
-                    returnStr = reader.readLine();
-                    break;
-                case TclIO.READ_N_BYTES:
-                    // Read the specified number of bytes.
-                    int total = 0;
-                    while ((total += reader.read(buf,total,numBytes))
-                        != numBytes) ;
-                    returnStr = new String(buf);
-                    break;
-                default:
-                    // Broken?
-                    throw new TclException(interp, "unknown read mode: "
-                        + readType);
-            }
+            returnStr = super.read(interp, readType, numBytes);
         }
         catch (EOFException e)
         {
             eofCond = true;
             errorMsg = e.getMessage();
-            returnStr = new String("");
+            returnStr = "";
         }
         catch (IOException e)
         {
             errorMsg = e.getMessage();
-            returnStr = new String("");
-        }
-        catch (Exception e)
-        {
-            throw new IOException(e.getMessage());
+            returnStr = "";
         }
 
-        if (ret == -1)
-            eofCond = true;
         if (returnStr == null)
         {
             eofCond = true;
-            returnStr = new String("");
+            returnStr = "";
         }
-        
+
         return returnStr;
     }
 
