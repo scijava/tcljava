@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.26 1999/08/27 23:50:52 mo Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.27 1999/08/29 17:16:33 mo Exp $
 
 # The directory containing the Tcl sources and headers appropriate
 # for this version of Tk ("srcdir" will be replaced or has already
@@ -14,6 +14,8 @@ TCL_LIBRARY_DIR = @TCL_SRC_DIR@/library
 # for this version of Tcl:
 TCL_BIN_DIR = @TCL_BIN_DIR@
 
+# The full path name of the tclsh executable after it is installed
+TCLSH=@TCLSH@
 
 # Specify which Tcl/Java system to build (jacl or tclblend).
 TCLJAVA	= @TCLJAVA@
@@ -225,7 +227,7 @@ TCLBLEND_CLASS_NAMES = \
 
 all: tcljava $(TCLJAVA)
 
-install: tcljava.install $(TCLJAVA).install
+install: $(TCLJAVA).install.check tcljava.install $(TCLJAVA).install
 
 uninstall: $(TCLJAVA).uninstall tcljava.uninstall
 
@@ -375,7 +377,16 @@ custom_shell_native:
 
 
 
+#
+# This rule is run before installing, it is used to do any checks that
+# are needed before we actually install tclblend.
+#
 
+tclblend.install.check:
+	@if test ! -x $(TCLSH) ; then \
+		echo "Tcl has not been installed, please install it before installing Tcl Blend" ; \
+		exit -1 ; \
+	fi
 
 
 
@@ -488,6 +499,14 @@ jacl.jar: jacl.build
 	cd $(JACL_BUILD_DIR) ;\
 	CLASSPATH=$(JAVA_CLASSPATH) \
 	$(JAR) $(JAR_COMPRESS_FLAGS) $(BUILD_DIR)/jacl.jar tcl com
+
+
+#
+# This rule is run before installing, it is used to do any checks that
+# are needed before we actually install jacl. Currently, there are none.
+#
+
+jacl.install.check:
 
 
 #

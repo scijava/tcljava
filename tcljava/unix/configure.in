@@ -2,7 +2,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run to configure the
 dnl	Makefile in this directory.
 AC_INIT(../src/tcljava/tcl/lang/InternalRep.java)
-# RCS: @(#) $Id: configure.in,v 1.19 1999/08/27 23:50:53 mo Exp $
+# RCS: @(#) $Id: configure.in,v 1.20 1999/08/29 17:16:33 mo Exp $
 
 
 #--------------------------------------------------------------------
@@ -339,7 +339,7 @@ if test -x $JAVA_DIR/bin/$NAME; then
     echo "Using JAVA_G=$JAVA_G" >&5
     AC_MSG_RESULT($JAVA_G)
 else
-    AC_MSG_ERROR([
+    AC_MSG_WARN([
   Cannot find $JAVA_DIR/bin/$NAME.])
 fi
 
@@ -1218,100 +1218,59 @@ fi
 
 
 
-
-
-
-
-
 #
-# try to find tclsh8.0 or wish8.0 in the path if we are running tclblend
+# Check for the installed version of tclsh and wish. we need to use the
+# one we compiled against because you can not compile with one version
+# and then load into another. If you compiled Tcl Blend with Tcl 8.1 and
+# then load it into a Tcl 8.0 interp, it will segfault.
 #
-
-TCLSH80=tclsh8.0
-WISH80=wish8.0
 
 if test $TCLJAVA = "tclblend" || test $BOTH = "true"; then
 
-  AC_PATH_PROG(TCLSH_LOC, tclsh8.0)
-  if test -x "$TCLSH_LOC"; then
-      echo 'puts [[info tclversion]] ; exit 0' > tcl_version.tcl
-      if test "`$TCLSH_LOC tcl_version.tcl 2>&5`" = "8.0"; then
-          TCLSH80=$TCLSH_LOC
-          MSG="found tcl version 8.0 at $TCLSH80"
-          echo $MSG >&5
-          AC_MSG_RESULT([$MSG])
-      else
-          MSG="could not find working tclsh8.0"
-          echo $MSG >&5
-          AC_MSG_WARN([$MSG])
-      fi
-      rm -f tcl_version.tcl
-  else
-      #if we did not find tclsh8.0 then try tclsh
-      AC_PATH_PROG(TCLSH_LOC, tclsh)
-      if test -x "$TCLSH_LOC"; then
-          echo 'puts [[info tclversion]] ; exit 0' > tcl_version.tcl
-          if test "`$TCLSH_LOC tcl_version.tcl 2>&5`" = "8.0"; then
-              TCLSH80=$TCLSH_LOC
-              MSG="found tcl version 8.0 at $TCLSH80"
-              echo $MSG >&5
-              AC_MSG_RESULT([$MSG])
-	  else
-              MSG="$TCLSH_LOC is not tcl version 8.0"
-              echo $MSG >&5
-              AC_MSG_WARN([$MSG])
-	  fi
-          rm -f tcl_version.tcl
-      else
-          MSG="Failed to find tcl shell version 8.0"
-          echo $MSG >&5
-          AC_MSG_WARN([$MSG])
-      fi
+  # Check to make sure that tclsh has been built by looking for the
+  # tclsh executable in the TCL_BIN_DIR directory.
+
+  if test ! -x $TCL_BIN_DIR/tclsh; then
+    AC_MSG_ERROR([Tcl was configued in $TCL_BIN_DIR, but it has not been built, please build it and run configure again.])
   fi
 
-  AC_PATH_PROG(WISH_LOC, wish8.0)
-  if test -x "$WISH_LOC"; then
-      echo 'puts [[info tclversion]] ; exit 0' > tcl_version.tcl
-      if test "`$WISH_LOC tcl_version.tcl 2>&5`" = "8.0"; then
-          WISH80=$WISH_LOC
-          MSG="found wish version 8.0 at $WISH80"
-          echo $MSG >&5
-          AC_MSG_RESULT([$MSG])
-      else
-          MSG="could not find working wish8.0"
-          echo $MSG >&5
-          AC_MSG_WARN([$MSG])
-      fi
+  # Double check that tclsh works and that it is tclsh8.0 or better
+  # We need to set LD_LIBRARY_PATH and SHLIB_PATH so that Tcl can find its
+  # shared library in the build directory on a Unix or HP-UX system.
+
+  LD_LIBRARY_PATH=$TCL_BIN_DIR:$LD_LIBRARY_PATH
+  export LD_LIBRARY_PATH
+  SHLIB_PATH=$TCL_BIN_DIR:$SHLIB_PATH
+  export SHLIB_PATH
+
+  TCLSH_LOC=$TCL_BIN_DIR/tclsh
+  rm -f tcl_version.tcl
+  echo 'puts [[expr {[info tclversion] >= 8.0}]] ; exit 0' > tcl_version.tcl
+  if test "`$TCLSH_LOC tcl_version.tcl 2>&5`" = "1"; then
+      AC_MSG_RESULT([Tcl executable $TCLSH_LOC works])
       rm -f tcl_version.tcl
   else
-      #if we did not find wish8.0 then try wish
-      AC_PATH_PROG(WISH_LOC, wish)
-      if test -x "$WISH_LOC"; then
-          echo 'puts [[info tclversion]] ; exit 0' > tcl_version.tcl
-          if test "`$WISH_LOC -f tcl_version.tcl 2>&5`" = "8.0"; then
-              WISH80=$WISH_LOC
-              MSG="found wish version 8.0 at $WISH80"
-              echo $MSG >&5
-              AC_MSG_RESULT([$MSG])
-          else
-              MSG="$WISH_LOC is not wish version 8.0"
-              echo $MSG >&5
-              AC_MSG_WARN([$MSG])
-          fi
-          rm -f tcl_version.tcl
-      else
-          MSG="Failed to find wish shell version 8.0"
-          echo $MSG >&5
-          AC_MSG_WARN([$MSG])
-      fi
+      # If the shell did not run or it was not at least Tcl 8.0, generate error
+      rm -f tcl_version.tcl
+      AC_MSG_ERROR([$TCLSH_LOC does not work or is not the correct version])
   fi
 
-  AC_SUBST(WISH80)
-  AC_SUBST(TCLSH80)
+  # Now check to see if "make install" has been run in the tcl directory.
+  # The installed executable name is tclsh8.0, tclsh8.1, or tclsh8.2.
+  # We also assume that wish is going to be installed in the same
+  # location, which could be incorrect but oh well.
+
+  TCLSH=$TCL_EXEC_PREFIX/bin/tclsh$TCL_VERSION
+  WISH=$TCL_EXEC_PREFIX/bin/wish$TCL_VERSION
+
+  if test ! -x $TCLSH; then
+      AC_MSG_WARN([Tcl has not been installed yet, it must be installed before installing Tcl Blend])
+  fi
+
+  AC_SUBST(WISH)
+  AC_SUBST(TCLSH)
 
 fi
-
-
 
 
 

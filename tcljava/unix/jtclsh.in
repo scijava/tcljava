@@ -44,8 +44,8 @@ LIB_INSTALL_DIR=${exec_prefix}/lib
 TCLBLEND=${prefix}/lib/tclblend
 
 # Fully qualified path name of wish and tclsh
-WISH80=@WISH80@
-TCLSH80=@TCLSH80@
+WISH=@WISH@
+TCLSH=@TCLSH@
 
 # Setting for CLASSPATH determined by configure
 JAVA_CLASSPATH=@JAVA_CLASSPATH@
@@ -140,8 +140,8 @@ export TCLLIBPATH
 
 # If the script is called as jtclsh, then use tclsh8.0, otherwise, use wish8.0
 case "`basename $0`" in
-    jtclsh) WISH_OR_TCLSH=${TCLSH80} ;;
-    jwish) WISH_OR_TCLSH=${WISH80} ;;
+    jtclsh) WISH_OR_TCLSH=${TCLSH} ;;
+    jwish) WISH_OR_TCLSH=${WISH} ;;
     *)
     echo "The wrapper script must be named jtclsh or jwish."
     exit 3
