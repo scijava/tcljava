@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: ReflectObject.test,v 1.3 1999/05/10 03:14:32 dejong Exp $
+# RCS: @(#) $Id: ReflectObject.test,v 1.4 1999/05/16 00:23:03 dejong Exp $
 
 # Note: This test file must be sourced from the parent directory
 #       or else the defs file may not be properly loaded.
@@ -200,4 +200,56 @@ test ReflectObject-3.3 {object equals} {
     set results
 } $lang_classes
 
+
+# test series 4, dealing with long (64 bit) values and conversions
+
+set LC tests.LongConvert
+
+set longmax 9223372036854775807
+set longmin -9223372036854775808
+set longval -2398461842900206033
+
+test ReflectObject-4.0 {max long value} {
+  java::field Long MAX_VALUE
+} $longmax
+
+test ReflectObject-4.1 {min long value} {
+  java::field Long MIN_VALUE
+} $longmin
+
+test ReflectObject-4.2 {parse max long value with Long constructor} {
+  [java::new Long $longmax] toString
+} $longmax
+
+test ReflectObject-4.3 {parse min long value with Long constructor} {
+  [java::new Long $longmin] toString
+} $longmin
+
+test ReflectObject-4.4 {parse long value with Long constructor} {
+  [java::new Long $longval] toString
+} $longval
+
+test ReflectObject-4.5 {max long value, passed to long method} {
+  java::call $LC isMax [java::field Long MAX_VALUE]
+} 1
+
+test ReflectObject-4.6 {long value, passed to long method} {
+  java::call $LC {isVal long} $longval
+} 1
+
+test ReflectObject-4.7 {long value, passed to String method} {
+  java::call $LC {isVal String} $longval
+} 1
+
+test ReflectObject-4.8 {pass a sring that can not be converted to a long} {
+  list [catch {java::call $LC isMax 34-*&,34} err] $err
+} {1 {expected integer but got "34-*&,34"}}
+
+test ReflectObject-4.9 {pass a Long to a long method} {
+  java::call $LC {isVal long} [java::new Long $longval]
+} 1
+
+test ReflectObject-4.10 {pass a Long to a long method} {
+  java::call $LC isMax [java::new Long $longmax]
+} 1
 
