@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: BlendExtension.java,v 1.4 1999/03/02 15:37:14 hylands Exp $
+ * RCS: @(#) $Id: BlendExtension.java,v 1.5 1999/03/05 03:55:30 hylands Exp $
  */
 
 package tcl.lang;
@@ -76,7 +76,7 @@ throws TclException
     interp.setVar("java::patchLevel", TclString.newInstance(patchLevel),
         TCL.GLOBAL_ONLY);
     interp.eval("namespace eval ::java namespace export bind call defineclass event field getinterp instanceof lock new null prop throw unlock");
-    interp.eval("package provide java " + version);
+    interp.eval("package provide java " + patchLevel);
 
 }
 
