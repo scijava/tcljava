@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaBindCmd.java,v 1.1 1998/10/14 21:09:14 cvsadmin Exp $
+ * RCS: @(#) $Id: JavaBindCmd.java,v 1.2 1999/05/09 21:43:54 dejong Exp $
  */
 
 package tcl.lang;
@@ -77,7 +77,6 @@ throws
     }
 
     ReflectObject robj = ReflectObject.getReflectObject(interp, argv[1]);
-    Object obj = robj.javaObj;
 
     if (eventMgr == null) {
 	eventMgr = BeanEventMgr.getBeanEventMgr(interp);
@@ -93,7 +92,10 @@ throws
 	EventSetDescriptor eventDesc;
 	Method method;
 
-	Object arr[] = getEventMethod(interp, obj, argv[2].toString());
+	Object arr[] = getEventMethod(interp,
+				      robj.javaObj, robj.javaClass,
+				      argv[2].toString());
+
 	eventDesc = (EventSetDescriptor)arr[0];
 
 	if (!eventDesc.getListenerType().isInterface()) {
@@ -156,6 +158,7 @@ getEventMethod(
     Interp interp,		// Current interpreter.
     Object obj,			// The object whose event listener methods
 				// are to be queried.
+    Class  cls,                 // The class of the event object
     String eventName)		// The string name of the event.
 throws
    TclException			// If the method cannot be found, or if
@@ -169,9 +172,9 @@ throws
 	BeanInfo beanInfo;
 
 	try {
-	    Class cls = obj.getClass();
-	    beanInfo = (BeanInfo)beanInfoCache.get(cls);
+	    beanInfo = (BeanInfo) beanInfoCache.get(cls);
 	    if (beanInfo == null) {
+		//System.out.println("Introspecting " + cls);
 		beanInfo = Introspector.getBeanInfo(cls);
 		beanInfoCache.put(cls, beanInfo);
 		
@@ -179,7 +182,7 @@ throws
 	} catch (IntrospectionException e) {
 	    break search;
 	}
-	EventSetDescriptor events[] = beanInfo.getEventSetDescriptors();
+	EventSetDescriptor[] events = beanInfo.getEventSetDescriptors();
 
 	if (events == null) {
 	    break search;
@@ -187,11 +190,9 @@ throws
 
 	dotPos = eventName.lastIndexOf('.');
 	if (dotPos == -1) {
-	    /*
-	     * the event string specifies only the event method. Must
-	     * ensure that exactly one event interface has this
-	     * method.
-	     */
+	    // the event string specifies only the event method. Must
+	    // ensure that exactly one event interface has this
+	    // method.
 
 	    for (i = 0; i < events.length; i++) {
 		Method methods[] = events[i].getListenerType().getMethods();
@@ -213,6 +214,10 @@ throws
 
 	    for (i = 0; i < events.length; i++) {
 		Class lsnType = events[i].getListenerType();
+                //System.out.println("event index " + i);
+                //if (evtCls == null) {System.out.println("null 1");}
+                //if (lsnType == null) {System.out.println("null 2");}
+                //if ((lsnType != null) && (evtCls == null)) {System.out.println("null 3");}
 		if (evtCls.equals(lsnType.getName())) {
 		    eventDesc = events[i];
 		    break;
