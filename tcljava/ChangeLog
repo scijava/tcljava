@@ -1,3 +1,26 @@
+2000-06-03  Mo DeJong  <mdejong@redhat.com>
+
+	* Makefile.in: Merged from unix/Makefile.in
+	* aclocal.m4:
+	* autogen.sh: Added
+	* configure.in: Merged from unix/configure.in
+	* jaclsh.in: Added
+	* jtclsh.in: Added
+	* tcljava.m4: Added
+	* tcljavaConfig.sh.in: Added
+	* unix/Makefile.in: Removed
+	* unix/configure.in: Removed
+	* unix/install-sh: Removed
+	* unix/jaclsh.in: Removed
+	* unix/jtclsh.in: Removed
+	* unix/tcljavaConfig.sh.in: Removed
+	Finished major overhaul of the build
+	system. The new configure process
+	is much more robust and will support
+	more systems that the older one.
+	Tcl Blend can now use the Kaffe JVM.
+	Support for IBM Java2-13 also added.
+
 2000-05-24  Mo DeJong  <mdejong@redhat.com>
 
 	* tests/inprogress/Unicode.test: Overhauled

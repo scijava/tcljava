@@ -1,1089 +1,168 @@
-#--------------------------------------------------------------------
-# This very first macro is used to verify that the configure script can 
-# find the sources.  The argument to AC_INIT should be a unique filename
-# for this package, and can be a relative path, such as:
-#
-# AC_INIT(../generic/tcl.h)
-#--------------------------------------------------------------------
+dnl	This file is an input file used by the GNU "autoconf" program to
+dnl	generate the file "configure", which is run to configure the
+dnl	Makefile in this directory.
+AC_INIT(ChangeLog)
 
-AC_INIT(src/tcljava/tcl/lang/InternalRep.java)
-
-#--------------------------------------------------------------------
-# Set your version numbers here.  The NODOT_VERSION is required
-# for constructing the library name on systems that don't like dots
-# in library names (Windows).  The VERSION variable is used on the
-# other systems.
-#--------------------------------------------------------------------
-
-PACKAGE=tclblend
-
-MAJOR_VERSION=1
-MINOR_VERSION=2
-PATCHLEVEL=6
-
-VERSION=
-NODOT_VERSION=
-
-#VERSION=${MAJOR_VERSION}.${MINOR_VERSION}${PATCHLEVEL}
-#NODOT_VERSION=${MAJOR_VERSION}${MINOR_VERSION}
-
-# Directory where we are building, used for CLASSPATH when we test
-BUILD_DIR=`pwd`
-AC_SUBST(BUILD_DIR)
-
-AC_SUBST(PACKAGE)
-AC_SUBST(VERSION)
-AC_SUBST(NODOT_VERSION)
-
-#--------------------------------------------------------------------
-# We put this here so that you can compile with -DVERSION="1.2" to
-# encode the package version directly into the source files.
-#--------------------------------------------------------------------
-
-eval AC_DEFINE_UNQUOTED(VERSION, "${VERSION}")
-
-   #--------------------------------------------------------------------
-   # Find ranlib
-   #--------------------------------------------------------------------
-
-   AC_PROG_RANLIB
-
-   #--------------------------------------------------------------------
-   # This macro performs additional compiler tests.
-   #--------------------------------------------------------------------
-
-   AC_CYGWIN
-
-#--------------------------------------------------------------------
-# Check whether --enable-gcc or --disable-gcc was given.  Do this 
-# before AC_CYGWIN is called so the compiler can 
-# be fully tested by built-in autoconf tools.
-# This macro also calls AC_PROG_CC to set the compiler if --enable-gcc
-# was not used.
-#--------------------------------------------------------------------
-
-SC_ENABLE_GCC
-AC_PROG_INSTALL
-
-   #--------------------------------------------------------------------
-   # Determines the correct binary file extension (.o, .obj, .exe etc.)
-   #--------------------------------------------------------------------
-
-   AC_OBJEXT
-   AC_EXEEXT
-
-#--------------------------------------------------------------------
-# Checks to see if the make program sets the $MAKE variable.
-#--------------------------------------------------------------------
-
-AC_PROG_MAKE_SET
-
-#--------------------------------------------------------------------
-#	Locate which java tool to build.  If the --with-build option
-#	is used, that overides everthing.  Otherwise look for Tcl Blend
-#	first then tclBlend.
-#--------------------------------------------------------------------
-
-AC_ARG_WITH(build, [  --with-build=DIR        select which system to build (jacl or tclblend)],
-	TCLJAVA=$withval, TCLJAVA=NONE)
-
-if test $TCLJAVA != "NONE"; then
-    if test $TCLJAVA != "jacl" && test $TCLJAVA != "tclblend"; then 
-	AC_MSG_ERROR([Cannot build --with-build='$TCLJAVA': use 'jacl' or 'tclblend'])
-    fi
-fi
-
-case "`uname -s`" in
-    *win32* | *WIN32* | *CYGWIN_NT*)
-        CYGPATH="cygpath -w"
-	PATH_SEP=\\\;
-	SEP=\\\\
-        ;;
-    *)
-        CYGPATH=echo
-	PATH_SEP=:
-	SEP=/
-	;;
-esac
-
-FULL_SRCDIR=`cd $srcdir; pwd`
-FULL_SRCDIR_NATIVE=\"`${CYGPATH} ${FULL_SRCDIR}`\"
-MISC_DIR=${FULL_SRCDIR}/src
-
-#BOTH will automatically be set to true when configuring Jacl and TclBlend
-BOTH=false
-
-if test $TCLJAVA = "NONE"; then
-    if test -f $srcdir/src/tclblend/tcl/lang/Interp.java; then
-	TCLJAVA=tclblend
-    elif test -f $srcdir/src/jacl/tcl/lang/Interp.java; then 
-	TCLJAVA=jacl
-    else
-	AC_MSG_ERROR([Cannot find source files to build either Jacl or Tcl Blend])
-    fi
-
-    if test -f $srcdir/src/jacl/tcl/lang/Interp.java && test $TCLJAVA = "tclblend"; then
-        MSG="configuring for both jacl and tcl blend"
-        echo $MSG >&5
-        echo $MSG
-        BOTH=true
-    fi
-fi
+AC_PREREQ(2.14)
 
 
 #--------------------------------------------------------------------
-# Need to get the Java directory
+# 	Version identification info (also set in source files)
 #--------------------------------------------------------------------
-JAVA_DIR=""
-JAVA_NAME=""
-
-#--------------------------------------------------------------------
-#	See if there was a command-line option for where the kaffe is;
-#       if it is none, look for kaffe on the path.
-#--------------------------------------------------------------------
-
-AC_ARG_WITH(kaffe, [  --with-kaffe=DIR        use Kaffe-JVM binaries from DIR], KAFFE_DIR=$withval, KAFFE_DIR=NONE)
-
-if test "$KAFFE_DIR" != "NONE"; then
-    # if --with-kaffe was given then we need to make sure no other JVM was
-    # configured with a --with option
-
-    if test "$JAVA_NAME" != ""; then
-        AC_MSG_ERROR([--with-kaffe can not be used with the --with-$JAVA_NAME option.]);
-    fi
-
-    if test ! -d "$KAFFE_DIR"; then
-        AC_MSG_ERROR([directory '$KAFFE_DIR' given to --with-kaffe option does not exist.])
-    fi
-
-    JAVA_NAME=kaffe
-
-
-    # currently the kaffe JVM does not work well enough to be used
-    # to build and run tcl blend or jacl. Once it does work this
-    # error message should be removed so that --with-kaffe can be used
-
-    #echo "Sorry: --with-kaffe is currently disabled because of bugs in"
-    #echo "       the implementation of the kaffe JVM. Once the bugs"
-    #echo "       in kaffe are fixed it will be enabled."
-    #exit 1
-
-fi
-
-if test "$JAVA_NAME" = "kaffe" && test ! -d "$KAFFE_DIR"; then
-    if test "$KAFFE_DIR" != "" && test "$KAFFE_DIR" != "yes"; then
-        AC_MSG_WARN(['$KAFFE_DIR' is not a directory, so we search for the kaffe.])
-    fi
-    AC_PATH_PROG(TMP_KAFFE, kaffe)
-    if test -x "$TMP_KAFFE"; then	
-	TMP_KAFFE=`dirname $TMP_KAFFE`
-	KAFFE_DIR=`dirname $TMP_KAFFE`
-    else
-        AC_MSG_ERROR([Failed to find kaffe, perhaps kaffe is not installed?
-Try --with-kaffe=DIR.])
-    fi
-fi
-
-if test "$JAVA_NAME" = "kaffe"; then
-    if test -d "$KAFFE_DIR"; then
-        # Convert into full path name
-        JAVA_DIR=`cd $KAFFE_DIR ; pwd`
-    else
-        AC_MSG_ERROR([kaffe directory '$KAFFE_DIR' does not exist, perhaps kaffe is not installed?
-Try --with-kaffe=DIR.])
-    fi
-fi
-
-
-
-
-
-
-#--------------------------------------------------------------------
-#	See if there was a command-line option for where the JDK is;  if
-#	not, check to see if the JAVA_HOME environment variable is set;
-#       if it is none, look for javac on the path. The -with-jdk option
-#       must be processed after any other --with options for JVMs.
-#--------------------------------------------------------------------
-
-AC_ARG_WITH(jdk, [  --with-jdk=DIR          use Sun's JDK Java binaries from DIR, defaults to the value of the JAVA_HOME environment variable],
-    JDK_DIR=$withval, JDK_DIR=NONE)
-
-if test "$JDK_DIR" = "NONE"; then
-    # no --with-jdk argument was given so we default to the value in JAVA_HOME
-    # as long a no other JVM was configured with the --with option
-
-    if test "$JAVA_NAME" = ""; then
-        JAVA_NAME=jdk
-        JDK_DIR=$JAVA_HOME
-    fi
-else
-    # if --with-jdk was given then we need to make sure no other JVM was
-    # configured with a --with option
-
-    if test "$JAVA_NAME" != ""; then
-        AC_MSG_ERROR([--with-jdk can not be used with the --with-$JAVA_NAME option.])
-    fi
-
-    if test ! -d "$JDK_DIR"; then
-        AC_MSG_ERROR([directory '$JDK_DIR' given to --with-jdk option does not exist.])
-    fi
-
-    JAVA_NAME=jdk
-fi
-
-if test "$JAVA_NAME" = "jdk" && test ! -d "$JDK_DIR"; then
-    if test "$JDK_DIR" != "" && test "$JDK_DIR" != "yes"; then
-        AC_MSG_WARN(['$JDK_DIR' is not a directory, so we search for the java compiler.])
-    fi
-    AC_PATH_PROG(TMP_JAVAC, javac)
-    if test -x "$TMP_JAVAC"; then	
-	TMP_JAVAC=`dirname $TMP_JAVAC`
-	JDK_DIR=`dirname $TMP_JAVAC`
-    else
-        AC_MSG_ERROR([Failed to find javac, perhaps Java is not installed?
-Try --with-jdk=DIR, or set the JAVA_HOME environment variable.])
-    fi
-fi
-
-if test "$JAVA_NAME" = "jdk"; then
-    if test -d "$JDK_DIR"; then
-        # Convert into full path name
-        JAVA_DIR=`cd $JDK_DIR ; pwd`
-    else
-        AC_MSG_ERROR([jdk directory '$JDK_DIR' does not exist, perhaps Java is not installed?
-Try --with-jdk=DIR, or set the JAVA_HOME environment variable.])
-    fi
-fi
-
-
-# At this point we should have found a valid JVM so we check for
-# the valid possibilities now so we can skip extra checks later
-
-case "$JAVA_NAME" in
-    jdk) DO=nothing ;;
-    kaffe) DO=nothing ;;
-    *) AC_MSG_ERROR(['$JAVA_NAME' is not a supported JVM]) ;;
-esac
-
-
-MSG="Java found at $JAVA_DIR"
-echo $MSG
-echo $MSG >&5
-echo "JAVA_NAME is $JAVA_NAME" >&5
-
-case "`uname -s`" in
-    *win32* | *WIN32* | *CYGWIN_NT*)
-        JAVA_DIR_NATIVE=\"`${CYGPATH} ${JAVA_DIR}`\"
-        ;;
-    *)
-	JAVA_DIR_NATIVE=${JAVA_DIR}
-	;;
-esac
-
-AC_SUBST(PATH_SEP)
-AC_SUBST(SEP)
-
-#--------------------------------------------------------------------
-#
-# Check to make sure we know the names of the .zip or .jar files
-# that need to be included in the CLASSPATH
-#
-#--------------------------------------------------------------------
-
-AC_MSG_CHECKING([for zip or jar files to include on CLASSPATH])
-JAVA_CLASSPATH=""
-
-if test "$JAVA_NAME" = "kaffe"; then
-    if test -f $JAVA_DIR/share/kaffe/Klasses.jar; then
-        JAVA_CLASSPATH=$JAVA_DIR_NATIVE/share/kaffe/Klasses.jar
-    fi
-elif test "$JAVA_NAME" = "jdk"; then
-    if test -f $JAVA_DIR/lib/classes.zip; then
-        # JDK1.1 requires classes.zip in CLASSPATH
-        JAVA_CLASSPATH=\"`${CYGPATH} ${JAVA_DIR}/lib/classes.zip`\"
-    elif test -f $JAVA_DIR/jre/lib/rt.jar; then
-        # JDK1.2 does not require system libs in CLASSPATH
-        # but we need them for compilers and tclblend
-        JAVA_CLASSPATH=\"`${CYGPATH} ${JAVA_DIR}/jre/lib/rt.jar`\"
-	if test -f $JAVA_DIR/lib/tools.jar; then
-	       JAVA_CLASSPATH=\"`${CYGPATH} ${JAVA_DIR}/lib/tools.jar`\"${PATH_SEP}${JAVA_CLASSPATH}
-	fi
-    elif test "`uname -s`" = "IRIX"; then
-        # JDK1.1.5 under IRIX
-        if test -f $JAVA_DIR/lib/rt.jar; then
-            JAVA_CLASSPATH=$JAVA_DIR_NATIVE/lib/rt.jar
-        else
-            AC_MSG_ERROR([could not find $JAVA_DIR/lib/rt.jar for IRIX system])
-        fi
-        if test -f $JAVA_DIR/lib/dev.jar; then
-            JAVA_CLASSPATH=${JAVA_CLASSPATH}${PATH_SEP}${JAVA_DIR_NATIVE}/lib/dev.jar
-        fi
-    fi
-fi
-
-if test "$JAVA_CLASSPATH" = ""; then
-    AC_MSG_ERROR([could not find zip or jar files to include on CLASSPATH.])
-else
-    echo "Using JAVA_CLASSPATH=$JAVA_CLASSPATH" >&5
-    AC_MSG_RESULT($JAVA_CLASSPATH)
-fi
-
-
-
-#--------------------------------------------------------------------
-#
-# Check that we have the java that corresponds with JAVA_DIR in our path
-#
-#--------------------------------------------------------------------
-
-AC_MSG_CHECKING([for the java runtime])
-case "$JAVA_NAME" in
-    jdk) NAME=java ;;
-    kaffe) NAME=kaffe ;;
-esac
-if test -x $JAVA_DIR/bin/$NAME; then
-    JAVA=$JAVA_DIR/bin/$NAME
-    echo "Using JAVA=$JAVA" >&5
-    AC_MSG_RESULT($JAVA)
-else
-    AC_MSG_ERROR([
-  Cannot find $JAVA_DIR/bin/$NAME.])
-fi
-
-
-
-
-#--------------------------------------------------------------------
-#
-# Check that we have the javac that corresponds with JAVA_DIR in our path
-#
-#--------------------------------------------------------------------
-
-AC_MSG_CHECKING([for the java compiler])
-case "$JAVA_NAME" in
-    jdk) NAME=javac ;;
-    kaffe) NAME=javac ;;
-esac
-
-if test -x $JAVA_DIR/bin/$NAME; then
-    JAVAC=$JAVA_DIR/bin/$NAME
-    JAVA_NATIVE_C=${JAVA_DIR_NATIVE}/bin/$NAME
-    echo "Using JAVAC=$JAVAC" >&5
-    AC_MSG_RESULT($JAVAC)
-else
-    AC_MSG_ERROR([
-  Cannot find $JAVA_DIR_NATIVE/bin/$NAME.])
-fi
-
-
-
-
-
-#--------------------------------------------------------------------
-#
-# Check that we have the javah that corresponds with JAVA_DIR in our path
-#
-#--------------------------------------------------------------------
-
-if test $TCLJAVA = "tclblend" || test $BOTH = "true"; then
-
-AC_MSG_CHECKING([for the java header program])
-case "$JAVA_NAME" in
-    jdk) NAME=javah ;;
-    kaffe) NAME=kaffeh ;;
-esac
-if test -x $JAVA_DIR/bin/$NAME; then
-    JAVAH=$JAVA_DIR/bin/$NAME
-    JAVAH_NATIVE=$JAVA_DIR_NATIVE/bin/$NAME
-    echo "Using JAVAH=$JAVAH" >&5
-    AC_MSG_RESULT($JAVAH)
-else
-    AC_MSG_ERROR([
-  Cannot find $JAVA_DIR_NATIVE/bin/$NAME.])
-fi
-
-fi
-
-
-#--------------------------------------------------------------------
-#
-# Check that we have the jar that corresponds with JAVA_DIR in our path
-#
-#--------------------------------------------------------------------
-
-AC_MSG_CHECKING([for the java archive program])
-case "$JAVA_NAME" in
-    jdk) NAME=jar ;;
-    kaffe) NAME=jar ;;
-esac
-if test -x $JAVA_DIR/bin/$NAME; then
-    JAR=$JAVA_DIR/bin/$NAME
-    JAR_NATIVE=$JAVA_DIR_NATIVE/bin/$NAME
-    echo "Using JAR=$JAR" >&5
-    AC_MSG_RESULT($JAR)
-else
-    AC_MSG_ERROR([
-  Cannot find $JAVA_DIR_NATIVE/bin/$NAME.])
-fi
-
-
-
-
-#--------------------------------------------------------------------
-#
-# Check that we have the jdb that corresponds with JAVA_DIR in our path
-# jdb will not be tested like the other java utils
-#
-#--------------------------------------------------------------------
-
-if test $TCLJAVA = "jacl" || test $BOTH = "true"; then
-   AC_MSG_CHECKING([for the java debugger program])
-   case "$JAVA_NAME" in
-       jdk) NAME=jdb ;;
-       kaffe) NAME=jdb ;;
-   esac
-   if test -x $JAVA_DIR/bin/$NAME; then
-       JDB=$JAVA_DIR_NATIVE/bin/$NAME
-       echo "Using JDB=$JDB" >&5
-       AC_MSG_RESULT($JDB)
-   else
-       AC_MSG_ERROR([Cannot find $JAVA_DIR/bin/$NAME.])
-   fi
-fi
-
-
-
-
-#--------------------------------------------------------------------
-#	See if there was a command-line option for where jikes is; if
-#       there was a command line option given but no argument was given
-#       then search for jikes on the PATH.
-#--------------------------------------------------------------------
-
-AC_ARG_WITH(jikes, [  --with-jikes=PROG       use jikes compiler given by PROG, if PROG is not given look for jikes on the PATH.],
-    JIKES=$withval, JIKES=NONE)
-
-#echo "JIKES is \"$JIKES\""
-
-if test "$JIKES" = "NONE"; then
-    #do nothing
-    JIKES=""
-else
-    AC_MSG_CHECKING([for the jikes java compiler])
-    if test "$JIKES" = "" || test "$JIKES" = "yes"; then
-        AC_MSG_RESULT([searching on PATH])
-        AC_PATH_PROG(TMP_JIKES, jikes)
-
-        if test "$TMP_JIKES" = ""; then
-            MSG="Could not find jikes on the PATH. Defaulting to javac."
-            echo $MSG >&5
-            AC_MSG_RESULT([$MSG])
-            JIKES=""
-        else
-            JIKES=$TMP_JIKES
-        fi
-    fi
-
-    if test "$JIKES" != ""; then
-
-        # Make sure jikes exists and is executable
-        if test ! -f $JIKES || test ! -x $JIKES; then
-            AC_MSG_ERROR([jikes executable '$JIKES' does not exist or is not executable.])
-        fi
-
-        AC_MSG_RESULT([$JIKES])
-
-        JAVAC=$JIKES
-        echo "Using JAVAC=$JAVAC" >&5
-    fi
+TCLJAVA_VERSION=1.3.0
+TCLJAVA_NODOT_VERSION=`echo $TCLJAVA_VERSION | sed -e 's/\.//g'`
+
+# Convert into full path name
+srcdir=`cd $srcdir ; pwd`
+AC_MSG_LOG(srcdir is $srcdir)
+
+
+# Check our version numbers hard coded into files. Update if needed.
+
+TCLJAVA_VERSION_CHECK
+
+# Figure out if we should be building Jacl or Tcl Blend
+
+TCLJAVA_ENABLE_JACL_OR_TCLBLEND
+
+# Process the --with-tcl command line option
+
+TCLJAVA_WITH_TCL
+
+# Check that Tcl install works and is the correct version.
+
+TCLJAVA_CHECK_TCLSH
+
+# See if --with-jdk command line argument is given
+
+AC_JAVA_WITH_JDK
+
+# See if --with-kaffe command line argument is given
+
+AC_JAVA_WITH_KAFFE
+
+# Use the jikes Java compiler if it can be found
+
+AC_JAVA_WITH_JIKES
+
+# Try to detect the installed JVM, this could be controlled
+# by the above --with options
+
+AC_JAVA_DETECT_JVM
+
+# Find all the Java tools like java, jar, and javah
+
+AC_JAVA_TOOLS
+
+
+# Look for debuggers on the PATH, we do not care if thay can not be found
+
+AC_PATH_PROG(DDD, ddd,)
+AC_PATH_PROG(GDB, gdb,)
+
+
+
+# Look for JNI include and library info when Tcl Blend is being compiled
+# We only support native threads with JNI so don't worry about green threads
+
+if test $TCLJAVA = "tclblend" || test $TCLJAVA = "both"; then
+
+    # Find out where JNI include directories live
+
+    AC_JAVA_JNI_INCLUDE
+
+    # Find out where the JNI native thread libraries live
+
+    AC_JAVA_JNI_LIBS
 
 fi
 
 
 
 
-
-
-
-#
-# If we are compiling tclblend, then we need to:
-# 1. Check that we have the native threads pack
-# 2. Find the platform dependent include files
-# 3. Find the platform dependent libraries
-#
-
-if test $TCLJAVA = "tclblend" || test $BOTH = "true"; then
-
-    # Find the main java include directory
-
-    case "$JAVA_NAME" in
-        jdk)
-            case "`uname -s`" in
-	        OSF1)
-                    JAVA_INCLUDE=$JAVA_DIR/include/java
-                    ;;
-                *)
-                    JAVA_INCLUDE=$JAVA_DIR/include
-                    ;;
-            esac
-            ;;
-        kaffe)
-            JAVA_INCLUDE=$JAVA_DIR/include/kaffe
-            ;;
-    esac
-
-    if test ! -d $JAVA_INCLUDE; then
-        AC_MSG_ERROR([include directory $JAVA_INCLUDE does not exist.])
-    fi
-
-
-    # We need to #include <jni.h> so make sure that we can find it
-
-    AC_MSG_CHECKING([for jni.h include file])
-    if test ! -f $JAVA_INCLUDE/jni.h; then
-        AC_MSG_ERROR([Can not find JNI include file $JAVA_INCLUDE/jni.h.])
-    else
-        echo "Found JNI include file $JAVA_INCLUDE/jni.h." >&5
-        AC_MSG_RESULT([$JAVA_INCLUDE/jni.h.])
-    fi
-
-
-    # Find out if we are using the JNI 1.1 or 1.2 interfaces
-
-    AC_MSG_CHECKING([for JDK1_2 in $JAVA_INCLUDE/jni.h])
-
-    if env grep JDK1_2 $JAVA_INCLUDE/jni.h | grep define 1>&5 2>&5 ; then
-        JAVA_VERSION=1.2
-        MSG="Looks like you are using a 1.2 JVM"
-        echo $MSG >&5
-        AC_MSG_RESULT([$MSG])
-    else
-        JAVA_VERSION=1.1
-        MSG="Looks like you are using a 1.1 JVM"
-        echo $MSG >&5
-        AC_MSG_RESULT([$MSG])
-    fi
-
-    if test "$JAVA_VERSION" != "1.1" && test "$JAVA_VERSION" != "1.2"; then
-        MSG="JAVA_VERSION must be one of 1.1 or 1.2, is was \"$JAVA_VERSION\""
-        echo $MSG >&5
-        AC_MSG_ERROR([$MSG])
-    fi
-
-
-
-    # Start JDK only tests
-
-    if test "$JAVA_NAME" = "jdk"; then
-
-    #
-    # Do checks that differ for each platform in one place
-    #
-    # 1) make sure native threads pack is installed
-    # 2) Find the proper platform include directory
-    # 3) Find the proper platform lib directory
-
-
-    # Ugly hack needed for Sun's "production" directory structure
-    PRODUCTION_RELEASE=0
-
-
-    # Keep case statements in alphabetical order.
-    case "`uname -s`" in
-	HP-UX)
-	    if test ! -d $JAVA_INCLUDE/native_threads; then
-                AC_MSG_ERROR(['$JAVA_INCLUDE/native_threads'
-does not exist. You must install the JDK Native Threads Pack to use tclblend.
-See http://www.hp.com/esy/technology/jdk/products/software.html.])
-            fi
-
-            JAVA_ARCH_INCLUDE=$JAVA_INCLUDE/hp-ux
-
-            ARCH=PA_RISC
-            ARCH_LIBNAME=lib
-            ARCH_LIB=${ARCH_LIBNAME}/${ARCH}
-
-            JAVA_SHLIB=libjava.sl
-            TCLBLEND_LIBS="-lpthread -L${JAVA_DIR}/${ARCH_LIBNAME} -ljava"
-            TCLBLEND_SHLIB_NAMES="libpthread.sl libjava.sl"
-
-            TCLBLEND_LD_PRELOAD=
-            TCLBLEND_LD_BIND_NOW=0
-
-            ;;
-	IRIX)
-	    if test ! -d $JAVA_INCLUDE/native_threads; then
-                AC_MSG_ERROR(['$JAVA_INCLUDE/native_threads'
-does not exist. You must install the JDK Native Threads Pack to use tclBlend.
-See http://www.sgi.com/Products/Evaluation/#jdk.])
-            fi
-
-            JAVA_ARCH_INCLUDE=$JAVA_INCLUDE/irix
-
-            ARCH=sgi
-            ARCH_LIBNAME=lib32
-
-            if test -d $JAVA_DIR/lib; then
-                MSG="IRIX 64 bit java libs found, but using 32 bit libs by default"
-                echo $MSG >&5
-                AC_MSG_WARN([$MSG])
-            fi
-
-            ARCH_LIB=${ARCH_LIBNAME}/${ARCH}
-
-            JAVA_SHLIB=libjava.so
-            TCLBLEND_LIBS="-L${JAVA_DIR}/${ARCH_LIBNAME} -ljava -lpthread"
-            TCLBLEND_SHLIB_NAMES="libjava.so libpthread.so"
-
-            TCLBLEND_LD_PRELOAD=
-            TCLBLEND_LD_BIND_NOW=1
-
-            ;;
-	Linux)
-	    if test "$JAVA_VERSION" = "1.1" && \
-                test ! -d $JAVA_INCLUDE/native_threads; then
-                AC_MSG_ERROR(['$JAVA_INCLUDE/native_threads'
-does not exist. You must install the JDK Native Threads Pack to use tclblend.
-See http://www.blackdown.org/java-linux.html.])
-            fi
-
-            if test "$JAVA_VERSION" = "1.1"; then
-                JAVA_ARCH_INCLUDE=$JAVA_INCLUDE/genunix
-            else
-                JAVA_ARCH_INCLUDE=$JAVA_INCLUDE/linux
-            fi
-
-            case "`uname -m`" in
-                alpha)  ARCH=alpha ;;
-                i?86)   
-			if test -d ${JAVA_DIR}/lib/`uname -m` ; then
-				ARCH=`uname -m`
-			else
-				ARCH=i386 
-			fi
-		    ;;
-                ppc)    ARCH=ppc ;;
-                sparc)  ARCH=sparc ;;
-                *)      AC_MSG_ERROR([ARCH '`uname -m`' is not supported]) ;;
-            esac
-
-	    
-
-            ARCH_LIBNAME=lib
-            ARCH_LIB=${ARCH_LIBNAME}/${ARCH}	
-	    if test -d ${JAVA_DIR}/${ARCH_LIB}/native_threads ; then
-		 ARCH_LIBPATH=${ARCH_LIB}/native_threads
-	    elif test -d  ${JAVA_DIR}/${ARCH_LIB}/native ; then
-		 ARCH_LIBPATH=${ARCH_LIB}/native
-	    elif test -d  ${JAVA_DIR}/${ARCH_LIB}/green_threads ; then
-		 ARCH_LIBPATH=${ARCH_LIB}/green_threads
-	    elif test -d  ${JAVA_DIR}/${ARCH_LIB}/green ; then
-		 ARCH_LIBPATH=${ARCH_LIB}/green
-	    fi
-
-            JAVA_SHLIB=libjava.so
-            TCLBLEND_LIBS="-lpthread -L${JAVA_DIR}/${ARCH_LIBPATH} -ljava"
-            TCLBLEND_SHLIB_NAMES="libpthread.so libjava.so"
-
-            TCLBLEND_LD_PRELOAD="libpthread.so libjava.so"
-            TCLBLEND_LD_BIND_NOW=1
-
-            MSG="Using AWT GUI components under Tcl Blend with the Linux port of the JDK from Blackdown requires a special modification to jtclsh and the Makefile. See known_issues.txt for more info."
-            echo $MSG >&5
-            AC_MSG_WARN([$MSG])
-
-            ;;
-        OSF1)
-            JAVA_ARCH_INCLUDE=$JAVA_INCLUDE/alpha
-
-            # Digital UNIX does not use the same arch and lib
-            # setup as other JVMs
-            ARCH_LIB=shlib
-
-            JAVA_SHLIB=libjava.so
-            TCLBLEND_LIBS="-L${JAVA_DIR}/${ARCH_LIBNAME} -ljava"
-            TCLBLEND_SHLIB_NAMES="libjava.so"
-
-            TCLBLEND_LD_PRELOAD=
-            TCLBLEND_LD_BIND_NOW=0
-
-            ;;
-	SunOS) 
-	    if test ! -d $JAVA_INCLUDE/native_threads; then
-		if test "$JAVA_VERSION" = "1.1"; then
-		    if test -r $JAVA_DIR/lib/sparc/native_threads; then
-			AC_MSG_RESULT(['$JAVA_INCLUDE/native_threads'
-does not exist, but '$JAVA_DIR/lib/sparc/native_threads' is readable,
-so you are probably running the production JDK.])
-		    else
-                        AC_MSG_ERROR(['$JAVA_INCLUDE/native_threads'
-does not exist. You must install the Solaris JDK Native Threads Pack to
-use tclblend. See http://www.javasoft.com/products/jdk/1.1/index.html.])
-                    fi
-		fi
-	    fi
-
-            JAVA_ARCH_INCLUDE=$JAVA_INCLUDE/solaris
-
-            ARCH=sparc
-            ARCH_LIBNAME=lib
-            ARCH_LIB=${ARCH_LIBNAME}/${ARCH}
-
-            JAVA_SHLIB=libjava.so
-	    if test -f ${JAVA_DIR}/${ARCH_LIBNAME}/libjava.so ; then
-	        TCLBLEND_LIBS="-lthread -L${JAVA_DIR}/${ARCH_LIBNAME} -ljava"
-	    elif test -f ${JAVA_DIR}/jre/${ARCH_LIB}/libjava.so ; then
-	        TCLBLEND_LIBS="-lthread -L${JAVA_DIR}/jre/${ARCH_LIB} -ljava"
-	    fi
-            TCLBLEND_SHLIB_NAMES="libthread.so libjava.so"
-
-            TCLBLEND_LD_PRELOAD=
-            TCLBLEND_LD_BIND_NOW=0
-
-
-            # Check for a "production" release which is really #@&%$ ugly.
-            # It would of course be too much to ask for Sun to stick to
-            # a single directory naming system.
-            
-            if  test ! -d $JAVA_DIR/$ARCH_LIB/green_threads &&
-                test ! -d $JAVA_DIR/$ARCH_LIB/native_threads &&
-                test ! -d $JAVA_DIR/jre/$ARCH_LIB/green_threads &&
-                test ! -d $JAVA_DIR/jre/$ARCH_LIB/native_threads ; then
-                PRODUCTION_RELEASE=1
-                MSG="Sun JDK Production Release Detected."
-                echo $MSG >&5
-                AC_MSG_RESULT([$MSG])
-            fi
-	    ;;
-
-	*win32* | *WIN32* | *CYGWIN_NT*)
-	    JAVA_ARCH_INCLUDE=${JAVA_INCLUDE}/win32
-
-            ARCH=win32
-            ARCH_LIBNAME=bin
-
-	    if test -d ${JAVA_DIR}/jre/bin/classic ; then
-	        ARCH_LIB=${ARCH_LIBNAME}/classic
-	    else
-		ARCH_LIB=${ARCH_LIBNAME}
-	    fi
-
-            if test "$JAVA_VERSION" = "1.1"; then
-	        JAVA_SHLIB=javai.dll
-		TCLBLEND_LIBS=\"`${CYGPATH} ${JAVA_DIR}/lib/javai.lib`\"
-	    else
-		JAVA_SHLIB=jvm.dll
-                TCLBLEND_LIBS=\"`${CYGPATH} ${JAVA_DIR}/lib/jvm.lib`\"
-	    fi
-
-            TCLBLEND_SHLIB_NAMES=
-	    PRODUCTION_RELEASE=1
-
-            TCLBLEND_LD_PRELOAD=
-            TCLBLEND_LD_BIND_NOW=0
-	    ;;
-
-	*)
-            AC_MSG_ERROR([Sorry, the `uname -s` platform is not supported. You will need to edit the configure.in file to add the proper platform include and lib directories in order to configure and compile tclblend.])
-            ;;
-    esac
-
-    case "`uname -s`" in
-	*win32* | *WIN32* | *CYGWIN_NT*)
-	    JAVA_INCLUDE_NATIVE=\"`${CYGPATH} ${JAVA_INCLUDE}`\"
-	    JAVA_ARCH_INCLUDE_NATIVE=\"`${CYGPATH} ${JAVA_INCLUDE}/win32`\"
-	    BUILD_DIR_NATIVE=\"`${CYGPATH} ${BUILD_DIR}`\"
-	    TCLBLEND_BUILD_DIR_NATIVE=\"`${CYGPATH} ${BUILD_DIR}/tclblend`\"
-	    TCLJAVA_BUILD_DIR_NATIVE=\"`${CYGPATH} ${BUILD_DIR}/tcljava`\"
-	    TEST_BUILD_DIR_NATIVE=\"`${CYGPATH} ${BUILD_DIR}/tests`\"
-	    EMPTY_JAR=\"`${CYGPATH} ${MISC_DIR}/empty/empty.jar | sed -e s%\\\\%\\\\\\\\\\\\\\\\%g% `\"
-	    TCLJAVA_JAR=\"`${CYGPATH} ${BUILD_DIR}/tcljava.jar | sed -e s%\\\\%\\\\\\\\%g% `\"
-	    TCLBLEND_JAR=\"`${CYGPATH} ${BUILD_DIR}/tclblend.jar | sed -e s%\\\\%\\\\\\\\%g% `\"
-	    ;;
-        *)
-	    JAVA_INCLUDE_NATIVE=${JAVA_INCLUDE}
-	    JAVA_ARCH_INCLUDE_NATIVE=${JAVA_ARCH_INCLUDE}
-	    BUILD_DIR_NATIVE=${BUILD_DIR}
-	    TCLBLEND_BUILD_DIR_NATIVE=${BUILD_DIR}/tclblend
-	    TCLJAVA_BUILD_DIR_NATIVE=${BUILD_DIR}/tcljava
-	    TEST_BUILD_DIR_NATIVE=${BUILD_DIR}/tests
-	    EMPTY_JAR=${MISC_DIR}/empty/empty.jar
-	    TCLJAVA_JAR=${BUILD_DIR}/tcljava.jar
-	    TCLBLEND_JAR=${BUILD_DIR}/tclblend.jar
-	    ;;
-    esac
-
-
-    #
-    # Check architecture specific include directory
-    #
-
-    AC_MSG_CHECKING([for jni_md.h include file])
-    if test -f $JAVA_ARCH_INCLUDE/jni_md.h; then
-        MSG="$JAVA_ARCH_INCLUDE/jni_md.h"
-        echo "Found $MSG" >&5
-        AC_MSG_RESULT([$MSG])
-    else
-        MSG="Could not find $JAVA_ARCH_INCLUDE/jni_md.h"
-        echo $MSG >&5
-        AC_MSG_ERROR([$MSG])
-    fi
-
-
-    #
-    # Check architecture specific lib directories
-    #
-
-    AC_MSG_CHECKING([the jdk arch lib directory])
-
-    if test "$JAVA_VERSION" = "1.1"; then
-
-        DIR=$JAVA_DIR/$ARCH_LIB
-        if test ! -d $DIR; then
-            MSG="jdk arch directory $DIR does not exist"
-            echo $MSG >&5
-            AC_MSG_ERROR([$MSG])
-        fi
-
-        DIR=$JAVA_DIR/$ARCH_LIB/green_threads
-        if test ! -d $DIR; then
-            MSG="jdk arch directory $DIR does not exist"
-            echo $MSG >&5
-	    DIR=$JAVA_DIR/$ARCH_LIB
-            AC_MSG_WARN([$MSG])
-        fi
-        JAVA_ARCH_GREEN_LIB=$DIR
-        JAVA_ARCH_GREEN_RUNTIME_LIBS=$DIR
-
-        LIB=$DIR/$JAVA_SHLIB
-        if test ! -f $LIB; then
-            MSG="jdk shared library $LIB does not exist"
-            echo $MSG >&5
-            AC_MSG_WARN([$MSG])
-        fi
-
-        DIR=$JAVA_DIR/$ARCH_LIB/native_threads
-        if test ! -d $DIR; then
-            MSG="jdk arch directory $DIR does not exist"
-            echo $MSG >&5
-	    DIR=$JAVA_DIR/$ARCH_LIB
-            AC_MSG_WARN([$MSG])
-        fi
-        JAVA_ARCH_NATIVE_LIB=$DIR
-        JAVA_ARCH_NATIVE_RUNTIME_LIBS=$DIR
-
-
-        LIB=$DIR/$JAVA_SHLIB
-        if test ! -f $LIB; then
-            MSG="jdk shared library $LIB does not exist"
-            echo $MSG >&5
-            AC_MSG_ERROR([$MSG])
-        fi
-
-    else
-
-        # if java 1.2 then look in the new jre lib locations
-
-        DIR=$JAVA_DIR/jre/$ARCH_LIB
-        if test ! -d $DIR; then
-            MSG="jdk directory $DIR does not exist"
-            echo $MSG >&5
-            AC_MSG_ERROR([$MSG])
-        else
-            JAVA_ARCH_GREEN_LIB=$DIR
-            JAVA_ARCH_GREEN_RUNTIME_LIBS=$DIR
-            JAVA_ARCH_NATIVE_LIB=$DIR
-            JAVA_ARCH_NATIVE_RUNTIME_LIBS=$DIR
-        fi
-
-        LIB=$DIR/$JAVA_SHLIB
-        if test ! -f $LIB; then
-            MSG="jdk shared library $LIB does not exist"
-            echo $MSG >&5
-            AC_MSG_ERROR([$MSG])
-        fi
-
-        # A "production" release has no green_threads or native_threads dir
-
-        if test "$PRODUCTION_RELEASE" = "0"; then
-
-        DIR=$JAVA_DIR/jre/$ARCH_LIB/green_threads
-        if test ! -d $DIR; then
-            MSG="jdk directory $DIR does not exist"
-            echo $MSG >&5
-            AC_MSG_WARN([$MSG])
-        else
-            JAVA_ARCH_GREEN_RUNTIME_LIBS=$JAVA_ARCH_GREEN_RUNTIME_LIBS:$DIR
-        fi
-
-        DIR=$JAVA_DIR/jre/$ARCH_LIB/native_threads
-        if test ! -d $DIR; then
-            MSG="jdk directory $DIR does not exist"
-            echo $MSG >&5
-            AC_MSG_ERROR([$MSG])
-        else
-            JAVA_ARCH_NATIVE_RUNTIME_LIBS=$JAVA_ARCH_NATIVE_RUNTIME_LIBS:$DIR
-        fi
-
-        DIR=$JAVA_DIR/jre/$ARCH_LIB/classic
-        if test ! -d $DIR; then
-            MSG="jdk directory $DIR does not exist"
-            echo $MSG >&5
-            AC_MSG_ERROR([$MSG])
-        else
-            if test "$JAVA_ARCH_GREEN_LIB" != ""; then
-                JAVA_ARCH_GREEN_RUNTIME_LIBS=$JAVA_ARCH_GREEN_RUNTIME_LIBS:$DIR
-            fi
-
-            JAVA_ARCH_NATIVE_RUNTIME_LIBS=$JAVA_ARCH_NATIVE_RUNTIME_LIBS:$DIR
-        fi
-
-        fi
-        # End of "production" if block
-
-    fi
-
-    AC_MSG_RESULT([$JAVA_ARCH_NATIVE_LIB])
-
-
-    fi
-    # End JDK only tests
-
-
-
-
-
-    # Start Kaffe only tests
-
-    if test "$JAVA_NAME" = "kaffe"; then
-
-    DIR=$JAVA_DIR/lib
-    if test ! -d $DIR; then
-        MSG="kaffe directory $DIR does not exist"
-        echo $MSG >&5
-        AC_MSG_ERROR([$MSG])
-    else
-        JAVA_ARCH_NATIVE_LIB=$DIR
-        JAVA_ARCH_NATIVE_RUNTIME_LIBS=$DIR
-    fi
-    
-    DIR=$JAVA_DIR/lib/kaffe
-    if test ! -d $DIR; then
-        MSG="kaffe directory $DIR does not exist"
-        echo $MSG >&5
-        AC_MSG_ERROR([$MSG])
-    else
-        JAVA_ARCH_NATIVE_RUNTIME_LIBS=$JAVA_ARCH_NATIVE_RUNTIME_LIBS:$DIR
-    fi
-
-    LIB=$JAVA_DIR/lib/libkaffevm.so
-    if test ! -f $LIB; then
-        MSG="kaffe shared library $LIB does not exist"
-        echo $MSG >&5
-        AC_MSG_ERROR([$MSG])
-    else
-        TCLBLEND_LIBS="-lkaffevm -lpthread"
-        TCLBLEND_SHLIB_NAMES="libkaffevm.so libpthread.so"
-    fi
-
-    TCLBLEND_LD_PRELOAD=
-    TCLBLEND_LD_BIND_NOW=0
-
-    fi
-    # End Kaffe only tests
-
-fi
-
-# End of tclblend's java platform detection section 
-
-
-# Test the java tools supplied with the JVM
-
+# Do a more in depth test of the Java tools (JAVAC, JAVA, JAVAH, and JAR)
 
 AC_MSG_CHECKING([the Java compiler])
 
-CLASSPATH=$JAVA_CLASSPATH
+CLASSPATH=$ac_java_classpath
 export CLASSPATH
-echo "Using CLASSPATH=$CLASSPATH" >&5
+AC_MSG_LOG([Using CLASSPATH=$CLASSPATH], 1)
 
-echo "Copied $srcdir/src/Test.tcl to `pwd`" >&5
+AC_MSG_LOG([Copied $srcdir/src/Test.tcl to `pwd`], 1)
 cp $srcdir/src/Test.tcl .
 
-JAVA_TEST_FILE=`${CYGPATH} ${FULL_SRCDIR}/src/Test.java`
-
 rm -f Test.class
-echo "$JAVAC -d . ${JAVA_TEST_FILE}" >&5
-if env $JAVAC -d . ${JAVA_TEST_FILE} 1>&5 2>&5 &&
+AC_MSG_LOG([$JAVAC $JAVAC_FLAGS $JAVAC_D_FLAG . $srcdir/src/Test.java], 1)
+if ( $JAVAC $JAVAC_FLAGS $JAVAC_D_FLAG . $srcdir/src/Test.java 1>&5 2>&5 ) &&
     test -f Test.class ; then
     AC_MSG_RESULT([the Java compiler works])
 
     AC_MSG_CHECKING([the -native flag to the Java runtime])
 
-    CLASSPATH=${JAVA_CLASSPATH}${PATH_SEP}.
+    CLASSPATH=$ac_java_classpath:.
     export CLASSPATH
-    echo "Using CLASSPATH=$CLASSPATH" >&5
+    AC_MSG_LOG([Using CLASSPATH=$CLASSPATH], 1)
 
-    if test "$JAVA_NAME" = "jdk"; then
-	echo "$JAVA -native Test" >&5
+    if test "$ac_java_jvm_name" = "jdk"; then
+        AC_MSG_LOG([$JAVA -native Test], 1)
     fi
-    if test "$JAVA_NAME" = "jdk" &&
+    if test "$ac_java_jvm_name" = "jdk" &&
 	test "`$JAVA -native Test 2>&5`" = "OK"; then
         JAVA_FLAGS=-native
-        echo "the -native flag works" >&5
-        AC_MSG_RESULT([the -native flag works])
+        AC_MSG_LOG([the -native flag works])
 
         # -native does not work correctly under JDK 1.1.7 from Blackdown.
         # The problem is related to IO from a shell script.
-        if test "$JAVA_VERSION" = "1.1" && test "`uname -s`" = "Linux"; then
-            JAVA_FLAGS=""
-            MSG="skipping -native option because jacl has some problems running with native threads on linux with JDK 1.1"
-            echo $MSG >&5
-            AC_MSG_WARN([$MSG])
+        # Figure out if this is 1.1.8 and not 1.1.7
+
+        if test "`uname -s`" = "Linux" && test "$ac_java_jvm_version" = "1.1"; then
+             AC_GREP_FILE([JDK 1.1.8], $ac_java_jvm_dir/README.linux, IS118=1)
+             if test "$IS118" != "1" ; then
+                 JAVA_FLAGS=""
+                 AC_MSG_LOG([skipping -native option because jacl has some problems running with native threads on linux with JDK 1.1.7 from Blackdown])
+             fi
         fi
     else
         # If -native is not supported then run without it
-	echo "$JAVA Test" >&5
-	testresult=`$JAVA Test 2>&5 | tr -d '\r'`
-	if test "${testresult}" = "OK"; then
+        AC_MSG_LOG([$JAVA Test], 1)
+	if test "`$JAVA Test 2>&5`" = "OK"; then
             JAVA_FLAGS=""
-            MSG="the -native flag does not work"
-            echo $MSG >&5
-            AC_MSG_RESULT([$MSG])
+            AC_MSG_LOG([the -native flag does not work])
         else
             AC_MSG_ERROR([could not run simple test program Test.class with $JAVA, you need to check the Java runtime to make sure it is installed correctly])
         fi
     fi
 
-    if test $TCLJAVA = "tclblend" || test $BOTH = "true"; then
+    if test $TCLJAVA = "tclblend" || test $TCLJAVA = "both"; then
         #test out the javah program on our Test.class file and generate Test.h
         AC_MSG_CHECKING([the Java header generation program])
 
-        CLASSPATH=${JAVA_CLASSPATH}${PATH_SEP}.
+        CLASSPATH=$ac_java_classpath:.
         export CLASSPATH
-        echo "Using CLASSPATH=$CLASSPATH" >&5
+        AC_MSG_LOG([Using CLASSPATH=$CLASSPATH], 1)
 
+        JAVAH_FLAGS="-jni -o"
         rm -f Test.h
-	echo "$JAVAH -jni -o Test.h Test" >&5
-        if env $JAVAH -jni -o Test.h Test 2>&5 &&
+        AC_MSG_LOG([$JAVAH $JAVAH_FLAGS Test.h Test], 1)
+        if ($JAVAH $JAVAH_FLAGS Test.h Test 2>&5) &&
 	    test -f Test.h; then
 
 	    # Echo the lines we might be looking for into config.log
-            echo "# Possible matches for method foo" >&5
-	    if env grep foo Test.h 1>&5 2>&5 ; then
-                echo "# End of possible matches for method foo" >&5
+            AC_MSG_LOG([Possible matches for method foo], 1)
+	    if (grep foo Test.h 1>&5 2>&5) ; then
+                AC_MSG_LOG([End of possible matches for method foo], 1)
             else
-                echo "# No mathes for method foo" >&5
-                AC_MSG_WARN([ no lines matched method foo in Test.h])
+                AC_MSG_LOG([No lines matched method foo in Test.h])
             fi
 
-	    #make sure the JNI style func got defined in the file
-            echo "egrep 'JNIEXPORT[[ |\t]]+void[[ |\t]]+JNICALL[[ |\t]]+Java_Test_foo' Test.h" >&5
-	    if env egrep 'JNIEXPORT[[ |\t]]+void[[ |\t]]+JNICALL[[ |\t]]+Java_Test_foo' Test.h 1>&5 2>&5; then
+	    # Make sure the JNI style func got defined in the file
+            AC_GREP_FILE([JNIEXPORT void JNICALL Java_Test_foo], Test.h, JAVAH_WORKED=1, JAVAH_WORKED=0)
+
+            if test "$JAVAH_WORKED" = "1" ; then
                 AC_MSG_RESULT([the Java header generation program works])
             else
-                echo "No JNI signature matches found in Test.h" >&5
-                AC_MSG_ERROR([Could not find native function definition in Test.h
+               AC_MSG_LOG([No JNI signature matches found in Test.h], 1)
+               AC_MSG_ERROR([Could not find native function definition in Test.h
 generated by $JAVAH])
             fi
 
@@ -1093,60 +172,60 @@ generated by $JAVAH])
     fi
 
     AC_MSG_CHECKING([the Java archive program])
-    echo  ""
 
-    # use jar program to create an uncompressed archive
+    # Flags we will pass to the jar executable
+    JAR_EXTRACT_FLAGS=-xf
+    JAR_COMPRESS_FLAGS=-cfM
+    JAR_NOCOMPRESS_FLAGS=-cf0M
 
-    CLASSPATH=$JAVA_CLASSPATH
+    # Use jar program to create an uncompressed archive
+
+    CLASSPATH=$ac_java_classpath
     export CLASSPATH
-    echo "Using CLASSPATH=$CLASSPATH" >&5
+    AC_MSG_LOG([Using CLASSPATH=$CLASSPATH], 1)
 
     rm -f Test.jar
-    echo  "$JAR -cf0 Test.jar Test.class" >&5
-    if env $JAR -cf0 Test.jar Test.class 2>&5 && test -f Test.jar; then
+    AC_MSG_LOG([$JAR $JAR_NOCOMPRESS_FLAGS Test.jar Test.class], 1)
+    if ($JAR $JAR_NOCOMPRESS_FLAGS Test.jar Test.class 2>&5) && test -f Test.jar; then
         AC_MSG_RESULT([the jar program creates uncompressed archives])
     else
-        MSG="the jar program could not create an uncompressed archive"
-        echo $MSG >&5
-        AC_MSG_ERROR([$MSG])
+	AC_MSG_LOG([the jar program could not create an uncompressed archive], 1)
+	AC_MSG_ERROR([the jar program could not create an uncompressed archive])
     fi
 
-    # test out extraction of .class file from an uncompressed jar
+    # Test out extraction of .class file from an uncompressed jar
 
     rm -f Test.class
-    echo  "$JAR -xf Test.jar" >&5
-    if env $JAR -xf Test.jar 2>&5 && test -f Test.class; then
+    AC_MSG_LOG([$JAR $JAR_EXTRACT_FLAGS Test.jar], 1)
+    if ($JAR $JAR_EXTRACT_FLAGS Test.jar 2>&5) && test -f Test.class; then
         AC_MSG_RESULT([the jar program extracts uncompressed archives])
     else
-        MSG="the jar program could not extract from an uncompressed archive" 
-        echo $MSG >&5
-        AC_MSG_ERROR([$MSG])
+        AC_MSG_LOG([the jar program could not extract from an uncompressed archive], 1)
+        AC_MSG_ERROR([the jar program could not extract from an uncompressed archive])
     fi
 
-    # use jar program to create a compressed archive
+    # Use jar program to create a compressed archive
     rm -f Test.jar
-    echo  "$JAR -cf Test.jar Test.class" >&5
-    if env $JAR -cf Test.jar Test.class 2>&5 && test -f Test.jar; then
+    AC_MSG_LOG([$JAR $JAR_COMPRESS_FLAGS Test.jar Test.class], 1)
+    if ($JAR $JAR_COMPRESS_FLAGS Test.jar Test.class 2>&5) && test -f Test.jar; then
         AC_MSG_RESULT([the jar program creates compressed archives])
     else
-        MSG="the jar program could not create a compressed archive"
-        echo $MSG >&5
-        AC_MSG_ERROR([$MSG])
+        AC_MSG_LOG([the jar program could not create a compressed archive], 1)
+        AC_MSG_ERROR([the jar program could not create a compressed archive])
     fi
 
-    # test out extraction of .class file from a compressed jar
+    # Test out extraction of .class file from a compressed jar
 
     rm -f Test.class
-    echo  "$JAR -xf Test.jar" >&5
-    if env $JAR -xf Test.jar 2>&5 && test -f Test.class; then
+    AC_MSG_LOG([$JAR $JAR_EXTRACT_FLAGS Test.jar], 1)
+    if ($JAR $JAR_EXTRACT_FLAGS Test.jar 2>&5) && test -f Test.class; then
         AC_MSG_RESULT([the jar program extracts compressed archives])
     else
-        MSG="the jar program could not extract from a compressed archive"
-        echo $MSG >&5
-        AC_MSG_ERROR([$MSG])
+        AC_MSG_LOG([the jar program could not extract from a compressed archive], 1)
+        AC_MSG_ERROR([the jar program could not extract from a compressed archive])
     fi
 
-    # clean up, people might think they need Test.jar
+    # Clean up, people might think they need Test.jar
     rm -f Test.jar
 
 
@@ -1155,12 +234,13 @@ generated by $JAVAH])
 
     AC_MSG_CHECKING([that the jar program did not corrupt the test file])
 
-    CLASSPATH=${JAVA_CLASSPATH}${PATH_SEP}.
+    CLASSPATH=$ac_java_classpath:.
     export CLASSPATH
-    echo "Using CLASSPATH=$CLASSPATH" >&5
 
-    echo "$JAVA Test" >&5
-    if test "`$JAVA Test 2>&5 | tr -d '\r'`" = "OK"; then
+    AC_MSG_LOG([Using CLASSPATH=$CLASSPATH], 1)
+
+    AC_MSG_LOG([$JAVA Test], 1)
+    if test "`$JAVA Test 2>&5`" = "OK"; then
         AC_MSG_RESULT([it did not])
     else
         AC_MSG_ERROR([Test.class has been corrupted.])
@@ -1170,313 +250,91 @@ generated by $JAVAH])
     # to verify that the installed shell is working.
 
 else
-    MSG="Could not compile simple test program Test.java
-with $JAVAC"
-    echo $MSG >&5
-    AC_MSG_ERROR([$MSG])
+    AC_MSG_LOG([Could not compile simple test program Test.java with $JAVAC], 1)
+    AC_MSG_ERROR([Could not compile simple test program Test.java with $JAVAC])
 fi
 
-JAVA_FLAGS_C=""
 
-AC_SUBST(BUILD_DIR_NATIVE)
-AC_SUBST(TCLBLEND_BUILD_DIR_NATIVE)
-AC_SUBST(TCLJAVA_BUILD_DIR_NATIVE)
-AC_SUBST(TEST_BUILD_DIR_NATIVE)
-AC_SUBST(EMPTY_JAR)
-AC_SUBST(TCLBLEND_JAR)
-AC_SUBST(TCLJAVA_JAR)
 
-AC_SUBST(JAVA_DIR)
-AC_SUBST(JAVA_DIR_NATIVE)
-AC_SUBST(JAVA_CLASSPATH)
-AC_SUBST(JAVA_FLAGS)
-AC_SUBST(JAVA_FLAGS_C)
 
-AC_SUBST(JAVA_INCLUDE)
-AC_SUBST(JAVA_INCLUDE_NATIVE)
-AC_SUBST(JAVA_ARCH_INCLUDE)
-AC_SUBST(JAVA_ARCH_INCLUDE_NATIVE)
 
-AC_SUBST(JAVA_ARCH_GREEN_LIB)
-AC_SUBST(JAVA_ARCH_GREEN_RUNTIME_LIBS)
-AC_SUBST(JAVA_ARCH_NATIVE_LIB)
-AC_SUBST(JAVA_ARCH_NATIVE_RUNTIME_LIBS)
+# Subst variables that are only used by Tcl Blend
 
-AC_SUBST(TCLBLEND_LIBS)
-AC_SUBST(TCLBLEND_SHLIB_NAMES)
+if test "$ac_java_jvm_name" = "kaffe"; then
+    TCL_CFLAGS="$TCL_CFLAGS -DTCLBLEND_KAFFE"
+fi
+
+AC_SUBST(CC)
+AC_SUBST(SHLIB_CFLAGS)
+AC_SUBST(SHLIB_LD)
+AC_SUBST(SHLIB_LD_LIBS)
+AC_SUBST(SHLIB_PREFIX)
+AC_SUBST(SHLIB_SUFFIX)
+AC_SUBST(SHLIB_VERSION)
+AC_SUBST(TCL_BUILD_LIB_SPEC)
+AC_SUBST(TCL_CFLAGS)
+AC_SUBST(TCL_LIBS)
+AC_SUBST(TCL_VERSION)
+AC_SUBST(TCL_SRC_DIR)
+AC_SUBST(TCL_BIN_DIR)
+AC_SUBST(TCL_LD_SEARCH_FLAGS)
+AC_SUBST(TCL_DBGX)
+
+AC_SUBST(TCLJAVA_DBGX)
+
+
+JAVA_INCLUDE_FLAGS=$ac_java_jvm_jni_include_flags
+AC_SUBST(JAVA_INCLUDE_FLAGS)
+
+JAVA_LIB_FLAGS=$ac_java_jvm_jni_lib_flags
+AC_SUBST(JAVA_LIB_FLAGS)
+
+JAVA_LIB_RUNTIME_PATH=$ac_java_jvm_jni_lib_runtime_path
+AC_SUBST(JAVA_LIB_RUNTIME_PATH)
+
+TCLBLEND_LD_PRELOAD=$ac_java_jvm_ld_preload
+TCLBLEND_LD_BIND_NOW=$ac_java_jvm_ld_bind_now
+
 AC_SUBST(TCLBLEND_LD_PRELOAD)
 AC_SUBST(TCLBLEND_LD_BIND_NOW)
 
+AC_SUBST(WISH)
+AC_SUBST(TCLSH)
+AC_SUBST(TCL_INSTALL_LIB_DIR)
+
+
+# Subst variables that are used in both jacl and tclblend
+
+BUILD_DIR=`pwd`
+AC_SUBST(BUILD_DIR)
+
 AC_SUBST(JAVA)
+AC_SUBST(JAVA_G)
 AC_SUBST(JAVAC)
 AC_SUBST(JAVAH)
 AC_SUBST(JAR)
 AC_SUBST(JDB)
+AC_SUBST(DDD)
+AC_SUBST(GDB)
 
-AC_SUBST(JAVA_NATIVE_C)
-AC_SUBST(JAVAH_NATIVE)
-AC_SUBST(JAR_NATIVE)
-AC_SUBST(JDB_NATIVE)
+JAVA_CLASSPATH=$ac_java_classpath
+AC_SUBST(JAVA_CLASSPATH)
+AC_SUBST(JAVA_FLAGS)
+AC_SUBST(JAVAC_FLAGS)
+AC_SUBST(JAVAC_D_FLAG)
+AC_SUBST(JAVA_G_FLAGS)
 
+AC_SUBST(JAR_EXTRACT_FLAGS)
+AC_SUBST(JAR_COMPRESS_FLAGS)
+AC_SUBST(JAR_NOCOMPRESS_FLAGS)
+
+AC_SUBST(TCLJAVA_VERSION)
+AC_SUBST(TCLJAVA_NODOT_VERSION)
+
+# We need to pass "tclblend" as the TCLJAVA name instead of "both"
+if test "$TCLJAVA" = "both" ; then
+    TCLJAVA=tclblend
+fi
 AC_SUBST(TCLJAVA)
 
-#--------------------------------------------------------------------
-#	If the TCLJAVA variable equals tclblend then we need to
-#	grab some variables from the tclConfig.sh
-#--------------------------------------------------------------------
-
-if test "x$exec_prefix" = xNONE; then
-   if test "x$prefix" = xNONE; then
-      exec_prefix_NATIVE=`${CYGPATH} ${ac_default_prefix}`
-   else
-      exec_prefix_NATIVE=`${CYGPATH} ${prefix}`
-   fi
-else
-   exec_prefix_NATIVE=`${CYGPATH} ${exec_prefix}`
-fi
-AC_SUBST(exec_prefix_NATIVE)
-
-if test $TCLJAVA = "tclblend" || test $BOTH = "true"; then
-
-   #--------------------------------------------------------------------
-   # Load the tclConfig.sh file
-   #--------------------------------------------------------------------
-
-   SC_PATH_TCLCONFIG
-   SC_LOAD_TCLCONFIG
-
-   #--------------------------------------------------------------------
-   # Set some values that point to parts of the Tcl source tree.  Many
-   # extensions require headers/source files that Tcl doesn't normally
-   # export.
-   #
-   # "cygpath" is used on windows to generate native path names for include
-   # files.
-   # These variables should only be used with the compiler and linker since
-   # they generate native path names.
-   #
-   # Unix tclConfig.sh points SRC_DIR at the top-level directory of
-   # the Tcl sources, while the Windows tclConfig.sh points SRC_DIR at
-   # the win subdirectory.  Hence the different usages of SRC_DIR below.
-   #--------------------------------------------------------------------
-
-   case "`uname -s`" in
-       *win32* | *WIN32* | *CYGWIN_NT*)
-	   TCL_TOP_DIR_NATIVE=\"`${CYGPATH} ${TCL_SRC_DIR}/..`\"
-	   TCL_GENERIC_DIR_NATIVE=\"`${CYGPATH} ${TCL_SRC_DIR}/../generic`\"
-	   TCL_UNIX_DIR_NATIVE=\"`${CYGPATH} ${TCL_SRC_DIR}/../unix`\"
-	   TCL_WIN_DIR_NATIVE=\"`${CYGPATH} ${TCL_SRC_DIR}/../win`\"
-	   TCL_BMAP_DIR_NATIVE=\"`${CYGPATH} ${TCL_SRC_DIR}/../bitmaps`\"
-	   TCL_TOOL_DIR_NATIVE=\"`${CYGPATH} ${TCL_SRC_DIR}/../tools`\"
-	   eval "INCLUDE_DIR=${includedir}"
-	   INCLUDE_DIR_NATIVE=\"`${CYGPATH} ${INCLUDE_DIR}`\"
-       ;;
-       *)
-	   TCL_TOP_DIR_NATIVE=${TCL_SRC_DIR}
-	   TCL_GENERIC_DIR_NATIVE='$(TCL_TOP_DIR_NATIVE)/generic'
-	   TCL_UNIX_DIR_NATIVE='$(TCL_TOP_DIR_NATIVE)/unix'
-	   TCL_WIN_DIR_NATIVE='$(TCL_TOP_DIR_NATIVE)/win'
-	   TCL_BMAP_DIR_NATIVE='$(TCL_TOP_DIR_NATIVE)/bitmaps'
-	   TCL_TOOL_DIR_NATIVE='$(TCL_TOP_DIR_NATIVE)/tools'
-	   INCLUDE_DIR_NATIVE="${includedir}"
-       ;;
-   esac
-
-   #--------------------------------------------------------------------
-   # Locate the platform-specific piece of the Tcl source tree.
-   #--------------------------------------------------------------------
-
-   case "`uname -s`" in
-       *win32* | *WIN32* | *CYGWIN_NT*)
-           TCL_PLATFORM_DIR_NATIVE=${TCL_WIN_DIR_NATIVE}
-       ;;
-       *)
-	   TCL_PLATFORM_DIR_NATIVE=${TCL_UNIX_DIR_NATIVE}
-       ;;
-   esac
-
-   #--------------------------------------------------------------------
-   # Put all of these in the Makefile so we can add them to the compiler's
-   # include line.
-   #--------------------------------------------------------------------
-
-   AC_SUBST(TCL_TOP_DIR_NATIVE)
-   AC_SUBST(TCL_GENERIC_DIR_NATIVE)
-   AC_SUBST(TCL_UNIX_DIR_NATIVE)
-   AC_SUBST(TCL_WIN_DIR_NATIVE)
-   AC_SUBST(TCL_BMAP_DIR_NATIVE)
-   AC_SUBST(TCL_TOOL_DIR_NATIVE)
-   AC_SUBST(TCL_PLATFORM_DIR_NATIVE)
-   AC_SUBST(TCL_BIN_DIR_NATIVE)
-   AC_SUBST(INCLUDE_DIR_NATIVE)
-   AC_SUBST(CYGPATH)
-
-   #--------------------------------------------------------------------
-   # Check whether --enable-threads or --disable-threads was given.
-   # So far only Tcl responds to this one.
-   #--------------------------------------------------------------------
-
-   SC_ENABLE_THREADS
-
-   #--------------------------------------------------------------------
-   # The statement below defines a collection of symbols related to
-   # building as a shared library instead of a static library.
-   #--------------------------------------------------------------------
-
-   SC_ENABLE_SHARED
-
-   #--------------------------------------------------------------------
-   # This macro figures out what flags to use with the compiler/linker
-   # when building shared/static debug/optimized objects.  This information
-   # is all taken from the tclConfig.sh file.
-   #--------------------------------------------------------------------
-
-   CFLAGS_DEBUG=${TCL_CFLAGS_DEBUG}
-   CFLAGS_OPTIMIZE=${TCL_CFLAGS_OPTIMIZE}
-   LDFLAGS_DEBUG=${TCL_LDFLAGS_DEBUG}
-   LDFLAGS_OPTIMIZE=${TCL_LDFLAGS_OPTIMIZE}
-   SHLIB_LD=${TCL_SHLIB_LD}
-   STLIB_LD=${TCL_STLIB_LD}
-   SHLIB_CFLAGS=${TCL_SHLIB_CFLAGS}
-
-   AC_SUBST(CFLAGS_DEBUG)
-   AC_SUBST(CFLAGS_OPTIMIZE)
-   AC_SUBST(STLIB_LD)
-   AC_SUBST(SHLIB_LD)
-   AC_SUBST(SHLIB_CFLAGS)
-   AC_SUBST(SHLIB_LDFLAGS)
-
-   #--------------------------------------------------------------------
-   # Set the default compiler switches based on the --enable-symbols 
-   # option.
-   #--------------------------------------------------------------------
-
-   SC_ENABLE_SYMBOLS
-
-   if test "${SHARED_BUILD}" = "1" ; then
-       CFLAGS='${CFLAGS_DEFAULT} ${CFLAGS_WARNING} ${SHLIB_CFLAGS}'
-   else
-       CFLAGS='${CFLAGS_DEFAULT} ${CFLAGS_WARNING}'
-   fi
-
-   #--------------------------------------------------------------------
-   # Everyone should be linking against the Tcl stub library.  If you
-   # can't for some reason, remove this definition.  If you aren't using
-   # stubs, you also need to modify the SHLIB_LD_LIBS setting below to
-   # link against the non-stubbed Tcl library.
-   #--------------------------------------------------------------------
-
-   #AC_DEFINE(USE_TCL_STUBS)
-
-   #--------------------------------------------------------------------
-   # This macro generates a line to use when building a library.  It
-   # depends on values set by the SC_ENABLE_SHARED, SC_ENABLE_SYMBOLS,
-   # and SC_LOAD_TCLCONFIG macros above.
-   #--------------------------------------------------------------------
-
-   SC_MAKE_LIB
-
-   #--------------------------------------------------------------------
-   # eval these two values to dereference the ${DBGX} variable.
-   #--------------------------------------------------------------------
-
-   eval "SHARED_LIB_SUFFIX=${TCL_SHLIB_SUFFIX}"
-   eval "UNSHARED_LIB_SUFFIX=${TCL_UNSHARED_LIB_SUFFIX}"
-
-   #--------------------------------------------------------------------
-   # Shared libraries and static libraries have different names.
-   #--------------------------------------------------------------------
-
-   case "`uname -s`" in
-       *win32* | *WIN32* | *CYGWIN_NT*)
-           if test "${SHARED_LIB_SUFFIX}" = "" ; then
-	      SHARED_LIB_SUFFIX=".dll"
-	   fi
-           if test "${SHARED_BUILD}" = "1" ; then
-	       SHLIB_LD_LIBS="\"`cygpath -w ${TCL_BIN_DIR}/${TCL_LIB_FILE}`\" ${TCL_SHLIB_LD_LIBS}"
-	       eval "TCLBLEND_LIB_FILE=${PACKAGE}${SHARED_LIB_SUFFIX}"
-	       RANLIB=:
-	   else
-	       eval "TCLBLEND_LIB_FILE=${PACKAGE}${UNSHARED_LIB_SUFFIX}"
-	   fi
-	;;
-        *)
-	   if test "${SHARED_BUILD}" = "1" ; then
-	       if test ! -f "${TCL_LIB_PATH}" ; then
-	           SHLIB_LD_LIBS="${TCL_BUILD_LIB_SPEC}"
-	       else
-	           SHLIB_LD_LIBS="${TCL_LIB_SPEC}"
-	       fi
-	       eval "TCLBLEND_LIB_FILE=lib${PACKAGE}${SHARED_LIB_SUFFIX}"
-	       RANLIB=:
-	   else
-	       eval "TCLBLEND_LIB_FILE=lib${PACKAGE}${UNSHARED_LIB_SUFFIX}"
-	   fi
-	;;
-   esac
-
-   AC_SUBST(TCLBLEND_LIB_FILE)
-   AC_SUBST(SHLIB_LD_LIBS)
-
-   #--------------------------------------------------------------------
-   # Find tclsh so that we can run pkg_mkIndex to generate the pkgIndex.tcl
-   # file during the install process.  Don't run the TCLSH_PROG through
-   # ${CYGPATH} because it's being used directly by make.
-   #--------------------------------------------------------------------
-
-   SC_PROG_TCLSH
-
-fi
-
-#--------------------------------------------------------------------
-# A few miscellaneous platform-specific items:
-#
-# Define a special symbol for Windows (BUILD_sha in this case) so
-# that we create the export library with the dll.  See sha1.h on how
-# to use this.
-#
-# Windows creates a few extra files that need to be cleaned up.
-#--------------------------------------------------------------------
-
-case "`uname -s`" in
-    *win32* | *WIN32* | *CYGWIN_NT*)
-	AC_DEFINE(__WIN32__)
-	CLEANFILES="*.lib *.dll *.exp *.ilk *.pdb vc50.pch"
-	AC_SUBST(CLEANFILES)
-    ;;
-    *)
-    ;;
-esac
-
-#--------------------------------------------------------------------
-# Each platform has it's own notifier code, need the platform name
-#--------------------------------------------------------------------
-
-case "`uname -s`" in
-    *win32* | *WIN32* | *CYGWIN_NT*)
-	eval "TCLBLEND_PLATFORM=win"
-	;;
-    *)
-	eval "TCLBLEND_PLATFORM=unix"
-	;;
-esac
-
-AC_SUBST(TCLBLEND_PLATFORM)
-
-
-#--------------------------------------------------------------------
-# Some of our tool routines need native paths for these
-#--------------------------------------------------------------------
-
-
-AC_SUBST(FULL_SRCDIR)
-AC_SUBST(FULL_SRCDIR_NATIVE)
-AC_SUBST(MISC_DIR)
-
-
-#--------------------------------------------------------------------
-# Finally, substitute all of the various values into the Makefile.
-#--------------------------------------------------------------------
-
-AC_OUTPUT([Makefile \
-        mkIndex.tcl])
+AC_OUTPUT([Makefile jaclsh jtclsh tcljavaConfig.sh])

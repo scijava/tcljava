@@ -57,16 +57,11 @@ TCLSH=@TCLSH@
 JAVA_CLASSPATH=@JAVA_CLASSPATH@
 
 # Colon seperated list of shared lib directories to search
-JAVA_ARCH_GREEN_RUNTIME_LIBS=@JAVA_ARCH_GREEN_RUNTIME_LIBS@:${TCLJAVA_INSTALL_DIR}
-JAVA_ARCH_NATIVE_RUNTIME_LIBS=@JAVA_ARCH_NATIVE_RUNTIME_LIBS@:${TCLJAVA_INSTALL_DIR}
+JAVA_LIB_RUNTIME_PATH=@JAVA_LIB_RUNTIME_PATH@:${TCLJAVA_INSTALL_DIR}
 
-# Can be set to JAVA_ARCH_GREEN_RUNTIME_LIBS if you know what you are doing
-JAVA_ARCH_RUNTIME_LIBS=${JAVA_ARCH_NATIVE_RUNTIME_LIBS}
-
-# extra shared lib stuff
+# extra shared lib hack
 TCLBLEND_LD_PRELOAD="@TCLBLEND_LD_PRELOAD@"
 TCLBLEND_LD_BIND_NOW=@TCLBLEND_LD_BIND_NOW@
-TCLBLEND_SHLIB_NAMES="@TCLBLEND_SHLIB_NAMES@"
 
 
 # Tcl Blend under Linux AWT Workaround! (Required before JDK 1.1.8 from Blackdown)
@@ -106,11 +101,17 @@ fi
 # Set up our LD_LIBRARY_PATH or SHLIB_PATH
 
 if test "`uname -s`" = "HP-UX" ; then
-    SHLIB_PATH=${JAVA_ARCH_RUNTIME_LIBS}:${SHLIB_PATH}
+    SHLIB_PATH=${JAVA_LIB_RUNTIME_PATH}:${SHLIB_PATH}
     export SHLIB_PATH
+    # Export the Kaffe library path in case we are running Kaffe
+    KAFFELIBRARYPATH=${JAVA_LIB_RUNTIME_PATH}:${LD_LIBRARY_PATH}
+    export KAFFELIBRARYPATH
 else
-    LD_LIBRARY_PATH=${JAVA_ARCH_RUNTIME_LIBS}:${LD_LIBRARY_PATH}
+    LD_LIBRARY_PATH=${JAVA_LIB_RUNTIME_PATH}:${LD_LIBRARY_PATH}
     export LD_LIBRARY_PATH
+    # Export the Kaffe library path in case we are running Kaffe
+    KAFFELIBRARYPATH=${JAVA_LIB_RUNTIME_PATH}:${LD_LIBRARY_PATH}
+    export KAFFELIBRARYPATH
 fi    
 
 # Extra shared lib stuff
