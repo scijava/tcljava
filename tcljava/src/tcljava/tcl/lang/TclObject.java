@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclObject.java,v 1.2 1999/07/28 03:51:50 mo Exp $
+ * RCS: @(#) $Id: TclObject.java,v 1.3 1999/08/15 19:38:55 mo Exp $
  *
  */
 
@@ -48,6 +48,7 @@ public final class TclObject {
     public TclObject(InternalRep rep) {
 	internalRep = rep;
 	stringRep = null;
+	refCount = 0;
     }
 
     /**
@@ -61,6 +62,7 @@ public final class TclObject {
     protected TclObject(TclString rep, String s) {
 	internalRep = rep;
 	stringRep = s;
+	refCount = 0;
     }
 
     /**
