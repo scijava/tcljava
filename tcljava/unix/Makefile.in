@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.31.6.2 2000/04/29 00:22:12 mo Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.31.6.3 2000/05/01 08:59:11 mo Exp $
 
 # The directory containing the Tcl sources and headers appropriate
 # for this version of Tk ("srcdir" will be replaced or has already
@@ -1281,8 +1281,6 @@ jaclDist: $(UNIX_DIR)/configure Makefile
 		$(JACL_DISTDIR)/unix
 
 	mkdir -p $(JACL_DISTDIR)/win
-	cp -p $(TOP_DIR)/win/jaclsh.bat \
-		$(JACL_DISTDIR)/win
 
 	@# Substitute in TCLJAVA=jacl
 	cat $(TOP_DIR)/win/makefile.vc | \
