@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclList.java,v 1.2 1999/07/28 03:09:54 mo Exp $
+ * RCS: @(#) $Id: TclList.java,v 1.2.10.1 2000/10/25 11:01:24 mdejong Exp $
  *
  */
 
@@ -18,7 +18,7 @@ import java.util.*;
 /**
  * This class implements the list object type in Tcl.
  */
-public class TclList extends InternalRep {
+public class TclList implements InternalRep {
 
     /**
      * Internal representation of a list value.
@@ -46,7 +46,7 @@ public class TclList extends InternalRep {
      * Called to free any storage for the type's internal rep.
      * @param obj the TclObject that contains this internalRep.
      */
-    protected void dispose() {
+    public void dispose() {
 	int size = vector.size();
 	for (int i=0; i<size; i++) {
 	    ((TclObject) vector.elementAt(i)).release();
@@ -58,7 +58,7 @@ public class TclList extends InternalRep {
      *
      * @param obj the TclObject that contains this internalRep.
      */
-    protected InternalRep duplicate() {
+    public InternalRep duplicate() {
 	int size = vector.size();
 	TclList newList = new TclList(size);
 

@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: FieldSig.java,v 1.2 1999/05/09 21:19:41 dejong Exp $
+ * RCS: @(#) $Id: FieldSig.java,v 1.2.10.1 2000/10/25 11:01:24 mdejong Exp $
  *
  */
 
@@ -25,7 +25,7 @@ import java.util.*;
  * signature.
  */
 
-class FieldSig extends InternalRep {
+class FieldSig implements InternalRep {
 
 // The class that the field signature is used against. If the
 // java::field command is given a class name, then the targetCls is
@@ -91,11 +91,16 @@ FieldSig(
  *----------------------------------------------------------------------
  */
 
-protected InternalRep
-duplicate()
+public InternalRep duplicate()
 {
     return new FieldSig(targetCls, sigCls, pkgInvoker, field);
 }
+
+/**
+  * Implement this no-op for the InternalRep interface.
+  */
+
+public void dispose() {}
 
 /*
  *----------------------------------------------------------------------

@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: ReflectObject.java,v 1.12 2000/07/30 02:37:19 mo Exp $
+ * RCS: @(#) $Id: ReflectObject.java,v 1.12.2.1 2000/10/25 11:01:24 mdejong Exp $
  *
  */
 
@@ -27,7 +27,7 @@ import java.beans.*;
  * reference count of the object is greater than zero.
  */
 
-public class ReflectObject extends InternalRep implements CommandWithDispose {
+public class ReflectObject implements InternalRep, CommandWithDispose {
 
 // The java.lang.Object wrapped by the ReflectObject representation.
 
@@ -589,8 +589,7 @@ makeReflectObject(
  *----------------------------------------------------------------------
  */
 
-protected void
-dispose()
+public void dispose()
 {
     if (debug) {
         System.out.println("dispose called for reflect object " + refID);
@@ -641,8 +640,7 @@ dispose()
  *----------------------------------------------------------------------
  */
 
-protected InternalRep
-duplicate()
+public InternalRep duplicate()
 {
     useCount++;
 

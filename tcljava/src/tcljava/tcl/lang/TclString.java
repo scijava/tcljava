@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclString.java,v 1.1.1.1.10.1 2000/10/25 09:38:53 mdejong Exp $
+ * RCS: @(#) $Id: TclString.java,v 1.1.1.1.10.2 2000/10/25 11:01:24 mdejong Exp $
  *
  */
 
@@ -15,7 +15,7 @@ package tcl.lang;
 
 // This class implements the string object type in Tcl.
 
-public class TclString extends InternalRep {
+public class TclString implements InternalRep {
 
     // Used to perform "append" operations. After an append op,
     // sbuf.toString() will contain the latest value of the string and
@@ -36,9 +36,15 @@ public class TclString extends InternalRep {
      * @param obj the TclObject that contains this internalRep.
      */
 
-    protected InternalRep duplicate() {
+    public InternalRep duplicate() {
 	return new TclString();
     }
+
+    /**
+     * Implement this no-op for the InternalRep interface.
+     */
+
+    public void dispose() {}
 
     /**
      * Called to query the string representation of the Tcl object. This

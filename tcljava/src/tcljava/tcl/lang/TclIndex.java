@@ -11,12 +11,12 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclIndex.java,v 1.3 1999/07/28 03:50:56 mo Exp $
+ * RCS: @(#) $Id: TclIndex.java,v 1.3.10.1 2000/10/25 11:01:24 mdejong Exp $
  */
 
 package tcl.lang;
 
-public class TclIndex extends InternalRep {
+public class TclIndex implements InternalRep {
 
     /**
      * The variable slots for this object.
@@ -41,9 +41,15 @@ public class TclIndex extends InternalRep {
      * Returns a dupilcate of the current object.
      * @param obj the TclObject that contains this internalRep.
      */
-    protected InternalRep duplicate() {
+    public InternalRep duplicate() {
 	return new TclIndex(index, table);
     }
+
+    /**
+     * Implement this no-op for the InternalRep interface.
+     */
+
+    public void dispose() {}
 
     /**
      * Called to query the string representation of the Tcl object. This

@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclByteArray.java,v 1.1 2000/03/02 04:08:34 mo Exp $
+ * RCS: @(#) $Id: TclByteArray.java,v 1.1.2.1 2000/10/25 11:01:24 mdejong Exp $
  *
  */
 
@@ -21,7 +21,7 @@ import java.io.*;
 /**
  * This class implements the binary data object type in Tcl.
  */
-public class TclByteArray extends InternalRep {
+public class TclByteArray implements InternalRep {
 
     /**
      * The number of bytes used in the byte array.
@@ -79,9 +79,15 @@ public class TclByteArray extends InternalRep {
      *
      * @param obj the TclObject that contains this internalRep.
      */
-    protected InternalRep duplicate() {
+    public InternalRep duplicate() {
 	return new TclByteArray(bytes, 0, used);
     }
+
+    /**
+     * Implement this no-op for the InternalRep interface.
+     */
+
+    public void dispose() {}
 
     /**
      * Called to query the string representation of the Tcl object. This

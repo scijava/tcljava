@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: CObject.java,v 1.1 1998/10/14 21:09:10 cvsadmin Exp $
+ * RCS: @(#) $Id: CObject.java,v 1.1.1.1.10.1 2000/10/25 11:01:24 mdejong Exp $
  */
 
 package tcl.lang;
@@ -22,7 +22,7 @@ package tcl.lang;
  * Tcl_Obj*.
  */
 
-class CObject extends InternalRep {
+class CObject implements InternalRep {
 
 /*
  * This long really contains a Tcl_Obj*.  It is declared with package

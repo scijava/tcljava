@@ -1,5 +1,39 @@
 2000-10-25  Mo DeJong  <mdejong@redhat.com>
 
+	* docs/TclJavaLib/InternalRep.htm:
+	* docs/TclJavaLib/ReflectObject.htm:
+	* docs/TclJavaLib/TclBoolean.htm:
+	* docs/TclJavaLib/TclDouble.htm:
+	* docs/TclJavaLib/TclIndex.htm:
+	* docs/TclJavaLib/TclInteger.htm:
+	* docs/TclJavaLib/TclList.htm:
+	* docs/TclJavaLib/TclObject.htm:
+	* docs/TclJavaLib/TclString.htm:
+	* docs/TclJavaLib/traceVar.htm: Update to
+	account for change to InternalRep class.
+	* src/empty/empty.jar: Regen.
+	* src/empty/tcl/lang/CObject.java:
+	* src/jacl/tcl/lang/CObject.java:
+	* src/jacl/tcl/lang/NamespaceCmd.java:
+	* src/jacl/tcl/lang/TclByteArray.java:
+	* src/jacl/tcl/lang/TclList.java:
+	* src/tclblend/tcl/lang/CObject.java:
+	* src/tcljava/tcl/lang/ClassRep.java:
+	* src/tcljava/tcl/lang/FieldSig.java:
+	* src/tcljava/tcl/lang/FuncSig.java:
+	* src/tcljava/tcl/lang/InternalRep.java:
+	* src/tcljava/tcl/lang/JavaNewCmd.java:
+	* src/tcljava/tcl/lang/PropertySig.java:
+	* src/tcljava/tcl/lang/ReflectObject.java:
+	* src/tcljava/tcl/lang/TclBoolean.java:
+	* src/tcljava/tcl/lang/TclDouble.java:
+	* src/tcljava/tcl/lang/TclIndex.java:
+	* src/tcljava/tcl/lang/TclInteger.java:
+	* src/tcljava/tcl/lang/TclString.java: Change InternalRep
+	into an interface instead of an abstract class.
+
+2000-10-25  Mo DeJong  <mdejong@redhat.com>
+
 	* src/tcljava/tcl/lang/TclObject.java:
 	* src/tcljava/tcl/lang/TclString.java: Comment fixup.
 

@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: InternalRep.java,v 1.3 1999/07/28 03:42:01 mo Exp $
+ * RCS: @(#) $Id: InternalRep.java,v 1.3.10.1 2000/10/25 11:01:24 mdejong Exp $
  *
  */
 
@@ -34,7 +34,7 @@ package tcl.lang;
  * (5) class method get() if appropriate
  */
 
-abstract public class InternalRep {
+public interface InternalRep {
 
 /*
  *----------------------------------------------------------------------
@@ -42,6 +42,7 @@ abstract public class InternalRep {
  * dispose --
  *
  *	Free any state associated with the object's internal rep.
+ *	This method should not be invoked by user code.
  *
  * Results:
  *	None.
@@ -52,11 +53,7 @@ abstract public class InternalRep {
  *----------------------------------------------------------------------
  */
 
-protected void
-dispose()
-{
-    // The default implementation does nothing.
-}
+public void dispose();
 
 /*
  *----------------------------------------------------------------------
@@ -64,6 +61,7 @@ dispose()
  * duplicate --
  *
  *	Make a copy of an object's internal representation.
+  *	This method should not be invoked by user code.
  *
  * Results:
  *	Returns a newly allocated instance of the appropriate type.
@@ -74,7 +72,7 @@ dispose()
  *----------------------------------------------------------------------
  */
 
-abstract protected InternalRep duplicate();
+public InternalRep duplicate();
 
 } // end InternalRep
 

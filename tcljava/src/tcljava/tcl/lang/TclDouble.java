@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclDouble.java,v 1.1 1998/10/14 21:09:14 cvsadmin Exp $
+ * RCS: @(#) $Id: TclDouble.java,v 1.1.1.1.10.1 2000/10/25 11:01:24 mdejong Exp $
  *
  */
 
@@ -20,7 +20,7 @@ package tcl.lang;
  * This class implements the double object type in Tcl.
  */
 
-public class TclDouble extends InternalRep {
+public class TclDouble implements InternalRep {
 
 /*
  * Internal representation of a double value.
@@ -96,11 +96,16 @@ throws
  *----------------------------------------------------------------------
  */
 
-protected InternalRep
-duplicate()
+public InternalRep duplicate()
 {
     return new TclDouble(value);
 }
+
+/**
+ * Implement this no-op for the InternalRep interface.
+ */
+
+public void dispose() {}
 
 /*
  *----------------------------------------------------------------------
