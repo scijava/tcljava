@@ -1,7 +1,7 @@
 # Cross platform init script for Tcl Blend. Known to work on unix and windows.
 # 
-# Author:  Christopher Hylands
-# RCS: @(#) $Id: pkgIndex.tcl,v 1.3 1998/11/24 04:25:08 hylands Exp $
+# Author:  Christopher Hylands, Mo Dejong
+# RCS: @(#) $Id: pkgIndex.tcl,v 1.4 1998/11/24 05:49:17 hylands Exp $
 #
 # Copyright (c) 1997-1998 The Regents of the University of California.
 # 	All Rights Reserved.
@@ -29,7 +29,13 @@
 # 						COPYRIGHTENDKEY
 
 proc loadtclblend {dir} {
-    global tcl_platform env
+    global tcl_platform env tclblend_init
+
+    set tclblend_debug 0
+    if { [info exists tclblend_init] && "$tclblend_init" == "debug" } {
+	set tclblend_debug 1
+    }
+
     switch $tcl_platform(platform) {
         java {
             # This can happend when jacl reads the same tcl lib path, ignore it
@@ -40,17 +46,19 @@ proc loadtclblend {dir} {
             set sep ":"
         }
         windows {
+            # Expand the pathname in case it is something like
+            # c:/Progra~1/Tcl/lib/tclblend1.1
+            # Without this expansion we have problems loading tclblend.dll
+            set dir [file attributes $dir -longname]
+
             set pre_lib ""
 	    # JDK1.2 requires that tclblend.dll either be in the users's path
 	    # or that we use an absolute pathname. 
             if [ file exists "$dir/tclblend[info sharedlibextension]"] {
 		set pre_lib "$dir/"
             }
+
             set sep ";"
-            # Expand the pathname in case it is something like
-            # c:/Progra~1/Tcl/lib/tclblend1.1
-            # Without this expansion we have problems loading tclblend.dll
-            set dir [file attributes $dir -longname]
             if {"$dir" != [pwd] && \
                     [file exists tclblend[info sharedlibextension]]} {
                 puts stderr "Warning: [pwd]/tclblend[info sharedlibextension]\
@@ -135,7 +143,11 @@ proc loadtclblend {dir} {
 	set env(CLASSPATH) ${f}${sep}
 	append env(CLASSPATH) $tmp
     }
-
+    
+    if {"$tclblend_debug" == "1"} {
+	puts stderr "pkgIndex.tcl: debug: CLASSPATH = '$env(CLASSPATH)'"
+	puts stderr "pkgIndex.tcl: debug: about to load '$native_lib'"
+    }
 
     # Load the tclblend native lib after the .class files are loaded.
     if [catch {load $native_lib} errMsg] {
