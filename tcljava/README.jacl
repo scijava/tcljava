@@ -1,6 +1,6 @@
 Jacl
 
-RCS: @(#) $Id: README.jacl,v 1.5 1999/05/16 07:59:24 dejong Exp $
+RCS: @(#) $Id: README.jacl,v 1.6 1999/08/07 06:41:11 mo Exp $
  
 1. Introduction
 ---------------
@@ -35,7 +35,7 @@ http://www.scriptics.com/java for other useful information.
 
 The Jacl distribution requires the Java Development Kit 1.1 or
 greater. Jacl has been tested on Win95, WinNT, Solaris, IRIX,
-Linux, and the Mac. It should also work on other systems that
+and Linux. It should also work on other systems that
 have a correctly implemented Java VM.
 
 Jacl works under JDK1.2, see known_issues.txt for
