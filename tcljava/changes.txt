@@ -1,6 +1,6 @@
 Recent user-visible changes to Jacl & Tcl Blend:
 
-RCS: @(#) $Id: changes.txt,v 1.22 1999/07/28 02:33:25 mo Exp $
+RCS: @(#) $Id: changes.txt,v 1.23 1999/07/28 02:52:31 mo Exp $
 
 ----------------- Released 1.0a1, 10/22/97 -----------------------
 
@@ -882,4 +882,9 @@ The Tcl 8.1 implementation of the package command includes a new
 subcommand that will test to see if a package has been loaded
 without actually trying to load any packages. Support for this
 subcommand has now been added to Jacl. (Mo)
+
+7/28/99 (added unicode parser support to Jacl)
+The Jacl parser would raise an error if unicode characters
+appeared in a Jacl script. This problem has been fixed and
+Jacl should now support all unicode characters. (Mo)
 
