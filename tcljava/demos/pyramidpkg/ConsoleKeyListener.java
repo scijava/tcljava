@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ConsoleKeyListener.java,v 1.1 1998/10/14 21:09:23 cvsadmin Exp $
+ * RCS: @(#) $Id: ConsoleKeyListener.java,v 1.2 2000/06/04 03:36:52 mo Exp $
  */
 
 import java.awt.*;
@@ -44,28 +44,24 @@ public class ConsoleKeyListener implements KeyListener {
  	char key = evt.getKeyChar();
 	
 	if ((key == '\r') || (key == '\n')) {
-	    /*
-	     * Enter and return notify the console that there is a new
-	     * line to process and empties the buffer.
-	     */
+	    // Enter and return notify the console that there is a new
+	    // line to process. If this line was a complete Tcl command
+	    // then we can empty our cmd buffer.
 	
 	    sbuf.append(key);
-	    console.LineReadyNotify(sbuf.toString());
-	    sbuf.setLength(0);
+	    if (console.processCommand(sbuf.toString())) {
+		sbuf.setLength(0);
+	    }
 	} else if (((int) key == BACK_SPACE) || ((int) key ==  DELETE)) {
-	    /*
-	     * Delete and backspace erase the last character from both
-	     * the screen and the buffer.
-	     */
+	    // Delete and backspace erase the last character from both
+	    // the screen and the buffer.
 
 	    int len = sbuf.length();
 	    if (len > 0) {
 		sbuf.setLength(len-1);
 	    }
 	} else {
-	    /*
-	     * All other keys are appended to the buffer.
-	     */
+	    // All other keys are appended to the buffer.
 
 	    sbuf.append(key);
 	}

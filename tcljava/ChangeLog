@@ -1,5 +1,13 @@
 2000-06-03  Mo DeJong  <mdejong@redhat.com>
 
+	* demos/pyramidpkg/AppletConsole.java:
+	* demos/pyramidpkg/ConsoleKeyListener.java:
+	* demos/pyramidpkg/Pyramid.java:
+	Overhauled the pyramid demo so that it uses
+	the Tcl event queue in a thread safe way.
+
+2000-06-03  Mo DeJong  <mdejong@redhat.com>
+
 	* new_features.txt: Added notes about
 	new JVM support. Minor comment fixup.
 	* src/native/java.h: Removed old code
