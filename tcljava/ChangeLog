@@ -62,6 +62,8 @@
 	* src/tcljava/tcl/lang/TclObject.java (duplicate,
 	takeExclusive): Add new duplicate method and
 	deprecate the takeExclusive method.
+	* src/tests/jacl/tcl/lang/TestEmptyResultCmd.java:
+	Add new test case implementation.
 	* src/tests/jacl/tcl/lang/TestParsevarCmd.java:
 	Release ParseResult when done with it.
 	* src/tests/tclblend/tcl/lang/IntListAppendCmd.java:
