@@ -1,6 +1,6 @@
 # Cross platform init script for Tcl Blend. Known to work on unix and windows.
 # Authors:  Christopher Hylands, Mo Dejong
-# RCS: @(#) $Id: pkgIndex.tcl,v 1.19.2.1 2000/04/29 00:25:24 mo Exp $
+# RCS: @(#) $Id: pkgIndex.tcl,v 1.19.2.2 2000/05/01 08:59:05 mo Exp $
 
 proc loadtclblend {dir} {
     global tcl_platform env tclblend_init
@@ -156,10 +156,10 @@ proc loadtclblend {dir} {
 
     if {! [info exists env(CLASSPATH)] } {
         if {$debug_loadtclblend} {
-	    puts "setting env(CLASSPATH) to {}"
+	    puts "setting env(CLASSPATH) to ${path_sep}"
         }
 
-	set env(CLASSPATH) {}
+	set env(CLASSPATH) ${path_sep}
     }
 
     # now we need to search on the CLASSPATH to see if tclblend.jar
@@ -305,16 +305,15 @@ proc loadtclblend {dir} {
 
     if {[catch {load $tclblend_shlib} errMsg]} {
 	set fullErr "\"load $tclblend_shlib\" failed:\n $errMsg"
-	append fullErr "\ncurrently, the $VAR environment variable includes these directories:"
+	append fullErr "\ncurrently, the $VAR environment variable includes these directories:\n"
 	
 	set split_list [split $env($VAR) $path_sep]
-	set filtered_list [list]
 	foreach index $split_list {
 	    if {$index != {}} {
-	        lappend filtered_list $index
+	        append fullErr $index
+	        append fullErr " "
 	    }
 	}
-	append fullErr "\n\{$filtered_list\}"
 
 	if {$VAR == "PATH"} {
 	    append fullErr "\n\nWindows users should note that the most common\
@@ -324,9 +323,9 @@ proc loadtclblend {dir} {
 	    
 	    append fullErr "\nJDK 1.1 users that installed into C:\\jdk1.1.8\
 	    need to include C:\\jdk1.1.8\\bin on the PATH."
-	    append fullErr "\nJDK 1.2 users that installed into C:\\jdk1.2\
-	    need to include C:\\jdk1.2\\jre\\bin AND C:\\jdk1.2\\jre\\bin\\classic\
-	    on the PATH."
+	    append fullErr "\nJDK 1.2 users that installed into C:\\jdk1.2.2\
+	    need to include C:\\jdk1.2.2\\jre\\bin AND C:\\jdk1.2.2\\jre\\bin\\classic\
+	    AND [file nativename $dir] on the PATH."
 	} else {
 	    append fullErr "\n\nUnix users should note that the most common\
 	    cause of problems loading TclBlend is not having the proper environment\
