@@ -530,7 +530,7 @@ else
 fi
 
 
-# RCS: @(#) $Id: configure,v 1.1 1998/10/14 21:09:22 cvsadmin Exp $
+# RCS: @(#) $Id: configure,v 1.2 1998/11/04 22:46:10 hylands Exp $
 
 
 #--------------------------------------------------------------------
@@ -557,7 +557,7 @@ fi
 #convert srcdir into full path name
 srcdir=`cd $srcdir;pwd`
 
-# Set BOTH to true if we are configuring both Jacl and Tcl Blend
+# BOTH will automatically be set to true when configuring Jacl and TclBlend
 BOTH=false
 
 echo "srcdir is $srcdir"
@@ -569,11 +569,11 @@ if test $TCLJAVA = "NONE"; then
     else
 	{ echo "configure: error: Cannot find source files to build either Jacl or Tcl Blend" 1>&2; exit 1; }
     fi
+
     if test -f $srcdir/../src/jacl/tcl/lang/Interp.java && test $TCLJAVA = "tclblend"; then
         echo "configuring for both jacl and tcl blend"
         BOTH=true
     fi
-
 fi
 
 #--------------------------------------------------------------------
@@ -592,11 +592,12 @@ fi
 
 
 if test ! -d "$JAVA_DIR"; then
-    echo "configure: warning: '${JAVA_DIR}' is not a directory, so we search for the java compiler." 1>&2
+    echo "configure: warning: \$JAVA_DIR == '${JAVA_DIR}' is not a directory,
+	so we search for the java compiler." 1>&2
     # Extract the first word of "javac", so it can be a program name with args.
 set dummy javac; ac_word=$2
 echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
-echo "configure:600: checking for $ac_word" >&5
+echo "configure:601: checking for $ac_word" >&5
 if eval "test \"`echo '$''{'ac_cv_path_JAVAC'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
@@ -650,15 +651,15 @@ fi
 # Check that we have the javac that corresponds with JAVA_DIR in our path
 #
 echo $ac_n "checking for the java runtime in $JAVA_DIR/bin""... $ac_c" 1>&6
-echo "configure:654: checking for the java runtime in $JAVA_DIR/bin" >&5
+echo "configure:655: checking for the java runtime in $JAVA_DIR/bin" >&5
 if test -f $JAVA_DIR/bin/java; then
     echo "$ac_t""$JAVA_DIR/bin/java" 1>&6
     echo $ac_n "checking that you have the right java in your path.""... $ac_c" 1>&6
-echo "configure:658: checking that you have the right java in your path." >&5
+echo "configure:659: checking that you have the right java in your path." >&5
     # Extract the first word of "java", so it can be a program name with args.
 set dummy java; ac_word=$2
 echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
-echo "configure:662: checking for $ac_word" >&5
+echo "configure:663: checking for $ac_word" >&5
 if eval "test \"`echo '$''{'ac_cv_path_JAVA'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
@@ -704,15 +705,15 @@ fi
 # Check that we have the javac that corresponds with JAVA_DIR in our path
 #
 echo $ac_n "checking for the java compiler in $JAVA_DIR/bin""... $ac_c" 1>&6
-echo "configure:708: checking for the java compiler in $JAVA_DIR/bin" >&5
+echo "configure:709: checking for the java compiler in $JAVA_DIR/bin" >&5
 if test -f $JAVA_DIR/bin/javac; then
     echo "$ac_t""$JAVA_DIR/bin/javac" 1>&6
     echo $ac_n "checking that you have the right javac in your path.""... $ac_c" 1>&6
-echo "configure:712: checking that you have the right javac in your path." >&5
+echo "configure:713: checking that you have the right javac in your path." >&5
     # Extract the first word of "javac", so it can be a program name with args.
 set dummy javac; ac_word=$2
 echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
-echo "configure:716: checking for $ac_word" >&5
+echo "configure:717: checking for $ac_word" >&5
 if eval "test \"`echo '$''{'ac_cv_path_JAVAC'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
@@ -828,7 +829,7 @@ fi
 	{ echo "configure: error: Java directory $JAVA_ARCH_INCLUDE doesn't exist" 1>&2; exit 1; }
     fi
     echo $ac_n "checking for the java jni_md.h include file""... $ac_c" 1>&6
-echo "configure:832: checking for the java jni_md.h include file" >&5
+echo "configure:833: checking for the java jni_md.h include file" >&5
     if test -f $JAVA_ARCH_INCLUDE/jni_md.h; then
 	echo "$ac_t""$JAVA_ARCH_INCLUDE/jni_md.h" 1>&6
     else
@@ -858,6 +859,17 @@ of the architecture dependent include files in the JDK." 1>&2; exit 1; }
 	        if test ! -f $TMP_JAVA_ARCH_LIB/$JAVA_ARCH_LIB_CHK; then
 			TMP_JAVA_ARCH_LIB=$JAVA_DIR/jre/lib/sparc
 		fi
+		if test ! -d $TMP_JAVA_ARCH_LIB/native_threads; then
+		        echo "configure: warning:  could not find '$TMP_JAVA_ARCH_LIB/native_threads'" 1>&2;
+		else 
+			JAVA_ARCH_RUNTIME_LIBS=$TMP_JAVA_ARCH_LIB/native_threads
+		fi
+	        # if it is JDK1.2RC1 we need to have
+	        # jre/lib/sparc/native_threads jre/lib/sparc and
+		#  jre/lib/sparc/native_threads in LD_LIBRARY_PATH
+	        if test -d $JAVA_DIR/jre/lib/sparc/classic; then
+                	JAVA_ARCH_RUNTIME_LIBS=$JAVA_DIR/jre/lib/sparc:$JAVA_DIR/jre/lib/sparc/classic:$JAVA_DIR/jre/lib/sparc/native_threads
+	        fi
 	    fi	
 	    ;;
 	*)TMP_JAVA_ARCH_LIB=$JAVA_DIR/lib/idontknow;;
@@ -878,7 +890,7 @@ fi
 	{ echo "configure: error: Java directory $JAVA_ARCH_LIB doesn't exist" 1>&2; exit 1; }
     fi
     echo $ac_n "checking for the java $JAVA_ARCH_LIB_CHK library file""... $ac_c" 1>&6
-echo "configure:882: checking for the java $JAVA_ARCH_LIB_CHK library file" >&5
+echo "configure:894: checking for the java $JAVA_ARCH_LIB_CHK library file" >&5
     if test -f $JAVA_ARCH_LIB/$JAVA_ARCH_LIB_CHK; then
 	echo "$ac_t""$JAVA_ARCH_LIB/$JAVA_ARCH_LIB_CHK" 1>&6
     else
@@ -888,7 +900,7 @@ architecture dependent library files in the JDK." 1>&2; exit 1; }
     fi
 
     echo $ac_n "checking how to run the C preprocessor""... $ac_c" 1>&6
-echo "configure:892: checking how to run the C preprocessor" >&5
+echo "configure:904: checking how to run the C preprocessor" >&5
 # On Suns, sometimes $CPP names a directory.
 if test -n "$CPP" && test -d "$CPP"; then
   CPP=
@@ -903,13 +915,13 @@ else
   # On the NeXT, cc -E runs the code through the compiler's parser,
   # not just through cpp.
   cat > conftest.$ac_ext <<EOF
-#line 907 "configure"
+#line 919 "configure"
 #include "confdefs.h"
 #include <assert.h>
 Syntax Error
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
-{ (eval echo configure:913: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+{ (eval echo configure:925: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
 ac_err=`grep -v '^ *+' conftest.out`
 if test -z "$ac_err"; then
   :
@@ -920,13 +932,13 @@ else
   rm -rf conftest*
   CPP="${CC-cc} -E -traditional-cpp"
   cat > conftest.$ac_ext <<EOF
-#line 924 "configure"
+#line 936 "configure"
 #include "confdefs.h"
 #include <assert.h>
 Syntax Error
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
-{ (eval echo configure:930: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+{ (eval echo configure:942: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
 ac_err=`grep -v '^ *+' conftest.out`
 if test -z "$ac_err"; then
   :
@@ -949,12 +961,12 @@ fi
 echo "$ac_t""$CPP" 1>&6
 
 echo $ac_n "checking for ANSI C header files""... $ac_c" 1>&6
-echo "configure:953: checking for ANSI C header files" >&5
+echo "configure:965: checking for ANSI C header files" >&5
 if eval "test \"`echo '$''{'ac_cv_header_stdc'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 958 "configure"
+#line 970 "configure"
 #include "confdefs.h"
 #include <stdlib.h>
 #include <stdarg.h>
@@ -962,7 +974,7 @@ else
 #include <float.h>
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
-{ (eval echo configure:966: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+{ (eval echo configure:978: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
 ac_err=`grep -v '^ *+' conftest.out`
 if test -z "$ac_err"; then
   rm -rf conftest*
@@ -979,7 +991,7 @@ rm -f conftest*
 if test $ac_cv_header_stdc = yes; then
   # SunOS 4.x string.h does not declare mem*, contrary to ANSI.
 cat > conftest.$ac_ext <<EOF
-#line 983 "configure"
+#line 995 "configure"
 #include "confdefs.h"
 #include <string.h>
 EOF
@@ -997,7 +1009,7 @@ fi
 if test $ac_cv_header_stdc = yes; then
   # ISC 2.0.2 stdlib.h does not declare free, contrary to ANSI.
 cat > conftest.$ac_ext <<EOF
-#line 1001 "configure"
+#line 1013 "configure"
 #include "confdefs.h"
 #include <stdlib.h>
 EOF
@@ -1018,7 +1030,7 @@ if test "$cross_compiling" = yes; then
   :
 else
   cat > conftest.$ac_ext <<EOF
-#line 1022 "configure"
+#line 1034 "configure"
 #include "confdefs.h"
 #include <ctype.h>
 #define ISLOWER(c) ('a' <= (c) && (c) <= 'z')
@@ -1029,7 +1041,7 @@ if (XOR (islower (i), ISLOWER (i)) || toupper (i) != TOUPPER (i)) exit(2);
 exit (0); }
 
 EOF
-if { (eval echo configure:1033: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest && (./conftest; exit) 2>/dev/null
+if { (eval echo configure:1045: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest && (./conftest; exit) 2>/dev/null
 then
   :
 else
@@ -1056,12 +1068,12 @@ fi
     for ac_func in memset
 do
 echo $ac_n "checking for $ac_func""... $ac_c" 1>&6
-echo "configure:1060: checking for $ac_func" >&5
+echo "configure:1072: checking for $ac_func" >&5
 if eval "test \"`echo '$''{'ac_cv_func_$ac_func'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 1065 "configure"
+#line 1077 "configure"
 #include "confdefs.h"
 /* System header to define __stub macros and hopefully few prototypes,
     which can conflict with char $ac_func(); below.  */
@@ -1084,7 +1096,7 @@ $ac_func();
 
 ; return 0; }
 EOF
-if { (eval echo configure:1088: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest; then
+if { (eval echo configure:1100: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest; then
   rm -rf conftest*
   eval "ac_cv_func_$ac_func=yes"
 else
@@ -1122,7 +1134,7 @@ fi
 #
 
 echo $ac_n "checking for the classes.zip or classes.jar file in $JAVA_DIR/lib""... $ac_c" 1>&6
-echo "configure:1126: checking for the classes.zip or classes.jar file in $JAVA_DIR/lib" >&5
+echo "configure:1138: checking for the classes.zip or classes.jar file in $JAVA_DIR/lib" >&5
 
 if test -f $JAVA_DIR/lib/classes.zip; then
     # JDK1.1.6 under Solaris and Windows
@@ -1150,12 +1162,12 @@ fi
 
 
 echo $ac_n "checking the java runtime""... $ac_c" 1>&6
-echo "configure:1154: checking the java runtime" >&5
+echo "configure:1166: checking the java runtime" >&5
 
 if env $JAVAC -d . $srcdir/Test.java ; then
     echo "$ac_t""the java compiler works" 1>&6
     echo $ac_n "checking the -native flag to the Java runtime""... $ac_c" 1>&6
-echo "configure:1159: checking the -native flag to the Java runtime" >&5
+echo "configure:1171: checking the -native flag to the Java runtime" >&5
     if env $JAVA -native Test ; then
         JAVA_FLAGS=-native
 	echo "$ac_t""the -native flag works" 1>&6
@@ -1261,6 +1273,7 @@ Make sure Tcl was configured with --enable-shared." 1>&2; exit 1; }
     
     
     
+    
 fi
 
 
@@ -1310,7 +1323,7 @@ if test $TCLJAVA = "tclblend" || test $BOTH = "true"; then
   # Extract the first word of "tclsh8.0", so it can be a program name with args.
 set dummy tclsh8.0; ac_word=$2
 echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
-echo "configure:1314: checking for $ac_word" >&5
+echo "configure:1327: checking for $ac_word" >&5
 if eval "test \"`echo '$''{'ac_cv_path_TCLSH_LOC'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
@@ -1352,7 +1365,7 @@ fi
       # Extract the first word of "tclsh", so it can be a program name with args.
 set dummy tclsh; ac_word=$2
 echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
-echo "configure:1356: checking for $ac_word" >&5
+echo "configure:1369: checking for $ac_word" >&5
 if eval "test \"`echo '$''{'ac_cv_path_TCLSH_LOC'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
@@ -1397,7 +1410,7 @@ fi
   # Extract the first word of "wish8.0", so it can be a program name with args.
 set dummy wish8.0; ac_word=$2
 echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
-echo "configure:1401: checking for $ac_word" >&5
+echo "configure:1414: checking for $ac_word" >&5
 if eval "test \"`echo '$''{'ac_cv_path_WISH_LOC'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
@@ -1439,7 +1452,7 @@ fi
       # Extract the first word of "wish", so it can be a program name with args.
 set dummy wish; ac_word=$2
 echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
-echo "configure:1443: checking for $ac_word" >&5
+echo "configure:1456: checking for $ac_word" >&5
 if eval "test \"`echo '$''{'ac_cv_path_WISH_LOC'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
@@ -1673,6 +1686,7 @@ s%@TCL_SRC_DIR@%$TCL_SRC_DIR%g
 s%@TCL_BIN_DIR@%$TCL_BIN_DIR%g
 s%@JAVA_ARCH_INCLUDE@%$JAVA_ARCH_INCLUDE%g
 s%@JAVA_ARCH_LIB@%$JAVA_ARCH_LIB%g
+s%@JAVA_ARCH_RUNTIME_LIBS@%$JAVA_ARCH_RUNTIME_LIBS%g
 s%@TCL_LD_SEARCH_FLAGS@%$TCL_LD_SEARCH_FLAGS%g
 s%@TCLSH_LOC@%$TCLSH_LOC%g
 s%@WISH_LOC@%$WISH_LOC%g
