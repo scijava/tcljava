@@ -1,6 +1,6 @@
 Recent user-visible changes to Jacl & Tcl Blend:
 
-RCS: @(#) $Id: changes.txt,v 1.8 1999/03/02 15:23:47 hylands Exp $
+RCS: @(#) $Id: changes.txt,v 1.9 1999/05/08 22:50:27 dejong Exp $
 
 ----------------- Released 1.0a1, 10/22/97 -----------------------
 
@@ -142,7 +142,6 @@ the tclblendtest.exec rule so --src-dir works when running tests. (BS)
 2/18/98 (bug fix) Made the Shell class public. (BS)
 
 ----------------- Released 1.0, 10/22/97 -----------------------
-Changes between TclBlend 1.0 and 1.0up1
 
 8/26/98 (bug fix)  Tcl8.1: Fixes for generic/javaInterp.c: In function
 `Java_tcl_lang_Interp_eval': generic/javaInterp.c:277: too few arguments to
@@ -152,7 +151,7 @@ this change it won't even compile.
 *** POTENTIAL INCOMPATIBILITY *** (CXH)
 
 8/26/98 (Unix Makefile change) Uncommented install rule. Now we create
-a hard link from jtclsh to jwish.  Added rules to build green.purify,
+a soft link from jtclsh to jwish.  Added rules to build green.purify,
 which is a Purified version of green. See
 http://ptolemy.eecs.berkeley.edu/~cxh/java/purify/index.html#PurifyJNITcl
 for details.  (CXH)
@@ -182,7 +181,7 @@ and FunSig-1.3  (CXH)
 
 8/26/98 (new feature) JavaGetEnv(): #ifdefd for use with JDK1.2
 JavaGetEnv(): Added tclblend_init Tcl #variable which can be used to under
-JDK1.2 to set flags in the JVM while it is #being initialized.  (CXH)
+JDK1.2 to set flags in the JVM while it is being initialized.  (CXH)
 
 8/26/98 (new feature)  Provide more information when doing a package require
 on the java package. If you set "tclblend_init" to "help" before doing the
@@ -214,27 +213,23 @@ to 1.0up2  (CXH)
 c:/Progra~1/Tcl/lib/tclblend1.0 Without this expansion we have problems loading
 tclblend.dll  (CXH))
 
+8/26/98 (new feature) Added tcl command "file nativename" to Jacl. (MD)
+
+8/26/98 (new feature) The java object representation has been changed (in
+ReflectObject.java) so that it holds the type of the object as well as the
+Object ref. Arrays also keep track of the types in the array. If old code
+did something that violates the JavaLangSpec then it could break.
+*** POTENTIAL INCOMPATIBILITY *** (MD)
+
 8/26/98 (new feature) New tcl command for Tcl Blend and Jacl:  java::cast.
 The command casts the type of object "s" to the class Object.  It does not
 change the type of the ref of "s" it simply makes a new reflected object with
 the Object type and the instance "s".  This command is just a tcl binding to
 the standard casting functionality in the Java language. (MD)
 
-8/26/98 (new feature) All objects are typed and arrays keep track of the types
-in the array.  If old code did something that violates the JavaLangSpec then
-it could break the users code.
-*** POTENTIAL INCOMPATIBILITY *** (MD)
-
-8/26/98 (new feature) Added tcl command "file nativename" to Jacl. (MD)
-
-8/26/98 (new feature) The java object representation has been changed (in
-ReflectObject.java) so that it holds the type of the object as well as the
-Object ref.
-*** POTENTIAL INCOMPATIBILITY *** (MD)
-
 8/26/98 (new feature) The Parser classes (Parser ParseAdaptor TclParse ...)
 were changed to remove allocation of CharPointer objects as well as TclToken
-objects.  The parser is now much faster and less memory hungry. (MD)
+objects. The parser is now much faster and less memory hungry. (MD)
 
 9/21/98 (renamed file) changes is now changes.txt (CXH)
 
@@ -255,13 +250,13 @@ version number from 1.1.1 to 1.1 and set java::PatchLevel to 1.1a1. (CXH)
 
 9/21/98 (error message) TclClassLoader.java: If we attempt to load
 a package that starts with tcl or java, we throw a security exception.
-Now we include a detail message that describes why.
+Now we include a detail message that describes why. (CXH)
 
 9/21/98 (error message) JavaLoadCmd.java: if we get a security exception,
 print the detail message. (CXH)
 
 9/21/98 (file reorganization) moved win/pkgIndex.tcl to
-src/pkgIndex.tcl.  Removed unix/pkgIndex.tcl. Modified makefiles. (CXH)
+src/pkgIndex.tcl. Removed unix/pkgIndex.tcl. Modified makefiles. (CXH)
 
 9/21/98 (file reorganization) makefile.vc no longer uses version numbers
 in directory above javalock.tcl (CXH) 
@@ -324,73 +319,6 @@ regular expression code so we can ship them. (MD)
 10/9/98 (configure) Properly handle configuring both Jacl and Tcl Blend
 at the same time. (MD)
 
-11/5/98 (man pages) Removed Unix style man pages, the html versions
-are more up to date. (MD)
 
------------------ Released 1.1a1, 11/13/98 -----------------------
+----------------- Released 1.1a1, 7/1/98 -----------------------
 
-11/15/98 (jacl in applet) jacl/tcl/lang/Interp.java, evalResource()):
-Catch SecurityException if getResourceAsStream() throws it.  This is
-likely to happen if we run Jacl from within an applet. (CXH)
-
-11/15/98 (configure) If the JDK_ARCH_LIB directory ends in
-'green_threads', then configure checks to see if there is an adjacent
-native_threads directory, prints a message if there is, and then exits
-with an error.
-We need not set TCL_SRC_DIR by running make topDirName, TCL_SRC_DIR
-is set in tclConfig.sh.  Running 'make topDirName' can sometimes
-generate text like 'make[4] . . .' so it should be avoided.  (CXH)
-
-11/15/98 (windows pkgindex change)
-Under Windows, if tclblend.dll can be found with an absolute path,
-then set pre_lib and use it.  JDK1.2 is more picky than JDK1.1 about
-finding .dlls. (CXH)
-
-11/16/98 (jwish)
-Under HPUX, call uname -s, not arch -s
-
-11/24/98 (misc. minor problems)
-* win/README and unix/README were accidentally no shipped with 1.1a1 (CXH)
-* doc/html/contents.htm: typo (MD)
-* doc/html/TclJava/java.htm: Beefed up info about tclblend_init (CXH)
-
-11/24/98 (unix Makefile.in, configure.in minor cleanups + Digital Unix)
-Minor cleanups for how we generate dist files.
-Added rules to copy README.* files into place.
-Renamed various zip and tar files so that the naming is more uniform.
-
-Changes for Digital Unix:  JDK1.1.4 under Digital Unix V4.0B is installed
-in /usr/bin, and we need to look in /usr/include/java and
-/usr/include/java/alpha. Substitute in $JAVA_INC_DIR instead of hardwiring
-in $(JAVA_DIR)/include. (CXH)
-
-1/7/99 (unix configure)
-Search for tcl8.0.4 instead of tcl8.0.3 (CXH) 
-
-1/7/99 (windows line separator)
-src/jacl/tcl/lang/Interp.java:
-Fix for properly handling \r \n under Windows.  This also fixes problems
-with multi-line commands.  Added new method translateLineSeparators(), which
-is called when we read in a file and when we eval a resource.
-Based on code from Christian Krone <krischan@sql.de>.  Also added
-test to test/jacl/Interp.java (CXH)
-
-1/7/99 (line numbers in jacl error messages)
-Line numbers in error messages were being lost in tcl.lang.Interp evalFile()
-  "A similar thing might be necessary in interp.eval, but since
-  interp.evalFile calls interp.eval, I am not yet sure how to prevent eval
-  from adding to errorInfo, if it was called by evalFile. Maybe a
-  protected and a public version of interp.eval is necessary."
-Harald Kirsch <kir@iitb.fhg.de>
-
-1/11/99 (jacl fix to expr)
-Under jacl, 'expr {""}' returns 0.0.  Under tclsh8.0, it returns the
-empty string.  Reported by 
-Jeffrey J. Biesiadecki <jeffrey.j.biesiadecki@jpl.nasa.gov> (MD)
-
------------------ Released 1.1, 1/14/99 -----------------------
-
-3/2/99 (tcljava reflection table bug fix)
-Test ReflectObject-3.1 was failing under JDK1.2 (MD)
-
------------------ Released 1.1.1, 3/2/99 -----------------------
