@@ -1727,7 +1727,7 @@ Make sure Tcl was configured with --enable-shared." >&2;}
     SHLIB_CFLAGS=$TCL_SHLIB_CFLAGS
 
     # We need to add stdcall aliases when building a dll
-    # under Win32 so that Java finds exported symbols
+    # under Win32 so that Java finds exported JNI symbols
     if test "$ac_cv_tcl_win32" = "yes"; then
         SHLIB_LD="$TCL_SHLIB_LD -mwindows -Wl,--add-stdcall-alias"
     else
@@ -4240,8 +4240,9 @@ echo "$as_me: error: Unable to locate directory for -ljvm" >&2;}
     echo Found $ac_java_jvm_dir/$F >&5
 
 
-                D=`dirname $ac_java_jvm_dir/$F`
-                ac_java_jvm_jni_lib_runtime_path=$ac_java_jvm_dir/jre/bin/classic
+                D1=$ac_java_jvm_dir/jre/bin
+                D2=$ac_java_jvm_dir/jre/bin/classic
+                ac_java_jvm_jni_lib_runtime_path="${D1}:${D2}"
                 ac_java_jvm_jni_lib_flags="$ac_java_jvm_dir/$F"
             fi
         fi
