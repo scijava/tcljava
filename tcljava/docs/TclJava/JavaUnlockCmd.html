@@ -22,16 +22,21 @@ Usage:
 
 <P>
 
-The <B>java::unlock</B> command removes a lock placed on <I>javaObj</I> by the
-<B>java::lock</B> command. Multiple locks are allowed on
-<I>javaObj</I>. The <B>java::unlock</B> removes one lock each
-time it is called. If the internal rep of the Tcl variable referenced by
-<I>javaObj</I> is zero after the lock is removed, the Java object will
+The <B>java::unlock</B> command removes a lock placed on
+<I>javaObj</I> by the <B>java::lock</B> command.
+Multiple locks are allowed on <I>javaObj</I>.
+The <B>java::unlock</B> removes one lock each
+time it is called.
+If the internal rep of the Tcl variable referenced by <I>javaObj</I>
+is zero after the lock is removed, the Java object will
 be garbage collected. If <I>javaObj</I> does not have an existing lock a
 Tcl error is generated.
 
+<P>
 
-
+If the <B>java::unlock</B> command is called with the string "all"
+as the argument, each object that had been locked with the 
+<B>java::lock</B> command will be unlocked.
 
 <P>
 
@@ -44,3 +49,4 @@ Tcl error is generated.
 
 </BODY>
 </HTML>
+
