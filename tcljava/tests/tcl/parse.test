@@ -7,12 +7,10 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: parse.test,v 1.1 1998/10/14 21:09:26 cvsadmin Exp $
+# RCS: @(#) $Id: parse.test,v 1.2 1999/05/10 02:53:50 dejong Exp $
 
 
 if {[string compare test [info procs test]] == 1} then {source defs}
-
-setupJavaPackage
 
 if {[info commands testparser] == {}} {
     puts "This application hasn't been compiled with the \"testparser\""
@@ -23,24 +21,31 @@ if {[info commands testparser] == {}} {
 test parse-1.1 {Tcl_ParseCommand procedure, computing string length} {tempNotJacl} {
     testparser [bytestring "foo\0 bar"] -1 foo 3
 } {- foo 1 simple foo 1 text foo 0 {}}
+
 test parse-1.2 {Tcl_ParseCommand procedure, computing string length} {
     testparser "foo bar" -1 foo 3
 } {- {foo bar} 2 simple foo 1 text foo 0 simple bar 1 text bar 0 {}}
+
 test parse-1.3 {Tcl_ParseCommand procedure, leading space} {
     testparser "  \n\t   foo" 0 foo 3
 } {- foo 1 simple foo 1 text foo 0 {}}
+
 test parse-1.4 {Tcl_ParseCommand procedure, leading space} {
     testparser "\f\r\vfoo" 0 foo 3
 } {- foo 1 simple foo 1 text foo 0 {}}
+
 test parse-1.5 {Tcl_ParseCommand procedure, backslash-newline in leading space} {
     testparser "  \\\n foo" 0 foo 3
 } {- foo 1 simple foo 1 text foo 0 {}}
+
 test parse-1.6 {Tcl_ParseCommand procedure, backslash-newline in leading space} {
     testparser {  \a foo} 0 foo 3
 } {- {\a foo} 2 word {\a} 1 backslash {\a} 0 simple foo 1 text foo 0 {}}
+
 test parse-1.7 {Tcl_ParseCommand procedure, missing continuation line in leading space} {
     testparser "   \\\n" 0 foo 3
 } {- {} 0 {}}
+
 test parse-1.8 {Tcl_ParseCommand procedure, eof in leading space} {
     testparser "      foo" 3 foo 3
 } {- {} 0 {   foo}}
@@ -49,17 +54,21 @@ test parse-2.1 {Tcl_ParseCommand procedure, comments} {
     testparser "# foo bar\n foo" 0 foo 3
 } {{# foo bar
 } foo 1 simple foo 1 text foo 0 {}}
+
 test parse-2.2 {Tcl_ParseCommand procedure, several comments} {
     testparser " # foo bar\n # another comment\n\n   foo" 0 foo 3
 } {{# foo bar
  # another comment
 } foo 1 simple foo 1 text foo 0 {}}
+
 test parse-2.3 {Tcl_ParseCommand procedure, backslash-newline in comments} {
     testparser " # foo bar\\\ncomment on continuation line\nfoo" 0 foo 3
 } {#\ foo\ bar\\\ncomment\ on\ continuation\ line\n foo 1 simple foo 1 text foo 0 {}}
+
 test parse-2.4 {Tcl_ParseCommand procedure, missing continuation line in comment} {
     testparser "#   \\\n" 0 foo 3
 } {#\ \ \ \\\n {} 0 {}}
+
 test parse-2.5 {Tcl_ParseCommand procedure, eof in comment} {
     testparser " # foo bar\nfoo" 8 foo 3
 } {{# foo b} {} 0 {ar
@@ -68,51 +77,66 @@ foo}}
 test parse-3.1 {Tcl_ParseCommand procedure, parsing words, skipping space} {
     testparser "foo  bar\t\tx" 0 foo 3
 } {- {foo  bar		x} 3 simple foo 1 text foo 0 simple bar 1 text bar 0 simple x 1 text x 0 {}}
+
 test parse-3.2 {Tcl_ParseCommand procedure, missing continuation line in leading space} {
     testparser "abc  \\\n" 0 foo 3
 } {- abc\ \ \\\n 1 simple abc 1 text abc 0 {}}
+
 test parse-3.3 {Tcl_ParseCommand procedure, parsing words, command ends in space} {
     testparser "foo  ;  bar x" 0 foo 3
 } {- {foo  ;} 1 simple foo 1 text foo 0 {  bar x}}
+
 test parse-3.4 {Tcl_ParseCommand procedure, parsing words, command ends in space} {
     testparser "foo       " 5 foo 3
 } {- {foo  } 1 simple foo 1 text foo 0 {     }}
+
 test parse-3.5 {Tcl_ParseCommand procedure, quoted words} {
     testparser {foo "a b c" d "efg";} 0 foo 3
 } {- {foo "a b c" d "efg";} 4 simple foo 1 text foo 0 simple {"a b c"} 1 text {a b c} 0 simple d 1 text d 0 simple {"efg"} 1 text efg 0 {}}
+
 test parse-3.6 {Tcl_ParseCommand procedure, quoted words} {
     list [catch {testparser {foo "a b c"d} 0 foo 3} msg] $msg $errorInfo
 } {1 {extra characters after close-quote} {extra characters after close-quote
     (remainder of script: "d")
     invoked from within
 "testparser {foo "a b c"d} 0 foo 3"}}
+
 test parse-3.7 {Tcl_ParseCommand procedure, words in braces} {
     testparser {foo {a $b [concat foo]} {c d}} 0 foo 3
 } {- {foo {a $b [concat foo]} {c d}} 3 simple foo 1 text foo 0 simple {{a $b [concat foo]}} 1 text {a $b [concat foo]} 0 simple {{c d}} 1 text {c d} 0 {}}
+
 test parse-3.8 {Tcl_ParseCommand procedure, nested braces} {
     testparser {foo {{}}} 0 foo 3
 } {- {foo {{}}} 2 simple foo 1 text foo 0 simple {{{}}} 1 text {{}} 0 {}}
+
 test parse-3.9 {Tcl_ParseCommand procedure, nested braces} {
     testparser {foo {{a {b} c} {} {d e}}} 0 foo 3
 } {- {foo {{a {b} c} {} {d e}}} 2 simple foo 1 text foo 0 simple {{{a {b} c} {} {d e}}} 1 text {{a {b} c} {} {d e}} 0 {}}
+
 test parse-3.10 {Tcl_ParseCommand procedure, backslashes in words in braces} {
     testparser "foo {a \\n\\\{}" 0 foo 3
 } {- {foo {a \n\{}} 2 simple foo 1 text foo 0 simple {{a \n\{}} 1 text {a \n\{} 0 {}}
+
 test parse-3.11 {Tcl_ParseCommand procedure, missing continuation line in braces} {
     list [catch {testparser "\{abc\\\n" 0 foo 3} msg] $msg $errorInfo
 } {1 {missing close-brace} missing\ close-brace\n\ \ \ \ (remainder\ of\ script:\ \"\{abc\\\n\")\n\ \ \ \ invoked\ from\ within\n\"testparser\ \"\\\{abc\\\\\\n\"\ 0\ foo\ 3\"}
+
 test parse-3.12 {Tcl_ParseCommand procedure, backslash-newline in word in braces} {
     testparser "foo {\\\nx}" 0 foo 3
 } {- foo\ \{\\\nx\} 2 simple foo 1 text foo 0 word \{\\\nx\} 2 backslash \\\n 0 text x 0 {}}
+
 test parse-3.13 {Tcl_ParseCommand procedure, backslash-newline in word in braces} {
     testparser "foo {a \\\n   b}" 0 foo 3
 } {- foo\ \{a\ \\\n\ \ \ b\} 2 simple foo 1 text foo 0 word \{a\ \\\n\ \ \ b\} 3 text {a } 0 backslash \\\n\ \ \  0 text b 0 {}}
+
 test parse-3.14 {Tcl_ParseCommand procedure, backslash-newline in word in braces} {
     testparser "foo {xyz\\\n }" 0 foo 3
 } {- foo\ \{xyz\\\n\ \} 2 simple foo 1 text foo 0 word \{xyz\\\n\ \} 2 text xyz 0 backslash \\\n\  0 {}}
+
 test parse-3.15 {Tcl_ParseCommand procedure, missing close brace} {
     list [catch {testparser "foo \{xy\\\nz" 0 foo 3} msg] $msg $errorInfo
 } {1 {missing close-brace} missing\ close-brace\n\ \ \ \ (remainder\ of\ script:\ \"\{xy\\\nz\")\n\ \ \ \ invoked\ from\ within\n\"testparser\ \"foo\ \\\{xy\\\\\\nz\"\ 0\ foo\ 3\"}
+
 test parse-3.16 {Tcl_ParseCommand procedure, error in unquoted word} {
     list [catch {testparser "foo \$\{abc" 0 foo 3} msg] $msg $errorInfo
 } {1 {missing close-brace for variable name} missing\ close-brace\ for\ variable\ name\n\ \ \ \ (remainder\ of\ script:\ \"\{abc\")\n\ \ \ \ invoked\ from\ within\n\"testparser\ \"foo\ \\\$\\\{abc\"\ 0\ foo\ 3\"}
@@ -120,18 +144,23 @@ test parse-3.16 {Tcl_ParseCommand procedure, error in unquoted word} {
 test parse-4.1 {Tcl_ParseCommand procedure, simple words} {
     testparser {foo} 0 foo 3
 } {- foo 1 simple foo 1 text foo 0 {}}
+
 test parse-4.2 {Tcl_ParseCommand procedure, simple words} {
     testparser {{abc}} 0 foo 3
 } {- {{abc}} 1 simple {{abc}} 1 text abc 0 {}}
+
 test parse-4.3 {Tcl_ParseCommand procedure, simple words} {
     testparser {"c d"} 0 foo 3
 } {- {"c d"} 1 simple {"c d"} 1 text {c d} 0 {}}
+
 test parse-4.4 {Tcl_ParseCommand procedure, simple words} {
     testparser {x$d} 0 foo 3
 } {- {x$d} 1 word {x$d} 3 text x 0 variable {$d} 1 text d 0 {}}
+
 test parse-4.5 {Tcl_ParseCommand procedure, simple words} {
     testparser {"a [foo] b"} 0 foo 3
 } {- {"a [foo] b"} 1 word {"a [foo] b"} 3 text {a } 0 command {[foo]} 0 text { b} 0 {}}
+
 test parse-4.6 {Tcl_ParseCommand procedure, simple words} {
     testparser {$x} 0 foo 3
 } {- {$x} 1 word {$x} 2 variable {$x} 1 text x 0 {}}
@@ -139,19 +168,24 @@ test parse-4.6 {Tcl_ParseCommand procedure, simple words} {
 test parse-5.1 {Tcl_ParseCommand procedure, backslash-newline terminates word} {
     testparser "{abc}\\\n" 0 foo 3
 } {- \{abc\}\\\n 1 simple {{abc}} 1 text abc 0 {}}
+
 test parse-5.2 {Tcl_ParseCommand procedure, backslash-newline terminates word} {
     testparser "foo\\\nbar" 0 foo 3
 } {- foo\\\nbar 2 simple foo 1 text foo 0 simple bar 1 text bar 0 {}}
+
 test parse-5.3 {Tcl_ParseCommand procedure, word terminator is command terminator} {
     testparser "foo\n bar" 0 foo 3
 } {- {foo
 } 1 simple foo 1 text foo 0 { bar}}
+
 test parse-5.4 {Tcl_ParseCommand procedure, word terminator is command terminator} {
     testparser "foo; bar" 0 foo 3
 } {- {foo;} 1 simple foo 1 text foo 0 { bar}}
+
 test parse-5.5 {Tcl_ParseCommand procedure, word terminator is end of string} {
     testparser "\"foo\" bar" 5 foo 3
 } {- {"foo"} 1 simple {"foo"} 1 text foo 0 { bar}}
+
 test parse-5.6 {Tcl_ParseCommand procedure, junk after close quote} {
     list [catch {testparser {foo "bar"x} 0 foo 3} msg] $msg $errorInfo
 } {1 {extra characters after close-quote} {extra characters after close-quote
@@ -161,12 +195,14 @@ test parse-5.6 {Tcl_ParseCommand procedure, junk after close quote} {
 test parse-5.7 {Tcl_ParseCommand procedure, backslash-newline after close quote} {
     testparser "foo \"bar\"\\\nx" 0 foo 3
 } {- foo\ \"bar\"\\\nx 3 simple foo 1 text foo 0 simple {"bar"} 1 text bar 0 simple x 1 text x 0 {}}
+
 test parse-5.8 {Tcl_ParseCommand procedure, junk after close brace} {
     list [catch {testparser {foo {bar}x} 0 foo 3} msg] $msg $errorInfo
 } {1 {extra characters after close-brace} {extra characters after close-brace
     (remainder of script: "x")
     invoked from within
 "testparser {foo {bar}x} 0 foo 3"}}
+
 test parse-5.9 {Tcl_ParseCommand procedure, backslash-newline after close brace} {
     testparser "foo {bar}\\\nx" 0 foo 3
 } {- foo\ \{bar\}\\\nx 3 simple foo 1 text foo 0 simple {{bar}} 1 text bar 0 simple x 1 text x 0 {}}
@@ -174,38 +210,48 @@ test parse-5.9 {Tcl_ParseCommand procedure, backslash-newline after close brace}
 test parse-6.1 {ParseTokens procedure, empty word} {
     testparser {""} 0 foo 3
 } {- {""} 1 simple {""} 1 text {} 0 {}}
+
 test parse-6.2 {ParseTokens procedure, simple range} {
     testparser {"abc$x.e"} 0 foo 3
 } {- {"abc$x.e"} 1 word {"abc$x.e"} 4 text abc 0 variable {$x} 1 text x 0 text .e 0 {}}
+
 test parse-6.3 {ParseTokens procedure, variable reference} {
     testparser {abc$x.e $y(z)} 0 foo 3
 } {- {abc$x.e $y(z)} 2 word {abc$x.e} 4 text abc 0 variable {$x} 1 text x 0 text .e 0 word {$y(z)} 3 variable {$y(z)} 2 text y 0 text z 0 {}}
+
 test parse-6.4 {ParseTokens procedure, variable reference} {
     list [catch {testparser {$x([a )} 0 foo 3} msg] $msg
 } {1 {missing close-bracket}}
+
 test parse-6.5 {ParseTokens procedure, command substitution} {
     testparser {[foo $x bar]z} 0 foo 3
 } {- {[foo $x bar]z} 1 word {[foo $x bar]z} 2 command {[foo $x bar]} 0 text z 0 {}}
+
 test parse-6.6 {ParseTokens procedure, command substitution} {
     testparser {[foo \] [a b]]} 0 foo 3
 } {- {[foo \] [a b]]} 1 word {[foo \] [a b]]} 1 command {[foo \] [a b]]} 0 {}}
+
 test parse-6.7 {ParseTokens procedure, error in command substitution} {
     list [catch {testparser {a [b {}c d] e} 0 foo 3} msg] $msg $errorInfo
 } {1 {extra characters after close-brace} {extra characters after close-brace
     (remainder of script: "c d] e")
     invoked from within
 "testparser {a [b {}c d] e} 0 foo 3"}}
+
 test parse-6.8 {ParseTokens procedure, error in command substitution} {
     info complete {a [b {}c d]}
 } {1}
+
 test parse-6.9 {ParseTokens procedure, error in command substitution} {
     info complete {a [b "c d}
 } {0}
+
 test parse-6.10 {ParseTokens procedure, incomplete sub-command} {
     info complete {puts [
 	expr 1+1
 	#this is a comment ]}
 } {0}
+
 test parse-6.11 {ParseTokens procedure, memory allocation for big nested command} {
     testparser {[$a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b)]} 0 foo 3
 } {- {[$a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b)]} 1 word {[$a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b)]} 1 command {[$a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b)]} 0 {}}
@@ -215,18 +261,23 @@ test parse-6.12 {ParseTokens procedure, missing close bracket} {
     (remainder of script: "[foo $x bar")
     invoked from within
 "testparser {[foo $x bar} 0 foo 3"}}
+
 test parse-6.13 {ParseTokens procedure, backslash-newline without continuation line} {
     list [catch {testparser "\"a b\\\n" 0 foo 3} msg] $msg $errorInfo
 } {1 {missing "} missing\ \"\n\ \ \ \ (remainder\ of\ script:\ \"\"a\ b\\\n\")\n\ \ \ \ invoked\ from\ within\n\"testparser\ \"\\\"a\ b\\\\\\n\"\ 0\ foo\ 3\"}
+
 test parse-6.14 {ParseTokens procedure, backslash-newline} {
     testparser "b\\\nc" 0 foo 3
 } {- b\\\nc 2 simple b 1 text b 0 simple c 1 text c 0 {}}
+
 test parse-6.15 {ParseTokens procedure, backslash-newline} {
     testparser "\"b\\\nc\"" 0 foo 3
 } {- \"b\\\nc\" 1 word \"b\\\nc\" 3 text b 0 backslash \\\n 0 text c 0 {}}
+
 test parse-6.16 {ParseTokens procedure, backslash substitution} {
     testparser {\n\a\x7f} 0 foo 3
 } {- {\n\a\x7f} 1 word {\n\a\x7f} 3 backslash {\n} 0 backslash {\a} 0 backslash {\x7f} 0 {}}
+
 test parse-6.17 {ParseTokens procedure, null characters} {tempNotJacl} {
     testparser [bytestring "foo\0zz"] 0 foo 3
 } {- [bytestring foo\0zz] 1 word [bytestring foo\0zz] 3 text foo 0 text [bytestring \0] 0 text zz 0 {}}
@@ -238,12 +289,14 @@ test parse-7.1 {Tcl_FreeParse and ExpandTokenArray procedures} {
 test parse-8.1 {Tcl_EvalObjv procedure} {
     testevalobjv "test command" 20 0 concat this is a test
 } {this is a test}
+
 test parse-8.2 {Tcl_EvalObjv procedure, unknown commands} {
     rename unknown unknown.old
     set x [catch {testevalobjv "test command" 0 10 asdf poiu} msg]
     rename unknown.old unknown
     list $x $msg
 } {1 {invalid command name "asdf"}}
+
 test parse-8.3 {Tcl_EvalObjv procedure, unknown commands} {
     rename unknown unknown.old
     proc unknown args {
@@ -254,6 +307,7 @@ test parse-8.3 {Tcl_EvalObjv procedure, unknown commands} {
     rename unknown.old unknown
     list $x $msg
 } {0 {unknown asdf poiu}}
+
 test parse-8.4 {Tcl_EvalObjv procedure, unknown commands} {
     rename unknown unknown.old
     proc unknown args {
@@ -264,12 +318,14 @@ test parse-8.4 {Tcl_EvalObjv procedure, unknown commands} {
     rename unknown.old unknown
     list $x $msg
 } {1 {I don't like that command}}
+
 test parse-8.5 {Tcl_EvalObjv procedure, command traces} {tempNotJacl} {
     testcmdtrace tracetest {testevalobjv "test command" 10 0 set x 123}
 } {{testevalobjv "test command" 10 0 set x 123} {testevalobjv {test command} 10 0 set x 123} {test comma} {set x 123}}
 test parse-8.6 {Tcl_EvalObjv procedure, command traces} {tempNotJacl} {
     testcmdtrace tracetest {testevalobjv "" 0 0 set x 123}
 } {{testevalobjv "" 0 0 set x 123} {testevalobjv {} 0 0 set x 123} {} {set x 123}}
+
 test parse-8.7 {Tcl_EvalObjv procedure, TCL_EVAL_GLOBAL flag} {
     proc x {} {
 	set y 23
@@ -280,6 +336,7 @@ test parse-8.7 {Tcl_EvalObjv procedure, TCL_EVAL_GLOBAL flag} {
     set y 16
     x
 } {16 23}
+
 test parse-8.8 {Tcl_EvalObjv procedure, async handlers} {tempNotJacl} {
     proc async1 {result code} {
 	global aresult acode
@@ -294,6 +351,7 @@ test parse-8.8 {Tcl_EvalObjv procedure, async handlers} {tempNotJacl} {
     testasync delete
     set x
 } {0 {new result} 0 original}
+
 test parse-8.9 {Tcl_EvalObjv procedure, exceptional return} {
     list [catch {testevalobjv "test command" 10 0 error message} msg] $msg
 } {1 message}
@@ -324,6 +382,7 @@ test parse-9.1 {Tcl_LogCommandInfo, line numbers} {
 	# asdf
 	set x
     }}"}}
+
 test parse-9.2 {Tcl_LogCommandInfo, truncating long commands} {
     list [testeval2 {catch {set a b 111111111 222222222 333333333 444444444 555555555 666666666 777777777 888888888 999999999 000000000 aaaaaaaaa bbbbbbbbb ccccccccc ddddddddd eeeeeeeee fffffffff ggggggggg}}] $errorInfo
 } {1 {wrong # args: should be "set varName ?newValue?"
@@ -333,52 +392,65 @@ test parse-9.2 {Tcl_LogCommandInfo, truncating long commands} {
 test parse-10.1 {Tcl_EvalTokens, simple text} {
     testeval2 {concat test}
 } {test}
+
 test parse-10.2 {Tcl_EvalTokens, backslash sequences} {
     testeval2 {concat test\063\062test}
 } {test32test}
+
 test parse-10.3 {Tcl_EvalTokens, nested commands} {
     testeval2 {concat [expr 2 + 6]}
 } {8}
+
 test parse-10.4 {Tcl_EvalTokens, nested commands} {
     catch {unset a}
     list [catch {testeval2 {concat xxx[expr $a]}} msg] $msg
 } {1 {can't read "a": no such variable}}
+
 test parse-10.5 {Tcl_EvalTokens, simple variables} {
     set a hello
     testeval2 {concat $a}
 } {hello}
+
 test parse-10.6 {Tcl_EvalTokens, array variables} {
     catch {unset a}
     set a(12) 46
     testeval2 {concat $a(12)}
 } {46}
+
 test parse-10.7 {Tcl_EvalTokens, array variables} {
     catch {unset a}
     set a(12) 46
     testeval2 {concat $a(1[expr 3 - 1])}
 } {46}
+
 test parse-10.8 {Tcl_EvalTokens, array variables} {
     catch {unset a}
     list [catch {testeval2 {concat $x($a)}} msg] $msg
 } {1 {can't read "a": no such variable}}
+
 test parse-10.9 {Tcl_EvalTokens, array variables} {
     catch {unset a}
     list [catch {testeval2 {concat xyz$a(1)}} msg] $msg
 } {1 {can't read "a(1)": no such variable}}
+
 test parse-10.10 {Tcl_EvalTokens, object values} {
     set a 123
     testeval2 {concat $a}
 } {123}
+
 test parse-10.11 {Tcl_EvalTokens, object values} {
     set a 123
     testeval2 {concat $a$a$a}
 } {123123123}
+
 test parse-10.12 {Tcl_EvalTokens, object values} {
     testeval2 {concat [expr 2][expr 4][expr 6]}
 } {246}
+
 test parse-10.13 {Tcl_EvalTokens, string values} {
     testeval2 {concat {a" b"}}
 } {a" b"}
+
 test parse-10.14 {Tcl_EvalTokens, string values} {
     set a 111
     testeval2 {concat x$a.$a.$a}
@@ -394,42 +466,53 @@ test parse-11.1 {Tcl_Eval2, TCL_EVAL_GLOBAL flag} {
     set y 321
     x
 } {321 777}
+
 test parse-11.2 {Tcl_Eval2, error while parsing} {
     list [catch {testeval2 {concat "abc}} msg] $msg
 } {1 {missing "}}
+
 test parse-11.3 {Tcl_Eval2, error while collecting words} {
     catch {unset a}
     list [catch {testeval2 {concat xyz $a}} msg] $msg
 } {1 {can't read "a": no such variable}}
+
 test parse-11.4 {Tcl_Eval2, error in Tcl_EvalObjv call} {
     catch {unset a}
     list [catch {testeval2 {_bogus_ a b c d}} msg] $msg
 } {1 {invalid command name "_bogus_"}}
+
 test parse-11.5 {Tcl_Eval2, exceptional return} {
     list [catch {testeval2 {break}} msg] $msg
 } {3 {}}
+
 test parse-11.6 {Tcl_Eval2, freeing memory} {
     testeval2 {concat a b c d e f g h i j k l m n o p q r s t u v w x y z}
 } {a b c d e f g h i j k l m n o p q r s t u v w x y z}
+
 test parse-11.7 {Tcl_Eval2, multiple commands in script} {
     list [testeval2 {set a b; set c d}] $a $c
 } {d b d}
+
 test parse-11.8 {Tcl_Eval2, multiple commands in script} {
     list [testeval2 {
 	set a b
 	set c d
     }] $a $c
 } {d b d}
+
 test parse-11.9 {Tcl_Eval2, freeing memory after error} {
     catch {unset a}
     list [catch {testeval2 {concat a b c d e f g h i j k l m n o p q r s t u v w x y z $a}} msg] $msg
 } {1 {can't read "a": no such variable}}
+
 test parse-11.10 {Tcl_EvalTokens, empty commands} {
     testeval2 {concat xyz;   }
 } {xyz}
+
 test parse-11.11 {Tcl_EvalTokens, empty commands} {
     testeval2 "concat abc; ; # this is a comment\n"
 } {abc}
+
 test parse-11.12 {Tcl_EvalTokens, empty commands} {
     testeval2 {}
 } {}
@@ -437,81 +520,105 @@ test parse-11.12 {Tcl_EvalTokens, empty commands} {
 test parse-12.1 {Tcl_ParseVarName procedure, initialization} {
     list [catch {testparsevarname {$a([first second])} 8 0} msg] $msg
 } {1 {missing close-bracket}}
+
 test parse-12.2 {Tcl_ParseVarName procedure, initialization} {
     testparsevarname {$a([first second])} 0 0
 } {- {} 0 variable {$a([first second])} 2 text a 0 command {[first second]} 0 {}}
+
 test parse-12.3 {Tcl_ParseVarName procedure, initialization} {
     list [catch {testparsevarname {$abcd} 3 0} msg] $msg
 } {0 {- {} 0 variable {$ab} 1 text ab 0 cd}}
+
 test parse-12.4 {Tcl_ParseVarName procedure, initialization} {
     testparsevarname {$abcd} 0 0
 } {- {} 0 variable {$abcd} 1 text abcd 0 {}}
+
 test parse-12.5 {Tcl_ParseVarName procedure, just a dollar sign} {
     testparsevarname {$abcd} 1 0
 } {- {} 0 text {$} 0 abcd}
+
 test parse-12.6 {Tcl_ParseVarName procedure, braced variable name} {
     testparser {${..[]b}cd} 0 foo 3
 } {- {${..[]b}cd} 1 word {${..[]b}cd} 3 variable {${..[]b}} 1 text {..[]b} 0 text cd 0 {}}
+
 test parse-12.7 {Tcl_ParseVarName procedure, braced variable name} {
     testparser "\$\{\{\} " 0 foo 3
 } {- \$\{\{\}\  1 word \$\{\{\} 2 variable \$\{\{\} 1 text \{ 0 {}}
+
 test parse-12.8 {Tcl_ParseVarName procedure, missing close brace} {
     list [catch {testparser "$\{abc" 0 foo 3} msg] $msg $errorInfo
 } {1 {missing close-brace for variable name} missing\ close-brace\ for\ variable\ name\n\ \ \ \ (remainder\ of\ script:\ \"\{abc\")\n\ \ \ \ invoked\ from\ within\n\"testparser\ \"\$\\\{abc\"\ 0\ foo\ 3\"}
+
 test parse-12.9 {Tcl_ParseVarName procedure, missing close brace} {
     list [catch {testparsevarname {${bcd}} 4 0} msg] $msg
 } {1 {missing close-brace for variable name}}
+
 test parse-12.10 {Tcl_ParseVarName procedure, missing close brace} {
     list [catch {testparsevarname {${bc}} 4 0} msg] $msg
 } {1 {missing close-brace for variable name}}
+
 test parse-12.11 {Tcl_ParseVarName procedure, simple variable name} {
     testparser {$az_AZ.} 0 foo 3
 } {- {$az_AZ.} 1 word {$az_AZ.} 3 variable {$az_AZ} 1 text az_AZ 0 text . 0 {}}
+
 test parse-12.12 {Tcl_ParseVarName procedure, simple variable name} {
     testparser {$abcdefg} 4 foo 3
 } {- {$abc} 1 word {$abc} 2 variable {$abc} 1 text abc 0 defg}
+
 test parse-12.13 {Tcl_ParseVarName procedure, simple variable name with ::} {
     testparser {$xyz::ab:c} 0 foo 3
 } {- {$xyz::ab:c} 1 word {$xyz::ab:c} 3 variable {$xyz::ab} 1 text xyz::ab 0 text :c 0 {}}
+
 test parse-12.14 {Tcl_ParseVarName procedure, variable names with many colons} {
     testparser {$xyz:::::c} 0 foo 3
 } {- {$xyz:::::c} 1 word {$xyz:::::c} 2 variable {$xyz:::::c} 1 text xyz:::::c 0 {}}
+
 test parse-12.15 {Tcl_ParseVarName procedure, : vs. ::} {
     testparsevarname {$ab:cd} 0 0
 } {- {} 0 variable {$ab} 1 text ab 0 :cd}
+
 test parse-12.16 {Tcl_ParseVarName procedure, eof in ::} {
     testparsevarname {$ab::cd} 4 0
 } {- {} 0 variable {$ab} 1 text ab 0 ::cd}
+
 test parse-12.17 {Tcl_ParseVarName procedure, eof in ::} {
     testparsevarname {$ab:::cd} 5 0
 } {- {} 0 variable {$ab::} 1 text ab:: 0 :cd}
+
 test parse-12.18 {Tcl_ParseVarName procedure, no variable name} {
     testparser {$$ $.} 0 foo 3
 } {- {$$ $.} 2 word {$$} 2 text {$} 0 text {$} 0 word {$.} 2 text {$} 0 text . 0 {}}
+
 test parse-12.19 {Tcl_ParseVarName procedure, EOF before (} {
     testparsevarname {$ab(cd)} 3 0
 } {- {} 0 variable {$ab} 1 text ab 0 (cd)}
+
 test parse-12.20 {Tcl_ParseVarName procedure, array reference} {
     testparser {$x(abc)} 0 foo 3
 } {- {$x(abc)} 1 word {$x(abc)} 3 variable {$x(abc)} 2 text x 0 text abc 0 {}}
+
 test parse-12.21 {Tcl_ParseVarName procedure, array reference} {
     testparser {$x(ab$cde[foo bar])} 0 foo 3
 } {- {$x(ab$cde[foo bar])} 1 word {$x(ab$cde[foo bar])} 6 variable {$x(ab$cde[foo bar])} 5 text x 0 text ab 0 variable {$cde} 1 text cde 0 command {[foo bar]} 0 {}}
+
 test parse-12.22 {Tcl_ParseVarName procedure, array reference} {
     testparser {$x([cmd arg]zz)} 0 foo 3
 } {- {$x([cmd arg]zz)} 1 word {$x([cmd arg]zz)} 4 variable {$x([cmd arg]zz)} 3 text x 0 command {[cmd arg]} 0 text zz 0 {}}
+
 test parse-12.23 {Tcl_ParseVarName procedure, missing close paren in array reference} {
     list [catch {testparser {$x(poiu} 0 foo 3} msg] $msg $errorInfo
 } {1 {missing )} {missing )
     (remainder of script: "(poiu")
     invoked from within
 "testparser {$x(poiu} 0 foo 3"}}
+
 test parse-12.24 {Tcl_ParseVarName procedure, missing close paren in array reference} {
     list [catch {testparsevarname {$ab(cd)} 6 0} msg] $msg $errorInfo
 } {1 {missing )} {missing )
     (remainder of script: "(cd)")
     invoked from within
 "testparsevarname {$ab(cd)} 6 0"}}
+
 test parse-12.25 {Tcl_ParseVarName procedure, nested array reference} {
     testparser {$x(a$y(b$z))} 0 foo 3
 } {- {$x(a$y(b$z))} 1 word {$x(a$y(b$z))} 8 variable {$x(a$y(b$z))} 7 text x 0 text a 0 variable {$y(b$z)} 4 text y 0 text b 0 variable {$z} 1 text z 0 {}}
@@ -520,16 +627,20 @@ test parse-13.1 {Tcl_ParseVar procedure} {
     set abc 24
     testparsevar {$abc.fg}
 } {24 .fg}
+
 test parse-13.2 {Tcl_ParseVar procedure, no variable name} {
     testparsevar {$}
 } {{$} {}}
+
 test parse-13.3 {Tcl_ParseVar procedure, no variable name} {
     testparsevar {$.123}
 } {{$} .123}
+
 test parse-13.4 {Tcl_ParseVar procedure, error looking up variable} {
     catch {unset abc}
     list [catch {testparsevar {$abc}} msg] $msg
 } {1 {can't read "abc": no such variable}}
+
 test parse-13.5 {Tcl_ParseVar procedure, error looking up variable} {
     catch {unset abc}
     list [catch {testparsevar {$abc([bogus x y z])}} msg] $msg
@@ -538,144 +649,191 @@ test parse-13.5 {Tcl_ParseVar procedure, error looking up variable} {
 test parse-14.1 {CommandComplete procedure} {
     info complete ""
 } 1
+
 test parse-14.2 {CommandComplete procedure} {
     info complete "  \n"
 } 1
+
 test parse-14.3 {CommandComplete procedure} {
     info complete "abc def"
 } 1
+
 test parse-14.4 {CommandComplete procedure} {
     info complete "a b c d e f \t\n"
 } 1
+
 test parse-14.5 {CommandComplete procedure} {
     info complete {a b c"d}
 } 1
+
 test parse-14.6 {CommandComplete procedure} {
     info complete {a b "c d" e}
 } 1
+
 test parse-14.7 {CommandComplete procedure} {
     info complete {a b "c d"}
 } 1
+
 test parse-14.8 {CommandComplete procedure} {
     info complete {a b "c d"}
 } 1
+
 test parse-14.9 {CommandComplete procedure} {
     info complete {a b "c d}
 } 0
+
 test parse-14.10 {CommandComplete procedure} {
     info complete {a b "}
 } 0
+
 test parse-14.11 {CommandComplete procedure} {
     info complete {a b "cd"xyz}
 } 1
+
 test parse-14.12 {CommandComplete procedure} {
     info complete {a b "c $d() d"}
 } 1
+
 test parse-14.13 {CommandComplete procedure} {
     info complete {a b "c $dd("}
 } 0
+
 test parse-14.14 {CommandComplete procedure} {
     info complete {a b "c \"}
 } 0
+
 test parse-14.15 {CommandComplete procedure} {
     info complete {a b "c [d e f]"}
 } 1
+
 test parse-14.16 {CommandComplete procedure} {
     info complete {a b "c [d e f] g"}
 } 1
+
 test parse-14.17 {CommandComplete procedure} {
     info complete {a b "c [d e f"}
 } 0
+
 test parse-14.18 {CommandComplete procedure} {
     info complete {a {b c d} e}
 } 1
+
 test parse-14.19 {CommandComplete procedure} {
     info complete {a {b c d}}
 } 1
+
 test parse-14.20 {CommandComplete procedure} {
     info complete "a b\{c d"
 } 1
+
 test parse-14.21 {CommandComplete procedure} {
     info complete "a b \{c"
 } 0
+
 test parse-14.22 {CommandComplete procedure} {
     info complete "a b \{c{ }"
 } 0
+
 test parse-14.23 {CommandComplete procedure} {
     info complete "a b {c d e}xxx"
 } 1
+
 test parse-14.24 {CommandComplete procedure} {
     info complete "a b {c \\\{d e}xxx"
 } 1
+
 test parse-14.25 {CommandComplete procedure} {
     info complete {a b [ab cd ef]}
 } 1
+
 test parse-14.26 {CommandComplete procedure} {
     info complete {a b x[ab][cd][ef] gh}
 } 1
+
 test parse-14.27 {CommandComplete procedure} {
     info complete {a b x[ab][cd[ef] gh}
 } 0
+
 test parse-14.28 {CommandComplete procedure} {
     info complete {a b x[ gh}
 } 0
+
 test parse-14.29 {CommandComplete procedure} {
     info complete {[]]]}
 } 1
+
 test parse-14.30 {CommandComplete procedure} {
     info complete {abc x$yyy}
 } 1
+
 test parse-14.31 {CommandComplete procedure} {
     info complete "abc x\${abc\[\\d} xyz"
 } 1
+
 test parse-14.32 {CommandComplete procedure} {
     info complete "abc x\$\{ xyz"
 } 0
+
 test parse-14.33 {CommandComplete procedure} {
     info complete {word $a(xyz)}
 } 1
+
 test parse-14.34 {CommandComplete procedure} {
     info complete {word $a(}
 } 0
+
 test parse-14.35 {CommandComplete procedure} {
     info complete "set a \\\n"
 } 0
+
 test parse-14.36 {CommandComplete procedure} {
     info complete "set a \\\\\n"
 } 1
+
 test parse-14.37 {CommandComplete procedure} {
     info complete "set a \\n "
 } 1
+
 test parse-14.38 {CommandComplete procedure} {
     info complete "set a \\"
 } 1
+
 test parse-14.39 {CommandComplete procedure} {
     info complete "foo \\\n\{"
 } 0
+
 test parse-14.40 {CommandComplete procedure} {
     info complete "a\nb\n# \{\n# \{\nc\n"
 } 1
+
 test parse-14.41 {CommandComplete procedure} {
     info complete "#Incomplete comment\\\n"
 } 0
+
 test parse-14.42 {CommandComplete procedure} {
     info complete "#Incomplete comment\\\nBut now it's complete.\n"
 } 1
+
 test parse-14.43 {CommandComplete procedure} {
     info complete "# Complete comment\\\\\n"
 } 1
+
 test parse-14.44 {CommandComplete procedure} {
     info complete "abc\\\n def"
 } 1
+
 test parse-14.45 {CommandComplete procedure} {
     info complete "abc\\\n "
 } 1
+
 test parse-14.46 {CommandComplete procedure} {
     info complete "abc\\\n"
 } 0
+
 test parse-14.47 {CommandComplete procedure} {
     info complete "\{abc\}\{"
 } 1
+
 test parse-14.48 {CommandComplete procedure} {
     info complete "\"abc\"("
 } 1
