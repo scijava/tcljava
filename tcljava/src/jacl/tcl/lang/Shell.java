@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Shell.java,v 1.10 2001/11/18 06:29:37 mdejong Exp $
+ * RCS: @(#) $Id: Shell.java,v 1.11 2002/04/12 21:00:27 mdejong Exp $
  */
 
 package tcl.lang;
@@ -381,7 +381,7 @@ public synchronized void run() {
 		    }
 		    if (prompt != null) {
 			try {
-			    interp.eval(prompt.toString(), TCL.GLOBAL_ONLY);
+			    interp.eval(prompt.toString(), TCL.EVAL_GLOBAL);
 			} catch (TclException e) {
 			    put(out, "% ");
 			}
@@ -408,7 +408,7 @@ public synchronized void run() {
 		    }
 		    if (prompt != null) {
 			try {
-			    interp.eval(prompt.toString(), TCL.GLOBAL_ONLY);
+			    interp.eval(prompt.toString(), TCL.EVAL_GLOBAL);
 			} catch (TclException e) {
 			    put(out, "");
 			}

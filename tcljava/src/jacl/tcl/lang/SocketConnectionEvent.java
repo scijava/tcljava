@@ -28,7 +28,7 @@ public class SocketConnectionEvent extends TclEvent {
             // Process the event
             try
             {
-                cbInterp.eval(callbackCmd, TCL.GLOBAL_ONLY);
+                cbInterp.eval(callbackCmd, TCL.EVAL_GLOBAL);
             }
             catch (Exception e)
             {

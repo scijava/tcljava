@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.38 2002/01/02 18:40:53 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.39 2002/04/12 21:00:26 mdejong Exp $
  *
  */
 
@@ -2152,7 +2152,7 @@ throws
 public void 
 eval(
     String string,	// A script to evaluate.
-    int flags)		// Flags, either 0 or TCL_GLOBAL_ONLY.
+    int flags)		// Flags, either 0 or TCL.EVAL_GLOBAL
 throws 
     TclException 	// A standard Tcl exception.
 {
@@ -2239,7 +2239,7 @@ throws
 public void 
 eval(
     TclObject tobj,	// A Tcl object holding a script to evaluate.
-    int flags)		// Flags, either 0 or TCL_GLOBAL_ONLY.
+    int flags)		// Flags, either 0 or TCL.EVAL_GLOBAL
 throws 
     TclException 	// A standard Tcl exception.
 {

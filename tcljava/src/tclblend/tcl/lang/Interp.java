@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.16 2000/07/30 02:37:18 mo Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.17 2002/04/12 21:00:28 mdejong Exp $
  *
  */
 
@@ -766,7 +766,7 @@ resetResult();
 public native void 
 eval(
     String script,	// A script to evaluate.
-    int flags)		// Flags, either 0 or TCL.GLOBAL_ONLY.
+    int flags)		// Flags, either 0 or TCL.EVAL_GLOBAL.
 throws 
     TclException; 	// A standard Tcl exception.
 
@@ -784,7 +784,7 @@ throws
 public void 
 eval(
     TclObject tobj,	// A Tcl object holding a script to evaluate.
-    int flags)		// Flags, either 0 or TCL.GLOBAL_ONLY.
+    int flags)		// Flags, either 0 or TCL.EVAL_GLOBAL.
 throws 
     TclException 	// A standard Tcl exception.
 {
@@ -815,7 +815,7 @@ throws
 public void 
 recordAndEval(
     TclObject script,	// A script to evaluate.
-    int flags)		// Flags, either 0 or TCL_GLOBAL_ONLY.
+    int flags)		// Flags, either 0 or TCL.EVAL_GLOBAL.
 throws 
     TclException 	// A standard Tcl exception.
 {

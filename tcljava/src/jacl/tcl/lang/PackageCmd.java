@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: PackageCmd.java,v 1.3 1999/07/28 02:33:25 mo Exp $
+ * RCS: @(#) $Id: PackageCmd.java,v 1.4 2002/04/12 21:00:26 mdejong Exp $
  */
 
 package tcl.lang;
@@ -194,7 +194,7 @@ throws
       
 	    script = best.script;
 	    try {
-		interp.eval(script, TCL.GLOBAL_ONLY);
+		interp.eval(script, TCL.EVAL_GLOBAL);
 	    } catch (TclException e) {
 		interp.addErrorInfo("\n    (\"package ifneeded\" script)");
 
@@ -232,7 +232,7 @@ throws
 		throw new TclRuntimeError("unexpected TclException: " + e);
 	    }
 	    try {
-		interp.eval(sbuf.toString(), TCL.GLOBAL_ONLY);
+		interp.eval(sbuf.toString(), TCL.EVAL_GLOBAL);
 	    } catch (TclException e) {
 		interp.addErrorInfo("\n    (\"package unknown\" script)");
 	

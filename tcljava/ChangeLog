@@ -1,3 +1,16 @@
+2002-04-12  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/jacl/tcl/lang/AfterCmd.java (processTimerEvent,
+	processIdleEvent):
+	* src/jacl/tcl/lang/Interp.java (eval):
+	* src/jacl/tcl/lang/PackageCmd.java (pkgRequire):
+	* src/jacl/tcl/lang/Shell.java (run):
+	* src/jacl/tcl/lang/SocketConnectionEvent.java (processEvent):
+	* src/tclblend/tcl/lang/Interp.java (eval, recordAndEval):
+	Pass TCL.EVAL_GLOBAL instead of TCL.GLOBAL_ONLY to
+	eval() functions. Fixup docs that suggest using the
+	wrong form.
+
 2002-04-12  Shawn Boyce  <shawn@qcominc.com>
 
 	* src/jacl/tcl/lang/FileCmd.java (copyRenameOneFile):
