@@ -1,3 +1,10 @@
+2002-01-15  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* tests/README: Update README so that it is
+	clear the tests are for Tcl/Java commands.
+	Describe running on make shell and make test.
+	Remove unneeded sections.
+	
 2002-01-15  Shawn Boyce  <shawn@qcominc.com>
 
 	* src/jacl/tcl/lang/ExecCmd.java
