@@ -1,3 +1,8 @@
+2001-05-05  Mo DeJong  <mdejong@redhat.com>
+
+	* tests/tcljava/JavaImportCmd.test: Fix incorrectly
+	spelled error message that was causing test failures.
+
 2001-05-05  Christian Krone  <christian.krone@softwareag.com>
 
 	* src/jacl/tcl/lang/Interp.java (resolvers,
