@@ -586,11 +586,6 @@ that would be enough!
 
 
 (TODO)
-Tcl 8.1 seems to have added a new "package present" command. This should
-also be added to the Jacl implementation when I get some time.
-
-
-(TODO)
 
 There seems to be some problem with the positive and negative infinity
 description string on different platforms. If Tcl should have one or
@@ -635,4 +630,12 @@ that they will execute in. I think this is broken currently.
 Check the Procedure class. Do we really need to have a namespace member
 in the procedure class when there is already one in the CommandWrapper?
 This is related to the earlier TODO.
+
+
+(TODO)
+
+Check the implementation of the test command. The command really should
+print the header info before actually calling the command. If the command
+crashes at least we will know which test was running when it crashed.
+
 
