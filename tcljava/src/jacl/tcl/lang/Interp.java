@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.18 1999/08/03 02:25:18 mo Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.19 1999/08/05 03:37:15 mo Exp $
  *
  */
 
@@ -288,9 +288,6 @@ Interp()
 
     
     // Init things that are specific to the Jacl implementation
-
-    // FIXME : remove later
-    //cmdTable         = new Hashtable();
 
     workingDir       = new File(Util.tryGetSystemProperty("user.dir", "."));
     noEval           = 0;
@@ -1323,10 +1320,11 @@ createCommand(
     Command cmdImpl)		// Command object to associate with
 				// cmdName.
 {
-    //ImportRef oldRef = null;
-    NamespaceCmd.Namespace ns, dummy1, dummy2;
+    ImportRef oldRef = null;
+    NamespaceCmd.Namespace ns;
     WrappedCommand cmd, refCmd;
     String tail;
+    ImportedCmdData data;
 
     if (deleted) {
 	// The interpreter is being deleted.  Don't create any new
@@ -1343,13 +1341,12 @@ createCommand(
 	// Java does not support passing an address so we pass
 	// an array of size 1 and then assign arr[0] to the value
 	NamespaceCmd.Namespace[] nsArr     = new NamespaceCmd.Namespace[1];
-	NamespaceCmd.Namespace[] dummy1Arr = new NamespaceCmd.Namespace[1];
-	NamespaceCmd.Namespace[] dummy2Arr = new NamespaceCmd.Namespace[1];
+	NamespaceCmd.Namespace[] dummyArr  = new NamespaceCmd.Namespace[1];
 	String[]    tailArr   = new String[1];
 
 	NamespaceCmd.getNamespaceForQualName(this, cmdName, null,
 		         NamespaceCmd.CREATE_NS_IF_UNKNOWN, nsArr,
-			 dummy1Arr, dummy2Arr, tailArr);
+			 dummyArr, dummyArr, tailArr);
 
 	ns = nsArr[0];
 	tail = tailArr[0];
@@ -1369,8 +1366,8 @@ createCommand(
 	// restore them down below.  That way, you can redefine a
 	// command and its import status will remain intact.
 
-	//oldRef = cmd.importRef;
-	//cmd.importRef = null;
+	oldRef = cmd.importRef;
+	cmd.importRef = null;
 
 	deleteCommandFromToken(cmd);
 
@@ -1396,7 +1393,6 @@ createCommand(
     // FIXME : import feature not implemented
     //cmd.importRef = null;
 
-    /*
     // Plug in any existing import references found above.  Be sure
     // to update all of these references to point to the new command.
 
@@ -1404,13 +1400,11 @@ createCommand(
 	cmd.importRef = oldRef;
 	while (oldRef != null) {
 	    refCmd = oldRef.importedCmd;
-	    data = (ImportedCmdData) refCmd.objClientData;
+	    data = (ImportedCmdData) refCmd.cmd;
 	    data.realCmd = cmd;
-	    oldRef = oldRef.nextPtr;
+	    oldRef = oldRef.next;
 	}
     }
-    */
-
 
     // There are no shadowed commands in Jacl because they are only
     // used in the 8.0 compiler
@@ -1438,9 +1432,9 @@ createCommand(
  */
 
 String getCommandFullName(
-    Interp interp,		// Interpreter containing the command.
     WrappedCommand cmd)	        // Token for the command.
 {
+    Interp interp = this;
     StringBuffer name = new StringBuffer();
 
     // Add the full name of the containing namespace, followed by the "::"
@@ -1527,8 +1521,8 @@ deleteCommandFromToken(
 	return -1;
     }
 
-    //ImportRef ref, nextRef;
-    //Command importCmd;
+    ImportRef ref, nextRef;
+    WrappedCommand importCmd;
 
     // The code here is tricky.  We can't delete the hash table entry
     // before invoking the deletion callback because there are cases
@@ -1559,16 +1553,12 @@ deleteCommandFromToken(
     // commands were created that refer back to this command. Delete these
     // imported commands now.
 
-    // FIXME: imported command not implemented
-
-    /*
-    for (refPtr = cmdPtr->importRefPtr;  refPtr != NULL;
-            refPtr = nextRefPtr) {
-	nextRefPtr = refPtr->nextPtr;
-	importCmd = (Tcl_Command) refPtr->importedCmdPtr;
-        Tcl_DeleteCommandFromToken(interp, importCmd);
+    for (ref = cmd.importRef;  ref != null;
+            ref = nextRef) {
+	nextRef = ref.next;
+	importCmd = ref.importedCmd;
+	deleteCommandFromToken(importCmd);
     }
-    */
 
     // FIXME : what does this mean? Is this a mistake in the C comment?
 
@@ -1619,12 +1609,10 @@ protected void renameCommand(
 {
     Interp interp = this;
     String newTail;
-    NamespaceCmd.Namespace cmdNs, newNs, dummy1, dummy2;
+    NamespaceCmd.Namespace cmdNs, newNs;
     WrappedCommand cmd;
     Hashtable table,   oldTable;
     String    hashKey, oldHashKey;
-    //Tcl_HashEntry *hPtr, *oldHPtr;
-    //int new, result;
 
     // Find the existing command. An error is returned if cmdName can't
     // be found.
@@ -1651,13 +1639,12 @@ protected void renameCommand(
     // Tcl_CreateCommand would.
 
     NamespaceCmd.Namespace[] newNsArr   = new NamespaceCmd.Namespace[1];
-    NamespaceCmd.Namespace[] dummy1Arr  = new NamespaceCmd.Namespace[1];
-    NamespaceCmd.Namespace[] dummy2Arr  = new NamespaceCmd.Namespace[1];
+    NamespaceCmd.Namespace[] dummyArr   = new NamespaceCmd.Namespace[1];
     String[]                 newTailArr = new String[1];
 
     NamespaceCmd.getNamespaceForQualName(interp, newName, null,
         NamespaceCmd.CREATE_NS_IF_UNKNOWN, newNsArr,
-	dummy1Arr, dummy2Arr, newTailArr);
+	dummyArr, dummyArr, newTailArr);
 
     newNs   = newNsArr[0];
     newTail = newTailArr[0];
