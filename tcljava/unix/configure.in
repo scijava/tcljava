@@ -2,7 +2,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run to configure the
 dnl	Makefile in this directory.
 AC_INIT(../src/tcljava/tcl/lang/InternalRep.java)
-# RCS: @(#) $Id: configure.in,v 1.32 2000/05/13 23:49:30 mo Exp $
+# RCS: @(#) $Id: configure.in,v 1.33 2000/05/17 20:53:01 mo Exp $
 
 
 #--------------------------------------------------------------------
@@ -1329,7 +1329,7 @@ if test $TCLJAVA = "tclblend" || test $BOTH = "true"; then
   fi
 
   echo '
-        if {[[catch {package require Tcl 8.3.1} err]]} {
+        if {[[catch {package require Tcl 8.3} err]]} {
           puts stderr $err
           exit -1
         }

@@ -1,5 +1,12 @@
 2000-05-14  Mo DeJong  <mdejong@redhat.com>
 
+	* unix/configure.in: Moved minimum
+	version number back to 8.3 instead
+	of 8.3.1 because of a bug in Tcl's
+	package command.
+
+2000-05-14  Mo DeJong  <mdejong@redhat.com>
+
 	* unix/Makefile.in: Fixed up "make test"
 	rules, added output that makes it easy
 	to run the tests from "make shell".
