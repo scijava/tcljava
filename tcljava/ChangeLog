@@ -1,5 +1,14 @@
 2002-07-19  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/empty/tcl/lang/Interp.java (Interp):
+	Throw runtime exception if fake Interp instance
+	is accidently created.
+	* src/tcljava/tcl/lang/BlendExtension.java (init):
+	Raise runtime exception if init method is
+	invoked twice. This should never happed.
+
+2002-07-19  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* Makefile.in: Add support for THREAD_BIN_DIR.
 	Include pkgIndex.tcl files from the blend build
 	dir, the src dir, and the THREAD_BIN_DIR.

@@ -9,7 +9,7 @@ import java.util.*;
 
 public class Interp {
 
-public Interp() {}
+public Interp() { throw new RuntimeError("empty Interp used"); }
 
 // Used ONLY by ReflectObject
 Hashtable reflectObjTable = null;

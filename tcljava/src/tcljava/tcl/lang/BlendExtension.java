@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: BlendExtension.java,v 1.19 2000/05/14 23:21:46 mo Exp $
+ * RCS: @(#) $Id: BlendExtension.java,v 1.20 2002/07/20 05:39:32 mdejong Exp $
  */
 
 package tcl.lang;
@@ -36,6 +36,10 @@ init(
     Interp interp)		// Interpreter to intialize.
 throws TclException
 {
+    if (interp.getCommand("java::new") != null) {
+        throw new TclRuntimeError("BlendExtension.init() invoked twice in same interp");
+    }
+
     // Create the commands in the Java package
 
     loadOnDemand(interp, "java::bind",        "tcl.lang.JavaBindCmd");
