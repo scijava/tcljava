@@ -1,6 +1,6 @@
 Recent user-visible changes to Jacl & Tcl Blend:
 
-RCS: @(#) $Id: changes.txt,v 1.36 2000/01/06 00:18:05 mo Exp $
+RCS: @(#) $Id: changes.txt,v 1.37 2000/01/06 01:30:50 mo Exp $
 
 ----------------- Released 1.0a1, 10/22/97 -----------------------
 
@@ -967,7 +967,7 @@ would look for a tclsh executable on the path. This would
 cause big problems if the tclsh executable was not the
 same one that we compiled Tcl Blend against. Tcl Blend
 now requires that you install and use the executable
-that was built from the Tcl source.
+that was built from the Tcl source. (Mo)
 
 ----------------- Released 1.2.4, 8/30/99 -----------------------
 
@@ -996,8 +996,14 @@ an error, we now copy the variant into env(CLASSPATH) if necessary.
 01/05/2000 (Fixed source build under windows)
 Moved checks for tcl version numbers inside src/native/tclResult.c
 to fix build problems under windows. Only the makefile.vc build
-was effected by this bug, the TEA build worked just fine.
+was effected by this bug, the TEA build worked just fine. (Mo)
 
 01/05/2000 (Bug fixes for Jacl's clock command)
-Added the patch submitted by Christian Krone <krischan@sql.de>.
+Added the patch submitted by Christian Krone <krischan@sql.de>. (Mo)
 
+01/05/2000 (Added debug output to TclClassLoader)
+The class loader was returning confusing error messages in some
+really strange cases. To address this issue, I added a helpful
+error message that would tell the user which class they were
+loading when something went wrong along with the .jar file
+that we found it in if there was one. (Mo)
