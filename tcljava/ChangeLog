@@ -1,5 +1,11 @@
 2000-08-20  Christian Krone  <krischan@sql.de>
 
+	* src/jacl/tcl/lang/LreplaceCmd.java:
+	* tests/tcl/lreplace.test: Update lreplace
+	command to be 8.4 compliant.
+
+2000-08-20  Christian Krone  <krischan@sql.de>
+
 	* src/jacl/tcl/lang/LsearchCmd.java: Update
 	lsearch command to be 8.4 compatible.
 	* tests/tcl/LsearchCmd.test: Remove.
