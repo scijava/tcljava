@@ -1,5 +1,17 @@
 2001-11-20  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/jacl/tcl/lang/ServerSocketChannel.java (errorMsg)
+	Remove unused errorMsg member.
+	* src/jacl/tcl/lang/SocketChannel.java (SocketChannel,
+	close): Set channel mode to TclIO.RDWR to indicate that
+	reading and writing are allowed on socket. Set errorMsg
+	member if an exception was raised during close.
+	* src/jacl/tcl/lang/SocketCmd.java (cmdProc): Create
+	SocketChannel with TclIO.RDWR mode to indicate that
+	reading and writing are allowed on socket.
+
+2001-11-20  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/jacl/tcl/lang/ServerSocketChannel.java (write,
 	flush): Remove overridden methods that attempted to
 	provide channel specific error messages. The write

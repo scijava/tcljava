@@ -120,9 +120,9 @@ public class SocketChannel extends Channel {
 
     public SocketChannel(Interp interp, Socket s) throws TclException
     {
-        this.mode = (TclIO.RDWR|TclIO.RDONLY|TclIO.WRONLY);
+        this.mode = TclIO.RDWR;
         this.sock = s;
-        // Get the Input and Output streams
+
         try
         {
             reader = new BufferedReader(
@@ -149,7 +149,6 @@ public class SocketChannel extends Channel {
         errorMsg = new String();
     }
 
-        
     /**
      * Perform a read on a SocketChannel.
      *
@@ -219,9 +218,7 @@ public class SocketChannel extends Channel {
     }
         
     /**
-     * Close the SocketChannel. The channel is only closed, it is
-     * the responsibility of the "caller" to remove the channel from
-     * the channel table.
+     * Close the SocketChannel.
      */
 
     void close() throws IOException
@@ -231,8 +228,10 @@ public class SocketChannel extends Channel {
         try { sock.close(); } catch (IOException e) { ex = e; }
         try { super.close(); } catch (IOException e) { ex = e; }
 
-        if (ex != null)
-            throw new IOException(ex.getMessage());
+        if (ex != null) {
+            errorMsg = ex.getMessage();
+            throw ex;
+        }
     }
 
     /**

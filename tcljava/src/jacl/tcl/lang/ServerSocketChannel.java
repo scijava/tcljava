@@ -42,12 +42,6 @@ public class ServerSocketChannel extends Channel {
     private AcceptThread acceptThread;
 
     /**
-     * A string which holds the message of the last exception thrown.
-     **/
-
-    String errorMsg;
-
-    /**
      * Creates a new ServerSocketChannel object with the given options.
      * Creates an underlying ServerSocket object, and a thread to handle
      * connections to the socket.
@@ -90,7 +84,6 @@ public class ServerSocketChannel extends Channel {
         acceptThread = new AcceptThread(sock, this);
         
         setChanName(TclIO.getNextDescriptor(interp, "sock"));
-        errorMsg = new String();
         acceptThread.start();
     }
 
