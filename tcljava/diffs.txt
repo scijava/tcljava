@@ -1,6 +1,6 @@
 diffs.txt --  DIFFERENCES BETWEEN TCL and JACL
 
-RCS: @(#) $Id: diffs.txt,v 1.6 2000/03/02 04:08:34 mo Exp $
+RCS: @(#) $Id: diffs.txt,v 1.7 2000/04/03 12:36:15 mo Exp $
 
 This file contains a list of differences between Tcl 8.x and Jacl 1.x.
 
@@ -100,6 +100,7 @@ Interp			Interp			Tcl_CreateInterp
 			getCommand		Tcl_GetCommandInfo
 			eval			Tcl_Eval, Tcl_EvalObj
 						Tcl_GlobalEval
+			recordAndEval		Tcl_RecordAndEvalObj
 			evalFile		Tcl_EvalFile
 			commandComplete		Tcl_CommandComplete
 			setResult		Tcl_SetObjResult

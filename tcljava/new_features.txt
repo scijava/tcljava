@@ -211,5 +211,10 @@ An implementation of Tcl's binary command has been added to Jacl.
 This new command passes all of the Tcl regression tests for the
 binary command.
 
+(NEW COMMAND FOR JACL)
+
+An implementation of Tcl's history command has been added to Jacl.
+This new command passes all of the Tcl regression tests for the
+history command.
 
 </PRE></BODY></HTML>

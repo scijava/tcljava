@@ -7,7 +7,7 @@ check Tcl scripts.</DL>
 <DL><DD>void <B>eval</B>(String <I>str</I>) throws TclException</DL>
 <DL><DD>void <B>eval</B>(String <I>str</I>, int <I>flags</I>) throws TclException</DL>
 <DL><DD>void <B>eval</B>(TclObject <I>tobj</I>, int <I>flags</I>) throws TclException</DL>
-<DL><DD>void <B>recordAndEval</B>(String <I>str</I>, int <I>flags</I>) throws TclException</DL>
+<DL><DD>void <B>recordAndEval</B>(TclObject <I>tobj</I>, int <I>flags</I>) throws TclException</DL>
 <DL><DD>void <B>evalFile</B>(String <I>fileName</I>) throws TclException</DL>
 <DL><DD>static boolean <B>commandComplete</B>(String <I>cmdName</I>) throws TclException</DL>
 <DD><A HREF="Eval.htm#M4" NAME="L26">OTHER METHODS</A>
@@ -32,7 +32,7 @@ check Tcl scripts.
 <P>void <B>eval</B>(String <I>str</I>) throws TclException
 <P>void <B>eval</B>(String <I>str</I>, int <I>flags</I>) throws TclException
 <P>void <B>eval</B>(TclObject <I>tobj</I>, int <I>flags</I>) throws TclException
-<P>void <B>recordAndEval</B>(String <I>str</I>, int <I>flags</I>) throws TclException
+<P>void <B>recordAndEval</B>(TclObject <I>tobj</I>, int <I>flags</I>) throws TclException
 <P>void <B>evalFile</B>(String <I>fileName</I>) throws TclException
 <P>static boolean <B>commandComplete</B>(String <I>cmdName</I>) throws TclException
 <H3><A NAME="M4">OTHER METHODS</A></H3>
@@ -49,17 +49,17 @@ check Tcl scripts.
 
 <H3><A NAME="M5">ARGUMENTS</A></H3>
 <DL>
-<P><DT>String <B>str</B> ()<DD>
+<P><DT>String <B>str</B><DD>
 String value of script to evaluate.
-<P><DT>TclObject <B>tobj</B> ()<DD>
+<P><DT>TclObject <B>tobj</B><DD>
 TclObject value of script to evaluate.
-<P><DT>int <B>flags</B> ()<DD>
+<P><DT>int <B>flags</B><DD>
 OR-ed combination of flag bits that specify additional options.
 <B>TCL_EVAL_GLOBAL</B> and <B>TCL_EVAL_DIRECT</B> are currently
 supported.  These flags control the stack level of the evaluation.
-<P><DT>String <B>fileName</B> ()<DD>
+<P><DT>String <B>fileName</B><DD>
 File containing script to evaluate.
-<P><DT>String <B>cmdName</B> ()<DD>
+<P><DT>String <B>cmdName</B><DD>
 Command string to test for completeness.
 <P></DL>
 <H3><A NAME="M6">DESCRIPTION</A></H3>
@@ -81,7 +81,7 @@ the current stack level.  A TclException is thrown if an error occurs
 in evaluating the <I>str</I> or <I>tobj</I> (e.g. the script contains bad
 Tcl syntax or accesses an undefined variable).
 <P><DT><A NAME="M8"><B>recordAndEval</B></A><DD>
-The <B>recordAndEval</B> method adds the script stored in <I>str</I>
+The <B>recordAndEval</B> method adds the script stored in <I>tobj</I>
 to the current list of recorded events and then executes the command by
 calling <B>eval</B>.
 
@@ -99,7 +99,7 @@ returns false.
 
 <P></DL>
 <H3><A NAME="M11">EQUIVALENT C FUNCTIONS</A></H3>
-<A href="../cFunctions.html">Tcl_Eval</A>, <A href="../cFunctions.html">Tcl_GlobalEval</A>, <A href="../cFunctions.html">Tcl_EvalObj</A>, <A href="../cFunctions.html">Tcl_EvalFile</A>, <A href="../cFunctions.html">Tcl_RecordAndEval</A>, <A href="../cFunctions.html">Tcl_CommandComplete</A>
+<A href="../cFunctions.html">Tcl_Eval</A>, <A href="../cFunctions.html">Tcl_GlobalEval</A>, <A href="../cFunctions.html">Tcl_EvalObj</A>, <A href="../cFunctions.html">Tcl_EvalFile</A>, <A href="../cFunctions.html">Tcl_RecordAndEvalObj</A>, <A href="../cFunctions.html">Tcl_CommandComplete</A>
 <H3><A NAME="M12">SEE ALSO</A></H3>
 <B><A HREF="../TclJavaLib/Interp.htm">Interp</A></B>, <B><A HREF="../TclJavaLib/setVar.htm">setVar</A></B>, <B><A HREF="../TclJavaLib/setResult.htm">setResult</A></B>, <B><A HREF="../TclJavaLib/backgdErr.htm">addErrorInfo</A></B>, <B><A HREF="../TclJavaLib/dispose.htm">dispose</A></B>, <B><A HREF="../TclJavaLib/TclException.htm">TclException</A></B>, <B><A HREF="../TclJavaLib/runtimeError.htm">TclRuntimeError</A></B>, <B><A HREF="../TclJavaLib/TclEvent.htm">TclEvent</A></B>
 <H3><A NAME="M13">KEYWORDS</A></H3>

@@ -1,7 +1,20 @@
 2000-04-03  Mo DeJong  <mdejong@redhat.com>
 
-        * tests/tcl/history.test:
-	Added regression tests for history command.
+	* diffs.txt: Added note about Interp.recordAndEval
+	* new_features.txt: Added note about the addition
+	of the history command.
+	* docs/cFunctions.html: Fixed Interp.recordAndEval
+	doc and reformatted to a single list.
+	* docs/TclJavaLib/Eval.htm: Fixed Interp.recordAndEval
+	documentation.
+	* src/jacl/tcl/lang/ConsoleEvent.java: Fixed up
+	Interp.recordAndEval method invocation.
+	* src/jacl/tcl/lang/Interp.java: Changed signature
+	for recordAndEval method.
+	* src/tclblend/tcl/lang/Interp.java: Added empty stub
+	for recordAndEval method.
+	* tests/tcl/history.test: Added regression tests for
+	history command.
 
 2000-04-01  Mo DeJong  <mdejong@redhat.com>
 

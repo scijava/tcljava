@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.26 2000/03/02 04:08:34 mo Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.27 2000/04/03 12:36:16 mo Exp $
  *
  */
 
@@ -2105,7 +2105,7 @@ throws
 /*
  *----------------------------------------------------------------------
  *
- * recordAndEval --
+ * Tcl_RecordAndEvalObj -> recordAndEval
  *
  *	This procedure adds its command argument to the current list of
  *	recorded events and then executes the command by calling eval.
@@ -2125,27 +2125,26 @@ throws
 
 public void 
 recordAndEval(
-    String string,	// A script to evaluate.
+    TclObject script,	// A script to evaluate.
     int flags)		// Flags, either 0 or TCL_GLOBAL_ONLY.
 throws 
     TclException 	// A standard Tcl exception.
 {
-    // Append the string to the event list by calling "history add <string>".
+    // Append the script to the event list by calling "history add <script>".
     // We call the eval method with the command of type TclObject, so that
-    // we don't have to deal with funny chars ("{}[]$\) in the string.
+    // we don't have to deal with funny chars ("{}[]$\) in the script.
 
     try {
-	Interp interp = this;
 	TclObject cmd = TclList.newInstance();
-	TclList.append(interp, cmd, TclString.newInstance("history"));
-	TclList.append(interp, cmd, TclString.newInstance("add"));
-	TclList.append(interp, cmd, TclString.newInstance(string));
+	TclList.append(this, cmd, TclString.newInstance("history"));
+	TclList.append(this, cmd, TclString.newInstance("add"));
+	TclList.append(this, cmd, script);
 	eval(cmd, 0);
     } catch (Exception e) {}
 
-    // Finally evaluate the string.
+    // Finally evaluate the script.
 
-    eval(string, flags);
+    eval(script, flags);
 }
 
 /*

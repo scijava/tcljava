@@ -11,7 +11,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ConsoleEvent.java,v 1.3 2000/02/23 22:14:16 mo Exp $
+ * RCS: @(#) $Id: ConsoleEvent.java,v 1.4 2000/04/03 12:36:16 mo Exp $
  *
  */
 
@@ -87,7 +87,7 @@ processEvent(
     int flags)		// Same as flags passed to Notifier.doOneEvent.
 {
     try {
-	interp.recordAndEval(script, 0);
+	interp.recordAndEval(TclString.newInstance(script), 0);
 	evalResult = interp.getResult();
 	evalResult.preserve();
     } catch (TclException e) {

@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.10 2000/02/23 22:16:27 mo Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.11 2000/04/03 12:36:16 mo Exp $
  *
  */
 
@@ -793,6 +793,38 @@ throws
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_RecordAndEvalObj -> recordAndEval
+ *
+ *	This procedure adds its command argument to the current list of
+ *	recorded events and then executes the command by calling eval.
+ *
+ * Results:
+ *	The return value is void.  However, a standard Tcl Exception
+ *	may be generated.  The interpreter's result object will contain
+ *	the value of the evaluation but will persist only until the next 
+ *	call to one of the eval functions.
+ *
+ * Side effects:
+ *	The side effects will be determined by the exact Tcl code to be 
+ *	evaluated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+public void 
+recordAndEval(
+    TclObject script,	// A script to evaluate.
+    int flags)		// Flags, either 0 or TCL_GLOBAL_ONLY.
+throws 
+    TclException 	// A standard Tcl exception.
+{
+    // FIXME : need native implementation
+    throw new TclRuntimeError("Not implemented yet.");
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * evalFile --
  *	Loads a Tcl script from a file and evaluates it in the
  * 	current interpreter.
@@ -813,6 +845,7 @@ evalFile(
 throws 
     TclException
 {
+    // FIXME : need implementation
     throw new TclRuntimeError("Not implemented yet.");
 }
 
