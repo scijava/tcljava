@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: ReflectObject.java,v 1.9 2000/04/01 11:50:39 mo Exp $
+ * RCS: @(#) $Id: ReflectObject.java,v 1.10 2000/04/03 06:47:19 mo Exp $
  *
  */
 
@@ -156,14 +156,12 @@ private static void addToReflectTable(ReflectObject roRep)
 	
 	interp.reflectObjTable.put(ident, roRep);
     } else {
-	// This should never happen
-		
+	// This should never happen, if there is a problem in the hash
+	// table because of System.identityHashCode(), it should generate
+	// a descriptive exception in findInReflectTable().
+
 	throw new TclRuntimeError("reflectObjectTable returned non-null for " + id +
-				  " with ident \"" + ident + "\", " +
-				  "Found Class = \"" +
-				  JavaInfoCmd.getNameFromClass(found.javaClass) + "\" " +
-				  "Found identityHashCode = \"" +
-				  System.identityHashCode(found.javaObj) + "\"");
+				  " with ident \"" + ident + "\"");
     }
 }
 
@@ -199,18 +197,23 @@ private static void removeFromReflectTable(ReflectObject roRep)
 
       if (found != roRep) {
 	  StringBuffer sb = new StringBuffer();
-	  sb.append("table entry ");
+	  sb.append("(remove) table entry \"");
 	  sb.append(ident);
-	  sb.append(" mapped to an invalid entry, ");
+	  sb.append("\" mapped to an invalid entry, ");
 	  sb.append("Searched (");
+	  sb.append("refID = \"" + id + "\" ");
 	  sb.append("Class = \"" + JavaInfoCmd.getNameFromClass(cl) + "\" ");
 	  sb.append("identityHashCode = \"" + System.identityHashCode(obj) + "\"");
+	  sb.append("hashCode = \"" + obj.hashCode() + "\"");
 	  sb.append(") Found ( ");
+	  sb.append("refID = \"" + found.refID + "\" ");
 	  sb.append("Class = \"" + JavaInfoCmd.getNameFromClass(found.javaClass) + "\" ");
 	  sb.append("identityHashCode = \"" + System.identityHashCode(found.javaObj) + "\"");
+	  sb.append("hashCode = \"" + found.javaObj.hashCode() + "\"");
 	  sb.append(") Equality Tests ( ");
 	  sb.append("Class  == \"" + (found.javaClass == cl) + "\" ");
 	  sb.append("Object == \"" + (found.javaObj == obj) + "\" ");
+	  sb.append("Object.equals() == \"" + (obj.equals(found.javaObj)) + "\" ");
 	  sb.append("Interp == \"" + (found.ownerInterp == interp) + "\")");
 
 	  throw new TclRuntimeError(sb.toString());
@@ -261,18 +264,22 @@ private static ReflectObject findInReflectTable(Interp interp, Class cl, Object 
 
 	if (found.javaClass != cl || found.javaObj != obj || found.ownerInterp != interp) {
 	    StringBuffer sb = new StringBuffer();
-	    sb.append("table entry ");
+	    sb.append("(find) table entry \"");
 	    sb.append(ident);
-	    sb.append(" mapped to an invalid entry, ");
+	    sb.append("\" mapped to an invalid entry, ");
 	    sb.append("Searched (");
 	    sb.append("Class = \"" + JavaInfoCmd.getNameFromClass(cl) + "\" ");
 	    sb.append("identityHashCode = \"" + System.identityHashCode(obj) + "\"");
+	    sb.append("hashCode = \"" + obj.hashCode() + "\"");
 	    sb.append(") Found ( ");
+	    sb.append("refID = \"" + found.refID + "\" ");
 	    sb.append("Class = \"" + JavaInfoCmd.getNameFromClass(found.javaClass) + "\" ");
 	    sb.append("identityHashCode = \"" + System.identityHashCode(found.javaObj) + "\"");
+	    sb.append("hashCode = \"" + found.javaObj.hashCode() + "\"");
 	    sb.append(") Equality Tests ( ");
 	    sb.append("Class  == \"" + (found.javaClass == cl) + "\" ");
 	    sb.append("Object == \"" + (found.javaObj == obj) + "\" ");
+	    sb.append("Object.equals() == \"" + (obj.equals(found.javaObj)) + "\" ");
 	    sb.append("Interp == \"" + (found.ownerInterp == interp) + "\")");
 
 	    throw new TclRuntimeError(sb.toString());
