@@ -1,5 +1,12 @@
 2000-08-20  Christian Krone  <krischan@sql.de>
 
+	* src/jacl/tcl/lang/FileCmd.java: Don't
+	back up over multiple dots in a file
+	extension. This matches the behavior
+	of newer versions of Tcl.
+
+2000-08-20  Christian Krone  <krischan@sql.de>
+
 	* src/jacl/tcl/lang/ClockCmd.java:
 	* tests/tcl/clock.test: Update Jacl's clock
 	command to be Tcl 8.4 compliant.

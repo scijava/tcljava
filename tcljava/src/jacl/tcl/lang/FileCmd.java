@@ -11,7 +11,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FileCmd.java,v 1.3 1999/08/07 05:59:06 mo Exp $
+ * RCS: @(#) $Id: FileCmd.java,v 1.4 2000/08/20 06:46:09 mo Exp $
  *
  */
 
@@ -670,12 +670,10 @@ getExtension(
 	return "";
     }		
 
-    // Back up to the first period in a series of contiguous dots.
-    // This is needed so foo..o will be split on the first dot.
-
-    while ((dotIndex > 0) && (lastSep.charAt(dotIndex - 1) == '.')) {
-	--dotIndex;
-    }
+    // In earlier versions, we used to back up to the first period in a series
+    // so that "foo..o" would be split into "foo" and "..o".  This is a
+    // confusing and usually incorrect behavior, so now we split at the last
+    // period in the name.
 
     return(lastSep.substring(dotIndex));
 }
