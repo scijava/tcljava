@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Channel.java,v 1.13 2001/11/20 19:07:30 mdejong Exp $
+ * RCS: @(#) $Id: Channel.java,v 1.14 2001/11/27 16:26:15 mdejong Exp $
  */
 
 package tcl.lang;
@@ -66,6 +66,12 @@ abstract class Channel {
      */
 
     protected static final int BUF_SIZE = 1024;
+
+    /**
+     * Set to false when channel is in non-blocking mode.
+     */
+    
+    protected boolean blocking = true;
 
     /**
      * Read data from the Channel.
@@ -269,4 +275,23 @@ abstract class Channel {
     int getMode() {
         return mode;
     }
+
+
+    /** 
+     * Query blocking mode.
+     */
+
+    boolean getBlocking() {
+        return blocking;
+    }
+
+
+    /** 
+     * Set blocking mode.
+     */
+
+    void setBlocking(boolean blocking) {
+        this.blocking = blocking;
+    }
+
 }

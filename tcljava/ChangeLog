@@ -1,3 +1,11 @@
+2001-11-27  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/jacl/tcl/lang/Channel.java (blocking, getBlocking,
+	setBlocking): Add new blocking state.
+	* src/jacl/tcl/lang/FconfigureCmd.java (cmdProc): Indent
+	to 4 space Tcl style. Add -blocking channel option.
+	Remove the "fconfigure command not implemented yet" error.
+
 2001-11-21  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* src/tcljava/tcl/lang/TclPosixException.java
