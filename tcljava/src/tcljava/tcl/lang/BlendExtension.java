@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: BlendExtension.java,v 1.6 1999/05/09 21:12:32 dejong Exp $
+ * RCS: @(#) $Id: BlendExtension.java,v 1.7 1999/05/09 21:12:50 dejong Exp $
  */
 
 package tcl.lang;
@@ -64,15 +64,58 @@ throws TclException
     
     interp.evalResource("/tcl/lang/library/java/javalock.tcl");
 
-    // Note that we cannot set a variable in a namespace until the namespace
-    // exists, so we must to do it after we create the commands.
+    // Set up the tcljava array which will store info about
+    // The system that scripts may want to access to.
 
-    interp.setVar("java::version", TclString.newInstance(
-	System.getProperty("java.version")), TCL.GLOBAL_ONLY);
+    // Set tcljava(tcljava) to jacl or tclblend
 
-    // FIXME : provide automatic way to set java package version
+    TclObject plat = interp.getVar("tcl_platform", "platform",
+        TCL.GLOBAL_ONLY|TCL.DONT_THROW_EXCEPTION);
 
-    // Provide the Tcl/Java package with its version info.
+    if (plat.toString().equals("java")) {
+        interp.setVar("tcljava", "tcljava",
+            TclString.newInstance("jacl"), TCL.GLOBAL_ONLY);
+    } else {
+        interp.setVar("tcljava", "tcljava",
+            TclString.newInstance("tclblend"), TCL.GLOBAL_ONLY);
+    }
+
+
+    // set tcljava(java.version) to the JVM version number
+
+    interp.setVar("tcljava", "java.version",
+        TclString.newInstance(System.getProperty("java.version")),
+        TCL.GLOBAL_ONLY);
+
+    // set tcljava(java.home) to the root of the JVM install
+
+    interp.setVar("tcljava", "java.home",
+        TclString.newInstance(System.getProperty("java.home")),
+        TCL.GLOBAL_ONLY);
+
+    // set tcljava(java.vendor) to the info from the JVM provider
+
+    interp.setVar("tcljava", "java.vendor",
+        TclString.newInstance(System.getProperty("java.vendor")),
+        TCL.GLOBAL_ONLY);
+
+    // set tcljava(java.vendor.url) to the info from the JVM provider
+
+    interp.setVar("tcljava", "java.vendor.url",
+        TclString.newInstance(System.getProperty("java.vendor.url")),
+        TCL.GLOBAL_ONLY);
+
+    // set tcljava(java.vendor.url.bug) to the info from the JVM provider
+
+    interp.setVar("tcljava", "java.vendor.url.bug",
+        TclString.newInstance(System.getProperty("java.vendor.url.bug")),
+        TCL.GLOBAL_ONLY);
+
+
+
+
+
+    // Provide the Tcl/Java package with the version info.
     // The version is also set in:
     // src/jacl/tcl/lang/Interp.java
     // src/pkgIndex.tcl
