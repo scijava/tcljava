@@ -1,5 +1,21 @@
 2000-08-20  Christian Krone  <krischan@sql.de>
 
+	* src/jacl/tcl/lang/Expression.java (DoubleTooSmall,
+	ExprLooksLikeInt): Check for ARITH UNDERFLOW, rename
+	ExprLooksLikeInt to looksLikeInt.
+	* src/jacl/tcl/lang/Parser.java (parseVar, backslash):
+	No Exception, when parsing the following command: "set $a(foo".
+	Correct handling for \x123 characters with its 8th bit set (>= \x80).
+	* src/jacl/tcl/lang/StringCmd.java: 8.4 compatible string command.
+	* src/jacl/tcl/lang/TclByteArray.java (toString): And a byte
+	with 0xff to produce a char.
+	* src/jacl/tcl/lang/Util.java (strtoul, toTitle): 0X123 will now
+	be detected as valid hex number. 8.4 compatible error message for
+	bad octal numbers. Add toTitle method to support string command.
+	* tests/tcl/string.test: 8.4 compatible tests for string command.
+
+2000-08-20  Christian Krone  <krischan@sql.de>
+
 	* src/jacl/tcl/lang/FileCmd.java: Don't
 	back up over multiple dots in a file
 	extension. This matches the behavior

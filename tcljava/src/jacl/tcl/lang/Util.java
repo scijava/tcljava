@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Util.java,v 1.7 2000/03/17 23:31:30 mo Exp $
+ * RCS: @(#) $Id: Util.java,v 1.8 2000/08/20 08:37:48 mo Exp $
  */
 
 package tcl.lang;
@@ -175,7 +175,7 @@ strtoul(
 	    if (i < len-1) {
 		i++;
 		c = s.charAt(i);
-		if (c == 'x') {
+		if (c == 'x' || c == 'X') {
 		    i += 1;
 		    base = 16;
 		}
@@ -294,13 +294,13 @@ throws
 		    "integer value too large to represent");
 	} else {
 	    throw new TclException(interp, "expected integer but got \"" +
-		    s + "\"");
+			  s + "\"" + checkBadOctal(interp, s));
 	}
     } else if (res.index < len) {
 	for (i = res.index; i<len; i++) {
 	    if (!Character.isWhitespace(s.charAt(i))) {
-		throw new TclException(interp,
-			"expected integer but got \"" + s + "\"");
+		throw new TclException(interp, "expected integer but got \"" +
+			      s + "\"" + checkBadOctal(interp, s));
 	    }
 	}
     }
@@ -353,7 +353,9 @@ static final int getIntForIndex(Interp interp, TclObject tobj, int endValue)
 	try {
 	    offset = TclInteger.get(null, tobj);
 	} catch (TclException e) {
-	    throw new TclException(interp, intforindex_error);
+	    throw new TclException(interp, "bad index \"" + bytes
+			  + "\": must be integer or end?-integer?"
+			  + checkBadOctal(interp, bytes));
 	}
 	return offset;
     }
@@ -366,7 +368,9 @@ static final int getIntForIndex(Interp interp, TclObject tobj, int endValue)
 	offset = Util.getInt(interp, bytes.substring(3));
 	return endValue + offset;
     } else {
-	throw new TclException(interp, intforindex_error);
+	throw new TclException(interp, "bad index \"" + bytes
+		      + "\": must be integer or end?-integer?"
+		      + checkBadOctal(interp, bytes.substring(3)));
     }
 }
 
@@ -482,6 +486,7 @@ strtod(
     // Count the number of digits in the mantissa (including the decimal
     // point), and also locate the decimal point.
 
+    boolean maybeZero = true;
     decPt = -1;
     for (mantSize = 0; ; mantSize += 1) {
 	c = CharAt(s, i, len);
@@ -490,6 +495,9 @@ strtod(
 		break;
 	    }
 	    decPt = mantSize;
+	}
+	if (c != '0' && c != '.') {
+	    maybeZero = false; // non zero digit found...
 	}
 	i++;
     }
@@ -519,8 +527,9 @@ strtod(
     }
 
     if ((result == Double.NEGATIVE_INFINITY) ||
-	    (result == Double.POSITIVE_INFINITY)) {
-	return new StrtodResult(0, i, TCL.DOUBLE_RANGE);
+	(result == Double.POSITIVE_INFINITY) ||
+	(result == 0.0 && !maybeZero)) {
+	return new StrtodResult(result, i, TCL.DOUBLE_RANGE);
     }
 
     if (result == Double.NaN) {
@@ -734,11 +743,7 @@ stringMatch(
 	// but not at the end of the string, we failed.
 	
 	if (pIndex == patLen) {
-	    if (sIndex == strLen) {
-		return true;
-	    } else {
-		return false;
-	    }
+	    return sIndex == strLen;
 	}
 	if ((sIndex == strLen) && (patArr[pIndex] != '*')) {
 	    return false;
@@ -780,7 +785,6 @@ stringMatch(
 	
 	if (patArr[pIndex] == '[') {
 	    pIndex++;
-	    
 	    while (true) {
 		if ((pIndex == patLen) || (patArr[pIndex] == ']')) {
 		    return false;
@@ -809,13 +813,13 @@ stringMatch(
 		 pIndex++) {
 	    }
 	    if (pIndex == patLen) {
-		return false;
+		pIndex--;
 	    }
 	    incrIndex = true;
 	    continue;
 	}
 	
-	// If the next pattern character is '/', just strip off the '/'
+	// If the next pattern character is '\', just strip off the '\'
 	// so we do exact matching on the character that follows.
 	
 	if (patArr[pIndex] == '\\') {
@@ -833,6 +837,40 @@ stringMatch(
 	}
 	incrIndex = true;
     }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_UtfToTitle -> toTitle --
+ *
+ *	Changes the first character of a string to title case or
+ *	uppercase and the rest of the string to lowercase.
+ *
+ * Results:
+ *	Returns the generated string.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static String
+toTitle(
+    String str)			// String to convert in place.
+{
+    // Capitalize the first character and then lowercase the rest of the
+    // characters until we get to the end of string.
+
+    int length = str.length();
+    if (length == 0) {
+	return "";
+    }
+    StringBuffer buf = new StringBuffer(length);
+    buf.append(Character.toTitleCase(str.charAt(0)));
+    buf.append(str.substring(1).toLowerCase());
+    return buf.toString();
 }
 
 /*

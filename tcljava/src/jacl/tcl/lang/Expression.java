@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Expression.java,v 1.4 2000/03/10 18:05:01 mo Exp $
+ * RCS: @(#) $Id: Expression.java,v 1.5 2000/08/20 08:37:47 mo Exp $
  *
  */
 
@@ -278,6 +278,13 @@ class Expression {
 		"floating-point value too large to represent");
     }
 
+    static void DoubleTooSmall(Interp interp) throws TclException {
+	interp.setErrorCode(TclString.newInstance(		
+	   "ARITH UNDERFLOW {floating-point value too small to represent}"));
+	throw new TclException(interp,
+		"floating-point value too small to represent");
+    }
+
     static void DomainError(Interp interp) throws TclException {
 	interp.setErrorCode(TclString.newInstance(
 		"ARITH DOMAIN {domain error: argument not in valid range}"));
@@ -320,7 +327,7 @@ class Expression {
 
 
 	int i;
-	if (ExprLooksLikeInt(s, len, 0)) {
+	if (looksLikeInt(s, len, 0)) {
 	    //System.out.println("string looks like an int");
 
 	    // Note: use strtoul instead of strtol for integer conversions
@@ -404,7 +411,11 @@ class Expression {
                 }
 
             } else if (res.errno == TCL.DOUBLE_RANGE) {
-                DoubleTooLarge(interp);
+		if (res.value != 0) {
+		    DoubleTooLarge(interp);
+		} else {
+		    DoubleTooSmall(interp);
+		}
             }
             // if res.errno is any other value (like TCL.INVALID_DOUBLE)
             // just fall through and use the string rep
@@ -956,7 +967,7 @@ class Expression {
 	}
 
 	if ((c != '+')  && (c != '-')) {
-	    if (ExprLooksLikeInt(m_expr, m_len, m_ind)) {
+	    if (looksLikeInt(m_expr, m_len, m_ind)) {
 		StrtoulResult res = Util.strtoul(m_expr, m_ind, 0);
 
 		if (res.errno == 0) {
@@ -976,7 +987,11 @@ class Expression {
 		    return new ExprValue(res.value);
 		} else {
 		    if (res.errno == TCL.DOUBLE_RANGE) {
-			DoubleTooLarge(interp);
+			if (res.value != 0) {
+			    DoubleTooLarge(interp);
+			} else {
+			    DoubleTooSmall(interp);
+			}
 		    }
 		}
 	    }
@@ -1298,7 +1313,8 @@ class Expression {
      * @return a boolean value indicating if the string looks like an integer.
      */
 
-    private static boolean ExprLooksLikeInt(String s, int len, int i) {
+    static boolean
+    looksLikeInt(String s, int len, int i) {
 	while (i < len && Character.isWhitespace(s.charAt(i))) {
 	    i++;
 	}

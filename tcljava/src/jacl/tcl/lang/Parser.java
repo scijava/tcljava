@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Parser.java,v 1.9 2000/05/14 23:10:20 mo Exp $
+ * RCS: @(#) $Id: Parser.java,v 1.10 2000/08/20 08:37:47 mo Exp $
  */
 
 package tcl.lang;
@@ -1558,6 +1558,9 @@ throws
 
     CharPointer src = new CharPointer(string);
     parse = parseVarName(interp, src.array, src.index, -1, null, false);
+    if (parse.result != TCL.OK) {
+	throw new TclException(interp, interp.getResult().toString());
+    }
 
     try {
 	if (debug) {
@@ -1723,11 +1726,10 @@ backslash(
 		StrtoulResult res = Util.strtoul(str, 0, 16);
 		if (res.errno == 0) {
 		    // We force res.value to be a 8-bit (ASCII) character
-		    // so that it compatible with Tcl 7.6.
+		    // so that it is compatible with Tcl.
 		    
-		    byte b = (byte) (res.value & 0xff);
-		    return new BackSlashResult((char)(b), script_index + 
-			    res.index);
+		    char b = (char) (res.value & 0xff);
+		    return new BackSlashResult(b, script_index + res.index);
 		}
 	    }
 	}
