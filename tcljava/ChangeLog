@@ -1,5 +1,14 @@
 2000-03-17 Mo DeJong  <mdejong@redhat.com>
 
+	* tests/inprogress/Unicode.test: Added test cases
+	for Jacl substitution and passing of strings from
+	Java to Tcl.
+	* src/jacl/tcl/lang/Parser.java:
+	Fixed a horrible bug that caused \u1234 to be
+	parsed as \u1234 + 4. The parser was off by one.
+
+2000-03-17 Mo DeJong  <mdejong@redhat.com>
+
 	* docs/cFunctions.html:
 	* docs/TclJavaLib/TclInteger.htm:
 	* src/jacl/tcl/lang/LindexCmd.java:

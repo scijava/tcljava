@@ -1,0 +1,37 @@
+# These are some utility methods used to test out
+# unicode substitutions made by the parser.
+
+if {[string compare test [info procs test]] == 1} then {source defs}
+
+setupJavaPackage
+
+test unicode-1.0 {unicode replacement} {
+    string length abc\u7266x
+} 5
+
+test unicode-1.1 {unicode replacement} {
+    string length \u7266\u8345
+} 2
+
+test unicode-1.2 {unicode replacement} {
+    string index \u7266\u8345 2
+} {}
+
+test unicode-2.0 {unicode substitution, passed through Java} {
+    puts "doing full unicode substitution/conversion test, this can take several minutes"
+    flush stdout
+    set max [expr {int(pow(2,16)) - 1}]
+
+    for {set i 0} {$i < $max} {incr i} { 
+        set n [format %04x $i]
+        eval "set c \\u${n}"
+        if {[string length $c] != 1} {
+            error "incorrect conversion of \\u${n}, length [string length $c]"
+        }
+        set s [java::new String $c]
+        if {$c != [$s toString]} {
+             error "unicode value $max not passed through properly"
+        }
+    }
+    set i
+} 65535

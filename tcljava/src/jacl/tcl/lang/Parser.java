@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Parser.java,v 1.7 1999/08/03 02:33:08 mo Exp $
+ * RCS: @(#) $Id: Parser.java,v 1.8 2000/03/18 03:30:46 mo Exp $
  */
 
 package tcl.lang;
@@ -1756,7 +1756,7 @@ backslash(
 	    if (count == 0) {
 		result = 'u';
 	    }
-	    return new BackSlashResult((char)result, script_index);
+	    return new BackSlashResult((char)result, script_index+1);
     case '\r':
     case '\n':
 	if (c == '\r') {
