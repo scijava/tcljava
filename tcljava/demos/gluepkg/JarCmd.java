@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: JarCmd.java,v 1.3 1999/08/27 23:19:21 mo Exp $
+ * RCS: @(#) $Id: JarCmd.java,v 1.2 1999/05/08 23:17:10 dejong Exp $
  *
  */
 
@@ -75,7 +75,7 @@ class JarCmd implements Command {
 
 	while (enum.hasMoreElements()) { 
 
-	    zEntry = (ZipEntry) enum.nextElement();
+	    zEntry = (ZipEntry)enum.nextElement();
 
 	    if (!extract) {
 		// If not extracting, simply append each filename to the 

@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclObject.java,v 1.3 1999/08/15 19:38:55 mo Exp $
+ * RCS: @(#) $Id: TclObject.java,v 1.1 1998/10/14 21:09:14 cvsadmin Exp $
  *
  */
 
@@ -48,7 +48,6 @@ public final class TclObject {
     public TclObject(InternalRep rep) {
 	internalRep = rep;
 	stringRep = null;
-	refCount = 0;
     }
 
     /**
@@ -62,7 +61,6 @@ public final class TclObject {
     protected TclObject(TclString rep, String s) {
 	internalRep = rep;
 	stringRep = s;
-	refCount = 0;
     }
 
     /**
@@ -87,22 +85,26 @@ public final class TclObject {
 	    return;
 	}
 
-	// In the special case where the internal representation is a CObject,
-	// we want to call the special interface to convert the underlying
-	// native object into a reference to the Java TclObject.  Note that
-	// this test will always fail if we are not using the native
-	// implementation.
+	/*
+	 * In the special case where the internal representation is a CObject,
+	 * we want to call the special interface to convert the underlying
+	 * native object into a reference to the Java TclObject.  Note that
+	 * this test will always fail if we are not using the native
+	 * implementation.
+	 */
 
 	if ((internalRep instanceof CObject) && !(rep instanceof CObject)) {
-	    // We must ensure that the string rep is copied into Java
-	    // before we lose the reference to the underlying CObject.
-	    // Otherwise we will lose the original string information
-	    // when the backpointer is lost.
+	    /*
+	     * We must ensure that the string rep is copied into Java
+	     * before we lose the reference to the underlying CObject.
+	     * Otherwise we will lose the original string information
+	     * when the backpointer is lost.
+	     */
 
 	    if (stringRep == null) {
 		stringRep = internalRep.toString();
 	    }
-	    ((CObject) internalRep).makeReference(this);
+	    ((CObject)internalRep).makeReference(this);
 	}
 	internalRep.dispose();
 	internalRep = rep;
@@ -175,7 +177,7 @@ public final class TclObject {
 	    TclObject newObj = new TclObject(internalRep.duplicate());
 	    newObj.stringRep = this.stringRep;
 	    newObj.refCount = 1;
-	    refCount--;
+	    this.refCount --;
 	    return newObj;
 	} else {
 	    throw new TclRuntimeError("takeExclusive() called on object \"" +
@@ -184,8 +186,6 @@ public final class TclObject {
     }
 
     /**
-     * Tcl_IncrRefCount -> preserve
-     *
      * Increments the refCount to indicate the caller's intent to
      * preserve the value of this object. Each preserve() call must be matched
      * by a corresponding release() call.
@@ -197,25 +197,24 @@ public final class TclObject {
 	    throw new TclRuntimeError("Attempting to preserve object " +
 		    "after it was deallocated");
 	} 
-	refCount++;
+	refCount ++;
     }
 
     /**
-     * Tcl_DecrRefCount -> release
-     *
      * Decrements the refCount to indicate that the caller is no longer
      * interested in the value of this object. If the refCount reaches 0,
      * the obejct will be deallocated.
      */
     public final void release() {
-	refCount--;
+	refCount --;
 
 	if (refCount <= 0) {
 	    internalRep.dispose();
 
-	    // Setting these to null will ensure that any attempt to use
-	    // this object will result in a Java NullPointerException.
-
+	    /*
+	     * Setting these to null will ensure that any attempt to use
+	     * this object will result in a Java NullPointerException.
+	     */
 	    internalRep = null;
 	    stringRep = null;
 	}

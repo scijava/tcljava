@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: ReflectObject.java,v 1.7 1999/08/09 09:18:34 mo Exp $
+ * RCS: @(#) $Id: ReflectObject.java,v 1.6 1999/05/15 23:51:29 dejong Exp $
  *
  */
 
@@ -422,6 +422,8 @@ makeReflectObject(
 {
     //final boolean debug = false;
 
+    ensureInit(interp); // make sure reflect tables are initialized
+
     if (obj == null) {
         // this is the null reflect object case
 
@@ -648,6 +650,8 @@ throws
 				// registered in the given interpreter.
 				// Error message is left inside interp.
 {
+    ensureInit(interp); // make sure reflect tables are initialized
+
     InternalRep rep = tobj.getInternalRep();
     ReflectObject roRep;
 
@@ -919,6 +923,40 @@ public String
 toString()
 {
   return refID;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ensureInit --
+ *
+ *	Initializes fields inside the Interp that are used by
+ *	ReflectObject's. This is slightly tricky because we can
+ *      be initialized in a couple of ways. The BlendExtension
+ *      class could be loaded by doing a "package require java"
+ *      but there is also the nasty case where a Jacl user
+ *      creates an Interp and calls ReflectObject methods directly.
+ *      To maintain compatibility with Jacl 1.0 and 1.1 we
+ *      make sure the ReflectObject tables are initialized by
+ *      calling ensureInit from public static methods in ReflectObject.
+ *
+ * Results:
+ * 	None.
+ *
+ * Side effects:
+ *	The fields are initialized.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+ensureInit(Interp interp)
+{
+    if (interp.reflectIDTable == null) {
+	interp.reflectIDTable = new Hashtable();
+	interp.reflectObjTable = new Hashtable();
+	interp.reflectObjCount = 0;
+    }
 }
 
 } // end ReflectObject

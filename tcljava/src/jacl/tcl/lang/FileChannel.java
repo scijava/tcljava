@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FileChannel.java,v 1.5 1999/05/24 12:44:49 mo Exp $
+ * RCS: @(#) $Id: FileChannel.java,v 1.2 1999/05/09 00:12:06 dejong Exp $
  *
  */
 
@@ -28,7 +28,6 @@ class FileChannel extends Channel {
      * that allows this behavior.
      */
     private RandomAccessFile file = null;
-    private BufferedReader reader = null;
 
     /**
      * Buffer size used when reading large files
@@ -75,15 +74,18 @@ class FileChannel extends Channel {
 	File fileObj = FileUtil.getNewFileObj(interp, fileName);
 	
 	if (((modeFlags & TclIO.CREAT) != 0)  && !fileObj.exists() ) {
-	    // Creates the file and closes it so it may be
-	    // reopened with the correct permissions. (w, w+, a+)
-
+	    /* 
+	     * Creates the file and closes it so it may be
+	     * reopened with the correct permissions. (w, w+, a+)
+	     */
 	    file = new RandomAccessFile(fileObj, "rw");
 	    file.close();
 	} 
 
 	if ((modeFlags & TclIO.RDWR) != 0) { 
-	    // Opens file (r+), error if dosent exist.  
+	    /* 
+	     * Opens file (r+), error if dosent exist.  
+	     */
 
 	    checkFileExists(interp, fileObj);
 	    checkReadWritePerm(interp, fileObj, 0);
@@ -96,7 +98,9 @@ class FileChannel extends Channel {
 	    file = new RandomAccessFile(fileObj, "rw");
 
 	} else if ((modeFlags & TclIO.RDONLY) != 0) { 
-	    // Opens file (r), error if dosent exist.
+	    /* 
+	     * Opens file (r), error if dosent exist.
+	     */
 
 	    checkFileExists(interp, fileObj);
 	    checkReadWritePerm(interp, fileObj, -1);
@@ -109,7 +113,9 @@ class FileChannel extends Channel {
 	    file = new RandomAccessFile(fileObj, "r");
 
 	} else if ((modeFlags & TclIO.WRONLY) != 0) {
-	    // Opens file (a), error if dosent exist.
+	    /* 
+	     * Opens file (a), error if dosent exist.
+	     */
 
 	    checkFileExists(interp, fileObj);
 	    checkReadWritePerm(interp, fileObj, 1);
@@ -119,11 +125,13 @@ class FileChannel extends Channel {
 			fileName + "\": illegal operation on a directory");
 	    }
 	    
-	    // Currently there is a limitation in the Java API.
-	    // A file can only be opened for read OR read-write.
-	    // Therefore if the file is write only, Java cannot
-	    // open the file.  Throw an error indicating this
-	    // limitation.
+	    /*
+	     * Currently there is a limitation in the Java API.
+	     * A file can only be opened for read OR read-write.
+	     * Therefore if the file is write only, Java cannot
+	     * open the file.  Throw an error indicating this
+	     * limitation. 
+	     */
 
 	    if (!fileObj.canRead()) {
 	        throw new TclException(interp, 
@@ -136,14 +144,18 @@ class FileChannel extends Channel {
 	    throw new TclRuntimeError("FileChannel.java: invalid mode value");
 	}
 
-	// If we are appending, move the file pointer to EOF.
+	/* 
+	 * If we are appending, move the file pointer to EOF.
+	 */
 
 	if((modeFlags & TclIO.APPEND) != 0) {      
 	    file.seek(file.length());
 	}
 
-	// In standard Tcl fashion, set the channelId to be "file" + the
-	// value of the current FileDescriptor.
+	/*
+	 * In standard Tcl fashion, set the channelId to be "file" + the
+	 * value of the current FileDescriptor.
+	 */
 
 	String fName = "file" + getNextFileNum(interp);
 	setChanName(fName);
@@ -161,7 +173,7 @@ class FileChannel extends Channel {
      *            the next line, or a specified number of bytes.
      * @param numBytes number of bytes to read.  Only used when the readType
      *            is TclIO.READ_N_BYTES.
-     * @return String of data that was read from file. (can not be null)
+     * @return String of data that was read from file.
      * @exception TclException is thrown if read occurs on WRONLY channel.
      * @exception IOException is thrown when an IO error occurs that was not
      *                correctly tested for.  Most cases should be caught.
@@ -178,43 +190,63 @@ class FileChannel extends Channel {
 	        getChanName() + "\"wasn't opened for reading");
 	}
 
-	// Create the Buffered Reader if it does not already exist
-	if (reader == null) {
-	    reader = new BufferedReader( new FileReader(file.getFD()) );
-	}
-
-	eofCond = false;
-
 	switch (readType) {
 	    case TclIO.READ_ALL: {
-		char[] charArr = new char[BUF_SIZE];
-		StringBuffer sbuf = new StringBuffer((int) file.length());
-		int numRead;
-		    
-		while((numRead = reader.read(charArr, 0, BUF_SIZE)) != -1) {
-		    sbuf.append(charArr,0, numRead);
+	        int    bytesRead  = 0;
+		long   fileSize   = file.length();
+		byte[] byteArr    = new byte[BUF_SIZE];
+		StringBuffer sbuf = new StringBuffer((int)fileSize);
+		
+		while((fileSize - (long)bytesRead) > BUF_SIZE) {
+		    bytesRead += file.read(byteArr);
+		    sbuf.append(byteArr);
 		}
+		bytesRead = file.read(byteArr);
+		if (bytesRead == -1) {
+		    return("");
+		}
+		sbuf.append(new String(byteArr, 0, bytesRead));
 		eofCond = true;
+
+		return sbuf.toString();
+	    } 
+	    case TclIO.READ_LINE: {
+	        int    byteRead   = 0;
+		char   ch;
+		StringBuffer sbuf = new StringBuffer();
+		eofCond = false;
+
+		/*
+		 * The readXXX interface is inconsistent w/ the basic
+		 * read() in that readXXX throws EOFException when it
+		 * reaches the EOF, while read() returns -1.
+		 */
+		try {
+		    while ((ch = (char)file.readByte()) != -1) {
+			if ((ch == '\n') || (ch == '\r')) {
+			    break;
+			} else {
+			    sbuf.append(ch);
+			    byteRead++;
+			}
+		    }
+		} catch (EOFException e) {
+		    eofCond = true;
+		}
+
 		return sbuf.toString();
 	    }
-	    case TclIO.READ_LINE: {
-		String line = reader.readLine();
-		if (line == null) {
-		    eofCond = true;
-		    return "";
-		} else {
-		    return line;
-		}
-	    }
 	    case TclIO.READ_N_BYTES: {
-		char[] charArr = new char[numBytes];
-		int numRead;
-		numRead = reader.read(charArr, 0, numBytes);
-		if (numRead == -1) {
+	        byte[] byteArr = new byte[numBytes];
+		int bytesRead  = file.read(byteArr);
+
+		if (bytesRead == -1) {
 		    eofCond = true;
-		    return "";
+		    return ("");
+		} else {
+		    eofCond = false;
+		    return (new String(byteArr));
 		}
-		return( new String(charArr,0,numRead) );
 	    }
 	    default: {
 	        throw new TclRuntimeError(
@@ -402,7 +434,9 @@ class FileChannel extends Channel {
 	Hashtable htbl = TclIO.getInterpChanTable(interp);
 
         for (i = 0; (htbl.get("file" + i)) != null; i++) {
-	    // Do nothing...
+	    /*
+	     * Do nothing...
+	     */
 	}
 	return i;
     }

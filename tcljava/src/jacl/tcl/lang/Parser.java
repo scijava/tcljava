@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Parser.java,v 1.7 1999/08/03 02:33:08 mo Exp $
+ * RCS: @(#) $Id: Parser.java,v 1.2 1999/05/09 01:05:13 dejong Exp $
  */
 
 package tcl.lang;
@@ -121,8 +121,8 @@ parseCommand(
 	while (true) {
 
 	  cur = script_array[script_index];
-
-	  while (((cur <= TYPE_MAX) && (typeTable[cur] == TYPE_SPACE)) || (cur == '\n')) {
+	  
+	  while ((typeTable[cur] == TYPE_SPACE) || (cur == '\n')) {
 	    cur = script_array[++script_index];
 	  }
 	  
@@ -196,7 +196,7 @@ parseCommand(
 
 	    while (true) {
 	      cur = script_array[script_index];
-	      type = ((cur > TYPE_MAX) ? TYPE_NORMAL : typeTable[cur]);
+	      type = typeTable[cur];
 	      
 	      if (type == TYPE_SPACE) {
 		script_index++;
@@ -262,10 +262,9 @@ parseCommand(
 		while (true) {
 		    cur = script_array[script_index];
 
-		    // get the current char in the array and lookup its type
-		    while (((cur > TYPE_MAX) ? TYPE_NORMAL : typeTable[cur])
-			   == TYPE_NORMAL) {
-		      cur = script_array[++script_index];
+		    // get the current char in the array and lookup its type in array
+		    while (typeTable[script_array[script_index]] == TYPE_NORMAL) {
+		      script_index++;
 		    }
 		    if (script_array[script_index] == '}') {
 			level--;
@@ -354,7 +353,7 @@ parseCommand(
 	    
 
 	    cur = script_array[script_index];
-	    type = ((cur > TYPE_MAX) ? TYPE_NORMAL : typeTable[cur]);
+	    type = typeTable[cur];
 
 	    if (type == TYPE_SPACE) {
 		script_index++;
@@ -497,7 +496,8 @@ parseTokens(
 	    char tmp_c = script_array[script_index];
 	    System.out.println("Char is '" + tmp_c + "'");
 	    System.out.println("Unicode id is " + ((int) tmp_c));
-	    int tmp_i = ((int) ((tmp_c > TYPE_MAX) ? TYPE_NORMAL : typeTable[tmp_c]));
+	    int tmp_i = ((int) typeTable[tmp_c]);
+	    
 	    System.out.println("Type is " + tmp_i);
 	    System.out.println("Mask is " + mask);
 	    System.out.println("(type & mask) is " + ((int) (tmp_i & mask)));
@@ -506,7 +506,7 @@ parseTokens(
 
 
 	cur = script_array[script_index];
-	type = ((cur > TYPE_MAX) ? TYPE_NORMAL : typeTable[cur]);
+	type = typeTable[cur];
 	    
 	if ((type & mask) != 0) {
 	    if (debug) {
@@ -524,14 +524,14 @@ parseTokens(
 	    }
 
 	    while (true) {
-		cur = script_array[++script_index];
-		type = ((cur > TYPE_MAX) ? TYPE_NORMAL : typeTable[cur]);
+	        script_index++;
 
 		if (debug) {
-		    System.out.println("skipping '" + cur + "'");
+		    System.out.println("skipping '" + script_array[script_index]
+				       + "'");
 		}
 
-		if ((type & (mask | TYPE_SUBS)) != 0) {
+		if (((typeTable[script_array[script_index]]) & (mask | TYPE_SUBS)) != 0) {
 		    break;
 		}
 	    }
@@ -746,7 +746,7 @@ throws
     Command cmd;
     TclObject[] newObjv;
     int i;
-    CallFrame savedVarFrame;	//Saves old copy of interp.varFrame
+    CallFrame savedVarFrame;	//Saves old copy of iPtr->varFramePtr
                                 // in case TCL_EVAL_GLOBAL was set.
 
     interp.resetResult();
@@ -804,7 +804,7 @@ throws
 	interp.cmdCount++;
 	savedVarFrame = interp.varFrame;
 	if ((flags & TCL_EVAL_GLOBAL) != 0) {
-	    interp.varFrame = null;
+	    interp.varFrame = interp.globalFrame;
 	}
 	
 	cmd.cmdProc(interp, objv);
@@ -1084,8 +1084,8 @@ static void
 eval2(
     Interp interp,		// Interpreter in which to evaluate the
 				// script.  Also used for error reporting. 
-    char[] script_array,        // the array of charcters
-    int    script_index,        // the starting index into this array
+    char[] script_array,        //the array of charcters
+    int    script_index,        //the starting index into this array
 
     int numBytes,		// Number of bytes in script.  If < 0, the
 				// script consists of all bytes up to the
@@ -1142,7 +1142,7 @@ throws
     interp.resetResult();
     savedVarFrame = interp.varFrame;
     if ((flags & TCL_EVAL_GLOBAL) != 0) {
-	interp.varFrame = null;
+	interp.varFrame = interp.globalFrame;
     }
 
     // Each iteration through the following loop parses the next
@@ -1269,9 +1269,7 @@ throws
     } while (bytesLeft > 0);
 
     } finally {
-      if (parse != null) {
-          parse.release(); // Let go of parser resources
-      }
+      parse.release(); // Let go of parser resources
       releaseObjv(interp, objv); // Let go of objv buffer
     }
 
@@ -1842,7 +1840,7 @@ static char
 charType(
     char c)
 {
-    return ((c > TYPE_MAX) ? TYPE_NORMAL : typeTable[c]);
+    return (typeTable[c]);
 }
 
 // The following table provides parsing information about each possible
@@ -1874,14 +1872,8 @@ static final char TYPE_CLOSE_PAREN	= 0x10;
 static final char TYPE_CLOSE_BRACK	= 0x20;
 static final char TYPE_BRACE		= 0x40;
 
-// This is the largest value in the type table. If a
-// char value is larger then the char type is TYPE_NORMAL.
-// Lookup -> ((c > TYPE_MAX) ? TYPE_NORMAL : typeTable[c])
 
-static final char TYPE_MAX              = 127;
-
-
-static char[] typeTable = {
+static char typeTable[] = {
     // Character values, from 0-127:
 
     TYPE_SUBS,        TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
@@ -1916,6 +1908,41 @@ static char[] typeTable = {
     TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
     TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_BRACE,
     TYPE_NORMAL,      TYPE_BRACE,       TYPE_NORMAL,      TYPE_NORMAL,
+
+    // Character values, from 128-255:
+
+    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
+    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
+    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
+    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
+    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
+    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
+    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
+    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
+    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
+    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
+    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
+    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
+    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
+    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
+    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
+    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
+    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
+    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
+    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
+    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
+    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
+    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
+    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
+    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
+    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
+    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
+    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
+    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
+    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
+    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
+    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
+    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
 };
 
 

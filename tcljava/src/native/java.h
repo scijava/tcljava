@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: java.h,v 1.3 1999/11/01 18:31:32 redman Exp $
+ * RCS: @(#) $Id: java.h,v 1.1 1998/10/14 21:09:18 cvsadmin Exp $
  */
 
 #ifndef _JAVA
@@ -171,14 +171,6 @@ extern JavaInfo java;
     JavaSetEnv(oldEnv); \
     (*env)->MonitorExit(env, java.NativeLock); \
 }
-
-
-#if (TCL_MAJOR_VERSION == 8 && TCL_MINOR_VERSION == 0) 
-TCLBLEND_EXTERN void Tcl_SaveResult(Tcl_Interp *interp,
-	  			    Tcl_SavedResult *statePtr);
-TCLBLEND_EXTERN void Tcl_RestoreResult(Tcl_Interp *interp,
-				       Tcl_SavedResult *statePtr);
-#endif
 
 /*
  * Declarations for functions shared across files.

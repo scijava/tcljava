@@ -24,7 +24,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: TclClassLoader.java,v 1.7 1999/08/28 02:43:16 mo Exp $
+ * RCS: @(#) $Id: TclClassLoader.java,v 1.4 1999/05/09 22:56:45 dejong Exp $
  */
 
 
@@ -527,13 +527,12 @@ getEnvTclClasspath(
     Interp interp) 
 throws TclException
 {
-    try {
-	return TclList.getElements(interp,
-	           interp.getVar("env", "TCL_CLASSPATH", TCL.GLOBAL_ONLY));
-    } catch (TclException e) {
-	interp.resetResult();
-	return null;
+    TclObject tobj = interp.getVar("env", "TCL_CLASSPATH",
+             TCL.DONT_THROW_EXCEPTION | TCL.GLOBAL_ONLY);
+    if (tobj != null) {
+	return(TclList.getElements(interp, tobj));
     }
+    return(null);
 }
 
 /*
@@ -578,7 +577,7 @@ throws
  *
  * removeCache --
  *
- *	Remove the given className from the internal cache.
+ *	|>description<|
  *
  * Results:
  *	|>None.<|
@@ -591,9 +590,9 @@ throws
 
 void
 removeCache(
-    String className)
+    String key)
 {
-    classes.remove(className);
+    classes.remove(key);
 }
 
 } // end TclClassLoader

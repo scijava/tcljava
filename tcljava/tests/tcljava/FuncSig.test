@@ -5,7 +5,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: FuncSig.test,v 1.4 1999/07/28 03:59:56 mo Exp $
+# RCS: @(#) $Id: FuncSig.test,v 1.2 1999/05/10 03:01:48 dejong Exp $
 
 # Note: This test file must be sourced from the parent directory
 #       or else the defs file may not be properly loaded.
@@ -40,14 +40,12 @@ test FuncSig-1.3 {get, overloaded methods} {
 
     expr {$k1 == $k2}
 } 0
-
 test FuncSig-1.4 {get, cache correctness} {
     set c tests.JavaTest
     java::new $c
     java::new $c a 1
     catch {java::new $c}
 } {0}
-
 test FuncSig-1.5 {get, errors} {
     list [catch {java::call Object "\{"} msg] $msg
 } {1 {unmatched open brace in list}}

@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FileDialogCmd.java,v 1.3 1999/08/27 23:19:21 mo Exp $
+ * RCS: @(#) $Id: FileDialogCmd.java,v 1.2 1999/05/08 23:15:49 dejong Exp $
  *
  */
 
@@ -30,23 +30,23 @@ class FileDialogCmd implements Command {
      * If dir and file are valid the result is set to the valid absolute path.
      */
 
-    public void cmdProc(Interp interp, TclObject[] objv)
+    public void cmdProc(Interp interp, TclObject argv[])
             throws TclException {
         FileDialogApp fileDialog;      // The FileDialog widget
 	String        dirName = null;  // The dir to start with, if any
 
 
-	if ((objv.length != 1) && (objv.length != 3)) {
-	    throw new TclNumArgsException(interp, 1, objv,
+	if ((argv.length != 1) && (argv.length != 3)) {
+	    throw new TclNumArgsException(interp, 1, argv,
 		    "?-directory dirName?");
 	}
 
-	if ((objv.length == 3)) {
-	    if("-directory".startsWith(objv[1].toString())) {
-	        dirName = objv[2].toString();
+	if ((argv.length == 3)) {
+	    if("-directory".startsWith(argv[1].toString())) {
+	        dirName = argv[2].toString();
 	    } else {
 	        throw new TclException(interp, "bad filedialog option \""
-                        + objv[1].toString() + "\": must be -directory");
+                        + argv[1].toString() + "\": must be -directory");
 	    }
 	}
 
@@ -72,3 +72,5 @@ class FileDialogCmd implements Command {
 	}
     }
 }
+
+

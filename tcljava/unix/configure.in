@@ -2,14 +2,13 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run to configure the
 dnl	Makefile in this directory.
 AC_INIT(../src/tcljava/tcl/lang/InternalRep.java)
-# RCS: @(#) $Id: configure.in,v 1.24 1999/11/02 00:10:01 redman Exp $
+# RCS: @(#) $Id: configure.in,v 1.10 1999/05/16 00:26:22 dejong Exp $
 
 
 #--------------------------------------------------------------------
 # 	Version identification info (also set in source files)
 #--------------------------------------------------------------------
-TCLJAVA_VERSION=1.2.5
-TCLJAVA_NODOT_VERSION=`echo $TCLJAVA_VERSION | sed -e 's/\.//g'`
+TCLJAVA_VERSION=1.2.2
 
 # Convert into full path name
 srcdir=`cd $srcdir ; pwd`
@@ -22,48 +21,49 @@ echo $MSG
 
 # the very first thing we need to do update the dist version number.
 # we only need to do this when releasing new versions of the code
-# so only the code maintainer will need to do this.
+# so only the code maintainer will care about doing this.
 
 TOOLS=$srcdir/tools
 
 if test -d $TOOLS ; then
 
-    # Check that grep is working by looking for the match to the
-    # current version number in the configure.in file.
+    # Make sure our original match using grep worked so that we will
+    # know if the version number really changed.
 
     if env grep "TCLJAVA_VERSION=$TCLJAVA_VERSION" $srcdir/configure.in > /dev/null; then
         DO=nothing
     else
-	AC_MSG_ERROR([TCLJAVA_VERSION grep failed.
-        did you rerun autoconf after changing the version number in configure.in?])
+	AC_MSG_ERROR([TCLJAVA_VERSION grep failed])
     fi
-
-    # Check that the files we need actually exist
-
+ 
     if test ! -d $TOOLS/vutil ; then
 	echo "$TOOLS/vutil does not exist"
-	exit 1
+	exit -1
     fi
 
     if test ! -f $TOOLS/vutil/vsub.sh ; then
 	echo "$TOOLS/vutil/vsub.sh does not exist"
-	exit 1
+	exit -1
     fi
 
-    # Find out if we need to update the version numbers by checking to
-    # see if the one we got differs from the one in the file "current".
 
-    if env grep "TCLJAVA_VERSION=$TCLJAVA_VERSION" $TOOLS/vutil/current > /dev/null; then
-        # If they are the same we do not need to update
-	DO=nothing
+    TMP_CWD=`pwd`
+    cd $TOOLS/vutil
+    sh vsub.sh
+    cd $TMP_CWD
+
+
+    # Now test to see if the version number got changed
+
+    if env grep "TCLJAVA_VERSION=$TCLJAVA_VERSION" $srcdir/configure.in > /dev/null; then
+        # version was not changed so we can just keep going
+	echo "dist version number checked"
     else
-        # Otherwise we do need to update
-        echo "Updating version numbers in the source files to $TCLJAVA_VERSION"
-	
-        TMP_CWD=`pwd`
-        cd $TOOLS/vutil
-        sh vsub.sh $TCLJAVA_VERSION
-        cd $TMP_CWD
+        # version was changed, we need to quit running ./configure now
+        # and run it again so that we get the new version number info.
+
+	echo "dist version number was updated, please run configure again."
+	exit 0
     fi
 fi
 
@@ -77,8 +77,8 @@ fi
 
 #--------------------------------------------------------------------
 #	Locate which java tool to build.  If the --with-build option
-#	is used, that overides everthing.  Otherwise configure for
-#	both Tcl Blend and Jacl.
+#	is used, that overides everthing.  Otherwise look for Tcl Blend
+#	first then tclBlend.
 #--------------------------------------------------------------------
 
 AC_ARG_WITH(build, [  --with-build=DIR        select which system to build (jacl or tclblend)],
@@ -86,11 +86,11 @@ AC_ARG_WITH(build, [  --with-build=DIR        select which system to build (jacl
 
 if test $TCLJAVA != "NONE"; then
     if test $TCLJAVA != "jacl" && test $TCLJAVA != "tclblend"; then 
-	AC_MSG_ERROR([Cannot build --with-build='$TCLJAVA': use 'jacl' or 'tclblend'])
+	AC_MSG_ERROR([Cannot build --with-'$TCLJAVA': use 'jacl' or 'tclblend'])
     fi
 fi
 
-#BOTH will automatically be set to true when configuring Jacl and Tcl Blend
+#BOTH will automatically be set to true when configuring Jacl and TclBlend
 BOTH=false
 
 
@@ -219,7 +219,7 @@ else
         AC_MSG_ERROR([--with-jdk can not be used with the --with-$JAVA_NAME option.])
     fi
 
-    if test "$JDK_DIR" != "yes" && test ! -d "$JDK_DIR"; then
+    if test ! -d "$JDK_DIR"; then
         AC_MSG_ERROR([directory '$JDK_DIR' given to --with-jdk option does not exist.])
     fi
 
@@ -268,12 +268,10 @@ echo "JAVA_NAME is $JAVA_NAME" >&5
 
 
 
-#------------------------------------------------------------------
 #
 # Check to make sure we know the names of the .zip or .jar files
 # that need to be included in the CLASSPATH
 #
-#------------------------------------------------------------------
 
 AC_MSG_CHECKING([for zip or jar files to include on CLASSPATH])
 JAVA_CLASSPATH=""
@@ -312,12 +310,9 @@ fi
 
 
 
-#------------------------------------------------------------------
 #
-# Check for the java runtime
+# Check that we have the java that corresponds with JAVA_DIR in our path
 #
-#------------------------------------------------------------------
-
 AC_MSG_CHECKING([for the java runtime])
 case "$JAVA_NAME" in
     jdk) NAME=java ;;
@@ -332,33 +327,12 @@ else
   Cannot find $JAVA_DIR/bin/$NAME.])
 fi
 
-#------------------------------------------------------------------
-#
-# Check for the remote debug java_g runtime
-#
-#------------------------------------------------------------------
-
-AC_MSG_CHECKING([for the java_g runtime])
-case "$JAVA_NAME" in
-    jdk) NAME=java_g ;;
-    kaffe) NAME=kaffe ;;
-esac
-if test -x $JAVA_DIR/bin/$NAME; then
-    JAVA_G=$JAVA_DIR/bin/$NAME
-    echo "Using JAVA_G=$JAVA_G" >&5
-    AC_MSG_RESULT($JAVA_G)
-else
-    AC_MSG_WARN([
-  Cannot find $JAVA_DIR/bin/$NAME.])
-fi
 
 
 
-#------------------------------------------------------------------
 #
-# Check for the javac compiler
+# Check that we have the javac that corresponds with JAVA_DIR in our path
 #
-#------------------------------------------------------------------
 
 AC_MSG_CHECKING([for the java compiler])
 case "$JAVA_NAME" in
@@ -378,11 +352,9 @@ fi
 
 
 
-#------------------------------------------------------------------
 #
-# Check that we have the javah .h header generator
+# Check that we have the javah that corresponds with JAVA_DIR in our path
 #
-#------------------------------------------------------------------
 
 if test $TCLJAVA = "tclblend" || test $BOTH = "true"; then
 
@@ -403,12 +375,9 @@ fi
 fi
 
 
-#------------------------------------------------------------------
 #
-# Check that we have the jar archive utility
+# Check that we have the jar that corresponds with JAVA_DIR in our path
 #
-#------------------------------------------------------------------
-
 AC_MSG_CHECKING([for the java archive program])
 case "$JAVA_NAME" in
     jdk) NAME=jar ;;
@@ -426,42 +395,28 @@ fi
 
 
 
-#------------------------------------------------------------------
 #
-# Check that we have the jdb java debugger program
-# jdb functionality will not be tested by the configure script
+# Check that we have the jdb that corresponds with JAVA_DIR in our path
+# jdb will not be tested like the other java utils
 #
-#------------------------------------------------------------------
 
 if test $TCLJAVA = "jacl" || test $BOTH = "true"; then
 
-    AC_MSG_CHECKING([for the java debugger program])
-    case "$JAVA_NAME" in
-        jdk) NAME=jdb ;;
-        kaffe) NAME=jdb ;;
-    esac
-    if test -x $JAVA_DIR/bin/$NAME; then
-        JDB=$JAVA_DIR/bin/$NAME
-        echo "Using JDB=$JDB" >&5
-        AC_MSG_RESULT($JDB)
-    else
-        AC_MSG_ERROR([Cannot find $JAVA_DIR/bin/$NAME.])
-    fi
+AC_MSG_CHECKING([for the java debugger program])
+case "$JAVA_NAME" in
+    jdk) NAME=jdb ;;
+    kaffe) NAME=jdb ;;
+esac
+if test -x $JAVA_DIR/bin/$NAME; then
+    JDB=$JAVA_DIR/bin/$NAME
+    echo "Using JDB=$JDB" >&5
+    AC_MSG_RESULT($JDB)
+else
+    AC_MSG_ERROR([
+  Cannot find $JAVA_DIR/bin/$NAME.])
 fi
 
-
-#------------------------------------------------------------------
-#
-# Look on the path for ddd, if it is not found do nothing
-# ddd functionality will not be tested by the configure script
-#
-#------------------------------------------------------------------
-
-AC_PATH_PROG(TMP_DDD, ddd)
-if test -x "$TMP_DDD"; then
-    DDD=$TMP_DDD
 fi
-
 
 
 
@@ -473,9 +428,11 @@ fi
 #--------------------------------------------------------------------
 
 AC_ARG_WITH(jikes, [  --with-jikes=PROG       use jikes compiler given by PROG, if PROG is not given look for jikes on the PATH.],
-    JIKES=$withval, JIKES=yes)
+    JIKES=$withval, JIKES=NONE)
 
-if test "$JIKES" = "no"; then
+#echo "JIKES is \"$JIKES\""
+
+if test "$JIKES" = "NONE"; then
     #do nothing
     JIKES=""
 else
@@ -657,8 +614,7 @@ does not exist. You must install the JDK Native Threads Pack to use tclblend.
 See http://www.blackdown.org/java-linux.html.])
             fi
 
-            # Early Blackdown JDK include dir name was genunix
-            if test -d $JAVA_INCLUDE/genunix; then
+            if test "$JAVA_VERSION" = "1.1"; then
                 JAVA_ARCH_INCLUDE=$JAVA_INCLUDE/genunix
             else
                 JAVA_ARCH_INCLUDE=$JAVA_INCLUDE/linux
@@ -667,7 +623,6 @@ See http://www.blackdown.org/java-linux.html.])
             case "`uname -m`" in
                 alpha)  ARCH=alpha ;;
                 i?86)   ARCH=i386 ;;
-                mips)   ARCH=mips ;;
                 ppc)    ARCH=ppc ;;
                 sparc)  ARCH=sparc ;;
                 *)      AC_MSG_ERROR([ARCH '`uname -m`' is not supported]) ;;
@@ -982,11 +937,9 @@ if env $JAVAC -d . $srcdir/../src/Test.java 1>&5 2>&5 &&
 
         # -native does not work correctly under JDK 1.1.7 from Blackdown.
         # The problem is related to IO from a shell script.
-	# Currently we ignore the JAVA_VERISON FLAG but we really should
-	# fix that so that it works for the blackdown port of 1.2. 
-        if test "`uname -s`" = "Linux"; then
+        if test "$JAVA_VERSION" = "1.1" && test "`uname -s`" = "Linux"; then
             JAVA_FLAGS=""
-            MSG="skipping -native option because jacl has some problems running with native threads on linux with JDK 1.1 from Blackdown"
+            MSG="skipping -native option because jacl has some problems running with native threads on linux with JDK 1.1"
             echo $MSG >&5
             AC_MSG_WARN([$MSG])
         fi
@@ -1127,8 +1080,8 @@ fi
 
 
 #--------------------------------------------------------------------
-#	If the TCLJAVA variable equals tclblend or both then we 
-#       need to grab some variables from the tclConfig.sh
+#	If the TCLJAVA variable equals tclblend then we need to
+#	grab some variables from the tclConfig.sh
 #--------------------------------------------------------------------
 
 if test $TCLJAVA = "tclblend" || test $BOTH = "true"; then
@@ -1138,8 +1091,20 @@ if test $TCLJAVA = "tclblend" || test $BOTH = "true"; then
     #	not, assume that its top-level directory is a sibling of ours.
     #--------------------------------------------------------------------
     
-    AC_ARG_WITH(tcl, [  --with-tcl=DIR          build directory for Tcl 8.X source release from DIR],
+    AC_ARG_WITH(tcl, [  --with-tcl=DIR          build directory for Tcl 8.0 source release from DIR],
     	TCL_BIN_DIR=$withval, TCL_BIN_DIR="$srcdir/../../tcl8.0.5/unix")
+    
+    if test ! -d $TCL_BIN_DIR; then
+	TCL_BIN_DIR="$srcdir/../../tcl8.0.4/unix"
+    fi
+
+    if test ! -d $TCL_BIN_DIR; then
+	TCL_BIN_DIR="$srcdir/../../tcl8.0.3/unix"
+    fi
+
+    if test ! -d $TCL_BIN_DIR; then
+	TCL_BIN_DIR="$srcdir/../../tcl8.0/unix"
+    fi
 
     if test ! -d $TCL_BIN_DIR; then
         AC_MSG_ERROR([Tcl directory could not be located.
@@ -1203,17 +1168,6 @@ Make sure Tcl was configured with --enable-shared.])
         fi
     fi
 
-    # Fix up the TCL_LD_SEARCH_FLAGS when running under Solaris
-
-    case "`uname -s`" in
-        SunOS*)
-            TCL_LD_SEARCH_FLAGS=`echo ${TCL_LD_SEARCH_FLAGS} | sed -e 's/-Wl,-R,/-R /'`
-            ;;
-        IRIX)
-            TCL_LD_SEARCH_FLAGS=`echo ${TCL_LD_SEARCH_FLAGS} | sed -e 's/-Wl,-rpath,/-rpath /'`
-            ;;
-    esac
-
     # Define used when we compile with kaffe
     if test "$JAVA_NAME" = "kaffe"; then
         TCL_CFLAGS="$TCL_CFLAGS -DTCLBLEND_KAFFE"
@@ -1247,59 +1201,100 @@ fi
 
 
 
+
+
+
+
+
 #
-# Check for the installed version of tclsh and wish. we need to use the
-# one we compiled against because you can not compile with one version
-# and then load into another. If you compiled Tcl Blend with Tcl 8.1 and
-# then load it into a Tcl 8.0 interp, it will segfault.
+# try to find tclsh8.0 or wish8.0 in the path if we are running tclblend
 #
+
+TCLSH80=tclsh8.0
+WISH80=wish8.0
 
 if test $TCLJAVA = "tclblend" || test $BOTH = "true"; then
 
-  # Check to make sure that tclsh has been built by looking for the
-  # tclsh executable in the TCL_BIN_DIR directory.
-
-  if test ! -x $TCL_BIN_DIR/tclsh; then
-    AC_MSG_ERROR([Tcl was configued in $TCL_BIN_DIR, but it has not been built, please build it and run configure again.])
-  fi
-
-  # Double check that tclsh works and that it is tclsh8.0 or better
-  # We need to set LD_LIBRARY_PATH and SHLIB_PATH so that Tcl can find its
-  # shared library in the build directory on a Unix or HP-UX system.
-
-  LD_LIBRARY_PATH=$TCL_BIN_DIR:$LD_LIBRARY_PATH
-  export LD_LIBRARY_PATH
-  SHLIB_PATH=$TCL_BIN_DIR:$SHLIB_PATH
-  export SHLIB_PATH
-
-  TCLSH_LOC=$TCL_BIN_DIR/tclsh
-  rm -f tcl_version.tcl
-  echo 'puts [[expr {[info tclversion] >= 8.0}]] ; exit 0' > tcl_version.tcl
-  if test "`$TCLSH_LOC tcl_version.tcl 2>&5`" = "1"; then
-      AC_MSG_RESULT([Tcl executable $TCLSH_LOC works])
+  AC_PATH_PROG(TCLSH_LOC, tclsh8.0)
+  if test -x "$TCLSH_LOC"; then
+      echo 'puts [[info tclversion]] ; exit 0' > tcl_version.tcl
+      if test "`$TCLSH_LOC tcl_version.tcl 2>&5`" = "8.0"; then
+          TCLSH80=$TCLSH_LOC
+          MSG="found tcl version 8.0 at $TCLSH80"
+          echo $MSG >&5
+          AC_MSG_RESULT([$MSG])
+      else
+          MSG="could not find working tclsh8.0"
+          echo $MSG >&5
+          AC_MSG_WARN([$MSG])
+      fi
       rm -f tcl_version.tcl
   else
-      # If the shell did not run or it was not at least Tcl 8.0, generate error
+      #if we did not find tclsh8.0 then try tclsh
+      AC_PATH_PROG(TCLSH_LOC, tclsh)
+      if test -x "$TCLSH_LOC"; then
+          echo 'puts [[info tclversion]] ; exit 0' > tcl_version.tcl
+          if test "`$TCLSH_LOC tcl_version.tcl 2>&5`" = "8.0"; then
+              TCLSH80=$TCLSH_LOC
+              MSG="found tcl version 8.0 at $TCLSH80"
+              echo $MSG >&5
+              AC_MSG_RESULT([$MSG])
+	  else
+              MSG="$TCLSH_LOC is not tcl version 8.0"
+              echo $MSG >&5
+              AC_MSG_WARN([$MSG])
+	  fi
+          rm -f tcl_version.tcl
+      else
+          MSG="Failed to find tcl shell version 8.0"
+          echo $MSG >&5
+          AC_MSG_WARN([$MSG])
+      fi
+  fi
+
+  AC_PATH_PROG(WISH_LOC, wish8.0)
+  if test -x "$WISH_LOC"; then
+      echo 'puts [[info tclversion]] ; exit 0' > tcl_version.tcl
+      if test "`$WISH_LOC tcl_version.tcl 2>&5`" = "8.0"; then
+          WISH80=$WISH_LOC
+          MSG="found wish version 8.0 at $WISH80"
+          echo $MSG >&5
+          AC_MSG_WARN([$MSG])
+      else
+          MSG="could not find working wish8.0"
+          echo $MSG >&5
+          AC_MSG_WARN([$MSG])
+      fi
       rm -f tcl_version.tcl
-      AC_MSG_ERROR([$TCLSH_LOC does not work or is not the correct version])
+  else
+      #if we did not find wish8.0 then try wish
+      AC_PATH_PROG(WISH_LOC, wish)
+      if test -x "$WISH_LOC"; then
+          echo 'puts [[info tclversion]] ; exit 0' > tcl_version.tcl
+          if test "`$WISH_LOC -f tcl_version.tcl 2>&5`" = "8.0"; then
+              WISH80=$WISH_LOC
+              MSG="found wish version 8.0 at $WISH80"
+              echo $MSG >&5
+              AC_MSG_RESULT([$MSG])
+          else
+              MSG="$WISH_LOC is not wish version 8.0"
+              echo $MSG >&5
+              AC_MSG_WARN([$MSG])
+          fi
+          rm -f tcl_version.tcl
+      else
+          MSG="Failed to find wish shell version 8.0"
+          echo $MSG >&5
+          AC_MSG_WARN([$MSG])
+      fi
   fi
 
-  # Now check to see if "make install" has been run in the tcl directory.
-  # The installed executable name is tclsh8.0, tclsh8.1, or tclsh8.2.
-  # We also assume that wish is going to be installed in the same
-  # location, which could be incorrect but oh well.
-
-  TCLSH=$TCL_EXEC_PREFIX/bin/tclsh$TCL_VERSION
-  WISH=$TCL_EXEC_PREFIX/bin/wish$TCL_VERSION
-
-  if test ! -x $TCLSH; then
-      AC_MSG_WARN([Tcl has not been installed yet, it must be installed before installing Tcl Blend])
-  fi
-
-  AC_SUBST(WISH)
-  AC_SUBST(TCLSH)
+  AC_SUBST(WISH80)
+  AC_SUBST(TCLSH80)
 
 fi
+
+
 
 
 
@@ -1310,19 +1305,16 @@ BUILD_DIR=`pwd`
 AC_SUBST(BUILD_DIR)
 
 AC_SUBST(JAVA)
-AC_SUBST(JAVA_G)
 AC_SUBST(JAVAC)
 AC_SUBST(JAVAH)
 AC_SUBST(JAR)
 AC_SUBST(JDB)
-AC_SUBST(DDD)
 
 AC_SUBST(JAVA_CLASSPATH)
 AC_SUBST(JAVA_FLAGS)
 AC_SUBST(JAVA_INCLUDE)
 
 AC_SUBST(TCLJAVA_VERSION)
-AC_SUBST(TCLJAVA_NODOT_VERSION)
 AC_SUBST(TCLJAVA)
 
 if test $TCLJAVA = "jacl"; then 

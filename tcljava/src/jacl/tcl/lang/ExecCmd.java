@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ExecCmd.java,v 1.5 1999/05/17 03:50:37 dejong Exp $
+ * RCS: @(#) $Id: ExecCmd.java,v 1.4 1999/05/09 01:05:13 dejong Exp $
  */
 
 package tcl.lang;
@@ -333,15 +333,8 @@ private Process
     throws IOException, InterruptedException {
 
     // when running on NT we need to write out two files
-    // the first is in C:/TEMP/jacl1.bat and the second is C:/TEMP/jacl2.bat
+    // the fist is in C:/TEMP/jacl1.bat and the second is C:/TEMP/jacl2.bat
     // we exec command.com on jacl1.bat which will invoke cmd.exe on jacl2.bat
-
-    File tmp = new File("C:\\TEMP");
-    if (! tmp.exists()) {
-	if (! tmp.mkdirs()) {
-	    throw new IOException("could not create C:\\TEMP");
-	}
-    }
     
     // if we are not running under NT then we just write out the jacl1.bat file
     // and invoke that with command.com which should work on 95

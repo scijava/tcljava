@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: AppendCmd.java,v 1.2 1999/07/28 01:59:49 mo Exp $
+ * RCS: @(#) $Id: AppendCmd.java,v 1.1 1998/10/14 21:09:20 cvsadmin Exp $
  *
  */
 
@@ -43,24 +43,24 @@ class AppendCmd implements Command {
 public void
 cmdProc(
     Interp interp,		// Current interpreter.
-    TclObject[] objv)		// Argument list.
+    TclObject argv[])		// Argument list.
 throws 
     TclException 		// A standard Tcl exception.
 {
-    TclObject varValue = null;
-
-    if (objv.length < 2) {
-	throw new TclNumArgsException(interp, 1, objv, 
+    if (argv.length < 2) {
+	throw new TclNumArgsException(interp, 1, argv, 
 		"varName ?value value ...?");
-    } else if (objv.length == 2) {
-	interp.setResult(interp.getVar(objv[1], 0));
+    } else if (argv.length == 2) {
+	interp.setResult(interp.getVar(argv[1], 0));
     } else {
-	for (int i = 2; i < objv.length; i++) {
-	    varValue = interp.setVar(objv[1], objv[i], TCL.APPEND_VALUE);
+	TclObject result = null;
+
+	for (int i = 2; i < argv.length; i++) {
+	    result = interp.setVar(argv[1], argv[i], TCL.APPEND_VALUE);
 	}
 
-	if (varValue != null) {
-	    interp.setResult(varValue);
+	if (result != null) {
+	    interp.setResult(result);
 	} else {
 	    interp.resetResult();
 	}

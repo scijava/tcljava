@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Channel.java,v 1.2 1999/05/16 06:15:28 dejong Exp $
+ * RCS: @(#) $Id: Channel.java,v 1.1 1998/10/14 21:09:18 cvsadmin Exp $
  */
 
 package tcl.lang;
@@ -40,15 +40,11 @@ abstract class Channel {
      * Perform a read on the sub-classed channel.  
      * 
      * @param interp is used for TclExceptions.  
-     * @param readType is used to specify the type of read (line, all, etc).
+     * @param type is used to specify the type of read (line, all, etc).
      * @param numBytes the number of byte to read (if applicable).
-     * @return String of data that was read from the Channel (can not be null)
-     * @exception TclException is thrown if read occurs on WRONLY channel.
-     * @exception IOException is thrown when an IO error occurs that was not
-     *                correctly tested for.  Most cases should be caught.
      */
 
-    abstract String read(Interp interp, int readType, int numBytes) 
+    abstract String read(Interp interp, int type, int numBytes) 
             throws IOException, TclException;
 
 
