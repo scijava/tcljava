@@ -3404,7 +3404,7 @@ echo "${ECHO_T}$ac_java_jvm_jni_working" >&6
             fi
         fi
 
-        # JDK 1.1 for Solaris
+        # Sun JDK 1.1 for Solaris
 
         F=lib/sparc/native_threads/libjava.so
         if test "x$ac_java_jvm_jni_lib_flags" = "x" ; then
@@ -3421,7 +3421,7 @@ echo "${ECHO_T}$ac_java_jvm_jni_working" >&6
             fi
         fi
 
-        # JDK 1.2 for Solaris (groan, handle regular and production layout)
+        # Sun JDK 1.2 for Solaris (groan, handle regular and production layout)
 
         F=jre/lib/sparc/libjava.so
         if test "x$ac_java_jvm_jni_lib_flags" = "x" ; then
@@ -3447,6 +3447,33 @@ echo "${ECHO_T}$ac_java_jvm_jni_working" >&6
                 fi
 
                 ac_java_jvm_jni_lib_flags="$ac_java_jvm_jni_lib_flags -ljvm -lhpi"
+            fi
+        fi
+
+        # Sun JDK 1.3 and 1.4 for Linux
+
+        # The "classic" vm is only supported in 1.3 and it core dumps
+        # when loading the Java package. Use the "client" vm instead.
+
+        F=jre/lib/i386/libjava.so
+        if test "x$ac_java_jvm_jni_lib_flags" = "x" ; then
+
+    echo Looking for $ac_java_jvm_dir/$F >&5
+
+            if test -f $ac_java_jvm_dir/$F ; then
+
+    echo Found $ac_java_jvm_dir/$F >&5
+
+                D=`dirname $ac_java_jvm_dir/$F`
+                ac_java_jvm_jni_lib_runtime_path=$D
+                ac_java_jvm_jni_lib_flags="-L$D -ljava -lverify"
+                #D=$ac_java_jvm_dir/jre/lib/i386/classic
+                D=$ac_java_jvm_dir/jre/lib/i386/client
+                ac_java_jvm_jni_lib_runtime_path="${ac_java_jvm_jni_lib_runtime_path}:$D"
+                ac_java_jvm_jni_lib_flags="$ac_java_jvm_jni_lib_flags -L$D -ljvm"
+                D=$ac_java_jvm_dir/jre/lib/i386/native_threads
+                ac_java_jvm_jni_lib_runtime_path="${ac_java_jvm_jni_lib_runtime_path}:$D"
+                ac_java_jvm_jni_lib_flags="$ac_java_jvm_jni_lib_flags -L$D -lhpi"
             fi
         fi
 
@@ -3498,6 +3525,18 @@ echo "${ECHO_T}$ac_java_jvm_jni_working" >&6
 
     fi
 
+    # Generate error for unsupported JVM layout
+
+    if test "x$ac_java_jvm_jni_lib_flags" = "x" ; then
+        { { echo "$as_me:3531: error: Could not detect the location of the Java
+            shared library. You will need to update tcljava.m4
+            to add support for this JVM configuration." >&5
+echo "$as_me: error: Could not detect the location of the Java
+            shared library. You will need to update tcljava.m4
+            to add support for this JVM configuration." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
+
     echo Using the following JNI library flags $ac_java_jvm_jni_lib_flags >&5
     echo Using the following JNI library flags $ac_java_jvm_jni_lib_flags
 
@@ -3510,7 +3549,7 @@ echo "${ECHO_T}$ac_java_jvm_jni_working" >&6
 
     # Make sure we can compile and link a trivial JNI program
 
-    echo "$as_me:3513: checking to see if we can link a JNI application" >&5
+    echo "$as_me:3552: checking to see if we can link a JNI application" >&5
 echo $ECHO_N "checking to see if we can link a JNI application... $ECHO_C" >&6
 if test "${ac_java_jvm_working_jni_link+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -3525,7 +3564,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
         ac_saved_cflags=$CFLAGS
         CFLAGS="$CFLAGS $ac_java_jvm_jni_include_flags $ac_java_jvm_jni_lib_flags"
         cat >conftest.$ac_ext <<_ACEOF
-#line 3528 "configure"
+#line 3567 "configure"
 #include "confdefs.h"
 
             #include <jni.h>
@@ -3539,22 +3578,22 @@ JNI_GetCreatedJavaVMs(NULL,0,NULL);
 }
 _ACEOF
 rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:3542: \"$ac_link\"") >&5
+if { (eval echo "$as_me:3581: \"$ac_link\"") >&5
   (eval $ac_link) 2>&5
   ac_status=$?
-  echo "$as_me:3545: \$? = $ac_status" >&5
+  echo "$as_me:3584: \$? = $ac_status" >&5
   (exit $ac_status); } &&
          { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:3548: \"$ac_try\"") >&5
+  { (eval echo "$as_me:3587: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
-  echo "$as_me:3551: \$? = $ac_status" >&5
+  echo "$as_me:3590: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
   ac_java_jvm_working_jni_link=yes
 else
   echo "$as_me: failed program was:" >&5
 cat conftest.$ac_ext >&5
-{ { echo "$as_me:3557: error: could not link file that includes jni.h
+{ { echo "$as_me:3596: error: could not link file that includes jni.h
         It is likely that your JVM install is broken or corrupted." >&5
 echo "$as_me: error: could not link file that includes jni.h
         It is likely that your JVM install is broken or corrupted." >&2;}
@@ -3570,14 +3609,14 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
         CFLAGS=$ac_saved_cflags
 
 fi
-echo "$as_me:3573: result: $ac_java_jvm_working_jni_link" >&5
+echo "$as_me:3612: result: $ac_java_jvm_working_jni_link" >&5
 echo "${ECHO_T}$ac_java_jvm_working_jni_link" >&6
 
 fi
 
 # Do a more in depth test of the Java tools (JAVAC, JAVA, JAVAH, and JAR)
 
-echo "$as_me:3580: checking the Java compiler" >&5
+echo "$as_me:3619: checking the Java compiler" >&5
 echo $ECHO_N "checking the Java compiler... $ECHO_C" >&6
 
 CLASSPATH=$ac_java_classpath
@@ -3595,10 +3634,10 @@ rm -f Test.class
 
 if ( $JAVAC $JAVAC_FLAGS $JAVAC_D_FLAG . $srcdir/src/Test.java 1>&5 2>&5 ) &&
     test -f Test.class ; then
-    echo "$as_me:3598: result: the Java compiler works" >&5
+    echo "$as_me:3637: result: the Java compiler works" >&5
 echo "${ECHO_T}the Java compiler works" >&6
 
-    echo "$as_me:3601: checking the -native flag to the Java runtime" >&5
+    echo "$as_me:3640: checking the -native flag to the Java runtime" >&5
 echo $ECHO_N "checking the -native flag to the Java runtime... $ECHO_C" >&6
 
     CLASSPATH=$ac_java_classpath:.
@@ -3657,7 +3696,7 @@ echo $ECHO_N "checking the -native flag to the Java runtime... $ECHO_C" >&6
     echo the -native flag does not work
 
         else
-            { { echo "$as_me:3660: error: could not run simple test program Test.class with $JAVA, you need to check the Java runtime to make sure it is installed correctly" >&5
+            { { echo "$as_me:3699: error: could not run simple test program Test.class with $JAVA, you need to check the Java runtime to make sure it is installed correctly" >&5
 echo "$as_me: error: could not run simple test program Test.class with $JAVA, you need to check the Java runtime to make sure it is installed correctly" >&2;}
    { (exit 1); exit 1; }; }
         fi
@@ -3665,7 +3704,7 @@ echo "$as_me: error: could not run simple test program Test.class with $JAVA, yo
 
     if test $TCLJAVA = "tclblend" || test $TCLJAVA = "both"; then
         #test out the javah program on our Test.class file and generate Test.h
-        echo "$as_me:3668: checking the Java header generation program" >&5
+        echo "$as_me:3707: checking the Java header generation program" >&5
 echo $ECHO_N "checking the Java header generation program... $ECHO_C" >&6
 
         CLASSPATH=$ac_java_classpath:.
@@ -3713,13 +3752,13 @@ echo $ECHO_N "checking the Java header generation program... $ECHO_C" >&6
             fi
 
             if test "$JAVAH_WORKED" = "1" ; then
-                echo "$as_me:3716: result: the Java header generation program works" >&5
+                echo "$as_me:3755: result: the Java header generation program works" >&5
 echo "${ECHO_T}the Java header generation program works" >&6
             else
 
     echo No JNI signature matches found in Test.h >&5
 
-               { { echo "$as_me:3722: error: Could not find native function definition in Test.h
+               { { echo "$as_me:3761: error: Could not find native function definition in Test.h
 generated by $JAVAH" >&5
 echo "$as_me: error: Could not find native function definition in Test.h
 generated by $JAVAH" >&2;}
@@ -3727,13 +3766,13 @@ generated by $JAVAH" >&2;}
             fi
 
         else
-            { { echo "$as_me:3730: error: Could not generate header from Test.class with $JAVAH" >&5
+            { { echo "$as_me:3769: error: Could not generate header from Test.class with $JAVAH" >&5
 echo "$as_me: error: Could not generate header from Test.class with $JAVAH" >&2;}
    { (exit 1); exit 1; }; }
         fi
     fi
 
-    echo "$as_me:3736: checking the Java archive program" >&5
+    echo "$as_me:3775: checking the Java archive program" >&5
 echo $ECHO_N "checking the Java archive program... $ECHO_C" >&6
 
     # Flags we will pass to the jar executable
@@ -3753,13 +3792,13 @@ echo $ECHO_N "checking the Java archive program... $ECHO_C" >&6
     echo $JAR $JAR_NOCOMPRESS_FLAGS Test.jar Test.class >&5
 
     if ($JAR $JAR_NOCOMPRESS_FLAGS Test.jar Test.class 2>&5) && test -f Test.jar; then
-        echo "$as_me:3756: result: the jar program creates uncompressed archives" >&5
+        echo "$as_me:3795: result: the jar program creates uncompressed archives" >&5
 echo "${ECHO_T}the jar program creates uncompressed archives" >&6
     else
 
     echo the jar program could not create an uncompressed archive >&5
 
-	{ { echo "$as_me:3762: error: the jar program could not create an uncompressed archive" >&5
+	{ { echo "$as_me:3801: error: the jar program could not create an uncompressed archive" >&5
 echo "$as_me: error: the jar program could not create an uncompressed archive" >&2;}
    { (exit 1); exit 1; }; }
     fi
@@ -3771,13 +3810,13 @@ echo "$as_me: error: the jar program could not create an uncompressed archive" >
     echo $JAR $JAR_EXTRACT_FLAGS Test.jar >&5
 
     if ($JAR $JAR_EXTRACT_FLAGS Test.jar 2>&5) && test -f Test.class; then
-        echo "$as_me:3774: result: the jar program extracts uncompressed archives" >&5
+        echo "$as_me:3813: result: the jar program extracts uncompressed archives" >&5
 echo "${ECHO_T}the jar program extracts uncompressed archives" >&6
     else
 
     echo the jar program could not extract from an uncompressed archive >&5
 
-        { { echo "$as_me:3780: error: the jar program could not extract from an uncompressed archive" >&5
+        { { echo "$as_me:3819: error: the jar program could not extract from an uncompressed archive" >&5
 echo "$as_me: error: the jar program could not extract from an uncompressed archive" >&2;}
    { (exit 1); exit 1; }; }
     fi
@@ -3788,13 +3827,13 @@ echo "$as_me: error: the jar program could not extract from an uncompressed arch
     echo $JAR $JAR_COMPRESS_FLAGS Test.jar Test.class >&5
 
     if ($JAR $JAR_COMPRESS_FLAGS Test.jar Test.class 2>&5) && test -f Test.jar; then
-        echo "$as_me:3791: result: the jar program creates compressed archives" >&5
+        echo "$as_me:3830: result: the jar program creates compressed archives" >&5
 echo "${ECHO_T}the jar program creates compressed archives" >&6
     else
 
     echo the jar program could not create a compressed archive >&5
 
-        { { echo "$as_me:3797: error: the jar program could not create a compressed archive" >&5
+        { { echo "$as_me:3836: error: the jar program could not create a compressed archive" >&5
 echo "$as_me: error: the jar program could not create a compressed archive" >&2;}
    { (exit 1); exit 1; }; }
     fi
@@ -3806,13 +3845,13 @@ echo "$as_me: error: the jar program could not create a compressed archive" >&2;
     echo $JAR $JAR_EXTRACT_FLAGS Test.jar >&5
 
     if ($JAR $JAR_EXTRACT_FLAGS Test.jar 2>&5) && test -f Test.class; then
-        echo "$as_me:3809: result: the jar program extracts compressed archives" >&5
+        echo "$as_me:3848: result: the jar program extracts compressed archives" >&5
 echo "${ECHO_T}the jar program extracts compressed archives" >&6
     else
 
     echo the jar program could not extract from a compressed archive >&5
 
-        { { echo "$as_me:3815: error: the jar program could not extract from a compressed archive" >&5
+        { { echo "$as_me:3854: error: the jar program could not extract from a compressed archive" >&5
 echo "$as_me: error: the jar program could not extract from a compressed archive" >&2;}
    { (exit 1); exit 1; }; }
     fi
@@ -3823,7 +3862,7 @@ echo "$as_me: error: the jar program could not extract from a compressed archive
     # Run Test.class again so that we are sure the jar
     # programs did not screw it up
 
-    echo "$as_me:3826: checking that the jar program did not corrupt the test file" >&5
+    echo "$as_me:3865: checking that the jar program did not corrupt the test file" >&5
 echo $ECHO_N "checking that the jar program did not corrupt the test file... $ECHO_C" >&6
 
     CLASSPATH=$ac_java_classpath:.
@@ -3834,10 +3873,10 @@ echo $ECHO_N "checking that the jar program did not corrupt the test file... $EC
     echo $JAVA Test >&5
 
     if test "`$JAVA Test 2>&5`" = "OK"; then
-        echo "$as_me:3837: result: it did not" >&5
+        echo "$as_me:3876: result: it did not" >&5
 echo "${ECHO_T}it did not" >&6
     else
-        { { echo "$as_me:3840: error: Test.class has been corrupted." >&5
+        { { echo "$as_me:3879: error: Test.class has been corrupted." >&5
 echo "$as_me: error: Test.class has been corrupted." >&2;}
    { (exit 1); exit 1; }; }
     fi
@@ -3849,7 +3888,7 @@ else
 
     echo Could not compile simple test program Test.java with $JAVAC >&5
 
-    { { echo "$as_me:3852: error: Could not compile simple test program Test.java with $JAVAC" >&5
+    { { echo "$as_me:3891: error: Could not compile simple test program Test.java with $JAVAC" >&5
 echo "$as_me: error: Could not compile simple test program Test.java with $JAVAC" >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -3999,7 +4038,7 @@ rm -f confdef2opt.sed
 : ${CONFIG_STATUS=./config.status}
 ac_clean_files_save=$ac_clean_files
 ac_clean_files="$ac_clean_files $CONFIG_STATUS"
-{ echo "$as_me:4002: creating $CONFIG_STATUS" >&5
+{ echo "$as_me:4041: creating $CONFIG_STATUS" >&5
 echo "$as_me: creating $CONFIG_STATUS" >&6;}
 cat >$CONFIG_STATUS <<_ACEOF
 #! $SHELL
@@ -4166,7 +4205,7 @@ cat >>$CONFIG_STATUS <<\EOF
     echo "$ac_cs_version"; exit 0 ;;
   --he | --h)
     # Conflict between --help and --header
-    { { echo "$as_me:4169: error: ambiguous option: $1
+    { { echo "$as_me:4208: error: ambiguous option: $1
 Try \`$0 --help' for more information." >&5
 echo "$as_me: error: ambiguous option: $1
 Try \`$0 --help' for more information." >&2;}
@@ -4185,7 +4224,7 @@ Try \`$0 --help' for more information." >&2;}
     ac_need_defaults=false;;
 
   # This is an error.
-  -*) { { echo "$as_me:4188: error: unrecognized option: $1
+  -*) { { echo "$as_me:4227: error: unrecognized option: $1
 Try \`$0 --help' for more information." >&5
 echo "$as_me: error: unrecognized option: $1
 Try \`$0 --help' for more information." >&2;}
@@ -4224,7 +4263,7 @@ do
   "jaclsh" ) CONFIG_FILES="$CONFIG_FILES jaclsh" ;;
   "jtclsh" ) CONFIG_FILES="$CONFIG_FILES jtclsh" ;;
   "tcljavaConfig.sh" ) CONFIG_FILES="$CONFIG_FILES tcljavaConfig.sh" ;;
-  *) { { echo "$as_me:4227: error: invalid argument: $ac_config_target" >&5
+  *) { { echo "$as_me:4266: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}
    { (exit 1); exit 1; }; };;
   esac
@@ -4465,7 +4504,7 @@ done; }
   esac
 
   if test x"$ac_file" != x-; then
-    { echo "$as_me:4468: creating $ac_file" >&5
+    { echo "$as_me:4507: creating $ac_file" >&5
 echo "$as_me: creating $ac_file" >&6;}
     rm -f "$ac_file"
   fi
@@ -4483,7 +4522,7 @@ echo "$as_me: creating $ac_file" >&6;}
       -) echo $tmp/stdin ;;
       [\\/$]*)
          # Absolute (can't be DOS-style, as IFS=:)
-         test -f "$f" || { { echo "$as_me:4486: error: cannot find input file: $f" >&5
+         test -f "$f" || { { echo "$as_me:4525: error: cannot find input file: $f" >&5
 echo "$as_me: error: cannot find input file: $f" >&2;}
    { (exit 1); exit 1; }; }
          echo $f;;
@@ -4496,7 +4535,7 @@ echo "$as_me: error: cannot find input file: $f" >&2;}
            echo $srcdir/$f
          else
            # /dev/null tree
-           { { echo "$as_me:4499: error: cannot find input file: $f" >&5
+           { { echo "$as_me:4538: error: cannot find input file: $f" >&5
 echo "$as_me: error: cannot find input file: $f" >&2;}
    { (exit 1); exit 1; }; }
          fi;;

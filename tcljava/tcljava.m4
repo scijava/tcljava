@@ -767,7 +767,7 @@ AC_DEFUN([AC_JAVA_JNI_LIBS], [
             fi
         fi
 
-        # JDK 1.1 for Solaris
+        # Sun JDK 1.1 for Solaris
 
         F=lib/sparc/native_threads/libjava.so
         if test "x$ac_java_jvm_jni_lib_flags" = "x" ; then
@@ -780,7 +780,7 @@ AC_DEFUN([AC_JAVA_JNI_LIBS], [
             fi
         fi
 
-        # JDK 1.2 for Solaris (groan, handle regular and production layout)
+        # Sun JDK 1.2 for Solaris (groan, handle regular and production layout)
 
         F=jre/lib/sparc/libjava.so
         if test "x$ac_java_jvm_jni_lib_flags" = "x" ; then
@@ -802,6 +802,29 @@ AC_DEFUN([AC_JAVA_JNI_LIBS], [
                 fi
 
                 ac_java_jvm_jni_lib_flags="$ac_java_jvm_jni_lib_flags -ljvm -lhpi"
+            fi
+        fi
+
+        # Sun JDK 1.3 and 1.4 for Linux
+
+        # The "classic" vm is only supported in 1.3 and it core dumps
+        # when loading the java package. Use the "client" vm instead.
+
+        F=jre/lib/i386/libjava.so
+        if test "x$ac_java_jvm_jni_lib_flags" = "x" ; then
+            AC_MSG_LOG([Looking for $ac_java_jvm_dir/$F], 1)
+            if test -f $ac_java_jvm_dir/$F ; then
+                AC_MSG_LOG([Found $ac_java_jvm_dir/$F], 1)
+                D=`dirname $ac_java_jvm_dir/$F`
+                ac_java_jvm_jni_lib_runtime_path=$D
+                ac_java_jvm_jni_lib_flags="-L$D -ljava -lverify"
+                #D=$ac_java_jvm_dir/jre/lib/i386/classic
+                D=$ac_java_jvm_dir/jre/lib/i386/client
+                ac_java_jvm_jni_lib_runtime_path="${ac_java_jvm_jni_lib_runtime_path}:$D"
+                ac_java_jvm_jni_lib_flags="$ac_java_jvm_jni_lib_flags -L$D -ljvm"
+                D=$ac_java_jvm_dir/jre/lib/i386/native_threads
+                ac_java_jvm_jni_lib_runtime_path="${ac_java_jvm_jni_lib_runtime_path}:$D"
+                ac_java_jvm_jni_lib_flags="$ac_java_jvm_jni_lib_flags -L$D -lhpi"
             fi
         fi
 
@@ -832,6 +855,14 @@ AC_DEFUN([AC_JAVA_JNI_LIBS], [
 
         #FIXME : Blackdown JDK 1.2 for Linux
 
+    fi
+
+    # Generate error for unsupported JVM layout
+
+    if test "x$ac_java_jvm_jni_lib_flags" = "x" ; then
+        AC_MSG_ERROR([Could not detect the location of the Java
+            shared library. You will need to update tcljava.m4
+            to add support for this JVM configuration.])
     fi
 
     AC_MSG_LOG([Using the following JNI library flags $ac_java_jvm_jni_lib_flags])
