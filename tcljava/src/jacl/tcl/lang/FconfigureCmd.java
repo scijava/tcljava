@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FconfigureCmd.java,v 1.7 2001/12/24 08:01:12 mdejong Exp $
+ * RCS: @(#) $Id: FconfigureCmd.java,v 1.8 2001/12/24 21:08:06 mdejong Exp $
  *
  */
 
@@ -79,14 +79,51 @@ class FconfigureCmd implements Command {
             TclList.append(interp, list,
                 TclInteger.newInstance(chan.getBufferSize()));
 
+	    // -encoding
+
             TclList.append(interp, list, TclString.newInstance("-encoding"));
             String encoding = chan.getEncoding();
             if (encoding == null)
                 encoding = "binary";
             TclList.append(interp, list, TclString.newInstance(encoding));
 
+            // -eofchar
+
             TclList.append(interp, list, TclString.newInstance("-eofchar"));
-            TclList.append(interp, list, TclString.newInstance(""));
+            if (chan.isReadOnly()) {
+                char eofChar = chan.getInputEofChar();
+                TclList.append(interp, list,
+                    (eofChar == 0) ?
+                    TclString.newInstance("{}") :
+                    TclString.newInstance(eofChar));
+            } else if (chan.isWriteOnly()) {
+                char eofChar = chan.getOutputEofChar();
+                TclList.append(interp, list,
+                    (eofChar == 0) ?
+                    TclString.newInstance("{}") :
+                    TclString.newInstance(eofChar));
+            } else if (chan.isReadWrite()) {
+                char inEofChar = chan.getInputEofChar();
+                char outEofChar = chan.getOutputEofChar();
+
+                TclObject eofchar_pair = TclList.newInstance();
+
+                TclList.append(interp, eofchar_pair,
+                    (inEofChar == 0) ?
+                    TclString.newInstance("") :
+                    TclString.newInstance(inEofChar));
+
+                TclList.append(interp, eofchar_pair,
+                    (outEofChar == 0) ?
+                    TclString.newInstance("") :
+                    TclString.newInstance(outEofChar));
+
+                TclList.append(interp, list, eofchar_pair);
+            } else {
+                throw new TclRuntimeError("Invalid channel mode");
+            }
+
+            // -translation
 
             TclList.append(interp, list, TclString.newInstance("-translation"));
 
@@ -119,6 +156,7 @@ class FconfigureCmd implements Command {
 
             interp.setResult(list);
         }
+
         if (argv.length == 3) {
             // return value for supplied name
 
@@ -147,6 +185,37 @@ class FconfigureCmd implements Command {
                     break;
                 }
                 case OPT_EOFCHAR: {    // -eofchar
+                    if (chan.isReadOnly()) {
+                        char eofChar = chan.getInputEofChar();
+                        interp.setResult((eofChar == 0) ?
+                            TclString.newInstance("{}") :
+                            TclString.newInstance(eofChar));
+                    } else if (chan.isWriteOnly()) {
+                        char eofChar = chan.getOutputEofChar();
+                        interp.setResult((eofChar == 0) ?
+                            TclString.newInstance("{}") :
+                            TclString.newInstance(eofChar));
+                    } else if (chan.isReadWrite()) {
+                        char inEofChar = chan.getInputEofChar();
+                        char outEofChar = chan.getOutputEofChar();
+
+                        TclObject eofchar_pair = TclList.newInstance();
+
+                        TclList.append(interp, eofchar_pair,
+                            (inEofChar == 0) ?
+                            TclString.newInstance("") :
+                            TclString.newInstance(inEofChar));
+
+                        TclList.append(interp, eofchar_pair,
+                            (outEofChar == 0) ?
+                            TclString.newInstance("") :
+                            TclString.newInstance(outEofChar));
+
+                        interp.setResult(eofchar_pair);
+                    } else {
+                        throw new TclRuntimeError("Invalid channel mode");
+                    }
+
                     break;
                 }
                 case OPT_TRANSLATION: {    // -translation
@@ -216,6 +285,34 @@ class FconfigureCmd implements Command {
                     break;
                 }
                 case OPT_EOFCHAR: {    // -eofchar
+                    TclList.setListFromAny(interp, argv[i]);
+                    int length = TclList.getLength(interp, argv[i]);
+
+                    if (length > 2) {
+                        throw new TclException(interp,
+                            "bad value for -eofchar: " +
+                            "should be a list of zero, one, or two elements");
+                    }
+
+                    char inputEofChar, outputEofChar;
+                    String s;
+
+                    if (length == 0) {
+                        inputEofChar = outputEofChar = 0;
+                    } else if (length == 1) {
+                        s = TclList.index(interp,argv[i],0).toString();
+                        inputEofChar = outputEofChar = s.charAt(0);
+                    } else {
+                        s = TclList.index(interp,argv[i],0).toString();
+                        inputEofChar = s.charAt(0);
+
+                        s = TclList.index(interp,argv[i],1).toString();
+                        outputEofChar = s.charAt(0);
+                    }
+
+                    chan.setInputEofChar(inputEofChar);
+                    chan.setOutputEofChar(outputEofChar);
+
                     break;
                 }
                 case OPT_TRANSLATION: {    // -translation
@@ -245,7 +342,7 @@ class FconfigureCmd implements Command {
                             (outputTranslation == -1)) {
                         throw new TclException(interp,
                             "bad value for -translation: " +
-                            "must be one of auto, binary, cr, lf," +
+                            "must be one of auto, binary, cr, lf, " +
                             "crlf, or platform");
                     }
 

@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Channel.java,v 1.17 2001/12/24 06:04:35 mdejong Exp $
+ * RCS: @(#) $Id: Channel.java,v 1.18 2001/12/24 21:08:06 mdejong Exp $
  */
 
 package tcl.lang;
@@ -92,6 +92,19 @@ abstract class Channel {
 
     protected int inputTranslation = TclIO.TRANS_AUTO;
     protected int outputTranslation = TclIO.TRANS_PLATFORM;
+
+    /**
+     * If nonzero, use this as a signal of EOF on input.
+     */
+
+    protected char inEofChar = 0;
+
+    /**
+     * If nonzero, append this to a writeable channel on close.
+     */
+
+    protected char outEofChar = 0;
+
 
     /**
      * Read data from the Channel.
@@ -425,4 +438,37 @@ abstract class Channel {
     void setOutputTranslation(int translation) {
         outputTranslation = translation;
     }
+
+    /** 
+     * Query input eof character
+     */
+
+    char getInputEofChar() {
+        return inEofChar;
+    }
+
+    /** 
+     * Set new input eof character
+     */
+
+    void setInputEofChar(char inEof) {
+        inEofChar = inEof;
+    }
+
+    /** 
+     * Query output eof character
+     */
+
+    char getOutputEofChar() {
+        return outEofChar;
+    }
+
+    /** 
+     * Set new output eof character
+     */
+
+    void setOutputEofChar(char outEof) {
+        outEofChar = outEof;
+    }
+
 }

@@ -1,3 +1,14 @@
+2001-12-24  Bruce Johnson  <bruce_johnson@merck.com>,
+            Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/jacl/tcl/lang/Channel.java (getInputEofChar,
+	setInputEofChar, getOutputEofChar, setOutputEofChar):
+	Add methods to query and set the input and
+	output new eof state fields. These fields are not
+	actually used yet.
+	* src/jacl/tcl/lang/FconfigureCmd.java (cmdProc): Add
+	support for getting and setting -eofchar on a channel.
+
 2001-12-23  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* src/jacl/tcl/lang/FconfigureCmd.java (cmdProc):
