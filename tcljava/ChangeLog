@@ -1,3 +1,10 @@
+2003-02-06  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* tests/tcl/incr-old.test:
+	* tests/tcl/incr.test: Update incr test cases
+	to match Jacl implementation. Add tests cases
+	from Tcl 8.4 impl.
+
 2003-02-05  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* tests/interp.test: Don't include load command
