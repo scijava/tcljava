@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: PkgInvoker.test,v 1.10 2003/01/02 22:29:38 mdejong Exp $
+# RCS: @(#) $Id: PkgInvoker.test,v 1.11 2003/03/11 10:26:41 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -246,6 +246,29 @@ test PkgInvoker-3.6 {isAccessible Method} {
         $isAssignable
 } 1
 
+test PkgInvoker-3.7 {isAccessible Constructor} {
+    java::info constructors pkg1.PrivateAccess
+} {{pkg1.PrivateAccess int}}
+
+test PkgInvoker-3.8 {isAccessible Constructor} {
+    list [catch {java::new {pkg1.PrivateAccess boolean} 0} err] $err
+} {1 {no accessible constructor "pkg1.PrivateAccess boolean"}}
+
+test PkgInvoker-3.9 {isAccessible Method} {
+    set methods [java::info methods pkg1.PrivateAccess]
+    set ind1 [lsearch -exact $methods default_method]
+    set ind2 [lsearch -exact $methods private_method]
+    list [expr {$ind1 != -1}] [expr {$ind2 != -1}]
+} {1 0}
+
+test PkgInvoker-3.10 {isAccessible Field} {
+    java::info fields pkg1.PrivateAccess
+} {default_int}
+
+test PkgInvoker-3.11 {isAccessible Field} {
+    set obj [java::new pkg1.PrivateAccess 0]
+    list [catch {java::field $obj private_int} err] $err
+} {1 {no accessible field "private_int" found in class pkg1.PrivateAccess}}
 
 # cleanup
 ::tcltest::cleanupTests

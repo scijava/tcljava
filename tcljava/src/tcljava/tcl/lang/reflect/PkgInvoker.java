@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: PkgInvoker.java,v 1.5 2002/12/27 14:33:20 mdejong Exp $
+ * RCS: @(#) $Id: PkgInvoker.java,v 1.6 2003/03/11 10:26:41 mdejong Exp $
  *
  */
 
@@ -284,6 +284,38 @@ isAccessible(Method meth) {
     if (Modifier.isPrivate(mod))
         return false;
     if (usesDefaultInvoker(meth.getDeclaringClass()))
+        return false;
+    return true;
+}
+
+// Return true if the given Constructor is accessible,
+// meaning it is public or it is not private
+// and we have an invoker for the package.
+
+public static boolean
+isAccessible(Constructor cons) {
+    int mod = cons.getModifiers();
+    if (Modifier.isPublic(mod))
+        return true;
+    if (Modifier.isPrivate(mod))
+        return false;
+    if (usesDefaultInvoker(cons.getDeclaringClass()))
+        return false;
+    return true;
+}
+
+// Return true if the given Field is accessible,
+// meaning it is public or it is not private
+// and we have an invoker for the package.
+
+public static boolean
+isAccessible(Field fld) {
+    int mod = fld.getModifiers();
+    if (Modifier.isPublic(mod))
+        return true;
+    if (Modifier.isPrivate(mod))
+        return false;
+    if (usesDefaultInvoker(fld.getDeclaringClass()))
         return false;
     return true;
 }

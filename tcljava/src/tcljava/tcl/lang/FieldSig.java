@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: FieldSig.java,v 1.6 2002/12/27 14:33:18 mdejong Exp $
+ * RCS: @(#) $Id: FieldSig.java,v 1.7 2003/03/11 10:26:40 mdejong Exp $
  *
  */
 
@@ -207,7 +207,24 @@ getAccessibleFields(
     if (PkgInvoker.usesDefaultInvoker(cls)) {
 	return cls.getFields();
     } else {
-	return cls.getDeclaredFields();
+	Field[] fields = cls.getDeclaredFields();
+	Vector vec = new Vector();
+	boolean skipped_any = false;
+
+	for (int i=0; i < fields.length; i++) {
+	    Field f = fields[i];
+	    if (PkgInvoker.isAccessible(f)) {
+	        vec.addElement(f);
+	    } else {
+	        skipped_any = true;
+	    }
+	}
+
+	if (skipped_any) {
+	    fields = new Field[vec.size()];
+	    vec.copyInto(fields);
+	}
+	return fields;
     }
 }
 
@@ -220,7 +237,8 @@ getAccessibleFields(
  *	the given class.
  *
  * Results:
- *	An accessible field in the class.
+ *	An accessible field in the class, raises a NoSuchFieldException
+ *	if an accessible field cannot be found.
  *
  * Side effects:
  *	None.
@@ -237,7 +255,11 @@ getAccessibleField(
     if (PkgInvoker.usesDefaultInvoker(cls)) {
 	return cls.getField(fieldName);
     } else {
-	return cls.getDeclaredField(fieldName);
+	Field f = cls.getDeclaredField(fieldName);
+	if (!PkgInvoker.isAccessible(f)) {
+	    throw new NoSuchFieldException();
+	}
+	return f;
     }
 }
 } // end FieldSig

@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: FuncSig.java,v 1.11 2003/01/01 01:51:00 mdejong Exp $
+ * RCS: @(#) $Id: FuncSig.java,v 1.12 2003/03/11 10:26:40 mdejong Exp $
  *
  */
 
@@ -1102,7 +1102,24 @@ getAccessibleConstructors(
     if (PkgInvoker.usesDefaultInvoker(cls)) {
 	return cls.getConstructors();
     } else {
-	return cls.getDeclaredConstructors();
+	Constructor[] constructors = cls.getDeclaredConstructors();
+	Vector vec = new Vector();
+	boolean skipped_any = false;
+
+	for (int i=0; i < constructors.length; i++) {
+	    Constructor c = constructors[i];
+	    if (PkgInvoker.isAccessible(c)) {
+	        vec.addElement(c);
+	    } else {
+	        skipped_any = true;
+	    }
+	}
+
+	if (skipped_any) {
+	    constructors = new Constructor[vec.size()];
+	    vec.copyInto(constructors);
+	}
+	return constructors;
     }
 }
 
@@ -1115,7 +1132,8 @@ getAccessibleConstructors(
  *	that accepts the given arguments.
  *
  * Results:
- *	A constructor object.
+ *	A constructor object, raises a NoSuchMethodException
+ *	if an accessible constructor cannot be found.
  *
  * Side effects:
  *	None.
@@ -1132,7 +1150,12 @@ getAccessibleConstructor(
     if (PkgInvoker.usesDefaultInvoker(cls)) {
 	return cls.getConstructor(parameterTypes);
     } else {
-	return cls.getDeclaredConstructor(parameterTypes);
+	Constructor constructor =
+	    cls.getDeclaredConstructor(parameterTypes);
+	if (!PkgInvoker.isAccessible(constructor)) {
+	    throw new NoSuchMethodException();
+	}
+	return constructor;
     }
 }
 

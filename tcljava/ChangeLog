@@ -1,5 +1,25 @@
 2003-03-10  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/tcljava/tcl/lang/FieldSig.java
+	(getAccessibleFields, getAccessibleField):
+	Don't return a private field as a result of
+	getAccessibleFields or getAccessibleField.
+	* src/tcljava/tcl/lang/FuncSig.java
+	(getAccessibleConstructors, getAccessibleConstructor):
+	Don't return a private constructor as a result of
+	getAccessibleConstructors or getAccessibleConstructor.
+	* src/tcljava/tcl/lang/reflect/PkgInvoker.java
+	(isAccessible): Add isAccessible methods that
+	accept a Constructor or a Field argument.
+	* src/tests/tcljava/pkg1/PrivateAccess.java:
+	Add test case of private access for fields
+	and constructors.
+	* tests/tcljava/PkgInvoker.test: Add accessibility
+	checks for private methods, fields, and
+	constructors in a class with a TclPkgInvoker.
+
+2003-03-10  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/jacl/tcl/lang/Notifier.java (serviceEvent):
 	* src/tclblend/tcl/lang/Notifier.java (serviceEvent):
 	No need for extra logic that deals with the
