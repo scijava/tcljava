@@ -8,12 +8,12 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: BlendExtension.java,v 1.5 1999/03/05 03:55:30 hylands Exp $
+ * RCS: @(#) $Id: BlendExtension.java,v 1.6 1999/05/09 21:12:32 dejong Exp $
  */
 
 package tcl.lang;
 
-class BlendExtension extends Extension {
+public class BlendExtension extends Extension {
 
 /*
  *----------------------------------------------------------------------
@@ -36,6 +36,11 @@ init(
     Interp interp)		// Interpreter to intialize.
 throws TclException
 {
+    // init Java object reflection system
+    ReflectObject.init(interp);
+
+    // Create the commands in the Java package
+
     loadOnDemand(interp, "java::bind",        "tcl.lang.JavaBindCmd");
     loadOnDemand(interp, "java::call",        "tcl.lang.JavaCallCmd");
     loadOnDemand(interp, "java::cast",        "tcl.lang.JavaCastCmd");
@@ -51,32 +56,30 @@ throws TclException
     loadOnDemand(interp, "java::null",        "tcl.lang.JavaNullCmd");
     loadOnDemand(interp, "java::prop",        "tcl.lang.JavaPropCmd");
     loadOnDemand(interp, "java::throw",       "tcl.lang.JavaThrowCmd");
+    loadOnDemand(interp, "java::try",         "tcl.lang.JavaTryCmd");
 
-    /*
-     * Part of the java package is defined in Tcl code.  We source
-     * in that code now.
-     */
+
+    // Part of the java package is defined in Tcl code.  We source
+    // in that code now.
     
-    // See src/pkgIndex.tcl for a list of other files that should
-    // be updated if the version or patchLevel changes.
-
-    String version = "1.1";
-    // For minor versions:
-    String patchLevel = version + ".1";
-
     interp.evalResource("/tcl/lang/library/java/javalock.tcl");
 
-    /*
-     * Note that we cannot set a variable in a namespace until the namespace
-     * exists, so we must to do it after we create the commands.
-     */
+    // Note that we cannot set a variable in a namespace until the namespace
+    // exists, so we must to do it after we create the commands.
 
-    interp.setVar("java::jdkVersion", TclString.newInstance(
+    interp.setVar("java::version", TclString.newInstance(
 	System.getProperty("java.version")), TCL.GLOBAL_ONLY);
-    interp.setVar("java::patchLevel", TclString.newInstance(patchLevel),
-        TCL.GLOBAL_ONLY);
-    interp.eval("namespace eval ::java namespace export bind call defineclass event field getinterp instanceof lock new null prop throw unlock");
-    interp.eval("package provide java " + patchLevel);
+
+    // FIXME : provide automatic way to set java package version
+
+    // Provide the Tcl/Java package with its version info.
+    // The version is also set in:
+    // src/jacl/tcl/lang/Interp.java
+    // src/pkgIndex.tcl
+    // win/makefile.vc
+    // unix/configure.in
+
+    interp.eval("package provide java 1.2.1");
 
 }
 
