@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: ArrayObject.java,v 1.1 1998/10/14 21:09:13 cvsadmin Exp $
+ * RCS: @(#) $Id: ArrayObject.java,v 1.2 1999/05/09 20:59:47 dejong Exp $
  *
  */
 
@@ -24,7 +24,7 @@ import java.beans.*;
  * an instance of any Java Array class) and expose it to Tcl scripts.
  */
 
-class ArrayObject extends tcl.lang.ReflectObject {
+class ArrayObject extends ReflectObject {
 
 static final private String validCmds[] = {
     "length",
@@ -89,9 +89,7 @@ throws
 
     String arg1 = argv[1].toString();
     if ((arg1.length() >= 2) && (NOCONVERT.startsWith(arg1))) {
-	/*
-	 * numArgs is the number of optional arguments after the sub-command.
-	 */
+	// numArgs is the number of optional arguments after the sub-command.
 
 	convert = false;
 	optionIdx = 2;
@@ -107,20 +105,17 @@ throws
 		"?-noconvert? option ?arg arg ...?");
     }
 
-    /*
-     * If the <option> argument to the array object command is one of the
-     * array sub-commands, then proceed to the switch statement below.
-     * Otherwise, the array object behaves as a reflect object by calling
-     * ReflectObject.cmdProc, and <option> will be treated as a method
-     * of the array object.
-     *
-     * We can be sure that there is no conflect between the array
-     * sub-commands and the method of the array object. This is
-     * because the array object is an instance of java.lang.Object,
-     * which has only the following methods (as of JDK 1.1): getClass,
-     * hashCode, equals, wait, toString, notify, notifyAll
-     *
-     */
+    // If the <option> argument to the array object command is one of the
+    // array sub-commands, then proceed to the switch statement below.
+    // Otherwise, the array object behaves as a reflect object by calling
+    // ReflectObject.cmdProc, and <option> will be treated as a method
+    // of the array object.
+    //
+    // We can be sure that there is no conflect between the array
+    // sub-commands and the method of the array object. This is
+    // because the array object is an instance of java.lang.Object,
+    // which has only the following methods (as of JDK 1.1): getClass,
+    // hashCode, equals, wait, toString, notify, notifyAll
 
     try {
 	option = TclIndex.get(interp, argv[optionIdx], validCmds, "option",
@@ -165,11 +160,9 @@ throws
 	    subArrayClass = dereferenceClassDims(interp, javaClass, 1);
 	    index = 0;
 	} else {
-	    /*
-	     * Dereference all but the last dimension specified. Set
-	     * the interpreter result to the index'th element of the
-	     * "subArrayObj".
-	     */
+	    // Dereference all but the last dimension specified. Set
+	    // the interpreter result to the index'th element of the
+	    // "subArrayObj".
 
 	    subArrayObj = dereferenceArrayDims(interp, javaObj, 
 		    numDims, indexListObj);
@@ -178,10 +171,8 @@ throws
 		    TclList.index(interp, indexListObj, numDims - 1));
 	}
 
-	/*
-	 * Set the interpreter result to a TclObject containing the index'th
-	 * element of "subArrayObj".
-	 */
+	// Set the interpreter result to a TclObject containing the index'th
+	// element of "subArrayObj".
 
 	interp.setResult(getArrayElt(interp, subArrayObj, subArrayClass,
 				     index, convert));
@@ -204,11 +195,9 @@ throws
 	    subArrayClass = dereferenceClassDims(interp, javaClass, 1);
 	    index = 0;
 	} else {
-	    /*
-	     * Dereference all but the last dimension specified.  Set
-	     * the value of index'th element of the "subArrayObj" to
-	     * the value in argv[optionIdx + 2].
-	     */
+	    // Dereference all but the last dimension specified.  Set
+	    // the value of index'th element of the "subArrayObj" to
+	    // the value in argv[optionIdx + 2].
 
 	    subArrayObj = dereferenceArrayDims(interp, javaObj,
 		    numDims, indexListObj);
@@ -217,10 +206,8 @@ throws
 		    TclList.index(interp, indexListObj, numDims - 1));
 	}
 
-	/*
-	 * Set the value of the index'th element of "subArrayObj" to the value
-	 * in the TclObject argv[optionIdx + 2].
-	 */
+	// Set the value of the index'th element of "subArrayObj" to the value
+	// in the TclObject argv[optionIdx + 2].
 
 	setArrayElt(interp, subArrayObj, subArrayClass, index, argv[optionIdx + 2]);
 	interp.resetResult();
@@ -232,11 +219,9 @@ throws
 		    "?indexList ?count??");
 	}
 
-	/*
-	 * If an index list is specified, dereference all but the last
-	 * dimension specified.  If the index list is empty, getrange
-	 * behaves as an identity function and returns argv[0].
-	 */
+	// If an index list is specified, dereference all but the last
+	// dimension specified.  If the index list is empty, getrange
+	// behaves as an identity function and returns argv[0].
 
 	subArrayObj = javaObj;
 	subArrayClass = dereferenceClassDims(interp, javaClass, 1);
@@ -254,13 +239,11 @@ throws
 	    }
 	}
 
-	/*
-	 * The variable "count" represents the number of elements to
-	 * return.  The default is the array size less the first index
-	 * (the remaining elements of the array).  If a count is
-	 * specified and is smaller than the default, the default is
-	 * overridden.
-	 */
+	// The variable "count" represents the number of elements to
+	// return.  The default is the array size less the first index
+	// (the remaining elements of the array).  If a count is
+	// specified and is smaller than the default, the default is
+	// overridden.
 
 	count = Array.getLength(subArrayObj) - index;
 	if (numArgs > 1) {
@@ -268,10 +251,8 @@ throws
 		    argv[optionIdx + 2]));
 	}
 
-	/*
-	 * Set the interpreter result to a TclList containing "count" elements
-	 * of the "subArrayObj", starting with the index'th element.
-	 */
+	// Set the interpreter result to a TclList containing "count" elements
+	// of the "subArrayObj", starting with the index'th element.
 
 	interp.setResult(getArrayElts(interp, subArrayObj, subArrayClass,
 				      index, count, convert));
@@ -289,11 +270,9 @@ throws
 
 	TclObject tclValueListObj = argv[argv.length - 1];
 
-	/*
-	 * If an index list is specified, dereference all but the last
-	 * dimension specified.  If the index list is empty, setrange
-	 * initialized the array object as it would in the java::new command.
-	 */
+	// If an index list is specified, dereference all but the last
+	// dimension specified.  If the index list is empty, setrange
+	// initialized the array object as it would in the java::new command.
 
 	subArrayObj = javaObj;
 	subArrayClass = dereferenceClassDims(interp, javaClass, 1);
@@ -311,13 +290,11 @@ throws
 	    }
 	}
 
-	/*
-	 * "count" represents the number of elements to set. The
-	 * default is the minimum of the valueList size and array size
-	 * less the first index (the remaining elements of the array).
-	 * If a count is specified and is smaller than the default,
-	 * the default is overridden.
-	 */
+	// "count" represents the number of elements to set. The
+	// default is the minimum of the valueList size and array size
+	// less the first index (the remaining elements of the array).
+	// If a count is specified and is smaller than the default,
+	// the default is overridden.
 
 	count = Math.min(
 	    TclList.getLength(interp, tclValueListObj), 
@@ -327,10 +304,8 @@ throws
 	    count = Math.min(count, TclInteger.get(interp, argv[optionIdx+2]));
 	}
 
-	/*
-	 * Set the value of "count" elements of the "subArrayObj", starting
-	 * with the index'th element, to the values in tclValueListObj.
-	 */
+	// Set the value of "count" elements of the "subArrayObj", starting
+	// with the index'th element, to the values in tclValueListObj.
 
 	setArrayElts(interp, subArrayObj, subArrayClass,
 		     index, count, tclValueListObj);
@@ -374,13 +349,11 @@ throws
 	valueListLen = TclList.getLength(interp, valueListObj);
     }
 
-    /* 
-     * Set arrayLength to be the dim'th dimension size in sizeListObj.  If
-     * sizeListObj doesn't contain dim elts, the array length is the length
-     * of valueListObj.
-     *
-     *  Initialize the "arrayObj" to size "arrayLength".
-     */
+    // Set arrayLength to be the dim'th dimension size in sizeListObj.  If
+    // sizeListObj doesn't contain dim elts, the array length is the length
+    // of valueListObj.
+    //
+    //  Initialize the "arrayObj" to size "arrayLength".
     
     int arrayLength;
     if (dim < sizeListLen) {
@@ -402,10 +375,8 @@ throws
     }
 
     if (compCls.isArray()) {
-	/*
-	 * Initialize each subArray "i" according to the dim+1'st elt in
-	 * sizeListObj and i'th elt in valueListObj.
-	 */
+	// Initialize each subArray "i" according to the dim+1'st elt in
+	// sizeListObj and i'th elt in valueListObj.
 
 	int nextDim = dim + 1;
 	for (int i = 0; i < arrayLength; i++) {
@@ -420,10 +391,8 @@ throws
 	    Array.set(arrayObj, i, subArrayObj);
 	}
     } else if (valueListLen > 0) {
-	/*
-	 * Set the value of "count" elements of the "subArrayObj", starting
-	 * with the 0'th element, to the values in valueListObj.
-	 */
+	// Set the value of "count" elements of the "subArrayObj", starting
+	// with the 0'th element, to the values in valueListObj.
 
 	int count = Math.min(arrayLength, valueListLen);
 	setArrayElts(interp, arrayObj, compCls, 0, count, valueListObj);
@@ -459,10 +428,8 @@ throws
     TclException		// May encounter bad array index or
 				// dereference a null array value.
 {
-    /*
-     * Before derefencing any dimensions, check that the indexList isn't too
-     * large--we want to return an array.
-     */
+    // Before derefencing any dimensions, check that the indexList isn't too
+    // large--we want to return an array.
 
     int numDims = JavaInfoCmd.getNumDimsFromClass(arrayObj.getClass());
     if (numDims < numDerefDims) {
@@ -520,7 +487,7 @@ throws
     TclException		// May encounter bad array index or
 				// dereference a null array value.
 {
-    //Before derefencing class, check that the numDerefDims isn't too large
+    // Before derefencing class, check that the numDerefDims isn't too large
 
     int numDims = JavaInfoCmd.getNumDimsFromClass(arrayClass);
     if (numDims < numDerefDims) {
@@ -606,12 +573,10 @@ getArrayElt(
 throws
     TclException		// May encounter bad index.
 {
-    /*
-     * Set "obj" to the index'th element of the arrayObj.  If Array.get()
-     * fails, reset the interp result to cover error message, and set
-     * "obj" to null.  Wrap "obj" in a TclObject and append it to the
-     * result list.
-     */
+    // Set "obj" to the index'th element of the arrayObj.  If Array.get()
+    // fails, reset the interp result to cover error message, and set
+    // "obj" to null.  Wrap "obj" in a TclObject and append it to the
+    // result list.
 	 
     Object obj;
     try {
@@ -735,11 +700,9 @@ throws
     Object javaValue = JavaInvoke.convertTclObject(interp, componentType,
 	    value);
 
-    /*
-     * Set the arrayObj[index] to valueObj.  If the array has a primitive
-     * component type, the new value is automatically unwrapped by
-     * Array.set().
-     */
+    // Set the arrayObj[index] to valueObj.  If the array has a primitive
+    // component type, the new value is automatically unwrapped by
+    // Array.set().
 
 
     try {
@@ -772,20 +735,16 @@ static String
 getBaseName(
     String clsName)			// String name of the class.
 {
-    /*
-     * If the string is of the form className[][]..., strip out the trailing
-     * []s.
-     */
+    // If the string is of the form className[][]..., strip out the trailing
+    // []s.
     
     if (clsName.endsWith("[]")) {
 	int end = clsName.indexOf('[');
 	return clsName.substring(0, end);
     }
     
-    /*
-     * If the string begins with '[', strip off the leading '['s and convert of
-     * base code to the string it represents.
-     */
+    // If the string begins with '[', strip off the leading '['s and convert of
+    // base code to the string it represents.
     
     if (clsName.charAt(0) == '[') {
 	if (clsName.endsWith("[")) {
@@ -816,9 +775,7 @@ getBaseName(
 	}
     }
 
-    /*
-     * "clsName" is not array class name, so it must be a base class.
-     */
+    // "clsName" is not array class name, so it must be a base class.
 
     return clsName;
 }
