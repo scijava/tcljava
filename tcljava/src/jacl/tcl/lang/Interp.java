@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.4 1998/11/16 06:04:20 hylands Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.5 1999/01/07 22:57:40 hylands Exp $
  *
  */
 
@@ -1964,7 +1964,7 @@ readScriptFromFile(
     try {
 	byte charArray[] = new byte[fs.available()];
 	fs.read(charArray);
-	return new String(charArray);
+        return translateLineSeparators(charArray, charArray.length);
     } catch (IOException e) {
 	return null;
     } finally {
@@ -2062,6 +2062,58 @@ closeInputStream(
 /*
  *----------------------------------------------------------------------
  *
+ * translateLineSeparators --
+ *
+ *	If the line.Separator property is not \n, then translate all
+ *      occurrences of the line.Separator to \n.
+ *
+ * Results:
+ *	A String containing the properly translated results.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+private String
+translateLineSeparators(
+    byte [] byteArray,		// Input byte array.
+    int used)			// Only operate on 'used' chars.
+{
+    String sep = System.getProperty("line.separator");
+    if (sep.equals("\n")) {
+        return new String(byteArray, 0, used);
+    }
+
+    /*
+     * If we come to this place, a translation from "\r\n" (on Windows)
+     * or "\r" (on Mac?) into "\n" is needed.
+     */
+
+    int sepLength = sep.length();
+    String str = new String(byteArray, 0, used);
+    char tmpArray[] = new char[used];
+
+    int srcPos = 0;
+    int dstPos = 0;
+    int srcEnd;
+    while ((srcEnd = str.indexOf(sep, srcPos)) >= 0) {
+        str.getChars(srcPos, srcEnd, tmpArray, dstPos);
+        dstPos += srcEnd-srcPos;
+        tmpArray[dstPos++] = '\n';
+        srcPos = srcEnd+sepLength;
+    }
+    srcEnd = str.length();
+    str.getChars(srcPos, srcEnd, tmpArray, dstPos);
+    dstPos += srcEnd-srcPos;
+
+    return new String(tmpArray, 0, dstPos);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * evalResource --
  *
  *	Execute a Tcl script stored in the given Java resource location.
@@ -2132,7 +2184,7 @@ throws
 
 	  while (cur != -1) {
 	    
-	    //expand the byte array if we need to make more room
+	    // Expand the byte array if we need to make more room.
 	    if (used >= size) {
 	      byte[] oldArray = byteArray;
 	      int new_size = size * 2;
@@ -2147,11 +2199,11 @@ throws
 	    cur = stream.read();
 	  }
 	  
-	  //now we are done reading the stream so eval it
-	  eval(new String(byteArray,0,used), 0);	  
+	  // Now we are done reading the stream so eval it.
+          eval(translateLineSeparators(byteArray,used), 0);
 	  
 	} else {	  
-	  //other systems do not need the compressed jar hack
+	  // Other systems do not need the compressed jar hack.
 
 	  int num = stream.available();
 	  byte[] byteArray = new byte[num];
@@ -2162,9 +2214,8 @@ throws
 	    num -= readLen;
 	  }
 
-	  eval(new String(byteArray), 0);
-	}
-
+          eval(translateLineSeparators(byteArray, byteArray.length), 0);
+      }
     } catch (IOException e) {
 	return;
     } finally {
