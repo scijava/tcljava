@@ -1,6 +1,6 @@
 # This Makefile is used to the java loadable module.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.6 1998/11/05 22:53:12 hylands Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.7 1998/11/05 23:51:17 hylands Exp $
 
 # The version of TclJava, used in this Makefile
 VERSION = @TCLJAVA_VERSION@
@@ -104,15 +104,8 @@ exec_prefix		= @exec_prefix@
 # Directory in which to install libtcl.so or libtcl.a:
 LIB_INSTALL_DIR		= $(INSTALL_ROOT)$(exec_prefix)/lib
 
-# Directory to install the .class files:
+# Directory to install pkgIndex.tcl
 BLEND_LIB_INSTALL_DIR	= $(LIB_INSTALL_DIR)/tclblend$(VERSION)
-
-# Directory from which applications will reference the library of Tcl
-# scripts
-BLEND_LIBRARY		= $(prefix)/lib/tclblend$(VERSION)
-
-# Path name to use when installing library scripts:
-BLEND_SCRIPT_INSTALL_DIR = $(INSTALL_ROOT)$(BLEND_LIBRARY)
 
 # Directory containing platform dependent binaries.
 BLEND_BIN_DIR 		= $(INSTALL_ROOT)$(exec_prefix)/bin
@@ -369,7 +362,6 @@ install_tclblend: #tclblend.jar #$(TCLBLEND_LIB_FILE)
 	@echo "# Installing tclblend"
 	@echo "#"
 	@for i in $(LIB_INSTALL_DIR) $(BLEND_LIB_INSTALL_DIR) \
-		$(BLEND_SCRIPT_INSTALL_DIR) \
 		$(BLEND_BIN_DIR) \
 		; \
 	    do \
@@ -720,6 +712,9 @@ test_tclblend.exec:
 	  puts \"auto_path is [set auto_path]\"\; \
 	  source all\; \
 	  puts \"Tests done, about to call exit.\"\; \
+	  puts \" Note that sometimes we get a Java crash here.\"\; \
+	  puts \" The cause seems to be TclEvent-1.3.\"\; \
+	  puts \" See know_issues.txt for more information.\"\; \
           exit; ) | \
 	LD_LIBRARY_PATH=$(BUILD_DIR):$(TCL_BIN_DIR):$(JAVA_ARCH_LIB):$(JAVA_ARCH_RUNTIME_LIBS):$(LD_LIBRARY_PATH) \
 	BUILD_DIR=$(BUILD_DIR) \
@@ -1423,7 +1418,7 @@ tclblendBinDist: $(UNIX_DIR)/configure Makefile
 	$(MAKE) tcljavaBinDist DISTDIR=$(BLEND_DISTDIR) TCLJAVA=tclblend
 
 	mkdir -p $(BLEND_DISTDIR)
-	cp -p $(UNIX_DIR)/green.c \
+	cp -p $(TOP_DIR)/src/pkgIndex.tcl \
 		$(BUILD_DIR)/jwish \
 		$(BUILD_DIR)/libtclblend$(SHLIB_SUFFIX) \
 		$(BUILD_DIR)/tclbean.jar \
