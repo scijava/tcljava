@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: JavaLoadCmd.test,v 1.2 1998/11/04 22:42:40 hylands Exp $
+# RCS: @(#) $Id: JavaLoadCmd.test,v 1.3 1999/05/10 03:10:35 dejong Exp $
 
 # Note: This test file must be sourced from the parent directory
 #       or else the defs file may not be properly loaded.
@@ -40,6 +40,12 @@ if {! [file isdirectory $root_path]} {
 set javaload_path [file join $root_path javaload]
 if {! [file isdirectory $javaload_path]} {
     puts "Unable to find directory \"$javaload_path\".  Cannot run tests."
+    return
+}
+
+set javaload_full_path [file join $javaload_path tests javaload]
+if {! [file isdirectory $javaload_full_path]} {
+    puts "Unable to find directory \"$javaload_full_path\".  Cannot run tests."
     return
 }
 
@@ -105,10 +111,6 @@ test javaLoadCmd-1.9 {error conditions} {
 
 test javaLoadCmd-1.10 {error in tcl.lang.Extension structure} {
     catch {unset msg}
-    set javaload_full_path [file join $javaload_path tests javaload]
-    if {! [file isdirectory $javaload_full_path]} {
-	error "Unable to find directory \"$javaload_full_path\".  Cannot run tests."
-    }
     catch {java::load -classpath $javaload_full_path Test1Extension} msg
     set msg
 } {load "Test1Extension" failed: use the fully qualified package name}
@@ -151,9 +153,8 @@ test javaLoadCmd-3.2 {error in tcl.lang.Extension structure} {
 
 test javaLoadCmd-3.3 {error in tcl.lang.Extension structure} {
     catch {unset msg}
-    catch {java::load -classpath $javaload_path Test8Extension} msg
-    set msg
-} {load "Test8Extension" failed: class or initializer is not accessible}
+    list [catch {java::load -classpath $javaload_path Test8Extension} msg] $msg
+} {1 {load "Test8Extension" failed: class or initializer is not accessible}}
 
 test javaLoadCmd-4.1 {test loading of valid packages} {
     java::load -classpath $javaload_path tests.javaload.Test1Extension.class 
@@ -195,6 +196,7 @@ catch {
     unset testpath;
     unset root_path;
     unset javaload_path;
+    unset javaload_full_path;
     rename test1 "";
     rename test2 "";
     rename test3 "";
