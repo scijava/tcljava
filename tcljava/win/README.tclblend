@@ -1,83 +1,60 @@
 Tcl Blend
-$Id: README.tclblend,v 1.1 1998/11/24 04:34:38 hylands Exp $
+RCS: @(#) $Id: README.tclblend,v 1.2 1999/05/10 03:20:46 dejong Exp $
 
+This is the directory where you configure, compile, test, and install 
+Windows versions Tcl Blend. This directory also contains source files for 
+Tcl Blend that are specific to Windows.
 
-How To Install Tcl Blend (Binary Release Only):
-----------------------------------------------
+The rest of this file contains instructions on how to do this.  The 
+release should compile and run either "out of the box" or with trivial 
+changes on a Win95, Win98, or WinNT system. To compile for a UNIX
+system, see the README file in the directory ../unix.
 
-(a) The Tcl Blend functionality is provided in the pagkage "java". 
-    After running the Tcl Blend installation program, you can load the
-    "java" package by issuing the following commands in your Tcl script:
-
-    package require java
-
-(b) At this point you can play with the Jacl commands. Start
-    tclsh80.exe and type:
-
-	set x [java::new java.awt.Frame]
-	$x setSize 200 200
-	$x show
-	
-    NOTE: Tcl Blend does not work with the alpha release of Tcl8.1.
-
-    NOTE: Tcl Blend is not entirely compatable with the beta release
-    of the Java Development Kit 1.2.
-
-
-How To Compile And Install Tcl Blend (Source Release Only):
+How To Compile And Install Tcl Blend:
 ----------------------------------------------------------
-This is the directory where you compile, test and install the Windows
-version of Tcl Blend.
 
-The rest of this file contains instructions on how to do this. The
-release should compile and run either "out of the box" or with trivial
-changes on the makefile.vc. To compile for Unix, see the README file
-in the directory ../unix.
+(1) You must have Tcl version 8.0 compilied before you can compile
+    Tcl Blend. See the corresponding win/README in the Tcl8.0
+    directory for information on how to do this.
 
-The Tcl Blend build process is based on a Visual C++ style makefile
-(makefile.vc). You must have the Visuall C++ nmake.exe program to use
-makefile.vc.
+    NOTE: Tcl Blend does not work with Tcl 8.1 yet.
 
-You also need to install the Tcl8.0 binary installation on your
-machine. You can download Tcl8.0 from
+(2) Check for patches as described in ../README.
 
-	ftp://ftp.sunlabs.com/pub/tcl/tcl80.exe.
+(3) Open makefile.vc in a text editor and set the variables at the
+    top of the file to the locations of your Tcl Blend distro,
+    your Java install, and your MS dev tools.
 
-(a) Check for the definitions on the top of the makefile.vc. Modify
-    the settings, when necessary, to reflect the setup of the Java
-    development tools at your site.
+(4) Type "nmake -f makefile.vc". This will build two library files
+    called tclblend.jar and tcljava.jar. The tclblend.jar library file
+    stores the class files that are only used by Tcl Blend.
+    The tcljava.jar library file stores the class files
+    that are shared between jacl and tclblend. Running make
+    will also create a shared library called "tclblend.dll".
 
-(b) Type "nmake -f makefile.vc tclblend.jar" in the Command Prompt window.
-    This will create both the DLL and JAR files needed by the Tcl Blend
-    package.
+(5) If the make fails then you'll have to personalize makefile.vc
+    for your site or possibly modify the distribution in other ways.
+    If you need to modify makefile.vc, there are comments at the
+    beginning of it that describe the things you might want to
+    change and how to change them.
 
-(c) Locate the "lib" directory created when Tcl8.0 was installed. For
-    the rest of this example, this is assumed to be 
-    "C:\Program Files\TCL\lib", but may be different on your machine.
+(6) After the make finishes you can quickly test out Tcl Blend by typing
+    "nmake -f makefile.vc shell" which will drop you into a running
+    Tcl Blend shell where you can type in commands. You can also run
+    the regression tests for Tcl Blend by typing "nmake -f makefile.vc test".
 
-(d) Create a directory called "C:\Program Files\TCL\lib\tclblend1.0".
+(7) When you are ready to install type "nmake -f makefile.vc install"
+    to install the Tcl Blend libraries on your system. The location
+    where the files are installed depeds on how you set up the
+    variables at the top of makefile.vc.
 
-(e) Copy tclblend.jar, tclblend.dll and pkgIndex.tcl to the
-    tclblend1.0 directory. 
+Test suite:
+-----------
 
-(f) The Tcl Blend functionality is provided in the pagkage "java". 
-    After starting the Tcl shell program, you can load the
-    "java" package by issuing the following commands in your Tcl script:
-
-    package require java
-
-    NOTE: Tcl Blend does not work with the alpha release of Tcl8.1.
-
-    NOTE: Tcl Blend is not entirely compatable with the beta release
-    of the Java Development Kit 1.2.
-
-
-Test suite (Source Release Only)
---------------------------------
-
-There is a relatively complete test suite for Tcl Blend in the
-subdirectory "tests". To use it just type "nmake -f makefile.vc test"
+There is a relatively complete test suite for all of the Tcl core in the 
+subdirectory "tests".  To use it just type "nmake -f makefile.vc test"
 in this directory. You should then see a printout of the test files
-processed. If any errors occur, you'll see a much more substantial
+processed.  If any errors occur, you'll see a much more substantial
 printout for each error.  See the README file in the "tests" directory
 for more information on the test suite.
+

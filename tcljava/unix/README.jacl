@@ -1,5 +1,5 @@
 Jacl
-RCS: @(#) $Id: README.jacl,v 1.6 1999/03/02 15:43:36 hylands Exp $
+RCS: @(#) $Id: README.jacl,v 1.7 1999/05/10 03:19:00 dejong Exp $
 
 This is the directory where you configure, compile, test, and install 
 UNIX versions of Jacl.
@@ -10,53 +10,89 @@ changes on any UNIX-like system that approximates POSIX, BSD, or
 System V.  We know that it runs on workstations from Sun.  To compile 
 for a PC running Windows, see the README file in the directory ../win.
 
-
-How To Install Jacl (Binary Release Only):
-------------------------------------------
-
-(a) In the top-level directory there are two jar files, jacl.jar
-    and tclblend.jar	
-
-    Set your CLASSPATH environment variable to include jacl.jar and
-    tclblend.jar 
-
-    For example, if the Jacl distribution was at /usr/local/jacl1.1.1,
-    and you had not set CLASSPATH previously:
-
-    setenv CLASSPATH /usr/local/jacl1.1.1/jacl.jar:/usr/local/jacl1.1.1/tclblend.jar
-
-(b) At this point you can play with Jacl by typing "java tcl.lang.Shell".  
-    If you haven't set the CLASSPATH variable correctly, you will see a 
-    java error "Can't find class tcl.lang.Shell.
-
-
-How To Compile And Install Jacl (Source Release Only):
+How To Compile And Install Jacl
 ------------------------------------------------------
 
-(a) Check for patches as described in ../README.
+(1) Check for patches as described in ../README.
 
-(b) Create a Makefile by typing "./configure".
+(2) Type "./configure".  This runs a configuration script created by
+    GNU autoconf, which configures Jacl for your system and
+    creates a Makefile.  The configure script allows you to customize
+    the Jacl configuration for your site; for details on how you can
+    do this, type "./configure --help" or refer to the autoconf
+    documentation (not included here).  Jacl's "configure"
+    supports the following special switches in addition to
+    the standard ones: 
 
-(c) Type "make".  This will create a directory called jacl that will
-    contain all of the Java class files needed to use Jacl.
+	--with-jdk		By default, the configure script will
+                                attempt to find the JDK by searching on
+                                the PATH for the javac program. If the
+                                javac program can not be found on the
+                                PATH or if you do not want to use the
+				JDK that it finds, you will need to use
+                                this switch to tell configure where
+                                it should look for the JDK binaries.
 
-(d) If the make fails then you'll have to personalize the Makefile
+	--with-kaffe		If this switch is given the configure script
+				will attempt to configure for use with the
+                                Kaffe JVM. See www.transvirtual.com for more
+                                info about Kaffe. This switch should be used
+                                with the absolute path to the directory where
+                                your Kaffe binaries are installed.
+
+	--with-jikes		The JDK ships with a java compiler called
+				javac. This compiler works but it is very
+				slow. Many people would rather use the
+				jikes compiler from IBM because it is much
+				faster than javac and it produces better code.
+				On my system, a compile with javac takes
+				1 minute while a compile with jikes
+                                takes less than 3 seconds. If this switch is
+                                given with no argument then the configure
+                                script will search for jikes on the PATH.
+                                If an argument is provided it must be the
+                                absolute path name of your jikes executable.
+                                See www.research.ibm.com/jikes for more info.
+
+    If you are only going to compile for a single JVM then you
+    should just run "./configure" from this directory. If you intend
+    to build Jacl for multiple JVMs you should make a sub
+    directory for each system you want to build a binary for. For
+    instance if you wanted to compile for Sun and Kaffe you
+    could make two directories called "Sun" and "Kaffe". At
+    this point you will want to run the configure script in the
+    directory of each target system. You should do something like
+    "cd Sun ; ../configure (your configure options here)".
+    You can also use this feature to build two versions of Jacl
+    (one that works with JDK1.1 and another that works with JDK1.2)
+    on the same system. If Jacl is compiled for JDK1.1 it will
+    also run on JDK1.2 but if compiled on JDK1.2 it may not
+    work with JDK1.1.
+
+(3) Type "make". This will build two library files called
+    jacl.jar and tcljava.jar. The jacl.jar library file
+    stores the class files that are only used by jacl.
+    The tcljava.jar library file stores the class files
+    that are shared between jacl and tclblend.
+
+(4) If the make fails then you'll have to personalize the Makefile
     for your site or possibly modify the distribution in other ways.
     If you need to modify Makefile, there are comments at the beginning 
     of it that describe the things you might want to change and how to 
     change them.
 
-(e) Set your CLASSPATH environment variable to include jacl.jar and
-    tclblend.jar 
+(5) After the make finishes you can quickly test out jacl by typing
+    "make shell" which will drop you into a running jacl shell where
+    you can type in commands. You can also run the regression tests
+    for jacl by typing "make test".
 
-    For example, if the Jacl distribution was at /usr/local/jacl1.1.1,
-    and you had not set CLASSPATH previously:
-
-    setenv CLASSPATH /usr/local/jacl1.1.1/jacl.jar:/usr/local/jacl1.1.1/tclblend.jar
-
-(f) At this point you can play with Jacl by typing "java tcl.lang.Shell".  
-    If you haven't set the CLASSPATH variable correctly, you will see a 
-    java error "Can't find class tcl.lang.Shell.
+(6) When you are ready to install jacl type "make install" to install
+    the jacl.jar and tcljava.jar libraries on your system. Doing the
+    install will also create a wrapper script called jaclsh which you
+    can use to run jacl without setting the CLASSPATH. After the wrapper
+    script has been installed a test program will be run to ensure that
+    the installed program is working correctly. If you want to run jacl
+    with special arguments you will need to edit the jaclsh script.
 
 Test suite:
 -----------
@@ -69,13 +105,3 @@ README file in the "tests" directory for more information on the test suite.
 Note: don't run the tests as superuser: this will cause several of them to 
 fail.
 
-Jar files
----------
-The Jacl release consists of two jar files:
-jacl.jar -      which contains the Jacl specific class files
-tcljava.jar -   which contains the class files that are common to both
-		Jacl and Tcl Blend
-
-While building tcljava.jar we use a stub file called empty.jar to
-avoid including extra class files in tcljava.jar.  For more information,
-see src/empty/README.txt

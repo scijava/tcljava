@@ -1,69 +1,52 @@
 Jacl
-$Id: README.jacl,v 1.1 1998/11/24 04:34:38 hylands Exp $
+RCS: @(#) $Id: README.jacl,v 1.2 1999/05/10 03:20:35 dejong Exp $
 
-How To Install Jacl (Binary Release Only):
-------------------------------------------
+This is the directory where you configure, compile, test, and install 
+Windows versions of Jacl.
 
-(a) In the top-level directory there is a file named jacl.jar. Set your
-    CLASSPATH environment variable to point this file. You can do this
-    by opening a Command Prompt window and typing:
+The rest of this file contains instructions on how to do this.  The 
+release should compile and run either "out of the box" or with trivial 
+changes on a Win95, Win98, or WinNT system. To compile for a UNIX
+system, see the README file in the directory ../unix.
 
-	set CLASSPATH=%CLASSPATH%;C:\jacl1.1\jacl.jar;C:\jacl1.1\tcljava.jar
-
-(b) At this point you can play with Jacl by typing 
-
-	java tcl.lang.Shell
-
-    If you haven't set the CLASSPATH variable correctly, you will see a 
-    java error "Can't find class tcl.lang.Shell.
-
-
-How To Compile And Install Jacl (Source Release Only):
+How To Compile And Install Jacl
 ------------------------------------------------------
 
-This is the directory where you compile and test the Windows version
-of Jacl.
+(1) Check for patches as described in ../README.
 
-The rest of this file contains instructions on how to do this. The
-release should compile and run either "out of the box" or with trivial
-changes on the makefile.vc. To compile for Unix, see the README file
-in the directory ../unix.
+(2) Open makefile.vc in a text editor and set the variables
+    at the top of the file to the locations of your Jacl distro,
+    your Java install, and your MS dev tools.
 
-The Jacl build process is based on a Visual C++ style makefile
-(makefile.vc). You must have the Visuall C++ nmake.exe program to use
-makefile.vc.
+(3) Type "nmake -f makefile.vc". This will build two library
+    files called jacl.jar and tcljava.jar. The jacl.jar library
+    file stores the class files that are only used by jacl.
+    The tcljava.jar library file stores the class files
+    that are shared between jacl and tclblend.
 
-You also need JDK 1.1 in order to compile and execute Jacl. You can
-download the latest JDK from http://java.sun.com.
+(4) If the make fails then you'll have to personalize makefile.vc
+    for your site or possibly modify the distribution in other ways.
+    If you need to modify makefile.vc, there are comments at the
+    beginning of it that describe the things you might want to
+    change and how to change them.
 
-(a) Check for the definitions on the top of the makefile.vc. Modify
-    the settings, when necessary, to reflect the setup of the Java
-    development tools at your site.
+(5) After the make finishes you can quickly test out Jacl by typing
+    "nmake -f makefile.vc shell" which will drop you into a running
+    Jacl shell where you can type in commands. You can also run the
+    regression tests for Jacl by typing "nmake -f makefile.vc test".
 
-(b) Type "nmake -f makefile.vc jacl" in the Command Prompt window.
-    This will create a directory called jacl that will contain all of
-    the Java class files needed to use Jacl.
+(6) When you are ready to install jacl type "nmake -f makefile.vc install"
+    to install the jacl.jar and tcljava.jar libraries on your system.
+    The location where the files are installed depends on how you
+    set up the variables at the top of makefile.vc.
 
-(c) Set your CLASSPATH environment variable to include the jacl
-    directory. This can be done by typing
+Test suite:
+-----------
 
-	set CLASSPATH=%CLASSPATH%;C:\jacl\win\jacl
+There is a relatively complete test suite for all of the Tcl core in the 
+subdirectory "tests".  To use it just type "nmake -f makefile.vc test"
+in this directory. You should then see a printout of the test files
+processed.  If any errors occur, you'll see a much more substantial
+printout for each error.  See the README file in the "tests" directory
+for more information on the test suite.
 
-    This will change the CLASSPATH settings in the Command Prompt
-    window for you to play with Jacl. To set the CLASSPATH permantly
-    on Windows NT, you can use the System,Environment settings in the
-    Control Panel; on Window 95, edit your AUTOEXEC.BAT file.
-
-(d) At this point you can play with Jacl by typing "java tcl.lang.Shell".  
-    If you haven't set the CLASSPATH variable correctly, you will see a 
-    java error "Can't find class tcl.lang.Shell.
-
-Test suite
-----------
-
-There is a relatively complete test suite for the Tcl core in the
-subdirectory "tests". To use it just type "nmake -f test". You should
-then see a printout of the test files processed. If any errors occur,
-you'll see a much more substantial printout for each error. See the
-README file in the "tests" directory for more information on the test
-suite.
