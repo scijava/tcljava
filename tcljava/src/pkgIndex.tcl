@@ -1,6 +1,6 @@
 # Cross platform init script for Tcl Blend. Known to work on unix and windows.
 # Author:  Christopher Hylands, Mo Dejong
-# RCS: @(#) $Id: pkgIndex.tcl,v 1.15 1999/10/21 20:10:39 redman Exp $
+# RCS: @(#) $Id: pkgIndex.tcl,v 1.16 1999/10/22 16:52:25 redman Exp $
 
 proc loadtclblend {dir} {
     global tcl_platform env tclblend_init
@@ -23,7 +23,7 @@ proc loadtclblend {dir} {
             # This can happend when jacl reads the same tcl lib path, ignore it
 
             if {$debug_loadtclblend} {
-                puts "tclblend's pkgIndex.tcl file read in jacl, ignoring".
+                puts "tclblend's pkgIndex.tcl file read in jacl, ignoring."
             }
 
             return
