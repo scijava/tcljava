@@ -2,7 +2,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run to configure the
 dnl	Makefile in this directory.
 AC_INIT(../src/tcljava/tcl/lang/InternalRep.java)
-# RCS: @(#) $Id: configure.in,v 1.22 1999/10/21 20:01:41 redman Exp $
+# RCS: @(#) $Id: configure.in,v 1.23 1999/10/29 01:46:17 redman Exp $
 
 
 #--------------------------------------------------------------------
@@ -86,7 +86,7 @@ AC_ARG_WITH(build, [  --with-build=DIR        select which system to build (jacl
 
 if test $TCLJAVA != "NONE"; then
     if test $TCLJAVA != "jacl" && test $TCLJAVA != "tclblend"; then 
-	AC_MSG_ERROR([Cannot build --with-build-'$TCLJAVA': use 'jacl' or 'tclblend'])
+	AC_MSG_ERROR([Cannot build --with-build='$TCLJAVA': use 'jacl' or 'tclblend'])
     fi
 fi
 
@@ -473,11 +473,9 @@ fi
 #--------------------------------------------------------------------
 
 AC_ARG_WITH(jikes, [  --with-jikes=PROG       use jikes compiler given by PROG, if PROG is not given look for jikes on the PATH.],
-    JIKES=$withval, JIKES=NONE)
+    JIKES=$withval, JIKES=yes)
 
-#echo "JIKES is \"$JIKES\""
-
-if test "$JIKES" = "NONE"; then
+if test "$JIKES" = "no"; then
     #do nothing
     JIKES=""
 else
@@ -659,7 +657,7 @@ does not exist. You must install the JDK Native Threads Pack to use tclblend.
 See http://www.blackdown.org/java-linux.html.])
             fi
 
-	    # Early Blackdown JDK include dir name was genunix
+            # Early Blackdown JDK include dir name was genunix
             if test -d $JAVA_INCLUDE/genunix; then
                 JAVA_ARCH_INCLUDE=$JAVA_INCLUDE/genunix
             else
@@ -1204,6 +1202,14 @@ Make sure Tcl was configured with --enable-shared.])
             echo "Not using SHLIB_LD_LIBS on `uname -s` workaround" >&5
         fi
     fi
+
+    # Fix up the TCL_LD_SEARCH_FLAGS when running under Solaris
+
+    case "$JAVA_NAME" in
+        SunOS-*)
+            TCL_LD_SEARCH_FLAGS=`echo ${TCL_LD_SEARCH_FLAGS} | sed -e 's/-Wl,-R,/-R /'`
+            ;;
+    esac
 
     # Define used when we compile with kaffe
     if test "$JAVA_NAME" = "kaffe"; then

@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FileUtil.java,v 1.4 1999/05/09 00:15:34 dejong Exp $
+ * RCS: @(#) $Id: FileUtil.java,v 1.5 1999/10/29 01:46:14 redman Exp $
  *
  */
 
@@ -132,7 +132,7 @@ getWinHomePath(
  * beginsWithLetterColon --
  *
  *	Determine whether a given windows path begins with [a-zA-Z]:
- *	Return O if path doesn't begins with [a-zA-Z]:
+ *	Return O if path doesn't begin with [a-zA-Z]:
  *	Return 3 if path begins with [a-zA-Z]:/
  *	Otherwise, return 2.
  *
@@ -377,9 +377,9 @@ getPathType(
 /*
  *-----------------------------------------------------------------------------
  *
- * getNewFileName --
+ * getNewFileObj --
  *
- *	Creatae a new File object with the name "fileName".
+ *	Create a new File object with the name "fileName".
  *
  * Results:
  *	Returns the newly created File object.
@@ -402,16 +402,55 @@ throws
     if (debug) {
 	System.out.println("File name is \"" + fileName + "\"");
     }
-    if (getPathType(fileName) == PATH_ABSOLUTE) {
-	if (debug) {
-	    System.out.println("File name is PATH_ABSOLUTE");
-	}
-	return new File(fileName);
-    } else {
-	if (debug) {
-	    System.out.println("File name is relative");
-	}
-	return new File(interp.getWorkingDir(), fileName);
+    switch (getPathType(fileName)) {
+        case PATH_RELATIVE:
+	    if (debug) {
+		System.out.println("File name is PATH_RELATIVE");
+	    }
+	    return new File(interp.getWorkingDir(), fileName);
+        case PATH_VOLUME_RELATIVE:
+	    if (debug) {
+		System.out.println("File name is PATH_VOLUME_RELATIVE");
+	    }
+
+	    // Something is very wrong if interp.getWorkingDir()
+	    // does not start with C: or another drive letter
+	    String cwd = interp.getWorkingDir().toString();
+	    int index = beginsWithLetterColon(cwd);
+	    if (index == 0) {
+		throw new TclRuntimeError("interp working directory \"" +
+                    cwd + "\" does not start with a drive letter");
+	    }
+
+	    // We can not use the joinPath() method because joing("D:/", "/f.txt")
+	    // returns "/f.txt" for some wacky reason. Just do it ourselves.
+	    StringBuffer buff = new StringBuffer();
+	    buff.append(cwd.substring(0, 2));
+	    buff.append('\\');
+	    for (int i=0; i < fileName.length() ; i++) {
+		if (fileName.charAt(i) != '\\') {
+	            // Once we skip all the \ characters at the front
+		    // append the rest of the fileName onto the buffer
+	            buff.append(fileName.substring(i));
+	            break;
+		}
+	    }
+
+	    fileName = buff.toString();
+
+	    if (debug) {
+		System.out.println("After PATH_VOLUME_RELATIVE join \"" + fileName + "\"");
+	    }
+
+	    return new File(fileName);
+        case PATH_ABSOLUTE:
+	    if (debug) {
+		System.out.println("File name is PATH_ABSOLUTE");
+	    }
+	    return new File(fileName);
+        default:
+	    throw new TclRuntimeError("type for fileName \"" + fileName +
+				      "\" not matched in case statement");
     }
 }
 
@@ -481,7 +520,7 @@ appendComponent(
 static String
 joinPath(
     Interp interp, 			// Current interpreter for path join.
-    TclObject argv[],			// List of pathes to be joined.
+    TclObject[] argv,			// List of pathes to be joined.
     int startIndex,			// 1st item in argv to join.
     int endIndex)			// 1st item to ignore.
 throws 

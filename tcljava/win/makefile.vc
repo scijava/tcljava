@@ -17,32 +17,30 @@ TCLJAVA		= tclblend
 TCLJAVA_VERSION	= 1.2.5
 
 # Location you will be installing into
-TCL_DIR		= C:\Tcl
-#TCL_DIR	= C:\progra~1\tcl
+TCL_DIR		= D:\Tcl
+#TCL_DIR	= C:\Program Files\tcl
 
 # Root directory of the distribution
 TOP_DIR		= C:\Tcl\$(TCLJAVA)$(TCLJAVA_VERSION)
 #TOP_DIR	= C:\users\cxh\java\tb\$(TCLJAVA)$(TCLJAVA_VERSION)
 
 # The root directory of your MS dev tools
-TOOLS32		= C:\msdev\VC98
-#TOOLS32	= D:\Progra~1\DevStudio\Vc
+TOOLS32		= C:\Program Files\Microsoft Visual Studio\vc98
+#TOOLS32	= D:\Program Files\DevStudio\Vc
 
 # JDK1.1 users should uncomment this section
-#JAVA_DIR	= C:\jdk1.1.7
-JAVA_DIR	= C:\java
+JAVA_DIR	= C:\jdk1.1.8
 JAVA_VERSION	= 1.1
 JAVA_CLASSPATH	= $(JAVA_DIR)\lib\classes.zip;.
 
 # JDK1.2 users should uncomment this section
 #JAVA_DIR	= C:\jdk1.2
-#JAVA_DIR	= G:\mo\software\java\jdk1.2
 #JAVA_VERSION	= 1.2
 #JAVA_CLASSPATH	= $(JAVA_DIR)\lib\tools.jar;$(JAVA_DIR)\jre\lib\rt.jar;.
 
 
 #Tcl version info needed by the rest of the scripts
-#TCL_DOTVERSION	= 8.2.0
+#TCL_DOTVERSION	= 8.2.1
 TCL_DOTVERSION	= 8.0.5
 #TCL_VERSION	= 82
 TCL_VERSION	= 80
@@ -77,7 +75,7 @@ MACHINE	= IX86
 
 # Dos commands to copy and remove directories
 COPYDIR			= xcopy /e /i /k
-DELETEDIR		= rd /s /q
+DELETEDIR		= deltree /y
 
 # Directory in which to install tclblend.dll:
 LIB_INSTALL_DIR 	= $(TCL_DIR)\lib
@@ -101,6 +99,7 @@ JAVAC			= $(JAVA_BIN_DIR)\javac
 JAVAH			= $(JAVA_BIN_DIR)\javah
 JAR			= $(JAVA_BIN_DIR)\jar
 JAVA_FLAGS		=
+#JAVA_FLAGS		= -Djava.compiler=NONE
 JAR_COMPRESS_FLAGS	= -cf0
 JAR_EXTRACT_FLAGS	= -xf
 
@@ -284,38 +283,38 @@ clean: 	tclblend.clean jacl.clean tcljava.clean \
 	demos.clean test.clean tmp.clean
 
 tclblend.clean: tmp.clean
-	-@del javaNative.h 2> NUL
-	-@$(DELETEDIR) $(TCLBLEND_BUILD_DIR) 2> NUL
-	del $(BUILD_DIR)\tclblend.jar 2> NUL
-	del pkgIndex.tcl 2> NUL
+	-@del javaNative.h
+	-@$(DELETEDIR) $(TCLBLEND_BUILD_DIR)
+	del $(BUILD_DIR)\tclblend.jar
+	del pkgIndex.tcl
 
 jacl.clean:
-	-@$(DELETEDIR) $(JACL_BUILD_DIR) 2> NUL
-	del $(BUILD_DIR)\jacl.jar 2> NUL
+	-@$(DELETEDIR) $(JACL_BUILD_DIR)
+	del $(BUILD_DIR)\jacl.jar
 
 tcljava.clean:
-	-@$(DELETEDIR) $(TCLJAVA_BUILD_DIR) 2> NUL
-	-@del $(BUILD_DIR)\tcljava.jar 2> NUL
+	-@$(DELETEDIR) $(TCLJAVA_BUILD_DIR)
+	-@del $(BUILD_DIR)\tcljava.jar
 
 demos.clean: 
-	-@$(DELETEDIR) $(DEMOS_BUILD_DIR) 2> NUL
+	-@$(DELETEDIR) $(DEMOS_BUILD_DIR)
 
 test.clean:
 	cd $(BUILD_DIR)
-	-@$(DELETEDIR) $(TEST_BUILD_DIR) 2> NUL
+	-@$(DELETEDIR) $(TEST_BUILD_DIR)
 
 
 tmp.clean:
 	-@cd $(BUILD_DIR)
-	-@del *.exp 2> NUL
-	-@del *.lib 2> NUL
-	del   *.dll 2> NUL
-	del   *.exe 2> NUL
-        del   *.obj 2> NUL
-        -@del *.res 2> NUL
-        -@del *.class 2> NUL
-        -@del *.pdb 2> NUL
-        -@del *.pch 2> NUL
+	-@del *.exp
+	-@del *.lib
+	del   *.dll
+	del   *.exe
+        del   *.obj
+        -@del *.res
+        -@del *.class
+        -@del *.pdb
+        -@del *.pch
 
 distclean: clean
 

@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.28 1999/08/30 13:48:37 mo Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.29 1999/10/29 01:46:17 redman Exp $
 
 # The directory containing the Tcl sources and headers appropriate
 # for this version of Tk ("srcdir" will be replaced or has already
@@ -1016,8 +1016,7 @@ distclean: clean
 
 DISTDIR			= /tmp/tcljava
 TCLJAVA_VERSION		= @TCLJAVA_VERSION@
-TCLJAVA_NODOT_VERSION	= `echo @TCLJAVA_VERSION@ | sed -e 's/\.//g'`
-
+TCLJAVA_NODOT_VERSION	= @TCLJAVA_NODOT_VERSION@
 
 JACL_ZIPNAME		= jacl$(TCLJAVA_NODOT_VERSION).zip
 JACL_DISTNAME		= jacl$(TCLJAVA_VERSION)

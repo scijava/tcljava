@@ -1,33 +1,29 @@
-This message is to announce the new 1.2.4 release of Jacl and
+This message is to announce the new 1.2.5 release of Jacl and
 Tcl Blend.  These releases are the result of a joint effort by
-Mo DeJong, Christopher Hylands, and Bryan Surles. The goal of
-this project is to extend and improve the 1.0 release of Jacl
-and Tcl Blend which was originally started by the Sun Tcl team.
+Mo DeJong, Christopher Hylands, Bryan Surles, and Scott Redman. 
+The goal of this project is to extend and improve the 1.0 release 
+of Jacl and Tcl Blend which was originally started by the Sun Tcl team.
 
-The 1.2.4 Developers release of Jacl and Tcl Blend are available for
+The 1.2.5 release of Jacl and Tcl Blend are available for
 downloading at the following URL:
 
-    http://www.cs.umn.edu/~dejong/tcl/tcljava
+    http://www.scriptics.com/java
 
-The 1.2 version is a developers release and should be considered alpha
-quality. Version 1.2.4 includes lots of bug fixes and new features
-that make it even easier to use Tcl and Java together.
+The 1.2 version is a "production" release, it is considered
+stable enough to be used on an everyday basis.This is the
+first stable release of the 1.2 tree after a year in
+development.
 
-
-What's New in the 1.2.4 Release?
+What's New in the 1.2.5 Release?
 ----------------------------------
 
-Jacl now includes the namespace command! All the namespace
-features included in Tcl 8.1 should be working in this
-release. Unicode support has been added to the Jacl parser.
-Tcl Blend works with Tcl 8.2 and supports Unicode characters
-(encoded as UTF-8) when compiled with Tcl 8.1 or Tcl 8.2.
-Jacl now supports the "package present" subcommand from
-Tcl 8.1's package command.  A new java::import command
-which supports using shortened class names has been added
-to Jacl and Tcl Blend. A number of bugs in Jacl have been
-fixed and a host of new regression tests from the Tcl 8.1
-dist have been added to Jacl.
+The new release includes no new features, but it does fix
+a couple of bugs present in the 1.2.4 release. The new
+release also includes an experimental new build system that
+is TEA compliant and should work on both Unix and Windows
+systems. The existing build system which uses configure
+under windows and VC++ makefiles under Windows is still
+supported.
 
 See the new_features.txt and changes.txt files for more info.
 
@@ -72,20 +68,20 @@ found at the following URL:
 Comments and questions can be sent to the Tcl & Java integration
 mailing list at:
 
-    tcljava@tclconsortium.org
+    tcljava@scriptics.com
 
 Of course, you will need to join the mailing list first. You can do
 so by sending an email to this address.
 
-    tcljava-request@tclconsortium.org
+    tcljava-request@scriptics.com
 
 Scriptics support for Jacl and Tcl Blend:
 -------------------------------------------------
 
 It is important to understand that this release is due entirely to the
 efforts of Christopher Hylands and Mo DeJong. Scriptics currently has
-a minor, facilitating role in Jacl and Tcl Blend and is not officially
-supporting these releases.
+a minor, facilitating role in Jacl and Tcl Blend. Scriptics does provide
+enterprise support for Tcl Blend through negotiable support agreements.
 
 If you have a problem with Jacl or Tcl Blend or you think you have
 a great idea for a feature, you should send an email to the tcljava
