@@ -1,6 +1,6 @@
 Recent user-visible changes to Jacl & Tcl Blend:
 
-RCS: @(#) $Id: changes.txt,v 1.40.2.6 2000/04/29 00:22:10 mo Exp $
+RCS: @(#) $Id: changes.txt,v 1.40.2.7 2000/04/29 00:25:25 mo Exp $
 
 ----------------- Released 1.0a1, 10/22/97 -----------------------
 
@@ -1052,6 +1052,10 @@ to build under windows.
 The 1.3 version contained a fix that linked libtclblend.so
 the the location where the Tcl dll was installed, not
 where it was built. This fix has been back ported.
+
+04/28/2000 (improved error message for "load tclblend.dll")
+Fixed error message displayed when the "load tclblend.dll"
+command fails. It now tell them what to do to fix the problem.
 
 ----------------- Released 1.2.6, XX/XX/XX -----------------------
 

@@ -1,6 +1,6 @@
 # Cross platform init script for Tcl Blend. Known to work on unix and windows.
-# Author:  Christopher Hylands, Mo Dejong
-# RCS: @(#) $Id: pkgIndex.tcl,v 1.19 2000/01/25 21:48:59 mo Exp $
+# Authors:  Christopher Hylands, Mo Dejong
+# RCS: @(#) $Id: pkgIndex.tcl,v 1.19.2.1 2000/04/29 00:25:24 mo Exp $
 
 proc loadtclblend {dir} {
     global tcl_platform env tclblend_init
@@ -269,68 +269,6 @@ proc loadtclblend {dir} {
     catch {unset found_tcljava}
     catch {unset found_tclblend}
 
-
-    # Define proc that searches for shared libs on the path
-    
-    proc shlib_search { shlibs envvar searchdirs } {
-	global env
-	upvar debug_loadtclblend debug_loadtclblend
-
-	if {[llength $shlibs] == 0} {
-	    error "no shlib names provided"
-	}
-	
-	# iterate over shlibs to set up the location array
-	
-	foreach shlib $shlibs {
-	    if {$shlib == ""} {
-		error "empty shlib name"
-	    }
-	    set shlibloc($shlib) ""
-	}
-	
-	foreach dir $searchdirs {
-	    if {$dir == {}} {
-		continue
-	    }
-	    if {! [file isdirectory $dir]} {
-		if {$debug_loadtclblend} {
-		    puts "directory \"$dir\" from $envvar does not exist"
-		}
-		continue
-	    }
-	    
-	    foreach shlib $shlibs {
-		set file [file join $dir $shlib]
-		
-		if {[file exists $file]} {
-		    if {$shlibloc($shlib) == ""} {
-			set shlibloc($shlib) $file
-		    } else {
-			if {$debug_loadtclblend} {
-			    puts "found duplicate $shlib on $envvar at\
-				    \"$file\", first was at $shlibloc($shlib)"
-			}
-		    }
-		}
-	    }
-	}
-	
-	foreach shlib $shlibs {
-	    if {$shlibloc($shlib) == ""} {
-		puts "could not find $shlib, you may need to add the\
-                        directory where $shlib lives to your $envvar\
-                        environmental variable."
-	    } else {
-		if {$debug_loadtclblend} {
-		    puts "found $shlib on $envvar at \"$shlibloc($shlib)\"."
-		}
-	    }
-	}
-    }
-
-
-
     switch $tcl_platform(platform) {
 	unix {
 	    # on a UNIX box shared libs can be found using the
@@ -355,54 +293,53 @@ proc loadtclblend {dir} {
 	    
 	    set VAR PATH
 	    set shlibdir bin
-
-	    if {$debug_loadtclblend} {
-		puts "JDK 1.1 users should have a directory like\
-			C:\\jdk1.1.6\\bin in their PATH."
-		puts "JDK 1.2 users should have directories like\
-			C:\\jdk1.2\\jre\\bin and\
-			C:\\jdk1.2\\jre\\bin\\classic in their PATH."
-	    }
 	}
 	mac -
 	default {
 	    error "unsupported platform \"$tcl_platform(platform)\""	
 	}
     }
-    
-    set shlibs [list ${pre_lib}tclblend${post_lib}]
-    
-    if {[info exists env(TCLBLEND_SHLIB_NAMES)]} {
-	foreach lib $env(TCLBLEND_SHLIB_NAMES) {
-	    lappend shlibs $lib
-	}
-    } else {
-	lappend shlibs ${pre_lib}java${post_lib}
-    }
-
 
     # Load the tclblend native lib after the .jar files are on the CLASSPATH.
     # If loading of the shared libs fails try to figure out why it failed.
 
     if {[catch {load $tclblend_shlib} errMsg]} {
+	set fullErr "\"load $tclblend_shlib\" failed:\n $errMsg"
+	append fullErr "\ncurrently, the $VAR environment variable includes these directories:"
+	
+	set split_list [split $env($VAR) $path_sep]
+	set filtered_list [list]
+	foreach index $split_list {
+	    if {$index != {}} {
+	        lappend filtered_list $index
+	    }
+	}
+	append fullErr "\n\{$filtered_list\}"
 
-	if {$debug_loadtclblend} {
-	    puts "Attempting to figure out why \"load $tclblend_shlib\" failed"
+	if {$VAR == "PATH"} {
+	    append fullErr "\n\nWindows users should note that the most common\
+	    cause of problems loading TclBlend is the user forgetting to\
+	    set the PATH environment variable to include both the Tcl shared\
+	    libraries and the Java shared libraries."
+	    
+	    append fullErr "\nJDK 1.1 users that installed into C:\\jdk1.1.8\
+	    need to include C:\\jdk1.1.8\\bin on the PATH."
+	    append fullErr "\nJDK 1.2 users that installed into C:\\jdk1.2\
+	    need to include C:\\jdk1.2\\jre\\bin AND C:\\jdk1.2\\jre\\bin\\classic\
+	    on the PATH."
+	} else {
+	    append fullErr "\n\nUnix users should note that the most common\
+	    cause of problems loading TclBlend is not having the proper environment\
+	    variables set. Please use the jtclsh startup that was created and\
+	    installed during the source compilation step. The jtclsh script will\
+	    automatically  set all the needed environment variables for you."
 	}
 
-        # Look for the shared libs that tclblend needs. The only
-        # tricky part here is that Windows users will not have
-        # the TCLBLEND_SHLIB_NAMES set so just check for "java".
-
 	if {$debug_loadtclblend} {
-	    puts "currently $VAR is set to \n\"$env($VAR)\""
+	    puts "full error message is \"$fullErr\""
 	}
 
-        shlib_search $shlibs $VAR [split $env($VAR) $path_sep]
-        rename shlib_search {}
-
-
-        error "\"load $tclblend_shlib\" failed:\n $errMsg"
+        error $fullErr
     }
 
 
@@ -410,7 +347,7 @@ proc loadtclblend {dir} {
     # export the java commands out of the java namespace
     namespace eval ::java {
 	namespace export bind call cast defineclass event field \
-	    getinterp instanceof lock new null prop throw try unlock
+	    getinterp instanceof lock new null prop throw try unlock import
     }
 
 
