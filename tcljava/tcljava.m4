@@ -622,7 +622,7 @@ AC_DEFUN([AC_JAVA_JNI_INCLUDE], [
     AC_REQUIRE([AC_PROG_CC])
 
     AC_CACHE_CHECK(to see if jni.h can be included,
-        ac_java_jvm_jni_working,
+        ac_java_jvm_jni_working,[
         AC_LANG_PUSH(C)
         ac_saved_cflags=$CFLAGS
         CFLAGS="$CFLAGS $ac_java_jvm_jni_include_flags"
@@ -633,7 +633,7 @@ AC_DEFUN([AC_JAVA_JNI_INCLUDE], [
         AC_MSG_ERROR([could not compile file that includes jni.h]))
         AC_LANG_POP()
         CFLAGS=$ac_saved_cflags
-    )
+    ])
 
     # FIXME: should we look for or require a include/native_threads dir?
 ])
@@ -834,7 +834,7 @@ AC_DEFUN([AC_JAVA_JNI_LIBS], [
     AC_REQUIRE([AC_PROG_CC])
 
     AC_CACHE_CHECK(to see if we can link a JNI application,
-        ac_java_jvm_working_jni_link,
+        ac_java_jvm_working_jni_link,[
         AC_LANG_PUSH(C)
         ac_saved_cflags=$CFLAGS
         CFLAGS="$CFLAGS $ac_java_jvm_jni_include_flags $ac_java_jvm_jni_lib_flags"
@@ -846,7 +846,7 @@ AC_DEFUN([AC_JAVA_JNI_LIBS], [
         It is likely that your JVM install is broken or corrupted.]))
         AC_LANG_POP()
         CFLAGS=$ac_saved_cflags
-    )
+    ])
 ])
 
 

@@ -10,7 +10,7 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  *
- * RCS: @(#) $Id: javaCmd.c,v 1.10 2000/10/29 06:00:41 mdejong Exp $
+ * RCS: @(#) $Id: javaCmd.c,v 1.11 2000/10/30 03:22:30 mdejong Exp $
  */
 
 /*
@@ -208,7 +208,7 @@ EXPORT(int,Tclblend_Init)(
 
 #ifdef TCLBLEND_DEBUG
     fprintf(stderr, "TCLBLEND_DEBUG: Tclblend_Init finished\n");
-    fprintf(stderr, "TCLBLEND_DEBUG: JavaInitBlend() returned ");
+    fprintf(stderr, "TCLBLEND_DEBUG: JavaInitBlend returned ");
     if (result == TCL_ERROR) {
       fprintf(stderr, "TCL_ERROR");
     } else if (result == TCL_OK) {
@@ -380,6 +380,8 @@ JavaInitEnv(
      * already attached to the JVM because it was created in Java.
      * Since we do not need to create a JVM and we do not need to
      * attach the current thread, we just set currentEnv and return.
+     * Also note that we would never need to access the javaVM pointer
+     * if Tcl Blend was loaded into from Java.
      */
 
     if (env) {
@@ -393,8 +395,9 @@ JavaInitEnv(
 
     /*
      * From this point on, deal with the case where Tcl Blend is loaded from Tcl.
-     * Check to see if the current process already has a Java VM.  If so, attach
-     * the current thread to it, otherwise create a new JVM (automatic thread attach).
+     * Check to see if the current process already has a JVM.  If so, attach
+     * the current thread to it, otherwise create a new JVM. Invoking
+     * JNI_CreateJavaVM will automatically attach the calling thread.
      */
 
     if (JNI_GetCreatedJavaVMs(&javaVM, 1, &nVMs) < 0) {
@@ -564,7 +567,7 @@ JavaInitEnv(
 
 	Tcl_CreateThreadExitHandler(DestroyJVM, NULL);
 
-    } else {
+    } else { /* (nVMs == 0) */
 
 #ifdef TCLBLEND_DEBUG
     fprintf(stderr, "TCLBLEND_DEBUG: JVM in process, attaching\n");

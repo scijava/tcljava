@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: ArrayObject.test,v 1.1 1998/10/14 21:09:24 cvsadmin Exp $
+# RCS: @(#) $Id: ArrayObject.test,v 1.2 2000/10/30 03:22:30 mdejong Exp $
 
 # Note: This test file must be sourced from the parent directory
 #       or else the defs file may not be properly loaded.
@@ -580,7 +580,7 @@ test arrayObject-11.14 {initArray} {
 	set handle [java::new {int[][][]} {3} {{{1 2} {3 4}} {{5 6} {7 8}}}]
     } msg] $msg
 } {1 {cannot initialize a 3 dimensional array with zero size in dimension 1}}
-test arrayObject-11.14 {initArray, error conditions} {
+test arrayObject-11.15 {initArray, error conditions} {
     list [catch {
 	set handle [java::new {int[][]} {5 -2}]
     } msg] $msg
