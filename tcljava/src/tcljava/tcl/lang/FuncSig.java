@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: FuncSig.java,v 1.10 2002/12/27 14:33:18 mdejong Exp $
+ * RCS: @(#) $Id: FuncSig.java,v 1.11 2003/01/01 01:51:00 mdejong Exp $
  *
  */
 
@@ -532,20 +532,11 @@ matchSignature(
 	match_classes = ((Method) match_vector.elementAt(i)).getParameterTypes();
       }
 
-      // Test for assignability.  A primitive type can not be passed a null
-      // argument so we check for that case first. If the argument is
-      // null we do not throw out a non primitive argument as any Class
-      // could be assigned the null object. Then we check for assignability
-      // of the Class object itself and throw out any that do not jive.
+      // If any of the arguments are not assignable to the method arguments,
+      // then remove this method from the vector of matches.
 
       for (j=0; j < argv_count; j++) {
-	if ((match_classes[j].isPrimitive() && argv_classes[j] == null) ||
-            (argv_classes[j] != null &&
-            match_classes[j] != argv_classes[j] &&
-	    !match_classes[j].isAssignableFrom(argv_classes[j]))) {
-	  
-	  // if this argument is totally incompatible with the signature
-	  // then remove this signature from the possible matches
+	if (!JavaInvoke.isAssignable(match_classes[j], argv_classes[j])) {
 	  
           if (debug) {
           System.out.println("removing non assignable match " + i);

@@ -5,7 +5,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: JavaInvoke.test,v 1.10 2002/12/31 23:29:05 mdejong Exp $
+# RCS: @(#) $Id: JavaInvoke.test,v 1.11 2003/01/01 01:51:01 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -421,7 +421,6 @@ test invoke-9.15 {convertJavaObject} {
 
 set tclstr "hello"
 set str [java::new String $tclstr]
-set obj [java::cast Object $str]
 
 test invoke-9.16 {convertJavaObject: When returned from a Java method,
         a Java String object will automatically be converted to a Tcl string } {
@@ -433,12 +432,7 @@ test invoke-9.17 {convertJavaObject: Return value will not get converted to
     java::call -noconvert tests.JavaTest retStr $str
 } $str
 
-# this is really more of an argument conversion test
-
-test invoke-9.18 {convertJavaObject: Argument should not be assignable } {
-    java::call tests.JavaTest retStr $obj
-} ""
-unset str obj
+unset str
 
 
 #
@@ -624,14 +618,12 @@ test invoke-10.6 {convertTclObject} {
 } [list 0 [java::null]]
 
 set value [java::new tests.JavaTest]
-#to string compare objects they must be reffed as same type
-set value [java::cast java.lang.Object $value]
 test invoke-10.7 {convertTclObject} {
     set cls [java::field tests.JavaTest class]
     list [catch {
 	java::call -noconvert $INVCLS convertTclObject $interp $cls                       [jtest getobject $value]
     } msg] $msg
-} [list 0 $value]
+} [list 0 [java::cast java.lang.Object $value]]
 
 set value [java::new tests.JavaTest]
 test invoke-10.8 {convertTclObject} {
@@ -713,6 +705,40 @@ test invoke-10.14 {convertTclObject} {
     [java::call tests.signature.PassTclObject getTclObjectString2 $str]]
 } {mystr 0}
 }
+
+
+test invoke-10.15 {convertTclObject} {
+    set str [java::new String hi]
+    set obj [java::cast Object $str]
+    catch {java::call tests.JavaTest {retStr String} $obj} err
+    string compare $err \
+        "expected object of type java.lang.String but got \"$obj\" (java.lang.Object)"
+} 0
+
+# A good argument could be made that this test should fail in the automatic
+# method resolver, but it fails during argument conversion right now.
+
+test invoke-10.16 {convertTclObject} {
+    set str [java::new String hi]
+    set obj [java::cast Object $str]
+    catch {java::call tests.JavaTest retStr $obj} err
+    string compare $err \
+        "expected object of type java.lang.String but got \"$obj\" (java.lang.Object)"
+} 0
+
+test invoke-10.17 {convertTclObject} {
+    set cls [java::field Integer TYPE]
+    set rnull [java::call tcl.lang.ReflectObject newInstance $interp [java::null] [java::null]]
+    list [catch \
+        {java::call -noconvert $INVCLS convertTclObject $interp $cls $rnull} err] $err
+} {1 {expected object of type int but got "java0x0" (null)}}
+
+test invoke-10.18 {convertTclObject} {
+    set obj [java::new tests.JavaTest]
+    list [catch {$obj {imethod int} [java::null]} err] $err
+} {1 {expected object of type int but got "java0x0" (null)}}
+
+
 
 #----------------------------------------------------------------------
 #

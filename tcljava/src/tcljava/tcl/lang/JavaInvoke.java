@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaInvoke.java,v 1.18 2002/12/31 23:29:05 mdejong Exp $
+ * RCS: @(#) $Id: JavaInvoke.java,v 1.19 2003/01/01 01:51:00 mdejong Exp $
  *
  */
 
@@ -817,10 +817,12 @@ throws
     TclException		// If conversion fails.
 {
     Object javaObj = null;
+    Class javaClass = null;
     boolean isReflectObj = false;
 
     try {
 	javaObj = ReflectObject.get(interp, tclObj);
+	javaClass = ReflectObject.getClass(interp, tclObj);
 	isReflectObj = true;
     } catch (TclException e) {
 	interp.resetResult();
@@ -910,11 +912,7 @@ throws
 	// type. If javaObj is a wrapper for a primitive type then
 	// we check to see if the object is an instanceof the type.
 
-	if (javaObj == null) {
-	    return null;
-	}
-
-	if (type.isInstance(javaObj)) {
+	if (isAssignable(type, javaClass)) {
 	    return javaObj;
 	}
 
@@ -972,8 +970,9 @@ throws
 	throw new TclException(interp, "expected object of type " +
                 JavaInfoCmd.getNameFromClass(type) +
 		" but got \"" + tclObj + "\" (" +
+                ((javaClass == null) ? "null" :
                 JavaInfoCmd.getNameFromClass(
-        	    ReflectObject.getClass(interp, tclObj) ) +
+        	    javaClass )) +
                 ")");
     }
 }
@@ -998,8 +997,7 @@ throws
 private static final TclObject
 wrap(
     Interp interp,	// Current interpreter.
-    Class cls,		// The class of the Java Object (we can't use
-			// javaObj.getClass because javaObj may be null.)
+    Class cls,		// The class of the Java Object
     Object javaObj,	// The Java Object to wrap.
     boolean convert)	// Whether the value should be converted
 			// into Tcl objects of the closest types. 
@@ -1009,6 +1007,46 @@ throws TclException
 	return convertJavaObject(interp, cls, javaObj);
     } else {
 	return ReflectObject.newInstance(interp, cls, javaObj);
+    }
+}
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * isAssignable --
+ *
+ *	Return true if the argument object can be assigned to
+ *	convert flag is set.
+ *
+ * Results:
+ *	The TclObject that wraps the Java Object.
+ *
+ * Side effects:
+ *	None.
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+static final boolean
+isAssignable(
+    Class  to_cls,	// The class we want to assign to
+    Class  from_cls)    // The class we want to assign from (can be null)
+{
+    // A primitive type can not be assigned the null value, but it
+    // can be assigned to any type derived from Object.
+
+    if (from_cls == null) {
+        if (to_cls.isPrimitive()) {
+            return false;
+        } else {
+            return true;
+        }
+    } else {
+        if ((to_cls == from_cls) || to_cls.isAssignableFrom(from_cls)) {
+            return true;
+        } else {
+            return false;
+        }
     }
 }
 

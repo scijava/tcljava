@@ -1,5 +1,21 @@
 2002-12-31  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/tcljava/tcl/lang/FuncSig.java (matchSignature):
+	Move assignment checks into JavaInvoke.isAssignable().
+	* src/tcljava/tcl/lang/JavaInvoke.java (convertTclObject,
+	isAssignable):
+	Query the class of an object passed to convertTclObject
+	and use it to ensure that a Java object is assignable.
+	Add isAssignable method for use in this class and FuncSig.
+	* tests/tcljava/JavaInvoke.test: Move failing test
+	invoke-9.18 down to the convertTclObject section.
+	Add tests to check that Java argument objects
+	can be assigned to the argument types of the method.
+	Also check that null cannot be assigned to a
+	primitive argument type.
+
+2002-12-31  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* new_features.txt: Add note about TclObject passing.
 	* src/tcljava/tcl/lang/JavaInvoke.java (convertTclObject):
 	Add support for passing a TclObject directly to a
