@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaInvoke.java,v 1.5 1999/05/09 22:15:02 dejong Exp $
+ * RCS: @(#) $Id: JavaInvoke.java,v 1.6 1999/05/15 23:44:24 dejong Exp $
  *
  */
 
@@ -685,8 +685,7 @@ throws
 static TclObject
 convertJavaObject(
     Interp interp,	// Current interpreter.
-    Class cls,		// The class of the Java Object (we can't use
-			// javaObj.getClass because javaObj may be null.)
+    Class cls,		// The class of the Java Object
     Object javaObj)	// The java.lang.Object to convert to a TclObject.
 throws TclException
 {
@@ -696,31 +695,32 @@ throws TclException
 	} else {
 	    return ReflectObject.newInstance(interp, cls, javaObj);
 	}
-    } else if (javaObj instanceof Integer) {
+
+    } else if ((cls == Integer.TYPE) || (cls == Integer.class)) {
 	return TclInteger.newInstance(((Integer) javaObj).intValue());
 
-    } else if (javaObj instanceof Long) {
+    } else if ((cls == Long.TYPE) || (cls == Long.class)) {
 	return TclInteger.newInstance(((Long) javaObj).intValue());
 
-    } else if (javaObj instanceof Short) {
+    } else if ((cls == Short.TYPE) || (cls == Short.class)) {
 	return TclInteger.newInstance(((Short) javaObj).intValue());
 
-    } else if (javaObj instanceof Byte) {
+    } else if ((cls == Byte.TYPE) || (cls == Byte.class)) {
 	return TclInteger.newInstance(((Byte) javaObj).intValue());
 
-    } else if (javaObj instanceof Double) {
+    } else if ((cls == Double.TYPE) || (cls == Double.class)) {
 	return TclDouble.newInstance(((Double) javaObj).doubleValue());
 
-    } else if (javaObj instanceof Float) {
+    } else if ((cls == Float.TYPE) || (cls == Float.class)) {
 	return TclDouble.newInstance(((Float) javaObj).doubleValue());
 
-    } else if (javaObj instanceof Boolean) {
+    } else if ((cls == Boolean.TYPE) || (cls == Boolean.class)) {
 	return TclBoolean.newInstance(((Boolean) javaObj).booleanValue());
 
-    } else if (javaObj instanceof Character) {
+    } else if ((cls == Character.TYPE) || (cls == Character.class)) {
 	return TclString.newInstance(((Character) javaObj).toString());
 
-    } else if (javaObj instanceof String) {
+    } else if (cls == String.class) {
 	return TclString.newInstance((String)javaObj);
 
     } else {
