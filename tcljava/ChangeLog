@@ -1,5 +1,14 @@
 2002-04-11  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/jacl/tcl/lang/EncodingCmd.java: Map the
+	Tcl "identity" encoding to "UTF8" in Java. While
+	this does not pass all the Tcl identity
+	encoding tests, it does pass quite a few.
+	* tests/tcl/utf.test: Add encoding command
+	tests from Tcl 8.3.
+
+2002-04-11  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* Makefile.in: Build demo binaries in a directory
 	named bdemo. Build test binaries in a directory
 	named btest. This will keep the make clean rule

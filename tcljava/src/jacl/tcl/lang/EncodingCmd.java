@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: EncodingCmd.java,v 1.1 2002/01/02 18:40:53 mdejong Exp $
+ * RCS: @(#) $Id: EncodingCmd.java,v 1.2 2002/04/12 15:32:44 mdejong Exp $
  *
  */
 
@@ -98,7 +98,7 @@ class EncodingCmd implements Command
     };
 
     static final String javaNames[] = {
-        "identity",
+        "UTF8",
         "UTF8",
         "UTF16",
         "ISO-10646-UCS-2",
