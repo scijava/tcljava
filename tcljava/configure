@@ -1714,6 +1714,17 @@ echo "$as_me: error: Cannot find jacl or tclblend sources" >&2;}
         fi
     fi
 
+    if test "$TCLJAVA" = "jacl"; then
+        case "`uname -s`" in
+	    *MINGW* | *win32* | *WIN32* | *CYGWIN_NT* |*CYGWIN_98*|*CYGWIN_95*)
+                ac_cv_tcl_win32="yes"
+                ;;
+            *)
+                ac_cv_tcl_win32="no"
+                ;;
+        esac
+    fi
+
 
 # Process the --with-tcl command line option
 
@@ -1794,7 +1805,7 @@ Make sure Tcl was configured with --enable-shared." >&2;}
    { (exit 1); exit 1; }; }
     fi
 
-    if test "$TCL_DLL_FILE" != "" ; then
+    if test "$TCL_DLL_FILE" != "" && test "x$ac_cv_tcl_win32" = "x" ; then
         ac_cv_tcl_win32=yes
     fi
 
@@ -2371,7 +2382,7 @@ echo "${ECHO_T}$ac_java_classpath" >&6
 echo $ECHO_N "checking to see if the java compiler works... $ECHO_C" >&6
 
     cat << \EOF > conftest.java
-// #line 2374 "configure"
+// #line 2385 "configure"
 
 
 public class conftest {
@@ -2442,7 +2453,7 @@ echo $ECHO_N "checking type of jvm... $ECHO_C" >&6
     if test "x$ac_java_jvm_name" = "x" ; then
 
     cat << \EOF > conftest.java
-// #line 2445 "configure"
+// #line 2456 "configure"
 import kaffe.lang.Application;
 
 public class conftest {
@@ -2469,7 +2480,7 @@ EOF
     if test "x$ac_java_jvm_name" = "x" ; then
 
     cat << \EOF > conftest.java
-// #line 2472 "configure"
+// #line 2483 "configure"
 import gnu.java.io.EncodingManager;
 
 public class conftest {
@@ -2518,7 +2529,7 @@ echo $ECHO_N "checking java API version... $ECHO_C" >&6
 
 
     cat << \EOF > conftest.java
-// #line 2521 "configure"
+// #line 2532 "configure"
 import java.lang.StrictMath;
 
 public class conftest {
@@ -2546,7 +2557,7 @@ EOF
     if test "x$ac_java_jvm_version" = "x" ; then
 
     cat << \EOF > conftest.java
-// #line 2549 "configure"
+// #line 2560 "configure"
 import java.lang.Package;
 
 public class conftest {
@@ -2575,7 +2586,7 @@ EOF
     if test "x$ac_java_jvm_version" = "x" ; then
 
     cat << \EOF > conftest.java
-// #line 2578 "configure"
+// #line 2589 "configure"
 import java.lang.reflect.Method;
 
 public class conftest {

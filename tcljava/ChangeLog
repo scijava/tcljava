@@ -1,5 +1,16 @@
 2004-09-30  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* configure: Regen.
+	* tcljava.m4 (TCLJAVA_ENABLE_JACL_OR_TCLBLEND):
+	When building with Jacl only, set the ac_cv_tcl_win32
+	var based on the results of uname -s. This fixes
+	a native path conversion code problem that was
+	causing a configure problem and was causing
+	`make test` to fail.
+	[Bug 904653]
+
+2004-09-30  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/jacl/tcl/lang/FileChannel.java (close): Set file
 	member to null after closing.
 	* src/jacl/tcl/lang/Interp.java (readScriptFromFile,

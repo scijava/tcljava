@@ -137,6 +137,17 @@ AC_DEFUN([TCLJAVA_ENABLE_JACL_OR_TCLBLEND], [
             AC_MSG_ERROR([Cannot find jacl or tclblend sources])
         fi
     fi
+
+    if test "$TCLJAVA" = "jacl"; then
+        case "`uname -s`" in
+	    *MINGW* | *win32* | *WIN32* | *CYGWIN_NT* |*CYGWIN_98*|*CYGWIN_95*)
+                ac_cv_tcl_win32="yes"
+                ;;
+            *)
+                ac_cv_tcl_win32="no"
+                ;;
+        esac
+    fi
 ])
 
 
@@ -1108,7 +1119,7 @@ Use the --with-tcl=<dirName> configure flag to specify the location.])
 Make sure Tcl was configured with --enable-shared.])
     fi
 
-    if test "$TCL_DLL_FILE" != "" ; then
+    if test "$TCL_DLL_FILE" != "" && test "x$ac_cv_tcl_win32" = "x" ; then
         ac_cv_tcl_win32=yes
     fi
 
