@@ -1,6 +1,6 @@
 Recent user-visible changes to Jacl & Tcl Blend:
 
-RCS: @(#) $Id: changes.txt,v 1.10 1999/05/08 22:53:23 dejong Exp $
+RCS: @(#) $Id: changes.txt,v 1.11 1999/05/08 22:54:37 dejong Exp $
 
 ----------------- Released 1.0a1, 10/22/97 -----------------------
 
@@ -458,6 +458,13 @@ After this change was made there was no need for the .class files
 in the src/jacl/tcl/regex directory so they were deleted and the
 Makefile was changed to reflect that. (Mo)
 
+12/28/98 (new command for Jacl and Tcl Blend)
+A new command called java::try has been added. This command provides
+a Tcl binding to Java's try-catch-finally construct. This command is
+able to manage multiple error conditions unlike the standard catch
+command in Tcl. The comand can also be used to catch Tcl errors and
+Java exceptions independently. (Mo)
+
 12/28/98 (new command for Jacl)
 I added the "clock" command submitted by Christian Krone. The
 files that were added were src/jacl/tcl/lang/ClockCmd.java,
@@ -650,6 +657,8 @@ configure.in, Makefile.in, and jtclsh.in. (Mo)
 Made sure all the demo README files and the makefiles used
 the same build target name for building demos. A user should
 run "make demos" in the build directory to build the demos. (Mo)
+
+
 
 
 
