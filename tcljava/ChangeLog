@@ -1,5 +1,10 @@
 2000-02-23  Mo DeJong  <mdejong@redhat.com>
 
+	* src/tclblend/tcl/lang/Interp.java: Removed old code
+	that was commented out. Fixed comments.
+
+2000-02-23  Mo DeJong  <mdejong@redhat.com>
+
 	* unix/configure.in: improved the error message displayed when
 	the directory given by --with-tcl does not exist by adding
 	the name of the directory we are searching for to the err msg.	

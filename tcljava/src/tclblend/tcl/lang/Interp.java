@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.9 1999/08/09 09:18:34 mo Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.10 2000/02/23 22:16:27 mo Exp $
  *
  */
 
@@ -103,7 +103,6 @@ Interp(
 
     notifier = Notifier.getNotifierForThread(Thread.currentThread());
     notifier.preserve();
-    //ReflectObject.init(this);
 }
 
 /*
@@ -118,8 +117,7 @@ Interp(
  *
  * Side effects:
  *	Calls init() on the new interpreter.  If init() fails,
- *	disposes of the interpreter.  Initializes the ReflectObject
- *	tables, too.
+ *	disposes of the interpreter.
  *
  *----------------------------------------------------------------------
  */
@@ -131,8 +129,6 @@ Interp()
 
     notifier = Notifier.getNotifierForThread(Thread.currentThread());
     notifier.preserve();
-
-    //ReflectObject.init(this);
 
     if (init(interpPtr) != TCL.OK) {
 	String result = getResult().toString();
