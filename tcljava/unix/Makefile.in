@@ -1,6 +1,6 @@
 # This Makefile is used to the java loadable module.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.5 1998/11/04 23:32:41 hylands Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.6 1998/11/05 22:53:12 hylands Exp $
 
 # The version of TclJava, used in this Makefile
 VERSION = @TCLJAVA_VERSION@
@@ -105,7 +105,7 @@ exec_prefix		= @exec_prefix@
 LIB_INSTALL_DIR		= $(INSTALL_ROOT)$(exec_prefix)/lib
 
 # Directory to install the .class files:
-BLEND_LIB_INSTALL_DIR	= $(LIB_INSTALL_DIR)/tclblend
+BLEND_LIB_INSTALL_DIR	= $(LIB_INSTALL_DIR)/tclblend$(VERSION)
 
 # Directory from which applications will reference the library of Tcl
 # scripts
@@ -245,7 +245,7 @@ COMMON_TCL_LANG_TESTS = \
 	$(TEST_SRC_DIR)/tcl/lang/Tester1Listener.java \
 	$(TEST_SRC_DIR)/tcl/lang/Tester2Event.java \
 	$(TEST_SRC_DIR)/tcl/lang/Tester2Listener.java \
-	$(TEST_SRC_DIR)/tcl/lang/TesterBean.java \
+	$(TEST_SRC_DIR)/tcl/lang/TesterBean.java
 
 JACL_TCL_LANG_TESTS = \
 	$(TEST_SRC_DIR)/tcl/lang/JavaTestExtension.java \
@@ -255,10 +255,10 @@ JACL_TCL_LANG_TESTS = \
 	$(TEST_SRC_DIR)/tcl/lang/TesttranslatefilenameCmd.java \
 	$(TEST_SRC_DIR)/tcl/lang/TestParserCmd.java \
 	$(TEST_SRC_DIR)/tcl/lang/TestParsevarCmd.java \
-	$(TEST_SRC_DIR)/tcl/lang/TestParsevarnameCmd.java \
+	$(TEST_SRC_DIR)/tcl/lang/TestParsevarnameCmd.java
 
 BLEND_TCL_LANG_TESTS = \
-	$(TEST_SRC_DIR)/tcl/lang/NativeTestExtension.java \
+	$(TEST_SRC_DIR)/tcl/lang/NativeTestExtension.java
 
 
 # Default is to build whatever is specified by the
@@ -364,12 +364,7 @@ tclblend:
 
 TCLBLEND_LIB_FILE = libtclblend$(SHLIB_SUFFIX)
 
-# Install tclBlend
-# Yes, this rebuilds tclblend, but it should be quick because it
-# is already done.  The alternative is to not have the install rule 
-# depend on tclblend, which means trouble if the build failed
-# earlier.  A fix would be to use dependencies better.
-install_tclblend: tclblend.jar #$(TCLBLEND_LIB_FILE)
+install_tclblend: #tclblend.jar #$(TCLBLEND_LIB_FILE)
 	@echo "#"
 	@echo "# Installing tclblend"
 	@echo "#"
@@ -592,12 +587,12 @@ jacl.jar: jacl.build
 
 
 # Install Jacl
-install_jacl: jacl.jar
+install_jacl: #jacl.jar
 	@echo "#"
 	@echo "# Installing jacl"
 	@echo "#"
 	@for i in $(LIB_INSTALL_DIR) \
-		$(prefix)/bin \
+		$(exec_prefix)/bin \
 		; \
 	    do \
 	    if [ ! -d $$i ] ; then \
@@ -609,9 +604,9 @@ install_jacl: jacl.jar
 	    done;
 	@echo "Installing jacl.jar in $(LIB_INSTALL_DIR)"
 	@$(INSTALL_DATA) $(CLASS_DIR)/jacl.jar $(LIB_INSTALL_DIR)
-	@echo "Installing jaclsh in $(prefix)/bin"
-	@$(INSTALL_PROGRAM) jaclsh $(prefix)/bin
-	@chmod 755 $(prefix)/bin/jaclsh
+	@echo "Installing jaclsh in $(exec_prefix)/bin"
+	@$(INSTALL_PROGRAM) jaclsh $(exec_prefix)/bin
+	@chmod 755 $(exec_prefix)/bin/jaclsh
 
 
 #----------------------------------------------------------------
@@ -1068,9 +1063,7 @@ tcljavaSrcDist: Makefile
 		$(DISTDIR)/src/tests/tests
 
 	mkdir -p $(DISTDIR)/doc
-	cp -p $(TOP_DIR)/doc/*.[13n] \
-		$(TOP_DIR)/doc/license.htm \
-		$(TOP_DIR)/doc/man.macros \
+	cp -p 	$(TOP_DIR)/doc/license.htm \
 		$(TOP_DIR)/license.terms \
 		$(DISTDIR)/doc
 
@@ -1102,6 +1095,10 @@ tcljavaSrcDist: Makefile
 	cp -r $(TOP_DIR)/tests/tcljava/*.test \
 		$(DISTDIR)/tests/tcljava
 
+	mkdir -p $(DISTDIR)/tests/jacl
+	cp -r $(TOP_DIR)/tests/jacl/*.test \
+		$(DISTDIR)/tests/jacl
+
 #----------------------------------------------------------------
 # tcljavaBinDist --
 #
@@ -1130,9 +1127,7 @@ tcljavaBinDist:
 	cp -p $(DEMO_BUILD_DIR)/simplepkg/*.class $(DISTDIR)/demos/simplepkg
 
 	mkdir -p $(DISTDIR)/doc
-	cp -p $(TOP_DIR)/doc/*.[13n] \
-		$(TOP_DIR)/doc/license.htm \
-		$(TOP_DIR)/doc/man.macros \
+	cp -p 	$(TOP_DIR)/doc/license.htm \
 		$(TOP_DIR)/license.terms \
 		$(DISTDIR)/doc
 	cp -rp $(TOP_DIR)/doc/html \
@@ -1324,26 +1319,29 @@ SRCEX			= /tmp/tcljavaDist.ex
 TCLJAVA_DISTNAME	= tcljava$(VERSION)$(PATCHLEVEL)
 TCLJAVA_TAR		= $(DISTDIR)/$(TCLJAVA_DISTNAME).tar
 
+# GNU tar.  Solaris tar will have problems excluding .o files
+GTAR = gtar
 tcljavaDist: $(SRCEX)
 	cd $(TOP_DIR)/..; \
-		tar cfX $(TCLJAVA_TAR) $(SRCEX) tcljava; \
+		$(GTAR) cfX $(TCLJAVA_TAR) $(SRCEX) tcljava; \
 		gzip --best -c $(TCLJAVA_TAR) > $(TCLJAVA_TAR).gz
 
 # GNU tar reads this file and excludes anything that matches
+# We need to ship .jar and .class files
 $(SRCEX):
-	echo '#*#' > $@
-	echo '*~' >> $@
-	echo '*.a' >> $@
-	echo '*.class' >> $@
-	echo '*.dll' >> $@
-	echo '*.jar' >> $@
-	echo '*.o' >> $@
-	echo '*.obj' >> $@
-	echo '*.so' >> $@
-	echo ',*' >> $@
-	echo 'SCCS' >> $@
-	echo 'core' >> $@
-	echo 'jsdatabase' >> $@
+	echo '*/#*#' > $@
+	echo '*/*~' >> $@
+	echo '*/*.a' >> $@
+	echo '*/*.dll' >> $@
+	echo '*/*.o' >> $@
+	echo '*/*.obj' >> $@
+	echo '*/*.so' >> $@
+	echo '*/,*' >> $@
+	echo '*/SCCS' >> $@
+	echo '*/CVS' >> $@
+	echo '*/RCS' >> $@
+	echo '*/core' >> $@
+	echo '*/jsdatabase' >> $@
 
 #----------------------------------------------------------------
 # jaclBinDist --
