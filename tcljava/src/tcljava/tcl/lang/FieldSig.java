@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: FieldSig.java,v 1.1 1998/10/14 21:09:14 cvsadmin Exp $
+ * RCS: @(#) $Id: FieldSig.java,v 1.2 1999/05/09 21:19:41 dejong Exp $
  *
  */
 
@@ -20,40 +20,32 @@ import tcl.lang.reflect.*;
 import java.lang.reflect.*;
 import java.util.*;
 
-/*
+/**
  * This class implements the internal representation of a Java field
  * signature.
  */
 
 class FieldSig extends InternalRep {
 
-/*
- * The class that the field signature is used against. If the
- * java::field command is given a class name, then the targetCls is
- * that class; if If the java::field command is given a Java object,
- * then the targetCls is the class of that object.  targetCls is used
- * to test the validity of a cached FieldSig internal rep.
- */
+// The class that the field signature is used against. If the
+// java::field command is given a class name, then the targetCls is
+// that class; if If the java::field command is given a Java object,
+// then the targetCls is the class of that object.  targetCls is used
+// to test the validity of a cached FieldSig internal rep.
 
 Class targetCls;
 
-/*
- * The class specified by the signature. If the signature only gives
- * the name of a field and omits the declaring class, then sigCls is
- * the same as targetCls.
- */
+// The class specified by the signature. If the signature only gives
+// the name of a field and omits the declaring class, then sigCls is
+// the same as targetCls.
 
 Class sigCls;
 
-/*
- * The handle to the field as given by the field signature.
- */
+// The handle to the field as given by the field signature.
 
 Field field;
 
-/*
- * The PkgInvoker used to access the field. 
- */
+// The PkgInvoker used to access the field. 
 
 PkgInvoker pkgInvoker;
 
@@ -133,10 +125,8 @@ throws
     InternalRep rep = signature.getInternalRep();
 
     if ((rep instanceof FieldSig) && (((FieldSig)rep).targetCls == targetCls)){
-	/*
-	 * The cached internal rep is a valid field signature for
-	 * the given targetCls.
-	 */
+	// The cached internal rep is a valid field signature for
+	// the given targetCls.
 
 	return (FieldSig)rep;
     }

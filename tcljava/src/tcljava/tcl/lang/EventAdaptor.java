@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: EventAdaptor.java,v 1.1 1998/10/14 21:09:14 cvsadmin Exp $
+ * RCS: @(#) $Id: EventAdaptor.java,v 1.2 1999/05/09 21:17:59 dejong Exp $
  */
 
 package tcl.lang;
@@ -41,42 +41,30 @@ import java.beans.*;
 
 public class EventAdaptor {
 
-/*
- * true if the init() has been called, false otherwise.
- */
+// true if the init() has been called, false otherwise.
 
 private boolean initialized;
 
-/*
- * The event should be fired to this interpreter.
- */
+// The event should be fired to this interpreter.
 
 Interp interp;
 
-/*
- * The event source object.
- */
+// The event source object.
 
 Object source;
 
-/*
- * Stores the callbacks that are currently being handled by the target.
- */
+// Stores the callbacks that are currently being handled by the target.
 
 Hashtable callbacks;
 
-/*
- * If an Exception is throws during the execution of the event
- * handler, it is stored in this member variable for later processing
- * by _wrongException(). If no Exception is thrown, the value of this
- * variable is null.
- */
+// If an Exception is throws during the execution of the event
+// handler, it is stored in this member variable for later processing
+// by _wrongException(). If no Exception is thrown, the value of this
+// variable is null.
 
 Throwable exception;
 
-/*
- * The event set handled by this adaptor.
- */
+// The event set handled by this adaptor.
 
 EventSetDescriptor eventDesc;
 
@@ -173,7 +161,7 @@ setCallback(
     				// fires.
 {
     check();
-    TclObject oldCmd = (TclObject)callbacks.get(eventName);
+    TclObject oldCmd = (TclObject) callbacks.get(eventName);
     if (oldCmd != null) {
 	oldCmd.release();
 	callbacks.remove(eventName);
@@ -210,7 +198,7 @@ throws
 {
     check();
 
-    TclObject oldCmd = (TclObject)callbacks.get(eventName);
+    TclObject oldCmd = (TclObject) callbacks.get(eventName);
     if (oldCmd != null) {
 	oldCmd.release();
 	callbacks.remove(eventName);
@@ -293,7 +281,7 @@ getHandledEvents(
 	String interfaceName = eventDesc.getListenerType().getName();
 
 	for (Enumeration e = callbacks.keys(); e.hasMoreElements(); ) {
-	    String eventName = (String)e.nextElement();
+	    String eventName = (String) e.nextElement();
 	    TclList.append(null, list, TclString.newInstance(
 		    interfaceName + "." + eventName));
 	}
@@ -330,7 +318,7 @@ throws
     check();
     exception = null;
 
-    TclObject cmd = (TclObject)callbacks.get(eventName);
+    TclObject cmd = (TclObject) callbacks.get(eventName);
     if (cmd != null) {
 	Class paramTypes[] = null;
 	Method methods[] = eventDesc.getListenerType().getMethods();
@@ -417,10 +405,8 @@ throws
     if (!(exception instanceof TclException)) {
 	interp.setResult("unexpected exception: " + exception);
     } else {
-	/*
-	 * The error message is already in the interp in the case of
-	 * a TclException, so there is no need to set it here.
-	 */
+	// The error message is already in the interp in the case of
+	// a TclException, so there is no need to set it here.
     }
 
     interp.addErrorInfo("\n    (command bound to event)");
@@ -448,11 +434,9 @@ public final boolean
 _return_boolean()
 {
     if (exception != null) {
-	/*
-	 * An unexpected exception had happen during the execution of
-	 * the binding. We return an "undefined" value without looking
-	 * at interp.getResult().
-	 */
+	// An unexpected exception had happen during the execution of
+	// the binding. We return an "undefined" value without looking
+	// at interp.getResult().
 	
 	return false;
     }
@@ -488,7 +472,7 @@ _return_boolean()
 public final byte
 _return_byte()
 {
-    return (byte)_return_int();
+    return (byte) _return_int();
 }
 
 /*
@@ -512,11 +496,9 @@ public final char
 _return_char()
 {
     if (exception != null) {
-	/*
-	 * An unexpected exception had happen during the execution of
-	 * the binding. We return an "undefined" value without looking
-	 * at interp.getResult().
-	 */
+	// An unexpected exception had happen during the execution of
+	// the binding. We return an "undefined" value without looking
+	// at interp.getResult().
 	
 	return '\0';
     }
@@ -555,11 +537,9 @@ public final double
 _return_double()
 {
     if (exception != null) {
-	/*
-	 * An unexpected exception had happen during the execution of
-	 * the binding. We return an "undefined" value without looking
-	 * at interp.getResult().
-	 */
+	// An unexpected exception had happen during the execution of
+	// the binding. We return an "undefined" value without looking
+	// at interp.getResult().
 	
 	return 0.0;
     }
@@ -595,7 +575,7 @@ _return_double()
 public final float
 _return_float()
 {
-    return (float)_return_double();
+    return (float) _return_double();
 }
 
 /*
@@ -619,11 +599,9 @@ public final int
 _return_int()
 {
     if (exception != null) {
-	/*
-	 * An unexpected exception had happen during the execution of
-	 * the binding. We return an "undefined" value without looking
-	 * at interp.getResult().
-	 */
+	// An unexpected exception had happen during the execution of
+	// the binding. We return an "undefined" value without looking
+	// at interp.getResult().
 	
 	return 0;
     }
@@ -658,7 +636,7 @@ _return_int()
 public final long
 _return_long()
 {
-    return (long)_return_int();
+    return (long) _return_int();
 }
 
 /*
@@ -681,7 +659,7 @@ _return_long()
 public final short
 _return_short()
 {
-    return (short)_return_int();
+    return (short) _return_int();
 }
 
 /*
@@ -708,11 +686,9 @@ _return_Object(
 				// belong to.
 {
     if (exception != null) {
-	/*
-	 * An unexpected exception had happen during the execution of
-	 * the binding. We return an "undefined" value without looking
-	 * at interp.getResult().
-	 */
+	// An unexpected exception had happen during the execution of
+	// the binding. We return an "undefined" value without looking
+	// at interp.getResult().
 	
 	return null;
     }
@@ -725,15 +701,13 @@ _return_Object(
     try {
 	cls = Class.forName(className);
     } catch (ClassNotFoundException e) {
-	/*
-	 * This exception should never happen here because the class
-	 * of the given name should have already been referenced
-	 * before execution comes to here (e.g, when a parameter of
-	 * this class is passed to the method).
-	 *
-	 * If the exception indeed happens, our byte-code generator
-	 * AdaptorGen must be at fault.
-	 */
+	// This exception should never happen here because the class
+	// of the given name should have already been referenced
+	// before execution comes to here (e.g, when a parameter of
+	// this class is passed to the method).
+	//
+	// If the exception indeed happens, our byte-code generator
+	// AdaptorGen must be at fault.
 
 	throw new TclRuntimeError("unexpected exception " + e);
     }
