@@ -2,7 +2,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run to configure the
 dnl	Makefile in this directory.
 AC_INIT(../src/tcljava/tcl/lang/InternalRep.java)
-# RCS: @(#) $Id: configure.in,v 1.31 2000/05/13 10:25:06 mo Exp $
+# RCS: @(#) $Id: configure.in,v 1.32 2000/05/13 23:49:30 mo Exp $
 
 
 #--------------------------------------------------------------------
@@ -1172,8 +1172,8 @@ if test $TCLJAVA = "tclblend" || test $BOTH = "true"; then
     #	not, assume that its top-level directory is a sibling of ours.
     #--------------------------------------------------------------------
     
-    AC_ARG_WITH(tcl, [  --with-tcl=DIR          build directory for Tcl 8.3 (or newer) source release from DIR],
-    	TCL_BIN_DIR=$withval, TCL_BIN_DIR="$srcdir/../../tcl8.3.0/unix")
+    AC_ARG_WITH(tcl, [  --with-tcl=DIR          build directory for Tcl 8.3.1 (or newer) source release from DIR],
+    	TCL_BIN_DIR=$withval, TCL_BIN_DIR="$srcdir/../../tcl8.3.1/unix")
 
     if test ! -d $TCL_BIN_DIR; then
         AC_MSG_ERROR([Tcl directory $TCL_BIN_DIR could not be located.
@@ -1311,7 +1311,7 @@ if test $TCLJAVA = "tclblend" || test $BOTH = "true"; then
     AC_MSG_ERROR([Tcl was configued in $TCL_BIN_DIR, but it has not been built, please build it and run configure again.])
   fi
 
-  # Double check that tclsh works and that it is tcl 8.3 or better
+  # Double check that tclsh works and that it is tcl 8.3.1 or better
   # We need to set LD_LIBRARY_PATH and SHLIB_PATH so that Tcl can find its
   # shared library in the build directory on a Unix or HP-UX system.
 
@@ -1322,14 +1322,27 @@ if test $TCLJAVA = "tclblend" || test $BOTH = "true"; then
 
   TCLSH_LOC=$TCL_BIN_DIR/tclsh
   rm -f tcl_version.tcl
-  echo 'puts [[expr {[info tclversion] >= 8.3}]] ; exit 0' > tcl_version.tcl
+
+  echo 'puts HELLO' > tcl_version.tcl
+  if test "`$TCLSH_LOC tcl_version.tcl 2>&5`" != "HELLO"; then
+    AC_MSG_ERROR([$TCLSH_LOC is broken, I could not run a simple Tcl script with it])
+  fi
+
+  echo '
+        if {[[catch {package require Tcl 8.3.1} err]]} {
+          puts stderr $err
+          exit -1
+        }
+        puts 1
+        exit 0
+       ' > tcl_version.tcl
+
   if test "`$TCLSH_LOC tcl_version.tcl 2>&5`" = "1"; then
       AC_MSG_RESULT([Tcl executable $TCLSH_LOC works])
       rm -f tcl_version.tcl
   else
-      # If the shell did not run or it was not at least Tcl 8.3, generate error
       rm -f tcl_version.tcl
-      AC_MSG_ERROR([$TCLSH_LOC is broken or is not version 8.3 or newer])
+      AC_MSG_ERROR([$TCLSH_LOC is not version 8.3.1 or newer])
   fi
 
   # Now check to see if "make install" has been run in the tcl directory.

@@ -10,7 +10,7 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  *
- * RCS: @(#) $Id: javaCmd.c,v 1.7 1999/08/31 00:46:37 redman Exp $
+ * RCS: @(#) $Id: javaCmd.c,v 1.8 2000/05/13 23:49:29 mo Exp $
  */
 
 /*
@@ -1087,29 +1087,11 @@ JavaGetString(
     jsize length;
     char *buf;
     int i;
-
-#if (TCL_MAJOR_VERSION == 8 && TCL_MINOR_VERSION != 0) /* Tcl 8.1 or above */
     char *p;
     Tcl_DString ds;
-#endif
 
     ustr = (*env)->GetStringChars(env, str, NULL);
     length = (*env)->GetStringLength(env, str);
-
-#if (TCL_MAJOR_VERSION == 8 && TCL_MINOR_VERSION == 0) /* Tcl 8.0 */
-
-    /*
-     * Copy the Unicode characters into an 8-bit character array
-     * by stripping off the upper byte of the character.
-     */
-
-    buf = ckalloc(length+1);
-    for (i = 0; i < length; i++) {
-	buf[i] = ustr[i] & 0xFF;
-    }
-    buf[length] = 0;
-
-#else /* it is Tcl 8.1 or above */
 
     /*
      * Convert the Unicode string into a UTF-8 encoded string. This
@@ -1138,7 +1120,6 @@ JavaGetString(
     buf[length] = 0;
 
     Tcl_DStringFree(&ds);
-#endif /* Tcl 8.0 */
 
     (*env)->ReleaseStringChars(env, str, ustr);
 

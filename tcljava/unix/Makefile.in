@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.38 2000/05/13 10:25:06 mo Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.39 2000/05/13 23:49:30 mo Exp $
 
 # The directory containing the Tcl sources and headers appropriate
 # for this version of Tk ("srcdir" will be replaced or has already
@@ -202,7 +202,6 @@ OBJS = \
 	javaNotifier.o \
 	javaTimer.o \
 	javaUtil.o \
-	tclResult.o \
 	unixNotifier.o
 
 SRCS = \
@@ -214,7 +213,6 @@ SRCS = \
 	$(NATIVE_SRC_DIR)/javaNotifier.c \
 	$(NATIVE_SRC_DIR)/javaTimer.c \
 	$(NATIVE_SRC_DIR)/javaUtil.c \
-	$(NATIVE_SRC_DIR)/tclResult.c \
 	$(UNIX_DIR)/unixNotifier.c
 
 TCLBLEND_CLASS_NAMES = \
@@ -318,9 +316,6 @@ javaTimer.o: $(NATIVE_SRC_DIR)/javaTimer.c
 
 javaUtil.o: $(NATIVE_SRC_DIR)/javaUtil.c
 	$(CC) $(CC_OBJ_FLAG) $(CC_SWITCHES) $(NATIVE_SRC_DIR)/javaUtil.c
-
-tclResult.o: $(NATIVE_SRC_DIR)/tclResult.c
-	$(CC) $(CC_OBJ_FLAG) $(CC_SWITCHES) $(NATIVE_SRC_DIR)/tclResult.c
 
 unixNotifier.o: $(UNIX_DIR)/unixNotifier.c
 	$(CC) $(CC_OBJ_FLAG) $(CC_SWITCHES) $(UNIX_DIR)/unixNotifier.c
@@ -676,7 +671,7 @@ tcljava.check:
 
 
 #----------------------------------------------------------------
-# Build regression tests files for jacl and tclblend
+# Build and run regression tests files for jacl and tclblend
 #----------------------------------------------------------------
 
 check: test

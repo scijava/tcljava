@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaUtil.c,v 1.3 1999/05/17 02:18:15 dejong Exp $
+ * RCS: @(#) $Id: javaUtil.c,v 1.4 2000/05/13 23:49:30 mo Exp $
  */
 
 #include "java.h"
@@ -20,15 +20,7 @@
  */
 
 
-#if (TCL_MAJOR_VERSION == 8 && TCL_MINOR_VERSION == 0) /* Tcl 8.0 */
-
-EXTERN char *TclGetCwd(Tcl_Interp *);
-
-#else /* it is Tcl 8.1 or above */
-
 EXTERN char *TclpGetCwd(Tcl_Interp *);
-
-#endif /* Tcl 8.0 */
 
 
 
@@ -237,25 +229,11 @@ Java_tcl_lang_Util_getCwd(
 {
     JNIEnv *oldEnv;
     jobject obj;
-
-#if (TCL_MAJOR_VERSION == 8 && TCL_MINOR_VERSION != 0) /* Tcl 8.1 or above */
     Tcl_DString ds;
-#endif
 
     JAVA_LOCK();
-    obj = (*env)->NewStringUTF(env,
-
-#if (TCL_MAJOR_VERSION == 8 && TCL_MINOR_VERSION == 0) /* Tcl 8.0 */
-
-                                   TclGetCwd(NULL));
-
-#else /* it is Tcl 8.1 or above */
-
-                                   Tcl_GetCwd(NULL,&ds));
-
-     Tcl_DStringFree(&ds);
-#endif /* Tcl 8.0 */
-
+    obj = (*env)->NewStringUTF(env, Tcl_GetCwd(NULL,&ds));
+    Tcl_DStringFree(&ds);
 
     JAVA_UNLOCK();
     return obj;

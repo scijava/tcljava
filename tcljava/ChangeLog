@@ -1,5 +1,17 @@
 2000-05-13  Mo DeJong  <mdejong@redhat.com>
 
+	* src/native/javaCmd.c:
+	* src/native/javaObj.c:
+	* src/native/javaUtil.c:
+	* src/native/tclResult.c:
+	* unix/Makefile.in:
+	* unix/configure.in:
+	Removed old compat code that supported
+	building Tcl Blend with Tcl 8.0.
+	We now require Tcl 8.3.1 as a minimum.
+
+2000-05-13  Mo DeJong  <mdejong@redhat.com>
+
 	* unix/Makefile.in: Changed var named
 	TCL_INSTALL_BIN_DIR to TCL_INSTALL_LIB_DIR.
 	Added "make gdb" rule for Tcl Blend debugging.
