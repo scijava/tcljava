@@ -21,7 +21,7 @@ TCL_DIR		= D:\Tcl
 #TCL_DIR	= C:\Program Files\tcl
 
 # Root directory of the distribution
-TOP_DIR		= C:\Tcl\$(TCLJAVA)$(TCLJAVA_VERSION)
+TOP_DIR		= D:\Tcl\$(TCLJAVA)$(TCLJAVA_VERSION)
 #TOP_DIR	= C:\users\cxh\java\tb\$(TCLJAVA)$(TCLJAVA_VERSION)
 
 # The root directory of your MS dev tools
@@ -34,15 +34,15 @@ JAVA_VERSION	= 1.1
 JAVA_CLASSPATH	= $(JAVA_DIR)\lib\classes.zip;.
 
 # JDK1.2 users should uncomment this section
-#JAVA_DIR	= C:\jdk1.2
+#JAVA_DIR	= C:\jdk1.2.2
 #JAVA_VERSION	= 1.2
 #JAVA_CLASSPATH	= $(JAVA_DIR)\lib\tools.jar;$(JAVA_DIR)\jre\lib\rt.jar;.
 
 
 #Tcl version info needed by the rest of the scripts
-TCL_DOTVERSION	= 8.2.3
+TCL_DOTVERSION	= 8.3.1
 #TCL_DOTVERSION	= 8.0.5
-TCL_VERSION	= 82
+TCL_VERSION	= 83
 #TCL_VERSION	= 80
 
 
@@ -69,24 +69,19 @@ MACHINE	= IX86
 
 
 
+# Dos commands to copy and remove directories
+COPYDIR			= xcopy /e /i /k
+DELETEDIR		= rd /s /q
+
+# If you are using Windows 95 use this instead of the above setting
+#DELETEDIR		= deltree /y
+
 ######################################################################
 # You should not have to modify below here
 ######################################################################
 
-# Dos commands to copy and remove directories
-COPYDIR			= xcopy /e /i /k
-DELETEDIR              = rd /s /q
-
-# If you are using Windows 95 use this instead of the above setting
-!IF "$(OS)" != "Windows_NT"
-DELETEDIR		= deltree /y
-!ENDIF
-
 # Directory in which to install tclblend.dll:
 LIB_INSTALL_DIR 	= $(TCL_DIR)\lib
-
-# Directory containing platform dependent binaries
-BIN_INSTALL_DIR 	= $(TCL_DIR)\bin
 
 # Directory from which applications will reference the
 # scripts used by tclblend (location of pkgIndex.tcl)
@@ -479,8 +474,8 @@ tcljava.install: tcljava.check
 	-@echo #
 	-@echo # Installing tcljava
 	-@echo #
+	-@mkdir $(TCL_DIR)
 	-@mkdir $(LIB_INSTALL_DIR)
-	-@mkdir $(BIN_INSTALL_DIR)
 	-@echo Installing tcljava.jar in $(LIB_INSTALL_DIR)
 	copy $(BUILD_DIR)\tcljava.jar $(LIB_INSTALL_DIR)
 
@@ -536,9 +531,8 @@ jacl.install: jacl.check
 	-@echo #
 	-@echo Installing jacl.jar in $(LIB_INSTALL_DIR)
 	copy $(BUILD_DIR)\jacl.jar $(LIB_INSTALL_DIR)
-	-@echo Installing jaclsh.bat in $(BIN_INSTALL_DIR)
-	copy $(BUILD_DIR)\jaclsh.bat $(BIN_INSTALL_DIR)
-	-@echo Please edit $(BIN_INSTALL_DIR)\jaclsh.bat for your site
+	-@echo Please add both tcljava.jar and jacl.jar to your CLASSPATH
+	-@echo and then run Jacl like this "java tcl.lang.Shell"
 
 
 #
@@ -586,13 +580,13 @@ tclblend.install: tclblend.check
 	-@echo #
 	-@echo # Installing tclblend
 	-@echo #
-	-@echo Installing $(TCLBLEND_LIB_FILE) in $(BIN_INSTALL_DIR)
-	-@copy $(BUILD_DIR)\$(TCLBLEND_LIB_FILE) $(BIN_INSTALL_DIR)
-	-@echo Installing tclblend.jar in $(LIB_INSTALL_DIR)
-	-@copy $(BUILD_DIR)\tclblend.jar $(LIB_INSTALL_DIR)
 	-@mkdir $(TCLBLEND_LIBRARY)
+	-@echo Installing $(TCLBLEND_LIB_FILE) in $(TCLBLEND_LIBRARY)
+	-@copy $(BUILD_DIR)\$(TCLBLEND_LIB_FILE) $(TCLBLEND_LIBRARY)
 	-@echo Installing pkgIndex.tcl in $(TCLBLEND_LIBRARY)
 	-@copy $(MISC_DIR)\pkgIndex.tcl $(TCLBLEND_LIBRARY)
+	-@echo Installing tclblend.jar in $(LIB_INSTALL_DIR)
+	-@copy $(BUILD_DIR)\tclblend.jar $(LIB_INSTALL_DIR)
 
 
 #
