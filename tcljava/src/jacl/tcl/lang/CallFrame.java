@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: CallFrame.java,v 1.6 1999/07/12 02:38:27 mo Exp $
+ * RCS: @(#) $Id: CallFrame.java,v 1.7 1999/07/16 05:41:37 mo Exp $
  *
  */
 
@@ -216,6 +216,8 @@ class CallFrame {
      *     in this CallFrame.
      */
 
+    // FIXME : need to port Tcl 8.1 implementation here
+
     Vector getVarNames() {
 	Vector vector = new Vector();
 
@@ -322,8 +324,6 @@ class CallFrame {
      * commands (e.g. from trace procedures).
      */
 
-    // FIXME : still need port of DeleteVars?
-
     protected void dispose() {
 	// Unchain this frame from the call stack.
 
@@ -332,61 +332,7 @@ class CallFrame {
 	caller = null;
 	callerVar = null;
 
-	int flags = TCL.TRACE_UNSETS;
-	
-	// FIXME : double check this change, what will happend when an interp is destroyed?
-	//if (this == interp.globalFrame) {
-	if (interp.varFrame == null) {
-	    flags |= TCL.INTERP_DESTROYED | TCL.GLOBAL_ONLY;
-	}
-	for (Enumeration e = varTable.elements(); e.hasMoreElements(); ) {
-	    Var var = (Var) e.nextElement();
-
-	    // For global/upvar variables referenced in procedures,
-	    // decrement the reference count on the variable referred
-	    // to, and free the referenced variable if it's no longer
-	    // needed.  Don't delete the hash entry for the other
-	    // variable if it's in the same table as us: this will
-	    // happen automatically later on.
-
-	    if (var.isVarLink()) {
-		Var upvar = (Var) var.value;
-		upvar.refCount--;
-		if ((upvar.refCount == 0) && upvar.isVarUndefined()
-		        && (upvar.traces == null)) {
-		    if ((upvar.table != null) && (upvar.table != varTable)) {
-			// No need to remove upvar.value because it is already
-			// undefined.
-
-			upvar.table.remove(upvar.hashKey);
-			upvar.table = null;
-		    }
-		}
-	    }
-
-	    // Invoke traces on the variable that is being deleted, then
-	    // free up the variable's space (no need to free the hash entry
-	    // here, unless we're dealing with a global variable:  the
-	    // hash entries will be deleted automatically when the whole
-	    // table is deleted).
-
-	    if (var.traces != null) {
-		Var.callTraces(interp, null, var, var.hashKey, null, flags);
-	    }
-
-	    if (var.isVarArray()) {
-		Var.deleteArray(interp, var.hashKey, var, flags);
-	    } else {
-		if ((var.value != null) && (var.value instanceof TclObject)) {
-		    ((TclObject) var.value).release();
-		}
-	    }
-	    var.value  = null;
-	    var.traces = null;
-	    var.flags  = Var.UNDEFINED;
-	    var.table  = null;
-	    var.hashKey= null;
-	}
+	Var.deleteVars(interp, varTable);
 	varTable = null;
     }
 
