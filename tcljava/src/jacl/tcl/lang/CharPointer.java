@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: CharPointer.java,v 1.2 1999/05/08 23:54:10 dejong Exp $
+ * RCS: @(#) $Id: CharPointer.java,v 1.3 1999/07/28 01:50:46 mo Exp $
  */
 
 package tcl.lang;
@@ -23,7 +23,6 @@ class CharPointer {
 char[] array;
 
 // The current index into the array.
-
 
 int index;
 
@@ -88,7 +87,7 @@ CharPointer(
 {
     int len = str.length();
     this.array = new char[len + 1];
-    System.arraycopy(str.toCharArray(), 0, this.array, 0, len);
+    str.getChars(0, len, this.array, 0);
     this.array[len] = '\0';
     this.index = 0;
 }
