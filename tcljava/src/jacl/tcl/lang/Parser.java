@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Parser.java,v 1.5 1999/07/06 12:19:34 mo Exp $
+ * RCS: @(#) $Id: Parser.java,v 1.6 1999/07/21 04:22:02 mo Exp $
  */
 
 package tcl.lang;
@@ -121,8 +121,8 @@ parseCommand(
 	while (true) {
 
 	  cur = script_array[script_index];
-	  
-	  while ((typeTable[cur] == TYPE_SPACE) || (cur == '\n')) {
+
+	  while (((cur <= TYPE_MAX) && (typeTable[cur] == TYPE_SPACE)) || (cur == '\n')) {
 	    cur = script_array[++script_index];
 	  }
 	  
@@ -196,7 +196,7 @@ parseCommand(
 
 	    while (true) {
 	      cur = script_array[script_index];
-	      type = typeTable[cur];
+	      type = ((cur > TYPE_MAX) ? TYPE_NORMAL : typeTable[cur]);
 	      
 	      if (type == TYPE_SPACE) {
 		script_index++;
@@ -262,9 +262,10 @@ parseCommand(
 		while (true) {
 		    cur = script_array[script_index];
 
-		    // get the current char in the array and lookup its type in array
-		    while (typeTable[script_array[script_index]] == TYPE_NORMAL) {
-		      script_index++;
+		    // get the current char in the array and lookup its type
+		    while (((cur > TYPE_MAX) ? TYPE_NORMAL : typeTable[cur])
+			   == TYPE_NORMAL) {
+		      cur = script_array[++script_index];
 		    }
 		    if (script_array[script_index] == '}') {
 			level--;
@@ -353,7 +354,7 @@ parseCommand(
 	    
 
 	    cur = script_array[script_index];
-	    type = typeTable[cur];
+	    type = ((cur > TYPE_MAX) ? TYPE_NORMAL : typeTable[cur]);
 
 	    if (type == TYPE_SPACE) {
 		script_index++;
@@ -496,8 +497,7 @@ parseTokens(
 	    char tmp_c = script_array[script_index];
 	    System.out.println("Char is '" + tmp_c + "'");
 	    System.out.println("Unicode id is " + ((int) tmp_c));
-	    int tmp_i = ((int) typeTable[tmp_c]);
-	    
+	    int tmp_i = ((int) ((tmp_c > TYPE_MAX) ? TYPE_NORMAL : typeTable[tmp_c]));
 	    System.out.println("Type is " + tmp_i);
 	    System.out.println("Mask is " + mask);
 	    System.out.println("(type & mask) is " + ((int) (tmp_i & mask)));
@@ -506,7 +506,7 @@ parseTokens(
 
 
 	cur = script_array[script_index];
-	type = typeTable[cur];
+	type = ((cur > TYPE_MAX) ? TYPE_NORMAL : typeTable[cur]);
 	    
 	if ((type & mask) != 0) {
 	    if (debug) {
@@ -524,14 +524,14 @@ parseTokens(
 	    }
 
 	    while (true) {
-	        script_index++;
+		cur = script_array[++script_index];
+		type = ((cur > TYPE_MAX) ? TYPE_NORMAL : typeTable[cur]);
 
 		if (debug) {
-		    System.out.println("skipping '" + script_array[script_index]
-				       + "'");
+		    System.out.println("skipping '" + cur + "'");
 		}
 
-		if (((typeTable[script_array[script_index]]) & (mask | TYPE_SUBS)) != 0) {
+		if ((type & (mask | TYPE_SUBS)) != 0) {
 		    break;
 		}
 	    }
@@ -1086,8 +1086,8 @@ static void
 eval2(
     Interp interp,		// Interpreter in which to evaluate the
 				// script.  Also used for error reporting. 
-    char[] script_array,        //the array of charcters
-    int    script_index,        //the starting index into this array
+    char[] script_array,        // the array of charcters
+    int    script_index,        // the starting index into this array
 
     int numBytes,		// Number of bytes in script.  If < 0, the
 				// script consists of all bytes up to the
@@ -1846,7 +1846,7 @@ static char
 charType(
     char c)
 {
-    return (typeTable[c]);
+    return ((c > TYPE_MAX) ? TYPE_NORMAL : typeTable[c]);
 }
 
 // The following table provides parsing information about each possible
@@ -1878,8 +1878,14 @@ static final char TYPE_CLOSE_PAREN	= 0x10;
 static final char TYPE_CLOSE_BRACK	= 0x20;
 static final char TYPE_BRACE		= 0x40;
 
+// This is the largest value in the type table. If a
+// char value is larger then the char type is TYPE_NORMAL.
+// Lookup -> ((c > TYPE_MAX) ? TYPE_NORMAL : typeTable[c])
 
-static char typeTable[] = {
+static final char TYPE_MAX              = 127;
+
+
+static char[] typeTable = {
     // Character values, from 0-127:
 
     TYPE_SUBS,        TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
@@ -1914,41 +1920,6 @@ static char typeTable[] = {
     TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
     TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_BRACE,
     TYPE_NORMAL,      TYPE_BRACE,       TYPE_NORMAL,      TYPE_NORMAL,
-
-    // Character values, from 128-255:
-
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
 };
 
 
