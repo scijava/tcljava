@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: TestEval2Cmd.java,v 1.1 1999/05/10 04:08:51 dejong Exp $
+ * RCS: @(#) $Id: TestEval2Cmd.java,v 1.2 2000/05/14 23:10:21 mo Exp $
  */
 
 package tcl.lang;
@@ -66,7 +66,7 @@ throws
 	    interp.setResult("bad value \"" + string + "\": must be global");
 	    throw new TclException(TCL.ERROR);
 	}
-	flags |= Parser.TCL_EVAL_GLOBAL;
+	flags |= TCL.EVAL_GLOBAL;
     } else if (objv.length != 2) {
 	throw new TclNumArgsException(interp, 1, objv, "script ?global?");
     }

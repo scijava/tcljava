@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: BgErrorMgr.java,v 1.2 1999/07/28 02:06:17 mo Exp $
+ * RCS: @(#) $Id: BgErrorMgr.java,v 1.3 2000/05/14 23:10:20 mo Exp $
  *
  */
 
@@ -272,7 +272,7 @@ processIdleEvent()
 	argv[0] = bgerrorCmdObj;
 	argv[1] = errorMsg;
 
-	Parser.evalObjv(interp, argv, 0, Parser.TCL_EVAL_GLOBAL);
+	Parser.evalObjv(interp, argv, 0, TCL.EVAL_GLOBAL);
     } catch (TclException e) {
 	switch (e.getCompletionCode()) {
 	case TCL.ERROR:

@@ -1,4 +1,19 @@
 2000-05-14  Mo DeJong  <mdejong@redhat.com>
+	* docs/TclJavaLib/Eval.htm:
+	* src/jacl/tcl/lang/BgErrorMgr.java:
+	* src/jacl/tcl/lang/Interp.java:
+	* src/jacl/tcl/lang/Parser.java:
+	* src/tcljava/tcl/lang/TCL.java:
+	* src/tests/jacl/tcl/lang/TestEval2Cmd.java:
+	* src/tests/jacl/tcl/lang/TestEvalObjvCmd.java:
+	Moved eval() flags like TCL_EVAL_GLOBAL
+	from the Jacl Parser class to the tcljava
+	TCL class. This makes it possible to write
+	code that calls eval() with flags arguments
+	that works in both Jacl and Tcl Blend. Also
+	removed an unused variable from Jacl's Interp.
+
+2000-05-14  Mo DeJong  <mdejong@redhat.com>
 
 	* src/jacl/tcl/lang/Interp.java: Removed
 	unused primaryThread variable.

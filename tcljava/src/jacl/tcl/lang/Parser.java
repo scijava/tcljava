@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Parser.java,v 1.8 2000/03/18 03:30:46 mo Exp $
+ * RCS: @(#) $Id: Parser.java,v 1.9 2000/05/14 23:10:20 mo Exp $
  */
 
 package tcl.lang;
@@ -738,7 +738,7 @@ evalObjv(
 				// used. 
     int flags)			// Collection of OR-ed bits that control
 				// the evaluation of the script.  Only
-				// TCL_EVAL_GLOBAL is currently
+				// TCL.EVAL_GLOBAL is currently
 				// supported. 
 throws 
     TclException
@@ -747,7 +747,7 @@ throws
     TclObject[] newObjv;
     int i;
     CallFrame savedVarFrame;	//Saves old copy of interp.varFrame
-                                // in case TCL_EVAL_GLOBAL was set.
+                                // in case TCL.EVAL_GLOBAL was set.
 
     interp.resetResult();
     if (objv.length == 0) {
@@ -803,7 +803,7 @@ throws
 	
 	interp.cmdCount++;
 	savedVarFrame = interp.varFrame;
-	if ((flags & TCL_EVAL_GLOBAL) != 0) {
+	if ((flags & TCL.EVAL_GLOBAL) != 0) {
 	    interp.varFrame = null;
 	}
 	
@@ -1092,7 +1092,7 @@ eval2(
 				// first end of script. 
     int flags)			// Collection of OR-ed bits that control
 				// the evaluation of the script.  Only
-				// TCL_EVAL_GLOBAL is currently
+				// TCL.EVAL_GLOBAL is currently
 				// supported. 
 throws
     TclException
@@ -1107,7 +1107,7 @@ throws
     TclParse parse = null;
     TclToken token;
 
-    // Saves old copy of interp.varFrame in case TCL_EVAL_GLOBAL was set
+    // Saves old copy of interp.varFrame in case TCL.EVAL_GLOBAL was set
     CallFrame savedVarFrame;
 
     // Take into account the trailing '\0'
@@ -1141,7 +1141,7 @@ throws
     }
     interp.resetResult();
     savedVarFrame = interp.varFrame;
-    if ((flags & TCL_EVAL_GLOBAL) != 0) {
+    if ((flags & TCL.EVAL_GLOBAL) != 0) {
 	interp.varFrame = null;
     }
 
@@ -1975,15 +1975,6 @@ static final int TCL_TOKEN_VARIABLE	= 32;
 
 // Note: Most of the variables below will not be used until the
 // Compilier is implemented, but are left for consistency.
-
-
-// Flag values passed to recordAndEval and/or evalObj.
-// WARNING: these bit choices must not conflict with the bit choices
-// for evalFlag bits in tclInt.h!!
-
-static final int TCL_NO_EVAL		= 0x10000;
-static final int TCL_EVAL_GLOBAL	= 0x20000;
-static final int TCL_EVAL_DIRECT	= 0x40000;
 
 // A structure of the following type is filled in by parseCommand.
 // It describes a single command parsed from an input string.

@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TCL.java,v 1.3 1999/08/03 03:29:53 mo Exp $
+ * RCS: @(#) $Id: TCL.java,v 1.4 2000/05/14 23:10:20 mo Exp $
  *
  */
 
@@ -100,6 +100,15 @@ public static final int QUEUE_MARK = 2;
 // Flags used to control the TclIndex.get method.
 
 public static final int EXACT	= 1;	// Matches must be exact.
+
+// Flag values passed to recordAndEval and/or evalObj.
+// These values must match those defined in tcl.h !!!
+
+// Note: EVAL_DIRECT is not currently used in Jacl.
+
+static final int NO_EVAL	= 0x10000;
+static final int EVAL_GLOBAL	= 0x20000;
+static final int EVAL_DIRECT	= 0x40000;
 
 } // end TCL
 

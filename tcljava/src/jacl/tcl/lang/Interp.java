@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.29 2000/05/14 22:57:07 mo Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.30 2000/05/14 23:10:20 mo Exp $
  *
  */
 
@@ -791,8 +791,8 @@ setVar(
 				// to set.
     TclObject value,		// New value for variable.
     int flags)			// Various flags that tell how to set value:
-				// any of GLOBAL_ONLY, NAMESPACE_ONLY,
-				// APPEND_VALUE, or LIST_ELEMENT. 
+				// any of TCL.GLOBAL_ONLY, TCL.NAMESPACE_ONLY,
+				// TCL.APPEND_VALUE, or TCL.LIST_ELEMENT. 
 throws 
     TclException 
 {
@@ -822,8 +822,8 @@ setVar(
 				// to set.
     TclObject value,		// New value for variable.
     int flags)			// Various flags that tell how to set value:
-				// any of GLOBAL_ONLY, NAMESPACE_ONLY,
-				// APPEND_VALUE, or LIST_ELEMENT. 
+				// any of TCL.GLOBAL_ONLY, TCL.NAMESPACE_ONLY,
+				// TCL.APPEND_VALUE, or TCL.LIST_ELEMENT. 
 throws
     TclException 
 {
@@ -855,8 +855,8 @@ setVar(
 				// null.
     TclObject value,		// New value for variable.
     int flags)			// Various flags that tell how to set value:
-				// any of GLOBAL_ONLY, NAMESPACE_ONLY,
-				// APPEND_VALUE or LIST_ELEMENT.
+				// any of TCL.GLOBAL_ONLY, TCL.NAMESPACE_ONLY,
+				// TCL.APPEND_VALUE or TCL.LIST_ELEMENT.
 throws
     TclException
 {
@@ -885,8 +885,8 @@ setVar(
 				// to set.
     String strValue,		// New value for variable.
     int flags)			// Various flags that tell how to set value:
-				// any of GLOBAL_ONLY, NAMESPACE_ONLY,
-				// APPEND_VALUE, orLIST_ELEMENT. 
+				// any of TCL.GLOBAL_ONLY, TCL.NAMESPACE_ONLY,
+				// TCL.APPEND_VALUE, or TCL.LIST_ELEMENT. 
 throws 
     TclException 
 {
@@ -2118,26 +2118,37 @@ throws
 
 public void 
 recordAndEval(
-    TclObject script,	// A script to evaluate.
-    int flags)		// Flags, either 0 or TCL_GLOBAL_ONLY.
-throws 
+    TclObject script,   // A script to evaluate.
+    int flags)          // Additional flags. TCL.NO_EVAL means
+                        // record only: don't execute the command.
+                        // TCL.EVAL_GLOBAL means evaluate the
+                        // script in global variable context instead
+                        // of the current procedure.
+throws
     TclException 	// A standard Tcl exception.
 {
     // Append the script to the event list by calling "history add <script>".
     // We call the eval method with the command of type TclObject, so that
     // we don't have to deal with funny chars ("{}[]$\) in the script.
 
+    TclObject cmd = null;
     try {
-	TclObject cmd = TclList.newInstance();
+	cmd = TclList.newInstance();
 	TclList.append(this, cmd, TclString.newInstance("history"));
 	TclList.append(this, cmd, TclString.newInstance("add"));
 	TclList.append(this, cmd, script);
-	eval(cmd, 0);
-    } catch (Exception e) {}
+	cmd.preserve();
+	eval(cmd, TCL.EVAL_GLOBAL);
+    } catch (Exception e) {
+    } finally {
+	cmd.release();
+    }
 
-    // Finally evaluate the script.
+    // Execute the command.
 
-    eval(script, flags);
+    if ((flags & TCL.NO_EVAL) == 0) {
+	eval(script, flags & TCL.EVAL_GLOBAL);
+    }
 }
 
 /*

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: TestEvalObjvCmd.java,v 1.1 1999/05/10 04:08:51 dejong Exp $
+ * RCS: @(#) $Id: TestEvalObjvCmd.java,v 1.2 2000/05/14 23:10:21 mo Exp $
  */
 package tcl.lang;
 
@@ -57,6 +57,6 @@ throws
     System.arraycopy(objv, 4, newObjv, 0, (objv.length - 4));
 
     Parser.evalObjv(interp, newObjv, /*script,*/ length,
-	    ((evalGlobal) ? Parser.TCL_EVAL_GLOBAL : 0));
+	    ((evalGlobal) ? TCL.EVAL_GLOBAL : 0));
 }
 } // end TestEvalObjvCmd

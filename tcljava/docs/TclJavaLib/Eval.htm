@@ -54,9 +54,8 @@ String value of script to evaluate.
 <P><DT>TclObject <B>tobj</B><DD>
 TclObject value of script to evaluate.
 <P><DT>int <B>flags</B><DD>
-OR-ed combination of flag bits that specify additional options.
-<B>TCL_EVAL_GLOBAL</B> and <B>TCL_EVAL_DIRECT</B> are currently
-supported.  These flags control the stack level of the evaluation.
+An OR'ed combination of flag  bits. Currently supported flags include
+<B>TCL.EVAL_GLOBAL</B>, <B>TCL.EVAL_DIRECT</B>, and <B>TCL.NO_EVAL</B>.
 <P><DT>String <B>fileName</B><DD>
 File containing script to evaluate.
 <P><DT>String <B>cmdName</B><DD>
@@ -72,7 +71,7 @@ The <B>eval</B> method executes the commands in the script stored in
 <I>str</I> or <I>tobj</I> until either an error occurs or the end of the
 script is reached.  If the <I>flag</I> argument is specified, it
 controls the stack level of the evaluation via an OR-ed combination of
-flag bits.  Currently, only the <B>TCL_EVAL_GLOBAL</B> flag is
+flag bits.  Currently, only the <B>TCL.EVAL_GLOBAL</B> flag is
 supported.  If this flag is set, the script is processed at global
 level.  This means that it is evaluated in the global namespace and
 its variable context consists of global variables only (it ignores any
@@ -83,7 +82,8 @@ Tcl syntax or accesses an undefined variable).
 <P><DT><A NAME="M8"><B>recordAndEval</B></A><DD>
 The <B>recordAndEval</B> method adds the script stored in <I>tobj</I>
 to the current list of recorded events and then executes the command by
-calling <B>eval</B>.
+calling <B>eval</B>. Passing <B>TCL.NO_EVAL</B> in the flags argument
+means record the command but don't evaluate.
 
 <P><DT><A NAME="M9"><B>evalFile</B></A><DD>
 The <B>evalFile</B> method reads the file given by <I>fileName</I> and
