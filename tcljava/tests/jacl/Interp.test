@@ -1,0 +1,194 @@
+# Interp.test --
+#
+#	Tests the implementation of the Interp.java file.
+#
+# Copyright (c) 1997 by Sun Microsystems, Inc.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+#
+# RCS: @(#) $Id: Interp.test,v 1.1 1998/11/05 19:48:40 hylands Exp $
+
+# Note: This test file must be sourced from the parent directory
+#       or else the defs file may not be properly loaded.
+
+if {[string compare test [info procs test]] == 1} then {source defs}
+
+setupJavaPackage
+
+proc bad_trace_proc {args} {
+    error gorp
+}
+
+# test Interp-1.1 {Interp constructor} {} {}
+
+# test Interp-1.2 {createCommands} {} {}
+
+test Interp-1.1 {dispose} {
+    set interp [java::new tcl.lang.Interp]
+    $interp dispose
+    set list ""
+
+    foreach field {globalFrame frame varFrame cmdTable assocDataTab deleted} {
+	lappend list [java::field $interp $field]
+    }
+
+    set list
+} {java0x0 java0x0 java0x0 java0x0 java0x0 1}
+
+# setVar_javaObj --
+#
+#	Sets a variable in $interp to be object handle (in $interp)
+#	that points to the javaObj.
+#
+# Arguments:
+#	interp		an object handle to a tcl.lang.Interp instance.
+#	varName		name of the variable to set
+#	javaObj		must be an object handle registered in the
+#			*current* interp.
+#	flags		Must be a list of GLOBAL_ONLY, etc.
+#
+# Example:
+#
+#	set interp [java::new tcl.lang.Interp]
+#	set x [java::new {Integer int} 123]
+#	setVar_javaObj $interp foo $x GLOBAL_ONLY
+#	$interp eval {puts [$foo toString]}
+
+proc setVar_javaObj {interp varName javaObj flags} {
+    set f 0
+    foreach x $flags {
+	set f [expr $f | [java::field tcl.lang.TCL $x]]
+    }
+
+    set tclObj [java::call tcl.lang.ReflectObject newInstance $interp $javaObj]
+    set m {setVar String String tcl.lang.TclObject int}
+    $interp $m $varName [java::null] $tclObj $f
+}
+
+test Interp-1.2 {dispose, variables are freed} {
+    set interp [java::new tcl.lang.Interp]
+
+    $interp eval {
+	set x 10
+	set y 10
+	set z 10
+    }
+    set tr [java::new tests.VarTraceTest {}]
+
+    set list ""
+    lappend list [lsort [[java::field $tr varsCalled] toString]]
+
+    $interp traceVar x [java::null] $tr [java::field tcl.lang.TCL TRACE_UNSETS]
+    $interp traceVar y [java::null] $tr [java::field tcl.lang.TCL TRACE_UNSETS]
+    $interp traceVar z [java::null] $tr [java::field tcl.lang.TCL TRACE_UNSETS]
+
+    $interp dispose
+
+    lappend list [lsort [[java::field $tr varsCalled] toString]]
+
+    set list
+} {{} {x(null) y(null) z(null)}}
+
+test Interp-1.2 {dispose, commands are deleted} {
+    set cmd1 [java::new tests.JavaTest]
+    set cmd2 [java::new tests.JavaTest]
+    set interp [java::new tcl.lang.Interp]
+
+    $interp createCommand foo $cmd1
+    $interp createCommand bar $cmd2
+
+    $interp dispose
+
+    list [java::field $cmd1 istr] [java::field $cmd2 istr]
+} {disposed disposed}
+
+#
+# setAssocData
+#
+
+test Interp-2.1 {setAssocData + } {
+    set x [java::new tcl.lang.TestAssocData [java::getinterp] \
+	    {set blah gotit} {}]
+    [java::getinterp] setAssocData foo $x
+    set blah ""
+    set assoc [[java::getinterp] getAssocData foo]
+    set assoc [java::cast tcl.lang.TestAssocData $assoc]
+    $assoc test
+    set blah
+} gotit
+
+# AssocData.disposeAssocData doesn't get called by Interp.setAssocData
+# or Interp.deleteAssocData
+
+test Interp-2.2 {setAssocData + deleteAssocData} {
+    set blah ""
+    set x1 [java::new tcl.lang.TestAssocData [java::getinterp] \
+	    {} {lappend blah "a"}]
+    set x2 [java::new tcl.lang.TestAssocData [java::getinterp] \
+	    {} {lappend blah "b"}]
+    set x3 [java::new tcl.lang.TestAssocData [java::getinterp] \
+	    {} {lappend blah "c"}]
+    [java::getinterp] setAssocData foo $x1
+    [java::getinterp] setAssocData foo $x2
+    [java::getinterp] deleteAssocData foo
+    [java::getinterp] setAssocData foo $x3
+    [java::getinterp] deleteAssocData foobar
+    [java::getinterp] deleteAssocData foo
+    set blah
+} {}
+
+test Interp-2.3 {deleteAssocData} {
+    list [catch {[java::getinterp] deleteAssocData foo} msg] $msg
+} {0 {}}
+
+set x [java::new tcl.lang.TestAssocData [java::getinterp] \
+	{} {}]
+
+test Interp-2.4 {getAssocData + } {
+    [java::getinterp] setAssocData foo $x
+    list [[java::getinterp] getAssocData foo] \
+	    [[java::getinterp] getAssocData bar] 
+} [list [java::cast tcl.lang.AssocData $x] [java::null]]
+
+catch {
+    [java::getinterp] deleteAssocData foo
+}
+
+# The following is Tcl 7.6 behavior. In Tcl 8.0, the result should
+# be {1 blah NONE}
+
+test Interp-3.1 {TclExceptions within setErrorCode()} {
+    trace variable errorCode w bad_trace_proc
+    list [catch {error blah} msg] $msg $errorCode
+} {1 {can't set "errorCode": gorp} NONE}
+
+catch {unset errorCode}
+
+test Interp-3.2 {TclExceptions within addErrorInfo()} {
+    trace variable errorInfo w bad_trace_proc
+    list [catch {error blah} msg] $msg
+} {1 {can't set "errorInfo": gorp}}
+
+catch {unset errorInfo}
+
+proc bgerror {msg} {
+    global x
+    lappend x $msg
+}
+
+# This test just takes a simple pass over the Interp.BackgroundError
+# method. BgErrorMgr has more detailed tests on background error handling.
+#
+test Interp-4.1 {BackgroundError()} {
+    set x ""
+    after idle {error xxx}
+    after idle {error xxx}
+    update idletasks
+    update idletasks
+    set x
+} {xxx xxx}
+
+catch {
+    rename bgerror {}
+}

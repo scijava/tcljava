@@ -1,0 +1,347 @@
+# Notifier.test --
+#
+#	Tests the implementation of the Notifier.java file.
+#
+# Copyright (c) 1997 by Sun Microsystems, Inc.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+#
+# RCS: @(#) $Id: Notifier.test,v 1.1 1998/11/05 19:48:41 hylands Exp $
+
+# Note: This test file must be sourced from the parent directory
+#       or else the defs file may not be properly loaded.
+
+if {[string compare test [info procs test]] == 1} then {source defs}
+
+setupJavaPackage
+
+proc after_cleanup {} {
+    foreach id [after info] {
+	after cancel $id
+    }
+}
+
+proc doOneEvent {flags} {
+    set f 0
+    foreach flag $flags {
+	set f [expr $f | [java::field tcl.lang.TCL $flag]]
+    }
+
+    uplevel #0 [[java::getinterp] getNotifier] doOneEvent $f
+}
+
+set currentThread [java::call Thread currentThread]
+set Notifier tcl.lang.Notifier
+set TestEvent tcl.lang.TestEvent
+set interp [java::getinterp]
+set HEAD [java::field tcl.lang.TCL QUEUE_HEAD]
+set TAIL [java::field tcl.lang.TCL QUEUE_TAIL]
+set MARK [java::field tcl.lang.TCL QUEUE_MARK]
+set notifier [java::call $Notifier getNotifierForThread $currentThread]
+
+test Notifier-1.1 {getNotifierForThread} {
+    set x1 [java::call $Notifier getNotifierForThread $currentThread]
+    set x2 [java::call $Notifier getNotifierForThread $currentThread]
+    expr {$x1 == $x2}
+} 1
+
+test Notifier-1.2 {queueEvent} {
+    set t1 [java::new $TestEvent $interp "lappend x a"]
+    set x ""
+    set testEvtReply 1
+    $notifier queueEvent $t1 $TAIL
+    update
+    set x
+} a
+
+test Notifier-1.3 {queueEvent} {
+    set x ""
+    set testEvtReply 1
+
+    set t1 [java::new $TestEvent $interp "lappend x a"]
+    set t2 [java::new $TestEvent $interp "lappend x b"]
+    set t3 [java::new $TestEvent $interp "lappend x c"]
+
+    $notifier queueEvent $t1 $TAIL
+    $notifier queueEvent $t2 $TAIL
+    $notifier queueEvent $t3 $TAIL
+    update
+    set x
+} {a b c}
+
+test Notifier-1.4 {queueEvent} {
+    set t1 [java::new $TestEvent $interp "lappend x a"]
+    set x ""
+    set testEvtReply 1
+    $notifier queueEvent $t1 $HEAD
+    update
+    set x
+} a
+
+test Notifier-1.5 {queueEvent} {
+    set x ""
+    set testEvtReply 1
+
+    set t1 [java::new $TestEvent $interp "lappend x a"]
+    set t2 [java::new $TestEvent $interp "lappend x b"]
+    set t3 [java::new $TestEvent $interp "lappend x c"]
+
+    $notifier queueEvent $t1 $HEAD
+    $notifier queueEvent $t2 $HEAD
+    $notifier queueEvent $t3 $HEAD
+    update
+    set x
+} {c b a}
+
+test Notifier-1.6 {queueEvent} {
+    set t1 [java::new $TestEvent $interp "lappend x a"]
+    set x ""
+    set testEvtReply 1
+    $notifier queueEvent $t1 $MARK
+    update
+    set x
+} a
+
+test Notifier-1.7 {queueEvent} {
+    set x ""
+    set testEvtReply 1
+
+    set t1 [java::new $TestEvent $interp "lappend x a"]
+    set t2 [java::new $TestEvent $interp "lappend x b"]
+    set t3 [java::new $TestEvent $interp "lappend x c"]
+    set t4 [java::new $TestEvent $interp "lappend x d"]
+    set t5 [java::new $TestEvent $interp "lappend x e"]
+
+    $notifier queueEvent $t1 $HEAD
+    $notifier queueEvent $t2 $MARK
+    $notifier queueEvent $t3 $HEAD
+    $notifier queueEvent $t4 $MARK
+    $notifier queueEvent $t5 $TAIL
+
+    update
+    set x
+} {c b d a e}
+
+set deleter [java::new tcl.lang.TestEventDeleter $interp]
+
+test Notifier-2.1 {deleteEvents()} {
+    set x ""
+    set testEvtReply 1
+
+    set t1 [java::new $TestEvent $interp "lappend x a"]
+    set t2 [java::new $TestEvent $interp "lappend x b"]
+    set t3 [java::new $TestEvent $interp "lappend x c"]
+    set t4 [java::new $TestEvent $interp "lappend x d"]
+
+    $notifier queueEvent $t1 $TAIL
+    $notifier queueEvent $t2 $TAIL
+    $notifier queueEvent $t3 $TAIL
+    $notifier queueEvent $t4 $TAIL
+
+    $deleter delete "lappend x a"
+    $deleter delete "lappend x c"
+    $deleter delete "lappend x d"
+
+    update
+    set x
+} b
+
+test Notifier-2.2 {deleteEvents(), queueEvent(evt, TCL.QUEUE_MARK)} {
+    set x ""
+    set testEvtReply 1
+
+    set t1 [java::new $TestEvent $interp "lappend x a"]
+    set t2 [java::new $TestEvent $interp "lappend x b"]
+    set t3 [java::new $TestEvent $interp "lappend x c"]
+    set t4 [java::new $TestEvent $interp "lappend x d"]
+
+    $notifier queueEvent $t1 $HEAD
+    $notifier queueEvent $t2 $MARK
+    $notifier queueEvent $t3 $TAIL
+
+    $deleter delete "lappend x a"
+    $deleter delete "lappend x b"
+
+    $notifier queueEvent $t4 $MARK
+
+    update
+    set x
+} {d c}
+
+test Notifier-3.1 {serviceEvent()} {
+    set x ""
+    set testEvtReply -2
+
+    set t1 [java::new $TestEvent $interp {lappend x a [incr testEvtReply]}]
+    set t2 [java::new $TestEvent $interp {lappend x b [incr testEvtReply]}]
+    set t3 [java::new $TestEvent $interp {lappend x c [incr testEvtReply]}]
+    set t4 [java::new $TestEvent $interp {lappend x d [incr testEvtReply]}]
+
+    $notifier queueEvent $t1 $TAIL
+    $notifier queueEvent $t2 $TAIL
+    $notifier queueEvent $t3 $TAIL
+    $notifier queueEvent $t4 $TAIL
+
+    update
+    set x
+} {a -1 b 0 c 1 b 2 d 3}
+
+test Notifier-4.1 {Notifier threading} {
+    set testEvtReply 1
+
+    set th1 [java::new tcl.lang.TestEventThread2 $interp]
+    set x ""
+    $th1 addEvent {lappend x a} 0
+    $th1 addEvent {lappend x b} 0
+    $th1 addEvent {lappend x c} 0
+    $th1 addEvent {lappend x d} 0
+    $th1 addEvent {set foo done} 0
+
+    $th1 start
+    vwait foo
+    set x
+} {a b c d}
+
+test Notifier-4.2 {Notifier threading} {
+    catch {unset foo}
+    catch {unset bar}
+
+    set testEvtReply 1
+    
+    set th1 [java::new tcl.lang.TestEventThread2 $interp]
+    set th2 [java::new tcl.lang.TestEventThread2 $interp]
+    set x ""
+    $th1 addEvent {lappend x k} 0
+    $th1 addEvent {lappend x k} 0
+    $th1 addEvent {lappend x k} 0
+    $th1 addEvent {lappend x k} 0
+    $th1 addEvent {set foo done} 0
+
+    $th2 addEvent {lappend x k} 0
+    $th2 addEvent {lappend x k} 0
+    $th2 addEvent {lappend x k} 0
+    $th2 addEvent {lappend x k} 0
+    $th2 addEvent {set bar done} 0
+
+    $th1 start
+    $th2 start
+
+    vwait foo
+    if ![info exists bar] {
+	vwait bar
+    }
+    set x
+} {k k k k k k k k}
+
+test Notifier-4.3 {Notifier threading} {
+    catch {unset foo}
+    catch {unset bar}
+
+    set testEvtReply 1
+
+    set th1 [java::new tcl.lang.TestEventThread2 $interp]
+    set th2 [java::new tcl.lang.TestEventThread2 $interp]
+    set x ""
+    set z ""
+    $th1 addEvent {lappend x k} 0
+    $th1 addEvent {lappend x k} 0
+    $th1 addEvent {lappend x k} 0
+    $th1 addEvent {lappend x k} 0
+    $th1 addEvent {set foo done} 0
+
+    $th2 addEvent {append z A} 0
+    $th2 addEvent {append z B} 0
+    $th2 addEvent {append z C} 0
+    $th2 addEvent {append z D} 0
+    $th2 addEvent {set bar done} 0
+
+    $th1 start
+    $th2 start
+
+    vwait foo
+    if ![info exists bar] {
+	vwait bar
+    }
+    set z
+} {ABCD}
+
+test Notifier-4.4 {Notifier threading} {
+    catch {unset foo}
+    catch {unset bar}
+
+    set testEvtReply 1
+
+    set th1 [java::new tcl.lang.TestEventThread2 $interp]
+    set th2 [java::new tcl.lang.TestEventThread2 $interp]
+    set x ""
+    set z ""
+    $th1 addEvent {lappend x k} 10
+    $th1 addEvent {lappend x k} 10
+    $th1 addEvent {lappend x k} 10
+    $th1 addEvent {lappend x k} 10
+    $th1 addEvent {set foo done} 0
+
+    $th2 addEvent {append z A} 0
+    $th2 addEvent {append z B} -1
+    $th2 addEvent {append z C} -1
+    $th2 addEvent {append z D} 10
+    $th2 addEvent {set bar done} 0
+
+    $th1 start
+    $th2 start
+
+    vwait foo
+    if ![info exists bar] {
+	vwait bar
+    }
+    set z
+} {ABCD}
+
+
+# serviceIdle only service idle events of the current generation.
+
+test Notifier-5.1 {serviceIdle() -- only service current generation} {
+    after_cleanup
+    after idle lappend x a
+    after idle {after idle lappend x b}
+    after idle lappend x c
+
+    set x ""
+    set list ""
+    doOneEvent IDLE_EVENTS
+    lappend list $x
+
+    after idle lappend x d
+    after idle {after idle lappend x e}
+
+    doOneEvent IDLE_EVENTS
+    lappend list $x
+
+    doOneEvent IDLE_EVENTS
+    lappend list $x
+} {{a c} {a c b d} {a c b d e}}
+
+
+# TimerEvent.processEvent() only process events in the current generation
+
+test Notifier-5.2 {TimerEvent.processEvent()} {
+    after_cleanup
+    update
+    after 10 lappend x a
+    after 10 {after 10 lappend x b; after 60}
+    after 10 lappend x c
+
+    set x ""
+    set list ""
+    after 40
+    doOneEvent TIMER_EVENTS
+    lappend list $x
+
+    after 10 lappend x d
+    after 40
+
+    doOneEvent TIMER_EVENTS
+    lappend list $x
+} {{a c} {a c b d}}
+

@@ -1,6 +1,6 @@
 # Primitive tests of the build under Unix 
 
-# RCS: @(#) $Id: testbuild.mk,v 1.2 1998/11/05 00:47:17 hylands Exp $
+# RCS: @(#) $Id: testbuild.mk,v 1.3 1998/11/05 19:48:33 hylands Exp $
 
 # To run these tests, do
 # cd ../unix 
@@ -9,9 +9,15 @@
 # make -f ../tests/testbuild.mk buildtest
 
 
-buildtest: srcBuild binBuild
+# Build everything and run all the tests
+buildtest: srcBuild srcTest binBuild 
 
+# Build from sources
 srcBuild: jaclSrcBuild blendSrcBuild 
+
+# Test the build from sources
+srcTest: jaclSrcTest jaclSrcSmokeTest blendSrcTest blendSrcSmokeTest
+
 binBuild: jaclBinBuild blendBinBuild
 
 
@@ -38,39 +44,85 @@ TMP_LD_LIBRARY_PATH =	$(JDK1.1_LD_LIBRARY_PATH)
 #JDK=$(JDK1.2)
 #TMP_LD_LIBRARY_PATH =	$(JDK1.2_LD_LIBRARY_PATH)
 
-
 TMPPATH =	$(JDK)/bin:/usr/bin:/usr/local/bin:/usr/ccs/bin:.
-
 
 # Cleanup
 testbuild_clean: clean_jaclSrcBuild clean_blendSrcBuild
 
+
+######################################################################
+# Smoke test variables
+#
+# A smoke test is a test where we plug it in and see if it explodes or not.
+# To smoke test Jacl and Tcl Blend, we start up and run a few commands
+# and check the results
+
+# Command to run to start up Jacl or Blend and see if it runs at all
+SMOKETEST = 	echo "puts \"java package: [package require java], jdkVersion: [set java::jdkVersion], patchLevel: [set java::patchLevel] \"; exit" 
+
+# File that we put the output of the smoke test into
+SMOKETEST_RESULTS_FILE =	$(DISTDIR)/smoketest_results
+
+# File that contains the ok results we compare against
+OK_SMOKETEST_RESULTS_FILE =	$(DISTDIR)/ok_smoketest_results
+
+# Correct output for Jacl
+JACL_GOOD_SMOKETEST_RESULTS =	"% java package: 1.1, jdkVersion: 1.1.6, patchLevel: 1.1a1 "
+
+# Correct output for Tcl Blend
+BLEND_GOOD_SMOKETEST_RESULTS =	"% java package: 1.1, jdkVersion: 1.1.6, patchLevel: 1.1a1 "
+
+
 ######################################################################
 # Untar the Jacl source and build it
 JACLSRCTEST_DIR = $(DISTDIR)/jaclsrctest
-
-jaclSrcBuild: $(JACLSRCTEST_DIR)/$(JACL_DISTNAME)
+JACLSRCTEST_JACLSH = $(JACLSRCTEST_DIR)/jacltest/bin/jaclsh
+jaclSrcBuild: $(JACLSRCTEST_JACLSH)
+$(JACLSRCTEST_JACLSH): $(JACLSRCTEST_DIR)/$(JACL_DISTNAME)
 	@echo "#"
 	@echo "# Building from Jacl Src tar file"
 	@echo "#"
-	mkdir -p $(JACLSRCTEST_DIR)/jacltest
+	mkdir -p $(JACLSRCTEST_DIR)/jacltest $(JACLSRCTEST_DIR)/jacltest.exec
 	cd $(JACLSRCTEST_DIR)/$(JACL_DISTNAME)/unix; \
 		PATH=$(TMPPATH) \
 		LD_LIBRARY_PATH=$(TMP_LD_LIBRARY_PATH) \
 		configure \
 		--prefix=$(JACLSRCTEST_DIR)/jacltest \
+		--exec-prefix=$(JACLSRCTEST_DIR)/jacltest.exec \
 		--with-studio=$(STUDIO_LIB_DIR); \
-		$(MAKE) install; \
-		$(MAKE) test
+		$(MAKE) install
 
 # Untar the Jacl Source file
 $(JACLSRCTEST_DIR)/$(JACL_DISTNAME): $(DISTDIR)/$(JACL_SRC_DISTNAME).tar.gz
 	@echo "#"
-	@echo "# Untarring $@"
+	@echo "# Untarring $^ to create $@"
 	@echo "#"
+	ls -ldg $@ $^
 	-mkdir  $(JACLSRCTEST_DIR)
 	cd  $(JACLSRCTEST_DIR); \
-		$(GTAR) -zxf $(DISTDIR)/$(JACL_SRC_DISTNAME).tar.gz
+		$(GTAR) -zxf $^
+	touch $@
+
+jaclSrcTest:  $(JACLSRCTEST_JACLSH)
+	@echo "#"
+	@echo "# Running the Jacl Test suite built from sources"
+	@echo "#"
+	cd $(JACLSRCTEST_DIR)/$(JACL_DISTNAME)/unix; \
+		PATH=$(TMPPATH) \
+		LD_LIBRARY_PATH=$(TMP_LD_LIBRARY_PATH) \
+		$(MAKE) test
+
+jaclSrcSmokeTest:  $(JACLSRCTEST_JACLSH)
+	@echo "#"
+	@echo "# Smoke testing jaclsh built from sources"
+	@echo "#"
+	rm -f $(SMOKETEST_RESULTS_FILE) $(OK_SMOKETEST_RESULTS_FILE)
+	echo $(JACL_GOOD_SMOKETEST_RESULTS) > $(OK_SMOKETEST_RESULTS_FILE)
+	PATH=$(TMPPATH) \
+		LD_LIBRARY_PATH=$(TMP_LD_LIBRARY_PATH) \
+		$(SMOKETEST) | \
+		 $(JACLSRCTEST_JACLSH) > $(SMOKETEST_RESULTS_FILE)
+	diff $(OK_SMOKETEST_RESULTS_FILE) $(SMOKETEST_RESULTS_FILE)
 
 clean_jaclSrcBuild:
 	rm -rf $(JACLSRCTEST_DIR)
@@ -79,21 +131,23 @@ clean_jaclSrcBuild:
 ######################################################################
 # Untar the Blend source and build it
 BLENDSRCTEST_DIR = $(DISTDIR)/blendsrctest
-
-blendSrcBuild: $(BLENDSRCTEST_DIR)/$(BLEND_DISTNAME)
+BLENDSRCTEST_JTCLSH = $(BLENDSRCTEST_DIR)/blendtest.exec/bin/jtclsh 
+blendSrcBuild: $(BLENDSRCTEST_JTCLSH)
+$(BLENDSRCTEST_JTCLSH): $(BLENDSRCTEST_DIR)/$(BLEND_DISTNAME)
 	@echo "#"
 	@echo "# Building from Blend Src tar file"
 	@echo "#"
-	mkdir -p $(BLENDSRCTEST_DIR)/blendtest
+	mkdir -p $(BLENDSRCTEST_DIR)/blendtest \
+		$(BLENDSRCTEST_DIR)/blendtest.exec
 	cd $(BLENDSRCTEST_DIR)/$(BLEND_DISTNAME)/unix; \
 		PATH=$(TMPPATH) \
 		LD_LIBRARY_PATH=$(TMP_LD_LIBRARY_PATH) \
 		configure \
 		--prefix=$(BLENDSRCTEST_DIR)/blendtest \
+		--exec-prefix=$(BLENDSRCTEST_DIR)/blendtest.exec \
 		--with-studio=$(STUDIO_LIB_DIR) \
 		--with-tcl=$(WITH_TCL); \
-		$(MAKE) install; \
-		$(MAKE) test
+		$(MAKE) install
 
 # Untar the Blend Source file
 $(BLENDSRCTEST_DIR)/$(BLEND_DISTNAME): $(DISTDIR)/$(BLEND_SRC_DISTNAME).tar.gz
@@ -103,6 +157,29 @@ $(BLENDSRCTEST_DIR)/$(BLEND_DISTNAME): $(DISTDIR)/$(BLEND_SRC_DISTNAME).tar.gz
 	-mkdir  $(BLENDSRCTEST_DIR)
 	cd  $(BLENDSRCTEST_DIR); \
 		$(GTAR) -zxf $(DISTDIR)/$(BLEND_SRC_DISTNAME).tar.gz
+	touch $@
+
+blendSrcTest: $(BLENDSRCTEST_JTCLSH)
+	@echo "#"
+	@echo "# Running the Blend test suite built from sources"
+	@echo "#"
+	cd $(BLENDSRCTEST_DIR)/$(BLEND_DISTNAME)/unix; \
+		PATH=$(TMPPATH) \
+		LD_LIBRARY_PATH=$(TMP_LD_LIBRARY_PATH) \
+		$(MAKE) test
+
+
+blendSrcSmokeTest: $(BLENDSRCTEST_DIR)/blendtest.exec/bin/jtclsh
+	@echo "#"
+	@echo "# Smoke testing jtclsh built from sources"
+	@echo "#"
+	rm -f $(SMOKETEST_RESULTS_FILE) $(OK_SMOKETEST_RESULTS_FILE)
+	echo $(BLEND_GOOD_SMOKETEST_RESULTS) > $(OK_SMOKETEST_RESULTS_FILE)
+	PATH=$(TMPPATH) \
+		LD_LIBRARY_PATH=$(TMP_LD_LIBRARY_PATH) \
+		$(SMOKETEST) | \
+		$(BLENDSRCTEST_JTCLSH) > $(SMOKETEST_RESULTS_FILE)
+	diff $(OK_SMOKETEST_RESULTS_FILE) $(SMOKETEST_RESULTS_FILE)
 
 clean_blendSrcBuild:
 	rm -rf $(BLENDSRCTEST_DIR)
@@ -133,6 +210,7 @@ $(JACLBINTEST_DIR): $(DISTDIR)/$(JACL_DISTNAME).tar.gz
 	-mkdir  -p $(JACLBINTEST_DIR)
 	cd  $(JACLBINTEST_DIR)/..; \
 		$(GTAR) -zxf $(DISTDIR)/$(JACL_DISTNAME).tar.gz
+	touch $@
 
 demo_jaclBinBuild: gluepkg_jaclBinBuild guiDemo_jaclBinBuild \
 	simplepkg_jaclBinBuild watchpkg_jaclBinBuild pyramidpkg_jaclBinBuild
@@ -197,7 +275,10 @@ $(BLENDBINTEST_DIR): $(DISTDIR)/$(BLEND_DISTNAME).solaris.tar.gz
 	-mkdir  -p $(BLENDBINTEST_DIR)
 	cd  $(BLENDBINTEST_DIR)/..; \
 		$(GTAR) -zxf $(DISTDIR)/$(BLEND_DISTNAME).solaris.tar.gz
+	touch $@
 
+######################################################################
+# Rules to run demos
 demo_blendBinBuild: gluepkg_blendBinBuild guiDemo_blendBinBuild \
 	simplepkg_blendBinBuild watchpkg_blendBinBuild
 

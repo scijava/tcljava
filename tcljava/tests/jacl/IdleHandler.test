@@ -1,0 +1,112 @@
+# IdleHandler.test --
+#
+#	Tests the implementation of the IdleHandler.java file.
+#
+# Copyright (c) 1997 by Sun Microsystems, Inc.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+#
+# RCS: @(#) $Id: IdleHandler.test,v 1.1 1998/11/05 19:48:39 hylands Exp $
+
+# Note: This test file must be sourced from the parent directory
+#       or else the defs file may not be properly loaded.
+
+if {[string compare test [info procs test]] == 1} then {source defs}
+
+setupJavaPackage
+
+proc idle_cleanup {} {
+    foreach id [after info] {
+	after cancel $id
+    }
+}
+
+test IdleHandler-1.1 {IdleHandler(), FIFO order} {
+    idle_cleanup
+    set x {}
+    after idle lappend x a
+    after idle lappend x b
+    after idle lappend x c
+    update idletasks
+    set x
+} {a b c}
+
+test IdleHandler-1.2 {IdleHandler(), FIFO order} {
+    idle_cleanup
+    set x {}
+    after idle lappend x b
+    after idle lappend x c
+    after idle lappend x a
+    update idletasks
+    set x
+} {b c a}
+
+test IdleHandler-1.3 {cancel()} {
+    idle_cleanup
+    set x {}
+    after idle lappend x a
+    after idle lappend x c
+    after idle lappend x b
+    after cancel lappend x c
+    update idletasks
+    set x
+} {a b}
+
+test IdleHandler-1.4 {cancel()} {
+    idle_cleanup
+    set x {}
+    after idle lappend x a
+    after idle lappend x b
+    after idle lappend x c
+    after cancel lappend x b
+    after idle lappend x d
+    update idletasks
+    set x
+} {a c d}
+
+test IdleHandler-1.5 {cancel() and invoke()} {
+    idle_cleanup
+
+    set x not_called
+    set notifier [java::call tcl.lang.Notifier getNotifierForThread \
+	[java::call Thread currentThread]]
+
+    set handle [after idle set x called]
+    set idleList [java::field $notifier idleList]
+
+    set idle [$idleList elementAt 0]
+    set idle [java::cast [[$idle getClass] getName] $idle]
+    after cancel $handle
+    set msg [$idle invoke]
+
+    update idletasks
+
+    list $msg $x
+} {0 not_called}
+
+test IdleHandler-1.6 {cancel() and invoke()} {
+    idle_cleanup
+
+    set x not_called
+    set notifier [java::call tcl.lang.Notifier getNotifierForThread \
+	[java::call Thread currentThread]]
+
+    set handle [after idle set x called]
+    set idleList [java::field $notifier idleList]
+
+    set idle [$idleList elementAt 0]
+    set idle [java::cast [[$idle getClass] getName] $idle]
+    after cancel $handle
+    $idle cancel
+    $idle cancel
+    $idle cancel
+    set msg [$idle invoke]
+
+    update idletasks
+
+    list $msg $x
+} {0 not_called}
+
+idle_cleanup
+
