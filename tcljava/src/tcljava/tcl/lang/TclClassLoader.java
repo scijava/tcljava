@@ -24,7 +24,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: TclClassLoader.java,v 1.3 1999/05/09 22:55:26 dejong Exp $
+ * RCS: @(#) $Id: TclClassLoader.java,v 1.4 1999/05/09 22:56:45 dejong Exp $
  */
 
 
@@ -140,7 +140,7 @@ throws
     try {
 	//System.out.println("now to load class named \"" + className + "\"");
 	result = Class.forName(className);
-	return result;
+	return result; // do not cache classes from the CLASSPATH
     } catch (ClassNotFoundException e) {
     } catch (IllegalArgumentException e) {
     } catch (NoClassDefFoundError e) {
@@ -278,6 +278,7 @@ getClassFromPath(
     byte[] classData = null;    // The bytes that compose the class file.
     String curDir;       	// The directory to search for the class file.
     File file;           	// The class file.                            
+    int total;                  // Total number of bytes read from the stream
 
     // Search through the list of "paths" for the className.  
     // ".jar" or ".zip" files found in the path will also be 
@@ -313,10 +314,14 @@ getClassFromPath(
 		    if (file.exists()) {
 			FileInputStream fi = new FileInputStream(file);
 			classData = new byte[fi.available()];
-// FIXME : io read()
-// does this read need to be rewritten??
-			fi.read(classData);
-			return(classData);
+
+			total = fi.read(classData);
+			while (total != classData.length) {
+			    total += fi.read(classData, total,
+					     (classData.length - total));
+
+			}
+			return (classData);
 		    }
 		}
 	    } catch (Exception e) {
@@ -432,7 +437,7 @@ throws IOException
 	while ((entry = zin.getNextEntry()) != null) { 
 	    // see if the current ZipEntry's name equals 
 	    // the file we want to extract. If equal
-	    // get the extract and return.
+	    // get the extract and return the contents of the file.
 	      
 	    if (className.equals(entry.getName())) {
 		size = getEntrySize(jarName, className);
