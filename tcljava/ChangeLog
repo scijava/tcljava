@@ -1,5 +1,10 @@
 2002-12-09  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/native/javaCmd.c (JavaInitEnv): Free memory
+	allocated for JVM options and classpath.
+
+2002-12-09  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/tcljava/tcl/lang/TclObject.java (disposedCheck):
 	Add helper method that will raise an error if
 	a TclObject method is called after the object

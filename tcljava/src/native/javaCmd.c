@@ -10,7 +10,7 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  *
- * RCS: @(#) $Id: javaCmd.c,v 1.15 2002/12/07 08:51:03 mdejong Exp $
+ * RCS: @(#) $Id: javaCmd.c,v 1.16 2002/12/10 04:15:56 mdejong Exp $
  */
 
 /*
@@ -515,7 +515,8 @@ JavaInitEnv(
 	    strcpy(newPath+oldSize+1, vm_args.classpath);
 	    vm_args.classpath = newPath;
 	} else if (path) {
-	    vm_args.classpath = path;
+	    vm_args.classpath = ckalloc(strlen(path)+1);
+	    strcpy(vm_args.classpath,path);
 	}
 #endif /* JDK1_2 */
 
@@ -640,6 +641,13 @@ JavaInitEnv(
     fprintf(stderr, "TCLBLEND_DEBUG: JavaInitEnv returning successfully\n");
 #endif /* TCLBLEND_DEBUG */
 
+#ifdef JDK1_2
+    ckfree((char *) options[0].optionString);
+    ckfree((char *) options);
+#else
+    ckfree((char *) vm_args.classpath);
+#endif /* JDK1_2 */
+
     return tsdPtr->currentEnv;
 
     error:
@@ -647,6 +655,13 @@ JavaInitEnv(
 #ifdef TCLBLEND_DEBUG
     fprintf(stderr, "TCLBLEND_DEBUG: JavaInitEnv returning NULL\n");
 #endif /* TCLBLEND_DEBUG */
+
+#ifdef JDK1_2
+    ckfree((char *) options[0].optionString);
+    ckfree((char *) options);
+#else
+    ckfree((char *) vm_args.classpath);
+#endif /* JDK1_2 */
 
     return NULL;
 }
