@@ -1,8 +1,9 @@
 2000-05-21  Mo DeJong  <mdejong@redhat.com>
 
-	* src/native/javaInterp.c: Fixed
-	up JNI method signatures in comments
-	for JNI methods.
+	* src/jacl/tcl/lang/Shell.java: Removed
+	unused bits of old code that were
+	still lying around. Added FIXME comment
+	about TCL.OK which is not accessable.
 
 2000-05-21  Mo DeJong  <mdejong@redhat.com>
 

@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Shell.java,v 1.8 2000/05/14 23:25:49 mo Exp $
+ * RCS: @(#) $Id: Shell.java,v 1.9 2000/05/22 04:01:42 mo Exp $
  */
 
 package tcl.lang;
@@ -170,12 +170,6 @@ class ConsoleThread extends Thread {
 
 Interp interp;
 
-// Temporarily holds refcount on the results of the interactive
-// commands so that an object command returned the java::* calls
-// can be used even when they are not saved in variables.
-
-Vector historyObjs;
-
 // Collect the user input in this buffer until it forms a complete Tcl
 // command.
 
@@ -206,7 +200,6 @@ static {
 	// sysInAvailableWorks is false and let the user suffer ...
     }
 
-    // FIXME : ugly JDK on windows hack
     // Sun's JDK 1.2 on Windows systems is screwed up, it does not
     // echo chars to the console unless blocking IO is used.
     // For this reason we need to use blocking IO under Windows.
@@ -244,7 +237,6 @@ ConsoleThread(
     setName("ConsoleThread");
     interp = i;
     sbuf = new StringBuffer(100);
-    historyObjs = new Vector();
 
     out = System.out;
     err = System.err;
@@ -333,7 +325,7 @@ public synchronized void run() {
 		    check_code: {
 			    if (code == TCL.RETURN) {
 				code = interp.updateReturnInfo();
-				if (code == TCL.OK) {
+				if (code == TCL.OK) { // FIXME : TCL.OK not accessable outside!!
 				    break check_code;
 				}
 			    }
