@@ -1,5 +1,20 @@
 2002-12-17  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/native/java.h:
+	* src/native/javaInterp.c (JavaCmdProc):
+	* src/native/javaObj.c (JavaBreakRef, JavaGetTclObject):
+	* src/tests/tcljava/tests/ListLengthCmd.java:
+	* tests/tclblend/javaObj.test:
+	Add new JavaBreakRef and invoke it from JavaCmdProc
+	and JavaGetTclObject. This fixes a problem where
+	a TclObject with a CObject or a TclList internal
+	rep is stored as a Java ref inside a Tcl_Obj on
+	the C side. Only non-CObject or TclList types
+	should have a reference from C pointing to the
+	container TclObject.
+
+2002-12-17  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/native/javaObj.c (Java_tcl_lang_CObject_makeRef,
 	Java_tcl_lang_CObject_newCObject): Return after
 	raising exception to avoid crash in some strange

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaObj.c,v 1.9 2002/12/18 02:18:54 mdejong Exp $
+ * RCS: @(#) $Id: javaObj.c,v 1.10 2002/12/18 03:39:53 mdejong Exp $
  */
 
 #include "java.h"
@@ -550,6 +550,66 @@ Java_tcl_lang_CObject_makeRef(
 /*
  *----------------------------------------------------------------------
  *
+ * JavaBreakRef --
+ *
+ *	Check to see if a Tcl_Obj contains an invalid
+ *	ref to a TclObject that has a CObject or TclList
+ *	internal rep. This method breaks such a ref by
+ *	setting the internal rep for the Tcl_Obj to
+ *	a string or list rep.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Modifies the internal representation of the Tcl_Obj.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+JavaBreakRef(
+    JNIEnv *env,		/* Java environment. */
+    Tcl_Obj *objPtr)		/* Object to check. */
+{
+    jobject object;
+    int isTclList=0, isCObject, dummy;
+    jobject internalRep;
+    JavaInfo* jcache = JavaGetCache();
+
+#ifdef TCL_MEM_DEBUG
+    if (objPtr->refCount == 0x61616161) {
+	panic("JavaBreakRef : disposed object");
+    }
+#endif
+
+    if ((objPtr->typePtr == &tclObjectType)
+            || ((objPtr->typePtr == cmdTypePtr) &&
+                    (objPtr->internalRep.twoPtrValue.ptr2) != NULL)) {
+        object = (jobject)(objPtr->internalRep.twoPtrValue.ptr2);
+        internalRep = (*env)->CallObjectMethod(env, object,
+	        jcache->getInternalRep);
+	isCObject = (*env)->IsInstanceOf(env, internalRep,
+	        jcache->CObject) == JNI_TRUE;
+	if (isCObject) {
+	    isTclList = (*env)->IsInstanceOf(env, internalRep,
+	            jcache->TclList) == JNI_TRUE;
+	}
+	(*env)->DeleteLocalRef(env, internalRep);
+
+	if (isTclList) {
+	    /*fprintf(stderr, "breaking ref for TclList \"%s\"\n", Tcl_GetString(objPtr));*/
+	    Tcl_ListObjLength((Tcl_Interp *) NULL, objPtr, &dummy);
+	} else if (isCObject) {
+	    /*fprintf(stderr, "breaking ref for string \"%s\"\n", Tcl_GetString(objPtr));*/
+	    Tcl_GetCharLength(objPtr);
+	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Java_tcl_lang_CObject_newCObject --
  *
  *	Allocate a new Tcl_Obj with the given string rep.
@@ -619,6 +679,14 @@ JavaGetTclObject(
     if (!objPtr) {
 	return NULL;
     }
+
+    /*
+     * Make sure the Tcl_Obj does not have
+     * an invalid ref to a TclObject that has a
+     * CObject or TclList internal rep.
+     */
+
+    JavaBreakRef(env, objPtr);
 
     if ((objPtr->typePtr == &tclObjectType)
 	    || ((objPtr->typePtr == cmdTypePtr) &&

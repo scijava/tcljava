@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: javaObj.test,v 1.4 2002/12/07 20:46:58 mdejong Exp $
+# RCS: @(#) $Id: javaObj.test,v 1.5 2002/12/18 03:39:54 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -184,6 +184,21 @@ test javaObj-11.2 {void return} {
     set result [$obj voidimethod]
     list $result [jtest type $result]
 } {{} tcl.lang.CObject}
+
+test javaObj-12.1 {JavaBreakRef} {
+    # Changing from a ReflectObject to a TclList
+    # internal rep will break the Tcl_Obj -> TclObject
+    # ref. We don't currently have any way to actually
+    # test the functionality here, but the following
+    # test exercises JavaBreakRef.
+
+    [java::getinterp] createCommand testlistlength \
+        [java::new tests.ListLengthCmd]
+    set obj [java::new String "1 2 3"]
+    testlistlength $obj
+    rename testlistlength {}
+    set result {}
+} {}
 
 # cleanup
 catch {interp delete [interp slaves]}

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaInterp.c,v 1.11 2002/12/11 02:11:09 mdejong Exp $
+ * RCS: @(#) $Id: javaInterp.c,v 1.12 2002/12/18 03:39:53 mdejong Exp $
  */
 
 #include "java.h"
@@ -1048,6 +1048,16 @@ JavaCmdProc(
 
     if (exception) {
 	(*env)->ExceptionClear(env);
+    }
+
+    /*
+     * Make sure none of the argument Tcl_Objs have
+     * an invalid ref to a TclObject that has a
+     * CObject or TclList internal rep.
+     */
+
+    for (i = 0; i < objc; i++) {
+	JavaBreakRef(env, objv[i]);
     }
 
     (*env)->DeleteLocalRef(env, args);
