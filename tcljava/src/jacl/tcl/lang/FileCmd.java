@@ -11,7 +11,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FileCmd.java,v 1.7 2002/04/12 20:07:03 mdejong Exp $
+ * RCS: @(#) $Id: FileCmd.java,v 1.8 2003/02/02 00:59:16 mdejong Exp $
  *
  */
 
@@ -49,6 +49,7 @@ static Class procClass = null;
 static final private String validCmds[] = {
     "atime",
     "attributes",
+    "channels",
     "copy",
     "delete",
     "dirname",
@@ -58,54 +59,62 @@ static final private String validCmds[] = {
     "isdirectory",
     "isfile",
     "join",
+    "link",
     "lstat",
     "mtime",
     "mkdir",
     "nativename",
+    "normalize",
     "owned",
     "pathtype",
     "readable",
     "readlink",
     "rename",
     "rootname",
+    "separator",
     "size",
     "split",
     "stat",
+    "system",
     "tail",
     "type",
     "volumes",
     "writable"
 };
 
-
 private static final int OPT_ATIME 		=  0;
 private static final int OPT_ATTRIBUTES         =  1;
-private static final int OPT_COPY 		=  2;
-private static final int OPT_DELETE 		=  3;
-private static final int OPT_DIRNAME 		=  4;
-private static final int OPT_EXECUTABLE 	=  5;
-private static final int OPT_EXISTS 		=  6;
-private static final int OPT_EXTENSION 		=  7;
-private static final int OPT_ISDIRECTORY 	=  8;
-private static final int OPT_ISFILE 		=  9;
-private static final int OPT_JOIN 		= 10;
-private static final int OPT_LSTAT 		= 11;
-private static final int OPT_MTIME 		= 12;
-private static final int OPT_MKDIR 		= 13;
-private static final int OPT_NATIVENAME 	= 14;
-private static final int OPT_OWNED 		= 15;
-private static final int OPT_PATHTYPE 		= 16;
-private static final int OPT_READABLE 		= 17;
-private static final int OPT_READLINK 		= 18;
-private static final int OPT_RENAME 		= 19;
-private static final int OPT_ROOTNAME 		= 20;
-private static final int OPT_SIZE 		= 21;
-private static final int OPT_SPLIT 		= 22;
-private static final int OPT_STAT 		= 23;
-private static final int OPT_TAIL 		= 24;
-private static final int OPT_TYPE 		= 25;
-private static final int OPT_VOLUMES 		= 26;
-private static final int OPT_WRITABLE 		= 27;
+private static final int OPT_CHANNELS           =  2;
+private static final int OPT_COPY 		=  3;
+private static final int OPT_DELETE 		=  4;
+private static final int OPT_DIRNAME 		=  5;
+private static final int OPT_EXECUTABLE 	=  6;
+private static final int OPT_EXISTS 		=  7;
+private static final int OPT_EXTENSION 		=  8;
+private static final int OPT_ISDIRECTORY 	=  9;
+private static final int OPT_ISFILE 		= 10;
+private static final int OPT_JOIN 		= 11;
+private static final int OPT_LINK 		= 12;
+private static final int OPT_LSTAT 		= 13;
+private static final int OPT_MTIME 		= 14;
+private static final int OPT_MKDIR 		= 15;
+private static final int OPT_NATIVENAME 	= 16;
+private static final int OPT_NORMALIZE  	= 17;
+private static final int OPT_OWNED 		= 18;
+private static final int OPT_PATHTYPE 		= 19;
+private static final int OPT_READABLE 		= 20;
+private static final int OPT_READLINK 		= 21;
+private static final int OPT_RENAME 		= 22;
+private static final int OPT_ROOTNAME 		= 23;
+private static final int OPT_SEPARATOR 		= 24;
+private static final int OPT_SIZE 		= 25;
+private static final int OPT_SPLIT 		= 26;
+private static final int OPT_STAT 		= 27;
+private static final int OPT_SYSTEM 		= 28;
+private static final int OPT_TAIL 		= 29;
+private static final int OPT_TYPE 		= 30;
+private static final int OPT_VOLUMES 		= 31;
+private static final int OPT_WRITABLE 		= 32;
 
 private static final String validOptions[] = {
     "-force",
@@ -170,6 +179,12 @@ throws
 		"sorry, \"file attributes\" is not implemented yet");
 
         //return;
+    case OPT_CHANNELS:
+        //FIXME:   not implemented yet
+
+        throw new TclException(interp,
+		"sorry, \"file channels\" is not implemented yet");
+
     case OPT_COPY:
 	fileCopyRename(interp, argv, true);
 	return;
@@ -284,6 +299,12 @@ throws
 	interp.setResult(FileUtil.joinPath(interp, argv, 2, argv.length));
 	return;
 
+    case OPT_LINK:
+        //FIXME:   not implemented yet
+
+        throw new TclException(interp,
+		"sorry, \"file link\" is not implemented yet");
+
     case OPT_LSTAT:
 	if (argv.length != 4) {
 	    throw new TclNumArgsException(interp, 2, argv, "name varName");
@@ -316,6 +337,13 @@ throws
 	interp.setResult(
 	      FileUtil.translateFileName(interp, argv[2].toString()));
         return;
+
+    case OPT_NORMALIZE:
+	// FIXME:  Not yet implemented.
+
+        throw new TclException(interp,
+		"sorry, \"file normalize\" is not implemented yet");
+
     case OPT_OWNED:
 	if (argv.length != 3) {
 	    throw new TclNumArgsException(interp, 2, argv, "name");
@@ -373,6 +401,12 @@ throws
 	interp.setResult(fileName.substring(0, diffLength));
 	return;
 	
+    case OPT_SEPARATOR:
+	// FIXME:  Not yet implemented.
+
+        throw new TclException(interp,
+		"sorry, \"file separator\" is not implemented yet");
+
     case OPT_SIZE:
 	if (argv.length != 3) {
 	    throw new TclNumArgsException(interp, 2, argv, "name");
@@ -399,6 +433,12 @@ throws
 	getAndStoreStatData(interp, argv[2].toString(), argv[3].toString());
 	return;
 	
+    case OPT_SYSTEM:
+        //FIXME:   not implemented yet
+
+        throw new TclException(interp,
+		"sorry, \"file system\" is not implemented yet");
+
     case OPT_TAIL:
 	if (argv.length != 3) {
 	    throw new TclNumArgsException(interp, 2, argv, "name");

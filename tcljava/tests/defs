@@ -54,6 +54,24 @@ proc testgetplatform { } {
 }
 
 
+if {[info commands testchmod] == ""} {
+
+# Java does not provide access to chmod type functionality
+# so we need to use the shell to do it.
+
+proc testchmod { mode file args } {
+    if {[testgetplatform] != "unix"} {
+        error "testchmod only implemented on UNIX"
+    }
+    set cmd "chmod $mode [concat $file $args]"
+    #puts "now to exec \"$cmd\""
+    exec /bin/sh -c $cmd
+}
+
+}
+
+
+
 if {$tcl_platform(platform) == "java"} {
 
 # Try to set a variable, if it does not exist raise an error

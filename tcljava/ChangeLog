@@ -1,5 +1,17 @@
 2003-02-01  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/jacl/tcl/lang/FileCmd.java (cmdProc):
+	Add unimplemented command stubs for channels,
+	link, normalize, separator, and system
+	subcommands.
+	* src/jacl/tcl/lang/FileUtil.java (doTildeSubst):
+	Search for env(HOME) in the global variable table.
+	* tests/defs: Add testchmod implementation for UNIX.
+	* tests/jacl/FileCmd.test: Rework tests to match
+	Tcl 8.4 and current Jacl implementation.
+
+2003-02-01  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* tests/tclblend/loading.test: Rework a couple
 	of tests to make errors showing up under JDK 1.4
 	more clear. Remove core file if there is one.
