@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.33 2000/07/13 17:05:26 mo Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.34 2000/07/30 02:37:17 mo Exp $
  *
  */
 
@@ -28,14 +28,9 @@ import java.net.*;
 public class Interp {
 
 // The following three variables are used to maintain a translation
-// table between ReflectObject's and their string names. These two
-// variables are accessed by the ReflectObject class (the variables
-// are here because we want one translation table per Interp).
-
-//  Translates integer ID to ReflectObject.
-
-
-Hashtable reflectIDTable = new Hashtable();
+// table between ReflectObject's and their string names. These
+// variables are accessed by the ReflectObject class, they
+// are defined here be cause we need them to be per interp data.
 
 // Translates Object to ReflectObject. This makes sure we have only
 // one ReflectObject internalRep for the same Object -- this
@@ -48,7 +43,8 @@ Hashtable reflectObjTable = new Hashtable();
 
 long reflectObjCount = 0;
 
-// Table used to store reflect hash index conflicts
+// Table used to store reflect hash index conflicts, see
+// ReflectObject implementation for more details
 
 Hashtable reflectConflictTable = new Hashtable();
 

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaInterp.c,v 1.6 2000/06/15 09:47:07 mo Exp $
+ * RCS: @(#) $Id: javaInterp.c,v 1.7 2000/07/30 02:37:18 mo Exp $
  */
 
 #include "java.h"
@@ -1148,6 +1148,71 @@ Java_tcl_lang_Interp_deleteCommand(
     POP_JAVA_ENV();
 
     return (jint) result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Java_tcl_lang_Interp_getCommand --
+ *
+ *	Return a tcl.lang.Command object for a given Tcl command.
+ *	This currently only works for Tcl commands implemented in Java.
+ *
+ * Class:     tcl_lang_Interp
+ * Method:    getCommand
+ * Signature: (Ljava/lang/String;)Ltcl/lang/Command;
+ *
+ * Results:
+ *	The command procedure of the given command, or null if
+ *      the command doesn't exist.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+jobject JNICALL
+Java_tcl_lang_Interp_getCommand(
+    JNIEnv *env,		/* Java environment. */
+    jobject interpObj,		/* Interp object. */
+    jstring nameStr)		/* Name of command to look for. */
+{
+    Tcl_Interp *interp = JavaGetInterp(env, interpObj);
+    const char *name;
+    jobject cmd = NULL;
+    Tcl_CmdInfo cmdInfo;
+    JNIEnv *oldEnv;
+
+    if (!interp) {
+	ThrowNullPointerException(env, NULL);
+	return NULL;
+    }
+    if (!nameStr) {
+	ThrowNullPointerException(env, "getCommand");
+	return NULL;
+    }
+
+    PUSH_JAVA_ENV();
+    name = (*env)->GetStringUTFChars(env, nameStr, NULL);    
+    if (Tcl_GetCommandInfo(interp, (/*UNCONST*/ char*) name, &cmdInfo)) {
+        /* If the command exists, find out if it is a Tcl command implemeneted in Java */
+	
+        if (cmdInfo.isNativeObjectProc &&
+                cmdInfo.objProc == JavaCmdProc) {
+            cmd = (jobject) cmdInfo.objClientData;
+	}
+
+        /*
+	 * FIXME: Figure out some way to wrap a Tcl command
+	 * in a tcl.lang.Command interface so that it can be
+	 * invoked directly from Java. We would need to deal
+	 * with deletion of commands which might be tricky
+	 */
+    }
+    (*env)->ReleaseStringUTFChars(env, nameStr, name);
+    POP_JAVA_ENV();
+    return cmd;
 }
 
 /*

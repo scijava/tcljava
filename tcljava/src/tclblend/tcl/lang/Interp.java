@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.15 2000/07/13 17:05:26 mo Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.16 2000/07/30 02:37:18 mo Exp $
  *
  */
 
@@ -47,14 +47,11 @@ static {
 
 long interpPtr;
 
+
 // The following three variables are used to maintain a translation
-// table between ReflectObject's and their string names. These two
-// variables are accessed by the ReflectObject class (the variables
-// are here because we want one translation table per Interp).
-
-// Translates integer ID to ReflectObject.
-
-Hashtable reflectIDTable = new Hashtable();
+// table between ReflectObject's and their string names. These
+// variables are accessed by the ReflectObject class, they
+// are defined here be cause we need them to be per interp data.
 
 // Translates Object to ReflectObject. This makes sure we have only
 // one ReflectObject internalRep for the same Object -- this
@@ -62,11 +59,13 @@ Hashtable reflectIDTable = new Hashtable();
 
 Hashtable reflectObjTable = new Hashtable();
 
-// Counter used for reflect object id's
+// Number of reflect objects created so far inside this Interp
+// (including those that have be freed)
 
 long reflectObjCount = 0;
 
-// Table used to store reflect hash index conflicts
+// Table used to store reflect hash index conflicts, see
+// ReflectObject implementation for more details
 
 Hashtable reflectConflictTable = new Hashtable();
 
@@ -616,12 +615,9 @@ deleteCommand(
  *----------------------------------------------------------------------
  */
 
-public Command
+public native Command
 getCommand(
-    String name) 		// String name of the command.
-{
-    throw new TclRuntimeError("Not implemented yet.");
-}
+    String name); 		// String name of the command.
 
 /*
  *----------------------------------------------------------------------

@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: ReflectObject.java,v 1.11 2000/07/13 17:05:27 mo Exp $
+ * RCS: @(#) $Id: ReflectObject.java,v 1.12 2000/07/30 02:37:19 mo Exp $
  *
  */
 
@@ -365,97 +365,10 @@ public static void dump(Interp interp) {
     try {
     System.out.println("BEGIN DUMP -------------------------------");
     System.out.println("interp.reflectObjCount = " + interp.reflectObjCount);
-    System.out.println("interp.reflectIDTable.size() = " + interp.reflectIDTable.size());
     System.out.println("interp.reflectObjTable.size() = " + interp.reflectObjTable.size());
     System.out.println("interp.reflectConflictTable.size() = " + interp.reflectConflictTable.size());
 
-    System.out.println("dumping reflectIDTable");
-
-    for (Enumeration keys = interp.reflectIDTable.keys() ; keys.hasMoreElements() ;) {
-        System.out.println();
-        String refID = (String) keys.nextElement();
-        ReflectObject roRep = (ReflectObject) interp.reflectIDTable.get(refID);
-
-        // do sanity check
-        if (roRep == null) {
-	    throw new RuntimeException("Reflect ID Table entry \"" + refID + "\" hashed to null");
-        }
-
-	// If the ReflectObject does not match, check in the Conflict table
-	if (! refID.equals(roRep.refID)) {
-	    roRep = findInConflictTable(interp, roRep.javaObj,
-					getHashString(roRep.javaClass, roRep.javaObj));
-	}
-
-        // do sanity check
-        if (! refID.equals(roRep.refID)) {
-	    throw new RuntimeException("Reflect ID Table entry \"" + refID +
-				       "\" does not match object refID \"" +
-				       roRep.refID + "\"");
-        }
-
-        // do sanity check
-        if (roRep.ownerInterp != interp) {
-	    throw new RuntimeException("roRep.ownerInterp not the same as current interp");
-        }
-
-        System.out.println("refID = \"" + roRep.refID + "\"");
-        System.out.println("javaClass = \"" +
-            JavaInfoCmd.getNameFromClass(roRep.javaClass) + "\"");
-
-	System.out.println("System.identityHashCode(javaObj) = \"" +
-			   System.identityHashCode(roRep.javaObj) + "\"");
-
-	if (roRep.javaObj.hashCode() != System.identityHashCode(roRep.javaObj)) {
-	    System.out.println("javaObj.hashCode() = \"" + roRep.javaObj.hashCode() + "\"");
-	}
-
-	/*
-	// FIXME: This "sanity check" will get into an infinite loop because
-	// the object deletes itself and then saves itself and deletes itself ...
-	// this happes because dump() is getting called after the delete!
-
-        // do sanity check
-        TclObject tobj = TclString.newInstance(roRep.refID);
-        Class  tclass;
-        try {
-            tclass = ReflectObject.getClass(interp, tobj);
-        } catch (TclException e) {
-            tclass = null;
-        }
-        if (tclass != null && roRep.javaClass != tclass) {
-	    throw new RuntimeException("javaClass is not the same the reflect class type \""
-            + JavaInfoCmd.getNameFromClass(tclass)
-            + "\" in the interp");
-        }
-	// Drop the ReflectObject interp rep from this Tcl Object, otherwise
-	// the use count would go up every time we called dump()
-	TclString.append(tobj,"Z");
-	*/
-
-        System.out.println("useCount = \"" + roRep.useCount + "\"");
-        System.out.println("isValid = \"" + roRep.isValid + "\"");
-
-
-        // do sanity check for the command itself
-        Command command;
-        try {
-            command = interp.getCommand(roRep.refID);
-        } catch (TclRuntimeError e) { //Tcl Blend did not have this implemented
-            command = null;
-        }
-        if (command == null) {
-	    System.out.println("could not find command named \"" + roRep.refID + "\"");
-        }
-    }
-    System.out.println();
-
-
-
-    System.out.println("dumping reflectObjTable");
-
-    // Loop over the entries in the reflectObjTable and check that each one also
-    // exists in the reflectIDTable and that they refer to the same ReflectObject
+    // Loop over the entries in the reflectObjTable and dump them out.
 
     for (Enumeration keys = interp.reflectObjTable.keys() ; keys.hasMoreElements() ;) {
         System.out.println();
@@ -466,10 +379,14 @@ public static void dump(Interp interp) {
 	    throw new RuntimeException("Reflect table entry \"" + hash + "\" hashed to null");
         }
 
-	// do sanity check, check the reflectIDTable to ensure we hashed to this ReflectObject
-        if (roRep != interp.reflectIDTable.get(roRep.refID)) {
-	    throw new RuntimeException("Reflect table entry \"" + hash +
-				       "\" did not hash to its own ReflectObject");
+        // do sanity check
+        if (roRep.ownerInterp != interp) {
+	    throw new RuntimeException("roRep.ownerInterp not the same as current interp");
+        }
+
+        // Check to see if the command is in the Tcl command table.
+        if (interp.getCommand(roRep.refID) == null) {
+	    System.out.println("could not find command named \"" + roRep.refID + "\"");
         }
 
 	String hash2 = getHashString(roRep.javaClass, roRep.javaObj);
@@ -480,8 +397,10 @@ public static void dump(Interp interp) {
 	}
 	
 	System.out.println("hash \"" + hash + "\" corresponds to ReflectObject with " +
-			   "refID \"" + roRep.refID + "\"");
-
+			   "refID \"" + roRep.refID + "\" useCount = \"" +
+			   roRep.useCount + "\" isValid = \"" + roRep.isValid + "\"" +
+			   " javaClass = \"" + JavaInfoCmd.getNameFromClass(roRep.javaClass) + "\"" +
+			   " System.identityHashCode(javaObj) = \"" + System.identityHashCode(roRep.javaObj) + "\"");
 
 	Vector conflicts = (Vector) interp.reflectConflictTable.get(hash);
 
@@ -490,12 +409,6 @@ public static void dump(Interp interp) {
 
 	    for (Enumeration e = conflicts.elements(); e.hasMoreElements() ; ) {
 		ReflectObject found = (ReflectObject) e.nextElement();
-
-		// do sanity check, check the reflectIDTable to ensure we hashed to this ReflectObject
-		if (roRep != interp.reflectIDTable.get(roRep.refID)) {
-		    throw new RuntimeException("Conflict table entry for \"" + hash +
-					       "\" did not hash to its own ReflectObject");
-		}
 
 		System.out.println("hash conflict for \"" + hash + "\" corresponds to ReflectObject with " +
 			   "refID \"" + found.refID + "\"");
@@ -632,17 +545,7 @@ makeReflectObject(
 	interp.reflectObjCount++; // incr id, the first id used will be 1
 	roRep.refID = CMD_PREFIX + Long.toHexString(interp.reflectObjCount);
 	
-	interp.createCommand(roRep.refID,roRep);
-
-        // FIXME: we may want to revisit the need for this reflectIDTable.
-	// It is only used to recover a ReflectObject from a TclObject
-	// that lost its internal representation. It is questionable if
-	// we should really allow this. If we had an internal rep that
-	// could not be lost then we could save a lot of memory! Why
-	// can't we just get the ReflectObject from the CMD? I think
-	// this is because of unimplemented bit in Tcl Blend!
-	interp.reflectIDTable.put(roRep.refID,roRep);
-	
+	interp.createCommand(roRep.refID, roRep);
 	addToReflectTable(roRep);
 	
 	if (debug) {
@@ -708,9 +611,6 @@ dispose()
 	}
 
         ownerInterp.deleteCommand(refID);
-
-        ownerInterp.reflectIDTable.remove(refID);
-
 	removeFromReflectTable(this);
 
 	ownerInterp = null;
@@ -797,8 +697,10 @@ throws
 	  tobj.setInternalRep(makeReflectObject(interp,null,null));
 	  return;
 	} else {
-	  roRep = (ReflectObject) interp.reflectIDTable.get(s);
-	  if ((roRep != null) && (roRep.isValid)) {
+          Command cmd = interp.getCommand(s);
+	  if ((cmd != null) && (cmd instanceof ReflectObject) &&
+	                       ((ReflectObject) cmd).isValid) {
+	    roRep = (ReflectObject) cmd;
 	    roRep.useCount++;
 
 	    if (debug) {
