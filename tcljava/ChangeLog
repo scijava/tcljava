@@ -1,3 +1,8 @@
+2000-04-03  Mo DeJong  <mdejong@redhat.com>
+
+        * tests/tcl/history.test:
+	Added regression tests for history command.
+
 2000-04-01  Mo DeJong  <mdejong@redhat.com>
 
 	* src/tcljava/tcl/lang/ReflectObject.java: improved some
