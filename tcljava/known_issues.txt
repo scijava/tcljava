@@ -116,7 +116,8 @@ get Tcl and Tcl Blend to compile on my IRIX box one needs to remove
 the -n32 and -mabi=n32 options from the Tcl and Tcl Blend makefiles
 after running ./configure. You might also need to use the
 -mabicalls -mmips-as options to gcc to get things to compile, it
-depends on what assembler you have installed.
+depends on what assembler you have installed. If you have newer
+versions of gcc or you are using egcs you should not have this problem.
 
 
 (Tcl Blend under Linux with the JDK and native threads)
@@ -128,30 +129,34 @@ so that the -native option will not be used to run jacl on a linux
 system. At this time, Tcl Blend does not work with the blackdown port.
 Update:
 TclBlend under Linux has been fixed. The native version now runs but
-it still fails some test cases. The other good news is that TclBlend
-was tested by the folks at blackdown and it will run on JDK1.2 for
-linux when it is released. If you run into problem with the JDK1.2
-port feel free to try setting LD_BIND_NOW=true instead of using
-the LD_PRELOAD=libtcljava.so in the Makefile and jtclsh.
+it still fails some test cases. TclBlend will also work under JDK1.2
+from Blackdown.
 
 
 (Tcl Blend under Linux with the JDK)
-The blackdown port of the JDK1.1.7 requires that Motif be installed
+The Blackdown port of the JDK1.1.7 requires that Motif be installed
 on your machine in order to use AWT widgets in Tcl Blend. After
 making sure that Motif is installed you need to edit the jtclsh
-file that is created by the make process. Look in the file for
-the string "Tcl Blend under Linux AWT Workaround" and follow
-the instructions given about how to modify the makefile. You
-should also be able to use LessTif in place of Motif but this
-option has not been tested.
+file that is created by the make process. Look in the jtclsh file
+for the section "Tcl Blend under Linux AWT Workaround" and follow
+the instructions given about how to modify script. If you want to
+run the Tcl Blend tests that use AWT code you will need to modify
+the Makefile too. You should also be able to use LessTif in place
+of Motif but this option has not been tested.
 
 
+(Linux with the JDK 1.2)
+The JDK 1.2 port uses a strangely named stdc++ library. If you
+are running on a non Debian Linux (like RedHat) you will need
+to run these two commands as root after making sure that
+/usr/local/lib is entered into your /etc/ld.so.conf file.
 
-
+% g++ -shared -o /usr/local/lib/libstdc++-libc6.0-1.so.2 -lm
+% ldconfig
 
 
 (Tcl Blend under Digital Unix)
-Tcl Blend 1.1 can compile under Digital Unix V4.0B with JDK1.1.4.
+Tcl Blend 1.1 should compile under Digital Unix V4.0B with JDK1.1.4.
 However, starting up is tricky, since it requires that we set
 the CLASSPATH and load libjava.so first:
 
