@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: if.test,v 1.4 2003/02/04 01:53:15 mdejong Exp $
+# RCS: @(#) $Id: if.test,v 1.5 2003/02/07 03:41:49 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -30,7 +30,7 @@ test if-1.3 {TclCompileIfCmd: error in if/elseif test} {
     list [catch {if {1+}} msg] $msg $errorInfo
 } {1 {syntax error in expression "1+"} {syntax error in expression "1+"
     ("if" test expression)
-    while executing
+    invoked from within
 "if {1+}"}}
 test if-1.4 {TclCompileIfCmd: if/elseif test in braces} {
     set a {}
@@ -70,7 +70,7 @@ test if-1.10 {TclCompileIfCmd: error in "then" body} {
     while executing
 "set"
     ("if" then script line 1)
-    while executing
+    invoked from within
 "if {$a!="xxx"} then {set}"}}
 test if-1.11 {TclCompileIfCmd: error in "then" body} {
     list [catch {if 2 then {[error "error in then clause"]}} msg] $msg
@@ -182,7 +182,7 @@ test if-2.4 {TclCompileIfCmd: error in expression after "elseif"} {
     list [catch {if 3>4 {set a 1} elseif {1>}} msg] $msg $errorInfo
 } {1 {syntax error in expression "1>"} {syntax error in expression "1>"
     ("if" test expression)
-    while executing
+    invoked from within
 "if 3>4 {set a 1} elseif {1>}"}}
 test if-2.5 {TclCompileIfCmd: test jumpFalse instruction replacement after long "elseif" body} {
     catch {unset i}
@@ -312,7 +312,7 @@ test if-3.4 {TclCompileIfCmd: error compiling body after "else"} {
     while executing
 "set"
     ("if" else script line 1)
-    while executing
+    invoked from within
 "if 2<1 {set a 1} else {set}"}
 test if-3.5 {TclCompileIfCmd: extra arguments after "else" argument} {
     set a {}
@@ -513,7 +513,8 @@ test if-5.3 {if cmd with computed command names: error in if/elseif test} {
     set z if
     list [catch {$z {1+}} msg] $msg $errorInfo
 } {1 {syntax error in expression "1+"} {syntax error in expression "1+"
-    while executing
+    ("if" test expression)
+    invoked from within
 "$z {1+}"}}
 test if-5.4 {if cmd with computed command names: if/elseif test in braces} {
     set z if
@@ -559,6 +560,7 @@ test if-5.10 {if cmd with computed command names: error in "then" body} {
 } {1 {wrong # args: should be "set varName ?newValue?"} {wrong # args: should be "set varName ?newValue?"
     while executing
 "set"
+    ("if" then script line 1)
     invoked from within
 "$z {$a!="xxx"} then {set}"}}
 test if-5.11 {if cmd with computed command names: error in "then" body} {
@@ -681,7 +683,8 @@ test if-6.4 {if cmd with computed command names: error in expression after "else
     set a {}
     list [catch {$z 3>4 {set a 1} elseif {1>}} msg] $msg $errorInfo
 } {1 {syntax error in expression "1>"} {syntax error in expression "1>"
-    while executing
+    ("if" test expression)
+    invoked from within
 "$z 3>4 {set a 1} elseif {1>}"}}
 test if-6.5 {if cmd with computed command names: test jumpFalse instruction replacement after long "elseif" body} {
     set z if
@@ -815,6 +818,7 @@ test if-7.4 {if cmd with computed command names: error compiling body after "els
 } {wrong # args: should be "set varName ?newValue?"
     while executing
 "set"
+    ("if" else script line 1)
     invoked from within
 "$z 2<1 {set a 1} else {set}"}
 test if-7.5 {if cmd with computed command names: extra arguments after "else" argument} {

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr.test,v 1.5 2003/02/04 01:53:14 mdejong Exp $
+# RCS: @(#) $Id: expr.test,v 1.6 2003/02/07 03:41:49 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -521,8 +521,6 @@ test expr-14.24 {CompilePrimaryExpr: error in subcommand primary} {
     set errorInfo
 } {missing close-bracket
     while executing
-"set i"
-    invoked from within
 "expr {[set i}"}
 test expr-14.25 {CompilePrimaryExpr: math function primary} {
     format %.6g [expr exp(1.0)]

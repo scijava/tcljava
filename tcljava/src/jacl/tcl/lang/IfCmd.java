@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: IfCmd.java,v 1.1 1998/10/14 21:09:18 cvsadmin Exp $
+ * RCS: @(#) $Id: IfCmd.java,v 1.2 2003/02/07 03:41:49 mdejong Exp $
  *
  */
 
@@ -43,7 +43,17 @@ class IfCmd implements Command {
 			"wrong # args: no expression after \"" +
 		        argv[i-1] +  "\" argument");
 	    }
-	    value = interp.expr.evalBoolean(interp, argv[i].toString());
+	    try {
+	        value = interp.expr.evalBoolean(interp, argv[i].toString());
+	    } catch (TclException e) {
+		switch (e.getCompletionCode()) {
+		case TCL.ERROR:
+		    interp.addErrorInfo("\n    (\"if\" test expression)");
+		    break;
+		}
+		throw e;
+	    }
+
 	    i++;
 	    if ((i < argv.length) && (argv[i].toString().equals("then"))) {
 		i++;
@@ -54,7 +64,17 @@ class IfCmd implements Command {
 		    	argv[i-1] + "\" argument");
 	    }
 	    if (value) {
-		interp.eval(argv[i], 0);
+		try {
+		    interp.eval(argv[i], 0);
+		} catch (TclException e) {
+		    switch (e.getCompletionCode()) {
+		    case TCL.ERROR:
+		        interp.addErrorInfo("\n    (\"if\" then script line " +
+		                interp.errorLine + ")");
+		        break;
+		    }
+		    throw e;
+		}
 		return;
 	    }
 
@@ -92,7 +112,17 @@ class IfCmd implements Command {
 		    "\"if\" command");
 	    }
 	}
-	interp.eval(argv[i], 0);
+	try {
+	    interp.eval(argv[i], 0);
+	} catch (TclException e) {
+	    switch (e.getCompletionCode()) {
+	    case TCL.ERROR:
+	        interp.addErrorInfo("\n    (\"if\" else script line " +
+	                interp.errorLine + ")");
+	       break;
+	    }
+	    throw e;
+	}
     }
 }
 

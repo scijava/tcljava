@@ -1,5 +1,14 @@
 2003-02-06  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/jacl/tcl/lang/IfCmd.java (cmdProc):
+	Add additional info to errorInfo to match
+	Tcl 8.3 implementation.
+	* tests/tcl/expr.test:
+	* tests/tcl/if.test: Update test cases to
+	match Jacl implementation.
+
+2003-02-06  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* tests/tcl/incr-old.test:
 	* tests/tcl/incr.test: Update incr test cases
 	to match Jacl implementation. Add tests cases
