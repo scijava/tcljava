@@ -1,4 +1,9 @@
-2000-02-29  Mo DeJong  <mdejong@redhat.com>
+2000-03-30  Mo DeJong  <mdejong@redhat.com>
+
+	* changes.txt: updated contents as a result
+	of back porting fixes to the 1.2 branch.
+
+2000-03-29  Mo DeJong  <mdejong@redhat.com>
 
 	* unix/configure.in: removed IRIX hack that was added
 	on 2000-02-23 but in fact did not work.
