@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: OpenCmd.java,v 1.1 1998/10/14 21:09:18 cvsadmin Exp $
+ * RCS: @(#) $Id: OpenCmd.java,v 1.2 2000/08/01 06:50:48 mo Exp $
  *
  */
 
@@ -53,7 +53,7 @@ class OpenCmd implements Command {
 
 	    switch (modeStr.charAt(0)) {
 	        case 'r': {
-		    if(len == 1) {
+		    if (len == 1) {
 		        modeFlags = TclIO.RDONLY;
 			break;
 		    } else if (modeStr.charAt(1) == '+') {
@@ -67,7 +67,7 @@ class OpenCmd implements Command {
 		    if (f.exists()) {
 			f.delete();
 		    }
-		    if(len == 1) {
+		    if (len == 1) {
 		        modeFlags = (TclIO.WRONLY|TclIO.CREAT);
 			break;
 		    } else if (modeStr.charAt(1) == '+') {
@@ -76,7 +76,7 @@ class OpenCmd implements Command {
 		    }
 		}
 	        case 'a': {
-		    if(len == 1) {
+		    if (len == 1) {
 		        modeFlags = (TclIO.WRONLY|TclIO.APPEND);
 			break;
 		    } else if (modeStr.charAt(1) == '+') {

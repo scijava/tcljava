@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FileChannel.java,v 1.5 1999/05/24 12:44:49 mo Exp $
+ * RCS: @(#) $Id: FileChannel.java,v 1.6 2000/08/01 06:50:48 mo Exp $
  *
  */
 
@@ -83,7 +83,7 @@ class FileChannel extends Channel {
 	} 
 
 	if ((modeFlags & TclIO.RDWR) != 0) { 
-	    // Opens file (r+), error if dosent exist.  
+	    // Opens file (r+), error if file does not exist.
 
 	    checkFileExists(interp, fileObj);
 	    checkReadWritePerm(interp, fileObj, 0);
@@ -96,7 +96,7 @@ class FileChannel extends Channel {
 	    file = new RandomAccessFile(fileObj, "rw");
 
 	} else if ((modeFlags & TclIO.RDONLY) != 0) { 
-	    // Opens file (r), error if dosent exist.
+	    // Opens file (r), error if file does not exist.
 
 	    checkFileExists(interp, fileObj);
 	    checkReadWritePerm(interp, fileObj, -1);
@@ -174,8 +174,8 @@ class FileChannel extends Channel {
 	    throw new TclRuntimeError("FileChannel.read: null file object");
 	}
 	if ((mode & TclIO.WRONLY) != 0) {
-	    throw new TclException(interp, "channel" +
-	        getChanName() + "\"wasn't opened for reading");
+	    throw new TclException(interp, "channel \"" +
+	        getChanName() + "\" wasn't opened for reading");
 	}
 
 	// Create the Buffered Reader if it does not already exist

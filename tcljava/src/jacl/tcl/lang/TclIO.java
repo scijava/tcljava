@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclIO.java,v 1.1 1998/10/14 21:09:20 cvsadmin Exp $
+ * RCS: @(#) $Id: TclIO.java,v 1.2 2000/08/01 06:50:49 mo Exp $
  *
  */
 
@@ -27,7 +27,7 @@ class TclIO {
 
     static final int RDONLY = 1;
     static final int WRONLY = 2;
-    static final int RDWR   = 4; 
+    static final int RDWR   = 4;
     static final int APPEND = 8;
     static final int CREAT  = 16;
 
@@ -68,14 +68,25 @@ class TclIO {
         if (interp != null) {
             Hashtable chanTable = getInterpChanTable(interp);
 	    chanTable.put(chan.getChanName(), chan);
+	    chan.refCount++;
 	}
     }
 
 
     static void unregisterChannel(Interp interp, Channel chan) {
         
-        Hashtable chanTable = getInterpChanTable(interp);
+	Hashtable chanTable = getInterpChanTable(interp);
 	chanTable.remove(chan.getChanName());
+
+	if (--chan.refCount <= 0) {
+	    try {
+	      chan.close();
+	    } catch (IOException e) {
+	      throw new TclRuntimeError(
+		    "CloseCmd.cmdProc() Error: IOException when closing " +
+		    chan.getChanName());
+	    }
+	}
     }
 
 

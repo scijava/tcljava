@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Channel.java,v 1.2 1999/05/16 06:15:28 dejong Exp $
+ * RCS: @(#) $Id: Channel.java,v 1.3 2000/08/01 06:50:48 mo Exp $
  */
 
 package tcl.lang;
@@ -35,6 +35,12 @@ abstract class Channel {
      */
 
     protected String chanName;
+
+    /**
+     * How many interpreters hold references to this IO channel?
+     */
+
+    protected int refCount = 0;
 
     /**
      * Perform a read on the sub-classed channel.  
