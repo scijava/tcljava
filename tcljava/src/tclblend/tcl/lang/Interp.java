@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.25 2002/12/30 06:28:06 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.26 2002/12/31 21:39:38 mdejong Exp $
  *
  */
 
@@ -779,14 +779,22 @@ resetResult();
  */
 
 private native void
-evalNative(
+evalString(
     String script,	// A script to evaluate.
     int flags)		// Flags, either 0 or TCL.EVAL_GLOBAL.
 throws 
     TclException; 	// A standard Tcl exception.
 
+private native void
+evalTclObject(
+    long objPtr,	// Tcl_Obj* from CObject
+    String string,	// String to evaluate
+    int flags)		// Flags, either 0 or TCL.EVAL_GLOBAL.
+throws 
+    TclException; 	// A standard Tcl exception.
 
-public void 
+
+public void
 eval(
     String script,	// A script to evaluate.
     int flags)		// Flags, either 0 or TCL.EVAL_GLOBAL.
@@ -799,7 +807,7 @@ throws
         held = true;
     }
     try {
-        evalNative(script, flags);
+        evalString(script, flags);
     } finally {
         if (held) {
             if (propagateException == false)
@@ -827,7 +835,28 @@ eval(
 throws 
     TclException 	// A standard Tcl exception.
 {
-    eval(tobj.toString(), flags);
+    boolean held = false;
+    if (!propagateException) {
+        propagateException = true;
+        held = true;
+    }
+
+    // Pass the Tcl_Obj ptr or the String object
+    // directly to evalTclObject for efficiency
+    long objPtr = tobj.getCObjectPtr();
+    String str = null;
+    if (objPtr == 0)
+        str = tobj.toString();
+
+    try {
+        evalTclObject(objPtr, str, flags);
+    } finally {
+        if (held) {
+            if (propagateException == false)
+                throw new TclRuntimeError("propagateException was false");
+            propagateException = false;
+        }
+    }
 }
 
 /*

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaInterp.c,v 1.20 2002/12/31 05:37:16 mdejong Exp $
+ * RCS: @(#) $Id: javaInterp.c,v 1.21 2002/12/31 21:39:38 mdejong Exp $
  */
 
 #include "java.h"
@@ -224,12 +224,12 @@ Java_tcl_lang_Interp_doDispose(
 /*
  *----------------------------------------------------------------------
  *
- * Java_tcl_lang_Interp_evalNative --
+ * Java_tcl_lang_Interp_evalString --
  *
- *	Evaluate the given string.
+ *	Evaluate the given String object.
  *
  * Class:     tcl_lang_Interp
- * Method:    evalNative
+ * Method:    evalString
  * Signature: (Ljava/lang/String;I)V
  *
  * Results:
@@ -242,7 +242,7 @@ Java_tcl_lang_Interp_doDispose(
  */
 
 void JNICALL
-Java_tcl_lang_Interp_evalNative(
+Java_tcl_lang_Interp_evalString(
     JNIEnv *env,		/* Java environment. */
     jobject interpObj,		/* Handle to Interp object. */
     jstring string,		/* String to eval. */
@@ -263,6 +263,86 @@ Java_tcl_lang_Interp_evalNative(
 
     objPtr = Tcl_NewObj();
     objPtr->bytes = JavaGetString(env, string, &objPtr->length);
+    Tcl_IncrRefCount(objPtr);
+
+    if (!flags) {
+	result = Tcl_EvalObj(interp, objPtr);
+    } else {
+	result = Tcl_GlobalEvalObj(interp, objPtr);
+    }
+
+    exception = (*env)->ExceptionOccurred(env);
+    (*env)->ExceptionClear(env);
+    Tcl_DecrRefCount(objPtr);
+
+    /*
+     * Check to see if an exception is being thrown.  If so, let it
+     * continue to propagate out to Java.  Otherwise convert a normal
+     * Tcl error into an exception.
+     */
+
+    if (exception) {
+	(*env)->Throw(env, exception);
+	(*env)->DeleteLocalRef(env, exception);
+    } else if (result != TCL_OK) {
+	JavaThrowTclException(env, interp, result);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Java_tcl_lang_Interp_evalTclObject --
+ *
+ *	Evaluate the given TclObject.
+ *
+ * Class:     tcl_lang_Interp
+ * Method:    evalTclObject
+ * Signature: (JLjava/lang/String;I)V
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	Whatever the eval does.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void JNICALL
+Java_tcl_lang_Interp_evalTclObject(
+    JNIEnv *env,		/* Java environment. */
+    jobject interpObj,		/* Handle to Interp object. */
+    jlong objRef,		/* Tcl_Obj* */
+    jstring string,		/* String */
+    jint flags)			/* Evaluation flags. */
+{
+    Tcl_Interp *interp = JavaGetInterp(env, interpObj);
+    Tcl_Obj *objPtr;
+    int result;
+    jobject exception;
+
+    if (!interp) {
+	ThrowNullPointerException(env, NULL);
+	return;
+    }
+
+    /*
+     * Get the Tcl_Obj* held in a CObject or TclList,
+     * otherwise convert the Java string to a Tcl string.
+     */
+
+    if (objRef != 0) {
+	objPtr = *(Tcl_Obj**)&objRef;
+    } else {
+	if (!string) {
+	    ThrowNullPointerException(env, "No string to evaluate.");
+	    return;
+	}
+
+	objPtr = Tcl_NewObj();
+	objPtr->bytes = JavaGetString(env, string, &objPtr->length);
+    }
     Tcl_IncrRefCount(objPtr);
 
     if (!flags) {

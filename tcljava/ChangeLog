@@ -1,5 +1,24 @@
 2002-12-31  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/native/javaInterp.c (
+	Java_tcl_lang_Interp_evalNative,
+	Java_tcl_lang_Interp_evalString,
+	Java_tcl_lang_Interp_evalTclObject):
+	Rename evalNative to evalString.
+	Add evalTclObject method to support
+	direct evaluation of a Tcl_Obj*
+	wrapped in a TclObject. This significantly
+	speeds up Java commands that call eval
+	with a TclObject argument because the
+	data does not need to be copied into
+	Java and then back into Tcl.
+	* src/tclblend/tcl/lang/Interp.java (evalNative,
+	evalString, evalTclObject, eval):
+	Invoke new evalTclObject method from
+	eval call that takes a TclObject argument.
+
+2002-12-31  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/empty/empty.jar: Regen.
 	* src/empty/tcl/lang/CObject.java (getCObjectPtr):
 	Add method decl.
