@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Notifier.java,v 1.3 2000/10/29 06:00:42 mdejong Exp $
+ * RCS: @(#) $Id: Notifier.java,v 1.4 2002/07/22 10:00:47 mdejong Exp $
  *
  */
 
@@ -603,5 +603,23 @@ hasEvents()
 
     return result;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * finalizeThreadCheck --
+ *	Checks to see if thread specific data needs to be cleaned
+ *	up and does so if needed.
+ *
+ * Results:
+ *	Will release thread specific data.
+ *
+ * Side effects:
+ *	Thread may detach from JVM, or JVM may be destroyed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static final native void finalizeThreadCheck();
 
 } // end Notifier

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaNotifier.c,v 1.3 2000/10/29 06:00:42 mdejong Exp $
+ * RCS: @(#) $Id: javaNotifier.c,v 1.4 2002/07/22 10:00:47 mdejong Exp $
  */
 
 #include "java.h"
@@ -269,4 +269,49 @@ JavaEventProc(
                                  jcache->serviceEvent, flags);
     return 1;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Java_tcl_lang_Notifier_finalizeThreadCheck --
+ *
+ *     Checks to see if the Notifier for this thread has been
+ *     released because the last interpreter in the thread was
+ *     disposed of. If so, the cleanup Tcl's thread local storage.
+ *
+ * Class:     tcl_lang_Notifier
+ * Method:    finalizeThreadCheck
+ * Signature: ()V;
+ *
+ * Results:
+ *     Releases thread specific data.
+ *
+ * Side effects:
+ *     Thread may detach from JVM, or JVM may be destroyed.
+ *
+ *----------------------------------------------------------------------
+ */
 
+void JNICALL
+Java_tcl_lang_Notifier_finalizeThreadCheck(
+    JNIEnv *env,               /* Java environment. */
+    jclass notifierClass)      /* Handle to Notifier class. */
+{
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+
+    if ((tsdPtr->notifierObj == NULL) && JavaWasJavaThreadInit()) {
+#ifdef TCLBLEND_DEBUG
+        fprintf(stderr, "TCLBLEND_DEBUG: Invoking Tcl_FinalizeThread\n");
+#endif /* TCLBLEND_DEBUG */
+
+        Tcl_FinalizeThread();
+
+#ifdef TCLBLEND_DEBUG
+        fprintf(stderr, "TCLBLEND_DEBUG: Done with Tcl_FinalizeThread\n");
+#endif /* TCLBLEND_DEBUG */
+    } else {
+#ifdef TCLBLEND_DEBUG
+        fprintf(stderr, "TCLBLEND_DEBUG: Tcl Thread data not finalized\n");
+#endif /* TCLBLEND_DEBUG */
+    }
+}

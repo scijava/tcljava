@@ -5,7 +5,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: loading.test,v 1.2 2002/07/22 09:27:20 mdejong Exp $
+# RCS: @(#) $Id: loading.test,v 1.3 2002/07/22 10:00:47 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -149,8 +149,6 @@ DetachTclThread
 FreeJavaCache
 Destroyed JVM}
 
-# Next test currently fails since Tcl does not clean up other threads.
-
 test loading-2.3 {load into two threads then exit
         to see if thread exit handlers for other thread are called} {
     set trace [makeFile {} tclblend.trace]
@@ -178,13 +176,8 @@ DetachTclThread
 FreeJavaCache
 Destroyed JVM}
 
-# This test is a problem because Java does not have any way
-# to invoke Tcl thread cleanup handlers on exit. If we
-# always dispose of the interp, can we clear out the
-# thread cache when there are no interps left. This
-# would only apply to interps created in Java!
 
-test loading-3.1 {load into Java} {
+test loading-3.1 {load into Java, fails if TSD not cleaned up from Java} {
     set trace [makeFile {} tclblend.trace]
     file delete $trace
     set env(TCLBLEND_TRACE) $trace
@@ -219,8 +212,6 @@ test loading-3.3 {load into Java, exit from Tcl} {
 } {Entrypoint JavaSetupJava
 Initialized Java Cache
 FreeJavaCache}
-
-# Next test fails because Tcl thread termination callbacks are not invoked.
 
 test loading-3.4 {load into two Java threads} {
     set trace [makeFile {} tclblend.trace]

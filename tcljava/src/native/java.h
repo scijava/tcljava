@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: java.h,v 1.8 2002/07/20 05:36:54 mdejong Exp $
+ * RCS: @(#) $Id: java.h,v 1.9 2002/07/22 10:00:47 mdejong Exp $
  */
 
 #ifndef _JAVA
@@ -139,6 +139,7 @@ typedef struct JavaInfo {
 
 TCLBLEND_EXTERN JNIEnv *	JavaGetEnv();
 TCLBLEND_EXTERN JavaInfo *	JavaGetCache();
+TCLBLEND_EXTERN int		JavaWasJavaThreadInit();
 TCLBLEND_EXTERN Tcl_Interp *	JavaGetInterp(JNIEnv *env, jobject interpObj);
 TCLBLEND_EXTERN char *		JavaGetString(JNIEnv *env, jstring str,
 			    	    int *lengthPtr);

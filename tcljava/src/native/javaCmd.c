@@ -10,7 +10,7 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  *
- * RCS: @(#) $Id: javaCmd.c,v 1.12 2002/07/20 05:36:54 mdejong Exp $
+ * RCS: @(#) $Id: javaCmd.c,v 1.13 2002/07/22 10:00:47 mdejong Exp $
  */
 
 /*
@@ -58,13 +58,22 @@ ENHANCEMENTS, OR MODIFICATIONS.
  */
 typedef struct ThreadSpecificData {
     /*
-     * This flag indicates that thread local data has been initialized for this thread.
+     * This flag indicates that thread local data has been
+     * initialized for this thread.
      */
 
     int initialized;
 
     /*
-     * JNI pointer for the current thread, functions invoked throught the env are thread safe.
+     * This flag indicates that thread local data was
+     * initialized from an existing JVM.
+     */
+
+    int initialized_from_java;
+
+    /*
+     * JNI pointer for the current thread, functions invoked
+     * throught the env are thread safe.
      */
 
     JNIEnv* currentEnv;
@@ -310,6 +319,7 @@ JavaGetEnv()
  *	This method  must be called after JavaSetupJava has been called.
  *
  * Side effects:
+ *	None.
  *
  *----------------------------------------------------------------------
  */
@@ -322,6 +332,33 @@ JavaGetCache()
     assert(tsdPtr->initialized);
 
     return &(tsdPtr->jcache);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * JavaWasJavaThreadInit --
+ *
+ *	Return 1 if the thread specific data was initialized
+ *	from a Java thread, 0 if initialized from Tcl.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+TCLBLEND_EXTERN int
+JavaWasJavaThreadInit()
+{
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+
+    assert(tsdPtr->initialized);
+
+    return tsdPtr->initialized_from_java;
 }
 
 /*
@@ -915,6 +952,7 @@ JavaSetupJava(
     jfieldID field;
     JavaInfo* jcache;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    int init_from_java = 0;
 
 #ifdef TCLBLEND_DEBUG
     if (env)
@@ -923,8 +961,10 @@ JavaSetupJava(
         fprintf(stderr, "TCLBLEND_DEBUG: called JavaSetupJava\n");
 #endif /* TCLBLEND_DEBUG */
 
-    if (env)
+    if (env) {
         TclBlendTrace("Entrypoint JavaSetupJava");
+        init_from_java = 1;
+    }
 
     /*
      * Check to see if the thread local data has already been
@@ -1054,6 +1094,7 @@ JavaSetupJava(
     JavaObjInit();
 
     tsdPtr->initialized = 1;
+    tsdPtr->initialized_from_java = init_from_java;
 
     ok:
 #ifdef TCLBLEND_DEBUG

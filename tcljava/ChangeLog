@@ -1,5 +1,21 @@
 2002-07-22  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/native/java.h (JavaWasJavaThreadInit): Add decl.
+	* src/native/javaCmd.c (JavaWasJavaThreadInit,
+	JavaSetupJava): Add JavaWasJavaThreadInit method.
+	* src/native/javaNotifier.c
+	(Java_tcl_lang_Notifier_finalizeThreadCheck): Add
+	new native method implementaiton that checks
+	to see if thread was created in Java and cleans
+	up Tcl thread data when last interp is deleted.
+	* src/tclblend/tcl/lang/Interp.java (dispose):
+	Invoke new Notifier.finalizeThreadCheck() method.
+	* src/tclblend/tcl/lang/Notifier.java
+	(finalizeThreadCheck): Add native method decl.
+	* tests/tclblend/loading.test: Remove useless comments.
+
+2002-07-22  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/tests/tclblend/tests/JavaEval.java:
 	* src/tests/tclblend/tests/JavaLoadTclBlend.java:
 	* src/tests/tclblend/tests/JavaLoadTclBlend2.java:

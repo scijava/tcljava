@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.17 2002/04/12 21:00:28 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.18 2002/07/22 10:00:47 mdejong Exp $
  *
  */
 
@@ -207,6 +207,9 @@ dispose()
 	doDispose(interpPtr);
 	interpPtr = 0;
     }
+
+    // See if we need to cleanup this Java thread
+    Notifier.finalizeThreadCheck();
 }
 
 /*
