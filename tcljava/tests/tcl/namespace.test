@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: namespace.test,v 1.3 1999/08/15 19:39:13 mo Exp $
+# RCS: @(#) $Id: namespace.test,v 1.4 2000/01/10 23:44:16 mo Exp $
 
 # Removed for now
 #if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -676,8 +676,8 @@ test namespace-21.6 {NamespaceChildrenCmd, glob-style pattern given} {
 } {::test_ns_1::test_ns_foo}
 test namespace-21.7 {NamespaceChildrenCmd, glob-style pattern given} {
     namespace eval test_ns_1::test_ns_foo {}
-    namespace children test_ns_1 test*
-} {::test_ns_1::test_ns_2 ::test_ns_1::test_ns_foo}
+    lsort [namespace children test_ns_1 test*]
+} [lsort {::test_ns_1::test_ns_2 ::test_ns_1::test_ns_foo}]
 
 test namespace-22.1 {NamespaceCodeCmd, bad args} {
     catch {eval namespace delete [namespace children :: test_ns_*]}
