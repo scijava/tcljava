@@ -805,12 +805,19 @@ AC_DEFUN([AC_JAVA_JNI_LIBS], [
             fi
         fi
 
-        # Sun JDK 1.3 and 1.4 for Linux
+        # Sun/Blackdown JDK 1.3 and 1.4 for Linux
 
         # The "classic" vm is only supported in 1.3 and it core dumps
         # when loading the java package. Use the "client" vm instead.
 
-        F=jre/lib/i386/libjava.so
+        machine=`uname --machine`
+        case "$machine" in
+            i?86)
+              machine=i386
+              ;;
+        esac
+
+        F=jre/lib/$machine/libjava.so
         if test "x$ac_java_jvm_jni_lib_flags" = "x" ; then
             AC_MSG_LOG([Looking for $ac_java_jvm_dir/$F], 1)
             if test -f $ac_java_jvm_dir/$F ; then
