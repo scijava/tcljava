@@ -669,7 +669,7 @@ libc = libc.lib
 libcdll = crtdll.lib
 !ELSE
 libc = libc.lib oldnames.lib
-libcdll = msvcrt.lib oldnames.lib
+libcdll = msvcrt$(DBGX).lib oldnames.lib
 !ENDIF
 
 baselibs   = kernel32.lib $(optlibs) advapi32.lib
