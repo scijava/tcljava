@@ -15,7 +15,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: NamespaceCmd.java,v 1.9 1999/08/05 03:39:22 mo Exp $
+ * RCS: @(#) $Id: NamespaceCmd.java,v 1.10 1999/08/27 23:56:39 mo Exp $
  */
 
 package tcl.lang;
@@ -1553,7 +1553,6 @@ public class NamespaceCmd extends InternalRep implements Command {
 		// qualName ended with a simple name at start. If FIND_ONLY_NS
 		// was specified, look this up as a namespace. Otherwise,
 		// start is the name of a cmd or var and we are done.
-
 		
 		if ((flags & FIND_ONLY_NS) != 0) {
 		    // assign the string from start_ind to the end of the name string
