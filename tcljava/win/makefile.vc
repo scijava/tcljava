@@ -52,6 +52,11 @@ TCL_VERSION	= 80
 #TCLSH		= tclsh80.exe
 #TCLLIB		= $(TCL_DIR)\lib\tcl$(TCL_VERSION)VC.LIB
 
+# If you are compiling from the Tcl Pro product, then uncomment these lines
+#TCLSH		= $(TCL_DIR)\win32-ix86\bin\protclsh$(TCL_VERSION)$(DBGX).exe
+#TCLLIB		= $(TCL_DIR)\win32-ix86\lib\tcl$(TCL_VERSION)$(DBGX).lib
+
+
 TCL_SRC		= ..\..\tcl$(TCL_DOTVERSION)
 
 
