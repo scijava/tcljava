@@ -108,3 +108,18 @@ appears
 src/native/javaInterp.c produces a warning while compiling because
 Tcl_ObjSetVar2 is not defined in Tcl8.1.  package require java
 fails because this symbol cannot be found.
+
+(Tcl Blend under Digital Unix)
+Tcl Blend 1.1 can compile under Digital Unix V4.0B with JDK1.1.4.
+However, starting up is tricky, since it requires that we set
+the CLASSPATH and load libjava.so first:
+
+  358% setenv CLASSPATH /usr/lib/classes.zip
+  359% tclsh8.0
+  % load /usr/shlib/libjava.so
+  couldn't find procedure Java_Init
+  % package require java
+  1.1
+  % 
+Most of the tests pass, though there are a few failures, especially
+tests that involve the size of integers, and some of the Timer tests.
