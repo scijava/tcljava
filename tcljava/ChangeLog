@@ -1,5 +1,14 @@
 2003-07-25  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/pkgIndex.tcl:
+	* src/jacl/tcl/lang/Interp.java:
+	* src/tcljava/tcl/lang/BlendExtension.java:
+	* unix/tools/vutil/current:
+	* win/makefile.vc: Update version numbers
+	in files as a result of running `make dist`.
+
+2003-07-25  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* configure: Regen.
 	* configure.in: Update version number to 1.3.1.
 

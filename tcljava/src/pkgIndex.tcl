@@ -1,6 +1,6 @@
 # Cross platform init script for Tcl Blend. Known to work on unix and windows.
 # Author:  Christopher Hylands, Mo Dejong
-# RCS: @(#) $Id: pkgIndex.tcl,v 1.22 2000/05/14 23:21:46 mo Exp $
+# RCS: @(#) $Id: pkgIndex.tcl,v 1.23 2003/07/25 16:38:35 mdejong Exp $
 
 proc loadtclblend {dir} {
     global tclblend_init env tcljava
@@ -175,7 +175,7 @@ proc loadtclblend {dir} {
     # See src/tcljava/tcl/lang/BlendExtension.java
     # for other places the version info is hardcoded
 
-    package provide java 1.3.0
+    package provide java 1.3.1
 
     # Delete proc from interp, if other interps do a package require
     # they will source this file again anyway
@@ -183,4 +183,4 @@ proc loadtclblend {dir} {
     rename loadtclblend {}
 }
 
-package ifneeded java 1.3.0 [list loadtclblend $dir]
+package ifneeded java 1.3.1 [list loadtclblend $dir]
