@@ -5,7 +5,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: JavaInvoke.test,v 1.3 1999/05/10 03:09:34 dejong Exp $
+# RCS: @(#) $Id: JavaInvoke.test,v 1.4 1999/05/16 00:15:38 dejong Exp $
 
 # Note: This test file must be sourced from the parent directory
 #       or else the defs file may not be properly loaded.
@@ -348,58 +348,72 @@ test invoke-9.1 {convertJavaObject} {
     set x [java::new tests.JavaTest]
     java::field $x iobjnull
 } java0x0
+
 test invoke-9.2 {convertJavaObject} {
     set x [java::new tests.ConvertTest]
     java::field $x strField0
 } ""
+
 test invoke-9.3 {convertJavaObject} {
     set x [java::new tests.JavaTest]
     java::field $x iint
 } 123
+
 test invoke-9.4 {convertJavaObject} {
     set x [java::new tests.JavaTest]
     java::field $x ilong
 } 123
+
 test invoke-9.5 {convertJavaObject} {
     set x [java::new tests.JavaTest]
     java::field $x ishort
 } 123
+
 test invoke-9.6 {convertJavaObject} {
     set x [java::new tests.JavaTest]
     java::field $x ibyte
 } 123
+
 test invoke-9.7 {convertJavaObject} {
     set x [java::new tests.JavaTest]
     java::field $x idouble
 } 123.0
+
 test invoke-9.8 {convertJavaObject} {
     set x [java::new tests.JavaTest]
     java::field $x ifloat
 } 123.0
+
 test invoke-9.9 {convertJavaObject} {
     set x [java::new tests.JavaTest]
     java::field $x istr
 } "test string"
+
 test invoke-9.10 {convertJavaObject} {
     set x [java::new tests.JavaTest]
     java::field $x iobj2
 } "test string obj"
+
 test invoke-9.11 {convertJavaObject} {
     set x [java::new tests.ConvertTest]
     java::field $x strField1
 } ""
+
 test invoke-9.12 {convertJavaObject} {
     set x [java::new tests.ConvertTest]
     java::field $x strField2
 } null
+
 test invoke-9.13 {convertJavaObject} {
     set x [java::new tests.ConvertTest]
     java::field $x strField3
 } foo
+
 test invoke-9.14 {convertJavaObject} {
     set x [java::new tests.JavaTest]
     java::field $x iobj1
 } 123
+
 test invoke-9.15 {convertJavaObject} {
     set x [java::new tests.JavaTest]
     jtest type [java::field $x iobj3]
