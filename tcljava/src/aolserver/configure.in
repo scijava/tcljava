@@ -1,0 +1,1151 @@
+dnl configure.in for nsjava - an embedded java virtual machine for aolserver
+dnl 
+dnl Copyright (c) 2000 by Daniel Wickstrom
+dnl
+dnl  This program is free software; you can redistribute it and/or modify
+dnl  it under the terms of the GNU Lesser General Public License 
+dnl  as published by the Free Software Foundation; either version 2.1 of 
+dnl  the License, or (at your option) any later version.
+dnl
+dnl  This program is distributed in the hope that it will be useful,
+dnl  but WITHOUT ANY WARRANTY; without even the implied warranty of
+dnl  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+dnl  GNU General Public License for more details.
+dnl
+dnl  You should have received a copy of the GNU Lesser General Public License
+dnl  along with this program; if not, write to the Free Software
+dnl  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+dnl
+dnl (See the included file COPYING / GPL-2.0)
+dnl
+
+dnl Check to see if we are in the right directory.
+AC_INIT(include/nsjava.h)
+
+dnl Some definitions
+PACKAGE="NSJAVABLEND"
+NSJVM_VERSION="0.0.9"
+NSJVM_MAJOR_VERSION=0
+NSJVM_MINOR_VERSION=0
+NSJVM_PATCH_LEVEL=".9"
+AC_DEFINE_UNQUOTED(PACKAGE, "$PACKAGE")
+AC_DEFINE_UNQUOTED(VERSION, "$VERSION")
+AC_SUBST(PACKAGE)
+AC_SUBST(VERSION)
+
+
+# Directory where we are building, used for CLASSPATH when we test
+BUILD_DIR=`pwd`
+AC_SUBST(BUILD_DIR)
+
+AC_MSG_CHECKING(prefix)
+#------------------------------------------------------------------------
+# Handle the --prefix=... option
+#------------------------------------------------------------------------
+
+if test "${prefix}" = "NONE"; then
+    prefix=/usr/local
+fi
+if test "${exec_prefix}" = "NONE"; then
+    exec_prefix=$prefix
+fi
+AC_MSG_RESULT($prefix)
+
+dnl Checks for programs.
+AC_LANG_C
+AC_PROG_CC
+
+
+
+#--------------------------------------------------------------------
+#	Check the command line option for --with-aolserver-src.  This option 
+#       is required as I don't know of a good way to find the aolserver 
+#       sources without it.
+#--------------------------------------------------------------------
+
+
+NS_SRC_DIR="NONE"
+AC_ARG_WITH(aolserver-src, [  --with-aolserver-src=DIR          root directory of aolserver sources],
+    NS_SRC_DIR=$withval, NS_SRC_DIR=NONE)
+
+if test "$NS_SRC_DIR" = "NONE"; then
+
+        AC_MSG_ERROR([you must specify the root directory of the aolserver sources using the --with-aolserver-src directive])
+
+        else
+            if test ! -d "$NS_SRC_DIR"; then
+                AC_MSG_ERROR([directory '$NS_SRC_DIR' given to --with-aolserver-src option does not exist.])
+        
+            else
+                AC_SUBST(NS_SRC_DIR)
+                AC_MSG_CHECKING([looking for aolserver ns.h include file])
+                if test ! -f $NS_SRC_DIR/include/ns.h; then 
+                        AC_MSG_ERROR([couldn't find ns.h include file])
+                else
+                        AC_MSG_RESULT($NS_SRC_DIR/include/ns.h)
+                fi
+                AC_MSG_CHECKING([looking for aolserver nsd.h include file])
+                if test ! -f $NS_SRC_DIR/nsd/nsd.h; then 
+                        AC_MSG_ERROR([couldn't find nsd.h include file])
+                else 
+                        AC_MSG_RESULT($NS_SRC_DIR/nsd/nsd.h)
+                fi
+                case "$NS_SRC_DIR" in
+                    *aolserver3_0) 
+                        NSVERSION="3_0" 
+                        NSVERSIONFLAGS=""
+                        ;;
+                    *) NSVERSION=3_0_PLUS 
+                        NSVERSIONFLAGS=-DNSVERSION_3_0_PLUS
+                        ;;                        
+                esac
+                AC_SUBST(NSVERSIONFLAGS)
+                AC_SUBST(NSVERSION)
+            fi
+fi
+
+
+dnl Determine a classpath for the build
+
+BUILD_CLASSPATH=`pwd`
+AC_SUBST(BUILD_CLASSPATH)
+
+
+dnl These java checks were lifted directly from the tclblend sources.
+
+
+case "`uname -s`" in
+    *win32* | *WIN32* | *CYGWIN_NT*)
+        CYGPATH="cygpath -w"
+	PATH_SEP=\\\;
+	SEP=\\\\
+        ;;
+    *)
+        CYGPATH=echo
+	PATH_SEP=:
+	SEP=/
+	;;
+esac
+
+#--------------------------------------------------------------------
+# Need to get the Java directory
+#--------------------------------------------------------------------
+JAVA_DIR=""
+JAVA_NAME=""
+#--------------------------------------------------------------------
+#	See if there was a command-line option for where the JDK is;  if
+#	not, check to see if the JAVA_HOME environment variable is set;
+#       if it is none, look for javac on the path. The -with-jdk option
+#       must be processed after any other --with options for JVMs.
+#--------------------------------------------------------------------
+
+AC_ARG_WITH(jdk, [  --with-jdk=DIR          use JDK Java binaries from DIR, defaults to the value of the JAVA_HOME environment variable],
+    JDK_DIR=$withval, JDK_DIR=NONE)
+
+if test "$JDK_DIR" = "NONE"; then
+    # no --with-jdk argument was given so we default to the value in JAVA_HOME
+    # as long a no other JVM was configured with the --with option
+
+    if test "$JAVA_NAME" = ""; then
+        JAVA_NAME=jdk
+        JDK_DIR=$JAVA_HOME
+    fi
+else
+
+    if test ! -d "$JDK_DIR"; then
+        AC_MSG_ERROR([directory '$JDK_DIR' given to --with-jdk option does not exist.])
+    fi
+
+    JAVA_NAME=jdk
+fi
+
+if test "$JAVA_NAME" = "jdk" && test ! -d "$JDK_DIR"; then
+    if test "$JDK_DIR" != "" && test "$JDK_DIR" != "yes"; then
+        AC_MSG_WARN(['$JDK_DIR' is not a directory, so we search for the java compiler.])
+    fi
+    AC_PATH_PROG(TMP_JAVAC, javac)
+    if test -x "$TMP_JAVAC"; then	
+	TMP_JAVAC=`dirname $TMP_JAVAC`
+	JDK_DIR=`dirname $TMP_JAVAC`
+    else
+        AC_MSG_ERROR([Failed to find javac, perhaps Java is not installed?
+Try --with-jdk=DIR, or set the JAVA_HOME environment variable.])
+    fi
+fi
+
+if test "$JAVA_NAME" = "jdk"; then
+    if test -d "$JDK_DIR"; then
+        # Convert into full path name
+        JAVA_DIR=`cd $JDK_DIR ; pwd`
+    else
+        AC_MSG_ERROR([jdk directory '$JDK_DIR' does not exist, perhaps Java is not installed?
+Try --with-jdk=DIR, or set the JAVA_HOME environment variable.])
+    fi
+fi
+
+
+# At this point we should have found a valid JVM so we check for
+# the valid possibilities now so we can skip extra checks later
+AC_MSG_CHECKING([checking for java])
+
+MSG="Java found at $JAVA_DIR"
+echo $MSG
+echo $MSG >&5
+echo "JAVA_NAME is $JAVA_NAME" >&5
+
+case "`uname -s`" in
+    *win32* | *WIN32* | *CYGWIN_NT*)
+        JAVA_DIR_NATIVE=\"`${CYGPATH} ${JAVA_DIR}`\"
+        ;;
+    *)
+	JAVA_DIR_NATIVE=${JAVA_DIR}
+	;;
+esac
+
+AC_SUBST(PATH_SEP)
+AC_SUBST(SEP)
+
+
+#--------------------------------------------------------------------
+#
+# Check to make sure we know the names of the .zip or .jar files
+# that need to be included in the CLASSPATH
+#
+#--------------------------------------------------------------------
+
+AC_MSG_CHECKING([for zip or jar files to include on CLASSPATH])
+JAVA_CLASSPATH=""
+
+if test "$JAVA_NAME" = "jdk"; then
+    if test -f $JAVA_DIR/lib/classes.zip; then
+        # JDK1.1 requires classes.zip in CLASSPATH
+        JAVA_CLASSPATH=\"`${CYGPATH} ${JAVA_DIR}/lib/classes.zip`\"
+    elif test -f $JAVA_DIR/jre/lib/rt.jar; then
+        # JDK1.2 does not require system libs in CLASSPATH
+        # but we need them for compilers and tclblend
+        JAVA_CLASSPATH=\"`${CYGPATH} ${JAVA_DIR}/jre/lib/rt.jar`\"
+	if test -f $JAVA_DIR/lib/tools.jar; then
+	       JAVA_CLASSPATH=\"`${CYGPATH} ${JAVA_DIR}/lib/tools.jar`\"${PATH_SEP}${JAVA_CLASSPATH}
+	fi
+    elif test "`uname -s`" = "IRIX"; then
+        # JDK1.1.5 under IRIX
+        if test -f $JAVA_DIR/lib/rt.jar; then
+            JAVA_CLASSPATH=$JAVA_DIR_NATIVE/lib/rt.jar
+        else
+            AC_MSG_ERROR([could not find $JAVA_DIR/lib/rt.jar for IRIX system])
+        fi
+        if test -f $JAVA_DIR/lib/dev.jar; then
+            JAVA_CLASSPATH=${JAVA_CLASSPATH}${PATH_SEP}${JAVA_DIR_NATIVE}/lib/dev.jar
+        fi
+    fi
+fi
+
+if test "$JAVA_CLASSPATH" = ""; then
+    AC_MSG_ERROR([could not find zip or jar files to include on CLASSPATH.])
+else
+    echo "Using JAVA_CLASSPATH=$JAVA_CLASSPATH" >&5
+    AC_MSG_RESULT($JAVA_CLASSPATH)
+fi
+
+
+#--------------------------------------------------------------------
+#
+# Check that we have the java that corresponds with JAVA_DIR in our path
+#
+#--------------------------------------------------------------------
+
+AC_MSG_CHECKING([for the java runtime])
+case "$JAVA_NAME" in
+    jdk) NAME=java ;;
+    kaffe) NAME=kaffe ;;
+esac
+if test -x $JAVA_DIR/bin/$NAME; then
+    JAVA=$JAVA_DIR/bin/$NAME
+    echo "Using JAVA=$JAVA" >&5
+    AC_MSG_RESULT($JAVA)
+else
+    AC_MSG_ERROR([
+  Cannot find $JAVA_DIR/bin/$NAME.])
+fi
+
+#--------------------------------------------------------------------
+#
+# Check that we have the javac that corresponds with JAVA_DIR in our path
+#
+#--------------------------------------------------------------------
+
+AC_MSG_CHECKING([for the java compiler])
+case "$JAVA_NAME" in
+    jdk) NAME=javac ;;
+    kaffe) NAME=javac ;;
+esac
+
+if test -x $JAVA_DIR/bin/$NAME; then
+    JAVAC=$JAVA_DIR/bin/$NAME
+    JAVA_NATIVE_C=${JAVA_DIR_NATIVE}/bin/$NAME
+    echo "Using JAVAC=$JAVAC" >&5
+    AC_MSG_RESULT($JAVAC)
+else
+    AC_MSG_ERROR([
+  Cannot find $JAVA_DIR_NATIVE/bin/$NAME.])
+fi
+
+#--------------------------------------------------------------------
+#
+# Check that we have the javah that corresponds with JAVA_DIR in our path
+#
+#--------------------------------------------------------------------
+
+
+AC_MSG_CHECKING([for the java header program])
+case "$JAVA_NAME" in
+    jdk) NAME=javah ;;
+    kaffe) NAME=kaffeh ;;
+esac
+if test -x $JAVA_DIR/bin/$NAME; then
+    JAVAH=$JAVA_DIR/bin/$NAME
+    JAVAH_NATIVE=$JAVA_DIR_NATIVE/bin/$NAME
+    echo "Using JAVAH=$JAVAH" >&5
+    AC_MSG_RESULT($JAVAH)
+else
+    AC_MSG_ERROR([
+  Cannot find $JAVA_DIR_NATIVE/bin/$NAME.])
+fi
+
+
+
+#--------------------------------------------------------------------
+#
+# Check that we have the jar that corresponds with JAVA_DIR in our path
+#
+#--------------------------------------------------------------------
+
+AC_MSG_CHECKING([for the java archive program])
+case "$JAVA_NAME" in
+    jdk) NAME=jar ;;
+    kaffe) NAME=jar ;;
+esac
+if test -x $JAVA_DIR/bin/$NAME; then
+    JAR=$JAVA_DIR/bin/$NAME
+    JAR_NATIVE=$JAVA_DIR_NATIVE/bin/$NAME
+    echo "Using JAR=$JAR" >&5
+    AC_MSG_RESULT($JAR)
+else
+    AC_MSG_ERROR([
+  Cannot find $JAVA_DIR_NATIVE/bin/$NAME.])
+fi
+
+
+#--------------------------------------------------------------------
+#
+# Check that we have the jdb that corresponds with JAVA_DIR in our path
+# jdb will not be tested like the other java utils
+#
+#--------------------------------------------------------------------
+
+AC_MSG_CHECKING([for the java debugger program])
+case "$JAVA_NAME" in
+    jdk) NAME=jdb ;;
+    kaffe) NAME=jdb ;;
+esac
+if test -x $JAVA_DIR/bin/$NAME; then
+    JDB=$JAVA_DIR_NATIVE/bin/$NAME
+    echo "Using JDB=$JDB" >&5
+    AC_MSG_RESULT($JDB)
+else
+    AC_MSG_ERROR([Cannot find $JAVA_DIR/bin/$NAME.])
+fi
+
+
+
+
+#
+# we need to:
+# 1. Check that we have the native threads pack
+# 2. Find the platform dependent include files
+# 3. Find the platform dependent libraries
+#
+
+
+# Find the main java include directory
+
+case "$JAVA_NAME" in
+    jdk)
+        case "`uname -s`" in
+            OSF1)
+                JAVA_INCLUDE=$JAVA_DIR/include/java
+                ;;
+            *)
+                JAVA_INCLUDE=$JAVA_DIR/include
+                ;;
+        esac
+        ;;
+    kaffe)
+        JAVA_INCLUDE=$JAVA_DIR/include/kaffe
+        ;;
+esac
+
+if test ! -d $JAVA_INCLUDE; then
+    AC_MSG_ERROR([include directory $JAVA_INCLUDE does not exist.])
+fi
+
+
+# We need to #include <jni.h> so make sure that we can find it
+
+AC_MSG_CHECKING([for jni.h include file])
+if test ! -f $JAVA_INCLUDE/jni.h; then
+    AC_MSG_ERROR([Can not find JNI include file $JAVA_INCLUDE/jni.h.])
+else
+    echo "Found JNI include file $JAVA_INCLUDE/jni.h." >&5
+    AC_MSG_RESULT([$JAVA_INCLUDE/jni.h.])
+fi
+
+
+# Find out if we are using the JNI 1.1 or 1.2 interfaces
+
+AC_MSG_CHECKING([for jdk version])
+
+if env grep JDK1_2 $JAVA_INCLUDE/jni.h | grep define 1>&5 2>&5 ; then
+    JAVA_VERSION=1.2
+    MSG="Looks like you are using a 1.2 JVM."
+    echo $MSG >&5
+    AC_MSG_RESULT([$MSG])
+    CFLAGS="-DUSING_JDK1_2"
+else
+    JAVA_VERSION=1.1
+    MSG="Looks like you are using a 1.1 JVM"
+    echo $MSG >&5
+    AC_MSG_RESULT([$MSG])
+    CFLAGS=""
+fi
+
+if test "$JAVA_VERSION" != "1.1" && test "$JAVA_VERSION" != "1.2"; then
+    MSG="JAVA_VERSION must be one of 1.1 or 1.2, is was \"$JAVA_VERSION\""
+    echo $MSG >&5
+    AC_MSG_ERROR([$MSG])
+fi
+
+
+
+# Start JDK only tests
+
+if test "$JAVA_NAME" = "jdk"; then
+
+#
+# Do checks that differ for each platform in one place
+#
+# 1) make sure native threads pack is installed
+# 2) Find the proper platform include directory
+# 3) Find the proper platform lib directory
+
+
+# Ugly hack needed for Sun's "production" directory structure
+PRODUCTION_RELEASE=0
+
+
+# Keep case statements in alphabetical order.
+case "`uname -s`" in
+    HP-UX)
+        if test ! -d $JAVA_INCLUDE/native_threads; then
+            AC_MSG_ERROR(['$JAVA_INCLUDE/native_threads'
+ not exist. You must install the JDK Native Threads Pack to use tclblend.
+http://www.hp.com/esy/technology/jdk/products/software.html.])
+        fi
+
+        JAVA_ARCH_INCLUDE=$JAVA_INCLUDE/hp-ux
+
+        ARCH=PA_RISC
+        ARCH_LIBNAME=lib
+        ARCH_LIB=${ARCH_LIBNAME}/${ARCH}
+
+        JAVA_SHLIB=libjava.sl
+        NSJAVA_LIBS="-lpthread -L${JAVA_DIR}/${ARCH_LIBNAME} -ljava"
+        NSJAVA_SHLIB_NAMES="libpthread.sl libjava.sl"
+
+        NSJAVA_LD_PRELOAD=
+        NSJAVA_LD_BIND_NOW=0
+
+        ;;
+    IRIX)
+        if test ! -d $JAVA_INCLUDE/native_threads; then
+            AC_MSG_ERROR(['$JAVA_INCLUDE/native_threads'
+ not exist. You must install the JDK Native Threads Pack to use tclBlend.
+http://www.sgi.com/Products/Evaluation/#jdk.])
+        fi
+
+        JAVA_ARCH_INCLUDE=$JAVA_INCLUDE/irix
+
+        ARCH=sgi
+        ARCH_LIBNAME=lib32
+
+        if test -d $JAVA_DIR/lib; then
+            MSG="IRIX 64 bit java libs found, but using 32 bit libs by default"
+            echo $MSG >&5
+            AC_MSG_WARN([$MSG])
+        fi
+
+        ARCH_LIB=${ARCH_LIBNAME}/${ARCH}
+
+        JAVA_SHLIB=libjava.so
+        NSJAVA_LIBS="-L${JAVA_DIR}/${ARCH_LIBNAME} -ljava -lpthread"
+        NSJAVA_SHLIB_NAMES="libjava.so libpthread.so"
+
+        NSJAVA_LD_PRELOAD=
+        NSJAVA_LD_BIND_NOW=1
+
+        ;;
+    Linux)
+        # This is broke for ibm JDK
+        #if test "$JAVA_VERSION" = "1.1" && \
+        #    test ! -d $JAVA_INCLUDE/native_threads; then
+        #    AC_MSG_ERROR(['$JAVA_INCLUDE/native_threads'
+# not exist. You must install the JDK Native Threads Pack to use nsjava.
+#http://www.blackdown.org/java-linux.html.])
+        #fi
+
+        # ibm uses a linux directory for 1.1
+        if test "$JAVA_VERSION" = "1.1" && \
+            test -d $JAVA_INCLUDE/genunix; then
+            JAVA_ARCH_INCLUDE=$JAVA_INCLUDE/genunix
+        else
+            JAVA_ARCH_INCLUDE=$JAVA_INCLUDE/linux
+        fi
+
+        # ibm uses the linux for the arch as well.
+        case "`uname -m`" in
+            alpha)  ARCH=alpha ;;
+            i?86)
+                if test -d ${JAVA_DIR}/lib/linux && \
+                        test -d ${JAVA_DIR}/include/linux; then
+                        ARCH=linux   
+    		elif test -d ${JAVA_DIR}/lib/`uname -m` ; then
+    			ARCH=`uname -m`
+    		else
+    			ARCH=i386 
+    		fi
+    	    ;;
+            ppc)    ARCH=ppc ;;
+            sparc)  ARCH=sparc ;;
+            *)      AC_MSG_ERROR([ARCH '`uname -m`' is not supported]) ;;
+        esac
+
+        
+
+        ARCH_LIBNAME=lib
+        ARCH_LIB=${ARCH_LIBNAME}/${ARCH}	
+        if test -d ${JAVA_DIR}/${ARCH_LIB}/native_threads ; then
+    	 ARCH_LIBPATH=${ARCH_LIB}/native_threads
+        elif test -d  ${JAVA_DIR}/${ARCH_LIB}/native ; then
+    	 ARCH_LIBPATH=${ARCH_LIB}/native
+        elif test -d  ${JAVA_DIR}/${ARCH_LIB}/green_threads ; then
+    	 ARCH_LIBPATH=${ARCH_LIB}/green_threads
+        elif test -d  ${JAVA_DIR}/${ARCH_LIB}/green ; then
+    	 ARCH_LIBPATH=${ARCH_LIB}/green
+        elif test -d $JAVA_DIR/jre/$ARCH_LIB ; then
+         ARCH_LIBPATH=jre/$ARCH_LIB
+        fi
+
+        JAVA_SHLIB=libjava.so
+        NSJAVA_LIBS="-L${JAVA_DIR}/${ARCH_LIBPATH} -ljava"
+        NSJAVA_SHLIB_NAMES="libpthread.so libjava.so"
+
+        NSJAVA_LD_PRELOAD="libpthread.so libjava.so"
+        NSJAVA_LD_BIND_NOW=1
+
+        ;;
+    OSF1)
+        JAVA_ARCH_INCLUDE=$JAVA_INCLUDE/alpha
+
+        # Digital UNIX does not use the same arch and lib
+        # setup as other JVMs
+        ARCH_LIB=shlib
+
+        JAVA_SHLIB=libjava.so
+        NSJAVA_LIBS="-L${JAVA_DIR}/${ARCH_LIBNAME} -ljava"
+        NSJAVA_SHLIB_NAMES="libjava.so"
+
+        NSJAVA_LD_PRELOAD=
+        NSJAVA_LD_BIND_NOW=0
+
+        ;;
+    SunOS) 
+        if test ! -d $JAVA_INCLUDE/native_threads; then
+    	if test "$JAVA_VERSION" = "1.1"; then
+    	    if test -r $JAVA_DIR/lib/sparc/native_threads; then
+    		AC_MSG_RESULT(['$JAVA_INCLUDE/native_threads'
+ not exist, but '$JAVA_DIR/lib/sparc/native_threads' is readable,
+ou are probably running the production JDK.])
+    	    else
+                    AC_MSG_ERROR(['$JAVA_INCLUDE/native_threads'
+ not exist. You must install the Solaris JDK Native Threads Pack to use nsjava. See http://www.javasoft.com/products/jdk/1.1/index.html.])
+                fi
+    	fi
+        fi
+
+        JAVA_ARCH_INCLUDE=$JAVA_INCLUDE/solaris
+
+        ARCH=sparc
+        ARCH_LIBNAME=lib
+        ARCH_LIB=${ARCH_LIBNAME}/${ARCH}
+
+        JAVA_SHLIB=libjava.so
+        if test -f ${JAVA_DIR}/${ARCH_LIBNAME}/libjava.so ; then
+            NSJAVA_LIBS="-lthread -L${JAVA_DIR}/${ARCH_LIBNAME} -ljava"
+        elif test -f ${JAVA_DIR}/jre/${ARCH_LIB}/libjava.so ; then
+            NSJAVA_LIBS="-lthread -L${JAVA_DIR}/jre/${ARCH_LIB} -ljava"
+        elif test -f ${JAVA_DIR}/${ARCH_LIB}/native_threads/libjava.so ; then
+            NSJAVA_LIBS="-lthread -L${JAVA_DIR}/${ARCH_LIB}/native_threads -ljava"
+        fi
+        NSJAVA_SHLIB_NAMES="libthread.so libjava.so"
+
+        NSJAVA_LD_PRELOAD=
+        NSJAVA_LD_BIND_NOW=0
+
+
+        # Check for a "production" release which is really #@&%$ ugly.
+        # It would of course be too much to ask for Sun to stick to
+        # a single directory naming system.
+        
+        if  test ! -d $JAVA_DIR/$ARCH_LIB/green_threads &&
+            test ! -d $JAVA_DIR/$ARCH_LIB/native_threads &&
+            test ! -d $JAVA_DIR/jre/$ARCH_LIB/green_threads &&
+            test ! -d $JAVA_DIR/jre/$ARCH_LIB/native_threads ; then
+            PRODUCTION_RELEASE=1
+            MSG="Sun JDK Production Release Detected."
+            echo $MSG >&5
+            AC_MSG_RESULT([$MSG])
+        fi
+        ;;
+
+    *win32* | *WIN32* | *CYGWIN_NT*)
+        JAVA_ARCH_INCLUDE=${JAVA_INCLUDE}/win32
+
+        ARCH=win32
+        ARCH_LIBNAME=bin
+
+        if test -d ${JAVA_DIR}/jre/bin/classic ; then
+            ARCH_LIB=${ARCH_LIBNAME}/classic
+        else
+    	ARCH_LIB=${ARCH_LIBNAME}
+        fi
+
+        if test "$JAVA_VERSION" = "1.1"; then
+            JAVA_SHLIB=javai.dll
+    	NSJAVA_LIBS=\"`${CYGPATH} ${JAVA_DIR}/lib/javai.lib`\"
+        else
+    	JAVA_SHLIB=jvm.dll
+            NSJAVA_LIBS=\"`${CYGPATH} ${JAVA_DIR}/lib/jvm.lib`\"
+        fi
+
+        NSJAVA_SHLIB_NAMES=
+        PRODUCTION_RELEASE=1
+
+        NSJAVA_LD_PRELOAD=
+        NSJAVA_LD_BIND_NOW=0
+        ;;
+
+    *)
+        AC_MSG_ERROR([Sorry, the `uname -s` platform is not supported. You will need to edit the configure.in file to add the proper platform include and lib directories in order to configure and compile nsjava.])
+        ;;
+esac
+
+case "`uname -s`" in
+    *win32* | *WIN32* | *CYGWIN_NT*)
+        JAVA_INCLUDE_NATIVE=\"`${CYGPATH} ${JAVA_INCLUDE}`\"
+        JAVA_ARCH_INCLUDE_NATIVE=\"`${CYGPATH} ${JAVA_INCLUDE}/win32`\"
+        BUILD_DIR_NATIVE=\"`${CYGPATH} ${BUILD_DIR}`\"
+        NSJAVA_BUILD_DIR_NATIVE=\"`${CYGPATH} ${BUILD_DIR}/tclblend`\"
+        TEST_BUILD_DIR_NATIVE=\"`${CYGPATH} ${BUILD_DIR}/tests`\"
+        EMPTY_JAR=\"`${CYGPATH} ${MISC_DIR}/empty/empty.jar | sed -e s%\\\\%\\\\\\\\\\\\\\\\%g% `\"
+        NSJAVA_JAR=\"`${CYGPATH} ${BUILD_DIR}/tclblend.jar | sed -e s%\\\\%\\\\\\\\%g% `\"
+        ;;
+    *)
+        JAVA_INCLUDE_NATIVE=${JAVA_INCLUDE}
+        JAVA_ARCH_INCLUDE_NATIVE=${JAVA_ARCH_INCLUDE}
+        BUILD_DIR_NATIVE=${BUILD_DIR}
+        NSJAVA_BUILD_DIR_NATIVE=${BUILD_DIR}/tclblend
+        TEST_BUILD_DIR_NATIVE=${BUILD_DIR}/tests
+        EMPTY_JAR=${MISC_DIR}/empty/empty.jar
+        NSJAVA_JAR=${BUILD_DIR}/tclblend.jar
+        ;;
+esac
+
+
+#
+# Check architecture specific include directory
+#
+
+AC_MSG_CHECKING([for jni_md.h include file])
+if test -f $JAVA_ARCH_INCLUDE/jni_md.h; then
+    MSG="$JAVA_ARCH_INCLUDE/jni_md.h"
+    echo "Found $MSG" >&5
+    AC_MSG_RESULT([$MSG])
+else
+    MSG="Could not find $JAVA_ARCH_INCLUDE/jni_md.h"
+    echo $MSG >&5
+    AC_MSG_ERROR([$MSG])
+fi
+
+
+#
+# Check architecture specific lib directories
+#
+
+AC_MSG_CHECKING([the jdk arch lib directory])
+
+if test "$JAVA_VERSION" = "1.1"; then
+
+    DIR=$JAVA_DIR/$ARCH_LIB
+    if test ! -d $DIR; then
+        MSG="jdk arch directory $DIR does not exist"
+        echo $MSG >&5
+        AC_MSG_ERROR([$MSG])
+    fi
+
+    #DIR=$JAVA_DIR/$ARCH_LIB/green_threads
+    #if test ! -d $DIR; then
+    #    MSG="jdk arch directory $DIR does not exist"
+    #    echo $MSG >&5
+    #    DIR=$JAVA_DIR/$ARCH_LIB
+    #    AC_MSG_WARN([$MSG])
+    #fi
+    #JAVA_ARCH_GREEN_LIB=$DIR
+    #JAVA_ARCH_GREEN_RUNTIME_LIBS=$DIR
+    JAVA_ARCH_GREEN_LIB=""
+    JAVA_ARCH_GREEN_RUNTIME_LIBS=""
+
+    #LIB=$DIR/$JAVA_SHLIB
+    #if test ! -f $LIB; then
+    #    MSG="jdk shared library $LIB does not exist"
+    #    echo $MSG >&5
+    #    AC_MSG_WARN([$MSG])
+    #fi
+
+    DIR=$JAVA_DIR/$ARCH_LIB/native_threads
+    if test ! -d $DIR; then
+        MSG="jdk arch directory $DIR does not exist"
+        echo $MSG >&5
+        DIR=$JAVA_DIR/$ARCH_LIB
+        AC_MSG_WARN([$MSG])
+    fi
+    JAVA_ARCH_NATIVE_LIB=$DIR
+    JAVA_ARCH_NATIVE_RUNTIME_LIBS=$DIR
+
+
+    LIB=$DIR/$JAVA_SHLIB
+    if test ! -f $LIB; then
+        MSG="jdk shared library $LIB does not exist"
+        echo $MSG >&5
+        AC_MSG_ERROR([$MSG])
+    fi
+
+else
+
+    # if java 1.2 then look in the new jre lib locations
+
+    DIR=$JAVA_DIR/jre/$ARCH_LIB
+    if test ! -d $DIR; then
+        MSG="jdk directory $DIR does not exist"
+        echo $MSG >&5
+        AC_MSG_ERROR([$MSG])
+    else
+        JAVA_ARCH_GREEN_LIB=$DIR
+        JAVA_ARCH_GREEN_RUNTIME_LIBS=$DIR
+        JAVA_ARCH_NATIVE_LIB=$DIR
+        JAVA_ARCH_NATIVE_RUNTIME_LIBS=$DIR
+    fi
+
+    LIB=$DIR/$JAVA_SHLIB
+    if test ! -f $LIB; then
+        MSG="jdk shared library $LIB does not exist"
+        echo $MSG >&5
+        AC_MSG_ERROR([$MSG])
+    fi
+
+    # A "production" release has no green_threads or native_threads dir
+
+    if test "$PRODUCTION_RELEASE" = "0"; then
+
+    DIR=$JAVA_DIR/jre/$ARCH_LIB/green_threads
+    if test ! -d $DIR; then
+        MSG="jdk directory $DIR does not exist"
+        echo $MSG >&5
+        AC_MSG_WARN([$MSG])
+    else
+        JAVA_ARCH_GREEN_RUNTIME_LIBS=$JAVA_ARCH_GREEN_RUNTIME_LIBS:$DIR
+    fi
+
+    DIR=$JAVA_DIR/jre/$ARCH_LIB/native_threads
+    if test ! -d $DIR; then
+        MSG="jdk directory $DIR does not exist"
+        echo $MSG >&5
+        AC_MSG_ERROR([$MSG])
+    else
+        JAVA_ARCH_NATIVE_RUNTIME_LIBS=$JAVA_ARCH_NATIVE_RUNTIME_LIBS:$DIR
+    fi
+
+    DIR=$JAVA_DIR/jre/$ARCH_LIB/classic
+    if test ! -d $DIR; then
+        MSG="jdk directory $DIR does not exist"
+        echo $MSG >&5
+        AC_MSG_ERROR([$MSG])
+    else
+        if test "$JAVA_ARCH_GREEN_LIB" != ""; then
+            JAVA_ARCH_GREEN_RUNTIME_LIBS=$JAVA_ARCH_GREEN_RUNTIME_LIBS:$DIR
+        fi
+
+        JAVA_ARCH_NATIVE_RUNTIME_LIBS=$JAVA_ARCH_NATIVE_RUNTIME_LIBS:$DIR
+    fi
+
+    fi
+    # End of "production" if block
+
+fi
+
+
+
+fi
+# End JDK only tests
+
+
+# Start Kaffe only tests
+
+if test "$JAVA_NAME" = "kaffe"; then
+
+DIR=$JAVA_DIR/lib
+if test ! -d $DIR; then
+    MSG="kaffe directory $DIR does not exist"
+    echo $MSG >&5
+    AC_MSG_ERROR([$MSG])
+else
+    JAVA_ARCH_NATIVE_LIB=$DIR
+    JAVA_ARCH_NATIVE_RUNTIME_LIBS=$DIR
+fi
+
+DIR=$JAVA_DIR/lib/kaffe
+if test ! -d $DIR; then
+    MSG="kaffe directory $DIR does not exist"
+    echo $MSG >&5
+    AC_MSG_ERROR([$MSG])
+else
+    JAVA_ARCH_NATIVE_RUNTIME_LIBS=$JAVA_ARCH_NATIVE_RUNTIME_LIBS:$DIR
+fi
+
+LIB=$JAVA_DIR/lib/libkaffevm.so
+if test ! -f $LIB; then
+    MSG="kaffe shared library $LIB does not exist"
+    echo $MSG >&5
+    AC_MSG_ERROR([$MSG])
+else
+    NSJAVA_LIBS="-lkaffevm -lpthread"
+    NSJAVA_SHLIB_NAMES="libkaffevm.so libpthread.so"
+fi
+
+AC_SUBST(NSJAVA_LIBS)
+AC_SUBST(NSJAVA_SHLIB_NAMES)
+
+NSJAVA_LD_PRELOAD=
+NSJAVA_LD_BIND_NOW=0
+
+fi
+# End Kaffe only tests
+
+
+AC_SUBST(JAVA_DIR)
+AC_SUBST(JAVA_DIR_NATIVE)
+AC_SUBST(JAVA_CLASSPATH)
+AC_SUBST(JAVA_FLAGS)
+AC_SUBST(JAVA_FLAGS_C)
+
+AC_SUBST(JAVA_INCLUDE)
+AC_SUBST(JAVA_INCLUDE_NATIVE)
+AC_SUBST(JAVA_ARCH_INCLUDE)
+AC_SUBST(JAVA_ARCH_INCLUDE_NATIVE)
+
+AC_SUBST(JAVA_ARCH_GREEN_LIB)
+AC_SUBST(JAVA_ARCH_GREEN_RUNTIME_LIBS)
+AC_SUBST(JAVA_ARCH_NATIVE_LIB)
+AC_SUBST(JAVA_ARCH_NATIVE_RUNTIME_LIBS)
+
+AC_SUBST(JAVA)
+AC_SUBST(JAVAC)
+AC_SUBST(JAVAH)
+AC_SUBST(JAR)
+AC_SUBST(JDB)
+
+AC_SUBST(JAVA_NATIVE_C)
+AC_SUBST(JAVAH_NATIVE)
+AC_SUBST(JAR_NATIVE)
+AC_SUBST(JDB_NATIVE)
+
+
+dnl Checks for header files.
+AC_CHECK_HEADERS(unistd.h)
+
+dnl Checks for typedefs, structures, and compiler characteristics.
+AC_C_CONST
+AC_TYPE_SIZE_T
+
+dnl Checks for library functions.
+AC_HEADER_STDC
+AC_CHECK_FUNCS(strerror strstr strlen)
+
+
+
+AC_MSG_CHECKING([platform specific compile options])	
+#
+# Auto-detect the platform
+#
+PLATFORM="unknown"
+UNAME_R=`uname -r`
+UNAME_S=`uname -s`
+#
+# HP/UX 11 -- gcc
+#
+#  SMP is fully supported.
+#
+if test "$UNAME_S$UNAME_R" = "HP-UXB.11.00"; then
+    PLATFORM="hp11"
+    # CC=cc
+    # CFLAGS+=-Ae +DAportable +z
+    CFLAGS="$CFLAGS -D__hp11 -pipe -fPIC -Wall -Wno-unused"
+    LDFLAGS="-Wl,-E"
+    LIBS="$LIBS -lpthread "
+    #LDSO=$LD -b
+    LDSO="$CC -shared"
+    CFLAGS="$CFLAGS -DUSE_DLSHL=1"
+fi
+
+
+#
+# HP/UX 10 -- gcc
+#
+#  The optional DCE threads package must be installed.
+#  SMP is fully supported.
+#
+if test "$UNAME_S$UNAME_R" = "HP-UXB.10.20"; then
+    PLATFORM="hp10"
+    # CC=cc
+    # CFLAGS+=-Ae +DAportable +z
+    CFLAGS="$CFLAGS -D__hp10 -pipe -fPIC -Wall -Wno-unused"
+    LDFLAGS="-Wl,-E"
+    LIBS="$LIBS -ldce -lc_r"
+    #LDSO=$LD -b
+    LDSO="$CC -shared"
+    CFLAGS="$CLFAGS -DHAVE_PTHREAD_D4=1 -DUSE_DLSHL=1 -DNEED_HERRNO=1"
+fi
+
+
+#
+# Linux -- gcc
+#
+#  Red Hat 6.1 is known to work -- it has working glibc 2.1 and Linuxthreads.
+#  glibc 2.1 (libc6) and its Linuxthreads component are absolutely required.
+#  glibc 2.0 (libc6) and BSD libc5 are obsolete on Linux and do not work.
+#  Linux supports SMP to some extent.  It will get better eventually.
+#  Some SMP systems accumulate zombie processes (this is a kernel issue).
+#  Note that we use the compiler to create shared objects, not the linker.
+#
+if test `uname` = "Linux"; then
+    PLATFORM="linux"
+    LDFLAGS="$LDFLAGS -Wl,-E"
+    CFLAGS="$CFLAGS -pipe -fPIC -Wall -Wno-unused"
+    LIBS="$LIBS -ldl -lpthread"
+    LDSO="$CC -shared"
+    CFLAGS="$CFLAGS -DHAVE_CMMSG=1 -DUSE_FIONREAD=1 -DHAVE_COND_EINTR=1"
+fi
+
+
+#
+# Sun Solaris SPARC and x86 -- gcc
+#
+#  Free Solaris distributions are available on promotion at http://sun.com/.
+#  The "-pipe" option to gcc does not work on some versions of Solaris.
+#  -lresolv is only needed by reverse-host lookup modules like nsperm.
+#  Solaris 7 binaries will not run on Solaris 2.6 (this is a Solaris problem).
+#  Cygnus "GNUPro" DOES NOT WORK.  Use GNU gcc and /usr/ccs/bin/ld.
+#  GNU gcc 2.8.1 and 2.95.2 from http://www.sunfreeware.com/ work fine.
+#  Solaris 7 pthreads sometimes report cond_wait timeouts (a Solaris bug).
+#  SMP is fully supported.
+#
+if test `uname` = "SunOS"; then
+    PLATFORM="solaris"
+    # CC=/opt/SUNWspro/bin/cc
+    # CFLAGS+=-KPIC
+    CFLAGS="$CFLAGS -D_POSIX_PTHREAD_SEMANTICS -fPIC -Wall -Wno-unused"
+    LIBS="${LIBS} -lsocket -lnsl -ldl -lposix4 -lpthread -lresolv"
+    LD="/usr/ccs/bin/ld"
+    #LDSO=$LD -G
+    LDSO="$CC -shared"
+    AR="/usr/ccs/bin/ar"
+    CFLAGS="${CFLAGS} -DUSE_PTHREAD_SYSSCOPE=1 -DUSE_DUPHIGH=1 -DHAVE_FORK1=1"
+    # Flags for pshared mutexes and conditions.
+    CFLAGS="${CFLAGS} -DUSE_PTHREAD_PSHARED=1 -DHAVE_ETIME_BUG=1"
+fi
+
+
+#
+# DEC OSF/1, Digital UNIX, Tru64 UNIX -- gcc
+#
+#  This should be changed to gcc as soon as possible.
+#  This is a 64-bit platform.
+#  SMP is fully supported.
+#
+if test `uname` = "OSF1"; then
+    PLATFORM="osf"
+    CC="cc"
+    CFLAGS="$CFLAGS -std1 -pthread"
+    LDFLAGS="$LDFLAGS -pthread"
+    LDSO="$LD -shared -expect_unresolved '*'"
+    LIBS="-lrt"
+fi
+
+
+#
+# SGI Irix (6.4 or better) -- cc or gcc
+#
+#  GCC: unset ABI, set SGI_ABI env variable to n32 to force linker to behave.
+#  CC: unset SGI_ABI; set the ABI variable to "-n32".
+#  gcc only works if all third-party libraries are in the "n32" ABI.
+#  The "-pipe" option to gcc does not work on some versions of Irix.
+#  ABI can be -o32, -n32, or -64.  Only "-n32" has been tested.
+#  SMP is fully supported.  It works best with "sproc" threads, not "pthreads."
+#  Use "systune" command to set "maxuproc" and "nproc" to reasonable values.
+#  The gcc compiler might not work on Irix 6.4.  It does work on 6.5.7.
+#
+#ifeq (IRIX, $(findstring IRIX, $(shell uname)))
+#    PLATFORM=irix
+#    SGI_ABI=n32
+#    ABI=-$(SGI_ABI)
+#    #CC=cc
+#    #CFLAGS+=$(ABI) -D_SGI_MP_SOURCE -fullwarn
+#    CFLAGS+=-D_SGI_MP_SOURCE -fPIC -Wall -Wno-unused
+#    LDFLAGS+=$(ABI)
+#    #LDSO=$LD $(ABI) -shared
+#    LDSO=$CC -shared
+#    #LIBS+=-lpthread
+#    #CFLAGS+=-DUSE_PTHREADS=1
+#    CFLAGS+=-DUSE_SPROC=1
+#    ifeq (o32, $(ABI))
+#	CFLAGS+=-DUSE_DUPHIGH=1
+#    endif
+#endif
+
+
+#
+# FreeBSD 3.x -- gcc
+#
+#  The pthread library that ships with FreeBSD 3.3 or better is required.
+#  FreeBSD does not yet support SMP -- evidently a FreeBSD 4.x release will.
+#
+if test `uname` = "FreeBSD"; then
+    PLATFORM="freebsd"
+    CFLAGS="$CFLAGS -pthread -D_THREAD_SAFE"
+    LDFLAGS="$LDFLAGS -pthread -Wl,-E"
+    LDSO="$CC -shared"
+    RANLIB="ranlib"
+    CFLAGS="$CFLAGS -DHAVE_CMMSG=1 -DNO_TIMEZONE=1 -DHAVE_TIMEGM"
+fi
+
+
+#
+# OpenBSD 2.5 or better -- gcc
+#
+# Contributed by Michael Yoon <michael@yoon.org>
+# SMP is not supported.
+#
+if test `uname` = "OpenBSD"; then
+    PLATFORM="openbsd"
+    CFLAGS="$CFLAGS -pthread -D_THREAD_SAFE"
+    LDFLAGS="$LDFLAGS -pthread -Wl,-E"
+    LDSO="$CC -shared"
+    RANLIB="ranlib"
+    CFLAGS="$CFLAGS -DHAVE_CMMSG=1 -DUSE_DLSYMPREFIX=1 -DUSE_RTLD_LAZY=1"
+    CFLAGS="$CFLAGS -DNO_TIMEZONE=1 -DHAVE_TIMEGM"
+fi
+
+
+#
+# SCO Unixware 7.x -- cc
+#
+#  Free Unixware 7 is available free on promotion at http://sco.com/.
+#  This should be changed to gcc as soon as possible -- anybody?
+#  GNU gcc is on the Skunkware disc and at http://sco.com/.
+#  Both cc and gcc require the UnixWare Development Kit (UDK) version 7.x.
+#  The UDK is free on promotion -- it's needed the dev utils and libs.
+#  SMP support is not known.
+#  For best results use Unixware 7.1 or later with all patches applied.
+#  This is *not* "SCO OpenServer," which is the older Xenix-based product.
+#
+if test `uname` = "UnixWare"; then
+    PLATFORM="unixware"
+    CC="cc"
+    CFLAGS="$CFLAGS -D__unixware -Kpic -Kthread"
+    LDFLAGS="-Wl,-B export"
+    LDSO="$LD -G"
+    LIBS="$LIBS -Kthread -lsocket"
+    CLFAGS="$CFLAGS -DUSE_PTHREAD_SYSSCOPE=1 -DHAVE_SENDV=1 -DHAVE_CMMSG=1"
+fi
+
+
+#
+# Mac OS X Server -- cc
+#
+#  The Mac OS X Server cc is gcc; the Mac OS X Server make is gmake.
+#  Tested under releases 1.0 and 1.02.
+#  No SMP support as of this writing.
+#
+if test `uname` = "Rhapsody"; then
+    PLATFORM="osx"
+    CC="cc"
+    LD="cc"
+    CFLAGS="$CFLAGS -dynamic -traditional-cpp -pipe -Wall -Wno-unused"
+    LDSO="$LD -bundle -undefined suppress"
+    RANLIB="ranlib"
+    CFLAGS="$CFLAGS -DUSE_CTHREADS=1 -DHAVE_CMMSG=1 -DUSE_DYLD -DUSE_DLSYMPREFIX=1"
+    CFLAGS="$CFLAGS -DNO_RAND48=1 -DNO_TIMEZONE=1"
+fi
+
+if test $PLATFORM = "unknown"; then
+        AC_MSG_ERROR(unknown platform)
+else
+        AC_MSG_RESULT([$PLATFORM])
+fi
+
+LIBS="${LIBS} $NSJAVA_LIBS"
+
+AC_SUBST(CFLAGS)
+AC_SUBST(LDFLAGS)
+AC_SUBST(LDSO)
+AC_SUBST(LIBS)
+AC_SUBST(RANLIB)
+AC_SUBST(LD)
+AC_SUBST(AR)
+OPT=""
+AC_SUBST(OPT)
+
+
+dnl Print results
+AC_MSG_RESULT([])
+AC_MSG_RESULT([	$PACKAGE version $NSJVM_VERSION configured successfully.])
+AC_MSG_RESULT([])
+AC_MSG_RESULT([Using c-compiler:      $CC])
+AC_MSG_RESULT([JDK Version:           $JAVA_VERSION])
+AC_MSG_RESULT([Install libnsjava.so:  $prefix/bin])
+AC_MSG_RESULT([Aolserver Version:     $NSVERSION])
+AC_MSG_RESULT([Aolserver include:     $NS_SRC_DIR/include])
+AC_MSG_RESULT([Aolserver nsd include: $NS_SRC_DIR/nsd])
+AC_MSG_RESULT([jdk include:           $JAVA_INCLUDE])
+AC_MSG_RESULT([jdk platform include:  $JAVA_ARCH_INCLUDE_NATIVE])
+AC_MSG_RESULT([libjava.so dir:        $JAVA_ARCH_NATIVE_LIB])
+AC_MSG_RESULT([java classpath:        $JAVA_CLASSPATH])
+
+
+AC_MSG_RESULT([])
+AC_MSG_RESULT([CFLAGS: '$CFLAGS'])
+AC_MSG_RESULT([])
+AC_MSG_RESULT([LIBS:   '$LIBS'])
+AC_MSG_RESULT([])
+
+dnl Output files
+AC_OUTPUT(Makefile.global)

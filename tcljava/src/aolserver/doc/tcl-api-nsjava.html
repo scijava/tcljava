@@ -1,0 +1,28 @@
+<HTML>
+<HEAD>
+<TITLE>Aolserver nsjava Module Tcl API Reference -- ns_java command</TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff">
+<h3>ns_java</h3>
+<h4>Overview</h4>
+<p>Call an arbitrary java static method from tcl.
+</p>
+<h4>Syntax</h4>
+<p>
+<b>ns_java  </b> ?<i>-detach</i>?<i>classname::methodname </i>?<i>arg1</i>? ?<i>arg2</i>? ?...?</p>
+<h4>Description</h4>
+<p>
+This function calls the named java static method from within either a tcl or an adp page.  The arguments are packed together as a java string array and handed to the called function as a single argument.  Only the calling of methods that return void are currently supported, but this will change in future releases.
+</p>
+<p>Optional <i>-detach</i> flag is used to tell nsjava to detach the current jvm thread.  This is needed as a workaround for scheduled procs to ensure that the jvm threads are detached when done.
+<p>The <i>classname</i> is the java class that contains the static method to be called, and this class must reside somewhere on the classpath set in the nsd.tcl startup file.  See the nsjava installation docs for more details.
+</p>
+<p>The <i>methodname</i> is the java static method to be called.  It can accept zero or one java.lang.String[] arguments and it must have a return type of void.
+</p>
+<p>You can pass any number of arguments (<i>arg1</i>,<i>arg2</i>,<i>arg3</i>...) to <i>ns_java</i> from within tcl and they will be packed into a single java.lang.String array and passed to the static method..  
+</p>
+<HR>
+<BR align=center>
+<FONT size=-1>Copyright &copy; 2000 Daniel Wickstrom. </FONT>
+</BODY>
+</HTML>

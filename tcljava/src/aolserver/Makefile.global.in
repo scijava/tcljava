@@ -1,0 +1,119 @@
+# global make file for nsjava
+
+CC = @CC@
+
+FIND		= find
+IDL2JAVA	= idltojava -fno-cpp -fno-tie
+JAR		= jar
+JAVA		= java
+JAVAC		= javac -g
+JAVADOC		= javadoc -public
+RM		= rm -f
+TOUCH		= touch
+JAVAH		= javah -jni
+
+NSJAVAJOBJ = NsSet.class \
+	NsDb.class \
+	NsPg.class \
+	NsLog.class
+
+JOBJ =  AdaptorClassLoader.class \
+	CommandWithDispose.class \
+	JavaInstanceofCmd.class \
+	TclBoolean.class \
+	EventAdaptor.class  \
+	JavaInvoke.class \
+	TclClassLoader.class \
+	EventDeleter.class \
+	JavaIsNullCmd.class \
+	TclDouble.class \
+	Extension.class \
+	JavaLoadCmd.class  \
+	TclEvent.class \
+	FieldSig.class  \
+	JavaNewCmd.class \
+	TclException.class \
+	FuncSig.class  \
+	JavaNullCmd.class  \
+	TclIndex.class \
+	IdleHandler.class \
+	JavaPropCmd.class \
+	TclInteger.class \
+	AdaptorGen.class  \
+	InternalRep.class \
+	JavaThrowCmd.class \
+	TclList.class ArrayObject.class \
+	Interp.class \
+	JavaTryCmd.class \
+	TclNumArgsException.class \
+	Notifier.class \
+	TclObject.class \
+	AssocData.class \
+	JavaBindCmd.class \
+	TclPosixException.class \
+	JavaCallCmd.class \
+	TclRuntimeError.class \
+	BeanEvent.class \
+	JavaCastCmd.class \
+	TclString.class \
+	BeanEventMgr.class \
+	JavaDefineClassCmd.class  \
+	TimerHandler.class \
+	BeanEventParamSet.class \
+	JavaEventCmd.class \
+	UnsupportedJDetachCallCmd.class \
+	BlendExtension.class  \
+	JavaFieldCmd.class  \
+	PropertySig.class  \
+	Util.class CObject.class \
+	JavaGetInterpCmd.class \
+	ReflectException.class  \
+	VarTrace.class ClassRep.class \
+	JavaImportCmd.class  \
+	ReflectObject.class \
+	Command.class  \
+	JavaInfoCmd.class \
+        TCL.class \
+	PkgInvoker.class
+
+JTEST = NsjavaTests.class
+AOLSERVER_HOME  = @prefix@
+NSJAVA_CLASSPATH = @BUILD_CLASSPATH@
+JAVA_CLASSPATH = @JAVA_CLASSPATH@
+NS_HOME = @NS_SRC_DIR@
+AUTOH = nsjava_NsSet.h nsjava_NsDb.h nsjava_NsPg.h nsjava_NsLog.h 
+
+TCLBLEND_JNI_HEADER_CLASS_NAMES = \
+	tcl_lang_CObject.h \
+	tcl_lang_IdleHandler.h \
+	tcl_lang_Interp.h \
+	tcl_lang_Notifier.h \
+	tcl_lang_TclList.h \
+	tcl_lang_TimerHandler.h \
+	tcl_lang_Util.h
+
+
+NSJAVALIB = libtclblend.so 
+
+LIBS = @LIBS@
+CFLAGS = -g -ggdb @CFLAGS@ @NSVERSIONFLAGS@ -D_REENTRANT -DUSE_TCL8X -DWITH_AOLSERVER
+
+INC = -I@NS_SRC_DIR@/include -I@NS_SRC_DIR@/nsd
+INC += -I@JAVA_INCLUDE@ -I@JAVA_ARCH_INCLUDE_NATIVE@
+OBJ = nsjava.o log.o set.o pg.o db.o methods.o
+BOBJ = javaCmd.o javaIdle.o javaInterp.o javaList.o javaNotifier.o javaObj.o javaTimer.o javaUtil.o
+
+OBJ += $(BOBJ)
+
+LDSO = @LDSO@
+
+JINC = $(JOBJ:.class=.h)
+JSRC = $(JOBJ:.class=.java)
+JDOC = $(JOBJ:.class=.html) AllNames.html packages.html tree.html
+JARFILE = nsjava.jar
+
+INC += -I../include -I. -I../../ -I../../native -I../../../
+
+vpath %.h 	../include ../../include
+vpath %.class 	../tcl/lang
+vpath %.java 	../tcl/lang

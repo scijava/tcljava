@@ -1,0 +1,2717 @@
+#! /bin/sh
+
+# Guess values for system-dependent variables and create Makefiles.
+# Generated automatically using autoconf version 2.13 
+# Copyright (C) 1992, 93, 94, 95, 96 Free Software Foundation, Inc.
+#
+# This configure script is free software; the Free Software Foundation
+# gives unlimited permission to copy, distribute and modify it.
+
+# Defaults:
+ac_help=
+ac_default_prefix=/usr/local
+# Any additions from configure.in:
+ac_help="$ac_help
+  --with-aolserver-src=DIR          root directory of aolserver sources"
+ac_help="$ac_help
+  --with-jdk=DIR          use JDK Java binaries from DIR, defaults to the value of the JAVA_HOME environment variable"
+
+# Initialize some variables set by options.
+# The variables have the same names as the options, with
+# dashes changed to underlines.
+build=NONE
+cache_file=./config.cache
+exec_prefix=NONE
+host=NONE
+no_create=
+nonopt=NONE
+no_recursion=
+prefix=NONE
+program_prefix=NONE
+program_suffix=NONE
+program_transform_name=s,x,x,
+silent=
+site=
+srcdir=
+target=NONE
+verbose=
+x_includes=NONE
+x_libraries=NONE
+bindir='${exec_prefix}/bin'
+sbindir='${exec_prefix}/sbin'
+libexecdir='${exec_prefix}/libexec'
+datadir='${prefix}/share'
+sysconfdir='${prefix}/etc'
+sharedstatedir='${prefix}/com'
+localstatedir='${prefix}/var'
+libdir='${exec_prefix}/lib'
+includedir='${prefix}/include'
+oldincludedir='/usr/include'
+infodir='${prefix}/info'
+mandir='${prefix}/man'
+
+# Initialize some other variables.
+subdirs=
+MFLAGS= MAKEFLAGS=
+SHELL=${CONFIG_SHELL-/bin/sh}
+# Maximum number of lines to put in a shell here document.
+ac_max_here_lines=12
+
+ac_prev=
+for ac_option
+do
+
+  # If the previous option needs an argument, assign it.
+  if test -n "$ac_prev"; then
+    eval "$ac_prev=\$ac_option"
+    ac_prev=
+    continue
+  fi
+
+  case "$ac_option" in
+  -*=*) ac_optarg=`echo "$ac_option" | sed 's/[-_a-zA-Z0-9]*=//'` ;;
+  *) ac_optarg= ;;
+  esac
+
+  # Accept the important Cygnus configure options, so we can diagnose typos.
+
+  case "$ac_option" in
+
+  -bindir | --bindir | --bindi | --bind | --bin | --bi)
+    ac_prev=bindir ;;
+  -bindir=* | --bindir=* | --bindi=* | --bind=* | --bin=* | --bi=*)
+    bindir="$ac_optarg" ;;
+
+  -build | --build | --buil | --bui | --bu)
+    ac_prev=build ;;
+  -build=* | --build=* | --buil=* | --bui=* | --bu=*)
+    build="$ac_optarg" ;;
+
+  -cache-file | --cache-file | --cache-fil | --cache-fi \
+  | --cache-f | --cache- | --cache | --cach | --cac | --ca | --c)
+    ac_prev=cache_file ;;
+  -cache-file=* | --cache-file=* | --cache-fil=* | --cache-fi=* \
+  | --cache-f=* | --cache-=* | --cache=* | --cach=* | --cac=* | --ca=* | --c=*)
+    cache_file="$ac_optarg" ;;
+
+  -datadir | --datadir | --datadi | --datad | --data | --dat | --da)
+    ac_prev=datadir ;;
+  -datadir=* | --datadir=* | --datadi=* | --datad=* | --data=* | --dat=* \
+  | --da=*)
+    datadir="$ac_optarg" ;;
+
+  -disable-* | --disable-*)
+    ac_feature=`echo $ac_option|sed -e 's/-*disable-//'`
+    # Reject names that are not valid shell variable names.
+    if test -n "`echo $ac_feature| sed 's/[-a-zA-Z0-9_]//g'`"; then
+      { echo "configure: error: $ac_feature: invalid feature name" 1>&2; exit 1; }
+    fi
+    ac_feature=`echo $ac_feature| sed 's/-/_/g'`
+    eval "enable_${ac_feature}=no" ;;
+
+  -enable-* | --enable-*)
+    ac_feature=`echo $ac_option|sed -e 's/-*enable-//' -e 's/=.*//'`
+    # Reject names that are not valid shell variable names.
+    if test -n "`echo $ac_feature| sed 's/[-_a-zA-Z0-9]//g'`"; then
+      { echo "configure: error: $ac_feature: invalid feature name" 1>&2; exit 1; }
+    fi
+    ac_feature=`echo $ac_feature| sed 's/-/_/g'`
+    case "$ac_option" in
+      *=*) ;;
+      *) ac_optarg=yes ;;
+    esac
+    eval "enable_${ac_feature}='$ac_optarg'" ;;
+
+  -exec-prefix | --exec_prefix | --exec-prefix | --exec-prefi \
+  | --exec-pref | --exec-pre | --exec-pr | --exec-p | --exec- \
+  | --exec | --exe | --ex)
+    ac_prev=exec_prefix ;;
+  -exec-prefix=* | --exec_prefix=* | --exec-prefix=* | --exec-prefi=* \
+  | --exec-pref=* | --exec-pre=* | --exec-pr=* | --exec-p=* | --exec-=* \
+  | --exec=* | --exe=* | --ex=*)
+    exec_prefix="$ac_optarg" ;;
+
+  -gas | --gas | --ga | --g)
+    # Obsolete; use --with-gas.
+    with_gas=yes ;;
+
+  -help | --help | --hel | --he)
+    # Omit some internal or obsolete options to make the list less imposing.
+    # This message is too long to be a string in the A/UX 3.1 sh.
+    cat << EOF
+Usage: configure [options] [host]
+Options: [defaults in brackets after descriptions]
+Configuration:
+  --cache-file=FILE       cache test results in FILE
+  --help                  print this message
+  --no-create             do not create output files
+  --quiet, --silent       do not print \`checking...' messages
+  --version               print the version of autoconf that created configure
+Directory and file names:
+  --prefix=PREFIX         install architecture-independent files in PREFIX
+                          [$ac_default_prefix]
+  --exec-prefix=EPREFIX   install architecture-dependent files in EPREFIX
+                          [same as prefix]
+  --bindir=DIR            user executables in DIR [EPREFIX/bin]
+  --sbindir=DIR           system admin executables in DIR [EPREFIX/sbin]
+  --libexecdir=DIR        program executables in DIR [EPREFIX/libexec]
+  --datadir=DIR           read-only architecture-independent data in DIR
+                          [PREFIX/share]
+  --sysconfdir=DIR        read-only single-machine data in DIR [PREFIX/etc]
+  --sharedstatedir=DIR    modifiable architecture-independent data in DIR
+                          [PREFIX/com]
+  --localstatedir=DIR     modifiable single-machine data in DIR [PREFIX/var]
+  --libdir=DIR            object code libraries in DIR [EPREFIX/lib]
+  --includedir=DIR        C header files in DIR [PREFIX/include]
+  --oldincludedir=DIR     C header files for non-gcc in DIR [/usr/include]
+  --infodir=DIR           info documentation in DIR [PREFIX/info]
+  --mandir=DIR            man documentation in DIR [PREFIX/man]
+  --srcdir=DIR            find the sources in DIR [configure dir or ..]
+  --program-prefix=PREFIX prepend PREFIX to installed program names
+  --program-suffix=SUFFIX append SUFFIX to installed program names
+  --program-transform-name=PROGRAM
+                          run sed PROGRAM on installed program names
+EOF
+    cat << EOF
+Host type:
+  --build=BUILD           configure for building on BUILD [BUILD=HOST]
+  --host=HOST             configure for HOST [guessed]
+  --target=TARGET         configure for TARGET [TARGET=HOST]
+Features and packages:
+  --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
+  --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
+  --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
+  --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
+  --x-includes=DIR        X include files are in DIR
+  --x-libraries=DIR       X library files are in DIR
+EOF
+    if test -n "$ac_help"; then
+      echo "--enable and --with options recognized:$ac_help"
+    fi
+    exit 0 ;;
+
+  -host | --host | --hos | --ho)
+    ac_prev=host ;;
+  -host=* | --host=* | --hos=* | --ho=*)
+    host="$ac_optarg" ;;
+
+  -includedir | --includedir | --includedi | --included | --include \
+  | --includ | --inclu | --incl | --inc)
+    ac_prev=includedir ;;
+  -includedir=* | --includedir=* | --includedi=* | --included=* | --include=* \
+  | --includ=* | --inclu=* | --incl=* | --inc=*)
+    includedir="$ac_optarg" ;;
+
+  -infodir | --infodir | --infodi | --infod | --info | --inf)
+    ac_prev=infodir ;;
+  -infodir=* | --infodir=* | --infodi=* | --infod=* | --info=* | --inf=*)
+    infodir="$ac_optarg" ;;
+
+  -libdir | --libdir | --libdi | --libd)
+    ac_prev=libdir ;;
+  -libdir=* | --libdir=* | --libdi=* | --libd=*)
+    libdir="$ac_optarg" ;;
+
+  -libexecdir | --libexecdir | --libexecdi | --libexecd | --libexec \
+  | --libexe | --libex | --libe)
+    ac_prev=libexecdir ;;
+  -libexecdir=* | --libexecdir=* | --libexecdi=* | --libexecd=* | --libexec=* \
+  | --libexe=* | --libex=* | --libe=*)
+    libexecdir="$ac_optarg" ;;
+
+  -localstatedir | --localstatedir | --localstatedi | --localstated \
+  | --localstate | --localstat | --localsta | --localst \
+  | --locals | --local | --loca | --loc | --lo)
+    ac_prev=localstatedir ;;
+  -localstatedir=* | --localstatedir=* | --localstatedi=* | --localstated=* \
+  | --localstate=* | --localstat=* | --localsta=* | --localst=* \
+  | --locals=* | --local=* | --loca=* | --loc=* | --lo=*)
+    localstatedir="$ac_optarg" ;;
+
+  -mandir | --mandir | --mandi | --mand | --man | --ma | --m)
+    ac_prev=mandir ;;
+  -mandir=* | --mandir=* | --mandi=* | --mand=* | --man=* | --ma=* | --m=*)
+    mandir="$ac_optarg" ;;
+
+  -nfp | --nfp | --nf)
+    # Obsolete; use --without-fp.
+    with_fp=no ;;
+
+  -no-create | --no-create | --no-creat | --no-crea | --no-cre \
+  | --no-cr | --no-c)
+    no_create=yes ;;
+
+  -no-recursion | --no-recursion | --no-recursio | --no-recursi \
+  | --no-recurs | --no-recur | --no-recu | --no-rec | --no-re | --no-r)
+    no_recursion=yes ;;
+
+  -oldincludedir | --oldincludedir | --oldincludedi | --oldincluded \
+  | --oldinclude | --oldinclud | --oldinclu | --oldincl | --oldinc \
+  | --oldin | --oldi | --old | --ol | --o)
+    ac_prev=oldincludedir ;;
+  -oldincludedir=* | --oldincludedir=* | --oldincludedi=* | --oldincluded=* \
+  | --oldinclude=* | --oldinclud=* | --oldinclu=* | --oldincl=* | --oldinc=* \
+  | --oldin=* | --oldi=* | --old=* | --ol=* | --o=*)
+    oldincludedir="$ac_optarg" ;;
+
+  -prefix | --prefix | --prefi | --pref | --pre | --pr | --p)
+    ac_prev=prefix ;;
+  -prefix=* | --prefix=* | --prefi=* | --pref=* | --pre=* | --pr=* | --p=*)
+    prefix="$ac_optarg" ;;
+
+  -program-prefix | --program-prefix | --program-prefi | --program-pref \
+  | --program-pre | --program-pr | --program-p)
+    ac_prev=program_prefix ;;
+  -program-prefix=* | --program-prefix=* | --program-prefi=* \
+  | --program-pref=* | --program-pre=* | --program-pr=* | --program-p=*)
+    program_prefix="$ac_optarg" ;;
+
+  -program-suffix | --program-suffix | --program-suffi | --program-suff \
+  | --program-suf | --program-su | --program-s)
+    ac_prev=program_suffix ;;
+  -program-suffix=* | --program-suffix=* | --program-suffi=* \
+  | --program-suff=* | --program-suf=* | --program-su=* | --program-s=*)
+    program_suffix="$ac_optarg" ;;
+
+  -program-transform-name | --program-transform-name \
+  | --program-transform-nam | --program-transform-na \
+  | --program-transform-n | --program-transform- \
+  | --program-transform | --program-transfor \
+  | --program-transfo | --program-transf \
+  | --program-trans | --program-tran \
+  | --progr-tra | --program-tr | --program-t)
+    ac_prev=program_transform_name ;;
+  -program-transform-name=* | --program-transform-name=* \
+  | --program-transform-nam=* | --program-transform-na=* \
+  | --program-transform-n=* | --program-transform-=* \
+  | --program-transform=* | --program-transfor=* \
+  | --program-transfo=* | --program-transf=* \
+  | --program-trans=* | --program-tran=* \
+  | --progr-tra=* | --program-tr=* | --program-t=*)
+    program_transform_name="$ac_optarg" ;;
+
+  -q | -quiet | --quiet | --quie | --qui | --qu | --q \
+  | -silent | --silent | --silen | --sile | --sil)
+    silent=yes ;;
+
+  -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
+    ac_prev=sbindir ;;
+  -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
+  | --sbi=* | --sb=*)
+    sbindir="$ac_optarg" ;;
+
+  -sharedstatedir | --sharedstatedir | --sharedstatedi \
+  | --sharedstated | --sharedstate | --sharedstat | --sharedsta \
+  | --sharedst | --shareds | --shared | --share | --shar \
+  | --sha | --sh)
+    ac_prev=sharedstatedir ;;
+  -sharedstatedir=* | --sharedstatedir=* | --sharedstatedi=* \
+  | --sharedstated=* | --sharedstate=* | --sharedstat=* | --sharedsta=* \
+  | --sharedst=* | --shareds=* | --shared=* | --share=* | --shar=* \
+  | --sha=* | --sh=*)
+    sharedstatedir="$ac_optarg" ;;
+
+  -site | --site | --sit)
+    ac_prev=site ;;
+  -site=* | --site=* | --sit=*)
+    site="$ac_optarg" ;;
+
+  -srcdir | --srcdir | --srcdi | --srcd | --src | --sr)
+    ac_prev=srcdir ;;
+  -srcdir=* | --srcdir=* | --srcdi=* | --srcd=* | --src=* | --sr=*)
+    srcdir="$ac_optarg" ;;
+
+  -sysconfdir | --sysconfdir | --sysconfdi | --sysconfd | --sysconf \
+  | --syscon | --sysco | --sysc | --sys | --sy)
+    ac_prev=sysconfdir ;;
+  -sysconfdir=* | --sysconfdir=* | --sysconfdi=* | --sysconfd=* | --sysconf=* \
+  | --syscon=* | --sysco=* | --sysc=* | --sys=* | --sy=*)
+    sysconfdir="$ac_optarg" ;;
+
+  -target | --target | --targe | --targ | --tar | --ta | --t)
+    ac_prev=target ;;
+  -target=* | --target=* | --targe=* | --targ=* | --tar=* | --ta=* | --t=*)
+    target="$ac_optarg" ;;
+
+  -v | -verbose | --verbose | --verbos | --verbo | --verb)
+    verbose=yes ;;
+
+  -version | --version | --versio | --versi | --vers)
+    echo "configure generated by autoconf version 2.13"
+    exit 0 ;;
+
+  -with-* | --with-*)
+    ac_package=`echo $ac_option|sed -e 's/-*with-//' -e 's/=.*//'`
+    # Reject names that are not valid shell variable names.
+    if test -n "`echo $ac_package| sed 's/[-_a-zA-Z0-9]//g'`"; then
+      { echo "configure: error: $ac_package: invalid package name" 1>&2; exit 1; }
+    fi
+    ac_package=`echo $ac_package| sed 's/-/_/g'`
+    case "$ac_option" in
+      *=*) ;;
+      *) ac_optarg=yes ;;
+    esac
+    eval "with_${ac_package}='$ac_optarg'" ;;
+
+  -without-* | --without-*)
+    ac_package=`echo $ac_option|sed -e 's/-*without-//'`
+    # Reject names that are not valid shell variable names.
+    if test -n "`echo $ac_package| sed 's/[-a-zA-Z0-9_]//g'`"; then
+      { echo "configure: error: $ac_package: invalid package name" 1>&2; exit 1; }
+    fi
+    ac_package=`echo $ac_package| sed 's/-/_/g'`
+    eval "with_${ac_package}=no" ;;
+
+  --x)
+    # Obsolete; use --with-x.
+    with_x=yes ;;
+
+  -x-includes | --x-includes | --x-include | --x-includ | --x-inclu \
+  | --x-incl | --x-inc | --x-in | --x-i)
+    ac_prev=x_includes ;;
+  -x-includes=* | --x-includes=* | --x-include=* | --x-includ=* | --x-inclu=* \
+  | --x-incl=* | --x-inc=* | --x-in=* | --x-i=*)
+    x_includes="$ac_optarg" ;;
+
+  -x-libraries | --x-libraries | --x-librarie | --x-librari \
+  | --x-librar | --x-libra | --x-libr | --x-lib | --x-li | --x-l)
+    ac_prev=x_libraries ;;
+  -x-libraries=* | --x-libraries=* | --x-librarie=* | --x-librari=* \
+  | --x-librar=* | --x-libra=* | --x-libr=* | --x-lib=* | --x-li=* | --x-l=*)
+    x_libraries="$ac_optarg" ;;
+
+  -*) { echo "configure: error: $ac_option: invalid option; use --help to show usage" 1>&2; exit 1; }
+    ;;
+
+  *)
+    if test -n "`echo $ac_option| sed 's/[-a-z0-9.]//g'`"; then
+      echo "configure: warning: $ac_option: invalid host type" 1>&2
+    fi
+    if test "x$nonopt" != xNONE; then
+      { echo "configure: error: can only configure for one host and one target at a time" 1>&2; exit 1; }
+    fi
+    nonopt="$ac_option"
+    ;;
+
+  esac
+done
+
+if test -n "$ac_prev"; then
+  { echo "configure: error: missing argument to --`echo $ac_prev | sed 's/_/-/g'`" 1>&2; exit 1; }
+fi
+
+trap 'rm -fr conftest* confdefs* core core.* *.core $ac_clean_files; exit 1' 1 2 15
+
+# File descriptor usage:
+# 0 standard input
+# 1 file creation
+# 2 errors and warnings
+# 3 some systems may open it to /dev/tty
+# 4 used on the Kubota Titan
+# 6 checking for... messages and results
+# 5 compiler messages saved in config.log
+if test "$silent" = yes; then
+  exec 6>/dev/null
+else
+  exec 6>&1
+fi
+exec 5>./config.log
+
+echo "\
+This file contains any messages produced by compilers while
+running configure, to aid debugging if configure makes a mistake.
+" 1>&5
+
+# Strip out --no-create and --no-recursion so they do not pile up.
+# Also quote any args containing shell metacharacters.
+ac_configure_args=
+for ac_arg
+do
+  case "$ac_arg" in
+  -no-create | --no-create | --no-creat | --no-crea | --no-cre \
+  | --no-cr | --no-c) ;;
+  -no-recursion | --no-recursion | --no-recursio | --no-recursi \
+  | --no-recurs | --no-recur | --no-recu | --no-rec | --no-re | --no-r) ;;
+  *" "*|*"	"*|*[\[\]\~\#\$\^\&\*\(\)\{\}\\\|\;\<\>\?]*)
+  ac_configure_args="$ac_configure_args '$ac_arg'" ;;
+  *) ac_configure_args="$ac_configure_args $ac_arg" ;;
+  esac
+done
+
+# NLS nuisances.
+# Only set these to C if already set.  These must not be set unconditionally
+# because not all systems understand e.g. LANG=C (notably SCO).
+# Fixing LC_MESSAGES prevents Solaris sh from translating var values in `set'!
+# Non-C LC_CTYPE values break the ctype check.
+if test "${LANG+set}"   = set; then LANG=C;   export LANG;   fi
+if test "${LC_ALL+set}" = set; then LC_ALL=C; export LC_ALL; fi
+if test "${LC_MESSAGES+set}" = set; then LC_MESSAGES=C; export LC_MESSAGES; fi
+if test "${LC_CTYPE+set}"    = set; then LC_CTYPE=C;    export LC_CTYPE;    fi
+
+# confdefs.h avoids OS command line length limits that DEFS can exceed.
+rm -rf conftest* confdefs.h
+# AIX cpp loses on an empty file, so make sure it contains at least a newline.
+echo > confdefs.h
+
+# A filename unique to this package, relative to the directory that
+# configure is in, which we can look for to find out if srcdir is correct.
+ac_unique_file=include/nsjava.h
+
+# Find the source files, if location was not specified.
+if test -z "$srcdir"; then
+  ac_srcdir_defaulted=yes
+  # Try the directory containing this script, then its parent.
+  ac_prog=$0
+  ac_confdir=`echo $ac_prog|sed 's%/[^/][^/]*$%%'`
+  test "x$ac_confdir" = "x$ac_prog" && ac_confdir=.
+  srcdir=$ac_confdir
+  if test ! -r $srcdir/$ac_unique_file; then
+    srcdir=..
+  fi
+else
+  ac_srcdir_defaulted=no
+fi
+if test ! -r $srcdir/$ac_unique_file; then
+  if test "$ac_srcdir_defaulted" = yes; then
+    { echo "configure: error: can not find sources in $ac_confdir or .." 1>&2; exit 1; }
+  else
+    { echo "configure: error: can not find sources in $srcdir" 1>&2; exit 1; }
+  fi
+fi
+srcdir=`echo "${srcdir}" | sed 's%\([^/]\)/*$%\1%'`
+
+# Prefer explicitly selected file to automatically selected ones.
+if test -z "$CONFIG_SITE"; then
+  if test "x$prefix" != xNONE; then
+    CONFIG_SITE="$prefix/share/config.site $prefix/etc/config.site"
+  else
+    CONFIG_SITE="$ac_default_prefix/share/config.site $ac_default_prefix/etc/config.site"
+  fi
+fi
+for ac_site_file in $CONFIG_SITE; do
+  if test -r "$ac_site_file"; then
+    echo "loading site script $ac_site_file"
+    . "$ac_site_file"
+  fi
+done
+
+if test -r "$cache_file"; then
+  echo "loading cache $cache_file"
+  . $cache_file
+else
+  echo "creating cache $cache_file"
+  > $cache_file
+fi
+
+ac_ext=c
+# CFLAGS is not in ac_cpp because -g, -O, etc. are not valid cpp options.
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='${CC-cc} -c $CFLAGS $CPPFLAGS conftest.$ac_ext 1>&5'
+ac_link='${CC-cc} -o conftest${ac_exeext} $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS 1>&5'
+cross_compiling=$ac_cv_prog_cc_cross
+
+ac_exeext=
+ac_objext=o
+if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
+  # Stardent Vistra SVR4 grep lacks -e, says ghazi@caip.rutgers.edu.
+  if (echo -n testing; echo 1,2,3) | sed s/-n/xn/ | grep xn >/dev/null; then
+    ac_n= ac_c='
+' ac_t='	'
+  else
+    ac_n=-n ac_c= ac_t=
+  fi
+else
+  ac_n= ac_c='\c' ac_t=
+fi
+
+
+
+PACKAGE="NSJAVABLEND"
+NSJVM_VERSION="0.0.9"
+NSJVM_MAJOR_VERSION=0
+NSJVM_MINOR_VERSION=0
+NSJVM_PATCH_LEVEL=".9"
+cat >> confdefs.h <<EOF
+#define PACKAGE "$PACKAGE"
+EOF
+
+cat >> confdefs.h <<EOF
+#define VERSION "$VERSION"
+EOF
+
+
+
+
+
+# Directory where we are building, used for CLASSPATH when we test
+BUILD_DIR=`pwd`
+
+
+echo $ac_n "checking prefix""... $ac_c" 1>&6
+echo "configure:552: checking prefix" >&5
+#------------------------------------------------------------------------
+# Handle the --prefix=... option
+#------------------------------------------------------------------------
+
+if test "${prefix}" = "NONE"; then
+    prefix=/usr/local
+fi
+if test "${exec_prefix}" = "NONE"; then
+    exec_prefix=$prefix
+fi
+echo "$ac_t""$prefix" 1>&6
+
+ac_ext=c
+# CFLAGS is not in ac_cpp because -g, -O, etc. are not valid cpp options.
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='${CC-cc} -c $CFLAGS $CPPFLAGS conftest.$ac_ext 1>&5'
+ac_link='${CC-cc} -o conftest${ac_exeext} $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS 1>&5'
+cross_compiling=$ac_cv_prog_cc_cross
+
+# Extract the first word of "gcc", so it can be a program name with args.
+set dummy gcc; ac_word=$2
+echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
+echo "configure:575: checking for $ac_word" >&5
+if eval "test \"`echo '$''{'ac_cv_prog_CC'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  if test -n "$CC"; then
+  ac_cv_prog_CC="$CC" # Let the user override the test.
+else
+  IFS="${IFS= 	}"; ac_save_ifs="$IFS"; IFS=":"
+  ac_dummy="$PATH"
+  for ac_dir in $ac_dummy; do
+    test -z "$ac_dir" && ac_dir=.
+    if test -f $ac_dir/$ac_word; then
+      ac_cv_prog_CC="gcc"
+      break
+    fi
+  done
+  IFS="$ac_save_ifs"
+fi
+fi
+CC="$ac_cv_prog_CC"
+if test -n "$CC"; then
+  echo "$ac_t""$CC" 1>&6
+else
+  echo "$ac_t""no" 1>&6
+fi
+
+if test -z "$CC"; then
+  # Extract the first word of "cc", so it can be a program name with args.
+set dummy cc; ac_word=$2
+echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
+echo "configure:605: checking for $ac_word" >&5
+if eval "test \"`echo '$''{'ac_cv_prog_CC'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  if test -n "$CC"; then
+  ac_cv_prog_CC="$CC" # Let the user override the test.
+else
+  IFS="${IFS= 	}"; ac_save_ifs="$IFS"; IFS=":"
+  ac_prog_rejected=no
+  ac_dummy="$PATH"
+  for ac_dir in $ac_dummy; do
+    test -z "$ac_dir" && ac_dir=.
+    if test -f $ac_dir/$ac_word; then
+      if test "$ac_dir/$ac_word" = "/usr/ucb/cc"; then
+        ac_prog_rejected=yes
+	continue
+      fi
+      ac_cv_prog_CC="cc"
+      break
+    fi
+  done
+  IFS="$ac_save_ifs"
+if test $ac_prog_rejected = yes; then
+  # We found a bogon in the path, so make sure we never use it.
+  set dummy $ac_cv_prog_CC
+  shift
+  if test $# -gt 0; then
+    # We chose a different compiler from the bogus one.
+    # However, it has the same basename, so the bogon will be chosen
+    # first if we set CC to just the basename; use the full file name.
+    shift
+    set dummy "$ac_dir/$ac_word" "$@"
+    shift
+    ac_cv_prog_CC="$@"
+  fi
+fi
+fi
+fi
+CC="$ac_cv_prog_CC"
+if test -n "$CC"; then
+  echo "$ac_t""$CC" 1>&6
+else
+  echo "$ac_t""no" 1>&6
+fi
+
+  if test -z "$CC"; then
+    case "`uname -s`" in
+    *win32* | *WIN32*)
+      # Extract the first word of "cl", so it can be a program name with args.
+set dummy cl; ac_word=$2
+echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
+echo "configure:656: checking for $ac_word" >&5
+if eval "test \"`echo '$''{'ac_cv_prog_CC'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  if test -n "$CC"; then
+  ac_cv_prog_CC="$CC" # Let the user override the test.
+else
+  IFS="${IFS= 	}"; ac_save_ifs="$IFS"; IFS=":"
+  ac_dummy="$PATH"
+  for ac_dir in $ac_dummy; do
+    test -z "$ac_dir" && ac_dir=.
+    if test -f $ac_dir/$ac_word; then
+      ac_cv_prog_CC="cl"
+      break
+    fi
+  done
+  IFS="$ac_save_ifs"
+fi
+fi
+CC="$ac_cv_prog_CC"
+if test -n "$CC"; then
+  echo "$ac_t""$CC" 1>&6
+else
+  echo "$ac_t""no" 1>&6
+fi
+ ;;
+    esac
+  fi
+  test -z "$CC" && { echo "configure: error: no acceptable cc found in \$PATH" 1>&2; exit 1; }
+fi
+
+echo $ac_n "checking whether the C compiler ($CC $CFLAGS $LDFLAGS) works""... $ac_c" 1>&6
+echo "configure:688: checking whether the C compiler ($CC $CFLAGS $LDFLAGS) works" >&5
+
+ac_ext=c
+# CFLAGS is not in ac_cpp because -g, -O, etc. are not valid cpp options.
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='${CC-cc} -c $CFLAGS $CPPFLAGS conftest.$ac_ext 1>&5'
+ac_link='${CC-cc} -o conftest${ac_exeext} $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS 1>&5'
+cross_compiling=$ac_cv_prog_cc_cross
+
+cat > conftest.$ac_ext << EOF
+
+#line 699 "configure"
+#include "confdefs.h"
+
+main(){return(0);}
+EOF
+if { (eval echo configure:704: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+  ac_cv_prog_cc_works=yes
+  # If we can't run a trivial program, we are probably using a cross compiler.
+  if (./conftest; exit) 2>/dev/null; then
+    ac_cv_prog_cc_cross=no
+  else
+    ac_cv_prog_cc_cross=yes
+  fi
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  ac_cv_prog_cc_works=no
+fi
+rm -fr conftest*
+ac_ext=c
+# CFLAGS is not in ac_cpp because -g, -O, etc. are not valid cpp options.
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='${CC-cc} -c $CFLAGS $CPPFLAGS conftest.$ac_ext 1>&5'
+ac_link='${CC-cc} -o conftest${ac_exeext} $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS 1>&5'
+cross_compiling=$ac_cv_prog_cc_cross
+
+echo "$ac_t""$ac_cv_prog_cc_works" 1>&6
+if test $ac_cv_prog_cc_works = no; then
+  { echo "configure: error: installation or configuration problem: C compiler cannot create executables." 1>&2; exit 1; }
+fi
+echo $ac_n "checking whether the C compiler ($CC $CFLAGS $LDFLAGS) is a cross-compiler""... $ac_c" 1>&6
+echo "configure:730: checking whether the C compiler ($CC $CFLAGS $LDFLAGS) is a cross-compiler" >&5
+echo "$ac_t""$ac_cv_prog_cc_cross" 1>&6
+cross_compiling=$ac_cv_prog_cc_cross
+
+echo $ac_n "checking whether we are using GNU C""... $ac_c" 1>&6
+echo "configure:735: checking whether we are using GNU C" >&5
+if eval "test \"`echo '$''{'ac_cv_prog_gcc'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  cat > conftest.c <<EOF
+#ifdef __GNUC__
+  yes;
+#endif
+EOF
+if { ac_try='${CC-cc} -E conftest.c'; { (eval echo configure:744: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }; } | egrep yes >/dev/null 2>&1; then
+  ac_cv_prog_gcc=yes
+else
+  ac_cv_prog_gcc=no
+fi
+fi
+
+echo "$ac_t""$ac_cv_prog_gcc" 1>&6
+
+if test $ac_cv_prog_gcc = yes; then
+  GCC=yes
+else
+  GCC=
+fi
+
+ac_test_CFLAGS="${CFLAGS+set}"
+ac_save_CFLAGS="$CFLAGS"
+CFLAGS=
+echo $ac_n "checking whether ${CC-cc} accepts -g""... $ac_c" 1>&6
+echo "configure:763: checking whether ${CC-cc} accepts -g" >&5
+if eval "test \"`echo '$''{'ac_cv_prog_cc_g'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  echo 'void f(){}' > conftest.c
+if test -z "`${CC-cc} -g -c conftest.c 2>&1`"; then
+  ac_cv_prog_cc_g=yes
+else
+  ac_cv_prog_cc_g=no
+fi
+rm -f conftest*
+
+fi
+
+echo "$ac_t""$ac_cv_prog_cc_g" 1>&6
+if test "$ac_test_CFLAGS" = set; then
+  CFLAGS="$ac_save_CFLAGS"
+elif test $ac_cv_prog_cc_g = yes; then
+  if test "$GCC" = yes; then
+    CFLAGS="-g -O2"
+  else
+    CFLAGS="-g"
+  fi
+else
+  if test "$GCC" = yes; then
+    CFLAGS="-O2"
+  else
+    CFLAGS=
+  fi
+fi
+
+
+
+
+#--------------------------------------------------------------------
+#	Check the command line option for --with-aolserver-src.  This option 
+#       is required as I don't know of a good way to find the aolserver 
+#       sources without it.
+#--------------------------------------------------------------------
+
+
+NS_SRC_DIR="NONE"
+# Check whether --with-aolserver-src or --without-aolserver-src was given.
+if test "${with_aolserver_src+set}" = set; then
+  withval="$with_aolserver_src"
+  NS_SRC_DIR=$withval
+else
+  NS_SRC_DIR=NONE
+fi
+
+
+if test "$NS_SRC_DIR" = "NONE"; then
+
+        { echo "configure: error: you must specify the root directory of the aolserver sources using the --with-aolserver-src directive" 1>&2; exit 1; }
+
+        else
+            if test ! -d "$NS_SRC_DIR"; then
+                { echo "configure: error: directory '$NS_SRC_DIR' given to --with-aolserver-src option does not exist." 1>&2; exit 1; }
+        
+            else
+                
+                echo $ac_n "checking looking for aolserver ns.h include file""... $ac_c" 1>&6
+echo "configure:825: checking looking for aolserver ns.h include file" >&5
+                if test ! -f $NS_SRC_DIR/include/ns.h; then 
+                        { echo "configure: error: couldn't find ns.h include file" 1>&2; exit 1; }
+                else
+                        echo "$ac_t""$NS_SRC_DIR/include/ns.h" 1>&6
+                fi
+                echo $ac_n "checking looking for aolserver nsd.h include file""... $ac_c" 1>&6
+echo "configure:832: checking looking for aolserver nsd.h include file" >&5
+                if test ! -f $NS_SRC_DIR/nsd/nsd.h; then 
+                        { echo "configure: error: couldn't find nsd.h include file" 1>&2; exit 1; }
+                else 
+                        echo "$ac_t""$NS_SRC_DIR/nsd/nsd.h" 1>&6
+                fi
+                case "$NS_SRC_DIR" in
+                    *aolserver3_0) 
+                        NSVERSION="3_0" 
+                        NSVERSIONFLAGS=""
+                        ;;
+                    *) NSVERSION=3_0_PLUS 
+                        NSVERSIONFLAGS=-DNSVERSION_3_0_PLUS
+                        ;;                        
+                esac
+                
+                
+            fi
+fi
+
+
+
+BUILD_CLASSPATH=`pwd`
+
+
+
+
+
+case "`uname -s`" in
+    *win32* | *WIN32* | *CYGWIN_NT*)
+        CYGPATH="cygpath -w"
+	PATH_SEP=\\\;
+	SEP=\\\\
+        ;;
+    *)
+        CYGPATH=echo
+	PATH_SEP=:
+	SEP=/
+	;;
+esac
+
+#--------------------------------------------------------------------
+# Need to get the Java directory
+#--------------------------------------------------------------------
+JAVA_DIR=""
+JAVA_NAME=""
+#--------------------------------------------------------------------
+#	See if there was a command-line option for where the JDK is;  if
+#	not, check to see if the JAVA_HOME environment variable is set;
+#       if it is none, look for javac on the path. The -with-jdk option
+#       must be processed after any other --with options for JVMs.
+#--------------------------------------------------------------------
+
+# Check whether --with-jdk or --without-jdk was given.
+if test "${with_jdk+set}" = set; then
+  withval="$with_jdk"
+  JDK_DIR=$withval
+else
+  JDK_DIR=NONE
+fi
+
+
+if test "$JDK_DIR" = "NONE"; then
+    # no --with-jdk argument was given so we default to the value in JAVA_HOME
+    # as long a no other JVM was configured with the --with option
+
+    if test "$JAVA_NAME" = ""; then
+        JAVA_NAME=jdk
+        JDK_DIR=$JAVA_HOME
+    fi
+else
+
+    if test ! -d "$JDK_DIR"; then
+        { echo "configure: error: directory '$JDK_DIR' given to --with-jdk option does not exist." 1>&2; exit 1; }
+    fi
+
+    JAVA_NAME=jdk
+fi
+
+if test "$JAVA_NAME" = "jdk" && test ! -d "$JDK_DIR"; then
+    if test "$JDK_DIR" != "" && test "$JDK_DIR" != "yes"; then
+        echo "configure: warning: '$JDK_DIR' is not a directory, so we search for the java compiler." 1>&2
+    fi
+    # Extract the first word of "javac", so it can be a program name with args.
+set dummy javac; ac_word=$2
+echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
+echo "configure:918: checking for $ac_word" >&5
+if eval "test \"`echo '$''{'ac_cv_path_TMP_JAVAC'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  case "$TMP_JAVAC" in
+  /*)
+  ac_cv_path_TMP_JAVAC="$TMP_JAVAC" # Let the user override the test with a path.
+  ;;
+  ?:/*)			 
+  ac_cv_path_TMP_JAVAC="$TMP_JAVAC" # Let the user override the test with a dos path.
+  ;;
+  *)
+  IFS="${IFS= 	}"; ac_save_ifs="$IFS"; IFS=":"
+  ac_dummy="$PATH"
+  for ac_dir in $ac_dummy; do 
+    test -z "$ac_dir" && ac_dir=.
+    if test -f $ac_dir/$ac_word; then
+      ac_cv_path_TMP_JAVAC="$ac_dir/$ac_word"
+      break
+    fi
+  done
+  IFS="$ac_save_ifs"
+  ;;
+esac
+fi
+TMP_JAVAC="$ac_cv_path_TMP_JAVAC"
+if test -n "$TMP_JAVAC"; then
+  echo "$ac_t""$TMP_JAVAC" 1>&6
+else
+  echo "$ac_t""no" 1>&6
+fi
+
+    if test -x "$TMP_JAVAC"; then	
+	TMP_JAVAC=`dirname $TMP_JAVAC`
+	JDK_DIR=`dirname $TMP_JAVAC`
+    else
+        { echo "configure: error: Failed to find javac, perhaps Java is not installed?
+Try --with-jdk=DIR, or set the JAVA_HOME environment variable." 1>&2; exit 1; }
+    fi
+fi
+
+if test "$JAVA_NAME" = "jdk"; then
+    if test -d "$JDK_DIR"; then
+        # Convert into full path name
+        JAVA_DIR=`cd $JDK_DIR ; pwd`
+    else
+        { echo "configure: error: jdk directory '$JDK_DIR' does not exist, perhaps Java is not installed?
+Try --with-jdk=DIR, or set the JAVA_HOME environment variable." 1>&2; exit 1; }
+    fi
+fi
+
+
+# At this point we should have found a valid JVM so we check for
+# the valid possibilities now so we can skip extra checks later
+echo $ac_n "checking checking for java""... $ac_c" 1>&6
+echo "configure:973: checking checking for java" >&5
+
+MSG="Java found at $JAVA_DIR"
+echo $MSG
+echo $MSG >&5
+echo "JAVA_NAME is $JAVA_NAME" >&5
+
+case "`uname -s`" in
+    *win32* | *WIN32* | *CYGWIN_NT*)
+        JAVA_DIR_NATIVE=\"`${CYGPATH} ${JAVA_DIR}`\"
+        ;;
+    *)
+	JAVA_DIR_NATIVE=${JAVA_DIR}
+	;;
+esac
+
+
+
+
+
+#--------------------------------------------------------------------
+#
+# Check to make sure we know the names of the .zip or .jar files
+# that need to be included in the CLASSPATH
+#
+#--------------------------------------------------------------------
+
+echo $ac_n "checking for zip or jar files to include on CLASSPATH""... $ac_c" 1>&6
+echo "configure:1001: checking for zip or jar files to include on CLASSPATH" >&5
+JAVA_CLASSPATH=""
+
+if test "$JAVA_NAME" = "jdk"; then
+    if test -f $JAVA_DIR/lib/classes.zip; then
+        # JDK1.1 requires classes.zip in CLASSPATH
+        JAVA_CLASSPATH=\"`${CYGPATH} ${JAVA_DIR}/lib/classes.zip`\"
+    elif test -f $JAVA_DIR/jre/lib/rt.jar; then
+        # JDK1.2 does not require system libs in CLASSPATH
+        # but we need them for compilers and tclblend
+        JAVA_CLASSPATH=\"`${CYGPATH} ${JAVA_DIR}/jre/lib/rt.jar`\"
+	if test -f $JAVA_DIR/lib/tools.jar; then
+	       JAVA_CLASSPATH=\"`${CYGPATH} ${JAVA_DIR}/lib/tools.jar`\"${PATH_SEP}${JAVA_CLASSPATH}
+	fi
+    elif test "`uname -s`" = "IRIX"; then
+        # JDK1.1.5 under IRIX
+        if test -f $JAVA_DIR/lib/rt.jar; then
+            JAVA_CLASSPATH=$JAVA_DIR_NATIVE/lib/rt.jar
+        else
+            { echo "configure: error: could not find $JAVA_DIR/lib/rt.jar for IRIX system" 1>&2; exit 1; }
+        fi
+        if test -f $JAVA_DIR/lib/dev.jar; then
+            JAVA_CLASSPATH=${JAVA_CLASSPATH}${PATH_SEP}${JAVA_DIR_NATIVE}/lib/dev.jar
+        fi
+    fi
+fi
+
+if test "$JAVA_CLASSPATH" = ""; then
+    { echo "configure: error: could not find zip or jar files to include on CLASSPATH." 1>&2; exit 1; }
+else
+    echo "Using JAVA_CLASSPATH=$JAVA_CLASSPATH" >&5
+    echo "$ac_t""$JAVA_CLASSPATH" 1>&6
+fi
+
+
+#--------------------------------------------------------------------
+#
+# Check that we have the java that corresponds with JAVA_DIR in our path
+#
+#--------------------------------------------------------------------
+
+echo $ac_n "checking for the java runtime""... $ac_c" 1>&6
+echo "configure:1043: checking for the java runtime" >&5
+case "$JAVA_NAME" in
+    jdk) NAME=java ;;
+    kaffe) NAME=kaffe ;;
+esac
+if test -x $JAVA_DIR/bin/$NAME; then
+    JAVA=$JAVA_DIR/bin/$NAME
+    echo "Using JAVA=$JAVA" >&5
+    echo "$ac_t""$JAVA" 1>&6
+else
+    { echo "configure: error: 
+  Cannot find $JAVA_DIR/bin/$NAME." 1>&2; exit 1; }
+fi
+
+#--------------------------------------------------------------------
+#
+# Check that we have the javac that corresponds with JAVA_DIR in our path
+#
+#--------------------------------------------------------------------
+
+echo $ac_n "checking for the java compiler""... $ac_c" 1>&6
+echo "configure:1064: checking for the java compiler" >&5
+case "$JAVA_NAME" in
+    jdk) NAME=javac ;;
+    kaffe) NAME=javac ;;
+esac
+
+if test -x $JAVA_DIR/bin/$NAME; then
+    JAVAC=$JAVA_DIR/bin/$NAME
+    JAVA_NATIVE_C=${JAVA_DIR_NATIVE}/bin/$NAME
+    echo "Using JAVAC=$JAVAC" >&5
+    echo "$ac_t""$JAVAC" 1>&6
+else
+    { echo "configure: error: 
+  Cannot find $JAVA_DIR_NATIVE/bin/$NAME." 1>&2; exit 1; }
+fi
+
+#--------------------------------------------------------------------
+#
+# Check that we have the javah that corresponds with JAVA_DIR in our path
+#
+#--------------------------------------------------------------------
+
+
+echo $ac_n "checking for the java header program""... $ac_c" 1>&6
+echo "configure:1088: checking for the java header program" >&5
+case "$JAVA_NAME" in
+    jdk) NAME=javah ;;
+    kaffe) NAME=kaffeh ;;
+esac
+if test -x $JAVA_DIR/bin/$NAME; then
+    JAVAH=$JAVA_DIR/bin/$NAME
+    JAVAH_NATIVE=$JAVA_DIR_NATIVE/bin/$NAME
+    echo "Using JAVAH=$JAVAH" >&5
+    echo "$ac_t""$JAVAH" 1>&6
+else
+    { echo "configure: error: 
+  Cannot find $JAVA_DIR_NATIVE/bin/$NAME." 1>&2; exit 1; }
+fi
+
+
+
+#--------------------------------------------------------------------
+#
+# Check that we have the jar that corresponds with JAVA_DIR in our path
+#
+#--------------------------------------------------------------------
+
+echo $ac_n "checking for the java archive program""... $ac_c" 1>&6
+echo "configure:1112: checking for the java archive program" >&5
+case "$JAVA_NAME" in
+    jdk) NAME=jar ;;
+    kaffe) NAME=jar ;;
+esac
+if test -x $JAVA_DIR/bin/$NAME; then
+    JAR=$JAVA_DIR/bin/$NAME
+    JAR_NATIVE=$JAVA_DIR_NATIVE/bin/$NAME
+    echo "Using JAR=$JAR" >&5
+    echo "$ac_t""$JAR" 1>&6
+else
+    { echo "configure: error: 
+  Cannot find $JAVA_DIR_NATIVE/bin/$NAME." 1>&2; exit 1; }
+fi
+
+
+#--------------------------------------------------------------------
+#
+# Check that we have the jdb that corresponds with JAVA_DIR in our path
+# jdb will not be tested like the other java utils
+#
+#--------------------------------------------------------------------
+
+echo $ac_n "checking for the java debugger program""... $ac_c" 1>&6
+echo "configure:1136: checking for the java debugger program" >&5
+case "$JAVA_NAME" in
+    jdk) NAME=jdb ;;
+    kaffe) NAME=jdb ;;
+esac
+if test -x $JAVA_DIR/bin/$NAME; then
+    JDB=$JAVA_DIR_NATIVE/bin/$NAME
+    echo "Using JDB=$JDB" >&5
+    echo "$ac_t""$JDB" 1>&6
+else
+    { echo "configure: error: Cannot find $JAVA_DIR/bin/$NAME." 1>&2; exit 1; }
+fi
+
+
+
+
+#
+# we need to:
+# 1. Check that we have the native threads pack
+# 2. Find the platform dependent include files
+# 3. Find the platform dependent libraries
+#
+
+
+# Find the main java include directory
+
+case "$JAVA_NAME" in
+    jdk)
+        case "`uname -s`" in
+            OSF1)
+                JAVA_INCLUDE=$JAVA_DIR/include/java
+                ;;
+            *)
+                JAVA_INCLUDE=$JAVA_DIR/include
+                ;;
+        esac
+        ;;
+    kaffe)
+        JAVA_INCLUDE=$JAVA_DIR/include/kaffe
+        ;;
+esac
+
+if test ! -d $JAVA_INCLUDE; then
+    { echo "configure: error: include directory $JAVA_INCLUDE does not exist." 1>&2; exit 1; }
+fi
+
+
+# We need to #include <jni.h> so make sure that we can find it
+
+echo $ac_n "checking for jni.h include file""... $ac_c" 1>&6
+echo "configure:1186: checking for jni.h include file" >&5
+if test ! -f $JAVA_INCLUDE/jni.h; then
+    { echo "configure: error: Can not find JNI include file $JAVA_INCLUDE/jni.h." 1>&2; exit 1; }
+else
+    echo "Found JNI include file $JAVA_INCLUDE/jni.h." >&5
+    echo "$ac_t""$JAVA_INCLUDE/jni.h." 1>&6
+fi
+
+
+# Find out if we are using the JNI 1.1 or 1.2 interfaces
+
+echo $ac_n "checking for jdk version""... $ac_c" 1>&6
+echo "configure:1198: checking for jdk version" >&5
+
+if env grep JDK1_2 $JAVA_INCLUDE/jni.h | grep define 1>&5 2>&5 ; then
+    JAVA_VERSION=1.2
+    MSG="Looks like you are using a 1.2 JVM."
+    echo $MSG >&5
+    echo "$ac_t""$MSG" 1>&6
+    CFLAGS="-DUSING_JDK1_2"
+else
+    JAVA_VERSION=1.1
+    MSG="Looks like you are using a 1.1 JVM"
+    echo $MSG >&5
+    echo "$ac_t""$MSG" 1>&6
+    CFLAGS=""
+fi
+
+if test "$JAVA_VERSION" != "1.1" && test "$JAVA_VERSION" != "1.2"; then
+    MSG="JAVA_VERSION must be one of 1.1 or 1.2, is was \"$JAVA_VERSION\""
+    echo $MSG >&5
+    { echo "configure: error: $MSG" 1>&2; exit 1; }
+fi
+
+
+
+# Start JDK only tests
+
+if test "$JAVA_NAME" = "jdk"; then
+
+#
+# Do checks that differ for each platform in one place
+#
+# 1) make sure native threads pack is installed
+# 2) Find the proper platform include directory
+# 3) Find the proper platform lib directory
+
+
+# Ugly hack needed for Sun's "production" directory structure
+PRODUCTION_RELEASE=0
+
+
+# Keep case statements in alphabetical order.
+case "`uname -s`" in
+    HP-UX)
+        if test ! -d $JAVA_INCLUDE/native_threads; then
+            { echo "configure: error: '$JAVA_INCLUDE/native_threads'
+ not exist. You must install the JDK Native Threads Pack to use tclblend.
+http://www.hp.com/esy/technology/jdk/products/software.html." 1>&2; exit 1; }
+        fi
+
+        JAVA_ARCH_INCLUDE=$JAVA_INCLUDE/hp-ux
+
+        ARCH=PA_RISC
+        ARCH_LIBNAME=lib
+        ARCH_LIB=${ARCH_LIBNAME}/${ARCH}
+
+        JAVA_SHLIB=libjava.sl
+        NSJAVA_LIBS="-lpthread -L${JAVA_DIR}/${ARCH_LIBNAME} -ljava"
+        NSJAVA_SHLIB_NAMES="libpthread.sl libjava.sl"
+
+        NSJAVA_LD_PRELOAD=
+        NSJAVA_LD_BIND_NOW=0
+
+        ;;
+    IRIX)
+        if test ! -d $JAVA_INCLUDE/native_threads; then
+            { echo "configure: error: '$JAVA_INCLUDE/native_threads'
+ not exist. You must install the JDK Native Threads Pack to use tclBlend.
+http://www.sgi.com/Products/Evaluation/#jdk." 1>&2; exit 1; }
+        fi
+
+        JAVA_ARCH_INCLUDE=$JAVA_INCLUDE/irix
+
+        ARCH=sgi
+        ARCH_LIBNAME=lib32
+
+        if test -d $JAVA_DIR/lib; then
+            MSG="IRIX 64 bit java libs found, but using 32 bit libs by default"
+            echo $MSG >&5
+            echo "configure: warning: $MSG" 1>&2
+        fi
+
+        ARCH_LIB=${ARCH_LIBNAME}/${ARCH}
+
+        JAVA_SHLIB=libjava.so
+        NSJAVA_LIBS="-L${JAVA_DIR}/${ARCH_LIBNAME} -ljava -lpthread"
+        NSJAVA_SHLIB_NAMES="libjava.so libpthread.so"
+
+        NSJAVA_LD_PRELOAD=
+        NSJAVA_LD_BIND_NOW=1
+
+        ;;
+    Linux)
+        # This is broke for ibm JDK
+        #if test "$JAVA_VERSION" = "1.1" && \
+        #    test ! -d $JAVA_INCLUDE/native_threads; then
+        #    AC_MSG_ERROR(['$JAVA_INCLUDE/native_threads'
+# not exist. You must install the JDK Native Threads Pack to use nsjava.
+#http://www.blackdown.org/java-linux.html.])
+        #fi
+
+        # ibm uses a linux directory for 1.1
+        if test "$JAVA_VERSION" = "1.1" && \
+            test -d $JAVA_INCLUDE/genunix; then
+            JAVA_ARCH_INCLUDE=$JAVA_INCLUDE/genunix
+        else
+            JAVA_ARCH_INCLUDE=$JAVA_INCLUDE/linux
+        fi
+
+        # ibm uses the linux for the arch as well.
+        case "`uname -m`" in
+            alpha)  ARCH=alpha ;;
+            i?86)
+                if test -d ${JAVA_DIR}/lib/linux && \
+                        test -d ${JAVA_DIR}/include/linux; then
+                        ARCH=linux   
+    		elif test -d ${JAVA_DIR}/lib/`uname -m` ; then
+    			ARCH=`uname -m`
+    		else
+    			ARCH=i386 
+    		fi
+    	    ;;
+            ppc)    ARCH=ppc ;;
+            sparc)  ARCH=sparc ;;
+            *)      { echo "configure: error: ARCH '`uname -m`' is not supported" 1>&2; exit 1; } ;;
+        esac
+
+        
+
+        ARCH_LIBNAME=lib
+        ARCH_LIB=${ARCH_LIBNAME}/${ARCH}	
+        if test -d ${JAVA_DIR}/${ARCH_LIB}/native_threads ; then
+    	 ARCH_LIBPATH=${ARCH_LIB}/native_threads
+        elif test -d  ${JAVA_DIR}/${ARCH_LIB}/native ; then
+    	 ARCH_LIBPATH=${ARCH_LIB}/native
+        elif test -d  ${JAVA_DIR}/${ARCH_LIB}/green_threads ; then
+    	 ARCH_LIBPATH=${ARCH_LIB}/green_threads
+        elif test -d  ${JAVA_DIR}/${ARCH_LIB}/green ; then
+    	 ARCH_LIBPATH=${ARCH_LIB}/green
+        elif test -d $JAVA_DIR/jre/$ARCH_LIB ; then
+         ARCH_LIBPATH=jre/$ARCH_LIB
+        fi
+
+        JAVA_SHLIB=libjava.so
+        NSJAVA_LIBS="-L${JAVA_DIR}/${ARCH_LIBPATH} -ljava"
+        NSJAVA_SHLIB_NAMES="libpthread.so libjava.so"
+
+        NSJAVA_LD_PRELOAD="libpthread.so libjava.so"
+        NSJAVA_LD_BIND_NOW=1
+
+        ;;
+    OSF1)
+        JAVA_ARCH_INCLUDE=$JAVA_INCLUDE/alpha
+
+        # Digital UNIX does not use the same arch and lib
+        # setup as other JVMs
+        ARCH_LIB=shlib
+
+        JAVA_SHLIB=libjava.so
+        NSJAVA_LIBS="-L${JAVA_DIR}/${ARCH_LIBNAME} -ljava"
+        NSJAVA_SHLIB_NAMES="libjava.so"
+
+        NSJAVA_LD_PRELOAD=
+        NSJAVA_LD_BIND_NOW=0
+
+        ;;
+    SunOS) 
+        if test ! -d $JAVA_INCLUDE/native_threads; then
+    	if test "$JAVA_VERSION" = "1.1"; then
+    	    if test -r $JAVA_DIR/lib/sparc/native_threads; then
+    		echo "$ac_t""'$JAVA_INCLUDE/native_threads'
+ not exist, but '$JAVA_DIR/lib/sparc/native_threads' is readable,
+ou are probably running the production JDK." 1>&6
+    	    else
+                    { echo "configure: error: '$JAVA_INCLUDE/native_threads'
+ not exist. You must install the Solaris JDK Native Threads Pack to use nsjava. See http://www.javasoft.com/products/jdk/1.1/index.html." 1>&2; exit 1; }
+                fi
+    	fi
+        fi
+
+        JAVA_ARCH_INCLUDE=$JAVA_INCLUDE/solaris
+
+        ARCH=sparc
+        ARCH_LIBNAME=lib
+        ARCH_LIB=${ARCH_LIBNAME}/${ARCH}
+
+        JAVA_SHLIB=libjava.so
+        if test -f ${JAVA_DIR}/${ARCH_LIBNAME}/libjava.so ; then
+            NSJAVA_LIBS="-lthread -L${JAVA_DIR}/${ARCH_LIBNAME} -ljava"
+        elif test -f ${JAVA_DIR}/jre/${ARCH_LIB}/libjava.so ; then
+            NSJAVA_LIBS="-lthread -L${JAVA_DIR}/jre/${ARCH_LIB} -ljava"
+        elif test -f ${JAVA_DIR}/${ARCH_LIB}/native_threads/libjava.so ; then
+            NSJAVA_LIBS="-lthread -L${JAVA_DIR}/${ARCH_LIB}/native_threads -ljava"
+        fi
+        NSJAVA_SHLIB_NAMES="libthread.so libjava.so"
+
+        NSJAVA_LD_PRELOAD=
+        NSJAVA_LD_BIND_NOW=0
+
+
+        # Check for a "production" release which is really #@&%$ ugly.
+        # It would of course be too much to ask for Sun to stick to
+        # a single directory naming system.
+        
+        if  test ! -d $JAVA_DIR/$ARCH_LIB/green_threads &&
+            test ! -d $JAVA_DIR/$ARCH_LIB/native_threads &&
+            test ! -d $JAVA_DIR/jre/$ARCH_LIB/green_threads &&
+            test ! -d $JAVA_DIR/jre/$ARCH_LIB/native_threads ; then
+            PRODUCTION_RELEASE=1
+            MSG="Sun JDK Production Release Detected."
+            echo $MSG >&5
+            echo "$ac_t""$MSG" 1>&6
+        fi
+        ;;
+
+    *win32* | *WIN32* | *CYGWIN_NT*)
+        JAVA_ARCH_INCLUDE=${JAVA_INCLUDE}/win32
+
+        ARCH=win32
+        ARCH_LIBNAME=bin
+
+        if test -d ${JAVA_DIR}/jre/bin/classic ; then
+            ARCH_LIB=${ARCH_LIBNAME}/classic
+        else
+    	ARCH_LIB=${ARCH_LIBNAME}
+        fi
+
+        if test "$JAVA_VERSION" = "1.1"; then
+            JAVA_SHLIB=javai.dll
+    	NSJAVA_LIBS=\"`${CYGPATH} ${JAVA_DIR}/lib/javai.lib`\"
+        else
+    	JAVA_SHLIB=jvm.dll
+            NSJAVA_LIBS=\"`${CYGPATH} ${JAVA_DIR}/lib/jvm.lib`\"
+        fi
+
+        NSJAVA_SHLIB_NAMES=
+        PRODUCTION_RELEASE=1
+
+        NSJAVA_LD_PRELOAD=
+        NSJAVA_LD_BIND_NOW=0
+        ;;
+
+    *)
+        { echo "configure: error: Sorry, the `uname -s` platform is not supported. You will need to edit the configure.in file to add the proper platform include and lib directories in order to configure and compile nsjava." 1>&2; exit 1; }
+        ;;
+esac
+
+case "`uname -s`" in
+    *win32* | *WIN32* | *CYGWIN_NT*)
+        JAVA_INCLUDE_NATIVE=\"`${CYGPATH} ${JAVA_INCLUDE}`\"
+        JAVA_ARCH_INCLUDE_NATIVE=\"`${CYGPATH} ${JAVA_INCLUDE}/win32`\"
+        BUILD_DIR_NATIVE=\"`${CYGPATH} ${BUILD_DIR}`\"
+        NSJAVA_BUILD_DIR_NATIVE=\"`${CYGPATH} ${BUILD_DIR}/tclblend`\"
+        TEST_BUILD_DIR_NATIVE=\"`${CYGPATH} ${BUILD_DIR}/tests`\"
+        EMPTY_JAR=\"`${CYGPATH} ${MISC_DIR}/empty/empty.jar | sed -e s%\\\\%\\\\\\\\\\\\\\\\%g% `\"
+        NSJAVA_JAR=\"`${CYGPATH} ${BUILD_DIR}/tclblend.jar | sed -e s%\\\\%\\\\\\\\%g% `\"
+        ;;
+    *)
+        JAVA_INCLUDE_NATIVE=${JAVA_INCLUDE}
+        JAVA_ARCH_INCLUDE_NATIVE=${JAVA_ARCH_INCLUDE}
+        BUILD_DIR_NATIVE=${BUILD_DIR}
+        NSJAVA_BUILD_DIR_NATIVE=${BUILD_DIR}/tclblend
+        TEST_BUILD_DIR_NATIVE=${BUILD_DIR}/tests
+        EMPTY_JAR=${MISC_DIR}/empty/empty.jar
+        NSJAVA_JAR=${BUILD_DIR}/tclblend.jar
+        ;;
+esac
+
+
+#
+# Check architecture specific include directory
+#
+
+echo $ac_n "checking for jni_md.h include file""... $ac_c" 1>&6
+echo "configure:1471: checking for jni_md.h include file" >&5
+if test -f $JAVA_ARCH_INCLUDE/jni_md.h; then
+    MSG="$JAVA_ARCH_INCLUDE/jni_md.h"
+    echo "Found $MSG" >&5
+    echo "$ac_t""$MSG" 1>&6
+else
+    MSG="Could not find $JAVA_ARCH_INCLUDE/jni_md.h"
+    echo $MSG >&5
+    { echo "configure: error: $MSG" 1>&2; exit 1; }
+fi
+
+
+#
+# Check architecture specific lib directories
+#
+
+echo $ac_n "checking the jdk arch lib directory""... $ac_c" 1>&6
+echo "configure:1488: checking the jdk arch lib directory" >&5
+
+if test "$JAVA_VERSION" = "1.1"; then
+
+    DIR=$JAVA_DIR/$ARCH_LIB
+    if test ! -d $DIR; then
+        MSG="jdk arch directory $DIR does not exist"
+        echo $MSG >&5
+        { echo "configure: error: $MSG" 1>&2; exit 1; }
+    fi
+
+    #DIR=$JAVA_DIR/$ARCH_LIB/green_threads
+    #if test ! -d $DIR; then
+    #    MSG="jdk arch directory $DIR does not exist"
+    #    echo $MSG >&5
+    #    DIR=$JAVA_DIR/$ARCH_LIB
+    #    AC_MSG_WARN([$MSG])
+    #fi
+    #JAVA_ARCH_GREEN_LIB=$DIR
+    #JAVA_ARCH_GREEN_RUNTIME_LIBS=$DIR
+    JAVA_ARCH_GREEN_LIB=""
+    JAVA_ARCH_GREEN_RUNTIME_LIBS=""
+
+    #LIB=$DIR/$JAVA_SHLIB
+    #if test ! -f $LIB; then
+    #    MSG="jdk shared library $LIB does not exist"
+    #    echo $MSG >&5
+    #    AC_MSG_WARN([$MSG])
+    #fi
+
+    DIR=$JAVA_DIR/$ARCH_LIB/native_threads
+    if test ! -d $DIR; then
+        MSG="jdk arch directory $DIR does not exist"
+        echo $MSG >&5
+        DIR=$JAVA_DIR/$ARCH_LIB
+        echo "configure: warning: $MSG" 1>&2
+    fi
+    JAVA_ARCH_NATIVE_LIB=$DIR
+    JAVA_ARCH_NATIVE_RUNTIME_LIBS=$DIR
+
+
+    LIB=$DIR/$JAVA_SHLIB
+    if test ! -f $LIB; then
+        MSG="jdk shared library $LIB does not exist"
+        echo $MSG >&5
+        { echo "configure: error: $MSG" 1>&2; exit 1; }
+    fi
+
+else
+
+    # if java 1.2 then look in the new jre lib locations
+
+    DIR=$JAVA_DIR/jre/$ARCH_LIB
+    if test ! -d $DIR; then
+        MSG="jdk directory $DIR does not exist"
+        echo $MSG >&5
+        { echo "configure: error: $MSG" 1>&2; exit 1; }
+    else
+        JAVA_ARCH_GREEN_LIB=$DIR
+        JAVA_ARCH_GREEN_RUNTIME_LIBS=$DIR
+        JAVA_ARCH_NATIVE_LIB=$DIR
+        JAVA_ARCH_NATIVE_RUNTIME_LIBS=$DIR
+    fi
+
+    LIB=$DIR/$JAVA_SHLIB
+    if test ! -f $LIB; then
+        MSG="jdk shared library $LIB does not exist"
+        echo $MSG >&5
+        { echo "configure: error: $MSG" 1>&2; exit 1; }
+    fi
+
+    # A "production" release has no green_threads or native_threads dir
+
+    if test "$PRODUCTION_RELEASE" = "0"; then
+
+    DIR=$JAVA_DIR/jre/$ARCH_LIB/green_threads
+    if test ! -d $DIR; then
+        MSG="jdk directory $DIR does not exist"
+        echo $MSG >&5
+        echo "configure: warning: $MSG" 1>&2
+    else
+        JAVA_ARCH_GREEN_RUNTIME_LIBS=$JAVA_ARCH_GREEN_RUNTIME_LIBS:$DIR
+    fi
+
+    DIR=$JAVA_DIR/jre/$ARCH_LIB/native_threads
+    if test ! -d $DIR; then
+        MSG="jdk directory $DIR does not exist"
+        echo $MSG >&5
+        { echo "configure: error: $MSG" 1>&2; exit 1; }
+    else
+        JAVA_ARCH_NATIVE_RUNTIME_LIBS=$JAVA_ARCH_NATIVE_RUNTIME_LIBS:$DIR
+    fi
+
+    DIR=$JAVA_DIR/jre/$ARCH_LIB/classic
+    if test ! -d $DIR; then
+        MSG="jdk directory $DIR does not exist"
+        echo $MSG >&5
+        { echo "configure: error: $MSG" 1>&2; exit 1; }
+    else
+        if test "$JAVA_ARCH_GREEN_LIB" != ""; then
+            JAVA_ARCH_GREEN_RUNTIME_LIBS=$JAVA_ARCH_GREEN_RUNTIME_LIBS:$DIR
+        fi
+
+        JAVA_ARCH_NATIVE_RUNTIME_LIBS=$JAVA_ARCH_NATIVE_RUNTIME_LIBS:$DIR
+    fi
+
+    fi
+    # End of "production" if block
+
+fi
+
+
+
+fi
+# End JDK only tests
+
+
+# Start Kaffe only tests
+
+if test "$JAVA_NAME" = "kaffe"; then
+
+DIR=$JAVA_DIR/lib
+if test ! -d $DIR; then
+    MSG="kaffe directory $DIR does not exist"
+    echo $MSG >&5
+    { echo "configure: error: $MSG" 1>&2; exit 1; }
+else
+    JAVA_ARCH_NATIVE_LIB=$DIR
+    JAVA_ARCH_NATIVE_RUNTIME_LIBS=$DIR
+fi
+
+DIR=$JAVA_DIR/lib/kaffe
+if test ! -d $DIR; then
+    MSG="kaffe directory $DIR does not exist"
+    echo $MSG >&5
+    { echo "configure: error: $MSG" 1>&2; exit 1; }
+else
+    JAVA_ARCH_NATIVE_RUNTIME_LIBS=$JAVA_ARCH_NATIVE_RUNTIME_LIBS:$DIR
+fi
+
+LIB=$JAVA_DIR/lib/libkaffevm.so
+if test ! -f $LIB; then
+    MSG="kaffe shared library $LIB does not exist"
+    echo $MSG >&5
+    { echo "configure: error: $MSG" 1>&2; exit 1; }
+else
+    NSJAVA_LIBS="-lkaffevm -lpthread"
+    NSJAVA_SHLIB_NAMES="libkaffevm.so libpthread.so"
+fi
+
+
+
+
+NSJAVA_LD_PRELOAD=
+NSJAVA_LD_BIND_NOW=0
+
+fi
+# End Kaffe only tests
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+echo $ac_n "checking how to run the C preprocessor""... $ac_c" 1>&6
+echo "configure:1677: checking how to run the C preprocessor" >&5
+# On Suns, sometimes $CPP names a directory.
+if test -n "$CPP" && test -d "$CPP"; then
+  CPP=
+fi
+if test -z "$CPP"; then
+if eval "test \"`echo '$''{'ac_cv_prog_CPP'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+    # This must be in double quotes, not single quotes, because CPP may get
+  # substituted into the Makefile and "${CC-cc}" will confuse make.
+  CPP="${CC-cc} -E"
+  # On the NeXT, cc -E runs the code through the compiler's parser,
+  # not just through cpp.
+  cat > conftest.$ac_ext <<EOF
+#line 1692 "configure"
+#include "confdefs.h"
+#include <assert.h>
+Syntax Error
+EOF
+ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
+{ (eval echo configure:1698: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
+if test -z "$ac_err"; then
+  :
+else
+  echo "$ac_err" >&5
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  CPP="${CC-cc} -E -traditional-cpp"
+  cat > conftest.$ac_ext <<EOF
+#line 1709 "configure"
+#include "confdefs.h"
+#include <assert.h>
+Syntax Error
+EOF
+ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
+{ (eval echo configure:1715: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
+if test -z "$ac_err"; then
+  :
+else
+  echo "$ac_err" >&5
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  CPP="${CC-cc} -nologo -E"
+  cat > conftest.$ac_ext <<EOF
+#line 1726 "configure"
+#include "confdefs.h"
+#include <assert.h>
+Syntax Error
+EOF
+ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
+{ (eval echo configure:1732: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
+if test -z "$ac_err"; then
+  :
+else
+  echo "$ac_err" >&5
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  CPP=/lib/cpp
+fi
+rm -f conftest*
+fi
+rm -f conftest*
+fi
+rm -f conftest*
+  ac_cv_prog_CPP="$CPP"
+fi
+  CPP="$ac_cv_prog_CPP"
+else
+  ac_cv_prog_CPP="$CPP"
+fi
+echo "$ac_t""$CPP" 1>&6
+
+for ac_hdr in unistd.h
+do
+ac_safe=`echo "$ac_hdr" | sed 'y%./+-%__p_%'`
+echo $ac_n "checking for $ac_hdr""... $ac_c" 1>&6
+echo "configure:1760: checking for $ac_hdr" >&5
+if eval "test \"`echo '$''{'ac_cv_header_$ac_safe'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  cat > conftest.$ac_ext <<EOF
+#line 1765 "configure"
+#include "confdefs.h"
+#include <$ac_hdr>
+EOF
+ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
+{ (eval echo configure:1770: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
+if test -z "$ac_err"; then
+  rm -rf conftest*
+  eval "ac_cv_header_$ac_safe=yes"
+else
+  echo "$ac_err" >&5
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  eval "ac_cv_header_$ac_safe=no"
+fi
+rm -f conftest*
+fi
+if eval "test \"`echo '$ac_cv_header_'$ac_safe`\" = yes"; then
+  echo "$ac_t""yes" 1>&6
+    ac_tr_hdr=HAVE_`echo $ac_hdr | sed 'y%abcdefghijklmnopqrstuvwxyz./-%ABCDEFGHIJKLMNOPQRSTUVWXYZ___%'`
+  cat >> confdefs.h <<EOF
+#define $ac_tr_hdr 1
+EOF
+ 
+else
+  echo "$ac_t""no" 1>&6
+fi
+done
+
+
+echo $ac_n "checking for working const""... $ac_c" 1>&6
+echo "configure:1798: checking for working const" >&5
+if eval "test \"`echo '$''{'ac_cv_c_const'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  cat > conftest.$ac_ext <<EOF
+#line 1803 "configure"
+#include "confdefs.h"
+
+int main() {
+
+/* Ultrix mips cc rejects this.  */
+typedef int charset[2]; const charset x;
+/* SunOS 4.1.1 cc rejects this.  */
+char const *const *ccp;
+char **p;
+/* NEC SVR4.0.2 mips cc rejects this.  */
+struct point {int x, y;};
+static struct point const zero = {0,0};
+/* AIX XL C 1.02.0.0 rejects this.
+   It does not let you subtract one const X* pointer from another in an arm
+   of an if-expression whose if-part is not a constant expression */
+const char *g = "string";
+ccp = &g + (g ? g-g : 0);
+/* HPUX 7.0 cc rejects these. */
+++ccp;
+p = (char**) ccp;
+ccp = (char const *const *) p;
+{ /* SCO 3.2v4 cc rejects this.  */
+  char *t;
+  char const *s = 0 ? (char *) 0 : (char const *) 0;
+
+  *t++ = 0;
+}
+{ /* Someone thinks the Sun supposedly-ANSI compiler will reject this.  */
+  int x[] = {25, 17};
+  const int *foo = &x[0];
+  ++foo;
+}
+{ /* Sun SC1.0 ANSI compiler rejects this -- but not the above. */
+  typedef const int *iptr;
+  iptr p = 0;
+  ++p;
+}
+{ /* AIX XL C 1.02.0.0 rejects this saying
+     "k.c", line 2.27: 1506-025 (S) Operand must be a modifiable lvalue. */
+  struct s { int j; const int *ap[3]; };
+  struct s *b; b->j = 5;
+}
+{ /* ULTRIX-32 V3.1 (Rev 9) vcc rejects this */
+  const int foo = 10;
+}
+
+; return 0; }
+EOF
+if { (eval echo configure:1852: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+  rm -rf conftest*
+  ac_cv_c_const=yes
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  ac_cv_c_const=no
+fi
+rm -f conftest*
+fi
+
+echo "$ac_t""$ac_cv_c_const" 1>&6
+if test $ac_cv_c_const = no; then
+  cat >> confdefs.h <<\EOF
+#define const 
+EOF
+
+fi
+
+echo $ac_n "checking for ANSI C header files""... $ac_c" 1>&6
+echo "configure:1873: checking for ANSI C header files" >&5
+if eval "test \"`echo '$''{'ac_cv_header_stdc'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  cat > conftest.$ac_ext <<EOF
+#line 1878 "configure"
+#include "confdefs.h"
+#include <stdlib.h>
+#include <stdarg.h>
+#include <string.h>
+#include <float.h>
+EOF
+ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
+{ (eval echo configure:1886: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
+if test -z "$ac_err"; then
+  rm -rf conftest*
+  ac_cv_header_stdc=yes
+else
+  echo "$ac_err" >&5
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  ac_cv_header_stdc=no
+fi
+rm -f conftest*
+
+if test $ac_cv_header_stdc = yes; then
+  # SunOS 4.x string.h does not declare mem*, contrary to ANSI.
+cat > conftest.$ac_ext <<EOF
+#line 1903 "configure"
+#include "confdefs.h"
+#include <string.h>
+EOF
+if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
+  egrep "memchr" >/dev/null 2>&1; then
+  :
+else
+  rm -rf conftest*
+  ac_cv_header_stdc=no
+fi
+rm -f conftest*
+
+fi
+
+if test $ac_cv_header_stdc = yes; then
+  # ISC 2.0.2 stdlib.h does not declare free, contrary to ANSI.
+cat > conftest.$ac_ext <<EOF
+#line 1921 "configure"
+#include "confdefs.h"
+#include <stdlib.h>
+EOF
+if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
+  egrep "free" >/dev/null 2>&1; then
+  :
+else
+  rm -rf conftest*
+  ac_cv_header_stdc=no
+fi
+rm -f conftest*
+
+fi
+
+if test $ac_cv_header_stdc = yes; then
+  # /bin/cc in Irix-4.0.5 gets non-ANSI ctype macros unless using -ansi.
+if test "$cross_compiling" = yes; then
+  :
+else
+  cat > conftest.$ac_ext <<EOF
+#line 1942 "configure"
+#include "confdefs.h"
+#include <ctype.h>
+#define ISLOWER(c) ('a' <= (c) && (c) <= 'z')
+#define TOUPPER(c) (ISLOWER(c) ? 'A' + ((c) - 'a') : (c))
+#define XOR(e, f) (((e) && !(f)) || (!(e) && (f)))
+int main () { int i; for (i = 0; i < 256; i++)
+if (XOR (islower (i), ISLOWER (i)) || toupper (i) != TOUPPER (i)) exit(2);
+exit (0); }
+
+EOF
+if { (eval echo configure:1953: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
+then
+  :
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -fr conftest*
+  ac_cv_header_stdc=no
+fi
+rm -fr conftest*
+fi
+
+fi
+fi
+
+echo "$ac_t""$ac_cv_header_stdc" 1>&6
+if test $ac_cv_header_stdc = yes; then
+  cat >> confdefs.h <<\EOF
+#define STDC_HEADERS 1
+EOF
+
+fi
+
+echo $ac_n "checking for size_t""... $ac_c" 1>&6
+echo "configure:1977: checking for size_t" >&5
+if eval "test \"`echo '$''{'ac_cv_type_size_t'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  cat > conftest.$ac_ext <<EOF
+#line 1982 "configure"
+#include "confdefs.h"
+#include <sys/types.h>
+#if STDC_HEADERS
+#include <stdlib.h>
+#include <stddef.h>
+#endif
+EOF
+if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
+  egrep "(^|[^a-zA-Z_0-9])size_t[^a-zA-Z_0-9]" >/dev/null 2>&1; then
+  rm -rf conftest*
+  ac_cv_type_size_t=yes
+else
+  rm -rf conftest*
+  ac_cv_type_size_t=no
+fi
+rm -f conftest*
+
+fi
+echo "$ac_t""$ac_cv_type_size_t" 1>&6
+if test $ac_cv_type_size_t = no; then
+  cat >> confdefs.h <<\EOF
+#define size_t unsigned
+EOF
+
+fi
+
+
+echo $ac_n "checking for ANSI C header files""... $ac_c" 1>&6
+echo "configure:2011: checking for ANSI C header files" >&5
+if eval "test \"`echo '$''{'ac_cv_header_stdc'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  cat > conftest.$ac_ext <<EOF
+#line 2016 "configure"
+#include "confdefs.h"
+#include <stdlib.h>
+#include <stdarg.h>
+#include <string.h>
+#include <float.h>
+EOF
+ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
+{ (eval echo configure:2024: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
+if test -z "$ac_err"; then
+  rm -rf conftest*
+  ac_cv_header_stdc=yes
+else
+  echo "$ac_err" >&5
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  ac_cv_header_stdc=no
+fi
+rm -f conftest*
+
+if test $ac_cv_header_stdc = yes; then
+  # SunOS 4.x string.h does not declare mem*, contrary to ANSI.
+cat > conftest.$ac_ext <<EOF
+#line 2041 "configure"
+#include "confdefs.h"
+#include <string.h>
+EOF
+if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
+  egrep "memchr" >/dev/null 2>&1; then
+  :
+else
+  rm -rf conftest*
+  ac_cv_header_stdc=no
+fi
+rm -f conftest*
+
+fi
+
+if test $ac_cv_header_stdc = yes; then
+  # ISC 2.0.2 stdlib.h does not declare free, contrary to ANSI.
+cat > conftest.$ac_ext <<EOF
+#line 2059 "configure"
+#include "confdefs.h"
+#include <stdlib.h>
+EOF
+if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
+  egrep "free" >/dev/null 2>&1; then
+  :
+else
+  rm -rf conftest*
+  ac_cv_header_stdc=no
+fi
+rm -f conftest*
+
+fi
+
+if test $ac_cv_header_stdc = yes; then
+  # /bin/cc in Irix-4.0.5 gets non-ANSI ctype macros unless using -ansi.
+if test "$cross_compiling" = yes; then
+  :
+else
+  cat > conftest.$ac_ext <<EOF
+#line 2080 "configure"
+#include "confdefs.h"
+#include <ctype.h>
+#define ISLOWER(c) ('a' <= (c) && (c) <= 'z')
+#define TOUPPER(c) (ISLOWER(c) ? 'A' + ((c) - 'a') : (c))
+#define XOR(e, f) (((e) && !(f)) || (!(e) && (f)))
+int main () { int i; for (i = 0; i < 256; i++)
+if (XOR (islower (i), ISLOWER (i)) || toupper (i) != TOUPPER (i)) exit(2);
+exit (0); }
+
+EOF
+if { (eval echo configure:2091: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
+then
+  :
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -fr conftest*
+  ac_cv_header_stdc=no
+fi
+rm -fr conftest*
+fi
+
+fi
+fi
+
+echo "$ac_t""$ac_cv_header_stdc" 1>&6
+if test $ac_cv_header_stdc = yes; then
+  cat >> confdefs.h <<\EOF
+#define STDC_HEADERS 1
+EOF
+
+fi
+
+for ac_func in strerror strstr strlen
+do
+echo $ac_n "checking for $ac_func""... $ac_c" 1>&6
+echo "configure:2117: checking for $ac_func" >&5
+if eval "test \"`echo '$''{'ac_cv_func_$ac_func'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  cat > conftest.$ac_ext <<EOF
+#line 2122 "configure"
+#include "confdefs.h"
+/* System header to define __stub macros and hopefully few prototypes,
+    which can conflict with char $ac_func(); below.  */
+#include <assert.h>
+/* Override any gcc2 internal prototype to avoid an error.  */
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char $ac_func();
+
+int main() {
+
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined (__stub_$ac_func) || defined (__stub___$ac_func)
+choke me
+#else
+$ac_func();
+#endif
+
+; return 0; }
+EOF
+if { (eval echo configure:2145: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+  rm -rf conftest*
+  eval "ac_cv_func_$ac_func=yes"
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  eval "ac_cv_func_$ac_func=no"
+fi
+rm -f conftest*
+fi
+
+if eval "test \"`echo '$ac_cv_func_'$ac_func`\" = yes"; then
+  echo "$ac_t""yes" 1>&6
+    ac_tr_func=HAVE_`echo $ac_func | tr 'abcdefghijklmnopqrstuvwxyz' 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'`
+  cat >> confdefs.h <<EOF
+#define $ac_tr_func 1
+EOF
+ 
+else
+  echo "$ac_t""no" 1>&6
+fi
+done
+
+
+
+
+echo $ac_n "checking platform specific compile options""... $ac_c" 1>&6
+echo "configure:2173: checking platform specific compile options" >&5	
+#
+# Auto-detect the platform
+#
+PLATFORM="unknown"
+UNAME_R=`uname -r`
+UNAME_S=`uname -s`
+#
+# HP/UX 11 -- gcc
+#
+#  SMP is fully supported.
+#
+if test "$UNAME_S$UNAME_R" = "HP-UXB.11.00"; then
+    PLATFORM="hp11"
+    # CC=cc
+    # CFLAGS+=-Ae +DAportable +z
+    CFLAGS="$CFLAGS -D__hp11 -pipe -fPIC -Wall -Wno-unused"
+    LDFLAGS="-Wl,-E"
+    LIBS="$LIBS -lpthread "
+    #LDSO=$LD -b
+    LDSO="$CC -shared"
+    CFLAGS="$CFLAGS -DUSE_DLSHL=1"
+fi
+
+
+#
+# HP/UX 10 -- gcc
+#
+#  The optional DCE threads package must be installed.
+#  SMP is fully supported.
+#
+if test "$UNAME_S$UNAME_R" = "HP-UXB.10.20"; then
+    PLATFORM="hp10"
+    # CC=cc
+    # CFLAGS+=-Ae +DAportable +z
+    CFLAGS="$CFLAGS -D__hp10 -pipe -fPIC -Wall -Wno-unused"
+    LDFLAGS="-Wl,-E"
+    LIBS="$LIBS -ldce -lc_r"
+    #LDSO=$LD -b
+    LDSO="$CC -shared"
+    CFLAGS="$CLFAGS -DHAVE_PTHREAD_D4=1 -DUSE_DLSHL=1 -DNEED_HERRNO=1"
+fi
+
+
+#
+# Linux -- gcc
+#
+#  Red Hat 6.1 is known to work -- it has working glibc 2.1 and Linuxthreads.
+#  glibc 2.1 (libc6) and its Linuxthreads component are absolutely required.
+#  glibc 2.0 (libc6) and BSD libc5 are obsolete on Linux and do not work.
+#  Linux supports SMP to some extent.  It will get better eventually.
+#  Some SMP systems accumulate zombie processes (this is a kernel issue).
+#  Note that we use the compiler to create shared objects, not the linker.
+#
+if test `uname` = "Linux"; then
+    PLATFORM="linux"
+    LDFLAGS="$LDFLAGS -Wl,-E"
+    CFLAGS="$CFLAGS -pipe -fPIC -Wall -Wno-unused"
+    LIBS="$LIBS -ldl -lpthread"
+    LDSO="$CC -shared"
+    CFLAGS="$CFLAGS -DHAVE_CMMSG=1 -DUSE_FIONREAD=1 -DHAVE_COND_EINTR=1"
+fi
+
+
+#
+# Sun Solaris SPARC and x86 -- gcc
+#
+#  Free Solaris distributions are available on promotion at http://sun.com/.
+#  The "-pipe" option to gcc does not work on some versions of Solaris.
+#  -lresolv is only needed by reverse-host lookup modules like nsperm.
+#  Solaris 7 binaries will not run on Solaris 2.6 (this is a Solaris problem).
+#  Cygnus "GNUPro" DOES NOT WORK.  Use GNU gcc and /usr/ccs/bin/ld.
+#  GNU gcc 2.8.1 and 2.95.2 from http://www.sunfreeware.com/ work fine.
+#  Solaris 7 pthreads sometimes report cond_wait timeouts (a Solaris bug).
+#  SMP is fully supported.
+#
+if test `uname` = "SunOS"; then
+    PLATFORM="solaris"
+    # CC=/opt/SUNWspro/bin/cc
+    # CFLAGS+=-KPIC
+    CFLAGS="$CFLAGS -D_POSIX_PTHREAD_SEMANTICS -fPIC -Wall -Wno-unused"
+    LIBS="${LIBS} -lsocket -lnsl -ldl -lposix4 -lpthread -lresolv"
+    LD="/usr/ccs/bin/ld"
+    #LDSO=$LD -G
+    LDSO="$CC -shared"
+    AR="/usr/ccs/bin/ar"
+    CFLAGS="${CFLAGS} -DUSE_PTHREAD_SYSSCOPE=1 -DUSE_DUPHIGH=1 -DHAVE_FORK1=1"
+    # Flags for pshared mutexes and conditions.
+    CFLAGS="${CFLAGS} -DUSE_PTHREAD_PSHARED=1 -DHAVE_ETIME_BUG=1"
+fi
+
+
+#
+# DEC OSF/1, Digital UNIX, Tru64 UNIX -- gcc
+#
+#  This should be changed to gcc as soon as possible.
+#  This is a 64-bit platform.
+#  SMP is fully supported.
+#
+if test `uname` = "OSF1"; then
+    PLATFORM="osf"
+    CC="cc"
+    CFLAGS="$CFLAGS -std1 -pthread"
+    LDFLAGS="$LDFLAGS -pthread"
+    LDSO="$LD -shared -expect_unresolved '*'"
+    LIBS="-lrt"
+fi
+
+
+#
+# SGI Irix (6.4 or better) -- cc or gcc
+#
+#  GCC: unset ABI, set SGI_ABI env variable to n32 to force linker to behave.
+#  CC: unset SGI_ABI; set the ABI variable to "-n32".
+#  gcc only works if all third-party libraries are in the "n32" ABI.
+#  The "-pipe" option to gcc does not work on some versions of Irix.
+#  ABI can be -o32, -n32, or -64.  Only "-n32" has been tested.
+#  SMP is fully supported.  It works best with "sproc" threads, not "pthreads."
+#  Use "systune" command to set "maxuproc" and "nproc" to reasonable values.
+#  The gcc compiler might not work on Irix 6.4.  It does work on 6.5.7.
+#
+#ifeq (IRIX, $(findstring IRIX, $(shell uname)))
+#    PLATFORM=irix
+#    SGI_ABI=n32
+#    ABI=-$(SGI_ABI)
+#    #CC=cc
+#    #CFLAGS+=$(ABI) -D_SGI_MP_SOURCE -fullwarn
+#    CFLAGS+=-D_SGI_MP_SOURCE -fPIC -Wall -Wno-unused
+#    LDFLAGS+=$(ABI)
+#    #LDSO=$LD $(ABI) -shared
+#    LDSO=$CC -shared
+#    #LIBS+=-lpthread
+#    #CFLAGS+=-DUSE_PTHREADS=1
+#    CFLAGS+=-DUSE_SPROC=1
+#    ifeq (o32, $(ABI))
+#	CFLAGS+=-DUSE_DUPHIGH=1
+#    endif
+#endif
+
+
+#
+# FreeBSD 3.x -- gcc
+#
+#  The pthread library that ships with FreeBSD 3.3 or better is required.
+#  FreeBSD does not yet support SMP -- evidently a FreeBSD 4.x release will.
+#
+if test `uname` = "FreeBSD"; then
+    PLATFORM="freebsd"
+    CFLAGS="$CFLAGS -pthread -D_THREAD_SAFE"
+    LDFLAGS="$LDFLAGS -pthread -Wl,-E"
+    LDSO="$CC -shared"
+    RANLIB="ranlib"
+    CFLAGS="$CFLAGS -DHAVE_CMMSG=1 -DNO_TIMEZONE=1 -DHAVE_TIMEGM"
+fi
+
+
+#
+# OpenBSD 2.5 or better -- gcc
+#
+# Contributed by Michael Yoon <michael@yoon.org>
+# SMP is not supported.
+#
+if test `uname` = "OpenBSD"; then
+    PLATFORM="openbsd"
+    CFLAGS="$CFLAGS -pthread -D_THREAD_SAFE"
+    LDFLAGS="$LDFLAGS -pthread -Wl,-E"
+    LDSO="$CC -shared"
+    RANLIB="ranlib"
+    CFLAGS="$CFLAGS -DHAVE_CMMSG=1 -DUSE_DLSYMPREFIX=1 -DUSE_RTLD_LAZY=1"
+    CFLAGS="$CFLAGS -DNO_TIMEZONE=1 -DHAVE_TIMEGM"
+fi
+
+
+#
+# SCO Unixware 7.x -- cc
+#
+#  Free Unixware 7 is available free on promotion at http://sco.com/.
+#  This should be changed to gcc as soon as possible -- anybody?
+#  GNU gcc is on the Skunkware disc and at http://sco.com/.
+#  Both cc and gcc require the UnixWare Development Kit (UDK) version 7.x.
+#  The UDK is free on promotion -- it's needed the dev utils and libs.
+#  SMP support is not known.
+#  For best results use Unixware 7.1 or later with all patches applied.
+#  This is *not* "SCO OpenServer," which is the older Xenix-based product.
+#
+if test `uname` = "UnixWare"; then
+    PLATFORM="unixware"
+    CC="cc"
+    CFLAGS="$CFLAGS -D__unixware -Kpic -Kthread"
+    LDFLAGS="-Wl,-B export"
+    LDSO="$LD -G"
+    LIBS="$LIBS -Kthread -lsocket"
+    CLFAGS="$CFLAGS -DUSE_PTHREAD_SYSSCOPE=1 -DHAVE_SENDV=1 -DHAVE_CMMSG=1"
+fi
+
+
+#
+# Mac OS X Server -- cc
+#
+#  The Mac OS X Server cc is gcc; the Mac OS X Server make is gmake.
+#  Tested under releases 1.0 and 1.02.
+#  No SMP support as of this writing.
+#
+if test `uname` = "Rhapsody"; then
+    PLATFORM="osx"
+    CC="cc"
+    LD="cc"
+    CFLAGS="$CFLAGS -dynamic -traditional-cpp -pipe -Wall -Wno-unused"
+    LDSO="$LD -bundle -undefined suppress"
+    RANLIB="ranlib"
+    CFLAGS="$CFLAGS -DUSE_CTHREADS=1 -DHAVE_CMMSG=1 -DUSE_DYLD -DUSE_DLSYMPREFIX=1"
+    CFLAGS="$CFLAGS -DNO_RAND48=1 -DNO_TIMEZONE=1"
+fi
+
+if test $PLATFORM = "unknown"; then
+        { echo "configure: error: unknown platform" 1>&2; exit 1; }
+else
+        echo "$ac_t""$PLATFORM" 1>&6
+fi
+
+LIBS="${LIBS} $NSJAVA_LIBS"
+
+
+
+
+
+
+
+
+OPT=""
+
+
+
+echo "$ac_t""" 1>&6
+echo "$ac_t""	$PACKAGE version $NSJVM_VERSION configured successfully." 1>&6
+echo "$ac_t""" 1>&6
+echo "$ac_t""Using c-compiler:      $CC" 1>&6
+echo "$ac_t""JDK Version:           $JAVA_VERSION" 1>&6
+echo "$ac_t""Install libnsjava.so:  $prefix/bin" 1>&6
+echo "$ac_t""Aolserver Version:     $NSVERSION" 1>&6
+echo "$ac_t""Aolserver include:     $NS_SRC_DIR/include" 1>&6
+echo "$ac_t""Aolserver nsd include: $NS_SRC_DIR/nsd" 1>&6
+echo "$ac_t""jdk include:           $JAVA_INCLUDE" 1>&6
+echo "$ac_t""jdk platform include:  $JAVA_ARCH_INCLUDE_NATIVE" 1>&6
+echo "$ac_t""libjava.so dir:        $JAVA_ARCH_NATIVE_LIB" 1>&6
+echo "$ac_t""java classpath:        $JAVA_CLASSPATH" 1>&6
+
+
+echo "$ac_t""" 1>&6
+echo "$ac_t""CFLAGS: '$CFLAGS'" 1>&6
+echo "$ac_t""" 1>&6
+echo "$ac_t""LIBS:   '$LIBS'" 1>&6
+echo "$ac_t""" 1>&6
+
+trap '' 1 2 15
+cat > confcache <<\EOF
+# This file is a shell script that caches the results of configure
+# tests run on this system so they can be shared between configure
+# scripts and configure runs.  It is not useful on other systems.
+# If it contains results you don't want to keep, you may remove or edit it.
+#
+# By default, configure uses ./config.cache as the cache file,
+# creating it if it does not exist already.  You can give configure
+# the --cache-file=FILE option to use a different cache file; that is
+# what configure does when it calls configure scripts in
+# subdirectories, so they share the cache.
+# Giving --cache-file=/dev/null disables caching, for debugging configure.
+# config.status only pays attention to the cache file if you give it the
+# --recheck option to rerun configure.
+#
+EOF
+# The following way of writing the cache mishandles newlines in values,
+# but we know of no workaround that is simple, portable, and efficient.
+# So, don't put newlines in cache variables' values.
+# Ultrix sh set writes to stderr and can't be redirected directly,
+# and sets the high bit in the cache file unless we assign to the vars.
+(set) 2>&1 |
+  case `(ac_space=' '; set | grep ac_space) 2>&1` in
+  *ac_space=\ *)
+    # `set' does not quote correctly, so add quotes (double-quote substitution
+    # turns \\\\ into \\, and sed turns \\ into \).
+    sed -n \
+      -e "s/'/'\\\\''/g" \
+      -e "s/^\\([a-zA-Z0-9_]*_cv_[a-zA-Z0-9_]*\\)=\\(.*\\)/\\1=\${\\1='\\2'}/p"
+    ;;
+  *)
+    # `set' quotes correctly as required by POSIX, so do not add quotes.
+    sed -n -e 's/^\([a-zA-Z0-9_]*_cv_[a-zA-Z0-9_]*\)=\(.*\)/\1=${\1=\2}/p'
+    ;;
+  esac >> confcache
+if cmp -s $cache_file confcache; then
+  :
+else
+  if test -w $cache_file; then
+    echo "updating cache $cache_file"
+    cat confcache > $cache_file
+  else
+    echo "not updating unwritable cache $cache_file"
+  fi
+fi
+rm -f confcache
+
+trap 'rm -fr conftest* confdefs* core core.* *.core $ac_clean_files; exit 1' 1 2 15
+
+test "x$prefix" = xNONE && prefix=$ac_default_prefix
+# Let make expand exec_prefix.
+test "x$exec_prefix" = xNONE && exec_prefix='${prefix}'
+
+# Any assignment to VPATH causes Sun make to only execute
+# the first set of double-colon rules, so remove it if not needed.
+# If there is a colon in the path, we need to keep it.
+if test "x$srcdir" = x.; then
+  ac_vpsub='/^[ 	]*VPATH[ 	]*=[^:]*$/d'
+fi
+
+trap 'rm -f $CONFIG_STATUS conftest*; exit 1' 1 2 15
+
+# Transform confdefs.h into DEFS.
+# Protect against shell expansion while executing Makefile rules.
+# Protect against Makefile macro expansion.
+cat > conftest.defs <<\EOF
+s%#define \([A-Za-z_][A-Za-z0-9_]*\) *\(.*\)%-D\1=\2%g
+s%[ 	`~#$^&*(){}\\|;'"<>?]%\\&%g
+s%\[%\\&%g
+s%\]%\\&%g
+s%\$%$$%g
+EOF
+DEFS=`sed -f conftest.defs confdefs.h | tr '\012' ' '`
+rm -f conftest.defs
+
+
+# Without the "./", some shells look in PATH for config.status.
+: ${CONFIG_STATUS=./config.status}
+
+echo creating $CONFIG_STATUS
+rm -f $CONFIG_STATUS
+cat > $CONFIG_STATUS <<EOF
+#! /bin/sh
+# Generated automatically by configure.
+# Run this file to recreate the current configuration.
+# This directory was configured as follows,
+# on host `(hostname || uname -n) 2>/dev/null | sed 1q`:
+#
+# $0 $ac_configure_args
+#
+# Compiler output produced by configure, useful for debugging
+# configure, is in ./config.log if it exists.
+
+ac_cs_usage="Usage: $CONFIG_STATUS [--recheck] [--version] [--help]"
+for ac_option
+do
+  case "\$ac_option" in
+  -recheck | --recheck | --rechec | --reche | --rech | --rec | --re | --r)
+    echo "running \${CONFIG_SHELL-/bin/sh} $0 $ac_configure_args --no-create --no-recursion"
+    exec \${CONFIG_SHELL-/bin/sh} $0 $ac_configure_args --no-create --no-recursion ;;
+  -version | --version | --versio | --versi | --vers | --ver | --ve | --v)
+    echo "$CONFIG_STATUS generated by autoconf version 2.13"
+    exit 0 ;;
+  -help | --help | --hel | --he | --h)
+    echo "\$ac_cs_usage"; exit 0 ;;
+  *) echo "\$ac_cs_usage"; exit 1 ;;
+  esac
+done
+
+ac_given_srcdir=$srcdir
+
+trap 'rm -fr `echo "Makefile.global" | sed "s/:[^ ]*//g"` conftest*; exit 1' 1 2 15
+EOF
+cat >> $CONFIG_STATUS <<EOF
+
+# Protect against being on the right side of a sed subst in config.status.
+sed 's/%@/@@/; s/@%/@@/; s/%g\$/@g/; /@g\$/s/[\\\\&%]/\\\\&/g;
+ s/@@/%@/; s/@@/@%/; s/@g\$/%g/' > conftest.subs <<\\CEOF
+$ac_vpsub
+$extrasub
+s%@SHELL@%$SHELL%g
+s%@CFLAGS@%$CFLAGS%g
+s%@CPPFLAGS@%$CPPFLAGS%g
+s%@CXXFLAGS@%$CXXFLAGS%g
+s%@FFLAGS@%$FFLAGS%g
+s%@DEFS@%$DEFS%g
+s%@LDFLAGS@%$LDFLAGS%g
+s%@LIBS@%$LIBS%g
+s%@exec_prefix@%$exec_prefix%g
+s%@prefix@%$prefix%g
+s%@program_transform_name@%$program_transform_name%g
+s%@bindir@%$bindir%g
+s%@sbindir@%$sbindir%g
+s%@libexecdir@%$libexecdir%g
+s%@datadir@%$datadir%g
+s%@sysconfdir@%$sysconfdir%g
+s%@sharedstatedir@%$sharedstatedir%g
+s%@localstatedir@%$localstatedir%g
+s%@libdir@%$libdir%g
+s%@includedir@%$includedir%g
+s%@oldincludedir@%$oldincludedir%g
+s%@infodir@%$infodir%g
+s%@mandir@%$mandir%g
+s%@PACKAGE@%$PACKAGE%g
+s%@VERSION@%$VERSION%g
+s%@BUILD_DIR@%$BUILD_DIR%g
+s%@CC@%$CC%g
+s%@NS_SRC_DIR@%$NS_SRC_DIR%g
+s%@NSVERSIONFLAGS@%$NSVERSIONFLAGS%g
+s%@NSVERSION@%$NSVERSION%g
+s%@BUILD_CLASSPATH@%$BUILD_CLASSPATH%g
+s%@TMP_JAVAC@%$TMP_JAVAC%g
+s%@PATH_SEP@%$PATH_SEP%g
+s%@SEP@%$SEP%g
+s%@NSJAVA_LIBS@%$NSJAVA_LIBS%g
+s%@NSJAVA_SHLIB_NAMES@%$NSJAVA_SHLIB_NAMES%g
+s%@JAVA_DIR@%$JAVA_DIR%g
+s%@JAVA_DIR_NATIVE@%$JAVA_DIR_NATIVE%g
+s%@JAVA_CLASSPATH@%$JAVA_CLASSPATH%g
+s%@JAVA_FLAGS@%$JAVA_FLAGS%g
+s%@JAVA_FLAGS_C@%$JAVA_FLAGS_C%g
+s%@JAVA_INCLUDE@%$JAVA_INCLUDE%g
+s%@JAVA_INCLUDE_NATIVE@%$JAVA_INCLUDE_NATIVE%g
+s%@JAVA_ARCH_INCLUDE@%$JAVA_ARCH_INCLUDE%g
+s%@JAVA_ARCH_INCLUDE_NATIVE@%$JAVA_ARCH_INCLUDE_NATIVE%g
+s%@JAVA_ARCH_GREEN_LIB@%$JAVA_ARCH_GREEN_LIB%g
+s%@JAVA_ARCH_GREEN_RUNTIME_LIBS@%$JAVA_ARCH_GREEN_RUNTIME_LIBS%g
+s%@JAVA_ARCH_NATIVE_LIB@%$JAVA_ARCH_NATIVE_LIB%g
+s%@JAVA_ARCH_NATIVE_RUNTIME_LIBS@%$JAVA_ARCH_NATIVE_RUNTIME_LIBS%g
+s%@JAVA@%$JAVA%g
+s%@JAVAC@%$JAVAC%g
+s%@JAVAH@%$JAVAH%g
+s%@JAR@%$JAR%g
+s%@JDB@%$JDB%g
+s%@JAVA_NATIVE_C@%$JAVA_NATIVE_C%g
+s%@JAVAH_NATIVE@%$JAVAH_NATIVE%g
+s%@JAR_NATIVE@%$JAR_NATIVE%g
+s%@JDB_NATIVE@%$JDB_NATIVE%g
+s%@CPP@%$CPP%g
+s%@LDSO@%$LDSO%g
+s%@RANLIB@%$RANLIB%g
+s%@LD@%$LD%g
+s%@AR@%$AR%g
+s%@OPT@%$OPT%g
+
+CEOF
+EOF
+
+cat >> $CONFIG_STATUS <<\EOF
+
+# Split the substitutions into bite-sized pieces for seds with
+# small command number limits, like on Digital OSF/1 and HP-UX.
+ac_max_sed_cmds=90 # Maximum number of lines to put in a sed script.
+ac_file=1 # Number of current file.
+ac_beg=1 # First line for current file.
+ac_end=$ac_max_sed_cmds # Line after last line for current file.
+ac_more_lines=:
+ac_sed_cmds=""
+while $ac_more_lines; do
+  if test $ac_beg -gt 1; then
+    sed "1,${ac_beg}d; ${ac_end}q" conftest.subs > conftest.s$ac_file
+  else
+    sed "${ac_end}q" conftest.subs > conftest.s$ac_file
+  fi
+  if test ! -s conftest.s$ac_file; then
+    ac_more_lines=false
+    rm -f conftest.s$ac_file
+  else
+    if test -z "$ac_sed_cmds"; then
+      ac_sed_cmds="sed -f conftest.s$ac_file"
+    else
+      ac_sed_cmds="$ac_sed_cmds | sed -f conftest.s$ac_file"
+    fi
+    ac_file=`expr $ac_file + 1`
+    ac_beg=$ac_end
+    ac_end=`expr $ac_end + $ac_max_sed_cmds`
+  fi
+done
+if test -z "$ac_sed_cmds"; then
+  ac_sed_cmds=cat
+fi
+EOF
+
+cat >> $CONFIG_STATUS <<EOF
+
+CONFIG_FILES=\${CONFIG_FILES-"Makefile.global"}
+EOF
+cat >> $CONFIG_STATUS <<\EOF
+for ac_file in .. $CONFIG_FILES; do if test "x$ac_file" != x..; then
+  # Support "outfile[:infile[:infile...]]", defaulting infile="outfile.in".
+  case "$ac_file" in
+  *:*) ac_file_in=`echo "$ac_file"|sed 's%[^:]*:%%'`
+       ac_file=`echo "$ac_file"|sed 's%:.*%%'` ;;
+  *) ac_file_in="${ac_file}.in" ;;
+  esac
+
+  # Adjust a relative srcdir, top_srcdir, and INSTALL for subdirectories.
+
+  # Remove last slash and all that follows it.  Not all systems have dirname.
+  ac_dir=`echo $ac_file|sed 's%/[^/][^/]*$%%'`
+  if test "$ac_dir" != "$ac_file" && test "$ac_dir" != .; then
+    # The file is in a subdirectory.
+    test ! -d "$ac_dir" && mkdir "$ac_dir"
+    ac_dir_suffix="/`echo $ac_dir|sed 's%^\./%%'`"
+    # A "../" for each directory in $ac_dir_suffix.
+    ac_dots=`echo $ac_dir_suffix|sed 's%/[^/]*%../%g'`
+  else
+    ac_dir_suffix= ac_dots=
+  fi
+
+  case "$ac_given_srcdir" in
+  .)  srcdir=.
+      if test -z "$ac_dots"; then top_srcdir=.
+      else top_srcdir=`echo $ac_dots|sed 's%/$%%'`; fi ;;
+  /*) srcdir="$ac_given_srcdir$ac_dir_suffix"; top_srcdir="$ac_given_srcdir" ;;
+  *) # Relative path.
+    srcdir="$ac_dots$ac_given_srcdir$ac_dir_suffix"
+    top_srcdir="$ac_dots$ac_given_srcdir" ;;
+  esac
+
+
+  echo creating "$ac_file"
+  rm -f "$ac_file"
+  configure_input="Generated automatically from `echo $ac_file_in|sed 's%.*/%%'` by configure."
+  case "$ac_file" in
+  *Makefile*) ac_comsub="1i\\
+# $configure_input" ;;
+  *) ac_comsub= ;;
+  esac
+
+  ac_file_inputs=`echo $ac_file_in|sed -e "s%^%$ac_given_srcdir/%" -e "s%:% $ac_given_srcdir/%g"`
+  sed -e "$ac_comsub
+s%@configure_input@%$configure_input%g
+s%@srcdir@%$srcdir%g
+s%@top_srcdir@%$top_srcdir%g
+" $ac_file_inputs | (eval "$ac_sed_cmds") > $ac_file
+fi; done
+rm -f conftest.s*
+
+EOF
+cat >> $CONFIG_STATUS <<EOF
+
+EOF
+cat >> $CONFIG_STATUS <<\EOF
+
+exit 0
+EOF
+chmod +x $CONFIG_STATUS
+rm -fr confdefs* $ac_clean_files
+test "$no_create" = yes || ${CONFIG_SHELL-/bin/sh} $CONFIG_STATUS || exit 1
+

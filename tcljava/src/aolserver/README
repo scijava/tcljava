@@ -1,0 +1,68 @@
+This module has only been test on the following platforms:
+
+        os              jdk vendor              jdk version     comments
+        --              ----------              -----------     --------
+
+linux 2.2.14            blackdown               1.1.8           o.k.
+
+solaris 2.5.1           sun                     1.1.8           o.k.
+
+If you get it to work on something else, and it reguires modifications to the
+makefiles, send me the diffs or a description and I'll incorporate the changes
+into the autoconf scripts.
+
+NOTICE: You must use a native threads jdk version. Green threads will
+not work.
+
+To build, cd into the nsjava directory and type:
+
+./configure --with-aolserver-src=AOLSERVER_SRC_DIR --prefix=AOLSERVER_BIN_DIR
+
+See the configure options at the end of the INSTALL document.
+
+The build and configure process has only been tested on redhat 6.2 and 
+solaris 2.7, so if you have something different you probably will have to
+modify the makefile and/or configure.in yourself. 
+
+Before starting to build set LD_LIBRARY_PATH so that libjava.so is included 
+in the path.  You might also need to add the path to the libnsjava.so file.
+
+For the 1.2.2 jdk's, I have had to set LD_LIBRARY_PATH to include libjava.so
+libjvm.so, and libhpi.so.  This seems a little bizarre to me.  I have to wonder
+if it has something to do with how I'm building libnsjava.so.  Oh well, one 
+thing to add to the todo list.
+
+Once it is configured, type `make'.
+
+When make is complete, type `make install'.
+
+Add the libnsjava.so entry to your list of modules in your nsd.tcl file as 
+follows:
+
+[ns/server/acs-pg/modules]
+nsjava=libtclblend.so
+
+Add another section in your nsd.tcl file for the nsjava module:
+
+[ns/server/acs-pg/module/nsjava]
+; enable the java module
+EnableJava=on
+; same as java command line verbose mode.  setting it to "on" will show the 
+; loading of libraries in the log file.
+VerboseJvm=off
+; Some 1.1 jvm's segfault when destroyed.  This option can be used to bypass 
+; destroying the jvm at shutdown.
+DestroyJvm=off
+; Prepend the following to the default classpath. This is just an example, your
+; classpath will probably be different.
+ClassPath=/usr/jdk118/lib/classes.zip:/web/acs-pg/www/webmail/java:/usr/local/aolserver/bin/nsjava.jar
+
+Change the classpath to reflect the location of your java libraries.  During 
+install the libnsjava.so and the nsjava.jar files are copied to the 
+aolserver bin directory.  The 1.2.2 jdk's don't require the classpath to 
+include the path to classes.zip or other system .jar files.
+
+
+- Dan
+
+Send comments or suggestions to dcwickstrom@earthlink.net
