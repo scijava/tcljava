@@ -11,7 +11,7 @@
 #------------------------------------------------------------------------
 
 AC_DEFUN([AC_MSG_LOG], [
-    echo $1 >&AC_FD_LOG
+    echo $1 >&AS_MESSAGE_LOG_FD
     ifval([$2], , [echo $1])
 ])
 
@@ -315,13 +315,13 @@ EOF
     CLASSPATH=$ac_java_classpath
     export CLASSPATH
     cmd="$JAVAC ${JAVAC_FLAGS} conftest.java"
-    if (echo $cmd >&AC_FD_LOG ; eval $cmd >&AC_FD_LOG 2>&AC_FD_LOG) ; then
-        echo "yes" >&AC_FD_LOG
+    if (echo $cmd >&AS_MESSAGE_LOG_FD ; eval $cmd >&AS_MESSAGE_LOG_FD 2>&AS_MESSAGE_LOG_FD) ; then
+        echo "yes" >&AS_MESSAGE_LOG_FD
         $3
     else
-        echo "configure: failed program was:" >&AC_FD_LOG
-        cat conftest.java >&AC_FD_LOG
-        echo "configure: CLASSPATH was $CLASSPATH" >&AC_FD_LOG
+        echo "configure: failed program was:" >&AS_MESSAGE_LOG_FD
+        cat conftest.java >&AS_MESSAGE_LOG_FD
+        echo "configure: CLASSPATH was $CLASSPATH" >&AS_MESSAGE_LOG_FD
         ifval([$4],
         [  $4
         ])dnl
@@ -977,7 +977,7 @@ if test $TCLJAVA = "tclblend" || test $TCLJAVA = "both"; then
   rm -f tcl_version.tcl
 
   echo 'puts HELLO' > tcl_version.tcl
-  if test "`$TCLSH_LOC tcl_version.tcl 2>&AC_FD_LOG`" != "HELLO"; then
+  if test "`$TCLSH_LOC tcl_version.tcl 2>&AS_MESSAGE_LOG_FD`" != "HELLO"; then
     AC_MSG_ERROR([$TCLSH_LOC is broken, I could not run a simple Tcl script with it])
   fi
 
@@ -990,7 +990,7 @@ if test $TCLJAVA = "tclblend" || test $TCLJAVA = "both"; then
         exit 0
        ' > tcl_version.tcl
 
-  if test "`$TCLSH_LOC tcl_version.tcl 2>&AC_FD_LOG`" = "1"; then
+  if test "`$TCLSH_LOC tcl_version.tcl 2>&AS_MESSAGE_LOG_FD`" = "1"; then
       AC_MSG_RESULT([Tcl executable $TCLSH_LOC works])
       rm -f tcl_version.tcl
   else
@@ -1009,7 +1009,7 @@ if test $TCLJAVA = "tclblend" || test $TCLJAVA = "both"; then
         exit 0
        ' > tcl_threads.tcl
 
-  if test "`$TCLSH_LOC tcl_threads.tcl 2>&AC_FD_LOG`" = "1"; then
+  if test "`$TCLSH_LOC tcl_threads.tcl 2>&AS_MESSAGE_LOG_FD`" = "1"; then
       AC_MSG_RESULT([Tcl was compiled with Thread support])
       rm -f tcl_threads.tcl
   else
