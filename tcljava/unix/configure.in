@@ -2,7 +2,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run to configure the
 dnl	Makefile in this directory.
 AC_INIT(../src/tcljava/tcl/lang/InternalRep.java)
-# RCS: @(#) $Id: configure.in,v 1.11 1999/05/17 02:26:32 dejong Exp $
+# RCS: @(#) $Id: configure.in,v 1.12 1999/05/17 03:58:06 dejong Exp $
 
 
 #--------------------------------------------------------------------
@@ -21,49 +21,47 @@ echo $MSG
 
 # the very first thing we need to do update the dist version number.
 # we only need to do this when releasing new versions of the code
-# so only the code maintainer will care about doing this.
+# so only the code maintainer will need to do this.
 
 TOOLS=$srcdir/tools
 
 if test -d $TOOLS ; then
 
-    # Make sure our original match using grep worked so that we will
-    # know if the version number really changed.
+    # Check that grep is working by looking for the match to the
+    # current version number in the configure.in file.
 
     if env grep "TCLJAVA_VERSION=$TCLJAVA_VERSION" $srcdir/configure.in > /dev/null; then
         DO=nothing
     else
 	AC_MSG_ERROR([TCLJAVA_VERSION grep failed])
     fi
- 
+
+    # Check that the files we need actually exist
+
     if test ! -d $TOOLS/vutil ; then
 	echo "$TOOLS/vutil does not exist"
-	exit -1
+	exit 1
     fi
 
     if test ! -f $TOOLS/vutil/vsub.sh ; then
 	echo "$TOOLS/vutil/vsub.sh does not exist"
-	exit -1
+	exit 1
     fi
 
+    # Find out if we need to update the version numbers by checking to
+    # see if the one we got differs from the one in the file "current".
 
-    TMP_CWD=`pwd`
-    cd $TOOLS/vutil
-    sh vsub.sh
-    cd $TMP_CWD
-
-
-    # Now test to see if the version number got changed
-
-    if env grep "TCLJAVA_VERSION=$TCLJAVA_VERSION" $srcdir/configure.in > /dev/null; then
-        # version was not changed so we can just keep going
-	echo "dist version number checked"
+    if env grep "TCLJAVA_VERSION=$TCLJAVA_VERSION" $TOOLS/vutil/current > /dev/null; then
+        # If they are the same we do not need to update
+	DO=nothing
     else
-        # version was changed, we need to quit running ./configure now
-        # and run it again so that we get the new version number info.
-
-	echo "dist version number was updated, please run configure again."
-	exit 0
+        # Otherwise we do need to update
+        echo "Updating version numbers in the source files to $TCLJAVA_VERSION"
+	
+        TMP_CWD=`pwd`
+        cd $TOOLS/vutil
+        sh vsub.sh $TCLJAVA_VERSION
+        cd $TMP_CWD
     fi
 fi
 
