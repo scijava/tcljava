@@ -1,6 +1,6 @@
 Recent user-visible changes to Jacl & Tcl Blend:
 
-RCS: @(#) $Id: changes.txt,v 1.40.2.4 2000/04/03 07:00:14 mo Exp $
+RCS: @(#) $Id: changes.txt,v 1.40.2.5 2000/04/11 05:26:59 mo Exp $
 
 ----------------- Released 1.0a1, 10/22/97 -----------------------
 
@@ -1041,6 +1041,12 @@ A number of error message fixups in the ReflectObject class
 from the 1.3 version were back ported to the 1.2 branch. None
 of these error messages were user visible, they would only
 happen when a JVM bug was encountered.
+
+04/10/2000 (fixed up README files and configure script)
+Changed the default version of Tcl that the system will
+search for to Tcl 8.3.0. Also fixed the README files
+so that they do not suggest a person user -f makefile.vc
+to build under windows.
 
 ----------------- Released 1.2.6, XX/XX/XX -----------------------
 

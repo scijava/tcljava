@@ -1,5 +1,5 @@
 Tcl Blend
-RCS: @(#) $Id: README.tclblend,v 1.2 1999/05/10 03:20:46 dejong Exp $
+RCS: @(#) $Id: README.tclblend,v 1.2.6.1 2000/04/11 05:27:01 mo Exp $
 
 This is the directory where you configure, compile, test, and install 
 Windows versions Tcl Blend. This directory also contains source files for 
@@ -13,46 +13,44 @@ system, see the README file in the directory ../unix.
 How To Compile And Install Tcl Blend:
 ----------------------------------------------------------
 
-(1) You must have Tcl version 8.0 compilied before you can compile
-    Tcl Blend. See the corresponding win/README in the Tcl8.0
+(1) You must have Tcl version 8.X compilied before you can compile
+    Tcl Blend. See the corresponding win/README in the Tcl8.X
     directory for information on how to do this.
 
-    NOTE: Tcl Blend does not work with Tcl 8.1 yet.
+(2) Run "copy makefile.vc makefile" to create a makefile that
+    you will customize for your site.
 
-(2) Check for patches as described in ../README.
+(3) Open makefile in a text editor and set the variables at the
+    top of the file to the locations of your Tcl and Tcl Blend
+    distros, your Java install, and your MS dev tools.
 
-(3) Open makefile.vc in a text editor and set the variables at the
-    top of the file to the locations of your Tcl Blend distro,
-    your Java install, and your MS dev tools.
-
-(4) Type "nmake -f makefile.vc". This will build two library files
-    called tclblend.jar and tcljava.jar. The tclblend.jar library file
+(4) Type "nmake". This will build two library files called
+    tclblend.jar and tcljava.jar. The tclblend.jar library file
     stores the class files that are only used by Tcl Blend.
     The tcljava.jar library file stores the class files
-    that are shared between jacl and tclblend. Running make
+    that are shared between jacl and tclblend. Running nmake
     will also create a shared library called "tclblend.dll".
 
-(5) If the make fails then you'll have to personalize makefile.vc
-    for your site or possibly modify the distribution in other ways.
-    If you need to modify makefile.vc, there are comments at the
-    beginning of it that describe the things you might want to
-    change and how to change them.
+(5) If the make fails then you most likely made a mistake
+    setting the paths for your tools. You will need to
+    double check the paths you set at the top of the
+    makefile and try again.
 
 (6) After the make finishes you can quickly test out Tcl Blend by typing
-    "nmake -f makefile.vc shell" which will drop you into a running
-    Tcl Blend shell where you can type in commands. You can also run
-    the regression tests for Tcl Blend by typing "nmake -f makefile.vc test".
+    "nmake shell" which will drop you into a running Tcl Blend shell
+    where you can type in commands. You can also run the regression
+    tests for Tcl Blend by running "nmake test".
 
-(7) When you are ready to install type "nmake -f makefile.vc install"
+(7) When you are ready to install type "nmake install"
     to install the Tcl Blend libraries on your system. The location
     where the files are installed depeds on how you set up the
-    variables at the top of makefile.vc.
+    variables at the top of makefile.
 
 Test suite:
 -----------
 
-There is a relatively complete test suite for all of the Tcl core in the 
-subdirectory "tests".  To use it just type "nmake -f makefile.vc test"
+There is a relatively complete test suite for all of the Tcl Blend core
+in the subdirectory "tests".  To use it just type "nmake test"
 in this directory. You should then see a printout of the test files
 processed.  If any errors occur, you'll see a much more substantial
 printout for each error.  See the README file in the "tests" directory

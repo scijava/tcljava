@@ -1,5 +1,5 @@
 Tcl Blend
-RCS: @(#) $Id: README.tclblend,v 1.4 1999/05/10 03:19:17 dejong Exp $
+RCS: @(#) $Id: README.tclblend,v 1.4.6.1 2000/04/11 05:27:00 mo Exp $
 
 This is the directory where you configure, compile, test, and install 
 UNIX versions Tcl Blend.  This directory also contains source files for 
@@ -15,15 +15,11 @@ for a PC running Windows, see the README file in the directory ../win.
 How To Compile And Install Tcl Blend:
 ----------------------------------------------------------
 
-(1) You must have Tcl version 8.0 installed and compilied as a shared
-    library.  See the corresponding unix/README where you have Tcl8.0
+(1) You must have Tcl version 8.X installed and compilied as a shared
+    library.  See the corresponding unix/README where you have Tcl8.X
     installed for information on how to do this.
 
-    NOTE: Tcl Blend does not work with the alpha release of Tcl8.1.
-
-(2) Check for patches as described in ../README.
-
-(3) Type "./configure".  This runs a configuration script created by
+(2) Type "./configure".  This runs a configuration script created by
     GNU autoconf, which configures Tcl Blend for your system and
     creates a Makefile.  The configure script allows you to customize
     the Tcl Blend configuration for your site; for details on how you can
@@ -32,10 +28,10 @@ How To Compile And Install Tcl Blend:
     supports the following special switches in addition to
     the standard ones: 
 
-	--with-tcl		Tcl8.0 is assumed to be installed in 
-				../../tcl8.0.  If this is not true, then 
-				use this switch to specify an absolute
-				path to the location of the Tcl source.
+	--with-tcl		Tcl8.X is assumed to be installed in 
+				../../tcl8.3.0.  If this is not the case,
+                                then use this switch to specify an absolute
+				path to the location of your Tcl build.
 
 	--with-jdk		By default, the configure script will
                                 attempt to find the JDK by searching on
@@ -74,25 +70,25 @@ How To Compile And Install Tcl Blend:
     on the same system. Make sure that tcl was compiled with the
     --enable-shared option or else Tcl Blend will not compile.
 
-(4) Type "make". This will build two library files called
+(3) Type "make". This will build two library files called
     tclblend.jar and tcljava.jar. The tclblend.jar library file
     stores the class files that are only used by Tcl Blend.
     The tcljava.jar library file stores the class files
     that are shared between jacl and tclblend. Running make
     will also create a shared library called "libtclblend.so".
 
-(5) If the make fails then you'll have to personalize the Makefile
+(4) If the make fails then you'll have to personalize the Makefile
     for your site or possibly modify the distribution in other ways.
     If you need to modify Makefile, there are comments at the beginning 
     of it that describe the things you might want to change and how to 
     change them.
 
-(6) After the make finishes you can quickly test out Tcl Blend by typing
+(5) After the make finishes you can quickly test out Tcl Blend by typing
     "make shell" which will drop you into a running Tcl Blend shell where
     you can type in commands. You can also run the regression tests
     for Tcl Blend by typing "make test".
 
-(7) When you are ready to install type "make install" to install
+(6) When you are ready to install type "make install" to install
     the Tcl Blend libraries on your system. Doing the install will
     also create a pair of wrapper scripts called jtclsh and jwish
     which you can use to run Tcl Blend without setting lots of
