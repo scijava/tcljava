@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ExecCmd.java,v 1.2 1998/11/04 22:36:00 hylands Exp $
+ * RCS: @(#) $Id: ExecCmd.java,v 1.4 1999/05/09 01:05:13 dejong Exp $
  */
 
 package tcl.lang;
@@ -48,7 +48,6 @@ public void
 throws 
     TclException 	// A standard Tcl exception.
 {
-    int      i, j;
     int      firstWord;             /* Index to the first non-switch arg */
     int      argLen = argv.length;  /* No of args to copy to argStrs     */
     int      exit;                  /* denotes exit status of process    */
@@ -57,7 +56,6 @@ throws
     boolean  keepNewline = false;   /* Retains newline in pipline output */
     Process  p;                     /* The exec-ed process               */
     String   argStr;                /* Conversion of argv to a string    */
-    String   os;                    /* Stores the os.name property       */
     StringBuffer sbuf;
 
     /*
@@ -335,7 +333,7 @@ private Process
     throws IOException, InterruptedException {
 
     // when running on NT we need to write out two files
-    // the first is in C:/TEMP/jacl1.bat and the second is C:/TEMP/jacl2.bat
+    // the fist is in C:/TEMP/jacl1.bat and the second is C:/TEMP/jacl2.bat
     // we exec command.com on jacl1.bat which will invoke cmd.exe on jacl2.bat
     
     // if we are not running under NT then we just write out the jacl1.bat file
