@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: JavaLoadCmd.test,v 1.1 1998/10/14 21:09:24 cvsadmin Exp $
+# RCS: @(#) $Id: JavaLoadCmd.test,v 1.2 1998/11/04 22:42:40 hylands Exp $
 
 # Note: This test file must be sourced from the parent directory
 #       or else the defs file may not be properly loaded.
@@ -50,11 +50,13 @@ test javaLoadCmd-1.1 {error conditions} {
     catch {java::load -classpath {list} foo} msg
     set msg
 } {package "foo" not found}
+
 test javaLoadCmd-1.2 {error conditions} {
     catch {unset msg}
     catch {java::load -classpath {itema itemb itemc} foo} msg
     set msg
 } {package "foo" not found}
+
 test javaLoadCmd-1.3 {error conditions} {
     catch {unset msg}
     lappend list "itema"
@@ -64,36 +66,43 @@ test javaLoadCmd-1.3 {error conditions} {
     unset list
     set msg
 } {package "foo" not found}
+
 test javaLoadCmd-1.4 {error conditions} {
     catch {unset msg}
     catch {java::load foo} msg
     set msg
 } {package "foo" not found}
+
 test javaLoadCmd-1.5 {error conditions} {
     catch {unset msg}
     catch {java::load -cl list foo} msg
     set msg
 } {package "foo" not found}
+
 test javaLoadCmd-1.6 {error conditions} {
     catch {unset msg}
     catch {java::load -classpath foo} msg
     set msg
 } {wrong # args: should be "java::load ?-classpath arg? packageName"}
+
 test javaLoadCmd-1.7 {error conditions} {
     catch {unset msg}
     catch {java::load -classpath} msg
     set msg
 } {package "-classpath" not found}
+
 test javaLoadCmd-1.8 {error conditions} {
     catch {unset msg}
     catch {java::load -cl list} msg
     set msg
 } {wrong # args: should be "java::load ?-classpath arg? packageName"}
+
 test javaLoadCmd-1.9 {error conditions} {
     catch {unset msg}
     catch {java::load -cl} msg
     set msg
 } {package "-cl" not found}
+
 test javaLoadCmd-1.10 {error in tcl.lang.Extension structure} {
     catch {unset msg}
     set javaload_full_path [file join $javaload_path tests javaload]
@@ -133,42 +142,51 @@ test javaLoadCmd-3.1 {error in tcl.lang.Extension structure} {
     catch {java::load -classpath $javaload_path Test3Extension} msg
     set msg
 } {load "Test3Extension" failed: not a subclass of tcl.lang.Extension}
+
 test javaLoadCmd-3.2 {error in tcl.lang.Extension structure} {
     catch {unset msg}
     catch {java::load -classpath $javaload_path Test7Extension} msg
     set msg
 } {load "Test7Extension" failed: object instantiation failure}
+
 test javaLoadCmd-3.3 {error in tcl.lang.Extension structure} {
     catch {unset msg}
     catch {java::load -classpath $javaload_path Test8Extension} msg
     set msg
 } {load "Test8Extension" failed: class or initializer is not accessible}
+
 test javaLoadCmd-4.1 {test loading of valid packages} {
     java::load -classpath $javaload_path tests.javaload.Test1Extension.class 
     test1
 } {test works}
+
 test javaLoadCmd-4.1 {test loading of valid packages} {
     java::load -classpath $javaload_path Test2Extension
     test2
 } {test works}
+
 test javaLoadCmd-4.2 {test loading of valid packages} {
     java::load -classpath $javaload_path Test4Extension
     test4
 } {test works}
+
 test javaLoadCmd-4.3 {test loading of valid packages} {
     java::load -classpath $javaload_path Test5Extension
     set a "[test5] [test5b]"
 } {test works test works}
+
 test javaLoadCmd-4.4 {test loading of valid packages} {
     set env(TCL_CLASSPATH) $javaload_path
     java::load Test6Extension
     unset env(TCL_CLASSPATH)
     test6
 } {test works}
+
 test javaLoadCmd-4.5 {test loading of valid packages} {
     java::load -classpath $javaload_path Test9Extension
     test9
 } {test works}
+
 test javaLoadCmd-5.0 {test loading of valid package from a jar} {
     java::load -classpath $javaload_path/test10.jar Test10Extension
 } {Test10 Loaded}
