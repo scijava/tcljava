@@ -1,5 +1,5 @@
 Tcl Blend
-RCS: @(#) $Id: README.tclblend,v 1.5 2000/10/29 06:00:43 mdejong Exp $
+RCS: @(#) $Id: README.tclblend,v 1.6 2002/12/25 06:17:13 mdejong Exp $
 
 This directory contains source files for Tcl Blend that are specific to UNIX.
 This file also describes how to build under UNIX systems.
@@ -14,15 +14,12 @@ for a PC running Windows, see the README file in the directory ../win.
 How To Compile And Install Tcl Blend:
 ----------------------------------------------------------
 
-(1) You must have Tcl version 8.0 installed and compilied as a shared
-    library.  See the corresponding unix/README where you have Tcl8.0
-    installed for information on how to do this.
+(1) You must have Tcl version 8.3.2 or newer built as a shared library.
+    See the corresponding unix/README where you have Tcl8.3 installed
+    for information on how to do this. You must also have build the
+    Tcl thread extension.
 
-    NOTE: Tcl Blend does not work with the alpha release of Tcl8.1.
-
-(2) Check for patches as described in ../README.
-
-(3) Type "./configure".  This runs a configuration script created by
+(2) Type "./configure".  This runs a configuration script created by
     GNU autoconf, which configures Tcl Blend for your system and
     creates a Makefile.  The configure script allows you to customize
     the Tcl Blend configuration for your site; for details on how you can
@@ -31,12 +28,16 @@ How To Compile And Install Tcl Blend:
     supports the following special switches in addition to
     the standard ones: 
 
-	--with-tcl		Tcl8.0 is assumed to be installed in 
-				../../tcl8.0.  If this is not true, then 
-				use this switch to specify an absolute
-				path to the location of the Tcl source.
+	--with-tcl=DIR		Pass the absolute path name of the
+				directory where Tcl has been build
+				as the value of DIR.
 
-	--with-jdk		By default, the configure script will
+	--with-thread=DIR	Pass the absolute path name of the
+				directory where the Tcl thread
+				extension has been build as the
+				value of DIR.
+
+	--with-jdk=DIR		By default, the configure script will
                                 attempt to find the JDK by searching on
                                 the PATH for the javac program. If the
                                 javac program can not be found on the
@@ -60,14 +61,14 @@ How To Compile And Install Tcl Blend:
                                 See www.research.ibm.com/jikes for more info.
 
     If you are only going to compile for a single platform then you
-    should just run "./configure" from this directory. If you intend
-    to build Tcl Blend for multiple systems you should make a sub
+    should just run "./configure" from the .. directory. If you intend
+    to build Tcl Blend for multiple systems you should make a
     directory for each system you want to build a binary for. For
     instance if you wanted to compile for solaris and linux you
     could make two directories called "solaris" and "linux". At
     this point you will want to run the configure script in the
     directory of each target system. You should do something like
-    "cd solaris ; ../configure (your configure options here)".
+    "cd solaris ; .../configure (your configure options here)".
     You can also use this feature to build two versions of Tcl Blend
     (one that works with JDK1.1 and another that works with JDK1.2)
     on the same system. Make sure that tcl was compiled with the
@@ -84,7 +85,8 @@ How To Compile And Install Tcl Blend:
     for your site or possibly modify the distribution in other ways.
     If you need to modify Makefile, there are comments at the beginning 
     of it that describe the things you might want to change and how to 
-    change them.
+    change them. Most users will not need to mess around with the
+    generated Makefile.
 
 (6) After the make finishes you can quickly test out Tcl Blend by typing
     "make shell" which will drop you into a running Tcl Blend shell where

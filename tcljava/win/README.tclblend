@@ -1,5 +1,5 @@
 Tcl Blend
-RCS: @(#) $Id: README.tclblend,v 1.3 2000/10/29 06:10:10 mdejong Exp $
+RCS: @(#) $Id: README.tclblend,v 1.4 2002/12/25 06:17:13 mdejong Exp $
 
 This is the directory where you configure, compile, test, and install 
 Windows versions Tcl Blend. This directory also contains source files for 
@@ -13,14 +13,14 @@ system, see the README file in the ../unix directory.
 How To Compile And Install Tcl Blend:
 ----------------------------------------------------------
 
-(1) You must have Tcl version 8.X compilied before you can compile
-    Tcl Blend. See the corresponding win/README in the Tcl8.X
+(1) You must have Tcl version 8.3.2 or newer compilied before you
+    can compile Tcl Blend. See the corresponding win/README in the Tcl
     directory for information on how to do this.
 
 (2) Run "copy makefile.vc makefile" to create a makefile that
     you will customize for your site.
 
-(3) Open makefile in a text editor and set the variables at the
+(3) Open the makefile in a text editor and set the variables at the
     top of the file to the locations of your Tcl and Tcl Blend
     distros, your Java install, and your MS dev tools.
 

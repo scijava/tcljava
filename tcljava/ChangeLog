@@ -1,5 +1,15 @@
 2002-12-24  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* README.jacl:
+	* README.tclblend:
+	* unix/README.tclblend:
+	* win/README.tclblend: ework help section, mention
+	SourceForge mailing lists instead of focusing
+	on comp.lang.tcl. Note that Tcl 8.3.2 or newer
+	is needed for Tcl Blend.
+
+2002-12-24  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* tests/defs: Move conditional define of
 	testgetplatform so it works with Jacl or
 	Tcl Blend.

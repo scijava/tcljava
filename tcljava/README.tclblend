@@ -1,6 +1,6 @@
 Tcl Blend
 
-RCS: @(#) $Id: README.tclblend,v 1.8 2000/04/08 04:25:36 mo Exp $
+RCS: @(#) $Id: README.tclblend,v 1.9 2002/12/25 06:17:11 mdejong Exp $
 
 1. Introduction
 ---------------
@@ -30,23 +30,22 @@ information.
 3. Requirements
 ---------------
 
-Tcl 8.0 or greater and the Java Development Kit 1.1 or greater is required.
+Tcl 8.3.2 or greater, the Tcl Thread extension, and the Java
+Development Kit 1.1 or greater are required to use Tcl Blend.
 
 To build Tcl Blend on Solaris the Native Threads Pack, and 
 several patches, must be installed on top of the JDK.  The 
 package, necessary patches, and installation instructions can 
 be found at http://www.javasoft.com/products/jdk/1.1/index.html.
 
-Tcl Blend will run under JDK1.2, see known_issues.txt for
-a list of problems and bugs.
+Tcl Blend will build and run under JDK1.2 and newer, see
+known_issues.txt for a list of problems and bugs.
 
 4. Installation
 ---------------
 
-Change to the "unix" subdirectory if you're compiling under UNIX,
-or "win" if you're compiling under Windows.  Then follow the 
-instructions in the README file in that directory for compiling 
-Tcl, installing it, and running the test suite.
+Follow the instructions in unix/README if you're compiling under UNIX,
+or win/README if you're compiling under Windows.
 
 5. License Agreement
 ---------------------
@@ -67,29 +66,30 @@ Scriptics, with assistance from Scriptics.
 7. Getting Help
 ----------------
 
-The network news group "comp.lang.tcl" intended for the exchange
-of information about Tcl, Tk, and related applications.  You should
-use this newsgroup to ask questions, give bug reports, or post fixes
-for Jacl & Tcl Blend. The developers of Jacl & Tcl Blend as well as
-many avid users of Tcl Blend & Jacl use comp.lang.tcl as a forum.
+Users of Tcl Blend or Jacl should make use of the tcljava-user mailing
+list at SourceForge. This is the place to ask questions or post scripts
+that are causing you trouble. Basically, any Jacl or Tcl Blend related
+question is fine on the user list.
 
-If you are interested in a more detailed forum focused on issues
-related to Jacl and Tcl Blend you might want to subscribe to the
-tcljava mailing list maintained by Scriptics. You can
-subscribe to the list by sending mail to this address
-tcljava-request@scriptics.com. Once you have subscribed you
-can send mail to the list at tcljava@scriptics.com. The mailing
-list is archived here http://www.mail-archive.com/tcljava@scriptics.com.
+http://lists.sourceforge.net/lists/listinfo/tcljava-user
 
-8. Support and bug fixes
-------------------------
+There is also a mailing list for Jacl and Tcl Blend developers.
+If you have a specific question about some implementation feature,
+have a patch for Jacl or Tcl Blend, or are interested in implementing
+some feature, then you should post a note to the developers mailing list.
 
-Unfortunately, Scriptics, University of Minnesota, and UC Berkeley
-cannot offer direct technical support for Jacl and Tcl Blend.  We
-prefer that you send bug reports and fixes to the comp.lang.tcl
-newsgroup rather than to any one individually.  We'll see anything on
-comp.lang.tcl, and in addition, someone else who reads comp.lang.tcl
-may be able to offer a solution.
+http://lists.sourceforge.net/lists/listinfo/tcljava-dev
+
+Note that you will have to subscribe to the mailing lists before
+posting to them. Some people this is is somehow "unfriendly", but
+if we did not do this the mailing list would be full of spam and
+it would be useful to nobody.
+
+In addition to the mailing lists, you can ask about Jacl or Tcl Blend
+or on the Tcl newsgroup. The network news group "comp.lang.tcl"
+intended for the exchange of information about Tcl, Tk, and
+related applications. It can also be useful to do a google groups
+search on comp.lang.tcl for Jacl or Tcl Blend related questions.
 
 When reporting bugs, please provide a short Tcl script that we can use
 to reproduce the bug.  Make sure that the script runs with bare-bones
