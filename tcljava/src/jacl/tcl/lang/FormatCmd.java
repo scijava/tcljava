@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FormatCmd.java,v 1.6 1999/05/24 11:41:04 mo Exp $
+ * RCS: @(#) $Id: FormatCmd.java,v 1.7 2003/02/01 00:56:29 mdejong Exp $
  *
  */
 
@@ -262,6 +262,10 @@ class FormatCmd implements Command {
 	    } else if (format[fmtIndex] == '*') {
 	        if (argv.length > argIndex) {
 	            width = TclInteger.get(interp, argv[argIndex]);
+	            if (width < 0) {
+	                width = -width;
+	                fmtFlags |= LEFT_JUSTIFY;
+	            }
 		    argIndex++;
 		    fmtIndex++;
 		}
@@ -896,7 +900,11 @@ class FormatCmd implements Command {
 	    StringBuffer sbuf = new StringBuffer();
 	    int index = (width - strValue.length());
 	    for (int i = 0; i < index; i++) {
-	        sbuf.append(' ');
+	        if ((flags & PAD_W_ZERO) != 0) {
+	            sbuf.append('0');
+	        } else {
+	            sbuf.append(' ');
+	        }
 	    }
 	    if ((LEFT_JUSTIFY & flags) != 0) {
 	        right = sbuf.toString();
