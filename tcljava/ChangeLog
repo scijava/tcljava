@@ -1,3 +1,9 @@
+2003-01-10  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* configure: Regen.
+	* tcljava.m4 (AC_JAVA_CLASSPATH): Look for
+	.../jre/lib/core.jar to support IBM JDK 1.4.
+
 2003-01-09  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* new_features.txt: Mention array unset addition.

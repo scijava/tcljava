@@ -2194,6 +2194,22 @@ echo "$as_me: error: jvm directory not set" >&2;}
         fi
     fi
 
+    # IBM JDK 1.4
+    F=jre/lib/core.jar
+    if test "x$ac_java_classpath" = "x" ; then
+
+    echo Looking for $ac_java_jvm_dir/$F >&5
+
+
+        if test -f $ac_java_jvm_dir/$F ; then
+
+    echo Found $ac_java_jvm_dir/$F >&5
+
+
+            ac_java_classpath=$ac_java_jvm_dir/$F
+        fi
+    fi
+
 
     echo Using CLASSPATH=$ac_java_classpath >&5
 
@@ -2211,7 +2227,7 @@ echo "${ECHO_T}$ac_java_classpath" >&6
 echo $ECHO_N "checking to see if the java compiler works... $ECHO_C" >&6
 
     cat << \EOF > conftest.java
-// #line 2214 "configure"
+// #line 2230 "configure"
 
 
 public class conftest {
@@ -2256,7 +2272,7 @@ echo $ECHO_N "checking type of jvm... $ECHO_C" >&6
     if test "x$ac_java_jvm_name" = "x" ; then
 
     cat << \EOF > conftest.java
-// #line 2259 "configure"
+// #line 2275 "configure"
 import kaffe.lang.Application;
 
 public class conftest {
@@ -2283,7 +2299,7 @@ EOF
     if test "x$ac_java_jvm_name" = "x" ; then
 
     cat << \EOF > conftest.java
-// #line 2286 "configure"
+// #line 2302 "configure"
 import gnu.java.io.EncodingManager;
 
 public class conftest {
@@ -2332,7 +2348,7 @@ echo $ECHO_N "checking java API version... $ECHO_C" >&6
 
 
     cat << \EOF > conftest.java
-// #line 2335 "configure"
+// #line 2351 "configure"
 import java.lang.StrictMath;
 
 public class conftest {
@@ -2360,7 +2376,7 @@ EOF
     if test "x$ac_java_jvm_version" = "x" ; then
 
     cat << \EOF > conftest.java
-// #line 2363 "configure"
+// #line 2379 "configure"
 import java.lang.Package;
 
 public class conftest {
@@ -2389,7 +2405,7 @@ EOF
     if test "x$ac_java_jvm_version" = "x" ; then
 
     cat << \EOF > conftest.java
-// #line 2392 "configure"
+// #line 2408 "configure"
 import java.lang.reflect.Method;
 
 public class conftest {

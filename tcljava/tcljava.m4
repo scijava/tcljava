@@ -498,6 +498,16 @@ AC_DEFUN([AC_JAVA_CLASSPATH], [
         fi
     fi
 
+    # IBM JDK 1.4
+    F=jre/lib/core.jar
+    if test "x$ac_java_classpath" = "x" ; then
+        AC_MSG_LOG([Looking for $ac_java_jvm_dir/$F], 1)
+        if test -f $ac_java_jvm_dir/$F ; then
+            AC_MSG_LOG([Found $ac_java_jvm_dir/$F], 1)
+            ac_java_classpath=$ac_java_jvm_dir/$F
+        fi
+    fi
+
     AC_MSG_LOG([Using CLASSPATH=$ac_java_classpath], 1)
     AC_MSG_RESULT($ac_java_classpath)
 ])
