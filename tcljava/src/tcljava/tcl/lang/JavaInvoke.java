@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaInvoke.java,v 1.2 1999/05/09 22:05:21 dejong Exp $
+ * RCS: @(#) $Id: JavaInvoke.java,v 1.3 1999/05/09 22:11:04 dejong Exp $
  *
  */
 
@@ -158,7 +158,7 @@ throws
     FuncSig sig = FuncSig.get(interp, cls, signature, argv,
 	    startIdx, count);
 
-    Method method = (Method)sig.func;
+    Method method = (Method) sig.func;
     if (!Modifier.isStatic(method.getModifiers())) {
 	throw new TclException(interp, "\"" + signature +
 		"\" is not a static method of class \"" + classObj + "\"");
@@ -245,11 +245,21 @@ throws
     }
 
     try {
+	final boolean debug = false;
+	Object result;
+
 	if (isConstructor) {
-	    return invoker.invokeConstructor(cons, args);
+	    result = invoker.invokeConstructor(cons, args);
 	}  else {
-	    return invoker.invokeMethod(method, obj, args);
+	    result = invoker.invokeMethod(method, obj, args);
 	}
+
+	if (debug) {
+	    System.out.println("result object from invocation is \""
+			       + result + "\"");
+	}
+
+	return result;
     } catch (Exception e) {
 	throw new ReflectException(interp, e);
     }
@@ -801,7 +811,8 @@ throws
 	    }
 	} else {
 	    throw new TclException(interp, "\"" + tclObj +
-		    "\" is not an object handle of class \"" + type.getName() +
+		    "\" is not an object handle of class \"" +
+                     JavaInfoCmd.getNameFromClass(type) +
 		    "\"");
 	}
     } else {
@@ -815,8 +826,10 @@ throws
 	}
 
 	throw new TclException(interp, "expected object of type " +
-		type.getName() + " but got \"" + tclObj + "\" (" +
-		javaObj.getClass().getName() + ")");
+                JavaInfoCmd.getNameFromClass(type) +
+		" but got \"" + tclObj + "\" (" +
+                JavaInfoCmd.getNameFromClass(javaObj.getClass()) +
+                ")");
     }
 }
 
