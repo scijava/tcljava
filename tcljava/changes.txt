@@ -1,6 +1,6 @@
 Recent user-visible changes to Jacl & Tcl Blend:
 
-RCS: @(#) $Id: changes.txt,v 1.17 1999/05/15 23:07:48 dejong Exp $
+RCS: @(#) $Id: changes.txt,v 1.18 1999/05/17 04:15:15 dejong Exp $
 
 ----------------- Released 1.0a1, 10/22/97 -----------------------
 
@@ -803,3 +803,50 @@ blocking IO calls under windows which does echo chars. (Mo)
 
 ----------------- Released 1.2.2, 3/23/99 -----------------------
 
+3/24/99 (fixed read problems with stdin for Jacl)
+A script as simple as "set data [read stdin]" would produce incorrect
+results because it would return all the bytes in the buffer, not
+just the ones that were read. The other forms of the read command
+on stdin were also fixed. (Mo)
+
+3/25/99 (fixed debug symbols problem on windows for Tcl Blend)
+In earlier versions, the debug version of the window C
+runtime library was not getting used by Tcl Blend. (Philip Chu)
+
+5/16/99 (fix for NullPointerException in Jacl parser)
+Added an extra test to make sure methods would not be invoked
+on a reference that might be null. (Mo)
+
+5/16/99 ("no awt in shared lib path" fix for Tcl Blend under Linux)
+The linux port of the JDK from Blackdown requires a nasty workaround
+when linking to libjava.so in an application like Tcl Blend. This
+workaround has now been tested with Motif and Lestif on Linux. To
+enable the workaround on must edit the generated Makefile and jtclsh. (Mo)
+
+5/16/99 (fixed Tcl Blend crashes in Tcl 8.1)
+Tcl Blend would crash when compiled for Tcl 8.1 because the current
+directoy was not getting requested correctly in src/native/javaUtil.c.
+After this change Tcl Blend seems to run without crashing with or
+without threads (ie, no --enable-threads option to Tcl's configure). (Mo)
+
+5/16/99 (added to java::field docs)
+Version 1.2.2 added a feature that provides a means to access the
+compiler simulated "class" field of a java.lang.Class object. A
+short usage description was added to docs/TclJava/JavaFieldCmd.html. (Mo)
+
+5/16/99 (changed JDK 1.2 compressed jar hack)
+The truely ugly hack to make compressed jar files work has been
+changed so that the java version number string does not need to
+be equal to "1.2", it just needs to start with "1.2". (Mo)
+
+5/16/99 (fixed the automatic version number updating tool)
+Releases 1.2.1 and 1.2.2 would grab the version number from
+the changes.txt file by looking at the RCS version. This
+turned out to be a really bad idea as it meant the CVS
+revision numbers would need to get set by hand. Now the
+version will only need to be set in the configure.in script. (Mo)
+
+5/16/99 (fixed bug in Jacl's exec command on Windows)
+Jacl's exec command would not work on a windows machine if
+the directory C:\Temp did not exist. Now, if the directory
+does not exist it will be created by the exec command.
