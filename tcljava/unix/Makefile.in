@@ -1,6 +1,6 @@
 # This Makefile is used to the java loadable module.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.4 1998/11/04 22:44:11 hylands Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.5 1998/11/04 23:32:41 hylands Exp $
 
 # The version of TclJava, used in this Makefile
 VERSION = @TCLJAVA_VERSION@
@@ -391,8 +391,6 @@ install_tclblend: tclblend.jar #$(TCLBLEND_LIB_FILE)
 	@chmod 555 $(LIB_INSTALL_DIR)/$(TCLBLEND_LIB_FILE)
 	@echo "Installing tclblend.jar in $(LIB_INSTALL_DIR)"
 	@$(INSTALL_DATA) $(CLASS_DIR)/tclblend.jar $(LIB_INSTALL_DIR)
-	@echo "Installing jwish.tcl in $(LIB_INSTALL_DIR)/tclblend"
-	@$(INSTALL_DATA) $(TOP_DIR)/src/jwish.tcl $(LIB_INSTALL_DIR)/tclblend
 	@echo "Installing jwish in $(BLEND_BIN_DIR)"
 	@$(INSTALL_PROGRAM) jwish $(BLEND_BIN_DIR)
 	chmod a+rx $(BLEND_BIN_DIR)/jwish
@@ -719,7 +717,6 @@ test_tclblend.exec:
 	@echo "# Making test_tclblend.exec"
 	@echo "#"
 	cp $(TOP_DIR)/src/pkgIndex.tcl $(BUILD_DIR)
-	cp $(TOP_DIR)/src/jwish.tcl $(BUILD_DIR)
 	( echo \
 	  lappend auto_path [pwd]\; \
 	  cd $(TOP_DIR)/tests\; \
@@ -978,7 +975,7 @@ tcljavaSrcDist: Makefile
 		$(DISTDIR)/win
 
 	# Don't just blindly recursively copy, we are bound to pick up kruft.
-	# src/pkgIndex.tcl and src/jwish.tcl are tclblend only
+	# src/pkgIndex.tcl are tclblend only
 
 	mkdir -p $(DISTDIR)/src/empty
 	cp -p $(TOP_DIR)/src/empty/README.txt \
@@ -1265,7 +1262,6 @@ tclblendSrcDist: $(UNIX_DIR)/configure Makefile
 
 	mkdir -p $(BLEND_DISTDIR)/src
 	cp -p $(TOP_DIR)/src/pkgIndex.tcl \
-		$(TOP_DIR)/src/jwish.tcl \
 		$(BLEND_DISTDIR)/src
 
 	mkdir -p $(BLEND_DISTDIR)/src/native
@@ -1431,7 +1427,6 @@ tclblendBinDist: $(UNIX_DIR)/configure Makefile
 	mkdir -p $(BLEND_DISTDIR)
 	cp -p $(UNIX_DIR)/green.c \
 		$(BUILD_DIR)/jwish \
-		$(BUILD_DIR)/jwish.tcl \
 		$(BUILD_DIR)/libtclblend$(SHLIB_SUFFIX) \
 		$(BUILD_DIR)/tclbean.jar \
 		$(BUILD_DIR)/tclblend.jar \

@@ -39,10 +39,6 @@ LIB_INSTALL_DIR=@exec_prefix@/lib
 # Location of your tclBlend distribution
 TCLBLEND=$LIB_INSTALL_DIR/tclblend
 
-# Location of the jwish.tcl script
-JWISH_TCL=$TCLBLEND/jwish.tcl
-
-
 # Full path name of wish and tclsh
 WISH80=@WISH80@
 TCLSH80=@TCLSH80@

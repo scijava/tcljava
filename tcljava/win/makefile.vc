@@ -276,7 +276,7 @@ distclean: clean
 
 clean_temp:
 	-@cd $(CLASS_DIR)
-	-@del pkgIndex.tcl jwish.tcl 2> NUL
+	-@del pkgIndex.tcl 2> NUL
 	-@del *.class 2> NUL
 	del   *.jar 2> NUL
 	-@del *.exp 2> NUL
@@ -304,7 +304,6 @@ test_tclblend.exec:
 	cd $(WIN_DIR)
 	-del tclblend.dll
 	copy $(SRC_DIR)\pkgIndex.tcl .
-	copy $(SRC_DIR)\jwish.tcl .
 	set CLASSPATH=$(TEST_CLASSPATH)
 	set PATH=$(WIN_DIR);$(PATH)
 	$(TCLSH) <<
