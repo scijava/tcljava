@@ -7,14 +7,14 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FileDialogApp.java,v 1.1 1998/10/14 21:09:23 cvsadmin Exp $
+ * RCS: @(#) $Id: FileDialogApp.java,v 1.2 1999/05/08 23:14:11 dejong Exp $
  *
  */
 
 import java.awt.*;
 import java.io.*;
 
-/*
+/**
  * A simple "application" that just wraps around the AWT FileDialog 
  * component.  Once the FileDialog is no longer displayed, then calls
  * to getFile() and getDirectory() will return information on which path 
@@ -23,13 +23,11 @@ import java.io.*;
 
 public class FileDialogApp {
 
-    /*
-     * The Java AWT FileDialog. 
-     */
+    // The Java AWT FileDialog. 
 
     private FileDialog fd;              
 
-    /*
+    /**
      * FileDialogApp --
      *
      * Create a FileDialog.  Since the AWT FileDialog is modal, it
@@ -44,7 +42,7 @@ public class FileDialogApp {
 	fd.show();
     }
 
-    /*
+    /**
      * getFile --
      *
      * Gets the file of the Dialog.
@@ -54,7 +52,7 @@ public class FileDialogApp {
         return(fd.getFile());
     }
 
-    /*
+    /**
      * getDirectory --
      *
      * Gets the directory of the Dialog.
@@ -64,7 +62,7 @@ public class FileDialogApp {
         return(fd.getDirectory());
     }
 
-    /*
+    /**
      * setDirectory --
      *
      * Set the directory of the Dialog to the specified directory.
