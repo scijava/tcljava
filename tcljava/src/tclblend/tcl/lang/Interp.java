@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.3 1999/05/09 20:51:32 dejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.4 1999/05/09 20:53:20 dejong Exp $
  *
  */
 
@@ -853,45 +853,27 @@ throws
 
     try {
 
-	
-	// Do a workaround for compressed files BUG in JDK1.2
+	// Ugly workaround for compressed files BUG in JDK1.2
         // this bug first showed up in  JDK1.2beta4. I have sent
         // a number of emails to Sun but they have deemed this a "feature"
-        // of 1.2. This is flat out wrong but I can not seem to change thier
+        // of 1.2. This is flat out wrong but I do not seem to change thier
         // minds. Because of this, there is no way to do non blocking IO
         // on a compressed Stream in Java. (mo)
 
-        if ((System.getProperty("java.version").equals("1.2beta4") ||
-            System.getProperty("java.version").equals("1.2fcs") ||
-            System.getProperty("java.version").equals("1.2")) &&
+        if (System.getProperty("java.version").equals("1.2") &&
             stream.getClass().getName().equals("java.util.zip.ZipFile$1")) {
-	  int used = 0;
-	  int cur;
-	  int size = 1024 * 8;  // A good default size ??
-
-	  byte[] byteArray = new byte[size];
-
-	  cur = stream.read();
-
-	  while (cur != -1) {
 	    
-	    // Expand the byte array if we need to make more room
-	    if (used >= size) {
-	      byte[] oldArray = byteArray;
-	      int new_size = size * 2;
-	      
-	      byteArray = new byte[new_size];
-	      System.arraycopy(oldArray, 0, byteArray, 0, used);
-	      oldArray = null;
-	      
-	      size = new_size;
-	    }
-	    byteArray[used++] = (byte) cur;
-	    cur = stream.read();
+	  ByteArrayOutputStream baos = new ByteArrayOutputStream(1024);
+	  byte[] buffer = new byte[1024];
+	  int numRead;
+
+	  // Read all data from the stream into a resizable buffer
+	  while ((numRead = stream.read(buffer, 0, buffer.length)) != -1) {
+	      baos.write(buffer, 0, numRead);
 	  }
-	  
-	  // Now we are done reading the stream so eval it
-	  eval(new String(byteArray,0,used), 0);	  
+
+	  // Convert bytes into a String and eval them
+	  eval(new String(baos.toByteArray()), 0);	  
 	  
 	} else {	  
 	  // Other systems do not need the compressed jar hack
