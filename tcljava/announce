@@ -22,7 +22,7 @@ the Linux port of Tcl Blend has been added. Some documentation
 errors have been fixed. A number of bugs in the implementation
 of the read and gets commands for Jacl have been fixed. A bug
 in Jacl's exec command under windows was fixed. Fixes for printing
-of -0.0, positive infinity, and negative for Jacl infinity were
+of -0.0, positive infinity, and negative infinity for Jacl were
 also added. See the changes.txt file for additional info.
 
 What is Jacl?
