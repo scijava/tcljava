@@ -1,5 +1,15 @@
 2000-07-29  Mo DeJong  <mdejong@redhat.com>
 
+	* tests/tcljava/JavaLock.test: Use
+	error string from Tcl 8.3 when a
+	command is invoked with the incorrect
+	number of arguments. Jacl does not
+	yet generate a Tcl 8.3 compliant
+	error in this case, so some of its
+	regression tests will fail.
+
+2000-07-29  Mo DeJong  <mdejong@redhat.com>
+
 	* src/empty/empty.jar: Regen.
 	* src/empty/tcl/lang/Interp.java:
 	* src/jacl/tcl/lang/Interp.java:

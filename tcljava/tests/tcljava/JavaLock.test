@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: JavaLock.test,v 1.2 1999/05/16 00:20:40 dejong Exp $
+# RCS: @(#) $Id: JavaLock.test,v 1.3 2000/07/30 02:43:47 mo Exp $
 
 # Note: This test file must be sourced from the parent directory
 #       or else the defs file may not be properly loaded.
@@ -19,11 +19,11 @@ setupJavaPackage
 
 test java::lock-1.1 {error checking} {
     list [catch {java::lock} msg] $msg
-} {1 {no value given for parameter "javaObj" to "java::lock"}}
+} {1 {wrong # args: should be "java::lock javaObj"}}
 
 test java::lock-1.2 {error checking} {
     list [catch {java::lock a b} msg] $msg
-} {1 {called "java::lock" with too many arguments}}
+} {1 {wrong # args: should be "java::lock javaObj"}}
 
 test java::lock-1.4 {error checking} {
     list [catch {java::lock a} msg] $msg
@@ -81,11 +81,11 @@ test java::lock-1.9 {create and remove multiple locks} {
 
 test java::unlock-1.1 {unlock error messages} {
     list [catch {java::unlock} msg] $msg
-} {1 {no value given for parameter "javaObj" to "java::unlock"}}
+} {1 {wrong # args: should be "java::unlock javaObj"}}
 
 test java::unlock-1.2 {unlock error checking} {
     list [catch {java::unlock a b} msg] $msg
-} {1 {called "java::unlock" with too many arguments}}
+} {1 {wrong # args: should be "java::unlock javaObj"}}
 
 test java::unlock-1.3 {error checking} {
     list [catch {java::lock a} msg] $msg
