@@ -59,7 +59,7 @@ JAVA_VERSION	= 1.1
 JAVA_CLASSPATH	= $(JAVA_DIR)\lib\classes.zip;.
 
 # JDK1.2 users should uncomment this section
-#JAVA_DIR	= D:\jdk1.2beta4
+#JAVA_DIR	= D:\jdk1.2
 #JAVA_DIR	= G:\mo\software\java\jdk1.1.2b4
 #JAVA_VERSION	= 1.2
 #JAVA_CLASSPATH	= $(JAVA_DIR)\lib\tools.jar;$(JAVA_DIR)\jre\lib\rt.jar;.
@@ -71,14 +71,14 @@ TCL_VERSION	= 80
 TCL_DIR		= D:\progra~1\tcl
 #TCL_DIR	= G:\mo\software\test_tcl
 # If you are compiling from the Tcl Blast 8.0.3 cd, then uncomment these lines
-TCLSH		= tclsh80.exe
-TCLLIB		= $(TCL_DIR)\lib\tcl$(TCL_VERSION)VC.LIB
+#TCLSH		= tclsh80.exe
+#TCLLIB		= $(TCL_DIR)\lib\tcl$(TCL_VERSION)VC.LIB
 
 TCL_SRC		= ..\..\tcl$(TCL_DOTVERSION)
 STUDIO_LIB_DIR	= c:\JavaStudio1.0\JS\classes.zip
 
-TCLBLEND_VERSION = 1.1
-TCLBLEND_PATCHLEVEL = a1
+TCLJAVA_VERSION = 1.1
+TCLJAVA_PATCHLEVEL = a1
 
 # Specify which system to build.  (either jacl or tclblend)
 TCLJAVA		= tclblend
@@ -98,7 +98,7 @@ MACHINE	= IX86
 ######################################################################
 
 
-TCL_LIB_INSTALL_DIR 	= $(TCL_DIR)\lib
+TCL_LIB_INSTALL_DIR 	= $(TCL_DIR)\lib\$(TCLJAVA)$(TCLJAVA_VERSION)
 TCL_BIN_INSTALL_DIR 	= $(TCL_DIR)\bin
 
 TOP_DIR			= ..
@@ -140,6 +140,12 @@ DBGX		=
 !IF "$(TCLLIB)"  == ""
 TCLSH   = $(TCL_SRC)\win$(TMPDIRNAME)\tclsh$(TCL_VERSION)$(DBGX).exe
 TCLLIB	= $(TCL_SRC)\win$(TMPDIRNAME)\tcl$(TCL_VERSION)$(DBGX).lib
+!ENDIF
+
+!IF "$(JAVA_VERSION)"  == "1.2"
+JAVA_RUNTIME_LIBS=$(JAVA_DIR)\jre\bin;$(JAVA_DIR)\jre\bin\classic
+!ELSE
+JAVA_RUNTIME_LIBS=
 !ENDIF
 
 TOOLS_DIR		= $(ROOT_DIR)\tools
@@ -302,9 +308,9 @@ install: install_$(TCLJAVA) install_tcljava
 # your are likely to get a crash.  Instead, set TCLSH = tclsh80.exe
 test_tclblend.exec:
 	cd $(WIN_DIR)
-	-del tclblend.dll
 	copy $(SRC_DIR)\pkgIndex.tcl .
 	set CLASSPATH=$(TEST_CLASSPATH)
+	set PATH=$(WIN_DIR);$(JAVA_RUNTIME_LIBS);$(PATH)
 	set PATH=$(WIN_DIR);$(PATH)
 	$(TCLSH) <<
 		puts "pwd is [pwd]"
@@ -338,18 +344,18 @@ test_jacl.exec:
 shell: shell_$(TCLJAVA).exec
 
 shell_jacl.exec:
-	cd $(BUILD_DIR)
+	cd $(WIN_DIR)
 	$(JAVA) $(JAVA_FLAGS) -classpath $(TEST_CLASSPATH) \
 		-DBUILD_DIR=$(WIN_DIR) -DJAVA=$(JAVA) tcl.lang.Shell
 
 shell_tclblend.exec:
-	cd $(BUILD_DIR)
-	copy $(MISC_DIR)\pkgIndex.tcl $(BUILD_DIR)
-	set TCLLIBPATH=$(BUILD_DIR)
-	set BUILD_DIR=$(BUILD_DIR)
-	set CLASSPATH=$(TEST_CLASSPATH)
-	set PATH=$(BUILD_DIR);$(PATH)
-	$(TCLSH)
+	cd $(WIN_DIR)
+	copy $(SRC_DIR)\pkgIndex.tcl $(WIN_DIR)
+	set TCLLIBPATH={$(WIN_DIR)}
+	set BUILD_DIR=$(WIN_DIR)
+  	set CLASSPATH=$(TEST_CLASSPATH)
+	set PATH=$(WIN_DIR);$(JAVA_RUNTIME_LIBS);$(PATH)
+  	$(TCLSH)
 
 #----------------------------------------------------------------
 # Build rules for the Demos
@@ -456,13 +462,12 @@ tclblend.jar:
 
 install_tclblend:
 	-@mkdir $(TCL_LIB_INSTALL_DIR)
-	-@echo Installing tclblend.dll in $(TCL_BIN_INSTALL_DIR)
-	-@copy $(CLASS_DIR)\tclblend.dll $(TCL_BIN_INSTALL_DIR)
+	-@echo Installing tclblend.dll in $(TCL_LIB_INSTALL_DIR)
+	-@copy $(CLASS_DIR)\tclblend.dll $(TCL_LIB_INSTALL_DIR)
 	-@echo Installing tclblend.jar in $(TCL_LIB_INSTALL_DIR)
 	-@copy $(CLASS_DIR)\tclblend.jar $(TCL_LIB_INSTALL_DIR)
-	-@mkdir $(TCL_LIB_INSTALL_DIR)\tclblend
-	-@echo Installing pkgIndex.tcl in $(TCL_LIB_INSTALL_DIR)\tclblend
-	-@copy $(SRC_DIR)\pkgIndex.tcl $(TCL_LIB_INSTALL_DIR)\tclblend
+	-@echo Installing pkgIndex.tcl in $(TCL_LIB_INSTALL_DIR)
+	-@copy $(SRC_DIR)\pkgIndex.tcl $(TCL_LIB_INSTALL_DIR)
 
 
 TCLBLEND_OBJS = \
