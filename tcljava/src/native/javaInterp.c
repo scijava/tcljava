@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaInterp.c,v 1.9 2002/07/22 19:39:21 mdejong Exp $
+ * RCS: @(#) $Id: javaInterp.c,v 1.10 2002/08/12 07:12:10 mdejong Exp $
  */
 
 #include "java.h"
@@ -35,7 +35,11 @@ static void		JavaCmdDeleteProc(ClientData clientData);
 static int		JavaCmdProc(ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[]);
 static char *		JavaTraceProc(ClientData clientData,
-			    Tcl_Interp *interp, char *name1,
+			    Tcl_Interp *interp,
+#ifdef CONST84
+			    CONST
+#endif
+			    char *name1,
 #ifdef CONST84
 			    CONST
 #endif
@@ -114,6 +118,7 @@ Java_tcl_lang_Interp_create(
 	Tcl_DeleteInterp(interp);
 	lvalue = 0;
     } else {
+	lvalue = 0;
 	*(Tcl_Interp**)&lvalue = interp;
     }
     return lvalue;
@@ -818,6 +823,9 @@ static char *
 JavaTraceProc(
     ClientData clientData,	/* Object handle. */
     Tcl_Interp *interp,		/* Current interpreter. */
+#ifdef CONST84
+    CONST
+#endif
     char *name1,		/* Name of scalar or array variable. */
 #ifdef CONST84
     CONST

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaList.c,v 1.3 2000/10/29 06:00:42 mdejong Exp $
+ * RCS: @(#) $Id: javaList.c,v 1.4 2002/08/12 07:12:10 mdejong Exp $
  */
 
 #include "java.h"
@@ -77,7 +77,8 @@ Java_tcl_lang_TclList_append(
     if (Tcl_ListObjAppendElement(NULL, listPtr, objPtr) != TCL_OK) {
 	JavaThrowTclException(env, NULL, TCL_ERROR);
     }
-    
+
+    list = 0;    
     *(Tcl_Obj **)&list = listPtr;
     return list;
 }
@@ -359,6 +360,7 @@ Java_tcl_lang_TclList_replace(
      * Return the new value of the list.
      */
 
+    list = 0;
     *(Tcl_Obj **)&list = listPtr;
     return list;
 }
@@ -408,6 +410,7 @@ Java_tcl_lang_TclList_splitList(
 	JavaThrowTclException(env, interp, TCL_ERROR);
 	list = 0;
     } else {
+        list = 0;
 	*(Tcl_Obj **)&list = listPtr;
     }
 

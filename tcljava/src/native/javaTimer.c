@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaTimer.c,v 1.3 2000/10/29 06:00:42 mdejong Exp $
+ * RCS: @(#) $Id: javaTimer.c,v 1.4 2002/08/12 07:12:10 mdejong Exp $
  */
 
 #include "java.h"
@@ -60,6 +60,7 @@ Java_tcl_lang_TimerHandler_createTimerHandler(
     infoPtr->token = Tcl_CreateTimerHandler(ms, JavaTimerProc,
 	    (ClientData) infoPtr);
 
+    lvalue = 0;
     *(TimerInfo**)&lvalue = infoPtr;
     return lvalue;
 }

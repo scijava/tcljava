@@ -1,3 +1,24 @@
+2002-08-12  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* Makefile.in: Fix 'make test' rule by setting
+	TCLLIBPATH correctly.
+	* src/native/javaCmd.c (Tclblend_Init):
+	* src/native/javaInterp.c (JavaTraceProc,
+	Java_tcl_lang_Interp_create):
+	* src/native/javaList.c (Java_tcl_lang_TclList_append,
+	Java_tcl_lang_TclList_replace,
+	Java_tcl_lang_TclList_splitList):
+	* src/native/javaNotifier.c (Java_tcl_lang_Notifier_init,
+	Java_tcl_lang_Notifier_alertNotifier):
+	* src/native/javaObj.c (JavaGetTclObject):
+	* src/native/javaTimer.c (
+	Java_tcl_lang_TimerHandler_createTimerHandler):
+	Zero out jlong values before assigning a pointer
+	value. This handles the case where pointers
+	are 32bits and a jlong is 64 bits. Add additional
+	CONST84 check to avoid compiler warnings when
+	compiling with Tcl 8.4 or newer.
+
 2002-07-23  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* Makefile.in: Write out an init file that sets

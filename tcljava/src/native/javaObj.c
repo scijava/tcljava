@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaObj.c,v 1.5 2000/10/29 06:00:42 mdejong Exp $
+ * RCS: @(#) $Id: javaObj.c,v 1.6 2002/08/12 07:12:10 mdejong Exp $
  */
 
 #include "java.h"
@@ -611,6 +611,19 @@ JavaGetTclObject(
 	 * Calls : TclObject tobj = CObject.newInstance(long objPtr);
 	 */
 
+	/*
+	 *
+	 * We should be able to use the following statement below:
+	 *
+	 *     lvalue = (jlong) objPtr;
+	 *
+	 * But gcc warns "cast to pointer from integer of different size"
+	 * so use an ugly workaround to avoid the compiler warning.
+	 * Note that the value is zeroed out before assigning to
+	 * handle the case where jlong is 64 while a ptr is 32 bits.
+	 */
+
+	lvalue = 0;
 	*(Tcl_Obj **)&lvalue = objPtr;
 	object = (*env)->CallStaticObjectMethod(env, jcache->CObject,
 		jcache->newCObjectInstance, lvalue);

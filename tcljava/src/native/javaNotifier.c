@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaNotifier.c,v 1.4 2002/07/22 10:00:47 mdejong Exp $
+ * RCS: @(#) $Id: javaNotifier.c,v 1.5 2002/08/12 07:12:10 mdejong Exp $
  */
 
 #include "java.h"
@@ -57,6 +57,7 @@ Java_tcl_lang_Notifier_init(
     jobject notifierObj)	/* Handle to Notifier object. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    jlong tid;
 
     tsdPtr->notifierObj    = (*env)->NewGlobalRef(env, notifierObj);
     tsdPtr->eventQueued    = 0;
@@ -68,7 +69,9 @@ Java_tcl_lang_Notifier_init(
      */
     Tcl_CreateEventSource(NotifierSetup, NotifierCheck, NULL);
 
-    return (jlong) Tcl_GetCurrentThread();
+    tid = 0;
+    *(Tcl_ThreadId *)&tid = Tcl_GetCurrentThread();
+    return tid;
 }
 
 /*
@@ -153,8 +156,7 @@ Java_tcl_lang_Notifier_alertNotifier(
     jobject notifierObj,        /* Handle to Notifier object. */
     jlong tid)	                /* Tcl_ThreadId for the notifier thread */
 {
-    /* FIXME: there has got to be a better way to do this */
-    Tcl_ThreadAlert((Tcl_ThreadId) tid);
+    Tcl_ThreadAlert(*(Tcl_ThreadId *)&tid);
 }
 
 /*
