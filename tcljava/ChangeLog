@@ -1,5 +1,10 @@
 2002-12-24  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* docs/TclJava/JavaFieldCmd.html: Make the doc
+	more clear WRT shadowed fields in a superclass.
+
+2002-12-24  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* README.jacl:
 	* README.tclblend:
 	* unix/README.tclblend:
