@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.40 2000/05/14 23:35:05 mo Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.41 2000/05/21 11:26:29 mo Exp $
 
 # The directory containing the Tcl sources and headers appropriate
 # for this version of Tk ("srcdir" will be replaced or has already
@@ -1056,7 +1056,7 @@ TCLBLEND_DISTDIR	= $(DISTDIR)/$(TCLBLEND_DISTNAME)
 DIST_CHMOD_PERMS	= a+rX,u+w,go-w,g-s
 
 # This rule will build all the distributions
-dists: jaclDist tclblendDist
+dist: jaclDist tclblendDist
 
 
 #this is just used for debugging the dist name generation

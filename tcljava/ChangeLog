@@ -1,3 +1,9 @@
+2000-05-21  Mo DeJong  <mdejong@redhat.com>
+
+	* unix/Makefile.in: Changed target
+	name from dists to dist to conform
+	to GNU specs.
+
 2000-05-14  Mo DeJong  <mdejong@redhat.com>
 
 	* unix/configure.in: Moved minimum
