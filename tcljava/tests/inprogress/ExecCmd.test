@@ -242,3 +242,28 @@ test exec-3.5 {exec return values} {
 } "0 \{\{tcl/lang/AfterCmd\$AfterAssocData.class\} \{tcl/lang/AfterCmd\$TimerInfo.class\}\nlast\$ one\}"
 
 
+test exec-4.1 { setting of errorCode when exit value != 0 } {unixOnly} {
+    # NOTE: This test ignores PID since we can't find that in Java.
+
+    set abnormal {child process exited abnormally}
+
+    if {![catch {exec false} err]} {
+        set result "exception not raised"
+    } elseif {$err != $abnormal} {
+        set result "expected $abnormal got $err"
+    } elseif {[lindex $errorCode 0] != "CHILDSTATUS" ||
+        [lindex $errorCode 2] != "1"} {
+        set result "expected {CHILDSTATUS ?PID? 1} got $errorCode"
+    } else {
+        set result ok
+    }
+} ok
+
+test exec-4.2 { no error when exit value == 0 } {unixOnly} {
+    list [catch {exec true} err] $err
+} {0 {}}
+
+
+# Need pid cmd and way to find a child's pid!
+
+

@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ExecCmd.java,v 1.5 1999/05/17 03:50:37 dejong Exp $
+ * RCS: @(#) $Id: ExecCmd.java,v 1.6 2001/11/16 05:31:07 mdejong Exp $
  */
 
 package tcl.lang;
@@ -139,8 +139,6 @@ throws
 	  sbuf.append("child process exited abnormally");
 	}
 
-
-	
 	//If the last character of the result buffer is a newline, then 
 	//remove the newline character (the newline would just confuse 
 	//things).  Finally, we set pass the result to the interpreter.
@@ -151,6 +149,24 @@ throws
 	    sbuf.setLength(length - 1);
 	}
 
+	// Tcl supports lots of child status conditions.
+	// Unfortunately, we can only find the child's
+	// exit status using the Java API
+        
+	if (exit != 0) {
+	    TclObject childstatus = TclList.newInstance();
+	    TclList.append(interp, childstatus,
+	        TclString.newInstance("CHILDSTATUS"));
+
+            // We don't know how to find the child's pid
+	    TclList.append(interp, childstatus,
+	        TclString.newInstance("?PID?"));
+
+	    TclList.append(interp, childstatus,
+	        TclInteger.newInstance(exit));
+
+            interp.setErrorCode( childstatus );
+	}
 
 	//when the subprocess writes to its stderr stream or returns
 	//a non zero result we generate an error
