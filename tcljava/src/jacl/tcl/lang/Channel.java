@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Channel.java,v 1.21 2002/01/02 18:40:53 mdejong Exp $
+ * RCS: @(#) $Id: Channel.java,v 1.22 2002/01/21 06:09:36 mdejong Exp $
  */
 
 package tcl.lang;
@@ -185,17 +185,7 @@ abstract class Channel {
         checkWrite(interp);
 
         if (writer != null) {
-            eofCond = false;
-
-            try
-            {
-                writer.write(outStr);
-            }
-            catch (EOFException e)
-            {
-                eofCond = true;
-                throw e;
-            }
+            writer.write(outStr);
         }
     }
 
@@ -252,13 +242,7 @@ abstract class Channel {
         checkWrite(interp);
 
         if (writer != null) {
-            try {
-                writer.flush();
-            } catch (EOFException e) {
-                // FIXME: We need to clear eofCond on next write if set!
-                eofCond = true;
-                throw e;
-            }
+            writer.flush();
         }
     }
 

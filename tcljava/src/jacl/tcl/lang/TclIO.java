@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclIO.java,v 1.7 2001/12/24 08:01:12 mdejong Exp $
+ * RCS: @(#) $Id: TclIO.java,v 1.8 2002/01/21 06:09:36 mdejong Exp $
  *
  */
 
@@ -86,9 +86,10 @@ class TclIO {
 	    try {
 	      chan.close();
 	    } catch (IOException e) {
+	      //e.printStackTrace(System.err);
 	      throw new TclRuntimeError(
-		    "CloseCmd.cmdProc() Error: IOException when closing " +
-		    chan.getChanName());
+		    "TclIO.unregisterChannel() Error: IOException when closing " +
+		    chan.getChanName() + ": " + e.getMessage());
 	    }
 	}
     }
