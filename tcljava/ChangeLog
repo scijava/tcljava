@@ -1,3 +1,14 @@
+2003-03-05  Tom Poindexter  <tpoindex@nyx.net>,
+            Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/jacl/tcl/lang/Interp.java (eventuallyDispose):
+	* src/jacl/tcl/lang/StdChannel.java (close): Invoke
+	the close() method for any remaining channel
+	when the interp is being disposed of. The close
+	method in the StdChannel class will invoke flush
+	one final time for stdout in case there was output
+	that had not yet been flushed.
+
 2003-03-05  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* src/jacl/tcl/lang/StdChannel.java (open, write):

@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.41 2003/01/09 02:15:39 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.42 2003/03/05 23:19:25 mdejong Exp $
  *
  */
 
@@ -539,6 +539,18 @@ eventuallyDispose()
 	    AssocData data = (AssocData) table.get(key);
 	    data.disposeAssocData(this);
 	    table.remove(key);
+	}
+    }
+
+    // Close any remaining channels
+
+    for (Enumeration e = interpChanTable.keys(); e.hasMoreElements();) {
+	Object key = e.nextElement();
+	Channel chan = (Channel) interpChanTable.get(key);
+	try {
+	    chan.close();
+	} catch (IOException ex) {
+	    // Ignore any IO errors
 	}
     }
 

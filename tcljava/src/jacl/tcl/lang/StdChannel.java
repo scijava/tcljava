@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: StdChannel.java,v 1.17 2003/03/05 22:57:59 mdejong Exp $
+ * RCS: @(#) $Id: StdChannel.java,v 1.18 2003/03/05 23:19:26 mdejong Exp $
  *
  */
 
@@ -137,6 +137,18 @@ class StdChannel extends Channel {
                 System.out.flush();
             }
         }
+    }
+
+    /**
+     * Check for any output that might still need to be flushed
+     * when the channel is closed.
+     */
+
+    void close() throws IOException {
+        super.close();
+
+        if (stdType == STDOUT)
+            System.out.flush();
     }
 
     String getChanType() {
