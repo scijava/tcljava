@@ -1,5 +1,10 @@
 2000-08-20  Christian Krone  <krischan@sql.de>
 
+	* src/jacl/tcl/lang/Expression.java (ExprGetValue):
+	Expressions with &&, || or ?: now accept boolean string values.
+
+2000-08-20  Christian Krone  <krischan@sql.de>
+
 	* src/jacl/tcl/lang/Expression.java (DoubleTooSmall,
 	ExprLooksLikeInt): Check for ARITH UNDERFLOW, rename
 	ExprLooksLikeInt to looksLikeInt.

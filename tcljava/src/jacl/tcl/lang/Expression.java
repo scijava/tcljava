@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Expression.java,v 1.5 2000/08/20 08:37:47 mo Exp $
+ * RCS: @(#) $Id: Expression.java,v 1.6 2000/08/20 09:15:20 mo Exp $
  *
  */
 
@@ -575,15 +575,20 @@ class Expression {
 		    value.intValue = (value.doubleValue != 0) ? 1 : 0;
 		    value.type = ExprValue.INT;
 		} else if (value.type == ExprValue.STRING) {
-		    if (interp.noEval == 0) {
-			IllegalType(interp, ExprValue.STRING, operator);
-		    }
+                   try {
+                       boolean b = Util.getBoolean(null, value.stringValue);
+                       value = new ExprValue(b ? 1 : 0);
+                   } catch (TclException e) {
+                       if (interp.noEval == 0) {
+                           IllegalType(interp, ExprValue.STRING, operator);
+                       }
 
-		    // Must set value.intValue to avoid referencing
-		    // uninitialized memory in the "if" below;  the actual
-		    // value doesn't matter, since it will be ignored.
-		    
-		    value.intValue = 0;
+                       // Must set value.intValue to avoid referencing
+                       // uninitialized memory in the "if" below;  the actual
+                       // value doesn't matter, since it will be ignored.
+
+                       value.intValue = 0;
+                   }
 		}
 		if (((operator == AND) && (value.intValue == 0))
 		        || ((operator == OR) && (value.intValue != 0))) {
@@ -719,7 +724,12 @@ class Expression {
 		    IllegalType(interp, value.type, operator);
 		}
 		if (value2.type == ExprValue.STRING) {
-		    IllegalType(interp, value.type, operator);
+		    try {
+                       boolean b = Util.getBoolean(null, value2.stringValue);
+                       value2 = new ExprValue(b ? 1 : 0);
+                   } catch (TclException e) {
+                       IllegalType(interp, value2.type, operator);
+                   }
 		}
 		break;
 
