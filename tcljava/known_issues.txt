@@ -1,9 +1,14 @@
 (Building)
-In this release java files are compiled everytime make is run.
-In earlier releases, a java dependency system was used to
-compile only the necessary files.
+If make is run with no arguments then all the source files will
+be recompiled even if they were compiled before. This differs
+from the "normal" make process which uses dependencies. The
+up side to this process is that the Makefiles are a less complex
+and easier to modify. Running make targets like "make shell",
+"make test", or "make demo" will only recompile the core files
+if they have not been compiled already.
 
-(Solaris)
+
+(Jacl under Solaris)
 running the jacl tests using the green threads java
 interpreter with the jit on will crash the JVM.
 This crash will happen even with the jit from the
@@ -13,101 +18,137 @@ tcljava/JavaDefineClassCmd.test
 tcljava/JavaLoadCmd.test
 
 to get around this you can disable the jit (-Djava.compiler=)
-or use the native version (pass in the -native flag).
+or use the native version (pass in the -native flag in jaclsh).
 
-(Windows)
+
+(Jacl under Windows)
 There is a very strange bug in the JDK1.1 series that causes
 the exec command to fail on some NT machines. An example
 from the test cases is an exec of java with some argument.
 The exec command will report that "java" can not be found
 even if it is in the users PATH. This problem has been
 fixed in the JDK1.2 series but still haunts the JDK1.1 code.
+The exec command also has some serious problem under Windows 95.
+These bugs in Jacl are caused by bugs in the JDK and there is
+no way to work around them in Jacl.
 
 
-(Windows)
+(Jacl under Windows)
 compiling jacl with jikes (the IBM java compiler) and then
 running jacl on a 1.1.6 sun VM with the jit on will crash the JVM.
 Update:
-This jit compiler bug has been fixed in Sun jdk1.1.7.
+This jit compiler bug has been fixed in JDK1.1.7.
 
 
-(Tcl Blend Windows)
+(Tcl Blend under Windows)
 Compiling under windows using the Tcl Blast 8.0.3 dist
 requires tclRegExp.h because tclInt.h includes it.
 
 
-(Tcl Blend Windows)
-If, under Windows, you compile and install Tcl8.0.3 yourself instead 
-of using the prebuilt binaries from Scriptics or the Tcl Blast CD,
-then 'package require java' may fail to find the java package.
-     
-The problem is that if you install Tcl8.0.3 yourself, then the
-Software\Scriptics\Tcl Registry key is not set, so auto_path is
-not set to include the C:\Program Files\Tcl\lib directory, instead it
-only includes C:\Program Files\Tcl\lib\tcl8.0.
-
-If the Tcl Blend1.1 pkgIndex.tcl file is in 
-C:\Program Files\Tcl\lib\tclblend1.1, then as a workaround, you
-can append the parent directory to auto_path:
-    lappend auto_path "C:/Program Files/Tcl/lib"
-    package require java
-
-Another workaround is to set the TCLLIBPATH environment variable to
-C:\Program Files\Tcl\lib.
-
-The problem stems from a bug in tcl8.0.3/library/init.tcl, and the bug
-has been fixed in the CVS sources at Scriptics.
-
-
-(Solaris Tcl Blend tests)
+(Tcl Blend tests under Solaris)
 TclEvent-1.3 in tests/tcljava/TclEvent.test causes problems later
 when exit is called.  If you run the TclEvent-1.3 test, then
 when you later call the tcl exit command, you will get the following
 message:
 	called Tcl_Close on channel with refCount > 0 
 This problem only seems to appear under Tcl8.0.3
+Update:
+This problem has been fixed in tcl8.0.4.
 
 
-(Solaris Jacl tests)
+(Jacl tests under Solaris)
 If you configure with --srcdir, and don't have write permission in
 the source directory, then some of the Jacl tests in tcl/fileName.test
 will fail.  Also, tcl/info.test will fail with a message
 about 'cannot open file: gorp.info'
 
-(Windows JDK1.2beta4 and JDK1.2fcs)
+
+(Tcl Blend under Windows with JDK1.2)
 To use tclblend with JDK1.2beta4 or JDK1.2fcs, add the following to your path:
 c:\jdk1.2beta4\bin;c:\jdk1.2beta4\jre\bin;c:\jdk1.2beta4\jre\bin\classic;c:\Program Files\Tcl\lib\tclblend1.1
 
 
 (JDK1.2beta4 tests)
-tests/tcljava/PkgInvoker.tcl fails.
-The cause seems to be connected with the forName method in java.lang.Class
+tests/tcljava/PkgInvoker.tcl fails.  The cause seems to be connected
+with the forName method in java.lang.Class
+Update:
 This JDK bug has been fixed in JDK1.2fcs.
 
 
 (JDK1.2beta4 tests)
-ReflectObject-3.1 fails when run after AmbiguousSignature
+ReflectObject-3.1 fails when run after AmbiguousSignature. This
+seems to be a bug in the JDK1.2. This bug needs to be squashed.
+Update:
+This bug has been fixed in TclJava1.2.2.
 
 
-(JDK1.2beta4 Windows tests)
+(Tcl Blend tests under Windows with JDK1.2Beta4)
 When running the tests under JDK1.2beta4 under NT4.0sp3, the TCLSH
 makefile variable must not be an absolute pathname.  If it is
 an absolute pathname, then tclsh80 will crash with a segfault
 
 
-(Tcl Blend guiDemo)
-Under Tcl Blend with Tcl 8.0.3, guiDemo sometimes does not work,
+(Tcl Blend with the gridDemo)
+Under Tcl Blend with Tcl 8.0.3, gridDemo sometimes does not work,
 especially when run on a remote display over the network.
 The problem is that employees cannot be moved over.
 When the arrow is clicked on, the message:
-	can't wait for variable "done":  would wait forever
+	"can't wait for variable "done":  would wait forever"
 appears
 
 
-(Tcl 8.1)
+(Tcl Blend with Tcl 8.1)
 src/native/javaInterp.c produces a warning while compiling because
 Tcl_ObjSetVar2 is not defined in Tcl8.1.  package require java
-fails because this symbol cannot be found.
+fails because this symbol cannot be found. There also seems to
+be an issue with the use of TclGetCwd inside javaUtil.c.
+Update:
+The compile problems are fixed and now Tcl blend will compile with
+Tcl 8.1b1 but it crashes on startup (inside BlendExtension.java).
+More work needs to be done to get Tcl Blend running with Tcl8.1.
+
+
+(Tcl Blend under IRIX)
+The Tcl configure scripts use two options that do not seem to work
+correctly with gcc on IRIX systems. These options are -n32 which
+is passed to the linker and -mabi=n32 which is passed to gcc. To
+get Tcl and Tcl Blend to compile on my IRIX box one needs to remove
+the -n32 and -mabi=n32 options from the Tcl and Tcl Blend makefiles
+after running ./configure. You might also need to use the
+-mabicalls -mmips-as options to gcc to get things to compile, it
+depends on what assembler you have installed.
+
+
+(Tcl Blend under Linux with the JDK and native threads)
+The linux native threads port of the JDK 1.1.7 from blackdown
+has some problems. Tcl Blend will not load java correctly and if
+jacl is run with the -native option it will hang when a command
+is typed. An extra check has been added to the configure script
+so that the -native option will not be used to run jacl on a linux
+system. At this time, Tcl Blend does not work with the blackdown port.
+Update:
+TclBlend under Linux has been fixed. The native version now runs but
+it still fails some test cases. The other good news is that TclBlend
+was tested by the folks at blackdown and it will run on JDK1.2 for
+linux when it is released. If you run into problem with the JDK1.2
+port feel free to try setting LD_BIND_NOW=true instead of using
+the LD_PRELOAD=libtcljava.so in the Makefile and jtclsh.
+
+
+(Tcl Blend under Linux with the JDK)
+The blackdown port of the JDK1.1.7 requires that Motif be installed
+on your machine in order to use AWT widgets in Tcl Blend. After
+making sure that Motif is installed you need to edit the jtclsh
+file that is created by the make process. Look in the file for
+the string "Tcl Blend under Linux AWT Workaround" and follow
+the instructions given about how to modify the makefile. You
+should also be able to use LessTif in place of Motif but this
+option has not been tested.
+
+
+
+
+
 
 (Tcl Blend under Digital Unix)
 Tcl Blend 1.1 can compile under Digital Unix V4.0B with JDK1.1.4.
@@ -124,51 +165,16 @@ the CLASSPATH and load libjava.so first:
 Most of the tests pass, though there are a few failures, especially
 tests that involve the size of integers, and some of the Timer tests.
 
-(Tcl Blend and Swing)
-Philip Chu writes:
-  I'm having problems using modal Swing dialogs with TclBlend 1.1a, JDK 1.2
-  on NT.
-
-  The first script below creates a tk button that pops up a Swing confirm
-  dialog. The confirm dialog comes up OK, but if you drag it over the tk
-  button, the latter does not repaint.
-
-  A more serious problem is shown in the second script below, which creates a
-  Swing frame and button, which has a tcl callback script that brings up a
-  Swing confirm dialog. In this case, the whole app freezes when the confirm
-  dialog pops up.
-
-  # test swing modal dialogs
-  package require java
-  set frame [java::new javax.swing.JFrame]
-  button .b -text "Test" -command \
-	 "java::call javax.swing.JOptionPane showConfirmDialog $frame Message" 
-  pack .b
-
-  # show JDialog from JFrame
-  package require java
-  set frame [java::new javax.swing.JFrame] 
-  set pane [$frame getContentPane] 
-  set button [java::new javax.swing.JButton "hello"] 
-  $pane add $button
-  java::bind $button java.awt.event.ActionListener.actionPerformed \
-      "java::call javax.swing.JOptionPane showConfirmDialog $frame hello"
-  $frame setSize 200 200 
-  $frame show
 
 
-Mo DeJong writes:
-  ... I am starting to think I know what might be wrong. My
-  guess is that the swing dialog is blocking the Tcl event thread. The AWT
-  dialog boxes are implemented so that they block the calling thread. If
-  things are working with non modal dialogs then I the AWT code must be
-  blocking the Tcl event thread. When the application is "hung" do the
-  AWT windows still redraw? The "real" problem here is the stupid way the
-  AWT is implemented (the guys who designed it should be shot). They have
-  some special hacks in the dialog code that create an extra thread for
-  AWT events when the AWT event thread itself is the one that would block
-  in a Dialog show() call. You could add your own hacked up AWT dialog class
-  that was modal but did not block the calling class but this would not be a
-  very good solution for everyone. There really is no reason swing and Tk
-  will not work in the same process but they will not be able to "share" a
-  window if that is what you mean.
+(AWT modal dialogs)
+
+Users have run into serious problems with AWT modal dialogs under Jacl
+and Tcl Blend. The problem is caused by the way the AWT blocks calling
+threads for modal dialogs. Both Jacl and Tcl Blend will "Freeze"
+if the AWT modal dialog show method is called from inside Tcl. A
+workaround for this problem has been developed but it is unlikely it
+will be an officially supported feature.
+
+FIXME: add more info about the bugs/DetachCall.java workaround for AWT bugs.
+
