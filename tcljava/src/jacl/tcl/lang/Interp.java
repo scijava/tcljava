@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.28 2000/04/08 04:25:37 mo Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.29 2000/05/14 22:57:07 mo Exp $
  *
  */
 
@@ -47,12 +47,6 @@ Hashtable reflectObjTable = new Hashtable();
 // (including those that have be freed)
 
 long reflectObjCount = 0;
-
-// The interpreter will execute scripts only inside this thread. All
-// calls to Interp.eval() by any other thread will be routed to this
-// thread.
-
-private Thread primaryThread;
 
 // The number of chars to copy from an offending command into error
 // message.
@@ -294,8 +288,7 @@ Interp()
     workingDir       = new File(Util.tryGetSystemProperty("user.dir", "."));
     noEval           = 0;
 
-    primaryThread    = Thread.currentThread();
-    notifier	     = Notifier.getNotifierForThread(primaryThread);
+    notifier	     = Notifier.getNotifierForThread(Thread.currentThread());
     notifier.preserve();
 
     randSeedInit     = false;

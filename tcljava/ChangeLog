@@ -1,5 +1,10 @@
 2000-05-14  Mo DeJong  <mdejong@redhat.com>
 
+	* src/jacl/tcl/lang/Interp.java: Removed
+	unused primaryThread variable.
+
+2000-05-14  Mo DeJong  <mdejong@redhat.com>
+
 	* src/jacl/tcl/lang/ConsoleEvent.java: Removed
 	class as it is no longer needed after changes to Shell.
 	* src/jacl/tcl/lang/Shell.java: Overhauled the
