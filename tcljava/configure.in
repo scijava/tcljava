@@ -652,17 +652,34 @@ See http://www.blackdown.org/java-linux.html.])
 
             case "`uname -m`" in
                 alpha)  ARCH=alpha ;;
-                i?86)   ARCH=i386 ;;
+                i?86)   
+			if test -d ${JAVA_DIR}/lib/`uname -m` ; then
+				ARCH=`uname -m`
+			else
+				ARCH=i386 
+			fi
+		    ;;
                 ppc)    ARCH=ppc ;;
                 sparc)  ARCH=sparc ;;
                 *)      AC_MSG_ERROR([ARCH '`uname -m`' is not supported]) ;;
             esac
 
+	    
+
             ARCH_LIBNAME=lib
-            ARCH_LIB=${ARCH_LIBNAME}/${ARCH}
+            ARCH_LIB=${ARCH_LIBNAME}/${ARCH}	
+	    if test -d ${JAVA_DIR}/${ARCH_LIB}/native_threads ; then
+		 ARCH_LIBPATH=${ARCH_LIB}/native_threads
+	    elif test -d  ${JAVA_DIR}/${ARCH_LIB}/native ; then
+		 ARCH_LIBPATH=${ARCH_LIB}/native
+	    elif test -d  ${JAVA_DIR}/${ARCH_LIB}/green_threads ; then
+		 ARCH_LIBPATH=${ARCH_LIB}/green_threads
+	    elif test -d  ${JAVA_DIR}/${ARCH_LIB}/green ; then
+		 ARCH_LIBPATH=${ARCH_LIB}/green
+	    fi
 
             JAVA_SHLIB=libjava.so
-            TCLBLEND_LIBS="-lpthread -L${JAVA_DIR}/${ARCH_LIBNAME} -ljava"
+            TCLBLEND_LIBS="-lpthread -L${JAVA_DIR}/${ARCH_LIBPATH} -ljava"
             TCLBLEND_SHLIB_NAMES="libpthread.so libjava.so"
 
             TCLBLEND_LD_PRELOAD="libpthread.so libjava.so"
