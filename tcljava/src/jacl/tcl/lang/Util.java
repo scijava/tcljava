@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Util.java,v 1.9 2001/05/12 23:13:16 mdejong Exp $
+ * RCS: @(#) $Id: Util.java,v 1.10 2002/05/16 22:53:45 mdejong Exp $
  */
 
 package tcl.lang;
@@ -1582,7 +1582,8 @@ isUnix() {
  *
  * isMac --
  *
- *	Returns true if running on a Mac platform.
+ *	Returns true if running on a Mac platform. Note that
+ *	this method returns false for Mac OSX.
  *
  * Results:
  *	Returns a boolean.
@@ -1595,8 +1596,8 @@ isUnix() {
 
 final static boolean 
 isMac() {
-    String os = System.getProperty("os.name");
-    if (os.toLowerCase().startsWith("mac")) {
+    String os = System.getProperty("os.name").toLowerCase();
+    if (os.startsWith("mac") && !os.endsWith("x")) {
 	return true;
     }
     return false;
