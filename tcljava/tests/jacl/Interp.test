@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: Interp.test,v 1.1 1998/11/05 19:48:40 hylands Exp $
+# RCS: @(#) $Id: Interp.test,v 1.2 1999/01/07 23:07:11 hylands Exp $
 
 # Note: This test file must be sourced from the parent directory
 #       or else the defs file may not be properly loaded.
@@ -192,3 +192,14 @@ test Interp-4.1 {BackgroundError()} {
 catch {
     rename bgerror {}
 }
+
+test Interp-5.1 {backslashes} {
+    if {1 == 1 && 2 == 2 } {
+	set r1 "This if statement is all on one line"
+    }
+    if {1 == 1 && \
+        2 == 2 } {
+	set r2 "This if statement has a back slash"
+    }
+    list $r1 $r2	
+} {This if statement is all on one line} {This if statement has a back slash}
