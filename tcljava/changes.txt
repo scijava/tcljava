@@ -1,6 +1,6 @@
 Recent user-visible changes to Jacl & Tcl Blend:
 
-RCS: @(#) $Id: changes.txt,v 1.21 1999/07/28 01:50:46 mo Exp $
+RCS: @(#) $Id: changes.txt,v 1.22 1999/07/28 02:33:25 mo Exp $
 
 ----------------- Released 1.0a1, 10/22/97 -----------------------
 
@@ -877,4 +877,9 @@ before sending the string to the parser. This extra copy was
 removed by using the String.getChars() method instead of the
 String.toCharArray() method inside the CharPointer constructor. (Mo)
 
+7/28/99 (added "package present" subcommand form Tcl 8.1 to Jacl)
+The Tcl 8.1 implementation of the package command includes a new
+subcommand that will test to see if a package has been loaded
+without actually trying to load any packages. Support for this
+subcommand has now been added to Jacl. (Mo)
 

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: PackageCmd.java,v 1.2 1999/05/09 00:48:24 dejong Exp $
+ * RCS: @(#) $Id: PackageCmd.java,v 1.3 1999/07/28 02:33:25 mo Exp $
  */
 
 package tcl.lang;
@@ -21,6 +21,7 @@ private static final String[] validCmds = {
     "forget",
     "ifneeded",
     "names",
+    "present",
     "provide",
     "require",
     "unknown",
@@ -32,12 +33,13 @@ private static final String[] validCmds = {
 static final private int OPT_FORGET	= 0;
 static final private int OPT_IFNEEDED	= 1;
 static final private int OPT_NAMES	= 2;
-static final private int OPT_PROVIDE	= 3;
-static final private int OPT_REQUIRE	= 4;
-static final private int OPT_UNKNOWN	= 5;
-static final private int OPT_VCOMPARE	= 6;
-static final private int OPT_VERSIONS	= 7;
-static final private int OPT_VSATISFIES	= 8;
+static final private int OPT_PRESENT	= 3;
+static final private int OPT_PROVIDE	= 4;
+static final private int OPT_REQUIRE	= 5;
+static final private int OPT_UNKNOWN	= 6;
+static final private int OPT_VCOMPARE	= 7;
+static final private int OPT_VERSIONS	= 8;
+static final private int OPT_VSATISFIES	= 9;
 
 /*
  *----------------------------------------------------------------------
@@ -271,6 +273,73 @@ throws
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_PkgPresent -> pkgPresent
+ *
+ *	Checks to see whether the specified package is present. If it
+ *	is not then no additional action is taken.
+ *
+ * Results:
+ *	If successful, returns the version string for the currently
+ *	provided version of the package, which may be different from
+ *	the "version" argument.  If the caller's requirements
+ *	cannot be met (e.g. the version requested conflicts with
+ *	a currently provided version), a TclException is raised.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static String 
+pkgPresent(
+    Interp interp,		// Interpreter in which package is now
+				// available.
+    String pkgName,		// Name of desired package.
+    String version,		// Version string for desired version;
+				// null means use the latest version
+				// available.
+    boolean exact)		// true means that only the particular
+				// version given is acceptable. false means
+				// use the latest compatible version.
+throws
+    TclException
+{
+    Package pkg;
+    VersionSatisfiesResult vsres = new VersionSatisfiesResult();
+    int result;
+
+    pkg = (Package) interp.packageTable.get(pkgName);
+    if (pkg != null) {
+	if (pkg.version != null) {
+
+	    // At this point we know that the package is present.  Make sure
+	    // that the provided version meets the current requirement.
+
+	    if (version == null) {
+		return pkg.version;
+	    }
+	    result = compareVersions(pkg.version, version, vsres);
+	    if ((vsres.satisfies && !exact) || (result == 0)) {
+		return pkg.version;
+	    }
+	    throw new TclException(interp,
+		"version conflict for package \"" +
+		pkgName + "\": have " + pkg.version + ", need " + version);
+	}
+    }
+
+    if (version != null) {
+	throw new TclException(interp,
+		"package " + pkgName + " " + version + " is not present");
+    } else {
+	throw new TclException(interp,
+		"package " + pkgName + " is not present");
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * cmdProc --
  *
  *	This procedure is invoked to process the "package" Tcl command.
@@ -284,7 +353,7 @@ throws
 
 public void cmdProc(
     Interp interp, 	// The current interpreter.
-    TclObject argv[])   // Command arguments.
+    TclObject[] objv)   // Command arguments.
 throws 
     TclException 	// Thrown if an error occurs.
 {
@@ -302,21 +371,21 @@ throws
     int i, opt, exact;
     boolean once;
 
-    if (argv.length < 2) {
-	throw new TclNumArgsException(interp, 1, argv,
+    if (objv.length < 2) {
+	throw new TclNumArgsException(interp, 1, objv,
 		"option ?arg arg ...?");
     }
-    opt = TclIndex.get(interp, argv[1], validCmds, "option", 0);
+    opt = TclIndex.get(interp, objv[1], validCmds, "option", 0);
     switch (opt) {
     case OPT_FORGET: {
 	// Forget takes 0 or more arguments.
 	
-	for (i = 2; i < argv.length ; i++) {
+	for (i = 2; i < objv.length ; i++) {
 	    // We do not need to check to make sure
 	    // package name is "" because it would not
 	    // be in the hash table so name will be ignored.
 
-	    pkgName = argv[i].toString();
+	    pkgName = objv[i].toString();
 	    pkg = (Package) interp.packageTable.get(pkgName);
 	  
 	    // If this package does not exist, go to next one.
@@ -335,17 +404,17 @@ throws
 	return;
     }
     case OPT_IFNEEDED: {
-	if ((argv.length < 4) || (argv.length > 5)) {
-	    throw new TclNumArgsException(interp, 1, argv, 
+	if ((objv.length < 4) || (objv.length > 5)) {
+	    throw new TclNumArgsException(interp, 1, objv, 
 		    "ifneeded package version ?script?");
 	}	
-	pkgName = argv[2].toString();
-	version = argv[3].toString(); 
+	pkgName = objv[2].toString();
+	version = objv[3].toString(); 
 	
 	// Verify that this version string is valid.
 
 	checkVersion(interp, version);
-	if (argv.length == 4) {
+	if (objv.length == 4) {
 	    pkg = (Package) interp.packageTable.get(pkgName);	  
 	    if (pkg == null)
 		return;
@@ -356,7 +425,7 @@ throws
 	for (avail = pkg.avail, prev = null; avail != null;
 	         prev = avail, avail = avail.next) { 	  
 	    if (compareVersions(avail.version, version, null) == 0) {
-		if (argv.length == 4) {
+		if (objv.length == 4) {
 		    // If doing a query return current script.
 
 		    interp.setResult(avail.script);
@@ -371,7 +440,7 @@ throws
 
 	// When we do not match on a query return nothing.
 
-	if (argv.length == 4) {
+	if (objv.length == 4) {
 	    return;
 	}
 	if (avail == null) {
@@ -385,12 +454,12 @@ throws
 		prev.next = avail;
 	    }
 	}
-	avail.script = argv[4].toString();
+	avail.script = objv[4].toString();
 	return;
     }
     case OPT_NAMES: {
-	if (argv.length != 2) {
-	    throw new TclNumArgsException(interp, 1, argv, 
+	if (objv.length != 2) {
+	    throw new TclNumArgsException(interp, 1, objv, 
 		    "names");
 	}
 
@@ -414,13 +483,40 @@ throws
 	}
 	return;
     }
+    case OPT_PRESENT: {
+	if (objv.length < 3) {
+	    throw new TclNumArgsException(interp, 2, objv, 
+		    "?-exact? package ?version?");
+	}
+	if (objv[2].toString().equals("-exact")) {
+	    exact = 1;
+	} else {
+	    exact = 0;
+	}
+
+	version = null;
+	if (objv.length == (4 + exact)) {
+	    version = objv[3 + exact].toString();
+	    checkVersion(interp, version);
+	} else if ((objv.length != 3) || (exact == 1)) {
+	    throw new TclNumArgsException(interp, 2, objv, 
+		    "?-exact? package ?version?");
+	}
+	if (exact == 1) {
+	    version = pkgPresent(interp, objv[3].toString(), version, true);
+	} else {
+	    version = pkgPresent(interp, objv[2].toString(), version, false);
+	}
+	interp.setResult(version);
+	break;
+    }
     case OPT_PROVIDE: {
-	if ((argv.length < 3) || (argv.length > 4)) {
-	    throw new TclNumArgsException(interp, 1, argv, 
+	if ((objv.length < 3) || (objv.length > 4)) {
+	    throw new TclNumArgsException(interp, 1, objv, 
 		    "provide package ?version?");
 	}		
-	if (argv.length == 3) {
-	    pkg = (Package)interp.packageTable.get( argv[2].toString() );
+	if (objv.length == 3) {
+	    pkg = (Package)interp.packageTable.get( objv[2].toString() );
 	    if (pkg != null) {
 		if (pkg.version != null) {
 		    interp.setResult(pkg.version);
@@ -428,46 +524,47 @@ throws
 	    }
 	    return;
 	}
-	pkgProvide(interp, argv[2].toString(), argv[3].toString());
+	pkgProvide(interp, objv[2].toString(), objv[3].toString());
 	return;
     }
     case OPT_REQUIRE: {
-	if ((argv.length < 3) || (argv.length > 5)) {
-	    throw new TclNumArgsException(interp, 1, argv, 
+	if ((objv.length < 3) || (objv.length > 5)) {
+	    throw new TclNumArgsException(interp, 1, objv, 
 		    "require ?-exact? package ?version?");
 	}	
-	if (argv[2].toString().equals("-exact")) {
+	if (objv[2].toString().equals("-exact")) {
 	    exact = 1;
 	} else {
 	    exact = 0;
 	}
 	version = null;
-	if (argv.length == (4 + exact)) {
-	    version = argv[3 + exact].toString();
-	} else if ((argv.length != 3) || (exact == 1)) {
-	    throw new TclNumArgsException(interp, 1, argv, 
+	if (objv.length == (4 + exact)) {
+	    version = objv[3 + exact].toString();
+	    checkVersion(interp, version);
+	} else if ((objv.length != 3) || (exact == 1)) {
+	    throw new TclNumArgsException(interp, 1, objv, 
 		    "require ?-exact? package ?version?");
 	}
 	if (exact == 1) {
-	    version = pkgRequire(interp, argv[3].toString(), version, true);
+	    version = pkgRequire(interp, objv[3].toString(), version, true);
 	} else {
-	    version = pkgRequire(interp, argv[2].toString(), version, false);
+	    version = pkgRequire(interp, objv[2].toString(), version, false);
 	}
 	interp.setResult(version);
 	return;
     }
     case OPT_UNKNOWN: {
-	if (argv.length > 3) {
-	    throw new TclNumArgsException(interp, 1, argv, 
+	if (objv.length > 3) {
+	    throw new TclNumArgsException(interp, 1, objv, 
 		    "unknown ?command?");
 	}
-	if (argv.length == 2) {
+	if (objv.length == 2) {
 	    if (interp.packageUnknown != null) {
 		interp.setResult(interp.packageUnknown);
 	    }
-	} else if (argv.length == 3) {
+	} else if (objv.length == 3) {
 	    interp.packageUnknown = null;
-	    cmd = argv[2].toString();
+	    cmd = objv[2].toString();
 	    if (cmd.length() > 0) {
 		interp.packageUnknown = cmd;
 	    }
@@ -475,23 +572,23 @@ throws
 	return;
     }
     case OPT_VCOMPARE: {
-	if (argv.length != 4) {
-	    throw new TclNumArgsException(interp, 1, argv, 
+	if (objv.length != 4) {
+	    throw new TclNumArgsException(interp, 1, objv, 
 		    "vcompare version1 version2");
 	}	
-	ver1 = argv[2].toString();
-	ver2 = argv[3].toString();
+	ver1 = objv[2].toString();
+	ver2 = objv[3].toString();
 	checkVersion(interp, ver1);
 	checkVersion(interp, ver2);
 	interp.setResult(compareVersions(ver1, ver2, null));
 	return;
     }
     case OPT_VERSIONS: {
-	if (argv.length != 3) {
-	    throw new TclNumArgsException(interp, 1, argv, 
+	if (objv.length != 3) {
+	    throw new TclNumArgsException(interp, 1, objv, 
 		    "versions package");
 	}
-	pkg = (Package)interp.packageTable.get(argv[2].toString());
+	pkg = (Package)interp.packageTable.get(objv[2].toString());
 	if (pkg != null) {
 	    try {	
 		sbuf = new StringBuffer();
@@ -510,13 +607,13 @@ throws
 	return;
     }
     case OPT_VSATISFIES: {
-	if (argv.length != 4) {
-	    throw new TclNumArgsException(interp, 1, argv, 
+	if (objv.length != 4) {
+	    throw new TclNumArgsException(interp, 1, objv, 
 		    "vsatisfies version1 version2");
 	}
 	
-	ver1 = argv[2].toString();
-	ver2 = argv[3].toString();
+	ver1 = objv[2].toString();
+	ver2 = objv[3].toString();
 	checkVersion(interp, ver1);
 	checkVersion(interp, ver2);
 	vsres = new VersionSatisfiesResult();
