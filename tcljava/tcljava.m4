@@ -928,7 +928,7 @@ AC_DEFUN([AC_JAVA_JNI_LIBS], [
         ac_java_jvm_working_jni_link=yes,
         AC_MSG_ERROR([could not link file that includes jni.h
         Either the configure script does not know how to deal with
-        this JVM configuration, or the JVM install is broken or corrupted.]))
+        this JVM configuration or the JVM install is broken or corrupted.]))
         AC_LANG_POP()
         CFLAGS=$ac_saved_cflags
     ])

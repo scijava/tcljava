@@ -4217,7 +4217,11 @@ else
 cat conftest.$ac_ext >&5
 { { echo "$as_me:$LINENO: error: could not link file that includes jni.h
         Either the configure script does not know how to deal with
-        this JVM configuration
+        this JVM configuration or the JVM install is broken or corrupted." >&5
+echo "$as_me: error: could not link file that includes jni.h
+        Either the configure script does not know how to deal with
+        this JVM configuration or the JVM install is broken or corrupted." >&2;}
+   { (exit 1); exit 1; }; }
 fi
 rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
         ac_ext=c
