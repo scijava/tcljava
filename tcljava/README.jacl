@@ -1,6 +1,6 @@
 Jacl
 
-RCS: @(#) $Id: README.jacl,v 1.8 2000/02/23 22:07:22 mo Exp $
+RCS: @(#) $Id: README.jacl,v 1.9 2000/03/02 03:40:04 mo Exp $
  
 1. Introduction
 ---------------
@@ -147,3 +147,14 @@ Mo DeJong (University of Minnesota)
 Christopher Hylands (UC Berkeley)
 John Reekie (UC Berkeley)
 Bryan Surles (Scriptics)
+
+The Jacl 1.2 & Tcl Blend 1.2 team
+---------------------------------
+Mo DeJong (University of Minnesota)
+Scott Redman (Scriptics)
+
+The Jacl 1.3 & Tcl Blend 1.3 team
+---------------------------------
+Mo DeJong (Cygnus / Red Hat)
+Scott Redman (Scriptics)
+Christian Krone (SQL Datenbanksysteme GmbH)
