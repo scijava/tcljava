@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Expression.java,v 1.7 2002/04/13 18:46:38 mdejong Exp $
+ * RCS: @(#) $Id: Expression.java,v 1.8 2003/01/09 02:15:39 mdejong Exp $
  *
  */
 
@@ -1012,6 +1012,7 @@ class Expression {
 	}
 
 	ParseResult pres;
+	ExprValue retval;
 	m_ind += 1;		// ind is advanced to point to the next token
 
 	switch (c) {
@@ -1021,24 +1022,24 @@ class Expression {
 	    m_ind = pres.nextIndex;
 
 	    if (interp.noEval != 0) {
-		return new ExprValue(0);
+		retval = new ExprValue(0);
 	    } else {
-		return ExprParseString(interp, pres.value.toString());
+		retval = ExprParseString(interp, pres.value.toString());
 	    }
-
+	    pres.release();
+	    return retval;
 	case '[':
-	    String str;
 	    m_token = VALUE;
 	    pres = ParseAdaptor.parseNestedCmd(interp, m_expr, m_ind, m_len);
 	    m_ind = pres.nextIndex;
-	    str = pres.value.toString();
 
 	    if (interp.noEval != 0) {
-		return new ExprValue(0);
+		retval = new ExprValue(0);
 	    } else {
-		return ExprParseString(interp, str);
+		retval = ExprParseString(interp, pres.value.toString());
 	    }
-
+	    pres.release();
+	    return retval;
 	case '"':
 	    m_token = VALUE;
 
@@ -1053,22 +1054,24 @@ class Expression {
 
 	    if (interp.noEval != 0) {
 	  //      System.out.println("returning noEval zero value");
-		return new ExprValue(0);
+		retval = new ExprValue(0);
 	    } else {
 	   //     System.out.println("returning value string ->" + pres.value.toString() + "<-" );
-		return ExprParseString(interp, pres.value.toString());
+		retval = ExprParseString(interp, pres.value.toString());
 	    }
-
+	    pres.release();
+	    return retval;
 	case '{':
 	    m_token = VALUE;
 	    pres = ParseAdaptor.parseBraces(interp, m_expr, m_ind, m_len);
 	    m_ind = pres.nextIndex;
 	    if (interp.noEval != 0) {
-		return new ExprValue(0);
+		retval = new ExprValue(0);
 	    } else {
-		return ExprParseString(interp, pres.value.toString());
+		retval = ExprParseString(interp, pres.value.toString());
 	    }
-
+	    pres.release();
+	    return retval;
 	case '(':
 	    m_token = OPEN_PAREN;
 	    return null;

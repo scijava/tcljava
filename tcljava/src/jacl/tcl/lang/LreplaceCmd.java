@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: LreplaceCmd.java,v 1.4 2000/08/21 04:48:11 mo Exp $
+ * RCS: @(#) $Id: LreplaceCmd.java,v 1.5 2003/01/09 02:15:39 mdejong Exp $
  *
  */
 
@@ -58,15 +58,25 @@ class LreplaceCmd implements Command {
         }
 
 	TclObject list = argv[1];
-	list.preserve();
-	list = list.takeExclusive();
+	boolean isDuplicate = false;
+
+	// If the list object is unshared we can modify it directly. Otherwise
+	// we create a copy to modify: this is "copy on write".
+
+	if (list.isShared()) {
+	    list = list.duplicate();
+	    isDuplicate = true;
+	}
 
 	try {
 	    TclList.replace(interp, list, first, numToDelete, argv, 4,
 		    argv.length-1);
 	    interp.setResult(list);
-	} finally {
-	    list.release();
+	} catch (TclException e) {
+	    if (isDuplicate) {
+	        list.release();
+	    }
+	    throw e;
 	}
     }
 }

@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: LinsertCmd.java,v 1.2 2000/03/17 23:31:30 mo Exp $
+ * RCS: @(#) $Id: LinsertCmd.java,v 1.3 2003/01/09 02:15:39 mdejong Exp $
  *
  */
 
@@ -34,14 +34,24 @@ class LinsertCmd implements Command {
 	int size = TclList.getLength(interp, argv[1]);
 	int index = Util.getIntForIndex(interp, argv[2], size);
 	TclObject list = argv[1];
+	boolean isDuplicate = false;
 
-	list.preserve();
-	list = list.takeExclusive();
+	// If the list object is unshared we can modify it directly. Otherwise
+	// we create a copy to modify: this is "copy on write".
+
+	if (list.isShared()) {
+	    list = list.duplicate();
+	    isDuplicate = true;
+	}
+
 	try {
 	    TclList.insert(interp, list, index, argv, 3, argv.length - 1);
 	    interp.setResult(list);
-	} finally {
-	    list.release();
+	} catch (TclException e) {
+	    if (isDuplicate) {
+	        list.release();
+	    }
+	    throw e;
 	}
     }
 }

@@ -95,20 +95,20 @@ test BgErrorMgr-2.1 {BgError.processIdleEvent()} {
 proc bgerror {msg} {
     global info
 
-    lappend info $msg [jtest ref $msg]
+    # Don't copy object into info list, just dup string
+    lappend info [format %s $msg] [jtest refcount $msg]
 }
 
 test BgErrorMgr-2.2 {BgError.processIdleEvent(), refCount} {
     set info ""
 
     set x xxx
-    lappend info [jtest ref $x]
+    lappend info [jtest refcount $x]
     after idle {error $x}
     after idle {error $x}
     update
-    set info
-    lappend info [jtest ref $x]
-} {1 xxx 5 xxx 4 1}
+    lappend info [jtest refcount $x]
+} {1 xxx 4 xxx 3 1}
 
 proc bgerror {msg} {
     global info errorCode errorInfo

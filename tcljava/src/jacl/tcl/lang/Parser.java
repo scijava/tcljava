@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Parser.java,v 1.11 2003/01/08 02:10:19 mdejong Exp $
+ * RCS: @(#) $Id: Parser.java,v 1.12 2003/01/09 02:15:39 mdejong Exp $
  */
 
 package tcl.lang;
@@ -1050,7 +1050,11 @@ throws
 	    }
 	    result.preserve();
 	} else {
-	    result = result.takeExclusive();
+	    if (result.isShared()) {
+	        result.release();
+	        result = result.duplicate();
+	        result.preserve();
+	    }
 	    if (value != null) {
 		p = value.toString();
 	    }
@@ -1578,8 +1582,6 @@ throws
 	    throw new TclRuntimeError(
 	        "parseVar got temporary object from evalTokens");
 	}
-	obj.release();
-
 	return new ParseResult(obj, parse.tokenList[0].size);
     } finally {
 	parse.release();  // Release parser resources

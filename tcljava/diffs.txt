@@ -1,6 +1,6 @@
 diffs.txt --  DIFFERENCES BETWEEN TCL and JACL
 
-RCS: @(#) $Id: diffs.txt,v 1.8 2000/08/20 06:08:41 mo Exp $
+RCS: @(#) $Id: diffs.txt,v 1.9 2003/01/09 02:15:35 mdejong Exp $
 
 This file contains a list of differences between Tcl 8.x and Jacl 1.x.
 
@@ -164,7 +164,7 @@ TclObject		TclObject		Tcl_NewObj
 			preserve		Tcl_IncrRefCount
 			release			Tcl_DecrRefCount
 			isShared		Tcl_IsShared
-			takeExclusive		
+			duplicate		Tcl_DuplicateObj
 
 TclString		newInstance		Tcl_NewStringObj
 			append			Tcl_AppendToObj

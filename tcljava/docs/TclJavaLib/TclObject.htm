@@ -12,7 +12,7 @@
 <DL><DD>void <B>preserve</B>()</DL>
 <DL><DD>void <B>release</B>()</DL>
 <DL><DD>boolean <B>isShared</B>()</DL>
-<DL><DD>TclObject <B>takeExclusive</B>()</DL>
+<DL><DD>TclObject <B>duplicate</B>()</DL>
 <DD><A HREF="TclObject.htm#M5" NAME="L219">ARGUMENTS</A>
 <DL>
 </DL>
@@ -26,7 +26,7 @@
 <DD><A HREF="TclObject.htm#M12" NAME="L226"><B>preserve</B></A>
 <DD><A HREF="TclObject.htm#M13" NAME="L227"><B>release</B></A>
 <DD><A HREF="TclObject.htm#M14" NAME="L228"><B>isShared</B></A>
-<DD><A HREF="TclObject.htm#M15" NAME="L229"><B>takeExclusive</B></A>
+<DD><A HREF="TclObject.htm#M15" NAME="L229"><B>duplicate</B></A>
 </DL>
 <DD><A HREF="TclObject.htm#M16" NAME="L230">EQUIVALENT C FUNCTIONS</A>
 <DD><A HREF="TclObject.htm#M17" NAME="L231">SEE ALSO</A>
@@ -46,10 +46,10 @@ TclObject
 <P>void <B>preserve</B>()
 <P>void <B>release</B>()
 <P>boolean <B>isShared</B>()
-<P>TclObject <B>takeExclusive</B>()
+<P>TclObject <B>duplicate</B>()
 <H3><A NAME="M5">ARGUMENTS</A></H3>
 <DL>
-<P><DT>InternalRep <B>rep</B> ()<DD>
+<P><DT>InternalRep <B>rep</B><DD>
 Internal representation to be stored in newly created TclObject.
 <P></DL>
 <H3><A NAME="M6">DESCRIPTION</A></H3>
@@ -88,13 +88,34 @@ the reference count by one.
 <P>
 Some methods, such as <B><A HREF="../TclJavaLib/TclList.htm">TclList</A></B>.
 <B>append()</B> and <B><A HREF="../TclJavaLib/TclInteger.htm">TclInteger</A></B>.<B>set()</B>,
-modify the contents of a TclObject.  When you are about to call these
-methods to modify the value of a TclObject, you must call <B>preserve</B> (if
-you haven't already done so) and then call <B>takeExclusive</B>.
-<B>takeExclusive</B> will make a copy of the TclObject if it is shared.
-The TclObject returned by the <B>takeExclusive</B> will always have a
-reference count of 1.
-<P>
+modify the contents of a TclObject. These methods cannot be called with a
+shared TclObject argument. Before calling such a method, take care to
+<b>duplicate</b> any shared object argument.
+<p>
+<b>Shared TclObject Example</b>
+<p>
+<code>
+<pre>
+import tcl.lang.*;
+
+public class ListAppendCmd implements Command {
+    public void 
+    cmdProc(
+        Interp interp,
+        TclObject[] objv)
+    throws TclException
+    {
+        TclObject obj = objv[1];
+        if (obj.isShared())
+            obj = obj.duplicate();
+        TclList.append(interp, obj, TclString.newInstance("hi"));
+        interp.setResult(obj);
+        return;
+    }
+}
+</pre>
+</code>
+<p>
 <DL>
 <P><DT><A NAME="M7"><B>TclObject</B></A><DD>
 The <B>TclObject</B> constructor creates a new TclObject with the
@@ -104,8 +125,13 @@ The <B>setInternalRep</B> method changes the internal representation
 of the TclObject to the value <I>rep</I>.
 <P><DT><A NAME="M9"><B>getInternalRep</B></A><DD>
 The <B>getInternalRep</B> method returns the internal representation
-of the TclObject.  This methods allows you to query the class of a
-returned object to determine what type of TclObject it is.
+of the TclObject.  In most cases, one should <b>not</b> use this method
+to determine how to treat different types. Instead, the code should
+be written so that it attempts to convert to a given type and
+deals with a conversion failure.  For example, an object that
+could be converted into a valid Tcl list might not have a TclList
+internal representation. One would need to attempt the conversion
+to see if it would be successful.
 <P><DT><A NAME="M10"><B>toString</B></A><DD>
 The <B>toString</B> method returns the string representation of the
 TclObject.
@@ -115,25 +141,23 @@ of the TclObject as invalid.  This method should be called only by
 subclasses of the InternalRep prior to a call the
 <B>setInternalRep</B>.
 <P><DT><A NAME="M12"><B>preserve</B></A><DD>
-The <B>preserve</B> method saves the value of a TclObject for
-later use.  Each call to <B>preserve</B> will internally increment the
-&quot;reference count&quot; of the TclObject by one.
+The <B>preserve</B> method increments the &quot;reference count&quot;
+of a TclObject so that it can be used later. Each call to <B>preserve</B>
+should be matched by a call to <B>release</B>.
 <P><DT><A NAME="M13"><B>release</B></A><DD>
-After saving the value of a TclObject for later use (via the
-<B>preserve</B> method), call the <B>release</B> method when you no
-longer need the TclObject's value.  Each call to <B>release</B> will
-internally decrement the &quot;reference count&quot; of the TclObject by one.
+Invoke the  <B>release</B> method when you no longer need access to
+a TclObject. Each call to <B>release</B> will decrement the
+&quot;reference count&quot; of the TclObject by one.
 <P><DT><A NAME="M14"><B>isShared</B></A><DD>
 The <B>isShared</B> method returns true if the TclObject is shared (its
 reference count is greater than one.)
-<P><DT><A NAME="M15"><B>takeExclusive</B></A><DD>
-The <B>takeExclusive</B> method makes a copy of the TclObject if it is
-shared.  The TclObject returned by the <B>takeExclusive</B> will always
-have a reference count of 1.
-
+<P><DT><A NAME="M15"><B>duplicate</B></A><DD>
+The <B>duplicate</B> method returns a copy of the TclObject.
+The TclObject returned by <B>duplicate</B> will always have
+a reference count of 0.
 <P></DL>
 <H3><A NAME="M16">EQUIVALENT C FUNCTIONS</A></H3>
-<A href="../cFunctions.html">Tcl_NewObj</A>, <A href="../cFunctions.html">Tcl_ConvertToType</A>, <A href="../cFunctions.html">TclObj.typePtr</A>, <A href="../cFunctions.html">Tcl_GetStringFromObj</A>, <A href="../cFunctions.html">Tcl_InvalidateStringRep</A>, <A href="../cFunctions.html">Tcl_IncrRefCount</A>, <A href="../cFunctions.html">Tcl_DecrRefCount</A>, <A href="../cFunctions.html">Tcl_IsShared</A>
+<A href="../cFunctions.html">Tcl_NewObj</A>, <A href="../cFunctions.html">Tcl_ConvertToType</A>, <A href="../cFunctions.html">TclObj.typePtr</A>, <A href="../cFunctions.html">Tcl_GetStringFromObj</A>, <A href="../cFunctions.html">Tcl_InvalidateStringRep</A>, <A href="../cFunctions.html">Tcl_IncrRefCount</A>, <A href="../cFunctions.html">Tcl_DecrRefCount</A>, <A href="../cFunctions.html">Tcl_IsShared</A>, <A href="../cFunctions.html">Tcl_DuplicateObj</A>
 <H3><A NAME="M17">SEE ALSO</A></H3>
 <B><A HREF="../TclJavaLib/InternalRep.htm">InternalRep</A></B>, <B><A HREF="../TclJavaLib/TclBoolean.htm">TclBoolean</A></B>, <B><A HREF="../TclJavaLib/TclDouble.htm">TclDouble</A></B>, <B><A HREF="../TclJavaLib/TclList.htm">TclList</A></B>, <B><A HREF="../TclJavaLib/TclIndex.htm">TclIndex</A></B>, <B><A HREF="../TclJavaLib/TclInteger.htm">TclInteger</A></B>, <B><A HREF="../TclJavaLib/TclString.htm">TclString</A></B>, <B><A HREF="../TclJavaLib/ReflectObject.htm">ReflectObject</A></B>, <B><A HREF="../TclJavaLib/Interp.htm">Interp</A></B>
 <H3><A NAME="M18">KEYWORDS</A></H3>

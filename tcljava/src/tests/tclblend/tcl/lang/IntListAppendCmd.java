@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: IntListAppendCmd.java,v 1.1 2002/12/21 04:04:19 mdejong Exp $
+ * RCS: @(#) $Id: IntListAppendCmd.java,v 1.2 2003/01/09 02:15:40 mdejong Exp $
  */
 
 package tcl.lang;
@@ -38,9 +38,9 @@ public class IntListAppendCmd implements Command {
             return;
         }
 
-        TclObject obj = objv[1].takeExclusive();
-        if (obj == objv[1])
-            throw new TclException(interp, "takeExclusive() did not duplicate");
+        TclObject obj = objv[1];
+        if (obj.isShared())
+            obj = obj.duplicate();
 
         TclList.append(interp, obj, TclString.newInstance("blue"));
         TclList.append(interp, obj, TclString.newInstance("green"));

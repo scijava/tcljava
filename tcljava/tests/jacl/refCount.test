@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: refCount.test,v 1.2 2002/12/21 04:03:35 mdejong Exp $
+# RCS: @(#) $Id: refCount.test,v 1.3 2003/01/09 02:15:40 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -91,14 +91,26 @@ test refcount-4.2 {TclObject not disposed} {
     $tobj toString
 } {foo}
 
-# Not sure what the deal is here, should
-# this be a valid test in jacl? Is this m_null?
-# Does the resetResult in eval cause this?
+test refcount-4.3 {m_nullResult is shared} {
+    interp create i
+    i eval {package require java}
+    i eval {
+        [java::getinterp] createCommand testemptyresult \
+            [java::new tcl.lang.TestEmptyResultCmd]
+        testemptyresult
+    }
+    set result [i eval {testemptyresult}]
+    interp delete i
+    set result
+} 1
 
-#test refcount-4.3 {TclObject.refCount} {
-#    #set obj [java::new Object]
-#    jtest refcount [[java::getinterp] getResult]
-#} {1}
+test refcount-4.4 {m_nullResult ref count not changed by setResult} {
+    [java::getinterp] createCommand testemptyresult \
+            [java::new tcl.lang.TestEmptyResultCmd]
+    set result [testemptyresult 1]
+    rename testemptyresult {}
+    set result
+} ok
 
 test refcount-5.1 {Duplicate a TclObject} {
     set results [list]
@@ -162,6 +174,50 @@ test refcount-6.2 {hold ref to TclObject} {
     lappend results [jtest refcount $obj]
 } {1 2 3 1}
 
+
+test refcount-7.1 {parsing} {
+    set results [list]
+    set var "my string value"
+    lappend results [jtest refcount $var]
+
+    set var "my string value"
+    expr {$var == ""}
+    lappend results [jtest refcount $var]
+
+    set var "my string value"
+    expr {"$var" == ""}
+    lappend results [jtest refcount $var]
+
+    set var "my string value"
+    expr {[set var] == ""}
+    lappend results [jtest refcount $var]
+
+    set var "my string value"
+    expr {"[set var]" == ""}
+    lappend results [jtest refcount $var]
+
+    set var "my string value"
+    subst {[set var] == ""}
+    lappend results [jtest refcount $var]
+} {1 1 1 1 1 1}
+
+test refcount-7.2 {parsing, error raised} {
+    set results [list]
+    set err "my error"
+    lappend results [jtest refcount $err]
+    catch {error $err}
+    lappend results [jtest refcount $err]
+} {1 1}
+
+test refcount-7.3 {parsing, error raised} {
+    proc bgerror { args } {}
+    set results [list]
+    set err "my error"
+    lappend results [jtest refcount $err]
+    after idle {error $err}
+    update
+    lappend results [jtest refcount $err]
+} {1 1}
 
 # cleanup
 catch {unset obj}

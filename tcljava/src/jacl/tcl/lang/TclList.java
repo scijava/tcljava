@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclList.java,v 1.4 2003/01/08 02:10:20 mdejong Exp $
+ * RCS: @(#) $Id: TclList.java,v 1.5 2003/01/09 02:15:39 mdejong Exp $
  *
  */
 
@@ -66,12 +66,8 @@ public class TclList implements InternalRep {
 
 	for (int i=0; i<size; i++) {
 	    TclObject tobj = (TclObject) vector.elementAt(i);
-
-	    // takeExclusive() is necessary. See comments inside
-	    // append().
-
 	    tobj.preserve();
-	    newList.vector.addElement(tobj.takeExclusive());
+	    newList.vector.addElement(tobj);
 	}
 
 	return newList;
@@ -181,15 +177,8 @@ public class TclList implements InternalRep {
 
 	TclList tlist = (TclList) tobj.getInternalRep();
 
-	// Note: takeExclusive() is necessary to avoid circular references
-	// like the following:
-	//
-	//	set x [list 1 2 3]
-	//	lappend y $x
-	//	lappend x $y
-
 	elemObj.preserve();
-	tlist.vector.addElement(elemObj.takeExclusive());	
+	tlist.vector.addElement(elemObj);
     }
 
     /**
@@ -336,7 +325,7 @@ public class TclList implements InternalRep {
 	}
 	for (i=from; i<=to; i++) {
 	    elements[i].preserve();
-	    tlist.vector.insertElementAt(elements[i].takeExclusive(), index++);
+	    tlist.vector.insertElementAt(elements[i], index++);
 	}
     }
 

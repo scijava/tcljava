@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: LappendCmd.java,v 1.2 1999/08/15 19:38:25 mo Exp $
+ * RCS: @(#) $Id: LappendCmd.java,v 1.3 2003/01/09 02:15:39 mdejong Exp $
  *
  */
 
@@ -44,23 +44,19 @@ class LappendCmd implements Command {
 	    } catch (TclException e) {
 		// The variable doesn't exist yet. Just create it with an empty
 		// initial value.
+		varValue = TclList.newInstance();
 
-		interp.setVar(objv[1], TclList.newInstance(), 0);
+		try {
+		    newValue = interp.setVar(objv[1], varValue, 0);
+		} finally {
+		    if (newValue == null)
+		        varValue.release(); // free unneeded object
+		}
+
 		interp.resetResult();
 		return;
 	    }
 	} else {
-	    /*
-	    // FIXME : remove this old implementation later
-	    TclObject result = null;
-	    for (i = 2; i < objv.length; i++) {
-		result = interp.setVar(objv[1], objv[i],
-			     TCL.APPEND_VALUE | TCL.LIST_ELEMENT);
-	    }
-	    interp.setResult(result);
-	    return;
-	    */
-
 	    // We have arguments to append. We used to call Tcl_SetVar2 to
 	    // append each argument one at a time to ensure that traces were run
 	    // for each append step. We now append the arguments all at once
@@ -103,25 +99,8 @@ class LappendCmd implements Command {
 
 	    // We only take this branch when the catch branch was not run
             if (createdNewObj == false && varValue.isShared()) {
-		/*
-		// FIXME : this extra preserve() is a hack to avoid null
-		// pointer exception in Var.setVar(). For some reason a
-		// takeExclusive() does not seem to work properly.
-		varValue.preserve();
-
-		varValue = varValue.takeExclusive();
+		varValue = varValue.duplicate();
 		createdNewObj = true;
-		*/
-
-		// Create a new empty list object and copy the values
-		// from the old list into this new one
-		
-		TclObject[] elems = TclList.getElements(interp, varValue);
-		varValue = TclList.newInstance();
-		createdNewObj = true;
-		for (i = 0; i < elems.length ; i++) {
-		    TclList.append(interp, varValue, elems[i]);
-		}
 	    }
 
 	    // Insert the new elements at the end of the list.
@@ -129,6 +108,9 @@ class LappendCmd implements Command {
 	    for (i = 2; i < objv.length ; i++) {
 		TclList.append(interp, varValue, objv[i]);
 	    }
+
+	    // No need to call varValue.invalidateStringRep() since it
+	    // is called during the TclList.append operation.
 
 	    // Now store the list object back into the variable. If there is an
 	    // error setting the new value, decrement its ref count if it

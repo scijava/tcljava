@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Var.java,v 1.10 2001/05/05 22:38:13 mdejong Exp $
+ * RCS: @(#) $Id: Var.java,v 1.11 2003/01/09 02:15:39 mdejong Exp $
  *
  */
 package tcl.lang;
@@ -990,28 +990,11 @@ class Var {
 			oldValue = TclList.newInstance();
 			var.value = oldValue;
 			oldValue.preserve(); // since var is referenced
-		    } else if (oldValue.isShared()) {
-			/*
-			// FIXME : should there be a TclObject.duplicate() method
-			// to match the Tcl_DuplicateObj function?
-			//varPtr->value.objPtr = Tcl_DuplicateObj(oldValuePtr);
-			//var.value = oldValue.duplicate();
-			// I use this for now!
-
-			// FIXME : SERIOUS BUG HERE!
-			// THE OLD VALUE GETS DELETED WHEN A VALUE IS
-			// SHARED
-
-			var.value = new TclObject(
-				    oldValue.getInternalRep().duplicate());
-
+		    } else if (oldValue.isShared()) { // append to copy
+			var.value = oldValue.duplicate();
 			oldValue.release();
 			oldValue = (TclObject) var.value;
 			oldValue.preserve(); // since var is referenced
-			*/
-
-			oldValue = oldValue.takeExclusive();
-			var.value = oldValue;
 		    }
 		    TclList.append(interp, oldValue, newValue);
 		} else {		               // append string
@@ -1023,19 +1006,10 @@ class Var {
 			((TclObject) var.value).preserve();
 		    } else {
 			if (oldValue.isShared()) { // append to copy
-			    /*
-			    // FIXME : duplicate shared var problem again
-			    //var.value = oldValue.duplicate();
-			    var.value = new TclObject(
-					   oldValue.getInternalRep().duplicate());
-
+			    var.value = oldValue.duplicate();
 			    oldValue.release();
 			    oldValue = (TclObject) var.value;
-			    oldValue.preserve();   // since var is ref
-			    */
-
-			    oldValue = oldValue.takeExclusive();
-			    var.value = oldValue;
+			    oldValue.preserve(); // since var is referenced
 			}
 			TclString.append(oldValue, newValue);
 		    }
@@ -1184,17 +1158,8 @@ class Var {
 
 	createdNewObj = false;
 	if (varValue.isShared()) {
-	    /*
-	    // FIXME : TclObject.duplicate problem again
-	    //varValue = varValue.duplicate();
-	    varValue = new TclObject(
-		         varValue.getInternalRep().duplicate());
+	    varValue = varValue.duplicate();
 	    createdNewObj = true;
-	    */
-
-	    // FIXME: there seems to be a big problem here!
-	    //varValue = varValue.takeExclusive();
-	    //createdNewObj = true;
 	}
 
 	try {
@@ -1206,12 +1171,7 @@ class Var {
 	    throw e;
 	}
 	
-	// FIXME : I have no clue why, but this breaks Jacl!!
-	// There seems to be a problem with using takeExclusive()
-	// -> "set v 1 ; set x $v ; incr x 2 ; incr v 2"
-	//TclInteger.set(varValue, (i + incrAmount));
-
-	varValue = TclInteger.newInstance(i + incrAmount);
+	TclInteger.set(varValue, (i + incrAmount));
 
 	// Store the variable's new value and run any write traces.
 

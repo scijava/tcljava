@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.40 2003/01/08 02:10:18 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.41 2003/01/09 02:15:39 mdejong Exp $
  *
  */
 
@@ -304,7 +304,8 @@ Interp()
     // interpreter result is set to empty.
 
     m_nullResult = TclString.newInstance("");
-    m_nullResult.preserve();
+    m_nullResult.preserve();  // Increment refCount to 1
+    m_nullResult.preserve();  // Increment refCount to 2 (shared)
     m_result = m_nullResult;  // correcponds to iPtr->objResultPtr
 
     expr             = new Expression();
@@ -1924,7 +1925,7 @@ getResult()
  *	Arrange for the given Tcl Object to be placed as the result 
  *	object for the interpreter.  Convenience functions are also
  *	available to create a Tcl Object out of the most common Java
- *	types.
+ *	types. Note that the ref count for m_nullResult is not changed.
  *
  * Results:
  *	None.
@@ -1944,16 +1945,20 @@ setResult(
 		"Interp.setResult() called with null TclObject argument.");
     }
 
+    if (r == m_result) {
+        // Setting to current value (including m_nullResult) is a no-op.
+        return;
+    }
+
     if (m_result != m_nullResult) {
-	if (m_result == r) {
-	    // Setting result to current value is a no-op
-	    return;
-	}
 	m_result.release();
     }
 
     m_result = r;
-    m_result.preserve();
+
+    if (m_result != m_nullResult) {
+	m_result.preserve();
+    }
 }
 
 /*
@@ -2087,6 +2092,9 @@ resetResult()
     if (m_result != m_nullResult) {
 	m_result.release();
 	m_result = m_nullResult;
+	if (!m_nullResult.isShared()) {
+	    throw new TclRuntimeError("m_nullResult is not shared");
+	}
     }
     errAlreadyLogged = false;
     errInProgress = false;
@@ -2127,11 +2135,11 @@ throws
     TclObject result;
 
     result = getResult();
-    result.preserve();
-    result = result.takeExclusive();
+    if (result.isShared()) {
+        result = result.duplicate();
+    }
     TclList.append(this, result, TclString.newInstance(string));
     setResult(result);
-    result.release();
 }
 
 /*

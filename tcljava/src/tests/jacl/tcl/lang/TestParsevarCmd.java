@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: TestParsevarCmd.java,v 1.1 1999/05/10 04:08:51 dejong Exp $
+ * RCS: @(#) $Id: TestParsevarCmd.java,v 1.2 2003/01/09 02:15:40 mdejong Exp $
  */
 
 package tcl.lang;
@@ -44,6 +44,7 @@ throws
 	interp.appendElement("");
     }
 
+    parseResult.release();
     return;
 }
 } // end TestParsevarCmd

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: ParseAdaptor.java,v 1.4 1999/08/27 23:50:46 mo Exp $
+ * RCS: @(#) $Id: ParseAdaptor.java,v 1.5 2003/01/09 02:15:39 mdejong Exp $
  */
 
 package tcl.lang;
@@ -241,7 +241,7 @@ throws
 	level--;
 	if (level == 0) {
 	  str = new String(arr, index, i - index);
-	  return new ParseResult(TclString.newInstance(str), i+1);
+	  return new ParseResult(str, i+1);
 	}
 	i++;
       } else if (arr[i] == '{') {

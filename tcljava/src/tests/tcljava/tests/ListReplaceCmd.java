@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: ListReplaceCmd.java,v 1.1 2002/12/21 04:05:09 mdejong Exp $
+ * RCS: @(#) $Id: ListReplaceCmd.java,v 1.2 2003/01/09 02:15:40 mdejong Exp $
  */
 
 package tests;
@@ -31,7 +31,9 @@ public class ListReplaceCmd implements Command {
         TclObject obj;
 
         if (objv.length == 2) {
-            obj = objv[1].takeExclusive();
+            obj = objv[1];
+            if (obj.isShared())
+                obj = obj.duplicate();
         } else if (objv.length == 3) {
             obj = TclList.newInstance();
             TclList.append(interp, obj, TclString.newInstance("UNO"));

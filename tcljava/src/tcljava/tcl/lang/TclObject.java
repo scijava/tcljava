@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclObject.java,v 1.8 2002/12/31 20:16:27 mdejong Exp $
+ * RCS: @(#) $Id: TclObject.java,v 1.9 2003/01/09 02:15:40 mdejong Exp $
  *
  */
 
@@ -164,23 +164,45 @@ public final class TclObject {
     }
 
     /**
-     * Takes exclusive ownership of this object. This method should be
-     * called before invoking any method that will modify the value of
-     * the object. E.g.
+     * Tcl_DuplicateObj -> duplicate
      *
-     *		tobj = tobj.takeExclusive();
+     * Duplicate a TclObject, this method provides the preferred
+     * means to deal with modification of a shared TclObject.
+     * It should be invoked in conjunction with isShared instead
+     * of using the deprecated takeExclusive method.
+     *
+     * Example:
+     *
+     *		if (tobj.isShared()) {
+     *		    tobj = tobj.duplicate();
+     *		}
      *		TclString.append(tobj, "hello");
      *
-     * The result of this method depends on the refCount of the object:
-     *
-     *     refCount == 1: the object itself is returned.
-     *     refCount >  1: a copy of the object will be returned. The refCount
-     *		          of the copy is set to 1.
-     *     refCount <  1: TclRuntimeError will be thrown.
-     *
-     * @return an TclObject with a refCount of 1.
-     * @exception TclRuntimeError if the refCount <= 0
+     * @return an TclObject with a refCount of 0.
      */
+
+    public final TclObject duplicate() {
+	disposedCheck();
+	if (internalRep instanceof TclString) {
+	    if (stringRep == null) {
+	        stringRep = internalRep.toString();
+	    }
+	}
+	TclObject newObj = new TclObject(internalRep.duplicate());
+	newObj.stringRep = this.stringRep;
+	newObj.refCount = 0;
+	return newObj;
+    }
+
+    /**
+     * @deprecated The takeExclusive method has been deprecated
+     * in favor of the new duplicate() method. The takeExclusive
+     * method would modify the ref count of the original object
+     * and return an object with a ref count of 1 instead of 0.
+     * These two behaviors lead to lots of useless duplication
+     * of objects that could be modified directly.
+     */
+
     public final TclObject takeExclusive() throws TclRuntimeError {
 	disposedCheck();
 	if (refCount == 1) {

@@ -1,3 +1,81 @@
+2003-01-08  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	Re-implement ref counting system for Jacl to
+	more closely match to C implementation.
+	Deprecate TclObject.takeExclusive() method and
+	replace it with new TclObject.duplicate() method.
+
+	* diffs.txt: Remove takeExclusive, add duplicate.
+	* new_features.txt: Mention new TclObject.duplicate()
+	method and when it should be used.
+	* docs/cFunctions.html: Add Tcl_DuplicateObj entry.
+	* docs/TclJavaLib/TclObject.htm: Doc duplicate
+	and remove docs for takeExclusive method. Add
+	example of how to use the duplicate method.
+	* src/jacl/tcl/lang/Expression.java (ExprLex):
+	Invoke release() when done with a ParseResult.
+	* src/jacl/tcl/lang/Interp.java (Interp, setResult,
+	resetResult, appendElement):
+	Preserve the m_nullResult twice so that it is
+	actually shared. This bug did not show up
+	before because objects were being copied
+	every time instead of when shared.
+	When setting a result, don't decrement or
+	increment the ref count of the m_nullResult.
+	Check for illegal decrement of m_nullResult.
+	Replace use of takeExclusive with duplicate.
+	* src/jacl/tcl/lang/LappendCmd.java (cmdProc):
+	Replace use of takeExclusive with duplicate.
+	* src/jacl/tcl/lang/LinsertCmd.java (cmdProc):
+	Replace use of takeExclusive with duplicate.
+	* src/jacl/tcl/lang/LreplaceCmd.java (cmdProc):
+	Replace use of takeExclusive with duplicate.
+	* src/jacl/tcl/lang/LsortCmd.java (cmdProc):
+	Replace use of takeExclusive with duplicate.
+	* src/jacl/tcl/lang/ParseAdaptor.java (parseBraces):
+	Invoke string constructor so ref count is incremented.
+	* src/jacl/tcl/lang/ParseResult.java (ParseResult,
+	release): Increment ref count of value unless
+	called with a TclObject argument. Add release
+	method that will let go of held ref.
+	* src/jacl/tcl/lang/Parser.java (evalTokens, parseVar):
+	Replace use of takeExclusive with duplicate.
+	Don't release the result of evalTokens call
+	since the ParseResult depends on it.
+	* src/jacl/tcl/lang/SubstCmd.java (cmdProc): Call
+	release after we are finished with a ParseResult.
+	Increment TclObject ref count before passing it
+	to the ParseResult constructor.
+	* src/jacl/tcl/lang/TclList.java (duplicate, append,
+	replace): Don't invoke takeExclusive for objects
+	that are being added to a list. This makes it
+	possible to create a list that holds a ref to
+	itself, but the C version of Tcl also has this
+	problem. This should significantly reduce
+	memory use in Jacl since we will not need to
+	copy every object that is added to a TclList.
+	* src/jacl/tcl/lang/Var.java (setVar, incrVar):
+	Remove ugly workarounds and hacks that were
+	needed since the takeExclusive API is so broken.
+	Invoke isShared and duplicate methods instead,
+	the code now matches the Tcl core implementation.
+	* src/tcljava/tcl/lang/TclObject.java (duplicate,
+	takeExclusive): Add new duplicate method and
+	deprecate the takeExclusive method.
+	* src/tests/jacl/tcl/lang/TestParsevarCmd.java:
+	Release ParseResult when done with it.
+	* src/tests/tclblend/tcl/lang/IntListAppendCmd.java:
+	Replace takeExclusive call with duplicate.
+	* src/tests/tcljava/tests/ListReplaceCmd.java:
+	Replace takeExclusive call with duplicate.
+	* tests/inprogress/BgErrorMgr.test:
+	Modify test case so that it matches current
+	implementation. This test case depending on
+	the old behavior of a list append that
+	appended a copy instead of the real object.
+	* tests/jacl/refCount.test: Add a series of
+	m_nullResult and parser ref count tests.
+
 2003-01-07  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* src/jacl/tcl/lang/CallFrame.java (dispose):
