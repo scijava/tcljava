@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FileChannel.java,v 1.1 1998/10/14 21:09:19 cvsadmin Exp $
+ * RCS: @(#) $Id: FileChannel.java,v 1.2 1999/05/09 00:12:06 dejong Exp $
  *
  */
 
@@ -305,7 +305,7 @@ class FileChannel extends Channel {
 
     void flush(Interp interp) throws IOException, TclException {
 	if (file == null) {
-	    throw new TclRuntimeError("FileChannel.seek(): null file object");
+	    throw new TclRuntimeError("FileChannel.flush(): null file object");
 	}
     }
 
