@@ -1,5 +1,4 @@
 <HTML><BODY BGCOLOR=#FFFFFF><PRE>
-RCS: @(#) $Id: new_features.txt,v 1.4 1999/08/05 03:33:07 mo Exp $
 
 What's new in Tcl/Java 1.1?
 
@@ -185,5 +184,13 @@ Unicode support has been added to the Jacl parser. Users should now
 be able to pass and unicode string form Java to Jacl and vice versa.
 
 
+(NEW COMMAND FOR JACL AND TCLBLEND)
+
+A new java::import command has been added. This command is like
+the import statement in the Java language, it provides a means
+to specify Java class names in a shortened format. For example,
+one could import the class java.util.Hashtable and then use
+the simple class name Hashtable instead of the fully qualified
+name java.util.Hashtable.
 
 </PRE></BODY></HTML>
