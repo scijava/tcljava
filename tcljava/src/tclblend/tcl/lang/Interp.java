@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.26 2002/12/31 21:39:38 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.27 2003/01/20 09:33:15 mdejong Exp $
  *
  */
 
@@ -24,20 +24,25 @@ import java.net.*;
 public class Interp {
 
 
-// Initialize the Interp class by loading the native methods.
+// Load the Tcl Blend shared library to make JNI
+// methods visible to the JVM. We need to actually
+// call a JNI method to make sure the loading worked
+// in case the JVM does not check for the symbols
+// until the method is actually invoked. We invoke
+// this method once the very first time a constructor
+// is called so that if an exception occurs, it can
+// be propagated out to the caller. If this same code
+// appeared in a static initializer (the old approach)
+// there would be no means to propagate the exception.
 
-static {
-    String shlibname = "tclblend";
+private static boolean shlib_loaded = false;
 
-    try {
-        System.loadLibrary(shlibname);
-    } catch (UnsatisfiedLinkError e) {
-        System.out.println("System.loadLibrary(\"" + shlibname + "\") failed because of UnsatisfiedLinkError");
-        e.printStackTrace(System.out);
-    } catch (Throwable t) {
-        System.out.println("System.loadLibrary(\"" + shlibname + "\") failed because of Unknown Throwable");
-        t.printStackTrace(System.out);
-    }
+private static void shlib_load()
+    throws UnsatisfiedLinkError
+{
+    System.loadLibrary("tclblend");
+    Interp.commandComplete("");
+    shlib_loaded = true;
 }
 
 
@@ -108,6 +113,10 @@ private
 Interp(
     long l)			// Pointer to Tcl_Interp.
 {
+    if (!shlib_loaded) {
+        shlib_load();
+    }
+
     interpPtr = l;
 
     notifier = Notifier.getNotifierForThread(Thread.currentThread());
@@ -134,6 +143,10 @@ Interp(
 public
 Interp()
 {
+    if (!shlib_loaded) {
+        shlib_load();
+    }
+
     interpPtr = create();
 
     notifier = Notifier.getNotifierForThread(Thread.currentThread());

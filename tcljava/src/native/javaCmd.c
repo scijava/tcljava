@@ -10,7 +10,7 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  *
- * RCS: @(#) $Id: javaCmd.c,v 1.23 2002/12/31 20:16:27 mdejong Exp $
+ * RCS: @(#) $Id: javaCmd.c,v 1.24 2003/01/20 09:33:15 mdejong Exp $
  */
 
 /*
@@ -201,6 +201,10 @@ EXPORT(int,Tclblend_Init)(
 	panic("Tclblend_Init : unexpected pending exception");
     }
 
+#ifdef TCLBLEND_DEBUG
+    fprintf(stderr, "TCLBLEND_DEBUG: Now to create Interp object\n");
+#endif /* TCLBLEND_DEBUG */
+
     lvalue = 0;
     *(Tcl_Interp**)&lvalue = interp;
     local = (*env)->NewObject(env, jcache->Interp,
@@ -208,13 +212,28 @@ EXPORT(int,Tclblend_Init)(
     if (!local) {
 	Tcl_Obj *obj;
 	jobject exception = (*env)->ExceptionOccurred(env);
+	jclass classid;
 	if (exception) {
 	    (*env)->ExceptionClear(env);
 	    obj = Tcl_GetObjResult(interp);
 	    ToString(env, obj, exception);
-	    (*env)->Throw(env, exception);
+	    Tcl_AppendToObj(obj,
+	        "\nWhile instantiating Interp object in Tclblend_Init", -1);
+
+	    classid = (*env)->FindClass(env, "java/lang/UnsatisfiedLinkError");
+	    if ((*env)->IsInstanceOf(env, exception, classid)) {
+	        Tcl_AppendToObj(obj,
+	            "\nThe Tcl Blend shared lib was loaded by Tcl,", -1);
+	        Tcl_AppendToObj(obj,
+	            "\nbut the JVM could not access JNI symbols.", -1);
+	    }
+	    (*env)->DeleteLocalRef(env, classid);
 	    (*env)->DeleteLocalRef(env, exception);
 	}
+#ifdef TCLBLEND_DEBUG
+    fprintf(stderr, "TCLBLEND_DEBUG: returning TCL_ERROR because of\n");
+    fprintf(stderr, "TCLBLEND_DEBUG: exception during Interp constructor\n");
+#endif /* TCLBLEND_DEBUG */
 	return TCL_ERROR;
     }
     interpObj = (*env)->NewGlobalRef(env, local);

@@ -1,3 +1,23 @@
+2003-01-20  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/native/javaCmd.c (Tclblend_Init): Add
+	additional TCLBLEND_DEBUG output.
+	If an exception is raised during the Interp
+	constructor, check to see if it is an
+	UnsatisfiedLinkError return a more
+	useful error message to Tcl. The old error
+	message "java.lang.UnsatisfiedLinkError: init"
+	was not very illuminating. Don't propagate
+	a Java exception since Tclblend_Init is
+	only every invoked by Tcl.
+	* src/tclblend/tcl/lang/Interp.java (shlib_load):
+	Add a new shlib_load method instead of attempting
+	to load the Tcl Blend shared library in the
+	static initializer for the class. This new
+	approach provides a way for us to catch and
+	propagate an exception during loading of the
+	shared library back to the caller.
+
 2003-01-11  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* src/tcljava/tcl/lang/TclNumArgsException.java
