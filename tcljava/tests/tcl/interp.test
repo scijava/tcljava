@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.5 2001/06/03 21:34:54 mdejong Exp $
+# RCS: @(#) $Id: interp.test,v 1.6 2003/02/06 01:11:18 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -19,12 +19,13 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 
 # The set of hidden commands is platform dependent:
 
-if {"$tcl_platform(platform)" == "macintosh"} {
-    set hidden_cmds {beep cd echo encoding exit fconfigure file glob load ls open pwd socket source}
-} elseif {"$tcl_platform(platform)" == "java"} {
-    set hidden_cmds {cd exec exit fconfigure file glob open pwd socket source}
-} else {
-    set hidden_cmds {cd encoding exec exit fconfigure file glob load open pwd socket source}
+set hidden_cmds {cd encoding exec exit fconfigure file glob load open pwd socket source}
+
+if {"$tcl_platform(platform)" == "java"} {
+    # Jacl does not include the load command
+    set ind [lsearch $hidden_cmds "load"]
+    if {$ind == -1} {error "can't find load command"}
+    set hidden_cmds [lreplace $hidden_cmds $ind $ind]
 }
 
 foreach i [interp slaves] {
@@ -259,8 +260,8 @@ test interp-7.4 {testing basic alias creation} {
     a alias bar
 } {in_master a1 a2 a3}
 test interp-7.5 {testing basic alias creation} {
-    a aliases
-} {foo bar}
+    lsort [a aliases]
+} {bar foo}
 
 # Part 7: testing basic alias invocation
 test interp-8.1 {testing basic alias invocation} {

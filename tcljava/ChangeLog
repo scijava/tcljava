@@ -1,5 +1,13 @@
 2003-02-05  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* tests/interp.test: Don't include load command
+	in list of hidden commands for Jacl.
+	* tests/set-old.test: Run test cases that depend
+	on hash order through lsort so that the tests
+	pass under Jacl.
+
+2003-02-05  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/jacl/tcl/lang/Parser.java (eval2): When
 	invoking logCommandInfo while processing a
 	nested command, check for a close bracket
