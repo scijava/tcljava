@@ -1,6 +1,6 @@
 # Cross platform init script for Tcl Blend. Known to work on unix and windows.
 # Author:  Christopher Hylands, Mo Dejong
-# RCS: @(#) $Id: pkgIndex.tcl,v 1.16 1999/10/22 16:52:25 redman Exp $
+# RCS: @(#) $Id: pkgIndex.tcl,v 1.19 2000/01/25 21:48:59 mo Exp $
 
 proc loadtclblend {dir} {
     global tcl_platform env tclblend_init
@@ -141,16 +141,16 @@ proc loadtclblend {dir} {
 	puts "found tcljava.jar at $tcljava_file"
     }
 
-    # Now scan the env array looking for an env(CLASSPATH) var
-    # with the incorrect case. A user might make an error
-    # like setting env(ClassPath) so we tell them what happened.
+    # We need to know the CLASSPATH value.  On Windows, this may have
+    # arbitrary capitalization, so we need to copy it into the all-caps
+    # form for later use.
     
-    foreach name [array names env] {
-	if {$name == "CLASSPATH"} {
-	    continue
-	}
-	if {[string toupper $name] == "CLASSPATH"} {
-	    error "found invalid variable env($name), should be env(CLASSPATH)"
+    if {![info exists env(CLASSPATH)]} {
+	foreach name [array names env] {
+	    if {[string equal -nocase $name "CLASSPATH"]} {
+		set env(CLASSPATH) $env($name)
+		break
+	    }
 	}
     }
 
@@ -161,8 +161,6 @@ proc loadtclblend {dir} {
 
 	set env(CLASSPATH) {}
     }
-
-
 
     # now we need to search on the CLASSPATH to see if tclblend.jar
     # or tcljava.jar are already located on the CLASSPATH. If one
@@ -320,9 +318,9 @@ proc loadtclblend {dir} {
 	
 	foreach shlib $shlibs {
 	    if {$shlibloc($shlib) == ""} {
-		error "could not find $shlib, you may need to add the\
-			directory where $shlib lives to your $envvar\
-			environmental variable."
+		puts "could not find $shlib, you may need to add the\
+                        directory where $shlib lives to your $envvar\
+                        environmental variable."
 	    } else {
 		if {$debug_loadtclblend} {
 		    puts "found $shlib on $envvar at \"$shlibloc($shlib)\"."
@@ -419,7 +417,7 @@ proc loadtclblend {dir} {
     # See src/tcljava/tcl/lang/BlendExtension.java
     # for other places the version info is hardcoded
 
-    package provide java 1.2.5
+    package provide java 1.2.6
 
     # Delete proc from interp, if other interps do a package require
     # they will source this file again anyway
@@ -427,5 +425,5 @@ proc loadtclblend {dir} {
     rename loadtclblend {}
 }
 
-package ifneeded java 1.2.5 [list loadtclblend $dir]
+package ifneeded java 1.2.6 [list loadtclblend $dir]
 

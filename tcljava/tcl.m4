@@ -303,7 +303,7 @@ AC_DEFUN(SC_ENABLE_GCC, [
 	CC=gcc
     else
 	case "`uname -s`" in
-	    *win32* | *WIN32* | *CYGWIN_NT*)
+	    *win32* | *WIN32* | *CYGWIN_NT* | *CYGWIN_98* | *CYGWIN_95*)
 		CC=cl
 	    ;;
 	    *)
@@ -391,7 +391,7 @@ AC_DEFUN(SC_ENABLE_THREADS, [
 	AC_DEFINE(_REENTRANT)
 
 	case "`uname -s`" in
-	    *win32* | *WIN32* | *CYGWIN_NT*)
+	    *win32* | *WIN32* | *CYGWIN_NT* | *CYGWIN_98* | *CYGWIN_95*)
 		    AC_MSG_RESULT(yes)
 		;;
 	    *)
@@ -444,7 +444,7 @@ AC_DEFUN(SC_ENABLE_THREADS, [
 
 AC_DEFUN(SC_ENABLE_SYMBOLS, [
     case "`uname -s`" in
-	*win32* | *WIN32* | *CYGWIN_NT*)
+	*win32* | *WIN32* | *CYGWIN_NT* | *CYGWIN_98* | *CYGWIN_95*)
 	    tcl_dbgx=d
 	;;
 	*)
@@ -662,7 +662,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	    LDFLAGS="-export-dynamic"
 	    LD_SEARCH_FLAGS=""
 	    ;;
-	*win32*|*WIN32*|CYGWIN_NT*|cygwin_nt*)
+	*win32*|*WIN32*|CYGWIN_NT*|cygwin_nt*|*CYGWIN_98*|*CYGWIN_95*)
 	    CFLAGS_DEBUG="-nologo -Z7 -Od -WX ${runtime}d"
 	    CFLAGS_OPTIMIZE="-nologo -Oti -Gs -GD ${runtime}"
 	    LDFLAGS_CONSOLE="-subsystem:console"
@@ -1792,7 +1792,7 @@ AC_DEFUN(SC_TCL_LINK_LIBS, [
 
 AC_DEFUN(SC_MAKE_LIB, [
     case "`uname -s`" in
-	*win32* | *WIN32* | *CYGWIN_NT*)
+	*win32* | *WIN32* | *CYGWIN_NT* |*CYGWIN_98*|*CYGWIN_95*)
 	    if test "${CC-cc}" = "cl"; then
 		MAKE_STATIC_LIB="\${STLIB_LD} -out:\[$]@ \$(\[$]@_OBJECTS) "
 		MAKE_SHARED_LIB="\${SHLIB_LD} \${SHLIB_LDFLAGS} \${SHLIB_LD_LIBS} \$(LDFLAGS) -out:\[$]@ \$(\[$]@_OBJECTS) "
@@ -1879,7 +1879,7 @@ AC_DEFUN(SC_LIB_SPEC, [
     done
 
     case "`uname -s`" in
-	*win32* | *WIN32* | *CYGWIN_NT*)
+	*win32* | *WIN32* | *CYGWIN_NT* |*CYGWIN_98*|*CYGWIN_95*)
 	    $1_LIB_SPEC=\"`${CYGPATH} ${$1_LIB_PATH_NAME}`\"
 	    ;;
 	*)
@@ -1925,7 +1925,7 @@ AC_DEFUN(SC_PRIVATE_TCL_HEADERS, [
     AC_MSG_CHECKING(for Tcl private include files)
 
     case "`uname -s`" in
-	*win32* | *WIN32* | *CYGWIN_NT*)
+	*win32* | *WIN32* | *CYGWIN_NT* |*CYGWIN_98*|*CYGWIN_95*)
 	    TCL_TOP_DIR_NATIVE=\"`${CYGPATH} ${TCL_SRC_DIR}/..`\"
 	    TCL_GENERIC_DIR_NATIVE=\"`${CYGPATH} ${TCL_SRC_DIR}/../generic`\"
 	    TCL_UNIX_DIR_NATIVE=\"`${CYGPATH} ${TCL_SRC_DIR}/../unix`\"
@@ -2051,7 +2051,7 @@ AC_DEFUN(SC_PRIVATE_TK_HEADERS, [
     AC_MSG_CHECKING(for Tk private include files)
 
     case "`uname -s`" in
-	*win32* | *WIN32* | *CYGWIN_NT*)
+	*win32* | *WIN32* | *CYGWIN_NT* |*CYGWIN_98*|*CYGWIN_95*)
 	    TK_UNIX_DIR_NATIVE=\"`${CYGPATH} ${TK_SRC_DIR}/../unix`\"
 	    TK_WIN_DIR_NATIVE=\"`${CYGPATH} ${TK_SRC_DIR}/../win`\"
 	    TK_GENERIC_DIR_NATIVE=\"`${CYGPATH} ${TK_SRC_DIR}/../generic`\"
@@ -2168,7 +2168,7 @@ AC_DEFUN(SC_SIMPLE_EXEEXT, [
     AC_MSG_CHECKING(executable extension based on host type)
 
     case "`uname -s`" in
-	*win32* | *WIN32* | *CYGWIN_NT*)
+	*win32* | *WIN32* | *CYGWIN_NT* |*CYGWIN_98*|*CYGWIN_95*)
 	    EXEEXT=".exe"
 	;;
 	*)
@@ -2183,8 +2183,9 @@ AC_DEFUN(SC_SIMPLE_EXEEXT, [
 #------------------------------------------------------------------------
 # SC_PROG_TCLSH
 #	Locate a tclsh shell in the following directories:
-#		${exec_prefix}
+#		${exec_prefix}/bin
 #		${prefix}/bin
+#		${TCL_BIN_DIR}
 #		${TCL_BIN_DIR}/../bin
 #		${PATH}
 #
@@ -2197,10 +2198,73 @@ AC_DEFUN(SC_SIMPLE_EXEEXT, [
 #------------------------------------------------------------------------
 
 AC_DEFUN(SC_PROG_TCLSH, [
-    AC_PATH_PROGS(TCLSH_PROG, tclsh8.2${EXEEXT} tclsh82${EXEEXT} tclsh82d${EXEEXT} tclsh${EXEEXT}, :, ${exec_prefix}/bin:${prefix}/bin:${TCL_BIN_DIR}:${TCL_BIN_DIR}/../bin:${PATH})
+    AC_MSG_CHECKING([for tclsh])
 
-    if test "x${TCLSH_PROG}" = "x:" ; then
-	AC_MSG_WARN(No tclsh executable found.  You will have to build the pkgIndex.tcl file manually.)
+    AC_CACHE_VAL(ac_cv_path_tclsh, [
+	search_path=`echo ${exec_prefix}/bin:${prefix}/bin:${TCL_BIN_DIR}:${TCL_BIN_DIR}/../bin:${PATH} | sed -e 's/:/ /g'`
+	for dir in $search_path ; do
+	    for j in `ls -r $dir/tclsh[[8-9]]*${EXEEXT} 2> /dev/null` \
+		    `ls -r $dir/tclsh*${EXEEXT} 2> /dev/null` ; do
+		if test x"$ac_cv_path_tclsh" = x ; then
+		    if test -f "$j" ; then
+			ac_cv_path_tclsh=$j
+			break
+		    fi
+		fi
+	    done
+	done
+    ])
+
+    if test -f "$ac_cv_path_tclsh" ; then
+	TCLSH_PROG=$ac_cv_path_tclsh
+	AC_MSG_RESULT($TCLSH_PROG)
+    else
+	AC_MSG_ERROR(No tclsh found in PATH:  $search_path)
     fi
     AC_SUBST(TCLSH_PROG)
 ])
+
+#------------------------------------------------------------------------
+# SC_PROG_WISH
+#	Locate a wish shell in the following directories:
+#		${exec_prefix}/bin
+#		${prefix}/bin
+#		${TCL_BIN_DIR}
+#		${TCL_BIN_DIR}/../bin
+#		${PATH}
+#
+# Arguments
+#	none
+#
+# Results
+#	Subst's the following values:
+#		WISH_PROG
+#------------------------------------------------------------------------
+
+AC_DEFUN(SC_PROG_WISH, [
+    AC_MSG_CHECKING([for wish])
+
+    AC_CACHE_VAL(ac_cv_path_wish, [
+	search_path=`echo ${exec_prefix}/bin:${prefix}/bin:${TCL_BIN_DIR}:${TCL_BIN_DIR}/../bin:${PATH} | sed -e 's/:/ /g'`
+	for dir in $search_path ; do
+	    for j in `ls -r $dir/wish[[8-9]]*${EXEEXT} 2> /dev/null` \
+		    `ls -r $dir/wish*${EXEEXT} 2> /dev/null` ; do
+		if test x"$ac_cv_path_wish" = x ; then
+		    if test -f "$j" ; then
+			ac_cv_path_wish=$j
+			break
+		    fi
+		fi
+	    done
+	done
+    ])
+
+    if test -f "$ac_cv_path_wish" ; then
+	WISH_PROG=$ac_cv_path_wish
+	AC_MSG_RESULT($WISH_PROG)
+    else
+	AC_MSG_ERROR(No wish found in PATH:  $search_path)
+    fi
+    AC_SUBST(WISH_PROG)
+])
+

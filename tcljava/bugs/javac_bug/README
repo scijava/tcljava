@@ -1,6 +1,0 @@
-This shows the package ref bug in javac that causes problems
-when compiling a multiple packages that rely on each other.
-
-If you compile the sub package first then the other package it
-will work but if you compile both packages at the same time it
-will fail with a "cant find package" error message.

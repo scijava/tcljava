@@ -24,7 +24,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: TclClassLoader.java,v 1.7 1999/08/28 02:43:16 mo Exp $
+ * RCS: @(#) $Id: TclClassLoader.java,v 1.8 2000/01/06 01:30:50 mo Exp $
  */
 
 
@@ -48,6 +48,12 @@ private static Hashtable classes = new Hashtable();
 
 private String[] classpath;
 private String[] loadpath;
+
+// Used only for error reporting when something went wrong with a class
+// that was loaded out of a jar and we want to know which jar. Will
+// be null unless the last searched class was found in a jar.
+private String lastSearchedClassFile = null;
+private String lastSearchedJarFile = null;
 
 /*
  *----------------------------------------------------------------------
@@ -126,7 +132,7 @@ throws
     SecurityException       // Attempt to dynamically load tcl/java package.
 {
     Class result;           // The Class that is loaded.             
-    byte  classData[];      // The bytes that compose the class file.
+    byte[] classData;      // The bytes that compose the class file.
     
     // Check our local cache of classes 
     
@@ -168,20 +174,46 @@ throws
 
 	classData = getClassFromPath(loadpath, className);	
     }								
-    
+
     if (classData == null) {
 	throw new ClassNotFoundException(className);
     }
 
     // Define it (parse the class file)
 
-    
+
     // we have to include this catch for java.lang.NoClassDefFoundError
     // because Sun seems to have changed the Spec for JDK 1.2
     try {
 	result = defineClass(className, classData, 0, classData.length);
     } catch (NoClassDefFoundError err) {
 	throw new ClassFormatError();
+    } catch (ClassFormatError err) {
+	// This exception can be generated when the className argument
+	// does not match the actual name of the class. For instance
+	// if we try to define Test.class with data from tester/Test.class
+	// we will get this error. Sadly, there does not seem to be any
+	// to find out the real name of the class without knowing the
+	// format of the .class file and parsing it.
+
+	StringBuffer buf = new StringBuffer(50);
+	buf.append(err.getMessage());
+	buf.append(". ");
+	if (lastSearchedClassFile != null) {
+	    buf.append(lastSearchedClassFile);
+	} else {
+	    buf.append(className);
+	}
+
+	if (lastSearchedJarFile != null) {
+	    buf.append(" loaded from ");
+	    buf.append(lastSearchedJarFile);
+	}
+
+	buf.append(": class name does not match");
+	buf.append(" the name defined in the classfile");
+
+	throw new ClassFormatError(buf.toString());
     }
 
     if (result == null) {
@@ -283,6 +315,8 @@ getClassFromPath(
     // Search through the list of "paths" for the className.  
     // ".jar" or ".zip" files found in the path will also be 
     // searched.  Yhe first occurence found is returned.
+    lastSearchedClassFile = null;
+    lastSearchedJarFile = null;
 
     if (paths != null) {
 	// When the class being loaded implements other classes that are
@@ -321,6 +355,11 @@ getClassFromPath(
 					     (classData.length - total));
 
 			}
+
+			// Set this so we can get the full name of the
+			// file we loaded the class from later
+			lastSearchedClassFile = file.toString();
+
 			return (classData);
 		    }
 		}
@@ -447,6 +486,12 @@ throws IOException
 		    total += zin.read(result, total, 
 			    (size - total));
 		}
+
+		// Set these so we can determine which
+		// Jar a class was extracted from later
+		lastSearchedClassFile = className;
+		lastSearchedJarFile = jarName;
+
 		return result;
 	    }
 	}

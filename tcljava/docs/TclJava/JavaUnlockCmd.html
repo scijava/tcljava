@@ -28,9 +28,9 @@ Multiple locks are allowed on <I>javaObj</I>.
 The <B>java::unlock</B> removes one lock each
 time it is called.
 If the internal rep of the Tcl variable referenced by <I>javaObj</I>
-is zero after the lock is removed, the Java object will
-be garbage collected. If <I>javaObj</I> does not have an existing lock a
-Tcl error is generated.
+is zero after the lock is removed, the Java object could
+be garbage collected. If <I>javaObj</I> does not have an existing lock,
+a Tcl error is generated.
 
 <P>
 

@@ -1,6 +1,6 @@
 Recent user-visible changes to Jacl & Tcl Blend:
 
-RCS: @(#) $Id: changes.txt,v 1.33 1999/10/29 22:19:00 redman Exp $
+RCS: @(#) $Id: changes.txt,v 1.40 2000/02/01 03:46:31 mo Exp $
 
 ----------------- Released 1.0a1, 10/22/97 -----------------------
 
@@ -967,7 +967,7 @@ would look for a tclsh executable on the path. This would
 cause big problems if the tclsh executable was not the
 same one that we compiled Tcl Blend against. Tcl Blend
 now requires that you install and use the executable
-that was built from the Tcl source.
+that was built from the Tcl source. (Mo)
 
 ----------------- Released 1.2.4, 8/30/99 -----------------------
 
@@ -985,4 +985,40 @@ JDKs.  Support for building Jacl will be added soon.
 (Scott Redman)
 
 ----------------- Released 1.2.5, 10/29/99 -----------------------
+
+11/18/99 (bug fix) The pkgIndex.tcl file generated an error if the
+CLASSPATH environment variable was spelled ClassPath or any other
+combination of case.  This causes problems on Windows, where mixed
+case is commonly used in enviroment variables.  Instead of generating
+an error, we now copy the variant into env(CLASSPATH) if necessary.
+(Scott Stanton)
+
+01/05/2000 (Fixed source build under windows)
+Moved checks for tcl version numbers inside src/native/tclResult.c
+to fix build problems under windows. Only the makefile.vc build
+was effected by this bug, the TEA build worked just fine. (Mo)
+
+01/05/2000 (Bug fixes for Jacl's clock command)
+Added the patch submitted by Christian Krone <krischan@sql.de>. (Mo)
+
+01/05/2000 (Added debug output to TclClassLoader)
+The class loader was returning confusing error messages in some
+really strange cases. To address this issue, I added a helpful
+error message that would tell the user which class they were
+loading when something went wrong along with the .jar file
+that we found it in if there was one. (Mo)
+
+01/25/2000 (Minor Docs fix up)
+Fixed a number of small problems in the documentation, I also
+added some more code examples to the documentation. (Mo)
+
+01/31/2000 (configure support for IBM JDK on Linux)
+The IBM JDK port to Linux uses yet another include
+native include directory style which required some
+changes to the configure script. (Mo)
+
+01/31/2000 (minor fixup for JavaFieldCmd.test)
+Added "string trim" calls around some values
+queried by the java::field regression tests so
+that they pass under glibc 2.0. (Mo)
 

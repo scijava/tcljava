@@ -35,9 +35,38 @@ fields of superclasses.
 
 <P>
 
+</DL>
+
+<DL>
+
+<H3>
+Examples:
+</H3>
+
+<DD>
+
+The <B>java::field</B> command can be used to get the value of
+a class or instance variable. In this example, we query the
+static variable <B>java.lang.Integer.MAX_VALUE</B>, which
+has the value 2147483647.
+
+<P>
+
+<code>
+<pre>
+% java::field Integer MAX_VALUE
+2147483647
+
+</pre>
+</code>
+
+<P>
+
 The <B>java::field</B> command also supports getting the compiler
-simulated "class" field on a <code>java.lang.Class</code> Object.
-This is the preferred method to get a handle to a named class.
+simulated <B>class</B> field for a Class. This is the preferred method
+of getting a handle to a <code>java.lang.Class</code>
+object given a class name.
+<P>
 
 <code>
 <pre>
@@ -48,11 +77,8 @@ java.lang.Class
 </pre>
 </code>
 
-<p>
-<p>
+<P>
 
-The <A HREF="JavaConversions.html">Conversions</a> section describes the effect
-of the optional <B>-noconvert</B> flag on the result.
 
 </DL>
 
@@ -63,3 +89,4 @@ of the optional <B>-noconvert</B> flag on the result.
 
 </BODY>
 </HTML>
+

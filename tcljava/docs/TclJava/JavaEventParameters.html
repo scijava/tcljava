@@ -42,9 +42,13 @@ Example:
 
 <code>
 <pre>
-set button [java::new jawa.awt.Button]
+package require java
 
-java::bind $button mouseClicked {
+set f [java::new java.awt.Frame]
+$f setSize 100 100
+$f show
+
+java::bind $f mouseClicked {
     puts "mouse click at ([java::event x],[java::event y])"
 }
 </pre>
@@ -63,3 +67,4 @@ java::bind $button mouseClicked {
 
 </BODY>
 </HTML>
+

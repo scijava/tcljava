@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: ReflectObject.java,v 1.7 1999/08/09 09:18:34 mo Exp $
+ * RCS: @(#) $Id: ReflectObject.java,v 1.8 2000/02/09 01:42:01 mo Exp $
  *
  */
 
@@ -227,7 +227,7 @@ private static ReflectObject findInReflectTable(Interp interp, Class cl, Object 
     
     if (found == null) {
 	if (debug) {
-	    System.out.println("could not find reflect object for "
+	    System.out.println("could not find reflect object for class "
 			       + JavaInfoCmd.getNameFromClass(cl));
 	}
 	
@@ -235,13 +235,28 @@ private static ReflectObject findInReflectTable(Interp interp, Class cl, Object 
     } else {
 	if (debug) {
 	    System.out.println("match for id " + found.refID +
-			       " of class " + JavaInfoCmd.getNameFromClass(cl));
+			       " of class " + JavaInfoCmd.getNameFromClass(found.javaClass));
 	}
 
-	// Sanity check
+	// Sanity check, if this ever happened it would be VERY BAD!
 
 	if (found.javaClass != cl || found.javaObj != obj || found.ownerInterp != interp) {
-	    throw new TclRuntimeError("table entry did not match arguments");
+	    StringBuffer sb = new StringBuffer();
+	    sb.append("table entry ");
+	    sb.append(ident);
+	    sb.append(" mapped to an invalid entry, ");
+	    sb.append("Searched (");
+	    sb.append("Class = \"" + JavaInfoCmd.getNameFromClass(cl) + "\" ");
+	    sb.append("identityHashCode = \"" + System.identityHashCode(obj) + "\"");
+	    sb.append(") Found ( ");
+	    sb.append("Class = \"" + JavaInfoCmd.getNameFromClass(found.javaClass) + "\" ");
+	    sb.append("identityHashCode = \"" + System.identityHashCode(found.javaObj) + "\"");
+	    sb.append(") Equality Tests ( ");
+	    sb.append("Class  == \"" + (found.javaClass == cl) + "\" ");
+	    sb.append("Object == \"" + (found.javaObj == obj) + "\" ");
+	    sb.append("Interp == \"" + (found.ownerInterp == interp) + "\")");
+
+	    throw new TclRuntimeError(sb.toString());
 	}
 
 	return found;

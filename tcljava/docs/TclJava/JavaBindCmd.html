@@ -56,15 +56,17 @@ script</I> to to be executed when the given event is fired in the
 in <I>javaObj</I>, it will be replaced by <I>script</I>. If <I>script</I>
 is the empty string, any previously installed callback
 scripts for the given event in <I>javaObj</I> will be removed.
+See the <A HREF="JavaEventScripts.html">Event Scripts</A> section for
+more information.
 <P>
 If the <I>script</I> argument is not given, the <B>java::bind</B>
 command returns the current callback script, if any, for the given
 event in <I>javaObj</I>.
 <P>
 If the <I>eventName</I> and <I>script</I> arguments are both omitted,
-the <B>java::bind</B> command returns a Tcl list of the the full names
-of all the events of <I>javaObj</I> that are currently associated with
-callback scripts.
+the <B>java::bind</B> command returns a Tcl list of the full names
+of all the events that are currently associated with
+callback scripts for the given <I>javaObj</I>.
 <P>
 
 </DL>
@@ -79,8 +81,9 @@ Example:
 
 This example creates a frame containing a single button widget. It then
 uses the <B>java::bind</B> command to associate a Tcl script that will
-be invoked when the ActionListener.actionPerformed interface method
-is invoked by the user pressing the button.
+be invoked when the <B>ActionListener.actionPerformed</B> interface method
+is invoked. When the user presses the button, the Tcl script will be
+evaluated inside the interpreter.
 
 <P>
 
@@ -102,7 +105,6 @@ java::bind $b actionPerformed {
 </code>
 
 <P>
-
 
 </DL>
 

@@ -41,11 +41,28 @@ by the <B>java::defineclass</B> routine.  The name of the class, which
 is stored within the class bytecodes, is extracted and is used to
 reference the cached Java Class object.  If the class name is used in
 future calls (e.g. <B>java::new</B>) the class defined by
-<I>classData</I> is used.  For example:
-<PRE>set file [open Foo.class r]
+<I>classData</I> is used.
+
+</DL>
+
+<DL>
+
+<H3>
+Example:
+</H3>
+
+<DD>
+
+In this example, a Java class is read from the filesystem
+and then defined using the <b>java::defineclass</b> command.
+
+<code>
+<pre>
+set file [open Foo.class r]
 
 # Tcl Blend users must call 'fconfigure $file -translate binary'
-set data [read $file]       
+set data [read $file]
+close $file
 
 # This returns a Java Class object.
 set class [java::defineclass $data]
@@ -53,10 +70,14 @@ set class [java::defineclass $data]
 # Get an instance of the object.
 set object [$class newInstance]
 
-# The class is now loaded into the VM, so the 
-# following call also works.
+# The class is now loaded into the VM, so we
+# can create instances of it
 set object [java::new Foo]
-</PRE>
+
+</pre>
+</code>
+
+<P>
 
 </DL>
 
@@ -67,3 +88,4 @@ set object [java::new Foo]
 
 </BODY>
 </HTML>
+

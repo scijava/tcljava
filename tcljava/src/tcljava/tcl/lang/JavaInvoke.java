@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaInvoke.java,v 1.10 1999/08/15 19:38:47 mo Exp $
+ * RCS: @(#) $Id: JavaInvoke.java,v 1.11 2000/01/06 00:54:18 mo Exp $
  *
  */
 
@@ -800,7 +800,7 @@ throws
 	    // and a Java long may be represented as a tcl integer if it
 	    // is small enogh, so we try to convert the string to a
 	    // tcl integer and if that fails we try to convert to a
-	    // java long. If both of these fail throw original Tcl error.
+	    // java Long object. If both of these fail throw original error.
 
 	    try {
 	        return new Long(TclInteger.get(interp, tclObj));

@@ -39,7 +39,7 @@ constructor for the Java object is invoked with the arguments to the
 <B>java::new</B> command provided as arguments to the Java constructor.
 If the arguments to <B>java::new</B> are not already Java objects, then
 those Tcl values are converted to Java objects or primitive values
-before being passed to the constructor. When the constructor completes
+before being passed to the constructor. When the constructor finishes,
 a Java object handle is returned by the <B>java::new</B> command.
 Because the specification of signatures for constructors and methods
 is very simmilar, a seperate
@@ -51,10 +51,10 @@ When <B>java::new</B> is called with an <I>arraySignature</I> argument,
 the signature is examined to determine the type of the array and
 the number of dimensions. The <I>arraySignature</I> argument consists
 of a class or a primitive data type followed by one or more pairs of brackets.
-The number of pairs of brackets determines the dimension of the array
-(e.g. {int[][][]} indicates a three dimensional array of integers;
-the curly braces keep the interpreter from evaluating the empty brackets
-as empty commands).
+The number of pairs of brackets determines the dimension of the array.
+For example, {int[][][]} indicates a three dimensional array of integers;
+the curly braces keeps the Tcl interpreter from evaluating the empty brackets
+as empty commands.
 
 <P>
 
@@ -92,6 +92,55 @@ objects or primitive types.
 
 </DL>
 
+<DL>
+
+<H3>
+Examples:
+</H3>
+
+<DD>
+
+The following example shows how to allocate an instance of the Java class
+<B>java.lang.String</b>, and how to get a Tcl string representation of the
+<B>java.lang.String</b> object.
+
+<code>
+<pre>
+# Allocate an instance of a String object.
+set jstring [java::new String "Hello World"]
+
+# Convert the Java string to a Tcl string
+set tstring [$jstring toString]
+</pre>
+</code>
+
+<P>
+
+In this example, we see how to allocate an array of <B>java.lang.String</b>
+objects. This example also demonstrates Java array object commands and their
+equivalent Java statements, see the <A HREF="JavaArrayObjCmd.html">javaArrayObj</A>
+section for more information.
+
+<code>
+<pre>
+# This is equivalent to the Java statement.
+# String[] arr = new String[2];
+set arr [java::new {String[]} {2}]
+
+# Set the values of the array elements.
+# This is equivalent to the following Java statements.
+# arr[0] = "Hello";
+# arr[1] = "World";
+$arr set 0 "Hello"
+$arr set 1 "World"
+
+</pre>
+</code>
+
+<P>
+
+</DL>
+
 <PRE>
 <A HREF="../license.html">Copyright</A> &#169; 1997-1998 Sun Microsystems, Inc.
 </PRE>
@@ -99,3 +148,4 @@ objects or primitive types.
 
 </BODY>
 </HTML>
+

@@ -2,13 +2,13 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run to configure the
 dnl	Makefile in this directory.
 AC_INIT(../src/tcljava/tcl/lang/InternalRep.java)
-# RCS: @(#) $Id: configure.in,v 1.24 1999/11/02 00:10:01 redman Exp $
+# RCS: @(#) $Id: configure.in,v 1.27 2000/02/01 03:44:06 mo Exp $
 
 
 #--------------------------------------------------------------------
 # 	Version identification info (also set in source files)
 #--------------------------------------------------------------------
-TCLJAVA_VERSION=1.2.5
+TCLJAVA_VERSION=1.2.6
 TCLJAVA_NODOT_VERSION=`echo $TCLJAVA_VERSION | sed -e 's/\.//g'`
 
 # Convert into full path name
@@ -133,7 +133,7 @@ JAVA_NAME=""
 
 #--------------------------------------------------------------------
 #	See if there was a command-line option for where the kaffe is;
-#       if it is none, look for kaffe on the path.
+#	if it is none, look for kaffe on the path.
 #--------------------------------------------------------------------
 
 AC_ARG_WITH(kaffe, [  --with-kaffe=DIR        use Kaffe-JVM binaries from DIR], KAFFE_DIR=$withval, KAFFE_DIR=NONE)
@@ -196,8 +196,8 @@ fi
 #--------------------------------------------------------------------
 #	See if there was a command-line option for where the JDK is;  if
 #	not, check to see if the JAVA_HOME environment variable is set;
-#       if it is none, look for javac on the path. The -with-jdk option
-#       must be processed after any other --with options for JVMs.
+#	if it is none, look for javac on the path. The -with-jdk option
+#	must be processed after any other --with options for JVMs.
 #--------------------------------------------------------------------
 
 AC_ARG_WITH(jdk, [  --with-jdk=DIR          use Sun's JDK Java binaries from DIR, defaults to the value of the JAVA_HOME environment variable],
@@ -270,8 +270,8 @@ echo "JAVA_NAME is $JAVA_NAME" >&5
 
 #------------------------------------------------------------------
 #
-# Check to make sure we know the names of the .zip or .jar files
-# that need to be included in the CLASSPATH
+#	Check to make sure we know the names of the .zip or .jar files
+#	that need to be included in the CLASSPATH
 #
 #------------------------------------------------------------------
 
@@ -314,7 +314,7 @@ fi
 
 #------------------------------------------------------------------
 #
-# Check for the java runtime
+#	Check for the java runtime
 #
 #------------------------------------------------------------------
 
@@ -334,7 +334,7 @@ fi
 
 #------------------------------------------------------------------
 #
-# Check for the remote debug java_g runtime
+#	Check for the remote debug java_g runtime
 #
 #------------------------------------------------------------------
 
@@ -356,7 +356,7 @@ fi
 
 #------------------------------------------------------------------
 #
-# Check for the javac compiler
+#	Check for the javac compiler
 #
 #------------------------------------------------------------------
 
@@ -380,7 +380,7 @@ fi
 
 #------------------------------------------------------------------
 #
-# Check that we have the javah .h header generator
+#	Check that we have the javah .h header generator
 #
 #------------------------------------------------------------------
 
@@ -405,7 +405,7 @@ fi
 
 #------------------------------------------------------------------
 #
-# Check that we have the jar archive utility
+#	Check that we have the jar archive utility
 #
 #------------------------------------------------------------------
 
@@ -428,8 +428,8 @@ fi
 
 #------------------------------------------------------------------
 #
-# Check that we have the jdb java debugger program
-# jdb functionality will not be tested by the configure script
+#	Check that we have the jdb java debugger program
+#	jdb functionality will not be tested by the configure script
 #
 #------------------------------------------------------------------
 
@@ -452,8 +452,8 @@ fi
 
 #------------------------------------------------------------------
 #
-# Look on the path for ddd, if it is not found do nothing
-# ddd functionality will not be tested by the configure script
+#	Look on the path for ddd, if it is not found do nothing
+#	ddd functionality will not be tested by the configure script
 #
 #------------------------------------------------------------------
 
@@ -468,8 +468,8 @@ fi
 
 #--------------------------------------------------------------------
 #	See if there was a command-line option for where jikes is; if
-#       there was a command line option given but no argument was given
-#       then search for jikes on the PATH.
+#	there was a command line option given but no argument was given
+#	then search for jikes on the PATH.
 #--------------------------------------------------------------------
 
 AC_ARG_WITH(jikes, [  --with-jikes=PROG       use jikes compiler given by PROG, if PROG is not given look for jikes on the PATH.],
@@ -515,12 +515,14 @@ fi
 
 
 
+#--------------------------------------------------------------------
 #
-# If we are compiling tclblend, then we need to:
-# 1. Check that we have the native threads pack
-# 2. Find the platform dependent include files
-# 3. Find the platform dependent libraries
+#	If we are compiling tclblend, then we need to:
+#	1. Check that we have the native threads pack
+#	2. Find the platform dependent include files
+#	3. Find the platform dependent libraries
 #
+#--------------------------------------------------------------------
 
 if test $TCLJAVA = "tclblend" || test $BOTH = "true"; then
 
@@ -650,8 +652,18 @@ See http://www.sgi.com/Products/Evaluation/#jdk.])
 
             ;;
 	Linux)
+	    # Ok, this is getting wacky. the Blackdown JVM
+	    # includes include/native_threads/include/mutex_md.h
+	    # But the IBM 1.1.8 port for the JDK does not
+	    # put this file in its own native_threads directory
+	    # (I presume because they only support native threads)
+	    # The IBM JDK includes this file in this location
+	    # include/linux/mutex_md.h, so to make this test
+	    # work for both we only fail if native_threads is
+	    # not a directory and mutex_md.h is not found
 	    if test "$JAVA_VERSION" = "1.1" && \
-                test ! -d $JAVA_INCLUDE/native_threads; then
+                test ! -d $JAVA_INCLUDE/native_threads && \
+                test ! -f $JAVA_INCLUDE/linux/mutex_md.h; then
                 AC_MSG_ERROR(['$JAVA_INCLUDE/native_threads'
 does not exist. You must install the JDK Native Threads Pack to use tclblend.
 See http://www.blackdown.org/java-linux.html.])
@@ -675,6 +687,13 @@ See http://www.blackdown.org/java-linux.html.])
 
             ARCH_LIBNAME=lib
             ARCH_LIB=${ARCH_LIBNAME}/${ARCH}
+            # The ibm JDK uses the arch name linux not i386
+            if  test ! -d $JAVA_DIR/$ARCH_LIB && \
+                test -d $JAVA_DIR/${ARCH_LIBNAME}/linux; then
+                MSG="IBM JDK Release Detected."
+                echo $MSG >&5
+                ARCH_LIB=${ARCH_LIBNAME}/linux
+            fi
 
             JAVA_SHLIB=libjava.so
             TCLBLEND_LIBS="-lpthread -ljava"
@@ -982,8 +1001,8 @@ if env $JAVAC -d . $srcdir/../src/Test.java 1>&5 2>&5 &&
 
         # -native does not work correctly under JDK 1.1.7 from Blackdown.
         # The problem is related to IO from a shell script.
-	# Currently we ignore the JAVA_VERISON FLAG but we really should
-	# fix that so that it works for the blackdown port of 1.2. 
+        # Currently, we ignore the JAVA_VERISON FLAG but we really should
+        # fix that so that it works for the blackdown port of 1.2. 
         if test "`uname -s`" = "Linux"; then
             JAVA_FLAGS=""
             MSG="skipping -native option because jacl has some problems running with native threads on linux with JDK 1.1 from Blackdown"
@@ -1128,7 +1147,7 @@ fi
 
 #--------------------------------------------------------------------
 #	If the TCLJAVA variable equals tclblend or both then we 
-#       need to grab some variables from the tclConfig.sh
+#	need to grab some variables from the tclConfig.sh
 #--------------------------------------------------------------------
 
 if test $TCLJAVA = "tclblend" || test $BOTH = "true"; then
@@ -1139,7 +1158,7 @@ if test $TCLJAVA = "tclblend" || test $BOTH = "true"; then
     #--------------------------------------------------------------------
     
     AC_ARG_WITH(tcl, [  --with-tcl=DIR          build directory for Tcl 8.X source release from DIR],
-    	TCL_BIN_DIR=$withval, TCL_BIN_DIR="$srcdir/../../tcl8.0.5/unix")
+    	TCL_BIN_DIR=$withval, TCL_BIN_DIR="$srcdir/../../tcl8.2.3/unix")
 
     if test ! -d $TCL_BIN_DIR; then
         AC_MSG_ERROR([Tcl directory could not be located.
@@ -1203,7 +1222,7 @@ Make sure Tcl was configured with --enable-shared.])
         fi
     fi
 
-    # Fix up the TCL_LD_SEARCH_FLAGS when running under Solaris
+    # Fix up the TCL_LD_SEARCH_FLAGS (known problem fixed by TEA)
 
     case "`uname -s`" in
         SunOS*)
