@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.26 2003/02/14 23:26:56 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.27 2003/03/17 23:44:54 mdejong Exp $
 
 SHELL = /bin/sh
 
@@ -447,9 +447,9 @@ tclblend.install: tclblend.check
 	@rm -rf $(prefix)/lib/xputils
 	@mkdir -p $(prefix)/lib/xputils
 	@chmod 755 $(prefix)/lib/xputils
-	@$(INSTALL_DATA) xputils/pkgIndex.tcl $(prefix)/lib/xputils
-	@$(INSTALL_DATA) xputils/xputils.tcl $(prefix)/lib/xputils
-	@$(INSTALL_DATA) xputils/iload.tcl $(prefix)/lib/xputils
+	@$(INSTALL_DATA) src/xputils/pkgIndex.tcl $(prefix)/lib/xputils
+	@$(INSTALL_DATA) src/xputils/xputils.tcl $(prefix)/lib/xputils
+	@$(INSTALL_DATA) src/xputils/iload.tcl $(prefix)/lib/xputils
 	@echo "Installing jtclsh in $(BIN_INSTALL_DIR)"
 	@$(INSTALL_PROGRAM) jtclsh $(BIN_INSTALL_DIR)
 	@chmod a+rx $(BIN_INSTALL_DIR)/jtclsh
@@ -1038,8 +1038,7 @@ Makefile: $(TOP_DIR)/Makefile.in
 	./config.status
 
 configure: $(TOP_DIR)/configure.in
-	@echo "# running autoconf on configure.in"
-	autoconf
+	@echo "You need to rerun autoconf, configure.in is out of date"
 
 clean: tclblend.clean jacl.clean tcljava.clean \
 	demos.clean test.clean tmp.clean \
@@ -1139,25 +1138,34 @@ tcljavaDist: Makefile
 		$(TOP_DIR)/ChangeLog \
 		$(TOP_DIR)/diffs.txt \
 		$(TOP_DIR)/known_issues.txt \
+		$(TOP_DIR)/new_features.txt \
 		$(DISTDIR)
 
+	cp -p $(TOP_DIR)/configure \
+		$(TOP_DIR)/configure.in \
+		$(TOP_DIR)/Makefile.in \
+		$(TOP_DIR)/bsjavac.sh \
+		$(TOP_DIR)/mingw_path.sh \
+		$(TOP_DIR)/mkIndex.tcl.in \
+		$(TOP_DIR)/tcl.m4 \
+		$(TOP_DIR)/tcljava.m4 \
+		$(TOP_DIR)/tcljavaConfig.sh.in \
+		$(TOP_DIR)/autogen.sh \
+		$(TOP_DIR)/install-sh \
+		$(TOP_DIR)/mkinstalldirs \
+		$(DISTDIR)
+
+	chmod 644 $(DISTDIR)/Makefile.in \
+		$(DISTDIR)/configure.in
+	chmod 755 $(DISTDIR)/configure \
+		$(DISTDIR)/install-sh \
+		$(DISTDIR)/mkinstalldirs
+
 	mkdir -p $(DISTDIR)/unix
-	cp -p $(UNIX_DIR)/configure \
-		$(UNIX_DIR)/configure.in \
-		$(UNIX_DIR)/install-sh \
-		$(UNIX_DIR)/tcljavaConfig.sh.in \
-		$(UNIX_DIR)/Makefile.in \
-		$(TOP_DIR)/license.terms \
+	cp -p 	$(TOP_DIR)/license.terms \
 		$(DISTDIR)/unix
 
-	chmod 644 $(DISTDIR)/unix/Makefile.in $(DISTDIR)/unix/configure.in
-	chmod 755 $(DISTDIR)/unix/configure 
-	chmod 555 $(DISTDIR)/unix/install-sh
-
-	@#this makefile will be modified later
 	mkdir -p $(DISTDIR)/win
-	cp -p $(TOP_DIR)/win/makefile.vc \
-		$(DISTDIR)/win/makefile.vc
 	cp -p 	$(TOP_DIR)/license.terms \
 		$(DISTDIR)/win
 
@@ -1234,19 +1242,26 @@ tcljavaDist: Makefile
 	cp -p $(TOP_DIR)/src/tests/tcljava/tcl/lang/*.java \
 		$(DISTDIR)/src/tests/tcljava/tcl/lang
 
-	mkdir -p $(DISTDIR)/tests/tcljava
+	mkdir -p $(DISTDIR)/tests
 	cp -p $(TOP_DIR)/tests/README \
-		$(TOP_DIR)/tests/all \
+		$(TOP_DIR)/tests/all.tcl \
 		$(TOP_DIR)/tests/defs \
+		$(TOP_DIR)/tests/tcltest.tcl \
 		$(DISTDIR)/tests
 
+	mkdir -p $(DISTDIR)/tests/tcljava
 	cp -p $(TOP_DIR)/tests/tcljava/*.test \
 		$(DISTDIR)/tests/tcljava
+
+	mkdir -p $(DISTDIR)/tests/inprogress
+	cp -p $(TOP_DIR)/tests/inprogress/*.test \
+		$(DISTDIR)/tests/inprogress
 
 	mkdir -p $(DISTDIR)/docs \
 		$(DISTDIR)/docs/Keywords \
 		$(DISTDIR)/docs/TclJava \
 		$(DISTDIR)/docs/TclJavaLib \
+		$(DISTDIR)/docs/website
 
 	cp -p $(TOP_DIR)/docs/*.html \
 		$(DISTDIR)/docs
@@ -1256,6 +1271,10 @@ tcljavaDist: Makefile
 		$(DISTDIR)/docs/TclJava
 	cp -p $(TOP_DIR)/docs/TclJavaLib/*.htm \
 		$(DISTDIR)/docs/TclJavaLib
+	cp -p $(TOP_DIR)/docs/website/*.html \
+		$(DISTDIR)/docs/website
+	cp -p $(TOP_DIR)/docs/website/*.gif \
+		$(DISTDIR)/docs/website
 
 
 #----------------------------------------------------------------
@@ -1308,7 +1327,7 @@ tcljavaDemoDist: Makefile
 # 	unique to Jacl.  Before this is done, the targets 
 #	tcljavaDist and tcljavaDemoDist MUST be built.
 #----------------------------------------------------------------
-jaclDist: $(UNIX_DIR)/configure Makefile
+jaclDist: Makefile
 	@echo "#"
 	@echo "# Making jaclDist"
 	@echo "#"
@@ -1317,10 +1336,6 @@ jaclDist: $(UNIX_DIR)/configure Makefile
 
 	cp -p $(TOP_DIR)/README.jacl \
 		$(JACL_DISTDIR)/README
-	cp -p $(TOP_DIR)/unix/README.jacl \
-		$(JACL_DISTDIR)/unix/README
-	cp -p $(TOP_DIR)/win/README.jacl \
-		$(JACL_DISTDIR)/win/README
 
 	mkdir -p $(JACL_DISTDIR)/src/tests/jacl/tcl/lang
 	cp -p $(TOP_DIR)/src/tests/jacl/tcl/lang/*.java \
@@ -1349,19 +1364,18 @@ jaclDist: $(UNIX_DIR)/configure Makefile
 	cp -p $(TOP_DIR)/tests/tcl/*.test \
 		$(JACL_DISTDIR)/tests/tcl
 
-	mkdir -p $(JACL_DISTDIR)/unix
-	cp -p $(TOP_DIR)/unix/jaclsh.in \
-		$(JACL_DISTDIR)/unix
+	cp -p $(TOP_DIR)/jaclsh.in \
+		$(JACL_DISTDIR)
 
 	mkdir -p $(JACL_DISTDIR)/win
 	cp -p $(TOP_DIR)/win/jaclsh.bat \
 		$(JACL_DISTDIR)/win
 
-	@# Substitute in TCLJAVA=jacl
-	cat $(TOP_DIR)/win/makefile.vc | \
-	sed -e 's/TCLJAVA[	 ]*= [a-z]*$$/TCLJAVA		= jacl/g' \
-		-e 's/tclBlend@TCLJAVA_VERSION@/jacl@TCLJAVA_VERSION@/g' >\
-		$(JACL_DISTDIR)/win/makefile.vc
+	mkdir -p $(JACL_DISTDIR)/extras/GuiShell
+	cp -p $(TOP_DIR)/extras/GuiShell/GuiShell.java \
+		$(TOP_DIR)/extras/GuiShell/README \
+		$(TOP_DIR)/extras/GuiShell/swingempty.jar \
+		$(JACL_DISTDIR)/extras/GuiShell
 
 	rm -f $(DISTDIR)/$(JACL_DISTNAME).tar.Z \
 		$(DISTDIR)/$(JACL_DISTNAME).tar.gz \
@@ -1369,7 +1383,6 @@ jaclDist: $(UNIX_DIR)/configure Makefile
 	cd $(DISTDIR);\
 		chmod -R $(DIST_CHMOD_PERMS) $(JACL_DISTNAME); \
 		tar -cf $(JACL_DISTNAME).tar $(JACL_DISTNAME); \
-		compress -c $(JACL_DISTNAME).tar > $(JACL_DISTNAME).tar.Z; \
 		zip -qr8 $(JACL_ZIPNAME) $(JACL_DISTNAME); \
 		gzip --best $(JACL_DISTNAME).tar
 
@@ -1411,7 +1424,7 @@ jaclDistBuild:
 #	tcljavaDist and tcljavaDemoDist MUST be built.
 #----------------------------------------------------------------
 
-tclblendDist: $(UNIX_DIR)/configure Makefile
+tclblendDist: Makefile
 	@echo "#"
 	@echo "# Making tclblendDist"
 	@echo "#"
@@ -1419,14 +1432,9 @@ tclblendDist: $(UNIX_DIR)/configure Makefile
 
 	cp -p $(TOP_DIR)/README.tclblend \
 		$(TCLBLEND_DISTDIR)/README
-	cp -p $(TOP_DIR)/unix/README.tclblend \
-		$(TCLBLEND_DISTDIR)/unix/README
-	cp -p $(TOP_DIR)/win/README.tclblend \
-		$(TCLBLEND_DISTDIR)/win/README
 
-	mkdir -p $(TCLBLEND_DISTDIR)/unix
-	cp -p $(TOP_DIR)/unix/jtclsh.in \
-		$(TCLBLEND_DISTDIR)/unix
+	cp -p $(TOP_DIR)/jtclsh.in \
+		$(TCLBLEND_DISTDIR)
 
 	mkdir -p $(TCLBLEND_DISTDIR)/src
 	cp -p $(TOP_DIR)/src/pkgIndex.tcl \
@@ -1442,33 +1450,8 @@ tclblendDist: $(UNIX_DIR)/configure Makefile
 		$(NATIVE_SRC_DIR)/*.h \
 		$(TCLBLEND_DISTDIR)/src/native
 
-	cp -p $(TOP_DIR)/configure \
-		$(TOP_DIR)/configure.in \
-		$(TOP_DIR)/Makefile.in \
-		$(TOP_DIR)/mkIndex.tcl.in \
-		$(TOP_DIR)/aclocal.m4 \
-		$(TOP_DIR)/tcl.m4 \
-		$(TOP_DIR)/install-sh \
-		$(TOP_DIR)/mkinstalldirs \
-		$(TCLBLEND_DISTDIR)
-
-	chmod 644 $(TCLBLEND_DISTDIR)/Makefile.in \
-		$(TCLBLEND_DISTDIR)/configure.in
-	chmod 755 $(TCLBLEND_DISTDIR)/configure \
-		$(TCLBLEND_DISTDIR)/install-sh
-	chmod 755 $(TCLBLEND_DISTDIR)/mkinstalldirs
-		cp -p $(UNIX_DIR)/custom.c \
-		$(UNIX_DIR)/unixNotifier.c \
+	cp -p $(UNIX_DIR)/custom.c \
 		$(TCLBLEND_DISTDIR)/unix
-
-	cp -p $(WIN_DIR)/winNotifier.c \
-		$(WIN_DIR)/tclRegexp.h \
-		$(TCLBLEND_DISTDIR)/win
-
-	@# Substitute in TCLJAVA=tclblend
-	cat $(TOP_DIR)/win/makefile.vc | \
-		sed -e 's/TCLJAVA[	 ]*= [a-z]*$$/TCLJAVA		= tclblend/g' >\
-			$(TCLBLEND_DISTDIR)/win/makefile.vc
 
 	mkdir -p $(TCLBLEND_DISTDIR)/src/tests/tclblend/tests
 	mkdir -p $(TCLBLEND_DISTDIR)/src/tests/tclblend/tcl/lang
@@ -1487,6 +1470,14 @@ tclblendDist: $(UNIX_DIR)/configure Makefile
 	cp -p  $(TOP_DIR)/tests/tclblend/*.test \
 		$(TCLBLEND_DISTDIR)/tests/tclblend
 
+	mkdir -p $(TCLBLEND_DISTDIR)/extras/JNI_example
+	cp -p $(TOP_DIR)/extras/JNI_example/JNI_example.c \
+		$(TOP_DIR)/extras/JNI_example/JNI_example.java \
+		$(TCLBLEND_DISTDIR)/extras/JNI_example
+
+	cp -p $(TOP_DIR)/extras/TclBlend.java \
+		$(TCLBLEND_DISTDIR)/extras
+
 	rm -f   $(DISTDIR)/$(TCLBLEND_DISTNAME).tar.Z \
 		$(DISTDIR)/$(TCLBLEND_DISTNAME).tar.gz \
 		$(DISTDIR)/$(TCLBLEND_ZIPNAME)
@@ -1494,7 +1485,6 @@ tclblendDist: $(UNIX_DIR)/configure Makefile
 	cd $(DISTDIR);\
 		chmod -R $(DIST_CHMOD_PERMS) $(TCLBLEND_DISTNAME); \
 		tar -cf $(TCLBLEND_DISTNAME).tar $(TCLBLEND_DISTNAME); \
-		compress -c $(TCLBLEND_DISTNAME).tar > $(TCLBLEND_DISTNAME).tar.Z; \
 		zip -rq8 $(TCLBLEND_ZIPNAME) $(TCLBLEND_DISTNAME); \
 		gzip --best $(TCLBLEND_DISTNAME).tar
 

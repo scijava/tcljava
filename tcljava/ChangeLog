@@ -1,5 +1,17 @@
 2003-03-17  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* Makefile.in: Revamp the dist target, updates
+	are needed since lots of things about file
+	layout have changed. Copy the xputils dir out
+	of the src subdir when installing Tcl Blend.
+	Don't bother building a .Z file via dist.
+	* configure: Regen.
+	* configure.in: Rework AC_OUTPUT so that only
+	the needed files are emitted for a Jacl or
+	Tcl Blend configure.
+
+2003-03-17  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* tests/inprogress/CallFrame.test:
 	* tests/inprogress/ExprCmd.test:
 	* tests/inprogress/GlobCmd.test:

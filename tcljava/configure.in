@@ -380,4 +380,12 @@ if test "$TCLJAVA" = "both" ; then
 fi
 AC_SUBST(TCLJAVA)
 
-AC_OUTPUT([Makefile jaclsh jtclsh tcljavaConfig.sh])
+if test $TCLJAVA = "both"; then
+    OUTPUT_FILES="Makefile jtclsh jaclsh tcljavaConfig.sh"
+elif test $TCLJAVA = "tclblend"; then
+    OUTPUT_FILES="Makefile jtclsh tcljavaConfig.sh"
+else
+    OUTPUT_FILES="Makefile jaclsh tcljavaConfig.sh"
+fi
+
+AC_OUTPUT([$OUTPUT_FILES])
