@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.14 1999/06/21 03:32:38 mo Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.15 1999/06/30 00:13:36 mo Exp $
  *
  */
 
@@ -112,7 +112,7 @@ NamespaceCmd.Namespace globalNs;
 // FIXME : does globalFrame need to be replaced by globalNs?
 // Points to the global variable frame.
 
-CallFrame globalFrame;
+//CallFrame globalFrame;
 
 // The script file currently under execution. Can be null if the
 // interpreter is not evaluating any script file.
@@ -266,15 +266,6 @@ Interp()
     frame            = null;
     varFrame         = null;
     
-    /*
-      // FIXME : what should we do here ?
-    frame            = newCallFrame();
-    varFrame         = frame;
-    // FIXME : how will globalNs be initialised?
-    globalFrame      = frame;
-    */
-
-
     returnCode       = TCL.OK;
     errorInfo        = null;
     errorCode        = null;
@@ -465,10 +456,16 @@ dispose()
 	throw new TclRuntimeError("unexpected TclException: " + e);
     }
 
-    globalFrame.dispose();
+    // FIXME : remove globalFrame stuff later
+    //globalFrame.dispose();
+    //globalFrame = frame;
+
+
+    // FIXME : is there a reason a new frame is created here?
     frame = newCallFrame();
+    // FIXME : is this the right thing to do with varFrame?
     varFrame = frame;
-    globalFrame = frame;
+
 
     try {
 	if (errorInfoObj != null) {
@@ -522,10 +519,13 @@ dispose()
     // deletion could have transferred ownership of the result string
     // to Tcl.
 
-    globalFrame.dispose();
+    // FIXME : remove globalFrame stuff later
+    //globalFrame.dispose();
+    //globalFrame = null;
+
     frame = null;
     varFrame = null;
-    globalFrame = null;
+    
 
     resetResult();
 }
@@ -657,7 +657,7 @@ createCommands()
     Extension.loadOnDemand(this, "jaclloadjava", "tcl.lang.JaclLoadJavaCmd");
     
     try {
-        eval("package ifneeded java 1.2.3 jaclloadjava");
+        eval("package ifneeded java 1.2.4 jaclloadjava");
     } catch (TclException e) {
 	System.out.println(getResult());
 	e.printStackTrace();
@@ -822,7 +822,7 @@ setVar(
 throws 
     TclException 
 {
-    return varFrame.setVar(nameObj, value, flags);
+    return Var.setVar(this, nameObj, value, flags);
 }
 
 /*
@@ -853,7 +853,7 @@ setVar(
 throws
     TclException 
 {
-    return varFrame.setVar(name, value, flags);
+    return Var.setVar(this, name, value, flags);
 }
 
 /*
@@ -886,7 +886,7 @@ setVar(
 throws
     TclException
 {
-    return varFrame.setVar(name1, name2, value, flags);
+    return Var.setVar(this, name1, name2, value, flags);
 }
 
 /*
@@ -916,7 +916,7 @@ setVar(
 throws 
     TclException 
 {
-    varFrame.setVar(name, TclString.newInstance(strValue), flags);
+    Var.setVar(this, name, TclString.newInstance(strValue), flags);
 }
 
 /*
@@ -949,7 +949,7 @@ setVar(
 throws 
     TclException
 {
-    varFrame.setVar(name1, name2, TclString.newInstance(strValue),
+    Var.setVar(this, name1, name2, TclString.newInstance(strValue),
 	    flags);
 }
 
@@ -978,7 +978,7 @@ getVar(
 throws
     TclException 
 {
-    return varFrame.getVar(nameObj, flags);
+    return Var.getVar(this, nameObj, flags);
 }
 
 /*
@@ -1006,7 +1006,7 @@ getVar(
 throws
     TclException
 {
-    return varFrame.getVar(name, flags);
+    return Var.getVar(this, name, flags);
 }
 
 /*
@@ -1037,7 +1037,7 @@ getVar(
 throws
     TclException
 {
-    return varFrame.getVar(name1, name2, flags);
+    return Var.getVar(this, name1, name2, flags);
 }
 
 /*
@@ -1065,7 +1065,7 @@ unsetVar(
 throws 
     TclException
 {
-    varFrame.unsetVar(nameObj, flags);
+    Var.unsetVar(this,nameObj, flags);
 }
 
 /*
@@ -1093,7 +1093,7 @@ unsetVar(
 throws 
     TclException 
 {
-    varFrame.unsetVar(name, flags);
+    Var.unsetVar(this, name, flags);
 }
 
 /*
@@ -1124,7 +1124,7 @@ unsetVar(
 throws
     TclException
 {
-    varFrame.unsetVar(name1, name2, flags);
+    Var.unsetVar(this, name1, name2, flags);
 }
 
 /*
@@ -1156,7 +1156,7 @@ traceVar(
 throws
     TclException
 {
-    varFrame.traceVar(nameObj, trace, flags);
+    Var.traceVar(this, nameObj, flags, trace);
 }
 
 /*
@@ -1188,7 +1188,7 @@ traceVar(
 throws
     TclException
 {
-    varFrame.traceVar(name, trace, flags);
+    Var.traceVar(this, name, flags, trace);
 }
 
 /*
@@ -1222,7 +1222,7 @@ traceVar(
 throws
     TclException
 {
-    varFrame.traceVar(part1, part2, trace, flags);
+    Var.traceVar(this, part1, part2, flags, trace);
 }
 
 /*
@@ -1251,7 +1251,7 @@ untraceVar(
 				// TCL.TRACE_WRITES, TCL.TRACE_UNSETS,
 				// TCL.GLOBAL_ONLY and TCL.NAMESPACE_ONLY.
 {
-    varFrame.untraceVar(nameObj, trace, flags);
+    Var.untraceVar(this, nameObj, flags, trace);
 }
 
 /*
@@ -1280,7 +1280,7 @@ untraceVar(
 				// TCL.TRACE_WRITES, TCL.TRACE_UNSETS,
 				// TCL.GLOBAL_ONLY and TCL.NAMESPACE_ONLY.
 {
-    varFrame.untraceVar(name, trace, flags);
+    Var.untraceVar(this, name, flags, trace);
 }
 
 /*
@@ -1311,7 +1311,7 @@ untraceVar(
 				// TCL.TRACE_WRITES, TCL.TRACE_UNSETS,
 				// TCL.GLOBAL_ONLY and TCL.NAMESPACE_ONLY.
 {
-    varFrame.untraceVar(part1, part2, trace, flags);
+    Var.untraceVar(this, part1, part2, flags, trace);
 }
 
 /*
@@ -2331,15 +2331,15 @@ updateReturnInfo()
  *----------------------------------------------------------------------
  */
 
-protected CallFrame 
+protected CallFrame
 newCallFrame(
     Procedure proc, 		// The procedure which will later be 
 				// execute inside the new callframe.
-    TclObject argv[])  		// The arguments to pass to the procedure.
+    TclObject[] objv)  		// The arguments to pass to the procedure.
 throws 
     TclException 		// Incorrect number of arguments passed.
 {
-    return new CallFrame(this, proc, argv);
+    return new CallFrame(this, proc, objv);
 }
 
 /*

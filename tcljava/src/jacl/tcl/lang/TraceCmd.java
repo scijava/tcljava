@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TraceCmd.java,v 1.2 1999/05/29 22:37:17 dejong Exp $
+ * RCS: @(#) $Id: TraceCmd.java,v 1.3 1999/06/30 00:13:39 mo Exp $
  *
  */
 
@@ -83,7 +83,7 @@ initOptStr()
 /*
  *----------------------------------------------------------------------
  *
- * cmdProc --
+ * Tcl_TraceObjCmd -> TraceCmd.cmdProc
  *
  *	This procedure is invoked as part of the Command interface to 
  *	process the "trace" Tcl command.  See the user documentation for
@@ -154,24 +154,24 @@ throws
 
 	if (opt == OPT_VARIABLE) {
 	    CmdTraceProc trace = new CmdTraceProc(argv[4].toString(), flags);
-	    interp.varFrame.traceVar(argv[2], trace, flags);
+	    Var.traceVar(interp, argv[2], flags, trace);
 	} else {
 	    // Search through all of our traces on this variable to
 	    // see if there's one with the given command.  If so, then
 	    // delete the first one that matches.
 		
-	    Vector traces = interp.varFrame.getTraces(argv[2], 0);
+	    Vector traces = Var.getTraces(interp, argv[2].toString(), 0);
 	    if (traces != null) {
 		len = traces.size();
 		for (int i = 0; i < len; i++) {
 		    TraceRecord rec = (TraceRecord) traces.elementAt(i);
 
 		    if (rec.trace instanceof CmdTraceProc) {
-			CmdTraceProc proc = (CmdTraceProc)(rec.trace);
+			CmdTraceProc proc = (CmdTraceProc) rec.trace;
 			if (proc.flags == flags && proc.command.toString().
 				equals(argv[4].toString())) {
-			    interp.varFrame.untraceVar(argv[2],
-				    proc, flags);
+			    Var.untraceVar(interp, argv[2],
+				    flags, proc);
 			    break;
 			}
 		    }
@@ -185,7 +185,7 @@ throws
 	    throw new TclNumArgsException(interp, 2, argv, 
 		    "name");
 	}
-	Vector traces = interp.varFrame.getTraces(argv[2], 0);
+	Vector traces = Var.getTraces(interp, argv[2].toString(), 0);
 	if (traces != null) {
 	    len = traces.size();
 	    TclObject list = TclList.newInstance();
@@ -197,7 +197,7 @@ throws
 		    TraceRecord rec = (TraceRecord) traces.elementAt(i);
 
 		    if (rec.trace instanceof CmdTraceProc) {
-			CmdTraceProc proc = (CmdTraceProc)(rec.trace);
+			CmdTraceProc proc = (CmdTraceProc) rec.trace;
 			int mode = proc.flags;
 			mode &= (TCL.TRACE_READS|TCL.TRACE_WRITES
 				|TCL.TRACE_UNSETS);

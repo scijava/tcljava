@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: UplevelCmd.java,v 1.1 1998/10/14 21:09:20 cvsadmin Exp $
+ * RCS: @(#) $Id: UplevelCmd.java,v 1.2 1999/06/30 00:13:39 mo Exp $
  *
  */
 
@@ -54,14 +54,19 @@ throws
     }
 
     CallFrame savedVarFrame;
-    CallFrame frame = interp.varFrame.getFrame(argv[1].toString());
+    CallFrame frame = null;
     TclObject cmd;
     int startIdx;
 
+    // FIXME : varFrame hack (does getFrame throw an eception here?
+    if (interp.varFrame != null) {
+	frame = interp.varFrame.getFrame(argv[1].toString());
+    } else {
+	// uplevel called from global scope, is this bad?
+    }
+
     if (frame != null) {
-	/*
-	 * The level is specified.
-	 */
+	// The level is specified.
 
 	if (argv.length < 3) {
 	    throw new TclNumArgsException(interp, 1, argv, 
@@ -69,13 +74,16 @@ throws
 	}
 	startIdx = 2;
     } else {
-	/*
-	 * The level is not specified. We are not in the global frame
-	 * (otherwise getFrame() would have thrown an exception).
-	 */
+	// The level is not specified. We are not in the global frame
+	// (otherwise getFrame() would have thrown an exception).
 
 	startIdx = 1;
-	frame = interp.varFrame.callerVar;
+	// FIXME : varFrame hack. see above
+	if (interp.varFrame == null) {
+	    frame = null;
+	} else {
+	    frame = interp.varFrame.callerVar;
+	}
     }
 
     if (startIdx == argv.length -1) {

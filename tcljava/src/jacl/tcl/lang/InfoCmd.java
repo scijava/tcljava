@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: InfoCmd.java,v 1.2 1999/06/21 03:32:38 mo Exp $
+ * RCS: @(#) $Id: InfoCmd.java,v 1.3 1999/06/30 00:13:36 mo Exp $
  *
  */
 
@@ -66,6 +66,8 @@ class InfoCmd implements Command {
     static final int OPT_VARS			= 19;
 
     /**
+     * Tcl_InfoObjCmd -> InfoCmd.cmdProc
+     *
      * This procedure is invoked to process the "info" Tcl command.
      * See the user documentation for details on what it does.
      *
@@ -186,7 +188,8 @@ class InfoCmd implements Command {
 			    "varName");
 		}
 
-		boolean exists = interp.varFrame.exists(argv[2].toString());
+		// FIXME : double check, should this just check the var frame?
+		boolean exists = CallFrame.exists(interp, argv[2].toString());
 		interp.setResult(TclBoolean.newInstance(exists));
 		return;
 	    case OPT_GLOBALS:
@@ -196,10 +199,10 @@ class InfoCmd implements Command {
 		}
 
 		if (argv.length == 2) {
-		    matchAndAppend(interp, interp.globalFrame.getVarNames(), 
+		    matchAndAppend(interp, interp.globalNs.varTable.keys(), 
 			    null);
 		} else {
-		    matchAndAppend(interp, interp.globalFrame.getVarNames(),
+		    matchAndAppend(interp, interp.globalNs.varTable.keys(),
 			    argv[2].toString());
 		}
 		return;
@@ -279,7 +282,7 @@ class InfoCmd implements Command {
 			    "?pattern?");
 		}
 
-		if (interp.varFrame == interp.globalFrame) {
+		if (interp.varFrame == null) {
 		    return;
 		}
 

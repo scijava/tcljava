@@ -15,7 +15,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: NamespaceCmd.java,v 1.3 1999/06/21 03:32:38 mo Exp $
+ * RCS: @(#) $Id: NamespaceCmd.java,v 1.4 1999/06/30 00:13:36 mo Exp $
  */
 
 package tcl.lang;
@@ -34,7 +34,7 @@ public class NamespaceCmd extends InternalRep implements Command {
     // Flag passed to TclGetNamespaceForQualName to indicate that it should
     // search for a namespace rather than a command or variable inside a
     // namespace. Note that this flag's value must not conflict with the values
-    // of TCL_GLOBAL_ONLY, TCL_NAMESPACE_ONLY, or CREATE_NS_IF_UNKNOWN.
+    // of TCL.GLOBAL_ONLY, TCL.NAMESPACE_ONLY, or CREATE_NS_IF_UNKNOWN.
 
     static final int FIND_ONLY_NS    = 0x1000;
 
@@ -333,7 +333,7 @@ public class NamespaceCmd extends InternalRep implements Command {
     {
 	Namespace ns, ancestor;
 	Namespace parent, dummy1, dummy2;
-	Namespace globalNs = interp.globalNs;
+	Namespace globalNs = getGlobalNamespace(interp);
 	String simpleName;
 	StringBuffer buffer1, buffer2;
 
@@ -1101,7 +1101,7 @@ public class NamespaceCmd extends InternalRep implements Command {
 
 	Namespace ns = cxtNsPtr;
 	Namespace altNs;
-	Namespace globalNs = interp.globalNs;
+	Namespace globalNs = getGlobalNamespace(interp);
 	Namespace entryNs;
 	String start, end;
 	String nsName;
@@ -1115,7 +1115,6 @@ public class NamespaceCmd extends InternalRep implements Command {
 	// namespace. Otherwise, use the given namespace given in cxtNsPtr, or
 	// if that is null, use the current namespace context. Note that we
 	// always treat two or more adjacent ":"s as a namespace separator.
-
 
 	if ((flags & (TCL.NAMESPACE_ONLY | FIND_ONLY_NS)) != 0) {
 	    ns = getCurrentNamespace(interp);
@@ -1158,7 +1157,7 @@ public class NamespaceCmd extends InternalRep implements Command {
 
 	// Start an alternate search path starting with the global namespace.
 	// However, if the starting context is the global namespace, or if the
-	// flag is set to search only the namespace *cxtNsPtr, ignore the
+	// flag is set to search only the namespace cxtNs, ignore the
 	// alternate search path.
 
 	
