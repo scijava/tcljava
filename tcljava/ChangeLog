@@ -812,3 +812,8 @@
 	* src/jacl/tcl/regex/OroRegsubCmd.java:
 	* src/jacl/tcl/lang/RegexMatcher.java: Removed all files
 	that were part of the ORO regexp implementation for Jacl.
+
+2000-02-23  Mo DeJong  <mdejong@redhat.com>
+
+	This ChangeLog file is new, for descriptions of
+	older changes see changes.txt.
