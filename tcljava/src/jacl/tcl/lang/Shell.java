@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Shell.java,v 1.1 1998/10/14 21:09:18 cvsadmin Exp $
+ * RCS: @(#) $Id: Shell.java,v 1.2 1999/05/09 01:26:52 dejong Exp $
  */
 
 package tcl.lang;
@@ -18,7 +18,7 @@ package tcl.lang;
 import java.util.*;
 import java.io.*;
 
-/*
+/**
  * The Shell class is similar to the Tclsh program: you can use it to
  * execute a Tcl script or enter Tcl command interactively at the
  * command prompt.
@@ -50,19 +50,15 @@ main(
 {
     String fileName = null;
 
-    /*
-     * Create the interpreter. This will also create the built-in
-     * Tcl commands.
-     */
+    // Create the interpreter. This will also create the built-in
+    // Tcl commands.
 
     Interp interp = new Interp();
 
-    /*
-     * Make command-line arguments available in the Tcl variables "argc"
-     * and "argv".  If the first argument doesn't start with a "-" then
-     * strip it off and use it as the name of a script file to process.
-     * We also set the argv0 and tcl_interactive vars here.
-     */
+    // Make command-line arguments available in the Tcl variables "argc"
+    // and "argv".  If the first argument doesn't start with a "-" then
+    // strip it off and use it as the name of a script file to process.
+    // We also set the argv0 and tcl_interactive vars here.
 
     if ((args.length > 0) && !(args[0].startsWith("-"))) {
 	fileName = args[0];
@@ -95,15 +91,11 @@ main(
 	argv.release();
     }
 
-    /*
-     * Normally we would do application specific initialization here.
-     * However, that feature is not currently supported.
-     */
+    // Normally we would do application specific initialization here.
+    // However, that feature is not currently supported.
 
-    /*
-     * If a script file was specified then just source that file
-     * and quit.
-     */
+    // If a script file was specified then just source that file
+    // and quit.
 
     if (fileName != null) {
 	try {
@@ -122,40 +114,32 @@ main(
 	    }
 	}
 
-	/*
-	 * Note that if the above interp.evalFile() returns the main
-	 * thread will exit.  This may bring down the VM and stop
-	 * the execution of Tcl.
-	 *
-	 * If the script needs to handle events, it must call
-	 * vwait or do something similar.
-	 *
-	 * Note that the script can create AWT widgets. This will
-	 * start an AWT event handling thread and keep the VM up. However,
-	 * the interpreter thread (the same as the main thread) would
-	 * have exited and no Tcl scripts can be executed.
-	 */
+	// Note that if the above interp.evalFile() returns the main
+	// thread will exit.  This may bring down the VM and stop
+	// the execution of Tcl.
+	//
+	// If the script needs to handle events, it must call
+	// vwait or do something similar.
+	//
+	// Note that the script can create AWT widgets. This will
+	// start an AWT event handling thread and keep the VM up. However,
+	// the interpreter thread (the same as the main thread) would
+	// have exited and no Tcl scripts can be executed.
     }
 
     if (fileName == null) {
-	/*
-	 * We are running in interactive mode. Start the ConsoleThread
-	 * that loops, grabbing stdin and passing it to the interp.
-	 */
+	// We are running in interactive mode. Start the ConsoleThread
+	// that loops, grabbing stdin and passing it to the interp.
 
 	ConsoleThread consoleThread = new ConsoleThread(interp);
 	consoleThread.setDaemon(true);
 	consoleThread.start();
 
-	/*
-	 * Loop forever to handle user input events in the command line.
-	 */
+	// Loop forever to handle user input events in the command line.
 
 	Notifier notifier = interp.getNotifier();
 	while (true) {
-	    /*
-	     * process events forevet until "exit" is called.
-	     */
+	    // process events until "exit" is called.
 
 	    notifier.doOneEvent(TCL.ALL_EVENTS);
 	}
@@ -163,7 +147,7 @@ main(
 	System.exit(0);
     }
 }
-} // end Shell
+} // end class Shell
 
 
 /*
@@ -182,34 +166,53 @@ main(
 
 class ConsoleThread extends Thread {
 
-/*
- * Interpreter associated with this console thread.
- */
+// Interpreter associated with this console thread.
 
 Interp interp;
 
-/*
- * Temporarily holds refcount on the results of the interactive
- * commands so that an object command returned the java::* calls
- * can be used even when they are not saved in variables.
- */
+// Temporarily holds refcount on the results of the interactive
+// commands so that an object command returned the java::* calls
+// can be used even when they are not saved in variables.
 
 Vector historyObjs;
 
-/*
- * Collect the user input in this buffer until it forms a complete Tcl
- * command.
- */
+// Collect the user input in this buffer until it forms a complete Tcl
+// command.
 
 StringBuffer sbuf;
 
-/*
- * Used to for interactive input/output
- */
+// Used to for interactive input/output
 
 private Channel in;
 private Channel out;
 private Channel err;
+
+// set to true to get extra debug output
+private static final boolean debug = false;
+
+// used to keep track of System.in's blocking status
+private static boolean sysInBlocks = false;
+
+static {
+    try {
+	// There is no way to tell whether System.in will block AWT
+	// threads, so we assume it does block if we can use
+	// System.in.available().
+
+	System.in.available();
+	sysInBlocks = true;
+    } catch (Exception e) {
+	// If System.in.available() causes an exception -- it's probably
+	// no supported on this platform (e.g. MS Java SDK). We assume
+	// sysInBlocks is false and let the user suffer ...
+    }
+
+    if (debug) {
+        System.out.println("sysInBlocks = " + sysInBlocks);
+    }
+
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -230,8 +233,9 @@ private Channel err;
 ConsoleThread(
     Interp i)			// Initial value for interp.
 {
+    setName("ConsoleThread");
     interp = i;
-    sbuf = new StringBuffer();
+    sbuf = new StringBuffer(100);
     historyObjs = new Vector();
 
     out = new StdChannel("stdout");
@@ -260,42 +264,55 @@ ConsoleThread(
 public synchronized void
 run()
 {
+    if (debug) {
+        System.out.println("entered ConsoleThread run() method");
+    }
+
+
     put(out, "% ");
 
     while (true) {
-	/*
-	 * Loop forever to collect user inputs in a StringBuffer.
-	 * When we have a complete command, then execute it and print
-	 * out the results.
-	 *
-	 * The loop is broken under two conditions: (1) when EOF is
-	 * received inside getLine(). (2) when the "exit" command is
-	 * executed in the script.
-	 */
+	// Loop forever to collect user inputs in a StringBuffer.
+	// When we have a complete command, then execute it and print
+	// out the results.
+	//
+	// The loop is broken under two conditions: (1) when EOF is
+	// received inside getLine(). (2) when the "exit" command is
+	// executed in the script.
 
 	TclObject prompt;
 
-        sbuf.append(getLine());
+        getLine();
 
-	/*
-	 * We have a complete command now. Execute it.
-	 */
+        if (debug) {
+            System.out.println("got line from console");
+            System.out.println("\"" + sbuf + "\"");
+        }
+
+	// We have a complete command now. Execute it.
 
 	if (Interp.commandComplete(sbuf.toString())) {
+            if (debug) {
+                System.out.println("line was a complete command");
+            }
+
 	    ConsoleEvent evt = new ConsoleEvent(interp, sbuf.toString());
 	    interp.getNotifier().queueEvent(evt, TCL.QUEUE_TAIL);
 	    evt.sync();
 
 	    if (evt.evalResult != null) {
 		String s = evt.evalResult.toString();
+
+                if (debug) {
+                    System.out.println("eval result was \"" + s + "\"");
+                }
+
 		if (s.length() > 0) {
 		    putLine(out, s);
 		}
 
-		/*
-		 * The "history limit" controls how many TclObject's
-		 * we record from the results of the Console inputs.
-		 */
+		// The "history limit" controls how many TclObject's
+		// we record from the results of the Console inputs.
 
 		int limit = 0;
 //		int limit = 10;
@@ -307,18 +324,14 @@ run()
 			limit = TclInteger.get(interp, histLimit);
 		    }
 		} catch (TclException e) {
-		    /*
-		     * histLimit doesn't exist or contains an invalid integer.
-		     * Ignore it.
-		     */
+		    // histLimit doesn't exist or contains an invalid integer.
+		    // Ignore it.
 		}
 
-		/*
-		 * This cleans up all intermediate objects that
-		 * are no longer referenced in Tcl. This check is
-		 * needed to clean up object references in the
-		 * string->object translation table.
-		 */
+		// This cleans up all intermediate objects that
+		// are no longer referenced in Tcl. This check is
+		// needed to clean up object references in the
+		// string->object translation table.
 
 		if (limit > 0) {
 		    historyObjs.addElement(evt.evalResult);
@@ -332,6 +345,10 @@ run()
 		    cobj.release();
 		}
 	    } else {
+                if (debug) {
+                    System.out.println("eval returned exceptional condition");
+                }
+
 		TclException e = evt.evalException;
 		int code = e.getCompletionCode();
 
@@ -359,7 +376,8 @@ run()
 		}
 	    }
 
-	    sbuf.setLength(0);
+	    sbuf.setLength(0); // empty out sbuf
+
 	    try {
 		prompt = interp.getVar("tcl_prompt1", TCL.GLOBAL_ONLY);
 	    } catch (TclException e) {
@@ -375,11 +393,12 @@ run()
 		put(out, "% ");
 	    }
 	} else {
+            if (debug) {
+                System.out.println("line was not a complete command");
+            }
 
-	    /*
-	     * We don't have a complete command yet. Print out a level 2
-	     * prompt message and wait for further inputs.
-	     */
+	    // We don't have a complete command yet. Print out a level 2
+	    // prompt message and wait for further inputs.
 
 	    try {
 		prompt = interp.getVar("tcl_prompt2", TCL.GLOBAL_ONLY);
@@ -404,7 +423,7 @@ run()
  *
  * getLine --
  *
- *	Gets a new line from System.in.
+ *	Gets a new line from System.in and put it in sbuf.
  *
  * Result:
  *	The new line of user input, including the trailing carriage
@@ -416,50 +435,35 @@ run()
  *----------------------------------------------------------------------
  */
 
-private String
-getLine()
-{
-    StringBuffer sbuf = new StringBuffer();
+private void getLine() {
+    // On Unix platforms, System.in.read() will block the delivery of
+    // of AWT events. We must make sure System.in.available() is larger
+    // than zero before attempting to read from System.in. Since
+    // there is no asynchronous IO in Java, we must poll the System.in
+    // every 100 milliseconds.
 
-    /*
-     * On Unix platforms, System.in.read() will block the delivery of
-     * of AWT events. We must make sure System.in.available() is larger
-     * than zero before attempting to read from System.in. Since
-     * there is no asynchronous IO in Java, we must poll the System.in
-     * every 100 milliseconds.
-     */
-
-    boolean sysInBlocks = false;
-
-    try {
-	/*
-	 * There is no way to tell whether System.in will block AWT
-	 * threads, so we assume it does block if we can use
-	 * System.in.available().
-	 */
-
-	System.in.available();
-	sysInBlocks = true;
-    } catch (Exception e) {
-	/*
-	 * System.in.available() causes an exception -- it's probably
-	 * no supported on this platform (e.g. MS Java SDK). We assume
-	 * sysInBlocks is false and let the user suffer ...
-	 */
-
-	sysInBlocks = false;
-    }
+    int availableBytes = -1;
 
     if (sysInBlocks) {
 	try {
-	    /*
-	     * Wait until there are inputs from System.in. On Unix,
-	     * this usually means the user has pressed the return key.
-	     */
+	    // Wait until there are inputs from System.in. On Unix,
+	    // this usually means the user has pressed the return key.
 
-	    while (System.in.available() == 0) {
+	    availableBytes = 0;
+
+	    while (availableBytes == 0) {
+                availableBytes = System.in.available();
+
+                /*
+                if (debug) {
+                    System.out.println(availableBytes +
+                        " bytes can be read from System.in");
+                }
+                /*
+                */
+
 		Thread.currentThread().sleep(100);
-	    }
+            }
 	} catch (InterruptedException e) {
 	    System.exit(0);
 	} catch (EOFException e) {
@@ -470,40 +474,52 @@ getLine()
 	}
     }
 
-    /* 
-     * Loop until user presses return or EOF is reached.
-     */
+    // Loop until user presses return or EOF is reached.
     char c2 = ' ';
+    char c = ' ';
 
-    while (true) {
-	char c = ' ';
+    if (debug) {
+        System.out.println("now to read from System.in");
+        System.out.println("availableBytes = " + availableBytes);
+    }
 
+    while (availableBytes != 0) {
 	try {
 	    int i = System.in.read();
+
 	    if (i == -1) {
 		if (sbuf.length() == 0) {
 		    System.exit(0);
 		} else {
-		    return sbuf.toString();
+		    return;
 		}
 	    }
-	    c = (char)i;
 
-	    /*
-	     * Temporary hack until Channel drivers are complete.  Convert
-	     * the Windows \r\n to \n.
-	     */
+	    c = (char) i;
+            availableBytes--;
+
+            if (debug) {
+                System.out.print("(" + (availableBytes+1) + ") ");
+                System.out.print("'" + c + "', ");
+            }
+
+	    // Temporary hack until Channel drivers are complete.  Convert
+	    // the Windows \r\n to \n.
 
 	    if (c == '\r') {
+                if (debug) {
+                    System.out.println("checking windows hack");
+                }
+
 	        i = System.in.read();
 	        if (i == -1) {
 		    if (sbuf.length() == 0) {
 		        System.exit(0);
 		    } else {
-		        return sbuf.toString();
+		        return;
 		    }
 		}
-		c2 = (char)i; 
+		c2 = (char) i; 
 		if (c2 == '\n') {
 		  c = c2;
 		} else {
@@ -512,19 +528,21 @@ getLine()
 		}
 	    }
 	} catch (IOException e) {
-	    /*
-	     * IOException shouldn't happen when reading from
-	     * System.in. The only exceptional state is the EOF event,
-	     * which is indicated by a return value of -1.
-	     */
+	    // IOException shouldn't happen when reading from
+	    // System.in. The only exceptional state is the EOF event,
+	    // which is indicated by a return value of -1.
 
 	    e.printStackTrace();
 	    System.exit(0);
 	}
 
+
 	sbuf.append(c);
+
+        //System.out.println("appending char '" + c + "' to sbuf");
+
 	if (c == '\n') {
-	    return sbuf.toString();
+	    return;
 	}
     }
 }
@@ -579,8 +597,9 @@ void put(
 {
     try {
 	out.write(interp, s);
+        out.flush(interp);
     } catch (Exception  e) {
 	throw new TclRuntimeError("unexpected Exception " + e);
     }
 }
-} // end ConsoleThread
+} // end of class ConsoleThread
