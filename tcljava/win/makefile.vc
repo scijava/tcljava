@@ -40,7 +40,7 @@ JAVA_CLASSPATH	= $(JAVA_DIR)\lib\classes.zip;.
 
 
 #Tcl version info needed by the rest of the scripts
-TCL_DOTVERSION	= 8.2.1
+TCL_DOTVERSION	= 8.2.3
 #TCL_DOTVERSION	= 8.0.5
 TCL_VERSION	= 82
 #TCL_VERSION	= 80
@@ -75,7 +75,12 @@ MACHINE	= IX86
 
 # Dos commands to copy and remove directories
 COPYDIR			= xcopy /e /i /k
+DELETEDIR              = rd /s /q
+
+# If you are using Windows 95 use this instead of the above setting
+!IF "$(OS)" != "Windows_NT"
 DELETEDIR		= deltree /y
+!ENDIF
 
 # Directory in which to install tclblend.dll:
 LIB_INSTALL_DIR 	= $(TCL_DIR)\lib
@@ -140,7 +145,7 @@ TCLLIB	= $(TCL_SRC)\win$(TMPDIRNAME)\tcl$(TCL_VERSION)$(DBGX).lib
 !IF "$(JAVA_VERSION)" == "1.2"
 JAVA_RUNTIME_LIBS=$(JAVA_DIR)\jre\bin;$(JAVA_DIR)\jre\bin\classic
 !ELSE
-JAVA_RUNTIME_LIBS=
+JAVA_RUNTIME_LIBS=$(JAVA_DIR)\bin
 !ENDIF
 
 
