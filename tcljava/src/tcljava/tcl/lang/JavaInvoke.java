@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaInvoke.java,v 1.4 1999/05/09 22:12:38 dejong Exp $
+ * RCS: @(#) $Id: JavaInvoke.java,v 1.5 1999/05/09 22:15:02 dejong Exp $
  *
  */
 
@@ -667,9 +667,9 @@ throws
  *
  *  convertJavaObject --
  *
- *	Converts the java.lang.Object into a Tcl object and set the
- *	interpreter's result with this Tcl object. Primitive data
- *	types are converted into primitive Tcl data types. Otherwise,
+ *	Converts the java.lang.Object into a Tcl object and return
+ *	TclObject that holds the reult. Primitive data types
+ *	are converted into primitive Tcl data types. Otherwise,
  *	a ReflectObject wrapper is created for the object so that it
  *	can be later accessed with the Reflection API.
  *
