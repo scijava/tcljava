@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FileChannel.java,v 1.3 1999/05/16 06:18:01 dejong Exp $
+ * RCS: @(#) $Id: FileChannel.java,v 1.4 1999/05/24 11:47:50 mo Exp $
  *
  */
 
@@ -74,18 +74,15 @@ class FileChannel extends Channel {
 	File fileObj = FileUtil.getNewFileObj(interp, fileName);
 	
 	if (((modeFlags & TclIO.CREAT) != 0)  && !fileObj.exists() ) {
-	    /* 
-	     * Creates the file and closes it so it may be
-	     * reopened with the correct permissions. (w, w+, a+)
-	     */
+	    // Creates the file and closes it so it may be
+	    // reopened with the correct permissions. (w, w+, a+)
+
 	    file = new RandomAccessFile(fileObj, "rw");
 	    file.close();
 	} 
 
 	if ((modeFlags & TclIO.RDWR) != 0) { 
-	    /* 
-	     * Opens file (r+), error if dosent exist.  
-	     */
+	    // Opens file (r+), error if dosent exist.  
 
 	    checkFileExists(interp, fileObj);
 	    checkReadWritePerm(interp, fileObj, 0);
@@ -98,9 +95,7 @@ class FileChannel extends Channel {
 	    file = new RandomAccessFile(fileObj, "rw");
 
 	} else if ((modeFlags & TclIO.RDONLY) != 0) { 
-	    /* 
-	     * Opens file (r), error if dosent exist.
-	     */
+	    // Opens file (r), error if dosent exist.
 
 	    checkFileExists(interp, fileObj);
 	    checkReadWritePerm(interp, fileObj, -1);
@@ -113,9 +108,7 @@ class FileChannel extends Channel {
 	    file = new RandomAccessFile(fileObj, "r");
 
 	} else if ((modeFlags & TclIO.WRONLY) != 0) {
-	    /* 
-	     * Opens file (a), error if dosent exist.
-	     */
+	    // Opens file (a), error if dosent exist.
 
 	    checkFileExists(interp, fileObj);
 	    checkReadWritePerm(interp, fileObj, 1);
@@ -125,13 +118,11 @@ class FileChannel extends Channel {
 			fileName + "\": illegal operation on a directory");
 	    }
 	    
-	    /*
-	     * Currently there is a limitation in the Java API.
-	     * A file can only be opened for read OR read-write.
-	     * Therefore if the file is write only, Java cannot
-	     * open the file.  Throw an error indicating this
-	     * limitation. 
-	     */
+	    // Currently there is a limitation in the Java API.
+	    // A file can only be opened for read OR read-write.
+	    // Therefore if the file is write only, Java cannot
+	    // open the file.  Throw an error indicating this
+	    // limitation.
 
 	    if (!fileObj.canRead()) {
 	        throw new TclException(interp, 
@@ -144,18 +135,14 @@ class FileChannel extends Channel {
 	    throw new TclRuntimeError("FileChannel.java: invalid mode value");
 	}
 
-	/* 
-	 * If we are appending, move the file pointer to EOF.
-	 */
+	// If we are appending, move the file pointer to EOF.
 
 	if((modeFlags & TclIO.APPEND) != 0) {      
 	    file.seek(file.length());
 	}
 
-	/*
-	 * In standard Tcl fashion, set the channelId to be "file" + the
-	 * value of the current FileDescriptor.
-	 */
+	// In standard Tcl fashion, set the channelId to be "file" + the
+	// value of the current FileDescriptor.
 
 	String fName = "file" + getNextFileNum(interp);
 	setChanName(fName);
@@ -216,11 +203,10 @@ class FileChannel extends Channel {
 		StringBuffer sbuf = new StringBuffer();
 		eofCond = false;
 
-		/*
-		 * The readXXX interface is inconsistent w/ the basic
-		 * read() in that readXXX throws EOFException when it
-		 * reaches the EOF, while read() returns -1.
-		 */
+		// The readXXX interface is inconsistent w/ the basic
+		// read() in that readXXX throws EOFException when it
+		// reaches the EOF, while read() returns -1.
+
 		try {
 		    while ((ch = (char)file.readByte()) != -1) {
 			if ((ch == '\n') || (ch == '\r')) {
@@ -434,9 +420,7 @@ class FileChannel extends Channel {
 	Hashtable htbl = TclIO.getInterpChanTable(interp);
 
         for (i = 0; (htbl.get("file" + i)) != null; i++) {
-	    /*
-	     * Do nothing...
-	     */
+	    // Do nothing...
 	}
 	return i;
     }
