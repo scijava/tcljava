@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: java.h,v 1.4 1999/12/07 23:30:34 redman Exp $
+ * RCS: @(#) $Id: java.h,v 1.5 2000/06/03 13:03:43 mo Exp $
  */
 
 #ifndef _JAVA
@@ -17,25 +17,6 @@
 
 #include <tcl.h>
 #include <jni.h>
-
-#if (TCL_MAJOR_VERSION == 8 && TCL_MINOR_VERSION == 0) 
-
-/*
- * The following structure is new to 8.1 so we include it here for now.
- */
-
-typedef struct Tcl_SavedResult {
-    char *result;
-    Tcl_FreeProc *freeProc;
-    Tcl_Obj *objResultPtr;
-    char *appendResult;
-    int appendAvl;
-    int appendUsed;
-    char resultSpace[TCL_RESULT_SIZE+1];
-} Tcl_SavedResult;
-
-#endif
-
 
 /*
  * Macros used to declare a function to be exported by a DLL.
@@ -171,14 +152,6 @@ extern JavaInfo java;
     JavaSetEnv(oldEnv); \
     (*env)->MonitorExit(env, java.NativeLock); \
 }
-
-
-#if (TCL_MAJOR_VERSION == 8 && TCL_MINOR_VERSION == 0) 
-void Tcl_SaveResult(Tcl_Interp *interp,
-	  			    Tcl_SavedResult *statePtr);
-void Tcl_RestoreResult(Tcl_Interp *interp,
-				       Tcl_SavedResult *statePtr);
-#endif
 
 /*
  * Declarations for functions shared across files.

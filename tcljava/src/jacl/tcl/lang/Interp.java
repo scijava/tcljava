@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.31 2000/05/24 08:04:32 mo Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.32 2000/06/03 13:03:43 mo Exp $
  *
  */
 
@@ -2001,7 +2001,7 @@ throws
     result.preserve();
     result = result.takeExclusive();
     TclList.append(this, result, TclString.newInstance(string));
-    setResult(result.toString());
+    setResult(result);
     result.release();
 }
 

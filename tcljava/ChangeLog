@@ -1,8 +1,18 @@
 2000-06-03  Mo DeJong  <mdejong@redhat.com>
 
+	* new_features.txt: Added notes about
+	new JVM support. Minor comment fixup.
+	* src/native/java.h: Removed old code
+	that supported Tcl 8.0.
+	* src/jacl/tcl/lang/Interp.java (appendElement):
+	Removed extra call to toString() on result.
+
+2000-06-03  Mo DeJong  <mdejong@redhat.com>
+
 	* Makefile.in: Merged from unix/Makefile.in
 	* aclocal.m4:
 	* autogen.sh: Added
+	* configure: Added
 	* configure.in: Merged from unix/configure.in
 	* jaclsh.in: Added
 	* jtclsh.in: Added
