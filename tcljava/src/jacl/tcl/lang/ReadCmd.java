@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ReadCmd.java,v 1.1 1998/10/14 21:09:18 cvsadmin Exp $
+ * RCS: @(#) $Id: ReadCmd.java,v 1.2 1999/05/09 01:15:27 dejong Exp $
  *
  */
 
@@ -34,7 +34,6 @@ class ReadCmd implements Command {
 
 	Channel chan;              /* The channel being operated on this 
 				    * method */
-	String  channelId;         /* String containing the key to chanTable */
 	int     i         = 1;     /* Index to the next arg in argv */
 	int     numBytes  = 0;     /* Num of bytes to read from channel */
 	boolean readAll   = true;  /* If true read-all else numBytes */
@@ -45,7 +44,7 @@ class ReadCmd implements Command {
 	    errorWrongNumArgs(interp, argv[0].toString());
 	}
 
-	if ("-nonewline".equals(argv[i].toString())) {
+	if (argv[i].toString().equals("-nonewline")) {
 	    noNewline = true;
 	    i++;
 	}
