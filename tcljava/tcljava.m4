@@ -1246,12 +1246,15 @@ if test $TCLJAVA = "tclblend" || test $TCLJAVA = "both"; then
   # Check to make sure that tclsh has been built by looking for the
   # tclsh executable in the TCL_BIN_DIR directory.
 
-  TCLSH_LOC=$TCL_BIN_DIR/tclsh
-  if test ! -x $TCLSH_LOC; then
-    TCLSH_LOC=`ls $TCL_BIN_DIR/tclsh*.exe`
-    if test "$TCLSH_LOC" = ""; then
-        AC_MSG_ERROR([Tcl was configued in $TCL_BIN_DIR, but it has not been built, please build it and run configure again.])
-    fi
+  TCL_VERSION_NO_DOTS=`echo $TCL_VERSION | sed 's/\.//g'`
+
+  if test "$ac_cv_tcl_win32" = "yes"; then
+    TCLSH_LOC=$TCL_BIN_DIR/tclsh${TCL_VERSION_NO_DOTS}${TCL_DBGX}
+  else
+    TCLSH_LOC=$TCL_BIN_DIR/tclsh
+  fi
+  if test ! -x "$TCLSH_LOC"; then
+    AC_MSG_ERROR([Tcl was configued in $TCL_BIN_DIR, but it has not been built, please build it and run configure again.])
   fi
 
   # Double check that tclsh works and that it is tcl 8.3.2 or better
@@ -1316,8 +1319,14 @@ if test $TCLJAVA = "tclblend" || test $TCLJAVA = "both"; then
   # location, which could be incorrect but oh well.
 
   TCL_INSTALL_LIB_DIR=$TCL_EXEC_PREFIX/lib
-  TCLSH=$TCL_EXEC_PREFIX/bin/tclsh$TCL_VERSION
-  WISH=$TCL_EXEC_PREFIX/bin/wish$TCL_VERSION
+
+  if test "$ac_cv_tcl_win32" = "yes"; then
+    TCLSH=$TCL_EXEC_PREFIX/bin/tclsh${TCL_VERSION_NO_DOTS}${TCL_DBGX}
+    WISH=$TCL_EXEC_PREFIX/bin/wish${TCL_VERSION_NO_DOTS}${TCL_DBGX}
+  else
+    TCLSH=$TCL_EXEC_PREFIX/bin/tclsh$TCL_VERSION
+    WISH=$TCL_EXEC_PREFIX/bin/wish$TCL_VERSION
+  fi
 
   if test ! -x "$TCLSH"; then
       AC_MSG_WARN([Tcl has not been installed yet, it must be installed before installing Tcl Blend])

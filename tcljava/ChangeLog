@@ -1,5 +1,15 @@
 2003-07-25  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* Makefile.in: Fix install of xputils package
+	so that it works when built outside the src dir.
+	* configure: Regen.
+	* tcljava.m4 (TCLJAVA_CHECK_TCLSH): Fix
+	the TCLSH_LOC and TCLSH paths so that the
+	install rule works under Win32 in both
+	regular and debug mode.
+
+2003-07-25  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/jacl/tcl/lang/Parser.java: Set the
 	interp result directly instead of trying
 	to append to the result object since appending

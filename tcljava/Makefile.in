@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.27 2003/03/17 23:44:54 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.28 2003/07/26 00:08:33 mdejong Exp $
 
 SHELL = /bin/sh
 
@@ -447,9 +447,9 @@ tclblend.install: tclblend.check
 	@rm -rf $(prefix)/lib/xputils
 	@mkdir -p $(prefix)/lib/xputils
 	@chmod 755 $(prefix)/lib/xputils
-	@$(INSTALL_DATA) src/xputils/pkgIndex.tcl $(prefix)/lib/xputils
-	@$(INSTALL_DATA) src/xputils/xputils.tcl $(prefix)/lib/xputils
-	@$(INSTALL_DATA) src/xputils/iload.tcl $(prefix)/lib/xputils
+	@$(INSTALL_DATA) $(MISC_DIR)/xputils/pkgIndex.tcl $(prefix)/lib/xputils
+	@$(INSTALL_DATA) $(MISC_DIR)/xputils/xputils.tcl $(prefix)/lib/xputils
+	@$(INSTALL_DATA) $(MISC_DIR)/xputils/iload.tcl $(prefix)/lib/xputils
 	@echo "Installing jtclsh in $(BIN_INSTALL_DIR)"
 	@$(INSTALL_PROGRAM) jtclsh $(BIN_INSTALL_DIR)
 	@chmod a+rx $(BIN_INSTALL_DIR)/jtclsh
