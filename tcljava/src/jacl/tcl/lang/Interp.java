@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.16 1999/07/06 12:19:34 mo Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.17 1999/07/16 05:47:10 mo Exp $
  *
  */
 
@@ -513,6 +513,7 @@ dispose()
     
     // FIXME : check impl of Tcl_DeleteNamespace
     NamespaceCmd.deleteNamespace(globalNs);
+    globalNs = null;
 
     // Free up the result *after* deleting variables, since variable
     // deletion could have transferred ownership of the result string
@@ -1425,6 +1426,57 @@ createCommand(
     // FIXME: is this needed?
     //TclResetShadowedCmdRefs(interp, cmdPtr);
     return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_GetCommandFullName -> getCommandFullName
+ *
+ *	Given a token returned by, e.g., Tcl_CreateCommand or
+ *	Tcl_FindCommand, this procedure appends to an object the command's
+ *	full name, qualified by a sequence of parent namespace names. The
+ *	command's fully-qualified name may have changed due to renaming.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The command's fully-qualified name is returned.
+ *
+ *----------------------------------------------------------------------
+ */
+
+String getCommandFullName(
+    Interp interp,		// Interpreter containing the command.
+    Command command	        // Token for command returned by a previous
+				// call to Tcl_CreateCommand. The command
+				// must not have been deleted.
+    )
+{
+    String name = null;
+
+    // Add the full name of the containing namespace, followed by the "::"
+    // separator, and the command name.
+
+    // FIXME : how can we find the command name from the Command ref 
+    /*
+
+    if (cmdPtr != NULL) {
+	if (cmdPtr->nsPtr != NULL) {
+	    Tcl_AppendToObj(objPtr, cmdPtr->nsPtr->fullName, -1);
+	    if (cmdPtr->nsPtr != iPtr->globalNsPtr) {
+		Tcl_AppendToObj(objPtr, "::", 2);
+	    }
+	}
+	if (cmdPtr->hPtr != NULL) {
+	    name = Tcl_GetHashKey(cmdPtr->hPtr->tablePtr, cmdPtr->hPtr);
+	    Tcl_AppendToObj(objPtr, name, -1);
+	}
+    }
+
+    */
+    return name;
 }
 
 /*
