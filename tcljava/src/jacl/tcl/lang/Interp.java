@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.5 1999/01/07 22:57:40 hylands Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.6 1999/01/08 02:31:30 hylands Exp $
  *
  */
 
@@ -1877,6 +1877,13 @@ throws
     try {
 	pushDebugStack(s, 1);
 	eval(fileContent, 0);
+    }
+    catch( TclException e) {
+        if( e.getCompletionCode()==TCL.ERROR ) {
+            addErrorInfo("\n    (file \"" + s + "\" line "
+            + errorLine + ")");
+        }
+        throw e;
     }
     finally {
 	scriptFile = oldScript;
