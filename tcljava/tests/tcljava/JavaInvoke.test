@@ -5,7 +5,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: JavaInvoke.test,v 1.11 2003/01/01 01:51:01 mdejong Exp $
+# RCS: @(#) $Id: JavaInvoke.test,v 1.12 2003/01/02 22:29:36 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -798,6 +798,34 @@ test invoke-11.10 {getClassByName} {
 } 1
 
 catch {unset clsdata}
+
+# Test JavaInvoke.isAssignable method
+
+test invoke-12.1 {isAssignable} {
+    set cls [java::field Integer TYPE]
+    java::call tcl.lang.JavaInvoke isAssignable $cls [java::null]
+} 0
+
+test invoke-12.2 {isAssignable} {
+    set cls [java::field Integer class]
+    java::call tcl.lang.JavaInvoke isAssignable $cls [java::null]
+} 1
+
+test invoke-12.3 {isAssignable} {
+    set cls [java::field Integer class]
+    java::call tcl.lang.JavaInvoke isAssignable $cls $cls
+} 1
+
+test invoke-12.4 {isAssignable} {
+    java::call tcl.lang.JavaInvoke isAssignable \
+        [java::field Object class] [java::field String class]
+} 1
+
+test invoke-12.5 {isAssignable} {
+    java::call tcl.lang.JavaInvoke isAssignable \
+        [java::field String class] [java::field Object class]
+} 0
+
 
 # cleanup
 ::tcltest::cleanupTests

@@ -1,3 +1,14 @@
+2003-01-31  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* configure: Regen.
+	* tcljava.m4 (AC_JAVA_CLASSPATH): Add additional
+	message to log file to indicate that an existing
+	CLASSPATH env var is being used.
+	* tests/tcljava/JavaInvoke.test: Test the
+	JavaInvoke.isAssignable method.
+	* tests/tcljava/PkgInvoker.test: Test the
+	usesDefaultInvoker and isAccessible methods.
+
 2002-12-31  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* src/tcljava/tcl/lang/FuncSig.java (matchSignature):

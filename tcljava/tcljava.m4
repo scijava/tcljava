@@ -452,6 +452,7 @@ AC_DEFUN([AC_JAVA_CLASSPATH], [
 
     # Use the CLASSPATH env variable is the user set it
     if test "x$CLASSPATH" != "x" ; then
+        AC_MSG_LOG([Grabbing user supplied CLASSPATH env var])
         ac_java_classpath=$CLASSPATH
     fi
 

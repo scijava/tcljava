@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: PkgInvoker.test,v 1.9 2002/12/29 02:10:43 mdejong Exp $
+# RCS: @(#) $Id: PkgInvoker.test,v 1.10 2003/01/02 22:29:38 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -201,6 +201,51 @@ foreach CLS {pkg1.MyClass pkg1.ProtectedClass} {
 	$o equals $x
     } 1
 }
+
+test PkgInvoker-3.1 {usesDefaultInvoker} {
+    java::call tcl.lang.reflect.PkgInvoker usesDefaultInvoker \
+        [java::field java.lang.String class]
+} 1
+
+test PkgInvoker-3.2 {usesDefaultInvoker} {
+    java::call tcl.lang.reflect.PkgInvoker usesDefaultInvoker \
+        [java::field tcl.lang.TclObject class]
+} 0
+
+test PkgInvoker-3.3 {usesDefaultInvoker} {
+    java::call tcl.lang.reflect.PkgInvoker usesDefaultInvoker \
+        [java::field tcl.lang.JavaInvoke class]
+} 0
+
+test PkgInvoker-3.4 {isAccessible Class} {
+    java::call tcl.lang.reflect.PkgInvoker isAccessible \
+        [java::call Class forName pkg2.ProtectedClass]
+} 0
+
+test PkgInvoker-3.5 {isAccessible Class} {
+    java::call tcl.lang.reflect.PkgInvoker isAccessible \
+        [java::call Class forName tcl.lang.JavaInvoke]
+} 1
+
+test PkgInvoker-3.6 {isAccessible Method} {
+    set cls [java::field tcl.lang.JavaInvoke class]
+    set methods [$cls getDeclaredMethods]
+    foreach method [$methods getrange] {
+        if {"isAssignable" == [$method getName]} {
+            set isAssignable $method
+        }
+    }
+    if {![info exists isAssignable]} {
+        error "could not find isAssignable method in class tcl.lang.JavaInvoke"
+    }
+    if {![java::call java.lang.reflect.Modifier isStatic \
+            [$isAssignable getModifiers]]} {
+        error "isAssignable method in class tcl.lang.JavaInvoke is not static"
+    }
+    java::call tcl.lang.reflect.PkgInvoker isAccessible \
+        $isAssignable
+} 1
+
 
 # cleanup
 ::tcltest::cleanupTests
