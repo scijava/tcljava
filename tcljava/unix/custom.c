@@ -40,9 +40,7 @@ main(argc, argv)
     JavaVMOption *options;
     JavaVMInitArgs vm_args;
 
-#endif
-
-
+#else
 
 #ifdef TCLBLEND_KAFFE
 
@@ -52,6 +50,7 @@ main(argc, argv)
 
     JDK1_1InitArgs vm_args;
 
+#endif
 #endif
 
 

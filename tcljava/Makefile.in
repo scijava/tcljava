@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.23 2003/01/20 21:38:11 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.24 2003/01/21 09:42:52 mdejong Exp $
 
 SHELL = /bin/sh
 
@@ -18,10 +18,11 @@ TCL_LIBRARY_DIR = @TCL_SRC_DIR@/library
 # The directory containing the Tcl library archive file appropriate
 # for this version of Tcl:
 TCL_BIN_DIR = @TCL_BIN_DIR@
-TCL_BIN_TCLSH=$(TCL_BIN_DIR)/tclsh
+TCL_BIN_TCLSH=@TCL_BIN_TCLSH@
 
 # The directory containing the Thread package binaries
 THREAD_BIN_DIR=@THREAD_BIN_DIR@
+THREAD_BIN_DIR_NATIVE=@THREAD_BIN_DIR_NATIVE@
 
 # The directory where the Tcl library archive file is installed
 TCL_INSTALL_LIB_DIR = @TCL_INSTALL_LIB_DIR@
@@ -36,7 +37,8 @@ TCLSH=@TCLSH@
 # modify any of this stuff by hand.
 #----------------------------------------------------------------
 
-TOP_DIR			= @srcdir@
+TOP_DIR			= @TOP_DIR@
+TOP_DIR_NATIVE		= @TOP_DIR_NATIVE@
 
 # Fully qualified paths for programs used in build process
 JAVA			= @JAVA@
@@ -65,8 +67,12 @@ JAVA_CLASSPATH		= @JAVA_CLASSPATH@
 JAVA_INCLUDE_FLAGS	= @JAVA_INCLUDE_FLAGS@
 
 # Library flags to pass to compiler
+
 # For example: -L/opt/jdk1.1.4/lib/sparc/native_threads -ljava
 JAVA_LIB_FLAGS		= @JAVA_LIB_FLAGS@
+
+# For example: -L/opt/tcl -ltcl84
+TCL_LIB_FLAGS		= @TCL_BUILD_LIB_SPEC@ @TCL_LIBS@
 
 # A colon seperated list of directories to pass to rld
 JAVA_LIB_RUNTIME_PATH	= @JAVA_LIB_RUNTIME_PATH@
@@ -74,6 +80,7 @@ JAVA_LIB_RUNTIME_PATH	= @JAVA_LIB_RUNTIME_PATH@
 
 
 BUILD_DIR		= @BUILD_DIR@
+BUILD_DIR_NATIVE	= @BUILD_DIR_NATIVE@
 UNIX_DIR		= $(TOP_DIR)/unix
 WIN_DIR			= $(TOP_DIR)/win
 TCLBLEND_SRC_DIR	= $(TOP_DIR)/src/tclblend
@@ -92,9 +99,11 @@ TEST_JACL_SRC_DIR	= $(TEST_SRC_DIR)/jacl
 TEST_TCLJAVA_SRC_DIR	= $(TEST_SRC_DIR)/tcljava
 TEST_BUILD_DIR		= $(BUILD_DIR)/btests
 MISC_DIR		= $(TOP_DIR)/src
+MISC_DIR_NATIVE		= $(TOP_DIR_NATIVE)/src
 CC			= @CC@
 CC_OBJ_FLAG		= -c
 CFLAGS			= @TCL_CFLAGS@
+CDEFS			= @TCL_DEFS@
 SHLIB_CFLAGS		= @SHLIB_CFLAGS@
 SHLIB_LD		= @SHLIB_LD@
 SHLIB_LD_LIBS		= @SHLIB_LD_LIBS@
@@ -115,7 +124,7 @@ TCLBLEND_LIB_FILE 	= $(SHLIB_PREFIX)tclblend$(TCLJAVA_DBGX)$(SHLIB_SUFFIX)
 # Initial value of auto_path variable in Tcl. This has to be set so that
 # the XpUtils and Thread packages can be package required.
 
-TCLLIBPATH		= "$(BUILD_DIR) $(MISC_DIR) $(THREAD_BIN_DIR)"
+TCLLIBPATH		= "$(BUILD_DIR_NATIVE) $(MISC_DIR_NATIVE) $(THREAD_BIN_DIR_NATIVE)"
 
 
 # Extra shared lib stuff needed on some systems.
@@ -188,7 +197,7 @@ TCLBLEND_DEBUG_CLASSPATH = $(TEST_CLASSPATH):$(TCLJAVA_SRC_DIR):$(TCLBLEND_SRC_D
 # Libraries to use when linking: (used by SHLIB_LD_LIBS)
 LIBS			= $(TCL_LD_SEARCH_FLAGS) \
 				$(JAVA_LIB_FLAGS) \
-				@TCL_BUILD_LIB_SPEC@ @TCL_LIBS@
+				$(TCL_LIB_FLAGS)
 
 
 CC_SWITCHES 		= \
@@ -792,6 +801,7 @@ test_tclblend.exec: test_tclblend.check
           exit; ) | \
 	LD_PRELOAD=$(TCLBLEND_LD_PRELOAD) \
 	LD_BIND_NOW=$(TCLBLEND_LD_BIND_NOW) \
+	PATH=$(PATH):$(BUILD_DIR):$(TCL_BIN_DIR):$(THREAD_BIN_DIR):$(JAVA_LIB_RUNTIME_PATH) \
 	LD_LIBRARY_PATH=$(BUILD_DIR):$(TCL_BIN_DIR):$(THREAD_BIN_DIR):$(JAVA_LIB_RUNTIME_PATH):$(LD_LIBRARY_PATH) \
 	SHLIB_PATH=$(BUILD_DIR):$(TCL_BIN_DIR):$(THREAD_BIN_DIR):$(JAVA_LIB_RUNTIME_PATH):$(SHLIB_PATH) \
 	KAFFELIBRARYPATH=$(BUILD_DIR):$(TCL_BIN_DIR):$(THREAD_BIN_DIR):$(JAVA_LIB_RUNTIME_PATH) \
@@ -820,6 +830,7 @@ shell_tclblend: tclblend.check
 	@echo "To run test: cd $(TOP_DIR)/tests ; source all.tcl"
 	LD_PRELOAD=$(TCLBLEND_LD_PRELOAD) \
 	LD_BIND_NOW=$(TCLBLEND_LD_BIND_NOW) \
+	PATH=$(PATH):$(BUILD_DIR):$(TCL_BIN_DIR):$(THREAD_BIN_DIR):$(JAVA_LIB_RUNTIME_PATH) \
 	LD_LIBRARY_PATH=$(BUILD_DIR):$(TCL_BIN_DIR):$(THREAD_BIN_DIR):$(JAVA_LIB_RUNTIME_PATH):$(LD_LIBRARY_PATH) \
 	SHLIB_PATH=$(BUILD_DIR):$(TCL_BIN_DIR):$(THREAD_BIN_DIR):$(JAVA_LIB_RUNTIME_PATH):$(SHLIB_PATH) \
 	KAFFELIBRARYPATH=$(BUILD_DIR):$(TCL_BIN_DIR):$(THREAD_BIN_DIR):$(JAVA_LIB_RUNTIME_PATH) \
@@ -1023,7 +1034,8 @@ configure: $(TOP_DIR)/configure.in
 	autoconf
 
 clean: tclblend.clean jacl.clean tcljava.clean \
-	demos.clean test.clean tmp.clean
+	demos.clean test.clean tmp.clean \
+	jni_example.clean
 
 tclblend.clean:
 	rm -f  *.o $(TCLBLEND_LIB_FILE) custom javaNative.h
@@ -1055,6 +1067,9 @@ distclean: clean
 	rm -f Test.class Test.tcl Test.h Test.jar
 	rm -f Makefile jtclsh jaclsh tcljavaConfig.sh
 
+jni_example.clean:
+	rm -f $(SHLIB_PREFIX)JNI_example$(SHLIB_SUFFIX)
+	rm -f JNI_example.o JNI_example.class
 
 #----------------------------------------------------------------
 # Distributions

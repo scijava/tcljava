@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: java.h,v 1.17 2002/12/31 20:16:26 mdejong Exp $
+ * RCS: @(#) $Id: java.h,v 1.18 2003/01/21 09:42:55 mdejong Exp $
  */
 
 #ifndef _JAVA
@@ -31,11 +31,13 @@
  */
 
 #ifdef __WIN32__
+# undef DLLIMPORT
+# undef DLLEXPORT
 # ifdef STATIC_BUILD
 #  define DLLIMPORT
 #  define DLLEXPORT
 # else
-#  ifdef _MSC_VER
+#  if defined(_MSC_VER) || defined(__MINGW32__)
 #   define DLLIMPORT __declspec(dllimport)
 #   define DLLEXPORT __declspec(dllexport)
 #  else

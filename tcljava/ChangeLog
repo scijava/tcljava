@@ -1,3 +1,33 @@
+2003-01-21  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	Add initial and incomplete mingw build support.
+
+	* Makefile.in: Add _NATIVE versions of paths
+	that have to be in Win32 native format. Add
+	TCL_DEFS to compile line to avoid compiler
+	warnings under Mingw. Add PATH to the list
+	of variables that gets modified when running
+	the shell or test targets. Add jni_example.clean
+	to cleanup after recent change.
+	* configure: Regen.
+	* configure.in: Subst TCL_DEFS and TCL_BIN_TCLSH
+	into Makefile. Subst *_NATIVE variables after
+	running them through mingw_path.sh.
+	* mingw_path.sh: Add new helper file that
+	converts a mingw path to a win32 path.
+	* tcljava.m4 (AC_JAVA_JNI_LIBS, TCLJAVA_WITH_TCL,
+	TCLJAVA_CHECK_TCLSH):
+	Detect IBM JDK 1.3 for win32. Make sure libs
+	appear after the source file in JVM link test.
+	When loading tclConfig.sh, check for win32
+	specific defines and add any missing variables.
+	Add mingw flags to build commands under win32.
+	Check for win32 name for tclsh if unix style
+	name is not found.
+	* src/native/java.h: Add mingw build support.
+	* unix/custom.c: Fixup define checks so that
+	custom can be compiled with JDK 1.2 or newer.
+
 2003-01-20  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* Makefile.in: Split creation of JNI_example

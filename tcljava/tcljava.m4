@@ -906,8 +906,19 @@ AC_DEFUN([AC_JAVA_JNI_LIBS], [
             fi
         fi
 
-        #FIXME : Blackdown JDK 1.2 for Linux
+        # IBM JDK 1.3 for Win32
 
+        F=lib/jvm.lib
+        if test "x$ac_java_jvm_jni_lib_flags" = "x" ; then
+            AC_MSG_LOG([Looking for $ac_java_jvm_dir/$F], 1)
+            if test -f $ac_java_jvm_dir/$F ; then
+                AC_MSG_LOG([Found $ac_java_jvm_dir/$F], 1)
+                D1=$ac_java_jvm_dir/jre/bin
+                D2=$ac_java_jvm_dir/jre/bin/classic
+                ac_java_jvm_jni_lib_runtime_path="${D1}:${D2}"
+                ac_java_jvm_jni_lib_flags="$ac_java_jvm_dir/$F"
+            fi
+        fi
     fi
 
     # Generate error for unsupported JVM layout
@@ -932,7 +943,9 @@ AC_DEFUN([AC_JAVA_JNI_LIBS], [
         ac_java_jvm_working_jni_link,[
         AC_LANG_PUSH(C)
         ac_saved_cflags=$CFLAGS
-        CFLAGS="$CFLAGS $ac_java_jvm_jni_include_flags $ac_java_jvm_jni_lib_flags"
+        ac_saved_libs=$LIBS
+        CFLAGS="$CFLAGS $ac_java_jvm_jni_include_flags"
+        LIBS="$LIBS $ac_java_jvm_jni_lib_flags"
         AC_TRY_LINK([
             #include <jni.h>
         ],[JNI_GetCreatedJavaVMs(NULL,0,NULL);],
@@ -942,6 +955,7 @@ AC_DEFUN([AC_JAVA_JNI_LIBS], [
         this JVM configuration or the JVM install is broken or corrupted.]))
         AC_LANG_POP()
         CFLAGS=$ac_saved_cflags
+        LIBS=$ac_saved_libs
     ])
 ])
 
@@ -1020,13 +1034,49 @@ Use the --with-tcl=<dirName> configure flag to specify the location.])
 Make sure Tcl was configured with --enable-shared.])
     fi
 
+    if test "$TCL_DLL_FILE" != "" ; then
+        ac_cv_tcl_win32=yes
+    fi
+
     CC=$TCL_CC
     SHLIB_CFLAGS=$TCL_SHLIB_CFLAGS
-    SHLIB_LD=$TCL_SHLIB_LD
-    SHLIB_LD_LIBS=$TCL_SHLIB_LD_LIBS
-    SHLIB_PREFIX=lib
-    SHLIB_SUFFIX=$TCL_SHLIB_SUFFIX
+
+    # We need to add stdcall aliases when building a dll
+    # under Win32 so that Java finds exported JNI symbols
+    if test "$ac_cv_tcl_win32" = "yes"; then
+        SHLIB_LD="$TCL_SHLIB_LD -mwindows -Wl,--add-stdcall-alias"
+    else
+        SHLIB_LD=$TCL_SHLIB_LD
+    fi
+
+    # Tcl < 8.4.2 does not define TCL_SHLIB_LD_LIBS for win32
+    if test "$TCL_SHLIB_LD_LIBS" = "" &&
+       test "$ac_cv_tcl_win32" = "yes" ; then
+        SHLIB_LD_LIBS='${LIBS}'
+    else
+        SHLIB_LD_LIBS=$TCL_SHLIB_LD_LIBS
+    fi
+
+    if test "$ac_cv_tcl_win32" = "yes" ; then
+        SHLIB_PREFIX=""
+    else
+        SHLIB_PREFIX=lib
+    fi
+
+    # Tcl < 8.4.2 does not define TCL_SHLIB_SUFFIX for win32
+    if test "$TCL_SHLIB_SUFFIX" = "" &&
+       test "$ac_cv_tcl_win32" = "yes" ; then
+        SHLIB_SUFFIX=".dll"
+    else
+        SHLIB_SUFFIX=$TCL_SHLIB_SUFFIX
+    fi
     SHLIB_VERSION=$TCL_SHLIB_VERSION
+
+    # Tcl < 8.4.2 does not define TCL_BUILD_LIB_SPEC for win32
+    if test "$TCL_BUILD_LIB_SPEC" = "" &&
+       test "$ac_cv_tcl_win32" = "yes" ; then
+        TCL_BUILD_LIB_SPEC="$TCL_BIN_DIR/$TCL_LIB_FILE"
+    fi
 
     # Set debug extension for the Tcl Blend shared lib
     # as defined by the Java method System.loadLibrary()
@@ -1134,8 +1184,12 @@ if test $TCLJAVA = "tclblend" || test $TCLJAVA = "both"; then
   # Check to make sure that tclsh has been built by looking for the
   # tclsh executable in the TCL_BIN_DIR directory.
 
-  if test ! -x $TCL_BIN_DIR/tclsh; then
-    AC_MSG_ERROR([Tcl was configued in $TCL_BIN_DIR, but it has not been built, please build it and run configure again.])
+  TCLSH_LOC=$TCL_BIN_DIR/tclsh
+  if test ! -x $TCLSH_LOC; then
+    TCLSH_LOC=`ls $TCL_BIN_DIR/tclsh*.exe`
+    if test "$TCLSH_LOC" = ""; then
+        AC_MSG_ERROR([Tcl was configued in $TCL_BIN_DIR, but it has not been built, please build it and run configure again.])
+    fi
   fi
 
   # Double check that tclsh works and that it is tcl 8.3.2 or better
@@ -1147,7 +1201,6 @@ if test $TCLJAVA = "tclblend" || test $TCLJAVA = "both"; then
   SHLIB_PATH=$TCL_BIN_DIR:$SHLIB_PATH
   export SHLIB_PATH
 
-  TCLSH_LOC=$TCL_BIN_DIR/tclsh
   rm -f tcl_version.tcl
 
   echo 'puts HELLO' > tcl_version.tcl

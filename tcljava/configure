@@ -1719,13 +1719,49 @@ Make sure Tcl was configured with --enable-shared." >&2;}
    { (exit 1); exit 1; }; }
     fi
 
+    if test "$TCL_DLL_FILE" != "" ; then
+        ac_cv_tcl_win32=yes
+    fi
+
     CC=$TCL_CC
     SHLIB_CFLAGS=$TCL_SHLIB_CFLAGS
-    SHLIB_LD=$TCL_SHLIB_LD
-    SHLIB_LD_LIBS=$TCL_SHLIB_LD_LIBS
-    SHLIB_PREFIX=lib
-    SHLIB_SUFFIX=$TCL_SHLIB_SUFFIX
+
+    # We need to add stdcall aliases when building a dll
+    # under Win32 so that Java finds exported symbols
+    if test "$ac_cv_tcl_win32" = "yes"; then
+        SHLIB_LD="$TCL_SHLIB_LD -mwindows -Wl,--add-stdcall-alias"
+    else
+        SHLIB_LD=$TCL_SHLIB_LD
+    fi
+
+    # Tcl < 8.4.2 does not define TCL_SHLIB_LD_LIBS for win32
+    if test "$TCL_SHLIB_LD_LIBS" = "" &&
+       test "$ac_cv_tcl_win32" = "yes" ; then
+        SHLIB_LD_LIBS='${LIBS}'
+    else
+        SHLIB_LD_LIBS=$TCL_SHLIB_LD_LIBS
+    fi
+
+    if test "$ac_cv_tcl_win32" = "yes" ; then
+        SHLIB_PREFIX=""
+    else
+        SHLIB_PREFIX=lib
+    fi
+
+    # Tcl < 8.4.2 does not define TCL_SHLIB_SUFFIX for win32
+    if test "$TCL_SHLIB_SUFFIX" = "" &&
+       test "$ac_cv_tcl_win32" = "yes" ; then
+        SHLIB_SUFFIX=".dll"
+    else
+        SHLIB_SUFFIX=$TCL_SHLIB_SUFFIX
+    fi
     SHLIB_VERSION=$TCL_SHLIB_VERSION
+
+    # Tcl < 8.4.2 does not define TCL_BUILD_LIB_SPEC for win32
+    if test "$TCL_BUILD_LIB_SPEC" = "" &&
+       test "$ac_cv_tcl_win32" = "yes" ; then
+        TCL_BUILD_LIB_SPEC="$TCL_BIN_DIR/$TCL_LIB_FILE"
+    fi
 
     # Set debug extension for the Tcl Blend shared lib
     # as defined by the Java method System.loadLibrary()
@@ -1823,10 +1859,14 @@ if test $TCLJAVA = "tclblend" || test $TCLJAVA = "both"; then
   # Check to make sure that tclsh has been built by looking for the
   # tclsh executable in the TCL_BIN_DIR directory.
 
-  if test ! -x $TCL_BIN_DIR/tclsh; then
-    { { echo "$as_me:$LINENO: error: Tcl was configued in $TCL_BIN_DIR, but it has not been built, please build it and run configure again." >&5
+  TCLSH_LOC=$TCL_BIN_DIR/tclsh
+  if test ! -x $TCLSH_LOC; then
+    TCLSH_LOC=`ls $TCL_BIN_DIR/tclsh*.exe`
+    if test "$TCLSH_LOC" = ""; then
+        { { echo "$as_me:$LINENO: error: Tcl was configued in $TCL_BIN_DIR, but it has not been built, please build it and run configure again." >&5
 echo "$as_me: error: Tcl was configued in $TCL_BIN_DIR, but it has not been built, please build it and run configure again." >&2;}
    { (exit 1); exit 1; }; }
+    fi
   fi
 
   # Double check that tclsh works and that it is tcl 8.3.2 or better
@@ -1838,7 +1878,6 @@ echo "$as_me: error: Tcl was configued in $TCL_BIN_DIR, but it has not been buil
   SHLIB_PATH=$TCL_BIN_DIR:$SHLIB_PATH
   export SHLIB_PATH
 
-  TCLSH_LOC=$TCL_BIN_DIR/tclsh
   rm -f tcl_version.tcl
 
   echo 'puts HELLO' > tcl_version.tcl
@@ -2227,7 +2266,7 @@ echo "${ECHO_T}$ac_java_classpath" >&6
 echo $ECHO_N "checking to see if the java compiler works... $ECHO_C" >&6
 
     cat << \EOF > conftest.java
-// #line 2230 "configure"
+// #line 2269 "configure"
 
 
 public class conftest {
@@ -2272,7 +2311,7 @@ echo $ECHO_N "checking type of jvm... $ECHO_C" >&6
     if test "x$ac_java_jvm_name" = "x" ; then
 
     cat << \EOF > conftest.java
-// #line 2275 "configure"
+// #line 2314 "configure"
 import kaffe.lang.Application;
 
 public class conftest {
@@ -2299,7 +2338,7 @@ EOF
     if test "x$ac_java_jvm_name" = "x" ; then
 
     cat << \EOF > conftest.java
-// #line 2302 "configure"
+// #line 2341 "configure"
 import gnu.java.io.EncodingManager;
 
 public class conftest {
@@ -2348,7 +2387,7 @@ echo $ECHO_N "checking java API version... $ECHO_C" >&6
 
 
     cat << \EOF > conftest.java
-// #line 2351 "configure"
+// #line 2390 "configure"
 import java.lang.StrictMath;
 
 public class conftest {
@@ -2376,7 +2415,7 @@ EOF
     if test "x$ac_java_jvm_version" = "x" ; then
 
     cat << \EOF > conftest.java
-// #line 2379 "configure"
+// #line 2418 "configure"
 import java.lang.Package;
 
 public class conftest {
@@ -2405,7 +2444,7 @@ EOF
     if test "x$ac_java_jvm_version" = "x" ; then
 
     cat << \EOF > conftest.java
-// #line 2408 "configure"
+// #line 2447 "configure"
 import java.lang.reflect.Method;
 
 public class conftest {
@@ -4188,8 +4227,24 @@ echo "$as_me: error: Unable to locate directory for -ljvm" >&2;}
             fi
         fi
 
-        #FIXME : Blackdown JDK 1.2 for Linux
+        # IBM JDK 1.3 for Win32
 
+        F=lib/jvm.lib
+        if test "x$ac_java_jvm_jni_lib_flags" = "x" ; then
+
+    echo Looking for $ac_java_jvm_dir/$F >&5
+
+
+            if test -f $ac_java_jvm_dir/$F ; then
+
+    echo Found $ac_java_jvm_dir/$F >&5
+
+
+                D=`dirname $ac_java_jvm_dir/$F`
+                ac_java_jvm_jni_lib_runtime_path=$ac_java_jvm_dir/jre/bin/classic
+                ac_java_jvm_jni_lib_flags="$ac_java_jvm_dir/$F"
+            fi
+        fi
     fi
 
     # Generate error for unsupported JVM layout
@@ -4239,7 +4294,9 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
         ac_saved_cflags=$CFLAGS
-        CFLAGS="$CFLAGS $ac_java_jvm_jni_include_flags $ac_java_jvm_jni_lib_flags"
+        ac_saved_libs=$LIBS
+        CFLAGS="$CFLAGS $ac_java_jvm_jni_include_flags"
+        LIBS="$LIBS $ac_java_jvm_jni_lib_flags"
         cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
 #include "confdefs.h"
@@ -4292,6 +4349,7 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
         CFLAGS=$ac_saved_cflags
+        LIBS=$ac_saved_libs
 
 fi
 echo "$as_me:$LINENO: result: $ac_java_jvm_working_jni_link" >&5
@@ -4660,6 +4718,7 @@ fi
 
 
 
+
 JAVA_INCLUDE_FLAGS=$ac_java_jvm_jni_include_flags
 
 
@@ -4677,12 +4736,38 @@ TCLBLEND_LD_BIND_NOW=$ac_java_jvm_ld_bind_now
 
 
 
+TCL_BIN_TCLSH=$TCLSH_LOC
+
 
 
 
 # Subst variables that are used in both jacl and tclblend
 
 BUILD_DIR=`pwd`
+
+
+TOP_DIR=$srcdir
+if test "$ac_cv_tcl_win32" = "yes"; then
+    TOP_DIR_NATIVE=`sh $srcdir/mingw_path.sh $TOP_DIR`
+else
+    TOP_DIR_NATIVE=$TOP_DIR
+fi
+
+
+
+if test "$ac_cv_tcl_win32" = "yes"; then
+    BUILD_DIR_NATIVE=`sh $srcdir/mingw_path.sh $BUILD_DIR`
+else
+    BUILD_DIR_NATIVE=$BUILD_DIR
+fi
+
+
+if test "$ac_cv_tcl_win32" = "yes"; then
+    THREAD_BIN_DIR_NATIVE=`sh $srcdir/mingw_path.sh $THREAD_BIN_DIR`
+else
+    THREAD_BIN_DIR_NATIVE=$THREAD_BIN_DIR
+fi
+
 
 
 
@@ -5325,6 +5410,7 @@ s,@SHLIB_SUFFIX@,$SHLIB_SUFFIX,;t t
 s,@SHLIB_VERSION@,$SHLIB_VERSION,;t t
 s,@TCL_BUILD_LIB_SPEC@,$TCL_BUILD_LIB_SPEC,;t t
 s,@TCL_CFLAGS@,$TCL_CFLAGS,;t t
+s,@TCL_DEFS@,$TCL_DEFS,;t t
 s,@TCL_LIBS@,$TCL_LIBS,;t t
 s,@TCL_VERSION@,$TCL_VERSION,;t t
 s,@TCL_SRC_DIR@,$TCL_SRC_DIR,;t t
@@ -5339,8 +5425,13 @@ s,@TCLBLEND_LD_PRELOAD@,$TCLBLEND_LD_PRELOAD,;t t
 s,@TCLBLEND_LD_BIND_NOW@,$TCLBLEND_LD_BIND_NOW,;t t
 s,@WISH@,$WISH,;t t
 s,@TCLSH@,$TCLSH,;t t
+s,@TCL_BIN_TCLSH@,$TCL_BIN_TCLSH,;t t
 s,@TCL_INSTALL_LIB_DIR@,$TCL_INSTALL_LIB_DIR,;t t
 s,@BUILD_DIR@,$BUILD_DIR,;t t
+s,@TOP_DIR@,$TOP_DIR,;t t
+s,@TOP_DIR_NATIVE@,$TOP_DIR_NATIVE,;t t
+s,@BUILD_DIR_NATIVE@,$BUILD_DIR_NATIVE,;t t
+s,@THREAD_BIN_DIR_NATIVE@,$THREAD_BIN_DIR_NATIVE,;t t
 s,@JAVA_CLASSPATH@,$JAVA_CLASSPATH,;t t
 s,@JAVA_FLAGS@,$JAVA_FLAGS,;t t
 s,@JAVAC_FLAGS@,$JAVAC_FLAGS,;t t
