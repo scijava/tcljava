@@ -35,6 +35,22 @@ fields of superclasses.
 
 <P>
 
+The <B>java::field</B> command also supports getting the compiler
+simulated "class" field on a <code>java.lang.Class</code> Object.
+This is the preferred method to get a handle to a named class.
+
+<code>
+<pre>
+% set cl [java::field java.util.Hashtable class]
+% java::info class $cl
+java.lang.Class
+
+</pre>
+</code>
+
+<p>
+<p>
+
 The <A HREF="JavaConversions.html">Conversions</a> section describes the effect
 of the optional <B>-noconvert</B> flag on the result.
 
