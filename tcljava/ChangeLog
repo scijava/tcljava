@@ -1,3 +1,23 @@
+2003-03-10  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/jacl/tcl/lang/Notifier.java (deleteEvents,
+	deleteEvent, serviceEvent): Have the Notifier
+	class implement the EventDeleter interface
+	to match the event delete implementation
+	used in Tcl Blend. Optimize the deleteEvents
+	call by saving the just processed event in
+	the servicedEvent field and checking this field
+	when the Notifier is passed to deleteEvents.
+	This avoids the need for a call to the deleteEvent
+	method for every event in the queue.
+	* src/tclblend/tcl/lang/Notifier.java (deleteEvents,
+	deleteEvent, serviceEvent): Optimize the deleteEvents
+	call by saving the just processed event in
+	the servicedEvent field and checking this field
+	when the Notifier is passed to deleteEvents.
+	This avoids the need for a call to the deleteEvent
+	method for every event in the queue.
+
 2003-03-09  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* src/jacl/tcl/lang/Notifier.java (serviceEvent,

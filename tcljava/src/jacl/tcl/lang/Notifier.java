@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Notifier.java,v 1.5 2003/03/10 02:18:43 mdejong Exp $
+ * RCS: @(#) $Id: Notifier.java,v 1.6 2003/03/10 10:52:41 mdejong Exp $
  *
  */
 
@@ -38,7 +38,7 @@ import java.util.Vector;
 // Notifier.getNotifierForThread() ), which returns the Notifier for that
 // interpreter (thread).
 
-public class Notifier {
+public class Notifier implements EventDeleter {
 
 // First pending event, or null if none.
 
@@ -51,6 +51,10 @@ private TclEvent lastEvent;
 // Last high-priority event in queue, or null if none.
 
 private TclEvent markerEvent;
+
+// Event that was just processed by serviceEvent
+
+private TclEvent servicedEvent = null;
 
 // The primary thread of this notifier. Only this thread should process
 // events from the event queue.
@@ -294,7 +298,10 @@ queueEvent(
  *
  *	Calls an EventDeleter for each event in the queue and deletes
  *	those for which deleter.deleteEvent() returns 1. Events
- *	for which the deleter returns 0 are left in the queue.
+ *	for which the deleter returns 0 are left in the queue. This
+ *	method includes code to handle the special case of the
+ *	Notifier wanting to delete a single event after is has
+ *	been serviced. This method is concurrent safe.
  *
  * Results:
  *	None.
@@ -311,25 +318,70 @@ deleteEvents(
 				// should be removed.
 {
     TclEvent evt, prev;
+    TclEvent servicedEvent = null;
 
-//FIXME: The Tcl Blend Notifier and Jacl version of this method don't match.
+    // Handle the special case of deletion of a single event that was just
+    // processed by the serviceEvent() method.
+
+    if (deleter == this) {
+        servicedEvent = this.servicedEvent;
+        if (servicedEvent == null)
+            throw new TclRuntimeError(
+                    "servicedEvent was not set by serviceEvent()");
+        this.servicedEvent = null;
+    }
+
     for (prev = null, evt = firstEvent; evt != null; evt = evt.next) {
-        if (deleter.deleteEvent(evt) == 1) {
-            if (firstEvent == evt) {
+        if (((servicedEvent == null) && (deleter.deleteEvent(evt) == 1))
+                || (evt == servicedEvent)) {
+            if (evt == firstEvent) {
                 firstEvent = evt.next;
-                if (evt.next == null) {
-                    lastEvent = null;
-                }
             } else {
                 prev.next = evt.next;
             }
-	    if (markerEvent == evt) {
-		markerEvent = null;
-	    }
+            if (evt.next == null) {
+                lastEvent = prev;
+            }
+            if (evt == markerEvent) {
+                markerEvent = prev;
+            }
+            if (evt == servicedEvent) {
+                servicedEvent = null;
+                break; // Just service this one event in the special case
+            }
         } else {
             prev = evt;
         }
     }
+    if (servicedEvent != null) {
+        throw new TclRuntimeError(
+                "servicedEvent was not removed from the queue");
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * deleteEvent --
+ *
+ *	This method is required to implement the EventDeleter interface
+ *	It is not actually used though, see deleteEvents method for
+ *	special casing of the deletion of a specific event.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+public int
+deleteEvent(
+    TclEvent evt) {
+    throw new TclRuntimeError(
+        "The Notifier.deleteEvent() method should not be called");
 }
 
 /*
@@ -397,28 +449,9 @@ serviceEvent(
 		    evt.notifyAll();
 		}
 	    }
-	    synchronized (this) {
-	    if (firstEvent == evt) {
-		firstEvent = evt.next;
-		if (evt.next == null) {
-		    lastEvent = null;
-		}
-		if (markerEvent == evt) {
-		    markerEvent = null;
-		}
-	    } else {
-		for (prev = firstEvent; prev.next != evt; prev = prev.next) {
-		    // Empty loop body.
-		}
-		prev.next = evt.next;
-		if (evt.next == null) {
-		    lastEvent = prev;
-		}
-		if (markerEvent == evt) {
-		    markerEvent = prev;
-		}
-	    }
-	    } // synchronized (this)
+	    // Remove this specific event from the queue
+	    servicedEvent = evt;
+	    deleteEvents(this);
 	    return 1;
 	} else {
 	    // The event wasn't actually handled, so we have to

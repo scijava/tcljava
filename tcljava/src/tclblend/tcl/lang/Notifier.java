@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Notifier.java,v 1.4 2002/07/22 10:00:47 mdejong Exp $
+ * RCS: @(#) $Id: Notifier.java,v 1.5 2003/03/10 10:52:41 mdejong Exp $
  *
  */
 
@@ -53,6 +53,10 @@ private TclEvent lastEvent;
 // Last high-priority event in queue, or null if none.
 
 private TclEvent markerEvent;
+
+// Event that was just processed by serviceEvent
+
+private TclEvent servicedEvent = null;
 
 // The primary thread of this notifier. Only this thread should process
 // events from the event queue.
@@ -288,8 +292,10 @@ queueEvent(
  *
  *	Calls an EventDeleter for each event in the queue and deletes
  *	those for which deleter.deleteEvent() returns 1. Events
- *	for which the deleter returns 0 are left in the queue.   This 
- *	method is concurrent safe. 
+ *	for which the deleter returns 0 are left in the queue.
+ *	This method includes code to handle the special case of the
+ *	Notifier wanting to delete a single event after is has
+ *	been serviced. This method is concurrent safe.
  *
  * Results:
  *	None.
@@ -306,31 +312,47 @@ deleteEvents(
 				// should be removed.
 {
     TclEvent evt, prev;
+    TclEvent servicedEvent = null;
 
     synchronized (notifierMutex) {
 //FIXME: indent this block properly
+
+    // Handle the special case of deletion of a single event that was just
+    // processed by the serviceEvent() method.
+
+    if (deleter == this) {
+        servicedEvent = this.servicedEvent;
+        if (servicedEvent == null)
+            throw new TclRuntimeError(
+                    "servicedEvent was not set by serviceEvent()");
+        this.servicedEvent = null;
+    }
+
     for (prev = null, evt = firstEvent; evt != null; evt = evt.next) {
-        if (deleter.deleteEvent(evt) == 1) {
-            if (firstEvent == evt) {
+        if (((servicedEvent == null) && (deleter.deleteEvent(evt) == 1))
+                || (evt == servicedEvent)) {
+            if (evt == firstEvent) {
                 firstEvent = evt.next;
-                if (evt.next == null) {
-                    lastEvent = null;
-                }
-		    if (markerEvent == evt) {
-			markerEvent = null;
-		    }
             } else {
                 prev.next = evt.next;
-		    if (evt.next == null) {
-			lastEvent = prev;
             }
-	    if (markerEvent == evt) {
-			markerEvent = prev;
-		    }
-	    }
+            if (evt.next == null) {
+                lastEvent = prev;
+            }
+            if (evt == markerEvent) {
+                markerEvent = prev;
+            }
+            if (evt == servicedEvent) {
+                servicedEvent = null;
+                break; // Just service this one event in the special case
+            }
         } else {
             prev = evt;
         }
+    }
+    if (servicedEvent != null) {
+        throw new TclRuntimeError(
+                "servicedEvent was not removed from the queue");
     }
     }
 }
@@ -340,13 +362,12 @@ deleteEvents(
  *
  * deleteEvent --
  *
- *	This method is required for this class being an EventDeleter.
- *	Checks the given event to see if it is already processed.
- *	This method together with 'deleteEvents' are used by serviceEvent to
- *	remove an event that is just processed in a concurrent safe manor.
+ *	This method is required to implement the EventDeleter interface
+ *	It is not actually used though, see deleteEvents method for
+ *	special casing of the deletion of a specific event.
  *
  * Results:
- *	Returns 1 if the given event is processed, 0 otherwise.
+ *	None.
  *
  * Side effects:
  *	None.
@@ -356,9 +377,9 @@ deleteEvents(
 
 public int
 deleteEvent(
-    TclEvent evt) {		// Check whether this event should be removed.
-    return ((evt.isProcessing == true) &&
-	    (evt.isProcessed  == true)) ? 1 : 0;
+    TclEvent evt) {
+    throw new TclRuntimeError(
+        "The Notifier.deleteEvent() method should not be called");
 }
 
 /*
@@ -415,6 +436,8 @@ serviceEvent(
 	//    change almost arbitrarily while handling the event, so we
 	//    can't depend on pointers found now still being valid when
 	//    the handler returns.
+
+// FIXME: Why does this synchronized block differ from the Jacl impl?
 	synchronized (evt) {
 //FIXME: indent this properly
 	boolean b = evt.isProcessing;
@@ -423,11 +446,11 @@ serviceEvent(
 	if ((b == false) && (evt.processEvent(flags) != 0)) {
 	    evt.isProcessed = true;
 	    if (evt.needsNotify) {
-		    evt.notifyAll();
-		}
-		
-		deleteEvents(this);	// this takes care of deletion of the
-					// just processed event
+	        evt.notifyAll();
+	    }
+	    // Remove this specific event from the queue
+	    servicedEvent = evt;
+	    deleteEvents(this);
 	    return 1;
 	} else {
 	    // The event wasn't actually handled, so we have to
@@ -436,10 +459,10 @@ serviceEvent(
 
 	    evt.isProcessing = b;
 
-	// The handler for this event asked to defer it.  Just go on to
-		// the next event.  we will try to find another event to
-		// process when the while loop continues
-	    }
+	    // The handler for this event asked to defer it.  Just go on to
+	    // the next event.  we will try to find another event to
+	    // process when the while loop continues
+	}
 	}
     }
 
