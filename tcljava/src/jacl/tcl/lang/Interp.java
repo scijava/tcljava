@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.20 1999/08/09 08:52:36 mo Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.21 1999/08/09 09:18:34 mo Exp $
  *
  */
 
@@ -35,18 +35,18 @@ public class Interp {
 //  Translates integer ID to ReflectObject.
 
 
-Hashtable reflectIDTable;
+Hashtable reflectIDTable = new Hashtable();
 
 // Translates Object to ReflectObject. This makes sure we have only
 // one ReflectObject internalRep for the same Object -- this
 // way Object identity can be done by string comparison.
 
-Hashtable reflectObjTable;
+Hashtable reflectObjTable = new Hashtable();
 
 // Number of reflect objects created so far inside this Interp
 // (including those that have be freed)
 
-long reflectObjCount;
+long reflectObjCount = 0;
 
 // The interpreter will execute scripts only inside this thread. All
 // calls to Interp.eval() by any other thread will be routed to this
