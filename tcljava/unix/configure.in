@@ -2,7 +2,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run to configure the
 dnl	Makefile in this directory.
 AC_INIT(../src/tcljava/tcl/lang/InternalRep.java)
-# RCS: @(#) $Id: configure.in,v 1.18 1999/08/03 05:11:50 mo Exp $
+# RCS: @(#) $Id: configure.in,v 1.19 1999/08/27 23:50:53 mo Exp $
 
 
 #--------------------------------------------------------------------
@@ -1120,24 +1120,8 @@ if test $TCLJAVA = "tclblend" || test $BOTH = "true"; then
     #	not, assume that its top-level directory is a sibling of ours.
     #--------------------------------------------------------------------
     
-    AC_ARG_WITH(tcl, [  --with-tcl=DIR          build directory for Tcl 8.0 source release from DIR],
-    	TCL_BIN_DIR=$withval, TCL_BIN_DIR="$srcdir/../../tcl8.0.6/unix")
-
-    if test ! -d $TCL_BIN_DIR; then
-	TCL_BIN_DIR="$srcdir/../../tcl8.0.5/unix"
-    fi
-
-    if test ! -d $TCL_BIN_DIR; then
-	TCL_BIN_DIR="$srcdir/../../tcl8.0.4/unix"
-    fi
-
-    if test ! -d $TCL_BIN_DIR; then
-	TCL_BIN_DIR="$srcdir/../../tcl8.0.3/unix"
-    fi
-
-    if test ! -d $TCL_BIN_DIR; then
-	TCL_BIN_DIR="$srcdir/../../tcl8.0/unix"
-    fi
+    AC_ARG_WITH(tcl, [  --with-tcl=DIR          build directory for Tcl 8.X source release from DIR],
+    	TCL_BIN_DIR=$withval, TCL_BIN_DIR="$srcdir/../../tcl8.0.5/unix")
 
     if test ! -d $TCL_BIN_DIR; then
         AC_MSG_ERROR([Tcl directory could not be located.
@@ -1292,7 +1276,7 @@ if test $TCLJAVA = "tclblend" || test $BOTH = "true"; then
           WISH80=$WISH_LOC
           MSG="found wish version 8.0 at $WISH80"
           echo $MSG >&5
-          AC_MSG_WARN([$MSG])
+          AC_MSG_RESULT([$MSG])
       else
           MSG="could not find working wish8.0"
           echo $MSG >&5
