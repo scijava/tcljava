@@ -1,5 +1,21 @@
 2001-12-25  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/jacl/tcl/lang/Channel.java (close):
+	Check for a custom output eof character and
+	write it to the stream before closing.
+	* src/jacl/tcl/lang/FileChannel.java (close):
+	Invoke super class close method before closing
+	actual stream in case custom EOF is written.
+	Reformat some tabs into spaces.
+	* src/jacl/tcl/lang/ServerSocketChannel.java (close):
+	Invoke super class close method before closing
+	actual stream. Add FIXME note.
+	* src/jacl/tcl/lang/SocketChannel.java (close):
+	Invoke super class close method before closing
+	actual stream in case custom EOF is written.
+
+2001-12-25  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/jacl/tcl/lang/Channel.java (read, write,
 	flush, checkRead, checkWrite): Implement and use
 	new helper methods that check to see if reading

@@ -110,14 +110,20 @@ public class ServerSocketChannel extends Channel {
         cbInterp.getNotifier().queueEvent((TclEvent)evt,TCL.QUEUE_TAIL);
     }
 
+    // FIXME: Since this does not actually close the socket
+    // right away, we run into errors in the test suite
+    // saying the socket is already in use after the close
+    // command has been issued. Need to figure out how to
+    // deal with this issue.
+
     void close() throws IOException
     {
         // Stop the event handler thread.
         // this might not happen for up to a minute!
         acceptThread.pleaseStop();
-        // Close the socket
-        sock.close();
+
         super.close();
+        sock.close();
     }
 
 

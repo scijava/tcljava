@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Channel.java,v 1.19 2001/12/25 21:20:19 mdejong Exp $
+ * RCS: @(#) $Id: Channel.java,v 1.20 2001/12/25 22:22:19 mdejong Exp $
  */
 
 package tcl.lang;
@@ -206,8 +206,24 @@ abstract class Channel {
             try { reader.close(); } catch (IOException e) { ex = e; }
             reader = null;
         }
+
+        // If channel has a custom eof marker, write it to the
+        // stream before closing. Invoke the write method
+        // instead of writing directly to the stream since
+        // some channels might not set the writer field.
+
+        if ((outEofChar != 0) && (isWriteOnly() || isReadWrite())) {
+            try {
+                write(null, String.valueOf(outEofChar));
+            } catch (TclException ex2) {
+                throw new TclRuntimeError(
+		    "Channel.close: TclException while writing eof " +
+		    ex2.getMessage());
+            }
+        }
+
         if (writer != null) {
-           try { writer.close(); } catch (IOException e) { ex = e; }
+            try { writer.close(); } catch (IOException e) { ex = e; }
             writer = null;
         }
 

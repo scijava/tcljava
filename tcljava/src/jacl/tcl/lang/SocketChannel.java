@@ -225,8 +225,9 @@ public class SocketChannel extends Channel {
     {
         IOException ex = null;
 
-        try { sock.close(); } catch (IOException e) { ex = e; }
+        // Invoke super.close() first since it might write an eof char
         try { super.close(); } catch (IOException e) { ex = e; }
+        try { sock.close(); } catch (IOException e) { ex = e; }
 
         if (ex != null) {
             errorMsg = ex.getMessage();

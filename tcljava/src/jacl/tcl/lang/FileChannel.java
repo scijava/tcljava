@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FileChannel.java,v 1.15 2001/12/25 21:20:19 mdejong Exp $
+ * RCS: @(#) $Id: FileChannel.java,v 1.16 2001/12/25 22:22:19 mdejong Exp $
  *
  */
 
@@ -176,10 +176,10 @@ class FileChannel extends Channel {
     void write(Interp interp, String s) 
             throws IOException, TclException {
 
-	if (file == null) {
-	    throw new TclRuntimeError(
-                    "FileChannel.write(): null file object");
-	}
+        if (file == null) {
+            throw new TclRuntimeError(
+                "FileChannel.write(): null file object");
+        }
 
         checkWrite(interp);
         file.writeBytes(s);
@@ -192,26 +192,28 @@ class FileChannel extends Channel {
      */
 
     void close() throws IOException {
-	if (file == null) {
-	    throw new TclRuntimeError(
-                    "FileChannel.close(): null file object");
-	}
-        file.close();
+        if (file == null) {
+            throw new TclRuntimeError(
+                "FileChannel.close(): null file object");
+        }
+
+        // Invoke super.close() first since it might write an eof char
         super.close();
+        file.close();
     }
 
 
     /**
-     * Flush the a file.  The file MUST be open or a TclRuntimeError
-     * is thrown.
-     * Note: Since we only have synchronous file IO right now, this 
-     * is a no-op.
+     * Flush the Channel
+     *
+     *  The file MUST be open or a TclRuntimeError. Note that since
+     *  we only have synchronous file IO right now, this is a no-op.
      */
 
     void flush(Interp interp) throws IOException, TclException {
-	if (file == null) {
-	    throw new TclRuntimeError("FileChannel.flush(): null file object");
-	}
+        if (file == null) {
+            throw new TclRuntimeError("FileChannel.flush(): null file object");
+        }
 
         checkWrite(interp);
     }
