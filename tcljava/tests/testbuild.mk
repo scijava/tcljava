@@ -1,11 +1,13 @@
-# Primitive tests of the build under Unix 
+# Primitive tests of the tarfiles under Unix.
+# This file need not be shipped with Jacl or Tcl Blend, it should
+# only be in the tcljava tar file that includes both Jacl and Tcl Blend.
 
-# RCS: @(#) $Id: testbuild.mk,v 1.3 1998/11/05 19:48:33 hylands Exp $
+# RCS: @(#) $Id: testbuild.mk,v 1.4 1998/11/05 22:56:05 hylands Exp $
 
 # To run these tests, do
 # cd ../unix 
-# make dists
 # configure --with-tcl=/users/cxh/pt/obj.sol2.5/tcltk/tcl8.0.3/unix/ `/users/cxh/pt/src/tcltk/java_studio`
+# make dists
 # make -f ../tests/testbuild.mk buildtest
 
 
@@ -55,7 +57,7 @@ testbuild_clean: clean_jaclSrcBuild clean_blendSrcBuild
 #
 # A smoke test is a test where we plug it in and see if it explodes or not.
 # To smoke test Jacl and Tcl Blend, we start up and run a few commands
-# and check the results
+# and check the results.
 
 # Command to run to start up Jacl or Blend and see if it runs at all
 SMOKETEST = 	echo "puts \"java package: [package require java], jdkVersion: [set java::jdkVersion], patchLevel: [set java::patchLevel] \"; exit" 
@@ -70,13 +72,13 @@ OK_SMOKETEST_RESULTS_FILE =	$(DISTDIR)/ok_smoketest_results
 JACL_GOOD_SMOKETEST_RESULTS =	"% java package: 1.1, jdkVersion: 1.1.6, patchLevel: 1.1a1 "
 
 # Correct output for Tcl Blend
-BLEND_GOOD_SMOKETEST_RESULTS =	"% java package: 1.1, jdkVersion: 1.1.6, patchLevel: 1.1a1 "
+BLEND_GOOD_SMOKETEST_RESULTS =	"java package: 1.1, jdkVersion: 1.1.6, patchLevel: 1.1a1 "
 
 
 ######################################################################
 # Untar the Jacl source and build it
 JACLSRCTEST_DIR = $(DISTDIR)/jaclsrctest
-JACLSRCTEST_JACLSH = $(JACLSRCTEST_DIR)/jacltest/bin/jaclsh
+JACLSRCTEST_JACLSH = $(JACLSRCTEST_DIR)/jacltest.exec/bin/jaclsh
 jaclSrcBuild: $(JACLSRCTEST_JACLSH)
 $(JACLSRCTEST_JACLSH): $(JACLSRCTEST_DIR)/$(JACL_DISTNAME)
 	@echo "#"
@@ -90,7 +92,7 @@ $(JACLSRCTEST_JACLSH): $(JACLSRCTEST_DIR)/$(JACL_DISTNAME)
 		--prefix=$(JACLSRCTEST_DIR)/jacltest \
 		--exec-prefix=$(JACLSRCTEST_DIR)/jacltest.exec \
 		--with-studio=$(STUDIO_LIB_DIR); \
-		$(MAKE) install
+		$(MAKE) all install
 
 # Untar the Jacl Source file
 $(JACLSRCTEST_DIR)/$(JACL_DISTNAME): $(DISTDIR)/$(JACL_SRC_DISTNAME).tar.gz
@@ -147,7 +149,7 @@ $(BLENDSRCTEST_JTCLSH): $(BLENDSRCTEST_DIR)/$(BLEND_DISTNAME)
 		--exec-prefix=$(BLENDSRCTEST_DIR)/blendtest.exec \
 		--with-studio=$(STUDIO_LIB_DIR) \
 		--with-tcl=$(WITH_TCL); \
-		$(MAKE) install
+		$(MAKE) all install
 
 # Untar the Blend Source file
 $(BLENDSRCTEST_DIR)/$(BLEND_DISTNAME): $(DISTDIR)/$(BLEND_SRC_DISTNAME).tar.gz
