@@ -335,7 +335,7 @@ test_tclblend.exec: test_tclblend.check
 	set CLASSPATH=$(TEST_CLASSPATH)
 	set PATH=$(BUILD_DIR);$(JAVA_RUNTIME_LIBS);$(PATH)
 	$(TCLSH) <<
-		lappend auto_path [pwd]
+		set auto_path [concat [pwd] [set auto_path]]\; \
 		cd {$(TOP_DIR)\tests}
 		puts "pwd is [pwd]"
 		puts "CLASSPATH is [set env(CLASSPATH)]"
@@ -355,7 +355,7 @@ test_jacl.exec: test_jacl.check
 	set CLASSPATH=$(TEST_CLASSPATH)
 	$(JAVA) $(JAVA_FLAGS) \
 		-DBUILD_DIR=$(BUILD_DIR) -DJAVA=$(JAVA) tcl.lang.Shell <<
-		lappend auto_path [pwd]
+		set auto_path [concat [pwd] [set auto_path]]\; \
 		cd {$(TOP_DIR)\tests}
 		puts "pwd is [pwd]"
 		puts "CLASSPATH is [set env(CLASSPATH)]"

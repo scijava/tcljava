@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.20 1999/05/17 02:24:20 dejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.21 1999/05/24 11:39:25 mo Exp $
 
 # The directory containing the Tcl sources and headers appropriate
 # for this version of Tk ("srcdir" will be replaced or has already
@@ -710,7 +710,7 @@ test_tcljava.build: $(TCLJAVA).check
 
 test_jacl.exec: test_jacl.check
 	@(  echo \
-	  lappend auto_path [pwd]\; \
+	  set auto_path [concat [pwd] [set auto_path]]\; \
 	  cd $(TOP_DIR)/tests\; \
 	  puts \"pwd is [pwd]\"\; \
 	  puts \"CLASSPATH is [set env\(CLASSPATH\)]\"\; \
@@ -727,7 +727,7 @@ test_jacl.exec: test_jacl.check
 
 test_tclblend.exec: test_tclblend.check
 	@(  echo \
-	  lappend auto_path [pwd]\; \
+	  set auto_path [concat [pwd] [set auto_path]]\; \
 	  cd $(TOP_DIR)/tests\; \
 	  puts \"pwd is [pwd]\"\; \
 	  puts \"CLASSPATH is [set env\(CLASSPATH\)]\"\; \
@@ -1323,8 +1323,9 @@ custom.pure: .purify tclblend.check custom.check
 	echo "suppress umr TclCleanupByteCode; FreeByteCodeInternalRep" >> $@
 
 custom.pure.test.exec: .purify
-	( echo lappend auto_path [pwd]\; cd $(TOP_DIR)/tests\; \
-	  source all\; exit; ) | \
+	( echo set auto_path [concat [pwd] [set auto_path]]\;
+	 cd $(TOP_DIR)/tests\; \
+	 source all\; exit; ) | \
 	LD_LIBRARY_PATH=$(BUILD_DIR):$(TCL_BIN_DIR):$(JAVA_ARCH_GREEN_RUNTIME_LIBS):$(LD_LIBRARY_PATH) \
 	CLASSPATH=$(TEST_CLASSPATH) \
 	BUILD_DIR=$(BUILD_DIR) \
