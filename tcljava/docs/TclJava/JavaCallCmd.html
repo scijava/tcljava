@@ -39,6 +39,34 @@ describes the result and possible error conditions of the
 
 </DL>
 
+<DL>
+
+<H3>
+Example:
+</H3>
+
+<DD>
+
+A Java method can be invoked directly from Tcl code using the
+<B>java::call</B> command. In this example, the static method
+<B>toBinaryString(int)</B> in the class <b>java.lang.Integer</b>
+is invoked from Tcl.
+
+<code>
+<pre>
+# Call the method java.lang.Integer.toBinaryString(int)
+set string [java::call Integer toBinaryString 5]
+
+# This will print "result is 101", the binary representation of 5
+puts "result is $string"
+
+</pre>
+</code>
+
+<P>
+
+</DL>
+
 <PRE>
 <A HREF="../license.html">Copyright</A> &#169; 1997-1998 Sun Microsystems, Inc.
 </PRE>
@@ -46,3 +74,4 @@ describes the result and possible error conditions of the
 
 </BODY>
 </HTML>
+

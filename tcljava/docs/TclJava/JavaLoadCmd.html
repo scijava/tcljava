@@ -26,8 +26,8 @@ The <B>java::load</B> command loads extensions into the Java VM.  An
 extension is a Java class that specifies a set of class files to load
 into the VM, as well as specifying how the Tcl interpreter should
 interact with these classes.  The primary use for this function is to
-load additional functionality (i.e. new commands) into the Tcl
-interpreter, but it may also be used to load classes into the VM that
+load new Tcl commands into the interpreter, but it may also be
+used to load classes into the VM that
 can be used by the Reflection API.  
 
 <P>
@@ -55,13 +55,13 @@ EXAMPLE:
 
 <P>
 
-Load an extension stored in /proj/TclJava/Foo.class;
+Load an extension stored in /home/user/Foo.class;
 
 <P>
 
 <code>
 <pre>
-java::load -classpath /home/user/TclJava Foo
+java::load -classpath /home/user Foo
 </pre>
 </code>
 
