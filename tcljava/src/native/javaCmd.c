@@ -10,7 +10,7 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  *
- * RCS: @(#) $Id: javaCmd.c,v 1.14 2002/08/12 07:12:10 mdejong Exp $
+ * RCS: @(#) $Id: javaCmd.c,v 1.15 2002/12/07 08:51:03 mdejong Exp $
  */
 
 /*
@@ -910,6 +910,7 @@ FreeJavaCache(ClientData clientData)
     (*env)->DeleteGlobalRef(env, jcache->TclException);
     (*env)->DeleteGlobalRef(env, jcache->CommandWithDispose);
     (*env)->DeleteGlobalRef(env, jcache->CObject);
+    (*env)->DeleteGlobalRef(env, jcache->TclList);
     (*env)->DeleteGlobalRef(env, jcache->Extension);
     (*env)->DeleteGlobalRef(env, jcache->VarTrace);
     (*env)->DeleteGlobalRef(env, jcache->Void);
@@ -1012,6 +1013,7 @@ JavaSetupJava(
         AddToClassCache(env, interp, &jcache->TclException, "tcl/lang/TclException") ||
         AddToClassCache(env, interp, &jcache->CommandWithDispose, "tcl/lang/CommandWithDispose") ||
         AddToClassCache(env, interp, &jcache->CObject, "tcl/lang/CObject") ||
+        AddToClassCache(env, interp, &jcache->TclList, "tcl/lang/TclList") ||
         AddToClassCache(env, interp, &jcache->Extension, "tcl/lang/Extension") ||
         AddToClassCache(env, interp, &jcache->VarTrace, "tcl/lang/VarTrace") ||
         AddToClassCache(env, interp, &jcache->Void, "java/lang/Void") ||
@@ -1055,6 +1057,8 @@ JavaSetupJava(
                                       &jcache->CommandWithDispose, "()V", 0) ||
 	AddToMethodCache(env, interp, &jcache->newCObjectInstance, "newInstance",
                                       &jcache->CObject, "(J)Ltcl/lang/TclObject;", 1) ||
+	AddToMethodCache(env, interp, &jcache->newTclListInstance, "newInstance",
+                                      &jcache->TclList, "(J)Ltcl/lang/TclObject;", 1) ||
 	AddToMethodCache(env, interp, &jcache->preserve, "preserve",
                                       &jcache->TclObject, "()V", 0) ||
 	AddToMethodCache(env, interp, &jcache->release, "release",

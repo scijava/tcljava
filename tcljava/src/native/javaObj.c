@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaObj.c,v 1.6 2002/08/12 07:12:10 mdejong Exp $
+ * RCS: @(#) $Id: javaObj.c,v 1.7 2002/12/07 08:51:03 mdejong Exp $
  */
 
 #include "java.h"
@@ -42,6 +42,7 @@ Tcl_ObjType tclObjectType = {
 
 static Tcl_ObjType oldCmdType;
 static Tcl_ObjType *cmdTypePtr = NULL;
+static Tcl_ObjType *Java_tclListTypePtr;
 
 /*
  * Mutex to serialize access to cmdTypePtr.
@@ -90,6 +91,24 @@ JavaObjInit()
         cmdTypePtr->freeIntRepProc = FreeJavaCmdInternalRep;
         cmdTypePtr->dupIntRepProc = DupJavaCmdInternalRep;
         cmdTypePtr->setFromAnyProc = SetJavaCmdFromAny;
+
+        /*
+         * Grab a pointer to the Tcl list type.
+         * We can't simply use &tclListType because
+         * pulling in a ref to a global symbol
+         * breaks loading of shared libs.
+         */
+
+	{
+            Tcl_Obj* elemPtr = Tcl_NewStringObj("",-1);
+            Tcl_Obj* listPtr = Tcl_NewListObj(1, &elemPtr);
+
+            if (listPtr->typePtr == NULL)
+                panic("list typePtr is null");
+
+            Java_tclListTypePtr = listPtr->typePtr;
+            Tcl_DecrRefCount(listPtr);
+        }
     }
 
     Tcl_MutexUnlock(&cmdTypePtrLock);
@@ -562,8 +581,8 @@ Java_tcl_lang_CObject_newCObject(
  * JavaGetTclObject --
  *
  *	Retrieve the Java TclObject that shadows the given Tcl_Obj.
- *	Creates a new TclObject of type CObject that refers to the
- *	given Tcl_Obj, unless the Tcl_Obj is of type TclObject already.
+ *	Creates a new TclObject of type CObject or TclObject that refers
+ *	to thegiven Tcl_Obj, unless the Tcl_Obj is a TclObject already.
  *
  * Results:
  *	Returns the TclObject associated with the Tcl_Obj.
@@ -605,13 +624,6 @@ JavaGetTclObject(
 	}
     } else {
 	/*
-	 * This object is of an unknown type, so we create a new TclObject
-	 * with an internal rep of CObject that points to the Tcl_Obj *.
-	 *
-	 * Calls : TclObject tobj = CObject.newInstance(long objPtr);
-	 */
-
-	/*
 	 *
 	 * We should be able to use the following statement below:
 	 *
@@ -625,8 +637,27 @@ JavaGetTclObject(
 
 	lvalue = 0;
 	*(Tcl_Obj **)&lvalue = objPtr;
-	object = (*env)->CallStaticObjectMethod(env, jcache->CObject,
-		jcache->newCObjectInstance, lvalue);
+
+	/*
+	 * This object is of an unknown type, so create a new TclObject.
+	 * If the Tcl object is a list, then create a TclList.
+	 *
+	 *    TclObject tobj = TclList.newInstance(long objPtr);
+	 *
+	 * Otherwise we don't know the type so create a CObject.
+	 *
+	 *    TclObject tobj = CObject.newInstance(long objPtr);
+	 *
+	 */
+
+	if (objPtr->typePtr == Java_tclListTypePtr) {
+	    object = (*env)->CallStaticObjectMethod(env, jcache->TclList,
+	        jcache->newTclListInstance, lvalue);
+	} else {
+	    object = (*env)->CallStaticObjectMethod(env, jcache->CObject,
+	        jcache->newCObjectInstance, lvalue);
+	}
+
 	if (isLocalPtr) {
 	    *isLocalPtr = 1;
 	}

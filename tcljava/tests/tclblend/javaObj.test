@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: javaObj.test,v 1.2 2000/12/22 09:47:15 mdejong Exp $
+# RCS: @(#) $Id: javaObj.test,v 1.3 2002/12/07 08:51:03 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -157,6 +157,16 @@ test javaObj-9.2 {SetJavaCmdFromAny} {
     list [foo::test $o] [$o imethod]
 } {42 6}
 
+
+test javaObj-10.1 {JavaGetTclObject for a CObject} {
+    set obj "a string"
+    jtest type $obj
+} tcl.lang.CObject
+
+test javaObj-10.2 {JavaGetTclObject for a CObject} {
+    set obj [list 1 2 3]
+    jtest type $obj
+} tcl.lang.TclList
 
 # cleanup
 catch {interp delete [interp slaves]}

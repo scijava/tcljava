@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: TclList.java,v 1.1 1998/10/14 21:09:10 cvsadmin Exp $
+ * RCS: @(#) $Id: TclList.java,v 1.2 2002/12/07 08:51:03 mdejong Exp $
  */
 
 package tcl.lang;
@@ -86,6 +86,31 @@ public static TclObject
 newInstance()
 {
     return new TclObject(new TclList());
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * newInstance --
+ *
+ *	Construct a new TclObject from a Tcl_Obj*.  This routine is only
+ *	called from C. It is also the only TclList method that can be
+ *	called from C.
+ *
+ * Results:
+ *	Returns a newly allocated TclObject.
+ *
+ * Side effects:
+ *	Constructs a new TclList.
+ *
+ *----------------------------------------------------------------------
+ */
+
+private static TclObject
+newInstance(
+    long objPtr)		// Tcl_Obj to wrap.
+{
+    return new TclObject(new TclList(objPtr));
 }
 
 /*

@@ -1,3 +1,17 @@
+2002-12-07  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/native/java.h:
+	* src/native/javaCmd.c (FreeJavaCache, JavaSetupJava):
+	* src/native/javaObj.c (JavaObjInit, JavaGetTclObject):
+	* src/tclblend/tcl/lang/TclList.java (newInstance):
+	* tests/tclblend/javaObj.test:
+	Add newInstance method to TclList and call it when
+	we detect that a native object is a list. The
+	old approach was to wrap the object as a CObject
+	and then convert it to a TclList the first time
+	a list operation was done from Java. The new
+	approach is more efficient.
+
 2002-08-12  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* Makefile.in: Fix 'make test' rule by setting
