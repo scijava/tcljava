@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: JavaFieldCmd.test,v 1.8 2000/12/22 09:47:15 mdejong Exp $
+# RCS: @(#) $Id: JavaFieldCmd.test,v 1.9 2002/12/23 20:38:11 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -71,12 +71,12 @@ test javaFieldCmd-2.2 {get static field} {
 } 3
 
 test javaFieldCmd-2.3 {get static field} {
-    list [catch {java::field tests.JavaTest JT4} msg] $msg
+    list [catch {java::field tests.JavaTest JT2} msg] $msg
 } {1 {can't access an instance field without an object}}
 
 test javaFieldCmd-2.4 {get private static field} {
     list [catch {java::field tests.JavaTest JT3} msg] $msg
-} {1 {can't access field "JT3": java.lang.IllegalAccessException: tests/JavaTest}}
+} {1 {no accessible field "JT3" found in class tests.JavaTest}}
 
 test javaFieldCmd-2.6 {instance fields} {
     list [catch {java::field tests.JavaTest JT2} msg] $msg
@@ -85,7 +85,7 @@ test javaFieldCmd-2.6 {instance fields} {
 set o [java::new tests.JavaTest]
 test javaFieldCmd-2.7 {instance fields} {
     list [catch {java::field tests.JavaTest $o} msg] $msg
-} "1 {field \"$o\" doesn't exist}"
+} "1 {no accessible field \"$o\" found in class tests.JavaTest}"
 
 test javaFieldCmd-2.8 {instance fields} {
     set o [java::new tests.JavaTest]
@@ -236,11 +236,11 @@ test javaFieldCmd-5.5 {error message} {
 
 test javaFieldCmd-5.6 {error message} {
     list [catch {java::field tests.JavaTest gorp} msg] $msg
-} {1 {field "gorp" doesn't exist}}
+} {1 {no accessible field "gorp" found in class tests.JavaTest}}
 
 test javaFieldCmd-5.7 {error message} {
     list [catch {java::field tests.JavaTest gorp 123} msg] $msg
-} {1 {field "gorp" doesn't exist}}
+} {1 {no accessible field "gorp" found in class tests.JavaTest}}
 
 test javaFieldCmd-6.1 {null value} {
     java::field tests.JavaTest sstr [java::null]

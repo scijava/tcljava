@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: FieldSig.java,v 1.4 2002/12/07 13:14:36 mdejong Exp $
+ * RCS: @(#) $Id: FieldSig.java,v 1.5 2002/12/23 20:38:11 mdejong Exp $
  *
  */
 
@@ -167,10 +167,10 @@ throws
     }
 
     try {
-	field = sigCls.getDeclaredField(fieldName);
+	field = getAccessibleField(sigCls, fieldName);
     } catch (NoSuchFieldException e) {
-	throw new TclException(interp, "field \"" + signature +
-		"\" doesn't exist");
+	throw new TclException(interp, "no accessible field \"" + signature +
+		"\" found in class " + sigCls.getName());
     }
 
     FieldSig sig = new FieldSig(targetCls, sigCls, PkgInvoker.getPkgInvoker(
@@ -179,6 +179,62 @@ throws
 
     return sig;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * getAccessibleFields --
+ *
+ *	Returns all fields that can be read/written for a given class.
+ *
+ * Results:
+ *	An array of all the accessible fields in the class.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
 
+static Field[]
+getAccessibleFields(
+    Class cls)				// The class to query.
+{
+    if (PkgInvoker.usesDefaultInvoker(cls)) {
+	return cls.getFields();
+    } else {
+	return cls.getDeclaredFields();
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * getAccessibleField --
+ *
+ *	Returns an accessible field given by the fieldName and
+ *	the given class.
+ *
+ * Results:
+ *	An accessible field in the class.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Field
+getAccessibleField(
+    Class cls,				// The class to query.
+    String fieldName)			// The field name.
+    throws NoSuchFieldException
+{
+    if (PkgInvoker.usesDefaultInvoker(cls)) {
+	return cls.getField(fieldName);
+    } else {
+	return cls.getDeclaredField(fieldName);
+    }
+}
 } // end FieldSig
 

@@ -1,5 +1,47 @@
 2002-12-23  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* new_features.txt: Add note about new accessible
+	field, method, and constructor implementation.
+	* src/tcljava/tcl/lang/FieldSig.java (get,
+	getAccessibleFields, getAccessibleField):
+	Implement new access approach for fields. Use
+	a new error message to indicate that a field
+	can't be access, not that is does not exist.
+	* src/tcljava/tcl/lang/FuncSig.java (get,
+	lookupMethod, matchSignature,
+	getAccessibleConstructors, getAccessibleConstructor,
+	getAllDeclaredMethods, getAccessibleMethods):
+	Implement new access approach for methods
+	and constructors. Use a new error message to
+	indicate that a method or constructor can't
+	be accessed, not the it does not exist.
+	* src/tcljava/tcl/lang/JavaInfoCmd.java
+	(getFieldInfoList): Invoke FieldSig.getAccessibleFields()
+	instead of calling Class.getFields() directly so that
+	package access fields are returned when accessible.
+	* src/tcljava/tcl/lang/reflect/PkgInvoker.java
+	(usesDefaultInvoker): Add new helper method that
+	will return true when a given class does not have
+	a custom package invoker.
+	* src/tests/tcljava/tests/invoke/PublicTester.java:
+	Update comments.
+	* tests/tcljava/AutomaticSignature.test: Update err msg.
+	* tests/tcljava/FieldSig.test: Update err msg.
+	* tests/tcljava/FuncSig.test: Update err msg and tests
+	that invoked getAllDeclaredMethods.
+	* tests/tcljava/JavaFieldCmd.test: Update err msg.
+	* tests/tcljava/JavaInvoke.test: Update err msg.
+	Use java::field instead of Object.forName() to get
+	a java.lang.Class object.
+	* tests/tcljava/JavaThrowCmd.test: Update err msg.
+	* tests/tcljava/PkgInvoker.test: Update err msg.
+	Use java::field instead of Object.forName() to get
+	a java.lang.Class object. Add java::info fields
+	test for a package accessible field.
+	* tests/tcljava/ReflectObject.test: Update err msg.
+
+2002-12-23  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* tests/tcljava/JavaInfoCmd.test (Button_properties_check):
 	Add a testing proc that checks java.awt.Button props
 	vs a known JDK 1.1 list of props. This will avoid

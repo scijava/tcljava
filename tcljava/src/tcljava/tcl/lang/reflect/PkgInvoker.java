@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: PkgInvoker.java,v 1.2 1999/05/10 02:39:02 dejong Exp $
+ * RCS: @(#) $Id: PkgInvoker.java,v 1.3 2002/12/23 20:38:11 mdejong Exp $
  *
  */
 
@@ -247,5 +247,13 @@ getPkgInvoker(
     return invoker;
 }
 
+// Return true if the passed in class uses the default invoker,
+// meaning there is no custom invoker for the package.
+
+public static boolean
+usesDefaultInvoker(Class cls) {
+    PkgInvoker invoker = getPkgInvoker(cls);
+    return (invoker == defaultInvoker);
+}
 } // end PkgInvoker
 

@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: PkgInvoker.test,v 1.6 2000/12/22 09:47:15 mdejong Exp $
+# RCS: @(#) $Id: PkgInvoker.test,v 1.7 2002/12/23 20:38:11 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -16,21 +16,17 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 
 setupJavaPackage
 
-proc forName {clsName} {
-    return [java::call Class forName $clsName]
-}
-
 set PkgInvoker tcl.lang.reflect.PkgInvoker
 
 test PkgInvoker-1.1 {getPkgInvoker} {
-    set x1 [java::call $PkgInvoker getPkgInvoker [forName pkg1.MyClass]]
-    set x2 [java::call $PkgInvoker getPkgInvoker [forName pkg1.MyClass]]
+    set x1 [java::call $PkgInvoker getPkgInvoker [java::field pkg1.MyClass class]]
+    set x2 [java::call $PkgInvoker getPkgInvoker [java::field pkg1.MyClass class]]
     string compare $x1 $x2
 } 0
 
 test PkgInvoker-1.2 {getPkgInvoker} {
-    set x1 [java::call $PkgInvoker getPkgInvoker [forName pkg2.MyClass]]
-    set x2 [java::call $PkgInvoker getPkgInvoker [forName java.lang.Object]]
+    set x1 [java::call $PkgInvoker getPkgInvoker [java::field pkg2.MyClass class]]
+    set x2 [java::call $PkgInvoker getPkgInvoker [java::field java.lang.Object class]]
     string compare $x1 $x2
 } 0
 
@@ -44,7 +40,7 @@ test PkgInvoker-1.4 {getPkgInvoker} {
 
 test PkgInvoker-1.5 {getPkgInvoker} {
     list [catch {[java::new pkg2.MyClass] someMethod} msg] $msg
-} {1 {java.lang.IllegalAccessException: pkg2/MyClass}}
+} {1 {no accessible method "someMethod" in class pkg2.MyClass}}
 
 test PkgInvoker-1.6 {getPkgInvoker} {
     list [catch {java::new pkg2.ProtectedClass} msg] $msg
@@ -130,6 +126,13 @@ foreach CLS {pkg1.MyClass pkg1.ProtectedClass} {
 	java::prop $x foo 4455
 	java::prop $x foo
     } 4455
+
+    test PkgInvoker-$CLS-2.20 {query fields} {
+	set x [java::new $CLS]
+        set fields [java::info fields $x]
+        set ind [lsearch $fields foo]
+        expr {$ind != -1}
+    } 1
 }
 
 # cleanup

@@ -281,4 +281,14 @@ Java garbage collector and should not suffer from
 the memory leaks or shutdown issues that plagued
 the previous implementation.
 
+(NEW REFLECTED METHOD/CONSTRUCTOR/FIELD ACCESS)
+
+A new approach to reflected method, constructor, and field
+access has been implemented. In the previous implementation,
+package scoped entities were considered when accessing a field,
+when attempting to resolve a method signature, or when choosing
+a constructor. In the new implementation, these package scoped
+entities are only considered when a custom package invoker
+is defined for the package.
+
 </PRE></BODY></HTML>

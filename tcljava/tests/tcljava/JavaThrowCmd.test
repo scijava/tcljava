@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: JavaThrowCmd.test,v 1.2 2000/12/22 09:47:15 mdejong Exp $
+# RCS: @(#) $Id: JavaThrowCmd.test,v 1.3 2002/12/23 20:38:11 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -26,7 +26,7 @@ test JavaThrowCmd-1.2 {JavaThrow.cmdProc} {
 
 test JavaThrowCmd-1.3 {JavaThrow.cmdProc} {
     list [catch {java::throw [java::new {java.lang.Exception} 123 456]} msg]               $msg
-} {1 {can't find constructor with 2 argument(s) for class "java.lang.Exception"}}
+} {1 {can't find accessible constructor with 2 argument(s) for class "java.lang.Exception"}}
 
 test JavaThrowCmd-1.4 {JavaThrow.cmdProc} {
     set k [java::new {java.lang.Throwable} "blah blah blah"]

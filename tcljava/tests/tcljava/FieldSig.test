@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: FieldSig.test,v 1.2 2000/12/22 09:47:15 mdejong Exp $
+# RCS: @(#) $Id: FieldSig.test,v 1.3 2002/12/23 20:38:11 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -68,15 +68,15 @@ test FieldSig-1.8 {get} {
 
 test FieldSig-1.9 {get} {
     list [catch {java::field tests.JavaTest {foobar}} msg] $msg
-} {1 {field "foobar" doesn't exist}}
+} {1 {no accessible field "foobar" found in class tests.JavaTest}}
 
 test FieldSig-1.10 {get} {
     list [catch {java::field tests.JavaTest {foobar tests.JavaTest}} msg] $msg
-} {1 {field "foobar tests.JavaTest" doesn't exist}}
+} {1 {no accessible field "foobar tests.JavaTest" found in class tests.JavaTest}}
 
 test FieldSig-1.11 {get} {
     list [catch {java::field tests.JavaTest {foobar Object}} msg] $msg
-} {1 {field "foobar Object" doesn't exist}}
+} {1 {no accessible field "foobar Object" found in class java.lang.Object}}
 
 test FieldSig-1.12 {get} {
     java::field tests.JavaTest {sint} 10

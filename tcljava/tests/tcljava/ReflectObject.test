@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: ReflectObject.test,v 1.5 2000/12/22 09:47:15 mdejong Exp $
+# RCS: @(#) $Id: ReflectObject.test,v 1.6 2002/12/23 20:38:11 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -40,7 +40,7 @@ test ReflectObject-1.4 {cmdProc} {
 test ReflectObject-1.5 {cmdProc} {
     set o [java::new tests.JavaTest]
     list [catch {[$o - imethod] toString} msg] $msg
-} {1 {no such method "-" in class tests.JavaTest}}
+} {1 {no accessible method "-" in class tests.JavaTest}}
 
 test ReflectObject-1.6 {cmdProc} {
     set o [java::new tests.JavaTest]
@@ -144,7 +144,7 @@ test ReflectObject-3.0 {object type} {
     lappend results [java::info class $bad]
     lappend results [catch {$bad getSecret} err]
     lappend results $err
-} {tests.DownReference X123 java.lang.Object 1 {no such method "getSecret" in class java.lang.Object}}
+} {tests.DownReference X123 java.lang.Object 1 {no accessible method "getSecret" in class java.lang.Object}}
 
 
 test ReflectObject-3.1 {object compare} {

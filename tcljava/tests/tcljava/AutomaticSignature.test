@@ -26,13 +26,13 @@ test AutomaticSignature-1.0 {error conditions} {
 test AutomaticSignature-1.1 {error conditions} {
     set o [java::new Object]
     list [catch {$o {{} java.util.Vector java.util.Hashtable} [java::null] [java::null]} err] $err
-} {1 {no such method "{} java.util.Vector java.util.Hashtable" in class java.lang.Object}}
+} {1 {no accessible method "{} java.util.Vector java.util.Hashtable" in class java.lang.Object}}
 
 
 test AutomaticSignature-1.2 {error conditions} {
     set o [java::new Object]
     list [catch {$o {equals Object Object} [java::null]} err] $err
-} {1 {no such method "equals Object Object" in class java.lang.Object}}
+} {1 {no accessible method "equals Object Object" in class java.lang.Object}}
 
 
 

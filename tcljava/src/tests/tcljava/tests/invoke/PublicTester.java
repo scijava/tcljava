@@ -1,16 +1,16 @@
 /*
- * Bar.java --
+ * PublicTester.java --
  *
  *	This file defines a public class and a package protected class.
- *	These classes are used in the invoke.test to test the
- *	correctness of Inoke.getAccessibleMethods.
+ *	These classes are used in the tcljava/FuncSig.test to test the
+ *	correctness of FuncSig.getAccessibleMethods.
  *
  * Copyright (c) 1997 by Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: PublicTester.java,v 1.1 1999/05/10 04:09:06 dejong Exp $
+ * RCS: @(#) $Id: PublicTester.java,v 1.2 2002/12/23 20:38:11 mdejong Exp $
  */
 
 package tests.invoke;
@@ -68,7 +68,7 @@ String noAccess2() {
 }
 
 /*
- * Can't call this method because the class its declaring class
+ * Can't call this method because the classes declaring class
  * (NonPublicTester) is not public.
  */
 

@@ -5,7 +5,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: JavaInvoke.test,v 1.6 2000/12/22 09:47:15 mdejong Exp $
+# RCS: @(#) $Id: JavaInvoke.test,v 1.7 2002/12/23 20:38:11 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -24,7 +24,7 @@ test invoke-1.1 {newInstance} {
 
 test invoke-1.2 {newInstance} {
     list [catch {java::new tests.JavaTest blah blah blah} msg] $msg
-} {1 {can't find constructor with 3 argument(s) for class "tests.JavaTest"}}
+} {1 {can't find accessible constructor with 3 argument(s) for class "tests.JavaTest"}}
 
 test invoke-1.3 {newInstance} {
     list [catch {java::new {tests.JavaTest boolean} blah} msg] $msg
@@ -57,7 +57,7 @@ test invoke-2.1 {callMethod} {
 test invoke-2.2 {callMethod} {
     set x [java::new Object]
     list [catch {$x foo} msg] $msg
-} {1 {no such method "foo" in class java.lang.Object}}
+} {1 {no accessible method "foo" in class java.lang.Object}}
 
 test invoke-2.3 {callMethod} {
     set x [java::new Object]
@@ -84,7 +84,7 @@ test invoke-3.1 {callStaticMethod} {
 
 test invoke-3.2 {callStaticMethod} {
     list [catch {java::call tests.JavaTest {smethod int}} msg] $msg
-} {1 {no such method "smethod int" in class tests.JavaTest}}
+} {1 {no accessible method "smethod int" in class tests.JavaTest}}
 
 test invoke-3.3 {callStaticMethod} {
     list [catch {java::call tests.JavaTest {imethod}} msg] $msg
@@ -180,7 +180,7 @@ test invoke-5.9 {getsetfield} {
     list [catch {
 	java::field tests.JavaTest JT3
     } msg] $msg
-} {1 {can't access field "JT3": java.lang.IllegalAccessException: tests/JavaTest}}
+} {1 {no accessible field "JT3" found in class tests.JavaTest}}
 
 #
 # getProperty
@@ -526,7 +526,7 @@ foreach type [lsort [array names clsdata]] {
 	set value  [lindex $pair 0]
 	set result [lindex $pair 1]
 
-	set cls [java::call Class forName $type]
+	set cls [java::field $type class]
         test invoke-10.1.$i "convertTclObject - $type, $value " {
 	    list [catch {
 		[java::call -noconvert $INVCLS convertTclObject $interp $cls                       [jtest getobject $value]] toString
@@ -592,7 +592,7 @@ test invoke-10.3 {convertTclObject} {
     # If this test fails, be sure that you do not have a libtclblend.so
     # in your LD_LIBRARY_PATH before the libtclblend.so that
     # is returned by 'info loaded' after calling 'package require java'
-    set cls [java::call Class forName tests.JavaTest]
+    set cls [java::field tests.JavaTest class]
     set value foobar
     list [catch {
 	[java::call -noconvert $INVCLS convertTclObject $interp $cls                       [jtest getobject $value]] toString
@@ -600,7 +600,7 @@ test invoke-10.3 {convertTclObject} {
 } {1 {tcl.lang.TclException: "foobar" is not an object handle of class "tests.JavaTest"}}
 
 test invoke-10.4 {convertTclObject} {
-    set cls [java::call Class forName tests.JavaTest]
+    set cls [java::field tests.JavaTest class]
     set value java0x1000000
     list [catch {
 	[java::call -noconvert $INVCLS convertTclObject $interp $cls                       [jtest getobject $value]] toString
@@ -608,7 +608,7 @@ test invoke-10.4 {convertTclObject} {
 } {1 {tcl.lang.TclException: "java0x1000000" is not an object handle of class "tests.JavaTest"}}
 
 test invoke-10.5 {convertTclObject} {
-    set cls [java::call Class forName tests.JavaTest]
+    set cls [java::field tests.JavaTest class]
     set value [java::null]
     list [catch {
 	java::call -noconvert $INVCLS convertTclObject $interp $cls                       [jtest getobject $value]
@@ -616,7 +616,7 @@ test invoke-10.5 {convertTclObject} {
 } [list 0 [java::null]]
 
 test invoke-10.6 {convertTclObject} {
-    set cls [java::call Class forName tests.JavaTest]
+    set cls [java::field tests.JavaTest class]
     set value [java::null]
     list [catch {
 	java::call -noconvert $INVCLS convertTclObject $interp $cls                       [jtest getobject $value]
@@ -627,7 +627,7 @@ set value [java::new tests.JavaTest]
 #to string compare objects they must be reffed as same type
 set value [java::cast java.lang.Object $value]
 test invoke-10.7 {convertTclObject} {
-    set cls [java::call Class forName tests.JavaTest]
+    set cls [java::field tests.JavaTest class]
     list [catch {
 	java::call -noconvert $INVCLS convertTclObject $interp $cls                       [jtest getobject $value]
     } msg] $msg
@@ -635,7 +635,7 @@ test invoke-10.7 {convertTclObject} {
 
 set value [java::new tests.JavaTest]
 test invoke-10.8 {convertTclObject} {
-    set cls [java::call Class forName java.lang.Integer]
+    set cls [java::field Integer class]
     list [catch {
 	java::call -noconvert $INVCLS convertTclObject $interp $cls                       [jtest getobject $value]
     } msg] $msg
@@ -643,7 +643,7 @@ test invoke-10.8 {convertTclObject} {
 
 set value [java::new {Short short} 123]
 test invoke-10.8 {convertTclObject} {
-    set cls [java::call Class forName java.lang.Integer]
+    set cls [java::field Integer class]
     list [catch {
 	java::call -noconvert $INVCLS convertTclObject $interp $cls                       [jtest getobject $value]
     } msg] $msg

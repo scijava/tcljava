@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: FuncSig.java,v 1.7 2002/12/07 13:14:36 mdejong Exp $
+ * RCS: @(#) $Id: FuncSig.java,v 1.8 2002/12/23 20:38:11 mdejong Exp $
  *
  */
 
@@ -236,13 +236,13 @@ throws
 
 	if (isConstructor) {
 	    try {
-		match = cls.getDeclaredConstructor(paramTypes);
+		match = getAccessibleConstructor(cls, paramTypes);
 	    } catch (NoSuchMethodException e) {
 	      if (sigLength > 1) {
-		throw new TclException(interp, "no such constructor \"" +
+		throw new TclException(interp, "no accessible constructor \"" +
 			    signature + "\"");
 	      } else {
-		throw new TclException(interp, "can't find constructor with " +
+		throw new TclException(interp, "can't find accessible constructor with " +
 			    count + " argument(s) for class \"" + cls.getName() +
 			      "\"");
 	      }
@@ -281,7 +281,7 @@ lookupMethod(
 )
     throws TclException
 {
-  Method[] methods = getAllDeclaredMethods(cls);
+  Method[] methods = getAccessibleMethods(cls);
   boolean foundSameName = false;
 
 
@@ -317,11 +317,11 @@ lookupMethod(
 
   if (paramTypes.length > 0 || !foundSameName) {
     throw new TclException(interp,
-      "no such method \"" + signature + "\" in class " +
+      "no accessible method \"" + signature + "\" in class " +
 			   cls.getName());
   } else {
     throw new TclException(interp,
-      "can't find method \"" + signature + "\" with " +
+      "can't find accessible method \"" + signature + "\" with " +
         paramTypes.length + " argument(s) for class \"" + cls.getName()
 			   + "\"");
   }
@@ -346,7 +346,7 @@ static Object
 matchSignature(
     Interp interp,           // the tcl interpreter
     Class cls,               // the Java objects class
-    TclObject  signature,    // used for error reporting
+    TclObject signature,     // used for error reporting
     String methodName,       // name of method, can be null
     boolean isConstructor,   // duh
     TclObject[] argv,        // arguments to Method or Constructor
@@ -363,9 +363,9 @@ matchSignature(
   final boolean debug = false;  
 
   if (isConstructor) {
-    funcs = cls.getDeclaredConstructors();
+    funcs = getAccessibleConstructors(cls);
   } else {
-    funcs = getAllDeclaredMethods(cls);
+    funcs = getAccessibleMethods(cls);
   }
 
   for (i = 0; i < funcs.length; i++) {
@@ -935,9 +935,9 @@ matchSignature(
           // Get all the signatures that match this name and number or args
 
           if (isConstructor) {
-            funcs = cls.getDeclaredConstructors();
+            funcs = getAccessibleConstructors(cls);
           } else {
-            funcs = getAllDeclaredMethods(cls);
+            funcs = getAccessibleMethods(cls);
           }
 
           for (i = 0; i < funcs.length; i++) {
@@ -1021,18 +1021,17 @@ matchSignature(
   // if we got to here then we could not find a matching method so raise error
 
   if (isConstructor) {
-    throw new TclException(interp, "can't find constructor with " +
+    throw new TclException(interp, "can't find accessible constructor with " +
 			       argv_count + " argument(s) for class \"" +
 			       cls.getName() + "\"");
   } else {
-    
     if (!foundSameName) {
       throw new TclException(interp,
-			     "no such method \"" + signature + "\" in class " +
+			     "no accessible method \"" + signature + "\" in class " +
 			     cls.getName());
     } else {
       throw new TclException(interp,
-			     "can't find method \"" + signature + "\" with " +
+			     "can't find accessible method \"" + signature + "\" with " +
 			     argv_count + " argument(s) for class \"" +
 			     cls.getName() + "\"");
     }
@@ -1060,22 +1059,79 @@ private static void addInterfaces(Class cls, Vector v)
 
 
 
-
 
 /*
  *----------------------------------------------------------------------
  *
- * getAllDeclaredMethods --
+ * getAccessibleConstructors --
  *
- *	Returns all the methods declared by the class or superclasses
- *	of the class.
+ *	Returns all constructors that can be invoked for a given class.
  *
  * Results:
- *	An array of all the methods declared by the class and the
- *	superclasses of this class. If overloaded methods, only the
+ *	An array of all the accessible constructors in the class.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Constructor[]
+getAccessibleConstructors(
+    Class cls)				// The class to query.
+{
+    if (PkgInvoker.usesDefaultInvoker(cls)) {
+	return cls.getConstructors();
+    } else {
+	return cls.getDeclaredConstructors();
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * getAccessibleConstructor --
+ *
+ *	Returns an accessable constructors for the given class
+ *	that accepts the given arguments.
+ *
+ * Results:
+ *	A constructor object.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Constructor
+getAccessibleConstructor(
+    Class cls,				// The class to query.
+    Class[] parameterTypes)		// The constructor arguments types
+    throws NoSuchMethodException
+{
+    if (PkgInvoker.usesDefaultInvoker(cls)) {
+	return cls.getConstructor(parameterTypes);
+    } else {
+	return cls.getDeclaredConstructor(parameterTypes);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * getAccessibleMethods --
+ *
+ *	Returns all methods that can be invoked for a given class.
+ *
+ * Results:
+ *	An array of all the accessible methods in the class and the
+ *	superclasses of the class. If a method is overloaded, only the
  *	"most public" instance of that method is included in the
- *	array. See comments above the "func" member variable for more
- *	details.
+ *	array. A method is considered accessible if it has public
+ *	access or if it has package access and the package has
+ *	a custom PkgInvoker. See comments above the "func" member
+ *	variable for more details.
  *
  * Side effects:
  *	The array of methods are saved in a hashtable for faster access
@@ -1085,7 +1141,7 @@ private static void addInterfaces(Class cls, Vector v)
  */
 
 static Method[]
-getAllDeclaredMethods(
+getAccessibleMethods(
     Class cls)				// The class to query.
 {
     Method[] methods = (Method[]) allDeclMethTable.get(cls);
@@ -1096,7 +1152,14 @@ getAllDeclaredMethods(
     Vector vec = new Vector();
 
     for (Class c = cls; c != null; ) {
-	mergeMethods(c, c.getDeclaredMethods(), vec);
+	// Query public methods, unless the package contains a package
+	// invoker to provide access to package scoped methods.
+	if (PkgInvoker.usesDefaultInvoker(c)) {
+	    methods = c.getMethods();
+	} else {
+	    methods = c.getDeclaredMethods();
+	}
+	mergeMethods(c, methods, vec);
 
 	Class interfaces[] = c.getInterfaces();
 	for (int i = 0; i < interfaces.length; i++) {
