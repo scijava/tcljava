@@ -13,40 +13,34 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: TclToken.java,v 1.1 1998/10/14 21:09:20 cvsadmin Exp $
+ * RCS: @(#) $Id: TclToken.java,v 1.2 1999/05/09 01:34:50 dejong Exp $
  */
 
 package tcl.lang;
 
 class TclToken {
-/*
- * Contains an array the references the script from where the
- * token originates from and an index to the first character
- * of the token inside the script.
- */
+
+// Contains an array the references the script from where the
+// token originates from and an index to the first character
+// of the token inside the script.
+
 
 char[] script_array;
 int    script_index;
 
-/* 
- * Number of bytes in token. 
- */
+// Number of bytes in token. 
 
 int size;		
 
-/* 
- * Type of token, such as TCL_TOKEN_WORD;  See Parse.java 
- * for valid types. 
- */
+// Type of token, such as TCL_TOKEN_WORD;  See Parse.java 
+// for valid types. 
 
 int type;		
 
-/* 
- * If this token is composed of other tokens, this field 
- * tells how many of them there are (including components
- * of components, etc.).  The component tokens immediately
- * follow this one. 
- */
+// If this token is composed of other tokens, this field 
+// tells how many of them there are (including components
+// of components, etc.).  The component tokens immediately
+// follow this one.
 
 int numComponents;
 
@@ -94,6 +88,24 @@ TclToken() {
 
 String
 getTokenString() {
+    final boolean debug = false;
+    
+    if (debug && ((script_index + size) > script_array.length)) {
+    System.out.println();
+    System.out.println("Entered TclToken.getTokenString()");
+    System.out.println("hashCode() is " +
+		       hashCode());
+    System.out.println("script_array.length is " + script_array.length);
+    System.out.println("script_index is " + script_index);
+    System.out.println("size is " + size);
+
+    System.out.print("the string is \"");
+    for (int k = 0; k < script_array.length ; k++) {
+	System.out.print(script_array[k]);
+    }
+    System.out.println("\"");
+    }
+
     return(new String(script_array, script_index, size));
 }
 
