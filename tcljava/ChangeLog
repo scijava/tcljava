@@ -1,3 +1,30 @@
+2002-12-30  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/tcljava/tcl/lang/JavaTryCmd.java (cmdProc, eval):
+	Rewrite java::try command to take advantage of the
+	fact that exceptions are now propagated by Tcl Blend.
+	There is no longer any reason to query the value
+	of errorCode, since we can catch an exception directly.
+	Add support for catching a RuntimeException raised
+	in a Java command proc. An Java exception raised in a
+	method invoked via the invocation API would already
+	be wrapped in a ReflectException object.
+	* src/tcljava/tcl/lang/ReflectException.java (cmdProc,
+	getThrowable): Add a new getThrowable method for
+	use by the java::try command. This method lets us
+	query the Throwable object passed to a ReflectException
+	without having to deal with the errorCode variable.
+	Raise an exception if a TclException is passed to
+	the ReflectException constructor, since a ReflectException
+	should only be used for wrapped Java exceptions.
+	* src/tests/tcljava/tests/RuntimeExceptionCmd.java:
+	Add test case that raises a RuntimeException in the
+	body of a Java cmdProc.
+	* tests/tcljava/JavaTryCmd.test: Add new test cases
+	for exceptional conditions in catch and finally
+	blocks. These tests exercise the new java::try
+	command implementation.
+
 2002-12-29  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* src/tclblend/tcl/lang/Interp.java (callCommand):

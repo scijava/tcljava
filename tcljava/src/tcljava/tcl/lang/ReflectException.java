@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ReflectException.java,v 1.3 2002/12/29 02:10:43 mdejong Exp $
+ * RCS: @(#) $Id: ReflectException.java,v 1.4 2002/12/30 22:49:24 mdejong Exp $
  *
  */
 package tcl.lang;
@@ -26,6 +26,8 @@ import java.lang.reflect.*;
 
 class ReflectException extends TclException {
 
+// The throwable object passed to the constructor
+Throwable throwable;
 
 /*
  *----------------------------------------------------------------------
@@ -46,7 +48,6 @@ class ReflectException extends TclException {
  *----------------------------------------------------------------------
  */
 
-public
 ReflectException(
     Interp interp,		// Current interpreter. May be null.
 				// If non-null, its result object and
@@ -55,25 +56,29 @@ ReflectException(
 {
     super(TCL.ERROR);
 
+    if (throwable instanceof TclException)
+	throw new TclRuntimeError("don't wrap TclException in ReflectException");
+
+    if (e instanceof InvocationTargetException) {
+	// The original exception is wrapped in InvocationTargetException
+	// for us by the Java Reflection API. This fact doesn't provide
+	// any interesting information to script writers, so we'll
+	// unwrap it so that is more convenient for scripts to
+	// figure out the exception.
+
+	throwable = ((InvocationTargetException) e).getTargetException();
+    } else {
+	throwable = e;
+    }
+
     if (interp != null) {
-	Throwable t = e;
-	if (t instanceof InvocationTargetException) {
-	    // The original exception is wrapped in InvocationTargetException
-	    // for us by the Java Reflection API. This fact doesn't provide
-	    // any interesting information to script writers, so we'll
-	    // unwrap it so that is more convenient for scripts to
-	    // figure out the exception.
-
-	    t = ((InvocationTargetException) t).getTargetException();
-	}
-
 	TclObject errCode = TclList.newInstance();
 	errCode.preserve();
 
 	try {
 	    TclList.append(interp, errCode, TclString.newInstance("JAVA"));
 	    TclList.append(interp, errCode,
-                ReflectObject.newInstance(interp,Throwable.class,t)
+                ReflectObject.newInstance(interp,Throwable.class,throwable)
             );
 	} catch (TclException tclex) {
 	    throw new TclRuntimeError("unexpected TclException: " + tclex);
@@ -90,14 +95,31 @@ ReflectException(
 	interp.setErrorCode(errCode);
 	errCode.release();
 
-	// We don't want a TclException error message to
-	// show up as "TclException : ..."
-
-	if (t instanceof TclException)
-	    interp.setResult(t.getMessage());
-	else
-	    interp.setResult(t.toString());
+	interp.setResult(throwable.toString());
     }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * getThrowable --
+ *
+ *	Return the Throwable object that was recorded into the
+ *	errorCode global variable. Invoking this method should
+ *	be significantly faster than getting the value of the
+ *	errorCode variable.
+ *
+ * Results:
+ * 	Return a Throwable object.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Throwable getThrowable() {
+    return throwable;
 }
 
 } // end ReflectException

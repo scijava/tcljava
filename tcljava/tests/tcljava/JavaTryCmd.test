@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: JavaTryCmd.test,v 1.3 2000/12/22 09:47:15 mdejong Exp $
+# RCS: @(#) $Id: JavaTryCmd.test,v 1.4 2002/12/30 22:49:24 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1389,16 +1389,148 @@ test javatrycmd-6.11 {JavaTryCmd: do not catch incorrect continue in proc} {
 } {1 0 {invoked "continue" outside of a loop} NONE}
 
 
+test javatrycmd-7.1 {JavaTryCmd: same exception object caught} {
+    set e1 [java::new NullPointerException mynull]
+    java::try {
+        java::throw $e1
+    } catch {NullPointerException e2} {
+        string equal $e1 $e2
+    }
+} 1
+
+test javatrycmd-7.2 {throw TclException in a Java method} {
+    set result ""
+    java::try {
+        java::call tests.JavaTest throwTclException [java::getinterp]
+    } catch {TclException te} {
+        set result $te
+    }
+    set result
+} {no nuts in my fudge please!}
+
+test javatrycmd-7.3 {throw RuntimeException in a Java method} {
+    set result 0
+    java::try {
+        [java::getinterp] {setResult tcl.lang.TclObject} [java::null]
+    } catch {NullPointerException e} {
+        set result 1
+    }
+    set result
+} 1
+
+test javatrycmd-7.4 {throw RuntimeException in a Java command impl} {
+    set result 0
+    java::try {
+        [java::getinterp] createCommand "testruntimeexception" \
+            [java::new tests.RuntimeExceptionCmd]
+        testruntimeexception
+    } catch {NullPointerException e} {
+        set result 1
+    } finally {
+        rename testruntimeexception {}
+    }
+} 1
+
+test javatrycmd-7.5 {throw RuntimeException in a catch block} {
+    set result 0
+    java::try {
+        [java::getinterp] createCommand "testruntimeexception" \
+            [java::new tests.RuntimeExceptionCmd]
+
+        java::try {
+            error "Foo"
+        } catch {TclException te} {
+            testruntimeexception
+        } finally {
+            rename testruntimeexception {}
+        }
+    } catch {RuntimeException re} {
+        set result 1
+    }
+    list $result [info commands testruntimeexception]
+} {1 {}}
+
+test javatrycmd-7.6 {throw RuntimeException in a finally block} {
+    set result 0
+    java::try {
+        [java::getinterp] createCommand "testruntimeexception" \
+            [java::new tests.RuntimeExceptionCmd]
+
+        java::try {
+            error "Foo"
+        } finally {
+            testruntimeexception
+        }
+    } catch {RuntimeException re} {
+        set result 1
+    } finally {
+        rename testruntimeexception {}
+    }
+} 1
+
+test javatrycmd-7.7 {don't handle RuntimeException} {
+    set result 0
+    java::try {
+        [java::getinterp] createCommand "testruntimeexception" \
+            [java::new tests.RuntimeExceptionCmd]
+
+        java::try {
+            testruntimeexception
+        } catch {TclRuntimeError tre} {
+            set result 2
+        } finally {
+            rename testruntimeexception {}
+        }
+    } catch {RuntimeException re} {
+        set result 1
+    }
+} 1
 
 
+test javatrycmd-8.1 {return in script} {
+    global errorCode
+    catch {unset i ; unset i}
+    set catch 0
+    set ret [catch {
+        java::try {
+            return 5
+        } catch {TclException e} {
+            set catch 1
+            set e
+        }
+    } err]
+    list $ret $catch $err $errorCode
+} {0 0 5 NONE}
 
+test javatrycmd-8.2 {return in catch block} {
+    global errorCode
+    catch {unset i ; unset i}
+    set catch 0
+    set ret [catch {
+        java::try {
+            error FOO
+        } catch {TclException e} {
+            return 5
+        }
+    } err]
+    list $ret $catch $err $errorCode
+} {0 0 5 NONE}
 
-# additional test cases?
-
-# invoking return, break, or continue in catch or finally blocks
-
-# using the -code -errorCode -errorInfo arguments of return cmd
-
+test javatrycmd-8.3 {return in finally block} {
+    global errorCode
+    catch {unset i ; unset i}
+    set catch 0
+    set ret [catch {
+        java::try {
+            error FOO
+        } catch {TclException e} {
+            return 4
+        } finally {
+            return 5
+        }
+    } err]
+    list $ret $catch $err $errorCode
+} {0 0 4 NONE}
 
 # cleanup
 ::tcltest::cleanupTests

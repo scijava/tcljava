@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaTryCmd.java,v 1.4 2002/12/27 14:33:19 mdejong Exp $
+ * RCS: @(#) $Id: JavaTryCmd.java,v 1.5 2002/12/30 22:49:24 mdejong Exp $
  *
  */
 
@@ -63,147 +63,26 @@ public class JavaTryCmd implements Command
 		      "script ?catch exception_pair script? ?finally script?");
 	}
 
+	// Eval the script argument
+        eval(interp, argv[1]);
 
+        // If an exception was raised while executing the script
+        // we need to iterate over the catch blocks to see if
+        // there is an exception listed that matches the one we
+        // caught. Check for errors in the format of the catch
+        // arguments as we go.
 
-	// Eval the first arguent to the procedure
-
-	Throwable t = null;
-	boolean reflect_exception = false;
-
-	try {
-            interp.eval(argv[1],0);
-	} catch (ReflectException e) {
+	if (exrec.exception_thrown) {
 	    if (debug) {
-	        System.out.println("catching ReflectException");
-	    }
-
-	    reflect_exception = true;
-	} catch (TclException e) {
-
-	    if (debug) {
-	        System.out.println("catching TclException");
-	    }
-
-	    t = e;
-
-            // Figure out if the exception was really an error.
-            // It might have been caused by a break, continue, or return.
-
-            int code = e.getCompletionCode();
-
-	    if (code == TCL.RETURN) {
-	        // If the caught exception is a regular return
-	        // then no error really occured and we ignore it
-	        t = null;
-	    }
-
-            // If the code was TCL.ERROR, TCL.BREAK, or TCL.CONTINUE
-            // then we just process it like and other exception
-
-	}
-
-
-
-        if (t != null || reflect_exception == true) {
-            // grab the value of the errorCode variable
-
-	    TclObject errorCode = interp.getVar("errorCode", null,
-						TCL.GLOBAL_ONLY);
-	    if (errorCode == null) {
-	        throw new TclException(interp, "null errorCode");
-            }
-
-            if (debug) {
-	        System.out.println("errorCode is \""
-                           + errorCode.toString() + "\"");
-	    }
-
-	    TclObject desc = TclList.index(interp, errorCode, 0);
-	    if (desc == null) {
-	        throw new TclException(interp, "null errorCode index 0");
-	    }
-
-            if (debug) {
-	        System.out.println("errorCode index 0 is \""
-                           + desc.toString() + "\"");
-	    }
-
-	    if (reflect_exception) {
-                // if we caught a ReflectException we must make
-                // sure that the errorCode type is JAVA
-
- 	        if (! desc.toString().equals("JAVA")) {
-	            throw new TclException(interp, "errorCode index 0 was \"" +
-	            desc.toString() + "\", expected \"JAVA\"");
- 	        }
-	    } else {
-                // if we caught a TclException the error type might
-                // be anything. If it is a JAVA error we process it
-
- 	        if (desc.toString().equals("JAVA")) {
-                    reflect_exception = true;
- 	        }
-            }
-
-	    if (reflect_exception) {
-	        // in this case a Java exception has been wrapped
-	        // inside of a Tcl Exception. Grab the actual Java
-                // exception out of the errorCode variable
-	        // global var errorCode so that we can catch it here
-
-	        if (debug) {
-	        System.out.println("unwrapping Java Exception in TclException");
-	        }
-
-	        try {
-
-		TclObject java_exception = TclList.index(interp, errorCode, 1);
-		
-		if (java_exception == null) {
-		    throw new TclException(interp, "null errorCode index 1");
-		}
-
-		Object obj = ReflectObject.get(interp, java_exception);
-
-		if (obj == null) {
-		    throw new TclException(interp,
-                      "null ReflectObject at errorCode index 1");
-		}
-
-		if (! (obj instanceof Throwable)) {
-		    throw new TclException(interp, 
-		      "bad errorCode index 1, not instance of Throwable");
-		}
-
-		t = (Throwable) obj;
-
-	        } catch (TclException e2) {
-                throw new TclException(interp, "unexpected TclException " + e2);
-                }
-	    }
-
-        }
-
-
-
-
-
-
-	// now if there was an error we need to go through the
-	// catch clauses and check the error, we also need to
-	// make sure that and code we evaluate in the catch blocks
-	// does not raise and error that we do not handle because
-	// then our finally block would not get run. This of
-	// course does not include any problems that might come up
-	// if they did not call the method with the correct arguments
-	// if that happened an error will be raised while processing
-	// the catch clauses or when the finally clause is processed
-
-	if (t != null) {
-
-	    if (debug) {
-	    System.out.println("Exception raised inside body block, type = " +
-                t.getClass().getName() + ", msg = \"" + t.getMessage() + "\"");
+	        System.out.print("Exception thrown inside body block, type = ");
+	        if (exrec.reflect_exception != null)
+	            System.out.println("ReflectException");
+	        else if (exrec.tcl_exception != null)
+	            System.out.println("TclException");
+	        else if (exrec.runtime_exception != null)
+	            System.out.println("RuntimeException");
+	        else
+	            throw new TclRuntimeError("Java exception not found");
 	    }
 
 	    int end_loop = argv.length;
@@ -270,7 +149,7 @@ public class JavaTryCmd implements Command
 		// (ie "java.lang.Exception" matches "java.lang.Exception")
 		// but if that does not work then we try the short form
 		// (ie "java.lang.Exception" matches "Exception")
-		// We also wathc for the special case where the identifier
+		// We also watch for the special case where the identifier
 		// is "TclException". In this case we match any exception
 		// generated by a Tcl command. Any exception derived
 		// from TclException will also be matched by this case
@@ -287,24 +166,28 @@ public class JavaTryCmd implements Command
 		System.out.println("type_name is \"" + type_name + "\"");
 	        }
 
-		Class ex_type = t.getClass();
-
-		// this should never happen
-		if (ex_type == null) {
-		    throw new TclRuntimeError("null Exception class");
+		Class ex_type;
+		if (exrec.reflect_exception != null) {
+		    ex_type = exrec.reflect_exception.getThrowable().getClass();
+		} else if (exrec.tcl_exception != null) {
+		    ex_type = exrec.tcl_exception.getClass();
+		} else if (exrec.runtime_exception != null) {
+		    ex_type = exrec.runtime_exception.getClass();
+		} else {
+		    throw new TclRuntimeError("Exception not found");
 		}
 
 		String ex_type_name;
 
 
-		// check for special case where the Exception is derived
-                // from TclException and the type_name is "TclException"
+		// check for special case where the type name is
+		// "TclException" and we caught a TclException
 
-		if (type_name.equals("TclException") || 
-		    (t instanceof TclException)) {
+		if (type_name.equals("TclException") ||
+		    (exrec.tcl_exception != null)) {
 
 		    if (type_name.equals("TclException") &&
-		        (t instanceof TclException)) {
+		        (exrec.tcl_exception != null)) {
 		        matched_class = TclException.class;
 
 	                if (debug) {
@@ -317,15 +200,15 @@ public class JavaTryCmd implements Command
 		        // exception is not derived from TclException or
 		        // if the type is derived from TclException but
 		        // the type name is not "TclException", then 
-		        // just go onto the next catch block
+		        // move on to the next catch block
 
 	                if (debug) {
 			System.out.println("skipping catch block because " +
-			 "the of TclException mismatch");
-			System.out.println("exception name  = \""
+			    "of TclException mismatch");
+			System.out.println("exception name = \""
                             + type_name + "\"");
-			System.out.println("instanceof TclException  = " +
-		         (t instanceof TclException) );
+			System.out.println("caught TclException = " +
+		            (exrec.tcl_exception != null));
 	                }
 
 		        continue; //for loop
@@ -438,6 +321,16 @@ public class JavaTryCmd implements Command
 		      System.out.println("JavaException result getting saved in exception varaible");
 	              }
 
+                      Throwable t;
+
+		      if (exrec.reflect_exception != null) {
+		          t = exrec.reflect_exception.getThrowable();
+		      } else if (exrec.runtime_exception != null) {
+		          t = exrec.runtime_exception;
+		      } else {
+                          throw new TclRuntimeError("Java exception not found");
+		      }
+
 		      try {
 			interp.setVar(var.toString(),
 			  ReflectObject.newInstance(interp,
@@ -451,32 +344,17 @@ public class JavaTryCmd implements Command
 
 		    }
 
+		    // Now eval the exception handler script
+		    // this will also reset exrec values.
+		    eval(interp, exception_script);
 
+	            if (debug) {
+		        if (exrec.exception_thrown)
+		            System.out.println("exception thrown by exception handler");
+		        else
+		            System.out.println("no exception thrown by exception handler");
+	            }
 
-		    // eval the exception handler, catching all errors that
-		    // could be raised in the process because we also need
-		    // to be able to run our finally handler
-
-		    TclException t_after_catch = null;
-
-		    try {
-			interp.eval(exception_script,0);
-		    } catch (TclException e) {
-			// catch every possible error that could happen
-			// and record the type of the error for later
-			
-	                if (debug) {
-			System.out.println("Exception raised inside exception handler, type = " + e.getClass().getName() + ", msg = \"" + e.getMessage() + "\"");
-	                }
-
-			t_after_catch = e;
-		    }
-
-		    // set t (the main exception variable) to the result
-		    // of an error in the catch script evaluation
-
-		    t = t_after_catch;
-			            
 		    break; // break out of the enclosing for loop
 		           // this will stop catch block processing
 		}
@@ -515,78 +393,133 @@ public class JavaTryCmd implements Command
 	    res.preserve();
 	    interp.resetResult();
 
-	    // evaluate the finally scipt and make sure that errors
+	    // evaluate the finally scipt and make sure that exceptions
 	    // in the finally script are caught and then thrown at
-	    // the very end of this method
+	    // the very end of this method. Be sure to save the
+	    // exception record value from the catch block evaluation
+	    // so we can rethrow any raised exception if the catch
+	    // block does not raise any exceptions.
 
-	    boolean finally_catch = false;
+	    ExRecord tmp = exrec;
+	    exrec = tmp_exrec;
+	    tmp_exrec = tmp;
 
-	    try {
-		interp.eval(finally_script,0);
-	    } catch (TclException e) {
-		// catch every possible error that could happen
-		// and record the type of the error for later
-		
-		t = e;
-	        finally_catch = true;
-	    }
+	    eval(interp, finally_script);
 
-	    // restore the interpreter result as long as the
-	    // finally script did not raise an error of its own
-	    if (finally_catch == false) {
+	    // If the finally block did not raise an error
+	    // then reset the previous interpreter result
+	    // and use the previous exception record.
+
+	    if (exrec.exception_thrown == false) {
 	        interp.setResult(res);
+	        tmp = exrec;
+	        exrec = tmp_exrec;
+	        tmp_exrec = tmp;
             }
+
 	    res.release();
- 
 	}
 
 
+	// If an exception was thrown in the catch block or the
+	// finally block, then we need to throw it again.
 
-	// if we were in the middle of managing an error then the
-	// varliable t is non null and we need to raise that exception
-	// if a catch block handled the exception then t should be null
-
-	if (t != null) {
-	    // now if there is still an exception that needs to keep
-	    // going up the stack then we need to rewrap it so that
-	    // it looks like a TclException to the Java exception system
-
-	    // the only trick here is that if it was not a Java exception
-	    // then we just need to rethrow the original TclException
-
-
+	if (exrec.exception_thrown) {
 	    if (debug) {
-	    System.out.println("throwing end of try method exception, type = "
-                + t.getClass().getName() + ", msg = \"" +
-                  t.getMessage() + "\"");
+	        System.out.print("throwing end of try method exception, type = ");
+	        if (exrec.reflect_exception != null)
+	            System.out.println("ReflectException");
+	        else if (exrec.tcl_exception != null)
+	            System.out.println("TclException");
+	        else if (exrec.runtime_exception != null)
+	            System.out.println("RuntimeException");
+	        else
+	            throw new TclRuntimeError("Java exception not found");
 	    }
 
-
-	    // if it is a regular Tcl exception or a wrapped Java
-	    // exception then just rethrow it
-	    
-	    if (t instanceof TclException) {
+	    if (exrec.reflect_exception != null) {
 	        if (debug) {
-		System.out.println("rethrowing TclException " + t);
+		    System.out.println("rethrowing ReflectException " +
+		            exrec.reflect_exception);
 	        }
-		throw (TclException) t;
+
+		throw exrec.reflect_exception;
+	    } else if (exrec.tcl_exception != null) {
+	        if (debug) {
+		    System.out.println("rethrowing TclException " +
+		            exrec.tcl_exception);
+	        }
+
+		throw exrec.tcl_exception;
+	    } else if (exrec.runtime_exception != null) {
+	        if (debug) {
+		    System.out.println("rethrowing RuntimeException " +
+		            exrec.runtime_exception);
+	        }
+
+		throw exrec.runtime_exception;
+	    } else {
+	        throw new TclRuntimeError("Java exception not found");
 	    }
-
-
-	    // if it is an actual Java Exception (ie it is derived from
-	    // the java class Throwable) then we need to wrap it as a
-	    // TclException and then rethrow it. This can happen
-	    // if no exception routine handled a Java exception
-
-	    if (debug) {
-	    System.out.println("wrapping and rethrowing Exception " + t);
-	    }
-
-	    throw new ReflectException(interp,t);
-
 	}
+    }
 
-	return;
+    private static class ExRecord {
+        // Wrapper type, holds real exception thrown by some invoked method
+        ReflectException reflect_exception;
+
+        // An actual TclException
+        TclException tcl_exception;
+
+        // Some undeclared exception that was not raised in an invoked method.
+        RuntimeException runtime_exception;
+
+        // True if one of the three exceptions types was caught
+        boolean exception_thrown;
+    }
+
+    ExRecord exrec = new ExRecord();
+    ExRecord tmp_exrec = new ExRecord();
+
+    private void eval(Interp interp, TclObject script) {
+        exrec.reflect_exception = null;
+        exrec.tcl_exception = null;
+        exrec.runtime_exception = null;
+        exrec.exception_thrown = false;
+
+        try {
+            interp.eval(script, 0);
+        } catch (ReflectException e) {
+            if (debug) {
+	        System.out.println("eval() caught ReflectException");
+	    }
+            exrec.reflect_exception = e;
+            exrec.exception_thrown = true;
+	} catch (TclException e) {
+	    if (debug) {
+	        System.out.println("eval() caught TclException");
+	    }
+            exrec.tcl_exception = e;
+            exrec.exception_thrown = true;
+
+            // Exception might have been return, break, or continue
+            int code = e.getCompletionCode();
+
+	    if (code == TCL.RETURN) {
+	        // If the caught exception is a regular return
+	        // then no error really occured and we ignore it
+	        exrec.exception_thrown = false;
+	    }
+            // Process TCL.ERROR, TCL.BREAK, or TCL.CONTINUE
+            // like any other exception
+        } catch (RuntimeException e) {
+	    if (debug) {
+	        System.out.println("catching RuntimeException");
+	    }
+
+            exrec.runtime_exception = e;
+            exrec.exception_thrown = true;
+        }
     }
 
     private static final boolean debug = false; // enables debug output
