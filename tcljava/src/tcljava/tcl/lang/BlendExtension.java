@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: BlendExtension.java,v 1.12 1999/07/28 04:15:01 mo Exp $
+ * RCS: @(#) $Id: BlendExtension.java,v 1.13 1999/08/03 04:01:07 mo Exp $
  */
 
 package tcl.lang;
@@ -78,7 +78,7 @@ throws TclException
     // Set tcljava(tcljava) to jacl or tclblend
 
     TclObject plat = interp.getVar("tcl_platform", "platform",
-        TCL.GLOBAL_ONLY|TCL.DONT_THROW_EXCEPTION);
+				   TCL.GLOBAL_ONLY);
 
     if (plat.toString().equals("java")) {
         interp.setVar("tcljava", "tcljava",
