@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the actual
 # Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.5 1999/09/18 00:50:26 wart Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.6 1999/09/18 00:59:27 wart Exp $
 
 #========================================================================
 # Edit the following few lines when writing a new extension
@@ -495,10 +495,21 @@ install-libraries: libraries
 	done;
 
 install-doc: doc
-	$(mkinstalldirs) $(mandir)/html
+	$(mkinstalldirs) $(mandir)/html/TclJava
+	$(mkinstalldirs) $(mandir)/html/TclJavaLib
+	$(mkinstalldirs) $(mandir)/html/Keywords
 	@echo "Installing HTML docs"
-	@for i in $(srcdir)/docs/* ; do \
+	@for i in $(srcdir)/docs/*.htm* ; do \
 	    $(INSTALL_DATA) $$i $(mandir)/html ; \
+	done;
+	@for i in $(srcdir)/docs/Keywords/*.htm* ; do \
+	    $(INSTALL_DATA) $$i $(mandir)/html/Keywords ; \
+	done;
+	@for i in $(srcdir)/docs/TclJava/*.htm* ; do \
+	    $(INSTALL_DATA) $$i $(mandir)/html/TclJava ; \
+	done;
+	@for i in $(srcdir)/docs/TclJavaLib/*.htm* ; do \
+	    $(INSTALL_DATA) $$i $(mandir)/html/TclJavaLib ; \
 	done;
 
 
