@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: JavaBindCmd.test,v 1.1 1998/10/14 21:09:24 cvsadmin Exp $
+# RCS: @(#) $Id: JavaBindCmd.test,v 1.2 2000/03/20 17:51:30 mo Exp $
 
 # Note: This test file must be sourced from the parent directory
 #       or else the defs file may not be properly loaded.
@@ -103,3 +103,39 @@ test JavaBindCmd-2.8 {JavaBind.getEventMethod} {
     list [catch {java::bind $x tcl.lang.Tester2Listener.method0} msg] $msg
 } {0 {}}
 
+#
+# This test will create another thread and generate a bindable
+# events to simulate an AWT widget.
+#
+
+test JavaBindCmd-3.0 {JavaBind callback invoked from another thread} {
+    set b [java::new tests.javabind.Bind]
+    set action 0
+
+    java::bind $b actionPerformed {
+      set action 1
+    }
+
+    # Start up the other thread, it will generate an actionPerformed
+    # event that should invoke our Tcl callback
+    $b doLater
+
+    # Wait for a little bit so that events can be processed
+    set done 0
+    after 2000 "set done 1"
+    vwait done
+
+    set results [list]
+
+    if {[$b wasStarted]} {
+      lappend results Started
+    }
+
+    if {[$b wasStopped]} {
+      lappend results Finished
+    } else {
+      lappend results Deadlocked
+    }
+
+    lappend results $action
+} {Started Finished 1}

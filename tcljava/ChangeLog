@@ -1,3 +1,12 @@
+2000-03-20 Mo DeJong  <mdejong@redhat.com>
+
+	* src/tests/tcljava/tests/javabind/ActionEvent.java:
+	* src/tests/tcljava/tests/javabind/ActionListener.java:
+	* src/tests/tcljava/tests/javabind/Bind.java:
+	* tests/tcljava/JavaBindCmd.test:
+	* unix/Makefile.in
+	Added new multi-threaded test case for the java::bind command.
+
 2000-03-17 Mo DeJong  <mdejong@redhat.com>
 
 	* tests/inprogress/Unicode.test: Added test cases

@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.32 2000/02/23 22:07:23 mo Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.33 2000/03/20 17:51:30 mo Exp $
 
 # The directory containing the Tcl sources and headers appropriate
 # for this version of Tk ("srcdir" will be replaced or has already
@@ -713,7 +713,7 @@ test_tcljava.build: $(TCLJAVA).check
 		-d $(TEST_BUILD_DIR) pkg1/*.java pkg2/*.java \
 		tcl/lang/*.java tests/*.java tests/invoke/*.java \
 		tests/javainfo/*.java tests/signature/*.java \
-		tests/exec/*.java
+		tests/javabind/*.java tests/exec/*.java
 	mkdir -p $(TEST_BUILD_DIR)/javaload
 	@# workaround for bug in jikes (extra mkdir)
 	mkdir -p $(TEST_BUILD_DIR)/javaload/tests/javaload
@@ -1125,6 +1125,10 @@ tcljavaDist: Makefile
 	mkdir -p $(DISTDIR)/src/tests/tcljava/tests/javainfo
 	cp -p $(TOP_DIR)/src/tests/tcljava/tests/javainfo/*.java \
 		$(DISTDIR)/src/tests/tcljava/tests/javainfo
+
+	mkdir -p $(DISTDIR)/src/tests/tcljava/tests/javabind
+	cp -p $(TOP_DIR)/src/tests/tcljava/tests/javabind/*.java \
+		$(DISTDIR)/src/tests/tcljava/tests/javabind
 
 	mkdir -p $(DISTDIR)/src/tests/tcljava/tests/signature
 	cp -p $(TOP_DIR)/src/tests/tcljava/tests/signature/*.java \
