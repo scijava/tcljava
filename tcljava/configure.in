@@ -97,15 +97,18 @@ case "`uname -s`" in
     *win32* | *WIN32* | *CYGWIN_NT*)
         CYGPATH="cygpath -w"
 	PATH_SEP=\\\;
+	SEP=\\\\
         ;;
     *)
         CYGPATH=echo
 	PATH_SEP=:
+	SEP=/
 	;;
 esac
 
 FULL_SRCDIR=`cd $srcdir; pwd`
 FULL_SRCDIR_NATIVE=\"`${CYGPATH} ${FULL_SRCDIR}`\"
+MISC_DIR=${FULL_SRCDIR}/src
 
 #BOTH will automatically be set to true when configuring Jacl and TclBlend
 BOTH=false
@@ -279,6 +282,7 @@ case "`uname -s`" in
 esac
 
 AC_SUBST(PATH_SEP)
+AC_SUBST(SEP)
 
 #--------------------------------------------------------------------
 #
@@ -297,13 +301,13 @@ if test "$JAVA_NAME" = "kaffe"; then
 elif test "$JAVA_NAME" = "jdk"; then
     if test -f $JAVA_DIR/lib/classes.zip; then
         # JDK1.1 requires classes.zip in CLASSPATH
-        JAVA_CLASSPATH=$JAVA_DIR_NATIVE/lib/classes.zip
+        JAVA_CLASSPATH=\"`${CYGPATH} ${JAVA_DIR}/lib/classes.zip`\"
     elif test -f $JAVA_DIR/jre/lib/rt.jar; then
         # JDK1.2 does not require system libs in CLASSPATH
         # but we need them for compilers and tclblend
-        JAVA_CLASSPATH=$JAVA_DIR_NATIVE/jre/lib/rt.jar
+        JAVA_CLASSPATH=\"`${CYGPATH} ${JAVA_DIR}/jre/lib/rt.jar`\"
 	if test -f $JAVA_DIR/lib/tools.jar; then
-	       JAVA_CLASSPATH=$JAVA_DIR_NATIVE/lib/tools.jar${PATH_SEP}${JAVA_CLASSPATH}
+	       JAVA_CLASSPATH=\"`${CYGPATH} ${JAVA_DIR}/lib/tools.jar`\"${PATH_SEP}${JAVA_CLASSPATH}
 	fi
     elif test "`uname -s`" = "IRIX"; then
         # JDK1.1.5 under IRIX
@@ -758,10 +762,21 @@ use tclblend. See http://www.javasoft.com/products/jdk/1.1/index.html.])
 
             ARCH=win32
             ARCH_LIBNAME=bin
-            ARCH_LIB=${ARCH_LIBNAME}/classic
 
-            JAVA_SHLIB=jvm.dll
-            TCLBLEND_LIBS=\"`${CYGPATH} ${JAVA_DIR}/lib/jvm.lib`\"
+	    if test -d ${JAVA_DIR}/jre/bin/classic ; then
+	        ARCH_LIB=${ARCH_LIBNAME}/classic
+	    else
+		ARCH_LIB=${ARCH_LIBNAME}
+	    fi
+
+            if test "$JAVA_VERSION" = "1.1"; then
+	        JAVA_SHLIB=javai.dll
+		TCLBLEND_LIBS=\"`${CYGPATH} ${JAVA_DIR}/lib/javai.lib`\"
+	    else
+		JAVA_SHLIB=jvm.dll
+                TCLBLEND_LIBS=\"`${CYGPATH} ${JAVA_DIR}/lib/jvm.lib`\"
+	    fi
+
             TCLBLEND_SHLIB_NAMES=
 	    PRODUCTION_RELEASE=1
 
@@ -779,11 +794,23 @@ use tclblend. See http://www.javasoft.com/products/jdk/1.1/index.html.])
 	    JAVA_INCLUDE_NATIVE=\"`${CYGPATH} ${JAVA_INCLUDE}`\"
 	    JAVA_ARCH_INCLUDE_NATIVE=\"`${CYGPATH} ${JAVA_INCLUDE}/win32`\"
 	    BUILD_DIR_NATIVE=\"`${CYGPATH} ${BUILD_DIR}`\"
+	    TCLBLEND_BUILD_DIR_NATIVE=\"`${CYGPATH} ${BUILD_DIR}/tclblend`\"
+	    TCLJAVA_BUILD_DIR_NATIVE=\"`${CYGPATH} ${BUILD_DIR}/tcljava`\"
+	    TEST_BUILD_DIR_NATIVE=\"`${CYGPATH} ${BUILD_DIR}/tests`\"
+	    EMPTY_JAR=\"`${CYGPATH} ${MISC_DIR}/empty/empty.jar | sed -e s%\\\\%\\\\\\\\\\\\\\\\%g% `\"
+	    TCLJAVA_JAR=\"`${CYGPATH} ${BUILD_DIR}/tcljava.jar | sed -e s%\\\\%\\\\\\\\%g% `\"
+	    TCLBLEND_JAR=\"`${CYGPATH} ${BUILD_DIR}/tclblend.jar | sed -e s%\\\\%\\\\\\\\%g% `\"
 	    ;;
         *)
 	    JAVA_INCLUDE_NATIVE=${JAVA_INCLUDE}
 	    JAVA_ARCH_INCLUDE_NATIVE=${JAVA_ARCH_INCLUDE}
 	    BUILD_DIR_NATIVE=${BUILD_DIR}
+	    TCLBLEND_BUILD_DIR_NATIVE=${BUILD_DIR}/tclblend
+	    TCLJAVA_BUILD_DIR_NATIVE=${BUILD_DIR}/tcljava
+	    TEST_BUILD_DIR_NATIVE=${BUILD_DIR}/tests
+	    EMPTY_JAR=${MISC_DIR}/empty/empty.jar
+	    TCLJAVA_JAR=${BUILD_DIR}/tcljava.jar
+	    TCLBLEND_JAR=${BUILD_DIR}/tclblend.jar
 	    ;;
     esac
 
@@ -823,11 +850,11 @@ use tclblend. See http://www.javasoft.com/products/jdk/1.1/index.html.])
         if test ! -d $DIR; then
             MSG="jdk arch directory $DIR does not exist"
             echo $MSG >&5
+	    DIR=$JAVA_DIR/$ARCH_LIB
             AC_MSG_WARN([$MSG])
-        else
-            JAVA_ARCH_GREEN_LIB=$DIR
-            JAVA_ARCH_GREEN_RUNTIME_LIBS=$DIR
         fi
+        JAVA_ARCH_GREEN_LIB=$DIR
+        JAVA_ARCH_GREEN_RUNTIME_LIBS=$DIR
 
         LIB=$DIR/$JAVA_SHLIB
         if test ! -f $LIB; then
@@ -840,11 +867,12 @@ use tclblend. See http://www.javasoft.com/products/jdk/1.1/index.html.])
         if test ! -d $DIR; then
             MSG="jdk arch directory $DIR does not exist"
             echo $MSG >&5
-            AC_MSG_ERROR([$MSG])
-        else
-            JAVA_ARCH_NATIVE_LIB=$DIR
-            JAVA_ARCH_NATIVE_RUNTIME_LIBS=$DIR
+	    DIR=$JAVA_DIR/$ARCH_LIB
+            AC_MSG_WARN([$MSG])
         fi
+        JAVA_ARCH_NATIVE_LIB=$DIR
+        JAVA_ARCH_NATIVE_RUNTIME_LIBS=$DIR
+
 
         LIB=$DIR/$JAVA_SHLIB
         if test ! -f $LIB; then
@@ -1151,6 +1179,13 @@ fi
 JAVA_FLAGS_C=""
 
 AC_SUBST(BUILD_DIR_NATIVE)
+AC_SUBST(TCLBLEND_BUILD_DIR_NATIVE)
+AC_SUBST(TCLJAVA_BUILD_DIR_NATIVE)
+AC_SUBST(TEST_BUILD_DIR_NATIVE)
+AC_SUBST(EMPTY_JAR)
+AC_SUBST(TCLBLEND_JAR)
+AC_SUBST(TCLJAVA_JAR)
+
 AC_SUBST(JAVA_DIR)
 AC_SUBST(JAVA_DIR_NATIVE)
 AC_SUBST(JAVA_CLASSPATH)
@@ -1432,6 +1467,7 @@ AC_SUBST(TCLBLEND_PLATFORM)
 
 AC_SUBST(FULL_SRCDIR)
 AC_SUBST(FULL_SRCDIR_NATIVE)
+AC_SUBST(MISC_DIR)
 
 
 #--------------------------------------------------------------------
