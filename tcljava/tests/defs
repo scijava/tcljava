@@ -9,12 +9,12 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: defs,v 1.1 1998/10/14 21:09:24 cvsadmin Exp $
+# RCS: @(#) $Id: defs,v 1.2 1999/05/10 02:43:32 dejong Exp $
 
-if ![info exists VERBOSE] {
+if {! [info exists VERBOSE]} {
     set VERBOSE 0
 }
-if ![info exists TESTS] {
+if {! [info exists TESTS]} {
     set TESTS {}
 }
 
@@ -128,6 +128,10 @@ set testConfig(macOrPc) [expr $testConfig(macOnly) || $testConfig(pcOnly)]
 set testConfig(macOrUnix) [expr $testConfig(macOnly) || $testConfig(unixOnly)]
 set testConfig(nonPortable) [file exists doAllTests]
 
+if {! [file exists defs]} {
+  puts "ERROR : the defs file must be sourced from the current directory!"
+  exit -1
+}
 set f [open defs r]
 if {[expr [catch {fconfigure $f -blocking off}]] == 0} {
     set testConfig(nonBlockFiles) 1
@@ -230,6 +234,7 @@ proc print_verbose {name description script code answer} {
 	puts stdout "==== Result was:"
 	puts stdout "$answer"
     }
+    flush stdout
 }
 
 # test --
@@ -280,6 +285,7 @@ proc test {name description script answer args} {
 		    || !$testConfig($constraint)} {
 		if $VERBOSE then {
 		    puts stdout "++++ $name SKIPPED"
+                    flush stdout
 		}
 		return
 	    }
@@ -299,13 +305,15 @@ proc test {name description script answer args} {
 		    $code $result
 	    }
 	    puts stdout "++++ $name PASSED"
+            flush stdout
 	}
     } else { 
 	print_verbose $name $description $script \
 		$code $result
 	puts stdout "---- Result should have been:"
 	puts stdout "$answer"
-	puts stdout "---- $name FAILED" 
+	puts stdout "---- $name FAILED"
+        flush stdout
     }
 }
 
