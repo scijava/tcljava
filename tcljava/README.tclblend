@@ -1,6 +1,6 @@
 Tcl Blend
 
-RCS: @(#) $Id: README.tclblend,v 1.6 1999/10/21 20:01:40 redman Exp $
+RCS: @(#) $Id: README.tclblend,v 1.5 1999/05/16 07:59:24 dejong Exp $
 
 1. Introduction
 ---------------
@@ -75,11 +75,11 @@ many avid users of Tcl Blend & Jacl use comp.lang.tcl as a forum.
 
 If you are interested in a more detailed forum focused in issues
 related to Jacl and Tcl Blend you might want to subscribe to the
-tcljava mailing list maintained by Scriptics. You can
+tcljava mailing list maintained by the Tcl Consortium. You can
 subscribe to the list by sending mail to this address
-tcljava-request@scriptics.com. Once you have subscribed you
-can send mail to the list at tcljava@scriptics.com. The mailing
-list is archived here http://www.mail-archive.com/tcljava@scriptics.com.
+tcljava-request@tclconsortium.org. Once you have subscribed you
+can send mail to the list at tcljava@tclconsortium.org. The mailing
+list is archived here http://www.mail-archive.com/tcljava@tclconsortium.org.
 
 8. Support and bug fixes
 ------------------------

@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the actual
 # Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.13 1999/11/02 00:10:00 redman Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.8 1999/09/24 04:53:06 redman Exp $
 
 #========================================================================
 # Edit the following few lines when writing a new extension
@@ -92,7 +92,6 @@ SAMPLE_NEW_VAR=@SAMPLE_NEW_VAR@
 
 SHELL = @SHELL@
 PATH_SEP = @PATH_SEP@
-SEP=@SEP@
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -122,21 +121,19 @@ top_builddir = .
 
 FULL_SRCDIR=@FULL_SRCDIR@
 FULL_SRCDIR_NATIVE=@FULL_SRCDIR_NATIVE@
-MISC_DIR = @MISC_DIR@
-MISC_DIR_NATIVE = "`@CYGPATH@ @MISC_DIR@`"
 TCLBLEND_SRC_DIR = $(FULL_SRCDIR)/src/tclblend
 TCLJAVA_SRC_DIR = $(FULL_SRCDIR)/src/tcljava
+MISC_DIR = $(FULL_SRCDIR_NATIVE)/src
 
 BUILD_DIR=@BUILD_DIR@
 BUILD_DIR_NATIVE=@BUILD_DIR_NATIVE@
 TCLBLEND_BUILD_DIR = $(BUILD_DIR)/tclblend
 TCLJAVA_BUILD_DIR = $(BUILD_DIR)/tcljava
-TCLBLEND_BUILD_DIR_NATIVE = @TCLBLEND_BUILD_DIR_NATIVE@
-TCLJAVA_BUILD_DIR_NATIVE = @TCLJAVA_BUILD_DIR_NATIVE@
-
+TCLBLEND_BUILD_DIR_NATIVE = $(BUILD_DIR_NATIVE)/tclblend
+TCLJAVA_BUILD_DIR_NATIVE = $(BUILD_DIR_NATIVE)/tcljava
 
 TEST_BUILD_DIR=$(BUILD_DIR)/tests
-TEST_BUILD_DIR_NATIVE=@TEST_BUILD_DIR_NATIVE@
+TEST_BUILD_DIR_NATIVE=$(BUILD_DIR_NATIVE)/tests
 TEST_SRC_DIR = $(FULL_SRCDIR)/src/tests
 TEST_TCLJAVA_SRC_DIR = $(TEST_SRC_DIR)/tcljava
 TEST_TCLBLEND_SRC_DIR = $(TEST_SRC_DIR)/tclblend
@@ -162,7 +159,6 @@ CFLAGS_DEBUG = @CFLAGS_DEBUG@
 CFLAGS_DEFAULT = @CFLAGS_DEFAULT@
 CFLAGS_OPTIMIZE = @CFLAGS_OPTIMIZE@
 CLEANFILES = @CLEANFILES@
-TCL_DBGX = @TCL_DBGX@
 DL_LIBS = @DL_LIBS@
 EXEEXT = @EXEEXT@
 LDFLAGS_DEBUG = @LDFLAGS_DEBUG@
@@ -182,6 +178,7 @@ STLIB_LD = @STLIB_LD@
 TCL_BIN_DIR = @TCL_BIN_DIR@
 TCL_BUILD_LIB_SPEC = @TCL_BUILD_LIB_SPEC@
 TCL_BUILD_STUB_LIB_SPEC = @TCL_BUILD_STUB_LIB_SPEC@
+TCL_DBGX = @TCL_DBGX@
 TCL_DEFS = @TCL_DEFS@
 TCL_EXTRA_CFLAGS = @TCL_EXTRA_CFLAGS@
 TCL_LD_FLAGS = @TCL_LD_FLAGS@
@@ -233,7 +230,6 @@ TCLBLEND_JAVA_FILES = \
 	$(TCLBLEND_SRC_DIR)/tcl/lang/IdleHandler.java \
 	$(TCLBLEND_SRC_DIR)/tcl/lang/Interp.java \
 	$(TCLBLEND_SRC_DIR)/tcl/lang/NativeLock.java \
-	$(TCLBLEND_SRC_DIR)/tcl/lang/Notifier.java \
 	$(TCLBLEND_SRC_DIR)/tcl/lang/TclList.java \
 	$(TCLBLEND_SRC_DIR)/tcl/lang/TimerHandler.java \
 	$(TCLBLEND_SRC_DIR)/tcl/lang/Util.java
@@ -301,8 +297,7 @@ TEST_TCLBLEND_JAVA_FILES = \
 	$(TEST_TCLBLEND_SRC_DIR)/tests/TestObjectCmd.java \
 	$(TEST_TCLBLEND_SRC_DIR)/tests/TimerHandlerTest.java
 
-TEST_TCLBLEND_FILE_PATTERN = \
-	tests${SEP}*.java tcl${SEP}lang${SEP}*.java
+TEST_TCLBLEND_FILE_PATTERN = tests/*.java tcl/lang/*.java
 
 TEST_TCLJAVA_JAVA_FILES = \
 	$(TEST_TCLJAVA_SRC_DIR)/javaload/Test10Extension.java \
@@ -364,31 +359,27 @@ TEST_TCLJAVA_JAVA_FILES = \
 	$(TEST_TCLJAVA_SRC_DIR)/tests/signature/NullSignature.java
 
 TEST_TCLJAVA_FILE_PATTERN = \
-	pkg1${SEP}*.java \
-	pkg2${SEP}*.java \
-	tcl${SEP}lang${SEP}*.java \
-	tests${SEP}*.java \
-	tests${SEP}invoke${SEP}*.java \
-	tests${SEP}javainfo${SEP}*.java \
-	tests${SEP}signature${SEP}*.java \
-	tests${SEP}exec${SEP}*.java
+	pkg1/*.java \
+	pkg2/*.java \
+	tcl/lang/*.java \
+	tests/*.java \
+	tests/invoke/*.java \
+	tests/javainfo/*.java \
+	tests/signature/*.java \
+	tests/exec/*.java
 
 # AUX_CLASSPATH is used for Java Studio test coverage
 # Note that AUX_CLASSPATH should have a leading colon (:),
 # see the jstclblendTest rule for an example
 
-EMPTY_JAR=@EMPTY_JAR@
-TCLJAVA_JAR=@TCLJAVA_JAR@
-TCLBLEND_JAR=@TCLBLEND_JAR@
-
 TCLBLEND_CLASSPATH = $(TCLJAVA_BUILD_DIR_NATIVE)$(PATH_SEP)$(TCLBLEND_BUILD_DIR_NATIVE)$(PATH_SEP)$(JAVA_CLASSPATH)$(AUX_CLASSPATH)
 
 #JACL_CLASSPATH = $(TCLJAVA_BUILD_DIR_NATIVE)$(PATH_SEP)$(JACL_BUILD_DIR_NATIVE)$(PATH_SEP)$(JAVA_CLASSPATH)$(AUX_CLASSPATH)
 
-TCLJAVA_CLASSPATH = $(TCLJAVA_BUILD_DIR_NATIVE)$(PATH_SEP)$(EMPTY_JAR)$(PATH_SEP)$(JAVA_CLASSPATH)$(AUX_CLASSPATH)
-DEMOS_CLASSPATH	= $(TCLBLEND_JAR)$(PATH_SEP)$(TCLJAVA_JAR)$(PATH_SEP)$(JAVA_CLASSPATH)$(AUX_CLASSPATH)
+TCLJAVA_CLASSPATH = $(TCLJAVA_BUILD_DIR_NATIVE)$(PATH_SEP)$(MISC_DIR)/empty/empty.jar$(PATH_SEP)$(JAVA_CLASSPATH)$(AUX_CLASSPATH)
+DEMOS_CLASSPATH	= $(BUILD_DIR_NATIVE)/$(TCLJAVA).jar$(PATH_SEP)$(BUILD_DIR_NATIVE)/tcljava.jar$(PATH_SEP)$(JAVA_CLASSPATH)$(AUX_CLASSPATH)
 
-TEST_CLASSPATH = $(JAVA_CLASSPATH)$(PATH_SEP)$(TEST_BUILD_DIR_NATIVE)$(PATH_SEP)$(TCLBLEND_JAR)$(PATH_SEP)$(TCLJAVA_JAR)$(AUX_CLASSPATH)
+TEST_CLASSPATH = $(JAVA_CLASSPATH)$(PATH_SEP)$(TEST_BUILD_DIR_NATIVE)$(PATH_SEP)$(BUILD_DIR_NATIVE)/$(TCLJAVA).jar$(PATH_SEP)$(BUILD_DIR_NATIVE)/tcljava.jar$(AUX_CLASSPATH)
 
 
 AUTOCONF = autoconf
@@ -656,17 +647,16 @@ JAVA_COMPILE_TCLBLEND = \
 		-d $(TCLBLEND_BUILD_DIR_NATIVE) 
 
 $(TCLBLEND_BUILD_DIR):
-	$(mkinstalldirs) $(TCLBLEND_BUILD_DIR)
+	mkdir -p $(TCLBLEND_BUILD_DIR)
 
 tclblend.jar: $(TCLBLEND_BUILD_DIR) $(TCLBLEND_JAVA_FILES) tcljava.jar
-	rm -rf $(TCLBLEND_BUILD_DIR)/*
-	$(JAVA_COMPILE_TCLBLEND) tcl${SEP}lang${SEP}*.java
+	$(JAVA_COMPILE_TCLBLEND) tcl/lang/*.java
 	cd $(TCLBLEND_BUILD_DIR) ;\
 	CLASSPATH=$(JAVA_CLASSPATH) \
 	$(JAR) $(JAR_COMPRESS_FLAGS) $(BUILD_DIR_NATIVE)/tclblend.jar tcl
 
 pkgIndex.tcl : $(FULL_SRCDIR)/src/pkgIndex.tcl
-	$(INSTALL_DATA) $(MISC_DIR_NATIVE)/pkgIndex.tcl $(BUILD_DIR)
+	$(INSTALL_DATA) $(MISC_DIR)/pkgIndex.tcl $(BUILD_DIR)
 
 tclblend: tclblend.jar
 
@@ -681,9 +671,9 @@ JAVA_COMPILE_TCLJAVA = \
 		-d $(TCLJAVA_BUILD_DIR_NATIVE) 
 
 $(TCLJAVA_BUILD_DIR):
-	$(mkinstalldirs) $(TCLJAVA_BUILD_DIR)
-	$(mkinstalldirs) $(TCLJAVA_BUILD_DIR)/tcl
-	$(mkinstalldirs) $(TCLJAVA_BUILD_DIR)/tcl/lang
+	mkdir -p $(TCLJAVA_BUILD_DIR)
+	mkdir -p $(TCLJAVA_BUILD_DIR)/tcl
+	mkdir -p $(TCLJAVA_BUILD_DIR)/tcl/lang
 
 $(TCLJAVA_BUILD_DIR)/tcl/lang/library: $(TCLJAVA_SRC_DIR)/tcl/lang/library
 	cp -rf $(TCLJAVA_SRC_DIR)/tcl/lang/library $@
@@ -692,13 +682,11 @@ tcljava.jar: $(TCLJAVA_BUILD_DIR) \
 		$(TCLJAVA_REFLECT_JAVA_FILES) \
 		$(TCLJAVA_JAVA_FILES) \
 		$(TCLJAVA_BUILD_DIR)/tcl/lang/library
-	rm -rf $(TCLJAVA_BUILD_DIR)/tcl/lang/*.class
-	rm -rf $(TCLJAVA_BUILD_DIR)/tcl/lang/reflect/*.class
-	$(JAVA_COMPILE_TCLJAVA) tcl${SEP}lang${SEP}reflect${SEP}*.java
-	$(JAVA_COMPILE_TCLJAVA) tcl${SEP}lang${SEP}*.java
+	$(JAVA_COMPILE_TCLJAVA) tcl/lang/reflect/*.java
+	$(JAVA_COMPILE_TCLJAVA) tcl/lang/*.java
 	cd $(TCLJAVA_BUILD_DIR) ;\
 	CLASSPATH=$(JAVA_CLASSPATH) \
-	$(JAR) $(JAR_COMPRESS_FLAGS) $(TCLJAVA_JAR) tcl
+	$(JAR) $(JAR_COMPRESS_FLAGS) $(BUILD_DIR_NATIVE)/tcljava.jar tcl
 
 tcljava: tcljava.jar
 
@@ -706,7 +694,7 @@ tcljava: tcljava.jar
 # Build the TclBlend Test Package.
 #----------------------------------------------------------------
 $(TEST_BUILD_DIR) :
-	$(mkinstalldirs) $(TEST_BUILD_DIR)
+	mkdir -p $(TEST_BUILD_DIR)
 
 JAVA_COMPILE_TCLBLEND_TEST = \
 	cd $(TEST_TCLBLEND_SRC_DIR) ; \
@@ -746,11 +734,11 @@ $(TEST_BUILD_DIR)/tcljava: \
 		$(TEST_TCLJAVA_JAVA_FILES) \
 		tcljava.jar
 	$(JAVA_COMPILE_TCLJAVA_TEST) $(TEST_TCLJAVA_FILE_PATTERN)
-	$(mkinstalldirs) $(TEST_BUILD_DIR)/javaload
+	mkdir -p $(TEST_BUILD_DIR)/javaload
 	@# workaround for bug in jikes (extra mkdir)
-	$(mkinstalldirs) $(TEST_BUILD_DIR)/javaload/tests/javaload
+	mkdir -p $(TEST_BUILD_DIR)/javaload/tests/javaload
 	@# workaround for bug in jikes (extra dir on CLASSPATH)
-	$(JAVA_COMPILE_TCLJAVA_TEST_JAVALOAD) javaload${SEP}*.java
+	$(JAVA_COMPILE_TCLJAVA_TEST_JAVALOAD) javaload/*.java
 	cd $(TEST_BUILD_DIR)/javaload; \
 		CLASSPATH=$(JAVA_CLASSPATH) \
 		$(JAR) $(JAR_COMPRESS_FLAGS) test9.jar Test9Extension.class; \

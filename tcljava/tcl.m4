@@ -230,7 +230,6 @@ AC_DEFUN(SC_LOAD_TCLCONFIG, [
     eval TCL_LIB_FILE=${TCL_LIB_FILE}
     eval TCL_LIB_FLAG=${TCL_LIB_FLAG}
 
-    AC_SUBST(TCL_DBGX)
     AC_SUBST(TCL_BIN_DIR)
     AC_SUBST(TCL_SRC_DIR)
     AC_SUBST(TCL_LIB_FILE)
@@ -264,10 +263,10 @@ AC_DEFUN(SC_LOAD_TCLCONFIG, [
 #------------------------------------------------------------------------
 
 AC_DEFUN(SC_LOAD_TKCONFIG, [
-    AC_MSG_CHECKING([for existence of $TK_BIN_DIR/tkConfig.sh])
+    AC_MSG_CHECKING([for existence of $TCLCONFIG])
 
     if test -f "$TK_BIN_DIR/tkConfig.sh" ; then
-        AC_MSG_RESULT([loading])
+        AC_MSG_CHECKING([loading $TK_BIN_DIR/tkConfig.sh])
 	. $TK_BIN_DIR/tkConfig.sh
     else
         AC_MSG_RESULT([could not find $TK_BIN_DIR/tkConfig.sh])
@@ -276,7 +275,6 @@ AC_DEFUN(SC_LOAD_TKCONFIG, [
     AC_SUBST(TK_BIN_DIR)
     AC_SUBST(TK_SRC_DIR)
     AC_SUBST(TK_LIB_FILE)
-    AC_SUBST(TK_XINCLUDES)
 ])
 
 #------------------------------------------------------------------------
@@ -386,27 +384,19 @@ AC_DEFUN(SC_ENABLE_THREADS, [
 	[tcl_ok=$enableval], [tcl_ok=no])
 
     if test "$tcl_ok" = "yes"; then
+	AC_MSG_RESULT(yes)
 	TCL_THREADS=1
 	AC_DEFINE(TCL_THREADS)
 	AC_DEFINE(_REENTRANT)
 
-	case "`uname -s`" in
-	    *win32* | *WIN32* | *CYGWIN_NT*)
-		    AC_MSG_RESULT(yes)
-		;;
-	    *)
-		AC_CHECK_LIB(pthread,pthread_mutex_init,tcl_ok=yes,tcl_ok=no)
-		if test "$tcl_ok" = "yes"; then
-		    # The space is needed
-		    THREADS_LIBS=" -lpthread"
-		    AC_MSG_RESULT(yes)
-		else
-		    TCL_THREADS=0
-		    AC_MSG_RESULT(no)
-		    AC_MSG_WARN("Don t know how to find pthread lib on your system - you must disable thread support or edit the LIBS in the Makefile...")
-		fi
-		;;
-	esac
+	AC_CHECK_LIB(pthread,pthread_mutex_init,tcl_ok=yes,tcl_ok=no)
+	if test "$tcl_ok" = "yes"; then
+	    # The space is needed
+	    THREADS_LIBS=" -lpthread"
+	else
+	    TCL_THREADS=0
+	    AC_MSG_WARN("Don t know how to find pthread lib on your system - you must disable thread support or edit the LIBS in the Makefile...")
+	fi
     else
 	TCL_THREADS=0
 	AC_MSG_RESULT(no (default))
@@ -1824,12 +1814,8 @@ AC_DEFUN(SC_MAKE_LIB, [
 # Arguments:
 #	basename	The base name of the library without version
 #			numbers, extensions, or "lib" prefixes.
-#	extra_dir	Extra directory in which to search for the
-#			library.  This location is used first, then
-#			$prefix/$exec-prefix, then some defaults.
 #
-# Requires:
-#	CYGPATH		command used to generate native style paths
+#	Requires:
 #
 # Results:
 #
@@ -1840,29 +1826,8 @@ AC_DEFUN(SC_MAKE_LIB, [
 
 AC_DEFUN(SC_LIB_SPEC, [
     AC_MSG_CHECKING(for $1 library)
-
-    # Look in exec-prefix and prefix for the library.  If neither of
-    # these were specified, look in libdir.  It doesn't matter if libdir
-    # wasn't specified since a search in the unspecified directory will
-    # fail (NONE/lib)
-
-    if test x"${exec_prefix}" != x"NONE" ; then
-	sc_lib_name_dir="${exec_prefix}/lib"
-    elif test x"${prefix}" != "NONE" ; then
-	sc_lib_name_dir="${prefix}/lib"
-    else
-	eval "sc_lib_name_dir=${libdir}"
-    fi
-
-    if test x"$2" != x ; then
-	sc_extra_lib_dir=$2
-    else
-	sc_extra_lib_dir=NONE
-    fi
-
+    eval "sc_lib_name_dir=${libdir}"
     for i in \
-	    `ls -dr ${sc_extra_lib_dir}/$1[[0-9]]*.lib 2>/dev/null ` \
-	    `ls -dr ${sc_extra_lib_dir}/lib$1[[0-9]]* 2>/dev/null ` \
 	    `ls -dr ${sc_lib_name_dir}/$1[[0-9]]*.lib 2>/dev/null ` \
 	    `ls -dr ${sc_lib_name_dir}/lib$1[[0-9]]* 2>/dev/null ` \
 	    `ls -dr /usr/lib/$1[[0-9]]*.lib 2>/dev/null ` \
@@ -1873,14 +1838,13 @@ AC_DEFUN(SC_LIB_SPEC, [
 
 	    sc_lib_name_dir=`dirname $i`
 	    $1_LIB_NAME=`basename $i`
-	    $1_LIB_PATH_NAME=$i
 	    break
 	fi
     done
 
     case "`uname -s`" in
 	*win32* | *WIN32* | *CYGWIN_NT*)
-	    $1_LIB_SPEC=\"`${CYGPATH} ${$1_LIB_PATH_NAME}`\"
+	    $1_LIB_SPEC=${$1_LIB_NAME}
 	    ;;
 	*)
 	    # Strip off the leading "lib" and trailing ".a" or ".so"
@@ -1897,7 +1861,7 @@ AC_DEFUN(SC_LIB_SPEC, [
 ])
 
 #------------------------------------------------------------------------
-# SC_PRIVATE_TCL_HEADERS --
+# SC_PRIVATE_TCL_INCLUDE --
 #
 #	Locate the private Tcl include files
 #
@@ -1936,7 +1900,7 @@ AC_DEFUN(SC_PRIVATE_TCL_HEADERS, [
 	    TCL_PLATFORM_DIR_NATIVE=${TCL_WIN_DIR_NATIVE}
 	;;
 	*)
-	    TCL_TOP_DIR_NATIVE='$(TCL_SRC_DIR)'
+	    TCL_TOP_DIR_NATIVE=${TCL_SRC_DIR}
 	    TCL_GENERIC_DIR_NATIVE='$(TCL_TOP_DIR_NATIVE)/generic'
 	    TCL_UNIX_DIR_NATIVE='$(TCL_TOP_DIR_NATIVE)/unix'
 	    TCL_WIN_DIR_NATIVE='$(TCL_TOP_DIR_NATIVE)/win'
@@ -2031,156 +1995,6 @@ AC_DEFUN(SC_PUBLIC_TCL_HEADERS, [
 ])
 
 #------------------------------------------------------------------------
-# SC_PRIVATE_TK_HEADERS --
-#
-#	Locate the private Tk include files
-#
-# Arguments:
-#
-#	Requires:
-#		TK_SRC_DIR	Assumes that SC_LOAD_TKCONFIG has
-#				 already been called.
-#
-# Results:
-#
-#	Substs the following vars:
-#		TK_INCLUDES
-#------------------------------------------------------------------------
-
-AC_DEFUN(SC_PRIVATE_TK_HEADERS, [
-    AC_MSG_CHECKING(for Tk private include files)
-
-    case "`uname -s`" in
-	*win32* | *WIN32* | *CYGWIN_NT*)
-	    TK_UNIX_DIR_NATIVE=\"`${CYGPATH} ${TK_SRC_DIR}/../unix`\"
-	    TK_WIN_DIR_NATIVE=\"`${CYGPATH} ${TK_SRC_DIR}/../win`\"
-	    TK_GENERIC_DIR_NATIVE=\"`${CYGPATH} ${TK_SRC_DIR}/../generic`\"
-	    TK_XLIB_DIR_NATIVE=\"`${CYGPATH} ${TK_SRC_DIR}/../xlib`\"
-	    TK_PLATFORM_DIR_NATIVE=${TK_WIN_DIR_NATIVE}
-
-	    TK_INCLUDES="-I${TK_GENERIC_DIR_NATIVE} -I${TK_PLATFORM_DIR_NATIVE} -I${TK_XLIB_DIR_NATIVE}"
-	;;
-	*)
-	    TK_GENERIC_DIR_NATIVE='$(TK_TOP_DIR_NATIVE)/generic'
-	    TK_UNIX_DIR_NATIVE='$(TK_TOP_DIR_NATIVE)/unix'
-	    TK_WIN_DIR_NATIVE='$(TK_TOP_DIR_NATIVE)/win'
-	    TK_PLATFORM_DIR_NATIVE=${TK_UNIX_DIR_NATIVE}
-
-	    TK_INCLUDES="-I${TK_GENERIC_DIR_NATIVE} -I${TK_PLATFORM_DIR_NATIVE}"
-	;;
-    esac
-
-    AC_SUBST(TK_UNIX_DIR_NATIVE)
-    AC_SUBST(TK_WIN_DIR_NATIVE)
-    AC_SUBST(TK_GENERIC_DIR_NATIVE)
-    AC_SUBST(TK_XLIB_DIR_NATIVE)
-    AC_SUBST(TK_PLATFORM_DIR_NATIVE)
-
-    AC_SUBST(TK_INCLUDES)
-    AC_MSG_RESULT(Using srcdir found in tkConfig.sh)
-])
-
-#------------------------------------------------------------------------
-# SC_PUBLIC_TK_HEADERS --
-#
-#	Locate the installed public Tk header files
-#
-# Arguments:
-#	None.
-#
-# Requires:
-#	CYGPATH must be set
-#
-# Results:
-#
-#	Adds a --with-tkinclude switch to configure.
-#	Result is cached.
-#
-#	Substs the following vars:
-#		TK_INCLUDES
-#------------------------------------------------------------------------
-
-AC_DEFUN(SC_PUBLIC_TK_HEADERS, [
-    AC_MSG_CHECKING(for Tk public headers)
-
-    AC_ARG_WITH(tkinclude, [ --with-tkinclude      directory containing the public Tk header files.], with_tkinclude=${withval})
-
-    if test x"${with_tkinclude}" != x ; then
-	if test -f "${with_tkinclude}/tk.h" ; then
-	    ac_cv_c_tkh=${with_tkinclude}
-	else
-	    AC_MSG_ERROR([${with_tkinclude} directory does not contain Tk public header file tk.h])
-	fi
-    else
-	AC_CACHE_VAL(ac_cv_c_tkh, [
-	    # Use the value from --with-tkinclude, if it was given
-
-	    if test x"${with_tkinclude}" != x ; then
-		ac_cv_c_tkh=${with_tkinclude}
-	    else
-		# Check in the includedir, if --prefix was specified
-
-		eval "temp_includedir=${includedir}"
-		for i in \
-			`ls -d ${temp_includedir} 2>/dev/null` \
-			/usr/local/include /usr/include ; do
-		    if test -f "$i/tk.h" ; then
-			ac_cv_c_tkh=$i
-			break
-		    fi
-		done
-	    fi
-	])
-    fi
-
-    # Print a message based on how we determined the include path
-
-    if test x"${ac_cv_c_tkh}" = x ; then
-	AC_MSG_ERROR(tk.h not found.  Please specify its location with --with-tkinclude)
-    else
-	AC_MSG_RESULT(${ac_cv_c_tkh})
-    fi
-
-    # Convert to a native path and substitute into the output files.
-
-    INCLUDE_DIR_NATIVE=`${CYGPATH} ${ac_cv_c_tkh}`
-
-    TK_INCLUDES=-I\"${INCLUDE_DIR_NATIVE}\"
-
-    AC_SUBST(TK_INCLUDES)
-])
-
-#------------------------------------------------------------------------
-# SC_SIMPLE_EXEEXT
-#	Select the executable extension based on the host type.  This
-#	is a lightweight replacement for AC_EXEEXT that doesn't require
-#	a compiler.
-#
-# Arguments
-#	none
-#
-# Results
-#	Subst's the following values:
-#		EXEEXT
-#------------------------------------------------------------------------
-
-AC_DEFUN(SC_SIMPLE_EXEEXT, [
-    AC_MSG_CHECKING(executable extension based on host type)
-
-    case "`uname -s`" in
-	*win32* | *WIN32* | *CYGWIN_NT*)
-	    EXEEXT=".exe"
-	;;
-	*)
-	    EXEEXT=""
-	;;
-    esac
-
-    AC_MSG_RESULT(${EXEEXT})
-    AC_SUBST(EXEEXT)
-])
-
-#------------------------------------------------------------------------
 # SC_PROG_TCLSH
 #	Locate a tclsh shell in the following directories:
 #		${exec_prefix}
@@ -2203,4 +2017,75 @@ AC_DEFUN(SC_PROG_TCLSH, [
 	AC_MSG_WARN(No tclsh executable found.  You will have to build the pkgIndex.tcl file manually.)
     fi
     AC_SUBST(TCLSH_PROG)
+])
+
+#------------------------------------------------------------------------
+# SC_PATH_PROTOOLS
+#	Path to a valid Tclpro installation
+#
+# Arguments
+#	none
+#
+# Results
+#	Subst's the following values:
+#		PROTOOLSDIR
+#------------------------------------------------------------------------
+
+AC_DEFUN(SC_PATH_PROTOOLS, [
+    AC_ARG_WITH(protools, [ --with-protools            directory containing the Tclpro installation], protools_dir=${withval})
+
+    AC_MSG_CHECKING(for protclsh in a TclPro installation)
+
+    case "`uname -s`" in
+	*win32* | *WIN32* | *CYGWIN_NT*)
+		platform=win32-ix86
+	    ;;
+	SunOS)
+		platform=solaris-sparc
+	    ;;
+	Linux)
+		platform=linux-ix86
+	    ;;
+	*)
+		platform=UNSUPPORTED
+	    ;;
+    esac
+
+    if test x"${protools_dir}" != x ; then
+	# Look for protclsh
+
+	for i in `ls -r ${protools_dir}/${platform}/bin/protclsh* 2>/dev/null` ; do
+	    if test -f $i ; then
+		PROTCLSH=$i
+		break
+	    fi
+	done
+    else
+	for i in `ls -dr /tools/TclPro1.3 2>/dev/null` \
+		`ls -dr //t/tools/TclPro1.3 2>/dev/null ` ; do
+
+	    # Look for protclsh
+
+	    for j in `ls $i/${platform}/bin/protclsh* 2>/dev/null` ; do
+		if test -f $j ; then
+		    PROTCLSH=$j
+		    break
+		fi
+	    done
+
+	    if test x"${PROTCLSH}" != x ; then
+		protools_dir=$i
+		break
+	    fi
+	done
+    fi
+
+    if test x"${PROTCLSH}" = x ; then
+	AC_MSG_ERROR("Could not locate a TclPro installation containing protclsh.")
+    else
+	AC_MSG_RESULT("found ${PROTCLSH}")
+    fi
+
+    PROTOOLSDIR=${protools_dir}
+    AC_SUBST(PROTOOLSDIR)
 ])

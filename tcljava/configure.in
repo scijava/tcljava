@@ -97,18 +97,15 @@ case "`uname -s`" in
     *win32* | *WIN32* | *CYGWIN_NT*)
         CYGPATH="cygpath -w"
 	PATH_SEP=\\\;
-	SEP=\\\\
         ;;
     *)
         CYGPATH=echo
 	PATH_SEP=:
-	SEP=/
 	;;
 esac
 
 FULL_SRCDIR=`cd $srcdir; pwd`
 FULL_SRCDIR_NATIVE=\"`${CYGPATH} ${FULL_SRCDIR}`\"
-MISC_DIR=${FULL_SRCDIR}/src
 
 #BOTH will automatically be set to true when configuring Jacl and TclBlend
 BOTH=false
@@ -282,7 +279,6 @@ case "`uname -s`" in
 esac
 
 AC_SUBST(PATH_SEP)
-AC_SUBST(SEP)
 
 #--------------------------------------------------------------------
 #
@@ -301,13 +297,13 @@ if test "$JAVA_NAME" = "kaffe"; then
 elif test "$JAVA_NAME" = "jdk"; then
     if test -f $JAVA_DIR/lib/classes.zip; then
         # JDK1.1 requires classes.zip in CLASSPATH
-        JAVA_CLASSPATH=\"`${CYGPATH} ${JAVA_DIR}/lib/classes.zip`\"
+        JAVA_CLASSPATH=$JAVA_DIR_NATIVE/lib/classes.zip
     elif test -f $JAVA_DIR/jre/lib/rt.jar; then
         # JDK1.2 does not require system libs in CLASSPATH
         # but we need them for compilers and tclblend
-        JAVA_CLASSPATH=\"`${CYGPATH} ${JAVA_DIR}/jre/lib/rt.jar`\"
+        JAVA_CLASSPATH=$JAVA_DIR_NATIVE/jre/lib/rt.jar
 	if test -f $JAVA_DIR/lib/tools.jar; then
-	       JAVA_CLASSPATH=\"`${CYGPATH} ${JAVA_DIR}/lib/tools.jar`\"${PATH_SEP}${JAVA_CLASSPATH}
+	       JAVA_CLASSPATH=$JAVA_DIR_NATIVE/lib/tools.jar${PATH_SEP}${JAVA_CLASSPATH}
 	fi
     elif test "`uname -s`" = "IRIX"; then
         # JDK1.1.5 under IRIX
@@ -656,34 +652,17 @@ See http://www.blackdown.org/java-linux.html.])
 
             case "`uname -m`" in
                 alpha)  ARCH=alpha ;;
-                i?86)   
-			if test -d ${JAVA_DIR}/lib/`uname -m` ; then
-				ARCH=`uname -m`
-			else
-				ARCH=i386 
-			fi
-		    ;;
+                i?86)   ARCH=i386 ;;
                 ppc)    ARCH=ppc ;;
                 sparc)  ARCH=sparc ;;
                 *)      AC_MSG_ERROR([ARCH '`uname -m`' is not supported]) ;;
             esac
 
-	    
-
             ARCH_LIBNAME=lib
-            ARCH_LIB=${ARCH_LIBNAME}/${ARCH}	
-	    if test -d ${JAVA_DIR}/${ARCH_LIB}/native_threads ; then
-		 ARCH_LIBPATH=${ARCH_LIB}/native_threads
-	    elif test -d  ${JAVA_DIR}/${ARCH_LIB}/native ; then
-		 ARCH_LIBPATH=${ARCH_LIB}/native
-	    elif test -d  ${JAVA_DIR}/${ARCH_LIB}/green_threads ; then
-		 ARCH_LIBPATH=${ARCH_LIB}/green_threads
-	    elif test -d  ${JAVA_DIR}/${ARCH_LIB}/green ; then
-		 ARCH_LIBPATH=${ARCH_LIB}/green
-	    fi
+            ARCH_LIB=${ARCH_LIBNAME}/${ARCH}
 
             JAVA_SHLIB=libjava.so
-            TCLBLEND_LIBS="-lpthread -L${JAVA_DIR}/${ARCH_LIBPATH} -ljava"
+            TCLBLEND_LIBS="-lpthread -L${JAVA_DIR}/${ARCH_LIBNAME} -ljava"
             TCLBLEND_SHLIB_NAMES="libpthread.so libjava.so"
 
             TCLBLEND_LD_PRELOAD="libpthread.so libjava.so"
@@ -762,21 +741,10 @@ use tclblend. See http://www.javasoft.com/products/jdk/1.1/index.html.])
 
             ARCH=win32
             ARCH_LIBNAME=bin
+            ARCH_LIB=${ARCH_LIBNAME}/classic
 
-	    if test -d ${JAVA_DIR}/jre/bin/classic ; then
-	        ARCH_LIB=${ARCH_LIBNAME}/classic
-	    else
-		ARCH_LIB=${ARCH_LIBNAME}
-	    fi
-
-            if test "$JAVA_VERSION" = "1.1"; then
-	        JAVA_SHLIB=javai.dll
-		TCLBLEND_LIBS=\"`${CYGPATH} ${JAVA_DIR}/lib/javai.lib`\"
-	    else
-		JAVA_SHLIB=jvm.dll
-                TCLBLEND_LIBS=\"`${CYGPATH} ${JAVA_DIR}/lib/jvm.lib`\"
-	    fi
-
+            JAVA_SHLIB=jvm.dll
+            TCLBLEND_LIBS=\"`${CYGPATH} ${JAVA_DIR}/lib/jvm.lib`\"
             TCLBLEND_SHLIB_NAMES=
 	    PRODUCTION_RELEASE=1
 
@@ -794,23 +762,11 @@ use tclblend. See http://www.javasoft.com/products/jdk/1.1/index.html.])
 	    JAVA_INCLUDE_NATIVE=\"`${CYGPATH} ${JAVA_INCLUDE}`\"
 	    JAVA_ARCH_INCLUDE_NATIVE=\"`${CYGPATH} ${JAVA_INCLUDE}/win32`\"
 	    BUILD_DIR_NATIVE=\"`${CYGPATH} ${BUILD_DIR}`\"
-	    TCLBLEND_BUILD_DIR_NATIVE=\"`${CYGPATH} ${BUILD_DIR}/tclblend`\"
-	    TCLJAVA_BUILD_DIR_NATIVE=\"`${CYGPATH} ${BUILD_DIR}/tcljava`\"
-	    TEST_BUILD_DIR_NATIVE=\"`${CYGPATH} ${BUILD_DIR}/tests`\"
-	    EMPTY_JAR=\"`${CYGPATH} ${MISC_DIR}/empty/empty.jar | sed -e s%\\\\%\\\\\\\\\\\\\\\\%g% `\"
-	    TCLJAVA_JAR=\"`${CYGPATH} ${BUILD_DIR}/tcljava.jar | sed -e s%\\\\%\\\\\\\\%g% `\"
-	    TCLBLEND_JAR=\"`${CYGPATH} ${BUILD_DIR}/tclblend.jar | sed -e s%\\\\%\\\\\\\\%g% `\"
 	    ;;
         *)
 	    JAVA_INCLUDE_NATIVE=${JAVA_INCLUDE}
 	    JAVA_ARCH_INCLUDE_NATIVE=${JAVA_ARCH_INCLUDE}
 	    BUILD_DIR_NATIVE=${BUILD_DIR}
-	    TCLBLEND_BUILD_DIR_NATIVE=${BUILD_DIR}/tclblend
-	    TCLJAVA_BUILD_DIR_NATIVE=${BUILD_DIR}/tcljava
-	    TEST_BUILD_DIR_NATIVE=${BUILD_DIR}/tests
-	    EMPTY_JAR=${MISC_DIR}/empty/empty.jar
-	    TCLJAVA_JAR=${BUILD_DIR}/tcljava.jar
-	    TCLBLEND_JAR=${BUILD_DIR}/tclblend.jar
 	    ;;
     esac
 
@@ -850,11 +806,11 @@ use tclblend. See http://www.javasoft.com/products/jdk/1.1/index.html.])
         if test ! -d $DIR; then
             MSG="jdk arch directory $DIR does not exist"
             echo $MSG >&5
-	    DIR=$JAVA_DIR/$ARCH_LIB
             AC_MSG_WARN([$MSG])
+        else
+            JAVA_ARCH_GREEN_LIB=$DIR
+            JAVA_ARCH_GREEN_RUNTIME_LIBS=$DIR
         fi
-        JAVA_ARCH_GREEN_LIB=$DIR
-        JAVA_ARCH_GREEN_RUNTIME_LIBS=$DIR
 
         LIB=$DIR/$JAVA_SHLIB
         if test ! -f $LIB; then
@@ -867,12 +823,11 @@ use tclblend. See http://www.javasoft.com/products/jdk/1.1/index.html.])
         if test ! -d $DIR; then
             MSG="jdk arch directory $DIR does not exist"
             echo $MSG >&5
-	    DIR=$JAVA_DIR/$ARCH_LIB
-            AC_MSG_WARN([$MSG])
+            AC_MSG_ERROR([$MSG])
+        else
+            JAVA_ARCH_NATIVE_LIB=$DIR
+            JAVA_ARCH_NATIVE_RUNTIME_LIBS=$DIR
         fi
-        JAVA_ARCH_NATIVE_LIB=$DIR
-        JAVA_ARCH_NATIVE_RUNTIME_LIBS=$DIR
-
 
         LIB=$DIR/$JAVA_SHLIB
         if test ! -f $LIB; then
@@ -1179,13 +1134,6 @@ fi
 JAVA_FLAGS_C=""
 
 AC_SUBST(BUILD_DIR_NATIVE)
-AC_SUBST(TCLBLEND_BUILD_DIR_NATIVE)
-AC_SUBST(TCLJAVA_BUILD_DIR_NATIVE)
-AC_SUBST(TEST_BUILD_DIR_NATIVE)
-AC_SUBST(EMPTY_JAR)
-AC_SUBST(TCLBLEND_JAR)
-AC_SUBST(TCLJAVA_JAR)
-
 AC_SUBST(JAVA_DIR)
 AC_SUBST(JAVA_DIR_NATIVE)
 AC_SUBST(JAVA_CLASSPATH)
@@ -1366,6 +1314,9 @@ if test $TCLJAVA = "tclblend" || test $BOTH = "true"; then
    # link against the non-stubbed Tcl library.
    #--------------------------------------------------------------------
 
+   # However, TclBlend allows Java to create an interp, and the DLL is
+   # really a custom shell in that respect.  Do not use stubs.
+
    #AC_DEFINE(USE_TCL_STUBS)
 
    #--------------------------------------------------------------------
@@ -1380,7 +1331,7 @@ if test $TCLJAVA = "tclblend" || test $BOTH = "true"; then
    # eval these two values to dereference the ${DBGX} variable.
    #--------------------------------------------------------------------
 
-   eval "SHARED_LIB_SUFFIX=${TCL_SHLIB_SUFFIX}"
+   eval "SHARED_LIB_SUFFIX=${TCL_SHARED_LIB_SUFFIX}"
    eval "UNSHARED_LIB_SUFFIX=${TCL_UNSHARED_LIB_SUFFIX}"
 
    #--------------------------------------------------------------------
@@ -1389,9 +1340,6 @@ if test $TCLJAVA = "tclblend" || test $BOTH = "true"; then
 
    case "`uname -s`" in
        *win32* | *WIN32* | *CYGWIN_NT*)
-           if test "${SHARED_LIB_SUFFIX}" = "" ; then
-	      SHARED_LIB_SUFFIX=".dll"
-	   fi
            if test "${SHARED_BUILD}" = "1" ; then
 	       SHLIB_LD_LIBS="\"`cygpath -w ${TCL_BIN_DIR}/${TCL_LIB_FILE}`\" ${TCL_SHLIB_LD_LIBS}"
 	       eval "TCLBLEND_LIB_FILE=${PACKAGE}${SHARED_LIB_SUFFIX}"
@@ -1402,11 +1350,7 @@ if test $TCLJAVA = "tclblend" || test $BOTH = "true"; then
 	;;
         *)
 	   if test "${SHARED_BUILD}" = "1" ; then
-	       if test ! -f "${TCL_LIB_PATH}" ; then
-	           SHLIB_LD_LIBS="${TCL_BUILD_LIB_SPEC}"
-	       else
-	           SHLIB_LD_LIBS="${TCL_LIB_SPEC}"
-	       fi
+	       SHLIB_LD_LIBS=""
 	       eval "TCLBLEND_LIB_FILE=lib${PACKAGE}${SHARED_LIB_SUFFIX}"
 	       RANLIB=:
 	   else
@@ -1471,7 +1415,6 @@ AC_SUBST(TCLBLEND_PLATFORM)
 
 AC_SUBST(FULL_SRCDIR)
 AC_SUBST(FULL_SRCDIR_NATIVE)
-AC_SUBST(MISC_DIR)
 
 
 #--------------------------------------------------------------------
