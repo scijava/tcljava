@@ -596,3 +596,24 @@ There seems to be some problem with the positive and negative infinity
 description string on different platforms. If Tcl should have one or
 the other then Tcl may need to be fixed. The test cases in the regular
 Tcl dist does not check for this.
+
+(TODO)
+
+There is a problem with the configure script in places where it checks
+for the JAVA_VERISON variable. This variable is only set by the check
+done in Tcl Blend. In Jacl there are some tests that need to use
+this var but it is not set. See the tests related to the -native
+flag under Linux for a specific example.
+
+
+(TODO)
+
+Take a look at the Tcl Blend method tcl.lang.Interp.create(). The C
+implementation says that it is the primary entry point when a JVM
+loads Tcl Blend but whenever I tried that I got a "not monitor owner"
+error. Could this be because the method is not synchronized? If the
+Java method was synchronised would that matter? Can one even synchronize
+a native method like that? If not would it be possible to synchronize
+the method that calls create to get the same effect?
+
+
