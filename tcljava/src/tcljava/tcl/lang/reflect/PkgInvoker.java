@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: PkgInvoker.java,v 1.1 1998/10/14 21:09:15 cvsadmin Exp $
+ * RCS: @(#) $Id: PkgInvoker.java,v 1.2 1999/05/10 02:39:02 dejong Exp $
  *
  */
 
@@ -54,19 +54,15 @@ import java.util.*;
 
 public class PkgInvoker {
 
-/*
- * PkgInvokers of the packages that we have already visited are stored
- * in this hashtable. They key is the String name of a package.
- */
+// PkgInvokers of the packages that we have already visited are stored
+// in this hashtable. They key is the String name of a package.
 
 static Hashtable cachedInvokers = new Hashtable();
 
-/*
- * This is the default invoker to use if a package doesn't include a
- * proper TclPkgInvoker class. This means only the public members
- * of the public classes of that package can be accessed diretly
- * from Tcl.
- */
+// This is the default invoker to use if a package doesn't include a
+// proper TclPkgInvoker class. This means only the public members
+// of the public classes of that package can be accessed diretly
+// from Tcl.
 
 static PkgInvoker defaultInvoker = new PkgInvoker();
 
@@ -222,17 +218,15 @@ getPkgInvoker(
 	pkg = clsName.substring(0, index);
     }
 
-    PkgInvoker invoker = (PkgInvoker)cachedInvokers.get(pkg);
+    PkgInvoker invoker = (PkgInvoker) cachedInvokers.get(pkg);
     if (invoker == null) {
 	try {
 	    Class invCls = Class.forName(pkg + ".TclPkgInvoker");
-	    invoker = (PkgInvoker)(invCls.newInstance());
+	    invoker = (PkgInvoker) invCls.newInstance();
 	} catch (Exception e) {
-	    /*
-	     * The package doesn't include a PkgInvoker class. We use
-	     * the default invoker, which means we can't invoke
-	     * any of the protected members inside this package.
-	     */
+	    // The package doesn't include a PkgInvoker class. We use
+	    // the default invoker, which means we can't invoke
+	    // any of the protected members inside this package.
 
 	    invoker = defaultInvoker;
 	}
@@ -240,6 +234,12 @@ getPkgInvoker(
 	if (invoker == null) {
 	    invoker = defaultInvoker;
 	}
+
+// FIXME: should we store default pkg invoker in invoker table.
+// Should we store all the possible package that do not have
+// an invoker. How will we know if an earlier check failed ???
+// This also needs to be tied into a common "cache" system that can
+// be controlled by the user with some tcl commands.
 
 	cachedInvokers.put(pkg, invoker);
     }
