@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Var.java,v 1.3 1999/07/06 12:19:34 mo Exp $
+ * RCS: @(#) $Id: Var.java,v 1.4 1999/07/12 02:39:13 mo Exp $
  *
  */
 package tcl.lang;
@@ -233,7 +233,7 @@ class Var {
      */
 
     protected synchronized int getNextIndex() {
-        if(sidVec.size() == 0) {
+        if (sidVec.size() == 0) {
 	    return 1;
 	}
 	SearchId sid = (SearchId) sidVec.lastElement();
@@ -1777,6 +1777,55 @@ class Var {
 	return;
     }
 
+    /*
+     *----------------------------------------------------------------------
+     *
+     * Tcl_GetVariableFullName -> getVariableFullName
+     *
+     *  Given a Var token returned by NamespaceCmd.FindNamespaceVar, this
+     *	procedure appends to an object the namespace variable's full
+     *	name, qualified by a sequence of parent namespace names.
+     *
+     * Results:
+     *  None.
+     *
+     * Side effects:
+     *  The variable's fully-qualified name is appended to the string
+     *  representation of obj.
+     *
+     *----------------------------------------------------------------------
+     */
+
+    static void getVariableFullName(
+         Interp interp,	        // Interpreter containing the variable.
+	 Var variable,		// Token for the variable returned by a
+				// previous call to Tcl_FindNamespaceVar.
+         TclObject obj	        // Points to the object onto which the
+				// variable's full name is appended.
+	 )
+    {
+	Var var = variable;
+
+	// Add the full name of the containing namespace (if any), followed by
+	// the "::" separator, then the variable name.
+
+	if (var != null) {
+	    if (! var.isVarArrayElement()) {
+		if (var.ns != null) {
+		    TclString.append(obj, var.ns.fullName);
+		    if (var.ns != interp.globalNs) {
+			TclString.append(obj, "::");
+		    }
+		}
+		// Jacl's Var class does not include the "name" member
+		// We use the "hashKey" member which is equivalent
+
+		if (var.hashKey != null) {
+		    TclString.append(obj, var.hashKey);
+		}
+	    }
+	}
+    }
 
     /**
      * This procedure is invoked to find and invoke relevant
@@ -1802,8 +1851,8 @@ class Var {
 
     // FIXME : still need to port Tcl 8.1 version of callTraces!
 
-    static protected String callTraces(Interp interp, Var array, Var var, String part1,
-	    String part2, int flags) {
+    static protected String callTraces(Interp interp, Var array, Var var,
+				       String part1, String part2, int flags) {
 
 	// If there are already similar trace procedures active for the
 	// variable, don't call them again.
