@@ -10,7 +10,7 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  *
- * RCS: @(#) $Id: javaCmd.c,v 1.4 1999/05/17 02:33:51 dejong Exp $
+ * RCS: @(#) $Id: javaCmd.c,v 1.5 1999/07/28 03:36:58 mo Exp $
  */
 
 /*
@@ -300,6 +300,16 @@ EXPORT(int,Tclblend_Init)(
 #ifdef TCLBLEND_DEBUG
     fprintf(stderr, "Tcl Blend debug: Tclblend_Init finished in javaCmd.c:\n");
     fprintf(stderr, "Tcl Blend debug: CLASSPATH is \"%s\"\n", getenv("CLASSPATH"));
+    fprintf(stderr, "Tcl Blend debug: JavaInitBlend() returned \"");
+    if (result == TCL_ERROR) {
+      fprintf(stderr, "TCL_ERROR");
+    } else if (result == TCL_OK) {
+      fprintf(stderr, "TCL_OK");
+    } else {
+      fprintf(stderr, "%d", result);
+    }
+    fprintf(stderr, "\"\n");
+
 #endif /* TCLBLEND_DEBUG */
 
     return result;
@@ -720,7 +730,8 @@ JavaInitBlend(
     Tcl_Interp *interp,		/* Interpreter to intialize. */
     jobject interpObj)		/* Handle to Interp object. */
 {
-    jobject blend;
+    Tcl_Obj *obj;
+    jobject blend, exception;
     int result;
 
 #ifdef TCLBLEND_DEBUG
@@ -740,12 +751,27 @@ JavaInitBlend(
 
     blend = (*env)->NewObject(env, java.BlendExtension, java.blendC);
     (*env)->CallVoidMethod(env, blend, java.init, interpObj);
-    if ((*env)->ExceptionOccurred(env)) {
+    if (exception = (*env)->ExceptionOccurred(env)) {
+      (*env)->ExceptionDescribe(env);
+      (*env)->ExceptionClear(env);
+      obj = Tcl_GetObjResult(interp);
+      ToString(env, obj, exception);
+
+#ifdef TCLBLEND_DEBUG
+    fprintf(stderr, "Tcl Blend debug: Exception in init() method during JavaInitBlend() in javaCmd.c:\n");
+#endif /* TCLBLEND_DEBUG */
+
 	result = TCL_ERROR;
     } else {
 	result = TCL_OK;
     }
     (*env)->DeleteLocalRef(env, blend);
+
+
+#ifdef TCLBLEND_DEBUG
+    fprintf(stderr, "Tcl Blend debug: JavaInitBlend returning in javaCmd.c:\n");
+#endif /* TCLBLEND_DEBUG */
+
     return result;
 }
 
