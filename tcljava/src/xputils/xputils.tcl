@@ -108,7 +108,7 @@ proc XpUtils::splitpath { path } {
 
 proc XpUtils::appendpath { var elem } {
     set sep [XpUtils::getPathSeparator]
-    uplevel 1 append $var $sep$elem
+    uplevel 1 [list append $var $sep$elem]
 }
 
 
@@ -118,9 +118,9 @@ proc XpUtils::appendpath { var elem } {
 proc XpUtils::prependpath { var elem } {
     set sep [XpUtils::getPathSeparator]
 
-    set tmp [uplevel 1 set $var]
-    uplevel 1 set $var ${elem}${sep}
-    uplevel 1 append $var $tmp
+    set tmp [uplevel 1 [list set $var]]
+    uplevel 1 [list set $var ${elem}${sep}]
+    uplevel 1 [list append $var $tmp]
 }
 
 

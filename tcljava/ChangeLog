@@ -1,3 +1,9 @@
+2000-10-09  Mo DeJong  <mdejong@redhat.com>
+
+	* src/xputils/xputils.tcl (appendpath, prependpath):
+	Use list command to quote arguments set to uplevel.
+	This fixes a bug that caused xputils to fail under Windows.
+
 2000-08-26  Mo DeJong  <mdejong@redhat.com>
 
 	* src/native/javaCmd.c (JavaSetupJava, TclThreadCleanup):
