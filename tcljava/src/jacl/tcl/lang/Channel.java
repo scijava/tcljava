@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Channel.java,v 1.20 2001/12/25 22:22:19 mdejong Exp $
+ * RCS: @(#) $Id: Channel.java,v 1.21 2002/01/02 18:40:53 mdejong Exp $
  */
 
 package tcl.lang;
@@ -80,11 +80,15 @@ abstract class Channel {
     protected int bufferSize = 4096;
 
     /**
-     * Type of encoding for this Channel.
+     * Name of Java encoding for this Channel.
      * A null value means use no encoding (binary).
      */
-    
-    protected String encoding = "iso8859-1";
+
+    // FIXME: Check to see if this field is updated after a call
+    // to "encoding system $enc" for new Channel objects!
+
+    protected String encoding;
+    protected int bytesPerChar;
 
     /**
      * Translation mode for end-of-line character
@@ -105,6 +109,9 @@ abstract class Channel {
 
     protected char outEofChar = 0;
 
+    Channel() {
+        setEncoding(EncodingCmd.systemJavaEncoding);
+    }
 
     /**
      * Read data from the Channel.
@@ -411,7 +418,7 @@ abstract class Channel {
     /** 
      * Query encoding
      *
-     * @return Name of Channel's encoding (null if no encoding)
+     * @return Name of Channel's Java encoding (null if no encoding)
      */
 
     String getEncoding() {
@@ -420,15 +427,18 @@ abstract class Channel {
 
 
     /** 
-     * Set new encoding
+     * Set new Java encoding
      *
      */
 
     void setEncoding(String en) {
-        if (encoding.equals("binary") || encoding.equals(""))
+        if (en == null) {
             encoding = null;
-        else
+            bytesPerChar = 1;
+        } else {
             encoding = en;
+            bytesPerChar = EncodingCmd.getBytesPerChar(en);
+        }
     }
 
     /** 

@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FconfigureCmd.java,v 1.9 2001/12/25 21:20:19 mdejong Exp $
+ * RCS: @(#) $Id: FconfigureCmd.java,v 1.10 2002/01/02 18:40:53 mdejong Exp $
  *
  */
 
@@ -82,10 +82,15 @@ class FconfigureCmd implements Command {
 	    // -encoding
 
             TclList.append(interp, list, TclString.newInstance("-encoding"));
-            String encoding = chan.getEncoding();
-            if (encoding == null)
-                encoding = "binary";
-            TclList.append(interp, list, TclString.newInstance(encoding));
+
+            String javaEncoding = chan.getEncoding();
+            String tclEncoding;
+            if (javaEncoding == null) {
+                tclEncoding = "binary";
+            } else {
+                tclEncoding = EncodingCmd.getTclName(javaEncoding);
+            }
+            TclList.append(interp, list, TclString.newInstance(tclEncoding));
 
             // -eofchar
 
@@ -179,9 +184,13 @@ class FconfigureCmd implements Command {
                     break;
                 }
                 case OPT_ENCODING: {    // -encoding
-                    String encoding = chan.getEncoding();
-                    interp.setResult((encoding == null)
-                        ? "binary" : encoding);
+                    String javaEncoding = chan.getEncoding();
+                    if (javaEncoding == null) {
+                        interp.setResult("binary");
+                    } else {
+                        interp.setResult(
+                            EncodingCmd.getTclName(javaEncoding));
+                    }
                     break;
                 }
                 case OPT_EOFCHAR: {    // -eofchar
@@ -281,7 +290,21 @@ class FconfigureCmd implements Command {
                     break;
                 }
                 case OPT_ENCODING: {    // -encoding
-                    chan.setEncoding(argv[i].toString());
+                    String tclEncoding = argv[i].toString();
+
+                    if (tclEncoding.equals("") ||
+                            tclEncoding.equals("binary")) {
+                        chan.setEncoding(null);
+                    } else {
+                        String javaEncoding = EncodingCmd.getJavaName(
+                            tclEncoding);
+                        if (javaEncoding == null) {
+                            throw new TclException(interp,
+                                "unknown encoding \"" + tclEncoding + "\"");
+                        }
+                        chan.setEncoding(javaEncoding);
+                    }
+
                     break;
                 }
                 case OPT_EOFCHAR: {    // -eofchar

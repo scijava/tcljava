@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.37 2001/05/12 21:54:40 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.38 2002/01/02 18:40:53 mdejong Exp $
  *
  */
 
@@ -613,6 +613,7 @@ createCommands()
     Extension.loadOnDemand(this, "close",	  "tcl.lang.CloseCmd");
     Extension.loadOnDemand(this, "continue",  	  "tcl.lang.ContinueCmd");
     Extension.loadOnDemand(this, "concat",	  "tcl.lang.ConcatCmd");
+    Extension.loadOnDemand(this, "encoding",	  "tcl.lang.EncodingCmd");
     Extension.loadOnDemand(this, "eof",	 	  "tcl.lang.EofCmd");
     Extension.loadOnDemand(this, "eval",	  "tcl.lang.EvalCmd");
     Extension.loadOnDemand(this, "error",	  "tcl.lang.ErrorCmd");

@@ -1,3 +1,19 @@
+2002-01-02  Bruce Johnson  <bruce_johnson@merck.com>,
+            Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/jacl/tcl/lang/Channel.java (Channel, setEncoding):
+	Add default constructor that will set the encoding at
+	channel creation time. Move Tcl channel name logic into
+	fconfigure command and call EncodingCmd.getBytesPerChar
+	to cache the number of bytes per char for the channel.
+	* src/jacl/tcl/lang/EncodingCmd.java: Add initial
+	implementation of the encoding command.
+	* src/jacl/tcl/lang/FconfigureCmd.java (cmdProc): Add
+	logic to translate from Tcl encoding names to Java
+	encoding names and vice versa.
+	* src/jacl/tcl/lang/Interp.java (createCommands): Add
+	encoding command to interp cmd table.
+
 2001-12-25  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* src/jacl/tcl/lang/Channel.java (close):
