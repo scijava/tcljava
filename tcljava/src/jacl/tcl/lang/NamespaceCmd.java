@@ -15,7 +15,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: NamespaceCmd.java,v 1.5 1999/07/06 12:19:34 mo Exp $
+ * RCS: @(#) $Id: NamespaceCmd.java,v 1.6 1999/07/16 05:50:01 mo Exp $
  */
 
 package tcl.lang;
@@ -41,7 +41,7 @@ public class NamespaceCmd extends InternalRep implements Command {
     // Initial size of stack allocated space for tail list - used when resetting
     // shadowed command references in the functin: TclResetShadowedCmdRefs.
 
-    private static final int NUM_TRAIL_ELEMS = 5;
+    //private static final int NUM_TRAIL_ELEMS = 5;
 
     // Count of the number of namespaces created. This value is used as a
     // unique id for each namespace.
@@ -113,8 +113,6 @@ public class NamespaceCmd extends InternalRep implements Command {
     static Namespace
     getCurrentNamespace(Interp interp)
     {
-	// FIXME : check Interp.varFrame null condition
-
 	if (interp.varFrame != null) {
 	    return interp.varFrame.ns;
 	} else {
@@ -141,7 +139,6 @@ public class NamespaceCmd extends InternalRep implements Command {
     static Namespace
     getGlobalNamespace(Interp interp)
     {
-	// FIXME : double check initilization of this field inside the Interp
 	return interp.globalNs;
     }
 
@@ -205,7 +202,6 @@ public class NamespaceCmd extends InternalRep implements Command {
 	frame.caller = interp.frame;
 	frame.callerVar = interp.varFrame;
 
-	// FIXME : check that varFrame is null conditions in Interp
 	if (interp.varFrame != null) {
 	    frame.level = (interp.varFrame.level + 1);
 	} else {
@@ -215,12 +211,11 @@ public class NamespaceCmd extends InternalRep implements Command {
 	// FIXME : does Jacl need a procPtr in the CallFrame class?
 	//frame.procPtr = null; 	   // no called procedure
 
-	// FIXME : check on this (null == global frame thing inside Interp)
-	// FIXME : #2 this was causing crashes in var lookup code, Need to
+	// FIXME : this was causing crashes in var lookup code, Need to
 	// Look at the code in CallFrame to keep trace of null varFrame case!
 	//frame.varTable = null;       // and no local variables
 
-	// FIXME : delete these later, not part of Jacl's CallFrame (compiler only)
+	// Not part of Jacl CallFrame implementation (usedonly in tcl compiler)
 	//framePtr.numCompiledLocals = 0;
 	//framePtr.compiledLocals = null;
 	
@@ -281,8 +276,7 @@ public class NamespaceCmd extends InternalRep implements Command {
 	saveErrFlag = (interp.flags & Parser.ERR_IN_PROGRESS);
 	
 	if (frame.varTable != null) {
-	    //FIXME : do we need this call, should it be CallFrame.dispose()?
-	    //TclDeleteVars(interp, frame.varTable);
+	    Var.deleteVars(interp, frame.varTable);
 	    frame.varTable = null;
 	}
 	
@@ -400,6 +394,7 @@ public class NamespaceCmd extends InternalRep implements Command {
 		TclString.append(tobj,
 		    "can't create namespace \"" + name + "\": already exists");
 		*/
+
 		// FIXME : is there a test case to check this error result?
 		interp.setResult(
 		    "can't create namespace \"" + name + "\": already exists");
@@ -430,6 +425,8 @@ public class NamespaceCmd extends InternalRep implements Command {
 	ns.exportArray        = null;
 	ns.numExportPatterns  = 0;
 	ns.maxExportPatterns  = 0;
+
+	// Jacl does not use these tcl compiler specific members
 	//ns.cmdRefEpoch        = 0;
 	//ns.resolverEpoch      = 0;
 	// FIXME : if cmdResProc or varResProc is used we need to uncomment these
@@ -523,9 +520,8 @@ public class NamespaceCmd extends InternalRep implements Command {
 		// "errorInfo" and "errorCode" variables for errors that
 		// occurred while it was being torn down.  Try to clear the
 		// variable list one last time.
-		
-		// FIXME : do we need this call?
-		//TclDeleteVars((Interp *) ns.interp, &ns.varTable);
+
+		Var.deleteVars(ns.interp, ns.varTable);
 
 		ns.childTable.clear();
 		ns.cmdTable.clear();
@@ -605,9 +601,7 @@ public class NamespaceCmd extends InternalRep implements Command {
 		errorCodeStr = null;
 	    }
 
-	    // FIXME : what should we do about these?
-	    //TclDeleteVars(iPtr, &ns.varTable);
-	    //Tcl_InitHashTable(&ns.varTable, TCL_STRING_KEYS);
+	    Var.deleteVars(interp, ns.varTable);
 
 	    if (errorInfoStr != null) {
 		try {
@@ -624,12 +618,8 @@ public class NamespaceCmd extends InternalRep implements Command {
 		}
 	    }
 	} else {
-	    // Variable table should be cleared but not freed! TclDeleteVars
-	    // frees it, so we reinitialize it afterwards.
-
-	    // FIXME : again what does this do?
-	    //TclDeleteVars(iPtr, &ns.varTable);
-	    //Tcl_InitHashTable(&ns.varTable, TCL_STRING_KEYS);
+	    // Variable table should be cleared.
+	    Var.deleteVars(interp, ns.varTable);
 	}
 
 	// Remove the namespace from its parent's child hashtable.
@@ -659,7 +649,7 @@ public class NamespaceCmd extends InternalRep implements Command {
 	// command table.
 
 	// FIXME : double check that using an enumeration for a hashtable
-	// that changes is ok in Java!
+	// that changes is ok in Java! Also call deleteCommand... correctly!
 	search = ns.cmdTable.elements();
 	while( search.hasMoreElements() ) {
 	    cmd = (Command) search.nextElement();
@@ -1091,7 +1081,7 @@ public class NamespaceCmd extends InternalRep implements Command {
     {
 
 
-	// FIXME : double check calls to this method (for invariants)
+	// FIXME : remove extra method call checks when we are sure this works!
 
 	if (true) { // check invariants
 	    if ((nsPtrPtr == null) || (nsPtrPtr.length != 1)) {
@@ -1133,7 +1123,6 @@ public class NamespaceCmd extends InternalRep implements Command {
 	} else if ((flags & TCL.GLOBAL_ONLY) != 0) {
 	    ns = globalNs;
 	} else if (ns == null) {
-	    // FIXME : make sure interp.VarFrame is null when global
 	    if (interp.varFrame != null) {
 		ns = interp.varFrame.ns;
 	    } else {
@@ -1242,8 +1231,7 @@ public class NamespaceCmd extends InternalRep implements Command {
 		if (entryNs != null) {
 		    ns = entryNs;
 		} else if ((flags & CREATE_NS_IF_UNKNOWN) != 0) {
-		    // FIXME : is this the correct way to create a CallFrame?
-		    CallFrame frame = new CallFrame(interp);
+		    CallFrame frame = interp.newCallFrame();
 
 		    pushCallFrame(interp, frame, ns, false);
 		    ns = createNamespace(interp, nsName, null);
@@ -1665,52 +1653,6 @@ public class NamespaceCmd extends InternalRep implements Command {
 	}
 	return null;
     }
-
-
-    /*
-     *----------------------------------------------------------------------
-     *
-     * TclResetShadowedCmdRefs -> resetShadowedCmdRefs
-     *
-     *	Called when a command is added to a namespace to check for existing
-     *	command references that the new command may invalidate. Consider the
-     *	following cases that could happen when you add a command "foo" to a
-     *	namespace "b":
-     *	   1. It could shadow a command named "foo" at the global scope.
-     *	      If it does, all command references in the namespace "b" are
-     *	      suspect.
-     *	   2. Suppose the namespace "b" resides in a namespace "a".
-     *	      Then to "a" the new command "b::foo" could shadow another
-     *	      command "b::foo" in the global namespace. If so, then all
-     *	      command references in "a" are suspect.
-     *	The same checks are applied to all parent namespaces, until we
-     *	reach the global :: namespace.
-     *
-     * Results:
-     *	None.
-     *
-     * Side effects:
-     *	If the new command shadows an existing command, the cmdRefEpoch
-     *	counter is incremented in each namespace that sees the shadow.
-     *	This invalidates all command references that were previously cached
-     *	in that namespace. The next time the commands are used, they are
-     *	resolved from scratch.
-     *
-     *----------------------------------------------------------------------
-     */
-
-    // FIXME : does this only apply to byte code compiled command?
-    // If it does then we might not even need it!
-
-    static void resetShadowedCmdRefs(
-        Interp interp,		 // Interpreter containing the new command.
-        String name 		 // Reference to the new Command
-	)
-    {
-	//FIXME : add impl
-    }
-
-
 
     /*
      *----------------------------------------------------------------------
@@ -2292,8 +2234,7 @@ public class NamespaceCmd extends InternalRep implements Command {
 	// Make the specified namespace the current namespace and evaluate
 	// the command(s).
 
-	// FIXME : is this the correct way to create a CallFrame?
-	frame = new CallFrame(interp);
+	frame = interp.newCallFrame();
 	pushCallFrame(interp, frame, namespace, false);
 
 	try {
@@ -2544,8 +2485,7 @@ public class NamespaceCmd extends InternalRep implements Command {
 
 	// Make the specified namespace the current namespace.
 
-	// FIXME : is this the correct way to create a CallFrame?
-	frame = new CallFrame(interp);
+	frame = interp.newCallFrame();
 	pushCallFrame(interp, frame, namespace, false);
 
 
@@ -2816,7 +2756,60 @@ public class NamespaceCmd extends InternalRep implements Command {
     
     private static void whichCmd(Interp interp, TclObject[] objv)
 	    throws TclException {
-	// FIXME : add impl	
+	String arg;
+	Command cmd;
+	Var variable;
+	int argIndex, lookup;
+
+	if (objv.length < 3) {
+	    throw new TclNumArgsException(interp, 2, objv,
+		          "?-command? ?-variable? name");
+	}
+
+	// Look for a flag controlling the lookup.
+
+	argIndex = 2;
+	lookup = 0;			// assume command lookup by default
+	arg = objv[2].toString();
+	if ((arg.length() > 1) && (arg.charAt(0) == '-')) {
+	    if (arg.equals("-command")) {
+		lookup = 0;
+	    } else if (arg.equals("-variable")) {
+		lookup = 1;
+	    } else {
+		throw new TclNumArgsException(interp, 2, objv,
+		          "?-command? ?-variable? name");
+	    }
+	    argIndex = 3;
+	}
+	if (objv.length != (argIndex + 1)) {
+	    throw new TclNumArgsException(interp, 2, objv,
+		          "?-command? ?-variable? name");
+	}
+
+	// FIXME : need to finish implementation!
+
+	/*
+	switch (lookup) {
+	case 0:			// -command
+	    cmd = Tcl_GetCommandFromObj(interp, objv[argIndex]);
+	    if (cmd == null) {	
+		return;	        // cmd not found, just return (no error)
+	    }
+	    interp.setResult(interp.getCommandFullName(interp, cmd));
+	    return;
+
+	case 1:			// -variable
+	    arg = objv[argIndex].toString();
+	    variable = NamespaceCmd.findNamespaceVar(interp, arg, null, 0);
+	    if (variable != null) {
+		interp.setResult(Var.getVariableFullName(interp, variable));
+	    }
+	    return;
+	}
+	*/
+
+	return;
     }
     
 
