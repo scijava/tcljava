@@ -1,0 +1,428 @@
+# This file is just to keep track of changes and TODOs for MO
+
+(TODO)
+Make sure to change the test cases (or perhaps add a test case) so that
+we are sure that we load a resource from a compressed jar and an uncompressed
+jar file in the test cases.
+
+
+(TODO)
+From looking at the rules that do the purify build it seems that
+they put things into the src directory which would break if using
+--srcdir on a read only mounted filesystem (not too important).
+
+
+
+(TODO)
+The native implementation of Interp.getCommand()
+was never finished for Tcl Blend.
+
+
+(TODO)
+Look into the way that Java objects are retuned using the java::bind
+command. Is it correct when threads block?
+
+
+
+
+
+
+
+
+(PROBLEM)
+In looking at the Mac file name problem it seems the following files
+use platform specific code.
+FileCmd.java
+FileUtil.java
+GlobCmd.java
+
+Need to test used of ":" instead of "." for current directory as
+used in relative names for files. ( :/dir vs ./dir ??? )
+
+src/tcljava/tcl/lang/JavaLoadCmd.java:15: import java.io.File;
+src/tests/tcljava/tcl/lang/AdaptorGenTest.java:88:
+    FileOutputStream out = new FileOutputStream(fileName);
+src/tests/jacl/tcl/lang/TesttranslatefilenameCmd.java:55:
+   String result = FileUtil.translateFileName(interp, argv[1].toString());
+src/misc/empty/tcl/lang/Interp.java:20: File getWorkingDir()
+src/misc/empty/tcl/lang/Interp.java:120: public void evalFile(String s) throws TclException {}
+src/jacl/tcl/lang/FileChannel.java:432:     private int getNextFileNum(Interp interp) {
+src/jacl/tcl/lang/FileCmd.java:1195: } // end FileCmd class/tmp/mo/tcljava1.1a1/src/jacl/tcl/lang/FileUtil.java:2:  * FileUtil.java --
+src/jacl/tcl/lang/GlobCmd.java:20: import java.io.File;
+src/jacl/tcl/lang/GlobCmd.java:938:     return FileUtil.getNewFileObj(interp, fileName);
+src/jacl/tcl/lang/InfoCmd.java:340:                interp.setResult(TclString.newInstance(interp.scriptFile));
+src/jacl/tcl/lang/Interp.java:115: private File workingDir;/tmp/mo/tcljava1.1a1/src/jacl/tcl/lang/Interp.java:2659: String getScriptFile()
+src/jacl/tcl/lang/OpenCmd.java:65:                     File f = FileUtil.getNewFileObj(interp,
+src/jacl/tcl/lang/ProcCmd.java:37:                 argv[2], argv[3], interp.getScriptFile(),
+src/jacl/tcl/lang/Procedure.java:53: String srcFileName;
+src/jacl/tcl/lang/PwdCmd.java:64:      * Java File Object methods use backslashes.  Convert them to forward
+src/jacl/tcl/lang/Shell.java:110:      interp.evalFile(fileName);
+src/jacl/tcl/lang/SourceCmd.java:75:           interp.evalFile(fileName);
+src/tclblend/tcl/lang/Interp.java:821: evalFile(
+
+
+
+
+
+
+
+
+
+
+
+
+
+(JIT PROBLEM)
+
+I have been getting some really funky results from the test cases
+under JDK1.2. If I bring up a blend shell then do this.
+
+cd ../../tests
+source all
+
+It will run the test with no problems. But if I do this
+
+package require java
+cd ../../tests
+source all
+
+It crashes. This is really strange. It gets even more strange
+because it even seems to be happining under 1.1.6. 
+
+After some more messing around it looks like this still has
+something to do with the jit compiler bug I saw earlier.
+
+tcljava/JavaLoadCmd.test
+Segmentation Fault - core dumped
+
+But it seems like the non native threads stuff is getting used
+because this bug only shows up with green threads.
+
+setenv JAVA_COMPILER sunwjit
+
+I guess the only way to aviod this is to not use the compiler.
+But why does it only happen if you do the "package req java" first???
+
+It must have something to do with loading libtclblend.so out of the current directory.
+
+
+
+
+
+
+
+(TODO)
+Do we need to use SHLIB_PATH instead of LD_LIBRARY path
+in the Makefile when building and testing on HPUX?
+
+(TODO)
+Why can't the 1.1 vm use the tcl_blend init thing like the
+1.2 vm. Is there any reason this option can only be used in
+a 1.2 JVM?
+
+(TODO)
+the gluepkg demo has some strange code in it for AWT event
+management. This code needs to be updated to use the
+Notifier class and the java::event system.
+
+(TODO)
+the package test cases (in tcl/pkg.test) really need to be fixed
+so that they are not destructive. Perhaps the packages could be
+stored at the top of the file and then restored when done.
+
+
+(TODO)
+Something needs to be done during the install in case the configure
+script was not able to find a working tclsh8.0 installed on the
+system. Perhaps if one can not be found on the PATH then the
+"make install" will warn the person before testing with the
+Test.tcl file. In fact perhaps there should a "test_install"
+rule which runs the post install test so that folks can change
+that and rerun. Another possibility is to warn and tell them that
+the may need to go back and run "make install" in the Tcl source
+distro if they compiled with Tcl Blend. Jacl would not be affected.
+
+
+
+(TODO)
+ParseResult object may also need to be cached by the ParseAdaptor
+as they seem to be created frequently by the ParseAdaptor but they
+do not really do anything except return both a TclObject and an index.
+This also might need to be done in the parser itself.
+
+
+It might also help to optimize the parse part so that it will not
+invoke the full parser when parsing a "" (the second " right to
+the left of the first " can be checked with out a lot of work)
+
+Should the member variables in ExprValue be final? Is there any
+case where user code should be able to change the types?
+
+
+
+(TODO)
+Is there ever a case where the parse adaptors will be called with
+the length of a string that is less then the actual length of the
+string object. Currently the code assumes that two are the same
+but if they were different there would be big problems. Is there
+even a good reason for this? It seems like a waste.
+
+
+
+(TODO)
+There is a comment inside Parser.java about a nest level issue.
+Check into this to see if it needs to be changed. (line 885)
+There is also a comment on line 908 about removing some test
+code for the noEval checks once the "new parser" is done.
+Same for line 1052 in Parser.java. Also look at Interp.java
+and Expression.java for problems related to this.
+
+
+
+(TODO)
+check all places where strtoul or other functions like it are
+used. They need to check the returned errorno value to make sure
+things worked properly. In fact it might be better to have bad
+things like number format error use an exception rather then a
+multi return value like they are currently using (kind of a waste).
+Another possible approach would be to use a errno variable on
+the interp itself but this is also kind of a C kludge.
+
+
+
+(TODO)
+There are some comments in Expression.java that say the expr
+with trailing spces behavior is what was wanted. Is this a 7.6
+thing or is it new to 8.0. If trailing spaces is bad then why
+does tcl allow it?
+
+
+(TODO)
+Some checks are made in Util.java for the tcl.regex.Oro classes.
+These should be removed if possible.
+
+
+(TODO)
+Util.java says \v can not be used in java. Do they mean \u for
+unicode stuff?
+
+
+(TODO)
+The string trimleft and trim right code could be speeded up by using
+the labeled breaks in java. Right now they use a var in the loop.
+They could also use a second array for searching (mem cost).
+
+
+
+(TODO)
+The get boolean code seem to indicate that sub string matches
+for boolean conditions are allowed "tru" == "true". Does this
+jive with tclsh?
+
+
+(TODO)
+The stuff in tests/jacl/FileCmd.test really should be from the 8.0
+tests if they are not already from 8.0. (cmdsAH.test I think).
+
+
+
+(TODO)
+It looks like the method Interp.evalFile(String) has not been
+implemented in tclblend.
+
+
+
+
+
+
+(TODO)
+inprogress tests that still need work:
+
+ExprCmd.test has some problems under jacl
+GlobCmd.test requires testsetplatform under tclblend
+Util.test has some problems under jacl
+CdCmd.test has some problems under Tcl Blend with Tcl 8.0.x
+ExecCmd.test has some problems under windows 95
+AfterCmd.test has some problems under Tcl Blend
+BgErrorMgr.test has some problems under Tcl Blend
+EventAdaptor.test has some problems under Tcl Blend
+UplevelCmd.test has some problems under Tcl Blend
+
+
+
+
+
+(TODO)
+A Possible "Feature" of the cast command could be to cast
+a argument to the type of a reflected class object passed
+in as the first arguemnt.
+
+# methods returns a java.lang.Class object
+set class [java::call AClass getClassObj]
+set obj [java::new Sring "hi"]
+
+# cast by name of by reflected class passed in
+set cast_to [java::cast $class $obj]
+
+This would make it a lot easier to an object up
+java::cast [$obj getClass] $obj  (new)
+vs
+java::cast [[$obj getClass] getName] $obj (old)
+
+
+
+
+
+(TODO)
+Some of the event test cases will make Tcl Blend crash
+on a redhat 5.2 linux box (kernel 2.1.131). We need to
+figure why these are blocking and how they can be fixed.
+
+
+(TODO)
+take a look at the exception handling code in tcl.lang.Shell
+again. Does it correctly handle break or continue outside
+of a loop? Is this really that important?
+
+
+(TODO)
+The method names in jacl/tcl/lang/Channel.java
+are really misleading. They seem to be the opposite
+of java naming conventions.
+
+
+
+(TODO)
+Double check to make sure that jikes returns a bad status
+when it can not find classes.zip. I ran into a script where
+it seems like jikes might not have been returning an error.
+
+
+(TODO)
+in the "exact" method match is there any way someone could create
+an "ambiguous" signature with a full method signature??
+
+
+(TODO)
+need to add test cases to the AmbiguousSignature tests so that they
+also test out Constructor signatures as well as method signatures!
+
+
+
+(TODO)
+need to add the public methods evalFile() and evalURL() to
+Tcl Blend's Interp.java file.
+
+
+
+(TODO)
+Check to see what would happen if someone attempted to invoke
+a reflection method on a Java array object.
+
+
+(TODO)
+Find out if the subst engine does unicode escapes. I saw
+some code in Parser.backslash that seems to do it. Is this
+tested anywhere?
+
+
+(TODO)
+Add some debug code to the parser objects to keep track of
+the length argument given to scripts. If things like eval2()
+are not called with the correct lengths then they break.
+
+
+(TODO)
+Why arent all of the setVar() methods in the interp class
+public. Some of them are just easy ways to call the public
+methods so it seems like a waste to not make them public.
+One place that really hurts is the fact that
+
+setVar(String arrname, String arrindex, String value)
+
+is not public and only
+
+setVar(String arrname, String arrindex, TclObject value)
+
+is public so any code that calls setVar needs to do a stupid
+TclString.newInstance(str) call.
+
+
+Is TclString not suppossed to be in the TclBlend package?
+Currently TclString is part of the tcljava set of classes.
+
+
+
+
+(TODO)
+Check on OSF1 target that I got from Christopher's build.
+Does it need a LD_PRELOAD? Does it even work right now?
+
+
+
+
+(TODO)
+jaclsh.bat really should be launched with another shell
+so that the ugly variable stuff does not get in the way.
+Of course we would have to worry about the NT vs 95 stuff.
+
+
+
+(TODO)
+There is a really ugly problem with the way that the auto_path
+is set in the makefiles that can make the tests fail under
+windows when another version of tclblend is installed. The
+auto path should not be appended to it should be prepended to.
+
+
+
+
+(INFO)
+looks like Sun is using Jacl in a product called "Embeded Server".
+http://www.sun.com/software/embeddedserver/techinfo/relnotes.html#300
+
+
+
+
+(TODO)
+Check out conversion code to make sure String objects are getting
+converted correctly when they are typed as Object.
+
+package require java
+
+set hash [java::new java.util.Hashtable]
+
+$hash put key1 val1
+
+(should the return type be Object or String ???)
+
+puts "key1 value is [$hash get key1]"
+
+
+
+
+
+
+(CHANGED)
+replaced old ORO code with new version 1.1 code.
+
+
+(TODO)
+Fix a problem with the configure script. The JAVA_VERISON is not
+set in Jacl and there is a spot in the -native test that it is used.
+
+
+(TODO)
+The test cases have some serious problems in how the attempt to
+figure out what platform jacl is running under. These need to
+be fixed.
+
+
+(CHANGED)
+fixed small problem in jaclsh where CLASSPATH was not getting set
+correctly when CLASSPATH was already set in the shell.
+
+
+(TODO)
+Check that perms on open command are correct in jacl. Is "rw" a
+valid mode? (set fd [open tmpf rw])

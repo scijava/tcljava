@@ -1,0 +1,158 @@
+<HTML><BODY BGCOLOR=#FFFFFF><PRE>
+RCS: @(#) $Id: new_features.txt,v 1.1 1999/05/08 05:24:33 dejong Exp $
+
+What's new in Tcl/Java 1.1?
+
+(JDK 1.2 SUPPORT)
+
+Jacl and TclBlend now work with JDK1.1.7 and JDK1.2. The software
+has been tested under Windows and Solaris.
+
+
+(NEW COMMAND FOR JACL AND TCLBLEND)
+
+A new java::cast command has been added. This command can be used
+to change the reflected type of Java objects inside and interp.
+See the documentation for more info and examples on how this works.
+
+
+(GENERAL)
+
+Jacl is much faster. The Tcl parser has been completely rewritten.
+It now uses less memory and it runs a lot faster.
+
+The java::isnull command now accepts only the string java0x0 as
+an identifier for the null java object. Tcl/Java 1.0 would also
+accept strings like java0x00 and java0x000.
+
+The nativename subcommand was added to the file command in
+jacl. On Windows, "file nativename C:/dir" now returns "C:\dir".
+
+The java::info command no longer crashes if you pass it java0x0.
+
+Jacl's exec command for unix and windows has been improved.
+In Jacl 1.0, the exec command did not treat some strings
+correctly during an exec which could cause some very strange errors.
+Commands with a '$' of ' ' char did not work as expected.
+
+in Jacl 1.0, the regexp command could only be used in the binary
+release of Jacl. We have extracted the needed class files and placed
+the in the source release of Jacl 1.1. The source to the regular
+expression code is still not provided, just the binary .class files.
+
+
+
+
+(TYPED OBJECT REFLECTION)
+
+Tcl/Java 1.1 now represents all reflected java objects (A reflected Java
+object is one that has been added to the interp and has a Tcl command
+associated with it) as a pairing of instance and Class objects.
+A single Java object can be referenced as more then one Java Class
+type. For example, a String object can be referenced as type String
+or type Object. Java array objects have also been updated to support
+typed object reflection.
+
+
+(SIGNATURE MATCHING)
+
+In Tcl/Java 1.1, Java method invocations now use an argument matching
+system to automatically determine which Java method a user intended
+to invoke based on the types of the arguments to method. In version
+1.0 only the number of arguments to the method were used to disambiguate
+overloaded method invocations.
+
+
+
+What's new in Tcl/Java 1.2?
+
+
+(OS SUPPORT FOR TCL BLEND)
+
+Tcl/Java 1.2 adds support for Tcl Blend on Linux and IRIX systems.
+Tcl/Java on Linux works with both the JDK 1.1 and JDK 1.2 ports.
+Earlier versions of Tcl Blend did not works on these systems.
+
+
+(JVM SUPPORT)
+
+In Tcl/Java 1.1, only the Sun JVM was supported. Tcl/Java 1.2 adds
+support for JVMs from other providers. We are targeting the Kaffe JVM,
+and the Japhar JVM for this release. See www.kaffe.org and
+www.japhar.org for information on these JVMs.
+
+
+(TYPED OBJECT REFLECTION)
+
+In Tcl/Java 1.1, a single reflect object was used to represent
+the null Java object. In Java code, the special null object reference
+can have no type or it can be referenced as any type. We therefore needed
+to fix Tcl's reflection system so that it acted more like Java. To do
+this, the implementation was changed to support a type for a reflected
+null object. A reflected null object's type can be queried at runtime
+with the java::info command and it can be changed with the java::cast
+command. To get a reference to an untyped null object in the reflection
+system one would use the java::null command.
+
+
+(SIGNATURE MATCHING)
+
+The signature matching system introduced in Tcl/Java 1.1 did not
+work correctly when the null Java object was given as an argument to
+a method or constructor. This has been fixed in 1.2 and the matching
+system has been updated to take a null objects reflection type into
+account when disambiguating an overloaded method signature. In addition,
+the signature matching system will now provide a more descriptive error
+message in the case of an ambiguous signature.
+
+
+(DEMOS)
+
+Tcl/Java 1.2 includes a new pack demo which shows how a Java AWT
+layout manager and the Tcl/Java reflection system can be used to
+provide a Tk like pack command for Java widgets. This command can
+be used just like the pack command in Tk. The demo also includes
+an example of how the layout manager can be used in stand alone
+Java code.
+
+
+(ERROR MESSAGES)
+
+In Tcl Blend 1.1 some very confusing error messages could be printed
+if something went wrong while loading the Tcl Blend shared library.
+These errors were caused by incorrect installations but the error
+messages provided little help to the poor users that encountered
+them. Tcl Blend 1.2 will now check for common installation errors
+if loading of the Tcl Blend shared library fails. It will also
+produce much more "user friendly" error messages that will make
+it easy to figure out exactly what went wrong.
+
+
+(JAVA COMPILER SUPPORT)
+
+Tcl/Java 1.2 adds support for IBM's Jikes Java compiler. The Jikes
+compiler is much faster than the javac compiler provided with
+the JVM. On my system, compiling Jacl with javac takes 60 seconds
+while compiling Jacl with Jikes takes only 3 seconds. If you intend
+to compile more than once, you should think about installing and
+using the Jikes compiler. See www.research.ibm.com/jikes for info.
+
+
+(NEW COMMAND FOR JACL)
+
+An implementation of Tcl's clock command has been added to Jacl.
+Jacl's new clock command uses Java's time and date APIs to provide
+the clock functionality that Tcl users enjoy. This implementation
+is fully compatible with the clock command from Tcl 8.0.
+
+
+(NEW COMMAND FOR JACL AND TCLBLEND)
+
+A new java::try command has been added. This command provides
+a Tcl binding to Java's try-catch-finally construct. The command is
+able to manage multiple error conditions unlike the standard catch
+command in Tcl. The command can also be used to catch Tcl errors and
+Java exceptions independently. See the docs on the java::try command
+for more information.
+
+</PRE></BODY></HTML>
