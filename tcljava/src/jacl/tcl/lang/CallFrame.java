@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: CallFrame.java,v 1.1 1998/10/14 21:09:20 cvsadmin Exp $
+ * RCS: @(#) $Id: CallFrame.java,v 1.2 1999/05/29 21:11:26 dejong Exp $
  *
  */
 
@@ -25,16 +25,20 @@ import java.util.*;
 
 class CallFrame {
 
-    /*
-     * Strings for making error messages.
-     */
+    // The strings below are used to indicate what went wrong when a
+    // variable access is denied.
 
     static final String noSuchVar     =	"no such variable";
     static final String isArray       =	"variable is array";
     static final String needArray     =	"variable isn't array";
     static final String noSuchElement =	"no such element in array";
-    static final String danglingUpvar =	
-            "upvar refers to element in deleted array";
+    static final String danglingElement = 
+	"upvar refers to element in deleted array";
+    static final String danglingVar = 
+	"upvar refers to variable in deleted namespace";
+    static final String badNamespace =	"parent namespace doesn't exist";
+    static final String missingName =	"missing variable name";
+
 
     /**
      * Used in flags for lookupVar(). Indicates that if part1 of the
@@ -71,7 +75,7 @@ class CallFrame {
      * Is null for global level.
      */
 
-    TclObject m_argv[];
+    TclObject[] m_argv;
 
     /**
      * Value of interp.frame when this procedure was invoked
@@ -122,7 +126,7 @@ class CallFrame {
      * @param argv the arguments to the procedure.
      * @exception TclException if error occurs in parameter bindings.
      */
-    CallFrame(Interp ainterp, Procedure proc, TclObject argv[])
+    CallFrame(Interp ainterp, Procedure proc, TclObject[] argv)
 	    throws TclException {
 	interp	 = ainterp;
 	varTable = new Hashtable();
@@ -143,7 +147,7 @@ class CallFrame {
      * @param proc argv the parameter values.
      * @exception TclException if wrong number of arguments.
      */
-    void chain(Procedure proc, TclObject argv[])
+    void chain(Procedure proc, TclObject[] argv)
 	    throws TclException {
 	m_argv          = argv;
 	m_level         = interp.varFrame.m_level + 1;
@@ -152,10 +156,8 @@ class CallFrame {
 	interp.frame    = this;
 	interp.varFrame = this;
 
-	/*
-	 * parameter bindings
-	 */
-
+	// parameter bindings
+	
 	int numArgs = proc.argList.length;
 
 	if ((!proc.isVarArgs) && (argv.length-1 > numArgs)) {
@@ -165,11 +167,9 @@ class CallFrame {
 
 	int i, j;
 	for (i=0, j=1; i<numArgs; i++, j++) {
-	    /*
-	     * Handle the special case of the last formal being
-	     * "args".  When it occurs, assign it a list consisting of
-	     * all the remaining actual arguments.
-	     */
+	    // Handle the special case of the last formal being
+	    // "args".  When it occurs, assign it a list consisting of
+	    // all the remaining actual arguments.
 
 	    TclObject varName = proc.argList[i][0];
 	    TclObject value = null;
@@ -232,15 +232,13 @@ class CallFrame {
     	Hashtable table;
 	Var var;
 
-	/*
-	 * Parse part1 into array name and index.
-	 * Always check if part1 is an array element name and allow it only if
-	 * part2 is not given.   
-	 * (if one does not care about creating array elements that can't be used
-	 *  from tcl, and prefer slightly better performance, one can put
-	 *  the following in an   if (part2 == NULL) { ... } block and remove
-	 *  the part2's test and error reporting  or move that code in array set)
-	 */
+	// Parse part1 into array name and index.
+	// Always check if part1 is an array element name and allow it only if
+	// part2 is not given.   
+	// (if one does not care about creating array elements that can't be used
+	//  from tcl, and prefer slightly better performance, one can put
+	//  the following in an   if (part2 == NULL) { ... } block and remove
+	//  the part2's test and error reporting  or move that code in array set)
 
 	int len = part1.length();
 
@@ -252,8 +250,8 @@ class CallFrame {
 			throw new TclVarException(interp,
 				part1, part2, msg, needArray);
 		    }
-		    char n1[];
-		    char n2[]; 
+		    char[] n1;
+		    char[] n2; 
 		    if (i < len-2) {
 			n1 = new char[i];
 			n2 = new char[len-2-i];
@@ -267,22 +265,20 @@ class CallFrame {
 	    }
 	}
 
-	/*
-	 * Lookup part1. Look it up as either a namespace variable or as a
-	 * local variable in a procedure call frame (varFramePtr).
-	 * Interpret part1 as a namespace variable if:
-	 *    1) so requested by a TCL_GLOBAL_ONLY or TCL_NAMESPACE_ONLY flag,
-	 *    2) there is no active frame (we're at the global :: scope),
-	 *    3) the active frame was pushed to define the namespace context
-	 *       for a "namespace eval" or "namespace inscope" command,
-	 *    4) the name has namespace qualifiers ("::"s).
-	 * Otherwise, if part1 is a local variable, search first in the
-	 * frame's array of compiler-allocated local variables, then in its
-	 * hashtable for runtime-created local variables.
-	 *
-	 * If createPart1 and the variable isn't found, create the variable and,
-	 * if necessary, create varFramePtr's local var hashtable.
-	 */
+	// Lookup part1. Look it up as either a namespace variable or as a
+	// local variable in a procedure call frame (varFramePtr).
+	// Interpret part1 as a namespace variable if:
+	//    1) so requested by a TCL_GLOBAL_ONLY or TCL_NAMESPACE_ONLY flag,
+	//    2) there is no active frame (we're at the global :: scope),
+	//    3) the active frame was pushed to define the namespace context
+	//       for a "namespace eval" or "namespace inscope" command,
+	//    4) the name has namespace qualifiers ("::"s).
+	// Otherwise, if part1 is a local variable, search first in the
+	// frame's array of compiler-allocated local variables, then in its
+	// hashtable for runtime-created local variables.
+	//
+	// If createPart1 and the variable isn't found, create the variable and,
+	// if necessary, create varFramePtr's local var hashtable.
 
 	if ((flags & TCL.GLOBAL_ONLY) != 0) {
 	    table = interp.globalFrame.varTable;
@@ -291,7 +287,7 @@ class CallFrame {
 	}
 
 	if ((create & CRT_PART1) != 0) {
-	    var = (Var)table.get(part1);
+	    var = (Var) table.get(part1);
 	    if (var == null) {
 		var = new Var();
 		var.table = table;
@@ -299,7 +295,7 @@ class CallFrame {
 		table.put(part1, var);
 	    }
 	} else {
-	    var = (Var)table.get(part1);
+	    var = (Var) table.get(part1);
 	    if (var == null) {
 		if (throwException) {
 		    throw new TclVarException(interp, 
@@ -310,7 +306,7 @@ class CallFrame {
 	}
 
 	if ((var.flags & Var.UPVAR) != 0) {
-	    var = ((Var)var.value);
+	    var = ((Var) var.value);
 	}
 
 	if (part2 == null) {
@@ -320,10 +316,8 @@ class CallFrame {
 	    return ret;
 	}
 
-	/*
-	 * We're dealing with an array element, so make sure the variable
-	 * is an array and lookup the element (create it if desired).
-	 */
+	// We're dealing with an array element, so make sure the variable
+	// is an array and lookup the element (create it if desired).
 
 	if ((var.flags & Var.UNDEFINED) != 0) {
 	    if ((create & CRT_PART1) == 0) {
@@ -345,7 +339,7 @@ class CallFrame {
 	}
 
 	Var av = var;
-	Hashtable arrayTable = (Hashtable)av.value;
+	Hashtable arrayTable = (Hashtable) av.value;
 	if ((create & CRT_PART2) != 0) {
 	    var = (Var)arrayTable.get(part2);
 	    if (var == null) {
@@ -354,15 +348,13 @@ class CallFrame {
 		var.hashKey = part2;
 		arrayTable.put(part2, var);
 
-		/*
-		 * We have added one new element into the array. Remove all
-		 * outstanding searches.
-		 */
+		// We have added one new element into the array. Remove all
+		// outstanding searches.
 
 		var.sidVec = null;
 	    }
 	} else {
-	    var = (Var)arrayTable.get(part2);
+	    var = (Var) arrayTable.get(part2);
 	    if (var == null) {
 		if (throwException) {
 		    throw new TclVarException(interp, 
@@ -419,21 +411,20 @@ class CallFrame {
     TclObject setVar(String part1, String part2, TclObject tobj,
 	    int flags) throws TclException
     {
-	Var result[] = lookupVar(part1, part2, flags, "set",
+	Var[] result = lookupVar(part1, part2, flags, "set",
 		CRT_PART1|CRT_PART2, true);
 	Var var = result[0];
 	Var array = result[1];
 
-	/*
-	 * If the variable's table field is null, it means that this is an
-	 * upvar to an array element where the array was deleted, leaving
-	 * the element dangling at the end of the upvar. Generate an error
-	 * (allowing the variable to be reset would screw up our storage
-	 * allocation and is meaningless anyway).
-	 */
+	// If the variable's table field is null, it means that this is an
+	// upvar to an array element where the array was deleted, leaving
+	// the element dangling at the end of the upvar. Generate an error
+	// (allowing the variable to be reset would screw up our storage
+	// allocation and is meaningless anyway).
+
 	if (var.table == null) {
 	    throw new TclVarException(interp, part1, part2, "set",
-		    danglingUpvar);
+		    danglingElement);
 	}
 
 	if ((var.flags & Var.ARRAY) != 0) {
@@ -445,9 +436,7 @@ class CallFrame {
 
 	try {
 
-	    /*
-	     * Call read trace if variable is being appended to.
-	     */
+	    // Call read trace if variable is being appended to.
 
 	    if (((flags & TCL.APPEND_VALUE) != 0) && hasTraces) {
 		String msg = callTraces(array, var, part1, part2,
@@ -458,7 +447,7 @@ class CallFrame {
 		}
 	    } 
 
-	    TclObject value = (TclObject)var.value;
+	    TclObject value = (TclObject) var.value;
 
 	    if (value == null) {
 		if ((flags & TCL.LIST_ELEMENT) == 0) {
@@ -471,36 +460,30 @@ class CallFrame {
 		}
 	    } else if ((flags & TCL.APPEND_VALUE) == 0) {
 		if (value != tobj) {
-		    /*
-		     * Change to another value.
-		     */
+		    // Change to another value.
+
 		    value.release();
 		    value = tobj;
 		    value.preserve();
 		}
 	    } else {
-		/*
-		 * value != null && (flag & TCL.APPEND_VALUE) != 0
-		 */
+		// value != null && (flag & TCL.APPEND_VALUE) != 0
+
 		if ((flags & TCL.LIST_ELEMENT) == 0) {
-		    /*
-		     * A string append.
-		     */
+		    // A string append.
+
 		    value = value.takeExclusive();
 		    TclString.append(value, tobj);
 		} else {
-		    /*
-		     * A list append.
-		     */
+		    // A list append.
+
 		    value = value.takeExclusive();
 		    TclList.append(interp, value, tobj);
 		}
 	    }
 
-	    /*
-	     * If an array is being set, remove all search IDs associated
-	     * with this array UNLESS the array index is already defined.
-	     */
+	    // If an array is being set, remove all search IDs associated
+	    // with this array UNLESS the array index is already defined.
 
 	    if ((array != null) && (var.flags & Var.UNDEFINED) != 0) {
 	        array.sidVec = null;
@@ -508,10 +491,8 @@ class CallFrame {
 
 	    var.value = value;
 	    var.flags &= ~Var.UNDEFINED;
-	
-	    /*
-	     * Invoke any write traces for the variable.
-	     */
+
+	    // Invoke any write traces for the variable.
 
 	    if (hasTraces) {
 		String msg = callTraces(array, var, part1, part2,
@@ -522,12 +503,10 @@ class CallFrame {
 		}
 	    }
 
-	    /*
-	     * If the variable was changed in some gross way by a trace (e.g.
-	     * it was unset and then recreated as an array) then just return
-	     * an empty string;  otherwise return the variable's current
-	     * value.
-	     */
+	    // If the variable was changed in some gross way by a trace (e.g.
+	    // it was unset and then recreated as an array) then just return
+	    // an empty string;  otherwise return the variable's current
+	    // value.
 
 	    if ((var.flags & (Var.UNDEFINED|Var.UPVAR|Var.ARRAY)) == 0) {
 		return (TclObject)(var.value);
@@ -535,10 +514,9 @@ class CallFrame {
 		return TclString.newInstance("");
 	    }
 	} finally {
-	    /*
-	     * If the variable doesn't exist anymore and no-one's using it,
-	     * then free up the relevant structures and hash table entries.
-	     */
+	    // If the variable doesn't exist anymore and no-one's using it,
+	    // then free up the relevant structures and hash table entries.
+
 	    if ((var.flags & Var.UNDEFINED) != 0) {
 	        cleanupVar(var, array);
 	    }
@@ -585,15 +563,13 @@ class CallFrame {
 	    throws TclException
     {
 	boolean throwException = ((flags & TCL.DONT_THROW_EXCEPTION) == 0);
-	Var result[] = lookupVar(part1, part2, flags, "read", CRT_PART2,
+	Var[] result = lookupVar(part1, part2, flags, "read", CRT_PART2,
 		throwException);
 
 	if (result == null) {
-	    /*
-	     * lookupVar() returns null only if throwException is true
-	     * and the variable cannot be found. We return null to
-	     * indicate error.
-	     */
+	    // lookupVar() returns null only if throwException is true
+	    // and the variable cannot be found. We return null to
+	    // indicate error.
 
 	    return null;
 	}
@@ -602,9 +578,7 @@ class CallFrame {
 	Var array = result[1];
 
 	try {
-	    /*
-	     * Invoke any traces that have been set for the variable.
-	     */
+	    // Invoke any traces that have been set for the variable.
 
 	    if ((var.traces != null)
 	            || ((array != null) && (array.traces != null))) {
@@ -638,10 +612,8 @@ class CallFrame {
 	    }
 	    return null;
 	} finally {
-	    /*
-	     * If the variable doesn't exist anymore and no-one's using it,
-	     * then free up the relevant structures and hash table entries.
-	     */
+	    // If the variable doesn't exist anymore and no-one's using it,
+	    // then free up the relevant structures and hash table entries.
 
 	    if ((var.flags & Var.UNDEFINED) != 0) {
 		cleanupVar(var, array);
@@ -685,7 +657,7 @@ class CallFrame {
     void unsetVar(String part1, String part2, int flags)
 	    throws TclException
     {
-	Var result[] = lookupVar(part1, part2, flags, "unset", 0, true);
+	Var[] result = lookupVar(part1, part2, flags, "unset", 0, true);
 	Var var = result[0];
 	Var array = result[1];
 	boolean undefined = ((var.flags & Var.UNDEFINED) != 0);
@@ -694,18 +666,16 @@ class CallFrame {
 	    array.sidVec = null;
 	}
 
-	/*
-	 * The code below is tricky, because of the possibility that
-	 * a trace procedure might try to access a variable being
-	 * deleted.  To handle this situation gracefully, do things
-	 * in three steps:
-	 * 1. Copy the contents of the variable to a dummy variable
-	 *    structure, and mark the original structure as undefined.
-	 * 2. Invoke traces and clean up the variable, using the copy.
-	 * 3. If at the end of this the original variable is still
-	 *    undefined and has no outstanding references, then delete
-	 *    it (but it could have gotten recreated by a trace).
-	 */
+	// The code below is tricky, because of the possibility that
+	// a trace procedure might try to access a variable being
+	// deleted.  To handle this situation gracefully, do things
+	// in three steps:
+	// 1. Copy the contents of the variable to a dummy variable
+	//    structure, and mark the original structure as undefined.
+	// 2. Invoke traces and clean up the variable, using the copy.
+	// 3. If at the end of this the original variable is still
+	//    undefined and has no outstanding references, then delete
+	//    it (but it could have gotten recreated by a trace).
 
 	if ((var.value != null) && (var.value instanceof TclObject)) {
 	    ((TclObject)(var.value)).release();
@@ -725,15 +695,13 @@ class CallFrame {
 	var.value  = null;
 	var.sidVec = null;
 
-	/*
-	 * Call trace procedures for the variable being deleted and delete
-	 * its traces. Be sure to abort any other traces for the variable
-	 * that are still pending.  Special tricks:
-	 * 1. Increment var's refCount around this: callTraces() will
-	 *    use dummyVar so it won't increment var's refCount.
-	 * 2. Turn off the Var.TRACE_ACTIVE flag in dummyVar: we want to
-	 *    call unset traces even if other traces are pending.
-	 */
+	// Call trace procedures for the variable being deleted and delete
+	// its traces. Be sure to abort any other traces for the variable
+	// that are still pending.  Special tricks:
+	// 1. Increment var's refCount around this: callTraces() will
+	//    use dummyVar so it won't increment var's refCount.
+	// 2. Turn off the Var.TRACE_ACTIVE flag in dummyVar: we want to
+	//    call unset traces even if other traces are pending.
 
 	if ((dummyVar.traces != null)
 	       || ((array != null) && (array.traces != null))) {
@@ -745,21 +713,18 @@ class CallFrame {
 	    var.refCount--;
 	}
 
-	/*
-	 * If the variable is an array, delete all of its elements.  This
-	 * must be done after calling the traces on the array, above (that's
-	 * the way traces are defined).
-	 */
+	// If the variable is an array, delete all of its elements.  This
+	// must be done after calling the traces on the array, above (that's
+	// the way traces are defined).
 
 	if ((dummyVar.flags & Var.ARRAY) != 0) {
 	    deleteArray(part1, dummyVar,
 	        (flags & TCL.GLOBAL_ONLY) | TCL.TRACE_UNSETS);
 	}
 
-	/*
-	 * Finally, if the variable is truly not in use then free up its
-	 * record and remove it from the hash table.
-	 */
+	// Finally, if the variable is truly not in use then free up its
+	// record and remove it from the hash table.
+
 	cleanupVar(var, array);
 
 	if (undefined) {
@@ -822,10 +787,8 @@ class CallFrame {
 
 	var.traces.insertElementAt(rec, 0);
 
-	/*
-	 * When inserting a trace for an array on an UNDEFINED variable,
-	 * the search IDs for that array are reset.
-	 */
+	// When inserting a trace for an array on an UNDEFINED variable,
+	// the search IDs for that array are reset.
 
 	if(array != null && (var.flags & Var.UNDEFINED) != 0) {
 	    array.sidVec = null;
@@ -880,11 +843,9 @@ class CallFrame {
 		return;
 	    }
 	} catch (TclException e) {
-	    /*
-	     * We have set throwException argument to false in the
-	     * lookupVar() call, so an exception should never be
-	     * thrown.
-	     */
+	    // We have set throwException argument to false in the
+	    // lookupVar() call, so an exception should never be
+	    // thrown.
 
 	    throw new TclRuntimeError("unexpected TclException: " + e);
 	}
@@ -1005,10 +966,8 @@ class CallFrame {
 	Var result[], other, var;
 	CallFrame savedFrame;
 
-    	/*
-	 * In order to use LookupVar to find "other", temporarily replace
-	 * the current frame pointer in the interpreter.
-	 */
+	// In order to use LookupVar to find "other", temporarily replace
+	// the current frame pointer in the interpreter.
 
 	savedFrame = interp.varFrame;
 	interp.varFrame = frame;
@@ -1022,19 +981,17 @@ class CallFrame {
 	} else {
 	    table = interp.varFrame.varTable;
 	}
-	var = (Var)table.get(myName);
+	var = (Var) table.get(myName);
 	if (var == null) {
 	    var = new Var();
 	    var.table = table;
 	    var.hashKey = myName;
 	    table.put(myName, var);
 	} else {
-	    /*
-	     * The variable already exists.  Make sure that this variable
-	     * isn't also "otherVar" (avoid circular links).  Also, if it's
-	     * not an upvar then it's an error.  If it is an upvar, then
-	     * just disconnect it from the thing it currently refers to.
-	     */
+	    // The variable already exists.  Make sure that this variable
+	    // isn't also "otherVar" (avoid circular links).  Also, if it's
+	    // not an upvar then it's an error.  If it is an upvar, then
+	    // just disconnect it from the thing it currently refers to.
 
 	    if (var == other) {
 		throw new TclException(interp, 
@@ -1043,7 +1000,7 @@ class CallFrame {
 	    if ((var.flags & Var.UPVAR) != 0) {
 		Var upvar;
 
-		upvar = (Var)var.value;
+		upvar = (Var) var.value;
 		if (upvar == other) {
 		    return;
 		}
@@ -1074,7 +1031,7 @@ class CallFrame {
 
     boolean exists(String name) {
 	try {
-	    Var result[] = lookupVar(name, null, 0, "lookup", 0, false);
+	    Var[] result = lookupVar(name, null, 0, "lookup", 0, false);
 	    if (result == null) {
 		return false;
 	    }
@@ -1160,9 +1117,7 @@ class CallFrame {
 	CallFrame frame = interp.varFrame;
 	for (int j=0; j<i; j++) {
 	    if (frame == interp.globalFrame) {
-		/*
-		 * You asked for more levels that you can travel up to.
-		 */
+		// You asked for more levels that you can travel up to.
 
 		throw new TclException(interp, "bad level \"" + s + "\"");
 	    } else {
@@ -1197,10 +1152,9 @@ class CallFrame {
 
     protected String callTraces(Var array, Var var, String part1,
 	    String part2, int flags) {
-	/*
-	 * If there are already similar trace procedures active for the
-	 * variable, don't call them again.
-	 */
+
+	// If there are already similar trace procedures active for the
+	// variable, don't call them again.
 
 	if ((var.flags & Var.TRACE_ACTIVE) != 0) {
 	    return null;
@@ -1208,14 +1162,12 @@ class CallFrame {
 	var.flags |= Var.TRACE_ACTIVE;
 	var.refCount++;
 
-	/*
-	 * If the variable name hasn't been parsed into array name and
-	 * element, do it here.  If there really is an array element,
-	 * make a copy of the original name so that NULLs can be
-	 * inserted into it to separate the names (can't modify the name
-	 * string in place, because the string might get used by the
-	 * callbacks we invoke).
-	 */
+	// If the variable name hasn't been parsed into array name and
+	// element, do it here.  If there really is an array element,
+	// make a copy of the original name so that NULLs can be
+	// inserted into it to separate the names (can't modify the name
+	// string in place, because the string might get used by the
+	// callbacks we invoke).
 
 	if (part2 == null) {
 	    int len = part1.length();
@@ -1229,8 +1181,8 @@ class CallFrame {
 			}
 		    }
 		    if (i < len-1) {
-			char n1[];
-			char n2[];
+			char[] n1;
+			char[] n2;
 
 			if (i < len-2) {
 			    n1 = new char[i];
@@ -1254,9 +1206,7 @@ class CallFrame {
 	interp.resetResult();
 
 	try {
-	    /*
-	     * Invoke traces on the array containing the variable, if relevant.
-	     */
+	    // Invoke traces on the array containing the variable, if relevant.
 
 	    if (array != null) {
 		array.refCount ++;
@@ -1277,9 +1227,7 @@ class CallFrame {
 		}
 	    }
 
-	    /*
-	     * Invoke traces on the variable itself.
-	     */
+	    // Invoke traces on the variable itself.
 
 	    if ((flags & TCL.TRACE_UNSETS) != 0) {
 		flags |= TCL.TRACE_DESTROYED;
@@ -1322,9 +1270,7 @@ class CallFrame {
      */
 
     protected void dispose() {
-	/*
-	 * Unchain this frame from the call stack.
-	 */
+	// Unchain this frame from the call stack.
 
 	interp.frame = caller;
 	interp.varFrame = callerVar;
@@ -1337,16 +1283,14 @@ class CallFrame {
 	    flags |= TCL.INTERP_DESTROYED | TCL.GLOBAL_ONLY;
 	}
 	for (Enumeration e = varTable.elements(); e.hasMoreElements(); ) {
-	    Var var = (Var)e.nextElement();
+	    Var var = (Var) e.nextElement();
 
-	    /*
-	     * For global/upvar variables referenced in procedures,
-	     * decrement the reference count on the variable referred
-	     * to, and free the referenced variable if it's no longer
-	     * needed.  Don't delete the hash entry for the other
-	     * variable if it's in the same table as us: this will
-	     * happen automatically later on.
-	     */
+	    // For global/upvar variables referenced in procedures,
+	    // decrement the reference count on the variable referred
+	    // to, and free the referenced variable if it's no longer
+	    // needed.  Don't delete the hash entry for the other
+	    // variable if it's in the same table as us: this will
+	    // happen automatically later on.
 
 	    if ((var.flags & Var.UPVAR) != 0) {
 		Var upvar = (Var)(var.value);
@@ -1354,23 +1298,20 @@ class CallFrame {
 		if ((upvar.refCount == 0) && ((upvar.flags & Var.UNDEFINED)!=0)
 		        && (upvar.traces == null)) {
 		    if ((upvar.table != null) && (upvar.table != varTable)) {
-			/*
-			 * No need to remove upvar.value because it is already
-			 * undefined.
-			 */
+			// No need to remove upvar.value because it is already
+			// undefined.
+
 			upvar.table.remove(upvar.hashKey);
 			upvar.table = null;
 		    }
 		}
 	    }
 
-	    /*
-	     * Invoke traces on the variable that is being deleted, then
-	     * free up the variable's space (no need to free the hash entry
-	     * here, unless we're dealing with a global variable:  the
-	     * hash entries will be deleted automatically when the whole
-	     * table is deleted).
-	     */
+	    // Invoke traces on the variable that is being deleted, then
+	    // free up the variable's space (no need to free the hash entry
+	    // here, unless we're dealing with a global variable:  the
+	    // hash entries will be deleted automatically when the whole
+	    // table is deleted).
 
 	    if (var.traces != null) {
 		callTraces(null, var, var.hashKey, null, flags);
@@ -1406,12 +1347,12 @@ class CallFrame {
 
     protected void deleteArray(String arrayName, Var var, int flags) {
 	var.sidVec = null;
-	Hashtable table = (Hashtable)var.value;
+	Hashtable table = (Hashtable) var.value;
 
 	Var dummyVar = null;
 	for (Enumeration e1 = table.elements();
 		e1.hasMoreElements(); ) {
-	    Var el = (Var)e1.nextElement();
+	    Var el = (Var) e1.nextElement();
 	    TclObject value = (TclObject)el.value;
 	    if (value != null) {
 		value.release();
