@@ -34,10 +34,9 @@ proc setupJavaPackage {} {
 }
 
 
-
-if {$tcl_platform(platform) == "java"} {
-
 # Tcl only implementation of commands defined in generic/tclTest.c
+
+if {[info commands testgetplatform] == ""} {
 
 proc testgetplatform { } {
   package require java
@@ -51,6 +50,11 @@ proc testgetplatform { } {
     }
   }
 }
+
+}
+
+
+if {$tcl_platform(platform) == "java"} {
 
 # Try to set a variable, if it does not exist raise an error
 

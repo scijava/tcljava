@@ -1,5 +1,15 @@
 2002-12-24  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* tests/defs: Move conditional define of
+	testgetplatform so it works with Jacl or
+	Tcl Blend.
+	* tests/tcljava/JavaDefineClassCmd.test:
+	* tests/tcljava/JavaLoadCmd.test: Fixup
+	test directory name to account for changes
+	on 2002-04-11.
+
+2002-12-24  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/native/javaObj.c (FreeTclObject, SetJavaCmdFromAny):
 	Convert both a tclObjectType and a cmdTypePtr that
 	holds a TclObject into a command internal rep
