@@ -11,42 +11,32 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ConsoleEvent.java,v 1.1 1998/10/14 21:09:20 cvsadmin Exp $
+ * RCS: @(#) $Id: ConsoleEvent.java,v 1.2 1999/05/08 23:55:57 dejong Exp $
  *
  */
 
 package tcl.lang;
 
-/*
- * This type of event is generated when the user has entered a complete
- * command script on the command line.
- */
+// This type of event is generated when the user has entered a complete
+// command script on the command line.
 
 class ConsoleEvent extends TclEvent {
 
-/*
- * Interpreter to evaluate the user input.
- */
+// Interpreter to evaluate the user input.
 
 Interp interp;
 
-/*
- * The result of evaluating the user input string. Is null if an exception
- * occurred during the script evaluation.
- */
+// The result of evaluating the user input string. Is null if an exception
+// occurred during the script evaluation.
 
 TclObject evalResult;
 
-/*
- * If an exception occurred during the script evaluation, contains the
- * exception. Otherwise is null.
- */
+// If an exception occurred during the script evaluation, contains the
+// exception. Otherwise is null.
 
 TclException evalException;
 
-/*
- * The user input string.
- */
+// The user input string.
 
 String script;
 
