@@ -2,13 +2,13 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run to configure the
 dnl	Makefile in this directory.
 AC_INIT(../src/tcljava/tcl/lang/InternalRep.java)
-# RCS: @(#) $Id: configure.in,v 1.9 1999/05/10 03:19:38 dejong Exp $
+# RCS: @(#) $Id: configure.in,v 1.10 1999/05/16 00:26:22 dejong Exp $
 
 
 #--------------------------------------------------------------------
 # 	Version identification info (also set in source files)
 #--------------------------------------------------------------------
-TCLJAVA_VERSION=1.2.1
+TCLJAVA_VERSION=1.2.2
 
 # Convert into full path name
 srcdir=`cd $srcdir ; pwd`
@@ -63,7 +63,7 @@ if test -d $TOOLS ; then
         # and run it again so that we get the new version number info.
 
 	echo "dist version number was updated, please run configure again."
-	exit -1
+	exit 0
     fi
 fi
 
@@ -1092,8 +1092,12 @@ if test $TCLJAVA = "tclblend" || test $BOTH = "true"; then
     #--------------------------------------------------------------------
     
     AC_ARG_WITH(tcl, [  --with-tcl=DIR          build directory for Tcl 8.0 source release from DIR],
-    	TCL_BIN_DIR=$withval, TCL_BIN_DIR="$srcdir/../../tcl8.0.4/unix")
+    	TCL_BIN_DIR=$withval, TCL_BIN_DIR="$srcdir/../../tcl8.0.5/unix")
     
+    if test ! -d $TCL_BIN_DIR; then
+	TCL_BIN_DIR="$srcdir/../../tcl8.0.4/unix"
+    fi
+
     if test ! -d $TCL_BIN_DIR; then
 	TCL_BIN_DIR="$srcdir/../../tcl8.0.3/unix"
     fi
@@ -1103,7 +1107,7 @@ if test $TCLJAVA = "tclblend" || test $BOTH = "true"; then
     fi
 
     if test ! -d $TCL_BIN_DIR; then
-        AC_MSG_ERROR([Tcl directory $TCL_BIN_DIR could not be located.
+        AC_MSG_ERROR([Tcl directory could not be located.
 Use the --with-tcl=<dirName> configure flag to specify the location.])
     else
 	TCL_BIN_DIR=`cd $TCL_BIN_DIR; pwd`
@@ -1112,7 +1116,12 @@ Use the --with-tcl=<dirName> configure flag to specify the location.])
     echo "checking for Tcl build in $TCL_BIN_DIR"
 
     if test ! -f $TCL_BIN_DIR/tclConfig.sh; then
-	AC_MSG_ERROR([Tcl was not configured in the directory $TCL_BIN_DIR.])
+        # provide shortcut if --with-tcl=$PATH/tcl8.X was given
+        if test -f $TCL_BIN_DIR/unix/tclConfig.sh; then
+            TCL_BIN_DIR=$TCL_BIN_DIR/unix
+        else
+	    AC_MSG_ERROR([Tcl was not configured in the directory $TCL_BIN_DIR.])
+        fi
     fi
 
     #--------------------------------------------------------------------
