@@ -2,7 +2,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run to configure the
 dnl	Makefile in this directory.
 AC_INIT(../src/tcljava/tcl/lang/InternalRep.java)
-# RCS: @(#) $Id: configure.in,v 1.16 1999/07/28 04:20:52 mo Exp $
+# RCS: @(#) $Id: configure.in,v 1.17 1999/07/28 04:21:48 mo Exp $
 
 
 #--------------------------------------------------------------------
@@ -33,7 +33,8 @@ if test -d $TOOLS ; then
     if env grep "TCLJAVA_VERSION=$TCLJAVA_VERSION" $srcdir/configure.in > /dev/null; then
         DO=nothing
     else
-	AC_MSG_ERROR([TCLJAVA_VERSION grep failed])
+	AC_MSG_ERROR([TCLJAVA_VERSION grep failed.
+        did you rerun autoconf after changing the version number in configure.in?])
     fi
 
     # Check that the files we need actually exist
