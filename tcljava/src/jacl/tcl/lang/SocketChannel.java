@@ -121,4 +121,8 @@ public class SocketChannel extends Channel {
             sock.close();
         }
     }
+
+    String getChanType() {
+        return "tcp";
+    }
 }

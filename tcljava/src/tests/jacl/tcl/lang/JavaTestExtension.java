@@ -1,7 +1,7 @@
 /*
  * JavaTestExtension.java --
  *
- *	This file contains misc classes needed by the Jacl/Blend
+ *	This file contains loads classes needed by the Jacl
  *	test suite.
  *
  * Copyright (c) 1997 Sun Microsystems, Inc.
@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaTestExtension.java,v 1.1 1999/05/10 04:08:50 dejong Exp $
+ * RCS: @(#) $Id: JavaTestExtension.java,v 1.2 2002/01/23 09:53:50 mdejong Exp $
  *
  */
 
@@ -55,6 +55,8 @@ init(
     interp.createCommand("testsetplatform",   new TestsetplatformCmd());
     interp.createCommand("testtranslatefilename",
             new TesttranslatefilenameCmd());
+    interp.createCommand("testchannel",
+            new TestChannelCmd());
 }
 
 } // JavaTestExtension

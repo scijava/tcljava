@@ -136,6 +136,10 @@ public class ServerSocketChannel extends Channel {
         throw new TclPosixException(interp, TclPosixException.EACCES, true,
 		"error during seek on \"" + getChanName() + "\"");
     }
+
+    String getChanType() {
+        return "tcp";
+    }
 }
 
 

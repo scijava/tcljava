@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Channel.java,v 1.23 2002/01/21 06:34:26 mdejong Exp $
+ * RCS: @(#) $Id: Channel.java,v 1.24 2002/01/23 09:53:49 mdejong Exp $
  */
 
 package tcl.lang;
@@ -312,6 +312,22 @@ abstract class Channel {
         return chanName;
     }
 
+    /** 
+     * Return a string that describes the channel type.
+     *
+     * This is the equivilent of the Tcl_ChannelType->typeName field.
+     */
+
+    abstract String getChanType();
+
+
+    /** 
+     * Return number of references to this Channel.
+     */
+
+    int getRefCount() {
+        return refCount;
+    }
 
     /** 
      * Sets the chanName that is the key for the chanTable hashtable.
@@ -402,7 +418,6 @@ abstract class Channel {
         return bufferSize;
     }
 
-
     /** 
      * Tcl_SetChannelBufferSize -> setBufferSize
      *
@@ -419,6 +434,46 @@ abstract class Channel {
         }
 
         bufferSize = size;
+    }
+
+    int getBufferedInput() {
+        // FIXME: Need to query input stream
+        return 0;
+    }
+
+    int getBufferedOutput() {
+        // FIXME: Need to query output stream
+        return 0;
+    }
+
+    /** 
+     * Tcl_InputBlocked -> isBlocked
+     *
+     * Returns true if input is blocked on this channel, false otherwise.
+     *
+     */
+
+    boolean isBlocked() {
+	// We only support synchronous io so always return false
+        return false;
+    }
+
+    /** 
+     * Returns true if a background flush is waiting to happen.
+     */
+
+    boolean isBgFlushScheduled() {
+        return false;
+    }
+
+    /**
+     * Channel is in CRLF eol input translation mode and the last
+     * byte seen was a CR.
+     */
+
+    boolean inputSawCR() {
+        // FIXME: impl me!
+        return false;
     }
 
     /** 

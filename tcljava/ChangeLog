@@ -1,3 +1,27 @@
+2002-01-22  Bruce Johnson  <bruce_johnson@merck.com>,
+            Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/jacl/tcl/lang/Channel.java (getChanType, getRefCount,
+	getBufferedInput, getBufferedOutput, isBlocked,
+	isBgFlushScheduled, inputSawCR): Add placeholder methods
+	for properties queried by the testchannel command.
+	* src/jacl/tcl/lang/FblockedCmd.java (cmdProc):
+	Call placeholder isBlocked method of Channel class.
+	* src/jacl/tcl/lang/FileChannel.java (getChanType):
+	Add implementation of abstract getChanType method.
+	* src/jacl/tcl/lang/ServerSocketChannel.java (getChanType):
+	Add implementation of abstract getChanType method.
+	* src/jacl/tcl/lang/SocketChannel.java (getChanType):
+	Add implementation of abstract getChanType method.
+	* src/jacl/tcl/lang/StdChannel.java (open, getChanType):
+	Add implementation of abstract getChanType method.
+	Set correct default buffering mode for stdchannels so
+	that the testchannel command return proper values.
+	* src/tests/jacl/tcl/lang/JavaTestExtension.java (init)
+	Load testchannel command with other Jacl test commands.
+	* src/tests/jacl/tcl/lang/TestChannelCmd.java:
+	Add implementation of testchannel command.
+
 2002-01-20  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* src/jacl/tcl/lang/BgErrorMgr.java (processIdleEvent):

@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: StdChannel.java,v 1.15 2002/01/21 06:34:26 mdejong Exp $
+ * RCS: @(#) $Id: StdChannel.java,v 1.16 2002/01/23 09:53:49 mdejong Exp $
  *
  */
 
@@ -86,6 +86,7 @@ class StdChannel extends Channel {
         switch (type) {
 	    case STDIN:
 	        mode = TclIO.RDONLY;
+	        setBuffering(TclIO.BUFF_LINE);
 	        setChanName("stdin");
 		if (reader == null) {
 		    reader = new BufferedReader(
@@ -94,6 +95,7 @@ class StdChannel extends Channel {
 		break;
 	    case STDOUT:
 	        mode = TclIO.WRONLY;
+	        setBuffering(TclIO.BUFF_LINE);
 	        setChanName("stdout");
 		if (writer == null) {
 		    writer = new BufferedWriter(
@@ -102,6 +104,7 @@ class StdChannel extends Channel {
 		break;
 	    case STDERR:
 	        mode = TclIO.WRONLY;
+	        setBuffering(TclIO.BUFF_NONE);
 	        setChanName("stderr");
 		if (writer == null) {
 		    writer = new BufferedWriter(
@@ -137,5 +140,9 @@ class StdChannel extends Channel {
         // not require an explicit flush so we just hack a flush in.
         if (stdType == STDERR)
             flush(interp);
+    }
+
+    String getChanType() {
+        return "tty";
     }
 }

@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FileChannel.java,v 1.17 2002/01/21 06:34:26 mdejong Exp $
+ * RCS: @(#) $Id: FileChannel.java,v 1.18 2002/01/23 09:53:49 mdejong Exp $
  *
  */
 
@@ -316,5 +316,9 @@ class FileChannel extends Channel {
 	    throw new TclPosixException(interp, TclPosixException.EACCES,
 		    true, "couldn't open \"" + fileObj.getName() + "\"");
 	}
+    }
+
+    String getChanType() {
+        return "file";
     }
 }
