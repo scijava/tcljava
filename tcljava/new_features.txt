@@ -178,10 +178,12 @@ command. Support is still at an early stage and more feedback
 is needed but this is still an exciting development for Jacl.
 
 
-(JACL NOW SUPPORTS UNICODE)
+(JACL AND TCLBLEND NOW SUPPORT UNICODE)
 
 Unicode support has been added to the Jacl parser. Users should now
 be able to pass and unicode string form Java to Jacl and vice versa.
+Tcl Blend will also support Unicode strings (encoded as UTF-8) when
+compiled with Tcl 8.1 or better.
 
 
 (NEW COMMAND FOR JACL AND TCLBLEND)
@@ -192,5 +194,6 @@ to specify Java class names in a shortened format. For example,
 one could import the class java.util.Hashtable and then use
 the simple class name Hashtable instead of the fully qualified
 name java.util.Hashtable.
+
 
 </PRE></BODY></HTML>

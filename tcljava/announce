@@ -1,34 +1,39 @@
-This message is to announce the new 1.2.3 release of Jacl and
+This message is to announce the new 1.2.4 release of Jacl and
 Tcl Blend.  These releases are the result of a joint effort by
-Christopher Hylands, Mo DeJong, and Bryan Surles. The goal of
+Mo DeJong, Christopher Hylands, and Bryan Surles. The goal of
 this project is to extend and improve the 1.0 release of Jacl
 and Tcl Blend which was originally started by the Sun Tcl team.
 
-The 1.2.3 Developers release of Jacl and Tcl Blend are available for
+The 1.2.4 Developers release of Jacl and Tcl Blend are available for
 downloading at the following URL:
 
     http://www.cs.umn.edu/~dejong/tcl/tcljava
 
-The 1.2 release is a developers release and should be considered alpha
-quality. Version 1.2.3 includes lots of bug fixes and some new features
-that make it even easier to use Tcl and Java together
+The 1.2 version is a developers release and should be considered alpha
+quality. Version 1.2.4 includes lots of bug fixes and some new features
+that make it even easier to use Tcl and Java together.
 
 
-What's New in the 1.2.3 Release?
+What's New in the 1.2.4 Release?
 ----------------------------------
 
-Tcl Blend now works with Tcl 8.1! Support for Motif libs in
-the Linux port of Tcl Blend has been added. Some documentation
-errors have been fixed. A number of bugs in the implementation
-of the read and gets commands for Jacl have been fixed. A bug
-in Jacl's exec command under windows was fixed. Fixes for printing
-of -0.0, positive infinity, and negative infinity for Jacl were
-also added. See the changes.txt file for additional info.
+Jacl now includes the namespace command! All the namespace
+features included in Tcl 8.1 should be working in this
+release. Unicode support has been added to the Jacl parser.
+Tcl Blend also supports Unicode characters (encoded as UTF-8)
+when compiled with Tcl 8.1 or better. Jacl now supports the
+"package present" subcommand from Tcl 8.1's package command.
+A new java::import command which supports using shortened
+class names has been added to Jacl and Tcl Blend. A number
+of bugs in Jacl have been fixed and a host of new regression
+tests from the Tcl 8.1 dist have been added to Jacl.
+
+See the new_features.txt and changes.txt files for more info.
 
 What is Jacl?
 ----------------
 
-Jacl is a 100% Java implementation of Tcl 8.0.  This allows Tcl to run
+Jacl is a 100% Java implementation of Tcl 8.  This allows Tcl to run
 in more environments and also brings the power of scripting to Java
 developers.  Jacl only implements a subset of the Tcl language (the C
 version of Tcl has a lot of features!).  However, the core of the
@@ -40,10 +45,10 @@ What is Tcl Blend?
 Tcl Blend is a Tcl Extension that allows you to have access to the
 Java VM from the Tcl interpreter.  The goal here is to allow Tcl
 developers to write new Tcl extensions in Java rather then C or C++
-for better portability.  Currently, Tcl Blend is only known to work
-with Solaris and Windows 95/NT.  However, it should be easy to port
-Tcl Blend to any system that supports dynamic loading and the Java JNI
-interface.
+for better portability.  Tcl Blend is known to work on Solaris,
+Windows 95/NT, IRIX, and Linux. Other systems have not been tested
+but it should be easy to port Tcl Blend to any system that supports
+dynamic loading and the Java JNI interface.
 
 For additional information:
 ---------------------------------

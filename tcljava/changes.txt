@@ -1,6 +1,6 @@
 Recent user-visible changes to Jacl & Tcl Blend:
 
-RCS: @(#) $Id: changes.txt,v 1.28 1999/08/15 21:01:50 mo Exp $
+RCS: @(#) $Id: changes.txt,v 1.29 1999/08/27 23:56:37 mo Exp $
 
 ----------------- Released 1.0a1, 10/22/97 -----------------------
 
@@ -926,7 +926,7 @@ src/tcljava/tcl/lang/TclClassLoader.java
 src/jacl/tcl/lang/VariableCmd.java
 src/jacl/tcl/lang/WrappedCommand.java
 
-Namespace test cases were also added.
+Namespace test cases were also added. (Mo)
 
 8/9/99 (added java::import command to Jacl and Tcl Blend)
 The java::import command was added to support "importing"
@@ -944,4 +944,20 @@ the interp class where it belongs. (Mo)
 Some users reported problems with Tcl Blend under NT when
 the CLASSPATH env variable was stored as ClassPath. There
 is now a check in the Tcl Blend pkgIndex.tcl file that
-makes sure env(CLASSPATH) uses all uppercase letters. 
+makes sure env(CLASSPATH) uses all uppercase letters. (Mo)
+
+8/26/99 (added UNICODE support to Tcl Blend)
+When compiled with Tcl 8.1 or better, Tcl Blend will convert
+between UTF and UNICODE characters and vice versa. (Mo)
+
+8/27/99 (cleaned up the gluepkg demo)
+The glupkg demo was full of hacks that were needed because
+the java::bind command did not exist at the time it was
+written. The demo has now been rewritten to use the
+java::bind, java::event, java::field, ReflectObject,
+and vwait commands. (Mo)
+
+8/27/99 (minor changes to the TclJava docs)
+Added some examples to the java::bind documentation,
+fixed some minor typos in other commands. (Mo)
+
