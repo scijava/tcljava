@@ -123,3 +123,53 @@ the CLASSPATH and load libjava.so first:
   % 
 Most of the tests pass, though there are a few failures, especially
 tests that involve the size of integers, and some of the Timer tests.
+
+(Tcl Blend and Swing)
+Philip Chu writes:
+  I'm having problems using modal Swing dialogs with TclBlend 1.1a, JDK 1.2
+  on NT.
+
+  The first script below creates a tk button that pops up a Swing confirm
+  dialog. The confirm dialog comes up OK, but if you drag it over the tk
+  button, the latter does not repaint.
+
+  A more serious problem is shown in the second script below, which creates a
+  Swing frame and button, which has a tcl callback script that brings up a
+  Swing confirm dialog. In this case, the whole app freezes when the confirm
+  dialog pops up.
+
+  # test swing modal dialogs
+  package require java
+  set frame [java::new javax.swing.JFrame]
+  button .b -text "Test" -command \
+	 "java::call javax.swing.JOptionPane showConfirmDialog $frame Message" 
+  pack .b
+
+  # show JDialog from JFrame
+  package require java
+  set frame [java::new javax.swing.JFrame] 
+  set pane [$frame getContentPane] 
+  set button [java::new javax.swing.JButton "hello"] 
+  $pane add $button
+  java::bind $button java.awt.event.ActionListener.actionPerformed \
+      "java::call javax.swing.JOptionPane showConfirmDialog $frame hello"
+  $frame setSize 200 200 
+  $frame show
+
+
+Mo DeJong writes:
+  ... I am starting to think I know what might be wrong. My
+  guess is that the swing dialog is blocking the Tcl event thread. The AWT
+  dialog boxes are implemented so that they block the calling thread. If
+  things are working with non modal dialogs then I the AWT code must be
+  blocking the Tcl event thread. When the application is "hung" do the
+  AWT windows still redraw? The "real" problem here is the stupid way the
+  AWT is implemented (the guys who designed it should be shot). They have
+  some special hacks in the dialog code that create an extra thread for
+  AWT events when the AWT event thread itself is the one that would block
+  in a Dialog show() call. You could add your own hacked up AWT dialog class
+  that was modal but did not block the calling class but this would not be a
+  very good solution for everyone. There really is no reason swing and Tk
+  will not work in the same process but they will not be able to "share" a
+  window if that is what you mean.
+
