@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TCL.java,v 1.2 1999/07/28 03:48:50 mo Exp $
+ * RCS: @(#) $Id: TCL.java,v 1.3 1999/08/03 03:29:53 mo Exp $
  *
  */
 
@@ -33,12 +33,9 @@ public static final int TRACE_WRITES		= 0x20;
 public static final int TRACE_UNSETS		= 0x40;
 public static final int TRACE_DESTROYED		= 0x80;
 public static final int INTERP_DESTROYED	= 0x100;
-public static final int LEAVE_ERR_MSG		= 0x200;  // deprecated!
+public static final int LEAVE_ERR_MSG		= 0x200;
 public static final int PARSE_PART1		= 0x400;  // deprecated!
-
-// The DONT_THROW_EXCEPTION flag is only used in Jacl.
-
-public static final int DONT_THROW_EXCEPTION	= 0x800;
+public static final int TRACE_ARRAY		= 0x800;
 
 // When an TclException is thrown, its compCode may contain any
 // of the following values:

@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaTryCmd.java,v 1.1 1999/05/08 05:33:16 dejong Exp $
+ * RCS: @(#) $Id: JavaTryCmd.java,v 1.2 1999/08/03 03:25:42 mo Exp $
  *
  */
 
@@ -108,7 +108,7 @@ public class JavaTryCmd implements Command
             // grab the value of the errorCode variable
 
 	    TclObject errorCode = interp.getVar("errorCode", null,
-                TCL.GLOBAL_ONLY|TCL.DONT_THROW_EXCEPTION);
+						TCL.GLOBAL_ONLY);
 	    if (errorCode == null) {
 	        throw new TclException(interp, "null errorCode");
             }
