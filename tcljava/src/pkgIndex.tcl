@@ -1,7 +1,7 @@
 # Cross platform init script for Tcl Blend. Known to work on unix and windows.
 # 
 # Author:  Christopher Hylands, Mo Dejong
-# RCS: @(#) $Id: pkgIndex.tcl,v 1.5 1999/03/02 15:39:11 hylands Exp $
+# RCS: @(#) $Id: pkgIndex.tcl,v 1.6 1999/03/23 19:02:21 hylands Exp $
 #
 # Copyright (c) 1997-1998 The Regents of the University of California.
 # 	All Rights Reserved.
@@ -157,7 +157,7 @@ proc loadtclblend {dir} {
 	    This can happen if the appropriate Java .dlls are not in your\
 	    path.\nUnder JDK1.1, tclblend uses javai.dll, which is usually\n\
 	    found in c:\\jdk1.1.6\\bin.\n\
-	    Under JDK1.2, tclblend uses jvm.lib, which is usually\n\
+	    Under JDK1.2, tclblend uses jvm.dll, which is usually\n\
 	    found in c:\\jdk1.1.2\\jre\\bin\\classic.\n\
 	    You may need to add the appropriate directory to your PATH.\n\
 	    The error was:\n $errMsg"
