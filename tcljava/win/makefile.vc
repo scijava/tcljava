@@ -59,10 +59,10 @@ JAVA_VERSION	= 1.1
 JAVA_CLASSPATH	= $(JAVA_DIR)\lib\classes.zip;.
 
 # JDK1.2 users should uncomment this section
-JAVA_DIR	= D:\jdk1.2beta4
+#JAVA_DIR	= D:\jdk1.2beta4
 #JAVA_DIR	= G:\mo\software\java\jdk1.1.2b4
-JAVA_VERSION	= 1.2
-JAVA_CLASSPATH	= $(JAVA_DIR)\lib\tools.jar;$(JAVA_DIR)\jre\lib\rt.jar;.
+#JAVA_VERSION	= 1.2
+#JAVA_CLASSPATH	= $(JAVA_DIR)\lib\tools.jar;$(JAVA_DIR)\jre\lib\rt.jar;.
 
 # Tcl version info needed by the rest of the scripts
 TCL_DOTVERSION	= 8.0.3
@@ -155,12 +155,13 @@ DEMO_SRC_DIR		= $(ROOT_DIR)\demos
 TEST_SRC_DIR		= $(ROOT_DIR)\src\tests
 CLASS_DIR		= $(WIN_DIR)
 TEST_CLASS_DIR		= $(CLASS_DIR)\tests
+EMPTY_JAR               = $(ROOT_DIR)\src\empty\empty.jar
 
 
 
-TCLBLEND_CLASSPATH	= "$(TCLJAVA_SRC_DIR);$(TCLBLEND_SRC_DIR);$(JAVA_CLASSPATH)"
+TCLBLEND_CLASSPATH	= "$(TCLJAVA_SRC_DIR);$(TCLBLEND_SRCDIR);$(JAVA_CLASSPATH)"
 JACL_CLASSPATH		= "$(TCLJAVA_SRC_DIR);$(JACL_SRC_DIR);$(JAVA_CLASSPATH)"
-TCLJAVA_CLASSPATH	= "$(TCLJAVA_SRC_DIR);$(SWITCHED_SRC_DIR);$(JAVA_CLASSPATH)"
+TCLJAVA_CLASSPATH	= "$(TCLJAVA_SRC_DIR);$(EMPTY_JAR);$(JAVA_CLASSPATH)"
 BEAN_CLASSPATH		= "$(STUDIO_LIB_DIR)"
 
 DEMO_CLASSPATH		= "$(CLASS_DIR)\$(TCLJAVA).jar;$(CLASS_DIR)\tcljava.jar;$(JAVA_CLASSPATH)"
@@ -322,19 +323,34 @@ test_tclblend.exec:
 test_jacl.exec:
 	cd $(WIN_DIR)
 	set CLASSPATH=$(TEST_CLASSPATH)
-	$(JAVA) $(JAVA_FLAGS) tcl.lang.Shell <<
+	$(JAVA) $(JAVA_FLAGS) \
+		-DBUILD_DIR=$(WIN_DIR) -DJAVA=$(JAVA) tcl.lang.Shell <<
 		puts "pwd is [pwd]"
 		puts "CLASSPATH is [set env(CLASSPATH)]"
 		lappend auto_path [pwd]
+		puts "auto_path is [set auto_path]"
 		cd ../tests
 		source all
 <<
-run_jacl:
-	cd $(WIN_DIR)
+
+#----------------------------------------------------------------
+# shell : used to drop the user into a Jacl or Tcl Blend shell
+#----------------------------------------------------------------
+shell: shell_$(TCLJAVA).exec
+
+shell_jacl.exec:
+	cd $(BUILD_DIR)
+	$(JAVA) $(JAVA_FLAGS) -classpath $(TEST_CLASSPATH) \
+		-DBUILD_DIR=$(WIN_DIR) -DJAVA=$(JAVA) tcl.lang.Shell
+
+shell_tclblend.exec:
+	cd $(BUILD_DIR)
+	copy $(MISC_DIR)\pkgIndex.tcl $(BUILD_DIR)
+	set TCLLIBPATH=$(BUILD_DIR)
+	set BUILD_DIR=$(BUILD_DIR)
 	set CLASSPATH=$(TEST_CLASSPATH)
-	$(JAVA) $(JAVA_FLAGS) tcl.lang.Shell
-
-
+	set PATH=$(BUILD_DIR);$(PATH)
+	$(TCLSH)
 
 #----------------------------------------------------------------
 # Build rules for the Demos
