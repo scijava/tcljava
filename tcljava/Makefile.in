@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the actual
 # Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.7 1999/09/23 23:34:17 redman Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.8 1999/09/24 04:53:06 redman Exp $
 
 #========================================================================
 # Edit the following few lines when writing a new extension
@@ -429,7 +429,7 @@ LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(LDFLAGS) -o $@
 
 all: binaries libraries doc
 
-binaries: $(BINARIES)
+binaries: $(BINARIES) pkgIndex.tcl
 
 libraries:
 
@@ -654,6 +654,8 @@ tclblend.jar: $(TCLBLEND_BUILD_DIR) $(TCLBLEND_JAVA_FILES) tcljava.jar
 	cd $(TCLBLEND_BUILD_DIR) ;\
 	CLASSPATH=$(JAVA_CLASSPATH) \
 	$(JAR) $(JAR_COMPRESS_FLAGS) $(BUILD_DIR_NATIVE)/tclblend.jar tcl
+
+pkgIndex.tcl : $(FULL_SRCDIR)/src/pkgIndex.tcl
 	$(INSTALL_DATA) $(MISC_DIR)/pkgIndex.tcl $(BUILD_DIR)
 
 tclblend: tclblend.jar
