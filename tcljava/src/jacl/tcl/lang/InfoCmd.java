@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: InfoCmd.java,v 1.3 1999/06/30 00:13:36 mo Exp $
+ * RCS: @(#) $Id: InfoCmd.java,v 1.4 1999/07/06 12:19:34 mo Exp $
  *
  */
 
@@ -19,6 +19,9 @@ import java.util.*;
 /**
  * This class implements the built-in "info" command in Tcl.
  */
+
+// FIXME : need to port over the Tcl 8.1 implementation of "info"
+// from the file generic/tclCmdIL.c file!
 
 class InfoCmd implements Command {
     static final private String validCmds[] = {
@@ -92,7 +95,9 @@ class InfoCmd implements Command {
 		    throw new TclNumArgsException(interp, 2, argv, 
 			    "procname");
 		}
-		cmd = (Command) interp.cmdTable.get(argv[2].toString());
+		// FIXME: fix this interp.cmdTable stuff later
+		//cmd = (Command) interp.cmdTable.get(argv[2].toString());
+		cmd = (Command) interp.globalNs.cmdTable.get(argv[2].toString());
 		if ((cmd == null) || !(cmd instanceof Procedure)) {
 		    throw new TclException(interp, "\"" + argv[2] + 
 			    "\" isn't a procedure");
@@ -110,7 +115,9 @@ class InfoCmd implements Command {
 		    throw new TclNumArgsException(interp, 2, argv, 
 			    "procname");
 		}
-		cmd = (Command) interp.cmdTable.get(argv[2].toString());
+		// FIXME: fix this interp.cmdTable stuff later
+		//cmd = (Command) interp.cmdTable.get(argv[2].toString());
+		cmd = (Command) interp.globalNs.cmdTable.get(argv[2].toString());
 		if ((cmd == null) || !(cmd instanceof Procedure)) {
 		    throw new TclException(interp, "\"" + argv[2] + 
 			    "\" isn't a procedure");
@@ -130,11 +137,16 @@ class InfoCmd implements Command {
 		    throw new TclNumArgsException(interp, 2, argv, 
 			    "?pattern?");
 		}
+		// FIXME: fix this interp.cmdTable stuff later
 		if (argv.length == 2) {
-		    matchAndAppend(interp, interp.cmdTable.keys(), null);
+		    //matchAndAppend(interp, interp.cmdTable.keys(), null);
+		    matchAndAppend(interp, interp.globalNs.cmdTable.keys(), null);
 		} else {
-		    matchAndAppend(interp, interp.cmdTable.keys(),
-			    argv[2].toString());
+		    matchAndAppend(interp, interp.globalNs.cmdTable.keys(),
+				   argv[2].toString());
+
+		    //matchAndAppend(interp, interp.cmdTable.keys(),
+		    //argv[2].toString());
 		}
 		return;
 	    case OPT_COMPLETE:
@@ -153,7 +165,9 @@ class InfoCmd implements Command {
 
 		String procName = argv[2].toString();
 		String argName = argv[3].toString();
-		cmd = (Command) interp.cmdTable.get(argv[2].toString());
+		// FIXME: fix this interp.cmdTable stuff later
+		//cmd = (Command) interp.cmdTable.get(argv[2].toString());
+		cmd = (Command) interp.globalNs.cmdTable.get(argv[2].toString());
 		if ((cmd == null) || !(cmd instanceof Procedure)) {
 		    throw new TclException(interp, "\"" + argv[2] + 
 			    "\" isn't a procedure");
@@ -260,15 +274,15 @@ class InfoCmd implements Command {
 		if (argv.length != 2) {
 		    throw new TclNumArgsException(interp, 2, argv, null);
 		}
-		TclObject obj = interp.getVar("tcl_library",
-			TCL.GLOBAL_ONLY | TCL.DONT_THROW_EXCEPTION);
-		if (obj != null) {
-		    interp.setResult(obj);
-		} else {
+		try {		
+		    interp.setResult(
+		        interp.getVar("tcl_library", TCL.GLOBAL_ONLY));
+		    return;
+		} catch (TclException e) {
+		    // If the variable has not been defined
 		    throw new TclException(interp,
-			    "no library has been specified for Tcl");
+		        "no library has been specified for Tcl");
 		}
-		return;
 	    case OPT_LOADED:
 		if (argv.length != 2 && argv.length != 3) {
 		    throw new TclNumArgsException(interp, 2, argv, 
@@ -318,7 +332,9 @@ class InfoCmd implements Command {
 		}
 
 		StringBuffer sbuf = new StringBuffer();
-		for (Enumeration e = interp.cmdTable.keys();
+		// FIXME: fix this interp.cmdTable stuff later
+		//for (Enumeration e = interp.cmdTable.keys();
+		for (Enumeration e = interp.globalNs.cmdTable.keys();
 		     e.hasMoreElements(); ) {
 		    String key = (String)e.nextElement();
 
@@ -328,7 +344,9 @@ class InfoCmd implements Command {
 			}
 		    }
 
-		    cmd = (Command)interp.cmdTable.get(key);
+		    // FIXME: fix this interp.cmdTable stuff later
+		    //cmd = (Command)interp.cmdTable.get(key);
+		    cmd = (Command)interp.globalNs.cmdTable.get(key);
 		    if (cmd instanceof Procedure) {
 			Util.appendElement(interp, sbuf, key);
 		    }

@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Procedure.java,v 1.2 1999/05/29 22:44:58 dejong Exp $
+ * RCS: @(#) $Id: Procedure.java,v 1.3 1999/07/06 12:19:34 mo Exp $
  *
  */
 
@@ -39,6 +39,12 @@ boolean isVarArgs;
 CharPointer body;
 int body_length;
 
+// The namespace that the Command is defined in
+NamespaceCmd.Namespace ns;
+
+// FIXME : remove later
+// Hash lookup key that defines this command's name
+//String hashKey;
 
 // Name of the source file that contains this procedure. May be null, which
 // indicates that the source file is unknown.
@@ -70,6 +76,7 @@ int srcLineNumber;
 
 Procedure(
     Interp interp,		// Current interpreter.
+    NamespaceCmd.Namespace ns,  // The namespace that the proc is defined in.
     String name,		// Name of the procedure.
     TclObject args,		// The formal arguments of this procedure.
     TclObject b,		// The body of the procedure.
@@ -78,6 +85,7 @@ Procedure(
 throws
     TclException		// Standard Tcl exception.
 {
+    this.ns = ns;
     srcFileName = sFileName;
     srcLineNumber = sLineNumber;
 
@@ -154,7 +162,6 @@ throws
 
     interp.pushDebugStack(srcFileName, srcLineNumber);
     try {
-      //interp.eval(body, 0);
       Parser.eval2(interp, body.array, body.index, body_length, 0);
     } catch (TclException e) {
         int code = e.getCompletionCode();
@@ -225,7 +232,7 @@ disposeCmd()
 {
   //body.release();
   body = null;
-  for (int i=0; i<argList.length; i++) {
+  for (int i=0; i < argList.length; i++) {
     argList[i][0].release();
     argList[i][0] = null;
     

@@ -15,7 +15,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: NamespaceCmd.java,v 1.4 1999/06/30 00:13:36 mo Exp $
+ * RCS: @(#) $Id: NamespaceCmd.java,v 1.5 1999/07/06 12:19:34 mo Exp $
  */
 
 package tcl.lang;
@@ -31,7 +31,7 @@ import java.util.Enumeration;
 
 public class NamespaceCmd extends InternalRep implements Command {
 
-    // Flag passed to TclGetNamespaceForQualName to indicate that it should
+    // Flag passed to getNamespaceForQualName to indicate that it should
     // search for a namespace rather than a command or variable inside a
     // namespace. Note that this flag's value must not conflict with the values
     // of TCL.GLOBAL_ONLY, TCL.NAMESPACE_ONLY, or CREATE_NS_IF_UNKNOWN.
@@ -216,7 +216,9 @@ public class NamespaceCmd extends InternalRep implements Command {
 	//frame.procPtr = null; 	   // no called procedure
 
 	// FIXME : check on this (null == global frame thing inside Interp)
-	frame.varTable = null;       // and no local variables
+	// FIXME : #2 this was causing crashes in var lookup code, Need to
+	// Look at the code in CallFrame to keep trace of null varFrame case!
+	//frame.varTable = null;       // and no local variables
 
 	// FIXME : delete these later, not part of Jacl's CallFrame (compiler only)
 	//framePtr.numCompiledLocals = 0;
@@ -347,9 +349,15 @@ public class NamespaceCmd extends InternalRep implements Command {
 	    parent = null;
 	    simpleName = "";
 	} else if (name.length() == 0) {
+	    /*
 	    TclObject tobj = interp.getResult();
 	    // FIXME : is there a test case to check this error result?
 	    TclString.append(tobj,
+	      "can't create namespace \"\": only global namespace can have empty name");
+	    */
+
+	    // FIXME : is there a test case to check this error result?
+	    interp.setResult(
 	      "can't create namespace \"\": only global namespace can have empty name");
 	    return null;
 	} else {
@@ -386,9 +394,14 @@ public class NamespaceCmd extends InternalRep implements Command {
 	    // does not already exist in the parent namespace.
 	    
 	    if (parent.childTable.get(simpleName) != null) {
+		/*
 		TclObject tobj = interp.getResult();
 		// FIXME : is there a test case to check this error result?
 		TclString.append(tobj,
+		    "can't create namespace \"" + name + "\": already exists");
+		*/
+		// FIXME : is there a test case to check this error result?
+		interp.setResult(
 		    "can't create namespace \"" + name + "\": already exists");
 		return null;
 	    }
@@ -650,8 +663,7 @@ public class NamespaceCmd extends InternalRep implements Command {
 	search = ns.cmdTable.elements();
 	while( search.hasMoreElements() ) {
 	    cmd = (Command) search.nextElement();
-	    // FIXME : what is the Java equivilant of this call?
-	    //Tcl_DeleteCommandFromToken(interp, cmd);
+	    interp.deleteCommandFromToken(cmd);
 	}
 	
 	ns.cmdTable.clear();
@@ -1357,9 +1369,15 @@ public class NamespaceCmd extends InternalRep implements Command {
 	if (ns != null) {
 	    return ns;
 	} else if ((flags & TCL.LEAVE_ERR_MSG) != 0) {
+	    /*
 	    interp.resetResult();
 	    // FIXME : is there a test case for this error?
 	    TclString.append(interp.getResult(), "unknown namespace \"" + name + "\"");
+	    */
+
+	    // FIXME : is there a test case for this error?
+	    interp.setResult(
+			"unknown namespace \"" + name + "\"");     
 	}
 	return null;
     }
@@ -1497,9 +1515,7 @@ public class NamespaceCmd extends InternalRep implements Command {
 	if (cmd != null) {
 	    return cmd;
 	} else if ((flags & TCL.LEAVE_ERR_MSG) != 0) {
-	    interp.resetResult();
-	    // FIXME : is there a test case for this error?
-	    TclString.append(interp.getResult(), "unknown command \"" + name + "\"");
+	    throw new TclException(interp, "unknown command \"" + name + "\"");
 	}
 	
 	return null;
@@ -1638,9 +1654,14 @@ public class NamespaceCmd extends InternalRep implements Command {
 	if (var != null) {
 	    return var;
 	} else if ((flags & TCL.LEAVE_ERR_MSG) != 0) {
+	    /*
 	    interp.resetResult();
 	    // FIXME : is there a test case for this error?
 	    TclString.append(interp.getResult(), "unknown variable \"" + name + "\"");
+	    */
+
+	    // FIXME : is there a test case for this error?
+	    interp.setResult("unknown variable \"" + name + "\"");
 	}
 	return null;
     }
@@ -2130,9 +2151,13 @@ public class NamespaceCmd extends InternalRep implements Command {
 	currNs = getCurrentNamespace(interp);
 	
 	if (currNs == getGlobalNamespace(interp)) {
-	    TclString.append(interp.getResult(), "::");
+	    // FIXME : appending to te result really screws everything up!
+	    // need to figure out how to disallow this!
+	    //TclString.append(interp.getResult(), "::");
+	    interp.setResult("::");
 	} else {
-	    TclString.append(interp.getResult(), currNs.fullName);
+	    //TclString.append(interp.getResult(), currNs.fullName);
+	    interp.setResult(currNs.fullName);
 	}
     }
     
@@ -3126,6 +3151,12 @@ public class NamespaceCmd extends InternalRep implements Command {
 				 // variable references within the namespace
 				 // at compile time.
 	*/
+
+	// When printing out a Namespace use the full namespace name string
+
+	public String toString() {
+	    return fullName;
+	}
     }
 
 

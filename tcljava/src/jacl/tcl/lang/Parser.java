@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Parser.java,v 1.4 1999/06/30 00:13:36 mo Exp $
+ * RCS: @(#) $Id: Parser.java,v 1.5 1999/07/06 12:19:34 mo Exp $
  */
 
 package tcl.lang;
@@ -746,7 +746,7 @@ throws
     Command cmd;
     TclObject[] newObjv;
     int i;
-    CallFrame savedVarFrame;	//Saves old copy of iPtr->varFramePtr
+    CallFrame savedVarFrame;	//Saves old copy of interp.varFrame
                                 // in case TCL_EVAL_GLOBAL was set.
 
     interp.resetResult();

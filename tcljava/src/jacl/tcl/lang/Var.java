@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Var.java,v 1.2 1999/06/30 00:13:39 mo Exp $
+ * RCS: @(#) $Id: Var.java,v 1.3 1999/07/06 12:19:34 mo Exp $
  *
  */
 package tcl.lang;
@@ -1473,6 +1473,8 @@ class Var {
      * @param flags misc flags that control the actions of this method.
      * @param trace the trace to delete.
      */
+
+    // FIXME : need to port Tcl_UntraceVar2 from tclVar.c here!
 
     static void untraceVar(
 	Interp interp,       // Interpreter containing variable.

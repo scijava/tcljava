@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: CallFrame.java,v 1.4 1999/06/30 00:13:36 mo Exp $
+ * RCS: @(#) $Id: CallFrame.java,v 1.5 1999/07/06 12:19:34 mo Exp $
  *
  */
 
@@ -117,8 +117,6 @@ class CallFrame {
 	throws TclException {
 	this(i);
 
-	// FIXME : Does the namespace of the proc need to be read here?
-
 	try {
 	    chain(proc, objv);
 	} catch (TclException e) {
@@ -137,6 +135,8 @@ class CallFrame {
      */
     void chain(Procedure proc, TclObject[] objv)
 	    throws TclException {
+	// FIXME: double check this ns thing in case where proc is renamed to different ns.
+	this.ns         = proc.ns;
 	this.objv       = objv;
 	// FIXME : quick level hack : fix later
 	level           = (interp.varFrame == null) ? 1 : (interp.varFrame.level + 1);

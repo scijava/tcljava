@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.15 1999/06/30 00:13:36 mo Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.16 1999/07/06 12:19:34 mo Exp $
  *
  */
 
@@ -71,10 +71,9 @@ static final String TCL_PATCH_LEVEL = "8.0";
 
 protected int cmdCount;
 
-
+// FIXME : remove later
 // Table of commands for this interpreter.
-
-Hashtable cmdTable;
+//Hashtable cmdTable;
 
 // Table of channels currently registered in this interp.
 
@@ -288,10 +287,10 @@ Interp()
     }
 
     
-
     // Init things that are specific to the Jacl implementation
 
-    cmdTable         = new Hashtable();
+    // FIXME : remove later
+    //cmdTable         = new Hashtable();
 
     workingDir       = new File(Util.tryGetSystemProperty("user.dir", "."));
     noEval           = 0;
@@ -441,31 +440,27 @@ dispose()
     TclObject errorInfoObj = null, errorCodeObj = null;
 
     try {
-	errorInfoObj = getVar("errorInfo", null, TCL.GLOBAL_ONLY|
-		TCL.DONT_THROW_EXCEPTION);
-	if (errorInfoObj != null) {
-	    errorInfoObj.preserve();
-	}
-
-	errorCodeObj = getVar("errorCode", null, TCL.GLOBAL_ONLY|
-		TCL.DONT_THROW_EXCEPTION);
-	if (errorCodeObj != null) {
-	    errorCodeObj.preserve();
-	}
+	errorInfoObj = getVar("errorInfo", null, TCL.GLOBAL_ONLY);
     } catch (TclException e) {
-	throw new TclRuntimeError("unexpected TclException: " + e);
+	// Do nothing when var does not exist.
+    }
+    
+    if (errorInfoObj != null) {
+	errorInfoObj.preserve();
     }
 
-    // FIXME : remove globalFrame stuff later
-    //globalFrame.dispose();
-    //globalFrame = frame;
+    try {
+	errorCodeObj = getVar("errorCode", null, TCL.GLOBAL_ONLY);
+    } catch (TclException e) {
+	// Do nothing when var does not exist.
+    }
 
+    if (errorCodeObj != null) {
+	errorCodeObj.preserve();
+    }
 
-    // FIXME : is there a reason a new frame is created here?
-    frame = newCallFrame();
-    // FIXME : is this the right thing to do with varFrame?
-    varFrame = frame;
-
+    frame = null;
+    varFrame = null;
 
     try {
 	if (errorInfoObj != null) {
@@ -480,6 +475,8 @@ dispose()
 	// Ignore it -- same behavior as Tcl 8.0.
     }
 
+    // FIXME : remove later
+    /*
     // Delete all commands.
 
     if (cmdTable != null) {
@@ -489,6 +486,8 @@ dispose()
 	}
 	cmdTable = null;
     }
+    */
+
 
     // Tear down the math function table.
 
@@ -519,13 +518,8 @@ dispose()
     // deletion could have transferred ownership of the result string
     // to Tcl.
 
-    // FIXME : remove globalFrame stuff later
-    //globalFrame.dispose();
-    //globalFrame = null;
-
     frame = null;
-    varFrame = null;
-    
+    varFrame = null;    
 
     resetResult();
 }
@@ -822,7 +816,7 @@ setVar(
 throws 
     TclException 
 {
-    return Var.setVar(this, nameObj, value, flags);
+    return Var.setVar(this, nameObj, value, (flags|TCL.LEAVE_ERR_MSG));
 }
 
 /*
@@ -853,7 +847,7 @@ setVar(
 throws
     TclException 
 {
-    return Var.setVar(this, name, value, flags);
+    return Var.setVar(this, name, value, (flags|TCL.LEAVE_ERR_MSG));
 }
 
 /*
@@ -886,7 +880,7 @@ setVar(
 throws
     TclException
 {
-    return Var.setVar(this, name1, name2, value, flags);
+    return Var.setVar(this, name1, name2, value, (flags|TCL.LEAVE_ERR_MSG));
 }
 
 /*
@@ -916,7 +910,8 @@ setVar(
 throws 
     TclException 
 {
-    Var.setVar(this, name, TclString.newInstance(strValue), flags);
+    Var.setVar(this, name, TclString.newInstance(strValue),
+	       (flags|TCL.LEAVE_ERR_MSG));
 }
 
 /*
@@ -944,13 +939,13 @@ setVar(
 				// null. 
     String strValue,		// New value for variable. 
     int flags)			// Various flags that tell how to set value:
-				// any of GLOBAL_ONLY, NAMESPACE_ONLY,
-				// APPEND_VALUE, or LIST_ELEMENT.
+				// any of TCL.GLOBAL_ONLY, TCL.NAMESPACE_ONLY,
+				// TCL.APPEND_VALUE, or TCL.LIST_ELEMENT.
 throws 
     TclException
 {
     Var.setVar(this, name1, name2, TclString.newInstance(strValue),
-	    flags);
+	    (flags|TCL.LEAVE_ERR_MSG));
 }
 
 /*
@@ -961,7 +956,8 @@ throws
  *	Get the value of a variable.
  *
  * Results:
- *	Returns the value of the variable.
+ *	Returns the value of the variable. If the variable is not defined
+ *      a TclException will be raised.
  *
  * Side effects:
  *	May trigger traces.
@@ -974,11 +970,11 @@ getVar(
     TclObject nameObj,		// The name of a variable, array, or array
 				// element.
     int flags)			// Various flags that tell how to get value:
-				// any of GLOBAL_ONLY or NAMESPACE_ONLY.
+				// any of TCL.GLOBAL_ONLY or TCL.NAMESPACE_ONLY.
 throws
     TclException 
 {
-    return Var.getVar(this, nameObj, flags);
+    return Var.getVar(this, nameObj, (flags|TCL.LEAVE_ERR_MSG));
 }
 
 /*
@@ -1002,11 +998,11 @@ getVar(
     String name,		// The name of a variable, array, or array
 				// element.
     int flags)			// Various flags that tell how to get value:
-				// any of GLOBAL_ONLY or NAMESPACE_ONLY.
+				// any of TCL.GLOBAL_ONLY or TCL.NAMESPACE_ONLY.
 throws
     TclException
 {
-    return Var.getVar(this, name, flags);
+    return Var.getVar(this, name, (flags|TCL.LEAVE_ERR_MSG));
 }
 
 /*
@@ -1033,11 +1029,11 @@ getVar(
     String name2,		// Name of an element within an array, or
 				// null.
     int flags)			// Flags that tell how to get value:
-				// GLOBAL_ONLY or NAMESPACE_ONLY. 
+				// TCL.GLOBAL_ONLY or TCL.NAMESPACE_ONLY. 
 throws
     TclException
 {
-    return Var.getVar(this, name1, name2, flags);
+    return Var.getVar(this, name1, name2, (flags|TCL.LEAVE_ERR_MSG));
 }
 
 /*
@@ -1061,11 +1057,11 @@ unsetVar(
     TclObject nameObj,		// The name of a variable, array, or array
 				// element.
     int flags)			// Various flags that tell how to get value:
-				// any of GLOBAL_ONLY or NAMESPACE_ONLY.
+				// any of TCL.GLOBAL_ONLY or TCL.NAMESPACE_ONLY.
 throws 
     TclException
 {
-    Var.unsetVar(this,nameObj, flags);
+    Var.unsetVar(this, nameObj, (flags|TCL.LEAVE_ERR_MSG));
 }
 
 /*
@@ -1089,11 +1085,11 @@ unsetVar(
     String name,		// The name of a variable, array, or array
 				// element.
     int flags)			// Various flags that tell how to get value:
-				// any of GLOBAL_ONLY or NAMESPACE_ONLY.
+				// any of TCL.GLOBAL_ONLY or TCL.NAMESPACE_ONLY.
 throws 
     TclException 
 {
-    Var.unsetVar(this, name, flags);
+    Var.unsetVar(this, name, (flags|TCL.LEAVE_ERR_MSG));
 }
 
 /*
@@ -1120,11 +1116,11 @@ unsetVar(
     String name2,		// Name of an element within an array, or
 				// null.
     int flags)			// Flags that tell how to get value:
-				// GLOBAL_ONLY or NAMESPACE_ONLY. 
+				// TCL.GLOBAL_ONLY or TCL.NAMESPACE_ONLY. 
 throws
     TclException
 {
-    Var.unsetVar(this, name1, name2, flags);
+    Var.unsetVar(this, name1, name2, (flags|TCL.LEAVE_ERR_MSG));
 }
 
 /*
@@ -1328,7 +1324,10 @@ untraceVar(
  *	If a command named cmdName already exists for interp, it is
  *	deleted. In the future, when cmdName is seen as the name of a
  *	command by eval(), cmd will be called. When the command is
- *	deleted from the table, cmd.disposeCmd() be called if cmd
+ 
+
+
+*	deleted from the table, cmd.disposeCmd() be called if cmd
  *	implements the CommandWithDispose interface.
  *
  *----------------------------------------------------------------------
@@ -1337,21 +1336,101 @@ untraceVar(
 public void
 createCommand(
     String cmdName,		// Name of command.
-    Command cmd)		// Command object to associate with
+    Command cmdImpl)		// Command object to associate with
 				// cmdName.
 {
-    Command oldCmd = (Command)cmdTable.get(cmdName);
+    //ImportRef oldRef = null;
+    NamespaceCmd.Namespace ns, dummy1, dummy2;
+    Command cmd, refCmd;
+    String tail;
 
-    if (oldCmd != null && oldCmd instanceof CommandWithDispose) {
-	((CommandWithDispose)oldCmd).disposeCmd();
+    // Determine where the command should reside. If its name contains 
+    // namespace qualifiers, we put it in the specified namespace; 
+    // otherwise, we always put it in the global namespace.
+
+    if (cmdName.indexOf("::") != -1) {
+	// Java does not support passing an address so we pass
+	// an array of size 1 and then assign arr[0] to the value
+	NamespaceCmd.Namespace[] nsArr     = new NamespaceCmd.Namespace[1];
+	NamespaceCmd.Namespace[] dummy1Arr = new NamespaceCmd.Namespace[1];
+	NamespaceCmd.Namespace[] dummy2Arr = new NamespaceCmd.Namespace[1];
+	String[]    tailArr   = new String[1];
+
+	NamespaceCmd.getNamespaceForQualName(this, cmdName, null,
+		         NamespaceCmd.CREATE_NS_IF_UNKNOWN, nsArr,
+			 dummy1Arr, dummy2Arr, tailArr);
+
+	ns = nsArr[0];
+	//dummy1 = dummy1Arr[0];
+	//dummy2 = dummy2Arr[0];
+	tail = tailArr[0];
+
+       if ((ns == null) || (tail == null)) {
+	    return;
+	}
+    } else {
+	ns =  globalNs;
+	tail = cmdName;
     }
-    cmdTable.put(cmdName, cmd);
+
+    cmd = (Command) ns.cmdTable.get(tail);
+    if (cmd != null) {
+	// Command already exists. Delete the old one.
+	// Be careful to preserve any existing import links so we can
+	// restore them down below.  That way, you can redefine a
+	// command and its import status will remain intact.
+
+	//oldRef = cmd.importRef;
+	//cmd.importRefPtr = null;
+
+	deleteCommandFromToken(cmd);
+
+	// FIXME : double check the skipped part here?
+
+	/*
+	hPtr = Tcl_CreateHashEntry(&nsPtr->cmdTable, tail, &new);
+	if (!new) {
+	    // If the deletion callback recreated the command, just throw
+            // away the new command (if we try to delete it again, we
+            // could get stuck in an infinite loop).
+
+	    ckfree((char*) Tcl_GetHashValue(hPtr));
+	}
+	*/
+    }
+
+    cmd = cmdImpl;
+    ns.cmdTable.put(tail, cmd);
+
+    /*
+    // Plug in any existing import references found above.  Be sure
+    // to update all of these references to point to the new command.
+
+    if (oldRef != null) {
+	cmd.importRef = oldRef;
+	while (oldRef != null) {
+	    refCmd = oldRef.importedCmd;
+	    data = (ImportedCmdData) refCmdPtr->objClientData;
+	    data.realCmd = cmd;
+	    oldRef = oldRef.nextPtr;
+	}
+    }
+    */
+
+    // We just created a command, so in its namespace and all of its parent
+    // namespaces, it may shadow global commands with the same name. If any
+    // shadowed commands are found, invalidate all cached command references
+    // in the affected namespaces.
+    
+    // FIXME: is this needed?
+    //TclResetShadowedCmdRefs(interp, cmdPtr);
+    return;
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * deleteCommand --
+ * Tcl_DeleteCommand -> deleteCommand
  *
  *	Remove the given command from the given interpreter.
  *
@@ -1371,16 +1450,128 @@ public int
 deleteCommand(
     String cmdName)		// Name of command to remove.
 {
-    Command cmd = (Command) cmdTable.get(cmdName);
+    Command cmd;
+
+    //  Find the desired command and delete it.
+
+    try {
+	cmd = NamespaceCmd.findCommand(this, cmdName, null, 0);
+    } catch (TclException e) {
+	// This should never happen
+	throw new TclRuntimeError("unexpected TclException: " + e);
+    }
     if (cmd == null) {
 	return -1;
-    } else {
-	cmdTable.remove(cmdName);
-	if (cmd instanceof CommandWithDispose) {
-	    ((CommandWithDispose) cmd).disposeCmd();
-	}
+    }
+    return deleteCommandFromToken(cmd);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_DeleteCommandFromToken -> deleteCommandFromToken
+ *
+ *	Remove the given command from the given interpreter.
+ *
+ * Results:
+ *	0 is returned if the command was deleted successfully.
+ *	-1 is returned if there didn't exist a command by that
+ *	name.
+ *
+ * Side effects:
+ *	cmdName will no longer be recognized as a valid command for
+ *	the interpreter.
+ *
+ *----------------------------------------------------------------------
+ */
+
+protected int
+deleteCommandFromToken(
+    Command cmd)                // Token for command to delete.
+{
+    if (cmd == null) {
+	return -1;
+    }
+
+
+    //ImportRef ref, nextRef;
+    //Command importCmd;
+
+    // The code here is tricky.  We can't delete the hash table entry
+    // before invoking the deletion callback because there are cases
+    // where the deletion callback needs to invoke the command (e.g.
+    // object systems such as OTcl). However, this means that the
+    // callback could try to delete or rename the command. The deleted
+    // flag allows us to detect these cases and skip nested deletes.
+
+    // FIXME : how can this be implemented in Jacl?
+    /*
+    if (cmdPtr->deleted) {
+	// Another deletion is already in progress.  Remove the hash
+	// table entry now, but don't invoke a callback or free the
+	// command structure.
+
+        Tcl_DeleteHashEntry(cmdPtr->hPtr);
+	cmdPtr->hPtr = NULL;
 	return 0;
     }
+    */
+
+
+    /*
+    cmdPtr->deleted = 1;
+    if (cmdPtr->deleteProc != NULL) {
+	// Delete the command's client data. If this was an imported command
+	// created when a command was imported into a namespace, this client
+	// data will be a pointer to a ImportedCmdData structure describing
+	// the "real" command that this imported command refers to.
+	
+	(*cmdPtr->deleteProc)(cmdPtr->deleteData);
+    }
+    */
+
+
+    // FIXME: We need to be able to find the command name this command
+    // is currently mapped to so that we know what namespace cmdTable
+    // to remove the command from.
+    //cmdTable.remove(cmdName);
+
+    // FIXME: this needs to be added back in later!
+    /*
+    if (cmd instanceof CommandWithDispose) {
+	((CommandWithDispose) cmd).disposeCmd();
+    }
+    */
+
+
+    // If this command was imported into other namespaces, then imported
+    // commands were created that refer back to this command. Delete these
+    // imported commands now.
+
+    /*
+    for (refPtr = cmdPtr->importRefPtr;  refPtr != NULL;
+            refPtr = nextRefPtr) {
+	nextRefPtr = refPtr->nextPtr;
+	importCmd = (Tcl_Command) refPtr->importedCmdPtr;
+        Tcl_DeleteCommandFromToken(interp, importCmd);
+    }
+    */
+
+    // FIXME : what does this mean??
+
+    // Don't use hPtr to delete the hash entry here, because it's
+    // possible that the deletion callback renamed the command.
+    // Instead, use cmdPtr->hptr, and make sure that no-one else
+    // has already deleted the hash entry.
+
+    // FIXME : what do we do here?
+    /*
+    if (cmdPtr->hPtr != NULL) {
+	Tcl_DeleteHashEntry(cmdPtr->hPtr);
+    }
+    */
+
+    return 0;
 }
 
 /*
@@ -1402,9 +1593,16 @@ deleteCommand(
 
 public Command
 getCommand(
-    String name) 		// String name of the command.
+    String cmdName) 		// String name of the command.
 {
-    return (Command) cmdTable.get(name);
+    //  Find the desired command and return it.
+
+    try {
+	return NamespaceCmd.findCommand(this, cmdName, null, 0);
+    } catch (TclException e) {
+	// This should never happen
+	throw new TclRuntimeError("unexpected TclException: " + e);
+    }
 }
 
 /*
@@ -1700,7 +1898,7 @@ eval(
     int flags)		// Flags, either 0 or TCL_GLOBAL_ONLY.
 throws 
     TclException 	// A standard Tcl exception.
-{    
+{
     CharPointer script = new CharPointer(string);
     Parser.eval2(this, script.array, script.index, script.length(), flags);
 }
