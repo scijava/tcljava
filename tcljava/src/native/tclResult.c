@@ -8,9 +8,10 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResult.c,v 1.1 1998/10/14 21:09:18 cvsadmin Exp $
+ * RCS: @(#) $Id: tclResult.c,v 1.2 1999/12/07 23:27:37 redman Exp $
  */
 
+#if (TCL_MAJOR_VERSION == 8 && TCL_MINOR_VERSION == 0)
 #include "java.h"
 #include "tclInt.h"
 
@@ -200,3 +201,4 @@ Tcl_DiscardResult(statePtr)
 }
 
 
+#endif /* (TCL_MAJOR_VERSION == 8 && TCL_MINOR_VERSION == 0)  */
