@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# "@(#) io.test 1.102 98/02/09 15:21:27"
+# RCS: @(#) $Id: io.test,v 1.2 1998/11/04 23:48:39 hylands Exp $
 
 # If the regexp package is missing, skip tests that require it.
 set REGEXP 1
