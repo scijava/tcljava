@@ -1,6 +1,6 @@
 Recent user-visible changes to Jacl & Tcl Blend:
 
-RCS: @(#) $Id: changes.txt,v 1.12 1999/05/08 22:56:23 dejong Exp $
+RCS: @(#) $Id: changes.txt,v 1.13 1999/05/08 23:03:08 dejong Exp $
 
 ----------------- Released 1.0a1, 10/22/97 -----------------------
 
@@ -542,9 +542,9 @@ more descriptive error message would be printed in the case where
 the user provided an ambiguous signature. (Mo)
 
 1/26/99 (usage message fix for java::field)
-Changed the usage message for the java::field command to better match
-the usage message in the docs. Usage message was also changed in
-tests/tcljava/JavaFieldCmd.test to match. (Mo)
+Changed the usage message for the java::field command. The message
+produced by the command now matches the docs. Usage message also
+updated in tests/tcljava/JavaFieldCmd.test. (Mo)
 
 1/26/99 (java method invoation on interface types)
 Fixed interface class bug in the getAllDeclaredMethods method in the
@@ -680,7 +680,32 @@ thing like so [java::field Integer class]. (Mo)
 2/20/99 (rewrite of reflect table implementation)
 Finished up a complete rewrite of the reflect table. The
 new implementation uses string based hashing of reflect
-ids to reflect objects. This works around some really
-nasty bugs in the JDK1.2 implementation of Hashtable.
-It should also be a lot faster, use less memory, and
+ids to reflect objects. This works around a really nasty
+Hashtable problem created by a change in the JDK 1.2
+implementation of Hashtable. The new implementation
+should also be a lot faster, use less memory, and
 be 100% backward compatible with the old implementation. (Mo)
+
+3/2/99 (removed the java studio bean)
+The studio bean that was shipped with 1.0 and 1.1 has
+been removed. People were not using it and it did not
+really belong in the dist with jacl and tclblend. (Mo)
+
+3/4/99 (reformating the documentation)
+I reformatted all the documentation in docs/TclJava
+and I fixed up some of the documentation in
+docs/TclJavaLib. We still need to come up with
+a new automated doc system as the current one is
+rather broken and very hard to update. (Mo)
+
+3/4/99 (added test cases for null object in automatic signature)
+The new null object in methods signatures feature was
+added but test cases were lacking. I added the test cases
+and changed the name of the test file from
+tcljava/AmbiguousSignature.test to tcljava/AutomaticSignature.test
+because the old name did not describe what the tests do. (Mo)
+
+3/5/99 (usage message fix for java::prop)
+Changed the usage message for the java::prop command. The message
+produced by the command now matches the docs. Usage message also
+updated in tests/tcljava/JavaPropCmd.test. (Mo)
