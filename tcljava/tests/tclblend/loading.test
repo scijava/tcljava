@@ -5,7 +5,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: loading.test,v 1.5 2003/01/28 03:21:21 mdejong Exp $
+# RCS: @(#) $Id: loading.test,v 1.6 2003/02/01 21:48:27 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -357,13 +357,38 @@ test loading-6.2 {load into Java and then try to exec a program, if
     set env(TCLBLEND_TRACE) $trace
     set hello [makeFile {puts hello} hello.tcl]
     set script [format {
-exec %s %s
+exec %s %s >@stdout 2>@stderr
 exit 0
 } $tcltest::tcltest $hello]
     exec $env(JAVA) -classpath $env(CLASSPATH) tests.JavaEval $script
 } {hello}
 
-test loading-7.1 {JDK 1.2 and newer support tclblend_init for JVM options} {
+test loading-6.3 {load into Java and then try to exec a program, if
+        this fails it is because Java is masking the SIGCHLD signal} {
+    set trace [makeFile {} tclblend.trace]
+    file delete $trace
+    set env(TCLBLEND_TRACE) $trace
+    set hello [makeFile {puts hello} hello.tcl]
+    set script [format {
+puts [exec %s %s]
+exit 0
+} $tcltest::tcltest $hello]
+    exec $env(JAVA) -classpath $env(CLASSPATH) tests.JavaEval $script
+} {hello}
+
+
+test loading-7.1 {Invoke exit from inside a java::try command} {
+    set f [makeFile {
+package require java
+java::try {
+    exit 0
+} finally {}
+exit 1
+} loading.tcl]
+    list [catch {exec $tcltest::tcltest $f >@stdout 2>@stderr} err] $err
+} {0 {}}
+
+test loading-7.2 {JDK 1.2 and newer support tclblend_init for JVM options} {
      set f [makeFile {
 set tclblend_init {-Dmyprop1=555 -Dmyprop2=222}
 package require java
@@ -386,7 +411,7 @@ exit 1
 if {[info exists env(TCLBLEND_TRACE)]} {
     unset env(TCLBLEND_TRACE)
 }
-file delete -force $hello
+file delete -force $hello core
 
 ::tcltest::cleanupTests
 return
