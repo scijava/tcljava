@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Var.java,v 1.6 1999/07/21 04:24:31 mo Exp $
+ * RCS: @(#) $Id: Var.java,v 1.7 1999/08/05 03:41:14 mo Exp $
  *
  */
 package tcl.lang;
@@ -380,7 +380,7 @@ class Var {
 				// parens around the index.  Otherwise they
 				// are -1. These are needed to restore
 				// the parens after parsing the name.
-	NamespaceCmd.Namespace varNs, cxtNs, dummy1, dummy2;
+	NamespaceCmd.Namespace varNs, cxtNs;
 	//ResolverScheme res;
 	int p;
 	int i, result;
@@ -492,17 +492,14 @@ class Var {
 		    // Java does not support passing an address so we pass
 		    // an array of size 1 and then assign arr[0] to the value
 		    NamespaceCmd.Namespace[] varNsArr  = new NamespaceCmd.Namespace[1];
-		    NamespaceCmd.Namespace[] dummy1Arr = new NamespaceCmd.Namespace[1];
-		    NamespaceCmd.Namespace[] dummy2Arr = new NamespaceCmd.Namespace[1];
+		    NamespaceCmd.Namespace[] dummyArr = new NamespaceCmd.Namespace[1];
 		    String[]    tailArr   = new String[1];
 
 		    NamespaceCmd.getNamespaceForQualName(interp, part1, null,
-		       flags, varNsArr, dummy1Arr, dummy2Arr, tailArr);
+		       flags, varNsArr, dummyArr, dummyArr, tailArr);
 
-		    // Get the varNs, dummy1, dummy2, and tail values out of the arrays!
+		    // Get the values out of the arrays!
 		    varNs  = varNsArr[0];
-		    dummy1 = dummy1Arr[0];
-		    dummy2 = dummy2Arr[0];
 		    tail   = tailArr[0];
 
 		    if (varNs == null) {
@@ -1293,7 +1290,7 @@ class Var {
 	    var.value = null;
 	}
 
-	dummyVar = new Var();
+	dummyVar          = new Var();
 	dummyVar.value    = var.value;
 	dummyVar.traces   = var.traces;
 	dummyVar.flags    = var.flags;
@@ -1657,7 +1654,7 @@ class Var {
 	CallFrame varFrame;
 	CallFrame savedFrame = null;
 	Hashtable table;
-	NamespaceCmd.Namespace ns, altNs, dummyNs;
+	NamespaceCmd.Namespace ns, altNs;
 	String tail;
 	boolean newvar = false;
 
@@ -1716,7 +1713,6 @@ class Var {
 	    // Get the values out of the arrays!
 	    ns      = nsArr[0];
 	    altNs   = altNsArr[0];
-	    dummyNs = dummyNsArr[0];
 	    tail    = tailArr[0];
 
 	    if (ns == null) {
