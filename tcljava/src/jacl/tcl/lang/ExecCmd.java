@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ExecCmd.java,v 1.9 2004/11/17 19:57:36 mdejong Exp $
+ * RCS: @(#) $Id: ExecCmd.java,v 1.10 2004/11/18 04:02:22 mdejong Exp $
  */
 
 package tcl.lang;
@@ -133,37 +133,44 @@ throws
 	    p = execDefault(interp, argv, firstWord, argLen);
 	}
 
+        // When running under a pre JDK 1.3 system, read data
+        // in the same thread. Some JDKs newer than 1.3 require
+        // that the data from a subprocess be read in another
+        // thread.
 
-	//note to self : buffer reading should be done in
-	//a separate thread and not by calling waitFor()
-	//because a process that is waited for can block
+        sbuf = new StringBuffer();
 
-	
-	//Wait for the process to finish running,
-	exit = p.waitFor();
+        if (execMethod != null) {
+            // JDK 1.3 or newer, so create another thread.
+            ExecInputStreamReader reader = new ExecInputStreamReader(
+                p.getInputStream(), p.getErrorStream(), sbuf );
 
+            // Start reading thread, wait for process to terminate in
+            // this thread, then make sure other thread has terminated.
+            reader.start();
+            exit = p.waitFor();
+            reader.join();
 
-	//Make buffer for the results of the subprocess execution
-	sbuf = new StringBuffer();
+	    errorBytes = reader.getErrorBytes();
+        } else {
+            // Earlier than JDK 1.3, read in same thread.
+            exit = p.waitFor();
+            readStreamIntoBuffer(p.getInputStream(), sbuf);
 
-	//read data on stdout stream into  result buffer
-	readStreamIntoBuffer(p.getInputStream(),sbuf);
+            // Append any data from stderr stream to result
+            errorBytes = readStreamIntoBuffer(p.getErrorStream(), sbuf);
+        }
 
-
-	//if there is data on the stderr stream then append
-	//this data onto the result StringBuffer
-	//check for the special case where there is no error
-	//data but the process returns an error result
-
-	errorBytes = readStreamIntoBuffer(p.getErrorStream(),sbuf);
+	// Check for the special case where there is no error
+	// data but the process returns an error result
 
 	if ((errorBytes == 0) && (exit != 0)) {
 	  sbuf.append("child process exited abnormally");
 	}
 
-	//If the last character of the result buffer is a newline, then 
-	//remove the newline character (the newline would just confuse 
-	//things).  Finally, we set pass the result to the interpreter.
+	// If the last character of the result buffer is a newline, then 
+	// remove the newline character (the newline would just confuse 
+	// things).  Finally, we set pass the result to the interpreter.
 	
 	int length = sbuf.length();
 	if (!keepNewline && (length > 0) &&
@@ -211,8 +218,6 @@ throws
 	 */
     }
 }
-
-
 
 /*
  *----------------------------------------------------------------------
@@ -564,3 +569,40 @@ execReflection (Interp interp, TclObject argv[], int first, int last)
 }
 
 } // end ExecCmd
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ExecInputStreamReader --
+ *
+ *	Read data from an input stream into a StringBuffer.
+ *	This code is executed in its own thread since some
+ *	JDK implementation would deadlock when reading
+ *	from a stream after waitFor is invoked.
+ */
+
+class ExecInputStreamReader extends Thread {
+    InputStream stdout;
+    InputStream stderr;
+    StringBuffer sb;
+    int errorBytes;
+
+    ExecInputStreamReader(InputStream stdout, InputStream stderr, StringBuffer sb) {
+      this.stdout = stdout;
+      this.stderr = stderr;
+      this.sb = sb;
+      errorBytes = 0;
+    }
+
+    public void run() {
+        ExecCmd.readStreamIntoBuffer(stdout, sb);
+
+        // Append any data from stderr stream to result
+        errorBytes = ExecCmd.readStreamIntoBuffer(stderr, sb);
+    }
+
+    int getErrorBytes() {
+      return errorBytes;
+    }
+}
+

@@ -1,5 +1,15 @@
 2004-11-17  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/jacl/tcl/lang/ExecCmd.java (cmdProc)
+	Update exec for JDK 1.3 or newer so that
+	another thread is created to read data
+	from the subprocess while the first thread
+	calls waitFor(). Earlier than JDK 1.3
+	still does both in one thread.
+	[Bug 879167]
+
+2004-11-17  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/jacl/tcl/lang/ExecCmd.java (execWin):
 	Add "windows xp" as one of the OS strings
 	checked before execing the pre JDK 1.3
