@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.24 1999/07/28 04:08:59 mo Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.25 1999/08/07 06:47:27 mo Exp $
 
 # The directory containing the Tcl sources and headers appropriate
 # for this version of Tk ("srcdir" will be replaced or has already
@@ -875,6 +875,13 @@ ddd_local_jacl : jacl.check
 ddd_tclblend : tclblend.check
 	$(DDD) $(DDD_FLAGS) --gdb $(TCL_BIN_DIR)/tclsh &
 	@$(MAKE) TCLJAVA=tclblend shell
+
+
+# Invoke the debug session for Jacl or Tcl Blend "make ddd"
+
+ddd : ddd_$(TCLJAVA)
+
+
 
 
 #----------------------------------------------------------------
