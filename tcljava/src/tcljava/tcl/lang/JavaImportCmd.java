@@ -12,7 +12,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaImportCmd.java,v 1.1 1999/08/09 08:52:36 mo Exp $
+ * RCS: @(#) $Id: JavaImportCmd.java,v 1.2 2000/01/10 23:43:18 mo Exp $
  *
  */
 
@@ -298,7 +298,7 @@ public class JavaImportCmd implements Command {
 
 	    if (!forget) {
 		// Make sure class is not in the global package
-		// We only need to test to see if the class exists
+		// We need to test to see if the class exists only
 		// when doing an import because doing a -forget will
 		// only work if the class had been imported already
 
