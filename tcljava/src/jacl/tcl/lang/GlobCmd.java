@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: GlobCmd.java,v 1.3 1998/11/05 00:24:24 hylands Exp $
+ * RCS: @(#) $Id: GlobCmd.java,v 1.4 1999/05/09 00:21:40 dejong Exp $
  *
  */
 
@@ -127,9 +127,7 @@ throws
 	    separators = "/";
 	}
 	  
-	/*
-	 * Perform tilde substitution, if needed.
-	 */
+	// Perform tilde substitution, if needed.
 
 	index = 0;
 	if (arg.startsWith("~")) {
@@ -348,14 +346,13 @@ throws
 	count++;
     }
 
-    /*
-     * Deal with path separators.  On the Mac, we have to watch out
-     * for multiple separators, since they are special in Mac-style
-     * paths.
-     */
+    // Deal with path separators.  On the Mac, we have to watch out
+    // for multiple separators, since they are special in Mac-style
+    // paths.
 	
     switch (JACL.PLATFORM) {
     case JACL.PLATFORM_MAC:
+
 	if (separators.charAt(0) == '/') {
 	    if (((headLen == 0) && (count == 0))
 		    || ((headLen > 0) && (lastChar != ':'))) {
@@ -376,13 +373,12 @@ throws
 	    }
 	}
 	break;
+
     case JACL.PLATFORM_WINDOWS:
-	/*
-	 * If this is a drive relative path, add the colon and the
-	 * trailing slash if needed.  Otherwise add the slash if
-	 * this is the first absolute element, or a later relative
-	 * element.  Add an extra slash if this is a UNC path.
-	 */
+	// If this is a drive relative path, add the colon and the
+	// trailing slash if needed.  Otherwise add the slash if
+	// this is the first absolute element, or a later relative
+	// element.  Add an extra slash if this is a UNC path.
 	if (name.startsWith(":")) {
  	    headBuf.append(":");
 	    if (count > 1) {
@@ -880,7 +876,6 @@ throws
      * existing directory, otherwise check that the file exists.
      */
 
-    char lastChar = 0;
     if ((prettyLen > 0) && 
 	    (separators.indexOf(
 		prettyFileName.charAt(prettyLen - 1)) != -1)) {
@@ -919,10 +914,7 @@ createAbsoluteFileObj(
 throws 
     TclException
 {
-    File f;
-	
     if (fileName.equals("")) {
-	//return(new File(""));
 	return(interp.getWorkingDir());
     }
 
