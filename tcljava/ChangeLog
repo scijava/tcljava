@@ -1,5 +1,16 @@
 2004-11-17  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* Makefile.in:
+	* src/tcljava/tcl/lang/JavaLoadCmd.java:
+	* src/tests/tcljava/javaload/Test11Extension.java:
+	* tests/tcljava/JavaLoadCmd.test:
+	Add check for class dependency errors while
+	creating an instance of an Extension object
+	via the java::load command.
+	[Patch 1016586]
+
+2004-11-17  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/jacl/tcl/lang/Interp.java (setWorkingDir):
 	Fixup error message from cd command so that
 	it matches the Tcl implementation.

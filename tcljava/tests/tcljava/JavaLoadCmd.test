@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: JavaLoadCmd.test,v 1.5 2002/12/25 04:50:28 mdejong Exp $
+# RCS: @(#) $Id: JavaLoadCmd.test,v 1.6 2004/11/18 06:40:17 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -192,6 +192,11 @@ test javaLoadCmd-4.5 {test loading of valid packages} {
 test javaLoadCmd-5.0 {test loading of valid package from a jar} {
     java::load -classpath $javaload_path/test10.jar Test10Extension
 } {Test10 Loaded}
+
+test javaLoadCmd-6.0 {test loading an extension that includes a
+         dependency that can't be loaded} {
+    list [catch {java::load -classpath $javaload_path Test11Extension} err] $err
+} {1 {Extension "Test11Extension" contains a dependency "Test11ExtensionDep" that could not be resolved.}}
 
 catch {unset testpath}
 catch {unset root_path}

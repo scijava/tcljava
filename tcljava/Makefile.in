@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.31 2004/10/01 21:29:37 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.32 2004/11/18 06:40:15 mdejong Exp $
 
 SHELL = /bin/sh
 
@@ -773,6 +773,9 @@ test_tcljava.build: $(TCLJAVA).check
 	CLASSPATH=$(JAVA_CLASSPATH) \
 	$(JAR) $(JAR_NOCOMPRESS_FLAGS) test10.jar Test10Extension.class; \
 	rm Test10Extension.class
+	@# Remove Test11ExtensionDep to test class loading error
+	cd $(TEST_BUILD_DIR)/javaload; \
+	rm Test11ExtensionDep.class
 	mkdir -p $(TEST_BUILD_DIR)/hello
 	cd $(TEST_TCLJAVA_SRC_DIR) ;\
 	CLASSPATH=$(JAVA_CLASSPATH) \

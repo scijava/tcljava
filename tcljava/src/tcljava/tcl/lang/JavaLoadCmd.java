@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: JavaLoadCmd.java,v 1.2 1999/05/09 22:17:14 dejong Exp $
+ * RCS: @(#) $Id: JavaLoadCmd.java,v 1.3 2004/11/18 06:40:17 mdejong Exp $
  */
 
 package tcl.lang;
@@ -141,6 +141,14 @@ throws
     } catch (Exception e) {
 	throw new TclException (interp, errorMsg +
 		"can't find class \"" + e.getMessage() + "\"");
+    } catch (LinkageError e) {
+        // Known to covers these error conditions:
+        // NoClassDefFoundError
+        // ExceptionInInitializerError
+        throw new TclException(interp, "Extension \"" +
+		packageName +
+		"\" contains a dependency \"" + e.getMessage() +
+		"\" that could not be resolved.");
     } finally {
 	// If we did not have a valid load, the packageName
 	// must be removed from the static tclClassLoader's 
