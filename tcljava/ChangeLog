@@ -1,5 +1,12 @@
 2004-09-18  Alexander James Pasadyn  <ajpasadyn@users.sourceforge.net>
 
+	* src/jacl/tcl/lang/Shell.java (main): If the main eval()
+	returns TCL.ERROR or some unknown error code, exit with
+	a non-zero status.
+	[Patch 1021427]
+
+2004-09-18  Alexander James Pasadyn  <ajpasadyn@users.sourceforge.net>
+
 	* src/tcljava/tcl/lang/TCL.java: Make the TCL.NO_EVAL,
 	TCL.EVAL_GLOBAL, and TCL.EVAL_DIRECT constants public
 	so that they can be used outside the tcl.lang package.

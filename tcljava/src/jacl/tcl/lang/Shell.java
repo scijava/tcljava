@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Shell.java,v 1.13 2003/03/13 22:28:11 mdejong Exp $
+ * RCS: @(#) $Id: Shell.java,v 1.14 2004/09/18 22:15:27 mdejong Exp $
  */
 
 package tcl.lang;
@@ -98,6 +98,7 @@ main(
     // and quit.
 
     if (fileName != null) {
+	int exitCode = 0;
 	try {
 	    interp.evalFile(fileName);
 	} catch (TclException e) {
@@ -106,11 +107,14 @@ main(
 		code = interp.updateReturnInfo();
 		if (code != TCL.OK) {
 		    System.err.println("command returned bad code: " + code);
+		    exitCode = 2;
 		}
 	    } else if (code == TCL.ERROR) {
 		System.err.println(interp.getResult().toString());
+		exitCode = 1;
 	    } else {
 		System.err.println("command returned bad code: " + code);
+		exitCode = 2;
 	    }
 	}
 
@@ -127,7 +131,7 @@ main(
 	// have exited and no Tcl scripts can be executed.
 
         interp.dispose();
-        System.exit(0);
+        System.exit(exitCode);
     }
 
     if (fileName == null) {
