@@ -1,29 +1,32 @@
-This message is to announce the new 1.2.5 release of Jacl and
+This message is to announce the new 1.2.6 release of Jacl and
 Tcl Blend.  These releases are the result of a joint effort by
 Mo DeJong, Christopher Hylands, Bryan Surles, and Scott Redman. 
 The goal of this project is to extend and improve the 1.0 release 
 of Jacl and Tcl Blend which was originally started by the Sun Tcl team.
 
-The 1.2.5 release of Jacl and Tcl Blend are available for
+The 1.2.6 release of Jacl and Tcl Blend are available for
 downloading at the following URL:
 
     http://www.scriptics.com/java
 
 The 1.2 version is a "production" release, it is considered
-stable enough to be used on an everyday basis. This is the
-first stable release of the 1.2 tree after a year in
-development.
+stable enough to be used on an everyday basis. This stable
+release is the result of a years worth of development.
 
-What's New in the 1.2.5 Release?
+What's New in the 1.2.6 Release?
 ----------------------------------
 
 The new release includes no new features, but it does fix
-a couple of bugs present in the 1.2.4 release. The new
-release also includes an experimental new build system that
-is TEA compliant and should work on both Unix and Windows
-systems. The existing build system which uses configure
-under windows and VC++ makefiles under Windows is still
-supported.
+a couple of bugs present in the 1.2.5 release. Building
+Tcl Blend from the source under Windows was broken, it
+has now been fixed. The pkgIndex.tcl file does additional
+checks for CLASSPATH entries in the env array with the
+wrong case. A couple of bugs in Jacl's implementation of
+the clock command were fixed. Error messages provided
+by the TclClassLoader were also improved, and some
+additional examples were added to the HTML documentation.
+Additional support for the IBM JDK port for Linux has
+been added for both Jacl and Tcl Blend.
 
 See the new_features.txt and changes.txt files for more info.
 
