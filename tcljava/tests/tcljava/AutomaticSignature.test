@@ -10,10 +10,10 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-# Note: This test file must be sourced from the parent directory
-#       or else the defs file may not be properly loaded.
-
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
 
 setupJavaPackage
 
@@ -307,3 +307,6 @@ test AutomaticSignature-4.12 {check conversion and return values for null} {
        [java::info class $S_null2]
 } {1 1 1 1 java.lang.Object java.lang.Object java.lang.String}
 
+# cleanup
+::tcltest::cleanupTests
+return

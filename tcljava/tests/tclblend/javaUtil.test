@@ -9,12 +9,12 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: javaUtil.test,v 1.1 1998/10/14 21:09:24 cvsadmin Exp $
+# RCS: @(#) $Id: javaUtil.test,v 1.2 2000/12/22 09:47:15 mdejong Exp $
 
-# Note: This test file must be sourced from the parent directory
-#       or else the defs file may not be properly loaded.
-
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
 
 setupJavaPackage
 
@@ -86,5 +86,7 @@ test javaUtil-3.4 {Java_tcl_lang_Util_getInt} {
     } msg] $msg
 } {1 {tcl.lang.TclException: expected integer but got "foo"}}
 
+# cleanup
 $interp dispose
-
+::tcltest::cleanupTests
+return

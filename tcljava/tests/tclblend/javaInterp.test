@@ -9,12 +9,12 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: javaInterp.test,v 1.1 1998/10/14 21:09:24 cvsadmin Exp $
+# RCS: @(#) $Id: javaInterp.test,v 1.2 2000/12/22 09:47:15 mdejong Exp $
 
-# Note: This test file must be sourced from the parent directory
-#       or else the defs file may not be properly loaded.
-
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
 
 setupJavaPackage
 
@@ -574,6 +574,10 @@ test javaInterp-22.9 {Java_tcl_lang_Interp_pkgRequire} {
 
 
 # JavaGetInterp is already tested by the rest of this file
+
+# cleanup
 catch {unset foo}
 catch {unset i}
 catch {unset result}
+::tcltest::cleanupTests
+return

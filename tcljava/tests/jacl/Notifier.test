@@ -7,12 +7,12 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: Notifier.test,v 1.1 1998/11/05 19:48:41 hylands Exp $
+# RCS: @(#) $Id: Notifier.test,v 1.2 2000/12/22 09:47:15 mdejong Exp $
 
-# Note: This test file must be sourced from the parent directory
-#       or else the defs file may not be properly loaded.
-
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
 
 setupJavaPackage
 
@@ -345,3 +345,6 @@ test Notifier-5.2 {TimerEvent.processEvent()} {
     lappend list $x
 } {{a c} {a c b d}}
 
+# cleanup
+::tcltest::cleanupTests
+return

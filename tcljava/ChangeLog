@@ -1,3 +1,65 @@
+2000-12-22  Mo DeJong  <mdejong@redhat.com>
+
+	* Makefile.in: The test target will now source
+	tests/all.tcl instead of tests/all.
+	* tests/all: Remove.
+	* tests/defs: Remove old tcltest implementation,
+	keep some old helper procs.
+	* tests/tcltest.tcl: Import tcltest from Tcl 8.3.
+	* tests/inprogress/AfterCmd.test:
+	* tests/inprogress/BgErrorMgr.test:
+	* tests/inprogress/CallFrame.test:
+	* tests/inprogress/EventAdaptor.test:
+	* tests/inprogress/ExecCmd.test:
+	* tests/inprogress/ExprCmd.test:
+	* tests/inprogress/GlobCmd.test:
+	* tests/inprogress/TimerHandler.test:
+	* tests/inprogress/Unicode.test:
+	* tests/inprogress/UplevelCmd.test:
+	* tests/inprogress/Util.test:
+	* tests/jacl/FileCmd.test:
+	* tests/jacl/IdleHandler.test:
+	* tests/jacl/Interp.test:
+	* tests/jacl/Notifier.test:
+	* tests/tclblend/javaCmd.test:
+	* tests/tclblend/javaIdle.test:
+	* tests/tclblend/javaInterp.test:
+	* tests/tclblend/javaObj.test:
+	* tests/tclblend/javaTimer.test:
+	* tests/tclblend/javaUtil.test:
+	* tests/tcljava/ArrayObject.test:
+	* tests/tcljava/AutomaticSignature.test:
+	* tests/tcljava/BeanEvent.test:
+	* tests/tcljava/BeanEventMgr.test:
+	* tests/tcljava/ClassRep.test:
+	* tests/tcljava/FieldSig.test:
+	* tests/tcljava/FuncSig.test:
+	* tests/tcljava/JavaBindCmd.test:
+	* tests/tcljava/JavaCallCmd.test:
+	* tests/tcljava/JavaCastCmd.test:
+	* tests/tcljava/JavaDefineClassCmd.test:
+	* tests/tcljava/JavaEventCmd.test:
+	* tests/tcljava/JavaFieldCmd.test:
+	* tests/tcljava/JavaImportCmd.test:
+	* tests/tcljava/JavaInfoCmd.test:
+	* tests/tcljava/JavaInstanceofCmd.test:
+	* tests/tcljava/JavaInvoke.test:
+	* tests/tcljava/JavaIsNullCmd.test:
+	* tests/tcljava/JavaLoadCmd.test:
+	* tests/tcljava/JavaLock.test:
+	* tests/tcljava/JavaNewCmd.test:
+	* tests/tcljava/JavaNullCmd.test:
+	* tests/tcljava/JavaPropCmd.test:
+	* tests/tcljava/JavaThrowCmd.test:
+	* tests/tcljava/JavaTryCmd.test:
+	* tests/tcljava/PkgInvoker.test:
+	* tests/tcljava/PropertySig.test:
+	* tests/tcljava/ReflectException.test:
+	* tests/tcljava/ReflectObject.test:
+	* tests/tcljava/TclEvent.test: Add tcltest
+	package initilization and cleanup code
+	to each of the test cases.
+
 2000-11-19  Christian Krone  <christian.krone@softwareag.com>
 
 	* src/jacl/tcl/lang/StdChannel.java: (Bug #121678:) The recently

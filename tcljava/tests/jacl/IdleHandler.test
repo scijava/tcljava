@@ -7,12 +7,12 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: IdleHandler.test,v 1.1 1998/11/05 19:48:39 hylands Exp $
+# RCS: @(#) $Id: IdleHandler.test,v 1.2 2000/12/22 09:47:15 mdejong Exp $
 
-# Note: This test file must be sourced from the parent directory
-#       or else the defs file may not be properly loaded.
-
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
 
 setupJavaPackage
 
@@ -108,5 +108,8 @@ test IdleHandler-1.6 {cancel() and invoke()} {
     list $msg $x
 } {0 not_called}
 
+# cleanup
 idle_cleanup
-
+rename idle_cleanup ""
+::tcltest::cleanupTests
+return

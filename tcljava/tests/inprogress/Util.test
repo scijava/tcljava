@@ -12,7 +12,10 @@
 #
 # SCCS: @(#) util.test 1.1 98/01/26 16:22:31
 
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
 
 test util-1.1 {stringMatch} {
     string match ab*c abc

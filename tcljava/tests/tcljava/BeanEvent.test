@@ -9,10 +9,10 @@
 #
 # SCCS: @(#) BeanEvent.test 1.4 98/01/14 16:38:42
 
-# Note: This test file must be sourced from the parent directory
-#       or else the defs file may not be properly loaded.
-
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
 
 setupJavaPackage
 
@@ -190,6 +190,7 @@ test BeanEvent-1.13 {BeanEvent.processEvent, ReflectException} {
     list [lindex $info 0] [lindex $info 1] [lindex $msg 0]
 } {bgerror foo 0}
 
-
-
+# cleanup
 catch {rename bgerror {}}
+::tcltest::cleanupTests
+return

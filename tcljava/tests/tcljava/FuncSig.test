@@ -5,12 +5,12 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: FuncSig.test,v 1.4 1999/07/28 03:59:56 mo Exp $
+# RCS: @(#) $Id: FuncSig.test,v 1.5 2000/12/22 09:47:15 mdejong Exp $
 
-# Note: This test file must be sourced from the parent directory
-#       or else the defs file may not be properly loaded.
-
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
 
 setupJavaPackage
 
@@ -261,3 +261,6 @@ test FuncSig-3.8 {getAllDeclaredMethods, non public method} {
     list [catch {$a noAccess3} msg] $msg
 } {1 {java.lang.IllegalAccessException: tests/invoke/NonPublicTester}}
 
+# cleanup
+::tcltest::cleanupTests
+return

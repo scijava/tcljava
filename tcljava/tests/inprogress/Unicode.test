@@ -1,7 +1,10 @@
 # These are some utility methods used to test out
 # unicode substitutions made by the parser.
 
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
 
 setupJavaPackage
 

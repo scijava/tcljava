@@ -9,10 +9,10 @@
 #
 # SCCS: @(#) BeanEventMgr.test 1.2 98/01/14 16:38:43
 
-# Note: This test file must be sourced from the parent directory
-#       or else the defs file may not be properly loaded.
-
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
 
 setupJavaPackage
 
@@ -142,3 +142,7 @@ test BeanEventMgr-2.9 {getHandledEvents} {
     java::bind $x tcl.lang.Tester1Listener.method3 {puts hi}
     lsort [java::bind $x]
 } {tcl.lang.Tester1Listener.method0 tcl.lang.Tester1Listener.method1 tcl.lang.Tester1Listener.method2 tcl.lang.Tester1Listener.method3}
+
+# cleanup
+::tcltest::cleanupTests
+return

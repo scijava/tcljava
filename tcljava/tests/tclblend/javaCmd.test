@@ -9,12 +9,12 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: javaCmd.test,v 1.2 1999/05/10 02:59:49 dejong Exp $
+# RCS: @(#) $Id: javaCmd.test,v 1.3 2000/12/22 09:47:15 mdejong Exp $
 
-# Note: This test file must be sourced from the parent directory
-#       or else the defs file may not be properly loaded.
-
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
 
 setupJavaPackage
 
@@ -53,3 +53,7 @@ test javaCmd-2.1 {JavaInterpDeleted} {
 } {1 {java.lang.NullPointerException: Invalid interpreter.}}
 
 # JavaSetupJava, ToString, JavaThrowTclException do not have tests
+
+# cleanup
+::tcltest::cleanupTests
+return

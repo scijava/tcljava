@@ -9,12 +9,12 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: ArrayObject.test,v 1.2 2000/10/30 03:22:30 mdejong Exp $
+# RCS: @(#) $Id: ArrayObject.test,v 1.3 2000/12/22 09:47:15 mdejong Exp $
 
-# Note: This test file must be sourced from the parent directory
-#       or else the defs file may not be properly loaded.
-
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
 
 setupJavaPackage
 
@@ -705,3 +705,6 @@ test ArrayObject-13.3 {array class correctness} {
 
 } {{java.lang.Object[]} {java.lang.String[]} java.lang.Object java.lang.String 0}
 
+# cleanup
+::tcltest::cleanupTests
+return

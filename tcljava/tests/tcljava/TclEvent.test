@@ -7,12 +7,12 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: TclEvent.test,v 1.2 2000/10/29 06:00:43 mdejong Exp $
+# RCS: @(#) $Id: TclEvent.test,v 1.3 2000/12/22 09:47:15 mdejong Exp $
 
-# Note: This test file must be sourced from the parent directory
-#       or else the defs file may not be properly loaded.
-
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
 
 setupJavaPackage
 
@@ -62,3 +62,6 @@ test TclEvent-1.4 { enqueue of a vwait event should still allow
     list $numQueued $expectedNumQueued $numProcessed
 } {5 5 5}
 
+# cleanup
+::tcltest::cleanupTests
+return

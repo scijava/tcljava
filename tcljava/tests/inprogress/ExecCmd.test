@@ -11,7 +11,10 @@
 #
 # SCCS: @(#) exec.test 1.54 96/08/27 14:40:01
 
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
 
 # If exec is not defined just return with no error
 # Some platforms like the Macintosh do not have the exec command

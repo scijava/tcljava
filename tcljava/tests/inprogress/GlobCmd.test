@@ -11,7 +11,10 @@
 #
 # SCCS: @(#) GlobCmd.test 1.4 98/01/27 17:19:15
 
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
 
 setupJavaPackage
 
@@ -167,7 +170,7 @@ test globCmd-2.4 {simple globbing} {unixOrPC} {
     lsort [glob globTestJacl/x1.c globTestJacl/y1.c globTestJacl/foo]
 } "$globPreResult$x1 $globPreResult$y1"
 
-test globCmd-2.4 {simple globbing} {jaclOnly} {
+test globCmd-2.4 {simple globbing} {
     lsort [glob globTestJacl/x1.c globTestJacl/y1.c globTestJacl/foo]
 } "$globPreResult$x1 $globPreResult$y1"
 

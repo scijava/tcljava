@@ -5,12 +5,12 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: JavaInvoke.test,v 1.5 2000/08/23 05:54:31 mo Exp $
+# RCS: @(#) $Id: JavaInvoke.test,v 1.6 2000/12/22 09:47:15 mdejong Exp $
 
-# Note: This test file must be sourced from the parent directory
-#       or else the defs file may not be properly loaded.
-
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
 
 setupJavaPackage
 
@@ -419,11 +419,27 @@ test invoke-9.15 {convertJavaObject} {
     jtest type [java::field $x iobj3]
 } tcl.lang.ReflectObject
 
-set str [java::new String hello]
-test invoke-9.16 {convertJavaObject: Check passing of java.lang.String} {
+set tclstr "hello"
+set str [java::new String $tclstr]
+set obj [java::cast Object $str]
+
+test invoke-9.16 {convertJavaObject: When returned from a Java method,
+        a Java String object will automatically be converted to a Tcl string } {
     java::call tests.JavaTest retStr $str
+} $tclstr
+
+test invoke-9.17 {convertJavaObject: Return value will not get converted to
+        Tcl string when -noconvert is used } {
+    java::call -noconvert tests.JavaTest retStr $str
 } $str
-unset str
+
+# this is really more of an argument conversion test
+
+test invoke-9.18 {convertJavaObject: Argument should not be assignable } {
+    java::call tests.JavaTest retStr $obj
+} ""
+unset str obj
+
 
 #
 # convertTclObject
@@ -692,3 +708,6 @@ test invoke-11.10 {getClassByName} {
 
 catch {unset clsdata}
 
+# cleanup
+::tcltest::cleanupTests
+return

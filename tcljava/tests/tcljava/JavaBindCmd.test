@@ -7,12 +7,13 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: JavaBindCmd.test,v 1.3 2000/10/29 06:00:42 mdejong Exp $
+# RCS: @(#) $Id: JavaBindCmd.test,v 1.4 2000/12/22 09:47:15 mdejong Exp $
 
-# Note: This test file must be sourced from the parent directory
-#       or else the defs file may not be properly loaded.
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
 
-if {[string compare test [info procs test]] == 1} then {source defs}
 setupJavaPackage
 
 test JavaBindCmd-1.1 {JavaBind.cmdProc} {
@@ -144,3 +145,7 @@ test JavaBindCmd-3.0 {JavaBind callback invoked from another thread} {
 
     lappend results $action
 } {Started Finished 1}
+
+# cleanup
+::tcltest::cleanupTests
+return

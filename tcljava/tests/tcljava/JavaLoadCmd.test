@@ -9,12 +9,13 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: JavaLoadCmd.test,v 1.3 1999/05/10 03:10:35 dejong Exp $
+# RCS: @(#) $Id: JavaLoadCmd.test,v 1.4 2000/12/22 09:47:15 mdejong Exp $
 
-# Note: This test file must be sourced from the parent directory
-#       or else the defs file may not be properly loaded.
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
 
-if {[string compare test [info procs test]] == 1} then {source defs}
 setupJavaPackage
 
 # Attempt to locate the Class files that are used to 
@@ -192,19 +193,16 @@ test javaLoadCmd-5.0 {test loading of valid package from a jar} {
     java::load -classpath $javaload_path/test10.jar Test10Extension
 } {Test10 Loaded}
 
-catch {
-    unset testpath;
-    unset root_path;
-    unset javaload_path;
-    unset javaload_full_path;
-    rename test1 "";
-    rename test2 "";
-    rename test3 "";
-    rename test4 "";
-    rename test5 "";
-    rename test5b "";
-    rename test6 "";
-    rename bad   "";
-}
-return
+catch {unset testpath}
+catch {unset root_path}
+catch {unset javaload_path}
+catch {unset javaload_full_path}
+catch {rename test1 ""}
+catch {rename test2 ""}
+catch {rename test3 ""}
+catch {rename test4 ""}
+catch {rename test5 ""}
+catch {rename test5b ""}
+catch {rename test6 ""}
+catch {rename bad   ""}
 
