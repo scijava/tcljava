@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: FuncSig.java,v 1.3 1999/05/09 21:31:40 dejong Exp $
+ * RCS: @(#) $Id: FuncSig.java,v 1.4 1999/05/09 21:33:53 dejong Exp $
  *
  */
 
@@ -271,7 +271,7 @@ lookupMethod(
 )
     throws TclException
 {
-  Method methods[] = getAllDeclaredMethods(cls);
+  Method[] methods = getAllDeclaredMethods(cls);
   boolean foundSameName = false;
 
 
@@ -287,7 +287,7 @@ lookupMethod(
     
     foundSameName = true;
     
-    Class pt[] = methods[i].getParameterTypes();
+    Class[] pt = methods[i].getParameterTypes();
     if (pt.length != paramTypes.length) {
       continue;
     }
@@ -345,7 +345,7 @@ matchSignature(
 )
     throws TclException
 {
-  Object funcs[];
+  Object[] funcs;
   boolean foundSameName = false;
   Vector match_vector = new Vector();
   int i,j;
@@ -1078,7 +1078,7 @@ static Method[]
 getAllDeclaredMethods(
     Class cls)				// The class to query.
 {
-    Method methods[] = (Method[])allDeclMethTable.get(cls);
+    Method[] methods = (Method[]) allDeclMethTable.get(cls);
     if (methods != null) {
 	return methods;
     }
@@ -1101,6 +1101,7 @@ getAllDeclaredMethods(
 
     }
 
+    //sortMethods(vec); // removed until this can be tested more.
     methods = new Method[vec.size()];
     vec.copyInto(methods);
     allDeclMethTable.put(cls, methods);
@@ -1127,7 +1128,7 @@ getAllDeclaredMethods(
  *----------------------------------------------------------------------
  */
 
-static void 
+private static void 
 mergeMethods(
     Class c,
     Method methods[],
@@ -1184,7 +1185,7 @@ mergeMethods(
  *----------------------------------------------------------------------
  */
 
-static boolean
+private static boolean
 methodSigEqual(
     Method method1,
     Method method2)
@@ -1208,6 +1209,126 @@ methodSigEqual(
 
     return true;
 }
+/*
+ *----------------------------------------------------------------------
+ *
+ * sortMethods --
+ *
+ *	This method will sort a vector of Method objects. We need to sort
+ *      the methods so that the order of the methods does not depend on
+ *      the order the methods are returned by the JVM.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *      The order of the elements in the Vector is changed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+private static void 
+sortMethods(
+    Vector vec)
+{
+    final boolean debug = false;
+    int insize = vec.size();
+
+    if (insize == 0) {
+	if (debug) {
+	    System.out.println("Empty Method vector");
+	}
+
+	return;
+    }
+
+    if (debug) {
+	System.out.println("Pre sort dump");
+	for (int i=0; i < vec.size(); i++) {
+	    Method m = (Method) vec.elementAt(i);
+	    System.out.println("Method " + i + " is \t\"" + getMethodDescription(m) + "\"");
+	}
+    }
+
+    for (int i=1; i < vec.size(); i++) {
+	Method m = (Method) vec.elementAt(i);
+	String ms = getMethodDescription(m);
+
+	if (debug) {
+	    System.out.println("removed " + ms + " from index " + i);
+	}
+
+	vec.removeElementAt(i);
+
+	// loop down the elements until we find a string that is <= to this string.
+
+	boolean inserted = false;
+	for (int j = i - 1; j >= 0 ; j--) {
+	    Method lm = (Method) vec.elementAt(j);
+
+	    if (ms.compareTo( getMethodDescription(lm) ) >= 0) {
+		if (debug) {
+		    System.out.println("inserting at index " + (j+1));
+		}
+		
+		inserted = true;
+		vec.insertElementAt(m, j+1);
+		break;
+	    }
+	}
+
+	if (! inserted) {
+	    if (debug) {
+		    System.out.println("end of loop inserting at index 0");
+	    }
+
+	    vec.insertElementAt(m,0);
+	}
+    }
+
+    if (debug) {
+	System.out.println("Post sort dump");
+	for (int i=0; i < vec.size(); i++) {
+	    Method m = (Method) vec.elementAt(i);
+	    System.out.println("Method " + i + " is \t\"" +  getMethodDescription(m)+ "\"");
+	}
+    }
+
+    if (insize != vec.size()) {
+	throw new RuntimeException("lost elements");
+    }
+    return;
+}
+
+// Private helper used only by sortMethods
+
+private static String getMethodDescription(Method m) {
+    StringBuffer sb = new StringBuffer(50);
+
+    sb.append(m.getName());
+
+    Class[] params = m.getParameterTypes();
+
+    sb.append('(');
+    
+    for (int i=0; i < params.length; i++) {
+
+	sb.append(JavaInfoCmd.getNameFromClass(params[i]));
+
+	if (i < (params.length - 1)) {
+	    sb.append(", ");
+	}
+    }
+
+    sb.append(") returns ");
+
+    Class ret = m.getReturnType();
+
+    sb.append(JavaInfoCmd.getNameFromClass(ret));
+
+    return sb.toString();
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -1227,7 +1348,7 @@ methodSigEqual(
  *----------------------------------------------------------------------
  */
 
-static int
+private static int
 getMethodRank(
     Class declaringCls,		// The class that declares the method.
     Method method)		// Return the rank of this method.
