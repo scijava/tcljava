@@ -40,10 +40,10 @@ JAVA_CLASSPATH	= $(JAVA_DIR)\lib\classes.zip;.
 
 
 #Tcl version info needed by the rest of the scripts
-#TCL_DOTVERSION	= 8.2.1
-TCL_DOTVERSION	= 8.0.5
-#TCL_VERSION	= 82
-TCL_VERSION	= 80
+TCL_DOTVERSION	= 8.2.1
+#TCL_DOTVERSION	= 8.0.5
+TCL_VERSION	= 82
+#TCL_VERSION	= 80
 
 
 # If you are compiling from the Tcl Blast 8.0.3 cd, then uncomment these lines
@@ -630,9 +630,9 @@ TCLBLEND_CLASS_NAMES = \
 	tcl.lang.Util
 
 
-cc32		= $(TOOLS32)\bin\cl.exe
-link32		= $(TOOLS32)\bin\link.exe
-include32	= -I$(TOOLS32)\include
+cc32		= "$(TOOLS32)\bin\cl.exe"
+link32		= "$(TOOLS32)\bin\link.exe"
+include32	= -I"$(TOOLS32)\include"
 
 INCLUDES	= -I$(TCL_DIR)\include -I$(TCL_SRC)\generic -I$(WIN_DIR)  \
 		  -I$(NATIVE_SRC_DIR) -I$(JAVA_DIR)\include -I$(JAVA_DIR)\include\win32 
