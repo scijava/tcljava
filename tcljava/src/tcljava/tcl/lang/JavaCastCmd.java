@@ -9,13 +9,13 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaCastCmd.java,v 1.1 1998/10/14 21:09:14 cvsadmin Exp $
+ * RCS: @(#) $Id: JavaCastCmd.java,v 1.2 1999/05/09 21:51:20 dejong Exp $
  *
  */
 
 package tcl.lang;
 
-/*
+/**
  * Implements the built-in "java::cast" command.
  */
 
@@ -54,8 +54,10 @@ throws
 
     Class cast_to = ClassRep.get(interp,argv[1]);
     Object obj = ReflectObject.get(interp,argv[2]);
-    if (cast_to == null || obj == null) {
-        interp.setResult(argv[2]);
+
+    // The null object can be cast to any type
+    if (obj == null) {
+        interp.setResult( ReflectObject.newInstance(interp, cast_to, obj) );
         return;
     }
 
@@ -66,8 +68,8 @@ throws
       return;
     }
 
-    //use the getNameFromClass method from the JavaInfoCmd so
-    //that array names are printed in human readable form
+    // The JavaInfoCmd.getNameFromClass() method will return the name
+    // of an Array class in a human readable form.
 
     throw new TclException(interp, "could not cast from " +
 			   JavaInfoCmd.getNameFromClass(cast_from)
@@ -75,5 +77,5 @@ throws
 			   JavaInfoCmd.getNameFromClass(cast_to));
 }
 
-} // end JavaCallCmd
+} // end JavaCastCmd
 
