@@ -1,6 +1,6 @@
 Recent user-visible changes to Jacl & Tcl Blend:
 
-RCS: @(#) $Id: changes.txt,v 1.19 1999/05/24 12:59:27 mo Exp $
+RCS: @(#) $Id: changes.txt,v 1.20 1999/05/24 15:47:35 mo Exp $
 
 ----------------- Released 1.0a1, 10/22/97 -----------------------
 
@@ -868,3 +868,5 @@ badly broken. Fixes to the FileChannel class were
 added and some test cases were created to check the
 return value of each use of the read command. This
 should also fix the bug in the gets command for files. (Mo)
+
+----------------- Released 1.2.3, 5/24/99 -----------------------
