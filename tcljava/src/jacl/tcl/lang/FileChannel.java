@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FileChannel.java,v 1.14 2001/12/24 05:51:48 mdejong Exp $
+ * RCS: @(#) $Id: FileChannel.java,v 1.15 2001/12/25 21:20:19 mdejong Exp $
  *
  */
 
@@ -117,7 +117,7 @@ class FileChannel extends Channel {
 
 	// If we are appending, move the file pointer to EOF.
 
-	if((modeFlags & TclIO.APPEND) != 0) {      
+	if ((modeFlags & TclIO.APPEND) != 0) {      
 	    file.seek(file.length());
 	}
 
@@ -181,12 +181,7 @@ class FileChannel extends Channel {
                     "FileChannel.write(): null file object");
 	}
 
-        // Invoke super.write() to check for a channel that
-        // was not opened for writing. It does nothing else
-        // since the writer member is null.
-
-        super.write(interp, s);
-
+        checkWrite(interp);
         file.writeBytes(s);
     }
 
@@ -218,8 +213,7 @@ class FileChannel extends Channel {
 	    throw new TclRuntimeError("FileChannel.flush(): null file object");
 	}
 
-        // Raise TclException if Channel was not opened for writing.
-        super.flush(interp);
+        checkWrite(interp);
     }
 
 

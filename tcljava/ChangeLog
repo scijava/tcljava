@@ -1,3 +1,18 @@
+2001-12-25  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/jacl/tcl/lang/Channel.java (read, write,
+	flush, checkRead, checkWrite): Implement and use
+	new helper methods that check to see if reading
+	or writing is allowed on a Channel. The old logic
+	was incorrect in the case of a server socket which
+	is neither readable nor writeable.
+	* src/jacl/tcl/lang/FconfigureCmd.java (cmdProc):
+	Handle server socket case which is neither readable
+	not writeable the same as standard Tcl.
+	* src/jacl/tcl/lang/FileChannel.java (write, flush):
+	Call new checkWrite method instead of invoking
+	super class method to check the writable property.
+
 2001-12-24  Bruce Johnson  <bruce_johnson@merck.com>,
             Mo DeJong  <mdejong@users.sourceforge.net>
 

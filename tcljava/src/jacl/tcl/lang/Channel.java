@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Channel.java,v 1.18 2001/12/24 21:08:06 mdejong Exp $
+ * RCS: @(#) $Id: Channel.java,v 1.19 2001/12/25 21:20:19 mdejong Exp $
  */
 
 package tcl.lang;
@@ -121,9 +121,7 @@ abstract class Channel {
     String read(Interp interp, int readType, int numBytes) 
             throws IOException, TclException {
 
-        if (isWriteOnly())
-            throw new TclException(interp, "channel \"" + getChanName() +
-                "\" wasn't opened for reading");
+        checkRead(interp);
 
         eofCond = false;
 
@@ -177,9 +175,7 @@ abstract class Channel {
     void write(Interp interp, String outStr)
 	    throws IOException, TclException {
 
-        if (isReadOnly())
-            throw new TclException(interp, "channel \"" + getChanName() +
-                "\" wasn't opened for writing");
+        checkWrite(interp);
 
         if (writer != null) {
             eofCond = false;
@@ -230,9 +226,7 @@ abstract class Channel {
     void flush(Interp interp) 
             throws IOException, TclException {
 
-        if (isReadOnly())
-            throw new TclException(interp, "channel \"" + getChanName() +
-                    "\" wasn't opened for writing");
+        checkWrite(interp);
 
         if (writer != null) {
             try {
@@ -299,9 +293,6 @@ abstract class Channel {
         chanName = chan;
     }
 
-    // FIXME: Could we check that 1 of these returns true
-    // after the channel is created for consistency?
-
     boolean isReadOnly() {
         return ((mode & TclIO.RDONLY) != 0);
     }
@@ -312,6 +303,23 @@ abstract class Channel {
 
     boolean isReadWrite() {
         return ((mode & TclIO.RDWR) != 0);
+    }
+    
+    // Helper methods to check read/write permission and raise a
+    // TclException if reading is not allowed.
+
+    protected void checkRead(Interp interp) throws TclException {
+        if (!isReadOnly() && !isReadWrite()) {
+            throw new TclException(interp, "channel \"" + getChanName() +
+                "\" wasn't opened for reading");
+        }
+    }
+
+    protected void checkWrite(Interp interp) throws TclException {
+        if (!isWriteOnly() && !isReadWrite()) {
+            throw new TclException(interp, "channel \"" + getChanName() +
+                "\" wasn't opened for writing");
+        }
     }
 
     /** 
