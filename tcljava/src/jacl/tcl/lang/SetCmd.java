@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: SetCmd.java,v 1.1 1998/10/14 21:09:19 cvsadmin Exp $
+ * RCS: @(#) $Id: SetCmd.java,v 1.2 1999/05/09 01:23:19 dejong Exp $
  *
  */
 
@@ -47,9 +47,20 @@ cmdProc(
 throws 
     TclException 		// A standard Tcl exception.
 {
+    final boolean debug = false;
+
     if (argv.length == 2) {
+	if (debug) {
+	System.out.println("getting value of \"" + argv[1].toString() + "\"");
+	System.out.flush();
+	}
 	interp.setResult(interp.getVar(argv[1], 0));
     } else if (argv.length == 3) {
+	if (debug) {
+	System.out.println("setting value of \"" + argv[1].toString() +
+			   "\" to \"" + argv[2].toString() + "\"");
+	System.out.flush();
+	}
 	interp.setResult(interp.setVar(argv[1], argv[2], 0));
     } else {
 	throw new TclNumArgsException(interp, 1, argv, 
