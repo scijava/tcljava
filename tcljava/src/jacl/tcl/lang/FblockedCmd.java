@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FblockedCmd.java,v 1.1 1998/10/14 21:09:19 cvsadmin Exp $
+ * RCS: @(#) $Id: FblockedCmd.java,v 1.2 1999/05/09 00:09:07 dejong Exp $
  *
  */
 
@@ -30,7 +30,7 @@ class FblockedCmd implements Command {
     public void cmdProc(Interp interp, TclObject argv[])
             throws TclException {
 
-	Channel chan;        /* The channel being operated on this method */
+	Channel chan;        // The channel being operated on this method
 
 	if (argv.length != 2) {
 	    throw new TclNumArgsException(interp, 1, argv, 
@@ -48,10 +48,8 @@ class FblockedCmd implements Command {
 	            + "\" wasn't opened for reading");
 	}
 
-	/*
-	 * Currently we only have synchronous io so always return 0
-	 */
+	// Java only has synchronous io so always return 0
 
-	interp.setResult(TclInteger.newInstance(0));
+	interp.setResult(0);
     }
 }

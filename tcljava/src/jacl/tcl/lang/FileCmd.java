@@ -11,7 +11,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FileCmd.java,v 1.1 1998/10/14 21:09:20 cvsadmin Exp $
+ * RCS: @(#) $Id: FileCmd.java,v 1.2 1999/05/09 00:13:23 dejong Exp $
  *
  */
 
@@ -137,17 +137,16 @@ throws
 	    throw new TclNumArgsException(interp, 2, argv, "name");
 	}
 
-	/*
-	 * WARNING:  Currently returns the same thing as MTIME.
-	 * Java does not support retrieval of access time.
-	 */
+	// FIXME:  Currently returns the same thing as MTIME.
+	// Java does not support retrieval of access time.
+
 
 	fileObj = FileUtil.getNewFileObj(interp, argv[2].toString());
 	interp.setResult(getMtime(interp, argv[2].toString(), fileObj));
 	return;
 
     case OPT_ATTRIBUTES:
-        //WARNING:   not implemented yet
+        //FIXME:   not implemented yet
 
         throw new TclException(interp,
 		"sorry, \"file attributes\" is not implemented yet");
@@ -167,11 +166,10 @@ throws
 	}
 	path = argv[2].toString();
 
-	/*
-	 * Return all but the last component.  If there is only one
-	 * component, return it if the path was non-relative, otherwise
-	 * return the current directory.
-	 */
+	// Return all but the last component.  If there is only one
+	// component, return it if the path was non-relative, otherwise
+	// return the current directory.
+
 
  	TclObject splitArrayObj[] = TclList.getElements(interp,
  		FileUtil.splitAndTranslate(interp, path));
@@ -198,10 +196,8 @@ throws
 	boolean isExe = false;
 	fileObj = FileUtil.getNewFileObj(interp, argv[2].toString());
 
-	/* 
-	 * A file must exist to be executable.  Directories are always
-	 * executable. 
-	 */
+	// A file must exist to be executable.  Directories are always
+	// executable. 
 
 	if (fileObj.exists()) {
 	    isExe = fileObj.isDirectory();
@@ -211,26 +207,20 @@ throws
 	    }
 
 	    if (Util.isWindows()) {
-		/*
-		 * File that ends with .exe, .com, or .bat is executable.
-		 */
+		// File that ends with .exe, .com, or .bat is executable.
 
 		String fileName = argv[2].toString();
 		isExe = (fileName.endsWith(".exe") ||
 			fileName.endsWith(".com") ||
 			fileName.endsWith(".bat"));
 	    } else if (Util.isMac()) {
-		/*
-		 * WARNING:  Not yet implemented on Mac.  For now, return true.
-		 * Java does not support executability checking.
-		 */
+		// FIXME:  Not yet implemented on Mac.  For now, return true.
+		// Java does not support executability checking.
 
 		isExe = true;
 	    } else {
-		/*
-		 * WARNING:  Not yet implemented on Unix.  For now, return true.
-		 * Java does not support executability checking.
-		 */
+		// FIXME:  Not yet implemented on Unix.  For now, return true.
+		// Java does not support executability checking.
 
 		isExe = true;
 	    }
@@ -278,10 +268,8 @@ throws
 	    throw new TclNumArgsException(interp, 2, argv, "name varName");
 	}
 
-	/*
-	 * WARNING:  Not yet implemented.
-	 * Java does not support link access.
-	 */
+	// FIXME:  Not yet implemented.
+	// Java does not support link access.
 
 	throw new TclException(interp, "file command with opt " + 
 		argv[1].toString() + " is not yet implemented");
@@ -344,10 +332,8 @@ throws
 	    throw new TclNumArgsException(interp, 2, argv, "name");
 	}
 
-	/*
-	 * WARNING:  Not yet implemented.
-	 * Java does not support link access.
-	 */
+	// FIXME:  Not yet implemented.
+	// Java does not support link access.
 
 	throw new TclException(interp, "file command with opt " + 
 		argv[1].toString() + " is not yet implemented");
@@ -408,9 +394,9 @@ throws
 	return;
 
     case OPT_VOLUMES:
-        //WARNING:   not implemented yet
+        // FIXME:   not implemented yet
 
-        //Java 1.2 has a new getRoots() method that would work here
+        // Java 1.2 has a new getRoots() method that would work here
 
         throw new TclException(interp,
 		"sorry, \"file volumes\" is not implemented yet");
@@ -453,25 +439,19 @@ throws
     TclException 			// Thrown if unimplemented code segment
 					// is reached
 {
-    /*
-     * If the file doesn't exist, return false;
-     */
+    // If the file doesn't exist, return false;
 
     if (!fileObj.exists()) {
 	return false;
     }
     boolean owner = true;
 
-    /*
-     * For Windows and Macintosh, there are no user ids 
-     * associated with a file, so we always return 1.
-     */
+    // For Windows and Macintosh, there are no user ids 
+    // associated with a file, so we always return 1.
 
     if (Util.isUnix()) {
-	/*
-	 * WARNING:  Not yet implemented on Unix.  Do no checking, for now.
-	 * Java does not support ownership checking.
-	 */
+	// FIXME:  Not yet implemented on Unix.  Do no checking, for now.
+	// Java does not support ownership checking.
     }
     return owner;
 }
