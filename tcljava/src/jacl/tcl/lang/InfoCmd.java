@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: InfoCmd.java,v 1.5 1999/07/21 04:20:14 mo Exp $
+ * RCS: @(#) $Id: InfoCmd.java,v 1.6 1999/08/03 02:20:59 mo Exp $
  *
  */
 
@@ -95,9 +95,7 @@ class InfoCmd implements Command {
 		    throw new TclNumArgsException(interp, 2, argv, 
 			    "procname");
 		}
-		// FIXME: fix this interp.cmdTable stuff later
-		//cmd = (Command) interp.cmdTable.get(argv[2].toString());
-		cmd = (Command) interp.globalNs.cmdTable.get(argv[2].toString());
+		cmd = interp.getCommand(argv[2].toString());
 		if ((cmd == null) || !(cmd instanceof Procedure)) {
 		    throw new TclException(interp, "\"" + argv[2] + 
 			    "\" isn't a procedure");
@@ -115,9 +113,7 @@ class InfoCmd implements Command {
 		    throw new TclNumArgsException(interp, 2, argv, 
 			    "procname");
 		}
-		// FIXME: fix this interp.cmdTable stuff later
-		//cmd = (Command) interp.cmdTable.get(argv[2].toString());
-		cmd = (Command) interp.globalNs.cmdTable.get(argv[2].toString());
+		cmd = interp.getCommand(argv[2].toString());
 		if ((cmd == null) || !(cmd instanceof Procedure)) {
 		    throw new TclException(interp, "\"" + argv[2] + 
 			    "\" isn't a procedure");
@@ -165,9 +161,7 @@ class InfoCmd implements Command {
 
 		String procName = argv[2].toString();
 		String argName = argv[3].toString();
-		// FIXME: fix this interp.cmdTable stuff later
-		//cmd = (Command) interp.cmdTable.get(argv[2].toString());
-		cmd = (Command) interp.globalNs.cmdTable.get(argv[2].toString());
+		cmd = interp.getCommand(argv[2].toString());
 		if ((cmd == null) || !(cmd instanceof Procedure)) {
 		    throw new TclException(interp, "\"" + argv[2] + 
 			    "\" isn't a procedure");
@@ -336,7 +330,7 @@ class InfoCmd implements Command {
 		//for (Enumeration e = interp.cmdTable.keys();
 		for (Enumeration e = interp.globalNs.cmdTable.keys();
 		     e.hasMoreElements(); ) {
-		    String key = (String)e.nextElement();
+		    String key = (String) e.nextElement();
 
 		    if (pattern != null) {
 			if (!Util.stringMatch(key, pattern)) {
@@ -344,9 +338,7 @@ class InfoCmd implements Command {
 			}
 		    }
 
-		    // FIXME: fix this interp.cmdTable stuff later
-		    //cmd = (Command)interp.cmdTable.get(key);
-		    cmd = (Command)interp.globalNs.cmdTable.get(key);
+		    cmd = interp.getCommand(key);
 		    if (cmd instanceof Procedure) {
 			Util.appendElement(interp, sbuf, key);
 		    }
