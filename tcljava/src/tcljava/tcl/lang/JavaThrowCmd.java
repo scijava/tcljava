@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaThrowCmd.java,v 1.1 1998/10/14 21:09:13 cvsadmin Exp $
+ * RCS: @(#) $Id: JavaThrowCmd.java,v 1.2 2002/12/30 06:28:06 mdejong Exp $
  */
 
 package tcl.lang;
@@ -30,16 +30,17 @@ class JavaThrowCmd implements Command {
  * cmdProc --
  *
  *	This procedure is invoked as part of the Command interface to
- *	process the "java::throw" Tcl command. It constructs a Throwable
+ *	process the "java::throw" Tcl command. It receives a Throwable
  *	object and throws it by encapsulating the Throwable inside
- *	a ReflectException.
+ *	a ReflectException, which inherits from TclException. If the
+ *	Throwable is already of type TclException, throw it after
+ *	resetting the interp result to the TclException message.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	If the Throwable object is successfully constructed, throws a
- *	ReflectException which encapusulates the Throwable object.
+ *	Can change the interp result, errorInfo, and errorCode.
  *
  *----------------------------------------------------------------------
  */
@@ -61,6 +62,10 @@ throws
     if (!(javaObj instanceof Throwable)) {
 	throw new TclException(interp,
 		"bad object: must be an instance of Throwable");
+    } else if (javaObj instanceof TclException) {
+	TclException te = (TclException) javaObj;
+	interp.setResult(te.getMessage());
+	throw te;
     } else {
 	throw new ReflectException(interp, (Throwable)javaObj);
     }

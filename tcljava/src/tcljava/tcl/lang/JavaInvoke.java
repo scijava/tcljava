@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaInvoke.java,v 1.16 2002/12/29 03:20:46 mdejong Exp $
+ * RCS: @(#) $Id: JavaInvoke.java,v 1.17 2002/12/30 06:28:06 mdejong Exp $
  *
  */
 
@@ -279,7 +279,13 @@ throws
         throw new TclRuntimeError("unexpected IllegalArgumentException: " +
                 e.getMessage());
     } catch (InvocationTargetException e) {
-	throw new ReflectException(interp, e);
+	Throwable te = e.getTargetException();
+	if (te instanceof TclException) {
+	    interp.setResult(te.getMessage());
+	    throw (TclException) te;
+	} else {
+	    throw new ReflectException(interp, te);
+	}
     }
 }
 

@@ -1,5 +1,21 @@
 2002-12-29  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/tclblend/tcl/lang/Interp.java (callCommand):
+	Fix stupid typo from last checkin.
+	* src/tcljava/tcl/lang/JavaInvoke.java (call):
+	Implement a shortcut when catching a TclException
+	raised in an invoked Java method. Instead of
+	wrapping it in a ReflectException, just throw it
+	after resetting the interp result.
+	* src/tcljava/tcl/lang/JavaThrowCmd.java (cmdProc):
+	Implement same shortcut for thrown TclException.
+	* src/tests/tcljava/tests/JavaTest.java (throwTclException):
+	* tests/tcljava/JavaCallCmd.test:
+	* tests/tcljava/JavaThrowCmd.test:
+	Test TclException vs ReflectException shortcut.
+
+2002-12-29  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	Overhaul exception handling and propagation
 	in TclBlend. An exception raised during a
 	Java command will now be propagated up

@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.24 2002/12/30 05:53:29 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.25 2002/12/30 06:28:06 mdejong Exp $
  *
  */
 
@@ -1037,7 +1037,7 @@ callCommand(
     } catch (RuntimeException e) {
 	// This should not happen, if it does it means there is
 	// a bug somewhere in the implementation of a command.
-	if (propagateException)
+	if (propagateException) {
 	    throw e;
 	} else {
 	    ByteArrayOutputStream baos = new ByteArrayOutputStream(1000);

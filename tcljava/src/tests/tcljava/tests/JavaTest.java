@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: JavaTest.java,v 1.3 2000/08/23 05:54:31 mo Exp $
+ * RCS: @(#) $Id: JavaTest.java,v 1.4 2002/12/30 06:28:06 mdejong Exp $
  */
 
 package tests;
@@ -111,6 +111,12 @@ public class JavaTest implements CommandWithDispose {
 
     public static String retStr(String str) {
         return str;
+    }
+
+    // Throw Tcl error from Java method.
+
+    public static void throwTclException(Interp interp) throws TclException {
+        throw new TclException(interp, "no nuts in my fudge please!");
     }
 }
 

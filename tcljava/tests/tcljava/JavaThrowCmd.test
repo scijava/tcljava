@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: JavaThrowCmd.test,v 1.4 2002/12/26 01:17:49 mdejong Exp $
+# RCS: @(#) $Id: JavaThrowCmd.test,v 1.5 2002/12/30 06:28:07 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -61,6 +61,12 @@ test JavaThrowCmd-1.10 {JavaThrow.cmdProc} {
     catch {java::throw $x}
     [lindex $errorCode 1] equals $x
 } 1
+
+test JavaThrowCmd-1.11 {JavaThrow.cmdProc won't wrap a TclException} {
+    set errorCode NONE
+    list [catch {java::throw [java::new tcl.lang.TclException \
+        [java::getinterp] "Tcl error"]} err] $err $errorCode
+} {1 {Tcl error} NONE}
 
 # cleanup
 ::tcltest::cleanupTests

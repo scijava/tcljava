@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: JavaCallCmd.test,v 1.4 2002/12/27 02:44:41 mdejong Exp $
+# RCS: @(#) $Id: JavaCallCmd.test,v 1.5 2002/12/30 06:28:06 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -92,6 +92,13 @@ test javaCall-6.1 {null return} {
 test javaCall-6.2 {null return} {
     java::call tests.JavaTest nullsmethod
 } ""
+
+test javaCall-7.1 {throw TclException in a Java method} {
+    # Should not wrap a TclException in a ReflectException!
+    set errorCode NONE
+    list [catch {java::call tests.JavaTest \
+        throwTclException [java::getinterp]} err] $err $errorCode
+} {1 {no nuts in my fudge please!} NONE}
 
 # cleanup
 ::tcltest::cleanupTests
