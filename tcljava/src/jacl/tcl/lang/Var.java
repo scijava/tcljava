@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Var.java,v 1.7 1999/08/05 03:41:14 mo Exp $
+ * RCS: @(#) $Id: Var.java,v 1.8 1999/08/07 06:45:30 mo Exp $
  *
  */
 package tcl.lang;
@@ -1267,7 +1267,7 @@ class Var {
 	var = lookup_result[0];
 	array = lookup_result[1];
 
-	result = (var.isVarUndefined()? TCL.ERROR : TCL.OK);
+	result = (var.isVarUndefined() ? TCL.ERROR : TCL.OK);
 
 	if ((array != null) && (array.sidVec != null)) {
 	    deleteSearches(array);
@@ -1286,7 +1286,7 @@ class Var {
 	//	  it (but it could have gotten recreated by a trace).
 	
 	if ((var.value != null) && (var.value instanceof TclObject)) {
-	    ((TclObject)(var.value)).release();
+	    ((TclObject) var.value).release();
 	    var.value = null;
 	}
 
