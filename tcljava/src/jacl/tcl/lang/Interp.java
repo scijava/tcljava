@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.34 2000/07/30 02:37:17 mo Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.35 2000/08/20 06:08:42 mo Exp $
  *
  */
 
@@ -25,7 +25,7 @@ import java.net.*;
  * The Tcl interpreter class.
  */
 
-public class Interp {
+public class Interp extends EventuallyFreed {
 
 // The following three variables are used to maintain a translation
 // table between ReflectObject's and their string names. These
@@ -102,6 +102,35 @@ CallFrame varFrame;
 
 NamespaceCmd.Namespace globalNs;
 
+// Hash table used to keep track of hidden commands on a per-interp basis.
+
+Hashtable hiddenCmdTable;
+
+// Information used by InterpCmd.java to keep
+// track of master/slave interps on a per-interp basis.
+
+// Keeps track of all interps for which this interp is the Master.
+// First, slaveTable (a hashtable) maps from names of commands to
+// slave interpreters. This hashtable is used to store information
+// about slave interpreters of this interpreter, to map over all slaves, etc.
+
+Hashtable slaveTable;
+
+// Hash table for Target Records. Contains all Target records which denote
+// aliases from slaves or sibling interpreters that direct to commands in
+// this interpreter. This table is used to remove dangling pointers
+// from the slave (or sibling) interpreters when this interpreter is deleted.
+
+Hashtable targetTable;
+
+// Information necessary for this interp to function as a slave.
+InterpSlaveCmd slave;
+
+// Table which maps from names of commands in slave interpreter to
+// InterpAliasCmd objects.
+
+Hashtable aliasTable;
+
 // FIXME : does globalFrame need to be replaced by globalNs?
 // Points to the global variable frame.
 
@@ -128,6 +157,10 @@ int evalFlags;
 // Flags used when evaluating a command.
 
 int flags;
+
+// Is this interpreted marked as safe?
+
+boolean isSafe;
 
 // Offset of character just after last one compiled or executed
 // by Parser.eval2().
@@ -223,6 +256,20 @@ int             parserTokensUsed;
 // Used ONLY by JavaImportCmd
 Hashtable[] importTable = {new Hashtable(), new Hashtable()};
 
+// List of unsafe commands:
+
+static final String[] unsafeCmds = {
+    "encoding",	"exit",	    "load",	"cd",		"fconfigure",
+    "file",	"glob",	    "open",	"pwd",		"socket",
+    "beep",	"echo",	    "ls",	"resource",	"source",
+    "exec",	"source"
+};
+
+// Flags controlling the call of invoke.
+
+static final int INVOKE_HIDDEN       = 1;
+static final int INVOKE_NO_UNKNOWN   = 2;
+static final int INVOKE_NO_TRACEBACK = 4;
 
 
 /*
@@ -273,6 +320,7 @@ Interp()
     evalFlags        = 0;
     scriptFile       = null;
     flags            = 0;
+    isSafe           = false;
     assocData        = null;
 
 
@@ -300,7 +348,9 @@ Interp()
     
     dbg              = initDebugInfo();
 
-
+    slaveTable = new Hashtable();
+    targetTable = new Hashtable();
+    aliasTable = new Hashtable();
 
     // init parser variables
     Parser.init(this);
@@ -373,17 +423,15 @@ Interp()
 /*
  *----------------------------------------------------------------------
  *
- * dispose --
+ * eventuallyDispose --
  *
  *	This method cleans up the state of the interpreter so that
  *	it can be garbage collected safely. This routine needs to
  *	break any circular references that might keep the interpreter
  *	alive indefinitely.
  *
- *	[ToDo]
- *	The code in this method should run in an EventuallyFree proc,
- *	so that the interpreter won't be deleted until no active code
- *	depends on the interp.
+ *	This proc should never be called directly. Instead it is called
+ *	by the dispose() method of the EventuallyFreed superclass.
  *
  * Results:
  *	None.
@@ -395,7 +443,7 @@ Interp()
  */
 
 public void
-dispose()
+eventuallyDispose()
 {
     if (deleted) {
 	return;
@@ -579,6 +627,7 @@ createCommands()
     Extension.loadOnDemand(this, "if",	  	  "tcl.lang.IfCmd");
     Extension.loadOnDemand(this, "incr",	  "tcl.lang.IncrCmd");
     Extension.loadOnDemand(this, "info",	  "tcl.lang.InfoCmd");
+    Extension.loadOnDemand(this, "interp",	  "tcl.lang.InterpCmd");
     Extension.loadOnDemand(this, "list",     	  "tcl.lang.ListCmd");
     Extension.loadOnDemand(this, "join",     	  "tcl.lang.JoinCmd");
     Extension.loadOnDemand(this, "lappend",	  "tcl.lang.LappendCmd");
@@ -1529,16 +1578,16 @@ deleteCommandFromToken(
     // callback could try to delete or rename the command. The deleted
     // flag allows us to detect these cases and skip nested deletes.
 
-    // FIXME : how can this be implemented in Jacl?
-
     if (cmd.deleted) {
 	// Another deletion is already in progress.  Remove the hash
 	// table entry now, but don't invoke a callback or free the
 	// command structure.
 
-	cmd.table.remove(cmd.hashKey);
-	cmd.table = null;
-	cmd.hashKey = null;
+	if (cmd.hashKey != null && cmd.table != null) {
+	    cmd.table.remove(cmd.hashKey);
+	    cmd.table = null;
+	    cmd.hashKey = null;
+	}
 	return 0;
     }
 
@@ -1680,19 +1729,18 @@ protected void renameCommand(
 	p.ns = cmd.ns;
     }
 
-    /*
     // Now check for an alias loop. If we detect one, put everything back
     // the way it was and report the error.
 
-    result = TclPreventAliasLoop(interp, interp, (Tcl_Command) cmdPtr);
-    if (result != TCL_OK) {
-        Tcl_DeleteHashEntry(cmdPtr->hPtr);
-        cmdPtr->hPtr = oldHPtr;
-        cmdPtr->nsPtr = cmdNsPtr;
-        return;
+    try {
+	interp.preventAliasLoop(interp, cmd);
+    } catch (TclException e) {
+	newNs.cmdTable.remove(newTail);
+	cmd.table   = oldTable;
+	cmd.hashKey = oldHashKey;
+	cmd.ns      = cmdNs;
+	throw e;
     }
-
-    */
 
     // The new command name is okay, so remove the command from its
     // current namespace. This is like deleting the command, so bump
@@ -1701,6 +1749,73 @@ protected void renameCommand(
     oldTable.remove(oldHashKey);
 
     return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclPreventAliasLoop -> preventAliasLoop
+ *
+ *	When defining an alias or renaming a command, prevent an alias
+ *	loop from being formed.
+ *
+ * Results:
+ *	A standard Tcl object result.
+ *
+ * Side effects:
+ *	If TCL_ERROR is returned, the function also stores an error message
+ *	in the interpreter's result object.
+ *
+ * NOTE:
+ *	This function is public internal (instead of being static to
+ *	this file) because it is also used from TclRenameCommand.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+preventAliasLoop(
+    Interp cmdInterp,		//Interp in which the command is being defined.
+    WrappedCommand cmd)		// Tcl command we are attempting to define.
+throws
+    TclException
+{
+    // If we are not creating or renaming an alias, then it is
+    // always OK to create or rename the command.
+    
+    if (! (cmd.cmd instanceof InterpAliasCmd)) {
+        return;
+    }
+
+    // OK, we are dealing with an alias, so traverse the chain of aliases.
+    // If we encounter the alias we are defining (or renaming to) any in
+    // the chain then we have a loop.
+
+    InterpAliasCmd alias = (InterpAliasCmd) cmd.cmd;
+    InterpAliasCmd nextAlias = alias;
+    while (true) {
+
+	// If the target of the next alias in the chain is the same as
+        // the source alias, we have a loop.
+
+	WrappedCommand aliasCmd = nextAlias.getTargetCmd(this);
+        if (aliasCmd == null) {
+            return;
+        }
+        if (aliasCmd.cmd == cmd.cmd) {
+            throw new TclException(this, "cannot define or rename alias \""
+			  + alias.name + "\": would create a loop");
+        }
+
+	// Otherwise, follow the chain one step further. See if the target
+	// command is an alias - if so, follow the loop to its target
+	// command. Otherwise we do not have a loop.
+
+	if (!(aliasCmd.cmd instanceof InterpAliasCmd)) {
+            return;
+        }
+	nextAlias = (InterpAliasCmd) aliasCmd.cmd;
+    }
 }
 
 /*
@@ -1963,6 +2078,7 @@ resetResult()
     errAlreadyLogged = false;
     errInProgress = false;
     errCodeSet = false;
+    returnCode = TCL.OK;
 }
 
 /*
@@ -2032,8 +2148,35 @@ eval(
 throws 
     TclException 	// A standard Tcl exception.
 {
+    int evalFlags = this.evalFlags;
+    this.evalFlags &= ~ Parser.TCL_ALLOW_EXCEPTIONS;
+
     CharPointer script = new CharPointer(string);
-    Parser.eval2(this, script.array, script.index, script.length(), flags);
+    try {
+	Parser.eval2(this, script.array, script.index, script.length(), flags);
+    } catch (TclException e) {
+
+	if (nestLevel != 0) {
+	    throw e;
+	}
+
+	// Update the interpreter's evaluation level count. If we are again at
+	// the top level, process any unusual return code returned by the
+	// evaluated code.
+
+	int result = e.getCompletionCode();
+
+	if (result == TCL.RETURN) {
+	    result = updateReturnInfo();
+	}
+	if (result != TCL.OK && result != TCL.ERROR
+	    && (evalFlags & Parser.TCL_ALLOW_EXCEPTIONS) == 0) {
+	    processUnexpectedResult(result);
+	}
+	if (result != TCL.OK) {
+	    throw new TclException(this, e.getMessage(), result);
+	}
+    }
 }
 
 /*
@@ -2642,6 +2785,43 @@ addErrorInfo(
 /*
  *----------------------------------------------------------------------
  *
+ * ProcessUnexpectedResult -> processUnexpectedResult
+ *
+ *	Procedure called by Tcl_EvalObj to set the interpreter's result
+ *	value to an appropriate error message when the code it evaluates
+ *	returns an unexpected result code (not TCL_OK and not TCL_ERROR) to
+ *	the topmost evaluation level.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The interpreter result is set to an error message appropriate to
+ *	the result code.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+processUnexpectedResult(
+    int returnCode)		// The unexpected result code.
+throws 
+    TclException 	// A standard Tcl exception.
+{
+    resetResult();
+    if (returnCode == TCL.BREAK) {
+	throw new TclException(this, "invoked \"break\" outside of a loop");
+    } else if (returnCode == TCL.CONTINUE) {
+	throw new TclException(this, "invoked \"continue\" outside of a loop");
+    } else {
+	throw new TclException(this,
+		      "command returned bad code: " + returnCode);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * updateReturnInfo --
  *
  *	This internal method is used by various parts of the Jacl
@@ -3018,7 +3198,528 @@ getArgLineNumber(
 {
     return 0;
 }
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * TclTransferResult -> transferResult
+ *
+ *	Copy the result (and error information) from one interp to 
+ *	another.  Used when one interp has caused another interp to 
+ *	evaluate a script and then wants to transfer the results back
+ *	to itself.
+ *
+ *	This routine copies the string reps of the result and error 
+ *	information.  It does not simply increment the refcounts of the
+ *	result and error information objects themselves.
+ *	It is not legal to exchange objects between interps, because an
+ *	object may be kept alive by one interp, but have an internal rep 
+ *	that is only valid while some other interp is alive.  
+ *
+ * Results:
+ *	The target interp's result is set to a copy of the source interp's
+ *	result.  The source's error information "$errorInfo" may be
+ *	appended to the target's error information and the source's error
+ *	code "$errorCode" may be stored in the target's error code.
+ *
+ * Side effects:
+ *	None.
+ *
+ *-------------------------------------------------------------------------
+ */
+	
+void
+transferResult(
+    Interp sourceInterp,	// Interp whose result and error information
+				// should be moved to the target interp.  
+				// After moving result, this interp's result 
+				// is reset.
+    int result)			// TCL.OK if just the result should be copied, 
+				// TCL.ERROR if both the result and error 
+				// information should be copied.
+throws 
+    TclException
+{
+    if (sourceInterp == this) {
+      return;
+    }
 
+    if (result == TCL.ERROR) {
+        TclObject obj;
+
+	// An error occurred, so transfer error information from the source
+	// interpreter to the target interpreter.  Setting the flags tells
+	// the target interp that it has inherited a partial traceback
+	// chain, not just a simple error message.
+
+	if (!sourceInterp.errAlreadyLogged) {
+	    sourceInterp.addErrorInfo("");
+        }
+        sourceInterp.errAlreadyLogged = true;
+        
+        resetResult();
+        
+	obj = sourceInterp.getVar("errorInfo", TCL.GLOBAL_ONLY);
+	setVar("errorInfo", obj, TCL.GLOBAL_ONLY);
+
+	obj = sourceInterp.getVar("errorCode", TCL.GLOBAL_ONLY);
+	setVar("errorCode", obj, TCL.GLOBAL_ONLY);
+
+	errInProgress = true;
+	errCodeSet = true;
+    }
+
+    returnCode = result;
+    setResult(sourceInterp.getResult());
+    sourceInterp.resetResult();
+
+    if (result != TCL.OK) {
+	throw new TclException(this, getResult().toString(), result);
+    }
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * Tcl_HideCommand -> hideCommand
+ *
+ *	Makes a command hidden so that it cannot be invoked from within
+ *	an interpreter, only from within an ancestor.
+ *
+ * Results:
+ *	A standard Tcl result; also leaves a message in the interp's result
+ *	if an error occurs.
+ *
+ * Side effects:
+ *	Removes a command from the command table and create an entry
+ *      into the hidden command table under the specified token name.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+void
+hideCommand(
+    String cmdName,		// Name of command to hide.
+    String hiddenCmdToken)	// Token name of the to-be-hidden command.
+throws
+    TclException
+{
+    WrappedCommand cmd;
+
+    if (deleted) {
+	// The interpreter is being deleted. Do not create any new
+	// structures, because it is not safe to modify the interpreter.
+        return;
+    }
+
+    // Disallow hiding of commands that are currently in a namespace or
+    // renaming (as part of hiding) into a namespace.
+    //
+    // (because the current implementation with a single global table
+    //  and the needed uniqueness of names cause problems with namespaces)
+    //
+    // we don't need to check for "::" in cmdName because the real check is
+    // on the nsPtr below.
+    //
+    // hiddenCmdToken is just a string which is not interpreted in any way.
+    // It may contain :: but the string is not interpreted as a namespace
+    // qualifier command name. Thus, hiding foo::bar to foo::bar and then
+    // trying to expose or invoke ::foo::bar will NOT work; but if the
+    // application always uses the same strings it will get consistent
+    // behaviour.
+    //
+    // But as we currently limit ourselves to the global namespace only
+    // for the source, in order to avoid potential confusion,
+    // lets prevent "::" in the token too.  --dl
+
+    if (hiddenCmdToken.indexOf("::") >= 0) {
+        throw new TclException(this, "cannot use namespace qualifiers as "
+		      + "hidden commandtoken (rename)");
+    }
+
+    // Find the command to hide. An error is returned if cmdName can't
+    // be found. Look up the command only from the global namespace.
+    // Full path of the command must be given if using namespaces.
+
+    cmd = NamespaceCmd.findCommand(this, cmdName, null,
+	    /*flags*/ TCL.LEAVE_ERR_MSG | TCL.GLOBAL_ONLY);
+
+    // Check that the command is really in global namespace
+
+    if (cmd.ns != globalNs) {
+        throw new TclException(this, "can only hide global namespace commands"
+		      + " (use rename then hide)");
+    }
+    
+    // Initialize the hidden command table if necessary.
+
+    if (hiddenCmdTable == null) {
+        hiddenCmdTable = new Hashtable();
+    }
+
+    // It is an error to move an exposed command to a hidden command with
+    // hiddenCmdToken if a hidden command with the name hiddenCmdToken already
+    // exists.
+    
+    if (hiddenCmdTable.containsKey(hiddenCmdToken)) {
+        throw new TclException(this, "hidden command named \""
+		      + hiddenCmdToken + "\" already exists");
+    }
+
+    // Nb : This code is currently 'like' a rename to a specialy set apart
+    // name table. Changes here and in TclRenameCommand must
+    // be kept in synch untill the common parts are actually
+    // factorized out.
+
+    // Remove the hash entry for the command from the interpreter command
+    // table. This is like deleting the command, so bump its command epoch;
+    // this invalidates any cached references that point to the command.
+
+    if (cmd.table.containsKey(cmd.hashKey)) {
+	cmd.table.remove(cmd.hashKey);
+    }
+
+    // Now link the hash table entry with the command structure.
+    // We ensured above that the nsPtr was right.
+    
+    cmd.table = hiddenCmdTable;
+    cmd.hashKey = hiddenCmdToken;
+    hiddenCmdTable.put(hiddenCmdToken, cmd);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_ExposeCommand -> exposeCommand
+ *
+ *	Makes a previously hidden command callable from inside the
+ *	interpreter instead of only by its ancestors.
+ *
+ * Results:
+ *	A standard Tcl result. If an error occurs, a message is left
+ *	in the interp's result.
+ *
+ * Side effects:
+ *	Moves commands from one hash table to another.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+exposeCommand(
+    String hiddenCmdToken,	// Token name of the to-be-hidden command.
+    String cmdName)		// Name of command to hide.
+throws
+    TclException
+{
+    WrappedCommand cmd;
+
+    if (deleted) {
+	// The interpreter is being deleted. Do not create any new
+	// structures, because it is not safe to modify the interpreter.
+        return;
+    }
+
+    // Check that we have a regular name for the command
+    // (that the user is not trying to do an expose and a rename
+    //  (to another namespace) at the same time)
+
+    if (cmdName.indexOf("::") >= 0) {
+        throw new TclException(this, "can not expose to a namespace "
+		      + "(use expose to toplevel, then rename)");
+    }
+
+    // Get the command from the hidden command table:
+
+    if (hiddenCmdTable == null
+	|| !hiddenCmdTable.containsKey(hiddenCmdToken)) {
+        throw new TclException(this, "unknown hidden command \""
+		      + hiddenCmdToken + "\"");
+    }
+    cmd = (WrappedCommand) hiddenCmdTable.get(hiddenCmdToken);
+    
+    // Check that we have a true global namespace
+    // command (enforced by Tcl_HideCommand() but let's double
+    // check. (If it was not, we would not really know how to
+    // handle it).
+
+    if (cmd.ns != globalNs) {
+
+	// This case is theoritically impossible,
+	// we might rather panic() than 'nicely' erroring out ?
+
+        throw new TclException(this, "trying to expose "
+		      + "a non global command name space command");
+    }
+    
+    // This is the global table
+    NamespaceCmd.Namespace ns = cmd.ns;
+
+    // It is an error to overwrite an existing exposed command as a result
+    // of exposing a previously hidden command.
+
+    if (ns.cmdTable.containsKey(cmdName)) {
+      throw new TclException(this, "exposed command \""
+			     + cmdName + "\" already exists");
+    }
+
+    // Remove the hash entry for the command from the interpreter hidden
+    // command table.
+
+    if (cmd.hashKey != null) {
+	cmd.table.remove(cmd.hashKey);
+	cmd.table = ns.cmdTable;
+	cmd.hashKey = cmdName;
+    }
+
+    // Now link the hash table entry with the command structure.
+    // This is like creating a new command, so deal with any shadowing
+    // of commands in the global namespace.
+    
+    ns.cmdTable.put(cmdName, cmd);
+
+    // Not needed as we are only in the global namespace
+    // (but would be needed again if we supported namespace command hiding)
+
+    // TclResetShadowedCmdRefs(interp, cmdPtr);
+}
+
+/**
+ *----------------------------------------------------------------------
+ *
+ * TclHideUnsafeCommands -> hideUnsafeCommands
+ *
+ *	Hides base commands that are not marked as safe from this
+ *	interpreter.
+ *
+ * Results:
+ *	None
+ *
+ * Side effects:
+ *	Hides functionality in an interpreter.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+hideUnsafeCommands()
+throws
+    TclException
+{
+    for (int ix = 0; ix < unsafeCmds.length; ix++) {
+	try {
+	    hideCommand(unsafeCmds[ix], unsafeCmds[ix]);
+	} catch (TclException e) {
+	    if (!e.getMessage().startsWith("unknown command")) {
+	        throw e;
+	    }
+	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclObjInvokeGlobal -> invokeGlobal
+ *
+ *	Invokes a Tcl command, given an objv/objc, from	either the
+ *	exposed or hidden set of commands in the given interpreter.
+ *	NOTE: The command is invoked in the global stack frame of the
+ *	interpreter, thus it cannot see any current state on the
+ *	stack of that interpreter.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	Whatever the command does.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+invokeGlobal(
+  TclObject[] objv,		// Argument objects; objv[0] points to the
+				// name of the command to invoke.
+  int flags)			// Combination of flags controlling the call:
+				// INVOKE_HIDDEN,_INVOKE_NO_UNKNOWN,
+				// or INVOKE_NO_TRACEBACK.
+throws
+    TclException
+{
+    CallFrame savedVarFrame = varFrame;
+
+    try {
+	varFrame = null;
+	return invoke(objv, flags);
+    } finally {
+	varFrame = savedVarFrame;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclObjInvoke -> invoke
+ *
+ *	Invokes a Tcl command, given an objv/objc, from either the
+ *	exposed or the hidden sets of commands in the given interpreter.
+ *
+ * Results:
+ *	A standard Tcl object result.
+ *
+ * Side effects:
+ *	Whatever the command does.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+invoke(
+  TclObject[] objv,		// Argument objects; objv[0] points to the
+				// name of the command to invoke.
+  int flags)			// Combination of flags controlling the call:
+				// INVOKE_HIDDEN,_INVOKE_NO_UNKNOWN,
+				// or INVOKE_NO_TRACEBACK.
+throws
+    TclException
+{
+    if ((objv.length < 1) || (objv == null)) {
+	throw new TclException(this, "illegal argument vector");
+    }
+
+    String cmdName = objv[0].toString();
+    WrappedCommand cmd;
+    TclObject localObjv[] = null;
+
+    if ((flags & INVOKE_HIDDEN) != 0) {
+
+	// We never invoke "unknown" for hidden commands.
+
+        if (hiddenCmdTable == null || !hiddenCmdTable.containsKey(cmdName)) {
+	    throw new TclException(this, "invalid hidden command name \""
+			  + cmdName + "\"");
+        }
+	cmd = (WrappedCommand) hiddenCmdTable.get(cmdName);
+    } else {
+	cmd = NamespaceCmd.findCommand(this, cmdName, null, TCL.GLOBAL_ONLY);
+	if (cmd == null) {
+            if ((flags & INVOKE_NO_UNKNOWN) == 0) {
+		cmd = NamespaceCmd.findCommand(this, "unknown",
+			  null, TCL.GLOBAL_ONLY);
+                if (cmd != null) {
+		    localObjv = new TclObject[objv.length+1];
+		    localObjv[0] = TclString.newInstance("unknown");
+		    localObjv[0].preserve();
+                    for (int i = 0;  i < objv.length;  i++) {
+                        localObjv[i+1] = objv[i];
+                    }
+                    objv = localObjv;
+                }
+            }
+
+	    // Check again if we found the command. If not, "unknown" is
+	    // not present and we cannot help, or the caller said not to
+	    // call "unknown" (they specified TCL_INVOKE_NO_UNKNOWN).
+
+            if (cmd == null) {
+		throw new TclException(this, "invalid command name \""
+			  + cmdName + "\"");
+            }
+        }
+    }
+
+    // Invoke the command procedure. First reset the interpreter's string
+    // and object results to their default empty values since they could
+    // have gotten changed by earlier invocations.
+
+    resetResult();
+    cmdCount++;
+
+    int result = TCL.OK;
+    try {
+	cmd.cmd.cmdProc(this, objv);
+    } catch (TclException e) {
+	result = e.getCompletionCode();
+    }
+
+    // If we invoke a procedure, which was implemented as AutoloadStub,
+    // it was entered into the ordinary cmdTable. But here we know
+    // for sure, that this command belongs into the hiddenCmdTable.
+    // So if we can find an entry in cmdTable with the cmdName, just
+    // move it into the hiddenCmdTable.
+
+    if ((flags & INVOKE_HIDDEN) != 0) {
+	cmd = NamespaceCmd.findCommand(this, cmdName, null, TCL.GLOBAL_ONLY);
+	if (cmd != null) {
+	    // Basically just do the same as in hideCommand...
+	    cmd.table.remove(cmd.hashKey);
+	    cmd.table = hiddenCmdTable;
+	    cmd.hashKey = cmdName;
+	    hiddenCmdTable.put(cmdName, cmd);
+	}
+    }
+
+    // If an error occurred, record information about what was being
+    // executed when the error occurred.
+
+    if ((result == TCL.ERROR)
+	&& ((flags & INVOKE_NO_TRACEBACK) == 0)
+	&& !errAlreadyLogged) {
+        StringBuffer ds;
+
+        if (errInProgress) {
+            ds = new StringBuffer("\n    while invoking\n\"");
+        } else {
+            ds = new StringBuffer("\n    invoked from within\n\"");
+        }
+        for (int i = 0;  i < objv.length;  i++) {
+	    ds.append(objv[i].toString());
+            if (i < (objv.length - 1)) {
+                ds.append(" ");
+            } else if (ds.length() > 100) {
+                ds.append("...");
+                break;
+            }
+        }
+        ds.append("\"");
+	addErrorInfo(ds.toString());
+	errInProgress = true;
+    }
+
+    // Free any locally allocated storage used to call "unknown".
+
+    if (localObjv != null) {
+	localObjv[0].release();
+    }
+
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_AllowExceptions -> allowExceptions
+ *
+ *	Sets a flag in an interpreter so that exceptions can occur
+ *	in the next call to Tcl_Eval without them being turned into
+ *	errors.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The TCL_ALLOW_EXCEPTIONS flag gets set in the interpreter's
+ *	evalFlags structure.  See the reference documentation for
+ *	more details.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+allowExceptions()
+{
+    evalFlags |= Parser.TCL_ALLOW_EXCEPTIONS;
+}
 
 } // end Interp
-

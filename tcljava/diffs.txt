@@ -1,6 +1,6 @@
 diffs.txt --  DIFFERENCES BETWEEN TCL and JACL
 
-RCS: @(#) $Id: diffs.txt,v 1.7 2000/04/03 12:36:15 mo Exp $
+RCS: @(#) $Id: diffs.txt,v 1.8 2000/08/20 06:08:41 mo Exp $
 
 This file contains a list of differences between Tcl 8.x and Jacl 1.x.
 
@@ -17,7 +17,7 @@ any behavior that deviates from that of native Tcl.
 - General Tcl commands that are completely implemented in Jacl.
 
 	after, append, auto_load, binary, cd, clock, concat, eval, expr, format,
-	global, history, incr, join, lappend, lindex, linsert list, llength,
+	global, history, incr, interp, join, lappend, lindex, linsert list, llength,
 	lrange, lreplace, lsearch, lsort, namespace, package, pwd, regexp,
 	regsub, rename, scan, seek, set, source, split, string, subst, tell,
         time, trace, unknown, unset, update, uplevel, upvar, variable, vwait
@@ -59,7 +59,7 @@ What Does Not Work
 - Tcl commands that are not yet implemented in Jacl
 
 	auto_mkindex, fblocked, fcopy, fconfigure, fileevent
-	interp, load, pkg_mkIndex, pid, socket
+	load, pkg_mkIndex, pid, socket
 
 
 ----------

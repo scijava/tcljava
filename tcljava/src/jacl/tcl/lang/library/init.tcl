@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.3 2000/02/23 22:14:17 mo Exp $
+# RCS: @(#) $Id: init.tcl,v 1.4 2000/08/20 06:08:44 mo Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -12,22 +12,8 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 
-if {[string compare $tcl_platform(platform) java] == 0} {
-
-# interp --
-#
-# We haven't implementation interp yet. The following stub always return
-# 0 for the [interp issafe] calls in this file.
-
-proc interp {args} {
-    return 0
-}
-
-}
-
 set auto_path resource:/tcl/lang/library
 
-# End hack
 #----------------------------------------------------------------------0
 
 if {[info commands package] == ""} {

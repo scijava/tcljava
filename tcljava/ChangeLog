@@ -1,3 +1,39 @@
+2000-08-20  Christian Krone  <krischan@sql.de>
+
+	* configure.in: Pass -ms5m -mx22m in JAVA_FLAGS.
+	* diffs.txt: Add note about new interp command.
+	* jaclsh.in: Dont set JAVA_FLAGS here.
+	* new_features.txt: Add note about new interp command.
+	* src/jacl/tcl/lang/BgErrorMgr.java (processIdleEvent):
+	Add calls to Interp.preserve() and Interp.release().
+	* src/jacl/tcl/lang/CatchCmd.java:
+	Add call to Interp.resetResult().
+	* src/jacl/tcl/lang/EventuallyFreed.java:
+	Implement a ref counting scheme like
+	Tcl_Preserve and Tcl_Release. We can't
+	use GC because of Tcl's semantics.
+	* src/jacl/tcl/lang/Interp.java (dispose,
+	eventuallyDispose, createCommands,
+	deleteCommandFromToken, renameCommand, preventAliasLoop,
+	resetResult, eval, processUnexpectedResult, transferResult,
+	hideCommand, exposeCommand, hideUnsafeCommands, invokeGlobal,
+	invoke, allowExceptions):
+	Make Interp derive from EventuallyFreed.
+	Add guts needed to support slave/safe interps.
+	Add interp command. Set the returnCode to TCL.OK
+	when resetResult() is called. Add support for
+	propagating error info slave to master interp as well
+ 	as hiding and exposing commands.
+	* src/jacl/tcl/lang/InterpAliasCmd.java: Add command
+	that will proxy aliases commands in an interp.
+	* src/jacl/tcl/lang/InterpCmd.java: Add command
+	that handles the interp Tcl command.
+	* src/jacl/tcl/lang/InterpSlaveCmd.java: Add command
+	that will handle commands for slave interp in the master.
+	* src/jacl/tcl/lang/library/init.tcl: Remove stub
+	interp command.
+	* tests/tcl/interp.test: Add interp regression tests.
+
 2000-08-19  Christian Krone  <krischan@sql.de>
 
 	* src/jacl/tcl/lang/BgErrorMgr.java: Use

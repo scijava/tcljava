@@ -209,13 +209,13 @@ Jacl is now 100% Open Source.
 
 An implementation of Tcl's binary command has been added to Jacl.
 This new command passes all of the Tcl regression tests for the
-binary command.
+binary command. Thanks go to Christian Krone for this command.
 
 (NEW COMMAND FOR JACL)
 
 An implementation of Tcl's history command has been added to Jacl.
 This new command passes all of the Tcl regression tests for the
-history command.
+history command. Thanks go to Christian Krone for this command.
 
 (JVM SUPPORT)
 
@@ -224,5 +224,11 @@ the IBM Java-2 1.3 JVM. The new build system also adds
 support for the Kaffe Open JVM with Tcl Blend. Jacl has worked
 with Kaffe for some time, but now both Tcl Blend and Jacl can
 be used with Kaffe.
+
+(NEW COMMAND FOR JACL)
+
+An implementation of Tcl's interp command has been added to Jacl.
+This new command passes all of the Tcl regression tests for the
+interp command. Thanks go to Christian Krone for this command.
 
 </PRE></BODY></HTML>

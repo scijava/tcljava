@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: BgErrorMgr.java,v 1.4 2000/08/19 22:08:46 mo Exp $
+ * RCS: @(#) $Id: BgErrorMgr.java,v 1.5 2000/08/20 06:08:42 mo Exp $
  *
  */
 
@@ -257,6 +257,11 @@ processIdleEvent()
 	// the Tcl C API.
     }
 
+    // Make sure, that the interpreter will surive the invocation
+    // of the bgerror command.
+
+    interp.preserve();
+
     try {
 
 	// Invoke the bgerror command.
@@ -317,6 +322,8 @@ processIdleEvent()
 	    break;
 	}
     }
+
+    interp.release();
 
     errorMsg.release();
     errorMsg = null;

@@ -27,9 +27,8 @@ JACL_CLASSPATH=@JAVA_CLASSPATH@:${XP_TCLJAVA_INSTALL_DIR}/tcljava.jar:${XP_TCLJA
 # Fully qualified path name of JVM executable
 JAVA=@JAVA@
 
-# Start Java runtime with 5 Meg Min Heap and 20 Meg Max Heap
-JAVA_FLAGS="@JAVA_FLAGS@ -ms5m -mx20m"
-
+# The arguments to the JAVA command
+JAVA_FLAGS="@JAVA_FLAGS@"
 
 # Run java with the args passed in from the calling environment
 # We must set the CLASSPATH env var instead of using the -classpath
