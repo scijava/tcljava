@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the actual
 # Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.11 1999/10/29 02:05:09 redman Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.12 1999/11/01 18:31:27 redman Exp $
 
 #========================================================================
 # Edit the following few lines when writing a new extension
@@ -659,7 +659,7 @@ $(TCLBLEND_BUILD_DIR):
 	$(mkinstalldirs) $(TCLBLEND_BUILD_DIR)
 
 tclblend.jar: $(TCLBLEND_BUILD_DIR) $(TCLBLEND_JAVA_FILES) tcljava.jar
-	rm -rf $(TCLBLEND_BUILD_DIR)/*
+	rm -rf $(TCLBLEND_BUILD_DIR)
 	$(JAVA_COMPILE_TCLBLEND) tcl${SEP}lang${SEP}*.java
 	cd $(TCLBLEND_BUILD_DIR) ;\
 	CLASSPATH=$(JAVA_CLASSPATH) \
@@ -692,8 +692,8 @@ tcljava.jar: $(TCLJAVA_BUILD_DIR) \
 		$(TCLJAVA_REFLECT_JAVA_FILES) \
 		$(TCLJAVA_JAVA_FILES) \
 		$(TCLJAVA_BUILD_DIR)/tcl/lang/library
-	rm -rf $(TCLJAVA_BUILD_DIR)/tcl/lang/*.java
-	rm -rf $(TCLJAVA_BUILD_DIR)/tcl/lang/reflect/*.java
+	rm -rf $(TCLJAVA_BUILD_DIR)/tcl/lang/*.class
+	rm -rf $(TCLJAVA_BUILD_DIR)/tcl/lang/reflect/*.class
 	$(JAVA_COMPILE_TCLJAVA) tcl${SEP}lang${SEP}reflect${SEP}*.java
 	$(JAVA_COMPILE_TCLJAVA) tcl${SEP}lang${SEP}*.java
 	cd $(TCLJAVA_BUILD_DIR) ;\
