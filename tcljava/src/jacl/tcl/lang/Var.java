@@ -7,19 +7,21 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Var.java,v 1.4 1999/07/12 02:39:13 mo Exp $
+ * RCS: @(#) $Id: Var.java,v 1.5 1999/07/16 05:45:39 mo Exp $
  *
  */
 package tcl.lang;
 
 import java.util.*;
 
-/**
- * Implements variables in Tcl.
+/*
+ * Implements variables in Tcl. The Var class encapsulates most of the functionality
+ * of the methods in generic/tclVar.c and the structure Tcl_Var from the C version.
  */
+
 class Var {
 
-    /*
+    /**
      * Flag bits for variables. The first three (SCALAR, ARRAY, and
      * LINK) are mutually exclusive and give the "type" of the variable.
      * UNDEFINED is independent of the variable's type. 
@@ -214,12 +216,12 @@ class Var {
 	value    = null;
 	//name     = null;
 	ns       = null;
-	hashKey  = null;  // Same as hPtr in the C implementation
+	hashKey  = null;  // Like hPtr in the C implementation
 	table    = null;
 	refCount = 0;
 	traces   = null;
 	//search   = null;
-	sidVec   = null; // Same as search in the C implementation
+	sidVec   = null; // Like search in the C implementation
 	flags    = (SCALAR | UNDEFINED | IN_HASHTABLE);
     }
 
@@ -409,6 +411,7 @@ class Var {
 			return null;
 		    }
 		    elName = part1.substring(openParen+1, len - 1);
+		    part2 = elName; // same as elName, only used in error reporting
 		    part1  = part1.substring(0, openParen);
 		}
 		break;
@@ -519,8 +522,8 @@ class Var {
 		    var = new Var();
 		    varNs.varTable.put(tail, var);
 
-		    // FIXME: is this the correct thing to do?
-		    //var.hPtr = hPtr;
+		    // There is no hPtr member in Jacl, use the hashKey instead
+		    //varPtr->hPtr = hPtr;
 		    var.hashKey = tail;
 
 		    var.ns = varNs;
@@ -547,7 +550,7 @@ class Var {
 			var = new Var();
 			table.put(part1, var);
 
-			// FIXME : is this correct?
+			// There is no hPtr member in Jacl, use the hashKey instead
 			//varPtr->hPtr = hPtr;
 			var.hashKey = part1;
 
@@ -609,7 +612,7 @@ class Var {
 	    }
 
 	    var.setVarArray();
-	    var.setVarUndefined();
+	    var.clearVarUndefined();
 	    var.value = new Hashtable();
 	} else if (!var.isVarArray()) {
 	    if ((flags & TCL.LEAVE_ERR_MSG) != 0) {
@@ -973,17 +976,27 @@ class Var {
 			var.value = oldValue;
 			oldValue.preserve(); // since var is referenced
 		    } else if (oldValue.isShared()) {
+			/*
 			// FIXME : should there be a TclObject.duplicate() method
 			// to match the Tcl_DuplicateObj function?
 			//varPtr->value.objPtr = Tcl_DuplicateObj(oldValuePtr);
 			//var.value = oldValue.duplicate();
 			// I use this for now!
+
+			// FIXME : SERIOUS BUG HERE!
+			// THE OLD VALUE GETS DELETED WHEN A VALUE IS
+			// SHARED
+
 			var.value = new TclObject(
-					   oldValue.getInternalRep().duplicate());
+				    oldValue.getInternalRep().duplicate());
 
 			oldValue.release();
 			oldValue = (TclObject) var.value;
 			oldValue.preserve(); // since var is referenced
+			*/
+
+			oldValue = oldValue.takeExclusive();
+			var.value = oldValue;
 		    }
 		    TclList.append(interp, oldValue, newValue);
 		} else {		               // append string
@@ -995,6 +1008,7 @@ class Var {
 			((TclObject) var.value).preserve();
 		    } else {
 			if (oldValue.isShared()) { // append to copy
+			    /*
 			    // FIXME : duplicate shared var problem again
 			    //var.value = oldValue.duplicate();
 			    var.value = new TclObject(
@@ -1003,6 +1017,10 @@ class Var {
 			    oldValue.release();
 			    oldValue = (TclObject) var.value;
 			    oldValue.preserve();   // since var is ref
+			    */
+
+			    oldValue = oldValue.takeExclusive();
+			    var.value = oldValue;
 			}
 			TclString.append(oldValue, newValue);
 		    }
@@ -1698,7 +1716,7 @@ class Var {
 	    // variable in the shorter-lived procedure frame could go away
 	    // leaving the namespace var's reference invalid.
 
-	    if (((otherP2 == null) ? array.ns : other.ns) == null) {
+	    if (((otherP2 != null) ? array.ns : other.ns) == null) {
 		throw new TclException(interp, "bad variable name \"" +
 				               myName +
 		"\": upvar won't create namespace variable that refers to procedure variable");
@@ -1709,8 +1727,8 @@ class Var {
 		newvar = true;
 		var = new Var();
 		ns.varTable.put(tail, var);
-		    
-		// FIXME : is this correct?
+
+		// There is no hPtr member in Jacl, use the hashKey instead
 		//varPtr->hPtr = hPtr;
 		var.hashKey = tail;
 		
@@ -1732,7 +1750,7 @@ class Var {
 		    var = new Var();
 		    table.put(myName, var);
 		    
-		    // FIXME : is this correct?
+		    // There is no hPtr member in Jacl, use the hashKey instead
 		    //varPtr->hPtr = hPtr;
 		    var.hashKey = myName;
 
@@ -1790,21 +1808,18 @@ class Var {
      *  None.
      *
      * Side effects:
-     *  The variable's fully-qualified name is appended to the string
-     *  representation of obj.
+     *  The variable's fully-qualified name is returned.
      *
      *----------------------------------------------------------------------
      */
 
-    static void getVariableFullName(
+    static String getVariableFullName(
          Interp interp,	        // Interpreter containing the variable.
-	 Var variable,		// Token for the variable returned by a
+	 Var var                // Token for the variable returned by a
 				// previous call to Tcl_FindNamespaceVar.
-         TclObject obj	        // Points to the object onto which the
-				// variable's full name is appended.
 	 )
     {
-	Var var = variable;
+	StringBuffer buff = new StringBuffer();
 
 	// Add the full name of the containing namespace (if any), followed by
 	// the "::" separator, then the variable name.
@@ -1812,22 +1827,26 @@ class Var {
 	if (var != null) {
 	    if (! var.isVarArrayElement()) {
 		if (var.ns != null) {
-		    TclString.append(obj, var.ns.fullName);
+		    buff.append(var.ns.fullName);
 		    if (var.ns != interp.globalNs) {
-			TclString.append(obj, "::");
+			buff.append("::");
 		    }
 		}
 		// Jacl's Var class does not include the "name" member
 		// We use the "hashKey" member which is equivalent
 
 		if (var.hashKey != null) {
-		    TclString.append(obj, var.hashKey);
+		    buff.append(var.hashKey);
 		}
 	    }
 	}
+
+	return buff.toString();
     }
 
     /**
+     * CallTraces -> callTraces
+     *
      * This procedure is invoked to find and invoke relevant
      * trace procedures associated with a particular operation on
      * a variable.  This procedure invokes traces both on the
@@ -1882,17 +1901,9 @@ class Var {
 			}
 		    }
 		    if (i < len-1) {
-			char[] n1;
-			char[] n2;
-
 			if (i < len-2) {
-			    n1 = new char[i];
-			    n2 = new char[len-2-i];
-			    part1.getChars(0,   i,     n1, 0);
-			    part1.getChars(i+1, len-1, n2, 0);
-
-			    part1 = new String(n1);
-			    part2 = new String(n2);
+			    part2 = part1.substring(i+1, len - 1);
+			    part1 = part1.substring(0, i);
 			}
 		    }
 		}
@@ -1910,12 +1921,12 @@ class Var {
 	    // Invoke traces on the array containing the variable, if relevant.
 
 	    if (array != null) {
-		array.refCount ++;
+		array.refCount++;
 	    }
 	    if ((array != null) && (array.traces != null)) {
-		for (i=0; (array.traces != null) && (i<array.traces.size());
+		for (i=0; (array.traces != null) && (i < array.traces.size());
 			i++) {
-		    TraceRecord rec = (TraceRecord)(array.traces.elementAt(i));
+		    TraceRecord rec = (TraceRecord) array.traces.elementAt(i);
 		    if ((rec.flags & flags) != 0) {
 			try {
 			    rec.trace.traceProc(interp, part1, part2, flags);
@@ -1934,8 +1945,8 @@ class Var {
 		flags |= TCL.TRACE_DESTROYED;
 	    }
 
-	    for (i=0; (var.traces != null) && (i<var.traces.size()); i++) {
-		TraceRecord rec = (TraceRecord)(var.traces.elementAt(i));
+	    for (i=0; (var.traces != null) && (i < var.traces.size()); i++) {
+		TraceRecord rec = (TraceRecord) var.traces.elementAt(i);
 		if ((rec.flags & flags) != 0) {
 		    try {
 			rec.trace.traceProc(interp, part1, part2, flags);
@@ -1952,7 +1963,7 @@ class Var {
 	    if (array != null) {
 		array.refCount--;
 	    }
-	    var.flags &= ~Var.TRACE_ACTIVE;
+	    var.flags &= ~TRACE_ACTIVE;
 	    var.refCount--;
 
 	    interp.setResult(oldResult);
@@ -1977,9 +1988,6 @@ class Var {
 	arrayVar.sidVec = null;
     }
 
-
-    // FIXME : is this the dispose method inside CallFrame ??
-
     /**
      * TclDeleteVars -> deleteVars
      *
@@ -1995,7 +2003,104 @@ class Var {
 
     static protected void deleteVars(Interp interp, Hashtable table)
     {
-	// FIXME : add impl
+	Enumeration search;
+	String hashKey;
+	Var var;
+	Var link;
+	int flags;
+	//ActiveVarTrace active;
+	TclObject obj;
+	NamespaceCmd.Namespace currNs = NamespaceCmd.getCurrentNamespace(interp);
+
+	// Determine what flags to pass to the trace callback procedures.
+
+	flags = TCL.TRACE_UNSETS;
+	if (table == interp.globalNs.varTable) {
+	    flags |= (TCL.INTERP_DESTROYED | TCL.GLOBAL_ONLY);
+	} else if (table == currNs.varTable) {
+	    flags |= TCL.NAMESPACE_ONLY;
+	}
+
+	
+	for (search = table.elements(); search.hasMoreElements(); ) {
+	    var = (Var) search.nextElement();
+	    
+	    // For global/upvar variables referenced in procedures, decrement
+	    // the reference count on the variable referred to, and free
+	    // the referenced variable if it's no longer needed. Don't delete
+	    // the hash entry for the other variable if it's in the same table
+	    // as us: this will happen automatically later on.
+
+	    if (var.isVarLink()) {
+		link = (Var) var.value;
+		link.refCount--;
+		if ((link.refCount == 0) && link.isVarUndefined()
+		    && (link.traces == null)
+		    && ((link.flags & IN_HASHTABLE) != 0)) {
+		    
+		    if (link.hashKey == null) {
+			var.value = null; // Drops reference to the link Var
+		    // FIXME: in Jacl, can table be null when hashKay is not? 
+		    //} else if (link.table != table) { // From C version!
+		    } else if ((link.table != null) && (link.table != table)) {
+			link.table.remove(link.hashKey);
+			link.table = null; // Drops the link var's table reference
+			var.value = null;  // Drops reference to the link Var
+		    }
+		}
+	    }
+
+	    // free up the variable's space (no need to free the hash entry
+	    // here, unless we're dealing with a global variable: the
+	    // hash entries will be deleted automatically when the whole
+	    // table is deleted). Note that we give callTraces the variable's
+	    // fully-qualified name so that any called trace procedures can
+	    // refer to these variables being deleted.
+
+	    if (var.traces != null) {
+		String fullname = getVariableFullName(interp, var);
+
+		callTraces(interp, null, var,
+			   fullname, null, flags);
+
+		// The var.traces = null statement later will drop all the
+		// references to the traces which will free them up
+	    }
+	    
+	    if (var.isVarArray()) {
+		deleteArray(interp, var.hashKey, var,
+			    flags);
+		var.value = null;
+	    }
+	    if (var.isVarScalar() && (var.value != null)) {
+		obj = (TclObject) var.value;
+		obj.release();
+		var.value = null;
+	    }
+	    var.hashKey = null;
+	    var.traces = null;
+	    var.setVarUndefined();
+	    var.setVarScalar();
+
+	    // If the variable was a namespace variable, decrement its 
+	    // reference count. We are in the process of destroying its
+	    // namespace so that namespace will no longer "refer" to the
+	    // variable.
+
+	    if ((var.flags & NAMESPACE_VAR) != 0) {
+		var.flags &= ~NAMESPACE_VAR;
+		var.refCount--;
+	    }
+
+	    // Recycle the variable's memory space if there aren't any upvar's
+	    // pointing to it. If there are upvars to this variable, then the
+	    // variable will get freed when the last upvar goes away.
+
+	    if (var.refCount == 0) {
+		// When we drop the last reference it will be freeded
+	    }
+	}
+	table.clear();
     }
 
 
