@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: JavaFieldCmd.test,v 1.2 1999/05/10 03:06:25 dejong Exp $
+# RCS: @(#) $Id: JavaFieldCmd.test,v 1.3 1999/05/16 00:14:56 dejong Exp $
 
 # Note: This test file must be sourced from the parent directory
 #       or else the defs file may not be properly loaded.
@@ -23,31 +23,40 @@ set usage {1 {wrong # args: should be "java::field ?-noconvert? objOrClass field
 test javaFieldCmd-1.1 {argument errors} {
     list [catch {java::field} msg] $msg
 }  $usage
+
 test javaFieldCmd-1.2 {argument errors} {
     list [catch {java::field foo} msg] $msg
 } $usage
+
 test javaFieldCmd-1.3 {argument errors} {
     list [catch {java::field foo bar baz blat} msg] $msg
 } $usage
+
 test javaFieldCmd-1.4 {argument errors} {
     list [catch {java::field -noconvert tests.JavaTest bar blah} msg] $msg
 } $usage
+
 test javaFieldCmd-1.5 {argument errors} {
     list [catch {java::field -noconvert tests.JavaTest sint 1 sint 1} msg] $msg
 } $usage
+
 test javaFieldCmd-1.6 {argument errors} {
     java::field tests.JavaTest sint 1 sint 2
     java::field tests.JavaTest sint
 } 2
+
 test javaFieldCmd-1.7 {argument errors} {
     list [catch {java::field tests.JavaTest sint 1 sint} msg] $msg
 } $usage
+
 test javaFieldCmd-1.7 {argument errors} {
     list [catch {java::field tests.JavaTest foobar 1 sint} msg] $msg
 } $usage
+
 test javaFieldCmd-1.8 {argument errors} {
     list [catch {java::field foo bar} msg] $msg
 } {1 {unknown class or object "foo"}}
+
 test javaFieldCmd-1.9 {argument errors} {
     list [catch {java::field [java::null] bar} msg] $msg
 } {1 {can't access fields in a null object reference}}
@@ -56,15 +65,19 @@ test javaFieldCmd-2.1 {get instance field} {
     set o [java::new tests.JavaTest]
     java::field $o JT2
 } 4
+
 test javaFieldCmd-2.2 {get static field} {
     java::field tests.JavaTest JT1
 } 3
+
 test javaFieldCmd-2.3 {get static field} {
     list [catch {java::field tests.JavaTest JT4} msg] $msg
 } {1 {can't access an instance field without an object}}
+
 test javaFieldCmd-2.4 {get private static field} {
     list [catch {java::field tests.JavaTest JT3} msg] $msg
 } {1 {can't access field "JT3": java.lang.IllegalAccessException: tests/JavaTest}}
+
 test javaFieldCmd-2.6 {instance fields} {
     list [catch {java::field tests.JavaTest JT2} msg] $msg
 } {1 {can't access an instance field without an object}}
@@ -78,6 +91,7 @@ test javaFieldCmd-2.8 {instance fields} {
     set o [java::new tests.JavaTest]
     java::field $o JT1
 } 3
+
 test javaFieldCmd-2.9 {static fields} {
     java::field tests.JavaTest JT1
 } 3
@@ -85,36 +99,44 @@ test javaFieldCmd-2.9 {static fields} {
 test javaFieldCmd-3.1 {setting fields} {
     list [catch {java::field tests.JavaTest JT1 5} msg] $msg
 } {1 {can't access field "JT1": java.lang.IllegalAccessException: field is final}}
+
 test javaFieldCmd-3.2 {setting fields} {
     list [catch {java::field tests.JavaTest JT2 5} msg] $msg
 } {1 {can't access an instance field without an object}}
+
 test javaFieldCmd-3.3 {setting fields} {
     set o [java::new tests.JavaTest]
     list [catch {java::field $o JT2 5} msg] $msg
 } {1 {can't access field "JT2": java.lang.IllegalAccessException: field is final}}
+
 test javaFieldCmd-3.4 {setting fields} {
     set o [java::new tests.JavaTest]
     java::field $o sstr foobar
     java::field $o sstr
 } foobar
+
 test javaFieldCmd-3.5 {setting fields} {
     set o [java::new tests.JavaTest]
     java::field $o istr baz
     java::field $o istr
 } baz
+
 test javaFieldCmd-3.6 {setting fields} {
     java::field tests.JavaTest sstr blat
     java::field tests.JavaTest sstr
 } blat
+
 test javaFieldCmd-3.7 {setting fields} {
     java::field tests.JavaTest sstr blat
     java::field tests.JavaTest sstr
 } blat
+
 test javaFieldCmd-3.8 {setting fields} {
     set o [java::new tests.JavaTest]
     java::field $o istr abc sstr def
     list [java::field $o istr] [java::field $o sstr]
 } {abc def}
+
 test javaFieldCmd-3.9 {setting fields} {
     set o [java::new tests.JavaTest]
     set o2 [java::new tests.JavaTest]
@@ -122,6 +144,7 @@ test javaFieldCmd-3.9 {setting fields} {
     string compare [list [java::field $o sobj] [java::field $o iobj]] \
 	"$o2 $o2"
 } 0
+
 test javaFieldCmd-3.10 {setting array fields} {
     list [catch {
 	set w [java::new tests.invoke.ArrayTestClass]
@@ -131,6 +154,7 @@ test javaFieldCmd-3.10 {setting array fields} {
 	list $y $z
    } msg] $msg
 } {0 {{} {orange stars}}}
+
 test javaFieldCmd-3.11 {setting array fields} {
     list [catch {
 	set w [java::new tests.invoke.ArrayTestClass]
@@ -243,3 +267,6 @@ test javaFieldCmd-6.5 {get class field} {
     catch {java::field Integer class [java::null]}
 } 1
 
+test javaFieldCmd-6.5 {test NaN} {
+    java::field java.lang.Double NaN
+} NaN
