@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the actual
 # Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.4 1999/09/15 00:59:52 wart Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.5 1999/09/18 00:50:26 wart Exp $
 
 #========================================================================
 # Edit the following few lines when writing a new extension
@@ -471,7 +471,7 @@ install-lib-binaries: installdirs
 	    $(RANLIB) $(DESTDIR)$(bindir)/$$p; \
 	  else :; fi; \
 	done
-	cp -rp pkgIndex.tcl $(pkglibdir)
+	$(INSTALL_DATA) pkgIndex.tcl $(pkglibdir)
 
 
 #========================================================================
@@ -489,16 +489,17 @@ install-bin-binaries: installdirs
 install-libraries: libraries
 	$(mkinstalldirs) $(includedir)
 	$(mkinstalldirs) $(pkglibdir)
-	echo "Installing header files in $(includedir)"
+	@echo "Installing header files in $(includedir)"
 	@for i in $(GENERIC_HDRS) ; do \
-	    echo "Installing $$i" ; \
 	    $(INSTALL_DATA) $$i $(includedir) ; \
 	done;
 
 install-doc: doc
 	$(mkinstalldirs) $(mandir)/html
-	echo "Installing HTML docs"
-	cp -rp $(srcdir)/docs/* $(mandir)/html
+	@echo "Installing HTML docs"
+	@for i in $(srcdir)/docs/* ; do \
+	    $(INSTALL_DATA) $$i $(mandir)/html ; \
+	done;
 
 
 test: test_$(TCLJAVA)
@@ -589,31 +590,31 @@ $(TCLBLEND_LIB_FILE): $(tclblend_OBJECTS)
 @TCLBLEND_PLATFORM@Notifier.$(OBJEXT): \
 	    $(srcdir)/@TCLBLEND_PLATFORM@/@TCLBLEND_PLATFORM@Notifier.c \
 	    $(GENERIC_HDRS)
-	$(COMPILE) -c `@CYGPATH@ $<` -o $@
+	$(COMPILE) -c `@CYGPATH@ $(srcdir)/@TCLBLEND_PLATFORM@/@TCLBLEND_PLATFORM@Notifier.c` -o $@
 
 javaCmd.$(OBJEXT): $(srcdir)/src/native/javaCmd.c $(GENERIC_HDRS)
-	$(COMPILE) -c `@CYGPATH@ $<` -o $@
+	$(COMPILE) -c `@CYGPATH@ $(srcdir)/src/native/javaCmd.c` -o $@
 
 javaIdle.$(OBJEXT): $(srcdir)/src/native/javaIdle.c $(GENERIC_HDRS)
-	$(COMPILE) -c `@CYGPATH@ $<` -o $@
+	$(COMPILE) -c `@CYGPATH@ $(srcdir)/src/native/javaIdle.c` -o $@
 
 javaInterp.$(OBJEXT): $(srcdir)/src/native/javaInterp.c $(GENERIC_HDRS)
-	$(COMPILE) -c `@CYGPATH@ $<` -o $@
+	$(COMPILE) -c `@CYGPATH@ $(srcdir)/src/native/javaInterp.c` -o $@
 
 javaList.$(OBJEXT): $(srcdir)/src/native/javaList.c $(GENERIC_HDRS)
-	$(COMPILE) -c `@CYGPATH@ $<` -o $@
+	$(COMPILE) -c `@CYGPATH@ $(srcdir)/src/native/javaList.c` -o $@
 
 javaNotifier.$(OBJEXT): $(srcdir)/src/native/javaNotifier.c $(GENERIC_HDRS)
-	$(COMPILE) -c `@CYGPATH@ $<` -o $@
+	$(COMPILE) -c `@CYGPATH@ $(srcdir)/src/native/javaNotifier.c` -o $@
 
 javaObj.$(OBJEXT): $(srcdir)/src/native/javaObj.c $(GENERIC_HDRS)
-	$(COMPILE) -c `@CYGPATH@ $<` -o $@
+	$(COMPILE) -c `@CYGPATH@ $(srcdir)/src/native/javaObj.c` -o $@
 
 javaTimer.$(OBJEXT): $(srcdir)/src/native/javaTimer.c $(GENERIC_HDRS)
-	$(COMPILE) -c `@CYGPATH@ $<` -o $@
+	$(COMPILE) -c `@CYGPATH@ $(srcdir)/src/native/javaTimer.c` -o $@
 
 javaUtil.$(OBJEXT): $(srcdir)/src/native/javaUtil.c $(GENERIC_HDRS)
-	$(COMPILE) -c `@CYGPATH@ $<` -o $@
+	$(COMPILE) -c `@CYGPATH@ $(srcdir)/src/native/javaUtil.c` -o $@
 
 $(srcdir)/src/native/javaNative.h: tcljava tclblend
 	CLASSPATH=$(TCLBLEND_CLASSPATH) \
@@ -638,7 +639,7 @@ tclblend.jar: $(TCLBLEND_BUILD_DIR) $(TCLBLEND_JAVA_FILES) tcljava.jar
 	cd $(TCLBLEND_BUILD_DIR) ;\
 	CLASSPATH=$(JAVA_CLASSPATH) \
 	$(JAR) $(JAR_COMPRESS_FLAGS) $(BUILD_DIR_NATIVE)/tclblend.jar tcl
-	cp -f $(MISC_DIR)/pkgIndex.tcl $(BUILD_DIR)
+	$(INSTALL_DATA) $(MISC_DIR)/pkgIndex.tcl $(BUILD_DIR)
 
 tclblend: tclblend.jar
 
@@ -658,7 +659,7 @@ $(TCLJAVA_BUILD_DIR):
 	mkdir -p $(TCLJAVA_BUILD_DIR)/tcl/lang
 
 $(TCLJAVA_BUILD_DIR)/tcl/lang/library: $(TCLJAVA_SRC_DIR)/tcl/lang/library
-	cp -rf $< $@
+	cp -rf $(TCLJAVA_SRC_DIR)/tcl/lang/library $@
 
 tcljava.jar: $(TCLJAVA_BUILD_DIR) \
 		$(TCLJAVA_REFLECT_JAVA_FILES) \

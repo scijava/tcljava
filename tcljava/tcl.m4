@@ -1993,3 +1993,99 @@ AC_DEFUN(SC_PUBLIC_TCL_HEADERS, [
 
     AC_SUBST(TCL_INCLUDES)
 ])
+
+#------------------------------------------------------------------------
+# SC_PROG_TCLSH
+#	Locate a tclsh shell in the following directories:
+#		${exec_prefix}
+#		${prefix}/bin
+#		${TCL_BIN_DIR}/../bin
+#		${PATH}
+#
+# Arguments
+#	none
+#
+# Results
+#	Subst's the following values:
+#		TCLSH_PROG
+#------------------------------------------------------------------------
+
+AC_DEFUN(SC_PROG_TCLSH, [
+    AC_PATH_PROGS(TCLSH_PROG, tclsh8.2${EXEEXT} tclsh82${EXEEXT} tclsh82d${EXEEXT} tclsh${EXEEXT}, :, ${exec_prefix}/bin:${prefix}/bin:${TCL_BIN_DIR}:${TCL_BIN_DIR}/../bin:${PATH})
+
+    if test "x${TCLSH_PROG}" = "x:" ; then
+	AC_MSG_WARN(No tclsh executable found.  You will have to build the pkgIndex.tcl file manually.)
+    fi
+    AC_SUBST(TCLSH_PROG)
+])
+
+#------------------------------------------------------------------------
+# SC_PATH_PROTOOLS
+#	Path to a valid Tclpro installation
+#
+# Arguments
+#	none
+#
+# Results
+#	Subst's the following values:
+#		PROTOOLSDIR
+#------------------------------------------------------------------------
+
+AC_DEFUN(SC_PATH_PROTOOLS, [
+    AC_ARG_WITH(protools, [ --with-protools            directory containing the Tclpro installation], protools_dir=${withval})
+
+    AC_MSG_CHECKING(for protclsh in a TclPro installation)
+
+    case "`uname -s`" in
+	*win32* | *WIN32* | *CYGWIN_NT*)
+		platform=win32-ix86
+	    ;;
+	SunOS)
+		platform=solaris-sparc
+	    ;;
+	Linux)
+		platform=linux-ix86
+	    ;;
+	*)
+		platform=UNSUPPORTED
+	    ;;
+    esac
+
+    if test x"${protools_dir}" != x ; then
+	# Look for protclsh
+
+	for i in `ls -r ${protools_dir}/${platform}/bin/protclsh* 2>/dev/null` ; do
+	    if test -f $i ; then
+		PROTCLSH=$i
+		break
+	    fi
+	done
+    else
+	for i in `ls -dr /tools/TclPro1.3 2>/dev/null` \
+		`ls -dr //t/tools/TclPro1.3 2>/dev/null ` ; do
+
+	    # Look for protclsh
+
+	    for j in `ls $i/${platform}/bin/protclsh* 2>/dev/null` ; do
+		if test -f $j ; then
+		    PROTCLSH=$j
+		    break
+		fi
+	    done
+
+	    if test x"${PROTCLSH}" != x ; then
+		protools_dir=$i
+		break
+	    fi
+	done
+    fi
+
+    if test x"${PROTCLSH}" = x ; then
+	AC_MSG_ERROR("Could not locate a TclPro installation containing protclsh.")
+    else
+	AC_MSG_RESULT("found ${PROTCLSH}")
+    fi
+
+    PROTOOLSDIR=${protools_dir}
+    AC_SUBST(PROTOOLSDIR)
+])
