@@ -1,5 +1,16 @@
 2000-03-01  Mo DeJong  <mdejong@redhat.com>
 
+	* diffs.txt:
+	* new_features.txt:
+	* src/jacl/tcl/lang/BinaryCmd.java:
+	* src/jacl/tcl/lang/TclByteArray.java:
+	* tests/tcl/binary.test:
+	* src/jacl/tcl/lang/Interp.java: Added implementation
+	of Tcl's binary comand to Jacl. The implementation was donated
+	by Christian Krone <krischan@sql.de>.
+
+2000-03-01  Mo DeJong  <mdejong@redhat.com>
+
 	* README.jacl:
 	* README.tclblend: Updated Team member names.
 

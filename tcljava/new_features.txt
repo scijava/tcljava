@@ -205,5 +205,11 @@ donated by Colin Stevens. This replaces the Oro regexp
 implementation that was binary only and no longer supported.
 Jacl is now 100% Open Source.
 
+(NEW COMMAND FOR JACL)
+
+An implementation of Tcl's binary command has been added to Jacl.
+This new command passes all of the Tcl regression tests for the
+binary command.
+
 
 </PRE></BODY></HTML>
