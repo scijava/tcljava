@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: PackageCmd.java,v 1.4 2002/04/12 21:00:26 mdejong Exp $
+ * RCS: @(#) $Id: PackageCmd.java,v 1.5 2005/01/13 06:21:14 mdejong Exp $
  */
 
 package tcl.lang;
@@ -367,7 +367,7 @@ throws
     String cmd;
     String ver1, ver2;
     StringBuffer sbuf;
-    Enumeration enum;
+    Enumeration e;
     int i, opt, exact;
     boolean once;
 
@@ -465,11 +465,11 @@ throws
 
 	try {
 	    sbuf = new StringBuffer();
-	    enum = interp.packageTable.keys();
+	    e = interp.packageTable.keys();
 	    once = false;
-	    while (enum.hasMoreElements()) {
+	    while (e.hasMoreElements()) {
 		once = true;
-		key = (String) enum.nextElement();
+		key = (String) e.nextElement();
 		pkg = (Package) interp.packageTable.get(key); 
 		if ((pkg.version != null) || (pkg.avail != null)) {
 		    Util.appendElement(interp, sbuf, key);
@@ -478,8 +478,8 @@ throws
 	    if (once) {
 		interp.setResult(sbuf.toString());
 	    }
-	} catch (TclException e) {
-	    throw new TclRuntimeError("unexpected TclException: " + e);
+	} catch (TclException ex) {
+	    throw new TclRuntimeError("unexpected TclException: " + ex);
 	}
 	return;
     }
@@ -600,8 +600,8 @@ throws
 		if (once) {
 		    interp.setResult(sbuf.toString());
 		}
-	    } catch (TclException e) {
-		throw new TclRuntimeError("unexpected TclException: " + e);
+	    } catch (TclException ex) {
+		throw new TclRuntimeError("unexpected TclException: " + ex);
 	    }
 	}
 	return;

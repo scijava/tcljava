@@ -15,7 +15,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: NamespaceCmd.java,v 1.12 2001/05/05 22:38:13 mdejong Exp $
+ * RCS: @(#) $Id: NamespaceCmd.java,v 1.13 2005/01/13 06:21:14 mdejong Exp $
  */
 
 package tcl.lang;
@@ -1782,9 +1782,9 @@ public class NamespaceCmd implements InternalRep, Command {
 		}
 
 		if (cmd == null && interp.resolvers != null) {
-		    Enumeration enum = interp.resolvers.elements();
-		    while (cmd == null && enum.hasMoreElements()) {
-			res = (Interp.ResolverScheme) enum.nextElement();
+		    Enumeration e = interp.resolvers.elements();
+		    while (cmd == null && e.hasMoreElements()) {
+			res = (Interp.ResolverScheme) e.nextElement();
 			cmd = res.resolver.resolveCmd(interp,
 				  name, cxtNs, flags);
 		    }
@@ -1917,9 +1917,9 @@ public class NamespaceCmd implements InternalRep, Command {
 		}
 
 		if (var == null && interp.resolvers != null) {
-		    Enumeration enum = interp.resolvers.elements();
-		    while (var == null && enum.hasMoreElements()) {
-			res = (Interp.ResolverScheme) enum.nextElement();
+		    Enumeration e = interp.resolvers.elements();
+		    while (var == null && e.hasMoreElements()) {
+			res = (Interp.ResolverScheme) e.nextElement();
 			var = res.resolver.resolveVar(interp,
 				  name, cxtNs, flags);
 		    }

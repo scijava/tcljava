@@ -1,3 +1,16 @@
+2005-01-12  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* demos/gluepkg/JarCmd.java:
+	* src/jacl/tcl/lang/Interp.java:
+	* src/jacl/tcl/lang/NamespaceCmd.java:
+	* src/jacl/tcl/lang/PackageCmd.java:
+	* src/jacl/tcl/lang/SearchId.java:
+	* src/jacl/tcl/lang/Var.java:
+	* src/tcljava/tcl/lang/TclClassLoader.java:
+	* src/tests/jacl/tcl/lang/TestChannelCmd.java:
+	Replace use of variable identifier enum with
+	e since enum is a reserved word in Java 1.5.
+
 2004-11-20  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* docs/TclJavaLib/dispose.htm: Add note to

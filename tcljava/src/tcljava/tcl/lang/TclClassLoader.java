@@ -24,7 +24,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: TclClassLoader.java,v 1.9 2003/02/14 23:27:00 mdejong Exp $
+ * RCS: @(#) $Id: TclClassLoader.java,v 1.10 2005/01/13 06:21:14 mdejong Exp $
  */
 
 
@@ -532,16 +532,16 @@ throws IOException
 {
     ZipEntry       entry;      // A file contained in the jar file.    
     ZipFile        zip;        // Used to get the enum of ZipEntries.  
-    Enumeration    enum;       // List of the contents of the jar file.
+    Enumeration    e;          // List of the contents of the jar file.
 
     zip = new ZipFile(jarName);
-    enum = zip.entries();
+    e = zip.entries();
 
-    while (enum.hasMoreElements()) { 
+    while (e.hasMoreElements()) { 
 	// see if the current ZipEntry's
 	// name equals the file we want to extract.
 	  
-	entry = (ZipEntry) enum.nextElement();
+	entry = (ZipEntry) e.nextElement();
 	if (className.equals(entry.getName())) {
 	    zip.close();
 	    return((int) entry.getSize());

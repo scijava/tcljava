@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: JarCmd.java,v 1.3 1999/08/27 23:19:21 mo Exp $
+ * RCS: @(#) $Id: JarCmd.java,v 1.4 2005/01/13 06:21:14 mdejong Exp $
  *
  */
 
@@ -48,7 +48,7 @@ class JarCmd implements Command {
         String      extFileName = null;      // Name of file to extract
 	ZipFile     zFileObj    = null;      // Handle to opened jar file
 	ZipEntry    zEntry;                  // Handle to each jar entry
-	Enumeration enum;                    // Enum of each jar entry
+	Enumeration e;                       // Enum of each jar entry
 	boolean     extract = false;         // True if extracting a file
 	int         index;                   // Result of TclIndex.get()
 
@@ -71,11 +71,11 @@ class JarCmd implements Command {
 	zFileObj  = openZipFile(interp, jarFileName);
 	
 	result = TclList.newInstance();
-	enum   = zFileObj.entries();
+	e   = zFileObj.entries();
 
-	while (enum.hasMoreElements()) { 
+	while (e.hasMoreElements()) { 
 
-	    zEntry = (ZipEntry) enum.nextElement();
+	    zEntry = (ZipEntry) e.nextElement();
 
 	    if (!extract) {
 		// If not extracting, simply append each filename to the 

@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TestChannelCmd.java,v 1.2 2003/03/08 03:43:44 mdejong Exp $
+ * RCS: @(#) $Id: TestChannelCmd.java,v 1.3 2005/01/13 06:21:14 mdejong Exp $
  *
  */
 
@@ -73,11 +73,11 @@ class TestChannelCmd implements Command
         if (argv.length == 2) {
             // return list of all name/value pairs for this channelId
             Hashtable chanTable = TclIO.getInterpChanTable(interp);
-            Enumeration enum = chanTable.elements();
+            Enumeration e = chanTable.elements();
 
             TclObject list = TclList.newInstance();
-            while (enum.hasMoreElements()) {
-                chan = (Channel) enum.nextElement();
+            while (e.hasMoreElements()) {
+                chan = (Channel) e.nextElement();
                 TclList.append(interp, list,
                     TclString.newInstance(chan.getChanName()));
             }

@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.48 2004/11/20 22:36:49 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.49 2005/01/13 06:21:14 mdejong Exp $
  *
  */
 
@@ -3902,15 +3902,15 @@ addInterpResolver(
     String name,		// Name of this resolution scheme.
     Resolver resolver)		// Object to resolve commands/variables.
 {
-    Enumeration enum;
+    Enumeration e;
     ResolverScheme res;
 
     //  Look for an existing scheme with the given name.
     //  If found, then replace its rules.
 
     if (resolvers != null) {
-	for (enum = resolvers.elements(); enum.hasMoreElements();) {
-	    res = (ResolverScheme) enum.nextElement();
+	for (e = resolvers.elements(); e.hasMoreElements();) {
+	    res = (ResolverScheme) e.nextElement();
 	    if (name.equals(res.name)) {
 		res.resolver = resolver;
 		return;
@@ -3955,14 +3955,14 @@ getInterpResolver(
     String name)		// Look for a scheme with this name.
 {
     ResolverScheme res;
-    Enumeration enum;
+    Enumeration e;
 
     //  Look for an existing scheme with the given name.  If found,
     //  then return pointers to its procedures.
 
     if (resolvers != null) {
-	for (enum = resolvers.elements(); enum.hasMoreElements();) {
-	    res = (ResolverScheme) enum.nextElement();
+	for (e = resolvers.elements(); e.hasMoreElements();) {
+	    res = (ResolverScheme) e.nextElement();
 	    if (name.equals(res.name)) {
 		return res.resolver;
 	    }
@@ -3997,15 +3997,15 @@ removeInterpResolver(
     String name)		// Name of the scheme to be removed.
 {
     ResolverScheme res;
-    Enumeration enum;
+    Enumeration e;
     boolean found = false;
 
     //  Look for an existing scheme with the given name.
 
     if (resolvers != null) {
-	enum = resolvers.elements();
-	while (!found && enum.hasMoreElements()) {
-	    res = (ResolverScheme) enum.nextElement();
+	e = resolvers.elements();
+	while (!found && e.hasMoreElements()) {
+	    res = (ResolverScheme) e.nextElement();
 	    if (name.equals(res.name)) {
 		found = true;
 	    }

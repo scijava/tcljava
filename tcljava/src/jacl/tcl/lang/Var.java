@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Var.java,v 1.11 2003/01/09 02:15:39 mdejong Exp $
+ * RCS: @(#) $Id: Var.java,v 1.12 2005/01/13 06:21:14 mdejong Exp $
  *
  */
 package tcl.lang;
@@ -460,9 +460,9 @@ class Var {
 		}
 
 		if (var == null && interp.resolvers != null) {
-		    Enumeration enum = interp.resolvers.elements();
-		    while (var == null && enum.hasMoreElements()) {
-			res = (Interp.ResolverScheme) enum.nextElement();
+		    Enumeration e = interp.resolvers.elements();
+		    while (var == null && e.hasMoreElements()) {
+			res = (Interp.ResolverScheme) e.nextElement();
 			var = res.resolver.resolveVar(interp,
 				  part1, cxtNs, flags);
 		    }

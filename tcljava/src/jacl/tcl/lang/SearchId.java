@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: SearchId.java,v 1.1 1998/10/14 21:09:20 cvsadmin Exp $
+ * RCS: @(#) $Id: SearchId.java,v 1.2 2005/01/13 06:21:14 mdejong Exp $
  *
  */
 
@@ -28,7 +28,7 @@ class SearchId {
     * An Enumeration that stores the list of keys for
     * the ArrayVar.
     */
-    private Enumeration enum;
+    private Enumeration e;
   
    /**
     * The unique searchId string
@@ -51,7 +51,7 @@ class SearchId {
     * @param e index value for this object
     */
     SearchId(Enumeration e, String s, int i) {
-        enum  = e;      
+        this.e = e;      
 	str   = s;
 	index = i;
     }
@@ -72,7 +72,7 @@ class SearchId {
     * @return The Enumeration for the SearchId object
     */
     Enumeration getEnum() {
- 	return enum;
+ 	return e;
     }
 
    /**
