@@ -617,3 +617,22 @@ a native method like that? If not would it be possible to synchronize
 the method that calls create to get the same effect?
 
 
+(TODO)
+
+I added the "package present" subcommand but there is no binding to the
+Jacl interp itself. If a public API is added to the interp class then
+Tcl Blend will also need to have this method implemented. When this
+is done we also need to update the docs.
+
+(TODO)
+
+Make sure to check into the CallFrame.chain() method so that commands
+that are defined but are not actually procs really push the namespace
+that they will execute in. I think this is broken currently.
+
+(TODO)
+
+Check the Procedure class. Do we really need to have a namespace member
+in the procedure class when there is already one in the CommandWrapper?
+This is related to the earlier TODO.
+
