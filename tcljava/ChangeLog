@@ -1,5 +1,21 @@
 2003-02-03  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* tests/tcl/error.test:
+	* tests/tcl/expr.test:
+	* tests/tcl/for.test:
+	* tests/tcl/if.test:
+	* tests/tcl/incr.test:
+	* tests/tcl/while.test: Change expected result
+	of tests that examine the errorInfo variable
+	after an error is raised. The message
+	"while compiling" has been changed to "while executing"
+	to match the Jacl implementation. Jacl does not
+	have a bytecode compiler, so it can't match the
+	errorInfo messages of Tcl 8.X. This change allows
+	a number of test cases to pass.
+
+2003-02-03  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/jacl/tcl/lang/Expression.java (ExprGetValue):
 	Throw a plain syntax error when unmatched
 	parens or a bad ?: operator is encountered.

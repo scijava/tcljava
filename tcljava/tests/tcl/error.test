@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: error.test,v 1.4 2000/12/28 07:11:49 mdejong Exp $
+# RCS: @(#) $Id: error.test,v 1.5 2003/02/04 01:53:14 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -46,7 +46,9 @@ test error-1.3 {simple errors from commands} {
     set errorInfo
 } {wrong # args: should be "string index string charIndex"
     while executing
-"string index"}
+"string index"
+    invoked from within
+"format [string index]"}
 
 test error-1.4 {simple errors from commands} {
     catch {error glorp} b
@@ -114,7 +116,9 @@ test error-2.6 {errors in nested procedures} {
 } {glorp2
     while executing
 "error glorp2"
-    (procedure "foo2" line 3)
+    invoked from within
+"format [error glorp2]"
+    (procedure "foo2" line 1)
     invoked from within
 "foo2"}
 
