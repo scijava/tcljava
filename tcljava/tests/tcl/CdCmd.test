@@ -11,10 +11,14 @@
 #
 # SCCS: @(#) CdCmd.test 1.38 97/11/13 18:50:09
 
-# Note: This test file must be sourced from the parent directory
-#       or else the defs file may not be properly loaded.
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
 
-if {[string compare test [info procs test]] == 1} then {source defs}
+# FIXME: These tests are part of cmdAH.test in the regular
+# Tcl distro. This A-H stuff needs to be split up into
+# more focused sections of added to the Jacl suite as-is.
 
 test CdCmd-1.1 {cmdProc} {
     list [catch {cd foo bar} msg] $msg
@@ -63,3 +67,6 @@ test CdCmd-1.6 {cmdProc} {
     list [catch {cd _foobar} msg] $msg
 } {1 {couldn't change working directory to "_foobar": no such file or directory}}
 
+# cleanup
+::tcltest::cleanupTests
+return

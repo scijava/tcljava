@@ -9,10 +9,12 @@
 #
 # SCCS: @(#) UpdateCmd.test 1.2 98/01/14 16:38:54
 
-# Note: This test file must be sourced from the parent directory
-#       or else the defs file may not be properly loaded.
+# FIXME: compare and merge with event.test
 
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
 
 setupJavaPackage
 
@@ -55,3 +57,7 @@ test UpdateCmd-2.2 {UpdateCmd.cmdProc, event loop is entered} {
 foreach id [after info] {
     after cancel $id
 }
+
+# cleanup
+::tcltest::cleanupTests
+return

@@ -12,19 +12,12 @@
 #
 # SCCS: @(#) SwitchCmd.test 1.9 98/01/14 16:38:56
 
-# If the regexp package is missing, skip tests that require it.
-set REGEXP 1
-if {[catch {regexp {hi ([^ ]+) folks} "hi there folks" whole sub} err] == 1 ||
-    $err != 1 || $sub != "there"} {
-    set REGEXP 0
-    puts "Skipping lsearch tests that use the -regexp switch"
+# FIXME: These seem to be from switch.test
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
 }
-
-
-# Note: This test file must be sourced from the parent directory
-#       or else the defs file may not be properly loaded.
-
-if {[string compare test [info procs test]] == 1} then {source defs}
 
 test switch-1.1 {simple patterns} {
     switch a a {format 1} b {format 2} c {format 3} default {format 4}
@@ -75,16 +68,14 @@ test switch-3.1 {-exact vs. -glob vs. -regexp} {
     }
 } exact
 
-if {$REGEXP} {
-    test switch-3.2 {-exact vs. -glob vs. -regexp} {
-	switch -exact -regexp aaaab {
-	    ^a*b$	{concat regexp}
-	    *b		{concat glob}
-	    aaaab	{concat exact}
-	    default	{concat none}
-	}
-    } regexp
-}
+test switch-3.2 {-exact vs. -glob vs. -regexp} {
+    switch -exact -regexp aaaab {
+	^a*b$	{concat regexp}
+	*b		{concat glob}
+	aaaab	{concat exact}
+	default	{concat none}
+    }
+} regexp
 
 test switch-3.3 {-exact vs. -glob vs. -regexp} {
     switch -glob aaaab {
@@ -144,19 +135,14 @@ test switch-4.5 {error in default command} {
     invoked from within
 "switch foo a {error switch1} b {error switch 3}  default {error switch2}"}}
 
-if {$REGEXP} {
-    test switch-5.1 {errors in -regexp matching} {
-	list [catch {switch -regexp aaaab {
+
+test switch-5.1 {errors in -regexp matching} {
+    list [catch {switch -regexp aaaab {
 	    *b		{concat glob}
 	    aaaab	{concat exact}
 	    default	{concat none}
-	}} msg] $msg
-    } {1 {couldn't compile regular expression pattern: ?+* follows nothing}}
-
-
-    # the wrong way
-    # {1 {couldn't compile regular expression pattern: ?+* follows nothing in expression}}
-}
+    }} msg] $msg
+} {1 {couldn't compile regular expression pattern: ?+* follows nothing}}
 
 test switch-6.1 {backslashes in patterns} {
     switch -exact {\a\$\.\[} {
@@ -216,5 +202,6 @@ test switch-8.1 {empty body} {
     }
 } {}
 
-catch {unset REGEXP}
-concat ""
+# cleanup
+::tcltest::cleanupTests
+return

@@ -9,11 +9,13 @@
 #
 # SCCS: @(#) ReturnCmd.test 1.2 98/01/14 16:38:57
 
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
 
-# Note: This test file must be sourced from the parent directory
-#       or else the defs file may not be properly loaded.
-
-if {[string compare test [info procs test]] == 1} then {source defs}
+# FIXME: These are sort of like tests in proc-old.test
+# need to merge or purge.
 
 setupJavaPackage
 
@@ -141,3 +143,7 @@ test ReturnCmd-3.2 {ReturnCmd.cmdProc} {
 test ReturnCmd-3.3 {ReturnCmd.cmdProc} {
     list [catch {return -code 123} msg] $msg
 } {2 {}}
+
+# cleanup
+::tcltest::cleanupTests
+return

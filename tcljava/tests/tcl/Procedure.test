@@ -9,11 +9,13 @@
 #
 # SCCS: @(#) Procedure.test 1.2 98/01/14 16:38:59
 
+# FIXME: These are sort of like tests in proc-old.test
+# they should be merged, we don't need this extra test file.
 
-# Note: This test file must be sourced from the parent directory
-#       or else the defs file may not be properly loaded.
-
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
 
 setupJavaPackage
 
@@ -66,3 +68,6 @@ test Procedure-1.7 {Procedure.cmdProc} {
     list [catch {foo} msg] $msg
 } {1 {invoked "continue" outside of a loop}}
 
+# cleanup
+::tcltest::cleanupTests
+return

@@ -1,3 +1,16 @@
+2000-12-23  Mo DeJong  <mdejong@redhat.com>
+
+	* tests/tcl/CdCmd.test:
+	* tests/tcl/FileCmd.test:
+	* tests/tcl/Procedure.test:
+	* tests/tcl/PwdCmd.test:
+	* tests/tcl/RegexpCmd.test:
+	* tests/tcl/ReturnCmd.test:
+	* tests/tcl/SwitchCmd.test:
+	* tests/tcl/UpdateCmd.test: Add tcltest
+	package initilization and cleanup code
+	to each of the test cases.
+
 2000-12-22  Mo DeJong  <mdejong@redhat.com>
 
 	* Makefile.in: The test target will now source

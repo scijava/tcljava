@@ -11,10 +11,12 @@
 #
 # SCCS: @(#) pwdCmd.test 1.2 97/08/13 23:06:41
 
-# Note: This test file must be sourced from the parent directory
-#       or else the defs file may not be properly loaded.
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
 
-if {[string compare test [info procs test]] == 1} then {source defs}
+# FIXME: These are defined in pwd.test, we should use that !
 
 test PwdCmd-1.1 {cmdProc} {
 	catch pwd
@@ -22,3 +24,8 @@ test PwdCmd-1.1 {cmdProc} {
 test PwdCmd-1.2 {cmdProc} {
 	expr {[string length pwd] > 0}
 } 1
+
+# cleanup
+::tcltest::cleanupTests
+return
+
