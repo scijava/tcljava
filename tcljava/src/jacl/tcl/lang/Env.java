@@ -9,14 +9,14 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Env.java,v 1.1 1998/10/14 21:09:21 cvsadmin Exp $
+ * RCS: @(#) $Id: Env.java,v 1.2 1999/08/07 05:46:26 mo Exp $
  */
 
 package tcl.lang;
 import java.util.*;
 import java.io.*;
 
-/*
+/**
  * This class manages the environment array for Tcl interpreters.
  */
 
@@ -43,12 +43,10 @@ static void
 initialize(
     Interp interp)
 {
-    /*
-     * For a few standrad environment vairables that Tcl users 
-     * often assume aways exist (even if they shouldn't), we will
-     * try to create those expected variables with the common unix
-     * names.
-     */
+    // For a few standrad environment vairables that Tcl users 
+    // often assume aways exist (even if they shouldn't), we will
+    // try to create those expected variables with the common unix
+    // names.
 
     try {
 	interp.setVar("env", "CLASSPATH",
@@ -74,11 +72,9 @@ initialize(
 	// Ignore errors.
     }
 
-    /*
-     * Now we will populate the rest of the env array with the
-     * properties recieved from the System classes.  This makes for 
-     * a nice shortcut for getting to these useful values.
-     */
+    // Now we will populate the rest of the env array with the
+    // properties recieved from the System classes.  This makes for 
+    // a nice shortcut for getting to these useful values.
 
     try {
 
@@ -95,15 +91,12 @@ initialize(
 	    }
 	}
     } catch (SecurityException e2) {
-	/*
-	 * We are inside a browser and we can't access the list of
-	 * property names. That's fine. Life goes on ....
-	 */
+	// We are inside a browser and we can't access the list of
+	// property names. That's fine. Life goes on ....
     } catch (Exception e3) {
-	/*
-	 * We are inside a browser and we can't access the list of
-	 * property names. That's fine. Life goes on ....
-	 */
+	// We are inside a browser and we can't access the list of
+	// property names. That's fine. Life goes on ....
+
 	System.out.println("Exception while initializing env array");
 	System.out.println(e3);
 	System.out.println("");
