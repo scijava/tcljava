@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Channel.java,v 1.3 2000/08/01 06:50:48 mo Exp $
+ * RCS: @(#) $Id: Channel.java,v 1.4 2001/11/17 06:13:23 mdejong Exp $
  */
 
 package tcl.lang;
@@ -41,6 +41,27 @@ abstract class Channel {
      */
 
     protected int refCount = 0;
+
+    /**
+     * Generic Reader/Writer objects. A BufferedReader is required to gain
+     * access to line oriented input inside the read() method.
+     */
+
+    protected BufferedReader reader = null;
+    protected BufferedWriter writer = null;
+
+    /**
+     * Flag that is set on each read/write.  If the read/write encountered an EOF
+     * then it's set to true, else false.
+     */
+
+    protected boolean eofCond = false;
+
+    /**
+     * Buffer size used when reading blocks of input.
+     */
+
+    protected static final int BUF_SIZE = 1024;
 
     /**
      * Perform a read on the sub-classed channel.  
@@ -111,11 +132,12 @@ abstract class Channel {
 
 
     /**
-     * Interface that returns true if the last read reached the EOF.
+     * Returns true if the last read reached the EOF.
      */
 
-    abstract boolean eof();
-
+    final boolean eof() {
+        return eofCond;
+    }
 
     /** 
      * Gets the chanName that is the key for the chanTable hashtable.

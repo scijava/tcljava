@@ -165,11 +165,6 @@ public class ServerSocketChannel extends Channel {
         throw new IOException("tell is not supported for socket channels");
     }
 
-    boolean eof()
-    {
-        return false;
-    }
-
     /**
      * Returns the next free channel number
      **/

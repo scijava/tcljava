@@ -1,5 +1,15 @@
 2001-11-16  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/jacl/tcl/lang/Channel.java:
+	* src/jacl/tcl/lang/FileChannel.java:
+	* src/jacl/tcl/lang/ServerSocketChannel.java:
+	* src/jacl/tcl/lang/SocketChannel.java:
+	* src/jacl/tcl/lang/StdChannel.java:
+	Refector subclases of Channel class. Move reader, writer,
+	eofCond, BUF_SIZE, and eof() members into the superclass.
+
+2001-11-16  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/jacl/tcl/lang/InfoCmd.java (InfoNameOfExecutableCmd):
 	Implement info nameofexecutable command by doing a query
 	of the "JAVA" system property.

@@ -24,25 +24,6 @@ public class SocketChannel extends Channel {
     private Socket sock;
 
     /**
-     * The InputStream associated with this socket.
-     **/
-
-    private BufferedReader in;
-
-    /**
-     * The OutputStream associated with this socket.
-     **/
-
-    private BufferedWriter out;
-
-    /**
-     * The eof flag is set if a EOFException is thrown during IO.
-     * The flag is returned from the eof() call.
-     **/
-
-    private boolean eof;
-
-    /**
      * A string which holds the message of the last exception thrown.
      **/
 
@@ -117,7 +98,7 @@ public class SocketChannel extends Channel {
         // Get the Input and Output streams
         try
         {
-            in = new BufferedReader(
+            reader = new BufferedReader(
                     new InputStreamReader(sock.getInputStream()));
         }
         catch (IOException ex)
@@ -127,7 +108,7 @@ public class SocketChannel extends Channel {
 
         try
         {
-            out = new BufferedWriter(
+            writer = new BufferedWriter(
                     new OutputStreamWriter(sock.getOutputStream()));
         }
         catch (IOException ex)
@@ -154,7 +135,7 @@ public class SocketChannel extends Channel {
         // Get the Input and Output streams
         try
         {
-            in = new BufferedReader(
+            reader = new BufferedReader(
                     new InputStreamReader(sock.getInputStream()));
         }
         catch (IOException ex)
@@ -164,7 +145,7 @@ public class SocketChannel extends Channel {
 
         try
         {
-            out = new BufferedWriter(
+            writer = new BufferedWriter(
                     new OutputStreamWriter(sock.getOutputStream()));
         }
         catch (IOException ex)
@@ -200,7 +181,7 @@ public class SocketChannel extends Channel {
                     " wasn't opened for reading", TCL.ERROR);
 
         if ((numBytes < 1) || (readType == TclIO.READ_ALL))
-            numBytes = 4096; // 4k buffer
+            numBytes = BUF_SIZE;
 
         char[] buf = new char[numBytes]; // Buffer to read into
         int ret = 0;
@@ -208,25 +189,27 @@ public class SocketChannel extends Channel {
         // FIXME: This needs to be a StringBuffer for += all case!
         String returnStr = new String();
 
+        // FIXME: Where does eofCond get set to false before a read?
+
         try
         {
             // Decide what type of read we are doing.
             switch (readType) {
                 case TclIO.READ_ALL:
                     // Try and read the whole stream at once.
-                    while ((ret = in.read(buf, 0, 4096)) != -1)
+                    while ((ret = reader.read(buf, 0, BUF_SIZE)) != -1)
                         returnStr += new String(buf);
-                    eof = true; // We read to eof, so this must be true
+                    eofCond = true; // We read to eof, so this must be true
                     break;
                 case TclIO.READ_LINE:
                     // Try and read a line. Must assume character data
                     // and that this stream is configured non-binary.
-                    returnStr = in.readLine();
+                    returnStr = reader.readLine();
                     break;
                 case TclIO.READ_N_BYTES:
                     // Read the specified number of bytes.
                     int total = 0;
-                    while ((total += in.read(buf,total,numBytes))
+                    while ((total += reader.read(buf,total,numBytes))
                         != numBytes) ;
                     returnStr = new String(buf);
                     break;
@@ -238,7 +221,7 @@ public class SocketChannel extends Channel {
         }
         catch (EOFException e)
         {
-            eof = true;
+            eofCond = true;
             errorMsg = e.getMessage();
             returnStr = new String("");
         }
@@ -253,10 +236,10 @@ public class SocketChannel extends Channel {
         }
 
         if (ret == -1)
-            eof = true;
+            eofCond = true;
         if (returnStr == null)
         {
-            eof = true;
+            eofCond = true;
             returnStr = new String("");
         }
         
@@ -279,11 +262,11 @@ public class SocketChannel extends Channel {
         // Write to the Socket
         try
         {
-            out.write(outStr, 0, outStr.length());
+            writer.write(outStr, 0, outStr.length());
         }
         catch (EOFException e)
         {
-            eof = true;
+            eofCond = true;
             errorMsg = e.getMessage();
         }
         catch (IOException e)
@@ -306,11 +289,11 @@ public class SocketChannel extends Channel {
     {
         boolean thrown = false;
         // Close the socket
-        try { in.close(); } catch (IOException e) { 
+        try { reader.close(); } catch (IOException e) { 
             errorMsg = e.getMessage();
             thrown = true;
         }
-        try { out.close(); } catch (IOException e) { 
+        try { writer.close(); } catch (IOException e) { 
             errorMsg = e.getMessage(); 
             thrown = true;
         }
@@ -337,11 +320,11 @@ public class SocketChannel extends Channel {
                     " not opened for writing", TCL.ERROR);
         try
         {
-            out.flush();
+            writer.flush();
         }
         catch (EOFException e)
         {
-            eof = true;
+            eofCond = true;
             errorMsg = e.getMessage();
         }
         catch (IOException e)
@@ -376,15 +359,6 @@ public class SocketChannel extends Channel {
     long tell() throws IOException
     {
         throw new IOException("tell is not supported for socket channels");
-    }
-
-    /**
-     * Returns true if the last read reached EOF.
-     */
-
-    boolean eof()
-    {
-        return eof;
     }
 
     /**

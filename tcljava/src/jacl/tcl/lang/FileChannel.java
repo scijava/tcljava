@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FileChannel.java,v 1.6 2000/08/01 06:50:48 mo Exp $
+ * RCS: @(#) $Id: FileChannel.java,v 1.7 2001/11/17 06:13:23 mdejong Exp $
  *
  */
 
@@ -27,34 +27,13 @@ class FileChannel extends Channel {
      * within the file.  The RandomAccessFile is the only java.io class
      * that allows this behavior.
      */
+
     private RandomAccessFile file = null;
-    private BufferedReader reader = null;
-
-    /**
-     * Buffer size used when reading large files
-     */
-    private static final int BUF_SIZE = 1024;
-
-    /**
-     * Flag that is set on each read.  If the read incurred an EOF then
-     * it's set to true, else false.  Used in the eof() method.
-     */
-    private boolean eofCond;
-
-
-    /**
-     * The no-arg constructor initializes the boolean eofCond.  Before
-     * any other methods function properly, open needs to be called,
-     * otherwise a TclRuntimeError is thrown.
-     */
-
-    FileChannel() {
-        eofCond = false;
-    }
-
 
     /**
      * Open a file with the read/write permissions determined by modeFlags.
+     * This method must be called before any other methods will function
+     * properly.
      *
      * @param interp currrent interpreter.
      * @param fileName the absolute path or name of file in the current 
@@ -251,7 +230,7 @@ class FileChannel extends Channel {
 
 
     /**
-     * Close the a file.  The file MUST be open or a TclRuntimeError
+     * Close the file.  The file MUST be open or a TclRuntimeError
      * is thrown.
      */
 
@@ -325,17 +304,6 @@ class FileChannel extends Channel {
         return(file.getFilePointer());
     }
 
-
-    /**
-     * Return the status of the last read.  The boolean is initialized in 
-     * the constructor and is only altered on calls to read().
-     * 
-     * @return true if the last read incurred an EOF else false.
-     */
-
-    boolean eof() {
-        return eofCond;
-    }
 
     /**
      * If the file dosent exist then a TclExcpetion is thrown. 

@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: StdChannel.java,v 1.6 2000/11/19 17:13:53 krischan Exp $
+ * RCS: @(#) $Id: StdChannel.java,v 1.7 2001/11/17 06:13:23 mdejong Exp $
  *
  */
 
@@ -23,12 +23,6 @@ import java.io.*;
 class StdChannel extends Channel {
   
     /**
-     * This class is wrapped around System.in to access the readLine() API
-     */
-
-    private static BufferedReader in = null;
-
-    /**
      * stdType store which type, of the three below, this StdChannel is.
      */
 
@@ -41,18 +35,6 @@ class StdChannel extends Channel {
     static final int STDIN    = 0;
     static final int STDOUT   = 1; 
     static final int STDERR   = 2; 
-
-    /**
-     * The buffer size when reading in large files
-     */
-
-    private static final int BUF_SIZE = 1024;
-
-    /**
-     * Used to keep track of EOF on System.in.
-     */
-
-    private static boolean eofCond = false;
 
     /**
      * Constructor that does nothing.  Open() must be called before
@@ -104,8 +86,8 @@ class StdChannel extends Channel {
         switch (type) {
 	    case STDIN:
 	        mode = TclIO.RDONLY;
-		if (in == null) {
-		    in = new BufferedReader(new InputStreamReader(System.in)); 
+		if (reader == null) {
+		    reader = new BufferedReader(new InputStreamReader(System.in)); 
 		}
 		break;
 	    case STDOUT:
@@ -158,14 +140,14 @@ class StdChannel extends Channel {
 		StringBuffer sbuf = new StringBuffer();
 		int numRead;
 		    
-		while((numRead = in.read(charArr, 0, BUF_SIZE)) != -1) {
+		while((numRead = reader.read(charArr, 0, BUF_SIZE)) != -1) {
 		    sbuf.append(charArr,0, numRead);
 		}
 		eofCond = true;
 		return sbuf.toString();
 	    } 
 	    case TclIO.READ_LINE: {
-		String line = in.readLine();
+		String line = reader.readLine();
 		if (line == null) {
 		    eofCond = true;
 		    return "";
@@ -176,7 +158,7 @@ class StdChannel extends Channel {
 	    case TclIO.READ_N_BYTES: {
 		char[] charArr = new char[numBytes];
 		int numRead;
-		numRead = in.read(charArr, 0, numBytes);
+		numRead = reader.read(charArr, 0, numBytes);
 		if (numRead == -1) {
 		    eofCond = true;
 		    return "";
@@ -224,9 +206,9 @@ class StdChannel extends Channel {
     void close() throws IOException {
         switch (stdType) {
             case STDIN: {
-	        if(in != null) {
-	            in.close();
-		    in = null;
+	        if(reader != null) {
+	            reader.close();
+		    reader = null;
 		}  
 		break;
 	    }
@@ -308,11 +290,4 @@ class StdChannel extends Channel {
         return((long) -1);
     }
 
-    /**
-     * Return true if EOF has been read from stdin
-     * 
-     */
-    boolean eof() {
-	return eofCond;
-    }
 }
