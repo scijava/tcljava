@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: IncrCmd.java,v 1.1 1998/10/14 21:09:19 cvsadmin Exp $
+ * RCS: @(#) $Id: IncrCmd.java,v 1.2 1999/08/03 02:56:23 mo Exp $
  *
  */
 
@@ -25,41 +25,47 @@ class IncrCmd implements Command {
      *     integer.
      */
 
-    public void cmdProc(Interp interp, TclObject argv[])
-	    throws TclException {
-	if ((argv.length != 2) && (argv.length != 3)) {
-	    throw new TclNumArgsException(interp, 1, argv, 
+    public void cmdProc(Interp interp, TclObject objv[])
+	throws TclException
+    {
+	int incrAmount;
+	TclObject newValue;
+
+	if ((objv.length != 2) && (objv.length != 3)) {
+	    throw new TclNumArgsException(interp, 1, objv, 
 		    "varName ?increment?");
         }
 
-	TclObject tobj;
-	int oldValue;
-	int increment;
-
-	tobj = interp.getVar(argv[1], 0);
-
-	try {
-	    oldValue = TclInteger.get(interp, tobj);
-	} catch (TclException e) {
-	    interp.addErrorInfo(
-		    "\n    (reading value of variable to increment)");
-	    throw e;
-	}
-
-	if (argv.length == 2) {
-	    increment = 1;
+	// Calculate the amount to increment by.
+    
+	if (objv.length == 2) {
+	    incrAmount = 1;
 	} else {
 	    try {
-		increment = TclInteger.get(interp, argv[2]);
+		incrAmount = TclInteger.get(interp, objv[2]);
 	    } catch (TclException e) {
 		interp.addErrorInfo("\n    (reading increment)");
 		throw e;
 	    }
 	}
 
-	TclObject newValObj = TclInteger.newInstance(oldValue + increment);
-	interp.setVar(argv[1], newValObj, 0);
-	interp.setResult(newValObj);
+	// Increment the variable's value.
+	
+	newValue = Var.incrVar(interp, objv[1], null, incrAmount,
+				  TCL.LEAVE_ERR_MSG);
+	
+	// FIXME: we need to look at this exception throwing problem again
+	/*
+	if (newValue == null) {
+	    return TCL_ERROR;
+	}
+	*/
+	
+	// Set the interpreter's object result to refer to the variable's new
+	// value object.
+	
+	interp.setResult(newValue);
+	return; 
     }
 }
 
