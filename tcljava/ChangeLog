@@ -1,3 +1,10 @@
+2003-04-30  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* README.tclblend: Update min version of the
+	Tcl Thread package to 2.5.2. This avoids
+	a configure bug in the 2.5.1 release that
+	shows up when building in the srcdir.
+
 2003-03-18  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* src/tcljava/tcl/lang/JavaDefineClassCmd.java (cmdProc):
