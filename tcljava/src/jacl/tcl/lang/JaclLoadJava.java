@@ -31,7 +31,6 @@ throws TclException
     // from the interp.
 
     interp.deleteCommand(argv[0].toString());
-
 }
 
 }
