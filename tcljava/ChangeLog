@@ -1,3 +1,16 @@
+2000-08-08  Mo DeJong  <mdejong@redhat.com>
+
+	* src/native/java.h (JavaGetEnv):
+	* src/native/javaCmd.c (JavaGetEnv, JavaInitEnv):
+	Rewrite Tcl Blend initilization, create new method
+	to handle all initialization in a thread safe way.
+	* src/native/javaIdle.c:
+	* src/native/javaInterp.c:
+	* src/native/javaNotifier.c:
+	* src/native/javaObj.c:
+	* src/native/javaTimer.c: Call JavaGetEnv without
+	an Interp argument.
+
 2000-08-07  Mo DeJong  <mdejong@redhat.com>
 
 	* src/native/javaCmd.c (JavaGetEnv): Rewrite

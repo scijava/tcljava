@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaObj.c,v 1.4.2.1 2000/07/30 07:17:09 mo Exp $
+ * RCS: @(#) $Id: javaObj.c,v 1.4.2.2 2000/08/08 19:03:41 mo Exp $
  */
 
 #include "java.h"
@@ -128,7 +128,7 @@ DupTclObject(
     Tcl_Obj *destPtr)
 {
     jobject object = (jobject)(srcPtr->internalRep.twoPtrValue.ptr2);
-    JNIEnv *env = JavaGetEnv(NULL);
+    JNIEnv *env = JavaGetEnv();
 
     /*
      * Add a global reference to represent the new copy.
@@ -162,7 +162,7 @@ FreeTclObject(
     Tcl_Obj *objPtr)		/* Object to free. */
 {
     jobject object = (jobject)(objPtr->internalRep.twoPtrValue.ptr2);
-    JNIEnv *env = JavaGetEnv(NULL);
+    JNIEnv *env = JavaGetEnv();
 
     (*env)->CallVoidMethod(env, object, java.release);
     (*env)->DeleteGlobalRef(env, object);
@@ -218,7 +218,7 @@ UpdateTclObject(Tcl_Obj *objPtr)
 {
     jstring string;
     jobject object = (jobject)(objPtr->internalRep.twoPtrValue.ptr2);
-    JNIEnv *env = JavaGetEnv(NULL);
+    JNIEnv *env = JavaGetEnv();
 
     string = (*env)->CallObjectMethod(env, object, java.toString);
     objPtr->bytes = JavaGetString(env, string, &objPtr->length);
@@ -704,7 +704,7 @@ SetJavaCmdFromAny(
     } else if ((objPtr->typePtr == cmdTypePtr)
 	    && (objPtr->internalRep.twoPtrValue.ptr2 != NULL)) {
 	jobject object = (jobject)(objPtr->internalRep.twoPtrValue.ptr2);
-	JNIEnv *env = JavaGetEnv(NULL);
+	JNIEnv *env = JavaGetEnv();
 
 	/*
 	 * If we are converting from something that is already a java command

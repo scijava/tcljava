@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaNotifier.c,v 1.2.2.1 2000/07/30 07:17:09 mo Exp $
+ * RCS: @(#) $Id: javaNotifier.c,v 1.2.2.2 2000/08/08 19:03:41 mo Exp $
  */
 
 #include "java.h"
@@ -171,7 +171,7 @@ NotifierSetup(
     ClientData data,		/* Not used. */
     int flags)			/* Same as for Tcl_DoOneEvent. */
 {
-    JNIEnv *env = JavaGetEnv(NULL);
+    JNIEnv *env = JavaGetEnv();
 
     if ((*env)->CallBooleanMethod(env, globalNotifierObj, java.hasEvents)
 	    == JNI_TRUE) {
@@ -202,7 +202,7 @@ NotifierCheck(
     ClientData data,		/* Not used. */
     int flags)			/* Same as for Tcl_DoOneEvent. */
 {
-    JNIEnv *env = JavaGetEnv(NULL);
+    JNIEnv *env = JavaGetEnv();
     Tcl_Event *ePtr;
 
     /*
@@ -241,7 +241,7 @@ JavaEventProc(
     Tcl_Event *evPtr,		/* The event that is being processed. */
     int flags)			/* The flags passed to Tcl_ServiceEvent. */
 {
-    JNIEnv *env = JavaGetEnv(NULL);
+    JNIEnv *env = JavaGetEnv();
     
     /*
      * Call Notifier.serviceEvent() to handle invoking the next event and

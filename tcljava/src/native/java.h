@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: java.h,v 1.6.2.2 2000/08/07 00:50:09 mo Exp $
+ * RCS: @(#) $Id: java.h,v 1.6.2.3 2000/08/08 19:03:40 mo Exp $
  */
 
 #ifndef _JAVA
@@ -140,7 +140,7 @@ extern JavaInfo java;
 
 TCLBLEND_EXTERN void		JavaAlertNotifier();
 TCLBLEND_EXTERN void		JavaDisposeNotifier();
-TCLBLEND_EXTERN JNIEnv *	JavaGetEnv(Tcl_Interp *interp);
+TCLBLEND_EXTERN JNIEnv *	JavaGetEnv();
 TCLBLEND_EXTERN Tcl_Interp *	JavaGetInterp(JNIEnv *env, jobject interpObj);
 TCLBLEND_EXTERN char *		JavaGetString(JNIEnv *env, jstring str,
 			    	    int *lengthPtr);

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaInterp.c,v 1.7.2.2 2000/08/07 00:50:09 mo Exp $
+ * RCS: @(#) $Id: javaInterp.c,v 1.7.2.3 2000/08/08 19:03:41 mo Exp $
  */
 
 #include "java.h"
@@ -823,7 +823,7 @@ JavaTraceProc(
     jstring name1Str, name2Str;
     jobject exception, interpObj;
     Tcl_SavedResult state;
-    JNIEnv *env = JavaGetEnv(interp);
+    JNIEnv *env = JavaGetEnv();
 
     result = NULL;
     if (tPtr->errMsg != NULL) {
@@ -953,7 +953,7 @@ JavaCmdDeleteProc(
     ClientData clientData)
 {
     jobject cmd = (jobject)clientData;
-    JNIEnv *env = JavaGetEnv(NULL);
+    JNIEnv *env = JavaGetEnv();
 
     if ((*env)->IsInstanceOf(env, cmd, java.CommandWithDispose)) {
 	(*env)->CallVoidMethod(env, cmd, java.disposeCmd);
@@ -990,7 +990,7 @@ JavaCmdProc(
     jarray args;
     jobject value, exception, interpObj;
     int i, result;
-    JNIEnv *env = JavaGetEnv(interp);
+    JNIEnv *env = JavaGetEnv();
 
     interpObj = (jobject) Tcl_GetAssocData(interp, "java", NULL);
 
