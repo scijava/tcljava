@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: JavaFieldCmd.test,v 1.5 1999/08/31 23:56:31 redman Exp $
+# RCS: @(#) $Id: JavaFieldCmd.test,v 1.6 1999/10/15 22:17:21 redman Exp $
 
 # Note: This test file must be sourced from the parent directory
 #       or else the defs file may not be properly loaded.
@@ -271,6 +271,7 @@ test javaFieldCmd-6.6 {test NaN} {
     set result [java::field java.lang.Double NaN]
 
     if {[string compare $result NaN] == 0 || \
+	    [string compare $result nan] == 0 || \
 	    [string compare $result 1.#QNAN] == 0} {
 	set result pass
     } else {
@@ -285,6 +286,7 @@ test javaFieldCmd-6.7 {test -Inf} {
 
     if {[string compare $result -Inf] == 0 || \
 	    [string compare $result -Infinity] == 0 || \
+	    [string compare $result -inf] == 0 || \
 	    [string compare $result -1.#INF] == 0} {
 	set result pass
     } else {
@@ -299,6 +301,7 @@ test javaFieldCmd-6.8 {test Inf} {
 
     if {[string compare $result Inf] == 0 || \
 	    [string compare $result Infinity] == 0 || \
+	    [string compare $result inf] == 0 || \
 	    [string compare $result 1.#INF] == 0} {
 	set result pass
     } else {
