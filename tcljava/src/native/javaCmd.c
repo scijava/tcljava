@@ -10,7 +10,7 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  *
- * RCS: @(#) $Id: javaCmd.c,v 1.20 2002/12/25 00:01:16 mdejong Exp $
+ * RCS: @(#) $Id: javaCmd.c,v 1.21 2002/12/28 22:45:14 mdejong Exp $
  */
 
 /*
@@ -947,14 +947,10 @@ FreeJavaCache(ClientData clientData)
     (*env)->DeleteGlobalRef(env, jcache->TclList);
     (*env)->DeleteGlobalRef(env, jcache->Extension);
     (*env)->DeleteGlobalRef(env, jcache->VarTrace);
-    (*env)->DeleteGlobalRef(env, jcache->Void);
     (*env)->DeleteGlobalRef(env, jcache->BlendExtension);
     (*env)->DeleteGlobalRef(env, jcache->Notifier);
     (*env)->DeleteGlobalRef(env, jcache->IdleHandler);
     (*env)->DeleteGlobalRef(env, jcache->TimerHandler);
-
-     /* FIXME : we dont add or release a global ref for jcache->Void
-        or jcache->VoidTYPE class, should we ? */
 
     TclBlendTrace("FreeJavaCache");
 }
@@ -1050,26 +1046,12 @@ JavaSetupJava(
         AddToClassCache(env, interp, &jcache->TclList, "tcl/lang/TclList") ||
         AddToClassCache(env, interp, &jcache->Extension, "tcl/lang/Extension") ||
         AddToClassCache(env, interp, &jcache->VarTrace, "tcl/lang/VarTrace") ||
-        AddToClassCache(env, interp, &jcache->Void, "java/lang/Void") ||
         AddToClassCache(env, interp, &jcache->BlendExtension, "tcl/lang/BlendExtension") ||
         AddToClassCache(env, interp, &jcache->Notifier, "tcl/lang/Notifier") ||
         AddToClassCache(env, interp, &jcache->IdleHandler, "tcl/lang/IdleHandler") ||
         AddToClassCache(env, interp, &jcache->TimerHandler, "tcl/lang/TimerHandler")) {
         goto error;
     }
-
-    /*
-     * Get the Void.TYPE class.
-     */
-
-    field = (*env)->GetStaticFieldID(env, jcache->Void, "TYPE", "Ljava/lang/Class;");
-    jcache->voidTYPE = (*env)->GetStaticObjectField(env, jcache->Void, field);
-
-    /*
-     * Create a thread exit handler that will clean up the cache.
-     */
-
-    Tcl_CreateThreadExitHandler(FreeJavaCache, NULL);
 
     /*
      * Load methods needed by this module.
@@ -1116,7 +1098,7 @@ JavaSetupJava(
                                       &jcache->TimerHandler, "()V", 0)) {
         goto error;
     }
-    
+
     /*
      * Load fields needed by this module.
      */
@@ -1134,6 +1116,12 @@ JavaSetupJava(
 
     tsdPtr->initialized = 1;
     tsdPtr->initialized_from_java = init_from_java;
+
+    /*
+     * Create a thread exit handler that will clean up the cache.
+     */
+
+    Tcl_CreateThreadExitHandler(FreeJavaCache, NULL);
 
     ok:
 #ifdef TCLBLEND_DEBUG
@@ -1189,10 +1177,7 @@ AddToClassCache(
             (*env)->ExceptionDescribe(env);
             obj = Tcl_GetObjResult(interp);
             (*env)->ExceptionClear(env);
-            /*
-             * We can't call ToString() here, we might not have access
-             * to the java.lang.String.toString() method yet.
-             */
+            /* We can't call ToString() here, cache has not been initialized. */
             (*env)->Throw(env, exception);
             (*env)->DeleteLocalRef(env, exception);
         }
@@ -1252,9 +1237,9 @@ AddToMethodCache(
     if (id == NULL) {
         if (interp) {
             resultPtr = Tcl_GetObjResult(interp);
-            Tcl_AppendStringsToObj(resultPtr, "could not find method ",
-                name, " in ", NULL);
-            ToString(env, resultPtr, *(class));
+            Tcl_AppendStringsToObj(resultPtr, "could not find method \"",
+                name, "\"", NULL);
+            /* Don't call ToString(), cache not initialized yet */
         }
         return 1;
     }
@@ -1298,9 +1283,9 @@ AddToFieldCache(
     if (field == NULL) {
         if (interp) {
             resultPtr = Tcl_GetObjResult(interp);
-            Tcl_AppendStringsToObj(resultPtr, "could not find field ",
-                name, " in ", NULL);
-            ToString(env, resultPtr, *(class));
+            Tcl_AppendStringsToObj(resultPtr, "could not find field\"",
+                name, "\"", NULL);
+            /* Don't call ToString(), cache not initialized yet */
         }
 	return 1;
     }

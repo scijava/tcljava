@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: java.h,v 1.13 2002/12/19 03:34:36 mdejong Exp $
+ * RCS: @(#) $Id: java.h,v 1.14 2002/12/28 22:45:14 mdejong Exp $
  */
 
 #ifndef _JAVA
@@ -124,8 +124,6 @@ typedef struct JavaInfo {
     jmethodID blendC;
     jclass VarTrace;
     jmethodID traceProc;
-    jclass Void;		/* java.lang.Void */
-    jclass voidTYPE;		/* java.lang.Void.TYPE */
     jclass Notifier;
     jmethodID serviceEvent;
     jmethodID hasEvents;

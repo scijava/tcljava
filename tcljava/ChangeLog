@@ -1,3 +1,13 @@
+2002-12-28  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/native/java.h:
+	* src/native/javaCmd.c (FreeJavaCache, JavaSetupJava,
+	AddToClassCache, AddToMethodCache, AddToFieldCache):
+	Remove unused Void and voidTYPE classes from the cache.
+	Don't set a thread local exit handler unless the
+	cache was initialized properly. Don't call the ToString()
+	method since the cache was not yet initialized.
+
 2002-12-27  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* src/tcljava/tcl/lang/JavaInvoke.java (getsetField):
