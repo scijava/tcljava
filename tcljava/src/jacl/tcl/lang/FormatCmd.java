@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FormatCmd.java,v 1.5 1999/05/15 23:24:34 dejong Exp $
+ * RCS: @(#) $Id: FormatCmd.java,v 1.6 1999/05/24 11:41:04 mo Exp $
  *
  */
 
@@ -595,6 +595,16 @@ class FormatCmd implements Command {
 	boolean flag_exp   = false;   // Flag for exponential representation
 	boolean flag_rtz   = true;    // Flag for "remove trailing zeros"
 	boolean flag_dp    = true;    // Flag for remove "decimal point"
+
+	if (Double.isNaN(dblValue)) {
+	    return "NaN";
+	}
+	if (dblValue == Double.NEGATIVE_INFINITY) {
+	    return "-Inf";
+	}
+	if (dblValue == Double.POSITIVE_INFINITY) {
+	    return "Inf";
+	}
  
 	// If precision < 0 (eg -1) then the precision defaults
 
@@ -606,6 +616,25 @@ class FormatCmd implements Command {
 	    dblValue = -dblValue;
 	    prefix = '-';
 	    prefixSize = 1;
+	} else if (dblValue == 0.0 &&
+		   (new Double(dblValue)).equals((new Double(-0.0)))) {
+	    // Handle -0.0
+	    //
+	    // 15.19.1 "Numerical Comparison Operators <, <=, >, and >= "
+	    // of the Java Language Spec says:
+	    // "Positive zero and negative zero are considered
+	    // equal. Therefore, -0.0<0.0 is false, for example, but
+	    // -0.0<=0.0 is true."
+	    //
+	    // The Double.equal man page says:
+	    // "If d1 represents +0.0 while d2 represents -0.0, or
+	    // vice versa, the equal test has the value false, even
+	    // though +0.0==-0.0 has the value true. This allows
+	    // hashtables to operate properly.
+	    
+	    dblValue = -dblValue;
+	    prefix = '-';
+	    prefixSize = 1;
 	} else if ((flags & SHOW_SIGN) != 0) {
 	    prefix = '+';
 	    prefixSize = 1;
@@ -613,7 +642,7 @@ class FormatCmd implements Command {
 	    prefix = ' ';
 	    prefixSize = 1;
 	}
-
+	
 	// For GENERIC xtypes the precision includes the ones digit
 	// so just decrement to get the correct precision.
 
@@ -632,9 +661,6 @@ class FormatCmd implements Command {
 	// Normalize dblValue to within 10.0 > dblValue >= 1.0 
 
 	exp = 0;
-	if (Double.isNaN(dblValue)) {
-	    return "NaN";
-	}
 	if (dblValue>0.0) {
 	    int k = 0;
 	    while ((dblValue >= 1e8) && (k++ < 100)) {
