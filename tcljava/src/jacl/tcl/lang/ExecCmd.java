@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ExecCmd.java,v 1.8 2002/01/19 00:15:01 mdejong Exp $
+ * RCS: @(#) $Id: ExecCmd.java,v 1.9 2004/11/17 19:57:36 mdejong Exp $
  */
 
 package tcl.lang;
@@ -387,16 +387,20 @@ private Process
     String jacl1 = "C:\\TEMP\\jacl1.bat";
     String jacl2 = "C:\\TEMP\\jacl2.bat";
     
-    boolean isNT = System.getProperty("os.name").toLowerCase().equals("windows nt") ||
-                   System.getProperty("os.name").toLowerCase().equals("windows 2000");
+    String os_name = System.getProperty("os.name");
+    boolean isNT = os_name.equalsIgnoreCase("windows xp") ||
+                   os_name.equalsIgnoreCase("windows nt") ||
+                   os_name.equalsIgnoreCase("windows 2000");
+                   
+                   
     
     File jacl1_file = new File(jacl1);
     File jacl2_file = new File(jacl2);
 
 
-    // if we are running the NT version then we need to write out to jacl2 but
-    // if not then we write out to jacl, we also need to check to make sure jacl
-    // exists before each exec on NT because it might get removed by the user 
+    // If running on NT, write to jacl2.bat, otherwise write out to jacl1.bat.
+    // Also check that jacl1.bat exists before each exec in case it got
+    // deleted by the user.
 
     File out_file;
 
