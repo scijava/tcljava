@@ -1,3 +1,12 @@
+2003-03-05  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/jacl/tcl/lang/StdChannel.java (open, write):
+	Avoid wrapping a buffered IO object around the
+	stdio and stderr streams since this was causing
+	problems where stdout was not being flushed.
+	Instead, explicitly handle flushing in the
+	write method.
+
 2003-02-14  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* Makefile.in: Build a jar file named hello.jar

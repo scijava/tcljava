@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: StdChannel.java,v 1.16 2002/01/23 09:53:49 mdejong Exp $
+ * RCS: @(#) $Id: StdChannel.java,v 1.17 2003/03/05 22:57:59 mdejong Exp $
  *
  */
 
@@ -97,19 +97,11 @@ class StdChannel extends Channel {
 	        mode = TclIO.WRONLY;
 	        setBuffering(TclIO.BUFF_LINE);
 	        setChanName("stdout");
-		if (writer == null) {
-		    writer = new BufferedWriter(
-                        new OutputStreamWriter(System.out)); 
-		}
 		break;
 	    case STDERR:
 	        mode = TclIO.WRONLY;
 	        setBuffering(TclIO.BUFF_NONE);
 	        setChanName("stderr");
-		if (writer == null) {
-		    writer = new BufferedWriter(
-                        new OutputStreamWriter(System.err)); 
-		}
 		break;
 	    default:
 		throw new RuntimeException(
@@ -133,13 +125,18 @@ class StdChannel extends Channel {
     void write(Interp interp, TclObject outData) 
             throws IOException, TclException {
 
-        super.write(interp, outData);
+        checkWrite(interp);
 
-        // The OutputStreamWriter class will buffer even if you don't
-        // wrap it in a BufferedWriter. The stderr file object must
-        // not require an explicit flush so we just hack a flush in.
-        if (stdType == STDERR)
-            flush(interp);
+        if (stdType == STDERR) {
+            System.err.print(outData.toString());
+        } else {
+            String s = outData.toString();
+            System.out.print(s);
+            if (buffering == TclIO.BUFF_NONE ||
+                    (buffering == TclIO.BUFF_LINE && s.endsWith("\n"))) {
+                System.out.flush();
+            }
+        }
     }
 
     String getChanType() {
