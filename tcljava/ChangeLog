@@ -1,5 +1,12 @@
 2000-05-14  Mo DeJong  <mdejong@redhat.com>
 
+	* src/jacl/tcl/lang/Shell.java: Added calls
+	to preserve() and release() on cmd object being
+	passed to recordAndEval() to avoid a null
+	pointer exception.
+
+2000-05-14  Mo DeJong  <mdejong@redhat.com>
+
 	* src/pkgIndex.tcl:
 	* src/tcljava/tcl/lang/BlendExtension.java:
 	Moved the exporting of commands in the java

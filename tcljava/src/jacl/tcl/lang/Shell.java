@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Shell.java,v 1.7 2000/05/14 20:34:29 mo Exp $
+ * RCS: @(#) $Id: Shell.java,v 1.8 2000/05/14 23:25:49 mo Exp $
  */
 
 package tcl.lang;
@@ -317,9 +317,11 @@ public synchronized void run() {
 		    }
 
 		    boolean eval_exception = true;
+		    TclObject commandObj = TclString.newInstance(command);
 
 		    try {
-			interp.recordAndEval(TclString.newInstance(command), 0);
+			commandObj.preserve();
+			interp.recordAndEval(commandObj, 0);
 			eval_exception = false;
 		    } catch (TclException e) {
 			if (debug) {
@@ -353,6 +355,8 @@ public synchronized void run() {
 				putLine(err, "command returned bad code: " + code);
 			    }
 			}
+		    } finally {
+			commandObj.release();
 		    }
 
 		    if (!eval_exception) {
