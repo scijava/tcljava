@@ -11,7 +11,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FileCmd.java,v 1.4 2000/08/20 06:46:09 mo Exp $
+ * RCS: @(#) $Id: FileCmd.java,v 1.5 2001/02/07 11:54:21 mdejong Exp $
  *
  */
 
@@ -462,12 +462,9 @@ throws
  * getMtime --
  *
  *	Finds the last modification of file in fileObj.
- *	WARNING:   The return value of lastModified() is system dependent and
- *	should only be used to compare with other values returned by last
- *	modified. It should not be interpreted as an absolute time. 
  *
  * Results:
- *	Returns an int representation of modification time.
+ *	Returns an int representation of modification time, in seconds.
  *
  * Side effects:
  *	None.
@@ -488,7 +485,8 @@ throws
 	throw new TclPosixException(interp, TclPosixException.ENOENT, true, 
 		"could not read \"" + fileName + "\"");
     }
-    return (int) fileObj.lastModified();
+    // Divide to convert msecs to seconds
+    return (int) (fileObj.lastModified() / 1000);
 }
 
 /*

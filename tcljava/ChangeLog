@@ -1,3 +1,10 @@
+2001-02-07  Christian Sorensen  <cs@maerskdata.dk>
+
+	* src/jacl/tcl/lang/FileCmd.java (getMtime):
+	Divide the File.lastModified() result by
+	1000 so that the returned result will
+	be in seconds instead of milliseconds.
+
 2001-01-28  Mo DeJong  <mdejong@redhat.com>
 
 	* src/tcljava/tcl/lang/JavaImportCmd.java:
