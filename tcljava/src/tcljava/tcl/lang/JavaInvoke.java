@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaInvoke.java,v 1.10 1999/08/15 19:38:47 mo Exp $
+ * RCS: @(#) $Id: JavaInvoke.java,v 1.5 1999/05/09 22:15:02 dejong Exp $
  *
  */
 
@@ -627,26 +627,15 @@ throws
 	    try {
 		result = tclClassLoader.loadClass(prefix_buf + clsName + suffix_buf);
 	    } catch (ClassNotFoundException e) {
-		// If the class loader can not find the class then check with
-		// the "import" feature to see if the given clsName maps to
-		// a fully qualified class name.
-
-		String fullyqualified = JavaImportCmd.getImport(interp, clsName);
-
-		// If we do not find a fully qualified name in the import table
-		// then try to fully qualify the class with the java.lang prefix 
-		
-		if (fullyqualified == null) {
-		    fullyqualified = "java.lang." + clsName;
-		}
-
-		// If the system class loader cannot resolve the class, than a
-		// SecurityException is thrown, catch this and 
+		// The code below should really be in a java::import command.
+		// Since we dont have one yet, do a simple check for the class
+		// in java.lang.  If the system class loader cannot resolve the
+		// class, than a SecurityException is thrown, catch this and 
 		// throw the standard error.
-
+	    
 		try {
-		    result = tclClassLoader.loadClass(prefix_buf +
-			        fullyqualified +  suffix_buf);
+		    result = tclClassLoader.loadClass(prefix_buf + "java.lang." +
+			    clsName + suffix_buf);
 		} catch (SecurityException e2) {
 		    result = null;
 		}
@@ -696,7 +685,8 @@ throws
 static TclObject
 convertJavaObject(
     Interp interp,	// Current interpreter.
-    Class cls,		// The class of the Java Object
+    Class cls,		// The class of the Java Object (we can't use
+			// javaObj.getClass because javaObj may be null.)
     Object javaObj)	// The java.lang.Object to convert to a TclObject.
 throws TclException
 {
@@ -706,33 +696,31 @@ throws TclException
 	} else {
 	    return ReflectObject.newInstance(interp, cls, javaObj);
 	}
-
-    } else if ((cls == Integer.TYPE) || (cls == Integer.class)) {
+    } else if (javaObj instanceof Integer) {
 	return TclInteger.newInstance(((Integer) javaObj).intValue());
 
-    } else if ((cls == Long.TYPE) || (cls == Long.class)) {
-	// A long can not be represented as a TclInteger
-	return TclString.newInstance(javaObj.toString());
+    } else if (javaObj instanceof Long) {
+	return TclInteger.newInstance(((Long) javaObj).intValue());
 
-    } else if ((cls == Short.TYPE) || (cls == Short.class)) {
+    } else if (javaObj instanceof Short) {
 	return TclInteger.newInstance(((Short) javaObj).intValue());
 
-    } else if ((cls == Byte.TYPE) || (cls == Byte.class)) {
+    } else if (javaObj instanceof Byte) {
 	return TclInteger.newInstance(((Byte) javaObj).intValue());
 
-    } else if ((cls == Double.TYPE) || (cls == Double.class)) {
+    } else if (javaObj instanceof Double) {
 	return TclDouble.newInstance(((Double) javaObj).doubleValue());
 
-    } else if ((cls == Float.TYPE) || (cls == Float.class)) {
+    } else if (javaObj instanceof Float) {
 	return TclDouble.newInstance(((Float) javaObj).doubleValue());
 
-    } else if ((cls == Boolean.TYPE) || (cls == Boolean.class)) {
+    } else if (javaObj instanceof Boolean) {
 	return TclBoolean.newInstance(((Boolean) javaObj).booleanValue());
 
-    } else if ((cls == Character.TYPE) || (cls == Character.class)) {
+    } else if (javaObj instanceof Character) {
 	return TclString.newInstance(((Character) javaObj).toString());
 
-    } else if (cls == String.class) {
+    } else if (javaObj instanceof String) {
 	return TclString.newInstance((String)javaObj);
 
     } else {
@@ -775,7 +763,7 @@ throws
     }
 
 
-    if (! isReflectObj) {
+    if (!isReflectObj) {
 	// tclObj a Tcl "primitive" value. We try convert it to the 
 	// corresponding primitive value in Java.
 	//
@@ -796,21 +784,7 @@ throws
 	    return new Boolean(TclBoolean.get(interp, tclObj));
 
 	} else if ((type == Long.TYPE) || (type == Long.class)) {
-	    // A tcl integer can be converted a long (widening conversion)
-	    // and a Java long may be represented as a tcl integer if it
-	    // is small enogh, so we try to convert the string to a
-	    // tcl integer and if that fails we try to convert to a
-	    // java long. If both of these fail throw original Tcl error.
-
-	    try {
-	        return new Long(TclInteger.get(interp, tclObj));
-	    } catch (TclException e1) {
-	        try {
-	            return new Long( tclObj.toString() );
-	        } catch (NumberFormatException e2) {
-	            throw e1;
-	        }
-	    }
+	    return new Long((long) TclInteger.get(interp, tclObj));
 
 	} else if ((type == Float.TYPE) || (type == Float.class)) {
 	    return new Float((float) TclDouble.get(interp, tclObj));
@@ -820,7 +794,7 @@ throws
 
 	} else if ((type == Byte.TYPE) || (type == Byte.class)) {
 	    int i = TclInteger.get(interp, tclObj);
-	    if ((i < Byte.MIN_VALUE) || (i > Byte.MAX_VALUE)) {
+	    if ((i < -128) || (i > 127)) {
 		throw new TclException(interp,
 		   "integer value too large to represent in a byte");
 	    }
@@ -828,7 +802,7 @@ throws
 
 	} else if ((type == Short.TYPE) || (type == Short.class)) {
 	    int i = TclInteger.get(interp, tclObj);
-	    if ((i < Short.MIN_VALUE) || (i > Short.MAX_VALUE)) {
+	    if ((i < -32768) || (i > 32767)) {
 		throw new TclException(interp,
 		    "integer value too large to represent in a short");
 	    }
@@ -852,68 +826,17 @@ throws
     } else {
 	// The TclObject is a ReflectObject that contains javaObj. We
 	// check to see if javaObj can be converted to the required
-	// type. If javaObj is a wrapper for a primitive type then
-	// we check to see if the object is an instanceof the type.
+	// type.  If javaObj is an numberical type, we attempt to
+	// widen it to the required type.
 
-	if (javaObj == null) {
-	    return null;
-	}
-
-	if (type.isInstance(javaObj)) {
+	if ((javaObj == null) || type.isInstance(javaObj)) {
 	    return javaObj;
-	}
-
-	if (type.isPrimitive()) {
-	    if (type == Boolean.TYPE) {
-	        if (javaObj instanceof Boolean) {
-	            return javaObj;
-	        }
-	    }
-	    else if (type == Character.TYPE) {
-	        if (javaObj instanceof Character) {
-	            return javaObj;
-	        }
-	    }
-	    else if (type == Byte.TYPE) {
-	        if (javaObj instanceof Byte) {
-	            return javaObj;
-	        }
-	    }
-	    else if (type == Short.TYPE) {
-	        if (javaObj instanceof Short) {
-	            return javaObj;
-	        }
-	    }
-	    else if (type == Integer.TYPE) {
-	        if (javaObj instanceof Integer) {
-	            return javaObj;
-	        }
-	    }
-	    else if (type == Long.TYPE) {
-	        if (javaObj instanceof Long) {
-	            return javaObj;
-	        }
-	    }
-	    else if (type == Float.TYPE) {
-	        if (javaObj instanceof Float) {
-	            return javaObj;
-	        }
-	    }
-	    else if (type == Double.TYPE) {
-	        if (javaObj instanceof Double) {
-	            return javaObj;
-	        }
-	    }
-	    else if (type == Void.TYPE) {
-	        // void is not a valid type for conversions
-	    }
 	}
 
 	throw new TclException(interp, "expected object of type " +
                 JavaInfoCmd.getNameFromClass(type) +
 		" but got \"" + tclObj + "\" (" +
-                JavaInfoCmd.getNameFromClass(
-        	    ReflectObject.getClass(interp, tclObj) ) +
+                JavaInfoCmd.getNameFromClass(javaObj.getClass()) +
                 ")");
     }
 }

@@ -44,8 +44,8 @@ LIB_INSTALL_DIR=${exec_prefix}/lib
 TCLBLEND=${prefix}/lib/tclblend
 
 # Fully qualified path name of wish and tclsh
-WISH=@WISH@
-TCLSH=@TCLSH@
+WISH80=@WISH80@
+TCLSH80=@TCLSH80@
 
 # Setting for CLASSPATH determined by configure
 JAVA_CLASSPATH=@JAVA_CLASSPATH@
@@ -63,21 +63,15 @@ TCLBLEND_LD_BIND_NOW=@TCLBLEND_LD_BIND_NOW@
 TCLBLEND_SHLIB_NAMES="@TCLBLEND_SHLIB_NAMES@"
 
 
-# Tcl Blend under Linux AWT Workaround! (Required before JDK 1.1.8 from Blackdown)
+# Tcl Blend under Linux AWT Workaround!
 #
 # If you want to use the AWT in Tcl Blend on a Linux system with
 # the Blackdown port of the JDK then you should uncomment the
-# command you need in the next section. This will preload the
-# X toolkit and Motif libs into your Tcl Blend shell so
-# that you will not get a "no awt in shared lib path"
-# error when displaying a Java GUI component.
-
-# If you are using Motif then uncomment this line
-
-#TCLBLEND_LD_PRELOAD="${TCLBLEND_LD_PRELOAD} libXm.so libXpm.so libXt.so libSM.so libICE.so libXext.so libX11.so"
-
-# If you are using LessTif then uncomment this line
-
+# next command. It will preload the X toolkit and Motif libs into your
+# Tcl Blend shell so that you will not get a "no awt in shared lib path"
+# error when displaying a Java GUI component. This should also work
+# with LessTif but it has not been tested.
+ 
 #TCLBLEND_LD_PRELOAD="${TCLBLEND_LD_PRELOAD} libXt.so libXm.so libXext.so"
 
 
@@ -140,8 +134,8 @@ export TCLLIBPATH
 
 # If the script is called as jtclsh, then use tclsh8.0, otherwise, use wish8.0
 case "`basename $0`" in
-    jtclsh) WISH_OR_TCLSH=${TCLSH} ;;
-    jwish) WISH_OR_TCLSH=${WISH} ;;
+    jtclsh) WISH_OR_TCLSH=${TCLSH80} ;;
+    jwish) WISH_OR_TCLSH=${WISH80} ;;
     *)
     echo "The wrapper script must be named jtclsh or jwish."
     exit 3

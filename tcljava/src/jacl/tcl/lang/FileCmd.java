@@ -11,7 +11,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FileCmd.java,v 1.3 1999/08/07 05:59:06 mo Exp $
+ * RCS: @(#) $Id: FileCmd.java,v 1.2 1999/05/09 00:13:23 dejong Exp $
  *
  */
 
@@ -590,7 +590,7 @@ throws
 	TclObject sizeObj = TclInteger.newInstance((int) fileObj.length());
 	interp.setVar(varName, "size", sizeObj, 0);
     } catch (Exception e) {
-	// Do nothing.
+	/* Do nothing. */
     }
 
     try {
@@ -604,7 +604,7 @@ throws
 	TclObject uidObj = TclBoolean.newInstance(isOwner(interp, fileObj));
 	interp.setVar(varName, "uid", uidObj, 0);
     } catch (TclException e) {
-	// Do nothing.
+	/* Do nothing. */
     }
 }
 
@@ -634,7 +634,9 @@ getExtension(
 	return "";
     }
 
-    // Set lastSepIndex to the first index in the last component of the path.
+    /*
+     * Set lastSepIndex to the first index in the last component of the path.
+     */
 
     int lastSepIndex = -1;
     switch (JACL.PLATFORM) {
@@ -653,25 +655,33 @@ getExtension(
     }
     ++lastSepIndex;
 
-    // Return "" if the last character is a separator.
+    /*
+     * Return "" if the last character is a separator.
+     */
 
     if (lastSepIndex >= path.length()) {
 	return ("");
     }
 
-    // Find the last dot in the last component of the path.
+    /*
+     * Find the last dot in the last component of the path.
+     */
     
     String lastSep = path.substring(lastSepIndex);
     int dotIndex = lastSep.lastIndexOf('.');
 
-    // Return "" if no dot was found in the file's name.
+    /*
+     * Return "" if no dot was found in the file's name.
+     */
 
     if (dotIndex == -1) {
 	return "";
     }		
 
-    // Back up to the first period in a series of contiguous dots.
-    // This is needed so foo..o will be split on the first dot.
+    /*
+     * Back up to the first period in a series of contiguous dots.
+     * This is needed so foo..o will be split on the first dot.
+     */
 
     while ((dotIndex > 0) && (lastSep.charAt(dotIndex - 1) == '.')) {
 	--dotIndex;
@@ -704,11 +714,13 @@ getTail(
     String path)  			// Path for which to find the tail.
 throws 
     TclException 			// Thrown if tilde subst, which may be
-					// called by splitAndTranslate, fails. 
+					//   called by splitAndTranslate, fails. 
 {
-    // Split the path and return the string form of the last component,
-    // unless there is only one component which is the root or an absolute
-    // path. 
+    /*
+     * Split the path and return the string form of the last component,
+     * unless there is only one component which is the root or an absolute
+     * path. 
+     */
 
     TclObject splitResult = FileUtil.splitAndTranslate(interp, path);
 
@@ -762,7 +774,9 @@ throws
 	}
 	File dirObj = FileUtil.getNewFileObj(interp, dirName);
 	if (dirObj.exists()) {
-	    // If the directory already exists, do nothing.
+	    /*
+	     * If the directory already exists, do nothing.
+	     */
 
 	    if (dirObj.isDirectory()) {
 		continue;
@@ -872,16 +886,20 @@ throws
 {
     boolean isDeleted = true;
     File fileObj = FileUtil.getNewFileObj(interp, fileName);
-
-    // Trying to delete a file that does not exist is not
-    // considered an error, just a no-op
+	
+    /*
+     * Trying to delete a file that does not exist is not
+     * considered an error, just a no-op
+     */
 	
     if ((!fileObj.exists()) || (fileName.length() == 0)) {
 	return;
     }
-
-    // If the file is a non-empty directory, recursively delete its children if
-    // the -force option was chosen.  Otherwise, throw an error.
+	
+    /*
+     * If the file is a non-empty directory, recursively delete its children if
+     * the -force option was chosen.  Otherwise, throw an error.
+     */
 
     if (fileObj.isDirectory() && (fileObj.list().length > 0)) {
 	if (force) {
@@ -971,16 +989,20 @@ throws
 		"?options? source ?source ...? target");
     }
 
-    // WARNING:  ignoring links because Java does not support them.
+    /*
+     * WARNING:  ignoring links because Java does not support them.
+     */
 
     int target = argv.length - 1;
     String targetName = argv[target].toString();
 
     File targetObj = FileUtil.getNewFileObj(interp, targetName);
     if (targetObj.isDirectory()) {
-	// If the target is a directory, move each source file into target
-	// directory.  Extract the tailname from each source, and append it to
-	// the end of the target path.  
+	/*
+	 * If the target is a directory, move each source file into target
+	 * directory.  Extract the tailname from each source, and append it to
+	 * the end of the target path.  
+	 */
     
 	for (int source = firstSource; source < target; source++) {
 
@@ -1004,8 +1026,10 @@ throws
 	    }
 	}
     } else {
-	// If there is more than 1 source file and the target is not a
-	// directory, then throw an exception.
+	/*
+	 * If there is more than 1 source file and the target is not a
+	 * directory, then throw an exception.
+	 */
 	    
 	if (firstSource + 1 != target) {
 	    String action;
@@ -1049,21 +1073,25 @@ copyRenameOneFile(
     boolean force) 			// Flag tells whether to overwrite.
 throws 
     TclException 			// Thrown as a result of bad user input.
-{
-    // Copying or renaming a file onto itself is a no-op if force is chosen,
-    // otherwise, it will be caught later as an EEXISTS error.
+{		
+    /* 
+     * Copying or renaming a file onto itself is a no-op if force is chosen,
+     * otherwise, it will be caught later as an EEXISTS error.
+     */
 
     if (force && sourceName.equals(targetName)) {
 	return;
     }
 
-    // Check that the source exists and that if -force was not specified, the
-    // target doesn't exist.
-    //
-    // Prevent copying/renaming a file onto a directory and
-    // vice-versa.  This is a policy decision based on the fact that
-    // existing implementations of copy and rename on all platforms
-    // also prevent this.
+    /*
+     * Check that the source exists and that if -force was not specified, the
+     * target doesn't exist.
+     *
+     * Prevent copying/renaming a file onto a directory and
+     * vice-versa.  This is a policy decision based on the fact that
+     * existing implementations of copy and rename on all platforms
+     * also prevent this.
+     */
 
     String action;
     if (copyFlag) {
@@ -1104,7 +1132,9 @@ throws
     }
 
     if (!copyFlag) {
-	// Perform the rename procedure.
+	/*
+	 * Perform the rename procedure.
+	 */
 
 	if (!sourceFileObj.renameTo(targetFileObj)) {
 	    throw new TclPosixException(interp, TclPosixException.EACCES, true,
@@ -1112,11 +1142,15 @@ throws
 		    + "\":  best guess at reason");
 	}
     } else {
-	// Perform the copy procedure.
+	/*
+	 * Perform the copy procedure.
+	 */
 
 	try {
-	    // Read source to "cbuf" char array one line at a time.
-	    // For each line, Write cbuf to target.
+	    /*
+	     * Read source to "cbuf" char array one line at a time.
+	     * For each line, Write cbuf to target.
+	     */
 
 	    BufferedReader reader = 
 		new BufferedReader(new FileReader(sourceFileObj));

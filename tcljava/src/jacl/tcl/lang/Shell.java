@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Shell.java,v 1.4 1999/08/03 03:09:41 mo Exp $
+ * RCS: @(#) $Id: Shell.java,v 1.2 1999/05/09 01:26:52 dejong Exp $
  */
 
 package tcl.lang;
@@ -190,8 +190,8 @@ private Channel err;
 // set to true to get extra debug output
 private static final boolean debug = false;
 
-// used to keep track of wether or not System.in.available() works
-private static boolean sysInAvailableWorks = false;
+// used to keep track of System.in's blocking status
+private static boolean sysInBlocks = false;
 
 static {
     try {
@@ -200,24 +200,15 @@ static {
 	// System.in.available().
 
 	System.in.available();
-	sysInAvailableWorks = true;
+	sysInBlocks = true;
     } catch (Exception e) {
 	// If System.in.available() causes an exception -- it's probably
 	// no supported on this platform (e.g. MS Java SDK). We assume
-	// sysInAvailableWorks is false and let the user suffer ...
-    }
-
-    // FIXME : ugly JDK on windows hack
-    // Sun's JDK 1.2 on Windows systems is screwed up, it does not
-    // echo chars to the console unless blocking IO is used.
-    // For this reason we need to use blocking IO under Windows.
-
-    if (Util.isWindows()) {
-	sysInAvailableWorks = false;
+	// sysInBlocks is false and let the user suffer ...
     }
 
     if (debug) {
-        System.out.println("sysInAvailableWorks = " + sysInAvailableWorks);
+        System.out.println("sysInBlocks = " + sysInBlocks);
     }
 
 }
@@ -328,7 +319,7 @@ run()
 
 		try {
 		    TclObject histLimit = interp.getVar("historyLimit",
-			    TCL.GLOBAL_ONLY);
+			    TCL.GLOBAL_ONLY | TCL.DONT_THROW_EXCEPTION);
 		    if (histLimit != null) {
 			limit = TclInteger.get(interp, histLimit);
 		    }
@@ -453,7 +444,7 @@ private void getLine() {
 
     int availableBytes = -1;
 
-    if (sysInAvailableWorks) {
+    if (sysInBlocks) {
 	try {
 	    // Wait until there are inputs from System.in. On Unix,
 	    // this usually means the user has pressed the return key.

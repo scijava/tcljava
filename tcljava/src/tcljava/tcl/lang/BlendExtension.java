@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: BlendExtension.java,v 1.16 1999/08/31 00:54:35 redman Exp $
+ * RCS: @(#) $Id: BlendExtension.java,v 1.9 1999/05/09 21:14:31 dejong Exp $
  */
 
 package tcl.lang;
@@ -36,6 +36,9 @@ init(
     Interp interp)		// Interpreter to intialize.
 throws TclException
 {
+    // init Java object reflection system
+    ReflectObject.ensureInit(interp);
+
     // Create the commands in the Java package
 
     loadOnDemand(interp, "java::bind",        "tcl.lang.JavaBindCmd");
@@ -45,7 +48,6 @@ throws TclException
     loadOnDemand(interp, "java::event",       "tcl.lang.JavaEventCmd");
     loadOnDemand(interp, "java::field",       "tcl.lang.JavaFieldCmd");
     loadOnDemand(interp, "java::getinterp",   "tcl.lang.JavaGetInterpCmd");
-    loadOnDemand(interp, "java::import",      "tcl.lang.JavaImportCmd");
     loadOnDemand(interp, "java::info",        "tcl.lang.JavaInfoCmd");
     loadOnDemand(interp, "java::instanceof",  "tcl.lang.JavaInstanceofCmd");
     loadOnDemand(interp, "java::isnull",      "tcl.lang.JavaIsNullCmd");
@@ -76,7 +78,7 @@ throws TclException
     // Set tcljava(tcljava) to jacl or tclblend
 
     TclObject plat = interp.getVar("tcl_platform", "platform",
-				   TCL.GLOBAL_ONLY);
+        TCL.GLOBAL_ONLY|TCL.DONT_THROW_EXCEPTION);
 
     if (plat.toString().equals("java")) {
         interp.setVar("tcljava", "tcljava",
@@ -128,7 +130,7 @@ throws TclException
     // win/makefile.vc
     // unix/configure.in
 
-    interp.eval("package provide java 1.2.5");
+    interp.eval("package provide java 1.2.1");
 
 }
 

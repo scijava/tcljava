@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: CharPointer.java,v 1.4 1999/08/05 03:33:44 mo Exp $
+ * RCS: @(#) $Id: CharPointer.java,v 1.2 1999/05/08 23:54:10 dejong Exp $
  */
 
 package tcl.lang;
@@ -23,6 +23,7 @@ class CharPointer {
 char[] array;
 
 // The current index into the array.
+
 
 int index;
 
@@ -87,7 +88,7 @@ CharPointer(
 {
     int len = str.length();
     this.array = new char[len + 1];
-    str.getChars(0, len, this.array, 0);
+    System.arraycopy(str.toCharArray(), 0, this.array, 0, len);
     this.array[len] = '\0';
     this.index = 0;
 }
@@ -165,7 +166,10 @@ length()
  *
  * toString --
  *
- *	Get the entire string held in this CharPointer's array.
+ *	Get debug info about the string being referenced.  The attempt
+ *	is to print the array and a ^ below the output that indicates
+ *	where the index is pointing to.  This only work if the string
+ *	fits on one line of text.
  *
  * Results:
  *	A String used for debug.
@@ -180,5 +184,18 @@ public String
 toString() 
 {
     return new String(array,0,array.length-1);
+
+    /*
+    String str = new String(array,array.length-1,
+
+    StringBuffer sbuf = new StringBuffer();
+    sbuf.append(new String(array));
+    sbuf.append("\n");
+    for(int i=0; i<index; i++) {
+	sbuf.append(" ");
+    }
+    sbuf.append("^");
+    return (sbuf.toString());
+    */
 }
 } // end CharPointer

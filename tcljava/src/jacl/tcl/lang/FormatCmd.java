@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FormatCmd.java,v 1.6 1999/05/24 11:41:04 mo Exp $
+ * RCS: @(#) $Id: FormatCmd.java,v 1.3 1999/05/09 00:20:13 dejong Exp $
  *
  */
 
@@ -26,11 +26,11 @@ class FormatCmd implements Command {
     private static final int PAD_W_ZERO    = 8;
     private static final int ALT_OUTPUT    = 16;
     private static final int SIGNED_VALUE  = 32;
-    private static final int RADIX   = 1;  // Integer types.  %d, %x, %o
-    private static final int FLOAT   = 2;  // Floating point.  %f
-    private static final int EXP     = 3;  // Exponentional. %e and %E
-    private static final int GENERIC = 4;  // Floating or exponential, 
-                                           // depending on exponent. %g
+    private static final int RADIX   = 1;  /* Integer types.  %d, %x, %o */
+    private static final int FLOAT   = 2;  /* Floating point.  %f */
+    private static final int EXP     = 3;  /* Exponentional. %e and %E */
+    private static final int GENERIC = 4;  /* Floating or exponential, 
+					    * depending on exponent. %g */  
     
     /**
      * This procedure is invoked to process the "format" Tcl command.
@@ -62,34 +62,34 @@ class FormatCmd implements Command {
             throws TclException {
 	
 
-	StringBuffer sbuf;     // Stores the return value of the parsed
-	                       // format string
-	StrtoulResult stoul;   // A return object to the strtoul call
-	char[]  format;        // The format argument is converted to a char 
-			       // array and manipulated as such
-	int     phase;         // Stores the current phase of the parsing
-	int     width;         // Minimum field width
-	int     precision;     // Field precision from field specifier
-	int     fmtFlags;      // Used to store the format flags ( #,+,etc)
-	int     argIndex;      // Index of argument to substitute next.
-	int     fmtIndex;      // Used to locate end of the format fields.
-	int     endIndex;      // Used to locate end of numerical fields.
-	int     intValue;      // Generic storage variable
-	long    lngValue;      // Store the TclInteger.get() result
-	double  dblValue;      // Store the TclDouble.get() result
-	boolean noPercent;     // Special case for speed:  indicates there's
-	                       // no field specifier, just a string to copy.
-	boolean xpgSet;        // Indicates that xpg has been used for the 
-			       // particular format of the main while loop
-	boolean gotXpg;	       // True means that an XPG3 %n$-style
-			       // specifier has been seen.
-	boolean gotSequential; // True means that a regular sequential
-			       // (non-XPG3) conversion specifier has
-			       // been seen.
-	boolean useShort;      // Value to be printed is short 
-			       // (half word).
-	boolean precisionSet;  // Used for f, e, and E conversions
-	boolean cont;          // Used for phase 3
+	StringBuffer sbuf;     /* Stores the return value of the parced
+			        * format string */  
+	StrtoulResult stoul;   /* A return object to the strtoul call */
+	char[]  format;        /* The format argument is converted to a char 
+			        * array and manipulated as such */
+	int     phase;         /* Stores the current phase of the parcing */
+	int     width;         /* Minimum field width */
+	int     precision;     /* Field precision from field specifier */
+	int     fmtFlags;      /* Used to store the format flags ( #,+,etc) */
+	int     argIndex;      /* Index of argument to substitute next. */
+	int     fmtIndex;      /* Used to locate end of the format fields. */
+	int     endIndex;      /* Used to locate end of numerical fields. */
+	int     intValue;      /* Generic storage variable */
+	long    lngValue;      /* Store the TclInteger.get() result */
+	double  dblValue;      /* Store the TclDouble.get() result */
+	boolean noPercent;     /* Special case for speed:  indicates there's
+				* no field specifier, just a string to copy. */
+	boolean xpgSet;        /* Indicates that xpg has been used for the 
+				* particular format of the main while loop */
+	boolean gotXpg;	       /* True means that an XPG3 %n$-style
+				* specifier has been seen. */
+	boolean gotSequential; /* True means that a regular sequential
+				* (non-XPG3) conversion specifier has
+				* been seen. */
+	boolean useShort;      /* Value to be printed is short 
+				* (half word). */
+	boolean precisionSet;  /* Used for f, e, and E conversions */
+	boolean cont;          /* Used for phase 3 */
 	
 	if (argv.length < 2) {
 	    throw new TclNumArgsException(interp, 1, argv, 
@@ -102,8 +102,10 @@ class FormatCmd implements Command {
 	format   = argv[1].toString().toCharArray();
 	sbuf     = new StringBuffer();
 	
-       // So, what happens here is to scan the format string one % group
-       // at a time, making many individual appends to the StringBuffer.
+       /*
+	* So, what happens here is to scan the format string one % group
+	* at a time, making many individual appends to the StringBuffer.
+	*/
 
 	while (fmtIndex < format.length) {
 	    fmtFlags  = phase = width = 0;
@@ -111,9 +113,10 @@ class FormatCmd implements Command {
 	    xpgSet    = precisionSet = useShort = false;
 	    precision = -1;
 
-	    // Append all characters to sbuf that are not used for the
-	    // format specifier.
-
+	    /*
+	     * Append all characters to sbuf that are not used for the
+	     * format specifier.
+	     */
 
 	    if (format[fmtIndex] != '%') {
 	        int i;
@@ -130,22 +133,28 @@ class FormatCmd implements Command {
 		}
 	    }
 	    
-	    // If true, then a % has been indicated but we are at the end
-	    // of the format string.  Call function to throw exception.
+	    /*
+	     * If true, then a % has been indicated but we are at the end
+	     * of the format string.  Call function to throw exception.
+	     */
 
 	    if (fmtIndex+1 >= format.length) {
 	        errorEndMiddle(interp);
 	    }
 
-	    // Phase 0:
-	    // Check for %%.  If true then simply write a single '%'
-	    // to the list.
+	    /*
+	     * Phase 0:
+	     * Check for %%.  If true then simply write a single '%'
+	     * to the list.
+	     */
 
 	    checkOverFlow(interp, format, fmtIndex+1);
 	    if (format[fmtIndex+1] == '%') {
 		sbuf.append("%");
 		fmtIndex += 2;
-		// Re-enter the loop 
+		/* 
+		 * Re-enter the loop 
+		 */
 
 		continue;      
 	    }
@@ -153,8 +162,10 @@ class FormatCmd implements Command {
 	    fmtIndex++;
 	    checkOverFlow(interp, format, fmtIndex);
 	    if (Character.isDigit(format[fmtIndex])) {
-		// Parce the format array looking for the end of
-		// the number. 
+	        /*
+		 * Parce the format array looking for the end of
+		 * the number. 
+		 */
 
 		stoul = strtoul(format, fmtIndex);
 	        intValue = (int)stoul.value;
@@ -165,10 +176,12 @@ class FormatCmd implements Command {
 		        errorBadIndex(interp, true);
 		    }
 
-		    // Phase 1:
-		    // Check for an XPG3-style %n$ specification.  
-		    // Note: there must not be a mixture of XPG3
-		    // specs and non-XPG3 specs in the same format string.
+		    /*
+		     * Phase 1:
+		     * Check for an XPG3-style %n$ specification.  
+		     * Note: there must not be a mixture of XPG3
+		     * specs and non-XPG3 specs in the same format string.
+		     */
 
 		    if (gotSequential) {
 		        errorMixedXPG(interp);
@@ -183,10 +196,12 @@ class FormatCmd implements Command {
 		    }
 			
 		} else {
-		    // Phase 3:
-		    // Format jumped straight to phase 3; Setting 
-		    // width field.  Again, verify that all format
-		    // specifiers are sequential.
+		    /*
+		     * Phase 3:
+		     * Format jumped straight to phase 3; Setting 
+		     * width field.  Again, verify that all format
+		     * specifiers are sequential.
+		     */		    
 
 		    if (gotXpg) {
 		        errorMixedXPG(interp);
@@ -205,10 +220,12 @@ class FormatCmd implements Command {
 		gotSequential = true;
 	    }
 
-	    // Phase 2:
-	    // Setting the Format Flags.  At this point the phase value
-	    // can be either zero or three.  Anything greater is an
-	    // incorrect format.
+	    /*
+	     * Phase 2:
+	     * Setting the Format Flags.  At this point the phase value
+	     * can be either zero or three.  Anything greater is an
+	     * incorrect format.
+	     */
 
 	    if (phase < 3) {
 	        checkOverFlow(interp, format, fmtIndex);
@@ -249,9 +266,11 @@ class FormatCmd implements Command {
 		phase = 3;
 	    }
 
-	    // Phase 3:
-	    // Setting width field.  Partially redundant code from the
-	    // Phase 1 if/else statement, but this is made to run fast.
+	    /*
+	     * Phase 3:
+	     * Setting width field.  Partially redundant code from the
+	     * Phase 1 if/else statement, but this is made to run fast.
+	     */
 
 	    checkOverFlow(interp, format, fmtIndex);
 	    if (Character.isDigit(format[fmtIndex])) {
@@ -267,8 +286,10 @@ class FormatCmd implements Command {
 		}
 	    }
 
-	    // Phase 4:
-	    // Setting the precision field.
+	    /*
+	     * Phase 4:
+	     * Setting the precision field.
+	     */
 
 	    checkOverFlow(interp, format, fmtIndex);
 	    if (format[fmtIndex] == '.') {
@@ -289,15 +310,19 @@ class FormatCmd implements Command {
 			checkOverFlow(interp, format, fmtIndex);
 		    }
 		} else {
-		  // Format field had a '.' without an integer or '*'
-		  // preceeding it  (eg  %2.d  or %2.-5d)
+ 		  /*
+		   * Format field had a '.' without an integer or '*'
+		   * preceeding it  (eg  %2.d  or %2.-5d)
+		   */
 
 		  errorBadField(interp, format[fmtIndex]);
 		}
 	    }
-
-	    // Phase 5:
-	    // Setting the length modifier.
+		
+	    /*
+	     * Phase 5:
+	     * Setting the length modifier.
+	     */
 
 	    if (format[fmtIndex] == 'h') { 
 	        fmtIndex++;
@@ -307,33 +332,37 @@ class FormatCmd implements Command {
 	        fmtIndex++;
 		checkOverFlow(interp, format, fmtIndex);
 
-		// 'l' is ignored, but should still be processed.
+		/*
+		 * 'l' is ignored, but should still be processed.
+		 */
 	    }
 
 	    if ((argIndex < 2) || (argIndex >= argv.length)) {
 	        errorBadIndex(interp, gotXpg);
 	    }
 
-	    // Phase 6:
-	    // Setting conversion field.
-	    // At this point, variables are initialized as follows:
-	    //
-	    // width               The specified field width.  This is always
-	    //                         non-negative.  Zero is the default.
-	    // precision           The specified precision.  The default
-	    //                         is -1.
-	    // argIndex            The argument index from the argv array 
-	    //                         for the appropriate arg.
-	    // fmtFlags            The format flags are set via bitwise 
-	    //                         operations.  Below are the bits
-	    //                         and their meanings.
+	    /*
+	     * Phase 6:
+	     * Setting conversion field.
+	     * At this point, variables are initialized as follows:
+	     *
+	     * width               The specified field width.  This is always
+	     *                         non-negative.  Zero is the default.
+	     * precision           The specified precision.  The default
+	     *                         is -1.
+	     * argIndex            The argument index from the argv array 
+	     *                         for the appropriate arg.
+	     * fmtFlags            The format flags are set via bitwise 
+	     *                         operations.  Below are the bits
+	     *                         and their meanings.
 
-	    //     ALT_OUTPUT          set if a '#' is present.
-	    //     SHOW_SIGN           set if a '+' is present.
-	    //     SPACE_OR_SIGN       set if a ' ' is present.
-	    //     LEFT_JUSTIFY        set if a '-' is present or if the
-	    //                           field width was negative.
-	    //     PAD_W_ZERO          set if a '0' is present
+	     *     ALT_OUTPUT          set if a '#' is present.
+	     *     SHOW_SIGN           set if a '+' is present.
+	     *     SPACE_OR_SIGN       set if a ' ' is present.
+	     *     LEFT_JUSTIFY        set if a '-' is present or if the
+	     *                           field width was negative.
+	     *     PAD_W_ZERO          set if a '0' is present
+	     */
 
 	    String strValue = "";
 	    char index = format[fmtIndex];
@@ -346,11 +375,13 @@ class FormatCmd implements Command {
  	        case 'X': 
  	        case 'i': {
 		    if (index == 'u') {
-			// Since Java does not provide unsigned ints we need to 
-			// make our own.  If the value is negative we need to 
-			// clear out all of the leading bits from the 33rd bit
-			// and on.  The result is a long value equal to that
-			// of an unsigned int.
+		        /*
+			 * Since Java dosent provide unsigned ints we need to 
+			 * make our own.  If the value is negative we need to 
+			 * clear out all of the leading bits from the 33rd bit
+			 * and on.  The result is a long value equal to that
+			 * of an unsigned int.
+			 */
 
 		        lngValue = (long)TclInteger.get(interp, 
 				 argv[argIndex]);
@@ -364,8 +395,10 @@ class FormatCmd implements Command {
 				  argv[argIndex]);
 		    }
 
-		    // If the useShort option has been selected, we need
-		    // to clear all but the first 16 bits.
+		    /*
+		     * If the useShort option has been selected, we need
+		     * to clear all but the first 16 bits.
+		     */
 
 		    if (useShort) {
 		        lngValue = (lngValue << 48);
@@ -480,8 +513,10 @@ class FormatCmd implements Command {
 	int  prefixSize = 0;
 	char prefix     = 0;
 	
-	// For the format %#x, the value zero is printed "0" not "0x0".
-	// I think this is stupid.
+	/*
+	 * For the format %#x, the value zero is printed "0" not "0x0".
+	 * I think this is stupid. 
+	 */
 
 	if (lngValue==0) {
 	    flags = (flags | ALT_OUTPUT);
@@ -511,7 +546,9 @@ class FormatCmd implements Command {
             precision = width-prefixSize;
 	}
 
-	// Convert to ascii 
+	/* 
+	 * Convert to ascii 
+	 */
 
 	do{                                           
 	    sbuf.insert(0, charSet[(int)(lngValue%base)]);
@@ -532,9 +569,11 @@ class FormatCmd implements Command {
 	    }
         }
 
-	// The text of the conversion is pointed to by "bufpt" and is
-	// "length" characters long.  The field width is "width".  Do
-	// the output.
+	/*
+	 * The text of the conversion is pointed to by "bufpt" and is
+	 * "length" characters long.  The field width is "width".  Do
+	 * the output.
+	 */
 
         nspace = width-sbuf.length();
 	if (nspace > 0) {
@@ -545,11 +584,15 @@ class FormatCmd implements Command {
 	}
 
 	if ((LEFT_JUSTIFY & flags) != 0) {    
-	    // left justified 
+	    /* 
+	     * left justified 
+	     */
 
 	    return sbuf.toString() + tmpBuf.toString();
-	} else {
-	    // right justified 
+	} else {                              
+	    /* 
+	     * right justified 
+	     */
 
 	    return tmpBuf.toString() + sbuf.toString() ;
 	}
@@ -592,46 +635,19 @@ class FormatCmd implements Command {
 	int     prefixSize = 0;
 	char    prefix     = 0;
 	double  rounder;
-	boolean flag_exp   = false;   // Flag for exponential representation
-	boolean flag_rtz   = true;    // Flag for "remove trailing zeros"
-	boolean flag_dp    = true;    // Flag for remove "decimal point"
-
-	if (Double.isNaN(dblValue)) {
-	    return "NaN";
-	}
-	if (dblValue == Double.NEGATIVE_INFINITY) {
-	    return "-Inf";
-	}
-	if (dblValue == Double.POSITIVE_INFINITY) {
-	    return "Inf";
-	}
- 
-	// If precision < 0 (eg -1) then the precision defaults
+	boolean flag_exp   = false;   /* Flag for exponential representation */
+	boolean flag_rtz   = true;    /* Flag for "remove trailing zeros" */
+	boolean flag_dp    = true;    /* Flag for remove "decimal point" */
+      
+	/* 
+	 * If precision < 0 (eg -1) then the precision defaults
+	 */
 
 	if (precision < 0) {
 	    precision = 6;         
 	}
 
 	if (dblValue < 0.0) {
-	    dblValue = -dblValue;
-	    prefix = '-';
-	    prefixSize = 1;
-	} else if (dblValue == 0.0 &&
-		   (new Double(dblValue)).equals((new Double(-0.0)))) {
-	    // Handle -0.0
-	    //
-	    // 15.19.1 "Numerical Comparison Operators <, <=, >, and >= "
-	    // of the Java Language Spec says:
-	    // "Positive zero and negative zero are considered
-	    // equal. Therefore, -0.0<0.0 is false, for example, but
-	    // -0.0<=0.0 is true."
-	    //
-	    // The Double.equal man page says:
-	    // "If d1 represents +0.0 while d2 represents -0.0, or
-	    // vice versa, the equal test has the value false, even
-	    // though +0.0==-0.0 has the value true. This allows
-	    // hashtables to operate properly.
-	    
 	    dblValue = -dblValue;
 	    prefix = '-';
 	    prefixSize = 1;
@@ -642,15 +658,19 @@ class FormatCmd implements Command {
 	    prefix = ' ';
 	    prefixSize = 1;
 	}
-	
-	// For GENERIC xtypes the precision includes the ones digit
-	// so just decrement to get the correct precision.
+
+	/* 
+	 * For GENERIC xtypes the precision includes the ones digit
+	 * so just decrement to get the correct precision.
+	 */
 
 	if (xtype==GENERIC && precision > 0) {
 	    precision--;
 	}
 
-	// Rounding works like BSD when the constant 0.4999 is used.  Wierd! 
+	/* 
+	 * Rounding works like BSD when the constant 0.4999 is used.  Wierd! 
+	 */
 
 	for (i = precision, rounder = 0.4999; i > 0; i--, rounder*=0.1);
 
@@ -658,7 +678,9 @@ class FormatCmd implements Command {
 	    dblValue += rounder;
 	}
 
-	// Normalize dblValue to within 10.0 > dblValue >= 1.0 
+	/* 
+	 * Normalize dblValue to within 10.0 > dblValue >= 1.0 
+	 */
 
 	exp = 0;
 	if (dblValue>0.0) {
@@ -684,8 +706,10 @@ class FormatCmd implements Command {
 	    }
 	}
 
-	// If the field type is GENERIC, then convert to either EXP
-	// or FLOAT, as appropriate.
+        /*
+	 * If the field type is GENERIC, then convert to either EXP
+	 * or FLOAT, as appropriate.
+	 */
 
         flag_exp = xtype==EXP;
         if (xtype!=FLOAT) {
@@ -707,19 +731,25 @@ class FormatCmd implements Command {
             flag_rtz = false;
 	}
 
-	// The "exp+precision" test causes output to be of type EXP if
-	// the precision is too large to fit in buf[].
+        /*
+	 * The "exp+precision" test causes output to be of type EXP if
+	 * the precision is too large to fit in buf[].
+	 */
 
         count = 0;
         if (xtype == FLOAT) {
             flag_dp = ((precision > 0) || ((flags & ALT_OUTPUT) != 0));
 	    if (prefixSize > 0) {
-		// Sign 
+	        /* 
+		 * Sign 
+		 */
 
 	        sbuf.append(prefix);         
 	    }
 	    if (exp < 0) {
-		// Digits before "."
+	        /* 
+		 * Digits before "."
+		 */
 
 	        sbuf.append('0');            
 	    } 
@@ -749,7 +779,9 @@ class FormatCmd implements Command {
 	    }
 	    
 	    if (flag_rtz && flag_dp) {
-		// Remove trailing zeros and "." 
+	        /* 
+		 * Remove trailing zeros and "." 
+		 */
 
 	        int len, index;
 		len = index = 0;
@@ -767,7 +799,9 @@ class FormatCmd implements Command {
 		}
 	    }
 	} else {    
-	    // EXP or GENERIC 
+	    /* 
+	     * EXP or GENERIC 
+	     */
 
             flag_dp = ((precision > 0) || ((flags & ALT_OUTPUT) != 0));
 
@@ -791,7 +825,9 @@ class FormatCmd implements Command {
 	    }
 
 	    if (flag_rtz && flag_dp) {
-		// Remove trailing zeros and "." 
+	        /* 
+		 * Remove trailing zeros and "." 
+		 */
 
 		for (i = 0, length = (sbuf.length() - 1);
 		        (length >= 0) && (sbuf.charAt(length) == '0');
@@ -823,14 +859,18 @@ class FormatCmd implements Command {
 	    }
 	}
 
-	// The converted number is in sbuf. Output it.
-	// Note that the number is in the usual order, not reversed as with
-	// integer conversions. 
+        /* 
+	 * The converted number is in sbuf. Output it.
+	 * Note that the number is in the usual order, not reversed as with
+	 * integer conversions. 
+	 */
 
 	length = sbuf.length();
 
-	// Special case:  Add leading zeros if the PAD_W_ZERO flag is
-	// set and we are not left justified 
+	/* 
+	 * Special case:  Add leading zeros if the PAD_W_ZERO flag is
+	 * set and we are not left justified 
+	 */
 
         if (((PAD_W_ZERO & flags) != 0) && ((LEFT_JUSTIFY & flags) == 0)) {
 	    int nPad = width - length;
@@ -841,8 +881,10 @@ class FormatCmd implements Command {
 	    length = width;
         }
 
-	// Count the number of spaces remaining and creat a StringBuffer
-	// (tmpBuf) with the correct number of spaces.
+	/*
+	 * Count the number of spaces remaining and creat a StringBuffer
+	 * (tmpBuf) with the correct number of spaces.
+	 */
 
 	int nspace = width-length;
 	StringBuffer tmpBuf = new StringBuffer(0).append("");
@@ -853,12 +895,16 @@ class FormatCmd implements Command {
 	    }
 	}
 
-	if ((LEFT_JUSTIFY & flags) != 0) {
-	    // left justified 
+	if ((LEFT_JUSTIFY & flags) != 0) {    
+	    /* 
+	     * left justified 
+	     */
 
 	    return sbuf.toString() + tmpBuf.toString();
-	} else {
-	    // right justified
+	} else {                              
+	    /* 
+	     * right justified 
+	     */
 
 	    return tmpBuf.toString() + sbuf.toString() ;
 	}
@@ -905,7 +951,7 @@ class FormatCmd implements Command {
 	    }
 	}
 	
-	return(left + strValue + right);
+	return(left + strValue + right );
     }
 
 

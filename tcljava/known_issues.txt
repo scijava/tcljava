@@ -4,10 +4,8 @@ be recompiled even if they were compiled before. This differs
 from the "normal" make process which uses dependencies. The
 up side to this process is that the Makefiles are a less complex
 and easier to modify. Running make targets like "make shell",
-"make test", or "make demos" will only recompile the core files
-if they have not been compiled already. If you think this is
-a bad idea because it takes too long to recompile all the .java
-files, just download the jikes compiler.
+"make test", or "make demo" will only recompile the core files
+if they have not been compiled already.
 
 
 (Jacl under Solaris)
@@ -99,26 +97,6 @@ When the arrow is clicked on, the message:
 appears
 
 
-(Tcl Blend with Tcl 8.0 under Linux)
-This patch needs to be applied to Tcl 8.0.5's configure.in. If you do not
-apply this patch, Tcl Blend will compile with but it will fail to install
-with a shared lib error. This only matters if you are running under Linux.
-You could also work around this problem by adding the installed Tcl lib
-directory to your LD_LIBRARY_PATH before running jtclsh.
-
---- tcl8.0.5/unix/configure.in  Sun Aug 29 16:21:02 1999
-+++ tcl8.1.1/unix/configure.in  Sat Aug 28 09:56:26 1999
-@@ -795,7 +877,7 @@
-            DL_OBJS="tclLoadDl.o"
-            DL_LIBS="-ldl"
-            LD_FLAGS="-rdynamic"
--           LD_SEARCH_FLAGS=""
-+           LD_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
-        else
-            AC_CHECK_HEADER(dld.h, [
-                SHLIB_LD="ld -shared"
-
-
 (Tcl Blend with Tcl 8.1)
 src/native/javaInterp.c produces a warning while compiling because
 Tcl_ObjSetVar2 is not defined in Tcl8.1.  package require java
@@ -128,62 +106,6 @@ Update:
 The compile problems are fixed and now Tcl blend will compile with
 Tcl 8.1b1 but it crashes on startup (inside BlendExtension.java).
 More work needs to be done to get Tcl Blend running with Tcl8.1.
-Update:
-The crashes seem to be fixed in the Tcl 8.1 final release.
-Update:
-There is another bug in the configure.in script that still
-needs to be fixed for Linux and IRIX systems. These bugs
-were fixed in Tcl 8.0, but they got lost on the way to 8.1.1.
-These problems were also fixed in Tcl version 8.2.  The patch
-below is for the unix/configure.in, not the TEA configure.in
-in the top level of the code tree.
-
---- copy_configure.in   Sun Aug 29 16:49:52 1999
-+++ configure.in        Sun Aug 29 16:50:47 1999
-@@ -837,7 +837,7 @@
-     IRIX-5.*|IRIX-6.*|IRIX64-6.5*)
-        SHLIB_CFLAGS=""
-        SHLIB_LD="ld -n32 -shared -rdata_shared"
--       SHLIB_LD_LIBS=""
-+       SHLIB_LD_LIBS='${LIBS}'
-        SHLIB_SUFFIX=".so"
-        DL_OBJS="tclLoadDl.o"
-        DL_LIBS=""
-@@ -861,7 +861,7 @@
-     IRIX64-6.*)
-        SHLIB_CFLAGS=""
-        SHLIB_LD="ld -32 -shared -rdata_shared"
--       SHLIB_LD_LIBS=""
-+       SHLIB_LD_LIBS='${LIBS}'
-        SHLIB_SUFFIX=".so"
-        DL_OBJS="tclLoadDl.o"
-        DL_LIBS=""
-@@ -870,7 +870,7 @@
-        ;;
-     Linux*)
-        SHLIB_CFLAGS="-fPIC"
--       SHLIB_LD_LIBS=""
-+       SHLIB_LD_LIBS='${LIBS}'
-        SHLIB_SUFFIX=".so"
-        if test "$have_dl" = yes; then
-            SHLIB_LD="${CC} -shared"
-
-
-(Tcl Blend with Tcl 8.2)
-Use the TEA configure and Makefile for building Tcl Blend.
-
-(Tcl Blend with Tcl 8.2.0 under Windows)
-I ran into a really strange error when I tried to compile Tcl 8.2.0 on
-a Win95 system with visual C++. When I tried to compile Tcl, I got
-some errors that said "file create error". What was going on was that
-the makefile was not able to create the Debug and Release build dirs.
-The makefile exec'ed a file called mkd.bat (also in the win directory)
-to actually create these dirs. This mkd.bat program did not work as
-shipped in the tcl82.zip file. I then opened the mkd.bat file with
-edit and saved it, which fixed the problem (don't ask me why). After
-doing that, I was able to compile Tcl 8.2.0 with no problems under
-Windows.  You can also use the TEA configure and Makefile mechanism,
-which requires the Cygwin environment.
 
 
 (Tcl Blend under IRIX)
@@ -196,9 +118,7 @@ after running ./configure. You might also need to use the
 -mabicalls -mmips-as options to gcc to get things to compile, it
 depends on what assembler you have installed. If you have newer
 versions of gcc or you are using egcs you should not have this problem.
-Update:
-These problems were all fixed when we upgraded to egcs under IRIX,
-and should also work with GCC 2.95 (the reconverged EGCS code base).
+
 
 (Tcl Blend under Linux with the JDK and native threads)
 The linux native threads port of the JDK 1.1.7 from blackdown
@@ -211,8 +131,6 @@ Update:
 TclBlend under Linux has been fixed. The native version now runs but
 it still fails some test cases. TclBlend will also work under JDK1.2
 from Blackdown.
-Update:
-These problems have been fixed in the JDK 1.1.8 release.
 
 
 (Tcl Blend under Linux with the JDK)
@@ -225,8 +143,6 @@ the instructions given about how to modify script. If you want to
 run the Tcl Blend tests that use AWT code you will need to modify
 the Makefile too. You should also be able to use LessTif in place
 of Motif but this option has not been tested.
-Update:
-This problem has been fixed in the Blackdown JDK version 1.1.8.
 
 
 (Linux with the JDK 1.2)
@@ -260,10 +176,10 @@ tests that involve the size of integers, and some of the Timer tests.
 
 Users have run into serious problems with AWT modal dialogs under Jacl
 and Tcl Blend. The problem is caused by the way the AWT blocks calling
-threads for modal dialogs. Both Jacl and Tcl Blend will "freeze"
+threads for modal dialogs. Both Jacl and Tcl Blend will "Freeze"
 if the AWT modal dialog show method is called from inside Tcl. A
-workaround for this problem has been developed and added as an
-unsupported command. The name of this command is unsupported::jdetachcall.
-It works just jike java::call except that it will not block and it
-will work for instance and static methods. This method should only
-be used for blocking AWT like calls!
+workaround for this problem has been developed but it is unlikely it
+will be an officially supported feature.
+
+FIXME: add more info about the bugs/DetachCall.java workaround for AWT bugs.
+

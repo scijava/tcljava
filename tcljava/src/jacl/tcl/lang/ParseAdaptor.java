@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: ParseAdaptor.java,v 1.4 1999/08/27 23:50:46 mo Exp $
+ * RCS: @(#) $Id: ParseAdaptor.java,v 1.2 1999/05/09 00:53:01 dejong Exp $
  */
 
 package tcl.lang;
@@ -79,6 +79,8 @@ static ParseResult
 parseNestedCmd(
     Interp interp,		// The current Interp.
     String string,		// The script containing the variable.
+// FIXME : is this comment correct? , why would the parse rely on
+// the char after the ']'?
     int index,			// An index into string that points to.
 				// the character just after the ].
     int length)			// The length of the string.
@@ -137,13 +139,21 @@ throws
     TclToken token;
     CharPointer script;
 
+
     final boolean debug = false;
+
 
     try {
 
     script = new CharPointer(string);
     script.index = index;
 
+    /* // old code
+    parse = new TclParse(interp, string.toCharArray(), 
+	    (index+length-1), null, 0);
+    */
+
+    // new code
     parse = new TclParse(interp, script.array, 
 	    length, null, 0);
 
@@ -195,7 +205,7 @@ throws
 	obj = Parser.evalTokens(interp, parse.tokenList, 1, 
 		parse.numTokens - 1);
     } else {
-	throw new TclRuntimeError("parseQuotes error: null obj result");
+	throw new TclException(interp, "parseQuotes error: null obj result");
     }
 
     } finally { parse.release(); }
@@ -255,7 +265,44 @@ throws
       }
     }
 
+// FIXME : make sure close brace parsing works.
+
     //if you run off the end of the string you went too far
     throw new TclException(interp, "missing close-brace");
+
+
+
+    /*
+    //dual loop version
+      
+
+    while (true) {
+        while (i < length && Parser.charType(arr[i]) == Parser.TYPE_NORMAL) {
+	  i++;
+	}
+        if (i == length) {
+	  throw new TclException(interp, "missing close-brace");
+	} else if (arr[i] == '}') {
+	    level--;
+	    if (level == 0) {
+		break;
+	    }
+            i++;
+	} else if (arr[i] == '{') {
+            level++;
+            i++;
+	} else if (arr[i] == '\\') {
+	    bs = Parser.backslash(arr,i);
+	    i = bs.nextIndex;
+	} else {
+	    i++;
+	}
+    }
+
+    str = new String(arr, index, i - index);
+    return new ParseResult(TclString.newInstance(str), i+1);
+
+    */
+
 }
 } // end ParseAdaptor

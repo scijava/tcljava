@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: incr.test,v 1.2 1999/08/03 03:35:24 mo Exp $
+# RCS: @(#) $Id: incr.test,v 1.1 1998/10/14 21:09:25 cvsadmin Exp $
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 
@@ -43,14 +43,14 @@ test incr-2.3 {incr errors} {
     catch {unset x}
     list [catch {incr x} msg] $msg $errorInfo
 } {1 {can't read "x": no such variable} {can't read "x": no such variable
-    (reading value of variable to increment)
-    invoked from within
+    while executing
 "incr x"}}
 test incr-2.4 {incr errors} {
     set x abc
     list [catch {incr x} msg] $msg $errorInfo
 } {1 {expected integer but got "abc"} {expected integer but got "abc"
-    while executing
+    (reading value of variable to increment)
+    invoked from within
 "incr x"}}
 test incr-2.5 {incr errors} {
     set x 123

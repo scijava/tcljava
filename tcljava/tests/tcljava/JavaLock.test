@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: JavaLock.test,v 1.2 1999/05/16 00:20:40 dejong Exp $
+# RCS: @(#) $Id: JavaLock.test,v 1.1 1998/10/14 21:09:24 cvsadmin Exp $
 
 # Note: This test file must be sourced from the parent directory
 #       or else the defs file may not be properly loaded.
@@ -19,31 +19,26 @@ setupJavaPackage
 
 test java::lock-1.1 {error checking} {
     list [catch {java::lock} msg] $msg
-} {1 {no value given for parameter "javaObj" to "java::lock"}}
-
+} {1 {wrong # args: should be "java::lock object"}}
 test java::lock-1.2 {error checking} {
     list [catch {java::lock a b} msg] $msg
-} {1 {called "java::lock" with too many arguments}}
-
-test java::lock-1.4 {error checking} {
+} {1 {wrong # args: should be "java::lock object"}}
+test java::lock-1.3 {error checking} {
     list [catch {java::lock a} msg] $msg
 } {1 {unknown java object "a"}}
-
-test java::lock-1.5 {object already GC} {
+test java::lock-1.3 {object already GC} {
     set x [java::new java.lang.Object]
     llength $x
     catch {java::lock $x} msg
     string compare [list $msg] [format "{unknown java object \"%s\"}" $x]
 } {0}
-
-test java::lock-1.6 {create a lock} {
+test java::lock-1.4 {create a lock} {
     set x [java::new java.lang.Object]
     set result [string compare $x [java::lock $x]]
     java::unlock $x
     set result
 } {0}
-
-test java::lock-1.7 {create and remove a lock} {
+test java::lock-1.5 {create and remove a lock} {
     set x [java::new java.lang.Object]
     java::lock $x
     llength $x
@@ -52,8 +47,7 @@ test java::lock-1.7 {create and remove a lock} {
     catch {java::isnull $x} msg
     string compare [list $msg] [format "{unknown java object \"%s\"}" $x]
 } {0}
-
-test java::lock-1.8 {create and remove multiple locks} {
+test java::lock-1.6 {create and remove multiple locks} {
     set x [java::new java.lang.Object]
     java::lock $x
     java::lock $x
@@ -65,8 +59,7 @@ test java::lock-1.8 {create and remove multiple locks} {
     java::unlock $x
     set result
 } {0}
-
-test java::lock-1.9 {create and remove multiple locks} {
+test java::lock-1.7 {create and remove multiple locks} {
     set x [java::new java.lang.Object]
     java::lock $x
     java::lock $x
@@ -78,16 +71,13 @@ test java::lock-1.9 {create and remove multiple locks} {
     catch {java::isnull $x} msg
     string compare [list $msg] [format "{unknown java object \"%s\"}" $x]
 } {0}
-
-test java::unlock-1.1 {unlock error messages} {
+test java::unlock-1.8 {unlock error messages} {
     list [catch {java::unlock} msg] $msg
-} {1 {no value given for parameter "javaObj" to "java::unlock"}}
-
-test java::unlock-1.2 {unlock error checking} {
+} {1 {wrong # args: should be "java::unlock object"}}
+test java::unlock-1.9 {unlock error checking} {
     list [catch {java::unlock a b} msg] $msg
-} {1 {called "java::unlock" with too many arguments}}
-
-test java::unlock-1.3 {error checking} {
+} {1 {wrong # args: should be "java::unlock object"}}
+test java::unlock-1.10 {error checking} {
     list [catch {java::lock a} msg] $msg
 } {1 {unknown java object "a"}}
 

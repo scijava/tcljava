@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.9 1999/08/09 09:18:34 mo Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.4 1999/05/09 20:53:20 dejong Exp $
  *
  */
 
@@ -34,7 +34,7 @@ static {
         System.out.println("System.loadLibrary(\"tclblend\") failed because of UnsatisfiedLinkError");
         e.printStackTrace(System.out);
     } catch (Throwable t) {
-        System.out.println("System.loadLibrary(\"tclblend\") failed because of Unknown Throwable");
+        System.out.println("System.loadLibrary(\"tclblend\") failed because of Unoknown Throwable");
         t.printStackTrace(System.out);
     }
 }
@@ -53,17 +53,17 @@ long interpPtr;
 
 // Translates integer ID to ReflectObject.
 
-Hashtable reflectIDTable = new Hashtable();
+Hashtable reflectIDTable;
 
 // Translates Object to ReflectObject. This makes sure we have only
 // one ReflectObject internalRep for the same Object -- this
 // way Object identity can be done by string comparison.
 
-Hashtable reflectObjTable = new Hashtable();
+Hashtable reflectObjTable;
 
 // Counter used for reflect object id's
 
-long reflectObjCount = 0;
+long reflectObjCount;
 
 // The Notifier associated with this Interp.
 
@@ -73,10 +73,6 @@ private Notifier notifier;
 // when this interpreter is deleted.
 
 Hashtable assocDataTab;
-
-// Used ONLY by JavaImportCmd
-Hashtable[] importTable = {new Hashtable(), new Hashtable()};
-
 
 
 /*
@@ -857,7 +853,6 @@ throws
 
     try {
 
-	// FIXME : ugly JDK 1.2 only hack
 	// Ugly workaround for compressed files BUG in JDK1.2
         // this bug first showed up in  JDK1.2beta4. I have sent
         // a number of emails to Sun but they have deemed this a "feature"
@@ -865,7 +860,7 @@ throws
         // minds. Because of this, there is no way to do non blocking IO
         // on a compressed Stream in Java. (mo)
 
-        if (System.getProperty("java.version").startsWith("1.2") &&
+        if (System.getProperty("java.version").equals("1.2") &&
             stream.getClass().getName().equals("java.util.zip.ZipFile$1")) {
 	    
 	  ByteArrayOutputStream baos = new ByteArrayOutputStream(1024);

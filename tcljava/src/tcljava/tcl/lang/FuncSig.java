@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: FuncSig.java,v 1.5 1999/05/15 23:38:14 dejong Exp $
+ * RCS: @(#) $Id: FuncSig.java,v 1.4 1999/05/09 21:33:53 dejong Exp $
  *
  */
 
@@ -1101,7 +1101,7 @@ getAllDeclaredMethods(
 
     }
 
-    sortMethods(vec); // removed until this can be tested more.
+    //sortMethods(vec); // removed until this can be tested more.
     methods = new Method[vec.size()];
     vec.copyInto(methods);
     allDeclMethTable.put(cls, methods);
@@ -1209,7 +1209,6 @@ methodSigEqual(
 
     return true;
 }
-
 /*
  *----------------------------------------------------------------------
  *
@@ -1232,8 +1231,16 @@ private static void
 sortMethods(
     Vector vec)
 {
-    final boolean debug = false; // set to true for debug output
+    final boolean debug = false;
     int insize = vec.size();
+
+    if (insize == 0) {
+	if (debug) {
+	    System.out.println("Empty Method vector");
+	}
+
+	return;
+    }
 
     if (debug) {
 	System.out.println("Pre sort dump");
@@ -1244,42 +1251,38 @@ sortMethods(
     }
 
     for (int i=1; i < vec.size(); i++) {
-	int c = i;
-	Method cm = (Method) vec.elementAt(c);
-	String cms = getMethodDescription(cm);
+	Method m = (Method) vec.elementAt(i);
+	String ms = getMethodDescription(m);
 
-	// loop down array swapping elements into sorted order
+	if (debug) {
+	    System.out.println("removed " + ms + " from index " + i);
+	}
 
-	for (int j = c - 1; j >= 0 ; j--) {
-	    Method jm = (Method) vec.elementAt(j);
-	    String jms = getMethodDescription(jm);
+	vec.removeElementAt(i);
 
-	    if (debug) {
-	        System.out.println("checking \"" + cms + "\" from index " + c);
-	        System.out.println("against  \"" + jms + "\" from index " + j);
-	        System.out.println("compareTo() is " + cms.compareTo(jms));
-	    }
+	// loop down the elements until we find a string that is <= to this string.
 
-	    if (cms.compareTo(jms) <= 0) {
+	boolean inserted = false;
+	for (int j = i - 1; j >= 0 ; j--) {
+	    Method lm = (Method) vec.elementAt(j);
+
+	    if (ms.compareTo( getMethodDescription(lm) ) >= 0) {
 		if (debug) {
-		    System.out.println("swapping " + c + " and " + j);
+		    System.out.println("inserting at index " + (j+1));
 		}
 		
-		// Swap the Methods at c and j
-		vec.setElementAt(jm,c);
-	    	vec.setElementAt(cm,j);
-
-		// Current becomes the value of j for next loop
-		c = j;
-		//cm = jm;
-		//cms = jms;
-
-	    } else {
-                if (debug) {
-		    System.out.println("no swap at index " + j);
-                }
+		inserted = true;
+		vec.insertElementAt(m, j+1);
 		break;
-            }
+	    }
+	}
+
+	if (! inserted) {
+	    if (debug) {
+		    System.out.println("end of loop inserting at index 0");
+	    }
+
+	    vec.insertElementAt(m,0);
 	}
     }
 
@@ -1296,24 +1299,9 @@ sortMethods(
     }
     return;
 }
-
-/*
- *----------------------------------------------------------------------
- *
- * getMethodDescription --
- *
- *	This helper method will return a string description of a method
- *      and the arguments and return type of the methos. This helper
- *      is only called by sortMethods().
- *
- * Results:
- *	None.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
+
+// Private helper used only by sortMethods
+
 private static String getMethodDescription(Method m) {
     StringBuffer sb = new StringBuffer(50);
 

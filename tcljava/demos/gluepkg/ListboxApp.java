@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ListboxApp.java,v 1.3 1999/08/27 23:19:21 mo Exp $
+ * RCS: @(#) $Id: ListboxApp.java,v 1.2 1999/05/08 23:18:04 dejong Exp $
  *
  */
 
@@ -23,12 +23,18 @@ import java.awt.event.*;
  * calling 'getSelectedItems()'.
  */
 
-public class ListboxApp {
+public class ListboxApp implements ActionListener {
+
+    // Used to implement a wait mechanism
+    boolean wait = true;
+
+    // The list of selected items from the AWT List widget.
+    private String[] items;
+
     // The Java AWT Widgets (ummm... I mean Components.) 
-    public List     lst;
-    public Frame    frm;
-    public Button   okButton;
-    public Button   cancelButton;
+    private List     lst;
+    private Frame    frm;
+    private Button   but;
 
     /**
      * ListboxApp --
@@ -66,18 +72,64 @@ public class ListboxApp {
 	gbc.gridx = 0;
 	gbc.gridy = 1;
 
-	okButton = new Button("OK");
-	gbl.setConstraints(okButton, gbc);
-	frm.add(okButton);
+	but = new Button("OK");
+	but.addActionListener(this);
+	gbl.setConstraints(but, gbc);
+	frm.add(but);
 
 	gbc.gridx = 1;
 	gbc.gridy = 1;
 
-	cancelButton = new Button("Cancel");
-	gbl.setConstraints(cancelButton, gbc);
-	frm.add(cancelButton);
+	but = new Button("Cancel");
+	but.addActionListener(this);
+	gbl.setConstraints(but, gbc);
+	frm.add(but);
 
 	frm.setSize(170,170);
 	frm.show();
+	
+	// Since the current version of Jacl dosent have event bindings
+	// or vwait, we must poll until an action event occurs.  Otherwise
+	// there is now clean way to grab the selected list items.
+
+	try {
+	    while (wait) {
+	        Thread.currentThread().sleep(100); 
+	    }
+	} catch (InterruptedException e) {
+	    // Do nothing...
+	}
+    }
+
+    /**
+     * getSelectedItems --
+     *
+     * Gets the selected list items.
+     */
+
+    public String[] getSelectedItems() {
+        return(items);
+    }
+
+   /**
+    * actionPerformed --
+    *
+    * This is the callback when either 'OK' or 'Cancel' are pressed.
+    * In either case the window is removed, items is set, and the 
+    * wait variable is set to true, thus breaking the while loop in
+    * the constructor. If 'OK' has been pressed, the class variable
+    * 'items' equals the list of selected items, else null.  
+    */
+
+    public void actionPerformed(ActionEvent evt) {
+	
+	if (evt.getActionCommand().equals("Cancel")) {
+	    items = null;
+	} else if (evt.getActionCommand().equals("OK")) {
+	    items = lst.getSelectedItems();
+	}
+	frm.dispose();
+	wait = false;
     }
 }
+
