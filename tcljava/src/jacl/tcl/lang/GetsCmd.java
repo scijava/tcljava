@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: GetsCmd.java,v 1.5 2002/01/21 06:34:26 mdejong Exp $
+ * RCS: @(#) $Id: GetsCmd.java,v 1.6 2003/03/08 03:42:44 mdejong Exp $
  *
  */
 
@@ -35,6 +35,8 @@ class GetsCmd implements Command {
 	boolean writeToVar = false;  // If true write to var passes as arg
 	String  varName    = "";     // The variable to write value to
 	Channel chan;                // The channel being operated on
+	int lineLen;
+	TclObject line;
 
 	if ((argv.length < 2) || (argv.length > 3)) {
 	    throw new TclNumArgsException(interp, 1, argv, 
@@ -53,17 +55,23 @@ class GetsCmd implements Command {
 	}
 
 	try {
-	    TclObject inData = chan.read(interp, TclIO.READ_LINE, 0);
-	    String inStr = inData.toString();
+	    line = TclString.newInstance(new StringBuffer(64));
+	    lineLen = chan.read(interp, line, TclIO.READ_LINE, 0);
+	    if (lineLen < 0) {
+	        // FIXME: Need more specific posix error codes!
+	        if (!chan.eof() && !chan.isBlocked(interp)) {
+	            throw new TclPosixException(interp,
+	                    TclPosixException.EIO, true,
+	                    "error reading \"" +
+	                    argv[1].toString() + "\"");
+	        }
+	        lineLen = -1;
+	    }
  	    if (writeToVar) {
-	        interp.setVar(varName, inData, 0);
-		if (chan.eof()) {
-		    interp.setResult(-1);
-		} else {
-		    interp.setResult(inStr.length());
-		}
+                interp.setVar(varName, line, 0);
+		interp.setResult(lineLen);
 	    } else {
-	        interp.setResult(inData);
+                interp.setResult(line);
 	    }
 	} catch (IOException e) {
 	    //e.printStackTrace(System.err);

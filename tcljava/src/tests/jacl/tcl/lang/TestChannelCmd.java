@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TestChannelCmd.java,v 1.1 2002/01/23 09:53:50 mdejong Exp $
+ * RCS: @(#) $Id: TestChannelCmd.java,v 1.2 2003/03/08 03:43:44 mdejong Exp $
  *
  */
 
@@ -150,7 +150,7 @@ class TestChannelCmd implements Command
                         TclString.newInstance(""));
                 }
 
-                if (chan.isBlocked()) {
+                if (chan.isBlocked(interp)) {
                     TclList.append(interp, list,
                         TclString.newInstance("blocked")); // 8
                 } else {
@@ -203,11 +203,11 @@ class TestChannelCmd implements Command
 
                 TclList.append(interp, list,
                     TclInteger.newInstance(
-                        chan.getBufferedInput()));     // 12
+                        chan.getNumBufferedInputBytes()));     // 12
 
                 TclList.append(interp, list,
                     TclInteger.newInstance(
-                        chan.getBufferedOutput()));     // 13
+                        chan.getNumBufferedOutputBytes()));     // 13
 
                 try {
                     TclList.append(interp, list,
@@ -224,7 +224,7 @@ class TestChannelCmd implements Command
             }
         case OPT_INPUTBUFFERED:
             {
-                interp.setResult(chan.getBufferedInput());
+                interp.setResult(chan.getNumBufferedInputBytes());
                 break;
             }
         case OPT_NAME:
@@ -234,7 +234,7 @@ class TestChannelCmd implements Command
             }
         case OPT_OUTPUTBUFFERED:
             {
-                interp.setResult(chan.getBufferedOutput());
+                interp.setResult(chan.getNumBufferedOutputBytes());
                 break;
             }
         case OPT_QUEUEDCR:

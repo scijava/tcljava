@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Shell.java,v 1.11 2002/04/12 21:00:27 mdejong Exp $
+ * RCS: @(#) $Id: Shell.java,v 1.12 2003/03/08 03:42:44 mdejong Exp $
  */
 
 package tcl.lang;
@@ -125,6 +125,9 @@ main(
 	// start an AWT event handling thread and keep the VM up. However,
 	// the interpreter thread (the same as the main thread) would
 	// have exited and no Tcl scripts can be executed.
+
+        interp.dispose();
+        System.exit(0);
     }
 
     if (fileName == null) {
@@ -143,8 +146,6 @@ main(
 
 	    notifier.doOneEvent(TCL.ALL_EVENTS);
 	}
-    } else {
-	System.exit(0);
     }
 }
 } // end class Shell

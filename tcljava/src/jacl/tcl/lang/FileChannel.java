@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FileChannel.java,v 1.19 2003/03/06 22:53:06 mdejong Exp $
+ * RCS: @(#) $Id: FileChannel.java,v 1.20 2003/03/08 03:42:44 mdejong Exp $
  *
  */
 
@@ -133,7 +133,7 @@ class FileChannel extends Channel {
 
 	// If we are appending, move the file pointer to EOF.
 
-	if ((modeFlags & TclIO.APPEND) != 0) {      
+	if ((modeFlags & TclIO.APPEND) != 0) {
 	    file.seek(file.length());
 	}
 
@@ -144,63 +144,6 @@ class FileChannel extends Channel {
 	setChanName(fName);
 	return fName;
     }
-
-
-    /**
-     * Read data from a file.  The read can be for the entire buffer, line 
-     * or a specified number of bytes.  The file MUST be open or a 
-     * TclRuntimeError is thrown.
-     *
-     * @param interp currrent interpreter.
-     * @param readType specifies if the read should read the entire buffer, 
-     *            the next line, or a specified number of bytes.
-     * @param numBytes number of bytes to read.  Only used when the readType
-     *            is TclIO.READ_N_BYTES.
-     * @return String of data that was read from file. (can not be null)
-     * @exception TclException is thrown if read occurs on WRONLY channel.
-     * @exception IOException is thrown when an IO error occurs that was not
-     *                correctly tested for.  Most cases should be caught.
-     */
-
-    TclObject read(Interp interp, int readType, int numBytes) 
-            throws IOException, TclException {
-
-	if (file == null) {
-	    throw new TclRuntimeError("FileChannel.read: null file object");
-	}
-
-	// Create the Buffered Reader if it does not already exist
-	if (reader == null) {
-	    reader = new BufferedReader( new FileReader(file.getFD()) );
-	}
-
-        return super.read(interp, readType, numBytes);
-    }
-
-
-    /**
-     * Write data to a file.  The file MUST be open or a TclRuntimeError
-     * is thrown.
-     * 
-     * @param interp currrent interpreter.
-     * @param outData the TclObject that holds the data to write.
-     * @exception TclException is thrown if read occurs on RDONLY channel.
-     * @exception IOException is thrown when an IO error occurs that was not
-     *                correctly tested for.  Most cases should be caught.
-     */
-
-    void write(Interp interp, TclObject outData) 
-            throws IOException, TclException {
-
-        if (file == null) {
-            throw new TclRuntimeError(
-                "FileChannel.write(): null file object");
-        }
-
-        checkWrite(interp);
-        file.writeBytes(outData.toString());
-    }
-
 
     /**
      * Close the file.  The file MUST be open or a TclRuntimeError
@@ -221,23 +164,6 @@ class FileChannel extends Channel {
         }
     }
 
-
-    /**
-     * Flush the Channel
-     *
-     *  The file MUST be open or a TclRuntimeError. Note that since
-     *  we only have synchronous file IO right now, this is a no-op.
-     */
-
-    void flush(Interp interp) throws IOException, TclException {
-        if (file == null) {
-            throw new TclRuntimeError("FileChannel.flush(): null file object");
-        }
-
-        checkWrite(interp);
-    }
-
-
     /**
      * Move the file pointer internal to the RandomAccessFile object. 
      * The file MUST be open or a TclRuntimeError is thrown.
@@ -254,24 +180,114 @@ class FileChannel extends Channel {
 	    throw new TclRuntimeError("FileChannel.seek(): null file object");
 	}
 
-        switch (inmode) {
-	    case TclIO.SEEK_SET: {
-	        file.seek(offset);
-		break;
-	    }
-	    case TclIO.SEEK_CUR: {
-	        file.seek(file.getFilePointer() + offset);
-		break;
-	    }
-	    case TclIO.SEEK_END: {
-	        file.seek(file.length() + offset);
-		break;
-	    }
+        //FIXME: Disallow seek on dead channels (raise TclPosixException ??)
+        //if (CheckForDeadChannel(NULL, statePtr)) {
+        //    return Tcl_LongAsWide(-1);
+        //}
+
+        // Compute how much input and output is buffered. If both input and
+        // output is buffered, cannot compute the current position.
+
+	int inputBuffered = getNumBufferedInputBytes();
+	int outputBuffered = getNumBufferedOutputBytes();
+
+        if ((inputBuffered != 0) && (outputBuffered != 0)) {
+            throw new TclPosixException(interp,
+                    TclPosixException.EFAULT, true,
+                    "error during seek on \"" + getChanName() + "\"");
+        }
+
+        // If we are seeking relative to the current position, compute the
+        // corrected offset taking into account the amount of unread input.
+
+        if (inmode == TclIO.SEEK_CUR) {
+            offset -= inputBuffered;
+        }
+
+        // The seekReset method will discard queued input and
+        // reset flags like EOF and BLOCKED.
+
+        if (input != null) { input.seekReset(); }
+
+        // FIXME: Next block is disabled since non-blocking is not implemented.
+        // If the channel is in asynchronous output mode, switch it back
+        // to synchronous mode and cancel any async flush that may be
+        // scheduled. After the flush, the channel will be put back into
+        // asynchronous output mode.
+
+        boolean wasAsync = false;
+        if (false && !getBlocking()) {
+            wasAsync = true;
+            setBlocking(true); 
+            if (isBgFlushScheduled()) {
+                //scheduleBgFlush();
+            }
+        }
+
+        // If there is data buffered in curOut then mark the
+        // channel as ready to flush before invoking flushChannel.
+
+        if (output != null) {
+            output.seekCheckBuferReady();
+        }
+
+        // If the flush fails we cannot recover the original position. In
+        // that case the seek is not attempted because we do not know where
+        // the access position is - instead we return the error. FlushChannel
+        // has already called Tcl_SetErrno() to report the error upwards.
+        // If the flush succeeds we do the seek also.
+
+        if (output != null && output.flushChannel(null, false) != 0) {
+            // FIXME: IS this the proper action to take on error?
+            throw new IOException("flush error while seeking");
+        } else {
+            // Now seek to the new position in the channel as requested by the
+            // caller.
+
+            long actual_offset;
+
+            switch (inmode) {
+                case TclIO.SEEK_SET: {
+                    actual_offset = offset;
+                    break;
+                }
+                case TclIO.SEEK_CUR: {
+                    actual_offset = file.getFilePointer() + offset;
+                    break;
+                }
+                case TclIO.SEEK_END: {
+                    actual_offset = file.length() + offset;
+                    break;
+                }
+                default: {
+                    throw new TclRuntimeError("invalid seek mode");
+                }
+            }
+
+            // A negative offset to seek() would raise an IOException, but
+            // we want to raise an invalid argument error instead
+
+            if (actual_offset < 0) {
+                throw new TclPosixException(interp, TclPosixException.EINVAL, true,
+                    "error during seek on \"" + getChanName() + "\"");
+            }
+
+            file.seek(actual_offset);
 	}
+
+        // Restore to nonblocking mode if that was the previous behavior.
+        //
+        // NOTE: Even if there was an async flush active we do not restore
+        // it now because we already flushed all the queued output, above.
+
+        if (wasAsync) {
+            setBlocking(false);
+        }
     }
 
-
     /**
+     * Tcl_Tell -> tell
+     *
      * Return the current offset of the file pointer in number of bytes from 
      * the beginning of the file.  The file MUST be open or a TclRuntimeError
      * is thrown.
@@ -283,9 +299,23 @@ class FileChannel extends Channel {
 	if (file == null) {
 	    throw new TclRuntimeError("FileChannel.tell(): null file object");
 	}
-        return(file.getFilePointer());
-    }
+	int inputBuffered = getNumBufferedInputBytes();
+	int outputBuffered = getNumBufferedOutputBytes();
 
+	if ((inputBuffered != 0) && (outputBuffered != 0)) {
+	    // FIXME: Posix error EFAULT ?
+	    return -1;
+	}
+	long curPos = file.getFilePointer();
+	if (curPos == -1) {
+	    // FIXME: Set errno here?
+	    return -1;
+	}
+	if (inputBuffered != 0) {
+	    return curPos - inputBuffered;
+	}
+	return curPos + outputBuffered;
+    }
 
     /**
      * If the file dosent exist then a TclExcpetion is thrown. 
@@ -293,7 +323,6 @@ class FileChannel extends Channel {
      * @param interp currrent interpreter.
      * @param fileObj a java.io.File object of the file for this channel.
      */
-
 
     private void checkFileExists(Interp interp, File fileObj) 
         throws TclException {
@@ -336,5 +365,13 @@ class FileChannel extends Channel {
 
     String getChanType() {
         return "file";
+    }
+
+    protected InputStream getInputStream() throws IOException {
+        return new FileInputStream(file.getFD());
+    }
+
+    protected OutputStream getOutputStream() throws IOException {
+        return new FileOutputStream(file.getFD());
     }
 }

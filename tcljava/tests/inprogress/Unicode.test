@@ -142,3 +142,22 @@ test unicode-2.1 {unicode substitution, 536 - 65535} {
     }
     set min
 } 65536
+
+test unicode-3.1 {scan encoded string} {
+    set enc [encoding convertto iso2022-jp "\u4e00\u4e01"]
+    set len [string length $enc]
+    set results $len
+    for {set i 0} {$i < $len} {incr i} {
+        set c [string index $enc $i]
+        set int_c [scan $c %c]
+        lappend results $int_c
+    }
+    set results
+} {10 27 36 66 48 108 67 122 27 40 66}
+
+test unicode-3.2 {convert to encoded string} {
+    set str "\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"
+    set enc [encoding convertto jis0208 $str]
+    string compare $enc "!)!)!)!)!)!)!)!)!)!)!)!)!)!)!)"
+} 0
+

@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FblockedCmd.java,v 1.4 2002/01/23 09:53:49 mdejong Exp $
+ * RCS: @(#) $Id: FblockedCmd.java,v 1.5 2003/03/08 03:42:43 mdejong Exp $
  *
  */
 
@@ -43,6 +43,6 @@ class FblockedCmd implements Command {
                     + argv[1].toString() + "\"");
 	}
 
-	interp.setResult(chan.isBlocked());
+	interp.setResult(chan.isBlocked(interp));
     }
 }

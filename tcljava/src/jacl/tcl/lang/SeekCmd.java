@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: SeekCmd.java,v 1.2 2001/11/20 00:08:29 mdejong Exp $
+ * RCS: @(#) $Id: SeekCmd.java,v 1.3 2003/03/08 03:42:44 mdejong Exp $
  *
  */
 
@@ -20,6 +20,17 @@ import java.io.*;
  */
 
 class SeekCmd implements Command {
+
+    static final private String validOrigins[] = { 
+        "start",
+        "current",
+        "end"
+    };
+
+    static final int OPT_START		= 0;
+    static final int OPT_CURRENT	= 1;
+    static final int OPT_END		= 2;
+
     /**
      * This procedure is invoked to process the "seek" Tcl command.
      * See the user documentation for details on what it does.
@@ -37,23 +48,26 @@ class SeekCmd implements Command {
 		    "channelId offset ?origin?");
 	}
 
-	/*
-	 * default is the beginning of the file
-	 */
+	// default is the beginning of the file
 
 	mode = TclIO.SEEK_SET;
-
 	if (argv.length == 4) {
-	    if ("start".equals(argv[3].toString())) {
-	        mode = TclIO.SEEK_SET;
-	    } else if ("current".equals(argv[3].toString())) {
-	        mode = TclIO.SEEK_CUR;
-	    } else if ("end".equals(argv[3].toString())) {
-	        mode = TclIO.SEEK_END;
-	    } else {
-	        throw new TclException(interp, "bad origin \"" + 
-		        argv[3].toString() +
-                        "\": should be start, current, or end");
+	    int index = TclIndex.get(interp, argv[3], validOrigins,
+	            "origin", 0);
+
+	    switch (index) {
+	        case OPT_START: {
+	            mode = TclIO.SEEK_SET;
+	            break;
+	        }
+	        case OPT_CURRENT: {
+	            mode = TclIO.SEEK_CUR;
+	            break;
+	        }
+	        case OPT_END: {
+	            mode = TclIO.SEEK_END;
+	            break;
+	        }
 	    }
 	}
 	
@@ -71,7 +85,7 @@ class SeekCmd implements Command {
 	    // Should we also wrap an IOException in a ReflectException?
 	    throw new TclRuntimeError(
 	        "SeekCmd.cmdProc() Error: IOException when seeking " +
-	        chan.getChanName());
+	        chan.getChanName() + ":" + e.toString());
         }
     }
 }

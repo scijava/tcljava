@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: StdChannel.java,v 1.18 2003/03/05 23:19:26 mdejong Exp $
+ * RCS: @(#) $Id: StdChannel.java,v 1.19 2003/03/08 03:42:44 mdejong Exp $
  *
  */
 
@@ -88,10 +88,6 @@ class StdChannel extends Channel {
 	        mode = TclIO.RDONLY;
 	        setBuffering(TclIO.BUFF_LINE);
 	        setChanName("stdin");
-		if (reader == null) {
-		    reader = new BufferedReader(
-                        new InputStreamReader(System.in)); 
-		}
 		break;
 	    case STDOUT:
 	        mode = TclIO.WRONLY;
@@ -153,5 +149,13 @@ class StdChannel extends Channel {
 
     String getChanType() {
         return "tty";
+    }
+
+    protected InputStream getInputStream() throws IOException {
+        return System.in;
+    }
+
+    protected OutputStream getOutputStream() throws IOException {
+        throw new RuntimeException("should never be called");
     }
 }

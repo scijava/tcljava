@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Channel.java,v 1.24 2002/01/23 09:53:49 mdejong Exp $
+ * RCS: @(#) $Id: Channel.java,v 1.25 2003/03/08 03:42:43 mdejong Exp $
  */
 
 package tcl.lang;
@@ -47,19 +47,12 @@ abstract class Channel {
     protected int refCount = 0;
 
     /**
-     * Generic Reader/Writer objects. A BufferedReader is required to gain
-     * access to line oriented input inside the read() method.
+     * Tcl input and output objecs. These are like a mix between
+     * a Java Stream and a Reader.
      */
 
-    protected BufferedReader reader = null;
-    protected BufferedWriter writer = null;
-
-    /**
-     * Flag that is set on each read/write.  If the read/write encountered an EOF
-     * then it's set to true, else false.
-     */
-
-    protected boolean eofCond = false;
+    protected TclInputStream input = null;
+    protected TclOutputStream output = null;
 
     /**
      * Set to false when channel is in non-blocking mode.
@@ -101,13 +94,13 @@ abstract class Channel {
      * If nonzero, use this as a signal of EOF on input.
      */
 
-    protected char inEofChar = 0;
+    protected char inputEofChar = 0;
 
     /**
      * If nonzero, append this to a writeable channel on close.
      */
 
-    protected char outEofChar = 0;
+    protected char outputEofChar = 0;
 
     Channel() {
         setEncoding(EncodingCmd.systemJavaEncoding);
@@ -116,59 +109,39 @@ abstract class Channel {
     /**
      * Tcl_ReadChars -> read
      *
-     * Read data from the Channel.
-     * 
-     * @param interp is used for TclExceptions.  
-     * @param readType pecifies if the read should read the entire
-     *     buffer (TclIO.READ_ALL), the next line (TclIO.READ_LINE),
-     *     of a specified number of bytes (TclIO.READ_N_BYTES).
-     * @param numBytes the number of bytes/chars to read. Used only when
-     *     the readType is TclIO.READ_N_BYTES.
-     * @return TclObject that holds the read in data.
+     * Read data from the Channel into the given TclObject.
+     *
+     * @param interp           is used for TclExceptions.  
+     * @param tobj             the object data will be added to.
+     * @param readType         specifies if the read should read the entire
+     *                         buffer (TclIO.READ_ALL), the next line
+     *                         (TclIO.READ_LINE), of a specified number
+     *                         of bytes (TclIO.READ_N_BYTES).
+     * @param numBytes         the number of bytes/chars to read. Used only
+     *                         when the readType is TclIO.READ_N_BYTES.
+     * @return                 the number of bytes read.
+     *                         Returns -1 on EOF or on error.
      * @exception TclException is thrown if read occurs on WRONLY channel.
-     * @exception IOException is thrown when an IO error occurs that was not
-     *                correctly tested for.  Most cases should be caught.
+     * @exception IOException  is thrown when an IO error occurs that was not
+     *                         correctly tested for.  Most cases should be caught.
      */
 
-    TclObject read(Interp interp, int readType, int numBytes) 
+    int read(Interp interp, TclObject tobj, int readType, int numBytes) 
             throws IOException, TclException {
+        TclObject dataObj;
 
         checkRead(interp);
-
-        eofCond = false;
+        initInput();
 
         switch (readType) {
             case TclIO.READ_ALL: {
-                char[] charArr = new char[bufferSize];
-                StringBuffer sbuf = new StringBuffer(bufferSize);
-                int numRead;
-
-                while((numRead = reader.read(charArr, 0, bufferSize)) != -1) {
-                    sbuf.append(charArr,0, numRead);
-                }
-                eofCond = true;
-                return TclString.newInstance(sbuf);
+                return input.doReadChars(tobj, -1);
             }
             case TclIO.READ_LINE: {
-                String line = reader.readLine();
-                if (line == null) {
-                    eofCond = true;
-                    return TclString.newInstance("");
-                } else {
-                    // FIXME: Is it possible to check for EOF using
-                    // reader.ready() when a whole line is returned
-                    // but we ran into an EOF (no newline termination)?
-                    return TclString.newInstance(line);
-                }
+                return input.getsObj(tobj);
             }
             case TclIO.READ_N_BYTES: {
-                char[] charArr = new char[numBytes];
-                int numRead = reader.read(charArr, 0, numBytes);
-                if (numRead == -1) {
-                    eofCond = true;
-                    return TclString.newInstance("");
-                }
-                return TclString.newInstance(new String(charArr,0,numRead));
+                return input.doReadChars(tobj, numBytes);
             }
             default : {
                 throw new TclRuntimeError(
@@ -190,10 +163,11 @@ abstract class Channel {
 	    throws IOException, TclException {
 
         checkWrite(interp);
+        initOutput();
 
-        if (writer != null) {
-            String outStr = outData.toString();
-            writer.write(outStr);
+        // FIXME: Is it possible for a write to happen with a null output?
+        if (output != null) {
+            output.writeObj(outData);
         }
     }
 
@@ -221,29 +195,14 @@ abstract class Channel {
 
         IOException ex = null;
 
-        if (reader != null) {
-            try { reader.close(); } catch (IOException e) { ex = e; }
-            reader = null;
+        if (input != null) {
+            try { input.close(); } catch (IOException e) { ex = e; }
+            input = null;
         }
 
-        // If channel has a custom eof marker, write it to the
-        // stream before closing. Invoke the write method
-        // instead of writing directly to the stream since
-        // some channels might not set the writer field.
-
-        if ((outEofChar != 0) && (isWriteOnly() || isReadWrite())) {
-            try {
-                write(null, String.valueOf(outEofChar));
-            } catch (TclException ex2) {
-                throw new TclRuntimeError(
-		    "Channel.close: TclException while writing eof " +
-		    ex2.getMessage());
-            }
-        }
-
-        if (writer != null) {
-            try { writer.close(); } catch (IOException e) { ex = e; }
-            writer = null;
+        if (output != null) {
+            try { output.close(); } catch (IOException e) { ex = e; }
+            output = null;
         }
 
         if (ex != null)
@@ -263,8 +222,8 @@ abstract class Channel {
 
         checkWrite(interp);
 
-        if (writer != null) {
-            writer.flush();
+        if (output != null) {
+            output.flush();
         }
     }
 
@@ -296,12 +255,63 @@ abstract class Channel {
     }
 
     /**
+     * Setup the TclInputStream on the first call to read
+     */
+
+    protected void initInput() throws IOException {
+        if (input != null)
+            return;
+
+        input = new TclInputStream(getInputStream());
+        input.setEncoding(encoding);
+        input.setTranslation(inputTranslation);
+        input.setEofChar(inputEofChar);
+        input.setBuffering(buffering);
+        input.setBufferSize(bufferSize);
+        input.setBlocking(blocking);
+    }
+
+    /**
+     * Setup the TclOutputStream on the first call to write
+     */
+
+    protected void initOutput() throws IOException {
+        if (output != null)
+            return;
+
+        output = new TclOutputStream(getOutputStream());
+        output.setEncoding(encoding);
+        output.setTranslation(outputTranslation);
+        output.setEofChar(outputEofChar);
+        output.setBuffering(buffering);
+        output.setBufferSize(bufferSize);
+        output.setBlocking(blocking);
+    }
+
+    /**
      * Returns true if the last read reached the EOF.
      */
 
     final boolean eof() {
-        return eofCond;
+        if (input != null)
+            return input.eof();
+        else
+            return false;
     }
+
+    /**
+     * This method should be overridden in the subclass to provide
+     * a channel specific InputStream object.
+     */
+
+    protected abstract InputStream getInputStream() throws IOException;
+
+    /**
+     * This method should be overridden in the subclass to provide
+     * a channel specific OutputStream object.
+     */
+
+    protected abstract OutputStream getOutputStream() throws IOException;
 
     /** 
      * Gets the chanName that is the key for the chanTable hashtable.
@@ -319,7 +329,6 @@ abstract class Channel {
      */
 
     abstract String getChanType();
-
 
     /** 
      * Return number of references to this Channel.
@@ -382,8 +391,13 @@ abstract class Channel {
      * @param blocking new blocking mode
      */
 
-    void setBlocking(boolean blocking) {
-        this.blocking = blocking;
+    void setBlocking(boolean inBlocking) {
+        blocking = inBlocking;
+
+        if (input != null)
+            input.setBlocking(blocking);
+        if (output != null)
+            output.setBlocking(blocking);
     }
 
     /** 
@@ -402,12 +416,16 @@ abstract class Channel {
      *     or TclIO.BUFF_NONE
      */
 
-    void setBuffering(int buffering) {
-        if (buffering < TclIO.BUFF_FULL || buffering > TclIO.BUFF_NONE)
+    void setBuffering(int inBuffering) {
+        if (inBuffering < TclIO.BUFF_FULL || inBuffering > TclIO.BUFF_NONE)
             throw new TclRuntimeError(
-                "invalid buffering mode in Channel.setBlocking()");
+                "invalid buffering mode in Channel.setBuffering()");
 
-        this.buffering = buffering;
+        buffering = inBuffering;
+        if (input != null)
+            input.setBuffering(buffering);
+        if (output != null)
+            output.setBuffering(buffering);
     }
 
     /** 
@@ -434,16 +452,24 @@ abstract class Channel {
         }
 
         bufferSize = size;
+        if (input != null)
+            input.setBufferSize(bufferSize);
+        if (output != null)
+            output.setBufferSize(bufferSize);
     }
 
-    int getBufferedInput() {
-        // FIXME: Need to query input stream
-        return 0;
+    int getNumBufferedInputBytes() {
+        if (input != null)
+            return input.getNumBufferedBytes();
+        else
+            return 0;
     }
 
-    int getBufferedOutput() {
-        // FIXME: Need to query output stream
-        return 0;
+    int getNumBufferedOutputBytes() {
+        if (output != null)
+            return output.getNumBufferedBytes();
+        else
+            return 0;
     }
 
     /** 
@@ -453,9 +479,13 @@ abstract class Channel {
      *
      */
 
-    boolean isBlocked() {
-	// We only support synchronous io so always return false
-        return false;
+    boolean isBlocked(Interp interp) throws TclException {
+        checkRead(interp);
+
+        if (input != null)
+            return input.isBlocked();
+        else
+            return false;
     }
 
     /** 
@@ -463,6 +493,7 @@ abstract class Channel {
      */
 
     boolean isBgFlushScheduled() {
+        // FIXME: Need to query output here
         return false;
     }
 
@@ -472,7 +503,8 @@ abstract class Channel {
      */
 
     boolean inputSawCR() {
-        // FIXME: impl me!
+        if (input != null)
+            return input.sawCR();
         return false;
     }
 
@@ -489,17 +521,21 @@ abstract class Channel {
 
     /** 
      * Set new Java encoding
-     *
      */
 
-    void setEncoding(String en) {
-        if (en == null) {
-            encoding = null;
+    void setEncoding(String inEncoding) {
+        encoding = inEncoding;
+        if (encoding == null)
             bytesPerChar = 1;
-        } else {
-            encoding = en;
-            bytesPerChar = EncodingCmd.getBytesPerChar(en);
-        }
+        else
+            bytesPerChar = EncodingCmd.getBytesPerChar(encoding);
+
+        if (input != null)
+            input.setEncoding(encoding);
+        if (output != null)
+            output.setEncoding(encoding);
+
+        // FIXME: Pass bytesPerChar to input and output
     }
 
     /** 
@@ -516,6 +552,8 @@ abstract class Channel {
 
     void setInputTranslation(int translation) {
         inputTranslation = translation;
+        if (input != null)
+            input.setTranslation(inputTranslation);
     }
 
     /** 
@@ -532,6 +570,8 @@ abstract class Channel {
 
     void setOutputTranslation(int translation) {
         outputTranslation = translation;
+        if (output != null)
+            output.setTranslation(outputTranslation);
     }
 
     /** 
@@ -539,7 +579,7 @@ abstract class Channel {
      */
 
     char getInputEofChar() {
-        return inEofChar;
+        return inputEofChar;
     }
 
     /** 
@@ -547,7 +587,10 @@ abstract class Channel {
      */
 
     void setInputEofChar(char inEof) {
-        inEofChar = inEof;
+        // Store as a byte, not a unicode character
+        inputEofChar = (char) (inEof & 0xFF);
+        if (input != null)
+            input.setEofChar(inputEofChar);
     }
 
     /** 
@@ -555,7 +598,7 @@ abstract class Channel {
      */
 
     char getOutputEofChar() {
-        return outEofChar;
+        return outputEofChar;
     }
 
     /** 
@@ -563,7 +606,10 @@ abstract class Channel {
      */
 
     void setOutputEofChar(char outEof) {
-        outEofChar = outEof;
+        // Store as a byte, not a unicode character
+        outputEofChar = (char) (outEof & 0xFF);
+        if (output != null)
+            output.setEofChar(outputEofChar);
     }
 
 }

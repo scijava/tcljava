@@ -140,6 +140,14 @@ public class ServerSocketChannel extends Channel {
     String getChanType() {
         return "tcp";
     }
+
+    protected InputStream getInputStream() throws IOException {
+        throw new RuntimeException("should never be called");
+    }
+
+    protected OutputStream getOutputStream() throws IOException {
+        throw new RuntimeException("should never be called");
+    }
 }
 
 

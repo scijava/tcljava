@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclString.java,v 1.4 2002/12/18 07:07:18 mdejong Exp $
+ * RCS: @(#) $Id: TclString.java,v 1.5 2003/03/08 03:42:56 mdejong Exp $
  *
  */
 
@@ -19,9 +19,10 @@ public class TclString implements InternalRep {
 
     // Used to perform "append" operations. After an append op,
     // sbuf.toString() will contain the latest value of the string and
-    // tobj.stringRep will be set to null.
+    // tobj.stringRep will be set to null. This field is not private
+    // since it will need to be accessed directly by Jacl's IO code.
 
-    private StringBuffer sbuf;
+    StringBuffer sbuf;
 
     private TclString() {
 	sbuf = null;
@@ -70,7 +71,7 @@ public class TclString implements InternalRep {
     }
 
     /**
-     * Create a new TclObject that make use of the given StringBuffer
+     * Create a new TclObject that makes use of the given StringBuffer
      * object. The passed in StringBuffer should not be modified after
      * it is passed to this method.
      */
@@ -129,7 +130,7 @@ public class TclString implements InternalRep {
      * @param tobj the TclObject to append a string to.
      * @param string the string to append to the object.
      */
-    public static final void append(TclObject tobj, String string) {	
+    public static final void append(TclObject tobj, String string) {
 	setStringFromAny(tobj);
 
 	TclString tstr = (TclString) tobj.getInternalRep();
@@ -138,6 +139,27 @@ public class TclString implements InternalRep {
 	}
 	tobj.invalidateStringRep();
 	tstr.sbuf.append(string);
+    }
+
+    /**
+     * Appends an array of characters to a TclObject Object.
+     * Tcl_AppendUnicodeToObj() in Tcl 8.0.
+     *
+     * @param tobj the TclObject to append a string to.
+     * @param charArr array of characters.
+     * @param offset index of first character to append.
+     * @param length number of characters to append.
+     */
+    public static final void append(TclObject tobj,
+            char[] charArr, int offset, int length) {
+	setStringFromAny(tobj);
+
+	TclString tstr = (TclString) tobj.getInternalRep();
+	if (tstr.sbuf == null) {
+	    tstr.sbuf = new StringBuffer(tobj.toString());
+	}
+	tobj.invalidateStringRep();
+	tstr.sbuf.append(charArr, offset, length);
     }
 
     /**
@@ -150,6 +172,23 @@ public class TclString implements InternalRep {
      */
     static final void append(TclObject tobj, TclObject tobj2) {
 	append(tobj, tobj2.toString());
+    }
+
+    /**
+     * This procedure clears out an existing TclObject so
+     * that it has a string representation of "".
+     */
+
+    public static void empty(TclObject tobj) {
+	setStringFromAny(tobj);
+
+	TclString tstr = (TclString) tobj.getInternalRep();
+	if (tstr.sbuf == null) {
+	    tstr.sbuf = new StringBuffer();
+	} else {
+             tstr.sbuf.setLength(0);
+	}
+	tobj.invalidateStringRep();
     }
 }
 

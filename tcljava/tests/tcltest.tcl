@@ -12,7 +12,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: tcltest.tcl,v 1.1 2000/12/22 09:47:14 mdejong Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.2 2003/03/08 03:43:55 mdejong Exp $
 
 package provide tcltest 1.0
 
@@ -23,7 +23,7 @@ namespace eval tcltest {
     # Export the public tcltest procs
     set procList [list test cleanupTests saveState restoreState \
 	    normalizeMsg makeFile removeFile makeDirectory removeDirectory \
-	    viewFile bytestring safeFetch threadReap getMatchingFiles \
+	    viewFile bytestring safeFetch testConstraint threadReap getMatchingFiles \
 	    loadTestedCommands normalizePath]
     foreach proc $procList {
 	namespace export $proc
@@ -1893,6 +1893,35 @@ proc ::tcltest::threadReap {} {
     }
 }
 
+# tcltest::testConstraint --
+#
+#	sets a test constraint to a value; to do multiple constraints,
+#       call this proc multiple times.  also returns the value of the
+#       named constraint if no value was supplied.
+#
+# Arguments:
+#	constraint - name of the constraint
+#       value - new value for constraint (should be boolean) - if not
+#               supplied, this is a query
+#
+# Results:
+#	content of tcltest::testConstraints($constraint)
+#
+# Side effects:
+#	none
+
+proc tcltest::testConstraint {constraint {value ""}} {
+    variable testConstraints
+    if {[llength [info level 0]] == 2} {
+	return $testConstraints($constraint)
+    }
+    # Check for boolean values
+    if {[catch {expr {$value && $value}} msg]} {
+	return -code error $msg
+    }
+    set testConstraints($constraint) $value
+}
+
 # Initialize the constraints and set up command line arguments 
 namespace eval tcltest {
     # Ensure that we have a minimal auto_path so we don't pick up extra junk.
@@ -1903,3 +1932,4 @@ namespace eval tcltest {
 	::tcltest::processCmdLineArgs
     }
 }
+

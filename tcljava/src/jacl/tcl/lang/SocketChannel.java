@@ -74,13 +74,6 @@ public class SocketChannel extends Channel {
         else
             sock = new Socket(addr, port);
 
-        // Get the Input and Output streams
-        reader = new BufferedReader(
-            new InputStreamReader(sock.getInputStream()));
-
-        writer = new BufferedWriter(
-            new OutputStreamWriter(sock.getOutputStream()));
-
         // If we got this far, then the socket has been created.
         // Create the channel name
         setChanName(TclIO.getNextDescriptor(interp, "sock"));
@@ -97,14 +90,6 @@ public class SocketChannel extends Channel {
         this.mode = TclIO.RDWR;
         this.sock = s;
 
-        reader = new BufferedReader(
-            new InputStreamReader(sock.getInputStream()));
-
-        writer = new BufferedWriter(
-            new OutputStreamWriter(sock.getOutputStream()));
-
-        // If we got this far, then the socket has been created.
-        // Create the channel name
         setChanName(TclIO.getNextDescriptor(interp, "sock"));
     }
 
@@ -124,5 +109,13 @@ public class SocketChannel extends Channel {
 
     String getChanType() {
         return "tcp";
+    }
+
+    protected InputStream getInputStream() throws IOException {
+        return sock.getInputStream();
+    }
+
+    protected OutputStream getOutputStream() throws IOException {
+        return sock.getOutputStream();
     }
 }

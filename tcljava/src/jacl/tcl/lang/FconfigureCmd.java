@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FconfigureCmd.java,v 1.10 2002/01/02 18:40:53 mdejong Exp $
+ * RCS: @(#) $Id: FconfigureCmd.java,v 1.11 2003/03/08 03:42:43 mdejong Exp $
  *
  */
 
@@ -99,13 +99,13 @@ class FconfigureCmd implements Command {
                 char eofChar = chan.getInputEofChar();
                 TclList.append(interp, list,
                     (eofChar == 0) ?
-                    TclString.newInstance("{}") :
+                    TclString.newInstance("") :
                     TclString.newInstance(eofChar));
             } else if (chan.isWriteOnly()) {
                 char eofChar = chan.getOutputEofChar();
                 TclList.append(interp, list,
                     (eofChar == 0) ?
-                    TclString.newInstance("{}") :
+                    TclString.newInstance("") :
                     TclString.newInstance(eofChar));
             } else if (chan.isReadWrite()) {
                 char inEofChar = chan.getInputEofChar();
@@ -197,12 +197,12 @@ class FconfigureCmd implements Command {
                     if (chan.isReadOnly()) {
                         char eofChar = chan.getInputEofChar();
                         interp.setResult((eofChar == 0) ?
-                            TclString.newInstance("{}") :
+                            TclString.newInstance("") :
                             TclString.newInstance(eofChar));
                     } else if (chan.isWriteOnly()) {
                         char eofChar = chan.getOutputEofChar();
                         interp.setResult((eofChar == 0) ?
-                            TclString.newInstance("{}") :
+                            TclString.newInstance("") :
                             TclString.newInstance(eofChar));
                     } else if (chan.isReadWrite()) {
                         char inEofChar = chan.getInputEofChar();
@@ -348,17 +348,23 @@ class FconfigureCmd implements Command {
                             "must be a one or two element list");
                     }
 
+                    String inputTranslationArg, outputTranslationArg;
                     int inputTranslation, outputTranslation;
 
                     if (length == 2) {
-                        inputTranslation = TclIO.getTranslationID(
-                            TclList.index(interp, argv[i], 0).toString());
-
-                        outputTranslation = TclIO.getTranslationID(
-                            TclList.index(interp, argv[i], 1).toString());
+                        inputTranslationArg =
+                                TclList.index(interp, argv[i], 0).toString();
+                        inputTranslation =
+                                TclIO.getTranslationID(inputTranslationArg);
+                        outputTranslationArg =
+                                TclList.index(interp, argv[i], 1).toString();
+                        outputTranslation =
+                                TclIO.getTranslationID(outputTranslationArg);
                     } else {
-                        outputTranslation = inputTranslation = 
-                            TclIO.getTranslationID(argv[i].toString());
+                        outputTranslationArg = inputTranslationArg =
+                                argv[i].toString();
+                        outputTranslation = inputTranslation =
+                                TclIO.getTranslationID(outputTranslationArg);
                     }
 
                     if ((inputTranslation == -1) ||
@@ -374,11 +380,21 @@ class FconfigureCmd implements Command {
 
                     if (chan.isReadOnly()) {
                         chan.setInputTranslation(inputTranslation);
+                        if (inputTranslationArg.equals("binary")) {
+                            chan.setEncoding(null);
+                        }
                     } else if (chan.isWriteOnly()) {
                         chan.setOutputTranslation(outputTranslation);
+                        if (outputTranslationArg.equals("binary")) {
+                            chan.setEncoding(null);
+                        }
                     } else if (chan.isReadWrite()) {
                         chan.setInputTranslation(inputTranslation);
                         chan.setOutputTranslation(outputTranslation);
+                        if (inputTranslationArg.equals("binary") ||
+                                outputTranslationArg.equals("binary")) {
+                            chan.setEncoding(null);
+                        }
                     } else {
                         // Not readable or writeable, do nothing
                     }

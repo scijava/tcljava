@@ -1,5 +1,93 @@
 2003-03-07  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	Initial port of Tcl IO layer from Tcl 8.4. This
+	port implements encoding and translation features
+	and buffers things based on Tcl's semantics.
+	Implements correct semantics for puts, read,
+	gets, seek, tell, eof, and close. Async IO
+	the fileevent command, and the fcopy have
+	not been implemented.
+
+	* src/jacl/tcl/lang/Channel.java (read, write,
+	close, flush, initInput, initOutput, eof,
+	getInputStream, getOutputStream, setBlocking,
+	setBuffering, getBufferedInput, getBufferedOutput,
+	getNumBufferedInputBytes, getNumBufferedOutputBytes,
+	isBlocked, inputSawCR, setEncoding, setInputTranslation,
+	setOutputTranslation, getInputEofChar, setInputEofChar,
+	getOutputEofChar, setOutputEofChar):
+	Use the TclInputStream and TclOutputStream to
+	manage IO details instead of using a Java
+	Reader or Writer. Invoke methods on the input or
+	output object from the identical method in the
+	Channel class. The read method now returns an integer
+	and expects a TclObject as an argument. Add abstract
+	getInputStream and getOutputStream method that should
+	be defined by a subclass.
+	* src/jacl/tcl/lang/ChannelBuffer.java: Add helper
+	class that is used by TclInputStream and TclOutputStream.
+	* src/jacl/tcl/lang/FblockedCmd.java (cmdProc):
+	Pass interp to Channel API for error checking.
+	* src/jacl/tcl/lang/FconfigureCmd.java (cmdProc):
+	Update -eofchar and -translation option handling to
+	match Tcl impl and so test cases pass.
+	* src/jacl/tcl/lang/FileChannel.java (read, write,
+	flush, seek, tell, getInputStream, getOutputStream):
+	Remove read, write, and flush methods since this is
+	now handled in Channel. Update seek and tell
+	implementations based on the new TclInputStream and
+	TclOutputStream classes. Add defs for the
+	getInputStream and getOutputStream abstract methods.
+	* src/jacl/tcl/lang/GetsCmd.java (cmdProc): Implement
+	calls to Channel class based on Tcl implementation.
+	* src/jacl/tcl/lang/OpenCmd.java (cmdProc): Update
+	error messages in open so they pass Tcl tests.
+	* src/jacl/tcl/lang/ReadCmd.java (cmdProc): Implement
+	calls to Channel class based on Tcl implementation.
+	* src/jacl/tcl/lang/SeekCmd.java (cmdProc): Use
+	TclIndex when processing seek options so that test
+	cases pass.
+	* src/jacl/tcl/lang/ServerSocketChannel.java (getInputStream,
+	getOutputStream): Implement dummy methods.
+	* src/jacl/tcl/lang/Shell.java (main): Invoke the
+	interp.dispose() method before calling exit so that
+	any remaining IO is flushed when Channels are closed.
+	* src/jacl/tcl/lang/SocketChannel.java (SocketChannel,
+	getInputStream, getOutputStream): Remove setting of
+	reader and writer fields and implement getInputStream
+	and getOutputStream instead.
+	* src/jacl/tcl/lang/StdChannel.java (open, ):
+	Don't set reader, instead implement getInputStream method.
+	Add dummy getOutputStream implementaiton.
+	* src/jacl/tcl/lang/TclInputStream.java: Implementaiton of
+	input half of Tcl IO code. Supports binary input as
+	well as reading encoded streams.
+	* src/jacl/tcl/lang/TclOutputStream.java: Implementaiton of
+	output half of Tcl IO code. Supports binary output as
+	well as writing encoded streams.
+	* src/tcljava/tcl/lang/TclString.java (append, empty):
+	Add an append method that acepts a char[] and a new empty
+	method that will ensure that the internal rep is an
+	empty StringBuffer. These features are used by the Jacl
+	IO system only.
+	* src/tests/jacl/tcl/lang/TestChannelCmd.java (cmdProc):
+	Update calls to Channel APIs like isBlocked,
+	getNumBufferedInputBytes, and getNumBufferedOutputBytes.
+	* tests/tcltest.tcl: Add the testConstraint method since
+	it is used in io.test and ioCmd.test.
+	* tests/inprogress/Unicode.test: Add a couple of test
+	cases for Java encodings. The JVM's I have tested don't
+	seem to support encodings very well, so these tests
+	will likely fail.
+	* tests/tcl/FileCmd.test: Invoke fconfigure correctly,
+	this buggy code was inside a catch.
+	* tests/tcl/io.test:
+	* tests/tcl/ioCmd.test: Add IO test scripts from Tcl
+	CVS as of today. Most pass, some still fail because
+	of minor bugs.
+
+2003-03-07  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/jacl/tcl/lang/TclByteArray.java (setLength):
 	Remove TclException from method throws section since
 	the methods never throw a TclException. Call the

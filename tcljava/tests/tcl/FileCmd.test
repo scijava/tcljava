@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: FileCmd.test,v 1.3 2000/12/23 10:27:03 mdejong Exp $
+# RCS: @(#) $Id: FileCmd.test,v 1.4 2003/03/08 03:44:16 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -33,7 +33,7 @@ proc writeZero { name len } {
     global zero
     file delete -force $name
     set fd [open $name w]
-    catch {fconfigure stdout -buffering full -translation binary}
+    fconfigure $fd -encoding binary -translation binary
 
     set written 0
     set zerosize [string length $zero]
