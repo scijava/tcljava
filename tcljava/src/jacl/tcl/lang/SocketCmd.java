@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: SocketCmd.java,v 1.1 1998/10/14 21:09:20 cvsadmin Exp $
+ * RCS: @(#) $Id: SocketCmd.java,v 1.2 1999/05/09 01:28:41 dejong Exp $
  *
  */
 
@@ -27,6 +27,12 @@ class SocketCmd implements Command {
         "-server",
     };
 
+    static final int OPT_ASYNC		= 0;
+    static final int OPT_MYADDR		= 1;
+    static final int OPT_MYPORT		= 2;
+    static final int OPT_SERVER		= 3;
+
+
     /**
      * This procedure is invoked to process the "socket" Tcl command.
      * See the user documentation for details on what it does.
@@ -38,15 +44,15 @@ class SocketCmd implements Command {
     public void cmdProc(Interp interp, TclObject argv[])
             throws TclException {
      
-	boolean server    = false;    /* True if this is a server socket */
-	boolean async     = false;    /* True if this is asynchronous */
-	String  channelId = "";       /* Key into chanTable */
-	String  myaddr    = "";       /* DNS or IP address of the server */
-	String  script    = "";       /* Script for server to run */
-	String  host      = "";       /* The server fot the client */
-	int     myport    = 0;        /* The port to connect to */
-	int     index;                /* Index to the correct cmd */
-	int     i;                    /* Index to the current arg from argv */
+	boolean server    = false;    // True if this is a server socket
+	boolean async     = false;    // True if this is asynchronous
+	String  channelId = "";       // Key into chanTable
+	String  myaddr    = "";       // DNS or IP address of the server
+	String  script    = "";       // Script for server to run
+	String  host      = "";       // The server fot the client
+	int     myport    = 0;        // The port to connect to
+	int     index;                // Index to the correct cmd
+	int     i;                    // Index to the current arg from argv
 	
 	for (i = 1; (i < argv.length); i++) {
 	    if ((argv[i].toString().length() > 0) &&
@@ -58,7 +64,7 @@ class SocketCmd implements Command {
 	    }
 
  	    switch (index) {
-	        case 0: {        /* async  */
+	        case OPT_ASYNC: {
 		    if (server) {
 		        throw new TclException(interp,
                                 "cannot set -async option for server sockets");
@@ -66,7 +72,7 @@ class SocketCmd implements Command {
 		    async = true;
 		    break;
 		}
-	        case 1: {        /* myaddr */
+	        case OPT_MYADDR: {
 		    i++;
 		    if (i >= argv.length) {
 		        throw new TclException(interp,
@@ -75,7 +81,7 @@ class SocketCmd implements Command {
 		    myaddr = argv[i].toString();
 		    break;
 		}
-	        case 2: {        /* myport */
+	        case OPT_MYPORT: {
 		    i++;
 		    if (i >= argv.length) {
 		        throw new TclException(interp,
@@ -84,7 +90,7 @@ class SocketCmd implements Command {
 		    //myport = get a valid port from argv[i]
 		    break;
 		}
-	        case 3: {        /* server */
+	        case OPT_SERVER: {
 		    if (async) {
 		        throw new TclException(interp,
                                 "cannot set -async option for server sockets");
@@ -127,18 +133,14 @@ class SocketCmd implements Command {
 	}
 
 	if (server) {
- 	    /*
-	     * Register with the interpreter to let us know when the
-	     * interpreter is deleted (by having the callback set the
-	     * acceptCallbackPtr->interp field to NULL). This is to
-	     * avoid trying to eval the script in a deleted interpreter.
-	     */
+	    // Register with the interpreter to let us know when the
+	    // interpreter is deleted (by having the callback set the
+	    // acceptCallbackPtr->interp field to NULL). This is to
+	    // avoid trying to eval the script in a deleted interpreter.
 	  
-	    /*
-	     * Register a close callback. This callback will inform the
-	     * interpreter (if it still exists) that this channel does not
-	     * need to be informed when the interpreter is deleted.
-	     */
+	    // Register a close callback. This callback will inform the
+	    // interpreter (if it still exists) that this channel does not
+	    // need to be informed when the interpreter is deleted.
 
 	} else {
       
