@@ -11,7 +11,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FileCmd.java,v 1.8 2003/02/02 00:59:16 mdejong Exp $
+ * RCS: @(#) $Id: FileCmd.java,v 1.9 2003/02/03 01:39:02 mdejong Exp $
  *
  */
 
@@ -1196,6 +1196,13 @@ throws
 	// Perform the rename procedure.
 
 	if (!sourceFileObj.renameTo(targetFileObj)) {
+
+	    if (targetFileObj.isDirectory()) {
+	        throw new TclPosixException(interp, TclPosixException.EEXIST,
+	                true, "error renaming \"" + sourceName +
+	                "\" to \"" + targetName + "\"");
+	    }
+
 	    throw new TclPosixException(interp, TclPosixException.EACCES, true,
 		    "error renaming \"" + sourceName + "\" to \"" + targetName
 		    + "\":  best guess at reason");
