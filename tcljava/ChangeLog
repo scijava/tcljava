@@ -1,5 +1,13 @@
 2001-11-20  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/jacl/tcl/lang/ServerSocketChannel.java (write,
+	flush): Remove overridden methods that attempted to
+	provide channel specific error messages. The write
+	and flush methods in the super class provide error
+	messages that are compatible with Tcl.
+
+2001-11-20  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/jacl/tcl/lang/Channel.java (getNextDescriptor):
 	Move the getNextDescriptor method into the TclIO class.
 	Update documentation for Channel class.

@@ -116,16 +116,6 @@ public class ServerSocketChannel extends Channel {
                 s.getPort());
         cbInterp.getNotifier().queueEvent((TclEvent)evt,TCL.QUEUE_TAIL);
     }
-        
-    /**
-     * Write to the channel - not allowed.
-     **/
-
-    void write(Interp interp, String outStr)
-        throws IOException, TclException
-    {
-        throw new TclException(interp, "cannot write to a server socket");
-    }
 
     void close() throws IOException
     {
@@ -141,11 +131,6 @@ public class ServerSocketChannel extends Channel {
     /**
      * Override to provide specific errors for server socket.
      **/
-
-    void flush(Interp interp) throws IOException, TclException
-    {
-        throw new TclException(interp, "cannot flush a server socket");
-    }
 
     void seek(Interp interp, long offset, int mode)
             throws IOException, TclException {
