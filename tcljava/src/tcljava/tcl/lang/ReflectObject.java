@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: ReflectObject.java,v 1.4 1999/05/09 22:41:50 dejong Exp $
+ * RCS: @(#) $Id: ReflectObject.java,v 1.5 1999/05/09 22:44:00 dejong Exp $
  *
  */
 
@@ -40,7 +40,7 @@ Class  javaClass;
 
 Interp ownerInterp;
 
-// The reference ID of this object.
+// The reference ID of this object. (same as instance command name)
 
 String refID;
 
@@ -80,6 +80,8 @@ Hashtable bindings;
 
 private static final String NULL_REP = "java0x0";
 
+/*
+
 // this really should be final but there is a bug in Sun's javac which
 // incorrectly flags this as a "final not initialized" error
 //private static final ReflectObject NULL_OBJECT;
@@ -93,6 +95,9 @@ static {
 	NULL_OBJECT = makeNullObject(null, null);
 }
 
+*/
+
+
 protected static final String NOCONVERT = "-noconvert";
 
 protected static final String CMD_PREFIX = "java0x";
@@ -101,9 +106,6 @@ protected static final String CMD_PREFIX = "java0x";
 
 private static final boolean debug = false;
 
-
-
-
 
 // Private helper for creating reflected null objects
 
@@ -121,6 +123,708 @@ private static ReflectObject makeNullObject(Interp i, Class c) {
 
     return ro;
 }
+
+
+
+
+/*
+// Start of older object based reflect table implementation
+
+
+// Private helper used to add a reflect object to the reflect table
+
+private static void addToReflectTable(ReflectObject roRep)
+{
+    Interp interp = roRep.ownerInterp;
+    Class cl = roRep.javaClass;
+    Object obj = roRep.javaObj;
+    String id = roRep.refID;
+
+    // now we hash the object id to find the ReflectObject or 
+    // ReflectObjects that represent this object. The case where
+    // a single object is referenced as only one type will be common
+    // so the object we hash to can be either a ReflectObject or a
+    // Hashtable. At runtime we determine which one it is. While
+    // this may take a little longer it will save a lot of space
+    // because an object will not need to have a hashtable
+    // allocated to it unless it is getting referenced multiple
+    // time and by different object reference types.
+    
+    Object refOrTable = interp.reflectObjTable.get(obj);
+
+
+    if (refOrTable == null) {
+	// there is no reflect object for this java object, just add
+	// a single reflect object to the reflectObjTable in the interp
+	
+	if (debug) {
+	    System.out.println("new reflect object for "
+			       + JavaInfoCmd.getNameFromClass(cl));
+	}
+	
+	// hash from Java object to reflect object
+	interp.reflectObjTable.put(obj, roRep);
+    } else {
+
+	// found something in the table and now we must find out
+	// if it is a ReflectObject or a HashTable
+
+	if (refOrTable instanceof ReflectObject) {
+	    // we found a single reflect object, if the new type is the
+	    // same as the current ref type then we are ok. If not
+	    // then we need to make a hashtable for the ReflectObjects
+	    
+	    ReflectObject found;
+
+	    found = (ReflectObject) refOrTable;
+	    
+	    if (debug) {
+		System.out.println("typetable with single reflect object found");
+	    }
+	    
+	    // If the Class types match then someting is really wrong
+	    if (found.javaClass == cl) {
+		throw new TclRuntimeError("class " + JavaInfoCmd.getNameFromClass(cl)
+		    + " was already in typetable");
+	    } else {
+		// we need to allocate a hashtable and add the old ref
+		// in with the new ref that will be added to the hash table
+		
+		if (debug) {
+		    System.out.println("class " + JavaInfoCmd.getNameFromClass(cl) +
+		        " not found, allocating typetable for " + id);
+		}
+		
+		Hashtable h = new Hashtable(3);
+		
+		// map java Object to the new Hashtable
+		interp.reflectObjTable.put(obj,h);
+		
+		// hash the existing class to the existing ReflectObject
+		h.put(found.javaClass,found);
+		
+		// hash the new class to the new ReflectObject
+		h.put(cl,roRep);
+	    }
+	    
+	} else {
+	    // it must be a hash table if it is not a ReflectObject
+	    // we now hash the class type into this hashtable to
+	    // find the ReflectObject for the ref type we care about
+	    
+	    Hashtable h = (Hashtable) refOrTable;
+	    
+	    if (debug) {
+		System.out.println("typetable with " + h.size() +
+				   " entires found");
+	    }
+	    
+	    // If this class is already in the table then something is very wrong!
+
+	    if (h.get(cl) != null) {
+		throw new TclRuntimeError("class " + JavaInfoCmd.getNameFromClass(cl)
+				+ " was already in typetable");
+	    }
+
+	    // add new ReflectObject, map Class to ReflectObject in the table
+	    
+	    if (debug) {
+		System.out.println("Adding class " + 
+				   JavaInfoCmd.getNameFromClass(cl) +
+				   " to typetable");
+	    }
+	    
+	    h.put(cl,roRep);
+	}
+    }
+}
+
+
+// Private helper used to remove a reflected object from the reflect table.
+
+private static void removeFromReflectTable(ReflectObject roRep)
+{
+  Interp interp = roRep.ownerInterp;
+  Class cl = roRep.javaClass;
+  Object obj = roRep.javaObj;
+  String id = roRep.refID;
+
+  Object refOrTable = interp.reflectObjTable.get(obj);
+
+  // This should never happen
+  if (refOrTable == null) {
+      //dump(interp);
+
+      throw new TclRuntimeError("reflectObjectTable returned null for " + id);
+  }
+
+  if (refOrTable instanceof ReflectObject) {
+      // this is the easy case, we just need to remove the key
+      // that maps the java object to this reflect object
+
+      if (debug) {
+          System.out.println("removing single entry for " + id);
+      }
+
+      // Sanity check
+
+      if (roRep != refOrTable) {
+	  throw new TclRuntimeError("reflect object did not match object in table");
+      }
+
+      interp.reflectObjTable.remove(obj);
+  } else {
+      // in this case the main table hashed to a hash table
+      // so we need remove the current ref type from the hashtable
+
+      Hashtable h = (Hashtable) refOrTable;
+
+      if (debug) {
+          System.out.println("removing typetable entry for " +
+			     JavaInfoCmd.getNameFromClass(cl));
+      }
+
+      // remove the entry for the current refrencing class
+      h.remove(cl);
+
+      // now if there is only one key left in the hashtable
+      // we can remap the original table so that it maps
+      // the java object to the ReflectObject
+
+      if (h.size() == 1) {
+          // get the only value out of the table
+	  Object value = h.elements().nextElement();
+
+          // put the original single mapping back into the
+	  // interp reflect table which also frees up the
+	  // reftype hashtable for garbage collection
+      
+          interp.reflectObjTable.put(obj,value);
+
+          if (debug) {
+	      System.out.println("removing typetable");
+          }
+      }
+  }
+}
+
+
+
+// Find in ReflectTable will search the reflect table for a given
+// {Class Object} pair. If the pair exists its ReflectObject
+// will be returned. If not, null will be returned.
+    
+private static ReflectObject findInReflectTable(Interp interp, Class cl, Object obj)
+{
+    // now we hash the object id to find the ReflectObject or 
+    // ReflectObjects that represent this object. The case where
+    // a single object is referenced as only one type will be common
+    // so the object we hash to can be either a ReflectObject or a
+    // Hashtable. At runtime we determine which one it is. While
+    // this may take a little longer it will save a lot of space
+    // because an object will not need to have a hashtable
+    // allocated to it unless it is getting referenced multiple
+    // time and by different object reference types.
+    
+    Object refOrTable = interp.reflectObjTable.get(obj);
+
+    ReflectObject roRep;
+
+    if (refOrTable == null) {
+	if (debug) {
+	    System.out.println("could not find reflect object for "
+			       + JavaInfoCmd.getNameFromClass(cl));
+	}
+	
+	return null;
+    } else {
+
+	// found something in the table and now we must find out
+	// if it is a ReflectObject or a HashTable
+
+	if (refOrTable instanceof ReflectObject) {
+	    // we found a single reflect object, if the new type is the
+	    // same as the current ref type then we are ok. If not
+	    // then we need to make a hashtable for the ReflectObjects
+	    
+	    roRep = (ReflectObject) refOrTable;
+	    
+	    if (debug) {
+		System.out.println("single reflect object found");
+	    }
+	    	    
+	    // the class matches, just return the ReflectObject
+	    if (roRep.javaClass == cl) {
+		if (debug) {
+		    System.out.println("match for id " + roRep.refID +
+			" of class " + JavaInfoCmd.getNameFromClass(cl));
+		}
+		return roRep;
+	    } else {
+		return null;
+	    }
+	    
+	} else {
+	    // it must be a hash table if it is not a ReflectObject
+	    // we now hash the class type into this hashtable to
+	    // find the ReflectObject for the ref type we care about
+	    
+	    Hashtable h = (Hashtable) refOrTable;
+	    
+	    if (debug) {
+		System.out.println("typetable with " + h.size() +
+				   " entires found");
+	    }
+	    	    
+	    roRep = (ReflectObject) h.get(cl);
+	    
+	    // add a new reflect object if it is not in the table
+	    // map the class to the ReflectObject in the table
+	    
+	    if (roRep == null) {
+		if (debug) {
+		    System.out.println(cl + " not found in typetable");
+		}
+		
+		return null;
+	    } else {
+		if (debug) {
+		    System.out.println(cl + " already in typetable for "
+				       + roRep.refID);
+		}
+		
+		// if the rep is already in the table then just return it
+		return roRep;
+	    }
+	}
+    }    
+}
+
+
+// This method is only used for debugging, it will dump the contents of the
+// reflect table in a human readable form. The dump is to stdout.
+
+public static void dump(
+    Interp interp)
+{ 
+    try {
+    System.out.println("BEGIN DUMP -------------------------------");
+    System.out.println("interp.reflectObjCount = " + interp.reflectObjCount);
+    System.out.println("interp.reflectIDTable.size() = " + interp.reflectIDTable.size());
+    System.out.println("interp.reflectObjTable.size() = " + interp.reflectObjTable.size());
+
+
+    for (Enumeration keys = interp.reflectIDTable.keys() ; keys.hasMoreElements() ;) {
+        System.out.println();
+        String refID = (String) keys.nextElement();
+        ReflectObject roRep = (ReflectObject) interp.reflectIDTable.get(refID);
+
+        // do sanity check
+        if (roRep == null) {
+          System.out.println("Table refID \"" + refID + "\" hashed to the null object");
+        }
+
+        // do sanity check
+        if (! refID.equals(roRep.refID)) {
+          System.out.println("Table refID \"" + refID + "\" does not match object refID \"" +
+          roRep.refID + "\"");
+        }
+
+        // do sanity check
+        if (roRep.ownerInterp != interp) {
+          System.out.println("roRep.ownerInterp not the same as current interp");
+        }
+
+        System.out.println("refID = \"" + roRep.refID + "\"");
+        System.out.println("javaObj.hashCode() = \"" + roRep.javaObj.hashCode()  + "\"");
+
+
+        System.out.println("javaClass = \"" +
+            JavaInfoCmd.getNameFromClass(roRep.javaClass) + "\"");
+
+        // do sanity check
+        TclObject tobj = TclString.newInstance(roRep.refID);
+        Class  tclass;
+        try {
+            tclass = ReflectObject.getClass(interp, tobj);
+        } catch (TclException e) {
+            tclass = null;
+        }
+        if (roRep.javaClass != tclass) {
+            System.out.println("javaClass is not the same the reflect class type \"" +
+            JavaInfoCmd.getNameFromClass(tclass) + "\" in the interp");
+        }
+
+
+        System.out.println("useCount = \"" + roRep.useCount + "\"");
+        System.out.println("isValid = \"" + roRep.isValid + "\"");
+
+
+        // do sanity check
+        Command command;
+        try {
+            command = interp.getCommand(roRep.refID);
+        } catch (TclRuntimeError e) { //Tcl Blend did not have this implemented
+            command = null;
+        }
+        if (command == null) {
+            System.out.println("could not find command named \"" + roRep.refID + "\"");
+        }
+
+
+
+        // use the Java Object to lookup the ReflectObject typetable
+        Object refOrTable = interp.reflectObjTable.get(roRep.javaObj);
+
+        if (refOrTable == null) {
+            System.out.println("typetable is null");
+        } else {
+
+            if (refOrTable instanceof ReflectObject) {
+                // sanity check
+                if (roRep != refOrTable) {
+                    System.out.println("reflect object in typetable is not the same as the reflect object used to lookup the typetable");
+                }
+
+	        roRep = (ReflectObject) refOrTable;
+
+                System.out.println("typetable is a single entry of type \""  +
+                    JavaInfoCmd.getNameFromClass(roRep.javaClass) + "\"");
+            } else {
+                // the typetable is made up of a Hashtable
+	        Hashtable h = (Hashtable) refOrTable;
+
+                System.out.println("typetable has " + h.size() + " entries");
+	
+                for (Enumeration typetable_keys = h.keys() ;
+                    typetable_keys.hasMoreElements() ;) {
+                    System.out.println();
+                    Class key = (Class) typetable_keys.nextElement();
+	            roRep = (ReflectObject) h.get(key);
+
+                    System.out.println("typetable entry refID is \""  +
+                        roRep.refID + "\"");
+
+                    System.out.println("typetable entry type is \""  +
+                        JavaInfoCmd.getNameFromClass(roRep.javaClass) + "\"");
+                }
+
+            }
+
+        }
+
+
+    }
+    System.out.println();
+
+
+   // dump the table from a Tcl/Java shell like this
+   // java::call tcl.lang.ReflectObject dump [java::getinterp]
+
+    } catch (Throwable e) { e.printStackTrace(System.out); }
+
+}
+
+
+// End of older object based reflect table implementation
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Start of newer string based reflect table implementation
+
+
+
+// Private helper used to add a reflect object to the reflect table
+
+private static void addToReflectTable(ReflectObject roRep)
+{
+    Interp interp = roRep.ownerInterp;
+    Class cl = roRep.javaClass;
+    Object obj = roRep.javaObj;
+    String id = roRep.refID;
+
+
+    // now we hash a string combination of the class and the identity hash code
+    // so that we get a unique string for this pairing of {Class Object}.
+    
+    StringBuffer ident_buff = new StringBuffer();
+    ident_buff.append(JavaInfoCmd.getNameFromClass(cl));
+    ident_buff.append('.');
+    ident_buff.append(System.identityHashCode(obj));
+    String ident = ident_buff.toString();
+    
+    ReflectObject found = (ReflectObject) interp.reflectObjTable.get(ident);
+    
+    if (found == null) {
+	// there is no reflect object for this java object, just add
+	// a single reflect object to the reflectObjTable in the interp
+	
+	if (debug) {
+	    System.out.println("new reflect object for "
+			       + JavaInfoCmd.getNameFromClass(cl));
+	}
+	
+	interp.reflectObjTable.put(ident, roRep);
+    } else {
+	// This should never happen
+
+	//dump(interp);
+		
+	throw new TclRuntimeError("reflectObjectTable returned null for " + id);
+    }
+}
+
+
+// Private helper used to remove a reflected object from the reflect table.
+
+private static void removeFromReflectTable(ReflectObject roRep)
+{
+  Interp interp = roRep.ownerInterp;
+  Class cl = roRep.javaClass;
+  Object obj = roRep.javaObj;
+  String id = roRep.refID;
+
+  // now we hash a string combination of the class and the identity hash code
+  // so that we get a unique string for this pairing of {Class Object}.
+
+  StringBuffer ident_buff = new StringBuffer();
+  ident_buff.append(JavaInfoCmd.getNameFromClass(cl));
+  ident_buff.append('.');
+  ident_buff.append(System.identityHashCode(obj));
+  String ident = ident_buff.toString();
+
+  ReflectObject found = (ReflectObject) interp.reflectObjTable.get(ident);
+
+  // This should never happen
+  if (found == null) {
+      //dump(interp);
+
+      throw new TclRuntimeError("reflectObjectTable returned null for " + id);
+  } else {
+
+      // Sanity check
+      
+      if (found != roRep) {
+	  throw new TclRuntimeError("reflect object did not match object in table");
+      }
+
+      if (debug) {
+          System.out.println("removing entry for " + id);
+      }
+
+      interp.reflectObjTable.remove(ident);
+  }
+}
+
+
+
+// Find in ReflectTable will search the reflect table for a given
+// {Class Object} pair. If the pair exists its ReflectObject
+// will be returned. If not, null will be returned.
+    
+private static ReflectObject findInReflectTable(Interp interp, Class cl, Object obj)
+{
+    // now we hash a string combination of the class and the identity hash code
+    // so that we get a unique string for this pairing of {Class Object}.
+
+    StringBuffer ident_buff = new StringBuffer();
+    ident_buff.append(JavaInfoCmd.getNameFromClass(cl));
+    ident_buff.append('.');
+    ident_buff.append(System.identityHashCode(obj));
+    String ident = ident_buff.toString();
+    
+    ReflectObject found = (ReflectObject) interp.reflectObjTable.get(ident);
+    
+    if (found == null) {
+	if (debug) {
+	    System.out.println("could not find reflect object for "
+			       + JavaInfoCmd.getNameFromClass(cl));
+	}
+	
+	return null;
+    } else {
+	if (debug) {
+	    System.out.println("match for id " + found.refID +
+			       " of class " + JavaInfoCmd.getNameFromClass(cl));
+	}
+
+	// Sanity check
+
+	if (found.javaClass != cl || found.javaObj != obj || found.ownerInterp != interp) {
+	    throw new TclRuntimeError("table entry did not match arguments");
+	}
+
+	return found;
+    }
+}
+
+
+
+
+// This method is only used for debugging, it will dump the contents of the
+// reflect table in a human readable form. The dump is to stdout.
+
+public static void dump(
+    Interp interp)
+{ 
+    try {
+    System.out.println("BEGIN DUMP -------------------------------");
+    System.out.println("interp.reflectObjCount = " + interp.reflectObjCount);
+    System.out.println("interp.reflectIDTable.size() = " + interp.reflectIDTable.size());
+    System.out.println("interp.reflectObjTable.size() = " + interp.reflectObjTable.size());
+
+
+    System.out.println("dumping reflectIDTable");
+
+    for (Enumeration keys = interp.reflectIDTable.keys() ; keys.hasMoreElements() ;) {
+        System.out.println();
+        String refID = (String) keys.nextElement();
+        ReflectObject roRep = (ReflectObject) interp.reflectIDTable.get(refID);
+
+        // do sanity check
+        if (roRep == null) {
+	    throw new RuntimeException("Reflect ID Table entry \"" + refID + "\" hashed to null");
+        }
+
+        // do sanity check
+        if (! refID.equals(roRep.refID)) {
+	    throw new RuntimeException("Reflect ID Table entry \"" + refID +
+				       "\" does not match object refID \"" +
+				       roRep.refID + "\"");
+        }
+
+        // do sanity check
+        if (roRep.ownerInterp != interp) {
+	    throw new RuntimeException("roRep.ownerInterp not the same as current interp");
+        }
+
+        System.out.println("refID = \"" + roRep.refID + "\"");
+        System.out.println("javaClass = \"" +
+            JavaInfoCmd.getNameFromClass(roRep.javaClass) + "\"");
+
+
+	System.out.println("javaObj.hashCode() = \"" + roRep.javaObj.hashCode() + "\"");
+	System.out.println("System.identityHashCode(javaObj) = \"" +
+			   System.identityHashCode(roRep.javaObj) + "\"");
+
+        // do sanity check
+        TclObject tobj = TclString.newInstance(roRep.refID);
+        Class  tclass;
+        try {
+            tclass = ReflectObject.getClass(interp, tobj);
+        } catch (TclException e) {
+            tclass = null;
+        }
+        if (roRep.javaClass != tclass) {
+	    throw new RuntimeException("javaClass is not the same the reflect class type \""
+			         + JavaInfoCmd.getNameFromClass(tclass) + "\" in the interp");
+        }
+
+        System.out.println("useCount = \"" + roRep.useCount + "\"");
+        System.out.println("isValid = \"" + roRep.isValid + "\"");
+
+
+        // do sanity check for the command itself
+        Command command;
+        try {
+            command = interp.getCommand(roRep.refID);
+        } catch (TclRuntimeError e) { //Tcl Blend did not have this implemented
+            command = null;
+        }
+        if (command == null) {
+	    System.out.println("could not find command named \"" + roRep.refID + "\"");
+        }
+
+
+	// Make sure this ReflectObject hashes to itself in the reflectObjTable
+
+	StringBuffer ident_buff = new StringBuffer();
+	ident_buff.append(JavaInfoCmd.getNameFromClass(roRep.javaClass));
+	ident_buff.append('.');
+	ident_buff.append(System.identityHashCode(roRep.javaObj));
+	String ident = ident_buff.toString();
+
+	ReflectObject found = (ReflectObject) interp.reflectObjTable.get(ident);
+
+	// do sanity check
+        if (roRep != found) {
+	    throw new RuntimeException("Reflect ID table entry \"" + ident +
+				       "\" did not hash to its own ReflectObject");
+        }
+    }
+    System.out.println();
+
+
+
+    System.out.println("dumping reflectObjTable");
+
+    // Loop over the entries in the reflectObjTable and check that each one also
+    // exists in the reflectIDTable and that they refer to the same ReflectObject
+
+    for (Enumeration keys = interp.reflectObjTable.keys() ; keys.hasMoreElements() ;) {
+        System.out.println();
+        String ident = (String) keys.nextElement();
+        ReflectObject roRep = (ReflectObject) interp.reflectObjTable.get(ident);
+
+        // do sanity check
+        if (roRep == null) {
+	    throw new RuntimeException("Reflect table entry \"" + ident + "\" hashed to null");
+        }
+
+	// do sanity check, check the reflectIDTable to ensure we hast to this ReflectObject
+        if (roRep != interp.reflectIDTable.get(roRep.refID)) {
+	    throw new RuntimeException("Reflect table entry \"" + ident +
+				       "\" did not hash to its own ReflectObject");
+        }
+
+	// Check that the string we hashed to is valid for this object class combo
+	StringBuffer ident_buff = new StringBuffer();
+	ident_buff.append(JavaInfoCmd.getNameFromClass(roRep.javaClass));
+	ident_buff.append('.');
+	ident_buff.append(System.identityHashCode(roRep.javaObj));
+
+	if (! ident.equals(ident_buff.toString())) {
+	    throw new RuntimeException("ident \"" + ident + "\" is not equal to calculated" +
+				       " ident \"" + ident_buff.toString());
+	}
+	
+	System.out.println("ident \"" + ident + "\" corresponds to ReflectObject with " +
+			   "refID \"" + roRep.refID + "\"");
+    }
+
+
+    // dump the table from a Tcl/Java shell like this
+    // java::call tcl.lang.ReflectObject dump [java::getinterp]
+
+    } catch (Throwable e) { e.printStackTrace(System.out); }
+
+}
+
+
+// End of newer string based reflect table implementation
+
+
+
+
 
 
 
@@ -154,6 +858,8 @@ makeReflectObject(
 {
     //final boolean debug = true;
 
+    ensureInit(interp); // make sure reflect tables are initialized
+
     if (obj == null) {
         // this is the null reflect object case
 
@@ -165,6 +871,8 @@ makeReflectObject(
 	    System.out.println("non null class with null object");
 	    System.out.println("non null class was " + cl);
 	}
+	
+	// null objects are not added to the reflect table like other instances
 
 	return makeNullObject(interp,cl);
     }
@@ -175,9 +883,8 @@ makeReflectObject(
 
         throw new TclException(interp,"non null reflect object with null class is not valid");
     }
-    
    
-    // apply builtin type conversion rules
+    // apply builtin type conversion rules (so int becomes java.lang.Integer)
 
     if (cl == Integer.TYPE)
       cl = Integer.class;
@@ -199,212 +906,76 @@ makeReflectObject(
       throw new TclException(interp,"void object type can not be reflected");
 
     if (debug) {
-        System.out.println("object will be reflected as " + cl);
+        System.out.println("object will be reflected as "
+			   + JavaInfoCmd.getNameFromClass(cl));
     }
 
-
-    ReflectObject roRep = null;
-
-    // now we hash the object id to find the ReflectObject or 
-    // ReflectObjects that represent this object. The case where
-    // a single object is referenced as only one type will be common
-    // so the object we hash to can be either a ReflectObject or a
-    // Hashtable. At runtime we determine which one it is. While
-    // this may take a little longer it will save a lot of space
-    // because an object will not need to have a hashtable
-    // allocated to it unless it is getting referenced multiple
-    // time and by different object reference types.
+    // Try to find this {Class Object} pair in the reflect table.
     
-    Object refOrTable = interp.reflectObjTable.get(obj);
+    ReflectObject roRep = findInReflectTable(interp, cl, obj);
 
-
-    if (refOrTable == null) {
-      // there is no reflect object for this java object, just add
-      // a single reflect object to the reflectObjTable in the interp
-      
-      if (debug) {
-          System.out.println("new reflect object for " + cl);
-      }
-
-      return initReflectObject(interp,cl,obj,interp.reflectObjTable,obj);
-      
+    if (roRep != null) {
+	// If it is already in the table just increment the use count
+	roRep.useCount++;
+	return roRep;
     } else {
-
-      // found something in the table and now we must find out
-      // if it is a ReflectObject or a HashTable
-
-      if (refOrTable instanceof ReflectObject) {
-	// we found a single reflect object, if the new type is the
-	// same as the current ref type then we are ok. If not
-	// then we need to make a hashtable for the ReflectObjects
-	
-	roRep = (ReflectObject) refOrTable;
-
-        if (debug) {
-	    System.out.println("typetable with single reflect object found");
-        }
-
-	
-	// the easy types match case, just return the ReflectObject
-	if (roRep.javaClass == cl) {
-            if (debug) {
-	        System.out.println(cl + " already in typetable for " +
-			roRep.refID);
-            }
-	    roRep.useCount++;
-	    return roRep;
+	if (cl.isArray()) {
+	    roRep = new ArrayObject();
 	} else {
-	  // we need to allocate a hashtable and add the old ref
-	  // in with the new ref that will be added to the hash table
-	  
-          if (debug) {
-	      System.out.println(cl + " not found, allocating typetable for "
-                  +  roRep.refID);
-          }
+	    roRep = new ReflectObject();
+	}
 
-	  Hashtable h = new Hashtable(3);
-	  
-	  // make new hashtable into the interp reflect hash for the object
-	  interp.reflectObjTable.put(obj,h);
+	roRep.ownerInterp = interp;
+	roRep.javaObj = obj;
+	roRep.javaClass = cl;
+    
+	// make sure the object can be represented by the given Class
+	Class obj_class = roRep.javaObj.getClass();
+    
+	if (! roRep.javaClass.isAssignableFrom(obj_class)) {
+	    throw new TclException(interp,"object of type " +
+	        JavaInfoCmd.getNameFromClass(obj_class) +
+	        " can not be referenced as type " +
+	        JavaInfoCmd.getNameFromClass(roRep.javaClass));
+	}
 
-	  // hash the existing class to the existing ReflectObject
-	  h.put(roRep.javaClass,roRep);
-	  
-	  // now init a new ReflectObject and add it to the hashtable
-	  // we just created with the new reference class as the key
-	  
-	  return initReflectObject(interp,cl,obj,h,cl);
+	if (debug) {
+	    System.out.println("PRE REGISTER DUMP");
+	    dump(interp);
+	}
+
+
+	// Register the object in the interp.
+    
+	interp.reflectObjCount++; // incr id, the first id used will be 1
+	roRep.refID = CMD_PREFIX + Long.toHexString(interp.reflectObjCount);
+	
+	interp.createCommand(roRep.refID,roRep);
+	interp.reflectIDTable.put(roRep.refID,roRep);
+	
+	addToReflectTable(roRep);
+	
+	if (debug) {
+	    System.out.println("reflect object " + roRep.refID +
+			       " of type " +
+			       JavaInfoCmd.getNameFromClass(roRep.javaClass) +
+			       " registered");
 	}
 	
-      } else {
-	// it must be a hash table if it is not a ReflectObject
-	// we now hash the class type into this hashtable to
-	// find the ReflectObject for the ref type we care about
+	roRep.useCount = 1;
+	roRep.isValid  = true;	
+	
+	if (debug) {
+	    System.out.println("POST REGISTER DUMP");
+	    dump(interp);
+	}
 		
-	Hashtable h = (Hashtable) refOrTable;
-
-        if (debug) {
-	    System.out.println("typetable with " + h.size() +
-                " entires found");
-        }
-
-	
-	roRep = (ReflectObject) h.get(cl);
-
-	// add a new reflect object if it is not in the table
-	// map the class to the ReflectObject in the table
-
-	if (roRep == null) {
-            if (debug) {
-	        System.out.println(cl + " not found in typetable");
-            }
-
-	    return initReflectObject(interp,cl,obj,h,cl);
-	} else {
-            if (debug) {
-	        System.out.println(cl + " already in typetable for "
-                    + roRep.refID);
-            }
-
-	    // if the rep is already in the table then just return it
-	    roRep.useCount++;
-	    return roRep;
-	}
-
-      }
+	return roRep;
     }
 }
 
-
 
-/*
- *----------------------------------------------------------------------
- *
- * initReflectObject --
- *
- *      Helper for makeReflectObject, it prepares a ReflectObject so
- *      that it can be used inside the interp.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The object is unregistered (and thus no longer accessible from
- *	Tcl scripts) if no other if no other TclObjects are
- *	still using this internal rep.
- *
- *----------------------------------------------------------------------
- */
 
-private static ReflectObject
-initReflectObject(
-    Interp interp,          // the interp we are running inside of
-    Class  cl,              // the class of the object to reflect
-    Object obj,             // the java object to reflect
-    Hashtable addTable,     // the hashtable we should add the ReflectObject to
-    Object    addKey)       // the key that the ReflectObject is added under
-throws TclException
-{
-  ReflectObject roRep;
-
-  if (cl.isArray()) {
-    roRep = new ArrayObject();
-  } else {
-    roRep = new ReflectObject();
-  }
-
-  roRep.ownerInterp = interp;
-  roRep.javaObj = obj;
-  roRep.javaClass = cl;
-
-  // make sure the object can be represented by the given Class
-  Class obj_class = roRep.javaObj.getClass();
-
-  if (! roRep.javaClass.isAssignableFrom(obj_class)) {
-    throw new TclException(interp,"object of type " +
-        JavaInfoCmd.getNameFromClass(obj_class) +
-        " can not be referenced as type " +
-        JavaInfoCmd.getNameFromClass(roRep.javaClass));
-  }
-
-
-  if (debug) {
-      System.out.println("PRE REGISTER DUMP");
-      dump(interp);
-  }
-
-
-  // Register the object in the interp.
-	    
-  interp.reflectObjCount++; // incr id, the first id used will be 1
-  roRep.refID = CMD_PREFIX + Long.toHexString(interp.reflectObjCount);
-
-  interp.createCommand(roRep.refID,roRep);
-  interp.reflectIDTable.put(roRep.refID,roRep);
-      
-  addTable.put(addKey,roRep);
-
-  if (debug) {
-     System.out.println("reflect object " + roRep.refID +
-         " of type " +
-         JavaInfoCmd.getNameFromClass(roRep.javaClass) +
-         " registered");
-  }
-  
-  roRep.useCount = 1;
-  roRep.isValid  = true;
-
-
-  if (debug) {
-      System.out.println("POST REGISTER DUMP");
-      dump(interp);
-  }
-
-
-  return roRep;
-}
-
-
 /*
  *----------------------------------------------------------------------
  *
@@ -450,7 +1021,7 @@ dispose()
 
         ownerInterp.reflectIDTable.remove(refID);
 
-	disposeOfTableRefrences();
+	removeFromReflectTable(this);
 
 	ownerInterp = null;
 	javaObj = null;
@@ -459,70 +1030,6 @@ dispose()
 	refID = NULL_REP;
     }
 }
-
-
-
-// helper function for dispose, it will clean up reprences inside
-// the interp.reflectObjTable which currently holds either a
-// ReflectObject or a table of reflect objects
-
-private void
-disposeOfTableRefrences() {
-
-  Object refOrTable = ownerInterp.reflectObjTable.get(javaObj);
-
-  // This should never happen
-  if (refOrTable == null) {
-      //dump(ownerInterp);
-
-      throw new NullPointerException("reflectObjectTable returned null for " +
-          refID);
-  }
-
-  if (refOrTable instanceof ReflectObject) {
-      // this is the easy case, we just need to remove the key
-      // that maps the java object to this reflect object
-
-      if (debug) {
-          System.out.println("removing single entry typetable containing " +
-              ((ReflectObject) refOrTable).refID );
-      }
-
-      ownerInterp.reflectObjTable.remove(javaObj);
-  } else {
-      // in this case the main table hashed to a hash table
-      // so we need remove the current ref type from the hashtable
-
-      Hashtable h = (Hashtable) refOrTable;
-
-      if (debug) {
-          System.out.println("removing typetable entry for " + javaClass);
-      }
-
-      // remove the entry for the current refrencing class
-      h.remove(javaClass);
-
-      // now if there is only one key left in the hashtable
-      // we can remap the original table so that it maps
-      // the java object to the ReflectObject
-
-      if (h.size() == 1) {
-          // get the only value out of the table
-	  Object value = h.elements().nextElement();
-
-          // put the original single mapping back into the
-	  // interp reflect table which also frees up the
-	  // reftype hashtable for garbage collection
-      
-          ownerInterp.reflectObjTable.put(javaObj,value);
-
-          if (debug) {
-	      System.out.println("removing typetable");
-          }
-      }
-  }
-}
-
 
 
 /*
@@ -579,12 +1086,14 @@ throws
 				// registered in the given interpreter.
 				// Error message is left inside interp.
 {
+    ensureInit(interp); // make sure reflect tables are initialized
+
     InternalRep rep = tobj.getInternalRep();
     ReflectObject roRep;
 
     if (rep instanceof ReflectObject) {
 	roRep = (ReflectObject) rep;
-        if ((roRep.isValid && (roRep.ownerInterp == interp))) {
+        if (roRep.isValid && (roRep.ownerInterp == interp)) {
 	    return;
 	}
     }
@@ -849,10 +1358,17 @@ toString()
 /*
  *----------------------------------------------------------------------
  *
- * init --
+ * ensureInit --
  *
  *	Initializes fields inside the Interp that are used by
- *	ReflectObject's.
+ *	ReflectObject's. This is slightly tricky because we can
+ *      be initialized in a couple of ways. The BlendExtension
+ *      class could be loaded by doing a "package require java"
+ *      but there is also the nasty case where a Jacl user
+ *      creates an Interp and calls ReflectObject methods directly.
+ *      To maintain compatibility with Jacl 1.0 and 1.1 we
+ *      make sure the ReflectObject tables are initialized by
+ *      calling ensureInit from public static methods in ReflectObject.
  *
  * Results:
  * 	None.
@@ -864,140 +1380,13 @@ toString()
  */
 
 static void
-init(
-    Interp interp)
+ensureInit(Interp interp)
 {
-    interp.reflectIDTable = new Hashtable();
-    interp.reflectObjTable = new Hashtable();
-    interp.reflectObjCount = 0;
-}
-
-
-
-// This method is only used for debugging, it will dump the contents of the
-// reflect table in a human readable form. The dump is to stdout.
-
-public static void dump(
-    Interp interp)
-{ 
-    try {
-    System.out.println("BEGIN DUMP -------------------------------");
-    System.out.println("interp.reflectObjCount = " + interp.reflectObjCount);
-    System.out.println("interp.reflectIDTable.size() = " + interp.reflectIDTable.size());
-    System.out.println("interp.reflectObjTable.size() = " + interp.reflectObjTable.size());
-
-
-
-    for (Enumeration keys = interp.reflectIDTable.keys() ; keys.hasMoreElements() ;) {
-        System.out.println();
-        String refID = (String) keys.nextElement();
-        ReflectObject roRep = (ReflectObject) interp.reflectIDTable.get(refID);
-
-        // do sanity check
-        if (roRep == null) {
-          System.out.println("Table refID \"" + refID + "\" hashed to the null object");
-        }
-
-        // do sanity check
-        if (! refID.equals(roRep.refID)) {
-          System.out.println("Table refID \"" + refID + "\" does not match object refId \"" +
-          roRep.refID + "\"");
-        }
-
-        // do sanity check
-        if (roRep.ownerInterp != interp) {
-          System.out.println("roRep.ownerInterp not the same as current interp");
-        }
-
-        System.out.println("refID = \"" + roRep.refID + "\"");
-        System.out.println("javaObj.hashCode() = \"" + roRep.javaObj.hashCode()  + "\"");
-
-
-        System.out.println("javaClass = \"" +
-            JavaInfoCmd.getNameFromClass(roRep.javaClass) + "\"");
-
-        // do sanity check
-        TclObject tobj = TclString.newInstance(roRep.refID);
-        Class  tclass;
-        try {
-            tclass = ReflectObject.getClass(interp, tobj);
-        } catch (TclException e) {
-            tclass = null;
-        }
-        if (roRep.javaClass != tclass) {
-            System.out.println("javaClass is not the same the reflect class type \"" +
-            JavaInfoCmd.getNameFromClass(tclass) + "\" in the interp");
-        }
-
-
-        System.out.println("useCount = \"" + roRep.useCount + "\"");
-        System.out.println("isValid = \"" + roRep.isValid + "\"");
-
-
-        // do sanity check
-        Command command;
-        try {
-            command = interp.getCommand(roRep.refID);
-        } catch (TclRuntimeError e) { //Tcl Blend did not have this implemented
-            command = null;
-        }
-        if (command == null) {
-            System.out.println("could not find command named \"" + roRep.refID + "\"");
-        }
-
-
-
-        // use the Java Object to lookup the ReflectObject typetable
-        Object refOrTable = interp.reflectObjTable.get(roRep.javaObj);
-
-        if (refOrTable == null) {
-            System.out.println("typetable is null");
-        } else {
-
-            if (refOrTable instanceof ReflectObject) {
-                // sanity check
-                if (roRep != refOrTable) {
-                    System.out.println("reflect object in typetable is not the same as the reflect object used to lookup the typetable");
-                }
-
-	        roRep = (ReflectObject) refOrTable;
-
-                System.out.println("typetable is a single entry of type \""  +
-                    JavaInfoCmd.getNameFromClass(roRep.javaClass) + "\"");
-            } else {
-                // the typetable is made up of a Hashtable
-	        Hashtable h = (Hashtable) refOrTable;
-
-                System.out.println("typetable has " + h.size() + " entries");
-	
-                for (Enumeration typetable_keys = h.keys() ;
-                    typetable_keys.hasMoreElements() ;) {
-                    System.out.println();
-                    Class key = (Class) typetable_keys.nextElement();
-	            roRep = (ReflectObject) h.get(key);
-
-                    System.out.println("typetable entry refID is \""  +
-                        roRep.refID + "\"");
-
-                    System.out.println("typetable entry type is \""  +
-                        JavaInfoCmd.getNameFromClass(roRep.javaClass) + "\"");
-                }
-
-            }
-
-        }
-
-
+    if (interp.reflectIDTable == null) {
+	interp.reflectIDTable = new Hashtable();
+	interp.reflectObjTable = new Hashtable();
+	interp.reflectObjCount = 0;
     }
-    System.out.println();
-
-
-   // dump the table from a Tcl/Java shell like this
-   // java::call tcl.lang.ReflectObject dump [java::getinterp]
-
-
-    } catch (Throwable e) { e.printStackTrace(System.out); }
-
 }
 
 } // end ReflectObject
