@@ -1,6 +1,6 @@
 Recent user-visible changes to Jacl & Tcl Blend:
 
-RCS: @(#) $Id: changes.txt,v 1.5 1999/01/08 02:31:52 hylands Exp $
+RCS: @(#) $Id: changes.txt,v 1.6 1999/01/11 16:51:22 hylands Exp $
 
 ----------------- Released 1.0a1, 10/22/97 -----------------------
 
@@ -382,3 +382,8 @@ Line numbers in error messages were being lost in tcl.lang.Interp evalFile()
   from adding to errorInfo, if it was called by evalFile. Maybe a
   protected and a public version of interp.eval is necessary."
 Harald Kirsch <kir@iitb.fhg.de>
+
+1/11/99 (acl fix to expr)
+Under jacl, 'expr {""}' returns 0.0.  Under tclsh8.0, it returns the
+empty string.  Reported by 
+Jeffrey J. Biesiadecki <jeffrey.j.biesiadecki@jpl.nasa.gov> (MD)
