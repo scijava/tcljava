@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: javaObj.test,v 1.6 2002/12/18 07:39:40 mdejong Exp $
+# RCS: @(#) $Id: javaObj.test,v 1.7 2002/12/30 02:43:54 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -49,6 +49,15 @@ test javaObj-2.1 {FreeTclObject} {
 	[list 4 1 "unknown class or object \"$name\""]
 } 0
 
+test javaObj-2.2 {FreeTclObject, interp already deleted} {
+    setupInterp y
+    set obj [y eval {set o [java::new Object]}]
+    interp delete y
+    # Invokes FreeTclObject for previous value of obj
+    set obj ""
+    java::isnull java0x0
+} 1
+
 # There is no test for SetTclObject, it should never be called
 
 test javaObj-3.1 {UpdateTclObject} {
@@ -57,6 +66,8 @@ test javaObj-3.1 {UpdateTclObject} {
     setupInterp y
     interp alias y doit {} doit
     set result [y eval { set x [java::new tests.JavaTest] }]
+    # Copy the object so that it gets deleted before the interp
+    set result [format %s $result]
     interp delete y
     set result
 } java0x1

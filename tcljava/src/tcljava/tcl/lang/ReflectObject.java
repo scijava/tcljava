@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: ReflectObject.java,v 1.15 2002/12/27 14:33:19 mdejong Exp $
+ * RCS: @(#) $Id: ReflectObject.java,v 1.16 2002/12/30 02:43:54 mdejong Exp $
  *
  */
 
@@ -616,7 +616,9 @@ public void dispose()
 	    dump(ownerInterp);
 	}
 
-        ownerInterp.deleteCommand(refID);
+	// Don't delete command if interp was already deleted
+	if (isValid)
+	    ownerInterp.deleteCommand(refID);
 	removeFromReflectTable(this);
 
 	ownerInterp = null;
@@ -883,7 +885,6 @@ throws
     boolean convert;
     int sigIdx;
 
-    // FIXME : check on this later, not sure if isValid use is correct.
     if (! isValid) {
 	throw new TclException(interp, "reflected object is no longer valid");
     }

@@ -1,5 +1,15 @@
 2002-12-29  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/tcljava/tcl/lang/ReflectObject.java (dispose):
+	Don't attempt to delete the command from the
+	interpreter if the interp was already deleted.
+	* tests/tclblend/javaObj.test: Add test case that
+	tries to delete a ReflectObject after the interp
+	has been deleted. Modify existing test so that
+	it does not trigger the same error.
+
+2002-12-29  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/tcljava/tcl/lang/ArrayObject.java (initArray):
 	Generate TclException instead of ReflectException.
 	* src/tcljava/tcl/lang/JavaDefineClassCmd.java (cmdProc):
