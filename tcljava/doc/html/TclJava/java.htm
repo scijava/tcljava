@@ -131,8 +131,15 @@ the standard names are:
 	 <B>class</B>, <B>gc</B>, <B>jni</B>
 To see what other options are available, run <B>java -help</B>
 from the command line.
-A Tcl Blend extension is that if the value is <B>help</B>, then
-JVM initialization stops and a help message is printed.
+ <p>
+In addition <B>tclblend_init</B> can have the following values:
+<dl>
+<dt> <B>help</B>
+<dd> Print a help message and then stop JVM initialization.
+<dt> <B>debug</B>
+<dd> Print out debugging messages while start up.
+</dl>
+
 To use <B>tclblend_init</B>, set it before loading the <B>java</B>
 package:
 <pre>
@@ -141,7 +148,7 @@ package require java
 </pre>
 
 Note that <B>tclblend_init</B> is only read if the Tcl Blend C shared
-library was compiled with JDK1.2.
+library was compiled with JDK1.2.  
 
 <P><DT><A NAME="M5"><B>java::new</B></A><DD>
 The <B>java::new</B> command is used to create new instances of Java
