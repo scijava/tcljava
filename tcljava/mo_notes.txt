@@ -398,6 +398,7 @@ be fixed.
 Check that perms on open command are correct in jacl. Is "rw" a
 valid mode? (set fd [open tmpf rw])
 
+
 (TODO)
 How does the CommandWithDispose interface work when there is
 no way to find out the name of the command, For instance if
@@ -410,7 +411,7 @@ we want to delete it from the interp.
 (TODO)
 figure out why reflected null objects do not come up as typed
 in an automated signature. AutoSig 4.5 is a good example of this.
-It only happend when java::autolock is on. LAter, it looks like
+It only happend when java::autolock is on. Later, it looks like
 the eval command is to blame as it converts in the concat.
 
 
@@ -469,5 +470,296 @@ use a MAX_VALUE and MIN_VALUE argument for each class and then
 call a Java method that takes the MAX and MIN to make sure that
 values are getting passed correctly. Also things like infinity
 for Double calculation and the like need to be done.
+
+
+
+
+(TODO)
+
+The different Channel implementations need to have a single
+implementation that implements the Channel interface and
+does the reads and checks for EOF and such. These are error
+prone and should not be done for every implementation.
+
+
+(TODO)
+
+need to come up with test cases for the stdin read implementations
+and the file read implementation that make sure the EOF stuff
+is managed properly. It looks like a big mess right now and
+I am not sure if it works. Also the FileChannel does an ugly
+window-unix line conversion hack that should be in a more
+generic Channel driver.
+
+
+
+
+(TODO)
+It seems like the error message
+"cannot load new class into java or tcl package" would be alot
+more helpful if it included the name of the class that could
+not be loaded. Perhaps
+
+cannot load new class "java.lang.boolean" ...
+
+would work better.
+
+
+
+
+(TODO)
+possible problem in the parser class. (this is a 1.1.1 line number listing in eval2().
+The problem is that the parse reference could end up being null which would generate
+a null pointer exception like this. A null check might be needed here!
+
+> Exception in thread "main" java.lang.NullPointerException:
+>         at tcl.lang.Parser.eval2(Parser.java:1205)
+>         at tcl.lang.Procedure.cmdProc(Procedure.java:175)
+>         at tcl.lang.Parser.evalObjv(Parser.java:740)
+
+
+    } finally {
+      parse.release(); //let go of parser resources          <- line 1205
+      releaseObjv(interp, objv); //let go of objv buffer
+    }
+
+
+
+
+
+(TODO - Tcl Blend with Tcl 8.1b3 diffs)
+diff -r -u tclBlend1.2.2/src/native/javaInterp.c ../tclBlend1.2.2/src/native/javaInterp.c
+--- tclBlend1.2.2/src/native/javaInterp.c       Wed Mar 17 00:36:57 1999
++++ ../tclBlend1.2.2/src/native/javaInterp.c    Wed Apr 14 02:09:26 1999
+@@ -282,7 +282,7 @@
+        result = Tcl_GlobalEvalObj(interp, objPtr);
+     }
+ #else 
+-    result = Tcl_EvalObj(interp, objPtr, TCL_EVAL_GLOBAL);
++    result = Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_GLOBAL);
+ #endif /* TCL8.0 */
+ 
+     exception = (*env)->ExceptionOccurred(env);
+@@ -504,7 +504,7 @@
+ 
+ #else /* it is Tcl 8.1 or above */
+ 
+-    resultPtr = Tcl_SetObjVar2(interp, Tcl_GetStringFromObj(part1Ptr, (int *) NULL),
++    resultPtr = Tcl_SetVar2Ex(interp, Tcl_GetStringFromObj(part1Ptr, (int *) NULL),
+                                       Tcl_GetStringFromObj(part2Ptr, (int *) NULL),
+                                       valuePtr, flags);
+ #endif /* Tcl 8.0 */
+@@ -601,7 +601,7 @@
+ 
+ #else /* it is Tcl 8.1 or above */
+ 
+-    valuePtr = Tcl_GetObjVar2(interp, Tcl_GetStringFromObj(part1Ptr, (int *) NULL),
++    valuePtr = Tcl_GetVar2Ex(interp, Tcl_GetStringFromObj(part1Ptr, (int *) NULL),
+                                       Tcl_GetStringFromObj(part2Ptr, (int *) NULL),
+                                       flags);
+ #endif /* Tcl 8.0 */
+
+
+
+
+(TODO)
+To run TclBlend with Motif under Linux these shared libraries need
+to be pre loaded.
+
+
+TCLBLEND_LD_PRELOAD="${TCLBLEND_LD_PRELOAD} libXm.so libXpm.so libXt.so libSM.so libICE.so libXext.so libX11.so"
+
+
+TCLBLEND_LD_BIND_NOW=1
+
+
+
+(TODO)
+The Tcl Blend demos should not include the pyramid demo because it will
+only work with Jacl currently.
+
+
+(TODO)
+There seems to be a problem running gridDemo.tcl in Tcl Blend, it gives
+this error when run.
+
+tcljava/JavaInvoke.test
+invoke-10.1.25
+
+      1 {tcl.lang.TclException: expected floating-point number but got
+    "0.0"}
+
+      unknown floating-point error, errno = 84
+
+
+
+
+(TODO)
+
+There is a problem with renaming java object instance commands and
+then using those renamed command names in other java methods. Would
+it be a good solution to also check for a command that has an
+internal rep of a ReflectObject inside ReflectObject.convert().
+
+>      % set o [createRect 0 0 10 10]
+>      java0xc7
+>      % java::info methods java0xc7
+>      {equals java.lang.Object} ......
+>      % rename java0xc7 poly1
+>      % java::info methods poly1
+>      java::info: unknown java class or object "poly1"
+>      % java::info methods java0xc7
+>      {equals java.lang.Object} ......
+
+
+
+
+
+(TODO)
+
+There seems to be a big performance drop in Jacl 1.2. Users report
+a slowdown of about 4x. Run some tests to see what is going on here.
+Could this be related to the expr problems?
+
+(test run on solaris 2.5.1, native threads, 1.1a1 3.4sec, 1.2.2 13 sec)
+
+
+
+(TODO)
+
+Look into problems reading files bigger than the buffer size with the read
+command. This seems to be related to the other IO problems I have been
+running into.
+
+
+(TODO)
+
+There is a problem with the Jacl exec if C:\Temp does not already exist
+on the machine. Add in some code to create that directory if it does
+not already exists before doing the exec().
+
+
+(TODO)
+Look into a class file flushing system so that classes that
+are not being used can be removed from the cache at runtime.
+
+
+
+
+
+
+
+
+
+(Fix these problems in 1.2.3 release!)
+
+
+fix misspelling in 1.2.3 release of tclblend interp code
+!!! fix misspelled comment in Interp "Unoknown" -> "Unknown"
+
+
+Remove this fixme note in src/tcljava/tcl/lang/BlendExtension.java
+after fixing the auto number system.
+
+// FIXME : provide automatic way to set java package version
+
+
+
+
+
+
+Add a note to the docs for the java::field method about the "class"
+feature that was added to 1.2.1.
+
+
+
+
+(TODO)
+Configure script gives an error!
+
+done with version substitutions
+dist version number was updated, please run configure again.
+./configure: -1: bad number
+
+
+this really should be fixed by fixing the whole version number thing !!!
+
+it should be "exit 1" or something!
+
+
+
+
+
+
+JavaFieldCmd.test
+Add newline at end of file!
+
+
+
+
+
+
+(Look at this test case again and compare tclblend to jacl)
+
+Which is correct??
+
+inprogress/ExprCmd.test
+
+==== ExprCmd-1.19 cmdProc
+==== Contents of test case:
+
+    list [catch {expr {0 == "[set i 0]}} err] $err
+
+==== Result was:
+1 {missing close-bracket}
+---- Result should have been:
+1 {missing "}
+---- ExprCmd-1.19 FAILED
+
+
+
+
+
+(Add #define TCLBLEND_DEBUG)
+The new "extra stack space" code in src/native/javaCmd.c might need this.
+
+
+
+
+
+(make sure license files get copied into dists!)
+Make sure the license.oro and license.ucb files are added!.
+
+
+
+
+src/jacl 800K
+tcljava/tests/jacl/FileCmd.test,v      133 k
+tcljava/unix/configure,v            120 k
+
+
+
+
+
+
+(TODO)
+add Tcl 8.0.6 to configure search!
+
+
+
+(TODO)
+Would it be possible to make the check for Tcl/unix/tclConfig.sh
+happen a lot sooner in the configure script. It does all the java
+checkes and then does the Tcl checks. This can be a pain sometimes.
+If it would just check to see if the directory for Tcl was valid
+that would be enough!
+
+
+
+
+
+(TODO)
+inprogress/CdCmd.test should be move into a the working set (as of 8.0.5)
+
 
 
