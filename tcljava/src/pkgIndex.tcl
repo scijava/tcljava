@@ -1,6 +1,6 @@
 # Cross platform init script for Tcl Blend. Known to work on unix and windows.
 # Author:  Christopher Hylands, Mo Dejong
-# RCS: @(#) $Id: pkgIndex.tcl,v 1.16 1999/10/22 16:52:25 redman Exp $
+# RCS: @(#) $Id: pkgIndex.tcl,v 1.17 1999/11/18 22:54:52 stanton Exp $
 
 proc loadtclblend {dir} {
     global tcl_platform env tclblend_init
@@ -141,16 +141,16 @@ proc loadtclblend {dir} {
 	puts "found tcljava.jar at $tcljava_file"
     }
 
-    # Now scan the env array looking for an env(CLASSPATH) var
-    # with the incorrect case. A user might make an error
-    # like setting env(ClassPath) so we tell them what happened.
+    # We need to know the CLASSPATH value.  On Windows, this may have
+    # arbitrary capitalization, so we need to copy it into the all-caps
+    # form for later use.
     
-    foreach name [array names env] {
-	if {$name == "CLASSPATH"} {
-	    continue
-	}
-	if {[string toupper $name] == "CLASSPATH"} {
-	    error "found invalid variable env($name), should be env(CLASSPATH)"
+    if {![info exists env(CLASSPATH)]} {
+	foreach name [array names env] {
+	    if {[string equal -nocase $name "CLASSPATH"]} {
+		set env(CLASSPATH) $env($name)
+		break
+	    }
 	}
     }
 
@@ -161,8 +161,6 @@ proc loadtclblend {dir} {
 
 	set env(CLASSPATH) {}
     }
-
-
 
     # now we need to search on the CLASSPATH to see if tclblend.jar
     # or tcljava.jar are already located on the CLASSPATH. If one
