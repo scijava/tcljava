@@ -1,6 +1,6 @@
 # This Makefile is used to the java loadable module.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.2 1998/10/29 18:58:28 hylands Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.3 1998/10/29 22:35:38 hylands Exp $
 
 # The version of TclJava, used in this Makefile
 VERSION = @TCLJAVA_VERSION@
@@ -260,7 +260,7 @@ BLEND_TCL_LANG_TESTS = \
 
 # Default is to build whatever is specified by the
 # TCLJAVA variable (jacl or tclblend).
-all: $(TCLJAVA) test_$(TCLJAVA).build
+all: $(TCLJAVA)
 
 install: install_$(TCLJAVA) install_tcljava
 
@@ -655,7 +655,7 @@ install_tcljava:
 # Build tests
 #----------------------------------------------------------------
 
-test: test_$(TCLJAVA)
+test: test_$(TCLJAVA).build test_$(TCLJAVA)
 
 test_jacl: test_jacl.exec
 
