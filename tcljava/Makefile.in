@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.30 2003/09/02 19:46:06 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.31 2004/10/01 21:29:37 mdejong Exp $
 
 SHELL = /bin/sh
 
@@ -189,7 +189,7 @@ TCLJAVA_CLASSPATH	= $(TCLJAVA_BUILD_DIR):$(MISC_DIR)/empty/empty.jar:$(JAVA_CLAS
 
 DEMOS_CLASSPATH		= $(BUILD_DIR)/$(TCLJAVA).jar:$(BUILD_DIR)/tcljava.jar:$(JAVA_CLASSPATH)$(AUX_CLASSPATH)
 
-TEST_CLASSPATH		= $(JAVA_CLASSPATH):$(TEST_BUILD_DIR):$(BUILD_DIR)/$(TCLJAVA).jar:$(BUILD_DIR)/tcljava.jar$(AUX_CLASSPATH)
+TEST_CLASSPATH		= $(JAVA_CLASSPATH):$(TEST_BUILD_DIR):$(BUILD_DIR)/$(TCLJAVA).jar:$(BUILD_DIR)/tcljava.jar$(AUX_CLASSPATH):$(BUILD_DIR)/tl.jar
 
 JACL_DEBUG_CLASSPATH	=  $(TEST_CLASSPATH):$(TCLJAVA_SRC_DIR):$(JACL_SRC_DIR)
 TCLBLEND_DEBUG_CLASSPATH = $(TEST_CLASSPATH):$(TCLJAVA_SRC_DIR):$(TCLBLEND_SRC_DIR)
@@ -615,7 +615,6 @@ tcljava.build: tcljava.clean
 	cp -fr $(TCLJAVA_SRC_DIR)/tcl/lang/library \
 		$(TCLJAVA_BUILD_DIR)/tcl/lang/library
 
-
 # Only use this if you are developing tcljava code and you need to recompile
 # a lot. It will not clean up before building and tcljava.jar will not be
 # created. you really need to know what you are doing to use this rule.
@@ -782,6 +781,8 @@ test_tcljava.build: $(TCLJAVA).check
 	cd $(TEST_BUILD_DIR)/hello ;\
 	$(JAR) $(JAR_NOCOMPRESS_FLAGS) hello.jar hello; \
 	rm -rf hello
+	cp -fr $(TEST_TCL_DIR)/tl.jar \
+		$(BUILD_DIR)
 	@touch $(TEST_BUILD_DIR)/.tcljava
 
 

@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.27 2003/01/20 09:33:15 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.28 2004/10/01 21:29:41 mdejong Exp $
  *
  */
 
@@ -961,55 +961,54 @@ throws
     TclException
 {
     InputStream stream = Interp.class.getResourceAsStream(resName);
+
     if (stream == null) {
 	throw new TclException(this, "cannot read resource \"" + resName
 		+ "\"");
     }
 
+    String script = readScriptFromInputStream(stream);
+
+    eval(script, 0);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * readScriptFromInputStream --
+ *
+ *	Read a script from a Java InputStream into a string.
+ *
+ * Results:
+ *	Returns the content of the script.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+private String
+readScriptFromInputStream(
+    InputStream s)			// Java InputStream containing script
+{
+    BufferedReader r;
+    CharArrayWriter w;
+    String line = null;
+
+    r = new BufferedReader(new InputStreamReader(s));
+    w = new CharArrayWriter();
+
     try {
-
-	// FIXME : ugly JDK 1.2 only hack
-	// Ugly workaround for compressed files BUG in JDK1.2
-        // this bug first showed up in  JDK1.2beta4. I have sent
-        // a number of emails to Sun but they have deemed this a "feature"
-        // of 1.2. This is flat out wrong but I do not seem to change thier
-        // minds. Because of this, there is no way to do non blocking IO
-        // on a compressed Stream in Java. (mo)
-
-        if (System.getProperty("java.version").startsWith("1.2") &&
-            stream.getClass().getName().equals("java.util.zip.ZipFile$1")) {
-	    
-	  ByteArrayOutputStream baos = new ByteArrayOutputStream(1024);
-	  byte[] buffer = new byte[1024];
-	  int numRead;
-
-	  // Read all data from the stream into a resizable buffer
-	  while ((numRead = stream.read(buffer, 0, buffer.length)) != -1) {
-	      baos.write(buffer, 0, numRead);
-	  }
-
-	  // Convert bytes into a String and eval them
-	  eval(new String(baos.toByteArray()), 0);	  
-	  
-	} else {	  
-	  // Other systems do not need the compressed jar hack
-
-	  int num = stream.available();
-	  byte[] byteArray = new byte[num];
-	  int offset = 0;
-	  while ( num > 0 ) {
-	    int readLen = stream.read( byteArray, offset, num );
-	    offset += readLen;
-	    num -= readLen;
-	  }
-
-	  eval(new String(byteArray), 0);
-	}
-
+        while ((line = r.readLine()) != null){
+            w.write(line);
+            w.write('\n');
+        }
+        return w.toString();
     } catch (IOException e) {
-	return;
+        return null;
     } finally {
-	closeInputStream(stream);
+        closeInputStream(s);
     }
 }
 

@@ -1,3 +1,20 @@
+2004-10-01  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* Makefile.in: Copy tests/tl.jar to build dir
+	and add it to the CLASSPATH.
+	* src/jacl/tcl/lang/Interp.java (convertStringCRLF,
+	readScriptFromURL): Move CRLF conversion code into
+	helper function so that it can be regression tested.
+	* src/tclblend/tcl/lang/Interp.java (evalResource,
+	readScriptFromInputStream): Remove JDK compressed jar
+	hack and replace with Reader/Writer code in the
+	readScriptFromInputStream helper.
+	* tests/tl.jar: Add jar for test cases.
+	* tests/jacl/Interp.test: Add test case for
+	evalResource() in the Interp class.
+	* tests/tclblend/javaInterp.test: Add test case
+	for evalResource() in the Interp class.
+
 2004-09-30  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* configure: Regen.

@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.45 2004/10/01 06:08:31 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.46 2004/10/01 21:29:41 mdejong Exp $
  *
  */
 
@@ -2543,28 +2543,55 @@ readScriptFromURL(
     }
 
     if (content instanceof String) {
-        // When Java returns a String object as content
-        // we need to convert \r\n sequences to \n.
-
-        String str = (String) content;
-        StringBuffer sb = new StringBuffer(str.length());
-        char c, prev = '\n';
-        final int length = str.length();
-        for (int i = 0 ; i < length ; i++) {
-            c = str.charAt(i);
-            if (c == '\n' && prev == '\r') {
-                sb.setCharAt(sb.length()-1, '\n');
-                prev = '\n';
-            } else {
-                sb.append(c);
-                prev = c;
-            }
-        }
-        return sb.toString();
+        return convertStringCRLF((String) content);
     } else if (content instanceof InputStream) {
         return readScriptFromInputStream((InputStream) content);
     } else {
 	return null;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * convertStringCRLF --
+ *
+ *	Convert CRLF sequences into LF sequences in a String.
+ *
+ * Results:
+ *      A new string with LF instead of CRLF.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+String
+convertStringCRLF(
+    String inStr)			// String that could contain CRLFs
+{
+    String str = inStr;
+    StringBuffer sb = new StringBuffer(str.length());
+    char c, prev = '\n';
+    boolean foundCRLF = false;
+    final int length = str.length();
+
+    for (int i = 0 ; i < length ; i++) {
+        c = str.charAt(i);
+        if (c == '\n' && prev == '\r') {
+            sb.setCharAt(sb.length()-1, '\n');
+            prev = '\n';
+            foundCRLF = true;
+        } else {
+            sb.append(c);
+            prev = c;
+        }
+    }
+
+    if (foundCRLF) {
+        return sb.toString();
+    } else {
+        return str;
     }
 }
 
