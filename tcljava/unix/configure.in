@@ -2,7 +2,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run to configure the
 dnl	Makefile in this directory.
 AC_INIT(../src/tcljava/tcl/lang/InternalRep.java)
-# RCS: @(#) $Id: configure.in,v 1.28 2000/02/23 22:15:16 mo Exp $
+# RCS: @(#) $Id: configure.in,v 1.29 2000/03/29 11:20:17 mo Exp $
 
 
 #--------------------------------------------------------------------
@@ -1232,11 +1232,6 @@ Make sure Tcl was configured with --enable-shared.])
             TCL_LD_SEARCH_FLAGS=`echo ${TCL_LD_SEARCH_FLAGS} | sed -e 's/-Wl,-rpath,/-rpath /'`
             ;;
     esac
-
-    # For some reason, we need extra stack space under IRIX to avoid errors
-    if test "`uname -s`" = "IRIX"; then
-        TCL_CFLAGS="$TCL_CFLAGS -DTCLBLEND_INCREASE_STACK_SIZE"
-    fi
 
     # Define used when we compile with kaffe
     if test "$JAVA_NAME" = "kaffe"; then
