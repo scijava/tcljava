@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: JavaDefineClassCmd.test,v 1.1 1998/10/14 21:09:24 cvsadmin Exp $
+# RCS: @(#) $Id: JavaDefineClassCmd.test,v 1.2 1999/05/10 03:04:38 dejong Exp $
 
 # Note: This test file must be sourced from the parent directory
 #       or else the defs file may not be properly loaded.
@@ -45,6 +45,13 @@ if {! [file isdirectory $javaload_path]} {
     return
 }
 
+set javaload_full_path [file join $javaload_path tests javaload]
+if {! [file isdirectory $javaload_full_path]} {
+    puts "Unable to find directory \"$javaload_full_path\".  Cannot run tests."
+    return
+}
+
+
 # Tests begin here.
 
 test java::defineclass-1.1 {error checking} {
@@ -58,10 +65,6 @@ test java::defineclass-1.3 {error checking} {
     java::isnull $x
 } {1}
 test java::defineclass-2.1 {loading a class} {
-    set javaload_full_path [file join $javaload_path tests javaload]
-    if {! [file isdirectory $javaload_full_path]} {
-	error "Unable to find directory \"$javaload_full_path\".  Cannot run tests."
-    }
     set file  [open [file join $javaload_full_path Test1Cmd.class]]
     if {$system == "tclblend"} {
 	fconfigure $file -translation binary
