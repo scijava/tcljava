@@ -1,6 +1,6 @@
 Recent user-visible changes to Jacl & Tcl Blend:
 
-RCS: @(#) $Id: changes.txt,v 1.40.2.5 2000/04/11 05:26:59 mo Exp $
+RCS: @(#) $Id: changes.txt,v 1.40.2.6 2000/04/29 00:22:10 mo Exp $
 
 ----------------- Released 1.0a1, 10/22/97 -----------------------
 
@@ -1047,6 +1047,11 @@ Changed the default version of Tcl that the system will
 search for to Tcl 8.3.0. Also fixed the README files
 so that they do not suggest a person user -f makefile.vc
 to build under windows.
+
+04/28/2000 (back ported unix shared lib fix in Makefile)
+The 1.3 version contained a fix that linked libtclblend.so
+the the location where the Tcl dll was installed, not
+where it was built. This fix has been back ported.
 
 ----------------- Released 1.2.6, XX/XX/XX -----------------------
 

@@ -2,7 +2,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run to configure the
 dnl	Makefile in this directory.
 AC_INIT(../src/tcljava/tcl/lang/InternalRep.java)
-# RCS: @(#) $Id: configure.in,v 1.27.2.3 2000/04/28 23:48:07 mo Exp $
+# RCS: @(#) $Id: configure.in,v 1.27.2.4 2000/04/29 00:22:11 mo Exp $
 
 
 #--------------------------------------------------------------------
@@ -1308,6 +1308,7 @@ if test $TCLJAVA = "tclblend" || test $BOTH = "true"; then
   # We also assume that wish is going to be installed in the same
   # location, which could be incorrect but oh well.
 
+  TCL_INSTALL_BIN_DIR=$TCL_EXEC_PREFIX/lib
   TCLSH=$TCL_EXEC_PREFIX/bin/tclsh$TCL_VERSION
   WISH=$TCL_EXEC_PREFIX/bin/wish$TCL_VERSION
 
@@ -1317,6 +1318,7 @@ if test $TCLJAVA = "tclblend" || test $BOTH = "true"; then
 
   AC_SUBST(WISH)
   AC_SUBST(TCLSH)
+  AC_SUBST(TCL_INSTALL_BIN_DIR)
 
 fi
 

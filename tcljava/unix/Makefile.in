@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.31.6.1 2000/04/01 10:31:58 mo Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.31.6.2 2000/04/29 00:22:12 mo Exp $
 
 # The directory containing the Tcl sources and headers appropriate
 # for this version of Tk ("srcdir" will be replaced or has already
@@ -13,6 +13,9 @@ TCL_LIBRARY_DIR = @TCL_SRC_DIR@/library
 # The directory containing the Tcl library archive file appropriate
 # for this version of Tcl:
 TCL_BIN_DIR = @TCL_BIN_DIR@
+
+# The directory where the Tcl library archive file is installed
+TCL_INSTALL_BIN_DIR = @TCL_INSTALL_BIN_DIR@
 
 # The full path name of the tclsh executable after it is installed
 TCLSH=@TCLSH@
@@ -89,7 +92,7 @@ SHLIB_VERSION		= @SHLIB_VERSION@
 TCL_DBGX		= @TCL_DBGX@
 
 # directories to search for shared libs, needed for TCL_LD_SEARCH_FLAGS
-LIB_RUNTIME_DIR		= $(JAVA_ARCH_NATIVE_RUNTIME_LIBS):$(TCL_BIN_DIR)
+LIB_RUNTIME_DIR		= $(JAVA_ARCH_NATIVE_RUNTIME_LIBS):$(TCL_INSTALL_BIN_DIR)
 TCL_LD_SEARCH_FLAGS 	= @TCL_LD_SEARCH_FLAGS@
 TCLBLEND_LIB_FILE 	= libtclblend$(SHLIB_SUFFIX)
 TCLBLEND_LIBS		= @TCLBLEND_LIBS@
