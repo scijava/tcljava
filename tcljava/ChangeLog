@@ -1,4 +1,9 @@
 2000-04-01  Mo DeJong  <mdejong@redhat.com>
+
+	* unix/kaffe_tests: removed useless file.
+
+2000-04-01  Mo DeJong  <mdejong@redhat.com>
+
 	* unix/Makefile.in: fixed up "make dists" rule.
 
 2000-03-30  Mo DeJong  <mdejong@redhat.com>
