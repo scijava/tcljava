@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: StdChannel.java,v 1.3 1999/05/16 06:21:28 dejong Exp $
+ * RCS: @(#) $Id: StdChannel.java,v 1.4 1999/05/24 12:43:50 mo Exp $
  *
  */
 
@@ -145,12 +145,12 @@ class StdChannel extends Channel {
     String read(Interp interp, int readType, int numBytes) 
             throws IOException, TclException {
 
-	eofCond = false;
-
         if (stdType != STDIN) {
 	      throw new TclException(interp, "channel \"" +
 	        getChanName() + "\" wasn't opened for reading");
 	}
+
+	eofCond = false;
 
 	switch (readType) {
 	    case TclIO.READ_ALL: {
