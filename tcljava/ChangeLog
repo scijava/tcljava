@@ -1,3 +1,15 @@
+2002-07-23  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/tclblend/tcl/lang/Interp.java (finalize):
+	* tests/tclblend/javaInterp.test: Print an
+	error message to stderr if the Java GC
+	thread calls finalize for an Interp. This
+	would only happen when the user forgets to
+	invoke dispose() on an interp. This is at
+	least better than core dumping if an interp
+	was finalized which is what the code used
+	to do.
+
 2002-07-22  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* src/native/javaInterp.c (JavaTraceProc,

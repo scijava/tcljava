@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.18 2002/07/22 10:00:47 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.19 2002/07/23 10:19:53 mdejong Exp $
  *
  */
 
@@ -217,21 +217,29 @@ dispose()
  *
  * finalize --
  *
- *	Interpreter finalization method.
+ *	Interpreter finalization method. We print a message to
+ *	stderr if the user neglected to dispose of an Interp
+ *	properly. We can't call dispose here because the
+ *	finalize method is called from the gc thread and
+ *	Tcl thread specific data needs to be cleaned up
+ *	in the thread it was allocated in.
  *
  * Results:
- *	None.
+ *	Prints to stderr.
  *
  * Side effects:
- *	Calls dispose() to ensure everything has been cleaned up.
+ *	None.
  *
  *----------------------------------------------------------------------
  */
 
 protected void
-finalize()
+finalize() throws Throwable
 {
-    dispose();
+    if (notifier != null) {
+        System.err.println("finalized interp has not been disposed");
+    }
+    super.finalize();
 }
 
 /*
