@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: NamespaceCmd.java,v 1.1 1998/10/14 21:09:19 cvsadmin Exp $
+ * RCS: @(#) $Id: NamespaceCmd.java,v 1.2 1999/05/09 00:44:38 dejong Exp $
  */
 
 package tcl.lang;
@@ -28,8 +28,9 @@ class NamespaceCmd implements Command {
 
     public void cmdProc(Interp interp, TclObject argv[])
 	    throws TclException {
-	/*
-	 * unimplemented.
-	 */
+
+	// unimplemented.	 
+
+	throw new TclException(interp, "Namespace command is not yet implemented");
     }
 }
