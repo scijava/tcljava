@@ -1,5 +1,17 @@
 2000-12-23  Mo DeJong  <mdejong@redhat.com>
 
+	* tests/tcl/append.test:
+	* tests/tcl/assocd.test:
+	* tests/tcl/binary.test:
+	* tests/tcl/case.test:
+	* tests/tcl/clock.test:
+	* tests/tcl/compile.test:
+	* tests/tcl/concat.test: Added or updated tests
+	to match the ones in Tcl 8.3. Some tests expose
+	minor formatting issues for test arguments.
+
+2000-12-23  Mo DeJong  <mdejong@redhat.com>
+
 	* tests/all.tcl: Add missing test init file.
 	* tests/defs: Add Tcl only implementations
 	of test commands like testsetassocdata.

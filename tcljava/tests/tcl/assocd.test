@@ -6,59 +6,34 @@
 #
 # Copyright (c) 1991-1994 The Regents of the University of California.
 # Copyright (c) 1994 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# "@(#) assocd.test 1.6 98/02/10 17:05:19"
+# RCS: @(#) $Id: assocd.test,v 1.4 2000/12/23 23:48:46 mdejong Exp $
 
-if {[string compare test [info procs test]] == 1} then {source defs}
-
-if {$tcl_platform(platform) != "java" &&
-     [string compare testsetassocdata [info commands testsetassocdata]] != 0} {
-     puts "This application hasn't been compiled with the tests for assocData,"
-     puts "therefore I am skipping all of these tests."
-     return
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
 }
 
-if {$tcl_platform(platform) == "java"} {
-
-  proc testsetassocdata {var data} {
-    set this [java::getinterp]
-    set assocData [java::new tcl.lang.Test2AssocData $data]
-    $this setAssocData $var $assocData
-  }
-
-  proc testgetassocdata {var} {
-    set this [java::getinterp]
-    set assocData [$this getAssocData $var]
-    set assocData [java::cast {tcl.lang.Test2AssocData} $assocData]
-    if {[java::isnull $assocData]} {
-        return
-    }
-    $assocData getData
-  }
-
-  proc testdelassocdata {var} {
-    set this [java::getinterp]
-    $this deleteAssocData $var
-  }
-
+if {[string compare testsetassocdata [info commands testsetassocdata]] != 0} {
+    puts "This application hasn't been compiled with the tests for assocData,"
+    puts "therefore I am skipping all of these tests."
+    ::tcltest::cleanupTests
+    return
 }
-
 
 test assocd-1.1 {testing setting assoc data} {
    testsetassocdata a 1
 } ""
-
 test assocd-1.2 {testing setting assoc data} {
    testsetassocdata a 2
 } ""
-
 test assocd-1.3 {testing setting assoc data} {
    testsetassocdata 123 456
 } ""
-
 test assocd-1.4 {testing setting assoc data} {
    testsetassocdata abc "abc d e f"
 } ""
@@ -66,15 +41,12 @@ test assocd-1.4 {testing setting assoc data} {
 test assocd-2.1 {testing getting assoc data} {
    testgetassocdata a
 } 2
-
 test assocd-2.2 {testing getting assoc data} {
    testgetassocdata 123
 } 456
-
 test assocd-2.3 {testing getting assoc data} {
    testgetassocdata abc
 } {abc d e f}
-
 test assocd-2.4 {testing getting assoc data} {
    testgetassocdata xxx
 } ""
@@ -82,11 +54,25 @@ test assocd-2.4 {testing getting assoc data} {
 test assocd-3.1 {testing deleting assoc data} {
    testdelassocdata a
 } ""
-
 test assocd-3.2 {testing deleting assoc data} {
    testdelassocdata 123
 } ""
-
 test assocd-3.3 {testing deleting assoc data} {
    list [catch {testdelassocdata nonexistent} msg] $msg
 } {0 {}}
+
+# cleanup
+::tcltest::cleanupTests
+return
+
+
+
+
+
+
+
+
+
+
+
+
