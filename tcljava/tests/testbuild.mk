@@ -2,7 +2,7 @@
 # This file need not be shipped with Jacl or Tcl Blend, it should
 # only be in the tcljava tar file that includes both Jacl and Tcl Blend.
 
-# RCS: @(#) $Id: testbuild.mk,v 1.4 1998/11/05 22:56:05 hylands Exp $
+# RCS: @(#) $Id: testbuild.mk,v 1.5 1998/11/05 23:49:09 hylands Exp $
 
 # To run these tests, do
 # cd ../unix 
@@ -12,7 +12,7 @@
 
 
 # Build everything and run all the tests
-buildtest: srcBuild srcTest binBuild 
+buildtest: srcBuild srcTest binBuild demoBinBuild
 
 # Build from sources
 srcBuild: jaclSrcBuild blendSrcBuild 
@@ -20,8 +20,11 @@ srcBuild: jaclSrcBuild blendSrcBuild
 # Test the build from sources
 srcTest: jaclSrcTest jaclSrcSmokeTest blendSrcTest blendSrcSmokeTest
 
+# Test the binary tar files
 binBuild: jaclBinBuild blendBinBuild
 
+# Test the demos in the binary tar files
+demoBinBuild: demo_jaclBinBuild demo_blendBinBuild
 
 
 # Include the Unix Makefile
@@ -34,22 +37,21 @@ WITH_TCL = 	/users/cxh/pt/obj.sol2.5/tcltk/tcl8.0.3/unix
 TCLSH = 	/users/cxh/pt/bin.sol2.5/tclsh
 WISH =		/users/cxh/pt/bin.sol2.5/wish
 
+# Values for JDK1.1
+JDK =		/opt/jdk1.1.6
+JDK_LD_LIBRARY_PATH =	$(JDK1.1)/lib/sparc
+JDK_VERSION =	1.1.6
 
-JDK1.1 = 	/opt/jdk1.1.6
-JDK1.1_LD_LIBRARY_PATH =	$(JDK1.1)/lib/sparc
-
-JDK1.2 =	/opt/jdk1.2fcs
-JDK1.2_LD_LIBRARY_PATH =	$(JDK1.2)/jre/lib/sparc:$(JDK1.2)/jre/lib/sparc/native_threads
-
-JDK=$(JDK1.1)
-TMP_LD_LIBRARY_PATH =	$(JDK1.1_LD_LIBRARY_PATH)
-#JDK=$(JDK1.2)
-#TMP_LD_LIBRARY_PATH =	$(JDK1.2_LD_LIBRARY_PATH)
+# Values for JDK1.2
+#JDK =		/opt/jdk1.2fcs
+#JDK_LD_LIBRARY_PATH =	$(JDK1.2)/jre/lib/sparc:$(JDK1.2)/jre/lib/sparc/native_threads
+#JDK_VERSION =	1.2fcs
 
 TMPPATH =	$(JDK)/bin:/usr/bin:/usr/local/bin:/usr/ccs/bin:.
 
 # Cleanup
-testbuild_clean: clean_jaclSrcBuild clean_blendSrcBuild
+testbuild_clean: clean_jaclSrcBuild clean_blendSrcBuild \
+			clean_jaclBinBuild clean_blendBinBuild
 
 
 ######################################################################
@@ -69,10 +71,10 @@ SMOKETEST_RESULTS_FILE =	$(DISTDIR)/smoketest_results
 OK_SMOKETEST_RESULTS_FILE =	$(DISTDIR)/ok_smoketest_results
 
 # Correct output for Jacl
-JACL_GOOD_SMOKETEST_RESULTS =	"% java package: 1.1, jdkVersion: 1.1.6, patchLevel: 1.1a1 "
+JACL_GOOD_SMOKETEST_RESULTS =	"% java package: 1.1, jdkVersion: $(JDK_VERSION), patchLevel: 1.1a1 "
 
 # Correct output for Tcl Blend
-BLEND_GOOD_SMOKETEST_RESULTS =	"java package: 1.1, jdkVersion: 1.1.6, patchLevel: 1.1a1 "
+BLEND_GOOD_SMOKETEST_RESULTS =	"java package: 1.1, jdkVersion: $(JDK_VERSION), patchLevel: 1.1a1 "
 
 
 ######################################################################
@@ -200,11 +202,14 @@ jaclBinBuild: $(JACLBINTEST_DIR)
 	@echo "#"
 	@echo "# Smoke testing from Jacl Bin tar file"
 	@echo "#"
+	rm -f $(SMOKETEST_RESULTS_FILE) $(OK_SMOKETEST_RESULTS_FILE)
+	echo $(JACL_GOOD_SMOKETEST_RESULTS) > $(OK_SMOKETEST_RESULTS_FILE)
 	cd $(JACLBINTEST_DIR); \
 		echo "puts \"java package: [package require java], jdkVersion: [set java::jdkVersion], patchLevel: [set java::patchLevel] \"; exit" | \
-		$(RUN_JACL)
+		$(RUN_JACL) > $(SMOKETEST_RESULTS_FILE)
+	diff $(OK_SMOKETEST_RESULTS_FILE) $(SMOKETEST_RESULTS_FILE)
 
-# Untar the Jacl Source file
+# Untar the Jacl Binary file
 $(JACLBINTEST_DIR): $(DISTDIR)/$(JACL_DISTNAME).tar.gz
 	@echo "#"
 	@echo "# Untarring $@"
@@ -214,6 +219,11 @@ $(JACLBINTEST_DIR): $(DISTDIR)/$(JACL_DISTNAME).tar.gz
 		$(GTAR) -zxf $(DISTDIR)/$(JACL_DISTNAME).tar.gz
 	touch $@
 
+clean_jaclBinBuild:
+	rm -rf $(JACLBINTEST_DIR)
+
+######################################################################
+# Rules to run Jacl from the Binary file demos
 demo_jaclBinBuild: gluepkg_jaclBinBuild guiDemo_jaclBinBuild \
 	simplepkg_jaclBinBuild watchpkg_jaclBinBuild pyramidpkg_jaclBinBuild
 
@@ -249,25 +259,25 @@ pyramidpkg_jaclBinBuild:
 		CLASSPATH=.:$(JACLBINTEST_DIR)/jacl.jar:$(JACLBINTEST_DIR)/tcljava.jar \
 		appletviewer pyramid.html
 
-clean_jaclBinBuild:
-	rm -rf $(JACLBINTEST_DIR)
-
 ######################################################################
 # Smoke test the Blend Binary distribution
 BLENDBINTEST_DIR = $(DISTDIR)/blendbintest/$(BLEND_DISTNAME)
 
 RUN_BLEND= PATH=$(TMPPATH) \
 		LD_LIBRARY_PATH=$(TMP_LD_LIBRARY_PATH):$(BLENDBINTEST_DIR) \
-		CLASSPATH=$(BLENDBINTEST_DIR)/tclblend.jar:$(BLENDBINTEST_DIR)/tcljava.jar \
+		TCLLIBPATH=$(BLENDBINTEST_DIR) \
 		$(TCLSH)
 
 blendBinBuild: $(BLENDBINTEST_DIR)
 	@echo "#"
 	@echo "# Smoke testing from Blend Bin tar file"
 	@echo "#"
+	rm -f $(SMOKETEST_RESULTS_FILE) $(OK_SMOKETEST_RESULTS_FILE)
+	echo $(BLEND_GOOD_SMOKETEST_RESULTS) > $(OK_SMOKETEST_RESULTS_FILE)
 	cd $(BLENDBINTEST_DIR); \
 		echo "puts \"java package: [package require java], jdkVersion: [set java::jdkVersion], patchLevel: [set java::patchLevel] \"; exit" | \
-		$(RUN_BLEND)
+		$(RUN_BLEND) > $(SMOKETEST_RESULTS_FILE)
+	diff $(OK_SMOKETEST_RESULTS_FILE) $(SMOKETEST_RESULTS_FILE)
 
 # Untar the Blend Source file
 $(BLENDBINTEST_DIR): $(DISTDIR)/$(BLEND_DISTNAME).solaris.tar.gz
@@ -279,8 +289,11 @@ $(BLENDBINTEST_DIR): $(DISTDIR)/$(BLEND_DISTNAME).solaris.tar.gz
 		$(GTAR) -zxf $(DISTDIR)/$(BLEND_DISTNAME).solaris.tar.gz
 	touch $@
 
+clean_blendBinBuild:
+	rm -rf $(BLENDBINTEST_DIR)
+
 ######################################################################
-# Rules to run demos
+# Rules to run Tcl Blend from the Binary file demos
 demo_blendBinBuild: gluepkg_blendBinBuild guiDemo_blendBinBuild \
 	simplepkg_blendBinBuild watchpkg_blendBinBuild
 
@@ -294,25 +307,23 @@ guiDemo_blendBinBuild:
 		echo "source guiDemo.tcl" | \
 		$(RUN_BLEND)
 
-
 simplepkg_blendBinBuild:
 	cd $(BLENDBINTEST_DIR)/demos/simplepkg; \
-		echo "java::load -classpath . SimpleExtension; \
+		echo "package require java; \
+			java::load -classpath . SimpleExtension; \
 				puts [sayhello]" | \
 		$(RUN_BLEND)
 
 watchpkg_blendBinBuild:
 	cd $(BLENDBINTEST_DIR)/demos/watchpkg; \
-		echo "java::load -classpath . StopWatchExtension; \
+		echo "package require java; \
+			java::load -classpath . StopWatchExtension; \
 			sw new; sw set 10; \
 			source swCmd.tcl; set s [swNew]; swSet \$$s 10  " | \
 		$(RUN_BLEND)
 
 run_blendBinBuild:
 		$(RUN_BLEND)
-
-clean_blendBinBuild:
-	rm -rf $(BLENDBINTEST_DIR)
 
 ##############################################
 
