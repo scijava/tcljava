@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TraceCmd.java,v 1.4 1999/07/16 05:51:20 mo Exp $
+ * RCS: @(#) $Id: TraceCmd.java,v 1.5 1999/08/03 02:37:01 mo Exp $
  *
  */
 
@@ -35,7 +35,7 @@ static final private String[] validCmds = {
 };
 
 static final private int OPT_VARIABLE   = 0;
-static final private int OPT_VDELETE   	= 1;
+static final private int OPT_VDELETE    = 1;
 static final private int OPT_VINFO      = 2;
 
 // An array for quickly generating the Tcl strings corresponding to
