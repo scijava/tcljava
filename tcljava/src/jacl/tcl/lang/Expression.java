@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Expression.java,v 1.6 2000/08/20 09:15:20 mo Exp $
+ * RCS: @(#) $Id: Expression.java,v 1.7 2002/04/13 18:46:38 mdejong Exp $
  *
  */
 
@@ -942,6 +942,8 @@ class Expression {
     }
 
     /**
+     * GetLexeme -> ExprLex
+     *
      * Lexical analyzer for expression parser:  parses a single value,
      * operator, or other syntactic element from an expression string.
      *
@@ -977,7 +979,8 @@ class Expression {
 	}
 
 	if ((c != '+')  && (c != '-')) {
-	    if (looksLikeInt(m_expr, m_len, m_ind)) {
+	    final boolean startsWithDigit = Character.isDigit(c);
+	    if (startsWithDigit && looksLikeInt(m_expr, m_len, m_ind)) {
 		StrtoulResult res = Util.strtoul(m_expr, m_ind, 0);
 
 		if (res.errno == 0) {
@@ -989,7 +992,8 @@ class Expression {
 			IntegerTooLarge(interp);
 		    }
 		}
-	    } else {
+	    } else if (startsWithDigit || (c == '.')
+		    || (c == 'n') || (c == 'N')) {
 		StrtodResult res = Util.strtod(m_expr, m_ind);
 		if (res.errno == 0) {
 		    m_ind = res.index;

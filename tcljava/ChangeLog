@@ -1,3 +1,11 @@
+2002-04-13  Shawn Boyce  <shawn@qcominc.com>
+
+	* src/jacl/tcl/lang/Expression.java (ExprLex):
+	Check that a token starts with a digit before
+	passing it to strtod. This avoids a costly
+	runtime exception and leads to a 4x speedup
+	in some trivial examples.
+
 2002-04-12  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* src/jacl/tcl/lang/AfterCmd.java (processTimerEvent,
