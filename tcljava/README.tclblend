@@ -1,6 +1,18 @@
 Tcl Blend
 
-RCS: @(#) $Id: README.tclblend,v 1.10 2003/01/28 03:08:00 mdejong Exp $
+RCS: @(#) $Id: README.tclblend,v 1.11 2003/03/17 20:03:20 mdejong Exp $
+
+
+------------  STOP!  ------------
+
+Before going any farther, it needs to be made clear that this release
+of Tcl Blend is not considered stable enough to be used in production
+systems. There have been significant code changes since the last
+release, so much testing and evaluation will need to be done
+before the 1.3 version of Tcl Blend can be considered ready for
+deployment in a production system.
+
+---------------------------------
 
 1. Introduction
 ---------------
@@ -19,44 +31,50 @@ capabilities to provide a dynamic interface to Java.
 2. Documentation
 ----------------
 
-The best way to get started with Tcl Blend is to look at the demos
-provided in this release. The "docs" directory contains additional
-information. See the "diffs.txt" file in this directory for a list
-of Java Package features and the extent to which they are
-implemented in Tcl Blend. Also, look at the Scriptics Jacl and
-Tcl Blend page at http://www.scriptics.com/java for other useful
-information.
+The new webste includes a getting started page that provides
+a good intro to using Tcl/Java. One can also find demos
+included in this release that provide examples of how to
+integrate Tcl and Java. The "docs" directory contains additional
+information.  See the "diffs.txt" file in this directory for a list of
+Tcl features and the extent to which they are implemented in Jacl.
+The "new_features.txt" file describes features that have been
+added in each release.
 
 3. Requirements
 ---------------
 
-Tcl 8.3.2 or greater, the Tcl Thread extension, and the Java
-Development Kit 1.1 or greater are required to use Tcl Blend.
+The Java Development Kit 1.1 or greater are required to use Tcl Blend.
 
 To build Tcl Blend on Solaris the Native Threads Pack, and 
 several patches, must be installed on top of the JDK.  The 
 package, necessary patches, and installation instructions can 
-be found at http://www.javasoft.com/products/jdk/1.1/index.html.
+be found at http://java.sun.com/j2se/1.4/index.html.
 
 Tcl Blend will build and run under JDK1.2 and newer, see
 known_issues.txt for a list of problems and bugs.
+
+Unix users can build with Tcl 8.3.2 or greater. Windows
+users will need to build with Tcl 8.4.2 or greater.
+The Tcl thread extension version 2.5.1 or greater
+is also required. Each of these downloads can be found at
+the following URL.
+
+http://sourceforge.net/project/showfiles.php?group_id=10894
+
 
 4. Installation
 ---------------
 
 A unified build system that works under both Unix and Windows
-is used to build Tcl Blend. To build on UNIX, just run the
-supplied configure script in a shell. To build on Windows,
-you will first need to build the Tcl and Thread packages
-using the msys_mingw package. See the Tcl win/README file
-for more information about how to install and build Tcl
-and the Thread package with msys_mingw.
-
-Tcl 8.3.2 or newer is required when building under UNIX.
-Tcl 8.4.2 or newer is required when building under Windows.
-In either case, the most recent release of the Thread package
-is strongly suggested. Tcl must be built as a shared library
-with threads enabled.
+is used to build Tcl Blend. One will first need to build
+the Tcl and Thread packages. Unix users should just need
+to run the configure scripts. Windows users will need
+to download the msys_mingw package before building.
+See the Tcl win/README file for more information about how
+to install and build Tcl and the Thread package with msys_mingw.
+Both Tcl and the Threads package must be built as shared
+libraries (enabled by default) and with threads enabled
+(pass --enable-threads to configure).
 
 To run the configure script, just type ./configure in the
 toplevel directory. This runs a configuration script created

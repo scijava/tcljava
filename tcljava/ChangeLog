@@ -1,5 +1,14 @@
 2003-03-17  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* README.jacl:
+	* README.tclblend: Add note indicating that
+	1.3.0 is not a production release. Fixup
+	some old links and descriptions under the
+	Documentation section. Note the Tcl and
+	Thread package requirements for Tcl Blend.
+
+2003-03-17  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* docs/cFunctions.html:
 	* docs/contents.html:
 	* docs/TclJava/contents.html:

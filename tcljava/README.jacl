@@ -1,7 +1,18 @@
 Jacl
 
-RCS: @(#) $Id: README.jacl,v 1.12 2003/01/28 03:08:00 mdejong Exp $
- 
+RCS: @(#) $Id: README.jacl,v 1.13 2003/03/17 20:03:19 mdejong Exp $
+
+------------  STOP!  ------------
+
+Before going any farther, it needs to be made clear that this release
+of Jacl is not considered stable enough to be used in production
+systems. There have been significant code changes since the last
+release, so much testing and evaluation will need to be done
+before the 1.3 version of Jacl can be considered ready for
+deployment in a production system.
+
+---------------------------------
+
 1. Introduction
 ---------------
 
@@ -22,13 +33,14 @@ Java Package enables the user to script Java.
 2. Documentation
 ----------------
 
-The best way to get started with Jacl is to look at the demos provided
-in this release.  The "docs" directory contains additional
+The new webste includes a getting started page that provides
+a good intro to using Tcl/Java. One can also find demos
+included in this release that provide examples of how to
+integrate Tcl and Java. The "docs" directory contains additional
 information.  See the "diffs.txt" file in this directory for a list of
 Tcl features and the extent to which they are implemented in Jacl.
-Also, look at the Scriptics Jacl and Tcl Blend page at
-http://www.scriptics.com/java for other useful information.
-
+The "new_features.txt" file describes features that have been
+added in each release.
 
 3. Requirements
 ---------------
@@ -38,7 +50,7 @@ greater. Jacl has been tested on Win95, WinNT, Solaris, IRIX,
 and Linux. It should also work on other systems that
 have a correctly implemented Java VM.
 
-Jacl works under JDK1.2, see known_issues.txt for
+Jacl works under JDK1.2 and greater, see known_issues.txt for
 a list of known problems and bugs.
 
 4. Installation
