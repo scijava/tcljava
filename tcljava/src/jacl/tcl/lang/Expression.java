@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Expression.java,v 1.1 1998/10/14 21:09:21 cvsadmin Exp $
+ * RCS: @(#) $Id: Expression.java,v 1.2 1999/01/11 16:51:48 hylands Exp $
  *
  */
 
@@ -359,13 +359,15 @@ class Expression {
 	} else {
 	    StrtodResult res = Util.strtod(s, 0);
 	    if (res.index == len) {
-		if (res.errno == TCL.DOUBLE_RANGE) {
-		    DoubleTooLarge(interp);
-		} else {
-		    m_token = VALUE;
-		    return new ExprValue(res.value);
-		}
-	    }
+                if (res.errno == 0) { // then double conversion worked!
+                    m_token = VALUE;
+                    return new ExprValue(res.value);
+                } else if (res.errno == TCL.DOUBLE_RANGE) {
+                    DoubleTooLarge(interp);
+                }
+                // If res.errno is any other value (like TCL.INVALID_DOUBLE)
+                // just fall through and use the string rep.
+            }
 	}
 
 	/*
