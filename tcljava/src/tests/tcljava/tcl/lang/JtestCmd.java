@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: JtestCmd.java,v 1.1 1999/05/10 04:08:59 dejong Exp $
+ * RCS: @(#) $Id: JtestCmd.java,v 1.2 2002/12/18 07:07:19 mdejong Exp $
  *
  */
 
@@ -82,7 +82,7 @@ class JtestCmd implements Command {
 	case OPT_REFCOUNT:
 	    /*
 	     * Returns the reference count of an object.
-	     * E.g. info type $a
+	     * E.g. jtest refcount $obj
 	     */
 	    if (argv.length != 3) {
 		throw new TclException(interp, "wrong # args: should be \"" +
@@ -92,14 +92,15 @@ class JtestCmd implements Command {
 	    TclObject o = argv[2];
 
 	    /*
-	     * The following script will return 2
-	     *		set a foo
-	     *		jtest refcount $a
-	     * Two "owners" have preserveed to the object in $a
-	     *		- the variable "a"
-	     *		- the 3rd argument passed to the jtest command.
+	     * The following script will return 1
+	     *
+	     *		set obj [java::new Object]
+	     *		jtest refcount $obj
+	     *
+	     * Subtract 1 from the returned refCount to account for
+	     * the reference added by the 3rd argument to jtest.
 	     */	    
-	    interp.setResult(TclInteger.newInstance(o.getRefCount()));
+	    interp.setResult(o.getRefCount()-1);
 	    break;
 
 	case OPT_TYPE:

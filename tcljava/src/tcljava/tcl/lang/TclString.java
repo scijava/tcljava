@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclString.java,v 1.3 2002/01/19 00:11:37 mdejong Exp $
+ * RCS: @(#) $Id: TclString.java,v 1.4 2002/12/18 07:07:18 mdejong Exp $
  *
  */
 
@@ -128,8 +128,6 @@ public class TclString implements InternalRep {
      *
      * @param tobj the TclObject to append a string to.
      * @param string the string to append to the object.
-     * @return the TclObject whose string value is tobj.toString() + string.
-     *     Could be different than tobj if tobj has refCount > 1.
      */
     public static final void append(TclObject tobj, String string) {	
 	setStringFromAny(tobj);
@@ -143,7 +141,7 @@ public class TclString implements InternalRep {
     }
 
     /**
-     * Appends ab object to a TclObject object. This method is equivalent to
+     * Appends a TclObject to a TclObject. This method is equivalent to
      * Tcl_AppendToObj() in Tcl 8.0.
      *
      * The type of the TclObject will be a TclString that contains the

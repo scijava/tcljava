@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaList.c,v 1.5 2002/12/16 02:01:40 mdejong Exp $
+ * RCS: @(#) $Id: javaList.c,v 1.6 2002/12/18 07:07:18 mdejong Exp $
  */
 
 #include "java.h"
@@ -84,7 +84,7 @@ Java_tcl_lang_TclList_append(
 	JavaThrowTclException(env, NULL, TCL_ERROR);
     }
 
-    list = 0;    
+    list = 0;
     *(Tcl_Obj **)&list = listPtr;
     return list;
 }
@@ -189,6 +189,12 @@ Java_tcl_lang_TclList_index(
 	(*env)->ThrowNew(env, nullClass, "Invalid TclList.");
 	return NULL;
     }
+
+#ifdef TCL_MEM_DEBUG
+    if (listPtr->refCount == 0x61616161) {
+       panic("Java_tcl_lang_TclList_index : disposed object");
+    }
+#endif
 
     /*
      * This should never fail, because the calling code converts the object to

@@ -108,7 +108,7 @@ test BgErrorMgr-2.2 {BgError.processIdleEvent(), refCount} {
     update
     set info
     lappend info [jtest ref $x]
-} {2 xxx 6 xxx 5 2}
+} {1 xxx 5 xxx 4 1}
 
 proc bgerror {msg} {
     global info errorCode errorInfo

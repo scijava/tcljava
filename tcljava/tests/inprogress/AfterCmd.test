@@ -442,12 +442,12 @@ test AfterCmd-6.2 {AfterCmd.TimerInfo.processTimerEvent, release script obj} {
     set list ""
     set x {lappend x 10}
     after 10 $x
-    jtest ref $x
-    lappend list [jtest ref $x]
+    jtest refcount $x
+    lappend list [jtest refcount $x]
     after 20
     update
-    lappend list [jtest ref $x]
-} {3 2}
+    lappend list [jtest refcount $x]
+} {2 1}
 
 test AfterCmd-6.3 {AfterCmd.TimerInfo.processTimerEvent, bgerror} {
     cleanup
@@ -482,11 +482,11 @@ test AfterCmd-7.2 {AfterCmd.IdleInfo.processIdleEvent, release script obj} {
     set list ""
     set x {lappend x 10}
     after idle $x
-    jtest ref $x
-    lappend list [jtest ref $x]
+    jtest refcount $x
+    lappend list [jtest refcount $x]
     update idletasks
-    lappend list [jtest ref $x]
-} {3 2}
+    lappend list [jtest refcount $x]
+} {2 1}
 
 test AfterCmd-7.3 {AfterCmd.IdleInfo.processIdleEvent, bgerror} {
     cleanup

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaInterp.c,v 1.12 2002/12/18 03:39:53 mdejong Exp $
+ * RCS: @(#) $Id: javaInterp.c,v 1.13 2002/12/18 07:07:18 mdejong Exp $
  */
 
 #include "java.h"
@@ -33,6 +33,8 @@ typedef struct {
 
 static void		JavaCmdDeleteProc(ClientData clientData);
 static int		JavaCmdProc(ClientData clientData, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *CONST objv[]);
+static int		BTestCmd(ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[]);
 static char *		JavaTraceProc(ClientData clientData,
 			    Tcl_Interp *interp,
@@ -400,7 +402,7 @@ Java_tcl_lang_Interp_resetResult(
  *
  * Java_tcl_lang_Interp_setVar --
  *
- *	Set a variable to the given string.
+ *	Set a variable to the given object.
  *
  * Class:     tcl_lang_Interp
  * Method:    setVar
@@ -450,6 +452,10 @@ Java_tcl_lang_Interp_setVar(
 
     /*
      * Get the Tcl_Obj that corresponds to the given TclObject.
+     * Note that we need to increment and decrement the valuePtr
+     * ref count to deallocate in the case where Tcl_ObjSetVar2
+     * appends to the variable but does not increment the
+     * ref count of the valuePtr.
      */
 
     valuePtr = JavaGetTclObj(env, value);
@@ -1037,9 +1043,7 @@ JavaCmdProc(
     }
 
     /*
-     * Invoke the command by calling Interp.callCommand().  Be sure to
-     * leave the monitor since we are assuming nothing about the state
-     * of the world after this call.
+     * Invoke the command by calling Interp.callCommand().
      */
 
     result = (*env)->CallIntMethod(env, interpObj,
@@ -1529,4 +1533,88 @@ Java_tcl_lang_Interp_pkgRequire(
     }
     return string;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Java_tcl_lang_Interp_createBTestCommand --
+ *
+ *	Create a Tcl command called "btest", used for
+ *	testing and debugging Tcl Blend.
+ *
+ * Class:     tcl_lang_Interp
+ * Method:    Java_tcl_lang_Interp_createBTestCommand
+ * Signature: ()V;
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
 
+void JNICALL
+Java_tcl_lang_Interp_createBTestCommand(
+    JNIEnv *env,		/* Java environment. */
+    jobject interpObj)		/* Interp object. */
+{
+    Tcl_Interp *interp = JavaGetInterp(env, interpObj);
+    Tcl_CreateObjCommand(interp, "btest",
+        BTestCmd, NULL, NULL);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * BTestCmd --
+ *
+ *	Object testing method for Tcl Blend.
+ *
+ * Results:
+ *	See impl.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int BTestCmd(
+	ClientData clientData,
+        Tcl_Interp *interp,
+        int objc,
+        Tcl_Obj * CONST objv[])
+{
+    int index;
+    static CONST char *options[] = { 
+	"refcount", NULL 
+    };
+    enum options { 
+	BTEST_REFCOUNT
+    };
+
+    if (objc < 2) {
+    	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg arg ...?");
+	return TCL_ERROR;
+    }
+
+    if (Tcl_GetIndexFromObj(interp, objv[1], options, "option", 0,
+	    &index) != TCL_OK) {
+    	return TCL_ERROR;
+    }
+
+    switch ((enum options) index) {
+	case BTEST_REFCOUNT: {
+	    if (objc < 3 || objc > 3) {
+		Tcl_WrongNumArgs(interp, 2, objv, "obj");
+		return TCL_ERROR;
+	    }
+	    // refCount - 1 to account for the ref added for this method
+	    Tcl_SetObjResult(interp, Tcl_NewIntObj(objv[2]->refCount - 1));
+	    break;
+	}
+    }
+    return TCL_OK;
+}

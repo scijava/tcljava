@@ -1,5 +1,32 @@
 2002-12-17  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/native/javaInterp.c (BTestCmd,
+	Java_tcl_lang_Interp_createBTestCommand):  Add
+	new btest command via createBTestCommand().
+	* src/native/javaList.c (Java_tcl_lang_TclList_index):
+	Check for previously disposed Tcl_Obj.
+	* src/tclblend/tcl/lang/Interp.java (createBTestCommand):
+	Add native method decl.
+	* src/tclblend/tcl/lang/TclList.java: Fixup comments.
+	* src/tcljava/tcl/lang/TclString.java: Fixup comments.
+	* src/tests/tclblend/tcl/lang/NativeTestExtension.java:
+	Invoke Interp.createBTestCommand().
+	* src/tests/tcljava/tcl/lang/JtestCmd.java (cmdProc):
+	Modify the refcount subcommand so that it returns
+	refCount-1 to account for the ref added for the
+	method invocation.
+	* tests/inprogress/AfterCmd.test:
+	* tests/inprogress/BgErrorMgr.test:
+	* tests/inprogress/UplevelCmd.test :
+	Update tests that use jtest refcount to account
+	for change made to JtestCmd.java.
+	* tests/jacl/refCount.test: Check jtest command.
+	* tests/tclblend/javaTimer.test: Add comment.
+	* tests/tclblend/refCount.test: Add tests
+	for new btest command.
+
+2002-12-17  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/native/java.h:
 	* src/native/javaInterp.c (JavaCmdProc):
 	* src/native/javaObj.c (JavaBreakRef, JavaGetTclObject):

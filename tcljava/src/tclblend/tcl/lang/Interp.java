@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.19 2002/07/23 10:19:53 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.20 2002/12/18 07:07:18 mdejong Exp $
  *
  */
 
@@ -1261,5 +1261,26 @@ pkgRequire(
     String pkgname, 
     String version, 
     boolean exact);
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * createBTestCommand --
+ *
+ *	Create a Tcl command called "btest", used for
+ *	test cases and debugging Tcl Blend.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+native void
+createBTestCommand();
+
 } // end Interp
 

@@ -47,18 +47,18 @@ test UplevelCmd-1.5 {UplevelCmd.cmdProc} {
 } {1 {wrong # args: should be "uplevel ?level? command ?arg ...?"}}
 
 test UplevelCmd-2.1 {UplevelCmd.cmdProc, concat objects only when necessary} {
-    set x {jtest ref $x}
-    list [uplevel #0 $x] [jtest ref $x]
-} {4 2}
+    set x {jtest refcount $x}
+    list [uplevel #0 $x] [jtest refcount $x]
+} {3 1}
 
 test UplevelCmd-2.2 {UplevelCmd.cmdProc, concat objects only when necessary} {
     proc foo {} {
 	global x
-	set x {jtest ref $x}
-	list [uplevel $x] [jtest ref $x]
+	set x {jtest refcount $x}
+	list [uplevel $x] [jtest refcount $x]
     }
     foo
-} {4 2}
+} {3 1}
 
 test UplevelCmd-3.1 {UplevelCmd.cmdProc, error info} {
     list [catch {uplevel #0 error xx} msg] $msg $errorInfo

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: TclList.java,v 1.2 2002/12/07 08:51:03 mdejong Exp $
+ * RCS: @(#) $Id: TclList.java,v 1.3 2002/12/18 07:07:18 mdejong Exp $
  */
 
 package tcl.lang;
@@ -49,7 +49,7 @@ TclList()
  *
  * TclList --
  *
- *	Construct a new TclList from the given Tcl_Obj reference.
+ *	Construct a new TclList from the given Tcl_Obj*.
  *
  * Results:
  *	None.
@@ -61,7 +61,7 @@ TclList()
  */
 
 TclList(
-    long objPtr)		// Pointer to Tcl_Obj from C.
+    long objPtr)		// Tcl_Obj* from C.
 {
     super(objPtr);
 }
@@ -108,7 +108,7 @@ newInstance()
 
 private static TclObject
 newInstance(
-    long objPtr)		// Tcl_Obj to wrap.
+    long objPtr)		// Tcl_Obj* to wrap.
 {
     return new TclObject(new TclList(objPtr));
 }
@@ -268,12 +268,15 @@ throws
  *
  * index --
  *
- *	Retrieve the index'th object from the list.The first element has
+ *	Retrieve the index'th object from the list. The first element has
  *	index 0. If index is negative or greater than or equal to the
  *	number of elements in the list, a null is returned.
  *
  * Results:
- *	Returns the index'th TclObject in the list.
+ *	Returns the index'th TclObject in the list. The returned
+ *	object should be treated as readonly and its ref count is
+ *	_not_ incremented; the caller must do that if it holds
+ *	on to the reference.
  *
  * Side effects:
  *	Attempts to convert the object to a list and may throw an
