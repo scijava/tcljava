@@ -1,0 +1,59 @@
+Jikes Bug 317 :
+
+
+//File "Member.java"
+package MyPkg;
+public class Member {}
+
+
+//File "NonMember.java"
+public class NonMember {
+  Object ref = new MyPkg.Member();
+}
+
+
+
+When I try to compile Member.java from the current directory I get this
+error. (it does not seem to matter if I the cur dir is also called MyPkg)
+
+
+% jikes Member.java
+Found 1 semantic error compiling "Member.java":
+
+      1. package MyPkg;
+                 <--->
+ *** Error: Could not find package named:
+                 /soft/java/JDK-1.1.6/lib/classes.zip(MyPkg),
+                 ./MyPkg,
+
+
+
+ If I compile both files I get this error.
+
+ Found 2 semantic errors compiling "NonMember.java":
+
+      2.     Object ref =  new MyPkg.Member();
+                               <--->
+ *** Error: Could not find package named:
+                 /soft/java/JDK-1.1.6/lib/classes.zip(MyPkg),
+                 ./MyPkg,
+                 /tmp/mo/tcljava1.1b1/unix/tcljava.jar(MyPkg) or
+                 /tmp/mo/tcljava1.1b1/unix/tclblend.jar(MyPkg)
+
+
+      2.     Object ref =  new MyPkg.Member();
+                                     <---->
+ *** Error: Type MyPkg/Member was not found
+
+
+
+It seems to me that the problem is that jikes is not looking
+at the "in memory" (for lack of a better description) CLASSPATH
+and is only looking on the disk for the classes. I really think
+this is a bug and I am willing to do some work to hunt it down
+but I want to make sure this is not a "feature" of jikes. This
+exact same code compiles just fine under javac.
+
+Mo DeJong
+
+

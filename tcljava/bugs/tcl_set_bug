@@ -1,0 +1,2 @@
+set one(o 2
+puts $one(o

@@ -1,0 +1,76 @@
+Date: Wed, 02 Dec 1998 15:11:04 +0100
+From: Christian Krone <krischan@sql.de>
+
+Hello,
+
+I'm working with TclBlend 1.1a1 and JDK1.2 on WinNT for two weeks now
+and most of the time I'm really happy: Good work, Chris+Mo!
+
+But meanwhile I found some -mostly small- bugs (buggies?),
+which I will report here on this mailinglist (one after the other).
+
+Usage of javax.swing.JOptionPane freezes the whole application!
+May be, there is something wrong in thread control?
+It must be a problem of TclJava, since the corresponding program in
+pure Java is working fine, but it fails with Jacl and TclBlend.
+
+
+Here are the two programs, first the tcl one, then the Java stuff:
+
+--------------------------------------------------------------------------------
+
+package require java
+
+proc keyPressed {} {
+    java::call javax.swing.JOptionPane showMessageDialog \
+	    [java::null] "This is a very important message" "Wow!" \
+	    [java::field javax.swing.JOptionPane INFORMATION_MESSAGE]
+}
+
+set this [java::new javax.swing.JFrame "Dialog-Test"]
+java::bind $this keyPressed keyPressed
+$this setSize 400 200
+[$this getContentPane] add [java::new javax.swing.JLabel \
+	"Press any key, then wait and see..."]
+$this show
+
+# The funny lines below will go into the event loop,
+# if we are running under a tclsh, wish or jaclsh...
+if {[info globals tk_version] != ""} {
+    wm withdraw .
+    catch {console hide}
+} else {
+    vwait forever
+}
+
+--------------------------------------------------------------------------------
+
+import javax.swing.*;
+import java.awt.event.*;
+
+public class Dialog extends KeyAdapter implements KeyListener {
+
+public void keyPressed (KeyEvent e) {
+  JOptionPane.showMessageDialog (null, "This is a very important message",
+				 "Wow!", JOptionPane.INFORMATION_MESSAGE);
+}
+
+public Dialog () {
+  JFrame f = new JFrame ("Dialog-Test");
+  f.setSize (400, 200);
+  f.addKeyListener (this);
+  f.getContentPane ().add (new JLabel ("Press any key, then wait and see..."));
+  f.show ();
+}
+
+public static void main(String args[]) {
+  Dialog f = new Dialog ();
+}
+}
+
+--------------------------------------------------------------------------------
+
+Thanks for listening, Krischan
+-- 
+Christian Krone, SQL Datenbanksysteme GmbH
+Mail mailto:krischan@sql.de

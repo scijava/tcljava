@@ -1,0 +1,22 @@
+Note from
+Juergen Kreileder <kreilede@issan.cs.uni-dortmund.de>
+
+
+The problem with Linux is that dlopen and symbol resolution is not
+thread safe with glibc 2.0 (AFAIK it is thread-safe in 2.1). JDK 1.1.7
+does not work around this problem.
+For 1.2 I implemented a dl monitor for System.load() and internal JDK
+use. Also, we use RTLD_NOW instead of RTLD_LAZY in 1.2. Still this is not
+enough and so all JDK programs set LD_BIND_NOW=true (via .java_wrapper).
+(Solaris only needs LD_BIND_NOW=true for the green threads vm).
+There still may be problems when native code uses dlopen, but
+System.load() in java code should be safe.
+
+If you load the vm with dlopen, nobody will set LD_BIND_NOW for you.
+The result is an infinite loop while initializing the vm. There two
+work-arounds: First you could make sure that libpthread is loaded before
+the vm by linking your application against libpthread or by using
+LD_PRELOAD (LD_PRELOAD specifies libraries to load before all other
+libraries). Or you can set LD_BIND_NOW=true before starting your
+application. I would recommend the latter solution.
+

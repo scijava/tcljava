@@ -1,0 +1,56 @@
+From: Scott Persinger <scottp@alier.com>
+
+I have just started using Jacl and am quite impressed with its fidelity
+to the original Tcl interpreter.
+
+I have one question, however. The jacl interface seems to require that
+Java objects be assigned a generated name, like this:
+
+    % java::new java.lang.String
+    javax01
+
+However, I would like to be able to name instances myself, like this:
+
+    % java::new -name "str1" java.lang.String
+    str1
+
+I thought that I could get this basic behavior by simply renaming the
+command returned by "java::new", however it doesn't seem to work:
+
+    % set l [java::new java.lang.String]
+    javax01
+    % set newname [rename $l str1; set dummy str1]
+    str1
+    % str1 hashCode
+    Unknown java object
+
+Does anyone know a work around for this, or can anyone suggest a Jacl
+fix to allow this to work?
+
+--Scott
+
+
+
+LATER
+
+
+I managed to successfully modify Jacl to allow renaming the object and
+command.  Basically I did this by modifying the "rename" command to increment
+the Java ref count of the Java instance, thereby assuring that it doesn't get
+garbage collected.
+
+Then I implemented a new "delete" method that allows me to delete the Java
+object directly in Tcl.
+
+I did this because I need to support some existing code that assumes that
+objects can be given a name by the programmer.  It does seem unfortunate to
+me that Jacl doesn't allow you to name the object instance.  I'm fine with
+having to keep a variable referencing the object to avoid garbarge
+collection.  However, why couldn't jacl support a construction syntax like:
+    java::new -name "myObj" java.lang.String
+    myObj
+
+The only thing different here is that objects can't be assumed to be named
+'java0x??', and that the user can supply the name.
+
+

@@ -1,0 +1,17 @@
+#!/bin/sh
+
+# under JDK1.1.7 v1a for linux from blackdown these echo
+# programs will block on a System.in.read() call if they
+# are invoked from a shell script when running under the
+# native threads runtime. The same problem does not show
+# up if the shell exec()s the java program.
+
+#java echo
+java -native echo
+
+#java echo2
+#java -native echo2
+
+#java ConsoleThread
+#java -native ConsoleThread
+

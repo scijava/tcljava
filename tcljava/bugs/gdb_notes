@@ -1,0 +1,20 @@
+gdb patch for debugging problems under solaris.
+
+        --- ./gdb/solib.c.org   Sat Mar 30 06:58:51 1996
+        +++ ./gdb/solib.c       Sat Sep  6 14:48:18 1997
+        @@ -67,6 +67,7 @@
+
+         #ifdef SVR4_SHARED_LIBS
+         static char *solib_break_names[] = {
+        +  "rtld_db_dlactivity",
+           "r_debug_state",
+           "_r_debug_state",
+           "_dl_debug_state",
+
+Passing the -xs option to sun cc will force debug symbols into
+the shared library when it is linked (for gdb compat)
+
+
+gdb just seems to get stuck when you attempt to attach to the
+same program more then one time. It prints out stuff about loading
+symbols and then gets stuck.

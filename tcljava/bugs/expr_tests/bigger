@@ -1,0 +1,26 @@
+cd ../tests
+source defs
+
+test 1 {} {
+list [catch {
+  expr {"11111111111111111 1111111111111111111" == 1}
+} err] $err
+} {0 0}
+
+test 2 {} {
+list [catch {
+  expr {"11111111111111111+1111111111111111111" == 1}
+} err] $err
+} {0 0}
+
+test 3 {} {
+list [catch {
+  expr {111111111111111111111111111111111111 == 1}
+} err] $err
+} {1 {integer value too large to represent}}
+
+test 4 {} {
+list [catch {
+  expr {"111111111111111111111111111111111111" == 1}
+} err] $err
+} {0 0}

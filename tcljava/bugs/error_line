@@ -1,0 +1,109 @@
+
+> Harald Kirsch wrote:
+> kir@iitb.fhg.de
+> > 
+> > When Jacl produces a TclException because of a syntax error in a
+> > script, there is never any line number, not even the relative numbers
+> > found in the normal Tcl. Am I doing something wrong, or is it not
+> > implemented?
+
+> Could you provide a script example of how the output of Jacl
+> differs from Tcl Blend or just regular Tcl?
+
+Yes I can: Run the following class on just any syntactically wrong Tcl
+input. I don't know how to ask an `Interp' for the line number where
+something went wrong.
+
+
+------------------------------------------------------------------------
+import tcl.lang.*;
+
+public class Jbug
+{
+  /*****************************************************************/
+  public static void 
+  main(String[] argv)
+  {
+    Interp ip = new Interp();
+    
+    try {
+      ip.evalFile(argv[0]);
+    } catch( TclException e) {
+      System.err.println(ip.getResult().toString());
+      e.printStackTrace();
+    }
+  }
+  /*****************************************************************/
+}
+/*****************************************************************/
+------------------------------------------------------------------------
+
+The example Tcl-file I use is:
+------------------------------------------------------------------------
+puts hallo
+plim plam plum
+puts ballo
+------------------------------------------------------------------------
+
+The error message I get is:
+
+
+invalid command name "plim"
+tcl.lang.TclException
+        at tcl.lang.ReturnCmd.cmdProc(Compiled Code)
+        at tcl.lang.Parser.evalObjv(Compiled Code)
+        at tcl.lang.Parser.eval2(Compiled Code)
+        at tcl.lang.Procedure.cmdProc(Compiled Code)
+        at tcl.lang.Parser.evalObjv(Compiled Code)
+        at tcl.lang.Parser.evalObjv(Compiled Code)
+        at tcl.lang.Parser.eval2(Compiled Code)
+        at tcl.lang.Interp.eval(Compiled Code)
+        at tcl.lang.Interp.evalFile(Compiled Code)
+        at Jbug.main(Compiled Code)          
+
+Harald Kirsch
+
+
+
+
+
+
+
+
+
+Sender: kir@iitb.fhg.de
+Cc: per.hornblad@uab.ericsson.se, dejong@cs.umn.edu
+Subject: Re: Jacl and line numbers, cont.
+
+Ok, I had a look at the code and I think I fixed at least one place
+where line numbers get lost, in particular in `interp.evalFile'. Here
+comes the patch against 1.1a1.
+
+A similar thing might be necessary in interp.eval, but since
+interp.evalFile calls interp.eval, I am not yet sure how to prevent eval
+from adding to errorInfo, if it was called by evalFile. Maybe a
+protected and a public version of interp.eval is necessary.
+
+Regards,
+	Harald Kirsch
+
+
+------------------------------------------------------------------------
+diff -r -C 2 jacl1.1a1.orig/src/jacl/tcl/lang/Interp.java jacl1.1a1/src/jacl/tcl/lang/Interp.java
+*** jacl1.1a1.orig/src/jacl/tcl/lang/Interp.java	Fri Nov  6 23:38:15 1998
+--- jacl1.1a1/src/jacl/tcl/lang/Interp.java	Mon Dec 14 12:32:45 1998
+***************
+*** 1879,1882 ****
+--- 1879,1889 ----
+  	eval(fileContent, 0);
+      }
++     catch( TclException e) {
++         if( e.getCompletionCode()==TCL.ERROR ) {
++ 	    addErrorInfo("\n    (file \"" + s + "\" line " 
++ 			 + errorLine + ")");
++       }
++       throw e;
++     }
+      finally {
+  	scriptFile = oldScript;
+------------------------------------------------------------------------

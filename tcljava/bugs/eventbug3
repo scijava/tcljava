@@ -1,0 +1,30 @@
+Philip Chu <philipchu@technicat.com>
+I'm having problems using modal Swing dialogs with TclBlend 1.1a, JDK 1.2
+on NT.
+
+The first script below creates a tk button that pops up a Swing confirm
+dialog. The confirm dialog comes up OK, but if you drag it over the tk
+button, the latter does not repaint.
+
+A more serious problem is shown in the second script below, which creates a
+Swing frame and button, which has a tcl callback script that brings up a
+Swing confirm dialog. In this case, the whole app freezes when the confirm
+dialog pops up.
+
+# test swing modal dialogs
+package require java
+set frame [java::new javax.swing.JFrame]
+button .b -text "Test" -command "java::call javax.swing.JOptionPane 
+showConfirmDialog $frame Message" 
+pack .b
+
+# show JDialog from JFrame
+package require java
+set frame [java::new javax.swing.JFrame] 
+set pane [$frame getContentPane] 
+set button [java::new javax.swing.JButton "hello"] 
+$pane add $button
+java::bind $button java.awt.event.ActionListener.actionPerformed \
+"java::call javax.swing.JOptionPane showConfirmDialog $frame hello"
+$frame setSize 200 200 
+$frame show

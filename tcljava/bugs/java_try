@@ -1,0 +1,39 @@
+
+proc call { } {
+  return 1
+}
+
+
+catch {
+
+java::try {
+  call
+} catch {TclException e} {
+  puts "caught TclException \"$e\""
+}
+
+} err
+
+set err
+
+
+
+
+
+proc call { } {
+  return -code 1
+}
+
+
+catch {
+
+java::try {
+  call
+} catch {TclException e} {
+  puts "caught TclException \"$e\""
+}
+
+} err
+
+set err
+

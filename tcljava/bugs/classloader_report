@@ -1,0 +1,125 @@
+This bug is located in the JDK1.2fcs class java.lang.ClassLoader.
+The problem is in the native implementation of the defineClass
+method (aka java.lang.ClassLoader.defineClass0()). The spec says
+that the defineClass(String,byte[],int,in) version of the method
+will throw a ClassFormatError is the data passed to is not valid.
+This was implemented correctly until JDK1.2fcs came out.
+
+
+
+(running example code under JDK1.1)
+
+% java -version
+java version "1.1.5"
+
+% java TestLoader
+java.lang.ClassFormatError: Wrong name
+        at java.lang.ClassLoader.defineClass(Compiled Code)
+        at TestLoader.loadClass(Compiled Code)
+        at TestLoader.main(Compiled Code)
+
+
+
+(running example code under JDK1.2beta4)
+
+% java -version
+java version "1.2beta4"
+Classic VM (build JDK-1.2beta4-K, green threads, sunwjit)
+
+% java TestLoader
+Exception in thread "main" java.lang.ClassFormatError: Test (Wrong name: simple/Test)
+        at java.lang.ClassLoader.defineClass0(Native Method)
+        at java.lang.ClassLoader.defineClass(Compiled Code)
+        at TestLoader.loadClass(Compiled Code)
+        at TestLoader.main(Compiled Code)
+
+
+
+(here is where it breaks under JDK1.2fcs)
+
+% java -version
+java version "1.2fcs"
+Classic VM (build JDK-1.2fcs-O, green threads, sunwjit)
+
+% java TestLoader
+Exception in thread "main" java.lang.NoClassDefFoundError: Test (wrong name: simple/Test)
+        at java.lang.ClassLoader.defineClass0(Native Method)
+        at java.lang.ClassLoader.defineClass(Compiled Code)
+        at TestLoader.loadClass(Compiled Code)
+        at TestLoader.main(Compiled Code)
+
+
+
+
+
+Note that the ClassLoader.defineClass0() native method raised a
+java.lang.NoClassDefFoundError in this case (where the name
+argument does not match the name defined in the .class file).
+
+This method should not raise a java.lang.NoClassDefFoundError
+because that exception is not defined in the throws section of
+the API spec and it is not derived from ClassFormatError which
+is given in the throws section of the API.
+
+Please change the native implementation so that it raises a
+ClassFormatError in the case where the name argument does not
+match the data defined in the classfile.
+
+
+
+(here is the source code for the example print outs that I gave above)
+
+
+import java.util.*;
+import java.util.zip.*;
+import java.io.*;
+
+class TestLoader extends ClassLoader
+{
+    public TestLoader() {
+    }
+
+    public Class loadClass(String name, boolean resolve)
+    {
+
+	try {
+
+	//get class data from the file
+	
+	File f = new File("simple/Test.class");
+
+	FileInputStream fi = new FileInputStream(f);
+
+	byte[] classData = new byte[fi.available()];
+	
+	fi.read(classData);
+
+	//fully qualified name should be given as argument, but it is not
+
+	Class result = defineClass("Test", classData, 0, classData.length);
+
+	if (result == null) {
+	    System.out.println("got null result");
+	    return null;
+	}
+
+	System.out.println("got non null result " + result);
+
+	}
+	catch (FileNotFoundException e) {}
+	catch (IOException e2) {}
+
+	return null;
+    }
+    
+    public static void main(String[] argv) throws Exception {
+	TestLoader tl = new TestLoader();
+	tl.loadClass("",true);
+    }
+} //end class
+
+
+
+I hope that helps
+Mo DeJong
+dejong at cs.umn.edu

@@ -1,0 +1,204 @@
+WARNING, recursive extraction when a directory in the
+archive is given is not yet implemented
+
+
+jar -xvf data.jar dir1/dir2
+
+should extract everything under dir2 in the archive!
+
+
+
+
+
+
+
+
+
+
+What if you update an uncompressed archive without giving -0?
+Does it remain uncompressed or does it compress the archive?
+Does it just compress that one entry?
+
+update without an archive??
+
+read from stdin and write to stdout? (should it fail?)
+
+
+% /tmp/mo/jdk1.2/bin/jar -um empty
+
+
+U:
+
+requires 1 or more file arguments
+
+(what about -C combined with this arg?)
+I would think that update would be allowed to CD to
+different directories.
+
+
+
+Bug in JDK impl of jar
+
+
+% /tmp/mo/jdk1.2/bin/jar -cvf tmp.jar -C tmp nog
+
+added manifest
+adding: nog (in=12) (out=9) (deflated 25%)
+
+
+% /tmp/mo/jdk1.2/bin/jar -xvf tmp.jar -C tmp nog
+
+(NO OUTPUT)
+
+
+
+
+What if you list with -t but the file does not exist?
+
+% jar -tf test.jar
+META-INF/
+META-INF/MANIFEST.MF
+data.txt
+file1
+
+
+mo(/tmp/mo/tcljava/bugs/jar)% jar -tf test.jar data.txt nog
+data.txt
+
+
+
+
+What about extraction when dir to extract to -C does not exist?
+
+
+
+
+EXTRACTION
+
+
+# there seems to be a bug in the JDK's jar program
+# it does not create parent directories for files ???
+
+% jar -xvf ../test.jar 
+ extracted: META-INF/MANIFEST.MF
+java.io.IOException: tmp1/tmp2/: could not create directory
+        at sun.tools.jar.Main.extractFile(Main.java:395)
+        at sun.tools.jar.Main.extract(Main.java:375)
+        at sun.tools.jar.Main.run(Main.java:106)
+        at sun.tools.jar.Main.main(Main.java:524)
+
+
+mo(/tmp/mo/tcljava/bugs/jar/tmp)% jar -xvf ../test.jar
+ extracted: META-INF/MANIFEST.MF
+   created: tmp1/tmp2/
+ extracted: tmp1/tmp2/file2
+ extracted: tmp1/file1
+
+
+
+
+
+
+% /usr/bin/time jar -xvf test.jar 
+
+ extracted: META-INF/MANIFEST.MF
+   created: tmp1/
+   created: tmp1/tmp2/
+ extracted: tmp1/tmp2/file2
+ extracted: tmp1/file1
+ extracted: file1
+ extracted: big.data
+
+real        3.1
+user        1.7
+sys         0.7
+
+
+
+
+% /usr/bin/time java kaffe.tools.jar.Jar -xvf test.jar
+
+
+
+
+JDK bugs related to jar and zip stuff.
+
+
+4079029 (zip entry not accessable)
+
+
+
+
+
+
+
+# regression failures with Kaffe
+
+eval javac -d /tmp/mo/build [glob /tmp/mo/tcljava/bugs/jar/*.java]
+
+
+
+
+
+
+
+
+
+
+# When created with kaffe and read with the JDK
+
+% java kaffe.jar.Jar -xvf test.jar
+  inflated: META-INF/MANIFEST.MF
+java.util.zip.ZipException: invalid entry compressed size (expected 0 but got 2 bytes)
+        at java.util.zip.ZipInputStream.readEnd(ZipInputStream.java:235)
+        at java.util.zip.ZipInputStream.read(ZipInputStream.java:106)
+        at kaffe.jar.Jar.readwriteStreams(Jar.java:1187)
+        at kaffe.jar.Jar.extractFilesInJar(Jar.java:815)
+        at kaffe.jar.Jar.processJar(Jar.java:405)
+        at kaffe.jar.Jar.start(Jar.java:60)
+        at kaffe.jar.Jar.main(Jar.java:39)
+
+
+
+
+
+
+
+
+
+
+
+
+# kaffe does not seem to check to make sure at least on zip
+# entry is in the Zip file.
+
+
+
+
+
+
+# single JarOutputStream entry write.
+
+
+
+
+
+# kaffe.jar.Jar seems to break when manifest is given, why ?
+
+java.util.zip.ZipException: invalid entry compressed size (expected 0 but got 2 bytes)
+        at java.util.zip.ZipInputStream.readEnd(ZipInputStream.java:352)
+        at java.util.zip.ZipInputStream.read(ZipInputStream.java:137)
+        at java.util.zip.ZipInputStream.closeEntry(ZipInputStream.java:93)
+        at sun.tools.jar.Main.list(Main.java:668)
+        at sun.tools.jar.Main.run(Main.java:155)
+        at sun.tools.jar.Main.main(Main.java:760)
+
+
+
+
+
+
+is (-1) a valid date ?? (same problem as crc?)
+
+
+

@@ -1,0 +1,42 @@
+> I want to use tclBlend to control a simulation written in JAVA and use
+> TCL/Tk as a graphical backend.
+[...]
+> proc doRedraw {event} {
+>     puts "test"
+>     return
+> }
+> java::bind $simulation UpdateDisplayListener.carChanged "doRedraw"
+
+> I have the following problem: the simulation works fine when I don't use
+> the java::bind.
+> It gets stuck as soon as I use the binding, i.e prints CAR_MOVED and
+> halts as if it was trying to call doRedraw without success.
+> Does doRedraw need an argument ? Do I have to return something from
+> doRedraw ?
+
+
+
+Christian Krone <krischan@sql.de>
+
+I noticed some time ago, that java::bind has a bug: it freezes the
+application, if the callback script generates an error.
+Here is my workaround:
+
+proc util::javaBind {obj event script} {
+    java::bind $obj $event [format {
+        if {[catch {%s} msg]} {
+            if {[catch {tk_messageBox -icon error \
+                    -title "Error in Tcl script" -message $msg}]} {
+                puts "Error in Tcl script:\n$msg"
+            }
+        }  
+    } $script]
+}
+
+Now call util::javaBind instead of the original java::bind, and you get an
+error message (in a window or on stdout, this depends on the interpreter).
+Much more friendly than an application, which responds to nothing but Alt-F4 ;-}
+
+Hth, Krischan
+-- 
+Christian Krone, SQL Datenbanksysteme GmbH

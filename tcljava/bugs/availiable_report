@@ -1,0 +1,278 @@
+The bug described here is contained in the InputStream.available()
+method. The problem is that the InputStream.available method 
+returns different results if the resource that is referenced is
+coming from a compressed input stream. Code that depends in
+the number of bytes returned by the available() method broke
+when run under JDK1.2beta4. I had hoped that it would be fixed
+with JDK1.2fcs but I just tested it again and it is still broken.
+I have included the results from running a simple program under
+JDK1.1, JDK1.2beta4, and JDK1.2fcs in this file. I also included
+the original code that worked in JDK1.1 as well as the workaround
+that I have had to use since JDK1.2beta4 came out at the bottom
+of this email.
+
+
+
+mo%jar -cvf0 ../easy.zip easy
+    adding: easy/easy.msg (in=92) (out=92) (stored 0%)
+
+mo% jar -tvf easy.zip
+     0 Fri Sep 04 13:53:06 CDT 1998 META-INF/
+    25 Fri Sep 04 13:53:06 CDT 1998 META-INF/MANIFEST.MF
+     0 Fri Sep 04 13:51:04 CDT 1998 easy/
+    92 Fri Sep 04 13:52:32 CDT 1998 easy/easy.msg
+
+
+mo% jar -cvf ../easy.jar easy
+    adding: easy/easy.msg (in=92) (out=28) (deflated 69%)
+
+
+mo% jar -tvf easy.jar
+     0 Fri Sep 04 13:52:58 CDT 1998 META-INF/
+    25 Fri Sep 04 13:52:58 CDT 1998 META-INF/MANIFEST.MF
+     0 Fri Sep 04 13:51:04 CDT 1998 easy/
+    92 Fri Sep 04 13:52:32 CDT 1998 easy/easy.msg
+
+
+
+Note that the uncompressed size of the file if 92
+bytes and the compressed size of the file is 28 bytes!
+
+
+
+
+(results under JDK1.1 with easy.zip in CLASSPATH)
+
+mo(/tmp/mo/test_jar)% java -version
+java version "1.1.5"
+mo(/tmp/mo/test_jar)% java easy
+92 bytes available
+easy as pie in the sky
+easy as pie in the sky
+easy as pie in the sky
+easy as pie in the sky
+
+
+(results under JDK1.1 with easy.jar in CLASSPATH)
+mo(/tmp/mo/test_jar)% java -version
+java version "1.1.5"
+mo(/tmp/mo/test_jar)% java easy
+92 bytes available
+easy as pie in the sky
+easy as pie in the sky
+easy as pie in the sky
+easy as pie in the sky
+
+
+
+Note that in JDK1.1 the stream.available() method returns the same result
+reguardless of the way the zip entry was stored (compressed or not).
+
+
+
+
+(results under JDK1.2beta4 with easy.zip in CLASSPATH)
+mo(/tmp/mo/test_jar)% java -version
+java version "1.2beta4"
+mo(/tmp/mo/test_jar)% java easy
+92 bytes available
+easy as pie in the sky
+easy as pie in the sky
+easy as pie in the sky
+easy as pie in the sky
+
+
+
+(results under JDK1.2beta4 with easy.jar in CLASSPATH)
+mo(/tmp/mo/test_jar)% java -version
+java version "1.2beta4"
+mo(/tmp/mo/test_jar)% java easy
+compressed hack time
+available bytes is 28
+done reading
+easy as pie in the sky
+easy as pie in the sky
+easy as pie in the sky
+easy as pie in the sky
+
+
+
+JDK1.2beta4 broke this API call by returning the compressed
+size instead of the uncompressed size. This requires an ugly
+workaround for any code that uses the stream.available() method.
+
+
+
+(results under JDK1.2fcs with easy.zip in CLASSPATH)
+mo(/tmp/mo/test_jar)% java -version
+java version "1.2fcs"
+Classic VM (build JDK-1.2fcs-O, green threads, sunwjit)
+mo(/tmp/mo/test_jar)% java easy
+92 bytes available
+easy as pie in the sky
+easy as pie in the sky
+easy as pie in the sky
+easy as pie in the sky
+
+
+(results under JDK1.2fcs with easy.jar in CLASSPATH)
+mo(/tmp/mo/test_jar)% java -version
+java version "1.2fcs"
+Classic VM (build JDK-1.2fcs-O, green threads, sunwjit)
+mo(/tmp/mo/test_jar)% java easy
+compressed hack time
+available bytes is 1
+done reading
+easy as pie in the sky
+easy as pie in the sky
+easy as pie in the sky
+easy as pie in the sky
+
+
+
+I had hoped that this bug would be fixed by JDK1.2fcs but
+it has got even worse. Now the stream.available() method
+returns one byte reguardless of the actual size of the
+compressed data in the zip record. Why cant the available
+method use the uncompressed file size that is stored in
+the zip record? You should not need to unzip the data to
+find out how big the file was originally.
+
+
+
+
+
+
+
+(original source code that worked in JDK1.1)
+
+import java.io.*;
+
+public class easy {
+  public static void main(String[] argv) throws Exception {
+    InputStream stream = Class.class.getResourceAsStream("/easy/easy.msg");
+
+    if (stream == null) {
+      System.out.println("resource not found");
+      System.exit(-1);
+    }
+
+    int num = stream.available();
+    System.out.println(num + " bytes available");
+    byte charArray[] = new byte[num];
+    int offset = 0;
+    while ( num > 0 ) {
+      int readLen = stream.read( charArray, offset, num );
+      offset += readLen;
+      num -= readLen;
+    }
+
+    System.out.write(charArray);
+    System.out.flush(); //needed for some VMs that do not flush
+  }
+}
+
+
+
+
+
+
+(workaround for JDK1.2beta4 and JDK1.2fcs)
+
+
+import java.io.*;
+
+public class easy {
+  public static void main(String[] argv) throws Exception {
+    InputStream stream = Class.class.getResourceAsStream("/easy/easy.msg");
+
+    if (stream == null) {
+      System.out.println("resource not found");
+      System.exit(-1);
+    }
+
+    byte[] byteArray;
+
+    if ((System.getProperty("java.version").equals("1.2beta4") ||
+	System.getProperty("java.version").equals("1.2fcs")) &&
+	stream.getClass().getName().equals("java.util.zip.ZipFile$1")) {
+
+      //we must do a workaround for compressed files in JDK1.2B4
+      System.out.println("compressed hack time");
+
+
+      //read in the compressed file one byte at a time
+
+      System.out.println("available bytes is " + stream.available());
+
+      int size = stream.available() * 4;
+      //int size = 10;
+      int used = 0;
+      int cur;
+
+      //System.out.println("byte array size is " + size); 
+      byteArray = new byte[size];
+      
+      cur = stream.read();
+
+      while (cur != -1) {
+
+	//expand the byte array if we need to
+	if (used >= size) {
+	  //System.out.println("expanding byte array from " + size + " to " + (size * 2));
+	  byte[] oldArray = byteArray;
+	  int new_size = size * 2;
+
+	  byteArray = new byte[new_size];
+	  System.arraycopy(oldArray, 0, byteArray, 0, used);
+	  oldArray = null;
+
+	  size = new_size;
+	}
+
+	//System.out.println("added byte " + cur + " '" + ((char) cur) + "' to position " + used);
+	byteArray[used++] = (byte) cur;
+
+	cur = stream.read();
+      }
+
+
+      System.out.println("done reading");
+
+      byte[] oldArray = byteArray;
+      byteArray = new byte[used];
+      System.arraycopy(oldArray, 0, byteArray, 0, used);
+      oldArray = null;
+
+    } else {
+
+      //other systems do not need the compressed jar hack
+
+      int num = stream.available();
+      System.out.println(num + " bytes available");
+      byteArray = new byte[num];
+      int offset = 0;
+      while ( num > 0 ) {
+	int readLen = stream.read( byteArray, offset, num );
+	offset += readLen;
+	num -= readLen;
+      }
+
+    }
+
+
+
+    System.out.write(byteArray);
+    System.out.flush(); //kaffe needs this in order to flush properly
+  }
+}
+
+
+
+
+
+
+
+I hope that helps
+Mo DeJong
+dejong at cs.umn.edu

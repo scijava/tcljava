@@ -1,0 +1,8 @@
+interp create i
+
+i eval {
+    set env(VAR) 123455789ABCDEF
+    append env(VAR) G
+
+    puts "env(VAR) is \"$env(VAR)\""
+}

@@ -1,0 +1,242 @@
+From: Jagmeet Singh <jagmeet_singh@mri.mentorg.com>
+Hi!
+
+I'm using TclBlend 1.1a1, JDK 1.2 on Solaris 5.5.1 and 
+have a simple AWT application + a tk window up. They can
+send messages to each other as well as eval tcl strings.
+
+The problem is that after the java application completes
+its first action (sending a string to tk or evaluating a
+tcl command), it "hangs" the next time a button is pressed
+- this goes away if the mouse is just moved to the tk
+window (or any event takes place there - like raising or
+lowering of that window).
+
+There is no problem when I try the same thing from the tk window.
+
+The java code as well as the wish script are shown below.
+
+Somebody please help.
+
+Thanx.
+
+-J
+
+______________________
+
+Browser.java
+
+
+import tcl.lang.*;
+
+import java.awt.*;
+import java.awt.event.*;
+
+import java.util.*;
+import java.io.*;
+import java.text.*;
+
+
+import javax.swing.*;
+import javax.swing.event.*;
+import javax.swing.text.*;
+import javax.swing.border.*;
+
+public class Browser extends JFrame implements ActionListener
+{
+    private String newline;
+    private Insets insets1;
+
+    private JLabel label;
+    private JTextField textField;
+    private JButton button1;
+    private JButton button2;
+    private JTextArea textArea;
+    private JPanel panel1;
+    private JPanel panel2;
+
+    Interp tclInterp;
+    String tclScript;
+
+    // Grid Bag Layout stuff
+    private GridBagLayout GBlayout;
+    private GridBagConstraints GBconstraints;
+
+    // public static void main(String args[]) {
+    // Browser browser = new Browser();
+    // browser.show();
+    // }
+
+    public Browser(Interp interp) {
+	tclInterp = interp;
+
+	setSize(400, 200);
+	newline = System.getProperty("line.separator");
+	
+	label = new JLabel("Enter Input : ");
+	textField = new JTextField(64);
+
+	button1 = new JButton("Eval Tcl Cmd");
+	button1.setActionCommand("evalTclCmd");
+	button1.addActionListener(this);
+
+	button2 = new JButton("Send To Wish");
+	button2.setActionCommand("sendToWish");
+	button2.addActionListener(this);
+
+	textArea = new JTextArea("                   ", 8, 16);
+	textArea.setEditable(false);
+
+	// textField.setText("                         ");
+	textArea.setText(newline + "       Hello!      " + newline);
+
+	// Setup the Layout manager
+	GBlayout = new GridBagLayout();
+	getContentPane().setLayout(GBlayout);
+
+	insets1 = new Insets(5, 5, 5, 5);
+
+	GBconstraints = new GridBagConstraints();
+	GBconstraints.weightx = 100;
+	GBconstraints.weighty = 0;
+	GBconstraints.fill = GridBagConstraints.NONE;
+	GBconstraints.insets = insets1;
+
+	panel1 = new JPanel();
+	panel1.setLayout(new GridLayout(1, 2));
+	panel1.add(label);
+	panel1.add(textField);
+
+	panel2 = new JPanel();
+	panel2.setLayout(new GridLayout(1, 2));
+	panel2.add(button1);
+	panel2.add(button2);
+
+	addComponent(panel1, GBconstraints, GridBagConstraints.CENTER, 0, 0,
+		     GridBagConstraints.REMAINDER, 1);
+	addComponent(panel2, GBconstraints, GridBagConstraints.CENTER, 0, 2,
+		     GridBagConstraints.REMAINDER, 1);
+	addComponent(textArea, GBconstraints, GridBagConstraints.CENTER, 0, 4,
+		     GridBagConstraints.REMAINDER, 1);
+
+	setContentPane(getContentPane());   // force a redraw
+
+    }
+
+    public void actionPerformed(ActionEvent evt) {
+	// the button was pressed - now what ?
+	String str = textField.getText().trim();
+	textArea.setText("You entered : " + str + newline);
+
+	if (evt.getActionCommand().equals("evalTclCmd")) {
+	    evalTclCmd(str);
+	    textArea.append("DONE EVAL!" + newline);
+	}
+	
+	else if (evt.getActionCommand().equals("sendToWish")) {
+	    evalTclCmd("javaToWishCmd " + str);
+	    textArea.append("DONE WISH!" + newline);
+	}
+    }
+
+    class EvalEvent extends TclEvent {
+	public int processEvent (int flags) {
+	    try {
+		tclInterp.eval(tclScript);
+		textArea.append("Result : " + tclInterp.getResult().toString() +
+newline);
+		tclInterp.resetResult();
+	    }
+	    catch (Exception exc) {
+		textArea.setText("EXCEPTION : " + newline + exc + newline);
+	    }
+	    return 1;
+	}
+    }
+
+    private void evalTclCmd(String str) {
+	Notifier n = tclInterp.getNotifier();
+	tclScript = str;
+	TclEvent t = new EvalEvent();
+	n.queueEvent(t,TCL.QUEUE_TAIL);
+	t.sync();
+    }
+
+    public void wishToJavaCommand (String str) {
+	textArea.setText("Got string from wish : " + newline + str + newline);
+    }
+
+    public void addComponent(Component c, GridBagConstraints gbc, int
+anchor, int x, int y, int w, int h) {
+	gbc.anchor = anchor;
+	gbc.gridx = x;
+	gbc.gridy = y;
+	gbc.gridwidth = w;
+	gbc.gridheight = h;
+	getContentPane().add(c, gbc);
+    }
+
+}
+
+___________________
+
+doit.tcl
+
+#!/jags1/tk8.0.3/unix/wish
+ 
+source ~/.wishrc
+ 
+java::call System getProperty java.version
+set browser [java::new Browser [java::getinterp]]
+$browser show
+ 
+frame .top
+frame .center
+frame .bottom
+ 
+pack .top    -side top -padx 3m -pady 3m
+pack .center -side top -padx 3m -pady 3m
+pack .bottom -side top -padx 3m -pady 3m
+ 
+label .label -text "Enter Input :"
+entry .entry -width 12 -relief sunken -bd 2 -bg white -textvariable
+wishCmd
+pack .label .entry -in .top -side left -fill both
+ 
+button .b1 -text "Eval Tcl Cmd" -command wishEvalTclCmd
+button .b2 -text "Send To Java" -command wishToJavaCmd
+pack .b1 .b2 -in .center -side left -fill both
+ 
+message .mess -width 8c -bg white -justify left -relief sunken -bd 2
+-textvariable wishMsgTxt 
+pack .mess -in .bottom -fill both
+ proc wishEvalTclCmd {} {
+  global tmp
+  global wishCmd
+  global wishMsgTxt
+  set tmp {}
+  uplevel [list set tmp [eval $wishCmd]]
+  set wishMsgTxt [list Result: $tmp]
+}
+ 
+proc wishToJavaCmd {} {
+  global browser
+  global wishCmd
+  $browser wishToJavaCommand $wishCmd
+}
+ 
+proc javaToWishCmd args {
+  global tmp
+  global wishMsgTxt
+  set tmp {}
+  foreach i $args {
+    if {$tmp == ""} {
+      set tmp $i
+    } else {
+      set tmp "$tmp $i"
+    }
+  }
+  set wishMsgTxt [list $tmp]
+}
+ 
+# vwait done
