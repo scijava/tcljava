@@ -9,11 +9,10 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: WrappedCommand.java,v 1.1 1999/08/03 03:20:24 mo Exp $
+ * RCS: @(#) $Id: WrappedCommand.java,v 1.2 1999/08/05 03:42:05 mo Exp $
  */
 
 package tcl.lang;
-
 
 import java.util.*;
 
@@ -46,6 +45,14 @@ class WrappedCommand {
                       // of being deleted. Other attempts to
                       // delete the command should be ignored.
 
+    ImportRef importRef;  // List of each imported Command created in
+                          // another namespace when this command is
+			  // imported. These imported commands
+			  // redirect invocations back to this
+			  // command. The list is used to remove all
+			  // those imported commands when deleting
+			  // this "real" command.
+
 
     public String toString() {
 	StringBuffer sb = new StringBuffer();
@@ -67,4 +74,3 @@ class WrappedCommand {
 	return sb.toString();
     }
 }
-
