@@ -6,7 +6,7 @@
 # fields and creates jaclsh.
 
 # Author:  Moses DeJong
-# Version: $Id: jaclsh.in,v 1.5 1998/11/05 22:54:18 hylands Exp $
+# Version: $Id: jaclsh.in,v 1.6 1998/11/07 02:17:16 hylands Exp $
 #
 # Copyright (c) 1998 by Moses DeJong
 #
@@ -14,7 +14,8 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 
-# The next line gets substituted by configure
+# The next two lines gets substituted by configure
+prefix=@prefix@
 XPLATFORM_LIB_INSTALL_DIR=@exec_prefix@/lib
 
 # Add the .jar files to the CLASSPATH
