@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the actual
 # Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.13 1999/11/02 00:10:00 redman Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.13.8.1 2000/07/22 02:43:34 wart Exp $
 
 #========================================================================
 # Edit the following few lines when writing a new extension
@@ -462,16 +462,16 @@ install-lib-binaries: installdirs
 	  if test -f $$p; then \
 	    ext=`echo $$p|sed -e "s/.*\.//"`; \
 	    if test "x$$ext" = "xdll"; then \
-	        echo " $(INSTALL_DATA) $$p $(DESTDIR)$(bindir)/$$p"; \
-	        $(INSTALL_DATA) $$p $(DESTDIR)$(bindir)/$$p; \
+	        echo " $(INSTALL_PROGRAM) $$p $(DESTDIR)$(bindir)/$$p"; \
+	        $(INSTALL_PROGRAM) $$p $(DESTDIR)$(bindir)/$$p; \
 		lib=`basename $$p|sed -e 's/.[^.]*$$//'`.lib; \
 		if test -f $$lib; then \
-		    echo " $(INSTALL_DATA) $$lib $(DESTDIR)$(libdir)/$$lib"; \
-	            $(INSTALL_DATA) $$lib $(DESTDIR)$(libdir)/$$lib; \
+		    echo " $(INSTALL_PROGRAM) $$lib $(DESTDIR)$(libdir)/$$lib"; \
+	            $(INSTALL_PROGRAM) $$lib $(DESTDIR)$(libdir)/$$lib; \
 		fi; \
 	    else \
-		echo " $(INSTALL_DATA) $$p $(DESTDIR)$(libdir)/$$p"; \
-	        $(INSTALL_DATA) $$p $(DESTDIR)$(libdir)/$$p; \
+		echo " $(INSTALL_PROGRAM) $$p $(DESTDIR)$(libdir)/$$p"; \
+	        $(INSTALL_PROGRAM) $$p $(DESTDIR)$(libdir)/$$p; \
 	    fi; \
 	  else :; fi; \
 	done
@@ -482,9 +482,9 @@ install-lib-binaries: installdirs
 	  else :; fi; \
 	done
 	@list='$(jar_BINARIES)'; for p in $$list; do \
-	  $(INSTALL_DATA) $$p $(DESTDIR)$(pkglibdir)/$$p; \
+	  $(INSTALL_PROGRAM) $$p $(DESTDIR)$(pkglibdir)/$$p; \
 	done
-	$(INSTALL_DATA) pkgIndex.tcl $(pkglibdir)
+	$(INSTALL_PROGRAM) pkgIndex.tcl $(pkglibdir)
 
 
 #========================================================================
@@ -494,8 +494,8 @@ install-lib-binaries: installdirs
 install-bin-binaries: installdirs
 	@list='$(bin_BINARIES)'; for p in $$list; do \
 	  if test -f $$p; then \
-	    echo " $(INSTALL_DATA) $$p $(DESTDIR)$(bindir)/$$p"; \
-	    $(INSTALL_DATA) $$p $(DESTDIR)$(bindir)/$$p; \
+	    echo " $(INSTALL_PROGRAM) $$p $(DESTDIR)$(bindir)/$$p"; \
+	    $(INSTALL_PROGRAM) $$p $(DESTDIR)$(bindir)/$$p; \
 	  else :; fi; \
 	done
 

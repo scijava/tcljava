@@ -603,9 +603,18 @@ See http://www.hp.com/esy/technology/jdk/products/software.html.])
             ARCH=PA_RISC
             ARCH_LIBNAME=lib
             ARCH_LIB=${ARCH_LIBNAME}/${ARCH}
+          if test -d ${JAVA_DIR}/${ARCH_LIB}/native_threads ; then
+               ARCH_LIBPATH=${ARCH_LIB}/native_threads
+          elif test -d  ${JAVA_DIR}/${ARCH_LIB}/native ; then
+               ARCH_LIBPATH=${ARCH_LIB}/native
+          elif test -d  ${JAVA_DIR}/${ARCH_LIB}/green_threads ; then
+               ARCH_LIBPATH=${ARCH_LIB}/green_threads
+          elif test -d  ${JAVA_DIR}/${ARCH_LIB}/green ; then
+               ARCH_LIBPATH=${ARCH_LIB}/green
+          fi
 
             JAVA_SHLIB=libjava.sl
-            TCLBLEND_LIBS="-lpthread -L${JAVA_DIR}/${ARCH_LIBNAME} -ljava"
+            TCLBLEND_LIBS="-lpthread -L${JAVA_DIR}/${ARCH_LIBPATH} -ljava"
             TCLBLEND_SHLIB_NAMES="libpthread.sl libjava.sl"
 
             TCLBLEND_LD_PRELOAD=
