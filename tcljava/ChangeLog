@@ -1,5 +1,11 @@
 2000-05-24  Mo DeJong  <mdejong@redhat.com>
 
+	* tests/inprogress/Unicode.test: Overhauled
+	the unicode conversions/substitution tests.
+	They now take a lot less time to run.
+
+2000-05-24  Mo DeJong  <mdejong@redhat.com>
+
 	* src/jacl/tcl/lang/Interp.java (evalResource):
 	* src/tclblend/tcl/lang/Interp.java (evalResource):
 	Changed class that getResourceAsStream is called on
