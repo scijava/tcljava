@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FormatCmd.java,v 1.4 1999/05/15 23:23:35 dejong Exp $
+ * RCS: @(#) $Id: FormatCmd.java,v 1.5 1999/05/15 23:24:34 dejong Exp $
  *
  */
 
@@ -632,6 +632,9 @@ class FormatCmd implements Command {
 	// Normalize dblValue to within 10.0 > dblValue >= 1.0 
 
 	exp = 0;
+	if (Double.isNaN(dblValue)) {
+	    return "NaN";
+	}
 	if (dblValue>0.0) {
 	    int k = 0;
 	    while ((dblValue >= 1e8) && (k++ < 100)) {
