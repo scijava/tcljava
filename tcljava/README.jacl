@@ -1,6 +1,6 @@
 Jacl
 
-RCS: @(#) $Id: README.jacl,v 1.13 2003/03/17 20:03:19 mdejong Exp $
+RCS: @(#) $Id: README.jacl,v 1.14 2003/07/25 07:05:29 mdejong Exp $
 
 ------------  STOP!  ------------
 
@@ -138,7 +138,8 @@ install will also create a wrapper script called jaclsh which you
 can use to run jacl without setting the CLASSPATH. After the wrapper
 script has been installed a test program will be run to ensure that
 the installed program is working correctly. If you want to run jacl
-with special arguments you will need to edit the jaclsh script.
+with special arguments you will need to edit the jaclsh script. Note
+that you can not run the jaclsh before installing it.
 
 5. License Agreement
 ---------------------

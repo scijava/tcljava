@@ -1,3 +1,11 @@
+2003-07-25  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* README.jacl:
+	* README.tclblend: Update to mention that scripts
+	need to be installed before running and that
+	Tcl 8.4.4 is the min 8.4 version that Tcl Blend
+	can be used with.
+
 2003-07-07  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* configure: Regen.
