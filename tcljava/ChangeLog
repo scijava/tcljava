@@ -1,3 +1,15 @@
+2002-07-22  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/tests/tclblend/tests/JavaEval.java:
+	* src/tests/tclblend/tests/JavaLoadTclBlend.java:
+	* src/tests/tclblend/tests/JavaLoadTclBlend2.java:
+	* src/tests/tclblend/tests/JavaThreadLoadTclBlend.java:
+	Rework tests so that dispose is called from a finally
+	block just in case something goes wrong.
+	* tests/tclblend/loading.test: Add test that loads
+	two Java interpreters into the same Java threads.
+	Rename a couple of tests and fixup return values.
+
 2002-07-19  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* src/empty/tcl/lang/Interp.java (Interp):

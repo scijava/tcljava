@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: JavaLoadTclBlend.java,v 1.1 2002/07/20 05:36:54 mdejong Exp $
+ * RCS: @(#) $Id: JavaLoadTclBlend.java,v 1.2 2002/07/22 09:27:20 mdejong Exp $
  */
 
 package tests;
@@ -17,12 +17,17 @@ import tcl.lang.*;
 
 public class JavaLoadTclBlend {
     public static void main(String[] args) throws Exception {
-        Interp interp = new Interp();
-        interp.eval("expr {1 + 2}");
-        String num = interp.getResult().toString();
-        if (!num.equals("3"))
-            System.exit(-1);
-        interp.dispose();
+        Interp interp = null;
+
+        try {
+            interp = new Interp();
+            interp.eval("expr {1 + 2}");
+            if (!interp.getResult().toString().equals("3"))
+                System.exit(-1);
+        } finally {
+            if (interp != null)
+                interp.dispose();
+        }
         System.exit(0);
     }
 }

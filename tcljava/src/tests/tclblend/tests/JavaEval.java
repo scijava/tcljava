@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: JavaEval.java,v 1.1 2002/07/20 05:36:54 mdejong Exp $
+ * RCS: @(#) $Id: JavaEval.java,v 1.2 2002/07/22 09:27:20 mdejong Exp $
  */
 
 package tests;
@@ -18,11 +18,16 @@ import tcl.lang.*;
 
 public class JavaEval {
     public static String eval(String cmd) throws Exception {
-        Interp interp = new Interp();
-        interp.eval(cmd);
-        String result = interp.getResult().toString();
-        interp.dispose();
-        interp = null;
+        Interp interp = null;
+        String result = null;
+        try {
+            interp = new Interp();
+            interp.eval(cmd);
+            result = interp.getResult().toString();
+        } finally {
+            if (interp != null)
+                interp.dispose();
+        }
         return result;
     }
 
