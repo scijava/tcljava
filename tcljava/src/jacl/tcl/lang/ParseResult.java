@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ParseResult.java,v 1.1 1998/10/14 21:09:20 cvsadmin Exp $
+ * RCS: @(#) $Id: ParseResult.java,v 1.2 1999/05/09 00:55:48 dejong Exp $
  *
  */
 
@@ -40,17 +40,21 @@ class ParseResult {
     ParseResult() {
 	value = TclString.newInstance("");
     }
+
     ParseResult(String s, int ni) {
 	value = TclString.newInstance(s);
 	nextIndex = ni;
     }
+
     ParseResult(TclObject o, int ni) {
 	value = o;
 	nextIndex = ni;
     }
+
     ParseResult(StringBuffer sbuf, int ni) {
 	value = TclString.newInstance(sbuf.toString());
 	nextIndex = ni;
     }
+
 }
 
