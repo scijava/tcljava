@@ -1,3 +1,12 @@
+2002-04-11  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* Makefile.in: Build demo binaries in a directory
+	named bdemo. Build test binaries in a directory
+	named btest. This will keep the make clean rule
+	from removing the source files when configure
+	is run in the src directory. Don't set auto_path
+	when running Jacl since it is not required.
+
 2002-01-22  Bruce Johnson  <bruce_johnson@merck.com>,
             Mo DeJong  <mdejong@users.sourceforge.net>
 

@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.17 2002/01/09 11:01:03 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.18 2002/04/12 13:56:40 mdejong Exp $
 
 SHELL = /bin/sh
 
@@ -81,13 +81,13 @@ TCLJAVA_SRC_DIR		= $(TOP_DIR)/src/tcljava
 TCLJAVA_BUILD_DIR	= $(BUILD_DIR)/tcljava
 NATIVE_SRC_DIR		= $(TOP_DIR)/src/native
 DEMOS_SRC_DIR		= $(TOP_DIR)/demos
-DEMOS_BUILD_DIR		= $(BUILD_DIR)/demos
+DEMOS_BUILD_DIR		= $(BUILD_DIR)/bdemos
 TEST_TCL_DIR		= $(TOP_DIR)/tests
 TEST_SRC_DIR		= $(TOP_DIR)/src/tests
 TEST_TCLBLEND_SRC_DIR	= $(TEST_SRC_DIR)/tclblend
 TEST_JACL_SRC_DIR	= $(TEST_SRC_DIR)/jacl
 TEST_TCLJAVA_SRC_DIR	= $(TEST_SRC_DIR)/tcljava
-TEST_BUILD_DIR		= $(BUILD_DIR)/tests
+TEST_BUILD_DIR		= $(BUILD_DIR)/btests
 MISC_DIR		= $(TOP_DIR)/src
 CC			= @CC@
 CC_OBJ_FLAG		= -c
@@ -678,12 +678,12 @@ test: test_$(TCLJAVA).check test_$(TCLJAVA).exec
 test.build: test.clean test_tcljava.build test_$(TCLJAVA).build
 
 test_tcljava.check:
-	@if test ! -f $(BUILD_DIR)/tests/.tcljava ; then \
+	@if test ! -f $(TEST_BUILD_DIR)/.tcljava ; then \
 		$(MAKE) TCLJAVA=$(TCLJAVA) test_tcljava.build ; \
 	fi
 
 test_$(TCLJAVA).check:
-	@if test ! -f $(BUILD_DIR)/tests/.$(TCLJAVA) ; then \
+	@if test ! -f $(TEST_BUILD_DIR)/.$(TCLJAVA) ; then \
 		$(MAKE) TCLJAVA=$(TCLJAVA) test_$(TCLJAVA).build ; \
 	fi
 
@@ -691,23 +691,23 @@ test_jacl.build: jacl.check test_tcljava.check
 	@echo "#"
 	@echo "# Making test_jacl.build"
 	@echo "#"
-	@rm -f tests/.jacl
+	@rm -f $(TEST_BUILD_DIR)/.jacl
 	cd $(TEST_JACL_SRC_DIR) ;\
 	CLASSPATH=$(TEST_CLASSPATH) \
 	$(JAVAC) $(JAVAC_FLAGS) \
 		$(JAVAC_D_FLAG) $(TEST_BUILD_DIR) tcl/lang/*.java
-	@touch tests/.jacl
+	@touch $(TEST_BUILD_DIR)/.jacl
 
 test_tclblend.build: tclblend.check test_tcljava.check
 	@echo "#"
 	@echo "# Making test_tclblend.build"
 	@echo "#"
-	@rm -f tests/.tclblend
+	@rm -f $(TEST_BUILD_DIR)/.tclblend
 	cd $(TEST_TCLBLEND_SRC_DIR) ;\
 	CLASSPATH=$(TEST_CLASSPATH) \
 	$(JAVAC) $(JAVAC_FLAGS) \
 		$(JAVAC_D_FLAG) $(TEST_BUILD_DIR) tests/*.java tcl/lang/*.java
-	@touch tests/.tclblend
+	@touch $(TEST_BUILD_DIR)/.tclblend
 
 # only use test.clean on make clean or on test.build so that a shared
 # build of tclblend and jacl tests can co-exist in the tests directory.
@@ -719,7 +719,7 @@ test_tcljava.build: $(TCLJAVA).check
 	@echo "#"
 	@echo "# Making test_tcljava.build"
 	@echo "#"
-	@rm -f tests/.tcljava
+	@rm -f $(TEST_BUILD_DIR)/.tcljava
 	mkdir -p $(TEST_BUILD_DIR)
 	cd $(TEST_TCLJAVA_SRC_DIR) ;\
 	CLASSPATH=$(TEST_CLASSPATH) \
@@ -744,12 +744,11 @@ test_tcljava.build: $(TCLJAVA).check
 	CLASSPATH=$(JAVA_CLASSPATH) \
 	$(JAR) $(JAR_NOCOMPRESS_FLAGS) test10.jar Test10Extension.class; \
 	rm Test10Extension.class
-	@touch tests/.tcljava
+	@touch $(TEST_BUILD_DIR)/.tcljava
 
 
 test_jacl.exec: test_jacl.check
 	@(  echo \
-	  set auto_path [concat [pwd] [set auto_path]]\; \
 	  cd $(TOP_DIR)/tests\; \
 	  puts \"pwd is [pwd]\"\; \
 	  puts \"CLASSPATH is [set env\(CLASSPATH\)]\"\; \
