@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Var.java,v 1.5 1999/07/16 05:45:39 mo Exp $
+ * RCS: @(#) $Id: Var.java,v 1.6 1999/07/21 04:24:31 mo Exp $
  *
  */
 package tcl.lang;
@@ -120,11 +120,11 @@ class Var {
     }
 
     final void setVarUndefined() {
-	flags |=  UNDEFINED;
+	flags |= UNDEFINED;
     }
 
     final void clearVarUndefined() {
-	flags &=  ~UNDEFINED;
+	flags &= ~UNDEFINED;
     }
 
     /**
@@ -274,7 +274,7 @@ class Var {
 
         for(int i=0; i < sidVec.size(); i++) {
 	    curSid = (SearchId) sidVec.elementAt(i);
-	    if(curSid.equals(sid)){
+	    if (curSid.equals(sid)){
 	        sidVec.removeElementAt(i);
 		return true;
 	    }
@@ -971,7 +971,6 @@ class Var {
 		}
 		if ((flags & TCL.LIST_ELEMENT) != 0) {	// append list element
 		    if (oldValue == null) {
-			// FIXME : is this the right way to allocate an empty object?
 			oldValue = TclList.newInstance();
 			var.value = oldValue;
 			oldValue.preserve(); // since var is referenced
@@ -1169,11 +1168,17 @@ class Var {
 
 	createdNewObj = false;
 	if (varValue.isShared()) {
+	    /*
 	    // FIXME : TclObject.duplicate problem again
 	    //varValue = varValue.duplicate();
 	    varValue = new TclObject(
 		         varValue.getInternalRep().duplicate());
 	    createdNewObj = true;
+	    */
+
+	    // FIXME: there seems to be a big problem here!
+	    //varValue = varValue.takeExclusive();
+	    //createdNewObj = true;
 	}
 
 	try {
@@ -1185,7 +1190,12 @@ class Var {
 	    throw e;
 	}
 	
-	TclInteger.set(varValue, (i + incrAmount));
+	// FIXME : I have no clue why, but this breaks Jacl!!
+	// There seems to be a problem with using takeExclusive()
+	// -> "set v 1 ; set x $v ; incr x 2 ; incr v 2"
+	//TclInteger.set(varValue, (i + incrAmount));
+
+	varValue = TclInteger.newInstance(i + incrAmount);
 
 	// Store the variable's new value and run any write traces.
 
@@ -1484,15 +1494,15 @@ class Var {
      * Tcl_UntraceVar2 -> untraceVar
      *
      * Untrace a variable, given a two-part name consisting of array
-     * name and element within array.
+     * name and element within array. This will Remove a
+     * previously-created trace for a variable.
      *
+     * @param interp Interpreter containing variable.
      * @param part1 1st part of the variable name.
      * @param part2 2nd part of the variable name.
      * @param flags misc flags that control the actions of this method.
-     * @param trace the trace to delete.
+     * @param proc the trace to delete.
      */
-
-    // FIXME : need to port Tcl_UntraceVar2 from tclVar.c here!
 
     static void untraceVar(
 	Interp interp,       // Interpreter containing variable.
@@ -1539,6 +1549,13 @@ class Var {
 		    break;
 		}
 	    }
+	}
+
+	// If this is the last trace on the variable, and the variable is
+	// unset and unused, then free up the variable.
+
+	if (var.isVarUndefined()) {
+	    cleanupVar(var, null);
 	}
     }
 
@@ -1665,7 +1682,7 @@ class Var {
 
 	if (other == null) {
 	    // FIXME : leave error message thing again
-	    throw new TclException(interp, "");
+	    throw new TclRuntimeError("unexpected null reference");
 	}
 
 	// Now create a hashtable entry for "myName". Create it as either a
@@ -1852,6 +1869,7 @@ class Var {
      * a variable.  This procedure invokes traces both on the
      * variable and on its containing array (where relevant).
      *
+     * @param interp Interpreter containing variable.
      * @param array array variable that contains the variable, or null
      *   if the variable isn't an element of an array.
      * @param var Variable whose traces are to be invoked.
@@ -1859,7 +1877,7 @@ class Var {
      * @param part2 the second part of a variable name.
      * @param flags Flags to pass to trace procedures: indicates
      *   what's happening to variable, plus other stuff like
-     *   TCL.GLOBAL_ONLY and TCL.INTERP_DESTROYED.
+     *   TCL.GLOBAL_ONLY, TCL.NAMESPACE_ONLY, and TCL.INTERP_DESTROYED.
      * @return null if no trace procedures were invoked, or
      *   if all the invoked trace procedures returned successfully.
      *   The return value is non-null if a trace procedure returned an
@@ -1868,10 +1886,10 @@ class Var {
      *   is a pointer to a string describing the error.
      */
 
-    // FIXME : still need to port Tcl 8.1 version of callTraces!
-
     static protected String callTraces(Interp interp, Var array, Var var,
-				       String part1, String part2, int flags) {
+				       String part1, String part2, int flags) {	
+	TclObject oldResult;
+	int i;
 
 	// If there are already similar trace procedures active for the
 	// variable, don't call them again.
@@ -1884,18 +1902,18 @@ class Var {
 
 	// If the variable name hasn't been parsed into array name and
 	// element, do it here.  If there really is an array element,
-	// make a copy of the original name so that NULLs can be
+	// make a copy of the original name so that nulls can be
 	// inserted into it to separate the names (can't modify the name
 	// string in place, because the string might get used by the
 	// callbacks we invoke).
 
+	// FIXME : come up with parsing code to use for all situations!
 	if (part2 == null) {
 	    int len = part1.length();
 
 	    if (len > 0) {
 		if (part1.charAt(len-1) == ')') {
-		    int i;
-		    for (i=0; i<len-1; i++) {
+		    for (i=0; i < len-1; i++) {
 			if (part1.charAt(i) == '(') {
 			    break;
 			}
@@ -1909,9 +1927,6 @@ class Var {
 		}
 	    }
 	}
-
-	TclObject oldResult;
-	int i;
 
 	oldResult = interp.getResult();
 	oldResult.preserve();
@@ -1970,7 +1985,6 @@ class Var {
 	    oldResult.release();
 	}
     }
-
 
     /**
      * DeleteSearches -> deleteSearches
