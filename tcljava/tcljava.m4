@@ -808,7 +808,8 @@ AC_DEFUN([AC_JAVA_JNI_LIBS], [
         # Sun/Blackdown JDK 1.3 and 1.4 for Linux
 
         # The "classic" vm is only supported in 1.3 and it core dumps
-        # when loading the java package. Use the "client" vm instead.
+        # when loading the java package. Use the "client" vm
+        # unless "classic" is the only one available.
 
         machine=`uname --machine`
         case "$machine" in
@@ -825,8 +826,13 @@ AC_DEFUN([AC_JAVA_JNI_LIBS], [
                 D=`dirname $ac_java_jvm_dir/$F`
                 ac_java_jvm_jni_lib_runtime_path=$D
                 ac_java_jvm_jni_lib_flags="-L$D -ljava -lverify"
-                #D=$ac_java_jvm_dir/jre/lib/$machine/classic
                 D=$ac_java_jvm_dir/jre/lib/$machine/client
+                if test ! -d $D ; then
+                    D=$ac_java_jvm_dir/jre/lib/$machine/classic
+                    if test ! -d $D ; then
+                        AC_MSG_ERROR([Unable to locate directory for -ljvm])
+                    fi
+                fi
                 ac_java_jvm_jni_lib_runtime_path="${ac_java_jvm_jni_lib_runtime_path}:$D"
                 ac_java_jvm_jni_lib_flags="$ac_java_jvm_jni_lib_flags -L$D -ljvm"
                 D=$ac_java_jvm_dir/jre/lib/$machine/native_threads
