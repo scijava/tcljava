@@ -15,7 +15,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: NamespaceCmd.java,v 1.7 1999/07/21 04:20:14 mo Exp $
+ * RCS: @(#) $Id: NamespaceCmd.java,v 1.8 1999/08/03 02:29:25 mo Exp $
  */
 
 package tcl.lang;
@@ -419,7 +419,12 @@ public class NamespaceCmd extends InternalRep implements Command {
 	ns.interp             = interp;
 	ns.flags              = 0;
 	ns.activationCount    = 0;
-	ns.refCount           = 0;
+	// FIXME : there was a problem with the refcount because
+	// when the namespace was deleted the refocount was 0.
+	// We avoid this by just using a refcount of 1 for now.
+	// We can do ignore the refCount because GC will reclaim mem.
+	//ns.refCount           = 0;
+	ns.refCount           = 1;
 	ns.cmdTable           = new Hashtable();
 	ns.varTable           = new Hashtable();
 	ns.exportArray        = null;
@@ -525,9 +530,6 @@ public class NamespaceCmd extends InternalRep implements Command {
 
 		ns.childTable.clear();
 		ns.cmdTable.clear();
-		ns.childTable = null;
-		ns.cmdTable = null;
-
 
 		// If the reference count is 0, then discard the namespace.
 		// Otherwise, mark it as "dead" so that it can't be used.
@@ -573,7 +575,7 @@ public class NamespaceCmd extends InternalRep implements Command {
 	Interp interp = ns.interp;
 	Enumeration search;
 	Namespace childNs;
-	Command cmd;
+	WrappedCommand cmd;
 	Namespace globalNs = getGlobalNamespace(interp);
 	int i;
 
@@ -652,7 +654,7 @@ public class NamespaceCmd extends InternalRep implements Command {
 	// that changes is ok in Java! Also call deleteCommand... correctly!
 	search = ns.cmdTable.elements();
 	while( search.hasMoreElements() ) {
-	    cmd = (Command) search.nextElement();
+	    cmd = (WrappedCommand) search.nextElement();
 	    interp.deleteCommandFromToken(cmd);
 	}
 	
@@ -1196,7 +1198,7 @@ public class NamespaceCmd extends InternalRep implements Command {
 
 	    if ((end_ind == name_len)
 		&& !((end_ind-start_ind >= 2) &&
-		     ((qualName.charAt(end_ind-1) == ':') && (qualName.charAt(end_ind-1) == ':')))) {
+		     ((qualName.charAt(end_ind-1) == ':') && (qualName.charAt(end_ind-2) == ':')))) {
 
 		// qualName ended with a simple name at start. If FIND_ONLY_NS
 		// was specified, look this up as a namespace. Otherwise,
@@ -1359,7 +1361,6 @@ public class NamespaceCmd extends InternalRep implements Command {
 	} else if ((flags & TCL.LEAVE_ERR_MSG) != 0) {
 	    /*
 	    interp.resetResult();
-	    // FIXME : is there a test case for this error?
 	    TclString.append(interp.getResult(), "unknown namespace \"" + name + "\"");
 	    */
 
@@ -1391,7 +1392,7 @@ public class NamespaceCmd extends InternalRep implements Command {
      *----------------------------------------------------------------------
      */
 
-    static Command findCommand(
+    static WrappedCommand findCommand(
         Interp interp,		 // The interpreter in which to find the
                                  // command.
         String name,		 // Command's name. If it starts with "::",
@@ -1420,7 +1421,7 @@ public class NamespaceCmd extends InternalRep implements Command {
 	String simpleName;
 	int search;
 	//int result;
-	Command cmd;
+	WrappedCommand cmd;
 
 	// If this namespace has a command resolver, then give it first
 	// crack at the command resolution.  If the interpreter has any
@@ -1478,7 +1479,7 @@ public class NamespaceCmd extends InternalRep implements Command {
 
 
 	// Find the namespace(s) that contain the command.
-	
+
 	getNamespaceForQualName(interp, name, contextNs,
 				   flags, ns0Arr, ns1Arr, cxtNsArr, simpleNameArr);
 
@@ -1497,7 +1498,7 @@ public class NamespaceCmd extends InternalRep implements Command {
 	cmd = null;
 	for (search = 0;  (search < 2) && (cmd == null);  search++) {
 	    if ((ns[search] != null) && (simpleName != null)) {
-		cmd = (Command) ns[search].cmdTable.get(simpleName);
+		cmd = (WrappedCommand) ns[search].cmdTable.get(simpleName);
 	    }
 	}
 	if (cmd != null) {
@@ -1644,7 +1645,6 @@ public class NamespaceCmd extends InternalRep implements Command {
 	} else if ((flags & TCL.LEAVE_ERR_MSG) != 0) {
 	    /*
 	    interp.resetResult();
-	    // FIXME : is there a test case for this error?
 	    TclString.append(interp.getResult(), "unknown variable \"" + name + "\"");
 	    */
 
@@ -1800,13 +1800,6 @@ public class NamespaceCmd extends InternalRep implements Command {
 	throws TclException {
 	
 	int i, opt;
-
-	/*
-	if (1 == 1) {
-// !! Command currently unimplemented.
-	    throw new TclException(interp, "namespace command is not yet implemented");
-	} 
-	*/
 
 	if (objv.length < 2) {
 	    throw new TclNumArgsException(interp, 1, objv,
@@ -2757,7 +2750,7 @@ public class NamespaceCmd extends InternalRep implements Command {
     private static void whichCmd(Interp interp, TclObject[] objv)
 	    throws TclException {
 	String arg;
-	Command cmd;
+	WrappedCommand cmd;
 	Var variable;
 	int argIndex, lookup;
 
@@ -2787,12 +2780,17 @@ public class NamespaceCmd extends InternalRep implements Command {
 		          "?-command? ?-variable? name");
 	}
 
-	// FIXME : need to finish implementation!
+	// FIXME : check that this implementation works!
 
-	/*
 	switch (lookup) {
 	case 0:			// -command
-	    cmd = Tcl_GetCommandFromObj(interp, objv[argIndex]);
+	    // FIXME : is this the right way to lookup a Command token?
+	    // It was grabbed form interp.getCommand()
+
+	    arg = objv[argIndex].toString();
+	    cmd = NamespaceCmd.findCommand(interp, arg, null, 0);
+	    //cmd = Tcl_GetCommandFromObj(interp, objv[argIndex]);
+
 	    if (cmd == null) {	
 		return;	        // cmd not found, just return (no error)
 	    }
@@ -2807,7 +2805,6 @@ public class NamespaceCmd extends InternalRep implements Command {
 	    }
 	    return;
 	}
-	*/
 
 	return;
     }
@@ -2836,9 +2833,9 @@ public class NamespaceCmd extends InternalRep implements Command {
     protected void dispose()
     {
 	final boolean debug = false;
-	
 	if (debug) {
-	    System.out.println("dispose called for namespace object " + this);
+	    System.out.println("dispose() called for namespace object " +
+			     (otherValue == null ? null : otherValue.ns));
 	}
 	
 	// FIXME : double check this impl if NS structures change
@@ -2890,9 +2887,9 @@ public class NamespaceCmd extends InternalRep implements Command {
     protected InternalRep duplicate()
     {
 	final boolean debug = false;
-	
 	if (debug) {
-	    System.out.println("duplicate called for namespace object " + this);
+	    System.out.println("duplicate() called for namespace object " +
+			     (otherValue == null ? null : otherValue.ns));
 	}
 
 	ResolvedNsName resName = otherValue;
@@ -3018,9 +3015,10 @@ public class NamespaceCmd extends InternalRep implements Command {
 	toString()
     {
 	final boolean debug = false;
-	
+
 	if (debug) {
-	    System.out.println("toString called for namespace object " + this);
+	    System.out.println("toString() called for namespace object " +
+			     (otherValue == null ? null : otherValue.ns));
 	}
 
 	ResolvedNsName resName = otherValue;
@@ -3091,7 +3089,7 @@ public class NamespaceCmd extends InternalRep implements Command {
 
 	Hashtable cmdTable;	 // Contains all the commands currently
 				 // registered in the namespace. Indexed by
-				 // strings; values have type (Command).
+				 // strings; values have type (WrappedCommand).
 				 // Commands imported by Tcl_Import have
 				 // Command structures that point (via an
 				 // ImportedCmdRef structure) to the
