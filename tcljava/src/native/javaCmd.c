@@ -10,7 +10,7 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  *
- * RCS: @(#) $Id: javaCmd.c,v 1.9.2.4 2000/08/08 19:03:40 mo Exp $
+ * RCS: @(#) $Id: javaCmd.c,v 1.9.2.5 2000/08/27 04:15:54 mo Exp $
  */
 
 /*
@@ -107,94 +107,18 @@ static int initialized_javaVM = 0;
  */
 TCL_DECLARE_MUTEX(javaVM_init_mutex)
 
-
-/*
- * The following array contains the class names and jclass pointers for
- * all of the classes used by this module.  It is used to initialize
- * the java structure's jclass slots.
- */
-
-static struct {
-    jclass *addr;		/* Where to store jclass. */
-    char *name;			/* Name of class to load. */
-} classes[] = {
-    { &java.Object, "java/lang/Object" },
-    { &java.Interp, "tcl/lang/Interp" },
-    { &java.Command, "tcl/lang/Command" },
-    { &java.TclObject, "tcl/lang/TclObject" },
-    { &java.TclException, "tcl/lang/TclException" },
-    { &java.CommandWithDispose, "tcl/lang/CommandWithDispose" },
-    { &java.CObject, "tcl/lang/CObject" },
-    { &java.Extension, "tcl/lang/Extension" },
-    { &java.VarTrace, "tcl/lang/VarTrace" },
-    { &java.Void, "java/lang/Void" },
-    { &java.BlendExtension, "tcl/lang/BlendExtension" },
-    { &java.Notifier, "tcl/lang/Notifier" },
-    { &java.IdleHandler, "tcl/lang/IdleHandler" },
-    { &java.TimerHandler, "tcl/lang/TimerHandler" },
-    { NULL, NULL }
-};
-
-/*
- * The following array contains the information needed to load the jmethodID
- * pointers that this module uses.
- */
-
-static struct {
-    jmethodID *addr;		/* Where to store method id. */
-    char *name;			/* Name of method to load. */
-    jclass *class;		/* Where to find class id. */
-    char *sig;			/* Signature of method. */
-    int isStatic;		/* 1 if method is static. */
-} methods[] = {
-    { &java.toString, "toString", &java.Object,
-      "()Ljava/lang/String;", 0 },
-    { &java.callCommand, "callCommand", &java.Interp,
-      "(Ltcl/lang/Command;[Ltcl/lang/TclObject;)I", 0 },
-    { &java.dispose, "dispose", &java.Interp, "()V", 0 },
-    { &java.interpC, "<init>", &java.Interp, "(J)V", 0 },
-    { &java.cmdProc, "cmdProc", &java.Command,
-      "(Ltcl/lang/Interp;[Ltcl/lang/TclObject;)V", 0 },
-    { &java.disposeCmd, "disposeCmd", &java.CommandWithDispose, "()V", 0 },
-    { &java.newCObjectInstance, "newInstance", &java.CObject,
-      "(J)Ltcl/lang/TclObject;", 1 },
-    { &java.preserve, "preserve", &java.TclObject, "()V", 0},
-    { &java.release, "release", &java.TclObject, "()V", 0},
-    { &java.getInternalRep, "getInternalRep", &java.TclObject,
-      "()Ltcl/lang/InternalRep;", 0},
-    { &java.init, "init", &java.Extension, "(Ltcl/lang/Interp;)V", 0},
-    { &java.blendC, "<init>", &java.BlendExtension, "()V", 0},
-    { &java.traceProc, "traceProc", &java.VarTrace,
-      "(Ltcl/lang/Interp;Ljava/lang/String;Ljava/lang/String;I)V", 0},
-    { &java.serviceEvent, "serviceEvent", &java.Notifier, "(I)I", 0},
-    { &java.hasEvents, "hasEvents", &java.Notifier, "()Z", 0},
-    { &java.invokeIdle, "invoke", &java.IdleHandler, "()V", 0},
-    { &java.invokeTimer, "invoke", &java.TimerHandler, "()V", 0},
-    { NULL, NULL, NULL, NULL, 0 }
-};
-
-/*
- * The following array contains signature information for fields used
- * by this module.
- */
-
-static struct {
-    jfieldID *addr;		/* Where to store method id. */
-    char *name;			/* Name of method to load. */
-    jclass *class;		/* Where to find class id. */
-    char *sig;			/* Signature of method. */
-} fields[] = {
-    { &java.interpPtr, "interpPtr", &java.Interp, "J" },
-    { &java.objPtr, "objPtr", &java.CObject, "J" },
-    { NULL, NULL, NULL, NULL }
-};
-
 /*
  * Declarations of functions used only in this file.
  */
 
 static int		ToString(JNIEnv *env, Tcl_Obj *objPtr, jobject obj);
 static JNIEnv *		JavaInitEnv(JNIEnv *env, Tcl_Interp *interp);
+static int		AddToClassCache(JNIEnv *env, Tcl_Interp *interp, jclass *addr, char *name);
+static int		AddToMethodCache(JNIEnv *env, Tcl_Interp *interp, jmethodID *addr,
+                            char *name, jclass *class, char *sig, int isStatic);
+static int		AddToFieldCache(JNIEnv *env, Tcl_Interp *interp, jfieldID *addr,
+                            char *name, jclass *class, char *sig);
+
 
 /*
  *----------------------------------------------------------------------
@@ -812,11 +736,10 @@ JavaInterpDeleted(
 int
 JavaSetupJava(
     JNIEnv *env,		/* JNI pointer for current thread. */
-    Tcl_Interp *interp)		/* Interpreter to use for reporting errors. */
+    Tcl_Interp *interp)		/* Interpreter to use for reporting errors. Can be NULL */
 {
-    Tcl_Obj *resultPtr;
     jfieldID field;
-    int i;
+    JavaInfo* jcache;
 
 #ifdef TCLBLEND_DEBUG
     fprintf(stderr, "TCLBLEND_DEBUG: called JavaSetupJava\n");
@@ -846,108 +769,90 @@ JavaSetupJava(
     if (initialized_javaVM) {
         goto ok;
     }
-    
-    memset(&java, 0, sizeof(java));
+
+    jcache = &java;
+    memset(jcache, 0, sizeof(JavaInfo));
 
     /*
      * Load the classes needed by this module.
      */
 
-    for (i = 0; classes[i].addr != NULL; i++) {
-	jclass classid;
-	classid = (*env)->FindClass(env, classes[i].name);
-	if (classid == NULL) {
-            Tcl_Obj *obj;
-            jobject exception = (*env)->ExceptionOccurred(env);
-            if (exception) {
-                (*env)->ExceptionDescribe(env);
-                obj = Tcl_GetObjResult(interp);
-                (*env)->ExceptionClear(env);
-                /*
-		 * We can't call ToString() here, we might not have
-                 * java.toString yet.
-                 */
-                (*env)->Throw(env, exception);
-                (*env)->DeleteLocalRef(env, exception);
-            }
-
-	    if (interp) {
-     		Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-			"could not find class ", classes[i].name, ".\n",
-#ifdef __WIN32__
-                        "Check that your path includes the directory where ",
-                        "tclblend.dll resides.\n",
-#else
-                        "Check that your LD_LIBRARY_PATH environment ",
-                        "variable includes ",
-                        "the directory where libtclblend.so resides.\n",
-#endif
-                        "Try looking in the directories under the value of ",
-                        "tcl_library,\ncurrently: ",
-                        Tcl_GetVar(interp, "tcl_library",TCL_GLOBAL_ONLY),
-                        "\n",NULL);
-                appendClasspathMessage(interp);
-	    }
-	    goto error;
-	} else {
-	    *(classes[i].addr) = (jclass) (*env)->NewGlobalRef(env,
-		    (jobject)classid);
-	    (*env)->DeleteLocalRef(env, classid);
-	}
+    if (AddToClassCache(env, interp, &jcache->Object, "java/lang/Object") ||
+        AddToClassCache(env, interp, &jcache->Interp, "tcl/lang/Interp") ||
+        AddToClassCache(env, interp, &jcache->Command, "tcl/lang/Command") ||
+        AddToClassCache(env, interp, &jcache->TclObject, "tcl/lang/TclObject") ||
+        AddToClassCache(env, interp, &jcache->TclException, "tcl/lang/TclException") ||
+        AddToClassCache(env, interp, &jcache->CommandWithDispose, "tcl/lang/CommandWithDispose") ||
+        AddToClassCache(env, interp, &jcache->CObject, "tcl/lang/CObject") ||
+        AddToClassCache(env, interp, &jcache->Extension, "tcl/lang/Extension") ||
+        AddToClassCache(env, interp, &jcache->VarTrace, "tcl/lang/VarTrace") ||
+        AddToClassCache(env, interp, &jcache->Void, "java/lang/Void") ||
+        AddToClassCache(env, interp, &jcache->BlendExtension, "tcl/lang/BlendExtension") ||
+        AddToClassCache(env, interp, &jcache->Notifier, "tcl/lang/Notifier") ||
+        AddToClassCache(env, interp, &jcache->IdleHandler, "tcl/lang/IdleHandler") ||
+        AddToClassCache(env, interp, &jcache->TimerHandler, "tcl/lang/TimerHandler")) {
+        goto error;
     }
 
     /*
      * Load methods needed by this module.
      */
 
-    for (i = 0; methods[i].addr != NULL; i++) {
-	jmethodID id;
-	if (methods[i].isStatic) {
-	    id = (*env)->GetStaticMethodID(env, *(methods[i].class),
-		    methods[i].name, methods[i].sig);
-	} else {
-	    id = (*env)->GetMethodID(env, *(methods[i].class),
-		    methods[i].name, methods[i].sig);
-	}
-	if (id == NULL) {
-	    if (interp) {
-		resultPtr = Tcl_GetObjResult(interp);
-		Tcl_AppendStringsToObj(resultPtr, "could not find method ",
-			methods[i].name, " in ", NULL);
-		ToString(env, resultPtr, *(methods[i].class));
-	    }
-	    goto error;
-	}
-	*(methods[i].addr) = id;
+    if (AddToMethodCache(env, interp, &jcache->toString, "toString",
+                                      &jcache->Object, "()Ljava/lang/String;", 0) ||
+	AddToMethodCache(env, interp, &jcache->callCommand, "callCommand",
+                                      &jcache->Interp, "(Ltcl/lang/Command;[Ltcl/lang/TclObject;)I", 0) ||
+	AddToMethodCache(env, interp, &jcache->dispose, "dispose",
+                                      &jcache->Interp, "()V", 0) ||
+	AddToMethodCache(env, interp, &jcache->interpC, "<init>",
+                                      &jcache->Interp, "(J)V", 0) ||
+	AddToMethodCache(env, interp, &jcache->tclexceptionC, "<init>",
+                                      &jcache->TclException, "(Ltcl/lang/Interp;Ljava/lang/String;I)V", 0) ||
+	AddToMethodCache(env, interp, &jcache->cmdProc, "cmdProc",
+                                      &jcache->Command, "(Ltcl/lang/Interp;[Ltcl/lang/TclObject;)V", 0) ||
+	AddToMethodCache(env, interp, &jcache->disposeCmd, "disposeCmd",
+                                      &jcache->CommandWithDispose, "()V", 0) ||
+	AddToMethodCache(env, interp, &jcache->newCObjectInstance, "newInstance",
+                                      &jcache->CObject, "(J)Ltcl/lang/TclObject;", 1) ||
+	AddToMethodCache(env, interp, &jcache->preserve, "preserve",
+                                      &jcache->TclObject, "()V", 0) ||
+	AddToMethodCache(env, interp, &jcache->release, "release",
+                                      &jcache->TclObject, "()V", 0) ||
+	AddToMethodCache(env, interp, &jcache->getInternalRep, "getInternalRep",
+                                      &jcache->TclObject, "()Ltcl/lang/InternalRep;", 0) ||
+	AddToMethodCache(env, interp, &jcache->init, "init",
+                                      &jcache->Extension, "(Ltcl/lang/Interp;)V", 0) ||
+	AddToMethodCache(env, interp, &jcache->blendC, "<init>",
+                                      &jcache->BlendExtension, "()V", 0) ||
+	AddToMethodCache(env, interp, &jcache->traceProc, "traceProc",
+                                      &jcache->VarTrace,
+				      "(Ltcl/lang/Interp;Ljava/lang/String;Ljava/lang/String;I)V", 0) ||
+	AddToMethodCache(env, interp, &jcache->serviceEvent, "serviceEvent",
+                                      &jcache->Notifier, "(I)I", 0) ||
+	AddToMethodCache(env, interp, &jcache->hasEvents, "hasEvents",
+                                      &jcache->Notifier, "()Z", 0) ||
+	AddToMethodCache(env, interp, &jcache->invokeIdle, "invoke",
+                                      &jcache->IdleHandler, "()V", 0) ||
+	AddToMethodCache(env, interp, &jcache->invokeTimer, "invoke",
+                                      &jcache->TimerHandler, "()V", 0)) {
+        goto error;
     }
     
     /*
      * Load fields needed by this module.
      */
 
-    for (i = 0; fields[i].addr != NULL; i++) {
-	field = (*env)->GetFieldID(env,
-		*(fields[i].class), fields[i].name, fields[i].sig);
-	if (field == NULL) {
-	    if (interp) {
-		resultPtr = Tcl_GetObjResult(interp);
-		Tcl_AppendStringsToObj(resultPtr, "could not find field ",
-			fields[i].name, " in ", NULL);
-		ToString(env, resultPtr, *(fields[i].class));
-	    }
-	    goto error;
-	}
-	*(fields[i].addr) = field;
+    if (AddToFieldCache(env, interp, &jcache->interpPtr, "interpPtr", &jcache->Interp, "J") ||
+        AddToFieldCache(env, interp, &jcache->objPtr, "objPtr", &jcache->CObject, "J")) {
+	goto error;
     }
 
     /*
      * Get the Void.TYPE value.
      */
 
-    field = (*env)->GetStaticFieldID(env, java.Void, "TYPE",
-	    "Ljava/lang/Class;");
-    java.voidTYPE = (*env)->GetStaticObjectField(env, java.Void,
-	    field);
+    field = (*env)->GetStaticFieldID(env, jcache->Void, "TYPE", "Ljava/lang/Class;");
+    jcache->voidTYPE = (*env)->GetStaticObjectField(env, jcache->Void, field);
         
     /*
      * Register the Java object types.
@@ -975,6 +880,158 @@ JavaSetupJava(
         (*env)->ExceptionClear(env);
     }
     return TCL_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AddToClassCache --
+ *
+ *	This method will add a jclass token to
+ *      the thread local cache. This method must only
+ *      be called from inside JavaSetupJava.
+ *
+ * Results:
+ *	Zero if the class was added, Non-zero on error.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+AddToClassCache(
+    JNIEnv *env,		/* JNI pointer for current thread. */
+    Tcl_Interp *interp,		/* Interpreter to use for reporting errors. Can be NULL */
+    jclass *addr,		/* Where to store jclass. */
+    char *name)			/* Name of class to load. */
+{
+    jclass classid;
+
+    classid = (*env)->FindClass(env, name);
+    if (classid == NULL) {
+        Tcl_Obj *obj;
+        jobject exception = (*env)->ExceptionOccurred(env);
+        if (exception) {
+            (*env)->ExceptionDescribe(env);
+            obj = Tcl_GetObjResult(interp);
+            (*env)->ExceptionClear(env);
+            /*
+             * We can't call ToString() here, we might not have access
+             * to the java.lang.String.toString() method yet.
+             */
+            (*env)->Throw(env, exception);
+            (*env)->DeleteLocalRef(env, exception);
+        }
+
+        if (interp) {
+            Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+                "could not find class \"", name, "\".\n",
+                "Check your CLASSPATH settings.\n", NULL);
+                appendClasspathMessage(interp);
+	}
+        return 1;
+    } else {
+        *(addr) = (jclass) (*env)->NewGlobalRef(env, (jobject)classid);
+
+        (*env)->DeleteLocalRef(env, classid);
+        return 0;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AddToMethodCache --
+ *
+ *	This method will add a jmethodID token to
+ *      the thread local cache. This method must only
+ *      be called from inside JavaSetupJava.
+ *
+ * Results:
+ *	Zero if the method was added, Non-zero on error.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+AddToMethodCache(
+    JNIEnv *env,		/* JNI pointer for current thread. */
+    Tcl_Interp *interp,		/* Interpreter to use for reporting errors. Can be NULL */
+    jmethodID *addr,		/* Where to store jmethodID. */
+    char *name,			/* Name of method to load. */
+    jclass *class,		/* Where to find class id. */
+    char *sig,			/* Signature of method. */
+    int isStatic)		/* 1 if method is static. */
+{
+    Tcl_Obj *resultPtr;
+    jmethodID id;
+
+    if (isStatic) {
+        id = (*env)->GetStaticMethodID(env, *(class), name, sig);
+    } else {
+        id = (*env)->GetMethodID(env, *(class), name, sig);
+    }
+    if (id == NULL) {
+        if (interp) {
+            resultPtr = Tcl_GetObjResult(interp);
+            Tcl_AppendStringsToObj(resultPtr, "could not find method ",
+                name, " in ", NULL);
+            ToString(env, resultPtr, *(class));
+        }
+        return 1;
+    }
+    *(addr) = id;
+    return 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AddToFieldCache --
+ *
+ *	This method will add a jfieldID token to
+ *      the thread local cache. This method must only
+ *      be called from inside JavaSetupJava.
+ *
+ * Results:
+ *	Zero if the method was added, Non-zero on error.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+AddToFieldCache(
+    JNIEnv *env,		/* JNI pointer for current thread. */
+    Tcl_Interp *interp,		/* Interpreter to use for reporting errors. Can be NULL */
+    jfieldID *addr,		/* Where to store jfieldID. */
+    char *name,			/* Name of method to load. */
+    jclass *class,		/* Where to find class id. */
+    char *sig)			/* Signature of method. */
+{
+    Tcl_Obj *resultPtr;
+    jfieldID field;
+
+    field = (*env)->GetFieldID(env, *(class), name, sig);
+
+    if (field == NULL) {
+        if (interp) {
+            resultPtr = Tcl_GetObjResult(interp);
+            Tcl_AppendStringsToObj(resultPtr, "could not find field ",
+                name, " in ", NULL);
+            ToString(env, resultPtr, *(class));
+        }
+	return 1;
+    }
+    *(addr) = field;
+    return 0;
 }
 
 /*
@@ -1045,8 +1102,6 @@ JavaThrowTclException(
     Tcl_Interp *interp,		/* Interp to get result from, or NULL. */
     int result)			/* One of TCL_ERROR, etc. */
 {
-    jmethodID init= (*env)->GetMethodID(env, java.TclException, "<init>",
-	    "(Ltcl/lang/Interp;Ljava/lang/String;I)V");
     jobject exc;
     jstring msg;
 
@@ -1056,7 +1111,7 @@ JavaThrowTclException(
 	msg = (*env)->NewStringUTF(env,
 		Tcl_GetStringFromObj(Tcl_GetObjResult(interp), NULL));
     }
-    exc = (*env)->NewObject(env, java.TclException, init, NULL, msg,
+    exc = (*env)->NewObject(env, java.TclException, java.tclexceptionC, NULL, msg,
 	    result);
     (*env)->Throw(env, exc);
     if (msg) {
@@ -1091,7 +1146,6 @@ JavaGetString(
     const jchar *ustr;
     jsize length;
     char *buf;
-    int i;
     char *p;
     Tcl_DString ds;
 

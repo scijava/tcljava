@@ -1,3 +1,12 @@
+2000-08-26  Mo DeJong  <mdejong@redhat.com>
+
+	* src/native/java.h: Add method that corresponds
+	to tcl.lang.Exceptions's constructor to the JavaInfo struct.
+	* src/native/javaCmd.c (AddToClassCache, AddToMethodCache,
+	AddToFieldCache): Remove the global arrays that were used
+	to store class, method, and field signatures. We now init
+	the JavaInfo struct by calling methods.
+
 2000-08-23  Jiang Wu  <jwu@cs.stanford.edu>
 
 	* src/tclblend/tcl/lang/Notifier.java (preserve, release,
