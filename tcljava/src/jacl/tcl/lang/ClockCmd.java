@@ -3,7 +3,7 @@
  *
  *	Implements the built-in "clock" Tcl command.
  *
- * Copyright (c) 1998-1999 Christian Krone.
+ * Copyright (c) 1998-2000 Christian Krone.
  * Copyright (c) 1997 Cornell University.
  * Copyright (c) 1995-1997 Sun Microsystems, Inc.
  * Copyright (c) 1992-1995 Karl Lehenbauer and Mark Diekhans.
@@ -12,7 +12,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ClockCmd.java,v 1.3 2000/01/06 00:18:05 mo Exp $
+ * RCS: @(#) $Id: ClockCmd.java,v 1.4 2000/07/16 18:03:59 mo Exp $
  *
  */
 
@@ -39,6 +39,12 @@ class ClockCmd implements Command {
     static final private int CMD_SCAN		= 2;
     static final private int CMD_SECONDS	= 3;
 
+    static final private String clicksOpts[] = {
+	"-milliseconds"
+    };
+
+    static final private int OPT_CLICKS_MILLISECONDS = 0;
+
     static final private String[] formatOpts = {
 	"-format",
 	"-gmt"
@@ -56,6 +62,7 @@ class ClockCmd implements Command {
     static final private int OPT_SCAN_GMT	= 1;
 
     static final int EPOCH_YEAR = 1970;
+    static final int MILLIS_PER_HOUR = 60*60*1000;
 
 /**
  *----------------------------------------------------------------------
@@ -98,8 +105,15 @@ throws
 
     switch (cmd) {
 	case CMD_CLICKS: {
-	    if (objv.length != 2) {
-		throw new TclNumArgsException(interp, 2, objv, null);
+	    if (objv.length > 3) {
+		throw new TclNumArgsException(interp, 2, objv,
+		    "?-milliseconds?");
+	    }
+	    if (objv.length == 3) {
+		// We can safely ignore the -milliseconds options, since
+		// we measure the clicks in milliseconds anyway...
+	        int clicksOpt = TclIndex.get(interp, objv[2],
+				    clicksOpts, "switch", 0);
 	    }
 	    long millis = System.currentTimeMillis();
 	    int clicks = (int)(millis%Integer.MAX_VALUE);
@@ -219,22 +233,34 @@ throws
     TclException 		// A standard Tcl exception.
 {
     Date date = new Date((long)clockVal*1000);
-    Calendar calendar = Calendar.getInstance();
+    GregorianCalendar calendar = new GregorianCalendar();
     SimpleDateFormat fmt, locFmt;
     FieldPosition fp = new FieldPosition(0);
+    StringBuffer result = new StringBuffer();
 
     if (format == null) {
 	format = new String ("%a %b %d %H:%M:%S %Z %Y");
     }
 
-    calendar.setTime(date);
     if (useGMT) {
         calendar.setTimeZone(TimeZone.getTimeZone("GMT"));
     }
+    calendar.setTime(date);
     fmt = new SimpleDateFormat("mm.dd.yy", Locale.US);
     fmt.setCalendar(calendar);
-	
-    StringBuffer result = new StringBuffer();
+
+    if (format.equals("%Q")) { // Enterprise Stardate.
+	int trekYear = calendar.get(Calendar.YEAR) + 377 - 2323;
+	int trekDay = (calendar.get(Calendar.DAY_OF_YEAR) * 1000) /
+	    (calendar.isLeapYear(calendar.get(Calendar.YEAR)) ? 366 : 365);
+	int trekHour = (calendar.get(Calendar.HOUR_OF_DAY) * 60 + 
+			calendar.get(Calendar.MINUTE)) / 144;
+
+	interp.setResult("Stardate " + (trekYear < 10 ? "0" : "") +
+			 (trekYear*1000 + trekDay) + '.' + trekHour);
+	return;
+    }
+
     for (int ix = 0; ix < format.length(); ix++) {
         if (format.charAt(ix) == '%' && ix+1 < format.length()) {
 	    switch (format.charAt(++ix)) {
@@ -436,7 +462,6 @@ GetWeek(
     // After changing the firstDayOfWeek, we have to set the time value anew,
     // so that the fields of the calendar are recalculated.
 
-
     calendar.setFirstDayOfWeek(firstDayOfWeek);
     calendar.setMinimalDaysInFirstWeek(iso ? 4 : 7);
     calendar.setTime(calendar.getTime());
@@ -492,6 +517,44 @@ SetWeekday(
 /**
  *-----------------------------------------------------------------------------
  *
+ * SetOrdMonth --
+ *
+ *      The date of the given calendar will be incremented, so that it will
+ *	match the ordinal month in the diff object.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Modifies the given calendar.
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+private void
+SetOrdMonth(
+    Calendar calendar,		// Calendar containing Date.
+    ClockRelTimespan diff)	// time difference to evaluate
+{
+    int month = diff.getMonths();
+    int ordMonth = diff.getOrdMonth();
+
+    calendar.add(Calendar.MONTH, 1); /* we want to get the next month... */
+    while (calendar.get(Calendar.MONTH) != month) {
+	calendar.add(Calendar.MONTH, 1);
+    }
+    if (ordMonth > 1) {
+	calendar.add(Calendar.YEAR, ordMonth-1);
+    }
+    calendar.set(Calendar.DAY_OF_MONTH, 1);
+    calendar.clear(Calendar.HOUR_OF_DAY);
+    calendar.clear(Calendar.MINUTE);
+    calendar.clear(Calendar.SECOND);
+}
+
+/**
+ *-----------------------------------------------------------------------------
+ *
  * GetDate --
  *
  *      Scan a human readable date string and construct a Date.
@@ -511,7 +574,7 @@ GetDate(
     Date baseDate,		// Date to use as base
     boolean useGMT)		// Boolean
 {
-    Calendar calendar = Calendar.getInstance();
+    GregorianCalendar calendar = new GregorianCalendar();
     Calendar now = Calendar.getInstance();
     now.setTime(baseDate);
     calendar.set(now.get(Calendar.YEAR), now.get(Calendar.MONTH),
@@ -528,6 +591,7 @@ GetDate(
     int hasZone = 0;
     int hasDate = 0;
     int hasDay = 0;
+    int hasOrdMonth = 0;
     int hasRel = 0;
 
     while (parsePos.getIndex() < dt.length) {
@@ -535,23 +599,30 @@ GetDate(
 	    hasTime++;
 	} else if (ParseZone(dt, parsePos, calendar)) {
 	    hasZone++;
+	} else if (ParseIso(dt, parsePos, calendar)) {
+	    hasDate++;
 	} else if (ParseDate(dt, parsePos, calendar)) {
 	    hasDate++;
 	} else if (ParseDay(dt, parsePos, diff)) {
 	    hasDay++;
-	} else if (ParseRel(dt, parsePos, diff)) {
+	} else if (ParseOrdMonth(dt, parsePos, diff)) {
+	    hasOrdMonth++;
+	} else if (ParseRelSpec(dt, parsePos, diff)) {
 	    hasRel++;
 	} else if (ParseNumber(dt, parsePos, calendar,
 			       hasDate > 0 && hasTime > 0 && hasRel == 0)) {
 	    if (hasDate == 0 || hasTime == 0 || hasRel > 0) {
 	        hasTime++;
 	    }
+	} else if (ParseTrek(dt, parsePos, calendar)) {
+	    hasDate++; hasTime++;
 	} else {
 	    return null;
 	}
     }
 
-    if (hasTime > 1 || hasZone > 1 || hasDate > 1 || hasDay > 1) {
+    if (hasTime > 1 || hasZone > 1 || hasDate > 1 || hasDay > 1
+	|| hasOrdMonth > 1) {
         return null;
     }
 
@@ -584,6 +655,10 @@ GetDate(
 	SetWeekday(calendar, diff);
     }
 
+    if (hasOrdMonth > 0) {
+	SetOrdMonth(calendar, diff);
+    }
+
     return calendar.getTime();
 }
 
@@ -596,9 +671,9 @@ GetDate(
  *	A time string is valid, if it confirms to the following yacc rule:
  *	time    : tUNUMBER tMERIDIAN
  *	        | tUNUMBER ':' tUNUMBER o_merid
- *	        | tUNUMBER ':' tUNUMBER tSNUMBER
+ *	        | tUNUMBER ':' tUNUMBER '-' tUNUMBER
  *	        | tUNUMBER ':' tUNUMBER ':' tUNUMBER o_merid
- *	        | tUNUMBER ':' tUNUMBER ':' tUNUMBER tSNUMBER
+ *	        | tUNUMBER ':' tUNUMBER ':' tUNUMBER '-' tUNUMBER
  *	        ;
  *
  * Results:
@@ -619,18 +694,23 @@ ParseTime (
 {
     int pos = parsePos.getIndex();
 
-    if (pos+5 < dt.length &&
+    if (pos+6 < dt.length &&
 	dt[pos].isUNumber() &&
 	dt[pos+1].is(':') &&
 	dt[pos+2].isUNumber() &&
 	dt[pos+3].is(':') &&
 	dt[pos+4].isUNumber() &&
-	dt[pos+5].isSNumber()) {
-	calendar.set(Calendar.HOUR, dt[pos].getInt());
-	calendar.set(Calendar.MINUTE, dt[pos+2].getInt());
-	calendar.set(Calendar.SECOND, dt[pos+4].getInt());
-        parsePos.setIndex(pos+6);
-        return true;
+	dt[pos+5].is('-') &&
+	dt[pos+6].isUNumber()) {
+	ClockToken zone = GetTimeZoneFromRawOffset(-dt[pos+6].getInt()/100);
+	if (zone != null) {
+	    calendar.set(Calendar.HOUR_OF_DAY, dt[pos].getInt());
+	    calendar.set(Calendar.MINUTE, dt[pos+2].getInt());
+	    calendar.set(Calendar.SECOND, dt[pos+4].getInt());
+	    calendar.setTimeZone(zone.getZone());
+	    parsePos.setIndex(pos+7);
+	    return true;
+	}
     }
     if (pos+4 < dt.length &&
 	dt[pos].isUNumber() &&
@@ -644,15 +724,20 @@ ParseTime (
 	calendar.set(Calendar.SECOND, dt[pos+4].getInt());
         return true;
     } 
-    if (pos+3 < dt.length &&
+    if (pos+4 < dt.length &&
 	dt[pos].isUNumber() &&
 	dt[pos+1].is(':') &&
 	dt[pos+2].isUNumber() &&
-	dt[pos+3].isSNumber()) {
-	calendar.set(Calendar.HOUR, dt[pos].getInt());
-	calendar.set(Calendar.MINUTE, dt[pos+2].getInt());
-        parsePos.setIndex(pos+4);
-        return true;
+	dt[pos+3].is('-') &&
+	dt[pos+4].isUNumber()) {
+	ClockToken zone = GetTimeZoneFromRawOffset(-dt[pos+4].getInt()/100);
+	if (zone != null) {
+	    calendar.set(Calendar.HOUR_OF_DAY, dt[pos].getInt());
+	    calendar.set(Calendar.MINUTE, dt[pos+2].getInt());
+	    calendar.setTimeZone(zone.getZone());
+	    parsePos.setIndex(pos+5);
+	    return true;
+	}
     }
     if (pos+2 < dt.length &&
 	dt[pos].isUNumber() &&
@@ -735,6 +820,9 @@ ParseZone (
  *	day     : tDAY
  *	        | tDAY ','
  *	        | tUNUMBER tDAY
+ *	        | '+' tUNUMBER tDAY
+ *	        | '-' tUNUMBER tDAY
+ *	        | tNEXT tDAY
  *	        ;
  *
  * Results:
@@ -755,6 +843,29 @@ ParseDay (
 {
     int pos = parsePos.getIndex();
 
+    if (pos+2 < dt.length &&
+	dt[pos].is('+') &&
+	dt[pos+1].isUNumber() &&
+	dt[pos+2].is(ClockToken.DAY)) {
+	diff.setWeekday(dt[pos+2].getInt(), dt[pos+1].getInt());
+	parsePos.setIndex(pos+3);
+	return true;
+    }
+    if (pos+2 < dt.length &&
+	dt[pos].is('-') &&
+	dt[pos+1].isUNumber() &&
+	dt[pos+2].is(ClockToken.DAY)) {
+	diff.setWeekday(dt[pos+2].getInt(), -dt[pos+1].getInt());
+	parsePos.setIndex(pos+3);
+	return true;
+    }
+    if (pos+1 < dt.length &&
+	dt[pos].is(ClockToken.NEXT) &&
+	dt[pos+1].is(ClockToken.DAY)) {
+	diff.setWeekday(dt[pos+1].getInt(), 2);
+	parsePos.setIndex(pos+2);
+	return true;
+    }
     if (pos+1 < dt.length &&
 	dt[pos].is(ClockToken.DAY) &&
 	dt[pos+1].is(',')) {
@@ -787,6 +898,9 @@ ParseDay (
  *	A date string is valid, if it confirms to the following yacc rule:
  *	date	: tUNUMBER '/' tUNUMBER
  *		| tUNUMBER '/' tUNUMBER '/' tUNUMBER
+ *		| tISOBASE
+ *	        | tUNUMBER '-' tMONTH '-' tUNUMBER
+ *	        | tUNUMBER '-' tUNUMBER '-' tUNUMBER
  *		| tMONTH tUNUMBER
  *		| tMONTH tUNUMBER ',' tUNUMBER
  *		| tUNUMBER tMONTH
@@ -821,6 +935,30 @@ ParseDate (
 	calendar.set(Calendar.DAY_OF_MONTH, dt[pos+2].getInt());
 	calendar.set(Calendar.MONTH, dt[pos].getInt()-1);
 	calendar.set(Calendar.YEAR, dt[pos+4].getInt());
+        parsePos.setIndex(pos+5);
+        return true;
+    }
+    if (pos+4 < dt.length &&
+	dt[pos].isUNumber() &&
+	dt[pos+1].is('-') &&
+	dt[pos+2].is(ClockToken.MONTH) &&
+	dt[pos+3].is('-') &&
+	dt[pos+4].isUNumber()) {
+	calendar.set(Calendar.YEAR, dt[pos+4].getInt());
+	calendar.set(Calendar.MONTH, dt[pos+2].getInt());
+	calendar.set(Calendar.DAY_OF_MONTH, dt[pos].getInt());
+        parsePos.setIndex(pos+5);
+        return true;
+    }
+    if (pos+4 < dt.length &&
+	dt[pos].isUNumber() &&
+	dt[pos+1].is('-') &&
+	dt[pos+2].isUNumber() &&
+	dt[pos+3].is('-') &&
+	dt[pos+4].isUNumber()) {
+	calendar.set(Calendar.YEAR, dt[pos].getInt());
+	calendar.set(Calendar.MONTH, dt[pos+2].getInt()-1);
+	calendar.set(Calendar.DAY_OF_MONTH, dt[pos+4].getInt());
         parsePos.setIndex(pos+5);
         return true;
     }
@@ -868,6 +1006,14 @@ ParseDate (
 	calendar.set(Calendar.DAY_OF_MONTH, dt[pos].getInt());
 	calendar.set(Calendar.MONTH, dt[pos+1].getInt());
         parsePos.setIndex(pos+2);
+        return true;
+    }
+    if (pos < dt.length &&
+	dt[pos].isIsoBase()) {
+	calendar.set(Calendar.DAY_OF_MONTH, dt[pos].getInt()%100);
+	calendar.set(Calendar.MONTH, (dt[pos].getInt()%10000)/100 -1);
+	calendar.set(Calendar.YEAR, dt[pos].getInt()/10000);
+        parsePos.setIndex(pos+1);
         return true;
     }
     if (pos < dt.length &&
@@ -927,13 +1073,17 @@ ParseNumber (
 /**
  *-----------------------------------------------------------------------------
  *
- * ParseRel --
+ * ParseRelSpec --
  *
  *      Parse a relative time specification and sets the time difference.
  *	A relative time specification is valid, if it confirms to the
  *	following yacc rule:
- *	rel	: relunit tAGO
- *		| relunit
+ *	relspec : '+' tUNUMBER unit ago
+ *		| '-' tUNUMBER unit ago
+ *	        | tUNUMBER unit ago
+ *	        | tNEXT unit
+ *	        | tNEXT tUNUMBER unit
+ *	        | unit ago
  *		;
  *
  * Results:
@@ -948,44 +1098,86 @@ ParseNumber (
  */
 
 private boolean
-ParseRel (
+ParseRelSpec (
     ClockToken[] dt,		// Input as scanned array of tokens
     ParsePosition parsePos,	// Current position in input
     ClockRelTimespan diff)	// time difference to evaluate
 {
-    if (ParseRelUnit(dt, parsePos, diff)) {
-        int pos = parsePos.getIndex();
-        if (pos < dt.length &&
-	    dt[pos].is(ClockToken.AGO)) {
-	    diff.negate();
-	    parsePos.setIndex(pos+1);
-	}
-        return true;
+    boolean found = false;	// Already found a valid relspec?
+    int pos = parsePos.getIndex();
+
+    if (pos+2 < dt.length &&
+	dt[pos].is('+') &&
+	dt[pos+1].isUNumber() &&
+	dt[pos+2].isUnit()) {
+        diff.addUnit(dt[pos+2], dt[pos+1].getInt());
+        parsePos.setIndex(pos+3);
+        found = true;
     }
-    return false;
+    else if (pos+2 < dt.length &&
+	dt[pos].is('-') &&
+	dt[pos+1].isUNumber() &&
+	dt[pos+2].isUnit()) {
+        diff.addUnit(dt[pos+2], -dt[pos+1].getInt());
+        parsePos.setIndex(pos+3);
+        found = true;
+    }
+    else if (pos+1 < dt.length &&
+	dt[pos].isUNumber() &&
+	dt[pos+1].isUnit()) {
+        diff.addUnit(dt[pos+1], dt[pos].getInt());
+        parsePos.setIndex(pos+2);
+        found = true;
+    }
+    else if (pos+2 < dt.length &&
+	dt[pos].is(ClockToken.NEXT) &&
+	dt[pos+1].isUNumber() &&
+	dt[pos+2].isUnit()) {
+        diff.addUnit(dt[pos+2], dt[pos+1].getInt());
+        parsePos.setIndex(pos+3);
+        return true; // no trailing ago possible...
+    }
+    else if (pos+1 < dt.length &&
+	dt[pos].is(ClockToken.NEXT) &&
+	dt[pos+1].isUnit()) {
+        diff.addUnit(dt[pos+1]);
+        parsePos.setIndex(pos+2);
+        return true; // no trailing ago possible...
+    }
+    else if (pos < dt.length &&
+	dt[pos].isUnit()) {
+        diff.addUnit(dt[pos]);
+        parsePos.setIndex(pos+1);
+        found = true;
+    }
+
+    if (!found) {
+	return false;
+    }
+
+    pos = parsePos.getIndex();
+    if (pos < dt.length &&
+	dt[pos].is(ClockToken.AGO)) {
+	diff.negate();
+	parsePos.setIndex(pos+1);
+    }
+    return true;
 }
 
 /**
  *-----------------------------------------------------------------------------
  *
- * ParseRelUnit --
+ * ParseOrdMonth --
  *
- *      Parse a relative time unit and sets the time difference.
- *	A relative time unit is valid, if it confirms to the
+ *      Parse a relative month and sets the date difference.
+ *	A relative month is valid, if it confirms to the
  *	following yacc rule:
- *	relunit : tUNUMBER tMINUTE_UNIT
- *		| tSNUMBER tMINUTE_UNIT
- *		| tMINUTE_UNIT
- *		| tSNUMBER tSEC_UNIT
- *		| tUNUMBER tSEC_UNIT
- *		| tSEC_UNIT
- *		| tSNUMBER tMONTH_UNIT
- *		| tUNUMBER tMONTH_UNIT
- *		| tMONTH_UNIT
+ *	ordMonth: tNEXT tMONTH
+ *		| tNEXT tUNUMBER tMONTH
  *		;
  *
  * Results:
- *      True, if a relative time unit was read (parsePos was incremented and
+ *      True, if a relative month was read (parsePos was incremented and
  *	the time difference was set according to the read relative time unit);
  *	false otherwise.
  *
@@ -996,45 +1188,149 @@ ParseRel (
  */
 
 private boolean
-ParseRelUnit (
+ParseOrdMonth (
     ClockToken[] dt,		// Input as scanned array of tokens
     ParsePosition parsePos,	// Current position in input
     ClockRelTimespan diff)	// time difference to evaluate
 {
     int pos = parsePos.getIndex();
 
+    if (pos+2 < dt.length &&
+	dt[pos].is(ClockToken.NEXT) &&
+	dt[pos+1].isUNumber() &&
+	dt[pos+2].is(ClockToken.MONTH)) {
+        diff.addOrdMonth(dt[pos+2].getInt(), dt[pos+1].getInt());
+        parsePos.setIndex(pos+3);
+        return true;
+    }
     if (pos+1 < dt.length &&
-	(dt[pos].isUNumber() || dt[pos].isSNumber()) &&
-	dt[pos+1].is(ClockToken.MINUTE_UNIT)) {
-        diff.addSeconds(dt[pos].getInt()*dt[pos+1].getInt()*60);
+	dt[pos].is(ClockToken.NEXT) &&
+	dt[pos+1].is(ClockToken.MONTH)) {
+        diff.addOrdMonth(dt[pos+1].getInt(), 1);
         parsePos.setIndex(pos+2);
         return true;
-    } else if (pos+1 < dt.length &&
-	(dt[pos].isUNumber() || dt[pos].isSNumber()) &&
-	dt[pos+1].is(ClockToken.SEC_UNIT)) {
-        diff.addSeconds(dt[pos].getInt());
+    }
+    return false;
+}
+
+/**
+ *-----------------------------------------------------------------------------
+ *
+ * ParseIso --
+ *
+ *      Parse an ISO 8601 point in time and sets the Calendar.
+ *	An ISO 8601 point in time is valid, if it confirms to the
+ *	following yacc rule:
+ *	iso     : tISOBASE tZONE tISOBASE
+ *	        | tISOBASE tZONE tUNUMBER ':' tUNUMBER ':' tUNUMBER
+ *		| tISOBASE tISOBASE
+ *		;
+ *
+ * Results:
+ *      True, if an ISO 8601 point in time was read (parsePos was incremented
+ *	and calendar was set according to the read point); false otherwise.
+ *
+ * Side effects:
+ *      None.
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+private boolean
+ParseIso (
+    ClockToken[] dt,		// Input as scanned array of tokens
+    ParsePosition parsePos,	// Current position in input
+    Calendar calendar)		// calendar object to set
+{
+    int pos = parsePos.getIndex();
+
+    if (pos+6 < dt.length &&
+	dt[pos].isIsoBase() &&
+	dt[pos+1].is(ClockToken.ZONE) &&
+	dt[pos+2].isUNumber() &&
+	dt[pos+3].is(':') &&
+	dt[pos+4].isUNumber() &&
+	dt[pos+5].is(':') &&
+	dt[pos+6].isUNumber()) {
+	calendar.set(Calendar.DAY_OF_MONTH, dt[pos].getInt()%100);
+	calendar.set(Calendar.MONTH, (dt[pos].getInt()%10000)/100 -1);
+	calendar.set(Calendar.YEAR, dt[pos].getInt()/10000);
+	calendar.set(Calendar.HOUR_OF_DAY, dt[pos+2].getInt());
+	calendar.set(Calendar.MINUTE, dt[pos+4].getInt());
+	calendar.set(Calendar.SECOND, dt[pos+6].getInt());
+        parsePos.setIndex(pos+7);
+        return true;
+    }
+    if (pos+2 < dt.length &&
+	dt[pos].isIsoBase() &&
+	dt[pos+1].is(ClockToken.ZONE) &&
+	dt[pos+1].getZone().getRawOffset() == -7*MILLIS_PER_HOUR &&
+	dt[pos+2].isIsoBase()) {
+	calendar.set(Calendar.DAY_OF_MONTH, dt[pos].getInt()%100);
+	calendar.set(Calendar.MONTH, (dt[pos].getInt()%10000)/100 -1);
+	calendar.set(Calendar.YEAR, dt[pos].getInt()/10000);
+	calendar.set(Calendar.HOUR_OF_DAY, dt[pos+2].getInt()/10000);
+	calendar.set(Calendar.MINUTE, (dt[pos+2].getInt()%10000)/100);
+	calendar.set(Calendar.SECOND, dt[pos+2].getInt()%100);
+        parsePos.setIndex(pos+3);
+        return true;
+    }
+    if (pos+1 < dt.length &&
+	dt[pos].isIsoBase() &&
+	dt[pos+1].isIsoBase()) {
+	calendar.set(Calendar.DAY_OF_MONTH, dt[pos].getInt()%100);
+	calendar.set(Calendar.MONTH, (dt[pos].getInt()%10000)/100 -1);
+	calendar.set(Calendar.YEAR, dt[pos].getInt()/10000);
+	calendar.set(Calendar.HOUR_OF_DAY, dt[pos+1].getInt()/10000);
+	calendar.set(Calendar.MINUTE, (dt[pos+1].getInt()%10000)/100);
+	calendar.set(Calendar.SECOND, dt[pos+1].getInt()%100);
         parsePos.setIndex(pos+2);
         return true;
-    } else if (pos+1 < dt.length &&
-	(dt[pos].isUNumber() || dt[pos].isSNumber()) &&
-	dt[pos+1].is(ClockToken.MONTH_UNIT)) {
-        diff.addMonths(dt[pos].getInt()*dt[pos+1].getInt());
-        parsePos.setIndex(pos+2);
-        return true;
-    } else if (pos < dt.length &&
-	dt[pos].is(ClockToken.MINUTE_UNIT)) {
-        diff.addSeconds(dt[pos].getInt()*60);
-        parsePos.setIndex(pos+1);
-        return true;
-    } else if (pos < dt.length &&
-	dt[pos].is(ClockToken.SEC_UNIT)) {
-        diff.addSeconds(1);
-        parsePos.setIndex(pos+1);
-        return true;
-    } else if (pos < dt.length &&
-	dt[pos].is(ClockToken.MONTH_UNIT)) {
-        diff.addMonths(dt[pos].getInt());
-        parsePos.setIndex(pos+1);
+    }
+    return false;
+}
+
+/**
+ *-----------------------------------------------------------------------------
+ *
+ * ParseTrek --
+ *
+ *      Parse a Stardate and sets the Calendar.
+ *	A Stardate is valid, if it confirms to the following yacc rule:
+ *	iso     : tSTARDATE tUNUMBER '.' tUNUMBER
+ *		;
+ *
+ * Results:
+ *      True, if a Stardate was read (parsePos was incremented
+ *	and calendar was set according to the read point); false otherwise.
+ *
+ * Side effects:
+ *      None.
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+private boolean
+ParseTrek (
+    ClockToken[] dt,		// Input as scanned array of tokens
+    ParsePosition parsePos,	// Current position in input
+    GregorianCalendar calendar)	// calendar object to set
+{
+    int pos = parsePos.getIndex();
+
+    if (pos+3 < dt.length &&
+	dt[pos].is(ClockToken.STARDATE) &&
+	dt[pos+1].isUNumber() &&
+	dt[pos+2].is('.') &&
+	dt[pos+3].isUNumber()) {
+	int trekYear = dt[pos+1].getInt()/1000 + 2323 - 377;
+	int trekDay = 1 + ((dt[pos+1].getInt() % 1000) *
+			   (calendar.isLeapYear(trekYear) ? 366 : 365)) / 1000;
+	int trekSeconds = dt[pos+3].getInt() * 144 * 60;
+	calendar.set(Calendar.YEAR, trekYear);
+	calendar.set(Calendar.DAY_OF_YEAR, trekDay);
+	calendar.set(Calendar.SECOND, trekSeconds);
+        parsePos.setIndex(pos+4);
         return true;
     }
     return false;
@@ -1166,27 +1462,15 @@ GetNextToken (
 	}
 
 	char c = in.charAt(pos);
-	if (Character.isDigit(c) || c == '-' || c == '+') {
-	    if (c == '-' || c == '+') {
-	        sign = c == '-' ? -1 : 1;
-		if (!Character.isDigit(in.charAt(++pos))) {
-		    // skip the '-' sign
-		  continue;
-		}
-	    } else {
-	        sign = 0;
-	    }
+	if (Character.isDigit(c)) {
 	    int number = 0;
 	    while (pos < in.length() 
 		   && Character.isDigit(c = in.charAt(pos))) {
 	        number = 10 * number + c - '0';
 		pos++;
 	    }
-	    if (sign < 0) {
-	        number = -number;
-	    }
 	    parsePos.setIndex(pos);
-	    return new ClockToken(number, sign != 0);
+	    return new ClockToken(number, number >= 100000);
 	}
 	if (Character.isLetter(c)) {
 	    int beginPos = pos;
@@ -1336,16 +1620,68 @@ private ClockToken LookupWord(
     } else if (singular.equalsIgnoreCase("this")) {
 	return new ClockToken(ClockToken.MINUTE_UNIT, 0);
     } else if (singular.equalsIgnoreCase("next")) {
-	return new ClockToken(2, false);
+	return new ClockToken(ClockToken.NEXT, 1);
     } else if (singular.equalsIgnoreCase("ago")) {
 	return new ClockToken(ClockToken.AGO, 1);
     } else if (singular.equalsIgnoreCase("epoch")) {
 	return new ClockToken(ClockToken.EPOCH, 0);
+    } else if (singular.equalsIgnoreCase("stardate")) {
+	return new ClockToken(ClockToken.STARDATE, 0);
     }
 
-    // Ignore military timezones.
+    // Since a military timezone (T) is used in the clock test of 8.3,
+    // we can't ignore these timezones any longer...
+
+    if (withoutDots.length() == 1) {
+	int rawOffset = 0;
+	boolean found = true;
+	char milTz = Character.toLowerCase(withoutDots.charAt(0));
+
+	if (milTz >= 'a' && milTz <= 'm') {
+	    rawOffset = milTz - 'a' + 1;
+	} else if (milTz >= 'n' && milTz < 'z') {
+	    rawOffset = 'n' - milTz - 1;
+	} else if (milTz != 'z') {
+	    found = false;
+	}
+	if (found) {
+	    ClockToken zone = GetTimeZoneFromRawOffset(rawOffset);
+	    if (zone != null) {
+		return zone;
+	    }
+	}
+    }
 
     return new ClockToken(word);
+}
+
+/**
+ *-----------------------------------------------------------------------------
+ *
+ * GetTimeZoneFromRawOffset --
+ *
+ *      Look for a timezone with the given offset (in hours) from gmt.
+ *
+ * Results:
+ *      A ClockToken representing the specified timezone.
+ *
+ * Side effects:
+ *      None.
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+private ClockToken
+GetTimeZoneFromRawOffset(
+   int rawOffset		// an offset to GMT (in hours).
+) {
+    String tzNames[] = TimeZone.getAvailableIDs(rawOffset*MILLIS_PER_HOUR);
+
+    if (tzNames.length > 0) {
+	TimeZone zone = TimeZone.getTimeZone(tzNames[0]);
+	return new ClockToken(ClockToken.ZONE, zone);
+    }
+    return null;
 }
 
 } // end ClockCmd
@@ -1358,11 +1694,11 @@ private ClockToken LookupWord(
  *	An object of this class represents a lexical unit of the human
  *	readable date string. It can be one of the following variants:
  *
- *	- signed number,
- *	  = occurence can be asked by isSNumber(),
- *	  = value can be retrieved by means of getInt();
  *	- unsigned number,
  *	  = occurence can be asked by isUNumber(),
+ *	  = value can be retrieved by means of getInt();
+ *	- iso base date,
+ *	  = occurence can be asked by isIsoBase(),
  *	  = value can be retrieved by means of getInt();
  *	- a single character (delimiters like ':' or '/'),
  *	  = occurence can be asked by is(), e.g. is('/');
@@ -1374,7 +1710,7 @@ private ClockToken LookupWord(
  */
 
 class ClockToken {
-    final static int SNUMBER     = 1;
+    final static int ISOBASE     = 1;
     final static int UNUMBER     = 2;
     final static int WORD        = 3;
     final static int CHAR        = 4;
@@ -1389,9 +1725,11 @@ class ClockToken {
     final static int DAYZONE     = 13;
     final static int DST         = 14;
     final static int MERIDIAN    = 15;
+    final static int NEXT        = 16;
+    final static int STARDATE    = 17;
 
-    ClockToken(int number, boolean signed) {
-        this.kind = signed ? SNUMBER : UNUMBER;
+    ClockToken(int number, boolean isIsoBase) {
+	this.kind   = isIsoBase ? ISOBASE : UNUMBER;
 	this.number = number;
     }
     ClockToken(int kind, int number) {
@@ -1411,11 +1749,11 @@ class ClockToken {
 	this.c = c;
     }
 
-    public boolean isSNumber() {
-        return kind == SNUMBER;
-    }
     public boolean isUNumber() {
         return kind == UNUMBER;
+    }
+    public boolean isIsoBase() {
+        return kind == ISOBASE;
     }
     public boolean is(char c) {
         return this.kind == CHAR && this.c == c;
@@ -1423,7 +1761,9 @@ class ClockToken {
     public boolean is(int kind) {
         return this.kind == kind;
     }    
-
+    public boolean isUnit() {
+	return kind == MINUTE_UNIT || kind == MONTH_UNIT || kind == SEC_UNIT;
+    }
     int getInt() {
         return number;
     }
@@ -1432,10 +1772,10 @@ class ClockToken {
     }
 
     public String toString() {
-        if (isSNumber()) {
-	    return "S"+Integer.toString(getInt());
-	} else if (isUNumber()) {
+	if (isUNumber()) {
 	    return "U"+Integer.toString(getInt());
+	} else if (isIsoBase()) {
+	    return "I"+Integer.toString(getInt());
 	} else if (kind == WORD) {
 	    return word;
 	} else if (kind == CHAR) {
@@ -1473,6 +1813,7 @@ class ClockRelTimespan {
     ClockRelTimespan() {
         seconds = 0;
 	months = 0;
+	ordMonth = 0;
 	weekday = 0;
 	dayOrdinal = 0;
     }
@@ -1481,6 +1822,22 @@ class ClockRelTimespan {
     }
     void addMonths(int m) {
         months += m;
+    }
+    void addOrdMonth(int m, int c) {
+	months = m;
+        ordMonth += c;
+    }
+    void addUnit(ClockToken unit, int amount) {
+	if (unit.is(ClockToken.SEC_UNIT)) {
+	    addSeconds(unit.getInt() * amount);
+	} else if (unit.is(ClockToken.MINUTE_UNIT)) {
+	    addSeconds(unit.getInt()*60 * amount);
+	} else if (unit.is(ClockToken.MONTH_UNIT)) {
+	    addMonths(unit.getInt() * amount);
+        }
+    }
+    void addUnit(ClockToken unit) {
+	addUnit(unit, 1);
     }
     void setWeekday(int w, int ord) {
 	weekday = w;
@@ -1499,6 +1856,9 @@ class ClockRelTimespan {
     int getMonths() {
         return months;
     }
+    int getOrdMonth() {
+        return ordMonth;
+    }
     int getWeekday() {
         return weekday;
     }
@@ -1507,6 +1867,7 @@ class ClockRelTimespan {
     }
     private int seconds;
     private int months;
+    private int ordMonth;
     private int weekday;
     private int dayOrdinal;
 }
