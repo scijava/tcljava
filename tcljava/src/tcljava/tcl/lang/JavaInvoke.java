@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaInvoke.java,v 1.15 2002/12/27 22:19:11 mdejong Exp $
+ * RCS: @(#) $Id: JavaInvoke.java,v 1.16 2002/12/29 03:20:46 mdejong Exp $
  *
  */
 
@@ -278,7 +278,7 @@ throws
     } catch (IllegalArgumentException e) {
         throw new TclRuntimeError("unexpected IllegalArgumentException: " +
                 e.getMessage());
-    } catch (Exception e) {
+    } catch (InvocationTargetException e) {
 	throw new ReflectException(interp, e);
     }
 }
@@ -435,16 +435,12 @@ throws
 	    sig.pkgInvoker.setField(field, obj, javaValue);
 	    return null;
 	}
-    } catch (TclException e1) {
-	throw e1;
     } catch (IllegalArgumentException e) {
 	throw new TclRuntimeError("unexpected IllegalArgumentException: " +
 	        e.getMessage());
     } catch (IllegalAccessException e) {
 	throw new TclRuntimeError("unexpected IllegalAccessException: " +
 	        e.getMessage());
-    } catch (Exception e) {
-	throw new ReflectException(interp, e);
     }
 }
 
@@ -500,7 +496,7 @@ throws
     } catch (IllegalArgumentException e) {
 	throw new TclRuntimeError("unexpected IllegalArgumentException: " +
 	        e.getMessage());
-    } catch (Exception e) {
+    } catch (InvocationTargetException e) {
 	throw new ReflectException(interp, e);
     }
 
@@ -560,7 +556,7 @@ throws
     } catch (IllegalArgumentException e) {
 	throw new TclRuntimeError("unexpected IllegalArgumentException: " +
 	        e.getMessage());
-    } catch (Exception e) {
+    } catch (InvocationTargetException e) {
 	throw new ReflectException(interp, e);
     }
 }

@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.22 2002/12/25 08:29:31 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.23 2002/12/29 03:20:46 mdejong Exp $
  *
  */
 
@@ -997,9 +997,15 @@ callCommand(
 	return TCL.OK;
     } catch (TclException e) {
 	return e.getCompletionCode();
-    } catch (Throwable t) {
-	t.printStackTrace();
-	throw new TclRuntimeError("Error in command implementation");
+    } catch (RuntimeException e) {
+	// This should not happen, if it does it means there is
+	// a bug somewhere in the implementation of a command.
+	ByteArrayOutputStream baos = new ByteArrayOutputStream(1000);
+	PrintStream ps = new PrintStream(baos);
+	ps.println("RuntimeException in Java command implementation");
+	e.printStackTrace(ps);
+	setResult(baos.toString());
+	throw e;
     } finally {
 	CObject.cleanupPop(this);
     }

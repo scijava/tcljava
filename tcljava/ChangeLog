@@ -1,5 +1,19 @@
 2002-12-28  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/tclblend/tcl/lang/Interp.java (callCommand):
+	If a RuntimeException is encountered during
+	execution of a Tcl command implemented in Java,
+	set the interp result to the stack trace and
+	continue to propagate the exception.
+	* src/tcljava/tcl/lang/JavaInvoke.java (call,
+	getsetField, getProperty, setProperty):
+	Don't blindly catch all exceptions, instead
+	catch InvocationTargetException and wrap it
+	in a ReflectException when executing a method
+	via the reflection interface.
+
+2002-12-28  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/tcljava/tcl/lang/ReflectException.java
 	(ReflectException): Set the interp result to
 	the exception message instead of the result
