@@ -1,3 +1,9 @@
+2000-10-31  Mo DeJong  <mdejong@redhat.com>
+
+	* configure: Regen.
+	* tcljava.m4: The configure script would fail
+	if jikes was not found, fix that.
+
 2000-10-29  Mo DeJong  <mdejong@redhat.com>
 
 	* configure: Regen.

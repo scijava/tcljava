@@ -223,9 +223,6 @@ AC_DEFUN([AC_JAVA_WITH_JIKES], [
         else
             JIKES=$ok
         fi
-        if test ! -f "$JIKES" ; then
-            AC_MSG_ERROR([jikes executable '$JIKES' does not exist or is not executable.])
-        fi
         AC_MSG_LOG([Using JIKES=$JIKES], 1)
     fi
 ])
