@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the actual
 # Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.12 1999/11/01 18:31:27 redman Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.13 1999/11/02 00:10:00 redman Exp $
 
 #========================================================================
 # Edit the following few lines when writing a new extension
@@ -162,6 +162,7 @@ CFLAGS_DEBUG = @CFLAGS_DEBUG@
 CFLAGS_DEFAULT = @CFLAGS_DEFAULT@
 CFLAGS_OPTIMIZE = @CFLAGS_OPTIMIZE@
 CLEANFILES = @CLEANFILES@
+TCL_DBGX = @TCL_DBGX@
 DL_LIBS = @DL_LIBS@
 EXEEXT = @EXEEXT@
 LDFLAGS_DEBUG = @LDFLAGS_DEBUG@
@@ -181,7 +182,6 @@ STLIB_LD = @STLIB_LD@
 TCL_BIN_DIR = @TCL_BIN_DIR@
 TCL_BUILD_LIB_SPEC = @TCL_BUILD_LIB_SPEC@
 TCL_BUILD_STUB_LIB_SPEC = @TCL_BUILD_STUB_LIB_SPEC@
-TCL_DBGX = @TCL_DBGX@
 TCL_DEFS = @TCL_DEFS@
 TCL_EXTRA_CFLAGS = @TCL_EXTRA_CFLAGS@
 TCL_LD_FLAGS = @TCL_LD_FLAGS@
@@ -659,7 +659,7 @@ $(TCLBLEND_BUILD_DIR):
 	$(mkinstalldirs) $(TCLBLEND_BUILD_DIR)
 
 tclblend.jar: $(TCLBLEND_BUILD_DIR) $(TCLBLEND_JAVA_FILES) tcljava.jar
-	rm -rf $(TCLBLEND_BUILD_DIR)
+	rm -rf $(TCLBLEND_BUILD_DIR)/*
 	$(JAVA_COMPILE_TCLBLEND) tcl${SEP}lang${SEP}*.java
 	cd $(TCLBLEND_BUILD_DIR) ;\
 	CLASSPATH=$(JAVA_CLASSPATH) \

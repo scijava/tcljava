@@ -1380,7 +1380,7 @@ if test $TCLJAVA = "tclblend" || test $BOTH = "true"; then
    # eval these two values to dereference the ${DBGX} variable.
    #--------------------------------------------------------------------
 
-   eval "SHARED_LIB_SUFFIX=${TCL_SHARED_LIB_SUFFIX}"
+   eval "SHARED_LIB_SUFFIX=${TCL_SHLIB_SUFFIX}"
    eval "UNSHARED_LIB_SUFFIX=${TCL_UNSHARED_LIB_SUFFIX}"
 
    #--------------------------------------------------------------------

@@ -2,7 +2,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run to configure the
 dnl	Makefile in this directory.
 AC_INIT(../src/tcljava/tcl/lang/InternalRep.java)
-# RCS: @(#) $Id: configure.in,v 1.23 1999/10/29 01:46:17 redman Exp $
+# RCS: @(#) $Id: configure.in,v 1.24 1999/11/02 00:10:01 redman Exp $
 
 
 #--------------------------------------------------------------------
@@ -1205,9 +1205,12 @@ Make sure Tcl was configured with --enable-shared.])
 
     # Fix up the TCL_LD_SEARCH_FLAGS when running under Solaris
 
-    case "$JAVA_NAME" in
-        SunOS-*)
+    case "`uname -s`" in
+        SunOS*)
             TCL_LD_SEARCH_FLAGS=`echo ${TCL_LD_SEARCH_FLAGS} | sed -e 's/-Wl,-R,/-R /'`
+            ;;
+        IRIX)
+            TCL_LD_SEARCH_FLAGS=`echo ${TCL_LD_SEARCH_FLAGS} | sed -e 's/-Wl,-rpath,/-rpath /'`
             ;;
     esac
 
