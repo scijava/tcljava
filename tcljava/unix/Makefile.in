@@ -1,6 +1,6 @@
 # This Makefile is used to the java loadable module.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.16 1999/01/15 03:06:55 hylands Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.17 1999/03/05 04:00:39 hylands Exp $
 
 # The version of TclJava, used in this Makefile
 VERSION = @TCLJAVA_VERSION@
@@ -906,13 +906,13 @@ DISTDIR			= /tmp/tcljava
 JACL_BIN_ZIPNAME	= jacl@TCLJAVA_MAJOR_VERSION@@TCLJAVA_MINOR_VERSION@$(PATCHLEVEL).zip
 
 JACL_SRC_ZIPNAME	= jaclSrc@TCLJAVA_MAJOR_VERSION@@TCLJAVA_MINOR_VERSION@$(PATCHLEVEL).zip
-JACL_SRC_DISTNAME	= jaclSrc$(VERSION)$(PATCHLEVEL)
-JACL_DISTNAME		= jacl$(VERSION)$(PATCHLEVEL)
+JACL_SRC_DISTNAME	= jaclSrc$(VERSION)
+JACL_DISTNAME		= jacl$(VERSION)
 JACL_DISTDIR		= $(DISTDIR)/$(JACL_DISTNAME)
 
 BLEND_SRC_ZIPNAME	= tclBlendSrc@TCLJAVA_MAJOR_VERSION@@TCLJAVA_MINOR_VERSION@$(PATCHLEVEL).zip
-BLEND_SRC_DISTNAME	= tclBlendSrc$(VERSION)$(PATCHLEVEL)
-BLEND_DISTNAME		= tclBlend$(VERSION)$(PATCHLEVEL)
+BLEND_SRC_DISTNAME	= tclBlendSrc$(VERSION)
+BLEND_DISTNAME		= tclBlend$(VERSION)
 BLEND_DISTDIR		= $(DISTDIR)/$(BLEND_DISTNAME)
 
 # Permissions to set the files in the distribution to.
@@ -1232,7 +1232,7 @@ jaclSrcDist: $(UNIX_DIR)/configure Makefile
 	# Substitute in TCLJAVA=jacl
 	cat $(TOP_DIR)/win/makefile.vc | \
 	sed -e 's/TCLJAVA[	 ]*= [a-z]*$$/TCLJAVA		= jacl/' \
-		-e 's/tclBlend$(VERSION)$(PATCHLEVEL)/jacl$(VERSION)$(PATCHLEVEL)/' >\
+		-e 's/tclBlend$(VERSION)/jacl$(VERSION)/' >\
 		$(JACL_DISTDIR)/win/makefile.vc
 
 	rm -f $(DISTDIR)/$(JACL_SRC_DISTNAME).tar.Z \
@@ -1324,7 +1324,7 @@ tclblendSrcDist: $(UNIX_DIR)/configure Makefile
 # 
 #----------------------------------------------------------------
 SRCEX			= /tmp/tcljavaDist.ex
-TCLJAVA_DISTNAME	= tcljava$(VERSION)$(PATCHLEVEL)
+TCLJAVA_DISTNAME	= tcljava$(VERSION)
 TCLJAVA_TAR		= $(DISTDIR)/$(TCLJAVA_DISTNAME).tar
 
 # GNU tar.  Solaris tar will have problems excluding .o files
@@ -1348,6 +1348,7 @@ $(SRCEX): Makefile.in
 	echo '*/SCCS' >> $@
 	echo '*/CVS' >> $@
 	echo '*/RCS' >> $@
+	echo '*/adm' >> $@
 	echo '*/core' >> $@
 	echo '*/jsdatabase' >> $@
 	echo '*/unix/*.class' >> $@
