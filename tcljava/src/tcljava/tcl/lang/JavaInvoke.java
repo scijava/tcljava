@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaInvoke.java,v 1.3 1999/05/09 22:11:04 dejong Exp $
+ * RCS: @(#) $Id: JavaInvoke.java,v 1.4 1999/05/09 22:12:38 dejong Exp $
  *
  */
 
@@ -374,6 +374,14 @@ throws
 		"can't access fields in a null object reference");
 	}
 	cls = ReflectObject.getClass(interp, classOrObj);
+    }
+
+    // Check for the special case where the field is named "class"
+    // which has a special meaning and is enforced by the javac compiler.
+    // If found, return the java.lang.Class object for the named class.
+
+    if (isStatic && isget && signature.toString().equals("class")) {
+	return wrap(interp, Class.class, cls, false);
     }
 
     FieldSig sig = FieldSig.get(interp, signature, cls);
