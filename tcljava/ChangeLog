@@ -1,5 +1,14 @@
 2003-02-02  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/jacl/tcl/lang/ClockCmd.java (GetDate):
+	Work around bug in JDK's Calendar implementation
+	by adding whole days instead of a days worth
+	of seconds. This allows the two failing test
+	cases in clock.test to pass, these tests dealt
+	with daylight savings time issues.
+
+2003-02-02  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/jacl/tcl/lang/FileCmd.java (copyRenameOneFile):
 	Check for case where a directory cannot be renamed
 	because the target dir contains a file. Raise

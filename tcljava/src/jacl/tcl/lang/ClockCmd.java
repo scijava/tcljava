@@ -12,7 +12,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ClockCmd.java,v 1.5 2000/08/20 06:36:14 mo Exp $
+ * RCS: @(#) $Id: ClockCmd.java,v 1.6 2003/02/03 04:48:46 mdejong Exp $
  *
  */
 
@@ -647,7 +647,29 @@ GetDate(
         if (hasTime == 0 && hasDate == 0 && hasDay == 0) {
 	    calendar.setTime(baseDate);
 	}
-	calendar.add(Calendar.SECOND, diff.getSeconds());
+	// Certain JDK implementations are buggy WRT DST.
+	// Work around this issue by adding a day instead
+	// of a days worth of seconds.
+	final int seconds_in_day = (60 * 60 * 24);
+	int seconds = diff.getSeconds();
+	boolean negative_seconds = (seconds < 0);
+	int days = 0;
+	if (negative_seconds)
+	    seconds *= -1;
+	while (seconds >= seconds_in_day) {
+	    seconds -= seconds_in_day;
+	    days++;
+	}
+	if (negative_seconds) {
+	    seconds *= -1;
+	    days *= -1;
+	}
+	if (days != 0) {
+	    calendar.add(Calendar.DATE, days);
+	}
+	if (seconds != 0) {
+	    calendar.add(Calendar.SECOND, seconds);
+	}
 	calendar.add(Calendar.MONTH, diff.getMonths());
     }
 
