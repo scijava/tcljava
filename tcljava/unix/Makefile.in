@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.27 1999/08/29 17:16:33 mo Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.28 1999/08/30 13:48:37 mo Exp $
 
 # The directory containing the Tcl sources and headers appropriate
 # for this version of Tk ("srcdir" will be replaced or has already
@@ -252,7 +252,7 @@ tclblend.build: tclblend.clean tcljava.check
 tclblend.fastbuild:
 	@if test ! -d $(TCLBLEND_BUILD_DIR); then \
 		echo "tclblend must be built normally before a fastbuild" ; \
-		exit -1 ; \
+		exit 1 ; \
 	fi
 	cd $(TCLBLEND_SRC_DIR) ;\
 	CLASSPATH=$(TCLBLEND_CLASSPATH) \
@@ -385,7 +385,7 @@ custom_shell_native:
 tclblend.install.check:
 	@if test ! -x $(TCLSH) ; then \
 		echo "Tcl has not been installed, please install it before installing Tcl Blend" ; \
-		exit -1 ; \
+		exit 1 ; \
 	fi
 
 
@@ -485,7 +485,7 @@ jacl.build: jacl.clean tcljava.check
 jacl.fastbuild:
 	@if test ! -d $(JACL_BUILD_DIR); then \
 		echo "jacl must be built normally before a fastbuild" ; \
-		exit -1 ; \
+		exit 1 ; \
 	fi
 	cd $(JACL_SRC_DIR) ;\
 	CLASSPATH=$(JACL_CLASSPATH) \
@@ -581,7 +581,7 @@ tcljava.build: tcljava.clean
 tcljava.fastbuild:
 	@if test ! -d $(TCLJAVA_BUILD_DIR); then \
 		echo "tcljava must be built normally before a fastbuild" ; \
-		exit -1 ; \
+		exit 1 ; \
 	fi
 	cd $(TCLJAVA_SRC_DIR) ;\
 	CLASSPATH=$(TCLJAVA_CLASSPATH) \
@@ -947,7 +947,7 @@ demos.build: demos.clean
 depend:
 	@if test "$(TCLJAVA)" = "jacl"; then \
 	    echo "'make depend' only works with tclblend" ; \
-	    exit -1 ; \
+	    exit 1 ; \
         fi
 	@#create empty javaNative.h file if it is not there already
 	@touch javaNative.h
