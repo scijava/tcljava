@@ -1,5 +1,11 @@
 2002-07-22  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/native/javaInterp.c (JavaTraceProc,
+	Java_tcl_lang_Interp_pkgRequire): Fixup CONST
+	usage to cleanup compile with Tcl 8.4.
+
+2002-07-22  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/native/java.h (JavaWasJavaThreadInit): Add decl.
 	* src/native/javaCmd.c (JavaWasJavaThreadInit,
 	JavaSetupJava): Add JavaWasJavaThreadInit method.
