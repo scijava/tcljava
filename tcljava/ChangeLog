@@ -1,3 +1,8 @@
+2000-10-04  Mo DeJong  <mdejong@redhat.com>
+
+	* demos/watchpkg/README: Add a better
+	example of use of the sw* commands.
+
 2000-08-22  Mo DeJong  <mdejong@redhat.com>
 
 	* src/tests/tcljava/tests/JavaTest.java:

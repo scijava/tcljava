@@ -1,5 +1,5 @@
 README
-RCS: @(#) $Id: README,v 1.2 1999/05/08 23:27:58 dejong Exp $
+RCS: @(#) $Id: README,v 1.3 2000/10/05 03:10:06 mo Exp $
 
 
 Abstract
@@ -75,6 +75,14 @@ Running the Demo
 
       To add the sw* Tcl procedures, after adding the
       StopWatchExtension (as shown above), type
-      "source swCmd.tcl" at the Tcl command prompt.  Now you can execute 
-      the commands "swNew", "swSet", . . .
+      "source swCmd.tcl" at the Tcl command prompt.
+      to create a new stop watch object and save
+      a reference to the Tcl object, type:
 
+      % set sw [swNew]
+
+      To set the countdown time, type:
+
+      % swSet $sw 10
+
+      You get the idea.
