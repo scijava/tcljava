@@ -1,5 +1,12 @@
 2000-10-22  Mo DeJong  <mdejong@redhat.com>
 
+	* src/tests/tcljava/tests/javabind/Bind.java (run): Check
+	for a null callback so as to avoid a NullPointerException.
+	* tests/tcljava/JavaBindCmd.test: Give test thread time
+	to queue up the event, then process all events in queue.
+
+2000-10-22  Mo DeJong  <mdejong@redhat.com>
+
 	* src/native/javaCmd.c (TclThreadCleanup, DestroyJVM,
 	DetachTclThread, FreeJavaCache): Rename TclThreadCleanup
 	to DetachTclThread. Add DestroyJVM callback to cleanup

@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: JavaBindCmd.test,v 1.2 2000/03/20 17:51:30 mo Exp $
+# RCS: @(#) $Id: JavaBindCmd.test,v 1.2.2.1 2000/10/23 01:31:37 mdejong Exp $
 
 # Note: This test file must be sourced from the parent directory
 #       or else the defs file may not be properly loaded.
@@ -120,10 +120,15 @@ test JavaBindCmd-3.0 {JavaBind callback invoked from another thread} {
     # event that should invoke our Tcl callback
     $b doLater
 
-    # Wait for a little bit so that events can be processed
+    # Wait for a little bit, to give the other thread time to
+    # start running and enter an event in the notifier queue.
+
     set done 0
     after 2000 "set done 1"
     vwait done
+
+    # process all outstanding events in the queue
+    update
 
     set results [list]
 
