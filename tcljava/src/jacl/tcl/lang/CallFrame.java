@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: CallFrame.java,v 1.8 1999/07/21 04:19:31 mo Exp $
+ * RCS: @(#) $Id: CallFrame.java,v 1.9 2002/12/07 22:32:06 mdejong Exp $
  *
  */
 
@@ -150,8 +150,7 @@ class CallFrame {
 	int numArgs = proc.argList.length;
 
 	if ((!proc.isVarArgs) && (objv.length-1 > numArgs)) {
-	    throw new TclException(interp, "called \"" + objv[0] +
-		    "\" with too many arguments");
+	    wrongNumProcArgs(objv[0], proc);
 	}
 
 	int i, j;
@@ -178,15 +177,33 @@ class CallFrame {
 		} else if (proc.argList[i][1] != null) {
 		    value = proc.argList[i][1];
 		} else {
-		    throw new TclException(interp,
-			    "no value given for parameter \""+
-		    	    varName + "\" to \"" + objv[0] + "\"");
+		    wrongNumProcArgs(objv[0], proc);
 		}
 		interp.setVar(varName, value, 0);
 	    }
 	}
     }
 
+    private String wrongNumProcArgs(TclObject name, Procedure proc)
+	    throws TclException {
+        int i;
+	StringBuffer sbuf = new StringBuffer(200);
+	sbuf.append("wrong # args: should be \"");
+	sbuf.append(name.toString());
+	for (i=0; i < proc.argList.length; i++) {
+	    TclObject arg = proc.argList[i][0];
+	    TclObject def = proc.argList[i][1];
+
+	    sbuf.append(" ");
+	    if (def != null)
+	        sbuf.append("?");
+	    sbuf.append(arg.toString());
+	    if (def != null)
+	        sbuf.append("?");
+	}
+	sbuf.append("\"");
+	throw new TclException(interp, sbuf.toString());
+    }
 
     /**
      * @param name the name of the variable.

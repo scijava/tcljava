@@ -1,5 +1,17 @@
 2002-12-07  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/jacl/tcl/lang/CallFrame.java (chain,
+	wrongNumProcArgs):
+	* tests/jacl/Interp.test:
+	* tests/tcl/compile.test:
+	* tests/tcl/proc-old.test:
+	* tests/tcl/proc.test:
+	Update Jacl error message when proc is
+	called with wrong number of args to match
+	Tcl 8.4 implementation. Update tests.
+
+2002-12-07  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/tcljava/tcl/lang/JavaCallCmd.java (cmdProc):
 	* src/tcljava/tcl/lang/JavaInvoke.java (callMethod,
 	callStaticMethod):
