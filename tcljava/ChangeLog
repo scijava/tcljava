@@ -1,5 +1,12 @@
 2000-04-01  Mo DeJong  <mdejong@redhat.com>
 
+	* unix/Makefile.in:
+	* win/makefile.vc: Fixed bug that caused the pyramidpkg
+	to get compiled and shipped with tclblend. This fix was
+	also back ported to the old 1.2 version.
+
+2000-04-01  Mo DeJong  <mdejong@redhat.com>
+
 	* unix/kaffe_tests: removed useless file.
 
 2000-04-01  Mo DeJong  <mdejong@redhat.com>

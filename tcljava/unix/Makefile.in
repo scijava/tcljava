@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.34 2000/04/01 09:12:41 mo Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.35 2000/04/01 10:00:31 mo Exp $
 
 # The directory containing the Tcl sources and headers appropriate
 # for this version of Tk ("srcdir" will be replaced or has already
@@ -909,23 +909,19 @@ ddd : ddd_$(TCLJAVA)
 # Demos
 #----------------------------------------------------------------
 
-demos: $(TCLJAVA).check demos.build
+demos: $(TCLJAVA).check demos.build demos_$(TCLJAVA).build
 
 demos.build: demos.clean
 	mkdir -p $(DEMOS_BUILD_DIR)
 	cp -fr $(DEMOS_SRC_DIR)/gluepkg $(DEMOS_BUILD_DIR)/gluepkg
 	cp -fr $(DEMOS_SRC_DIR)/gridDemo $(DEMOS_BUILD_DIR)/gridDemo
 	cp -fr $(DEMOS_SRC_DIR)/packDemo $(DEMOS_BUILD_DIR)/packDemo
-	cp -fr $(DEMOS_SRC_DIR)/pyramidpkg $(DEMOS_BUILD_DIR)/pyramidpkg
 	cp -fr $(DEMOS_SRC_DIR)/simplepkg $(DEMOS_BUILD_DIR)/simplepkg
 	cp -fr $(DEMOS_SRC_DIR)/watchpkg $(DEMOS_BUILD_DIR)/watchpkg
 	cd $(DEMOS_BUILD_DIR)/gluepkg; \
 	CLASSPATH=$(DEMOS_CLASSPATH) \
 	$(JAVAC) $(JAVAC_FLAGS) *.java
 	cd $(DEMOS_BUILD_DIR)/packDemo; \
-	CLASSPATH=$(DEMOS_CLASSPATH) \
-	$(JAVAC) $(JAVAC_FLAGS) *.java
-	cd $(DEMOS_BUILD_DIR)/pyramidpkg; \
 	CLASSPATH=$(DEMOS_CLASSPATH) \
 	$(JAVAC) $(JAVAC_FLAGS) *.java
 	cd $(DEMOS_BUILD_DIR)/simplepkg; \
@@ -935,7 +931,14 @@ demos.build: demos.clean
 	CLASSPATH=$(DEMOS_CLASSPATH) \
 	$(JAVAC) $(JAVAC_FLAGS) *.java
 
+# This rule must be run after the demos.build rule
+demos_jacl.build:
+	cp -fr $(DEMOS_SRC_DIR)/pyramidpkg $(DEMOS_BUILD_DIR)/pyramidpkg
+	cd $(DEMOS_BUILD_DIR)/pyramidpkg; \
+	CLASSPATH=$(DEMOS_CLASSPATH) \
+	$(JAVAC) $(JAVAC_FLAGS) *.java
 
+demos_tclblend.build:
 
 #----------------------------------------------------------------
 # Other functions
@@ -1190,8 +1193,7 @@ tcljavaDemoDist: Makefile
 		$(DISTDIR)/demos/watchpkg \
 		$(DISTDIR)/demos/simplepkg \
 		$(DISTDIR)/demos/gridDemo \
-		$(DISTDIR)/demos/packDemo \
-		$(DISTDIR)/demos/pyramidpkg
+		$(DISTDIR)/demos/packDemo
 
 	cp -p $(TOP_DIR)/demos/README \
 		$(DISTDIR)/demos
@@ -1218,12 +1220,6 @@ tcljavaDemoDist: Makefile
 		$(TOP_DIR)/demos/packDemo/*.java \
 		$(TOP_DIR)/demos/packDemo/README \
 		$(DISTDIR)/demos/packDemo
-	cp -p $(TOP_DIR)/demos/pyramidpkg/*.java \
-		$(TOP_DIR)/demos/pyramidpkg/*.html \
-		$(TOP_DIR)/demos/pyramidpkg/changeDefs.tcl \
-		$(TOP_DIR)/demos/pyramidpkg/README \
-		$(TOP_DIR)/license.terms \
-		$(DISTDIR)/demos/pyramidpkg
 
 #----------------------------------------------------------------
 # jaclDist --
@@ -1236,7 +1232,8 @@ jaclDist: $(UNIX_DIR)/configure Makefile
 	@echo "#"
 	@echo "# Making jaclDist"
 	@echo "#"
-	$(MAKE) tcljavaDist DISTDIR=$(JACL_DISTDIR) TCLJAVA=jacl
+	$(MAKE) TCLJAVA=$(TCLJAVA) tcljavaDist DISTDIR=$(JACL_DISTDIR) TCLJAVA=jacl
+	$(MAKE) TCLJAVA=$(TCLJAVA) DISTDIR=$(JACL_DISTDIR) jaclDemoDist 
 
 	cp -p $(TOP_DIR)/README.jacl \
 		$(JACL_DISTDIR)/README
@@ -1297,6 +1294,24 @@ jaclDist: $(UNIX_DIR)/configure Makefile
 		gzip --best $(JACL_DISTNAME).tar
 
 
+#----------------------------------------------------------------
+# jaclDemoDist --
+#
+#	Builds the directory structure and copies demos that are 
+# 	only provided with jacl.
+#----------------------------------------------------------------
+
+jaclDemoDist: Makefile
+	@echo "#"
+	@echo "# Making jaclDemoDist"
+	@echo "#"
+	mkdir -p $(DISTDIR)/demos/pyramidpkg
+	cp -p $(TOP_DIR)/demos/pyramidpkg/*.java \
+		$(TOP_DIR)/demos/pyramidpkg/*.html \
+		$(TOP_DIR)/demos/pyramidpkg/changeDefs.tcl \
+		$(TOP_DIR)/demos/pyramidpkg/README \
+		$(TOP_DIR)/license.terms \
+		$(DISTDIR)/demos/pyramidpkg
 
 # Sanity check by building, installing, running tests
 jaclDistBuild:
