@@ -2,7 +2,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run to configure the
 dnl	Makefile in this directory.
 AC_INIT(../src/tcljava/tcl/lang/InternalRep.java)
-# RCS: @(#) $Id: configure.in,v 1.1 1998/10/14 21:09:22 cvsadmin Exp $
+# RCS: @(#) $Id: configure.in,v 1.2 1998/11/04 22:46:47 hylands Exp $
 
 
 #--------------------------------------------------------------------
@@ -23,7 +23,7 @@ fi
 #convert srcdir into full path name
 srcdir=`cd $srcdir;pwd`
 
-# Set BOTH to true if we are configuring both Jacl and Tcl Blend
+# BOTH will automatically be set to true when configuring Jacl and TclBlend
 BOTH=false
 
 echo "srcdir is $srcdir"
@@ -35,11 +35,11 @@ if test $TCLJAVA = "NONE"; then
     else
 	AC_MSG_ERROR(Cannot find source files to build either Jacl or Tcl Blend)
     fi
+
     if test -f $srcdir/../src/jacl/tcl/lang/Interp.java && test $TCLJAVA = "tclblend"; then
         echo "configuring for both jacl and tcl blend"
         BOTH=true
     fi
-
 fi
 
 #--------------------------------------------------------------------
@@ -52,7 +52,8 @@ AC_ARG_WITH(java, [  --with-java=DIR           use Java binaries from DIR, defau
     JAVA_DIR=$withval, JAVA_DIR=$JAVA_HOME)
 
 if test ! -d "$JAVA_DIR"; then
-    AC_MSG_WARN(['${JAVA_DIR}' is not a directory, so we search for the java compiler.])
+    AC_MSG_WARN([\$JAVA_DIR == '${JAVA_DIR}' is not a directory,
+	so we search for the java compiler.])
     AC_PATH_PROG(JAVAC, javac)
     if test -x "$JAVAC"; then	
 	JAVABIN=`dirname $JAVAC`
@@ -217,6 +218,17 @@ of the architecture dependent include files in the JDK.])
 	        if test ! -f $TMP_JAVA_ARCH_LIB/$JAVA_ARCH_LIB_CHK; then
 			TMP_JAVA_ARCH_LIB=$JAVA_DIR/jre/lib/sparc
 		fi
+		if test ! -d $TMP_JAVA_ARCH_LIB/native_threads; then
+		        AC_MSG_WARN([ could not find '$TMP_JAVA_ARCH_LIB/native_threads']);
+		else 
+			JAVA_ARCH_RUNTIME_LIBS=$TMP_JAVA_ARCH_LIB/native_threads
+		fi
+	        # if it is JDK1.2RC1 we need to have
+	        # jre/lib/sparc/native_threads jre/lib/sparc and
+		#  jre/lib/sparc/native_threads in LD_LIBRARY_PATH
+	        if test -d $JAVA_DIR/jre/lib/sparc/classic; then
+                	JAVA_ARCH_RUNTIME_LIBS=$JAVA_DIR/jre/lib/sparc:$JAVA_DIR/jre/lib/sparc/classic:$JAVA_DIR/jre/lib/sparc/native_threads
+	        fi
 	    fi	
 	    ;;
 	*)TMP_JAVA_ARCH_LIB=$JAVA_DIR/lib/idontknow;;
@@ -385,6 +397,7 @@ Make sure Tcl was configured with --enable-shared.])
     AC_SUBST(TCL_BIN_DIR)
     AC_SUBST(JAVA_ARCH_INCLUDE)
     AC_SUBST(JAVA_ARCH_LIB)
+    AC_SUBST(JAVA_ARCH_RUNTIME_LIBS)
     AC_SUBST(TCL_LD_SEARCH_FLAGS)
 fi
 
