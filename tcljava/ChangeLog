@@ -1,5 +1,16 @@
 2002-12-24  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/native/javaObj.c (FreeTclObject, SetJavaCmdFromAny):
+	Convert both a tclObjectType and a cmdTypePtr that
+	holds a TclObject into a command internal rep
+	with the same method. The previous implementation
+	incremented the ref count and created a new JNI
+	global ref for no apparent reason. Set the TclObject
+	pointer to NULL in FreeTclObject, this has no effect
+	but makes the code more clear.
+
+2002-12-24  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* new_features.txt: Mention tclblend_init change.
 	* src/native/javaCmd.c (JavaInitEnv): Treat
 	tclblend_init as a list and pass each element

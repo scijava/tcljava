@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaObj.c,v 1.13 2002/12/21 04:02:53 mdejong Exp $
+ * RCS: @(#) $Id: javaObj.c,v 1.14 2002/12/25 00:29:25 mdejong Exp $
  */
 
 #include "java.h"
@@ -211,6 +211,7 @@ FreeTclObject(
 
     (*env)->CallVoidMethod(env, object, jcache->release);
     (*env)->DeleteGlobalRef(env, object);
+    objPtr->internalRep.twoPtrValue.ptr2 = NULL;
 }
 
 /*
@@ -846,11 +847,10 @@ DupJavaCmdInternalRep(
  *
  * SetJavaCmdFromAny --
  *
- *	Attempt to generate command object from an arbitrary type.
+ *	Attempt to generate a command object from an arbitrary type.
  *	This routine is a wrapper around the standard cmdName setFromAny
- *	procedure.  If the old type was TclObject, it copies the handle
- *	into the command type so that it can be restored later, and so
- *	the object can't be garbage collected.
+ *	procedure.  If the object holds a reference to a TclObject,
+ *	save and restore the reference after the object is converted.
  *
  * Results:
  *	The return value is a standard object Tcl result. If an error occurs
@@ -858,8 +858,7 @@ DupJavaCmdInternalRep(
  *	result unless "interp" is NULL.
  *
  * Side effects:
- *	If no error occurs, an object reference is stored as "objPtr"s
- *	internal representation, and the object's refcount is increased.
+ *	None.
  *
  *----------------------------------------------------------------------
  */
@@ -873,55 +872,24 @@ SetJavaCmdFromAny(
 
     /*
      * Invoke the normal command type routine, but make sure
-     * it doesn't free the java object.  Note that we have to
-     * restore the ptr2 value after the conversion, since it gets
-     * set to NULL by the setFromAnyProc.
+     * it doesn't free the java object by setting the typePtr
+     * to NULL. Note that we have to restore the ptr2 value after
+     * the conversion, since it gets set to NULL by setFromAnyProc.
      */
 
-    if (objPtr->typePtr == &tclObjectType) {
+    if ((objPtr->typePtr == &tclObjectType) ||
+	    ((objPtr->typePtr == cmdTypePtr) &&
+		    (objPtr->internalRep.twoPtrValue.ptr2 != NULL))) {
 	VOID *ptr2;
 	if (objPtr->bytes == NULL) {
-	    UpdateTclObject(objPtr);	
+	    UpdateTclObject(objPtr);
 	}
 	objPtr->typePtr = NULL;
 	ptr2 = objPtr->internalRep.twoPtrValue.ptr2;
 	result = (oldCmdType.setFromAnyProc)(interp, objPtr);
 	objPtr->internalRep.twoPtrValue.ptr2 = ptr2;
-    } else if ((objPtr->typePtr == cmdTypePtr)
-	    && (objPtr->internalRep.twoPtrValue.ptr2 != NULL)) {
-	jobject object = (jobject)(objPtr->internalRep.twoPtrValue.ptr2);
-	JNIEnv *env = JavaGetEnv();
-	JavaInfo* jcache = JavaGetCache();
-
-	/*
-	 * If we are converting from something that is already a java command
-	 * reference we need to preserve the object handle so that it doesn't
-	 * get freed as a side effect of updating the command cache.  Note
-	 * that the new command may not refer to a java object, but we will
-	 * maintain the extra reference anyway since it is difficult to
-	 * detect this case.  The object reference will still be cleaned up
-	 * when the Tcl object is free.
-	 */
-
-	object = (*env)->NewGlobalRef(env, object);
-	(*env)->CallVoidMethod(env, object, jcache->preserve);
-	result = (oldCmdType.setFromAnyProc)(interp, objPtr);
-	if (result != TCL_OK) {
-	    (*env)->CallVoidMethod(env, object, jcache->release);
-	    (*env)->DeleteGlobalRef(env, object);
-	} else {
-	    objPtr->internalRep.twoPtrValue.ptr2 = (VOID*) object;
-	}
     } else {
 	result = (oldCmdType.setFromAnyProc)(interp, objPtr);
-
-	/*
-	 * Ensure that the ptr2 is null for non-java commands.
-	 */
-
-	if (result == TCL_OK) {
-	    objPtr->internalRep.twoPtrValue.ptr2 = NULL;
-	}
     }
     return result;
 }
