@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: PkgInvoker.test,v 1.4 1999/05/10 03:13:21 dejong Exp $
+# RCS: @(#) $Id: PkgInvoker.test,v 1.5 1999/05/16 00:21:51 dejong Exp $
 
 # Note: This test file must be sourced from the parent directory
 #       or else the defs file may not be properly loaded.
@@ -53,79 +53,79 @@ test PkgInvoker-1.6 {getPkgInvoker} {
 
 foreach CLS {pkg1.MyClass pkg1.ProtectedClass} {
 
-    test PkgInvoker-2.1 {invokeConstructor} {
+    test PkgInvoker-$CLS-2.1 {invokeConstructor} {
 	[java::new $CLS] getFoo
     } 4321
 
-    test PkgInvoker-2.2 {invokeConstructor} {
+    test PkgInvoker-$CLS-2.2 {invokeConstructor} {
 	[java::new "$CLS int" 2233] getFoo
     } 2233
 
-    test PkgInvoker-2.3 {invokeConstructor} {
+    test PkgInvoker-$CLS-2.3 {invokeConstructor} {
 	[java::new "$CLS short" 3344] getFoo
     } 3344
 
-    test PkgInvoker-2.4 {invokeMethod} {
+    test PkgInvoker-$CLS-2.4 {invokeMethod} {
 	[java::new $CLS] someMethod
     } 1234
-    test PkgInvoker-2.5 {invokeMethod} {
+    test PkgInvoker-$CLS-2.5 {invokeMethod} {
 	[java::new $CLS] someProtectedMethod
     } 4321
 
-    test PkgInvoker-2.6 {getField} {
+    test PkgInvoker-$CLS-2.6 {getField} {
 	java::field [java::new $CLS] foo
     } 4321
-    test PkgInvoker-2.7 {getField} {
+    test PkgInvoker-$CLS-2.7 {getField} {
 	java::field [java::new $CLS] pfoo
     } 5432
-    test PkgInvoker-2.8 {getField} {
+    test PkgInvoker-$CLS-2.8 {getField} {
 	java::field [java::new $CLS] sstring
     } "can get"
-    test PkgInvoker-2.9 {getField} {
+    test PkgInvoker-$CLS-2.9 {getField} {
 	java::field [java::new $CLS] psstring
     } "protected can get"
-    test PkgInvoker-2.10 {getField} {
+    test PkgInvoker-$CLS-2.10 {getField} {
 	java::field $CLS sstring
     } "can get"
-    test PkgInvoker-2.11 {getField} {
+    test PkgInvoker-$CLS-2.11 {getField} {
 	java::field $CLS psstring
     } "protected can get"
 
-    test PkgInvoker-2.12 {setField} {
+    test PkgInvoker-$CLS-2.12 {setField} {
 	set x [java::new $CLS]
 	java::field $x foo 2233
 	java::field $x foo
     } 2233
-    test PkgInvoker-2.13 {setField} {
+    test PkgInvoker-$CLS-2.13 {setField} {
 	set x [java::new $CLS]
 	java::field $x pfoo 3344
 	java::field $x pfoo
     } 3344
-    test PkgInvoker-2.14 {setField} {
+    test PkgInvoker-$CLS-2.14 {setField} {
 	set x [java::new $CLS]
 	java::field $x sstring "yo yo ma"
 	java::field $x sstring
     } {yo yo ma}
-    test PkgInvoker-2.15 {setField} {
+    test PkgInvoker-$CLS-2.15 {setField} {
 	set x [java::new $CLS]
 	java::field $x psstring yadiyadida
 	java::field $x psstring
     } yadiyadida
-    test PkgInvoker-2.16 {setField} {
+    test PkgInvoker-$CLS-2.16 {setField} {
 	java::field $CLS sstring "yo yo ma"
 	java::field $CLS sstring
     } {yo yo ma}
-    test PkgInvoker-2.17 {setField} {
+    test PkgInvoker-$CLS-2.17 {setField} {
 	java::field $CLS psstring yadiyadida
 	java::field $CLS psstring
     } yadiyadida
 
-    test PkgInvoker-2.18 {get/set property} {
+    test PkgInvoker-$CLS-2.18 {get/set property} {
 	set x [java::new $CLS]
 	java::prop $x foo
     } 4321
 
-    test PkgInvoker-2.19 {get/set property} {
+    test PkgInvoker-$CLS-2.19 {get/set property} {
 	set x [java::new $CLS]
 	java::prop $x foo 4455
 	java::prop $x foo
