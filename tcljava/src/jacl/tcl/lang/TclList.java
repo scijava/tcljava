@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclList.java,v 1.1 1998/10/14 21:09:20 cvsadmin Exp $
+ * RCS: @(#) $Id: TclList.java,v 1.2 1999/07/28 03:09:54 mo Exp $
  *
  */
 
@@ -49,7 +49,7 @@ public class TclList extends InternalRep {
     protected void dispose() {
 	int size = vector.size();
 	for (int i=0; i<size; i++) {
-	    ((TclObject)vector.elementAt(i)).release();
+	    ((TclObject) vector.elementAt(i)).release();
 	}
     }
 
@@ -63,12 +63,11 @@ public class TclList extends InternalRep {
 	TclList newList = new TclList(size);
 
 	for (int i=0; i<size; i++) {
-	    TclObject tobj = (TclObject)vector.elementAt(i);
+	    TclObject tobj = (TclObject) vector.elementAt(i);
 
-	    /*
-	     * takeExclusive() is necessary. See comments inside
-	     * append().
-	     */
+	    // takeExclusive() is necessary. See comments inside
+	    // append().
+
 	    tobj.preserve();
 	    newList.vector.addElement(tobj.takeExclusive());
 	}
@@ -174,16 +173,15 @@ public class TclList extends InternalRep {
 	setListFromAny(interp, tobj);
 	tobj.invalidateStringRep();
 
-	TclList tlist = (TclList)tobj.getInternalRep();
+	TclList tlist = (TclList) tobj.getInternalRep();
 
-	/*
-	 * Note: takeExclusive() is necessary to avoid circular references
-	 * like the following:
-	 *
-	 *	set x [list 1 2 3]
-	 *	lappend y $x
-	 *	lappend x $y
-	 */
+	// Note: takeExclusive() is necessary to avoid circular references
+	// like the following:
+	//
+	//	set x [list 1 2 3]
+	//	lappend y $x
+	//	lappend x $y
+
 	elemObj.preserve();
 	tlist.vector.addElement(elemObj.takeExclusive());	
     }
@@ -201,7 +199,7 @@ public class TclList extends InternalRep {
 	    throws TclException {
 	setListFromAny(interp, tobj);
 
-	TclList tlist = (TclList)tobj.getInternalRep();
+	TclList tlist = (TclList) tobj.getInternalRep();
 	return tlist.vector.size();
     }
 
@@ -222,12 +220,12 @@ public class TclList extends InternalRep {
     public static TclObject[] getElements(Interp interp, TclObject tobj)
 	    throws TclException {
 	setListFromAny(interp, tobj);
-	TclList tlist = (TclList)tobj.getInternalRep();
+	TclList tlist = (TclList) tobj.getInternalRep();
 
 	int size = tlist.vector.size();
 	TclObject objArray[] = new TclObject[size];
 	for (int i=0; i<size; i++) {
-	    objArray[i] = (TclObject)tlist.vector.elementAt(i);
+	    objArray[i] = (TclObject) tlist.vector.elementAt(i);
 	}
 	return objArray;
     }
@@ -249,11 +247,11 @@ public class TclList extends InternalRep {
 	    int index) throws TclException {
 	setListFromAny(interp, tobj);
 
-	TclList tlist = (TclList)tobj.getInternalRep();
+	TclList tlist = (TclList) tobj.getInternalRep();
 	if (index < 0 || index >= tlist.vector.size()) {
 	    return null;
 	} else {
-	    return (TclObject)tlist.vector.elementAt(index);
+	    return (TclObject) tlist.vector.elementAt(index);
 	}
     }
 
@@ -302,16 +300,14 @@ public class TclList extends InternalRep {
 	    throws TclException {
 	setListFromAny(interp, tobj);
 	tobj.invalidateStringRep();
-	TclList tlist = (TclList)tobj.getInternalRep();
+	TclList tlist = (TclList) tobj.getInternalRep();
 
 	int size = tlist.vector.size();
 	int i;
 
 	if (index >= size) {
-	    /*
-	     * Append to the end of the list. There is no need for deleting
-	     * elements.
-	     */
+	    // Append to the end of the list. There is no need for deleting
+	    // elements.
 	    index = size;
 	} else {
 	    if (index < 0) {
@@ -321,7 +317,7 @@ public class TclList extends InternalRep {
 		count = size - index;
 	    }
 	    for (i=0; i<count; i++) {
-		TclObject obj = (TclObject)tlist.vector.elementAt(index);
+		TclObject obj = (TclObject) tlist.vector.elementAt(index);
 		obj.release();
 		tlist.vector.removeElementAt(index);
 	    }
@@ -350,7 +346,7 @@ public class TclList extends InternalRep {
 	    throws TclException {
 	setListFromAny(interp, tobj);
 	tobj.invalidateStringRep();
-	TclList tlist = (TclList)tobj.getInternalRep();
+	TclList tlist = (TclList) tobj.getInternalRep();
 
 	int size = tlist.vector.size();
 
@@ -360,7 +356,7 @@ public class TclList extends InternalRep {
 
 	TclObject objArray[] = new TclObject[size];
 	for (int i=0; i<size; i++) {
-	    objArray[i] = (TclObject)tlist.vector.elementAt(i);
+	    objArray[i] = (TclObject) tlist.vector.elementAt(i);
 	}
 
 	QSort s = new QSort();
