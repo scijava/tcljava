@@ -1,5 +1,30 @@
 2002-12-18  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/native/java.h: Add decl for JavaNotifierInDoOneEvent.
+	* src/native/javaIdle.c (Java_tcl_lang_IdleHandler_doWhenIdle,
+	Java_tcl_lang_IdleHandler_cancelIdleCall, JavaIdleProc):
+	Reimplement IdleHandler to be more like TimerHandler.
+	Create a single global ref and store it inside the
+	instance. This avoids a memory leak in JDK 1.2 and newer
+	when the even is canceled. Use JavaNotifierInDoOneEvent
+	function to decide when to propagate a Java exception.
+	* src/native/javaNotifier.c (Java_tcl_lang_Notifier_init,
+	JavaNotifierInDoOneEvent): Add new JavaNotifierInDoOneEvent
+	function that can be used to find out if an event was
+	being processed as a result of a JNI call to the
+	Notifier.doOneEvent method.
+	* src/native/javaTimer.c (JavaTimerProc): Don't propagate
+	a Java exception when invoked from Tcl, instead print
+	an error message.
+	* src/tclblend/tcl/lang/IdleHandler.java (IdleHandler,
+	cancel, invoke): See javaIdle.c description.
+	Raise error if invoke is called after cancel.
+	* src/tclblend/tcl/lang/TimerHandler.java (cancel, invoke):
+	Zero out token, update comments. Raise an error if invoke
+	is called after cancel().
+
+2002-12-18  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	Invoke JNI DeleteLocalRef method to cleanup
 	exception and object pointers. This is handled
 	by default for JNI methods but it can't hurt

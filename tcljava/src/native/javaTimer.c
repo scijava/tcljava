@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaTimer.c,v 1.5 2002/12/18 10:50:14 mdejong Exp $
+ * RCS: @(#) $Id: javaTimer.c,v 1.6 2002/12/19 03:34:36 mdejong Exp $
  */
 
 #include "java.h"
@@ -118,14 +118,25 @@ JavaTimerProc(
     jobject exception;
     JNIEnv *env = JavaGetEnv();
     JavaInfo* jcache = JavaGetCache();
+    int fromJNIMethod = JavaNotifierInDoOneEvent();
 
     /*
-     * Call TimerHandler.invoke.
+     * Call TimerHandler.invoke(). If an exception was raised and
+     * this method was invoked as a result of a Notifier.doOneEvent
+     * then propagate the exception. If this method was
+     * called from Tcl, then print the error since we can't
+     * leave the exception pending.
      */
 
     (*env)->CallVoidMethod(env, infoPtr->obj, jcache->invokeTimer);
     exception = (*env)->ExceptionOccurred(env);
-    (*env)->ExceptionClear(env);
+    if (exception) {
+	if (!fromJNIMethod) {
+	    fprintf(stderr, "Java Exception in JavaTimerProc (Tcl_CreateTimerHandler handler)\n");
+	    (*env)->ExceptionDescribe(env);
+	}
+	(*env)->ExceptionClear(env);
+    }
 
     /*
      * Cean up the timer info since the timer has fired.
@@ -135,12 +146,13 @@ JavaTimerProc(
     ckfree((char *)infoPtr);
 
     /*
-     * Propagate the exception so the next level up can catch it.
+     * Rethrow the exception.
      */
 
     if (exception) {
-	(*env)->Throw(env, exception);
-	(*env)->DeleteLocalRef(env, exception);
+	 if (fromJNIMethod)
+	     (*env)->Throw(env, exception);
+	 (*env)->DeleteLocalRef(env, exception);
     }
 }
 

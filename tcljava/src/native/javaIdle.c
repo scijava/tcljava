@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaIdle.c,v 1.4 2002/12/18 10:50:14 mdejong Exp $
+ * RCS: @(#) $Id: javaIdle.c,v 1.5 2002/12/19 03:34:36 mdejong Exp $
  */
 
 #include "java.h"
@@ -28,20 +28,39 @@ static void	JavaIdleProc(ClientData clientData);
  *	Create a C level idle handler for a Java IdleHandler object.
  *
  * Results:
- *	Returns the Tcl_IdleToken.
+ *	Retuns an address to be stored in clientData.
  *
  * Side effects:
- *	None.
+ *	Will create a new global ref to this object.
  *
  *----------------------------------------------------------------------
  */
 
-void JNICALL
+jlong JNICALL
 Java_tcl_lang_IdleHandler_doWhenIdle(
     JNIEnv *env,		/* Java environment. */
     jobject idle)		/* Handle to IdleHandler object. */
 {
-    Tcl_DoWhenIdle(JavaIdleProc, (ClientData) (*env)->NewGlobalRef(env, idle));
+    jobject gref = (*env)->NewGlobalRef(env, idle);
+
+    /*
+     * It is not possible to store the global ref as an Object
+     * field because the garbage collector could move the
+     * object in memory before cancel was invoked. Instead,
+     * store it as a long.
+     */
+
+    jlong clientData = 0;
+    *(jobject *)&clientData = gref;
+
+    /*
+    fprintf(stderr, "doWhenIdle idle instance is %x\n", idle);
+    fprintf(stderr, "doWhenIdle wrote long %llx\n", clientData);
+    fprintf(stderr, "doWhenIdle gref is %x\n", gref);
+    */
+
+    Tcl_DoWhenIdle(JavaIdleProc, (ClientData) gref);
+    return clientData;
 }
 
 /*
@@ -63,39 +82,24 @@ Java_tcl_lang_IdleHandler_doWhenIdle(
 void JNICALL
 Java_tcl_lang_IdleHandler_cancelIdleCall(
     JNIEnv *env,		/* Java environment. */
-    jobject idle)		/* Handle to IdleHandler object. */
-{    
-    /*
-     * Make a global reference, which should have the same numeric value
-     * as the one we used in the client data argument.
-     */
-
-#ifdef JDK1_2
-    jobject tmpIdle;
-
-    tmpIdle = (*env)->NewGlobalRef(env, idle);
-    Tcl_CancelIdleCall(JavaIdleProc, (ClientData) tmpIdle); 
+    jobject idle,		/* Handle to IdleHandler object. */
+    jlong clientData)		/* Ptr to global ref passed as client data */
+{
+    jobject gref = *(jobject *)&clientData;
 
     /*
-     * Delete the ref in the local scope.
-     * Formerly we also deleted the one that was used
-     * in the client data for the idle proc.
-     */
+    fprintf(stderr, "cancelIdleCall idle instance is %x\n", idle);
+    fprintf(stderr, "cancelIdleCall read long %llx\n", clientData);
+    fprintf(stderr, "cancelIdleCall gref is %x\n", gref);
+    */
 
-    (*env)->DeleteGlobalRef(env, tmpIdle);
-#else
-    /* This code causes tests/native/javaIdle.c to fail under JDK1.2 */
-    idle = (*env)->NewGlobalRef(env, idle);
-    Tcl_CancelIdleCall(JavaIdleProc, (ClientData) idle);
+    Tcl_CancelIdleCall(JavaIdleProc, (ClientData) gref);
 
     /*
-     * Delete both the ref in the local scope and the one that was used
-     * in the client data for the idle proc.
+     * Free global ref so object can be garbage collected.
      */
 
-    (*env)->DeleteGlobalRef(env, idle);
-    (*env)->DeleteGlobalRef(env, idle);
-#endif
+    (*env)->DeleteGlobalRef(env, gref);
 }
 
 /*
@@ -120,30 +124,44 @@ JavaIdleProc(
 {
     JNIEnv *env = JavaGetEnv();
     jobject exception;
-    jobject idle = (jobject) clientData;
+    jobject gref = (jobject) clientData;
     JavaInfo* jcache = JavaGetCache();
+    int fromJNIMethod = JavaNotifierInDoOneEvent();
+
+    /*fprintf(stderr, "JavaIdleProc got global ref %x\n", gref);*/
 
     /*
-     * Call IdleHandler.invoke.
+     * Call IdleHandler.invoke(). If an exception was raised and
+     * this method was invoked as a result of a Notifier.doOneEvent
+     * then propagate the exception. If this method was
+     * called from Tcl, then just print the error since we can't
+     * leave the exception pending.
      */
 
-    (*env)->CallVoidMethod(env, idle, jcache->invokeIdle);
+    (*env)->CallVoidMethod(env, gref, jcache->invokeIdle);
     exception = (*env)->ExceptionOccurred(env);
-    (*env)->ExceptionClear(env);
+    if (exception) {
+	if (!fromJNIMethod) {
+	    fprintf(stderr, "Java Exception in JavaIdleProc (Tcl_DoWhenIdle handler)\n");
+	    (*env)->ExceptionDescribe(env);
+	}
+	(*env)->ExceptionClear(env);
+    }
 
     /*
-     * Release the ref to the idle object now that it has fired.
+     * Free global ref so object can be garbage collected.
      */
 
-    (*env)->DeleteGlobalRef(env, idle);
+    (*env)->DeleteGlobalRef(env, gref);
 
     /*
-     * Propagate the exception so the next level up can catch it.
+     * Rethrow the exception.
      */
 
     if (exception) {
-	(*env)->Throw(env, exception);
-	(*env)->DeleteLocalRef(env, exception);
+	 if (fromJNIMethod)
+	     (*env)->Throw(env, exception);
+	 (*env)->DeleteLocalRef(env, exception);
     }
 }
 

@@ -8,18 +8,21 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: IdleHandler.java,v 1.1 1998/10/14 21:09:10 cvsadmin Exp $
+ * RCS: @(#) $Id: IdleHandler.java,v 1.2 2002/12/19 03:34:36 mdejong Exp $
  */
 
 package tcl.lang;
 
 abstract public class IdleHandler {
 
-/*
- * True if the cancel() method has been called.
- */
+// True if the cancel() method has been called.
 
 boolean isCancelled;
+
+// Global ref passed to Tcl, read/written from C
+
+long clientData;
+
 
 /*
  *----------------------------------------------------------------------
@@ -45,7 +48,7 @@ IdleHandler(
     Notifier n)			// The notifier to fire the event.
 {
     isCancelled = false;
-    doWhenIdle();
+    clientData = doWhenIdle();
 }
 
 /*
@@ -74,7 +77,8 @@ cancel()
     }
 
     isCancelled = true;
-    cancelIdleCall();
+    cancelIdleCall(clientData);
+    clientData = 0;
 }
 
 /*
@@ -82,8 +86,8 @@ cancel()
  *
  * invoke --
  *
- *	Execute the idle handler if it has not been cancelled. This
- *	method should be called by the notifier only.
+ *	Execute the idle handler. This method is called by the
+ *	native method JavaIdleProc only.
  *
  *	Because the idle handler may be being cancelled by another
  *	thread, both this method and cancel() must be synchronized to
@@ -101,15 +105,11 @@ cancel()
 synchronized final void
 invoke()
 {
-    /*
-     * The idle handler may be cancelled after it was registered in
-     * the notifier. Check the isCancelled field to make sure it's not
-     * cancelled.
-     */
-
-    if (!isCancelled) {
-	processIdleEvent();
+    if (isCancelled) {
+	throw new TclRuntimeError("IdleHandler.invoke(): event was cancelled");
     }
+    processIdleEvent();
+    clientData = 0;
 }
 
 /*
@@ -140,7 +140,7 @@ processIdleEvent();
  *	Create a C level idle handler for this object.
  *
  * Results:
- *	None.
+ *	Returns a pointer to store in clientData.
  *
  * Side effects:
  *	None.
@@ -148,7 +148,7 @@ processIdleEvent();
  *----------------------------------------------------------------------
  */
 
-private final native void
+private final native long
 doWhenIdle();
 
 /*
@@ -168,7 +168,7 @@ doWhenIdle();
  */
 
 private final native void
-cancelIdleCall();
+cancelIdleCall(long clientData);
 
 } // end IdleHandler
 

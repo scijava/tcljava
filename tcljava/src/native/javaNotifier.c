@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaNotifier.c,v 1.5 2002/08/12 07:12:10 mdejong Exp $
+ * RCS: @(#) $Id: javaNotifier.c,v 1.6 2002/12/19 03:34:36 mdejong Exp $
  */
 
 #include "java.h"
@@ -20,6 +20,7 @@ typedef struct ThreadSpecificData {
 
   int eventQueued;
 
+  int doOneEventCount;
 } ThreadSpecificData;
 
 static Tcl_ThreadDataKey dataKey;
@@ -59,8 +60,9 @@ Java_tcl_lang_Notifier_init(
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     jlong tid;
 
-    tsdPtr->notifierObj    = (*env)->NewGlobalRef(env, notifierObj);
-    tsdPtr->eventQueued    = 0;
+    tsdPtr->notifierObj     = (*env)->NewGlobalRef(env, notifierObj);
+    tsdPtr->eventQueued     = 0;
+    tsdPtr->doOneEventCount = 0;
 
     /* If we segfault near here under Windows, try removing tclblend.dll
      * from the current directory.  Tcl Blend has problems loading
@@ -129,8 +131,11 @@ Java_tcl_lang_Notifier_doOneEvent(
 				 * or others defined by event sources. */
 {
     int result;
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
+    tsdPtr->doOneEventCount++;
     result = Tcl_DoOneEvent(flags);
+    tsdPtr->doOneEventCount--;
     return result;
 }
 
@@ -316,4 +321,29 @@ Java_tcl_lang_Notifier_finalizeThreadCheck(
         fprintf(stderr, "TCLBLEND_DEBUG: Tcl Thread data not finalized\n");
 #endif /* TCLBLEND_DEBUG */
     }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * JavaNotifierInDoOneEvent --
+ *
+ *     Returns true if the notifier for this thread is currently
+ *     executing Tcl_DoOneEvent in the doOneEvent() native
+ *     method.
+ *
+ * Results:
+ *     1 or 0.
+ *
+ * Side effects:
+ *     None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int 
+JavaNotifierInDoOneEvent()
+{
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    return (tsdPtr->doOneEventCount > 0);
 }

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: TimerHandler.java,v 1.1 1998/10/14 21:09:10 cvsadmin Exp $
+ * RCS: @(#) $Id: TimerHandler.java,v 1.2 2002/12/19 03:34:36 mdejong Exp $
  */
 
 package tcl.lang;
@@ -84,8 +84,8 @@ cancel()
     }
 
     isCancelled = true;
-
     deleteTimerHandler(token);
+    token = 0;
 }
 
 /*
@@ -93,8 +93,8 @@ cancel()
  *
  * invoke --
  *
- *	Execute the timer handler if it has not been cancelled. This
- *	method should be called by the notifier only.
+ *	Execute the timer handler. This method is called by the
+ *	native method JavaTimerProc only.
  *
  *	Because the timer handler may be being cancelled by another
  *	thread, both this method and cancel() must be synchronized to
@@ -112,15 +112,10 @@ cancel()
 synchronized final void
 invoke()
 {
-    /*
-     * The timer may be cancelled after it was put on the
-     * event queue. Check its isCancelled field to make sure it's
-     * not cancelled.
-     */
-
-    if (!isCancelled) {
-	processTimerEvent();
+    if (isCancelled) {
+	throw new TclRuntimeError("TimerHandler.invoke(): event was cancelled");
     }
+    processTimerEvent();
     token = 0;
 }
 
