@@ -3,8 +3,9 @@ dnl	generate the file "configure", which is run to configure the
 dnl	Makefile in this directory.
 AC_INIT(ChangeLog)
 
-AC_PREREQ(2.14)
+AC_PREREQ(2.50)
 
+sinclude(tcljava.m4)
 
 #--------------------------------------------------------------------
 # 	Version identification info (also set in source files)
@@ -14,7 +15,7 @@ TCLJAVA_NODOT_VERSION=`echo $TCLJAVA_VERSION | sed -e 's/\.//g'`
 
 # Convert into full path name
 srcdir=`cd $srcdir ; pwd`
-AC_MSG_LOG(srcdir is $srcdir)
+AC_MSG_LOG([srcdir is $srcdir])
 
 
 # Check our version numbers hard coded into files. Update if needed.

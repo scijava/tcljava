@@ -12,7 +12,7 @@
 
 AC_DEFUN([AC_MSG_LOG], [
     echo $1 >&AS_MESSAGE_LOG_FD
-    ifval([$2], , [echo $1])
+    m4_ifval([$2],,[echo $1])
 ])
 
 #------------------------------------------------------------------------
@@ -36,7 +36,7 @@ AC_DEFUN([AC_GREP_FILE], [
         $3
     else
         AC_MSG_LOG([grep result : no], 1)
-        ifval([$4], [
+        m4_ifval([$4], [
             $4
         ])dnl
     fi
@@ -322,7 +322,7 @@ EOF
         echo "configure: failed program was:" >&AS_MESSAGE_LOG_FD
         cat conftest.java >&AS_MESSAGE_LOG_FD
         echo "configure: CLASSPATH was $CLASSPATH" >&AS_MESSAGE_LOG_FD
-        ifval([$4],
+        m4_ifval([$4],
         [  $4
         ])dnl
     fi
@@ -560,7 +560,7 @@ AC_DEFUN([AC_JAVA_TOOLS_CHECK], [
 
     # Check to see if $1 could not be found
 
-    ifval([$4], ,[
+    m4_ifval([$4],,[
     if test "x[$]$1" = "x" ; then
         AC_MSG_ERROR([Cannot find $2 on $3])
     fi

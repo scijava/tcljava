@@ -1,3 +1,13 @@
+2002-01-08  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* aclocal.m4: Removed.
+	* configure: Regen with autoconf 2.52.
+	* configure.in: Require autoconf 2.50 or newer.
+	Directly include the tcljava.m4 file instead of
+	including it via aclocal.m4.
+	* tcljava.m4: Call m4_ifval instead of ifval
+	to avoid errors from new version of autoconf.
+
 2002-01-02  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* src/jacl/tcl/lang/SocketCmd.java (cmdProc, getPort):
