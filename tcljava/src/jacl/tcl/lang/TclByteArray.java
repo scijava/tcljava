@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclByteArray.java,v 1.3 2000/10/29 06:00:41 mdejong Exp $
+ * RCS: @(#) $Id: TclByteArray.java,v 1.4 2003/03/08 02:05:06 mdejong Exp $
  *
  */
 
@@ -144,8 +144,7 @@ public class TclByteArray implements InternalRep {
      * @param tobj the TclObject to convert to use the ByteArray internal rep.
      * @exception TclException if the object doesn't contain a valid ByteArray.
      */
-    static void setByteArrayFromAny(Interp interp, TclObject tobj)
-	    throws TclException {
+    static void setByteArrayFromAny(Interp interp, TclObject tobj) {
 	InternalRep rep = tobj.getInternalRep();
 
 	if (!(rep instanceof TclByteArray)) {
@@ -171,8 +170,11 @@ public class TclByteArray implements InternalRep {
      *	old array is truncated to the specified length.
      */
 
-    public static byte[] setLength(Interp interp, TclObject tobj, int length) 
-	    throws TclException {
+    public static byte[] setLength(Interp interp, TclObject tobj, int length) {
+	if (tobj.isShared()) {
+	    throw new TclRuntimeError(
+	        "TclByteArray.setLength() called with shared object");
+	}
 	setByteArrayFromAny(interp, tobj);
 	TclByteArray tbyteArray = (TclByteArray) tobj.getInternalRep();
 
@@ -181,6 +183,7 @@ public class TclByteArray implements InternalRep {
 	    System.arraycopy(tbyteArray.bytes, 0, newBytes, 0, tbyteArray.used);
 	    tbyteArray.bytes = newBytes;
 	}
+	tobj.invalidateStringRep();
 	tbyteArray.used = length;
 	return tbyteArray.bytes;
     }
@@ -194,8 +197,7 @@ public class TclByteArray implements InternalRep {
      * @return the length of the byte array.
      * @exception TclException if tobj is not a valid byte array.
      */
-    public static final int getLength(Interp interp, TclObject tobj)
-	    throws TclException {
+    public static final int getLength(Interp interp, TclObject tobj) {
 	setByteArrayFromAny(interp, tobj);
 
 	TclByteArray tbyteArray = (TclByteArray) tobj.getInternalRep();
@@ -211,8 +213,7 @@ public class TclByteArray implements InternalRep {
      * @return a byte array.
      * @exception TclException if tobj is not a valid ByteArray.
      */
-    public static byte[] getBytes(Interp interp, TclObject tobj)
-	    throws TclException {
+    public static byte[] getBytes(Interp interp, TclObject tobj) {
 	setByteArrayFromAny(interp, tobj);
 	TclByteArray tbyteArray = (TclByteArray) tobj.getInternalRep();
 	return tbyteArray.bytes;

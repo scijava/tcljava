@@ -1,3 +1,11 @@
+2003-03-07  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/jacl/tcl/lang/TclByteArray.java (setLength):
+	Remove TclException from method throws section since
+	the methods never throw a TclException. Call the
+	invalidateStringRep method from setLength so that
+	a modified array will be reflected in the string rep.
+
 2003-03-06  Bruce Johnson  <bruce_johnson@merck.com>,
             Mo DeJong  <mdejong@users.sourceforge.net>
 
