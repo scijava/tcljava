@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Parser.java,v 1.1 1998/10/14 21:09:19 cvsadmin Exp $
+ * RCS: @(#) $Id: Parser.java,v 1.2 1999/05/09 01:05:13 dejong Exp $
  */
 
 package tcl.lang;
@@ -112,10 +112,8 @@ parseCommand(
 	terminators = TYPE_COMMAND_END;
     }
 
-    /*
-     * Parse any leading space and comments before the first word of the
-     * command.
-     */
+    // Parse any leading space and comments before the first word of the
+    // command.
 
 
     try {
@@ -144,12 +142,12 @@ parseCommand(
 	    continue;
 	  }
 	  
-	  //if we have found the start of a command goto the word parsing loop
+	  // If we have found the start of a command goto the word parsing loop
 	  if (cur != '#') {
 	    break;
 	  }
 
-	  //record the index where the comment starts
+	  // Record the index where the comment starts
 	  if (parse.commentStart < 0) {
 	    parse.commentStart = script_index;
 	  }
@@ -250,11 +248,9 @@ parseCommand(
 		}
 		script_index = parse.termIndex + 1;
 	    } else if (cur == '{') {
-		/*
-		 * Find the matching right brace that terminates the word,
-		 * then generate a single token for everything between the
-		 * braces.
-		 */
+		// Find the matching right brace that terminates the word,
+		// then generate a single token for everything between the
+		// braces.
 
 		script_index++;
 		token = parse.getToken(parse.numTokens);
@@ -266,7 +262,7 @@ parseCommand(
 		while (true) {
 		    cur = script_array[script_index];
 
-		    //get the current char in the array and lookup its type in array
+		    // get the current char in the array and lookup its type in array
 		    while (typeTable[script_array[script_index]] == TYPE_NORMAL) {
 		      script_index++;
 		    }
@@ -282,13 +278,11 @@ parseCommand(
 		    } else if (script_array[script_index] == '\\') {
 			bs = backslash(script_array,script_index);
 			if (script_array[script_index + 1] == '\n') {
-			    /*
-			     * A backslash-newline sequence requires special
-			     * treatment: it must be collapsed, even inside
-			     * braces, so we have to split the word into
-			     * multiple tokens so that the backslash-newline
-			     * can be represented explicitly.
-			     */
+			    // A backslash-newline sequence requires special
+			    // treatment: it must be collapsed, even inside
+			    // braces, so we have to split the word into
+			    // multiple tokens so that the backslash-newline
+			    // can be represented explicitly.
 
 			    if ((script_index + 2) == parse.endIndex) {
 				parse.incomplete = true;
@@ -329,10 +323,8 @@ parseCommand(
 		}
 		script_index++;
 	    } else {
-		/*
-		 * This is an unquoted word.  Call parseTokens and let it do
-		 * all of the work.
-		 */
+		// This is an unquoted word.  Call parseTokens and let it do
+		// all of the work.
 
 		parse = parseTokens(script_array, script_index, TYPE_SPACE|terminators, 
 			parse);
@@ -342,11 +334,9 @@ parseCommand(
 		script_index = parse.termIndex;
 	    }
 	    
-	    /*
-	     * Finish filling in the token for the word and check for the
-	     * special case of a word consisting of a single range of
-	     * literal text.
-	     */
+	    // Finish filling in the token for the word and check for the
+	    // special case of a word consisting of a single range of
+	    // literal text.
 	    
 	    token = parse.getToken(wordIndex);
 	    token.size = script_index - token.script_index;
@@ -356,12 +346,10 @@ parseCommand(
 		token.type = TCL_TOKEN_SIMPLE_WORD;
 	    }
 
-	    /*
-	     * Do two additional checks: (a) make sure we're really at the
-	     * end of a word (there might have been garbage left after a
-	     * quoted or braced word), and (b) check for the end of the
-	     * command.
-	     */
+	    // Do two additional checks: (a) make sure we're really at the
+	    // end of a word (there might have been garbage left after a
+	    // quoted or braced word), and (b) check for the end of the
+	    // command.
 	    
 
 	    cur = script_array[script_index];
@@ -371,10 +359,8 @@ parseCommand(
 		script_index++;
 		continue;
 	    } else {
-		/*
-		 * Backslash-newline (and any following white space) must be
-		 * treated as if it were a space character.
-		 */
+		// Backslash-newline (and any following white space) must be
+		// treated as if it were a space character.
 
 		if ((cur == '\\') && (script_array[script_index + 1] == '\n')) {
 		    if ((script_index + 2) == parse.endIndex) {
@@ -444,7 +430,7 @@ parseCommand(
  * Results:
  *	Tokens are added to parse and parse.termIndex is filled in
  *	with the index of the character that terminated the parse (the
- *	first one whose charType() matched mask or the character at
+ *	first one that has a type matching the mask or the character at
  *	parse.endIndex).  The return value is TclParse object that 
  *	contains information about the parsed command.  If the 
  *	command was parsed successfully, the TclParse object's result 
@@ -461,8 +447,8 @@ parseCommand(
 
 static TclParse
 parseTokens(
-    char[] script_array, //the text to parse
-    int    script_index, // Index points to the first  character to parse.
+    char[] script_array,        // The text to parse
+    int    script_index,        // Index of first character to parse.
 
     int mask,			// Specifies when to stop parsing.  The
 				// parse stops at the first unquoted
@@ -478,12 +464,24 @@ parseTokens(
     TclParse nested;
     BackSlashResult bs;
 
-    /*
-     * Each iteration through the following loop adds one token of
-     * type TCL_TOKEN_TEXT, TCL_TOKEN_BS, TCL_TOKEN_COMMAND, or
-     * TCL_TOKEN_VARIABLE to parsePtr.  For TCL_TOKEN_VARIABLE additional,
-     * tokens tokens are added for the parsed variable name.
-     */
+
+    final boolean debug = false;
+    
+    if (debug) {
+    System.out.println();
+    System.out.println("Entered Parser.parseTokens()");
+    System.out.print("now to parse the string \"");
+    for (int k = script_index; k < script_array.length ; k++) {
+	System.out.print(script_array[k]);
+    }
+    System.out.println("\"");
+    }
+
+
+    // Each iteration through the following loop adds one token of
+    // type TCL_TOKEN_TEXT, TCL_TOKEN_BS, TCL_TOKEN_COMMAND, or
+    // TCL_TOKEN_VARIABLE to parsePtr.  For TCL_TOKEN_VARIABLE additional,
+    // tokens tokens are added for the parsed variable name.
 
     originalTokens = parse.numTokens;
     while (true) {
@@ -492,21 +490,47 @@ parseTokens(
 	token.script_index = script_index;
 	token.numComponents = 0;
 	
+	if (debug) {
+	    System.out.println();
+	    System.out.println("Now on index " + script_index);
+	    char tmp_c = script_array[script_index];
+	    System.out.println("Char is '" + tmp_c + "'");
+	    System.out.println("Unicode id is " + ((int) tmp_c));
+	    int tmp_i = ((int) typeTable[tmp_c]);
+	    
+	    System.out.println("Type is " + tmp_i);
+	    System.out.println("Mask is " + mask);
+	    System.out.println("(type & mask) is " + ((int) (tmp_i & mask)));
+	    System.out.println("orig token.size is " + token.size);
+	}
+
+
 	cur = script_array[script_index];
 	type = typeTable[cur];
 	    
 	if ((type & mask) != 0) {
+	    if (debug) {
+		System.out.println("mask break");
+	    }
 	    break;
 	}
 
 	if ((type & TYPE_SUBS) == 0) {
-	    /*
-	     * This is a simple range of characters.  Scan to find the end
-	     * of the range.
-	     */
+	    // This is a simple range of characters.  Scan to find the end
+	    // of the range.
+
+	    if (debug) {
+		System.out.println("simple range");
+	    }
 
 	    while (true) {
 	        script_index++;
+
+		if (debug) {
+		    System.out.println("skipping '" + script_array[script_index]
+				       + "'");
+		}
+
 		if (((typeTable[script_array[script_index]]) & (mask | TYPE_SUBS)) != 0) {
 		    break;
 		}
@@ -514,11 +538,21 @@ parseTokens(
 	    token.type = TCL_TOKEN_TEXT;
 	    token.size = script_index - token.script_index;
 	    parse.numTokens++;
+
+	    if (debug) {
+		System.out.println("end simple range");
+		System.out.println("token.size is " + token.size);
+		System.out.println("parse.numTokens is " + parse.numTokens);
+		System.out.println();
+	    }
+
 	} else if (cur == '$') {
-	    /*
-	     * This is a variable reference.  Call parseVarName to do
-	     * all the dirty work of parsing the name.
-	     */
+	    // This is a variable reference.  Call parseVarName to do
+	    // all the dirty work of parsing the name.
+
+	    if (debug) {
+		System.out.println("dollar sign");
+	    }
 
 	    varToken = parse.numTokens;
 	    parse = parseVarName(parse.interp, script_array, script_index,
@@ -528,11 +562,13 @@ parseTokens(
 	    }
 	    script_index += parse.getToken(varToken).size;
 	} else if (cur == '[') {
-	    /*
-	     * Command substitution.  Call parseCommand recursively
-	     * (and repeatedly) to parse the nested command(s), then
-	     * throw away the parse information.
-	     */
+	    // Command substitution.  Call parseCommand recursively
+	    // (and repeatedly) to parse the nested command(s), then
+	    // throw away the parse information.
+
+	    if (debug) {
+		System.out.println("command");
+	    }
 
 	    script_index++;
 	    while (true) {
@@ -563,20 +599,20 @@ parseTokens(
 	    token.size = script_index - token.script_index;
 	    parse.numTokens++;
 	} else if (cur == '\\') {
-	    /*
-	     * Backslash substitution.
-	     */
+	    // Backslash substitution.
+
+	    if (debug) {
+		System.out.println("backslash");
+	    }
 
 	    if (script_array[script_index + 1] == '\n') {
 		if ((script_index + 2) == parse.endIndex) {
 		    parse.incomplete = true;
 		}
 		
-		/*
-		 * Note: backslash-newline is special in that it is
-		 * treated the same as a space character would be.  This
-		 * means that it could terminate the token.
-		 */
+		// Note: backslash-newline is special in that it is
+		// treated the same as a space character would be.  This
+		// means that it could terminate the token.
 
 		if ((mask & TYPE_SPACE) != 0) {
 		    break;
@@ -588,12 +624,16 @@ parseTokens(
 	    parse.numTokens++;
 	    script_index += token.size;
 	} else if (cur == '\0') {
-	    /*
-	     * We encountered a null character.  If it is the null
-	     * character at the end of the string, then return.
-	     * Otherwise generate a text token for the single
-	     * character.
-	     */
+	    // We encountered a null character.  If it is the null
+	    // character at the end of the string, then return.
+	    // Otherwise generate a text token for the single
+	    // character.
+
+	    if (debug) {
+		System.out.println("null char");
+		System.out.println("script_index is " + script_index);
+		System.out.println("parse.endIndex is " + parse.endIndex);
+	    }
 
 	    if (script_index == parse.endIndex) {
 		 break;
@@ -607,20 +647,58 @@ parseTokens(
 	    throw new TclRuntimeError(
 		    "parseTokens encountered unknown character");
 	}
-    }
+    } // end while (true)
+
+
     if (parse.numTokens == originalTokens) {
-	/*
-	 * There was nothing in this range of text.  Add an empty token
-	 * for the empty range, so that there is always at least one
-	 * token added.
-	 */
+	// There was nothing in this range of text.  Add an empty token
+	// for the empty range, so that there is always at least one
+	// token added.
+
+
+	if (debug) {
+	    System.out.println("empty token");
+	}
 
 	token.type = TCL_TOKEN_TEXT;
 	token.size = 0;
 	parse.numTokens++;
+    } else {
+	if (debug) {
+	    System.out.println("non empty token case");
+	}
     }
+
     parse.termIndex = script_index;
     parse.result = TCL.OK;
+
+
+    if (debug) {
+    System.out.println();
+    System.out.println("Leaving Parser.parseTokens()");
+    
+    System.out.println("after parse, parse.numTokens is " + parse.numTokens);
+    System.out.println("after parse, token.size is " + token.size);
+    System.out.println("after parse, token.hashCode() is " +
+		       token.hashCode());
+
+
+    //System.out.println( parse.toString() );
+
+
+    System.out.print("printing " + (parse.numTokens - originalTokens) + " token(s)");
+
+    for (int k = originalTokens; k < parse.numTokens; k++) {
+	token = parse.getToken(k);
+	System.out.println(token);
+    }
+
+
+    System.out.print("done printing tokens");
+    
+    }
+
+
     return parse;
 }
 
@@ -676,9 +754,7 @@ throws
 	return;
     }
     
-    /*
-     * If the interpreter was deleted, return an error.
-     */
+    // If the interpreter was deleted, return an error.
     
     if (interp.deleted){
 	TclString.append(interp.getResult(),
@@ -688,10 +764,8 @@ throws
 	throw new TclException(TCL.ERROR);
     }
 
-    /*
-     * Check depth of nested calls to eval:  if this gets too large,
-     * it's probably because of an infinite loop somewhere.
-     */
+    // Check depth of nested calls to eval:  if this gets too large,
+    // it's probably because of an infinite loop somewhere.
 
     if (interp.nestLevel >= interp.maxNestingDepth) {
 	throw new TclException(interp, 
@@ -700,13 +774,11 @@ throws
     interp.nestLevel++;
 
     try {
-	/*
-	 * Find the procedure to execute this command. If there isn't one,
-	 * then see if there is a command "unknown".  If so, create a new
-	 * word array with "unknown" as the first word and the original
-	 * command words as arguments.  Then call ourselves recursively
-	 * to execute it.
-	 */
+	// Find the procedure to execute this command. If there isn't one,
+	// then see if there is a command "unknown".  If so, create a new
+	// word array with "unknown" as the first word and the original
+	// command words as arguments.  Then call ourselves recursively
+	// to execute it.
     
 	cmd = interp.getCommand(objv[0].toString());
 	if (cmd == null) {
@@ -727,9 +799,7 @@ throws
 	    return;
 	}
     
-	/*
-	 * Finally, invoke the Command's cmdProc.
-	 */
+	// Finally, invoke the Command's cmdProc.
 	
 	interp.cmdCount++;
 	savedVarFrame = interp.varFrame;
@@ -740,7 +810,7 @@ throws
 	cmd.cmdProc(interp, objv);
 	interp.varFrame = savedVarFrame;
 	
-	// TO DO...
+	// (TODO)
 	//
 	//if (AsyncReady()) {
 	//    code = AsyncInvoke(interp, code);
@@ -793,10 +863,8 @@ logCommandInfo(
     int pIndex;
 
     if (interp.errAlreadyLogged) {
-	/*
-	 * Someone else has already logged error information for this
-	 * command; we shouldn't add anything more.
-	 */
+	// Someone else has already logged error information for this
+	// command; we shouldn't add anything more.
 
 	return;
     }
@@ -815,15 +883,14 @@ logCommandInfo(
     }
 
 
-    //Create an error message to add to errorInfo, including up to a
-    //maximum number of characters of the command.
+    // Create an error message to add to errorInfo, including up to a
+    // maximum number of characters of the command.
 
     if (length < 0) {
         //take into account the trailing '\0'
         int script_length = script_array.length - 1;
 
 	length = script_length - cmdIndex;
-	//length = script.length() - cmdIndex;
     }
     if (length > 150) {
 	offset = 150;
@@ -887,22 +954,18 @@ throws
     String varName;
     BackSlashResult bs;
 
-    /*
-     * The only tricky thing about this procedure is that it attempts to
-     * avoid object creation and string copying whenever possible.  For
-     * example, if the value is just a nested command, then use the
-     * command's result object directly.
-     */
+    // The only tricky thing about this procedure is that it attempts to
+    // avoid object creation and string copying whenever possible.  For
+    // example, if the value is just a nested command, then use the
+    // command's result object directly.
 
     result = null;
     for ( ; count > 0; count--) {
 	token = tokenList[tIndex];
 
-	/*
-	 * The switch statement below computes the next value to be
-	 * concat to the result, as either a range of text or an
-	 * object.
-	 */
+	// The switch statement below computes the next value to be
+	// concat to the result, as either a range of text or an
+	// object.
 
 	value = null;
 	switch (token.type) {
@@ -947,13 +1010,11 @@ throws
 		}
 		varName = tokenList[tIndex + 1].getTokenString();
 
-		/*
-		 * In order to get the existing expr parser to work with the
-		 * new Parser, we test the interp.noEval flag which is set
-		 * by the expr parser.  If it is != 0, then we do not evaluate 
-		 * the variable.  This should be removed when the new expr
-		 * parser is implemented.
-		 */
+		// In order to get the existing expr parser to work with the
+		// new Parser, we test the interp.noEval flag which is set
+		// by the expr parser.  If it is != 0, then we do not evaluate 
+		// the variable.  This should be removed when the new expr
+		// parser is implemented.
 
 		if (interp.noEval == 0) {
 		    if (index != null) {
@@ -978,10 +1039,8 @@ throws
 		        "unexpected token type in evalTokens");
 	}
 
-	/*
-	 * If value isn't null, the next piece of text comes from that
-	 * object; otherwise, take value of p.
-	 */
+	// If value isn't null, the next piece of text comes from that
+	// object; otherwise, take value of p.
 
 	if (result == null) {
 	    if (value != null) {
@@ -1040,7 +1099,7 @@ throws
 {
     int i;
     int objUsed = 0;
-    int pIndex, nextIndex, wordIndex, tokenIndex;
+    int nextIndex, tokenIndex;
     int commandLength, bytesLeft;
     boolean nested;
     TclObject[] objv;
@@ -1051,15 +1110,31 @@ throws
     // Saves old copy of interp.varFrame in case TCL_EVAL_GLOBAL was set
     CallFrame savedVarFrame;
 
-    //take into account the trailing '\0'
+    // Take into account the trailing '\0'
     int script_length = script_array.length - 1;
 
 
-    //these are modified instead of script_array and script_index
+    // These are modified instead of script_array and script_index
     char[] src_array = script_array;
     int    src_index = script_index;
 
     //System.out.println("call to eval2");
+
+
+    final boolean debug = false;
+
+
+    if (debug) {
+    System.out.println();
+    System.out.println("Entered eval2()");
+    System.out.print("now to eval2 the string \"");
+    for (int k = script_index; k < script_array.length ; k++) {
+	System.out.print(script_array[k]);
+    }
+    System.out.println("\"");
+    }
+
+
 
     if (numBytes < 0) {
 	numBytes = script_length - script_index;
@@ -1070,12 +1145,12 @@ throws
 	interp.varFrame = interp.globalFrame;
     }
 
-    //Each iteration through the following loop parses the next
-    //command from the script and then executes it.
+    // Each iteration through the following loop parses the next
+    // command from the script and then executes it.
 
     bytesLeft = numBytes;
 
-    //init objv with the most commonly used array size
+    // Init objv with the most commonly used array size
     objv = grabObjv(interp,3);
 
     if ((interp.evalFlags & TCL_BRACKET_TERM) != 0) {
@@ -1095,15 +1170,11 @@ throws
 	    throw new TclException(parse.result);
 	}
 
-	/*
-	 * The test on noEval is temporary.  As soon as the new expr
-	 * parser is implemented it should be removed.
-	 */
+	// The test on noEval is temporary.  As soon as the new expr
+	// parser is implemented it should be removed.
 
 	if (parse.numWords > 0 && interp.noEval == 0) {	    
-	    /*
-	     * Generate an array of objects for the words of the command.
-	     */
+	    // Generate an array of objects for the words of the command.
 	    
 	    try {
 		tokenIndex = 0;
@@ -1133,7 +1204,7 @@ throws
 		    token = parse.getToken(tokenIndex);
 		}
 		
-		//Execute the command and free the objects for its words.
+		// Execute the command and free the objects for its words.
 		try {
 		    evalObjv(interp, objv, /*src,*/ bytesLeft, 0);
 		} catch (java.lang.StackOverflowError e) {
@@ -1143,26 +1214,23 @@ throws
 		}
 
 	    } catch (TclException e) {
-		/*
-		 * Generate various pieces of error information, such 
-		 * as the line number where the error occurred and 
-		 * information to add to the errorInfo variable.  Then 
-		 * free resources that had been allocated
-		 * to the command.
-		 */
+		// Generate various pieces of error information, such 
+		// as the line number where the error occurred and 
+		// information to add to the errorInfo variable.  Then 
+		// free resources that had been allocated
+		// to the command.
 		
 		if ( e.getCompletionCode()== TCL.ERROR &&
 		     !(interp.errAlreadyLogged)) {
 		    commandLength = parse.commandSize;
 		    if ((parse.commandStart + commandLength) 
 			    != (script_index + numBytes)) {
-			/*
-			 * The command where the error occurred didn't end 
-			 * at the end of the script (i.e. it ended at a 
-			 * terminator character such as ";".  Reduce the 
-			 * length by one so that the error message
-			 * doesn't include the terminator character.
-			 */
+
+			// The command where the error occurred didn't end 
+			// at the end of the script (i.e. it ended at a 
+			// terminator character such as ";".  Reduce the 
+			// length by one so that the error message
+			// doesn't include the terminator character.
 			
 			commandLength -= 1;
 		    }
@@ -1177,23 +1245,22 @@ throws
 		}
                 objUsed = 0;
 
-		parse.release(); //cleanup parser resources
+		parse.release(); // Cleanup parser resources
 	    }
 	}
 
 
-	//Advance to the next command in the script.
+	// Advance to the next command in the script.
 	
 	nextIndex = parse.commandStart + parse.commandSize;
 	bytesLeft -= (nextIndex - src_index);
 	src_index = nextIndex;
 	if (nested && (src_index > 1) &&
 	    (src_array[src_index-1] == ']')) {
-	    /*
-	     * We get here in the special case where the TCL_BRACKET_TERM
-	     * flag was set in the interpreter and we reached a close
-	     * bracket in the script.  Return immediately.
-	     */
+
+	    // We get here in the special case where the TCL_BRACKET_TERM
+	    // flag was set in the interpreter and we reached a close
+	    // bracket in the script.  Return immediately.
 
 	    interp.termOffset = (src_index - 1) - script_index;
 	    interp.varFrame = savedVarFrame;
@@ -1202,8 +1269,8 @@ throws
     } while (bytesLeft > 0);
 
     } finally {
-      parse.release(); //let go of parser resources
-      releaseObjv(interp, objv); //let go of objv buffer
+      parse.release(); // Let go of parser resources
+      releaseObjv(interp, objv); // Let go of objv buffer
     }
 
     interp.termOffset = src_index - script_index;
@@ -1261,6 +1328,19 @@ parseVarName(
     TclToken token, startToken;
     int endIndex,  varIndex;
 
+    final boolean debug = false;
+
+
+    if (debug) {
+    System.out.println();
+    System.out.println("Entered parseVarName()");
+    System.out.print("now to parse var off the string \"");
+    for (int k = script_index; k < script_array.length ; k++) {
+	System.out.print(script_array[k]);
+    }
+    System.out.println("\"");
+    }
+
 
     if (numBytes >= 0) {
 	endIndex = script_index + numBytes;
@@ -1271,11 +1351,9 @@ parseVarName(
 	parse = new TclParse(interp, script_array, endIndex, null, -1);
     }
 
-    /*
-     * Generate one token for the variable, an additional token for the
-     * name, plus any number of additional tokens for the index, if
-     * there is one.
-     */
+    // Generate one token for the variable, an additional token for the
+    // name, plus any number of additional tokens for the index, if
+    // there is one.
 
     token = parse.getToken(parse.numTokens);
     token.type = TCL_TOKEN_VARIABLE;
@@ -1285,11 +1363,9 @@ parseVarName(
     parse.numTokens++;
     script_index++;
     if (script_index >= endIndex) {
-	/*
-	 * The dollar sign isn't followed by a variable name.
-	 * replace the TCL_TOKEN_VARIABLE token with a
-	 * TCL_TOKEN_TEXT token for the dollar sign.
-	 */
+	// The dollar sign isn't followed by a variable name.
+	// replace the TCL_TOKEN_VARIABLE token with a
+	// TCL_TOKEN_TEXT token for the dollar sign.
 
 	token.type = TCL_TOKEN_TEXT;
 	token.size = 1;
@@ -1300,24 +1376,26 @@ parseVarName(
     startToken = token;
     token = parse.getToken(parse.numTokens);
 
-    /*
-     * The name of the variable can have three forms:
-     * 1. The $ sign is followed by an open curly brace.  Then 
-     *    the variable name is everything up to the next close
-     *    curly brace, and the variable is a scalar variable.
-     * 2. The $ sign is not followed by an open curly brace.  Then
-     *    the variable name is everything up to the next
-     *    character that isn't a letter, digit, or underscore.
-     *    :: sequences are also considered part of the variable
-     *    name, in order to support namespaces. If the following
-     *    character is an open parenthesis, then the information
-     *    between parentheses is the array element name.
-     * 3. The $ sign is followed by something that isn't a letter,
-     *    digit, or underscore:  in this case, there is no variable
-     *    name and the token is just "$".
-     */
+    // The name of the variable can have three forms:
+    // 1. The $ sign is followed by an open curly brace.  Then 
+    //    the variable name is everything up to the next close
+    //    curly brace, and the variable is a scalar variable.
+    // 2. The $ sign is not followed by an open curly brace.  Then
+    //    the variable name is everything up to the next
+    //    character that isn't a letter, digit, or underscore.
+    //    :: sequences are also considered part of the variable
+    //    name, in order to support namespaces. If the following
+    //    character is an open parenthesis, then the information
+    //    between parentheses is the array element name.
+    // 3. The $ sign is followed by something that isn't a letter,
+    //    digit, or underscore:  in this case, there is no variable
+    //    name and the token is just "$".
 
     if (script_array[script_index] == '{') {
+	if (debug) {
+	System.out.println("parsing curley var name");
+	}
+
 	script_index++;
 	token.type = TCL_TOKEN_TEXT;
 	token.script_array = script_array;
@@ -1344,6 +1422,10 @@ parseVarName(
 	parse.numTokens++;
 	script_index++;
     } else {
+	if (debug) {
+	System.out.println("parsing non curley var name");
+	}
+
 	token.type = TCL_TOKEN_TEXT;
 	token.script_array = script_array;
 	token.script_index = script_index;
@@ -1367,12 +1449,14 @@ parseVarName(
 	}
 	token.size = script_index - token.script_index;
 	if (token.size == 0) {
-	    /*
-	     * The dollar sign isn't followed by a variable name.
-	     * replace the TCL_TOKEN_VARIABLE token with a
-	     * TCL_TOKEN_TEXT token for the dollar sign.
-	     */
-	    
+	    // The dollar sign isn't followed by a variable name.
+	    // replace the TCL_TOKEN_VARIABLE token with a
+	    // TCL_TOKEN_TEXT token for the dollar sign.
+
+	    if (debug) {
+	    System.out.println("single $ with no var name found");
+	    }
+
 	    startToken.type = TCL_TOKEN_TEXT;
 	    startToken.size = 1;
 	    startToken.numComponents = 0;
@@ -1381,11 +1465,14 @@ parseVarName(
 	}
 	parse.numTokens++;
 	if ((script_index != endIndex) && (script_array[script_index] == '(')) {
-	    /*
-	     * This is a reference to an array element.  Call
-	     * parseTokens recursively to parse the element name,
-	     * since it could contain any number of substitutions.
-	     */
+	    // This is a reference to an array element.  Call
+	    // parseTokens recursively to parse the element name,
+	    // since it could contain any number of substitutions.
+
+	    if (debug) {
+	    System.out.println("parsing array element");
+	    }
+
 
 	    script_index++;
 	    parse = parseTokens(script_array,script_index, TYPE_CLOSE_PAREN, parse);
@@ -1405,6 +1492,17 @@ parseVarName(
 	    script_index = parse.termIndex + 1;
 	}
     }
+
+
+    if (debug) {
+    System.out.println("default end parse case");
+    System.out.print("var token is \"");
+    for (int k = startToken.script_index; k < script_index ; k++) {
+	System.out.print(script_array[k]);
+    }
+    System.out.println("\"");
+    }
+
 
     startToken.size = script_index - startToken.script_index;
     startToken.numComponents = parse.numTokens - (varIndex + 1);
@@ -1446,25 +1544,40 @@ throws
 {
     TclParse parse;
     TclObject obj;
+
+    final boolean debug = false;
+
+    if (debug) {
+    System.out.println();
+    System.out.println("Entered parseVar()");
+    System.out.print("now to parse var off the string \"" + string + "\"");
+    }
+
+
     CharPointer src = new CharPointer(string);
     parse = parseVarName(interp, src.array, src.index, -1, null, false);
 
     try {
-      if (parse.numTokens == 1) {
-        //There isn't a variable name after all: the $ is just a $.
-	return new ParseResult("$", 1);
-      }
+	if (debug) {
+	System.out.println();
+	System.out.print("parsed " + parse.numTokens + " tokens");
+	}
 
-      obj = evalTokens(interp, parse.tokenList, 0, parse.numTokens);
-      if (!obj.isShared()) {
-	throw new TclRuntimeError(
-	    "parseVar got temporary object from evalTokens");
-      }
-      obj.release();
+	if (parse.numTokens == 1) {
+	    // There isn't a variable name after all: the $ is just a $.
+	    return new ParseResult("$", 1);
+	}
 
-      return new ParseResult(obj, parse.tokenList[0].size);
+	obj = evalTokens(interp, parse.tokenList, 0, parse.numTokens);
+	if (!obj.isShared()) {
+	    throw new TclRuntimeError(
+	        "parseVar got temporary object from evalTokens");
+	}
+	obj.release();
+
+	return new ParseResult(obj, parse.tokenList[0].size);
     } finally {
-      parse.release();  //release parser resources
+	parse.release();  // Release parser resources
     }
 }
 
@@ -1494,22 +1607,22 @@ commandComplete(
     int length)				// Number of bytes in script.
 {
     TclParse parse;
-    String p;
 
     CharPointer src = new CharPointer(string);
-    int end = (src.index + length);
     
     do {
-	parse = parseCommand(null, src.array, src.index, end-src.index, 
+	parse = parseCommand(null, src.array, src.index, length, 
 		null, 0, false);
+
 	src.index = parse.commandStart + parse.commandSize;
-	if (src.index >= end) {
+
+	parse.release(); // Release parser resources
+
+	if (src.index >= length) {
 	    break;
 	}
 	src.index++;
     } while (parse.result == TCL.OK);
-
-    parse.release(); //release parser resources
 
     if (parse.incomplete) {
 	return false;
@@ -1550,7 +1663,7 @@ objCommandComplete(
  * backslash --
  *
  *	Figure out how to handle a backslash sequence.  The index
- *	of the script must be pointing to the first /.
+ *	of the script must be pointing to the first \.
  *
  * Results:
  *	The return value is an instance of BackSlashResult that 
@@ -1607,12 +1720,10 @@ backslash(
 			endIndex - script_index);
 		StrtoulResult res = Util.strtoul(str, 0, 16);
 		if (res.errno == 0) {
-		    /*
-		     * We force res.value to be a 8-bit (ASCII) character
-		     * so that it compatible with Tcl 7.6.
-		     */
+		    // We force res.value to be a 8-bit (ASCII) character
+		    // so that it compatible with Tcl 7.6.
 		    
-		    byte b = (byte)(res.value & 0xff);
+		    byte b = (byte) (res.value & 0xff);
 		    return new BackSlashResult((char)(b), script_index + 
 			    res.index);
 		}
@@ -1658,15 +1769,13 @@ backslash(
 	    c = script_array[script_index];
 	} while ((script_index < endIndex) && 
 		((c == ' ') || (c == '\t')));
-	return new BackSlashResult((char)' ', script_index);
+	return new BackSlashResult((char) ' ', script_index);
     case 0:
-	return new BackSlashResult((char)'\\', script_index+1);
+	return new BackSlashResult((char) '\\', script_index+1);
     default:
 	if ((c >= '0') && (c <= '9')) {
-	    /*
-	     * Convert it to an octal number. This implementation is
-	     * compatible with tcl 7.6 - characters 8 and 9 are allowed.
-	     */
+	    // Convert it to an octal number. This implementation is
+	    // compatible with tcl 7.6 - characters 8 and 9 are allowed.
 	    
 	    result = c - '0';
 	    script_index++;
@@ -1693,12 +1802,10 @@ backslash(
 		script_index++;
 	    }
 	    
-	    /*
-	     * We force result to be a 8-bit (ASCII) character so
-	     * that it compatible with Tcl 7.6.
-	     */
+	    // We force result to be a 8-bit (ASCII) character so
+	    // that it compatible with Tcl 7.6.
 	    
-	    return new BackSlashResult((char)(result & 0xff), script_index);
+	    return new BackSlashResult((char) (result & 0xff), script_index);
 	} else {
 	    return new BackSlashResult(c, script_index+1);
 	}
@@ -1736,27 +1843,25 @@ charType(
     return (typeTable[c]);
 }
 
-/*
- * The following table provides parsing information about each possible
- * character.  
- *
- * The method charType is used to index into the table and return
- * information about its character argument.  The following return
- * values are defined.
- *
- * TYPE_NORMAL -	All characters that don't have special significance
- *			to the Tcl parser.
- * TYPE_SPACE -		The character is a whitespace character other
- *			than newline.
- * TYPE_COMMAND_END -	Character is newline or semicolon.
- * TYPE_SUBS -		Character begins a substitution or has other
- *			special meaning in parseTokens: backslash, dollar
- *			sign, open bracket, or null.
- * TYPE_QUOTE -		Character is a double quote.
- * TYPE_CLOSE_PAREN -	Character is a right parenthesis.
- * TYPE_CLOSE_BRACK -	Character is a right square bracket.
- * TYPE_BRACE -		Character is a curly brace (either left or right).
- */
+// The following table provides parsing information about each possible
+// character.  
+//
+// The method charType is used to index into the table and return
+// information about its character argument.  The following return
+// values are defined.
+//
+// TYPE_NORMAL -	All characters that don't have special significance
+//			to the Tcl parser.
+// TYPE_SPACE -		The character is a whitespace character other
+//			than newline.
+// TYPE_COMMAND_END -	Character is newline or semicolon.
+// TYPE_SUBS -		Character begins a substitution or has other
+//			special meaning in parseTokens: backslash, dollar
+//			sign, open bracket, or null.
+// TYPE_QUOTE -		Character is a double quote.
+// TYPE_CLOSE_PAREN -	Character is a right parenthesis.
+// TYPE_CLOSE_BRACK -	Character is a right square bracket.
+// TYPE_BRACE -		Character is a curly brace (either left or right).
 
 static final char TYPE_NORMAL		= 0;
 static final char TYPE_SPACE		= 0x1;
@@ -1769,9 +1874,7 @@ static final char TYPE_BRACE		= 0x40;
 
 
 static char typeTable[] = {
-    /*
-     * Character values, from 0-127:
-     */
+    // Character values, from 0-127:
 
     TYPE_SUBS,        TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
     TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
@@ -1806,9 +1909,7 @@ static char typeTable[] = {
     TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_BRACE,
     TYPE_NORMAL,      TYPE_BRACE,       TYPE_NORMAL,      TYPE_NORMAL,
 
-    /*
-     * Character values, from 128-255:
-     */
+    // Character values, from 128-255:
 
     TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
     TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
@@ -1844,53 +1945,52 @@ static char typeTable[] = {
     TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
 };
 
-/*
- * Type values defined for TclToken structures.  These values are
- * defined as mask bits so that it's easy to check for collections of
- * types.
- *
- * TCL_TOKEN_WORD -		The token describes one word of a command,
- *				from the first non-blank character of
- *				the word (which may be " or {) up to but
- *				not including the space, semicolon, or
- *				bracket that terminates the word. 
- *				NumComponents counts the total number of
- *				sub-tokens that make up the word.  This
- *				includes, for example, sub-tokens of
- *				TCL_TOKEN_VARIABLE tokens.
- * TCL_TOKEN_SIMPLE_WORD -	This token is just like TCL_TOKEN_WORD
- *				except that the word is guaranteed to
- *				consist of a single TCL_TOKEN_TEXT
- *				sub-token.
- * TCL_TOKEN_TEXT -		The token describes a range of literal
- *				text that is part of a word. 
- *				NumComponents is always 0.
- * TCL_TOKEN_BS -		The token describes a backslash sequence
- *				that must be collapsed.  NumComponents
- *				is always 0.
- * TCL_TOKEN_COMMAND -		The token describes a command whose result
- *				must be substituted into the word.  The
- *				token includes the enclosing brackets. 
- *				NumComponents is always 0.
- * TCL_TOKEN_VARIABLE -		The token describes a variable
- *				substitution, including the dollar sign,
- *				variable name, and array index (if there
- *				is one) up through the right
- *				parentheses.  NumComponents tells how
- *				many additional tokens follow to
- *				represent the variable name.  The first
- *				token will be a TCL_TOKEN_TEXT token
- *				that describes the variable name.  If
- *				the variable is an array reference then
- *				there will be one or more additional
- *				tokens, of type TCL_TOKEN_TEXT,
- *				TCL_TOKEN_BS, TCL_TOKEN_COMMAND, and
- *				TCL_TOKEN_VARIABLE, that describe the
- *				array index; numComponents counts the
- *				total number of nested tokens that make
- *				up the variable reference, including
- *				sub-tokens of TCL_TOKEN_VARIABLE tokens.
- */
+
+// Type values defined for TclToken structures.  These values are
+// defined as mask bits so that it's easy to check for collections of
+// types.
+//
+// TCL_TOKEN_WORD -		The token describes one word of a command,
+//				from the first non-blank character of
+//				the word (which may be " or {) up to but
+//				not including the space, semicolon, or
+//				bracket that terminates the word. 
+//				NumComponents counts the total number of
+//				sub-tokens that make up the word.  This
+//				includes, for example, sub-tokens of
+//				TCL_TOKEN_VARIABLE tokens.
+// TCL_TOKEN_SIMPLE_WORD -	This token is just like TCL_TOKEN_WORD
+//				except that the word is guaranteed to
+//				consist of a single TCL_TOKEN_TEXT
+//				sub-token.
+// TCL_TOKEN_TEXT -		The token describes a range of literal
+//				text that is part of a word. 
+//				NumComponents is always 0.
+// TCL_TOKEN_BS -		The token describes a backslash sequence
+//				that must be collapsed.  NumComponents
+//				is always 0.
+// TCL_TOKEN_COMMAND -		The token describes a command whose result
+//				must be substituted into the word.  The
+//				token includes the enclosing brackets. 
+//				NumComponents is always 0.
+// TCL_TOKEN_VARIABLE -		The token describes a variable
+//				substitution, including the dollar sign,
+//				variable name, and array index (if there
+//				is one) up through the right
+//				parentheses.  NumComponents tells how
+//				many additional tokens follow to
+//				represent the variable name.  The first
+//				token will be a TCL_TOKEN_TEXT token
+//				that describes the variable name.  If
+//				the variable is an array reference then
+//				there will be one or more additional
+//				tokens, of type TCL_TOKEN_TEXT,
+//				TCL_TOKEN_BS, TCL_TOKEN_COMMAND, and
+//				TCL_TOKEN_VARIABLE, that describe the
+//				array index; numComponents counts the
+//				total number of nested tokens that make
+//				up the variable reference, including
+//				sub-tokens of TCL_TOKEN_VARIABLE tokens.
 
 static final int TCL_TOKEN_WORD		= 1;
 static final int TCL_TOKEN_SIMPLE_WORD	= 2;
@@ -1900,75 +2000,65 @@ static final int TCL_TOKEN_COMMAND	= 16;
 static final int TCL_TOKEN_VARIABLE	= 32;
 
 
-/*
- * Note: Most of the variables below will not be used until the
- * Compilier is implemented, but are left for consistency.
- */
+// Note: Most of the variables below will not be used until the
+// Compilier is implemented, but are left for consistency.
 
 
-/*
- * Flag values passed to recordAndEval and/or evalObj.
- * WARNING: these bit choices must not conflict with the bit choices
- * for evalFlag bits in tclInt.h!!
- */
+// Flag values passed to recordAndEval and/or evalObj.
+// WARNING: these bit choices must not conflict with the bit choices
+// for evalFlag bits in tclInt.h!!
 
 static final int TCL_NO_EVAL		= 0x10000;
 static final int TCL_EVAL_GLOBAL	= 0x20000;
 static final int TCL_EVAL_DIRECT	= 0x40000;
 
-/*
- * A structure of the following type is filled in by parseCommand.
- * It describes a single command parsed from an input string.
- */
+// A structure of the following type is filled in by parseCommand.
+// It describes a single command parsed from an input string.
 
-/*
- * evalFlag bits for Interp structures:
- *
- * TCL_BRACKET_TERM	1 means that the current script is terminated by
- *			a close bracket rather than the end of the string.
- * TCL_ALLOW_EXCEPTIONS	1 means it's OK for the script to terminate with
- *			a code other than TCL_OK or TCL_ERROR;  0 means
- *			codes other than these should be turned into errors.
- */
+// evalFlag bits for Interp structures:
+//
+// TCL_BRACKET_TERM	1 means that the current script is terminated by
+//			a close bracket rather than the end of the string.
+// TCL_ALLOW_EXCEPTIONS	1 means it's OK for the script to terminate with
+//			a code other than TCL_OK or TCL_ERROR;  0 means
+//			codes other than these should be turned into errors.
 
 static final int TCL_BRACKET_TERM	  = 1;
 static final int TCL_ALLOW_EXCEPTIONS	  = 4;
 
-/*
- * Flag bits for Interp structures:
- *
- * DELETED:		Non-zero means the interpreter has been deleted:
- *			don't process any more commands for it, and destroy
- *			the structure as soon as all nested invocations of
- *			Tcl_Eval are done.
- * ERR_IN_PROGRESS:	Non-zero means an error unwind is already in
- *			progress. Zero means a command proc has been
- *			invoked since last error occured.
- * ERR_ALREADY_LOGGED:	Non-zero means information has already been logged
- *			in $errorInfo for the current Tcl_Eval instance,
- *			so Tcl_Eval needn't log it (used to implement the
- *			"error message log" command).
- * ERROR_CODE_SET:	Non-zero means that Tcl_SetErrorCode has been
- *			called to record information for the current
- *			error.  Zero means Tcl_Eval must clear the
- *			errorCode variable if an error is returned.
- * EXPR_INITIALIZED:	Non-zero means initialization specific to
- *			expressions has	been carried out.
- * DONT_COMPILE_CMDS_INLINE: Non-zero means that the bytecode compiler
- *			should not compile any commands into an inline
- *			sequence of instructions. This is set 1, for
- *			example, when command traces are requested.
- * RAND_SEED_INITIALIZED: Non-zero means that the randSeed value of the
- *			interp has not be initialized.  This is set 1
- *			when we first use the rand() or srand() functions.
- * SAFE_INTERP:         Non zero means that the current interp is a
- *                      safe interp (ie it has only the safe commands
- *                      installed, less priviledge than a regular interp).
- * USE_EVAL_DIRECT:	Non-zero means don't use the compiler or byte-code
- *			interpreter; instead, have Tcl_EvalObj call
- *			Tcl_EvalDirect.  Used primarily for testing the
- *			new parser.
- */
+// Flag bits for Interp structures:
+//
+// DELETED:		Non-zero means the interpreter has been deleted:
+//			don't process any more commands for it, and destroy
+//			the structure as soon as all nested invocations of
+//			Tcl_Eval are done.
+// ERR_IN_PROGRESS:	Non-zero means an error unwind is already in
+//			progress. Zero means a command proc has been
+//			invoked since last error occured.
+// ERR_ALREADY_LOGGED:	Non-zero means information has already been logged
+//			in $errorInfo for the current Tcl_Eval instance,
+//			so Tcl_Eval needn't log it (used to implement the
+//			"error message log" command).
+// ERROR_CODE_SET:	Non-zero means that Tcl_SetErrorCode has been
+//			called to record information for the current
+//			error.  Zero means Tcl_Eval must clear the
+//			errorCode variable if an error is returned.
+// EXPR_INITIALIZED:	Non-zero means initialization specific to
+//			expressions has	been carried out.
+// DONT_COMPILE_CMDS_INLINE: Non-zero means that the bytecode compiler
+//			should not compile any commands into an inline
+//			sequence of instructions. This is set 1, for
+//			example, when command traces are requested.
+// RAND_SEED_INITIALIZED: Non-zero means that the randSeed value of the
+//			interp has not be initialized.  This is set 1
+//			when we first use the rand() or srand() functions.
+// SAFE_INTERP:         Non zero means that the current interp is a
+//                      safe interp (ie it has only the safe commands
+//                      installed, less priviledge than a regular interp).
+// USE_EVAL_DIRECT:	Non-zero means don't use the compiler or byte-code
+//			interpreter; instead, have Tcl_EvalObj call
+//			Tcl_EvalDirect.  Used primarily for testing the
+//			new parser.
 
 static final int DELETED			   = 1;
 static final int ERR_IN_PROGRESS		   = 2;
@@ -1985,29 +2075,29 @@ static final int USE_EVAL_DIRECT		= 0x100;
 
 
 
-//these are private read only values that are used by the parser
-//class to implement a TclObject[] cache
+// These are private read only values that are used by the parser
+// class to implement a TclObject[] cache
 
-//max size of array to cache (1..N)
+// Max size of array to cache (1..N)
 private static final int OBJV_CACHE_MAX = 10;
 
-//the number of array to cache for each size
-//for example if the number of 3 elements is set to 5
-//an array of 5 TclObject[] objects
-//which will each be 3 elements long
+// The number of array to cache for each size
+// for example if the number of 3 elements is set to 5
+// an array of 5 TclObject[] objects
+// which will each be 3 elements long
 
 private static final int[] OBJV_CACHE_SIZES = {0,4,4,10,4,4,4,4,4,4};
 
-//use test results
-//1 373
-//2 2424
-//3 11889
-//4 840
-//5 1374
-//6 926
-//7 0
-//8 74
-//9 0
+// use test results
+// 1 373
+// 2 2424
+// 3 11889
+// 4 840
+// 5 1374
+// 6 926
+// 7 0
+// 8 74
+// 9 0
 
 
 static void init(Interp interp) {
@@ -2044,12 +2134,12 @@ private static TclObject[] grabObjv(Interp interp, int size) {
   final int OPEN = interp.parserObjvUsed[size];
 
   if (OPEN < OBJV_CACHE_SIZES[size]) {
-    //we found an open cache slot
+    // Found an open cache slot
     //System.out.println("cache hit for objv of size " + size);
     interp.parserObjvUsed[size] += 1;
     return interp.parserObjv[size][OPEN];
   } else {
-    //we did not find a free cache array of this size
+    // Did not find a free cache array of this size
     //System.out.println("cache miss for objv of size " + size);
     return new TclObject[size];
   }
