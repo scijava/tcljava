@@ -24,7 +24,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: TclClassLoader.java,v 1.1 1998/10/14 21:09:15 cvsadmin Exp $
+ * RCS: @(#) $Id: TclClassLoader.java,v 1.2 1998/11/04 22:40:06 hylands Exp $
  */
 
 
@@ -196,7 +196,11 @@ throws
      * Define it (parse the class file)
      */
     
-    result = defineClass(className, classData, 0, classData.length);
+    try {
+        result = defineClass(className, classData, 0, classData.length);
+    } catch (NoClassDefFoundError e) {
+	throw new ClassFormatError();
+    }
     if (result == null) {
 	throw new ClassFormatError();
     }
