@@ -1,5 +1,12 @@
 2001-11-17  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/jacl/tcl/lang/Shell.java (ConsoleThread, putLine,
+	put): Make use of Tcl Channels instead of writing to
+	System.out and System.err directly. This avoids buffering
+	conflicts between the Shell and the Tcl interp.
+
+2001-11-17  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/jacl/tcl/lang/Channel.java (flush): Turn the
 	flush method into a concrete implementation
 	instead of an abstract method.

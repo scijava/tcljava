@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Shell.java,v 1.9 2000/05/22 04:01:42 mo Exp $
+ * RCS: @(#) $Id: Shell.java,v 1.10 2001/11/18 06:29:37 mdejong Exp $
  */
 
 package tcl.lang;
@@ -177,8 +177,8 @@ StringBuffer sbuf;
 
 // Used to for interactive input/output
 
-private PrintStream out;
-private PrintStream err;
+private Channel out;
+private Channel err;
 
 // set to true to get extra debug output
 private static final boolean debug = false;
@@ -238,8 +238,8 @@ ConsoleThread(
     interp = i;
     sbuf = new StringBuffer(100);
 
-    out = System.out;
-    err = System.err;
+    out = TclIO.getStdChannel(StdChannel.STDOUT);
+    err = TclIO.getStdChannel(StdChannel.STDERR);
 }
 
 /*
@@ -574,11 +574,20 @@ private void getLine() {
 
 private void
 putLine(
-    PrintStream stream,		// The stream to print to.
-    String s)			// The string to print.
+    Channel channel,		// The Channel to print to.
+    String s)			// The String to print.
 {
-    stream.println(s);
-    stream.flush();
+    try {
+        channel.write(interp,s);
+        channel.write(interp,"\n");
+        channel.flush(interp);
+    } catch (IOException ex) {
+        System.err.println("IOException in Shell.putLine()");
+        ex.printStackTrace(System.err);
+    } catch (TclException ex) {
+        System.err.println("TclException in Shell.putLine()");
+        ex.printStackTrace(System.err);
+    }
 }
 
 /*
@@ -600,10 +609,18 @@ putLine(
 
 private
 void put(
-    PrintStream stream,		// The stream to print to.
-    String s)			// The string to print.
+    Channel channel,		// The Channel to print to.
+    String s)			// The String to print.
 {
-    stream.print(s);
-    stream.flush();
+    try {
+        channel.write(interp,s);
+        channel.flush(interp);
+    } catch (IOException ex) {
+        System.err.println("IOException in Shell.put()");
+        ex.printStackTrace(System.err);
+    } catch (TclException ex) {
+        System.err.println("TclException in Shell.put()");
+        ex.printStackTrace(System.err);
+    }
 }
 } // end of class ConsoleThread
