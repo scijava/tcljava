@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: FuncSig.java,v 1.2 1999/05/09 21:29:44 dejong Exp $
+ * RCS: @(#) $Id: FuncSig.java,v 1.3 1999/05/09 21:31:40 dejong Exp $
  *
  */
 
@@ -30,16 +30,14 @@ import java.util.*;
 
 class FuncSig extends InternalRep {
 
-/**
- * The class that a method signature is used against. In the case of a
- * static method call by java::call, targetCls is given by the <class>
- * argument to java::call. In the case of an instance method call,
- * targetCls is the class of the instance. targetCls is used to test
- * the validity of a cached FuncSig internal rep for method
- * signatures.
- *
- * targetCls is not used for class signatures.
- */
+// The class that a method signature is used against. In the case of a
+// static method call by java::call, targetCls is given by the <class>
+// argument to java::call. In the case of an instance method call,
+// targetCls is the class of the instance. targetCls is used to test
+// the validity of a cached FuncSig internal rep for method
+// signatures.
+//
+// targetCls is not used for class signatures.
 
 Class targetCls;
 
@@ -424,7 +422,8 @@ matchSignature(
 
     for (i=0; i < argv_count; i++) {
       Class c = argv_classes[i];
-      System.out.print( ((c == null) ? "null" : c.getName()) );
+      System.out.print( ((c == null) ? "null" :
+          JavaInfoCmd.getNameFromClass(c)) );
       System.out.print(" ");
     }
     System.out.println();
@@ -443,9 +442,9 @@ matchSignature(
       System.out.print("match " + i + " is ");
       
       for (j=0; j < match_classes.length; j++) {
-	Class c = match_classes[j];
-	System.out.print( c.getName() );
-	System.out.print(" ");
+          Class c = match_classes[j];
+          System.out.print( JavaInfoCmd.getNameFromClass(c) );
+          System.out.print(" ");
       }
 
       System.out.println();
@@ -547,7 +546,7 @@ matchSignature(
       
       for (j=0; j < argv_count; j++) {
 	Class c = match_classes[j];
-	System.out.print( c.getName() );
+	System.out.print( JavaInfoCmd.getNameFromClass(c) );
 	System.out.print(" ");
       }
 
@@ -680,7 +679,7 @@ matchSignature(
 	  if (classes[j] == null) {
 	    System.out.print("null");
 	  } else {
-	    System.out.print(classes[j].getName());
+	    System.out.print( JavaInfoCmd.getNameFromClass(classes[j]) );
 	  }
 
 	  System.out.print(' ');
@@ -877,7 +876,7 @@ matchSignature(
 	
 	for (j=0; j < argv_count; j++) {
 	  Class c = match_classes[j];
-	  System.out.print( c.getName() );
+	  System.out.print( JavaInfoCmd.getNameFromClass(c) );
 	  System.out.print(" ");
 	}
 	
@@ -989,7 +988,8 @@ matchSignature(
 	  for (j=0; j < argv_count; j++) {
 	    Class c = match_classes[j];
             TclList.append(interp,cur_siglist,
-                TclString.newInstance(c.getName()) );
+                TclString.newInstance(
+	            JavaInfoCmd.getNameFromClass(c)) );
             //System.out.println("appending class name " + c.getName());
 	  }
 
