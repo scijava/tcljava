@@ -2,13 +2,14 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run to configure the
 dnl	Makefile in this directory.
 AC_INIT(../src/tcljava/tcl/lang/InternalRep.java)
-# RCS: @(#) $Id: configure.in,v 1.21 1999/08/31 00:54:37 redman Exp $
+# RCS: @(#) $Id: configure.in,v 1.22 1999/10/21 20:01:41 redman Exp $
 
 
 #--------------------------------------------------------------------
 # 	Version identification info (also set in source files)
 #--------------------------------------------------------------------
 TCLJAVA_VERSION=1.2.5
+TCLJAVA_NODOT_VERSION=`echo $TCLJAVA_VERSION | sed -e 's/\.//g'`
 
 # Convert into full path name
 srcdir=`cd $srcdir ; pwd`
@@ -85,11 +86,11 @@ AC_ARG_WITH(build, [  --with-build=DIR        select which system to build (jacl
 
 if test $TCLJAVA != "NONE"; then
     if test $TCLJAVA != "jacl" && test $TCLJAVA != "tclblend"; then 
-	AC_MSG_ERROR([Cannot build --with-'$TCLJAVA': use 'jacl' or 'tclblend'])
+	AC_MSG_ERROR([Cannot build --with-build-'$TCLJAVA': use 'jacl' or 'tclblend'])
     fi
 fi
 
-#BOTH will automatically be set to true when configuring Jacl and TclBlend
+#BOTH will automatically be set to true when configuring Jacl and Tcl Blend
 BOTH=false
 
 
@@ -267,10 +268,12 @@ echo "JAVA_NAME is $JAVA_NAME" >&5
 
 
 
+#------------------------------------------------------------------
 #
 # Check to make sure we know the names of the .zip or .jar files
 # that need to be included in the CLASSPATH
 #
+#------------------------------------------------------------------
 
 AC_MSG_CHECKING([for zip or jar files to include on CLASSPATH])
 JAVA_CLASSPATH=""
@@ -309,9 +312,12 @@ fi
 
 
 
+#------------------------------------------------------------------
 #
 # Check for the java runtime
 #
+#------------------------------------------------------------------
+
 AC_MSG_CHECKING([for the java runtime])
 case "$JAVA_NAME" in
     jdk) NAME=java ;;
@@ -326,9 +332,12 @@ else
   Cannot find $JAVA_DIR/bin/$NAME.])
 fi
 
+#------------------------------------------------------------------
 #
 # Check for the remote debug java_g runtime
 #
+#------------------------------------------------------------------
+
 AC_MSG_CHECKING([for the java_g runtime])
 case "$JAVA_NAME" in
     jdk) NAME=java_g ;;
@@ -345,9 +354,11 @@ fi
 
 
 
+#------------------------------------------------------------------
 #
 # Check for the javac compiler
 #
+#------------------------------------------------------------------
 
 AC_MSG_CHECKING([for the java compiler])
 case "$JAVA_NAME" in
@@ -367,9 +378,11 @@ fi
 
 
 
+#------------------------------------------------------------------
 #
 # Check that we have the javah .h header generator
 #
+#------------------------------------------------------------------
 
 if test $TCLJAVA = "tclblend" || test $BOTH = "true"; then
 
@@ -390,9 +403,12 @@ fi
 fi
 
 
+#------------------------------------------------------------------
 #
 # Check that we have the jar archive utility
 #
+#------------------------------------------------------------------
+
 AC_MSG_CHECKING([for the java archive program])
 case "$JAVA_NAME" in
     jdk) NAME=jar ;;
@@ -410,34 +426,37 @@ fi
 
 
 
+#------------------------------------------------------------------
 #
 # Check that we have the jdb java debugger program
 # jdb functionality will not be tested by the configure script
 #
+#------------------------------------------------------------------
 
 if test $TCLJAVA = "jacl" || test $BOTH = "true"; then
 
-AC_MSG_CHECKING([for the java debugger program])
-case "$JAVA_NAME" in
-    jdk) NAME=jdb ;;
-    kaffe) NAME=jdb ;;
-esac
-if test -x $JAVA_DIR/bin/$NAME; then
-    JDB=$JAVA_DIR/bin/$NAME
-    echo "Using JDB=$JDB" >&5
-    AC_MSG_RESULT($JDB)
-else
-    AC_MSG_ERROR([
-  Cannot find $JAVA_DIR/bin/$NAME.])
+    AC_MSG_CHECKING([for the java debugger program])
+    case "$JAVA_NAME" in
+        jdk) NAME=jdb ;;
+        kaffe) NAME=jdb ;;
+    esac
+    if test -x $JAVA_DIR/bin/$NAME; then
+        JDB=$JAVA_DIR/bin/$NAME
+        echo "Using JDB=$JDB" >&5
+        AC_MSG_RESULT($JDB)
+    else
+        AC_MSG_ERROR([Cannot find $JAVA_DIR/bin/$NAME.])
+    fi
 fi
 
-fi
 
-
+#------------------------------------------------------------------
 #
 # Look on the path for ddd, if it is not found do nothing
 # ddd functionality will not be tested by the configure script
 #
+#------------------------------------------------------------------
+
 AC_PATH_PROG(TMP_DDD, ddd)
 if test -x "$TMP_DDD"; then
     DDD=$TMP_DDD
@@ -640,6 +659,7 @@ does not exist. You must install the JDK Native Threads Pack to use tclblend.
 See http://www.blackdown.org/java-linux.html.])
             fi
 
+	    # Early Blackdown JDK include dir name was genunix
             if test -d $JAVA_INCLUDE/genunix; then
                 JAVA_ARCH_INCLUDE=$JAVA_INCLUDE/genunix
             else
@@ -964,7 +984,7 @@ if env $JAVAC -d . $srcdir/../src/Test.java 1>&5 2>&5 &&
 
         # -native does not work correctly under JDK 1.1.7 from Blackdown.
         # The problem is related to IO from a shell script.
-	# Currentlywe ignore the JAVA_VERISON FLAG but we really should
+	# Currently we ignore the JAVA_VERISON FLAG but we really should
 	# fix that so that it works for the blackdown port of 1.2. 
         if test "`uname -s`" = "Linux"; then
             JAVA_FLAGS=""
@@ -1109,8 +1129,8 @@ fi
 
 
 #--------------------------------------------------------------------
-#	If the TCLJAVA variable equals tclblend then we need to
-#	grab some variables from the tclConfig.sh
+#	If the TCLJAVA variable equals tclblend or both then we 
+#       need to grab some variables from the tclConfig.sh
 #--------------------------------------------------------------------
 
 if test $TCLJAVA = "tclblend" || test $BOTH = "true"; then
@@ -1293,6 +1313,7 @@ AC_SUBST(JAVA_FLAGS)
 AC_SUBST(JAVA_INCLUDE)
 
 AC_SUBST(TCLJAVA_VERSION)
+AC_SUBST(TCLJAVA_NODOT_VERSION)
 AC_SUBST(TCLJAVA)
 
 if test $TCLJAVA = "jacl"; then 
