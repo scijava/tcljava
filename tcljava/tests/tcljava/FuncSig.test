@@ -5,7 +5,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: FuncSig.test,v 1.11 2002/12/29 02:10:43 mdejong Exp $
+# RCS: @(#) $Id: FuncSig.test,v 1.12 2003/03/18 00:07:29 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -33,16 +33,19 @@ test FuncSig-1.2 {get} {
     jtest type $m
 } tcl.lang.TclList
 
-test FuncSig-1.3 {get, overloaded methods} {
-    set m imethod
-    [java::new tests.JavaTest] $m
-    set k1 [[jtest getobject $m] getInternalRep]
-
-    [java::new tests.JavaTest] $m 123
-    set k2 [[jtest getobject $m] getInternalRep]
-
-    expr {$k1 == $k2}
-} 0
+# This test has been disabled because it tests for
+# a cached internal rep for a method argument. This
+# feature has been disabled in the source.
+#test FuncSig-1.3 {get, overloaded methods} {
+#    set m imethod
+#    [java::new tests.JavaTest] $m
+#    set k1 [[jtest getobject $m] getInternalRep]
+#
+#    [java::new tests.JavaTest] $m 123
+#    set k2 [[jtest getobject $m] getInternalRep]
+#
+#    expr {$k1 == $k2}
+#} 0
 
 test FuncSig-1.4 {get, cache correctness} {
     set c tests.JavaTest

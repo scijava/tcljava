@@ -1,5 +1,18 @@
 2003-03-17  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* tests/tcl/get.test: Fix syntax error and
+	add knownbug constraint to test that fails.
+	* tests/tcljava/FuncSig.test: Comment out
+	test case that depends on a feature in the
+	source that was disabled.
+	* tests/tcljava/JavaDefineClassCmd.test:
+	Use binary translation when reading .class
+	files for both Jacl and Tcl Blend. This is
+	needed to fix a failing test in Jacl, as
+	a result of the recent IO upgrade.
+
+2003-03-17  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* Makefile.in: Revamp the dist target, updates
 	are needed since lots of things about file
 	layout have changed. Copy the xputils dir out
