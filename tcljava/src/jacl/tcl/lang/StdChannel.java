@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: StdChannel.java,v 1.14 2001/11/20 20:32:23 mdejong Exp $
+ * RCS: @(#) $Id: StdChannel.java,v 1.15 2002/01/21 06:34:26 mdejong Exp $
  *
  */
 
@@ -127,10 +127,10 @@ class StdChannel extends Channel {
      * @param s the string to write 
      */
 
-    void write(Interp interp, String s) 
+    void write(Interp interp, TclObject outData) 
             throws IOException, TclException {
 
-        super.write(interp, s);
+        super.write(interp, outData);
 
         // The OutputStreamWriter class will buffer even if you don't
         // wrap it in a BufferedWriter. The stderr file object must

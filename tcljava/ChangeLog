@@ -1,5 +1,29 @@
 2002-01-20  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/jacl/tcl/lang/BgErrorMgr.java (processIdleEvent):
+	Invoke Channel write method that takes a TclObject
+	directly instead of converting an existing TclObject
+	to a String.
+	* src/jacl/tcl/lang/Channel.java (read, write, flush):
+	Modify read and write methods to accept and return
+	TclObjects instead of Strings. This will make it
+	easier to add support for reading and writing of
+	binary data.
+	* src/jacl/tcl/lang/FileChannel.java (read, write, close):
+	Update read and write methods to match superclass signatures.
+	Place superclass close call in a try-finally block so that
+	file is closed if exception is raised in superclass close.
+	* src/jacl/tcl/lang/GetsCmd.java (cmdProc): Update call
+	to channel read method, it now returns a TclObject.
+	* src/jacl/tcl/lang/PutsCmd.java (cmdProc): Update call
+	to channel write method, it now accepts a TclObject.
+	* src/jacl/tcl/lang/ReadCmd.java (cmdProc): Update call
+	to channel read method, it now returns a TclObject.
+	* src/jacl/tcl/lang/StdChannel.java (write):
+	Update read and write methods to match superclass signatures.
+
+2002-01-20  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/jacl/tcl/lang/Channel.java (write, flush):
 	Don't mess with the eof flag while writing or
 	flushing since it only applies to a read operation.

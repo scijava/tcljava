@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: GetsCmd.java,v 1.4 2001/11/20 19:07:30 mdejong Exp $
+ * RCS: @(#) $Id: GetsCmd.java,v 1.5 2002/01/21 06:34:26 mdejong Exp $
  *
  */
 
@@ -53,21 +53,23 @@ class GetsCmd implements Command {
 	}
 
 	try {
-	    String inStr = chan.read(interp, TclIO.READ_LINE, 0);
+	    TclObject inData = chan.read(interp, TclIO.READ_LINE, 0);
+	    String inStr = inData.toString();
  	    if (writeToVar) {
-	        interp.setVar(varName, TclString.newInstance(inStr), 0);
+	        interp.setVar(varName, inData, 0);
 		if (chan.eof()) {
 		    interp.setResult(-1);
 		} else {
 		    interp.setResult(inStr.length());
 		}
 	    } else {
-	        interp.setResult(TclString.newInstance(inStr));
+	        interp.setResult(inData);
 	    }
 	} catch (IOException e) {
+	    //e.printStackTrace(System.err);
 	    throw new TclRuntimeError(
 		    "GetsCmd.cmdProc() Error: IOException when getting " +
-		    chan.getChanName());
+		    chan.getChanName() + ": " + e.getMessage());
 	}
 
     }

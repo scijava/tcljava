@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FileChannel.java,v 1.16 2001/12/25 22:22:19 mdejong Exp $
+ * RCS: @(#) $Id: FileChannel.java,v 1.17 2002/01/21 06:34:26 mdejong Exp $
  *
  */
 
@@ -146,7 +146,7 @@ class FileChannel extends Channel {
      *                correctly tested for.  Most cases should be caught.
      */
 
-    String read(Interp interp, int readType, int numBytes) 
+    TclObject read(Interp interp, int readType, int numBytes) 
             throws IOException, TclException {
 
 	if (file == null) {
@@ -167,13 +167,13 @@ class FileChannel extends Channel {
      * is thrown.
      * 
      * @param interp currrent interpreter.
-     * @param s string of data to write to the file
+     * @param outData the TclObject that holds the data to write.
      * @exception TclException is thrown if read occurs on RDONLY channel.
      * @exception IOException is thrown when an IO error occurs that was not
      *                correctly tested for.  Most cases should be caught.
      */
 
-    void write(Interp interp, String s) 
+    void write(Interp interp, TclObject outData) 
             throws IOException, TclException {
 
         if (file == null) {
@@ -182,7 +182,7 @@ class FileChannel extends Channel {
         }
 
         checkWrite(interp);
-        file.writeBytes(s);
+        file.writeBytes(outData.toString());
     }
 
 
@@ -198,8 +198,11 @@ class FileChannel extends Channel {
         }
 
         // Invoke super.close() first since it might write an eof char
-        super.close();
-        file.close();
+        try {
+            super.close();
+        } finally {
+            file.close();
+        }
     }
 
 

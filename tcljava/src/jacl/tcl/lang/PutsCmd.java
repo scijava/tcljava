@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: PutsCmd.java,v 1.5 2002/01/19 00:11:37 mdejong Exp $
+ * RCS: @(#) $Id: PutsCmd.java,v 1.6 2002/01/21 06:34:26 mdejong Exp $
  *
  */
 
@@ -81,10 +81,10 @@ class PutsCmd implements Command {
 
 	try { 
 	    if (newline) {
-	        chan.write(interp, argv[i].toString());
+	        chan.write(interp, argv[i]);
 	        chan.write(interp, "\n");
 	    } else {
-	        chan.write(interp, argv[i].toString());
+	        chan.write(interp, argv[i]);
 	    }
 	} catch (IOException e) {
 	    throw new TclRuntimeError(

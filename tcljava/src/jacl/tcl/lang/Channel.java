@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Channel.java,v 1.22 2002/01/21 06:09:36 mdejong Exp $
+ * RCS: @(#) $Id: Channel.java,v 1.23 2002/01/21 06:34:26 mdejong Exp $
  */
 
 package tcl.lang;
@@ -114,18 +114,23 @@ abstract class Channel {
     }
 
     /**
+     * Tcl_ReadChars -> read
+     *
      * Read data from the Channel.
      * 
      * @param interp is used for TclExceptions.  
-     * @param readType is used to specify the type of read (line, all, etc).
-     * @param numBytes the number of byte to read (if applicable).
-     * @return String of data that was read from the Channel (can not be null)
+     * @param readType pecifies if the read should read the entire
+     *     buffer (TclIO.READ_ALL), the next line (TclIO.READ_LINE),
+     *     of a specified number of bytes (TclIO.READ_N_BYTES).
+     * @param numBytes the number of bytes/chars to read. Used only when
+     *     the readType is TclIO.READ_N_BYTES.
+     * @return TclObject that holds the read in data.
      * @exception TclException is thrown if read occurs on WRONLY channel.
      * @exception IOException is thrown when an IO error occurs that was not
      *                correctly tested for.  Most cases should be caught.
      */
 
-    String read(Interp interp, int readType, int numBytes) 
+    TclObject read(Interp interp, int readType, int numBytes) 
             throws IOException, TclException {
 
         checkRead(interp);
@@ -142,18 +147,18 @@ abstract class Channel {
                     sbuf.append(charArr,0, numRead);
                 }
                 eofCond = true;
-                return sbuf.toString();
+                return TclString.newInstance(sbuf);
             }
             case TclIO.READ_LINE: {
                 String line = reader.readLine();
                 if (line == null) {
                     eofCond = true;
-                    return "";
+                    return TclString.newInstance("");
                 } else {
                     // FIXME: Is it possible to check for EOF using
                     // reader.ready() when a whole line is returned
                     // but we ran into an EOF (no newline termination)?
-                    return line;
+                    return TclString.newInstance(line);
                 }
             }
             case TclIO.READ_N_BYTES: {
@@ -161,9 +166,9 @@ abstract class Channel {
                 int numRead = reader.read(charArr, 0, numBytes);
                 if (numRead == -1) {
                     eofCond = true;
-                    return "";
+                    return TclString.newInstance("");
                 }
-                return new String(charArr,0,numRead);
+                return TclString.newInstance(new String(charArr,0,numRead));
             }
             default : {
                 throw new TclRuntimeError(
@@ -172,21 +177,38 @@ abstract class Channel {
         }
     }
 
-    /** 
+    /**
+     * Tcl_WriteObj -> write
+     *
      * Write data to the Channel
      * 
      * @param interp is used for TclExceptions.  
-     * @param outStr the string to write to the sub-classed channel.
+     * @param outData the TclObject that holds the data to write.
      */
 
-    void write(Interp interp, String outStr)
+    void write(Interp interp, TclObject outData)
 	    throws IOException, TclException {
 
         checkWrite(interp);
 
         if (writer != null) {
+            String outStr = outData.toString();
             writer.write(outStr);
         }
+    }
+
+    /** 
+     * Tcl_WriteChars -> write
+     *
+     * Write string data to the Channel.
+     * 
+     * @param interp is used for TclExceptions.  
+     * @param outStr the String object to write.
+     */
+
+    void write(Interp interp, String outStr)
+            throws IOException, TclException {
+        write(interp, TclString.newInstance(outStr));
     }
 
     /** 

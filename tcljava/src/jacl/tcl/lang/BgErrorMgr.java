@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: BgErrorMgr.java,v 1.5 2000/08/20 06:08:42 mo Exp $
+ * RCS: @(#) $Id: BgErrorMgr.java,v 1.6 2002/01/21 06:34:26 mdejong Exp $
  *
  */
 
@@ -278,16 +278,16 @@ processIdleEvent()
 		Channel chan = TclIO.getStdChannel(StdChannel.STDERR);
 		if (interp.getResult().toString().equals(
         "\"bgerror\" is an invalid command name or ambiguous abbreviation")) {
-		    chan.write(interp, errorInfo.toString());
+		    chan.write(interp, errorInfo);
 		    chan.write(interp, "\n");
                 } else {
 		    chan.write(interp,
                             "bgerror failed to handle background error.\n");
                     chan.write(interp, "    Original error: ");
-                    chan.write(interp, errorMsg.toString());
+                    chan.write(interp, errorMsg);
                     chan.write(interp, "\n");
                     chan.write(interp, "    Error in bgerror: ");
-                    chan.write(interp, interp.getResult().toString());
+                    chan.write(interp, interp.getResult());
                     chan.write(interp, "\n");
                 }
                 chan.flush(interp);

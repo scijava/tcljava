@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ReadCmd.java,v 1.6 2001/11/20 19:12:15 mdejong Exp $
+ * RCS: @(#) $Id: ReadCmd.java,v 1.7 2002/01/21 06:34:26 mdejong Exp $
  *
  */
 
@@ -80,24 +80,27 @@ class ReadCmd implements Command {
 	    }
 	}
 
-	try { 
-	    String inStr;
+	try {
+	    TclObject inData;
 	    if (readAll) {
-	        inStr = chan.read(interp, TclIO.READ_ALL, 0);
+	        inData = chan.read(interp, TclIO.READ_ALL, 0);
 
-		// If -nonewline was specified, the inStr is not "" and
-		// the last char is a "\n", then remove it and return.
+	        // If -nonewline was specified, and we have not hit EOF
+	        // and the last char is a "\n", then remove it and return.
 
-		if ((noNewline) && (inStr.length() != 0) &&
-		        (inStr.charAt(inStr.length() - 1)) == '\n') {
-		    interp.setResult(inStr.substring(0, (inStr.length() - 2)));
-		    return;
-		}
+	        if (noNewline && !chan.eof()) {
+	            String inStr = inData.toString();
+	            if (inStr.charAt(inStr.length() - 1) == '\n') {
+	                interp.setResult(
+                            inStr.substring(0, (inStr.length() - 2)));
+	                return;
+	            }
+	        }
 	    } else {
-	        inStr = chan.read(interp, TclIO.READ_N_BYTES, numBytes);
+	        inData = chan.read(interp, TclIO.READ_N_BYTES, numBytes);
 	    }
 
-	    interp.setResult(inStr);
+	    interp.setResult(inData);
 
 	} catch (IOException e) {
 	    throw new TclRuntimeError(
