@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Parser.java,v 1.6 1999/07/21 04:22:02 mo Exp $
+ * RCS: @(#) $Id: Parser.java,v 1.7 1999/08/03 02:33:08 mo Exp $
  */
 
 package tcl.lang;
@@ -804,8 +804,6 @@ throws
 	interp.cmdCount++;
 	savedVarFrame = interp.varFrame;
 	if ((flags & TCL_EVAL_GLOBAL) != 0) {
-	    // FIXME : double check this change
-	    //interp.varFrame = interp.globalFrame;
 	    interp.varFrame = null;
 	}
 	
@@ -1144,8 +1142,6 @@ throws
     interp.resetResult();
     savedVarFrame = interp.varFrame;
     if ((flags & TCL_EVAL_GLOBAL) != 0) {
-	// FIXME : double check this change
-	//interp.varFrame = interp.globalFrame;
 	interp.varFrame = null;
     }
 
