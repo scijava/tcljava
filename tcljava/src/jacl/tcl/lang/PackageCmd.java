@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: PackageCmd.java,v 1.1 1998/10/14 21:09:18 cvsadmin Exp $
+ * RCS: @(#) $Id: PackageCmd.java,v 1.2 1999/05/09 00:48:24 dejong Exp $
  */
 
 package tcl.lang;
@@ -72,9 +72,7 @@ throws
 {
     Package pkg;
 
-    /* 
-     * Validate the version string that was passed in.
-     */
+    // Validate the version string that was passed in.
 
     checkVersion(interp, version);
     pkg = findPackage(interp, pkgName);
@@ -137,33 +135,27 @@ throws
     String script;
     StringBuffer sbuf;
     int pass, result;
-  
-    /*
-     * Do extra check to make sure that version is not
-     * null when the exact flag is set to true.
-     */
+
+    // Do extra check to make sure that version is not
+    // null when the exact flag is set to true.
 
     if (version == null && exact) {
 	throw new TclException(interp,
 		"conflicting arguments : version == null and exact == true");
     }
 
-    /*
-     * Before we can compare versions the version string
-     * must be verified but if it is null we are just looking
-     * for the latest version so skip the check in this case.
-     */
+    // Before we can compare versions the version string
+    // must be verified but if it is null we are just looking
+    // for the latest version so skip the check in this case.
 
     if (version != null) {
 	checkVersion(interp, version);
     }
 
-    /*
-     * It can take up to three passes to find the package:  one pass to
-     * run the "package unknown" script, one to run the "package ifneeded"
-     * script for a specific version, and a final pass to lookup the
-     * package loaded by the "package ifneeded" script.
-     */
+    // It can take up to three passes to find the package:  one pass to
+    // run the "package unknown" script, one to run the "package ifneeded"
+    // script for a specific version, and a final pass to lookup the
+    // package loaded by the "package ifneeded" script.
   
     vsres = new VersionSatisfiesResult();
     for (pass = 1; ; pass++) {
@@ -172,10 +164,8 @@ throws
 	    break;
 	}
 
-	/*
-	 * The package isn't yet present.  Search the list of available
-	 * versions and invoke the script for the best available version.
-	 */
+	// The package isn't yet present.  Search the list of available
+	// versions and invoke the script for the best available version.
     
 	best = null;
 	for (avail = pkg.avail; avail != null; avail = avail.next) {
@@ -195,22 +185,18 @@ throws
 	    best = avail;
 	}
 	if (best != null) {
-	    /*
-	     * We found an ifneeded script for the package.  Be careful while
-	     * executing it:  this could cause reentrancy, so (a) protect the
-	     * script itself from deletion and (b) don't assume that best
-	     * will still exist when the script completes.
-	     */
+	    // We found an ifneeded script for the package.  Be careful while
+	    // executing it:  this could cause reentrancy, so (a) protect the
+	    // script itself from deletion and (b) don't assume that best
+	    // will still exist when the script completes.
       
 	    script = best.script;
 	    try {
 		interp.eval(script, TCL.GLOBAL_ONLY);
 	    } catch (TclException e) {
 		interp.addErrorInfo("\n    (\"package ifneeded\" script)");
-	
-		/* 
-		 * Throw the error with new info added to errorInfo.
-		 */
+
+		// Throw the error with new info added to errorInfo.
 		
 		throw e;
 	    }
@@ -218,12 +204,10 @@ throws
 	    pkg = findPackage(interp, pkgName);
 	    break;
 	}
-    
-	/*
-	 * Package not in the database.  If there is a "package unknown"
-	 * command, invoke it (but only on the first pass;  after that,
-	 * we should not get here in the first place).
-	 */
+
+	// Package not in the database.  If there is a "package unknown"
+	// command, invoke it (but only on the first pass;  after that,
+	// we should not get here in the first place).
     
 	if (pass > 1) {
 	    break;
@@ -250,9 +234,7 @@ throws
 	    } catch (TclException e) {
 		interp.addErrorInfo("\n    (\"package unknown\" script)");
 	
-		/* 
-		 * Throw the first exception.
-		 */
+		// Throw the first exception.
 
 		throw e;
 	    }
@@ -268,10 +250,8 @@ throws
 	throw new TclException(interp, sbuf.toString());
     }
   
-    /*
-     * At this point we know that the package is present.  Make sure that the
-     * provided version meets the current requirement.
-     */
+    // At this point we know that the package is present.  Make sure that the
+    // provided version meets the current requirement.
   
     if (version == null) {
 	return pkg.version;
@@ -282,9 +262,7 @@ throws
 	return pkg.version;
     }
 
-    /* 
-     * If we have a version conflict we throw a TclException.
-     */
+    // If we have a version conflict we throw a TclException.
     
     throw new TclException(interp, "version conflict for package \"" + pkgName
 	    + "\": have " + pkg.version + ", need " + version);
@@ -331,23 +309,17 @@ throws
     opt = TclIndex.get(interp, argv[1], validCmds, "option", 0);
     switch (opt) {
     case OPT_FORGET: {
-	/*
-	 * Forget takes 0 or more arguments.
-	 */
+	// Forget takes 0 or more arguments.
 	
 	for (i = 2; i < argv.length ; i++) {
-	    /*
-	     * We do not need to check to make sure
-	     * package name is "" because it would not
-	     * be in the hash table so name will be ignored.
-	     */
+	    // We do not need to check to make sure
+	    // package name is "" because it would not
+	    // be in the hash table so name will be ignored.
 
 	    pkgName = argv[i].toString();
-	    pkg = (Package)interp.packageTable.get(pkgName);
+	    pkg = (Package) interp.packageTable.get(pkgName);
 	  
-	    /*
-	     * If this package does not exist, go to next one.
-	     */
+	    // If this package does not exist, go to next one.
 
 	    if (pkg == null) {
 		continue;
@@ -370,9 +342,7 @@ throws
 	pkgName = argv[2].toString();
 	version = argv[3].toString(); 
 	
-	/*
-	 * Verify that this version string is valid.
-	 */
+	// Verify that this version string is valid.
 
 	checkVersion(interp, version);
 	if (argv.length == 4) {
@@ -387,25 +357,19 @@ throws
 	         prev = avail, avail = avail.next) { 	  
 	    if (compareVersions(avail.version, version, null) == 0) {
 		if (argv.length == 4) {
-		    /*
-		     * If doing a query return current script.
-		     */
+		    // If doing a query return current script.
 
 		    interp.setResult(avail.script);
 		    return;
 		}
-	    
-		/* 
-		 * We matched so we must be setting the script.
-		 */
+
+		// We matched so we must be setting the script.
 
 		break;
 	    }
 	}
-	
-	/*
-	 * When we do not match on a query return nothing.
-	 */
+
+	// When we do not match on a query return nothing.
 
 	if (argv.length == 4) {
 	    return;
@@ -594,9 +558,7 @@ throws
 {
     Package pkg;
 
-    /*
-     * check package name to make sure it is not null or "".
-     */
+    // check package name to make sure it is not null or "".
 
     if (pkgName == null || pkgName.length() == 0) {
 	throw new TclException(interp, 
@@ -605,9 +567,7 @@ throws
 
     pkg = (Package) interp.packageTable.get(pkgName);
     if (pkg == null) {
-	/*
-	 * We should add a package with this name.
-	 */
+	// We should add a package with this name.
     
 	pkg = new Package();
 	interp.packageTable.put(pkgName, pkg);
@@ -709,17 +669,14 @@ compareVersions(
     String[] v1ns;
     String[] v2ns;
 
-    /*
-     * Each iteration of the following loop processes one number from
-     * each string, terminated by a ".".  If those numbers don't match
-     * then the comparison is over;  otherwise, we loop back for the
-     * next number.
-     */
+    // Each iteration of the following loop processes one number from
+    // each string, terminated by a ".".  If those numbers don't match
+    // then the comparison is over;  otherwise, we loop back for the
+    // next number.
 
-    /*
-     * These should never happen because null strings would not
-     * have gotten past the version verify.
-     */
+
+    // This should never happen because null strings would not
+    // have gotten past the version verify.
 
     if ((v1 == null) || (v2 == null)) {
 	throw new TclRuntimeError("null version in package version compare");
@@ -727,10 +684,8 @@ compareVersions(
     v1ns = split(v1, '.');
     v2ns = split(v2, '.');
 
-    /*
-     * We are sure there is at least one string in each array so 
-     * this should never happen.
-     */
+    // We are sure there is at least one string in each array so 
+    // this should never happen.
 
     if (v1ns.length == 0 || v2ns.length == 0) {
 	throw new TclRuntimeError("version length is 0");
@@ -744,10 +699,8 @@ compareVersions(
     for (i=0; i < max ; i++) {
 	n1 = n2 = 0;
 
-	/* 
-	 * Grab number from each version ident if version spec
-	 * ends the use a 0 as value.
-	 */ 
+	// Grab number from each version ident if version spec
+	// ends the use a 0 as value.
 
 	try {
 	    if (i < v1ns.length) {
@@ -762,10 +715,8 @@ compareVersions(
 		    + "\" or \"" + v2 + "\"");
 	}
 
-	/*
-	 * Compare and go on to the next version number if the
-	 * current numbers match.
-	 */
+	// Compare and go on to the next version number if the
+	// current numbers match.
 
 	if (n1 != n2) {
 	    break;
@@ -813,10 +764,8 @@ split(
     char[] str;
     int wordstart = 0;
     
-    /*
-     * Create an array that is as big as the input
-     * str plus one for an extra split char.
-     */
+    // Create an array that is as big as the input
+    // str plus one for an extra split char.
   
     len = in.length();
     str = new char[len + 1];
@@ -826,11 +775,9 @@ split(
     
     for (i=0; i < len; i++) {
 			
-	/*
-	 * Compare this char to the split char
-	 * if they are the same the we need to
-	 * add the last word to the array.
-	 */
+	// Compare this char to the split char
+	// if they are the same the we need to
+	// add the last word to the array.
     
 	if (str[i] == splitchar) {
 	    if (wordstart <= (i - 1)) {
@@ -840,10 +787,8 @@ split(
 	}
     }
 
-    /*
-     * Create an array that is as big as the number
-     * of elements in the vector, copy over and return.
-     */
+    // Create an array that is as big as the number
+    // of elements in the vector, copy over and return.
 
     ret = new String[words.size()];
     words.copyInto(ret);
@@ -857,46 +802,38 @@ split(
 
 
 
-/*
- * if compare versions is called with a third argument then one of
- * these structures needs to be created and passed in
- */
+// If compare versions is called with a third argument then one of
+// these structures needs to be created and passed in
+
 
 static class VersionSatisfiesResult {
-boolean satisfies = false;
+    boolean satisfies = false;
 }
 
-/*
- * Each invocation of the "package ifneeded" command creates a class
- * of the following type, which is used to load the package into the
- * interpreter if it is requested with a "package require" command.
- */
+// Each invocation of the "package ifneeded" command creates a class
+// of the following type, which is used to load the package into the
+// interpreter if it is requested with a "package require" command.
 
 static class PkgAvail {
-String version = null;	/* Version string. */
-String script = null;	/* Script to invoke to provide this version
-			 * of the package. */
-PkgAvail next = null;       /* Next in list of available versions of
-			     * the same package. */
+    String version = null;	// Version string.
+    String script = null;	// Script to invoke to provide this package version
+    PkgAvail next = null;       // Next in list of available package versions
 }
 
 
 
-/*
- * For each package that is known in any way to an interpreter, there
- * is one record of the following type.  These records are stored in
- * the "packageTable" hash table in the interpreter, keyed by
- * package name such as "Tk" (no version number).
- */
+// For each package that is known in any way to an interpreter, there
+// is one record of the following type.  These records are stored in
+// the "packageTable" hash table in the interpreter, keyed by
+// package name such as "Tk" (no version number).
 
 static class Package {
-String version = null;	 /* Version that has been supplied in this
-			  * interpreter via "package provide"
-			  * null means the package doesn't
-			  * exist in this interpreter yet. */
+    String version = null;	 // Version that has been supplied in this
+                                 // interpreter via "package provide"
+                                 // null means the package doesn't
+                                 // exist in this interpreter yet.
 
-PkgAvail avail = null;	/* First in list of all available versions
-			 * of this package. */
+    PkgAvail avail = null;	// First in list of all available package versions
 }
 
 
