@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: FuncSig.java,v 1.1 1998/10/14 21:09:14 cvsadmin Exp $
+ * RCS: @(#) $Id: FuncSig.java,v 1.2 1999/05/09 21:29:44 dejong Exp $
  *
  */
 
@@ -20,7 +20,7 @@ import tcl.lang.reflect.*;
 import java.lang.reflect.*;
 import java.util.*;
 
-/*
+/**
  * This class implements the internal representation of a Java method
  * or constructor signature. Because methods and constructors are very
  * similar to each other, the operations on method signatures and
@@ -30,7 +30,7 @@ import java.util.*;
 
 class FuncSig extends InternalRep {
 
-/*
+/**
  * The class that a method signature is used against. In the case of a
  * static method call by java::call, targetCls is given by the <class>
  * argument to java::call. In the case of an instance method call,
@@ -43,44 +43,38 @@ class FuncSig extends InternalRep {
 
 Class targetCls;
 
-/*
- * The PkgInvoker used to access the constructor or method.
- */
+// The PkgInvoker used to access the constructor or method.
 
 PkgInvoker pkgInvoker;
 
-/*
- * The constructor or method given by the field signature. You need to
- * apply the instanceof operator to determine whether it's a
- * Constructor or a Method.
- *
- * func may be a public, protected, package protected or private
- * member of the given class. Attempts to access func is subject to
- * the Java language access control rules. Public members can always
- * be accessed. Protected and package protected members can be
- * accessed only if a proper TclPkgInvoker class exists. Private
- * members can never be accessed.
- *
- * If the signature is a method signature and the specified method has
- * been overloaded, then func will point to the "most public" instance
- * of that method. The order of public-ness is ranked as the following
- * (a larger number means more public):
- *
- * RANK		     METHOD ACCESS TYPE      CLASS ACCESS TYPE	
- *   0			private			any
- *   1			package protected	protected
- *   1			protected		protected
- *   1			public			protected
- *   1			package protected	public
- *   1			protected		public
- *   2			public			public
- */
+// The constructor or method given by the field signature. You need to
+// apply the instanceof operator to determine whether it's a
+// Constructor or a Method.
+//
+// func may be a public, protected, package protected or private
+// member of the given class. Attempts to access func is subject to
+// the Java language access control rules. Public members can always
+// be accessed. Protected and package protected members can be
+// accessed only if a proper TclPkgInvoker class exists. Private
+// members can never be accessed.
+//
+// If the signature is a method signature and the specified method has
+// been overloaded, then func will point to the "most public" instance
+// of that method. The order of public-ness is ranked as the following
+// (a larger number means more public):
+//
+// RANK		     METHOD ACCESS TYPE      CLASS ACCESS TYPE	
+//   0			private			any
+//   1			package protected	protected
+//   1			protected		protected
+//   1			public			protected
+//   1			package protected	public
+//   1			protected		public
+//   2			public			public
 
 Object func;
 
-/*
- * Stores all of the declared methods of each Java class.
- */
+// Stores all of the declared methods of each Java class.
 
 static Hashtable allDeclMethTable = new Hashtable();
 
@@ -164,9 +158,13 @@ throws
 {
     boolean isConstructor = (cls == null);
 
-    /* FIXME: we comment out this code because it causes
+    /* FIXME: commented out Method caching system
+     * we comment out this code because it causes
      * the AmbiguousSignature-2.1 test to fail under Tcl Blend.
-     * We need to implement a new signature cache system to fix this.
+     * a new caching system might help but it is unclear if
+     * determining a cache "match" is any less work then just searching.
+
+
     InternalRep rep = signature.getInternalRep();
 
     // If a valid FuncSig internal rep is already cached, return it
@@ -191,13 +189,13 @@ throws
     }
     */
 
+
     // Look up the constructor or method using the string rep of the
     // signature object.
 
     Object match;
     int sigLength = TclList.getLength(interp, signature);
     String methodName = null;
-    boolean foundSameName = false;
 
     if (sigLength == 0) {
 	throw new TclException(interp, "bad signature \"" + signature + "\"");
@@ -211,16 +209,14 @@ throws
     }
 
     if ((sigLength > 1) || (sigLength == 1 && count == 0)) {
-	/*
-	 * We come to here if one of the following two cases in true:
-	 *
-	 *     [1] (sigLength > 1): A signature has been given.
-	 *     [2] (sigLength == 1 && count == 0): A signature of no
-	 *         parameters is implied.
-	 *
-	 * In both cases, we search for a method that matches exactly
-	 * with the signature.
-	 */
+	// We come to here if one of the following two cases in true:
+	//
+	//     [1] (sigLength > 1): A signature has been given.
+	//     [2] (sigLength == 1 && count == 0): A signature of no
+	//         parameters is implied.
+	//
+	// In both cases, we search for a method that matches exactly
+	// with the signature.
 
 	int sigNumArgs = sigLength - 1;
 	Class[] paramTypes = new Class[sigNumArgs];
@@ -263,19 +259,17 @@ throws
 
 
 
-//lookupMethod attempts to find an Exact for the method name
-//mand method arguments (Class objects) given
-
-//it will raise a TclException if a matching Method can not be found
-
+// lookupMethod attempts to find an exact match for the method name
+// based on the typs (Java Class objects) of the arguments to the
+// method. If an exact match can not be found it will raise a TclException.
 
 static Method
 lookupMethod(
-    Interp interp,           //the tcl interpreter
-    Class cls,               //the Java objects class
-    String methodName,       //name of method
-    Class[] paramTypes,      //the Class object arguments
-    TclObject  signature     //used for error reporting
+    Interp interp,           // the tcl interpreter
+    Class cls,               // the Java objects class
+    String methodName,       // name of method
+    Class[] paramTypes,      // the Class object arguments
+    TclObject  signature     // used for error reporting
 )
     throws TclException
 {
@@ -283,7 +277,10 @@ lookupMethod(
   boolean foundSameName = false;
 
 
-//the search through ALL the methods is really slow
+  // FIXME : searching Java methods for method name match
+  // searching through ALL the methods is really slow
+  // there really should be a better way to do this
+  // as it needs to be done on every method invocation
 
   for (int i = 0; i < methods.length; i++) {
     if (! methodName.equals(methods[i].getName())) {
@@ -330,23 +327,23 @@ lookupMethod(
 
 
 
-//this method will attempt to find a match for a signature
-//if an exact match can not be found then it will use
-//the types of the argument objects to "guess" what
-//method was intended by the user
-//if match is not found it will raise a TclException
+// This method will attempt to find a match for a signature
+// if an exact match can not be found then it will use
+// the types of the argument objects to "guess" what
+// method was intended by the user. If not match can be
+// found after "guessing" then a TclException will be raised.
 
 
 static Object
 matchSignature(
-    Interp interp,           //the tcl interpreter
-    Class cls,               //the Java objects class
-    TclObject  signature,    //used for error reporting
-    String methodName,       //name of method, can be null
-    boolean isConstructor,   //duh
-    TclObject[] argv,        //argument to Method or Constructor
+    Interp interp,           // the tcl interpreter
+    Class cls,               // the Java objects class
+    TclObject  signature,    // used for error reporting
+    String methodName,       // name of method, can be null
+    boolean isConstructor,   // duh
+    TclObject[] argv,        // arguments to Method or Constructor
     int startIdx,	     // Index of the first argument in argv    
-    int argv_count
+    int argv_count           // set to -1 if JFK was killed by the FBI
 )
     throws TclException
 {
@@ -354,6 +351,8 @@ matchSignature(
   boolean foundSameName = false;
   Vector match_vector = new Vector();
   int i,j;
+
+  final boolean debug = false;  
 
   if (isConstructor) {
     funcs = cls.getDeclaredConstructors();
@@ -381,10 +380,12 @@ matchSignature(
   }  
 
 
-
-  //return now if we have a single match
+  // If there is only a single remaining match then we can return it now
 
   if (match_vector.size() == 1) {
+     // debug print the single match
+     //System.out.println("single match : " + match_vector.elementAt(0));
+
     return match_vector.elementAt(0);
   } else if (match_vector.size() > 1) {
     
@@ -392,24 +393,30 @@ matchSignature(
     Class[] match_classes;
     
     
-    //get the object types for the method arguments in argv
+    // get the object types for the method arguments in argv
     for (i=0; i < argv_count; i++) {
       TclObject tobj = argv[startIdx + i];
-      InternalRep ir = tobj.getInternalRep();
-      
-      if (ir instanceof ReflectObject) {
-	argv_classes[i] = ReflectObject.getClass(interp, argv[startIdx + i]);
+
+      boolean isJavaObj = true;
+      Class c = null;
+      try {
+          c = ReflectObject.getClass(interp, tobj);
+      } catch (TclException e) {
+          isJavaObj = false;
       }
-      else {
-//should this use internal rep for conversion??
+
+      if (isJavaObj) {
+	argv_classes[i] = c;
+      } else {
 	argv_classes[i] = String.class;
       }      
     }
 
 
-    /*
 
-    //debug print argv types
+
+    if (debug) {
+    // debug print argv types
     
     System.out.println("multiple matches for method " + methodName);
     
@@ -417,13 +424,13 @@ matchSignature(
 
     for (i=0; i < argv_count; i++) {
       Class c = argv_classes[i];
-      System.out.print( c.getName() );
+      System.out.print( ((c == null) ? "null" : c.getName()) );
       System.out.print(" ");
     }
     System.out.println();
 
 
-    //debug print match types
+    // debug print possible match types
 
     for (i=0; i < match_vector.size(); i++) {
 
@@ -443,13 +450,12 @@ matchSignature(
 
       System.out.println();
     }
-
-    */
-
+    } // end if (debug)
 
 
-    //try to match the argument types and the match
-    //types exactly by comparing Class objects
+
+    // try to match the argument types and the
+    // match types exactly by comparing Class objects
     
     for (i=0; i < match_vector.size(); i++) {
 
@@ -468,7 +474,9 @@ matchSignature(
       }
 
       if (exact) {
-	//System.out.println("exact match at " + i);
+        if (debug) {
+	System.out.println("exact match at " + i);
+        } // end if (debug)
 	return match_vector.elementAt(i);
       }
     }
@@ -476,8 +484,13 @@ matchSignature(
 
 
 
-    //loop from the end of the Vector to the begining and
-    //remove those signatures that are not assignable
+    // loop from the end of the Vector to the begining and
+    // remove those signatures that are not assignable
+    // take special care not to remove signatures that
+    // have an object decended from java.lang.Object
+    // in the same position as a null Class in argv_classes.
+    // This means a null argument will not match a built in type.
+    
 
     for (i = match_vector.size()-1; i >= 0 ; i--) {
       
@@ -487,27 +500,36 @@ matchSignature(
 	match_classes = ((Method) match_vector.elementAt(i)).getParameterTypes();
       }
 
-      //test for assignability if the item is not an exact match
+      // Test for assignability.  A primitive type can not be passed a null
+      // argument so we check for that case first. If the argument is
+      // null we do not throw out a non primitive argument as any Class
+      // could be assigned the null object. Then we check for assignability
+      // of the Class object itself and throw out any that do not jive.
 
-      boolean match = true;
       for (j=0; j < argv_count; j++) {
-	if (match_classes[j] != argv_classes[j] &&
-	    !match_classes[j].isAssignableFrom(argv_classes[j])) {
+	if ((match_classes[j].isPrimitive() && argv_classes[j] == null) ||
+            (argv_classes[j] != null &&
+            match_classes[j] != argv_classes[j] &&
+	    !match_classes[j].isAssignableFrom(argv_classes[j]))) {
 	  
-	  //if this argument is totally incompatible with the signature
-	  //then remove this signature from the possible matches
+	  // if this argument is totally incompatible with the signature
+	  // then remove this signature from the possible matches
 	  
+          if (debug) {
+          System.out.println("removing non assignable match " + i);
+          } // end if (debug)
+
 	  match_vector.removeElementAt(i);
-	  break;
+	  break; // go on to next Method
 	}
       }
 
     }
 
 
-    /*
 
-    //debug print match_vector
+    if (debug) {
+    // debug print match_vector after isAssignabelFrom test
 
     if (match_vector.size() > 0) {
       System.out.println("isAssignableFrom() matches");
@@ -531,12 +553,10 @@ matchSignature(
 
       System.out.println();
     }
-
-    */
-
+    } // end if (debug)
 
 
-    //if we have filtered the methods down to a single method return it
+    // If there is only a single remaining match then we can return it now
 
     if (match_vector.size() == 1) {
       return match_vector.elementAt(0);
@@ -545,70 +565,84 @@ matchSignature(
   
 
 
-    //at this point match_vector should have only those signatures
-    //that can take the argument types from argv with widining conversion
+    // at this point match_vector should have only those signatures
+    // that can take the argument types from argv with widining conversion
     
-    //to figure out which method we should call we need to determine
-    //which signatures are "better" then others where "better" is defined
-    //as the shortest number of steps up the inheritance tree
+    // to figure out which method we should call we need to determine
+    // which signatures are "better" then others where "better" is defined
+    // as the shortest number of steps up the inheritance or interface tree
     
     if (match_vector.size() > 1) {
     
-      //the first thing we need to do is get the inheritance info
-      //from the Java classes of the arguments to the method.
-      //from this we will create an array of Class objects that
-      //we will then use to match againsts the possible Method
-      //objects that we could invoke with this class name
+      // the first thing we need to do is get the inheritance info
+      // of the arguments to the method. From this we will create
+      // an array of Class objects used to match against the possible
+      // Method objects that we could invoke with this class name
 
-      //as an example if we invoked a Method that took one
-      //String argument this argv_classes_lookup array would
-      //end up as a 1 x 4 array with this array as index 0
-      //the Class objects representing these objects
-      //and including any interface Class objects
+      // as an example if we invoked a Method that took one
+      // String argument then the argv_classes_lookup array would
+      // end up as a 1 x 4 array with the java.lang.Class object
+      // of the argument at [0,0] in the array. The inheritance
+      // tree of the object would be represented by the [0,X]
+      // members of the array (X depends on number of parents)
+      // Class objects and Interface objects are stored and
+      // null is used to keep track of the end of each Class
 
-      // {String,Serializable,null,Object}
-
+      // Example argument : {String}
+      // Example array : {String,Serializable,null,Object}
+      // Example info : String implements 1 interface = Serializable
+      // Example info : String has 1 parent = Object
 
       Class[][] argv_classes_lookup = new Class[argv_count][];
       
 
-      //we use a vector to store up all of the Class objects
-      //that make up the inheritance tree for a particular class
+      // we use a vector to store up all of the Class objects
+      // that make up the inheritance tree for a particular class
 
       Vector class_vector = new Vector();
 
 
-      //for each argument to the method we loop up the inheritance tree
-      //to find out if there is a superclass argv class that exactly matches
+      // for each argument to the method we loop up the inheritance tree
+      // to find out if there is a superclass argv class that exactly matches
 
       for (i=0; i < argv_count; i++) {
-	
-	Class c = argv_classes[i]; //start with class type of argument
+	Class c = argv_classes[i]; // Start with class type of argument
 
-	//if we have alredy built this Class object lookup array
-	//then dont do it again.
+        if (c == null) {
+            continue; // Skip lookup for argument when Class type is null
+        }
 
-	//loop over the first elements of the argv_classes_lookup to find out
-	//if we have already looked up this class object
+	// loop over the first elements of the argv_classes_lookup to find out
+	// if we have already looked up this class object and if we have just
+        // use the array we found last time instead of doing the lookup again
 
-	//... add impl here
+        // Note that we would not need to do this if we cached the lookups
+
+        for (j=0; j < i ; j++) {
+            if (c == argv_classes_lookup[j][0]) {
+                if (debug) {
+                System.out.println("using argv_classes_lookup shortcut");
+                } // end if (debug)
+                argv_classes_lookup[i] = argv_classes_lookup[j];
+                continue;
+            }
+        }
 
 
-
-	//loop up the inheritance tree starting from c
+	// loop up the inheritance tree starting from c
 
 	while (c != null) {
-	  //add a null to the front of the vector
+	  // add a null to the front of the vector
 	  class_vector.addElement(null);
 
-	  //add this Class and its Interfaces to the vector
+	  // add this Class and its Interfaces to the vector
 	  addInterfaces(c,class_vector);
 
 	  c = c.getSuperclass();
 	}
 
 
-	//now remove the first element of the vector (it is null)
+	// now remove the first element of the vector (it is null)
 	class_vector.removeElementAt(0);
 
 	Class[] classes = new Class[class_vector.size()];
@@ -623,9 +657,9 @@ matchSignature(
       
       
       
-      /*
 
-      //debug print the argv_classes_lookup array
+      if (debug) {
+      // debug print the argv_classes_lookup array
 
       System.out.println("argv_classes_lookup array");
       
@@ -633,6 +667,11 @@ matchSignature(
       for (i=0; i < argv_count; i++) {
 
 	Class[] classes = argv_classes_lookup[i];
+
+	if (classes == null) {
+	    System.out.println("{ null }");
+            continue;
+        }
 
 	System.out.print("{ ");
 
@@ -650,8 +689,7 @@ matchSignature(
 	System.out.println("}");
 
       }
-
-      */
+      } // end if (debug)
 
 
 
@@ -663,26 +701,26 @@ matchSignature(
       Class min_class;
       
 
-      //iterate over the arguments then the Methods
-      //as opposed to Methods then over the arguments
+      // iterate over the arguments then the Methods
+      // as opposed to Methods then over the arguments
 
       for (j=0; j < argv_count; j++) {
 
-	//we need to keep track of the smallest # of jumps up the
-	//inheritance tree as well as the total min for the one
-	//special case where an implemented interface inherits
-	//from another interface that also matches the signature
+	// we need to keep track of the smallest # of jumps up the
+	// inheritance tree as well as the total min for the one
+	// special case where an implemented interface inherits
+	// from another interface that also matches the signature
 
 	min_super_step = Integer.MAX_VALUE;
 	min_total_step = Integer.MAX_VALUE;
 
 	
-	//define min_class as base object before we loop
+	// define min_class as base object before we loop
 	min_class = Object.class;
 
 	
-	//iterate over the matched methods to find the
-	//minimum steps for this argument
+	// iterate over the matched methods to find the
+	// minimum steps for this argument
 	
 	for (i=0; i < match_vector.size(); i++) {
 
@@ -694,9 +732,19 @@ matchSignature(
 
 	  Class match_to = match_classes[j];
 	  
-	  //Class objects we will compare the match_to Class against
-	  //the index (j) gives us the Class array for argv[j]
+	  // Class objects we will compare the match_to Class against
+	  // the index (j) gives us the Class array for argv[j]
 	  Class[] arg_classes = argv_classes_lookup[j];
+
+
+          // If the argument type is null then skip to the next
+          // argument and max the steps so they do not get removed
+          if (arg_classes == null) {
+	      super_steps[i] = Integer.MAX_VALUE;
+	      total_steps[i] = Integer.MAX_VALUE;
+              continue;
+          }
+
 
 	  Class c;
 	  int super_step=0;
@@ -706,20 +754,20 @@ matchSignature(
 	    c = arg_classes[total_step];
 	    
 	    if (c == null) {
-	      super_step++; //null means we have gone up to the superclass
+	      super_step++; // null means we have gone up to the superclass
 	    } else if (c == match_to) {	      	      
-	      super_steps[i] = super_step; //# of super classes up
-	      total_steps[i] = total_step; //total # of visible classes
+	      super_steps[i] = super_step; // # of super classes up
+	      total_steps[i] = total_step; // total # of visible classes
 	      
 
-	      //when we define the min for an argument we must make
-	      //sure that three precidence rules are followed
-	      //1: an interface can replace another interface as the min
-	      //2: an interface can replace the class Object
-	      //3: a class can replace an interface or a class
+	      // when we define the min for an argument we must make
+	      // sure that three precidence rules are followed
+	      // 1: an interface can replace another interface as the min
+	      // 2: an interface can replace the class Object
+	      // 3: a class can replace an interface or a class
 
-	      //thus if we have already found a non Object min_class
-	      //it can not be replaced by an interface
+	      // thus if we have already found a non Object min_class
+	      // it can not be replaced by an interface
 	      
 	      if (super_step <= min_super_step) {
 
@@ -727,18 +775,18 @@ matchSignature(
 		    min_class == Object.class ||
 		    min_class.isInterface()) {
 
-		  /*
-		  System.out.println("redefing min");
-		  System.out.println("min_class was " + min_class);
-		  System.out.println("min_class is now " + c);
-		  */
+                  if (debug) {
+		  //System.out.println("redefing min");
+		  //System.out.println("min_class was " + min_class);
+		  //System.out.println("min_class is now " + c);
+                  } // end if (debug)
 
 		  min_class = c;
 
 		  min_super_step = super_step;
 
-		  //check min_total_step only AFTER a min_super_step
-		  //or equal to min_super_step has been found
+		  // check min_total_step only AFTER a min_super_step
+		  // or equal to min_super_step has been found
 		
 		  if (total_step < min_total_step) {
 		    min_total_step = total_step;
@@ -752,9 +800,9 @@ matchSignature(
 	}
 
 
-	/*
 
-	//debug print the super_step array and the total_step array
+        if (debug) {
+	// debug print the super_step array and the total_step array
 	
 	System.out.println("step arrays for argument " + j);
 
@@ -764,21 +812,23 @@ matchSignature(
 
 	System.out.println("min_super_step = " + min_super_step);
 	System.out.println("min_total_step = " + min_total_step);
-
-	*/
-
+        } // end if (debug)
 
 
 
-	//from the step info we know the minumum so we can
-	//remove those values that are "worse" then the min
+	// from the step info we know the minumum so we can
+	// remove those values that are "worse" then the min
 
 	for (i=match_vector.size()-1; i >= 0; i--) {
 
 	  if (super_steps[i] > min_super_step ||
 	      (super_steps[i] == min_super_step &&
 	       total_steps[i] > min_total_step)) {
-	    //System.out.println("will trim method " + i);
+
+            if (debug) {
+	    System.out.println("will trim method " + i);
+            } // end if (debug)
+
 	    trim_matches[i] = true; //trim this match # later
 	  }
 
@@ -788,17 +838,17 @@ matchSignature(
 
 
 
-	//we should be able to short circut this so that we do
-	//not waste loops when they are not needed
+	// we should be able to short circut this so that we do
+	// not waste loops when they are not needed
 
 
-	//if all the methods have been trimmed then we do not
-	//need to loop to the next argument
+	// if all the methods have been trimmed then we do not
+	// need to loop to the next argument
 
       }
 
 
-      //remove and methods that were marked for deletion
+      // remove the methods that were marked for deletion
       
       for (i=match_vector.size()-1; i >= 0; i--) {
 	if (trim_matches[i]) {
@@ -810,7 +860,8 @@ matchSignature(
 
 
 
-      /*
+      if (debug) {
+      // Debug print remaining matches
       
       System.out.println("after super steps trim");
       
@@ -832,32 +883,132 @@ matchSignature(
 	
 	System.out.println();
       }
-      */
+      } // end if (debug)
      
       
-    } //end if (match_vector.size() > 1)
+    } // end if (match_vector.size() > 1)
  
     
     
-    //if there is only one item left in the match_vector return it
+    // if there is only one item left in the match_vector return it
     
     if (match_vector.size() == 1) {
       return match_vector.elementAt(0);
     } else {
-      //if we have 0 or >1 remaining matches then
-      //we were unable to find the "best" match so raise an error
+      // if we have 0 or >1 remaining matches then
+      // we were unable to find the "best" match so raise an error
+      // if possible, tell user what matches made the sig ambiguous.
 
-      throw new TclException(interp, "ambiguous " + 
-			     (isConstructor ? "constructor" : "method") +
-			     " signature \"" + signature + "\"");
+      //System.out.println("match_vector.size() is " + match_vector.size());
+
+
+      StringBuffer sb = new StringBuffer(100);
+      sb.append("ambiguous ");
+      if (isConstructor) {
+          sb.append("constructor");
+      } else {
+          sb.append("method");
+      }
+      sb.append(" signature");
+
+
+      if (match_vector.size() == 0) {
+
+	  // FIXME : better error message for no signature matches case
+	  // We really should tell the user which methods we could have
+	  // matched but did not for one reason or another. The tricky
+	  // part is knowing what matches should be shown, perhaps all?
+
+	  //sb.append(" \"" + signature + "\"");
+	  sb.append(", could not choose between ");
+
+
+          // Get all the signatures that match this name and number or args
+
+          if (isConstructor) {
+            funcs = cls.getDeclaredConstructors();
+          } else {
+            funcs = getAllDeclaredMethods(cls);
+          }
+
+          for (i = 0; i < funcs.length; i++) {
+            Class[] paramTypes;
+            if (isConstructor) {
+              paramTypes = ((Constructor)funcs[i]).getParameterTypes();
+            } else {
+              Method method = (Method)funcs[i];
+              if (! methodName.equals(method.getName())) {
+        	continue;
+              }
+              foundSameName = true;
+      
+              paramTypes = method.getParameterTypes();
+            }
+     
+            if (paramTypes.length == argv_count) {
+              match_vector.addElement(funcs[i]);
+            }
+          }  
+
+
+      } else {
+
+        // iterate over remaining possible matches and add to error message
+
+        sb.append(", assignable signatures are ");
+
+      }
+
+
+
+      TclObject siglist = TclList.newInstance();
+      siglist.preserve();
+
+      for (i=0; i < match_vector.size(); i++) {
+          TclObject cur_siglist = TclList.newInstance();
+          cur_siglist.preserve();
+
+          if (isConstructor) {
+            Constructor con = ((Constructor) match_vector.elementAt(i));
+            TclList.append(interp,cur_siglist,
+                TclString.newInstance(con.getName()) );
+
+            //System.out.println("appending constructor name " + con.getName());
+
+	    match_classes = con.getParameterTypes();
+	  } else {
+            Method meth = ((Method) match_vector.elementAt(i));
+            TclList.append(interp,cur_siglist,
+                TclString.newInstance(meth.getName()) );
+
+            //System.out.println("appending method name " + meth.getName());
+
+	    match_classes = meth.getParameterTypes();
+	  }
+	
+	  for (j=0; j < argv_count; j++) {
+	    Class c = match_classes[j];
+            TclList.append(interp,cur_siglist,
+                TclString.newInstance(c.getName()) );
+            //System.out.println("appending class name " + c.getName());
+	  }
+
+          TclList.append(interp,siglist,cur_siglist);
+          cur_siglist.release();
+      }
+
+      sb.append(siglist.toString());
+      siglist.release();
+
+      throw new TclException(interp, sb.toString());
     }
     
-  } //end else if (match_vector.size() > 1)
+  } // end else if (match_vector.size() > 1)
   
 
 
 
-  //if we got to here then we could not find a matching method so raise error
+  // if we got to here then we could not find a matching method so raise error
 
   if (isConstructor) {
     throw new TclException(interp, "can't find constructor with " +
@@ -883,15 +1034,15 @@ matchSignature(
 
 
 
-//this function recursively adds interfaces of a class to the vector
+// Helper method to recursively add interfaces of a class to the vector
 
-static void addInterfaces(Class cls, Vector v)
+private static void addInterfaces(Class cls, Vector v)
 {
   v.addElement(cls);
 
   Class[] interfaces = cls.getInterfaces();
   
-  for (int i=0; i<interfaces.length ; i++) {
+  for (int i=0; i < interfaces.length ; i++) {
     addInterfaces(interfaces[i],v);
   }
 }
@@ -934,13 +1085,20 @@ getAllDeclaredMethods(
 
     Vector vec = new Vector();
 
-    for (Class c = cls; c != null; c = c.getSuperclass()) {
+    for (Class c = cls; c != null; ) {
 	mergeMethods(c, c.getDeclaredMethods(), vec);
 
 	Class interfaces[] = c.getInterfaces();
 	for (int i = 0; i < interfaces.length; i++) {
 	    mergeMethods(interfaces[i], interfaces[i].getMethods(), vec);
 	}
+
+	if (c.isInterface()) {
+	    c = Object.class; // if cls is an interface add Object methods
+	} else {
+	    c = c.getSuperclass();
+	}	
+
     }
 
     methods = new Method[vec.size()];
@@ -997,14 +1155,12 @@ mergeMethods(
 	}
 	    
 	if (!sameSigExists) {
-	    /*
-	     * We copy a method into the vector only if no method
-	     * with the same signature is already in the
-	     * vector. Otherwise the matching routine in the get()
-	     * procedure may run into "ambiguous method signature"
-	     * errors when it sees instances of overloaded
-	     * methods.
-	     */
+	    // We copy a method into the vector only if no method
+	    // with the same signature is already in the
+	    // vector. Otherwise the matching routine in the get()
+	    // procedure may run into "ambiguous method signature"
+	    // errors when it sees instances of overloaded
+	    // methods.
 
 	    vec.addElement(newMeth);
 	}
