@@ -2,7 +2,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run to configure the
 dnl	Makefile in this directory.
 AC_INIT(../src/tcljava/tcl/lang/InternalRep.java)
-# RCS: @(#) $Id: configure.in,v 1.7 1999/01/15 03:06:55 hylands Exp $
+# RCS: @(#) $Id: configure.in,v 1.8 1999/03/02 15:38:17 hylands Exp $
 
 
 #--------------------------------------------------------------------
@@ -346,10 +346,11 @@ fi
 #--------------------------------------------------------------------
 # 	TclJAVA Specific Substitutions
 #--------------------------------------------------------------------
-TCLJAVA_VERSION=1.1
+# See src/pkgIndex.tcl for a list of other files that have version numbers
+TCLJAVA_VERSION=1.1.1
 TCLJAVA_MAJOR_VERSION=1
 TCLJAVA_MINOR_VERSION=1
-TCLJAVA_PATCHLEVEL=
+TCLJAVA_PATCHLEVEL=1
 
 #--------------------------------------------------------------------
 #	If the TCLJAVA variable equals tclblend then we need to

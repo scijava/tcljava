@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: BlendExtension.java,v 1.3 1999/01/15 03:06:54 hylands Exp $
+ * RCS: @(#) $Id: BlendExtension.java,v 1.4 1999/03/02 15:37:14 hylands Exp $
  */
 
 package tcl.lang;
@@ -62,8 +62,7 @@ throws TclException
 
     String version = "1.1";
     // For minor versions:
-    //String patchLevel = version + "b1";
-    String patchLevel = version;
+    String patchLevel = version + ".1";
 
     interp.evalResource("/tcl/lang/library/java/javalock.tcl");
 
