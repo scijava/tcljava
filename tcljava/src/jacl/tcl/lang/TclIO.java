@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclIO.java,v 1.2 2000/08/01 06:50:49 mo Exp $
+ * RCS: @(#) $Id: TclIO.java,v 1.3 2001/11/20 18:01:52 mdejong Exp $
  *
  */
 
@@ -138,6 +138,26 @@ class TclIO {
 	}
 
 	return(chan);
+    }
+
+    /**
+     * Really ugly function that attempts to get the next available
+     * channelId name.  In C the FD returned in the native open call
+     * returns this value, but we don't have that so we need to do
+     * this funky iteration over the Hashtable.
+     *
+     * @param interp currrent interpreter.
+     * @return the next integer to use in the channelId name.
+     */
+
+    static String getNextDescriptor(Interp interp, String prefix) {
+        int i;
+	Hashtable htbl = getInterpChanTable(interp);
+
+        for (i = 0; (htbl.get(prefix + i)) != null; i++) {
+	    // Do nothing...
+	}
+	return prefix + i;
     }
 }
 

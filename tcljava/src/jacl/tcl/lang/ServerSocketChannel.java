@@ -89,7 +89,7 @@ public class ServerSocketChannel extends Channel {
 
         acceptThread = new AcceptThread(sock, this);
         
-        setChanName(getNextDescriptor(interp, "sock"));
+        setChanName(TclIO.getNextDescriptor(interp, "sock"));
         errorMsg = new String();
         acceptThread.start();
     }

@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Channel.java,v 1.11 2001/11/20 04:31:14 mdejong Exp $
+ * RCS: @(#) $Id: Channel.java,v 1.12 2001/11/20 18:01:52 mdejong Exp $
  */
 
 package tcl.lang;
@@ -15,10 +15,13 @@ import java.io.*;
 import java.util.Hashtable;
 
 /**
- * The Channel interface specifies the methods that
- * for any Class that performs generic reads, writes, 
- * etc.  Note: open is not an interface, because it
- * takes unique arguments for each new channel type.
+ * The Channel class provides functionality that will
+ * be needed for any type of Tcl channel. It performs
+ * generic reads, writes, without specifying how a
+ * given channel is actually created. Each new channel
+ * type will need to extend the abstract Channel class
+ * and override any methods it needs to provide a
+ * specific implementation for.
  */
 
 abstract class Channel {
@@ -65,7 +68,7 @@ abstract class Channel {
     protected static final int BUF_SIZE = 1024;
 
     /**
-     * Perform a read on the sub-classed channel.  
+     * Read data from the Channel.
      * 
      * @param interp is used for TclExceptions.  
      * @param readType is used to specify the type of read (line, all, etc).
@@ -126,7 +129,7 @@ abstract class Channel {
     }
 
     /** 
-     * Interface to write data to the Channel
+     * Write data to the Channel
      * 
      * @param interp is used for TclExceptions.  
      * @param outStr the string to write to the sub-classed channel.
@@ -178,7 +181,7 @@ abstract class Channel {
     }
 
     /** 
-     * Interface to flush the Channel.
+     * Flush the Channel.
      *
      * @exception TclException is thrown when attempting to flush a 
      *            read only channel.
@@ -204,8 +207,9 @@ abstract class Channel {
     }
 
     /** 
-     * Interface move the current Channel pointer.
-     * Used in file channels to move the file pointer.
+     * Move the current file pointer. If seek is not supported on the
+     * given channel then -1 will be returned. A subclass should
+     * override this method if it supports the seek operation.
      * 
      * @param interp currrent interpreter.
      * @param offset The number of bytes to move the file pointer.
@@ -264,25 +268,5 @@ abstract class Channel {
 
     int getMode() {
         return mode;
-    }
-
-    /**
-     * Really ugly function that attempts to get the next available
-     * channelId name.  In C the FD returned in the native open call
-     * returns this value, but we don't have that so we need to do
-     * this funky iteration over the Hashtable.
-     *
-     * @param interp currrent interpreter.
-     * @return the next integer to use in the channelId name.
-     */
-
-    protected String getNextDescriptor(Interp interp, String prefix) {
-        int i;
-	Hashtable htbl = TclIO.getInterpChanTable(interp);
-
-        for (i = 0; (htbl.get(prefix + i)) != null; i++) {
-	    // Do nothing...
-	}
-	return prefix + i;
     }
 }

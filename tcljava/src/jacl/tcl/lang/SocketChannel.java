@@ -109,7 +109,7 @@ public class SocketChannel extends Channel {
 
         // If we got this far, then the socket has been created.
         // Create the channel name
-        setChanName(getNextDescriptor(interp, "sock"));
+        setChanName(TclIO.getNextDescriptor(interp, "sock"));
         errorMsg = new String();
     }
 
@@ -145,7 +145,7 @@ public class SocketChannel extends Channel {
 
         // If we got this far, then the socket has been created.
         // Create the channel name
-        setChanName(getNextDescriptor(interp, "sock"));
+        setChanName(TclIO.getNextDescriptor(interp, "sock"));
         errorMsg = new String();
     }
 

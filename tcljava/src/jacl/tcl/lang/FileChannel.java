@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FileChannel.java,v 1.12 2001/11/20 04:31:14 mdejong Exp $
+ * RCS: @(#) $Id: FileChannel.java,v 1.13 2001/11/20 18:01:52 mdejong Exp $
  *
  */
 
@@ -124,7 +124,7 @@ class FileChannel extends Channel {
 	// In standard Tcl fashion, set the channelId to be "file" + the
 	// value of the current FileDescriptor.
 
-	String fName = getNextDescriptor(interp, "file");
+	String fName = TclIO.getNextDescriptor(interp, "file");
 	setChanName(fName);
 	return fName;
     }

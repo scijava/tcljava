@@ -1,3 +1,15 @@
+2001-11-20  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/jacl/tcl/lang/Channel.java (getNextDescriptor):
+	Move the getNextDescriptor method into the TclIO class.
+	Update documentation for Channel class.
+	* src/jacl/tcl/lang/FileChannel.java:
+	* src/jacl/tcl/lang/ServerSocketChannel.java:
+	* src/jacl/tcl/lang/SocketChannel.java:
+	Invoke TclIO.getNextDescriptor from TclIO class.
+	* src/jacl/tcl/lang/TclIO.java (getNextDescriptor):
+	Add getNextDescriptor method from Channel class.
+
 2001-11-19  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* src/jacl/tcl/lang/Channel.java (read): Turn the
