@@ -1,0 +1,98 @@
+This message is to announce the new 1.2.2 release of Jacl and
+Tcl Blend.  These releases are the result of a joint effort by
+Christopher Hylands, Mo DeJong, and Bryan Surles. The goal of
+this project is to extend and improve the 1.0 release of Jacl
+and Tcl Blend which was originally started by the Sun Tcl team.
+
+The 1.2.2 Developers release of Jacl and Tcl Blend are available for
+downloading at the following URL:
+
+    http://www.cs.umn.edu/~dejong/tcl/tcljava
+
+The 1.2 release is a developers release and should be considered alpha
+quality. Version 1.2.2 includes lots of bug fixes and some new features
+that make it even easier to use Tcl and Java together. Jacl users will
+be interested in a workaround for a Windows JDK 1.2 bug which stopped
+characters from being echoed to the command line until return is pressed.
+Both Jacl and Tcl Blend users will be interested in the new ability
+to pass Java long objects to java methods. In addition, a new
+java::autolock command has been added which can halt garbage
+collection during interactive sessions.
+
+What is Jacl?
+----------------
+
+Jacl is a 100% Java implementation of Tcl 8.0.  This allows Tcl to run
+in more environments and also brings the power of scripting to Java
+developers.  Jacl only implements a subset of the Tcl language (the C
+version of Tcl has a lot of features!).  However, the core of the
+language is implemented and well tested.
+
+What is Tcl Blend?
+------------------------
+
+Tcl Blend is a Tcl Extension that allows you to have access to the
+Java VM from the Tcl interpreter.  The goal here is to allow Tcl
+developers to write new Tcl extensions in Java rather then C or C++
+for better portability.  Currently, Tcl Blend is only known to work
+with Solaris and Windows 95/NT.  However, it should be easy to port
+Tcl Blend to any system that supports dynamic loading and the Java JNI
+interface.
+
+For additional information:
+---------------------------------
+
+Scriptics Corporation maintains the download site for Jacl and Tcl
+Blend.  This site contains a variety of information about Tcl & Java
+integration: including FAQs, man pages, and the binary and source
+distributions for Jacl and Tcl Blend.  Please visit the following URL:
+
+    http://www.scriptics.com/java
+
+Christopher Hylands maintains his own page that lists a plethora of
+information.  There are links to related Web pages, his own personal
+notes about building and using Jacl and Tcl Blend, and in depth
+explanations about Tcl and Java integration.  This information can be
+found at the following URL:
+
+    http://ptolemy.eecs.berkeley.edu/~cxh/java/tclblend
+
+Comments and questions can be sent to the Tcl & Java integration
+mailing list at:
+
+    tcljava@tclconsortium.org
+
+Of course, you will need to join the mailing list first. You can do
+so by sending an email to this address.
+
+    tcljava-request@tclconsortium.org
+
+Scriptics support for Jacl and Tcl Blend:
+-------------------------------------------------
+
+It is important to understand that this release is due entirely to the
+efforts of Christopher Hylands and Mo DeJong. Scriptics currently has
+a minor, facilitating role in Jacl and Tcl Blend and is not officially
+supporting these releases.
+
+If you have a problem with Jacl or Tcl Blend or you think you have
+a great idea for a feature, you should send an email to the tcljava
+mailing list. Please do not send email directly to the authors.
+
+Credits
+---------
+The Jacl and Tcl Blend releases are brought to you by:
+
+ Mo DeJong
+ Christopher Hylands
+ Bryan Surles
+
+We would like to thank the Jacl and Tcl Blend 1.0 team:
+
+ Ray Johnson: Project Manager
+ Melissa Hirschl
+ Ioi Lam
+ Bryan Surles
+
+And a special thanks to Scott Stanton who implemented Tcl Blend, and
+to John Reekie of UC Berkeley.
