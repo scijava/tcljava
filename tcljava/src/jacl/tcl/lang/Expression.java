@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Expression.java,v 1.9 2003/02/04 00:15:18 mdejong Exp $
+ * RCS: @(#) $Id: Expression.java,v 1.10 2003/02/04 00:35:41 mdejong Exp $
  *
  */
 
@@ -475,8 +475,7 @@ class Expression {
 
 	    value = ExprGetValue(interp, -1);
 	    if (m_token != CLOSE_PAREN) {
-		throw new TclException(interp, "unmatched parentheses in " + 
-			"expression \"" + m_expr + "\"");
+		SyntaxError(interp);
 	    }
 	} else {
 	    if (m_token == MINUS) {
@@ -938,8 +937,7 @@ class Expression {
 		break;
 
 	    case COLON:
-		throw new TclException(interp, 
-			"can't have : operator without ? first");
+		SyntaxError(interp);
 	    }
 	}
     }

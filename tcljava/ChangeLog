@@ -1,5 +1,13 @@
 2003-02-03  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/jacl/tcl/lang/Expression.java (ExprGetValue):
+	Throw a plain syntax error when unmatched
+	parens or a bad ?: operator is encountered.
+	This is less descriptive but matches the Tcl
+	8.3 implementation.
+
+2003-02-03  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/jacl/tcl/lang/Expression.java (ExprGetValue,
 	mathFunction): Return null from ExprGetValue when
 	a CLOSE_PAREN is found and check for this special
