@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: VwaitCmd.java,v 1.1 1998/10/14 21:09:19 cvsadmin Exp $
+ * RCS: @(#) $Id: VwaitCmd.java,v 1.2 1999/08/03 03:22:47 mo Exp $
  */
 
 package tcl.lang;
@@ -51,21 +51,19 @@ throws
     }
 
     VwaitTrace trace = new VwaitTrace();
-    interp.varFrame.traceVar(argv[1], trace,
-	    TCL.GLOBAL_ONLY|TCL.TRACE_WRITES|TCL.TRACE_UNSETS);
+    Var.traceVar(interp, argv[1],
+	    TCL.GLOBAL_ONLY|TCL.TRACE_WRITES|TCL.TRACE_UNSETS, trace);
 
     int foundEvent = 1;
     while (!trace.done && (foundEvent != 0)) {
 	foundEvent = interp.getNotifier().doOneEvent(TCL.ALL_EVENTS);
     }
 
-    interp.varFrame.untraceVar(argv[1], trace,
-	    TCL.GLOBAL_ONLY|TCL.TRACE_WRITES|TCL.TRACE_UNSETS);
+    Var.untraceVar(interp, argv[1],
+	    TCL.GLOBAL_ONLY|TCL.TRACE_WRITES|TCL.TRACE_UNSETS, trace);
 
-    /*
-     * Clear out the interpreter's result, since it may have been set
-     * by event handlers.
-     */
+    // Clear out the interpreter's result, since it may have been set
+    // by event handlers.
 
     interp.resetResult();
 
