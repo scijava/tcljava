@@ -1,6 +1,6 @@
 # This Makefile is used to the java loadable module.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.11 1998/11/09 19:43:41 hylands Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.12 1998/11/11 17:24:31 hylands Exp $
 
 # The version of TclJava, used in this Makefile
 VERSION = @TCLJAVA_VERSION@
@@ -904,12 +904,14 @@ $(DOC_DIR)/html/JaclCmd/studiocustom.htm: $(DOC_DIR)/studiocustom.n
 
 DISTDIR			= /tmp/tcljava
 
-JACL_ZIPNAME		= jaclSrc@TCLJAVA_MAJOR_VERSION@@TCLJAVA_MINOR_VERSION@.zip
+JACL_BIN_ZIPNAME		= jacl@TCLJAVA_MAJOR_VERSION@@TCLJAVA_MINOR_VERSION@$(PATCHLEVEL).zip
+
+JACL_SRC_ZIPNAME		= jaclSrc@TCLJAVA_MAJOR_VERSION@@TCLJAVA_MINOR_VERSION@$(PATCHLEVEL).zip
 JACL_SRC_DISTNAME	= jaclSrc$(VERSION)$(PATCHLEVEL)
 JACL_DISTNAME		= jacl$(VERSION)$(PATCHLEVEL)
 JACL_DISTDIR		= $(DISTDIR)/$(JACL_DISTNAME)
 
-BLEND_ZIPNAME		= tclBlendSrc@TCLJAVA_MAJOR_VERSION@@TCLJAVA_MINOR_VERSION@.zip
+BLEND_SRC_ZIPNAME	= tclBlendSrc@TCLJAVA_MAJOR_VERSION@@TCLJAVA_MINOR_VERSION@.zip
 BLEND_SRC_DISTNAME	= tclBlendSrc$(VERSION)$(PATCHLEVEL)
 BLEND_DISTNAME		= tclBlend$(VERSION)$(PATCHLEVEL)
 BLEND_DISTDIR		= $(DISTDIR)/$(BLEND_DISTNAME)
@@ -1230,13 +1232,13 @@ jaclSrcDist: $(UNIX_DIR)/configure Makefile
 
 	rm -f $(DISTDIR)/$(JACL_SRC_DISTNAME).tar.Z \
 		$(DISTDIR)/$(JACL_SRC_DISTNAME).tar.gz \
-		$(DISTDIR)/$(JACL_ZIPNAME) 
+		$(DISTDIR)/$(JACL_SRC_ZIPNAME) 
 	cd $(DISTDIR);\
 		chmod -R $(DIST_CHMOD_PERMS) $(JACL_DISTDIR); \
 		tar cf $(JACL_SRC_DISTNAME).tar $(JACL_DISTNAME); \
 		gzip --best -c $(JACL_SRC_DISTNAME).tar > $(JACL_SRC_DISTNAME).tar.gz; \
 		compress $(JACL_SRC_DISTNAME).tar; \
-		zip -qr $(JACL_ZIPNAME) $(JACL_DISTNAME); \
+		zip -qr $(JACL_SRC_ZIPNAME) $(JACL_DISTNAME); \
 		rm -f $(JACL_SRC_DISTNAME).tar
 
 #----------------------------------------------------------------
@@ -1294,14 +1296,14 @@ tclblendSrcDist: $(UNIX_DIR)/configure Makefile
 	rm -f \
 		$(DISTDIR)/$(BLEND_SRC_DISTNAME).tar.Z \
 		$(DISTDIR)/$(BLEND_SRC_DISTNAME).tar.gz \
-		$(DISTDIR)/$(BLEND_ZIPNAME)
+		$(DISTDIR)/$(BLEND_SRC_ZIPNAME)
 	cd $(DISTDIR);\
 		chmod -R $(DIST_CHMOD_PERMS) $(BLEND_DISTDIR); \
 		tar cf $(BLEND_SRC_DISTNAME).tar $(BLEND_DISTNAME); \
 		gzip -9 -c $(BLEND_SRC_DISTNAME).tar > \
 			$(BLEND_SRC_DISTNAME).tar.gz; \
 		compress $(BLEND_SRC_DISTNAME).tar; \
-		zip -rq $(BLEND_ZIPNAME) $(BLEND_DISTNAME); \
+		zip -rq $(BLEND_SRC_ZIPNAME) $(BLEND_DISTNAME); \
 		rm -f $(BLEND_SRC_DISTNAME).tar 
 
 #----------------------------------------------------------------
@@ -1406,13 +1408,14 @@ jaclBinDist: $(UNIX_DIR)/configure Makefile
 	#	$(JACL_DISTDIR)/doc/html/JaclCmd/license.terms
 
 	rm -f $(DISTDIR)/$(JACL_DISTNAME).tar.Z \
-		$(DISTDIR)/$(JACL_DISTNAME).tar.gz
+		$(DISTDIR)/$(JACL_DISTNAME).tar.gz \
+		$(DISTDIR)/$(JACL_BIN_ZIPNAME).tar.gz
 	cd $(DISTDIR);\
 		chmod -R $(DIST_CHMOD_PERMS) $(JACL_DISTNAME); \
 		tar cf $(JACL_DISTNAME).tar $(JACL_DISTNAME); \
 		gzip -9 -c $(JACL_DISTNAME).tar > $(JACL_DISTNAME).tar.gz; \
 		compress $(JACL_DISTNAME).tar; \
-		zip -rq $(JACL_ZIPNAME) $(JACL_DISTNAME); \
+		zip -rq $(JACL_BIN_ZIPNAME) $(JACL_DISTNAME); \
 		rm -f $(JACL_DISTNAME).tar 
 
 #----------------------------------------------------------------
