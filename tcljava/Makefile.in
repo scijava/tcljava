@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the actual
 # Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.8 1999/09/24 04:53:06 redman Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.9 1999/10/08 20:39:05 wart Exp $
 
 #========================================================================
 # Edit the following few lines when writing a new extension
@@ -647,7 +647,7 @@ JAVA_COMPILE_TCLBLEND = \
 		-d $(TCLBLEND_BUILD_DIR_NATIVE) 
 
 $(TCLBLEND_BUILD_DIR):
-	mkdir -p $(TCLBLEND_BUILD_DIR)
+	$(mkinstalldirs) $(TCLBLEND_BUILD_DIR)
 
 tclblend.jar: $(TCLBLEND_BUILD_DIR) $(TCLBLEND_JAVA_FILES) tcljava.jar
 	$(JAVA_COMPILE_TCLBLEND) tcl/lang/*.java
@@ -671,9 +671,9 @@ JAVA_COMPILE_TCLJAVA = \
 		-d $(TCLJAVA_BUILD_DIR_NATIVE) 
 
 $(TCLJAVA_BUILD_DIR):
-	mkdir -p $(TCLJAVA_BUILD_DIR)
-	mkdir -p $(TCLJAVA_BUILD_DIR)/tcl
-	mkdir -p $(TCLJAVA_BUILD_DIR)/tcl/lang
+	$(mkinstalldirs) $(TCLJAVA_BUILD_DIR)
+	$(mkinstalldirs) $(TCLJAVA_BUILD_DIR)/tcl
+	$(mkinstalldirs) $(TCLJAVA_BUILD_DIR)/tcl/lang
 
 $(TCLJAVA_BUILD_DIR)/tcl/lang/library: $(TCLJAVA_SRC_DIR)/tcl/lang/library
 	cp -rf $(TCLJAVA_SRC_DIR)/tcl/lang/library $@
@@ -694,7 +694,7 @@ tcljava: tcljava.jar
 # Build the TclBlend Test Package.
 #----------------------------------------------------------------
 $(TEST_BUILD_DIR) :
-	mkdir -p $(TEST_BUILD_DIR)
+	$(mkinstalldirs) $(TEST_BUILD_DIR)
 
 JAVA_COMPILE_TCLBLEND_TEST = \
 	cd $(TEST_TCLBLEND_SRC_DIR) ; \
@@ -734,9 +734,9 @@ $(TEST_BUILD_DIR)/tcljava: \
 		$(TEST_TCLJAVA_JAVA_FILES) \
 		tcljava.jar
 	$(JAVA_COMPILE_TCLJAVA_TEST) $(TEST_TCLJAVA_FILE_PATTERN)
-	mkdir -p $(TEST_BUILD_DIR)/javaload
+	$(mkinstalldirs) $(TEST_BUILD_DIR)/javaload
 	@# workaround for bug in jikes (extra mkdir)
-	mkdir -p $(TEST_BUILD_DIR)/javaload/tests/javaload
+	$(mkinstalldirs) $(TEST_BUILD_DIR)/javaload/tests/javaload
 	@# workaround for bug in jikes (extra dir on CLASSPATH)
 	$(JAVA_COMPILE_TCLJAVA_TEST_JAVALOAD) javaload/*.java
 	cd $(TEST_BUILD_DIR)/javaload; \
