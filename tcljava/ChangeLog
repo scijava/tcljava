@@ -1,3 +1,12 @@
+2000-08-23  Jiang Wu  <jwu@cs.stanford.edu>
+
+	* src/tclblend/tcl/lang/Notifier.java (preserve, release,
+	queueEvent, deleteEvents, deleteEvent, serviceEvent,
+	getAvailableEvent, hasEvents): Fix bugs in Notifier,
+	use an internal monitor instead of one on the class
+	so that an event that calls vwait does not block
+	other events from getting added to the after queue.
+
 2000-08-23  Mo DeJong  <mdejong@redhat.com>
 
 	* src/tests/tcljava/tests/AppendEventQueueThread.java: Add source
