@@ -51,7 +51,8 @@ must be called when an interpreter is no longer in use.
 The <B>dispose</B> method can safely be called multiple times.
 However, after the <B>dispose</B> method is invoked, the interpreter is
 no longer in a useable state and none of its other methods should be
-called.
+called. The dispose method must be called from the thread the Interp
+was created in.
 
 <P></DL>
 <H3><A NAME="M9">EQUIVALENT C FUNCTIONS</A></H3>

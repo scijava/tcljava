@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.47 2004/11/18 04:38:34 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.48 2004/11/20 22:36:49 mdejong Exp $
  *
  */
 
@@ -244,6 +244,13 @@ private TclObject m_result;
 
 private TclObject m_nullResult;
 
+// Java thread this interp was created in. This is used
+// to check for user coding errors where the user tries
+// to create an interp in one thread and then invoke
+// methods from another thread.
+
+private Thread cThread;
+
 // Used ONLY by PackageCmd.
 
 Hashtable packageTable;
@@ -343,7 +350,8 @@ Interp()
     workingDir       = new File(Util.tryGetSystemProperty("user.dir", "."));
     noEval           = 0;
 
-    notifier	     = Notifier.getNotifierForThread(Thread.currentThread());
+    cThread	     = Thread.currentThread();
+    notifier	     = Notifier.getNotifierForThread(cThread);
     notifier.preserve();
 
     randSeedInit     = false;
@@ -425,6 +433,31 @@ Interp()
 	e.printStackTrace();
 	throw new TclRuntimeError("unexpected TclException: " + e);
     }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * dispose --
+ *
+ *	Invoked to indicate that the interp should be disposed of.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Cleans up the interpreter.
+ *
+ *----------------------------------------------------------------------
+ */
+
+public void
+dispose() {
+    if (Thread.currentThread() != cThread) {
+        throw new TclRuntimeError(
+            "Interp.dispose() invoked in thread other than the one it was created in");
+    }
+    super.dispose();
 }
 
 /*

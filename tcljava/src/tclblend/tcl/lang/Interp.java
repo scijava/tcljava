@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.28 2004/10/01 21:29:41 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.29 2004/11/20 22:36:49 mdejong Exp $
  *
  */
 
@@ -92,6 +92,13 @@ Vector cobjCleanup = new Vector();
 // True when callCommand should propagate exceptions
 boolean propagateException = false;
 
+// Java thread this interp was created in. This is used
+// to check for user coding errors where the user tries
+// to create an interp in one thread and then invoke
+// methods from another thread.
+
+private Thread cThread;
+
 
 /*
  *----------------------------------------------------------------------
@@ -119,7 +126,8 @@ Interp(
 
     interpPtr = l;
 
-    notifier = Notifier.getNotifierForThread(Thread.currentThread());
+    cThread  = Thread.currentThread();
+    notifier = Notifier.getNotifierForThread(cThread);
     notifier.preserve();
 }
 
@@ -149,7 +157,8 @@ Interp()
 
     interpPtr = create();
 
-    notifier = Notifier.getNotifierForThread(Thread.currentThread());
+    cThread  = Thread.currentThread();
+    notifier = Notifier.getNotifierForThread(cThread);
     notifier.preserve();
 
     if (init(interpPtr) != TCL.OK) {
@@ -200,6 +209,11 @@ create();
 public void
 dispose()
 {
+    if (Thread.currentThread() != cThread) {
+        throw new TclRuntimeError(
+            "Interp.dispose() invoked in thread other than the one it was created in");
+    }
+
     // Remove all the assoc data tied to this interp.
 	
     if (assocDataTab != null) {
