@@ -1,6 +1,6 @@
 Recent user-visible changes to Jacl & Tcl Blend:
 
-RCS: @(#) $Id: changes.txt,v 1.40 2000/02/01 03:46:31 mo Exp $
+RCS: @(#) $Id: changes.txt,v 1.40.2.1 2000/03/30 08:58:37 mo Exp $
 
 ----------------- Released 1.0a1, 10/22/97 -----------------------
 
@@ -1021,4 +1021,16 @@ changes to the configure script. (Mo)
 Added "string trim" calls around some values
 queried by the java::field regression tests so
 that they pass under glibc 2.0. (Mo)
+
+03/30/2000 (back ported configure error msg improvement)
+The unix/configure script would provide an error message
+that was not very helpful when the --with-tcl dir could
+not be found. An improved error message from the 1.3
+version was back ported.
+
+----------------- Released 1.2.6, XX/XX/XX -----------------------
+
+02/14/2000
+Starting with the 1.3 version, all changes will be added to
+the ChangeLog. This "changes.txt" file will no longer be used.
 

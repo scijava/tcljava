@@ -2,7 +2,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run to configure the
 dnl	Makefile in this directory.
 AC_INIT(../src/tcljava/tcl/lang/InternalRep.java)
-# RCS: @(#) $Id: configure.in,v 1.27 2000/02/01 03:44:06 mo Exp $
+# RCS: @(#) $Id: configure.in,v 1.27.2.1 2000/03/30 08:58:38 mo Exp $
 
 
 #--------------------------------------------------------------------
@@ -1161,7 +1161,7 @@ if test $TCLJAVA = "tclblend" || test $BOTH = "true"; then
     	TCL_BIN_DIR=$withval, TCL_BIN_DIR="$srcdir/../../tcl8.2.3/unix")
 
     if test ! -d $TCL_BIN_DIR; then
-        AC_MSG_ERROR([Tcl directory could not be located.
+        AC_MSG_ERROR([Tcl directory $TCL_BIN_DIR could not be located.
 Use the --with-tcl=<dirName> configure flag to specify the location.])
     else
 	TCL_BIN_DIR=`cd $TCL_BIN_DIR; pwd`
