@@ -1,3 +1,10 @@
+2003-03-18  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/tcljava/tcl/lang/JavaDefineClassCmd.java (cmdProc):
+	Convert each char to a byte instead of calling
+	String.getBytes() which returns bytes in the
+	platform's default encoding.
+
 2003-03-17  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	Add tcljava-130-2003-03-17 tag to mark the
