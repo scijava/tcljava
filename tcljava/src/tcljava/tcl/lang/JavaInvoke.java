@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaInvoke.java,v 1.12 2002/12/07 20:46:58 mdejong Exp $
+ * RCS: @(#) $Id: JavaInvoke.java,v 1.13 2002/12/27 02:44:41 mdejong Exp $
  *
  */
 
@@ -64,7 +64,8 @@ newInstance(
 throws
     TclException		// Standard Tcl exception.
 {
-    FuncSig sig = FuncSig.get(interp, null, signature, argv, startIdx, count);
+    FuncSig sig = FuncSig.get(interp, null, signature, argv, startIdx,
+	    count, false);
 
     Object javaObj = call(interp, sig.pkgInvoker, signature, sig.func,
 	    null, argv, startIdx, count);
@@ -108,7 +109,7 @@ throws
     Object javaObj = ReflectObject.get(interp, reflectObj);
     Class  javaCl  = ReflectObject.getClass(interp, reflectObj);
     FuncSig sig = FuncSig.get(interp, javaCl, signature, argv,
-                                               startIdx, count);
+                                               startIdx, count, false);
     Method method = (Method) sig.func;
 	
     Object result = call(interp, sig.pkgInvoker, signature, method, javaObj,
@@ -156,7 +157,7 @@ throws
 {
     Class cls = ClassRep.get(interp, classObj);
     FuncSig sig = FuncSig.get(interp, cls, signature, argv,
-	    startIdx, count);
+	    startIdx, count, true);
 
     Method method = (Method) sig.func;
     if (!Modifier.isStatic(method.getModifiers())) {

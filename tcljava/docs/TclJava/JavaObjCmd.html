@@ -23,12 +23,14 @@ Usage:
 <P>
 
 Each Java object handle is also the name of a Tcl command that can be
-used to invoke public methods of that object from Tcl. The
+used to invoke accessible methods of that object from Tcl. The
 <I>signature</I> argument specifies which instance method to invoke.
 The <A HREF="JavaSignatures.html">Signatures</A> section covers the
 form of the <I>signature</I> argument in more detail. Additional
 parameters to an object command are converted to Java objects or
-primitive Java values and passed to the method.
+primitive Java values and passed to the method. It is not
+possible to invoke static methods via a <I>javaObj</I> handle,
+use the <B>java::call</B> method instead.
 
 <P>
 

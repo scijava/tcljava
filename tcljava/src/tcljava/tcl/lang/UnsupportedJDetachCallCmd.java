@@ -83,8 +83,14 @@ public class UnsupportedJDetachCallCmd
 	}
 
 
-	FuncSig sig = FuncSig.get(interp, javaCl, signature,
-				  argv, startIdx, count);
+	FuncSig sig;
+
+	// Check for a static method signature first, then try and instance sig.
+        try {
+	    sig = FuncSig.get(interp, javaCl, signature, argv, startIdx, count, true);
+        } catch (TclException e) {
+	    sig = FuncSig.get(interp, javaCl, signature, argv, startIdx, count, false);
+        }
 
 	call_method = (Method) sig.func;
 

@@ -1,3 +1,61 @@
+2002-12-26  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* docs/TclJava/JavaCallCmd.html: Use the
+	term accessible instead of public to describe
+	which methods can be invoked.
+	* docs/TclJava/JavaObjCmd.html: Use the
+	term accessible instead of public to describe
+	which methods can be invoked. Explicitly
+	mention that invoking static methods via
+	an instance handle is not supported.
+	* src/tcljava/tcl/lang/ArrayObject.java (cmdProc):
+	Add additional static flag to FuncSig.get() call.
+	* src/tcljava/tcl/lang/FuncSig.java (get,
+	lookupMethod, matchSignature,
+	getAccessibleMethods, getAccessibleInstanceMethods,
+	getAccessibleStaticMethods, mergeMethods,
+	mergeInstanceMethods):
+	Create seperate static and instance cache for
+	accessible methods. Add additional static flag
+	to get() so that search is confined to static
+	methods. Pass this flag down to lookupMethod
+	and matchSignature. Add the word static to
+	the error message printed when searching for
+	a static Method fails.
+	Add new getAccessibleStaticMethods and
+	getAccessibleInstanceMethods methods to
+	implement seperating out the static and
+	instance method lookup tables.
+	Rename mergeMethods to mergeInstanceMethods
+	and avoid merging static or inaccessible
+	methods.
+	* src/tcljava/tcl/lang/JavaInfoCmd.java (getFieldInfoList,
+	getMethodInfoList):
+	Don't check for SecurityException, we don't do it
+	other places and the code should be able to deal
+	with a Java error. Use the -static flag to limit
+	the search to static or instance methods in
+	getMethodInfoList.
+	* src/tcljava/tcl/lang/JavaInvoke.java (newInstance,
+	callMethod, callStaticMethod): Pass additional
+	static flag to FuncSig.get().
+	* src/tcljava/tcl/lang/UnsupportedJDetachCallCmd.java:
+	Search for static and then instance method.
+	* src/tcljava/tcl/lang/reflect/PkgInvoker.java (isAccessible):
+	Add method to check accessibility of a Method.
+	* tests/tcljava/FuncSig.test: Pass additional
+	static flag to FuncSig.get().
+	* tests/tcljava/FuncSig.test: Update signature tests
+	to account for new getAccessibleInstanceMethods and
+	getAccessibleStaticMethods methods.
+	* tests/tcljava/JavaCallCmd.test: Update error
+	message for a non-static method via java::call.
+	* tests/tcljava/JavaInfoCmd.test: Fix java::info
+	test cases, static methods are not inherited or
+	overloaded.
+	* tests/tcljava/JavaInvoke.test: Fixup error
+	message and useless quoting.
+
 2002-12-25  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* tests/tcljava/JavaThrowCmd.test: Update test
@@ -38,7 +96,7 @@
 	* README.jacl:
 	* README.tclblend:
 	* unix/README.tclblend:
-	* win/README.tclblend: ework help section, mention
+	* win/README.tclblend: Rework help section, mention
 	SourceForge mailing lists instead of focusing
 	on comp.lang.tcl. Note that Tcl 8.3.2 or newer
 	is needed for Tcl Blend.

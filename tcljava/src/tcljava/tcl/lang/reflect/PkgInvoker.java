@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: PkgInvoker.java,v 1.3 2002/12/23 20:38:11 mdejong Exp $
+ * RCS: @(#) $Id: PkgInvoker.java,v 1.4 2002/12/27 02:44:41 mdejong Exp $
  *
  */
 
@@ -255,5 +255,22 @@ usesDefaultInvoker(Class cls) {
     PkgInvoker invoker = getPkgInvoker(cls);
     return (invoker == defaultInvoker);
 }
+
+// Return true if the given Method is accessible,
+// meaning it is public or it is not private
+// and we have an invoker for the package.
+
+public static boolean
+isAccessible(Method meth) {
+    int mod = meth.getModifiers();
+    if (Modifier.isPublic(mod))
+        return true;
+    if (Modifier.isPrivate(mod))
+        return false;
+    if (usesDefaultInvoker(meth.getDeclaringClass()))
+        return false;
+    return true;
+}
+
 } // end PkgInvoker
 

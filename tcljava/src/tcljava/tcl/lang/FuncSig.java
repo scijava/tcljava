@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: FuncSig.java,v 1.8 2002/12/23 20:38:11 mdejong Exp $
+ * RCS: @(#) $Id: FuncSig.java,v 1.9 2002/12/27 02:44:41 mdejong Exp $
  *
  */
 
@@ -72,9 +72,9 @@ PkgInvoker pkgInvoker;
 
 Object func;
 
-// Stores all of the declared methods of each Java class.
-
-static Hashtable allDeclMethTable = new Hashtable();
+// Stores all accessible instance methods for a Java class
+static Hashtable instanceMethodTable = new Hashtable();
+static Hashtable staticMethodTable = new Hashtable();
 
 
 /*
@@ -155,8 +155,9 @@ get(
     TclObject signature,	// Method/constructor signature.
     TclObject[] argv,		// Arguments.
     int startIdx,		// Index of the first argument in argv
-    int count)			// Number of arguments to pass to the
+    int count,			// Number of arguments to pass to the
 				// constructor.
+    boolean isStatic)		// True if signature is for a static Method.
 throws
     TclException
 {
@@ -248,11 +249,12 @@ throws
 	      }
 	    }
 	} else {
-	  match = lookupMethod(interp, cls, methodName, paramTypes, signature);
+	  match = lookupMethod(interp, cls, methodName, paramTypes,
+	          signature, isStatic);
 	}
     } else {
       match = matchSignature(interp, cls, signature, methodName,
-			     isConstructor, argv, startIdx, count);
+			     isConstructor, argv, startIdx, count, isStatic);
     }
 
     FuncSig sig = new FuncSig(cls, PkgInvoker.getPkgInvoker(cls), match);
@@ -268,7 +270,7 @@ throws
 
 
 // lookupMethod attempts to find an exact match for the method name
-// based on the typs (Java Class objects) of the arguments to the
+// based on the types (Java Class objects) of the arguments to the
 // method. If an exact match can not be found it will raise a TclException.
 
 static Method
@@ -277,12 +279,18 @@ lookupMethod(
     Class cls,               // the Java objects class
     String methodName,       // name of method
     Class[] paramTypes,      // the Class object arguments
-    TclObject  signature     // used for error reporting
+    TclObject  signature,    // used for error reporting
+    boolean isStatic         // True if signature is for a static Method.
 )
     throws TclException
 {
-  Method[] methods = getAccessibleMethods(cls);
+  Method[] methods;
   boolean foundSameName = false;
+
+  if (isStatic)
+      methods = getAccessibleStaticMethods(cls);
+  else
+      methods = getAccessibleInstanceMethods(cls);
 
 
   // FIXME : searching Java methods for method name match
@@ -317,13 +325,13 @@ lookupMethod(
 
   if (paramTypes.length > 0 || !foundSameName) {
     throw new TclException(interp,
-      "no accessible method \"" + signature + "\" in class " +
-			   cls.getName());
+      "no accessible" + (isStatic?" static ":" ") + "method \"" +
+      signature + "\" in class " + cls.getName());
   } else {
     throw new TclException(interp,
-      "can't find accessible method \"" + signature + "\" with " +
-        paramTypes.length + " argument(s) for class \"" + cls.getName()
-			   + "\"");
+      "can't find accessible" + (isStatic?" static ":" ") + "method \"" +
+      signature + "\" with " + paramTypes.length +
+      " argument(s) for class \"" + cls.getName() + "\"");
   }
 }
 
@@ -338,7 +346,7 @@ lookupMethod(
 // This method will attempt to find a match for a signature
 // if an exact match can not be found then it will use
 // the types of the argument objects to "guess" what
-// method was intended by the user. If not match can be
+// method was intended by the user. If no match can be
 // found after "guessing" then a TclException will be raised.
 
 
@@ -351,7 +359,8 @@ matchSignature(
     boolean isConstructor,   // duh
     TclObject[] argv,        // arguments to Method or Constructor
     int startIdx,	     // Index of the first argument in argv    
-    int argv_count           // set to -1 if JFK was killed by the FBI
+    int argv_count,          // set to -1 if JFK was killed by the FBI
+    boolean isStatic         // True if signature is for a static Method.
 )
     throws TclException
 {
@@ -365,7 +374,10 @@ matchSignature(
   if (isConstructor) {
     funcs = getAccessibleConstructors(cls);
   } else {
-    funcs = getAccessibleMethods(cls);
+    if (isStatic)
+        funcs = getAccessibleStaticMethods(cls);
+    else
+        funcs = getAccessibleInstanceMethods(cls);
   }
 
   for (i = 0; i < funcs.length; i++) {
@@ -937,7 +949,10 @@ matchSignature(
           if (isConstructor) {
             funcs = getAccessibleConstructors(cls);
           } else {
-            funcs = getAccessibleMethods(cls);
+            if (isStatic)
+              funcs = getAccessibleStaticMethods(cls);
+            else
+              funcs = getAccessibleInstanceMethods(cls);
           }
 
           for (i = 0; i < funcs.length; i++) {
@@ -1027,11 +1042,13 @@ matchSignature(
   } else {
     if (!foundSameName) {
       throw new TclException(interp,
-			     "no accessible method \"" + signature + "\" in class " +
+			     "no accessible" + (isStatic?" static ":" ") +
+			     "method \"" + signature + "\" in class " +
 			     cls.getName());
     } else {
       throw new TclException(interp,
-			     "can't find accessible method \"" + signature + "\" with " +
+			     "can't find accessible" + (isStatic?" static ":" ") +
+			     "method \"" + signature + "\" with " +
 			     argv_count + " argument(s) for class \"" +
 			     cls.getName() + "\"");
     }
@@ -1120,16 +1137,16 @@ getAccessibleConstructor(
 /*
  *----------------------------------------------------------------------
  *
- * getAccessibleMethods --
+ * getAccessibleInstanceMethods --
  *
- *	Returns all methods that can be invoked for a given class.
+ *	Returns all instance methods that can be invoked for a given class.
  *
  * Results:
- *	An array of all the accessible methods in the class and the
+ *	An array of all the accessible instance methods in the class and the
  *	superclasses of the class. If a method is overloaded, only the
  *	"most public" instance of that method is included in the
  *	array. A method is considered accessible if it has public
- *	access or if it has package access and the package has
+ *	access or if it does not have private access and the package has
  *	a custom PkgInvoker. See comments above the "func" member
  *	variable for more details.
  *
@@ -1141,43 +1158,40 @@ getAccessibleConstructor(
  */
 
 static Method[]
-getAccessibleMethods(
+getAccessibleInstanceMethods(
     Class cls)				// The class to query.
 {
-    Method[] methods = (Method[]) allDeclMethTable.get(cls);
+    Method[] methods = (Method[]) instanceMethodTable.get(cls);
     if (methods != null) {
 	return methods;
     }
 
+    // Avoid using Class.getMethods() because it includes
+    // static members and it does not account for interfaces
+    // which need to include methods from the Object class.
+
     Vector vec = new Vector();
 
     for (Class c = cls; c != null; ) {
-	// Query public methods, unless the package contains a package
-	// invoker to provide access to package scoped methods.
-	if (PkgInvoker.usesDefaultInvoker(c)) {
-	    methods = c.getMethods();
-	} else {
-	    methods = c.getDeclaredMethods();
-	}
-	mergeMethods(c, methods, vec);
+	methods = c.getDeclaredMethods();
+	mergeInstanceMethods(c, methods, vec);
 
 	Class interfaces[] = c.getInterfaces();
 	for (int i = 0; i < interfaces.length; i++) {
-	    mergeMethods(interfaces[i], interfaces[i].getMethods(), vec);
+	    mergeInstanceMethods(interfaces[i], interfaces[i].getMethods(), vec);
 	}
 
 	if (c.isInterface()) {
 	    c = Object.class; // if cls is an interface add Object methods
 	} else {
 	    c = c.getSuperclass();
-	}	
-
+	}
     }
 
-    sortMethods(vec); // removed until this can be tested more.
+    sortMethods(vec);
     methods = new Method[vec.size()];
     vec.copyInto(methods);
-    allDeclMethTable.put(cls, methods);
+    instanceMethodTable.put(cls, methods);
 
     return methods;
 }
@@ -1185,10 +1199,64 @@ getAccessibleMethods(
 /*
  *----------------------------------------------------------------------
  *
- * mergeMethods --
+ * getAccessibleStaticMethods --
  *
- *	Add the methods declared by a super-class or an interface to
- *	the list of declared methods of a class.
+ *	Returns all static methods that can be invoked for a given class.
+ *
+ * Results:
+ *	An array of all the accessible static methods in the class.
+ *	A method is considered accessible if it has public
+ *	access or if it is not private and the package has
+ *	a custom PkgInvoker. See comments above the "func" member
+ *	variable for more details.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Method[]
+getAccessibleStaticMethods(
+    Class cls)				// The class to query.
+{
+    Method[] methods = (Method[]) staticMethodTable.get(cls);
+    if (methods != null) {
+	return methods;
+    }
+
+    // When searching for static methods in this class,
+    // call getDeclaredMethods() and filter out those
+    // methods that are not static or are not accessible.
+    // This should be quicker than calling getMethods()
+    // since that returns both static and instance methods
+    // for the class and its superclasses.
+
+    methods = cls.getDeclaredMethods();
+    Vector vec = new Vector();
+
+    for (int i=0; i < methods.length; i++) {
+	Method m = methods[i];
+	if (Modifier.isStatic(m.getModifiers()) && PkgInvoker.isAccessible(m)) {
+	    vec.addElement(m);
+	}
+    }
+
+    sortMethods(vec);
+    methods = new Method[vec.size()];
+    vec.copyInto(methods);
+    staticMethodTable.put(cls, methods);
+
+    return methods;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * mergeInstanceMethods --
+ *
+ *	Add instance methods declared by a super-class or an interface to
+ *	the list of accessible instance methods.
  *
  * Results:
  *	None.
@@ -1202,7 +1270,7 @@ getAccessibleMethods(
  */
 
 private static void 
-mergeMethods(
+mergeInstanceMethods(
     Class c,
     Method methods[],
     Vector vec)
@@ -1210,6 +1278,15 @@ mergeMethods(
     for (int i=0; i < methods.length; i++) {
 	boolean sameSigExists = false;
 	Method newMeth = methods[i];
+
+	if (newMeth == null)
+	    continue;
+
+	// Don't merge static methods or inaccessible methods
+	if (Modifier.isStatic(newMeth.getModifiers()) ||
+	        !PkgInvoker.isAccessible(newMeth)) {
+	    continue;
+	}
 
 	for (int j=0; j < vec.size(); j++) {
 	    Method oldMeth = (Method)vec.elementAt(j);
@@ -1290,7 +1367,7 @@ methodSigEqual(
  *
  *	This method will sort a vector of Method objects. We need to sort
  *      the methods so that the order of the methods does not depend on
- *      the order the methods are returned by the JVM.
+ *      the order the methods as returned by the JVM.
  *
  * Results:
  *	None.

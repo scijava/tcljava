@@ -5,7 +5,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: FuncSig.test,v 1.8 2002/12/23 20:38:11 mdejong Exp $
+# RCS: @(#) $Id: FuncSig.test,v 1.9 2002/12/27 02:44:41 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -63,7 +63,8 @@ test FuncSig-1.7 {get, errors} {
     set sig "foo"
     list [catch {
 	java::call tcl.lang.FuncSig get [java::getinterp] [java::null] \
-            [jtest getobject $sig] [java::new {tcl.lang.TclObject[]} 2] 0 2
+            [jtest getobject $sig] [java::new {tcl.lang.TclObject[]} 2] \
+            0 2 true
     } msg] $msg
 } {1 {tcl.lang.TclException: unknown class "foo"}}
 
@@ -153,38 +154,68 @@ test FuncSig-1.24 {get, method short signature} {
     [java::new tests.JavaTest] imethod 12345
 } 12346
 
-#
-# getAccessibleMethods
-#
+test FuncSig-1.25 {can't call static method via instance} {
+    list [catch {[java::new tests.JavaTest] smethod} err] $err
+} {1 {no accessible method "smethod" in class tests.JavaTest}}
 
-test FuncSig-2.1 {getAccessibleMethods, caching} {
+
+test FuncSig-2.1 {getAccessible*Methods, caching} {
     set c [java::field Object class]
-    set m1 [java::call tcl.lang.FuncSig getAccessibleMethods $c]
-    set m2 [java::call tcl.lang.FuncSig getAccessibleMethods $c]
-    string compare $m1 $m2
-} 0
+    set m1 [java::call tcl.lang.FuncSig getAccessibleInstanceMethods $c]
+    set m2 [java::call tcl.lang.FuncSig getAccessibleInstanceMethods $c]
+    set m3 [java::call tcl.lang.FuncSig getAccessibleStaticMethods $c]
+    set m4 [java::call tcl.lang.FuncSig getAccessibleStaticMethods $c]
+    list [string compare $m1 $m2] [string compare $m3 $m4]
+} {0 0}
 
 set FuncSig2_2 {equals getClass hashCode notify notifyAll toString wait wait wait}
 
-test FuncSig-2.2 {getAccessibleMethods, caching} {
+test FuncSig-2.2 {getAccessibleInstanceMethods} {
     set c [java::field Object class]
-    set m [java::call tcl.lang.FuncSig getAccessibleMethods $c]
+    set m [java::call tcl.lang.FuncSig getAccessibleInstanceMethods $c]
 
     set list ""
     for {set i 0} {$i < [$m length]} {incr i} {
 	lappend list [[$m get $i] getName]
     }
 
-    lsort $list
+    set list
 } $FuncSig2_2
 
+set FuncSig2_3 {equals getClass getStringA hashCode notify notifyAll toString wait wait wait}
 
-set FuncSig2_3 \
-	{{equals java.lang.Object} {getClass java.lang.Object} {getNonPublicTester tests.invoke.PublicTester} {getStringA tests.invoke.IntA} {getStringC tests.invoke.PublicTester} {hashCode java.lang.Object} {noAccess3 tests.invoke.NonPublicTester} {notify java.lang.Object} {notifyAll java.lang.Object} {publicFunc tests.invoke.PublicTester} {toString java.lang.Object} {wait java.lang.Object} {wait java.lang.Object} {wait java.lang.Object}}
+test FuncSig-2.3 {getAccessibleInstanceMethods} {
+    set c [java::field tests.invoke.IntA class]
+    set m [java::call tcl.lang.FuncSig getAccessibleInstanceMethods $c]
 
-test FuncSig-2.3 {getAccessibleMethods, caching} {
-    set a [java::call tests.invoke.PublicTester getNonPublicTester]
-    set m [java::call tcl.lang.FuncSig getAccessibleMethods [$a getClass]]
+    set list ""
+    for {set i 0} {$i < [$m length]} {incr i} {
+	lappend list [[$m get $i] getName]
+    }
+
+    set list
+} $FuncSig2_3
+
+set FuncSig2_4 {copyValueOf copyValueOf valueOf valueOf valueOf valueOf valueOf valueOf valueOf valueOf valueOf}
+
+test FuncSig-2.4 {getAccessibleStaticMethods} {
+    set c [java::field String class]
+    set m [java::call tcl.lang.FuncSig getAccessibleStaticMethods $c]
+
+    set list ""
+    for {set i 0} {$i < [$m length]} {incr i} {
+	lappend list [[$m get $i] getName]
+    }
+
+    set list
+} $FuncSig2_4
+
+set FuncSig2_5 \
+	{{equals java.lang.Object} {getClass java.lang.Object} {getStringC tests.invoke.PublicTester} {hashCode java.lang.Object} {notify java.lang.Object} {notifyAll java.lang.Object} {publicFunc tests.invoke.PublicTester} {toString java.lang.Object} {wait java.lang.Object} {wait java.lang.Object} {wait java.lang.Object}}
+
+test FuncSig-2.5 {getAccessibleMethods} {
+    set m [java::call tcl.lang.FuncSig getAccessibleInstanceMethods \
+        [java::field tests.invoke.PublicTester class]]
 
     set results [list]
     for {set i 0} {$i < [$m length]} {incr i} {
@@ -194,9 +225,8 @@ test FuncSig-2.3 {getAccessibleMethods, caching} {
 
     # Compare individual elements
     if 0 {
-        set results [lsort $results]
         for {set i 0} {$i < [llength $results]} {incr i} {
-            set o_info [lindex $FuncSig2_3 $i]
+            set o_info [lindex $FuncSig2_5 $i]
             set info [lindex $results $i]
             if {![string equal $o_info $info]} {
                 puts "expected \{$o_info\} got \{$info\}"
@@ -204,8 +234,8 @@ test FuncSig-2.3 {getAccessibleMethods, caching} {
         }
     }
 
-    lsort $results
-} $FuncSig2_3
+    set results
+} $FuncSig2_5
 
 
 # Black box tests

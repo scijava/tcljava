@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaInfoCmd.java,v 1.4 2002/12/23 20:38:11 mdejong Exp $
+ * RCS: @(#) $Id: JavaInfoCmd.java,v 1.5 2002/12/27 02:44:41 mdejong Exp $
  */
 
 package tcl.lang;
@@ -382,12 +382,7 @@ throws
 {
     // Get the array of fields associated with that class.
 
-    Field[] fieldArray;
-    try {
-	fieldArray = FieldSig.getAccessibleFields(c);
-    } catch (SecurityException e) {
-	throw new TclException(interp, e.toString());
-    }
+    Field[] fieldArray = FieldSig.getAccessibleFields(c);
 
     // Check whether each field is static.  Based on -static option,
     // ignore the field or add it to the result list. 
@@ -453,9 +448,9 @@ throws
 /*
  *-----------------------------------------------------------------------------
  *
- * geMethodInfoList--
+ * getMethodInfoList--
  *
- *	Find the list of methods.
+ *	Find the list of static or instance methods.
  *
  * Results:
  *	Returns a TclObject list of method signatures.
@@ -477,26 +472,23 @@ throws
     TclException 			// Exceptions thrown as a result of bad
 					//   user input.
 {
-    // Get the array of methods associated with that class.
+    // Get the array of accessible static methods associated with the class,
+    // otherwise get all the accessible non-static methods in the class,
+    // its superclasses, and interfaces.
 
     Method[] methodArray;
-    try {
-	methodArray = c.getMethods();
-    } catch (SecurityException e) {
-	throw new TclException(interp, e.toString());
+
+    if (statOpt) {
+	methodArray = FuncSig.getAccessibleStaticMethods(c);
+    } else {
+	methodArray = FuncSig.getAccessibleInstanceMethods(c);
     }
     
-    // Check whether each method is static.  Based on -static
-    // option, ignore the method or add the signature to the
-    // result list.
-	    
     TclObject resultListObj = TclList.newInstance();
     TclObject elementObj, sigObj;
 
     for (int m = 0; m < methodArray.length; ++m) {
-	boolean isStatic = 
-	    ((methodArray[m].getModifiers() & Modifier.STATIC) > 0);
-	if (isStatic == statOpt) {
+	if (true) { // FIXME: left in to keep diff simple
 	    // Create the signature.
 
 	    sigObj = TclList.newInstance();
@@ -568,13 +560,8 @@ throws
 {
     // Get the array of constructors associated with that class.
 
-    Constructor[] constructorArray;
-    try {
-	constructorArray = c.getConstructors();
-    } catch (SecurityException e) {
-	throw new TclException(interp, e.toString());
-    }
-    
+    Constructor[] constructorArray = FuncSig.getAccessibleConstructors(c);
+
     TclObject resultListObj = TclList.newInstance();
     TclObject elementObj, sigObj;
 
