@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ForeachCmd.java,v 1.2 1999/05/09 00:16:27 dejong Exp $
+ * RCS: @(#) $Id: ForeachCmd.java,v 1.3 1999/08/03 04:00:16 mo Exp $
  *
  */
 
@@ -20,40 +20,39 @@ package tcl.lang;
 
 class ForeachCmd implements Command {
     /**
+     * Tcl_ForeachObjCmd -> ForeachCmd.cmdProc
+     *
      * This procedure is invoked to process the "foreach" Tcl command.
      * See the user documentation for details on what it does.
      *
      * @param interp the current interpreter.
-     * @param argv command arguments.
+     * @param objv command arguments.
      * @exception TclException if script causes error.
      */
 
-    public void cmdProc(Interp interp, TclObject argv[])
+    public void cmdProc(Interp interp, TclObject[] objv)
 	    throws TclException {
-	if (argv.length < 4 || (argv.length % 2) != 0) {
-	    throw new TclNumArgsException(interp, 1, argv, 
+	if (objv.length < 4 || (objv.length % 2) != 0) {
+	    throw new TclNumArgsException(interp, 1, objv, 
 		    "varList list ?varList list ...? command");
 	}
 
-	/*
-	 *
-	 * foreach {n1 n2} {1 2 3 4} {n3} {1 2} {puts $n1-$n2-$n3}
-	 *	name[0] = {n1 n2}	value[0] = {1 2 3 4}
-	 *	name[1] = {n3}		value[0] = {1 2}
-	 */
+	// foreach {n1 n2} {1 2 3 4} {n3} {1 2} {puts $n1-$n2-$n3}
+	//	name[0] = {n1 n2}	value[0] = {1 2 3 4}
+	//	name[1] = {n3}		value[0] = {1 2}
 
-	TclObject name[]  = new TclObject[(argv.length - 2) / 2];
-	TclObject value[] = new TclObject[(argv.length - 2) / 2];
+	TclObject[] name  = new TclObject[(objv.length - 2) / 2];
+	TclObject[] value = new TclObject[(objv.length - 2) / 2];
 
 	int c, i, j, base;
 	int maxIter = 0;
-	TclObject command = argv[argv.length-1];
+	TclObject command = objv[objv.length-1];
 	boolean done = false;
 
-	for (i=0; i<argv.length-2; i+=2) {
+	for (i=0; i < objv.length-2; i+=2) {
 	    int x = i/2;
-	    name[x]  = argv[i+1];
-	    value[x] = argv[i+2];
+	    name[x]  = objv[i+1];
+	    value[x] = objv[i+2];
 
 	    int nSize = TclList.getLength(interp, name[x]);
 	    int vSize = TclList.getLength(interp, value[x]);
@@ -68,23 +67,30 @@ class ForeachCmd implements Command {
 	    }
 	}
 	
-	for (c=0; !done && c<maxIter; c++) {
-	    /*
-	     * Set up the variables
-	     */
+	for (c=0; !done && c < maxIter; c++) {
+	    // Set up the variables
 
-	    for (i=0; i<argv.length-2; i+=2) {
+	    for (i=0; i < objv.length-2; i+=2) {
 		int x = i/2;
 		int nSize = TclList.getLength(interp, name[x]);
 		base = nSize * c;
-		for (j=0; j<nSize; j++) {
-		    /**
-		     * Test and see if the name variable is an array.
-		     */
+		for (j=0; j < nSize; j++) {
+		    // Test and see if the name variable is an array.
 
-		    Var var = (Var)interp.varFrame.varTable.
-                            get(name[x].toString());
-		    if ((var != null) && ((var.flags & Var.ARRAY) != 0)) {
+		    Var[] result = Var.lookupVar(interp, name[x].toString(),
+		        null, 0, null, false, false);
+		    Var var = null;
+
+		    if (result != null) {
+			if (result[1] != null) {
+			    var = result[1];
+			} else {
+			    var = result[0];
+			}
+		    }
+
+		    // FIXME : is it an error to have an array var as the index?
+		    if ((var != null) && var.isVarArray()) {
 		        throw new TclException(interp, 
 			        "couldn't set loop variable: \"" +
 				name[x] + "\"");
@@ -107,9 +113,7 @@ class ForeachCmd implements Command {
 		}
 	    }
 
-	    /*
-	     * Execute the script
-	     */
+	    // Execute the script
 
 	    try {
 		interp.eval(command, 0);
