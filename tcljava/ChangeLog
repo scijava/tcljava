@@ -1,5 +1,10 @@
 2002-05-02  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* new_features.txt: Add notes about the new features
+	added to Tcl Blend and Jacl.
+
+2002-05-02  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* configure: Regen.
 	* tcljava.m4 (AC_JAVA_JNI_LIBS): The previous checkin
 	neglected to use the $machine variable for variable

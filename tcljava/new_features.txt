@@ -231,10 +231,39 @@ An implementation of Tcl's interp command has been added to Jacl.
 This new command passes all of the Tcl regression tests for the
 interp command. Thanks go to Christian Krone for this command.
 
+(TCL BLEND NOW FULLY THREAD AWARE)
+
+Earlier versions of Tcl Blend made use of a global lock that
+serialized each Java method call. In the new version,
+Tcl Blend's JNI code has been rewritten to get rid of this
+global lock. This change significantly simplifies the code
+and should increase performance when Java methods are invoked
+from multiple threads.
+
+(NEW COMMAND FOR JACL)
+
+The fconfigure command has been added to Jacl. Thanks go to
+Bruce Johnson for providing the initial implementation
+of this command.
+
+(NEW COMMAND FOR JACL)
+
+The encoding command has been added to Jacl. Thanks go to
+Bruce Johnson for providing the initial implementation
+of this command.
+
 (NEW COMMAND FOR JACL)
 
 The socket command has been added to Jacl. Both client sockets
 and server sockets are supported. Thanks go to Neil Madden
-for the initial implementation of this command.
+for providing the the initial implementation of this command.
+
+(NEW COMMAND FOR JACL)
+
+The file volumes subcommand has been added to Jacl. The
+implementation makes use of the File.listRoots() method
+introduced in JDK 1.2, so a newer JDK is required to
+make use of this functionality. Thanks go to Shawn Boyce
+for providing the initial implementation of this command.
 
 </PRE></BODY></HTML>
