@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: ParseAdaptor.java,v 1.5 2003/01/09 02:15:39 mdejong Exp $
+ * RCS: @(#) $Id: ParseAdaptor.java,v 1.6 2003/02/05 09:24:40 mdejong Exp $
  */
 
 package tcl.lang;
@@ -78,15 +78,20 @@ throws
 static ParseResult
 parseNestedCmd(
     Interp interp,		// The current Interp.
-    String string,		// The script containing the variable.
+    String string,		// The script containing the nested command.
     int index,			// An index into string that points to.
-				// the character just after the ].
+				// the character just after the [.
     int length)			// The length of the string.
 throws 
     TclException
 {
     CharPointer script;
     TclObject obj;
+
+    // Check for the easy case where the last character in the string is '['.
+    if (index == length) {
+        throw new TclException(interp, "missing close-bracket");
+    }
 
     script = new CharPointer(string);
     script.index = index;

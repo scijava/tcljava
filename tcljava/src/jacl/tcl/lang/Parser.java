@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Parser.java,v 1.14 2003/02/03 11:07:23 mdejong Exp $
+ * RCS: @(#) $Id: Parser.java,v 1.15 2003/02/05 09:24:40 mdejong Exp $
  */
 
 package tcl.lang;
@@ -220,6 +220,10 @@ parseCommand(
 	    }
 
 	    if (script_index == parse.endIndex) {
+		if (nested && savedChar != ']') {
+		    parse.incomplete = true;
+		    throw new TclException(interp, "missing close-bracket");
+		}
 		break;
 	    }
 
@@ -379,6 +383,10 @@ parseCommand(
 		break;
 	    }
 	    if (script_index == parse.endIndex) {
+		if (nested && savedChar != ']') {
+		    parse.incomplete = true;
+		    throw new TclException(interp, "missing close-bracket");
+		}
 		break;
 	    }
 	    parse.termIndex = script_index;

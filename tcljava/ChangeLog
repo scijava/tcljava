@@ -1,3 +1,13 @@
+2003-02-05  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/jacl/tcl/lang/ParseAdaptor.java (parseNestedCmd):
+	Raise missing close-bracket exception for easy error case.
+	* src/jacl/tcl/lang/Parser.java (parseCommand):
+	Raise "missing close-bracket" exception when parser
+	finds a nested command that is not terminated by
+	a close bracket. This allows a couple of failing test
+	cases to pass.
+
 2003-02-03  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* tests/tcl/error.test:
