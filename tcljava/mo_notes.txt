@@ -125,11 +125,6 @@ the gluepkg demo has some strange code in it for AWT event
 management. This code needs to be updated to use the
 Notifier class and the java::event system.
 
-(TODO)
-the package test cases (in tcl/pkg.test) really need to be fixed
-so that they are not destructive. Perhaps the packages could be
-stored at the top of the file and then restored when done.
-
 
 (TODO)
 Something needs to be done during the install in case the configure
@@ -380,9 +375,10 @@ set in Jacl and there is a spot in the -native test that it is used.
 
 
 (TODO)
-The test cases have some serious problems in how the attempt to
+The test cases have some serious problems in how they attempt to
 figure out what platform jacl is running under. These need to
 be fixed.
+
 
 (TODO)
 Check that perms on open command are correct in jacl. Is "rw" a
@@ -473,14 +469,15 @@ then using those renamed command names in other java methods. Would
 it be a good solution to also check for a command that has an
 internal rep of a ReflectObject inside ReflectObject.convert().
 
->      % set o [createRect 0 0 10 10]
->      java0xc7
->      % java::info methods java0xc7
+>      % package require java
+>      % set o [java::new Object]
+>      java0x1
+>      % java::info methods java0x1
 >      {equals java.lang.Object} ......
->      % rename java0xc7 poly1
+>      % rename java0x1 poly1
 >      % java::info methods poly1
 >      java::info: unknown java class or object "poly1"
->      % java::info methods java0xc7
+>      % java::info methods java0x1
 >      {equals java.lang.Object} ......
 
 
@@ -594,4 +591,10 @@ Check the implementation of the test command. The command really should
 print the header info before actually calling the command. If the command
 crashes at least we will know which test was running when it crashed.
 
+
+(TODO)
+
+Check into problem with the java::bind command which breaks when there
+are not enough arguments given to the method. I think there is a deadlock
+problem here that needs to be addressed. (see tclblend_bug).
 
