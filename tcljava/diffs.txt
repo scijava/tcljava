@@ -1,8 +1,8 @@
 diffs.txt --  DIFFERENCES BETWEEN TCL and JACL
 
-RCS: @(#) $Id: diffs.txt,v 1.2 1999/01/14 18:13:17 hylands Exp $
+RCS: @(#) $Id: diffs.txt,v 1.3 1999/05/08 23:29:36 dejong Exp $
 
-This file contains a list of differences between Tcl 8.x and Jacl 1.1.
+This file contains a list of differences between Tcl 8.x and Jacl 1.x.
 
 What Works
 
@@ -12,17 +12,15 @@ any behavior that deviates from that of native Tcl.
 - All Tcl control flow constructs are fully implemented:
 
 	break, bgerror, case, catch, continue, exit,
-	for, foreach, if, proc, return, while
-	switch
+	for, foreach, if, proc, return, switch, while
 
 - General Tcl commands that are completely implemented in Jacl.
 
-	after, append, auto_load, cd, concat, eval, expr, format,
+	after, append, auto_load, cd, clock, concat, eval, expr, format,
 	global, incr, join, lappend, lindex, linsert list, llength,
-	lrange, lreplace, lsearch, lsort, package, pwd, rename,
-	regexp, regsub, scan, seek, set, source, split, string, subst,
-	tell, time, trace, unknown, unset, update, uplevel, upvar,
-	vwait
+	lrange, lreplace, lsearch, lsort, package, pwd, regexp, regsub,
+        rename, scan, seek, set, source, split, string, subst, tell,
+        time, trace, unknown, unset, update, uplevel, upvar, vwait
 
 ----------
 
@@ -31,35 +29,35 @@ What Partially Works
 These commands are close to being complete.  Please notify us if you
 find errors other than those we have described.
 
-- Currently, all I/O commands only handle synchronous I/O.  The
+- Currently, the I/O commands handle only synchronous I/O.  The
   following IO commands work but are limited to what Java allows. 
 
 	close, eof, file, flush, gets, open, puts
-	read, seek, tell, write
-	glob:	-buggy on windows
+	read, seek, tell, write, glob
 
-  - 'file nativename' was implemented by Mo DeJong for Jacl1.1
-
-- Regular expressions are only shipped as .class files. Tcl commands
-  regexp and regsub and lsearch and switch with -regexp flag are only
-  fully functional in both the binary and source releases of Jacl. We
-  expect there will be different behavior in Jacl's handling of
-  regexps.  The package we have included was designed to be compatible
-  with perl5.  One difference we know of is that the '^' character
-  means "a new line begins with" in perl5, but in native Tcl, the '^'
-  denotes "strictly begins with".
-
-  Jacl1.2 may use a different regexp parser.
+- Regular experessions work most of the time but we expect there
+  will be different behavior in Jacl's handling of regexps.  The
+  package we have included was designed to be compatible with perl5.
+  One difference we know of is that the '^' character means "a new
+  line begins with" in perl5, but in native Tcl, the '^' denotes
+  "strictly begins with".
 
 - Environment variable array "env" doesn't have the same indices
   defined in Jacl as in native Tcl.  USER and HOME are the only
   indices that are defined in both implementations.  Jacl defines
   non-native indices, such as CLASSPATH.
 
+- The auto_execok command works on UNIX systems but it does not
+  work on Windows systems. This command is used by the unknown
+  command to check to see if a given program can be exec'ed. The
+  auto_reset command also works on UNIX systems but has no effect
+  on Windows systems as it is closely related to auto_execok.
+
 - Tcl commands that are not fully functional
 
 	info:	Missing "loaded" option
-	exec:	Only works on unix, but pipes and redirections don't work
+	exec:   Not implemented on the Mac, pipes and redirections
+                don't work on unix or windows systems
 
 ----------
 
@@ -67,14 +65,10 @@ What Does Not Work
 
 - Tcl commands that are not yet implemented in Jacl
 
-	auto_execok, auto_mkindex, auto_reset
-	binary, clock, fblocked, fcopy, fconfigure, fileevent
+	auto_mkindex, binary, fblocked, fcopy, fconfigure, fileevent
 	history, interp, load, namespace, pkg_mkIndex, pid
 	socket
 
-  An implementation of the clock command was written by
-  Christian Krone <krischan@sql.de>.  This code is not present in 
-  Jacl 1.1, but hopefully will make it into Jacl 1.2
 
 ----------
 
@@ -139,6 +133,7 @@ Notifier		deleteEvents		Tcl_DeleteEvents
 
 ReflectObject		newInstance
 			get
+			getClass
 
 TclBoolean		newInstance		Tcl_NewBooleanObj
 			get			Tcl_GetBooleanFromObj

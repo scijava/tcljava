@@ -1,5 +1,5 @@
 README
-RCS: @(#) $Id: README,v 1.1 1998/10/14 21:09:23 cvsadmin Exp $
+RCS: @(#) $Id: README,v 1.2 1999/05/08 23:27:15 dejong Exp $
 
 
 Abstract
@@ -9,25 +9,16 @@ Abstract
       The SimpleExtension contains one Tcl command, "sayhello",
       which returns the string "Hello World!" when invoked.
 
-Why Bother?
------------
-
-      The purpose of this demo is to acquaint the user with a Jacl
-      interface mechanism.
-
 Running the Demo
 ----------------
 
-      Start either the Jacl Shell or the tclsh with the Tcl Blend library 
-      loaded.
+     To see the demo in action start out by typing "make demos" in the
+     directory you compiled in. This will create a demos subdirectory
+     in the directory you compiled in. At this point you will want to
+     start up a java enabled shell. The easiest way to do this is to
+     type "make shell" and then cd to the demos/simplepkg directory
+     that was created inside the directory you compiled in. At this
+     point you can load the extension like this "source simple.tcl".
+     You should see a "hello world" message that shows the extension
+     was loaded and is functioning properly.
 
-      Load the SimpleExtension into the interperter by typing	
-      "java::load -classpath . SimpleExtension"
-      
-      Now you can execute the "sayhello" command.
-
-Source Files
-------------
-
-    * SimpleExtension.java
-    * SayhelloCmd.java

@@ -1,5 +1,5 @@
 README
-RCS: @(#) $Id: README,v 1.1 1998/10/14 21:09:23 cvsadmin Exp $
+RCS: @(#) $Id: README,v 1.2 1999/05/08 23:27:58 dejong Exp $
 
 
 Abstract
@@ -63,21 +63,18 @@ Choosing the Best Interface
 Running the Demo
 ----------------
 
-      To run the StopWatch demo by adding the StopWatchExtension ("sw" Tcl
-      command defined in Java), type 
-      "java::load -classpath . StopWatchExtension" at your Tcl command
-      prompt.  Now you can execute the "sw" command with the
+      The first thing you will need to do is run "make demos" in your
+      build directory. This will create a demos subdirectory in your
+      build directory and it will compile any .java files the demo uses.
+
+      To run the StopWatch demo by adding the StopWatchExtension
+      ("sw" Tcl command defined in Java), type
+      "java::load -classpath . StopWatchExtension" at your java enabled
+      Tcl prompt. Now you can execute the "sw" command with the
       appropriate arguments.
 
       To add the sw* Tcl procedures, after adding the
       StopWatchExtension (as shown above), type
       "source swCmd.tcl" at the Tcl command prompt.  Now you can execute 
       the commands "swNew", "swSet", . . .
-  
-Source Files
-------------
 
-    * StopWatchExtension.java
-    * StopWatchThread.java
-    * SwCmd.java
-    * swCmd.tcl
