@@ -7,13 +7,13 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: SwitchCmd.java,v 1.1 1998/10/14 21:09:20 cvsadmin Exp $
+ * RCS: @(#) $Id: SwitchCmd.java,v 1.2 1999/05/09 01:32:03 dejong Exp $
  *
  */
 
 package tcl.lang;
 
-/*
+/**
  * This class implements the built-in "switch" command in Tcl.
  */
 
@@ -53,7 +53,7 @@ cmdProc(
     TclObject argv[])			// Arguments to "switch" statement.
 throws TclException
 {
-    int i, code, mode, body;
+    int i, mode, body;
     boolean matched;
     String string;
     TclObject switchArgv[] = null;
@@ -83,10 +83,8 @@ throws TclException
     string = argv[i].toString();
     i++;
 
-    /*
-     * If all of the pattern/command pairs are lumped into a single
-     * argument, split them out again.
-     */
+    // If all of the pattern/command pairs are lumped into a single
+    // argument, split them out again.
     
     if (argv.length - i == 1) {
 	switchArgv = TclList.getElements(interp, argv[i]);
@@ -101,9 +99,7 @@ throws TclException
 		    "extra switch pattern with no body");
 	}
 
-	/*
-	 * See if the pattern matches the string.
-	 */
+	// See if the pattern matches the string.
 
 	matched = false;
 	String pattern = switchArgv[i].toString();
@@ -127,10 +123,8 @@ throws TclException
 	    continue;
 	}
 
-	/*
-	 * We've got a match.  Find a body to execute, skipping bodies
-	 * that are "-".
-	 */
+	// We've got a match.  Find a body to execute, skipping bodies
+	// that are "-".
 
 	for (body = i+1; ; body += 2) {
 	    if (body >= switchArgv.length) {
@@ -156,9 +150,7 @@ throws TclException
 	}
     }
     
-    /*
-     * Nothing matched:  return nothing.
-     */
+    // Nothing matched:  return nothing.
 }
 
 } // end SwitchCmd
