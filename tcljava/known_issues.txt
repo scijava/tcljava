@@ -5,7 +5,9 @@ compile only the necessary files.
 
 (Solaris)
 running the jacl tests using the green threads java
-interpreter with the jit on will crash the JVM
+interpreter with the jit on will crash the JVM.
+This crash will happen even with the jit from the
+jdk1.1.6 production release JIT.
 
 tcljava/JavaDefineClassCmd.test
 tcljava/JavaLoadCmd.test
@@ -57,6 +59,11 @@ When running the tests under JDK1.2beta4 under NT4.0sp3, the TCLSH
 makefile variable must not be an absolute pathname.  If it is
 an absolute pathname, then tclsh80 will crash with a segfault
 
+(Tcl Blend guiDemo)
+Under Tcl Blend with Tcl 8.0.3, guiDemo does not work, employees
+cannot be moved over.  When the arrow is clicked on, the message:
+	can't wait for variable "done":  would wait forever
+appears
 
 (Tcl 8.1)
 src/native/javaInterp.c produces a warning while compiling because
