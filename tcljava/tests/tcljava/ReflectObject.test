@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: ReflectObject.test,v 1.2 1998/10/29 23:23:32 hylands Exp $
+# RCS: @(#) $Id: ReflectObject.test,v 1.3 1999/05/10 03:14:32 dejong Exp $
 
 # Note: This test file must be sourced from the parent directory
 #       or else the defs file may not be properly loaded.
@@ -66,6 +66,28 @@ test ReflectObject-1.10 {cmdProc} {
     set s1 [java::new {java.lang.String java.lang.String} "hello"]
     set s2 [$s1 -n toString]
     string compare $s1 $s2 
+} {0}
+
+test ReflectObject-1.11 {cmdProc} {
+    set x [java::new tests.ConvertTest]
+    set boolObj [$x -noconvert trueBooleanObjectMethod]
+    list [java::isnull $boolObj] [$boolObj booleanValue]
+} {0 1}
+
+test ReflectObject-1.12 {cmdProc} {
+    set x [java::new tests.ConvertTest]
+    set boolObj [$x -noconvert falseBooleanObjectMethod]
+    list [java::isnull $boolObj] [$boolObj booleanValue]
+} {0 0}
+
+test ReflectObject-1.13 {cmdProc} {
+    set x [java::new tests.ConvertTest]
+    $x trueBooleanMethod
+} {1}
+
+test ReflectObject-1.14 {cmdProc} {
+    set x [java::new tests.ConvertTest]
+    $x falseBooleanMethod
 } {0}
 
 test ReflectObject-2.1 {isValid flag} {
@@ -126,7 +148,6 @@ test ReflectObject-3.0 {object type} {
 
 
 test ReflectObject-3.1 {object compare} {
-    # Note that this test fails with JDK1.2beta4
     catch {unset results}
     set c [java::new tests.Compare]
     set r1 [$c get1]
@@ -164,6 +185,19 @@ test ReflectObject-3.2 {object compare} {
     lappend results [$c compare $r2 $r6]
 } {0 0 0 1 1 1 0 0 0}
 
+set lang_classes {{Boolean true} {Byte 5} {Character c} {Double 1.5} Exception {Float 1.5} {Integer 10} {Long 500} Object {Short 3} String StringBuffer Throwable}
 
+test ReflectObject-3.3 {object equals} {
+    set results [list]
+
+    foreach lang_class $lang_classes {
+	set x [eval java::new $lang_class]
+
+        if {! [$x equals [java::null]] && [$x equals $x]} {
+            lappend results $lang_class
+        }
+    }
+    set results
+} $lang_classes
 
 
