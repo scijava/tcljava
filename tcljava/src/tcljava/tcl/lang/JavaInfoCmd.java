@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaInfoCmd.java,v 1.2 1999/05/09 21:58:05 dejong Exp $
+ * RCS: @(#) $Id: JavaInfoCmd.java,v 1.3 1999/05/09 21:59:47 dejong Exp $
  */
 
 package tcl.lang;
@@ -18,7 +18,7 @@ import java.util.*;
 import java.beans.*;
 import java.lang.reflect.*;
 
-/*
+/**
  * This class implements the built-in "java::info" command in Tcl.
  */
 
@@ -151,9 +151,7 @@ throws
 	    return;
 	}
 
-	/*
-	 * The objOrClass doesn't support BeanInfo or it has no events.
-	 */
+	// The objOrClass doesn't support BeanInfo or it has no events.
 
 	interp.resetResult();
 	return;
@@ -219,11 +217,9 @@ throws
 	if (lastArg == 3) {
 	    opt = TclIndex.get(interp, argv[2], propOpts, "option", 0);
 
-	    /*
-	     * Since we just have one valid option, if the above call
-	     * returns without an exception, we've got "-type" (or
-	     * abreviations).
-	     */
+	    // Since we just have one valid option, if the above call
+	    // returns without an exception, we've got "-type" (or
+	    // abreviations).
 
 	    typeOpt = true;
 	}
@@ -331,21 +327,17 @@ throws
     TclObject elementObj, pairObj;
 
     for (int i = 0; i < propDesc.length; i++) {
-	/*
-	 * If the -type option was specified, create a list containing
-	 * the field's type and name.
-	 */
+	// If the -type option was specified, create a list containing
+	// the field's type and name.
 	    
 	pairObj = TclList.newInstance();
 		
 	if (typeOpt) {
-	    /* 
-	     * The result of getPropertyType() may be "null" if this is an
-	     * indexed property that does not support non-indexed access.
-	     * For now, if the result is null, just don't add anything to the
-	     * result.  This is as yet UNTESTED because I couldn't produce a
-	     * case in which null was returned.
-	     */
+	    // The result of getPropertyType() may be "null" if this is an
+	    // indexed property that does not support non-indexed access.
+	    // For now, if the result is null, just don't add anything to the
+	    // result.  This is as yet UNTESTED because I couldn't produce a
+	    // case in which null was returned.
 	    
 	    elementObj = 
 		TclString.newInstance(propDesc[i].getPropertyType().getName());
@@ -388,9 +380,7 @@ throws
     TclException 			// Exceptions thrown as a result of bad
 					//   user input.
 {
-    /*
-     * Get the array of fields associated with that class.
-     */
+    // Get the array of fields associated with that class.
 
     Field[] fieldArray;
     try {
@@ -399,10 +389,8 @@ throws
 	throw new TclException(interp, e.toString());
     }
 
-    /*
-     * Check whether each field is static.  Based on -static option,
-     * ignore the field or add it to the result list. 
-     */
+    // Check whether each field is static.  Based on -static option,
+    // ignore the field or add it to the result list. 
 	    
     TclObject resultListObj = TclList.newInstance();
     TclObject elementObj, sigObj, pairObj;
@@ -412,12 +400,10 @@ throws
 	boolean isStatic = 
 	    ((fieldArray[f].getModifiers() & Modifier.STATIC) > 0);
 	if (isStatic == statOpt) {
-	    /*
-	     * If the declaring class is the same as c, and the same field
-	     * is also declared in c, then the signature is the name of the
-	     * field.  Otherwise, the signature is a pair containing the field
-	     * name and the declaring class name. 
-	     */
+	    // If the declaring class is the same as c, and the same field
+	    // is also declared in c, then the signature is the name of the
+	    // field.  Otherwise, the signature is a pair containing the field
+	    // name and the declaring class name. 
 
 	    sigObj = TclList.newInstance();
 
@@ -444,10 +430,8 @@ throws
 		}
 	    }
 	    if (typeOpt) {
-		/*
-		 * If -type was used, create a pair with the property type and
-		 * signature.  Append the pair to the result list.
-		 */
+		// If -type was used, create a pair with the property type and
+		// signature.  Append the pair to the result list.
 
 		pairObj = TclList.newInstance();
 
@@ -457,9 +441,7 @@ throws
 		TclList.append(interp, pairObj, sigObj);
 		TclList.append(interp, resultListObj, pairObj);
 	    } else {
-		/*
-		 * Append the signature object to the result list.
-		 */
+		// Append the signature object to the result list.
 		
 		TclList.append(interp, resultListObj, sigObj);		
 	    }
@@ -495,9 +477,7 @@ throws
     TclException 			// Exceptions thrown as a result of bad
 					//   user input.
 {
-    /*
-     * Get the array of methods associated with that class.
-     */
+    // Get the array of methods associated with that class.
 
     Method[] methodArray;
     try {
@@ -506,11 +486,9 @@ throws
 	throw new TclException(interp, e.toString());
     }
     
-    /*
-     * Check whether each method is static.  Based on -static
-     * option, ignore the method or add the signature to the
-     * result list.
-     */
+    // Check whether each method is static.  Based on -static
+    // option, ignore the method or add the signature to the
+    // result list.
 	    
     TclObject resultListObj = TclList.newInstance();
     TclObject elementObj, sigObj;
@@ -519,9 +497,7 @@ throws
 	boolean isStatic = 
 	    ((methodArray[m].getModifiers() & Modifier.STATIC) > 0);
 	if (isStatic == statOpt) {
-	    /*
-	     * Create the signature.
-	     */
+	    // Create the signature.
 
 	    sigObj = TclList.newInstance();
 
@@ -536,11 +512,9 @@ throws
 	    }
 
 	    if (typeOpt) {
-		/*
-		 * If -type was used, create a sublist with the
-		 * method type, signature and exception types.
-		 * Append the sublist the result list.
-		 */
+		// If -type was used, create a sublist with the
+		// method type, signature and exception types.
+		// Append the sublist the result list.
 
 		TclObject sublist = TclList.newInstance();
 		TclObject exceptions = TclList.newInstance();
@@ -558,9 +532,7 @@ throws
 
 		TclList.append(interp, resultListObj, sublist);
 	    } else {
-		/*
-		 * Append the signature object to the result list.
-		 */
+		// Append the signature object to the result list.
 		
 		TclList.append(interp, resultListObj, sigObj);		
 	    }
@@ -594,9 +566,7 @@ throws
     TclException 			// Exceptions thrown as a result of
                                         // bad user input.
 {
-    /*
-     * Get the array of constructors associated with that class.
-     */
+    // Get the array of constructors associated with that class.
 
     Constructor[] constructorArray;
     try {
@@ -609,9 +579,7 @@ throws
     TclObject elementObj, sigObj;
 
     for (int m = 0; m < constructorArray.length; ++m) {
-	/*
-	 * Create signature and append it to the result list.
-	 */
+	// Create signature and append it to the result list.
 
 	sigObj = TclList.newInstance();
 
@@ -678,13 +646,14 @@ static String
 getNameFromClass(
     Class type)			// The class for which we return the name.
 {
-    StringBuffer brackets = new StringBuffer();
+    StringBuffer name = new StringBuffer();
     
     while (type.isArray()) {
-	brackets.append("[]");
+	name.append("[]");
 	type = type.getComponentType();
     }
-    return type.getName() + brackets;
+    name.insert(0,type.getName());
+    return name.toString();
 }
 
 /*
