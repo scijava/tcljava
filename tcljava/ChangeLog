@@ -1,5 +1,10 @@
 2003-08-07  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	Add tcljava-131-2003-08-07 tag to mark the
+	1.3.1 release.
+
+2003-08-07  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* Makefile.in: Create a tmp directory and
 	run install check for tclblend in this
 	dir. This avoids a problem under Windows
