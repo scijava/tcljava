@@ -90,7 +90,7 @@ public class ServerSocketChannel extends Channel {
 
         acceptThread = new AcceptThread(sock, this);
         
-        setChanName("sock" + getNextSockNum());
+        setChanName(getNextDescriptor(interp, "sock"));
         errorMsg = new String();
         acceptThread.start();
     }
@@ -149,6 +149,7 @@ public class ServerSocketChannel extends Channel {
         acceptThread.pleaseStop();
         // Close the socket
         sock.close();
+        super.close();
     }
 
     void flush(Interp interp) throws IOException, TclException
@@ -164,22 +165,6 @@ public class ServerSocketChannel extends Channel {
     {
         throw new IOException("tell is not supported for socket channels");
     }
-
-    /**
-     * Returns the next free channel number
-     **/
-
-    private int getNextSockNum()
-    {
-        int i;
-        Hashtable htbl = TclIO.getInterpChanTable(cbInterp);
-        for (i = 0; (htbl.get("sock" + i)) != null; i++)
-        {
-            // Do nothing
-        }
-        return i;
-    }
-
 }
 
 

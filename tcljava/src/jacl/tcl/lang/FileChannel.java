@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FileChannel.java,v 1.7 2001/11/17 06:13:23 mdejong Exp $
+ * RCS: @(#) $Id: FileChannel.java,v 1.8 2001/11/17 07:58:18 mdejong Exp $
  *
  */
 
@@ -124,7 +124,7 @@ class FileChannel extends Channel {
 	// In standard Tcl fashion, set the channelId to be "file" + the
 	// value of the current FileDescriptor.
 
-	String fName = "file" + getNextFileNum(interp);
+	String fName = getNextDescriptor(interp, "file");
 	setChanName(fName);
 	return fName;
     }
@@ -240,6 +240,7 @@ class FileChannel extends Channel {
                     "FileChannel.close(): null file object");
 	}
         file.close();
+        super.close();
     }
 
 
@@ -350,28 +351,5 @@ class FileChannel extends Channel {
 	    throw new TclPosixException(interp, TclPosixException.EACCES,
 		    true, "couldn't open \"" + fileObj.getName() + "\"");
 	}
-    }
-
-  
-    /**
-     * Really ugly function that attempts to get the next integer for
-     * the channelId name.  In C the FD returned in the native open call
-     * returns this value, but we dont have that...   
-     *
-     * For now we just iterate through the hashtable keys and finds the 
-     * first key matching file<X> that is not already taken.  
-     *
-     * @param interp currrent interpreter.
-     * @return the next integer to use in the channelId name.
-     */
-
-    private int getNextFileNum(Interp interp) {
-        int i;
-	Hashtable htbl = TclIO.getInterpChanTable(interp);
-
-        for (i = 0; (htbl.get("file" + i)) != null; i++) {
-	    // Do nothing...
-	}
-	return i;
     }
 }

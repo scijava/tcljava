@@ -1,11 +1,36 @@
 2001-11-16  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/jacl/tcl/lang/Channel.java (chanName, close,
+	getNextDescriptor): Make chanName member private.
+	Turn the close() method into a concrete implementation
+	instead of an abstract method. Add getNextDescriptor()
+	method to replace getNextFileNum() and getNextSocketNum()
+	methods in subclasses.
+	* src/jacl/tcl/lang/FileChannel.java (close,
+	getNextFileNum): Call supercalss getNextDescriptor()
+	instead of our own getNextFileNum(). Override close()
+	method to handle our own shutdown needs.
+	* src/jacl/tcl/lang/ServerSocketChannel.java (close,
+	getNextSockNum): Call supercalss getNextDescriptor()
+	instead of our own getNextSockNum(). Override close()
+	method to handle our own shutdown needs.
+	* src/jacl/tcl/lang/SocketChannel.java (close,
+ 	getNextSockNum, interp): Remove unneeded interp member.
+	Call supercalss getNextDescriptor() instead of
+	our own getNextSockNum(). Override close()
+	method to handle our own shutdown needs.
+	* src/jacl/tcl/lang/StdChannel.java (close, flush,
+	open, write): Remove close() method since that
+	is now handled in superclass.
+
+2001-11-16  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/jacl/tcl/lang/Channel.java:
 	* src/jacl/tcl/lang/FileChannel.java:
 	* src/jacl/tcl/lang/ServerSocketChannel.java:
 	* src/jacl/tcl/lang/SocketChannel.java:
 	* src/jacl/tcl/lang/StdChannel.java:
-	Refector subclases of Channel class. Move reader, writer,
+	Refactor subclases of Channel. Move reader, writer,
 	eofCond, BUF_SIZE, and eof() members into the superclass.
 
 2001-11-16  Mo DeJong  <mdejong@users.sourceforge.net>

@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: StdChannel.java,v 1.7 2001/11/17 06:13:23 mdejong Exp $
+ * RCS: @(#) $Id: StdChannel.java,v 1.8 2001/11/17 07:58:18 mdejong Exp $
  *
  */
 
@@ -87,14 +87,23 @@ class StdChannel extends Channel {
 	    case STDIN:
 	        mode = TclIO.RDONLY;
 		if (reader == null) {
-		    reader = new BufferedReader(new InputStreamReader(System.in)); 
+		    reader = new BufferedReader(
+                        new InputStreamReader(System.in)); 
 		}
 		break;
 	    case STDOUT:
 	        mode = TclIO.WRONLY;
+		if (writer == null) {
+		    writer = new BufferedWriter(
+                        new OutputStreamWriter(System.out)); 
+		}
 		break;
 	    case STDERR:
 	        mode = TclIO.WRONLY;
+		if (writer == null) {
+		    writer = new BufferedWriter(
+                        new OutputStreamWriter(System.err)); 
+		}
 		break;
 	    default:
 		throw new RuntimeException(
@@ -190,43 +199,8 @@ class StdChannel extends Channel {
 	        getChanName() + "\" wasn't opened for writing");
 	}
 
-	if (stdType == STDOUT) {
-	    System.out.print(s);
-	} else {
-	    System.err.print(s);
-	}
-      
+        writer.write(s, 0, s.length());
     }
-
-
-    /**
-     * Close the stdio channel.
-     */
-
-    void close() throws IOException {
-        switch (stdType) {
-            case STDIN: {
-	        if(reader != null) {
-	            reader.close();
-		    reader = null;
-		}  
-		break;
-	    }
-            case STDOUT: {
-	        System.out.close();
-		break;
-	    } 
-	    case STDERR: {
-	        System.err.close();
-		break;
-	    }
-	    default: {
-	        throw new TclRuntimeError(
-                        "Error: unexpected stdType for StdChannel");
-	    }
-	}
-    }
-
 
     /**
      * Flush all data from the StdChannel.  This is an error if called
@@ -235,17 +209,16 @@ class StdChannel extends Channel {
 
     void flush(Interp interp) throws IOException, TclException  {
 
+        // FIXME: Check for error using flag in super class, not here!
+
         switch (stdType) {
             case STDIN: {
 	        throw new TclException(interp, "channel \"" +
                         getChanName() + "\" wasn't opened for writing");
 	    }
-            case STDOUT: {
-	        System.out.flush();
-		break;
-	    } 
+            case STDOUT:
 	    case STDERR: {
-	        System.err.flush();
+	        writer.flush();
 		break;
 	    }
 	    default: {

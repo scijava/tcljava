@@ -8,7 +8,6 @@ import java.io.*;
 import java.net.Socket;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.Hashtable;
 
 /**
  * The SocketChannel class implements a channel object for Socket
@@ -30,12 +29,6 @@ public class SocketChannel extends Channel {
     private String errorMsg;
 
     /**
-     * The main interp.
-     **/
-
-    private Interp interp;
-
-    /**
      * Constructor - creates a new SocketChannel object with the given
      * options. Also creates an underlying Socket object, and Input and
      * Output Streams.
@@ -45,7 +38,6 @@ public class SocketChannel extends Channel {
             int localPort, boolean async, String address, int port)
         throws TclException
     {
-        this.interp = interp;
         InetAddress localAddress = null;
         InetAddress addr = null;
 
@@ -118,7 +110,7 @@ public class SocketChannel extends Channel {
 
         // If we got this far, then the socket has been created.
         // Create the channel name
-        setChanName("sock" + getNextSockNum());
+        setChanName(getNextDescriptor(interp, "sock"));
         errorMsg = new String();
     }
 
@@ -129,7 +121,6 @@ public class SocketChannel extends Channel {
 
     public SocketChannel(Interp interp, Socket s) throws TclException
     {
-        this.interp = interp;
         this.mode = (TclIO.RDWR|TclIO.RDONLY|TclIO.WRONLY);
         this.sock = s;
         // Get the Input and Output streams
@@ -155,7 +146,7 @@ public class SocketChannel extends Channel {
 
         // If we got this far, then the socket has been created.
         // Create the channel name
-        setChanName("sock" + getNextSockNum());
+        setChanName(getNextDescriptor(interp, "sock"));
         errorMsg = new String();
     }
 
@@ -287,22 +278,13 @@ public class SocketChannel extends Channel {
 
     void close() throws IOException
     {
-        boolean thrown = false;
-        // Close the socket
-        try { reader.close(); } catch (IOException e) { 
-            errorMsg = e.getMessage();
-            thrown = true;
-        }
-        try { writer.close(); } catch (IOException e) { 
-            errorMsg = e.getMessage(); 
-            thrown = true;
-        }
-        try { sock.close(); } catch (IOException e) { 
-            errorMsg = e.getMessage(); 
-            thrown = true;
-        }
-        if (thrown)
-            throw new IOException(errorMsg);
+        IOException ex = null;
+
+        try { sock.close(); } catch (IOException e) { ex = e; }
+        try { super.close(); } catch (IOException e) { ex = e; }
+
+        if (ex != null)
+            throw new IOException(ex.getMessage());
     }
 
     /**
@@ -312,6 +294,7 @@ public class SocketChannel extends Channel {
      *              read only channel.
      * @exception IOException is thrown for all other flush errors.
      */
+
     void flush(Interp interp) throws IOException, TclException
     {
         // Check mode.
@@ -360,20 +343,4 @@ public class SocketChannel extends Channel {
     {
         throw new IOException("tell is not supported for socket channels");
     }
-
-    /**
-     * Returns the next free channel number
-     **/
-
-    private int getNextSockNum()
-    {
-        int i;
-        Hashtable htbl = TclIO.getInterpChanTable(interp);
-        for (i = 0; (htbl.get("sock" + i)) != null; i++)
-        {
-            // Do nothing
-        }
-        return i;
-    }
-
 }

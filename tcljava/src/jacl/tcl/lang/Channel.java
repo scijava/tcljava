@@ -7,11 +7,12 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Channel.java,v 1.4 2001/11/17 06:13:23 mdejong Exp $
+ * RCS: @(#) $Id: Channel.java,v 1.5 2001/11/17 07:58:18 mdejong Exp $
  */
 
 package tcl.lang;
 import java.io.*;
+import java.util.Hashtable;
 
 /**
  * The Channel interface specifies the methods that
@@ -34,7 +35,7 @@ abstract class Channel {
      * as the key in the hashtable of registered channels (in interp).
      */
 
-    protected String chanName;
+    private String chanName;
 
     /**
      * How many interpreters hold references to this IO channel?
@@ -91,13 +92,29 @@ abstract class Channel {
 
 
     /** 
-     * Interface to close the Channel.  The channel is only closed, it is 
+     * Close the Channel.  The channel is only closed, it is 
      * the responsibility of the "closer" to remove the channel from 
      * the channel table.
      */
 
-    abstract void close() throws IOException;
+    void close() throws IOException {
 
+        IOException ex = null;
+
+        if (reader != null) {
+            try { reader.close(); } catch (IOException e) { ex = e; }
+            reader.close();
+            reader = null;
+        }
+        if (writer != null) {
+           try { writer.close(); } catch (IOException e) { ex = e; }
+            writer.close();
+            writer = null;
+        }
+
+        if (ex != null)
+            throw ex;
+    }
 
     /** 
      * Interface to flush the Channel.
@@ -166,5 +183,25 @@ abstract class Channel {
 
     int getMode() {
         return mode;
+    }
+
+    /**
+     * Really ugly function that attempts to get the next available
+     * channelId name.  In C the FD returned in the native open call
+     * returns this value, but we don't have that so we need to do
+     * this funky iteration over the Hashtable.
+     *
+     * @param interp currrent interpreter.
+     * @return the next integer to use in the channelId name.
+     */
+
+    protected String getNextDescriptor(Interp interp, String prefix) {
+        int i;
+	Hashtable htbl = TclIO.getInterpChanTable(interp);
+
+        for (i = 0; (htbl.get(prefix + i)) != null; i++) {
+	    // Do nothing...
+	}
+	return prefix + i;
     }
 }
