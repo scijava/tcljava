@@ -1,3 +1,9 @@
+2003-09-02  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* Makefile.in: Update the tclblendDist rule
+	so that win/libjvm.dll.a is included in the
+	tar and zip files.
+
 2003-08-17  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* docs/website/faq.html: Add entry about stubs.

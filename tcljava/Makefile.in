@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.29 2003/08/07 07:04:38 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.30 2003/09/02 19:46:06 mdejong Exp $
 
 SHELL = /bin/sh
 
@@ -1456,6 +1456,10 @@ tclblendDist: Makefile
 
 	cp -p $(UNIX_DIR)/custom.c \
 		$(TCLBLEND_DISTDIR)/unix
+
+	mkdir -p $(TCLBLEND_DISTDIR)/win
+	cp -p 	$(WIN_DIR)/libjvm.dll.a \
+		$(TCLBLEND_DISTDIR)/win
 
 	mkdir -p $(TCLBLEND_DISTDIR)/src/tests/tclblend/tests
 	mkdir -p $(TCLBLEND_DISTDIR)/src/tests/tclblend/tcl/lang
