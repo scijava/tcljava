@@ -1,6 +1,6 @@
 Jacl
 
-RCS: @(#) $Id: README.jacl,v 1.4 1999/05/08 22:40:22 dejong Exp $
+RCS: @(#) $Id: README.jacl,v 1.5 1999/05/16 07:59:24 dejong Exp $
  
 1. Introduction
 ---------------
@@ -78,7 +78,8 @@ related to Jacl and Tcl Blend you might want to subscribe to the
 tcljava mailing list maintained by the Tcl Consortium. You can
 subscribe to the list by sending mail to this address
 tcljava-request@tclconsortium.org. Once you have subscribed you
-can send mail to the list at tcljava@tclconsortium.org.
+can send mail to the list at tcljava@tclconsortium.org. The mailing
+list is archived here http://www.mail-archive.com/tcljava@tclconsortium.org.
 
 8. Support and bug fixes
 ------------------------
