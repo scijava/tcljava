@@ -42,11 +42,9 @@ JAVA_CLASSPATH	= $(JAVA_DIR)\lib\classes.zip;.
 
 
 #Tcl version info needed by the rest of the scripts
-#TCL_DOTVERSION	= 8.0.6
+#TCL_DOTVERSION	= 8.2.0
 TCL_DOTVERSION	= 8.0.5
-#TCL_DOTVERSION	= 8.0.4
-#TCL_DOTVERSION	= 8.0.3
-#TCL_DOTVERSION	= 8.0
+#TCL_VERSION	= 82
 TCL_VERSION	= 80
 
 
