@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FileUtil.java,v 1.2 1998/11/04 22:37:00 hylands Exp $
+ * RCS: @(#) $Id: FileUtil.java,v 1.3 1998/11/05 00:24:24 hylands Exp $
  *
  */
 
@@ -359,9 +359,11 @@ getPathType(
 
 	switch (path.indexOf(':')) {
 	case -1:
-	    // Unix-style name contains no colons.  Return absolute iff "path"
-	    // begins with '/' and is not degenerate.  Otherwise, return
-	    // relative.
+	    /*
+	     * Unix-style name contains no colons.  Return absolute iff "path"
+	     * begins with '/' and is not degenerate.  Otherwise, return
+	     * relative.
+	     */
 
 	    if ((path.charAt(0) == '/') &&
 		    (getDegenerateUnixPath(path) < path.length())) {
@@ -369,18 +371,24 @@ getPathType(
 	    }
 	    break;
 	case 0: 
-	    // Mac-style name contains a colon in the first position.
+	    /*
+	     * Mac-style name contains a colon in the first position.
+	     */
 
 	    return PATH_RELATIVE;
 	default:
-	    // Mac-style name contains a colon, but not in the first position.
+	    /*
+	     * Mac-style name contains a colon, but not in the first position.
+	     */
 
 	    return PATH_ABSOLUTE;
 	}
 	return PATH_RELATIVE;
 
     default:
-	// Unix absolute pathes start with either '/' or '~'.
+	/*
+	 * Unix absolute pathes start with either '/' or '~'.
+	 */
 
 	c = path.charAt(0);
 	if ((c == '/') || (c == '~')) {
@@ -570,10 +578,11 @@ throws
 	return result.toString();
    
     case JACL.PLATFORM_MAC:
-	// Iterate over all of the components.  If a component is
-	// absolute, then reset the result and start building the
-	// path from the current component on.
-
+	/*
+	 * Iterate over all of the components.  If a component is
+	 * absolute, then reset the result and start building the
+	 * path from the current component on.
+	 */
 
 	boolean needsSep = true;
 	for (int i = startIndex; i < endIndex; i++) {
@@ -585,8 +594,10 @@ throws
 		continue;
 	    }
 	    
-	    //If 1st path element is absolute, reset the result to "" and
-	    //append the 1st path element to it. 
+	    /*
+	     * If 1st path element is absolute, reset the result to "" and
+	     * append the 1st path element to it. 
+	     */
 
 	    int start = 0;
 	    String p = splitArrayObj[0].toString();
@@ -597,10 +608,12 @@ throws
 		needsSep = false;
 	    }
 
-	    // Now append the rest of the path elements, skipping
-	    // : unless it is the first element of the path, and
-	    // watching out for :: et al. so we don't end up with
-	    // too many colons in the result.
+	    /*
+	     * Now append the rest of the path elements, skipping
+	     * : unless it is the first element of the path, and
+	     * watching out for :: et al. so we don't end up with
+	     * too many colons in the result.
+	     */
 
 	    for (int j = start; j < splitArrayObj.length; j++) {
 
@@ -636,9 +649,11 @@ throws
 	    }
 	}
 	return result.toString();
-
+    
     default:
-	// Unix platform.
+	/*
+	 * Unix platform.
+	 */
 	
 	for (int i = startIndex; i < endIndex; i++) {
 	    
@@ -763,20 +778,23 @@ throws
 	break;
 
     case JACL.PLATFORM_MAC:
-
 	tmpPath = "";
 	thisDir = ":";
 
 	switch (path.indexOf(':')) {
 	case -1:
-	    // Unix-style name contains no colons.
-	    
+	    /*
+	     * Unix-style name contains no colons.
+	     */
+
 	    if (path.charAt(0) != '/') {
 		tmpPath = path;
 		convertDotToColon = true;
 		if (path.charAt(0) == '~') {
-		    // If '~' is the first char, then append a colon to end
-		    // of the 1st component. 
+		    /*
+		     * If '~' is the first char, then append a colon to end
+		     * of the 1st component. 
+		     */
 
 		    appendColon = true;
 		}
@@ -784,10 +802,11 @@ throws
 	    }
 	    int degenIndex = getDegenerateUnixPath(path);
 	    if (degenIndex < path.length()) {
-		// First component of absolute unix path is followed by a ':',
-		// instead of being preceded by a degenerate unix-style
-		// pattern.
-		
+		/*
+		 * First component of absolute unix path is followed by a ':',
+		 * instead of being preceded by a degenerate unix-style
+		 * pattern.
+		 */
     
 		tmpPath = path.substring(degenIndex);
 		convertDotToColon = true;
@@ -795,42 +814,49 @@ throws
 		break;
 	    }
 
-	    // Degenerate unix path can't be split.  Return a list with one
-	    // element:  ":" prepended to "path".
+	    /*
+	     * Degenerate unix path can't be split.  Return a list with one
+	     * element:  ":" prepended to "path".
+	     */
     
 	    componentObj = TclString.newInstance(":" + path);
 	    TclList.append(interp, resultListObj, componentObj);
 	    return resultListObj;
 	case 0: 
-	    // Relative mac-style name contains a colon in the first position.
+	    /*
+	     * Relative mac-style name contains a colon in the first position.
+	     */
 
 	    if (path.length() == 1) {
-		// If path == ":", then return a list with ":" as its only
-		// element.
+		/*
+		 * If path == ":", then return a list with ":" as its only
+		 * element.
+		 */
 
 		componentObj = TclString.newInstance(":");
 		TclList.append(interp, resultListObj, componentObj);
 		return resultListObj;
 	    }
 
-
-	    // For each component, if slashes exist in the remaining filename,
-	    // prepend a colon to the component.  Since this path is relative,
-	    // pretend that we have already processed 1 components so a
-	    // tilde-prefixed 1st component will have ":" prepended to it.
-	    
+	    /*
+	     * For each component, if slashes exist in the remaining filename,
+	     * prepend a colon to the component.  Since this path is relative,
+	     * pretend that we have already processed 1 components so a
+	     * tilde-prefixed 1st component will have ":" prepended to it.
+	     */
 
 	    tmpPath = path.substring(1);
 	    foundComponent = true;
 	    prependColon = true;
 	    isColonSeparator = true;
 	    break;
-
 	default:
-	    // Absolute mac-style name contains a colon, but not in the first
-	    // position.   Append a colon to the first component, and, for each
-	    // following component, if slashes exist in the remaining filename,
-	    // prepend a colon to the component.
+	    /*
+	     * Absolute mac-style name contains a colon, but not in the first
+	     * position.   Append a colon to the first component, and, for each
+	     * following component, if slashes exist in the remaining filename,
+	     * prepend a colon to the component.
+	     */
 
 	    tmpPath = path;
 	    appendColon = true;
@@ -901,7 +927,9 @@ throws
 	
 	if (convertDotToColon &&
 		(component.equals(".") || component.equals(".."))) {
-	    // If platform = MAC, convert .. to :: or . to :
+	    /*
+	     * If platform = MAC, convert .. to :: or . to ::
+	     */
 
 	    component = component.replace('.',':');
 	}
@@ -927,7 +955,9 @@ throws
 		}
 	    }
 	} else if (appendColon) {
-	    //If platform = MAC, append a ':' to the first component.
+	    /*
+	     * If platform = MAC, append a ':' to the first component.
+	     */
 
 	    component = component + ":";
 	}
@@ -1029,14 +1059,14 @@ throws
 
 	String user = splitArrayObj[0].toString().substring(1);
 
-
-	// Strip the trailing ':' off of a Mac path
-	// before passing the user name to DoTildeSubst.
+	/*
+	 * Strip the trailing ':' off of a Mac path
+	 * before passing the user name to DoTildeSubst.
+	 */
 	
 	if ((JACL.PLATFORM == JACL.PLATFORM_MAC) && (user.endsWith(":"))) {
 	    user = user.substring(0, user.length() - 1);
 	}
-
 	user = doTildeSubst(interp, user);
 
 // 	if (splitArrayObj.length < 2) {
@@ -1048,9 +1078,10 @@ throws
 // 	}
     }
 
-
-    // Convert forward slashes to backslashes in Windows paths because
-    // some system interfaces don't accept forward slashes.
+    /*
+     * Convert forward slashes to backslashes in Windows paths because
+     * some system interfaces don't accept forward slashes.
+     */
 
     if (JACL.PLATFORM == JACL.PLATFORM_WINDOWS) {
 	fileName = fileName.replace('/','\\');
