@@ -1,6 +1,7 @@
 /*
  * RenameCmd.java
  *
+ * Copyright (c) 1999 Mo DeJong.
  * Copyright (c) 1997 Cornell University.
  * Copyright (c) 1997 Sun Microsystems, Inc.
  *
@@ -8,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: RenameCmd.java,v 1.1 1998/10/14 21:09:20 cvsadmin Exp $
+ * RCS: @(#) $Id: RenameCmd.java,v 1.2 1999/08/03 03:07:54 mo Exp $
  *
  */
 
@@ -20,48 +21,35 @@ package tcl.lang;
 
 class RenameCmd implements Command {
     /**
-     * See Tcl user documentation for details.
+     *----------------------------------------------------------------------
+     *
+     * Tcl_RenameObjCmd -> RenameCmd.cmdProc
+     *
+     *	This procedure is invoked to process the "rename" Tcl command.
+     *	See the user documentation for details on what it does.
+     *
+     * Results:
+     *	A standard Tcl object result.
+     *
+     * Side effects:
+     *	See the user documentation.
+     *
+     *----------------------------------------------------------------------
      */
 
-    public void cmdProc(Interp interp, TclObject argv[])
+    public void cmdProc(Interp interp, TclObject[] objv)
 	    throws TclException {
-	if (argv.length != 3) {
-	    throw new TclNumArgsException(interp, 1, argv, "oldName newName");
+	String oldName, newName;
+    
+	if (objv.length != 3) {
+	    throw new TclNumArgsException(interp, 1, objv, "oldName newName");
 	}
 
-	boolean delete;
-	String oldName = argv[1].toString();
-	String newName = argv[2].toString();
+	oldName = objv[1].toString();
+	newName = objv[2].toString();
 
-	if (newName.length() == 0) {
-	    delete = true;
-	} else {
-	    delete = false;
-	}
-
-	Command cmd = (Command)interp.cmdTable.get(oldName);
-	if (cmd == null) {
-	    if (delete) {
-		throw new TclException(interp, "can't delete \"" + oldName +
-		        "\": command doesn't exist");
-	    } else {
-		throw new TclException(interp, "can't rename \"" + oldName +
-		        "\": command doesn't exist");
-	    }
-	}
-
-	if (interp.cmdTable.get(newName) != null) {
-	    throw new TclException(interp, "can't rename to \"" + newName +
-		    "\": command already exists");
-	}
-
-
-	if (delete) {
-	    interp.deleteCommand(oldName);
-	} else {
-	    interp.cmdTable.remove(oldName);
-	    interp.cmdTable.put(newName, cmd);
-	}
+	interp.renameCommand(oldName, newName);
+	return;
     }
 }
 
