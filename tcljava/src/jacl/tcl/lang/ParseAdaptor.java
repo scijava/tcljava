@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: ParseAdaptor.java,v 1.1 1998/10/14 21:09:20 cvsadmin Exp $
+ * RCS: @(#) $Id: ParseAdaptor.java,v 1.2 1999/05/09 00:53:01 dejong Exp $
  */
 
 package tcl.lang;
@@ -62,7 +62,7 @@ throws
  * parseNestedCmd --
  *
  *	Parse the nested command in string.  The index points to the 
- * 	character after the [.  Set the interp flag to denote a nested 
+ * 	character after the [. Set the interp flag to denote a nested 
  * 	evaluation.
  *
  * Results:
@@ -79,6 +79,8 @@ static ParseResult
 parseNestedCmd(
     Interp interp,		// The current Interp.
     String string,		// The script containing the variable.
+// FIXME : is this comment correct? , why would the parse rely on
+// the char after the ']'?
     int index,			// An index into string that points to.
 				// the character just after the ].
     int length)			// The length of the string.
@@ -137,12 +139,35 @@ throws
     TclToken token;
     CharPointer script;
 
+
+    final boolean debug = false;
+
+
     try {
 
     script = new CharPointer(string);
     script.index = index;
+
+    /* // old code
     parse = new TclParse(interp, string.toCharArray(), 
-	    (index+length-1), null, 0);    
+	    (index+length-1), null, 0);
+    */
+
+    // new code
+    parse = new TclParse(interp, script.array, 
+	    length, null, 0);
+
+    if (debug) {
+	System.out.println("string is \"" + string + "\"");
+	System.out.println("script.array is \"" + new String(script.array) + "\"");
+
+	System.out.println("index is " + index);
+	System.out.println("length is " + length);
+	
+	System.out.println("parse.endIndex is " + parse.endIndex);	
+    }
+
+
     parse.commandStart = script.index;
     token = parse.getToken(0);
     token.type = Parser.TCL_TOKEN_WORD;
@@ -152,13 +177,21 @@ throws
     parse.numWords++;
     parse = Parser.parseTokens(script.array,script.index, Parser.TYPE_QUOTE, parse);
 
+    // Check for the error condition where the parse did not end on
+    // a '"' char. Is this happened raise an error.
+
+    if (script.array[parse.termIndex] != '"') {
+	throw new TclException(interp, "missing \"");
+    }
+
+    // if there was no error then parsing will continue after the
+    // last char that was parsed from the string
+
     script.index = parse.termIndex + 1;
 	    
-    /*
-     * Finish filling in the token for the word and check for the
-     * special case of a word consisting of a single range of
-     * literal text.
-     */
+    // Finish filling in the token for the word and check for the
+    // special case of a word consisting of a single range of
+    // literal text.
     
     token = parse.getToken(0);
     token.size = script.index - token.script_index;
@@ -186,7 +219,7 @@ throws
  * parseBraces --
  *
  *	The new Parser dosen't handle simple parsing of braces.  This 
- * 	method extracts the until a close brace is found.
+ * 	method extracts tokens until a close brace is found.
  *
  * Results:
  *	A ParseResult with the contents inside the brace and an index
@@ -200,11 +233,11 @@ throws
 
 static ParseResult
 parseBraces(
-    Interp interp,		// The current Interp.
-    String str,		// The script containing the variable.
-    int index,			// An index into string that points to.
-				// the character just after the {.
-    int length)			// The length of the string.
+    Interp interp,              // The current Interp.
+    String str,                 // The script containing the variable.
+    int index,                  // An index into string that points to.
+                                // the character just after the {.
+    int length)                 // The length of the string.
 throws 
     TclException
 {
@@ -231,6 +264,8 @@ throws
 	i++;
       }
     }
+
+// FIXME : make sure close brace parsing works.
 
     //if you run off the end of the string you went too far
     throw new TclException(interp, "missing close-brace");
@@ -268,7 +303,6 @@ throws
     return new ParseResult(TclString.newInstance(str), i+1);
 
     */
-
 
 }
 } // end ParseAdaptor
