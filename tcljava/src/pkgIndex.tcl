@@ -1,21 +1,19 @@
 # Cross platform init script for Tcl Blend. Known to work on unix and windows.
 # Author:  Christopher Hylands, Mo Dejong
-# RCS: @(#) $Id: pkgIndex.tcl,v 1.14 1999/09/24 04:53:38 redman Exp $
-
-variable debug_loadtclblend 0
+# RCS: @(#) $Id: pkgIndex.tcl,v 1.15 1999/10/21 20:10:39 redman Exp $
 
 proc loadtclblend {dir} {
     global tcl_platform env tclblend_init
 
     # Set to true to get extra debug output
-    set ::debug_loadtclblend 0
+    set debug_loadtclblend 0
 
     # Turn on debug messages if tclblend_init is set to debug
     if { [info exists tclblend_init] && "$tclblend_init" == "debug" } {
-	set ::debug_loadtclblend 1
+	set debug_loadtclblend 1
     }
 
-    if {$::debug_loadtclblend} {
+    if {$debug_loadtclblend} {
 	puts ""
 	puts "called loadtclblend \"$dir\""
     }
@@ -24,7 +22,7 @@ proc loadtclblend {dir} {
         java {
             # This can happend when jacl reads the same tcl lib path, ignore it
 
-            if {$::debug_loadtclblend} {
+            if {$debug_loadtclblend} {
                 puts "tclblend's pkgIndex.tcl file read in jacl, ignoring".
             }
 
@@ -51,7 +49,7 @@ proc loadtclblend {dir} {
             }
 
             set dir [file attributes $dir -longname]
-	    if {$::debug_loadtclblend} {
+	    if {$debug_loadtclblend} {
 		if {"$dir" != [pwd] && [file exists [pwd]/tclblend.dll]} {
 		    puts "Warning: [pwd]/tclblend.dll exists.\n\
 			    Under Windows, this could cause Tcl to\
@@ -77,7 +75,7 @@ proc loadtclblend {dir} {
     }
 
 
-    if {$::debug_loadtclblend} {
+    if {$debug_loadtclblend} {
 	puts "tclblend_shlib is $tclblend_shlib"
     }
 
@@ -93,7 +91,7 @@ proc loadtclblend {dir} {
     foreach f $tclblend_files {
 	if {[file exists $f]} {
 	    if {$found} {
-		if {$::debug_loadtclblend} {
+		if {$debug_loadtclblend} {
 		    puts "Warning: more than one tclblend.jar file found:"
 		    puts "'$tclblend_file' and '$f'"
 		}
@@ -108,7 +106,7 @@ proc loadtclblend {dir} {
 	error "could not find tclblend.jar in directory $dir"
     }
 
-    if {$::debug_loadtclblend} {
+    if {$debug_loadtclblend} {
 	puts "found tclblend.jar at $tclblend_file"
     }
 
@@ -123,7 +121,7 @@ proc loadtclblend {dir} {
     foreach f $tcljava_files {
 	if {[file exists $f]} {
 	    if {$found} {
-		if {$::debug_loadtclblend} {
+		if {$debug_loadtclblend} {
 		    puts "Warning: more than one tcljava.jar file found:"
 		    puts "'$tcljava_file' and '$f'"
 		}
@@ -139,7 +137,7 @@ proc loadtclblend {dir} {
     }
 
 
-    if {$::debug_loadtclblend} {
+    if {$debug_loadtclblend} {
 	puts "found tcljava.jar at $tcljava_file"
     }
 
@@ -157,7 +155,7 @@ proc loadtclblend {dir} {
     }
 
     if {! [info exists env(CLASSPATH)] } {
-        if {$::debug_loadtclblend} {
+        if {$debug_loadtclblend} {
 	    puts "setting env(CLASSPATH) to {}"
         }
 
@@ -192,7 +190,7 @@ proc loadtclblend {dir} {
 	    if {! [info exists found_tclblend]} {
 		set found_tclblend $file
 	    } else {
-		if {$::debug_loadtclblend} {
+		if {$debug_loadtclblend} {
 		    puts "Warning: multiple tclblend.jar files found on env(CLASSPATH), found at $found_tclblend then $file"
 		}
 	    }
@@ -202,7 +200,7 @@ proc loadtclblend {dir} {
 	    if {! [info exists found_tcljava]} {
 		set found_tcljava $file
 	    } else {
-		if {$::debug_loadtclblend} {
+		if {$debug_loadtclblend} {
 		    puts "Warning: multiple tcljava.jar files found on env(CLASSPATH), found at $found_tcljava then $file"
 		}
 	    }
@@ -217,7 +215,7 @@ proc loadtclblend {dir} {
     }
 
 
-    if {$::debug_loadtclblend} {
+    if {$debug_loadtclblend} {
     
 	if {[info exists found_jacl]} {
 	    puts "found jacl.jar on env(CLASSPATH) at $found_jacl"
@@ -238,7 +236,7 @@ proc loadtclblend {dir} {
     # correctly load the tclblend.jar files instead of those in jacl.jar
 
     if {! [info exists found_tclblend]} {
-	if {$::debug_loadtclblend} {
+	if {$debug_loadtclblend} {
 	    puts "prepending ${tclblend_file} onto env(CLASSPATH)"
 	}
 
@@ -250,7 +248,7 @@ proc loadtclblend {dir} {
     # prepend tcljava.jar to the CLASSPATH if it is not already there.
 
     if {! [info exists found_tcljava]} {
-	if {$::debug_loadtclblend} {
+	if {$debug_loadtclblend} {
 	    puts "prepending ${tcljava_file} onto env(CLASSPATH)"
 	}
 
@@ -260,7 +258,7 @@ proc loadtclblend {dir} {
     }
 
 
-    if {$::debug_loadtclblend} {
+    if {$debug_loadtclblend} {
 	if {$saved_classpath != $env(CLASSPATH)} {
 	  puts "before jar prepend env(CLASSPATH) was \"$env(CLASSPATH)\""
 	  puts "after  jar prepend env(CLASSPATH) was \"$env(CLASSPATH)\""
@@ -278,7 +276,8 @@ proc loadtclblend {dir} {
     
     proc shlib_search { shlibs envvar searchdirs } {
 	global env
-	
+	upvar debug_loadtclblend debug_loadtclblend
+
 	if {[llength $shlibs] == 0} {
 	    error "no shlib names provided"
 	}
@@ -297,7 +296,7 @@ proc loadtclblend {dir} {
 		continue
 	    }
 	    if {! [file isdirectory $dir]} {
-		if {$::debug_loadtclblend} {
+		if {$debug_loadtclblend} {
 		    puts "directory \"$dir\" from $envvar does not exist"
 		}
 		continue
@@ -310,7 +309,7 @@ proc loadtclblend {dir} {
 		    if {$shlibloc($shlib) == ""} {
 			set shlibloc($shlib) $file
 		    } else {
-			if {$::debug_loadtclblend} {
+			if {$debug_loadtclblend} {
 			    puts "found duplicate $shlib on $envvar at\
 				    \"$file\", first was at $shlibloc($shlib)"
 			}
@@ -325,7 +324,7 @@ proc loadtclblend {dir} {
 			directory where $shlib lives to your $envvar\
 			environmental variable."
 	    } else {
-		if {$::debug_loadtclblend} {
+		if {$debug_loadtclblend} {
 		    puts "found $shlib on $envvar at \"$shlibloc($shlib)\"."
 		}
 	    }
@@ -359,7 +358,7 @@ proc loadtclblend {dir} {
 	    set VAR PATH
 	    set shlibdir bin
 
-	    if {$::debug_loadtclblend} {
+	    if {$debug_loadtclblend} {
 		puts "JDK 1.1 users should have a directory like\
 			C:\\jdk1.1.6\\bin in their PATH."
 		puts "JDK 1.2 users should have directories like\
@@ -389,7 +388,7 @@ proc loadtclblend {dir} {
 
     if {[catch {load $tclblend_shlib} errMsg]} {
 
-	if {$::debug_loadtclblend} {
+	if {$debug_loadtclblend} {
 	    puts "Attempting to figure out why \"load $tclblend_shlib\" failed"
 	}
 
@@ -397,7 +396,7 @@ proc loadtclblend {dir} {
         # tricky part here is that Windows users will not have
         # the TCLBLEND_SHLIB_NAMES set so just check for "java".
 
-	if {$::debug_loadtclblend} {
+	if {$debug_loadtclblend} {
 	    puts "currently $VAR is set to \n\"$env($VAR)\""
 	}
 
