@@ -369,16 +369,6 @@ so that the ugly variable stuff does not get in the way.
 Of course we would have to worry about the NT vs 95 stuff.
 
 
-
-(TODO)
-There is a really ugly problem with the way that the auto_path
-is set in the makefiles that can make the tests fail under
-windows when another version of tclblend is installed. The
-auto path should not be appended to it should be prepended to.
-
-
-
-
 (INFO)
 looks like Sun is using Jacl in a product called "Embeded Server".
 http://www.sun.com/software/embeddedserver/techinfo/relnotes.html#300
