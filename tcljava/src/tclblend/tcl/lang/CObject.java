@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: CObject.java,v 1.4 2002/12/31 20:16:27 mdejong Exp $
+ * RCS: @(#) $Id: CObject.java,v 1.5 2003/01/28 01:56:55 mdejong Exp $
  */
 
 package tcl.lang;
@@ -32,9 +32,11 @@ class CObject implements InternalRep {
 
 // This long really contains a Tcl_Obj*.  It is declared with protected
 // visibility so that subclasses that define type specific functionality
-// can query the Tcl_Obj*. This field can be read from C code.
+// can query the Tcl_Obj*. This field can be read from C code. The
+// final modifier is commented out because the javac in JDK 1.1 is
+// stupid and generates an incorrect compiler error.
 
-protected final long objPtr;
+protected /*final*/ long objPtr;
 
 // Number of times the refCount for the wrapped Tcl_Obj has
 // been incremented. This is needed for the case where

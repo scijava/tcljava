@@ -1,5 +1,20 @@
 2003-01-27  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* bsjavac.sh: Add script that works around path
+	separator issues under Win32.
+	* configure: Regen.
+	* tcljava.m4 (AC_PROG_JAVAC, AC_JAVA_JNI_LIBS,
+	TCLJAVA_CHECK_TCLSH): Add support for JDK 1.1
+	when building under mingw. This meant adding a
+	special workaround to deal with path separator
+	bugs in that version of javac. Also set the
+	TCL_LIBRARY env var when running tclsh.
+	* src/tclblend/tcl/lang/CObject.java: Don't
+	make objPtr final to work around bug in
+	brain dead jdk 1.1 compiler.
+
+2003-01-27  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* Makefile.in: Use TOP_DIR_NATIVE instead of
 	TOP_DIR in build rules that require a Win32
 	style path instead of a unix style path.

@@ -292,6 +292,26 @@ AC_DEFUN([AC_PROG_JAVAC], [
     else
         AC_MSG_ERROR([Could not compile simple Java program with '$JAVAC'])
     fi
+
+    # Check for sickly javac delivered with JDK 1.1 on Win32.
+    # The specific bug we are interested in is an inability
+    # to handle paths with a / seperator. We need to use a
+    # special helper script to deal with this issue when
+    # compiling under Win32.
+
+    if test "x$JIKES" = "x"; then
+        rm -f Test.class
+        AC_MSG_CHECKING([to see if the java compiler accepts forward slashes])
+        if ( $JAVAC $JAVAC_FLAGS $JAVAC_D_FLAG . $srcdir/src/Test.java \
+                1>&5 2>&5 ) && test -f Test.class ; then
+            AC_MSG_RESULT([yes])
+        else
+            AC_MSG_RESULT([no, using bsjavac.sh workaround])
+            JAVAC="sh $srcdir/bsjavac.sh $JAVAC"
+        fi
+    fi
+
+    AC_MSG_LOG([Using JAVAC=$JAVAC], 1)
 ])
 
 
@@ -906,6 +926,19 @@ AC_DEFUN([AC_JAVA_JNI_LIBS], [
             fi
         fi
 
+        # Sun JDK 1.1 for Win32
+
+        F=lib/javai.lib
+        if test "x$ac_java_jvm_jni_lib_flags" = "x" ; then
+            AC_MSG_LOG([Looking for $ac_java_jvm_dir/$F], 1)
+            if test -f $ac_java_jvm_dir/$F ; then
+                AC_MSG_LOG([Found $ac_java_jvm_dir/$F], 1)
+                D=$ac_java_jvm_dir/bin
+                ac_java_jvm_jni_lib_runtime_path="${D}"
+                ac_java_jvm_jni_lib_flags="$ac_java_jvm_dir/$F"
+            fi
+        fi
+
         # IBM JDK 1.3 for Win32
 
         F=lib/jvm.lib
@@ -1194,12 +1227,15 @@ if test $TCLJAVA = "tclblend" || test $TCLJAVA = "both"; then
 
   # Double check that tclsh works and that it is tcl 8.3.2 or better
   # We need to set LD_LIBRARY_PATH and SHLIB_PATH so that Tcl can find its
-  # shared library in the build directory on a Unix or HP-UX system.
+  # shared library in the build directory on a Unix or HP-UX system. Also
+  # set TCL_LIBRARY so that Tcl can init itself from a build dir.
 
   LD_LIBRARY_PATH=$TCL_BIN_DIR:$LD_LIBRARY_PATH
   export LD_LIBRARY_PATH
   SHLIB_PATH=$TCL_BIN_DIR:$SHLIB_PATH
   export SHLIB_PATH
+  TCL_LIBRARY=$TCL_SRC_DIR/library
+  export TCL_LIBRARY
 
   rm -f tcl_version.tcl
 
