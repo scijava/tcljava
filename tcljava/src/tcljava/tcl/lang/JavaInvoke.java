@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaInvoke.java,v 1.7 1999/05/15 23:45:25 dejong Exp $
+ * RCS: @(#) $Id: JavaInvoke.java,v 1.8 1999/05/15 23:48:01 dejong Exp $
  *
  */
 
@@ -764,7 +764,7 @@ throws
     }
 
 
-    if (!isReflectObj) {
+    if (! isReflectObj) {
 	// tclObj a Tcl "primitive" value. We try convert it to the 
 	// corresponding primitive value in Java.
 	//
@@ -841,17 +841,68 @@ throws
     } else {
 	// The TclObject is a ReflectObject that contains javaObj. We
 	// check to see if javaObj can be converted to the required
-	// type.  If javaObj is an numberical type, we attempt to
-	// widen it to the required type.
+	// type. If javaObj is a wrapper for a primitive type then
+	// we check to see if the object is an instanceof the type.
 
-	if ((javaObj == null) || type.isInstance(javaObj)) {
+	if (javaObj == null) {
+	    return null;
+	}
+
+	if (type.isInstance(javaObj)) {
 	    return javaObj;
+	}
+
+	if (type.isPrimitive()) {
+	    if (type == Boolean.TYPE) {
+	        if (javaObj instanceof Boolean) {
+	            return javaObj;
+	        }
+	    }
+	    else if (type == Character.TYPE) {
+	        if (javaObj instanceof Character) {
+	            return javaObj;
+	        }
+	    }
+	    else if (type == Byte.TYPE) {
+	        if (javaObj instanceof Byte) {
+	            return javaObj;
+	        }
+	    }
+	    else if (type == Short.TYPE) {
+	        if (javaObj instanceof Short) {
+	            return javaObj;
+	        }
+	    }
+	    else if (type == Integer.TYPE) {
+	        if (javaObj instanceof Integer) {
+	            return javaObj;
+	        }
+	    }
+	    else if (type == Long.TYPE) {
+	        if (javaObj instanceof Long) {
+	            return javaObj;
+	        }
+	    }
+	    else if (type == Float.TYPE) {
+	        if (javaObj instanceof Float) {
+	            return javaObj;
+	        }
+	    }
+	    else if (type == Double.TYPE) {
+	        if (javaObj instanceof Double) {
+	            return javaObj;
+	        }
+	    }
+	    else if (type == Void.TYPE) {
+	        // void is not a valid type for conversions
+	    }
 	}
 
 	throw new TclException(interp, "expected object of type " +
                 JavaInfoCmd.getNameFromClass(type) +
 		" but got \"" + tclObj + "\" (" +
-                JavaInfoCmd.getNameFromClass(javaObj.getClass()) +
+                JavaInfoCmd.getNameFromClass(
+        	    ReflectObject.getClass(interp, tclObj) ) +
                 ")");
     }
 }
