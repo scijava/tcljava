@@ -1,32 +1,22 @@
-# This Makefile is used to the java loadable module.
+# Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.17 1999/03/05 04:00:39 hylands Exp $
-
-# The version of TclJava, used in this Makefile
-VERSION = @TCLJAVA_VERSION@
-
-# The patchlevelof TclJava, used in this Makefile
-PATCHLEVEL = @TCLJAVA_PATCHLEVEL@
+# RCS: @(#) $Id: Makefile.in,v 1.18 1999/05/10 03:17:51 dejong Exp $
 
 # The directory containing the Tcl sources and headers appropriate
 # for this version of Tk ("srcdir" will be replaced or has already
 # been replaced by the configure script):
 TCL_GENERIC_DIR = @TCL_SRC_DIR@/generic
 
+# The directory containing the Tcl library files
+TCL_LIBRARY_DIR = @TCL_SRC_DIR@/library
+
 # The directory containing the Tcl library archive file appropriate
 # for this version of Tcl:
 TCL_BIN_DIR = @TCL_BIN_DIR@
 
 
-# Specify which Tcl Blend system to build (jacl or tclblend).
-TCLJAVA=@TCLJAVA@
-
-# When building tclblend, it is necessary to link in the Java thread 
-# libraries.  If you have access to native threads, use that.  Otherwise
-# you must use green threads.  This builds a "green" executable that performs
-# VM initialization before the Tcl interp runs.
-#JTHREADS=green
-JTHREADS=native
+# Specify which Tcl/Java system to build (jacl or tclblend).
+TCLJAVA	= @TCLJAVA@
 
 #----------------------------------------------------------------
 # The information below is modified by the configure script when
@@ -35,41 +25,37 @@ JTHREADS=native
 #----------------------------------------------------------------
 
 TOP_DIR			= @srcdir@/..
-JAVA_DIR		= @JAVA_DIR@
-JAVA_INC_DIR		= @JAVA_INC_DIR@
-JAVA_BIN_DIR		= $(JAVA_DIR)/bin
-JAVA_LIB_DIR		= $(JAVA_DIR)/lib
-JAVA_CLASSPATH		= @JAVA_CLASSPATH@
 
-# Location of javac and javah so that we are sure we get the proper
-# tools that correspond with $(JAVA_DIR)
-JAVA			= $(JAVA_BIN_DIR)/java
-JAVAC			= $(JAVA_BIN_DIR)/javac
-JAVAH			= $(JAVA_BIN_DIR)/javah
-JAR			= $(JAVA_BIN_DIR)/jar
+# Fully qualified paths for programs used in build process
+JAVA			= @JAVA@
+JAVAC			= @JAVAC@
+JAVAH			= @JAVAH@
+JAR			= @JAR@
+JDB			= @JDB@
 JAVA_FLAGS		= @JAVA_FLAGS@
 JAVAC_FLAGS		= -g
-JAR_FLAGS		= -cf0
+JAR_COMPRESS_FLAGS	= -cf0M
+JAR_EXTRACT_FLAGS	= -xf
+JDB_FLAGS		=
+
+
+# Java include dir, such as /opt/jdk1.1.4/include
+JAVA_INCLUDE		= @JAVA_INCLUDE@
+JAVA_CLASSPATH		= @JAVA_CLASSPATH@
 
 # Architecture dependent include dir, such as /opt/jdk1.1.4/include/solaris
 JAVA_ARCH_INCLUDE	= @JAVA_ARCH_INCLUDE@
 
-# Architecture dependent lib dir, /opt/jdk1.1.4/lib/sparc/native_threads
-JAVA_ARCH_LIB		= @JAVA_ARCH_LIB@
+# Architecture dependent lib dirs, such as /opt/jdk1.1.4/lib/sparc/native_threads
+JAVA_ARCH_GREEN_LIB		= @JAVA_ARCH_GREEN_LIB@
+JAVA_ARCH_GREEN_RUNTIME_LIBS	= @JAVA_ARCH_GREEN_RUNTIME_LIBS@
+JAVA_ARCH_NATIVE_LIB		= @JAVA_ARCH_NATIVE_LIB@
+JAVA_ARCH_NATIVE_RUNTIME_LIBS	= @JAVA_ARCH_NATIVE_RUNTIME_LIBS@
 
-# Shared libraries necessary at runtime
-JAVA_ARCH_RUNTIME_LIBS	= @JAVA_ARCH_RUNTIME_LIBS@
-
-# Colon separated list of directories to search for libraries at runtime 
-LIB_RUNTIME_DIR		= $(JAVA_ARCH_RUNTIME_LIBS):$(TCL_BIN_DIR)
-TCL_LD_SEARCH_FLAGS 	= @TCL_LD_SEARCH_FLAGS@
 
 UNIX_DIR		= $(TOP_DIR)/unix
-BUILD_DIR		= @BUILD_DIR@
-CLASS_DIR		= @BUILD_DIR@
-TOOLS_DIR		= $(TOP_DIR)/tools
-DOC_DIR			= $(TOP_DIR)/doc
 WIN_DIR			= $(TOP_DIR)/win
+BUILD_DIR		= @BUILD_DIR@
 TCLBLEND_SRC_DIR	= $(TOP_DIR)/src/tclblend
 TCLBLEND_BUILD_DIR	= $(BUILD_DIR)/tclblend
 JACL_SRC_DIR		= $(TOP_DIR)/src/jacl
@@ -77,20 +63,47 @@ JACL_BUILD_DIR		= $(BUILD_DIR)/jacl
 TCLJAVA_SRC_DIR		= $(TOP_DIR)/src/tcljava
 TCLJAVA_BUILD_DIR	= $(BUILD_DIR)/tcljava
 NATIVE_SRC_DIR		= $(TOP_DIR)/src/native
-SWITCHED_SRC_DIR	= $(TOP_DIR)/src/$(TCLJAVA)
-DEMO_SRC_DIR		= $(TOP_DIR)/demos
-DEMO_BUILD_DIR		= $(BUILD_DIR)/demos
+DEMOS_SRC_DIR		= $(TOP_DIR)/demos
+DEMOS_BUILD_DIR		= $(BUILD_DIR)/demos
+TEST_TCL_DIR		= $(TOP_DIR)/tests
 TEST_SRC_DIR		= $(TOP_DIR)/src/tests
-TEST_CLASS_DIR		= $(CLASS_DIR)/tests
-TCLTEST			= $(TCL_BIN_DIR)/tcltest
-EMPTY_JAR		= $(TOP_DIR)/src/empty/empty.jar
+TEST_TCLBLEND_SRC_DIR	= $(TEST_SRC_DIR)/tclblend
+TEST_JACL_SRC_DIR	= $(TEST_SRC_DIR)/jacl
+TEST_TCLJAVA_SRC_DIR	= $(TEST_SRC_DIR)/tcljava
+TEST_BUILD_DIR		= $(BUILD_DIR)/tests
+MISC_DIR		= $(TOP_DIR)/src
 CC			= @CC@
+CC_OBJ_FLAG		= -c
+CFLAGS			= @TCL_CFLAGS@
 SHLIB_CFLAGS		= @SHLIB_CFLAGS@
 SHLIB_LD		= @SHLIB_LD@
+SHLIB_LD_LIBS		= @SHLIB_LD_LIBS@
 SHLIB_SUFFIX		= @SHLIB_SUFFIX@
 SHLIB_VERSION		= @SHLIB_VERSION@
-SRC_DIR			= @srcdir@
-BUILDPKG		= CLASSPATH="$(TARGET_PATH)" buildpkg
+TCL_DBGX		= @TCL_DBGX@
+
+# directories to search for shared libs, needed for TCL_LD_SEARCH_FLAGS
+LIB_RUNTIME_DIR		= $(JAVA_ARCH_NATIVE_RUNTIME_LIBS):$(TCL_BIN_DIR)
+TCL_LD_SEARCH_FLAGS 	= @TCL_LD_SEARCH_FLAGS@
+TCLBLEND_LIB_FILE 	= libtclblend$(SHLIB_SUFFIX)
+TCLBLEND_LIBS		= @TCLBLEND_LIBS@
+
+
+
+# Extra shared lib stuff needed on some systems.
+# If you want to run the TclBlend tests on a Linux system
+# with the Blackdown JDK port you will need to install Motif or LessTif.
+# You will then need to uncomment the definition of
+# TCLBLEND_LD_PRELOAD that includes the X libs and
+# comment out the other definition of TCLBLEND_LD_PRELOAD.
+
+#TCLBLEND_LD_PRELOAD	= "@TCLBLEND_LD_PRELOAD@ libXt.so libXm.so libXext.so"
+
+TCLBLEND_LD_PRELOAD	= "@TCLBLEND_LD_PRELOAD@"
+TCLBLEND_LD_BIND_NOW	= @TCLBLEND_LD_BIND_NOW@
+TCLBLEND_SHLIB_NAMES	= "@TCLBLEND_SHLIB_NAMES@"
+
+
 
 # Default top-level directories in which to install architecture-
 # specific files (exec_prefix) and machine-independent files such
@@ -101,14 +114,19 @@ BUILDPKG		= CLASSPATH="$(TARGET_PATH)" buildpkg
 prefix			= @prefix@
 exec_prefix		= @exec_prefix@
 
-# Directory in which to install libtcl.so or libtcl.a:
-LIB_INSTALL_DIR		= $(INSTALL_ROOT)$(exec_prefix)/lib
+# Directory in which to install libtclblend.so (TCLBLEND_LIB_FILE)
+LIB_INSTALL_DIR		= $(exec_prefix)/lib
 
-# Directory to install pkgIndex.tcl
-BLEND_LIB_INSTALL_DIR	= $(LIB_INSTALL_DIR)/tclblend$(VERSION)
+# Directory containing platform dependent binaries
+BIN_INSTALL_DIR 	= $(exec_prefix)/bin
 
-# Directory containing platform dependent binaries.
-BLEND_BIN_DIR 		= $(INSTALL_ROOT)$(exec_prefix)/bin
+# cross platform install directory where .jar files will go
+XP_LIB_INSTALL_DIR 	= $(prefix)/lib
+
+# Directory from which applications will reference the
+# scripts used by tclblend (location of pkgIndex.tcl)
+TCLBLEND_LIBRARY	= $(XP_LIB_INSTALL_DIR)/tclblend
+
 
 # Tcl used to let the configure script choose which program to use
 # for installing, but there are just too many different versions of
@@ -119,50 +137,34 @@ INSTALL			= @srcdir@/install-sh -c
 INSTALL_PROGRAM		= ${INSTALL}
 INSTALL_DATA		= ${INSTALL} -m 644
 
-STUDIO_LIB_DIR		= @STUDIO_LIB_DIR@
-
 # AUX_CLASSPATH is used for Java Studio test coverage
-#  Note that AUX_CLASSPATH should have a leading colon (:),
-#  see the jstclblendTest rule for an example
-TCLBLEND_CLASSPATH	= "$(TCLJAVA_BUILD_DIR):$(TCLBLEND_BUILD_DIR):$(JAVA_CLASSPATH)$(AUX_CLASSPATH)"
-JACL_CLASSPATH		= "$(TCLJAVA_BUILD_DIR):$(JACL_SRC_DIR):$(JAVA_CLASSPATH)"
-# empty.jar is a stub file to solve problems while creating tcljava.jar
-# For more information about empty.jar, see src/empty/README.txt
-TCLJAVA_CLASSPATH	= "$(TCLJAVA_BUILD_DIR):$(EMPTY_JAR):$(JAVA_CLASSPATH)$(AUX_CLASSPATH)"
+# Note that AUX_CLASSPATH should have a leading colon (:),
+# see the jstclblendTest rule for an example
 
-BEAN_SRC_DIR		= $(TOP_DIR)/src/tcljava/tcl/bean
-BEAN_BUILD_DIR		= $(BUILD_DIR)/bean
+TCLBLEND_CLASSPATH	= $(TCLJAVA_BUILD_DIR):$(TCLBLEND_BUILD_DIR):$(JAVA_CLASSPATH)$(AUX_CLASSPATH)
 
-BEAN_CLASSPATH		= "$(STUDIO_LIB_DIR):$(TCLJAVA_CLASSPATH)"
+JACL_CLASSPATH		= $(TCLJAVA_BUILD_DIR):$(JACL_BUILD_DIR):$(JAVA_CLASSPATH)$(AUX_CLASSPATH)
 
-DEMO_CLASSPATH		= "$(CLASS_DIR)/$(TCLJAVA).jar:$(CLASS_DIR)/tcljava.jar:$(JAVA_CLASSPATH)"
+TCLJAVA_CLASSPATH	= $(TCLJAVA_BUILD_DIR):$(MISC_DIR)/empty/empty.jar:$(JAVA_CLASSPATH)$(AUX_CLASSPATH)
+
+DEMOS_CLASSPATH		= $(BUILD_DIR)/$(TCLJAVA).jar:$(BUILD_DIR)/tcljava.jar:$(JAVA_CLASSPATH)$(AUX_CLASSPATH)
+
+TEST_CLASSPATH		= $(JAVA_CLASSPATH):$(TEST_BUILD_DIR):$(BUILD_DIR)/$(TCLJAVA).jar:$(BUILD_DIR)/tcljava.jar$(AUX_CLASSPATH)
 
 
-# Don't add the javaload directory to TEST_CLASSPATH.   The point
-# of the javaload tests is to test out the tcljava loader, which is
-# run after the primoridial java loader fails to find a class.
-# If you add javaload to TEST_CLASSPATH, then the primordial java loader
-# will find the classes, and the tcljava loader will not be tested.
-TEST_CLASSPATH		= ".:$(TEST_CLASS_DIR):$(CLASS_DIR)/$(TCLJAVA).jar:$(CLASS_DIR)/tcljava.jar:$(JAVA_CLASSPATH)$(AUX_CLASSPATH)"
-
-AUX_LIBS		= @AUX_LIBS@
-
-
-# Libraries to use when linking:
-LIBS			= $(TCL_LD_SEARCH_FLAGS) -L$(JAVA_ARCH_LIB) \
-				-ljava $(AUX_LIBS) \
+# Libraries to use when linking: (used by SHLIB_LD_LIBS)
+LIBS			= $(TCL_LD_SEARCH_FLAGS) -L$(JAVA_ARCH_NATIVE_LIB) \
+				$(TCLBLEND_LIBS) \
 				@TCL_BUILD_LIB_SPEC@ @TCL_LIBS@
 
-CDEFS			= @DEFS@
-CFLAGS			= -O
 
 CC_SWITCHES 		= \
 	$(CFLAGS) $(CDEFS) -D_REENTRANT -DTCL_MEM_DEBUG \
 	-I. -I$(NATIVE_SRC_DIR) -I$(TCL_GENERIC_DIR) \
-	-I$(JAVA_INC_DIR) -I$(JAVA_ARCH_INCLUDE) $(SHLIB_CFLAGS)
+	-I$(JAVA_INCLUDE) -I$(JAVA_ARCH_INCLUDE) $(SHLIB_CFLAGS)
 
 DEPEND_SWITCHES = $(CFLAGS) -I$(NATIVE_SRC_DIR) -I$(TCL_GENERIC_DIR) \
-	-I$(JAVA_INC_DIR) -I$(JAVA_ARCH_INCLUDE) \
+	-I$(JAVA_INCLUDE) -I$(JAVA_ARCH_INCLUDE) \
 	$(AC_FLAGS) $(MATH_FLAGS) \
 	$(GENERIC_FLAGS) $(PROTO_FLAGS) $(MEM_DEBUG_FLAGS) \
 	-DTCL_SHLIB_EXT=\"$(SHLIB_SUFFIX)\"
@@ -201,217 +203,1082 @@ TCLBLEND_CLASS_NAMES = \
 	tcl.lang.Util
 
 
-JAVA_DEMO_CLASSES = \
-	$(DEMO_SRC_DIR)/pyramidpkg/AppletConsole.class \
-	$(DEMO_SRC_DIR)/pyramidpkg/ConsoleKeyListener.class \
-	$(DEMO_SRC_DIR)/pyramidpkg/ConsoleMouseListener.class \
-	$(DEMO_SRC_DIR)/pyramidpkg/Pyramid.class 
-
-COMMON_DEMO_CLASSES = \
-	$(DEMO_SRC_DIR)/gluepkg/FileDialogApp.class \
-	$(DEMO_SRC_DIR)/gluepkg/FileDialogCmd.class \
-	$(DEMO_SRC_DIR)/gluepkg/GlueExtension.class \
-	$(DEMO_SRC_DIR)/gluepkg/JarCmd.class \
-	$(DEMO_SRC_DIR)/gluepkg/ListboxApp.class \
-	$(DEMO_SRC_DIR)/gluepkg/ListboxCmd.class \
-	$(DEMO_SRC_DIR)/simplepkg/SayhelloCmd.class \
-	$(DEMO_SRC_DIR)/simplepkg/SimpleExtension.class \
-	$(DEMO_SRC_DIR)/watchpkg/StopWatchExtension.class \
-	$(DEMO_SRC_DIR)/watchpkg/StopWatchThread.class \
-	$(DEMO_SRC_DIR)/watchpkg/SwCmd.class
-
-HTML_FILES = \
-	$(DOC_DIR)/html/JaclCmd/java.htm \
-	$(DOC_DIR)/html/JaclCmd/javaload.htm \
-	$(DOC_DIR)/html/JaclCmd/javabind.htm \
-	$(DOC_DIR)/html/JaclCmd/studio.htm \
-	$(DOC_DIR)/html/JaclCmd/studiocustom.htm
-
-COMMON_TCL_LANG_TESTS = \
-	$(TEST_SRC_DIR)/tcl/lang/AdaptorGenTest.java \
-	$(TEST_SRC_DIR)/tcl/lang/JtestCmd.java \
-	$(TEST_SRC_DIR)/tcl/lang/NoEventBean.java \
-	$(TEST_SRC_DIR)/tcl/lang/TclPkgInvoker.java \
-	$(TEST_SRC_DIR)/tcl/lang/TestcompcodeCmd.java \
-	$(TEST_SRC_DIR)/tcl/lang/TestEvent.java \
-	$(TEST_SRC_DIR)/tcl/lang/Tester1Event.java \
-	$(TEST_SRC_DIR)/tcl/lang/Tester1Listener.java \
-	$(TEST_SRC_DIR)/tcl/lang/Tester2Event.java \
-	$(TEST_SRC_DIR)/tcl/lang/Tester2Listener.java \
-	$(TEST_SRC_DIR)/tcl/lang/TesterBean.java
-
-JACL_TCL_LANG_TESTS = \
-	$(TEST_SRC_DIR)/tcl/lang/JavaTestExtension.java \
-	$(TEST_SRC_DIR)/tcl/lang/TestEval2Cmd.java \
-	$(TEST_SRC_DIR)/tcl/lang/TestEvalObjvCmd.java \
-	$(TEST_SRC_DIR)/tcl/lang/TestsetplatformCmd.java \
-	$(TEST_SRC_DIR)/tcl/lang/TesttranslatefilenameCmd.java \
-	$(TEST_SRC_DIR)/tcl/lang/TestParserCmd.java \
-	$(TEST_SRC_DIR)/tcl/lang/TestParsevarCmd.java \
-	$(TEST_SRC_DIR)/tcl/lang/TestParsevarnameCmd.java
-
-BLEND_TCL_LANG_TESTS = \
-	$(TEST_SRC_DIR)/tcl/lang/NativeTestExtension.java
 
 
-# Default is to build whatever is specified by the
-# TCLJAVA variable (jacl or tclblend).
-all: Makefile $(TCLJAVA)
+#---------------------------------------
+# Default is to build the tcljava target
+# then build jacl or tclblend depending on
+# what the variable TCLJAVA is set to
+#---------------------------------------
 
-install: install_$(TCLJAVA) install_tcljava
+all: tcljava $(TCLJAVA)
+
+install: tcljava.install $(TCLJAVA).install
+
+uninstall: $(TCLJAVA).uninstall tcljava.uninstall
+
 
 #----------------------------------------------------------------
 # Build Tcl Blend
 #----------------------------------------------------------------
 
-tclblend: jwish tclblend.jar
+tclblend.build: tclblend.clean tcljava.check
+	@echo "#"
+	@echo "# Making tclblend.build"
+	@echo "#"
+	mkdir -p $(TCLBLEND_BUILD_DIR)
+	cd $(TCLBLEND_SRC_DIR) ;\
+	CLASSPATH=$(TCLBLEND_CLASSPATH) \
+	$(JAVAC) $(JAVAC_FLAGS) \
+		-d $(TCLBLEND_BUILD_DIR) tcl/lang/*.java
 
-# tclblend.jar needs to depend on tclblend.build so that it
-# gets rebuilt each time the .class files are built
+# Only use this if you are developing tclblend code and you need to recompile
+# a lot. It will not clean up before building and tclblend.jar will not be
+# created. you really need to know what you are doing to use this rule.
+tclblend.fastbuild:
+	@if test ! -d $(TCLBLEND_BUILD_DIR); then \
+		echo "tclblend must be built normally before a fastbuild" ; \
+		exit -1 ; \
+	fi
+	cd $(TCLBLEND_SRC_DIR) ;\
+	CLASSPATH=$(TCLBLEND_CLASSPATH) \
+	$(JAVAC) $(JAVAC_FLAGS) \
+		-d $(TCLBLEND_BUILD_DIR) tcl/lang/*.java
+
+# tclblend.jar needs to depend on tclblend.build so that the
+# classfiles get rebuilt each time the jar is built
+
 tclblend.jar: tclblend.build
 	cd $(TCLBLEND_BUILD_DIR) ;\
-	$(JAR) $(JAR_FLAGS) $(CLASS_DIR)/tclblend.jar tcl/lang/*.class
+	CLASSPATH=$(JAVA_CLASSPATH) \
+	$(JAR) $(JAR_COMPRESS_FLAGS) $(BUILD_DIR)/tclblend.jar tcl
 
-tclblend.build: tcljava tclblend.classes libtclblend$(SHLIB_SUFFIX) $(JTHREADS)
 
-tclblend.classes:
-	@echo "#"
-	@echo "# Making tclblend.classes"
-	@echo "#"
-	mkdir -p $(BUILD_DIR)/tclblend/tcl/lang
-	cd $(TCLBLEND_SRC_DIR) ;\
-		$(JAVAC) $(JAVAC_FLAGS) -classpath $(TCLBLEND_CLASSPATH) \
-		-d $(BUILD_DIR)/tclblend tcl/lang/*.java
+tclblend: tclblend.jar $(TCLBLEND_LIB_FILE)
+	cp -f $(MISC_DIR)/pkgIndex.tcl $(BUILD_DIR)
+
 
 # Build the shared library
-libtclblend$(SHLIB_SUFFIX): $(OBJS)
-	rm -f libtclblend$(SHLIB_SUFFIX)
-	$(SHLIB_LD) $(OBJS) -o libtclblend$(SHLIB_SUFFIX) @SHLIB_LD_LIBS@
+$(TCLBLEND_LIB_FILE): $(OBJS)
+	$(SHLIB_LD) -o $(TCLBLEND_LIB_FILE) $(OBJS) $(SHLIB_LD_LIBS)
 
-# javaNative.h is created by javah in the object directory.
+
+# javaNative.h is created by javah in the build directory.
 $(OBJS): javaNative.h
 
 javaCmd.o: $(NATIVE_SRC_DIR)/javaCmd.c
-	$(CC) -c $(CC_SWITCHES) $(NATIVE_SRC_DIR)/javaCmd.c
+	$(CC) $(CC_OBJ_FLAG) $(CC_SWITCHES) $(NATIVE_SRC_DIR)/javaCmd.c
 
 javaIdle.o: $(NATIVE_SRC_DIR)/javaIdle.c
-	$(CC) -c $(CC_SWITCHES) $(NATIVE_SRC_DIR)/javaIdle.c
+	$(CC) $(CC_OBJ_FLAG) $(CC_SWITCHES) $(NATIVE_SRC_DIR)/javaIdle.c
 
 javaInterp.o: $(NATIVE_SRC_DIR)/javaInterp.c
-	$(CC) -c $(CC_SWITCHES) $(NATIVE_SRC_DIR)/javaInterp.c
+	$(CC) $(CC_OBJ_FLAG) $(CC_SWITCHES) $(NATIVE_SRC_DIR)/javaInterp.c
 
 javaObj.o: $(NATIVE_SRC_DIR)/javaObj.c
-	$(CC) -c $(CC_SWITCHES) $(NATIVE_SRC_DIR)/javaObj.c
+	$(CC) $(CC_OBJ_FLAG) $(CC_SWITCHES) $(NATIVE_SRC_DIR)/javaObj.c
 
 javaList.o: $(NATIVE_SRC_DIR)/javaList.c
-	$(CC) -c $(CC_SWITCHES) $(NATIVE_SRC_DIR)/javaList.c
+	$(CC) $(CC_OBJ_FLAG) $(CC_SWITCHES) $(NATIVE_SRC_DIR)/javaList.c
 
 javaNotifier.o: $(NATIVE_SRC_DIR)/javaNotifier.c
-	$(CC) -c $(CC_SWITCHES) $(NATIVE_SRC_DIR)/javaNotifier.c
+	$(CC) $(CC_OBJ_FLAG) $(CC_SWITCHES) $(NATIVE_SRC_DIR)/javaNotifier.c
 
 javaTimer.o: $(NATIVE_SRC_DIR)/javaTimer.c
-	$(CC) -c $(CC_SWITCHES) $(NATIVE_SRC_DIR)/javaTimer.c
+	$(CC) $(CC_OBJ_FLAG) $(CC_SWITCHES) $(NATIVE_SRC_DIR)/javaTimer.c
 
 javaUtil.o: $(NATIVE_SRC_DIR)/javaUtil.c
-	$(CC) -c $(CC_SWITCHES) $(NATIVE_SRC_DIR)/javaUtil.c
+	$(CC) $(CC_OBJ_FLAG) $(CC_SWITCHES) $(NATIVE_SRC_DIR)/javaUtil.c
 
 tclResult.o: $(NATIVE_SRC_DIR)/tclResult.c
-	$(CC) -c $(CC_SWITCHES) $(NATIVE_SRC_DIR)/tclResult.c
+	$(CC) $(CC_OBJ_FLAG) $(CC_SWITCHES) $(NATIVE_SRC_DIR)/tclResult.c
 
 unixNotifier.o: $(UNIX_DIR)/unixNotifier.c
-	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/unixNotifier.c
+	$(CC) $(CC_OBJ_FLAG) $(CC_SWITCHES) $(UNIX_DIR)/unixNotifier.c
 
 javaNative.h:
-	$(JAVAH) -classpath $(TCLBLEND_CLASSPATH) \
-		-jni -o javaNative.h $(TCLBLEND_CLASS_NAMES)
+	CLASSPATH=$(TCLBLEND_CLASSPATH) \
+	$(JAVAH) -jni -o javaNative.h $(TCLBLEND_CLASS_NAMES)
 
-green.build:
-	@$(MAKE) green SRC_CLASSPATH=$(TCLBLEND_CLASSPATH) TCLJAVA=tclblend \
-		SRC_DIR=$(NATIVE_SRC_DIR)
-
-native:
-
-# Build the shared lib. that is necessary for pre-initialization
-# of the Tcl interp.
-green: green.error green.o libtclblend$(SHLIB_SUFFIX)
-	$(CC) -o green -g green.o libtclblend$(SHLIB_SUFFIX) $(LIBS)
-
-green.error:
+custom.warn:
 	@echo ""
-	@echo "Tcl Blend does not work with green threads."
-	@echo "This release does have code to get green threads"
-	@echo "working for Tcl Blend, but currently is not functional"
-	@echo "You can either fix the code or install the native"
-	@echo "threads package."
+	@echo "########################################################"
+	@echo "Using the custom tclblend shell may or may not work"
+	@echo "on your system. The green threads version of the"
+	@echo "custom shell may be less reliable than the native"
+	@echo "threads version. The custom shell option is for"
+	@echo "developers only as it can be more difficult to"
+	@echo "install and use when compared to the shared libs method."
+	@echo "########################################################"
 	@echo ""
-	@exit 1
 
-green.o: $(UNIX_DIR)/green.c
-	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/green.c
+custom.o: $(UNIX_DIR)/custom.c
+	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/custom.c
+
+# Build the tclblend shared lib before building custom.o
+custom: tclblend.check custom.warn custom.o
+	LD_LIBRARY_PATH=$(BUILD_DIR):$(TCL_BIN_DIR):$(JAVA_ARCH_NATIVE_RUNTIME_LIBS):$(LD_LIBRARY_PATH) \
+	$(CC) -o custom -g custom.o $(TCLBLEND_LIB_FILE) $(LIBS)
+
+custom.check:
+	@if test ! -f custom ; then \
+		$(MAKE) TCLJAVA=$(TCLJAVA) custom ; \
+	fi
+
+
+# Run the green threads version of the tclblend cutom shell.
+# This rule does a little trick so that the custom shell is
+# linked to the green threads version of the java lib.
+
+custom_shell_green:
+	rm -f $(TCLBLEND_LIB_FILE)
+	$(MAKE) JAVA_ARCH_NATIVE_LIB=$(JAVA_ARCH_GREEN_LIB) \
+            JAVA_ARCH_NATIVE_RUNTIME_LIBS=$(JAVA_ARCH_GREEN_RUNTIME_LIBS) custom
+	TCLLIBPATH=$(BUILD_DIR) \
+	TCL_LIBRARY=$(TCL_LIBRARY_DIR) \
+	LD_LIBRARY_PATH=$(BUILD_DIR):$(TCL_BIN_DIR):$(JAVA_ARCH_GREEN_RUNTIME_LIBS):$(LD_LIBRARY_PATH) \
+	JAVA=$(JAVA) \
+	BUILD_DIR=$(BUILD_DIR) \
+	CLASSPATH=$(TEST_CLASSPATH) \
+	./custom
+
+
+# Run the native threads version of the tclblend custom shell
+# always rebuild TCLBLEND_LIB_FILE just in case it was linked to
+# to the green threads libs becasue we ran custom_shell_green
+
+custom_shell_native:
+	rm -f $(TCLBLEND_LIB_FILE)
+	$(MAKE) custom
+	TCLLIBPATH=$(BUILD_DIR) \
+	TCL_LIBRARY=$(TCL_LIBRARY_DIR) \
+	LD_LIBRARY_PATH=$(BUILD_DIR):$(TCL_BIN_DIR):$(JAVA_ARCH_NATIVE_RUNTIME_LIBS):$(LD_LIBRARY_PATH) \
+	JAVA=$(JAVA) \
+	BUILD_DIR=$(BUILD_DIR) \
+	CLASSPATH=$(TEST_CLASSPATH) \
+	./custom
 
 
 
-# Nothing is done for this rule, but it still needs to be here to 
-# satisfy the target for the tclblend rule reference to $(JTHREADS)
-tclblend:
 
-TCLBLEND_LIB_FILE = libtclblend$(SHLIB_SUFFIX)
 
-install_tclblend: #tclblend.jar #$(TCLBLEND_LIB_FILE)
+
+
+#
+# Install tclBlend, if the user did not build tclblend already
+# it would have been built by the tcljava.install rule
+#
+tclblend.install: tclblend.check
 	@echo "#"
 	@echo "# Installing tclblend"
 	@echo "#"
-	@for i in $(LIB_INSTALL_DIR) $(BLEND_LIB_INSTALL_DIR) \
-		$(BLEND_BIN_DIR) \
-		; \
+	@if test ! -d $(TCLBLEND_LIBRARY) ; then \
+		echo "Making directory $(TCLBLEND_LIBRARY)" ; \
+		mkdir -p $(TCLBLEND_LIBRARY) ; \
+		chmod 755 $(TCLBLEND_LIBRARY) ; \
+	fi
+	@echo "Installing $(TCLBLEND_LIB_FILE) in $(LIB_INSTALL_DIR)"
+	@$(INSTALL_DATA) $(TCLBLEND_LIB_FILE) $(LIB_INSTALL_DIR)
+	@chmod 555 $(LIB_INSTALL_DIR)/$(TCLBLEND_LIB_FILE)
+	@echo "Installing tclblend.jar in $(XP_LIB_INSTALL_DIR)"
+	@$(INSTALL_DATA) $(BUILD_DIR)/tclblend.jar $(XP_LIB_INSTALL_DIR)
+	@echo "Installing pkgIndex.tcl in $(TCLBLEND_LIBRARY)"
+	@$(INSTALL_DATA) $(MISC_DIR)/pkgIndex.tcl $(TCLBLEND_LIBRARY)
+	@echo "Installing jtclsh in $(BIN_INSTALL_DIR)"
+	@$(INSTALL_PROGRAM) jtclsh $(BIN_INSTALL_DIR)
+	@chmod a+rx $(BIN_INSTALL_DIR)/jtclsh
+	@echo "Installing jwish in $(BIN_INSTALL_DIR)"
+	@cd $(BIN_INSTALL_DIR); rm -f jwish; ln -s jtclsh jwish
+	@if env $(BIN_INSTALL_DIR)/jtclsh Test.tcl; then \
+		DO=NOTHING ; \
+	else \
+		echo "Test failed ... you may need to edit $(BIN_INSTALL_DIR)/jtclsh by hand to set the correct paths" ;   \
+	fi
+
+
+
+tclblend.uninstall:
+	@echo "#"
+	@echo "# Uninstalling tclblend"
+	@echo "#"
+	@echo "Uninstalling $(LIB_INSTALL_DIR)/$(TCLBLEND_LIB_FILE)"
+	@rm -f $(LIB_INSTALL_DIR)/$(TCLBLEND_LIB_FILE)
+	@echo "Uninstalling $(XP_LIB_INSTALL_DIR)/tclblend.jar"
+	@rm -f $(XP_LIB_INSTALL_DIR)/tclblend.jar
+	@echo "Uninstalling $(TCLBLEND_LIBRARY)/pkgIndex.tcl"
+	@rm -f $(TCLBLEND_LIBRARY)/pkgIndex.tcl
+	@echo "Uninstalling $(BIN_INSTALL_DIR)/jtclsh"
+	@rm -f $(BIN_INSTALL_DIR)/jtclsh 
+	@echo "Uninstalling $(BIN_INSTALL_DIR)/jwish"
+	@rm -f $(BIN_INSTALL_DIR)/jwish
+	@if env rmdir $(TCLBLEND_LIBRARY) 2> /dev/null; then \
+		echo "Removing directory $(TCLBLEND_LIBRARY)" ; \
+	fi
+
+
+
+#
+# Check to make sure tclblend is built
+#
+
+tclblend.check: tcljava.check
+	@if test ! -f tclblend.jar ; then \
+		$(MAKE) TCLJAVA=$(TCLJAVA) tclblend.jar ; \
+	fi
+	@ if test ! -f $(TCLBLEND_LIB_FILE) ; then \
+		$(MAKE) TCLJAVA=$(TCLJAVA) $(TCLBLEND_LIB_FILE) ; \
+		cp -f $(MISC_DIR)/pkgIndex.tcl $(BUILD_DIR) ; \
+	fi
+
+
+
+
+#----------------------------------------------------------------
+# Build Jacl
+#----------------------------------------------------------------
+
+jacl: jacl.jar
+
+jacl.build: jacl.clean tcljava.check
+	mkdir -p $(JACL_BUILD_DIR)
+	cd $(JACL_BUILD_DIR) ;\
+	CLASSPATH=$(JAVA_CLASSPATH) \
+	$(JAR) $(JAR_EXTRACT_FLAGS) $(JACL_SRC_DIR)/oro.jar
+	cd $(JACL_SRC_DIR) ;\
+	CLASSPATH=$(JACL_CLASSPATH) \
+	$(JAVAC) $(JAVAC_FLAGS) \
+		-d $(JACL_BUILD_DIR) \
+                tcl/lang/*.java tcl/regex/*.java
+	cp -fr $(JACL_SRC_DIR)/tcl/lang/library\
+		$(JACL_BUILD_DIR)/tcl/lang/library
+
+
+# Only use this if you are developing jacl code and you need to recompile
+# a lot. It will not clean up before building and jacl.jar will not be
+# created you really need to know what you are doing to use this rule
+jacl.fastbuild:
+	@if test ! -d $(JACL_BUILD_DIR); then \
+		echo "jacl must be built normally before a fastbuild" ; \
+		exit -1 ; \
+	fi
+	cd $(JACL_SRC_DIR) ;\
+	CLASSPATH=$(JACL_CLASSPATH) \
+	$(JAVAC) $(JAVAC_FLAGS) \
+		-d $(JACL_BUILD_DIR) \
+                tcl/lang/*.java tcl/regex/*.java
+
+# jacl.jar needs to depend on jacl.build so that the
+# classfiles get rebuilt each time the jar is built
+jacl.jar: jacl.build
+	cd $(JACL_BUILD_DIR) ;\
+	CLASSPATH=$(JAVA_CLASSPATH) \
+	$(JAR) $(JAR_COMPRESS_FLAGS) $(BUILD_DIR)/jacl.jar tcl com
+
+
+#
+# Install jacl, if the user did not build jacl already
+# it would have been built by the jacl.check rule
+#
+jacl.install: jacl.check
+	@echo "#"
+	@echo "# Installing jacl"
+	@echo "#"
+	@echo "Installing jacl.jar in $(XP_LIB_INSTALL_DIR)"
+	@$(INSTALL_DATA) $(BUILD_DIR)/jacl.jar $(XP_LIB_INSTALL_DIR)
+	@echo "Installing jaclsh in $(BIN_INSTALL_DIR)"
+	@$(INSTALL_PROGRAM) $(BUILD_DIR)/jaclsh $(BIN_INSTALL_DIR)
+	@chmod 755 $(BIN_INSTALL_DIR)/jaclsh
+	@if env $(BIN_INSTALL_DIR)/jaclsh Test.tcl; then \
+		DO=NOTHING ; \
+	else \
+		echo "Test failed ... you may need to edit $(BIN_INSTALL_DIR)/jaclsh by hand to set the correct paths" ;   \
+	fi
+
+
+jacl.uninstall:
+	@echo "#"
+	@echo "# Uninstalling jacl"
+	@echo "#"
+	@echo "Uninstalling $(XP_LIB_INSTALL_DIR)/jacl.jar"
+	@rm -f $(XP_LIB_INSTALL_DIR)/jacl.jar
+	@echo "Uninstalling $(BIN_INSTALL_DIR)/jaclsh"
+	@rm -f $(BIN_INSTALL_DIR)/jaclsh 
+
+
+#
+# Check to make sure jacl is built
+#
+
+jacl.check: tcljava.check
+	@if test ! -f jacl.jar ; then \
+		$(MAKE) TCLJAVA=$(TCLJAVA) jacl ; \
+	fi
+
+
+
+#----------------------------------------------------------------
+# Build the TclJava Package.
+#----------------------------------------------------------------
+
+tcljava: tcljava.jar
+
+tcljava.build: tcljava.clean
+	@echo "#"
+	@echo "# Making tcljava.build"
+	@echo "#"
+	mkdir -p $(TCLJAVA_BUILD_DIR)
+	cd $(TCLJAVA_SRC_DIR) ;\
+	CLASSPATH=$(TCLJAVA_CLASSPATH) \
+	$(JAVAC) $(JAVAC_FLAGS) \
+		-d $(TCLJAVA_BUILD_DIR) \
+		tcl/lang/reflect/*.java
+	cd $(TCLJAVA_SRC_DIR) ;\
+	CLASSPATH=$(TCLJAVA_CLASSPATH) \
+	$(JAVAC) $(JAVAC_FLAGS) \
+	-d $(TCLJAVA_BUILD_DIR) \
+		tcl/lang/*.java
+	cp -fr $(TCLJAVA_SRC_DIR)/tcl/lang/library \
+		$(TCLJAVA_BUILD_DIR)/tcl/lang/library
+
+
+# Only use this if you are developing tcljava code and you need to recompile
+# a lot. It will not clean up before building and tcljava.jar will not be
+# created. you really need to know what you are doing to use this rule.
+tcljava.fastbuild:
+	@if test ! -d $(TCLJAVA_BUILD_DIR); then \
+		echo "tcljava must be built normally before a fastbuild" ; \
+		exit -1 ; \
+	fi
+	cd $(TCLJAVA_SRC_DIR) ;\
+	CLASSPATH=$(TCLJAVA_CLASSPATH) \
+	$(JAVAC) $(JAVAC_FLAGS) \
+	-d $(TCLJAVA_BUILD_DIR) \
+		tcl/lang/*.java
+
+# tcljava.jar needs to depend on tcljava.build so that the
+# classfiles get rebuilt each time the jar is built
+tcljava.jar: tcljava.build
+	cd $(TCLJAVA_BUILD_DIR) ;\
+	CLASSPATH=$(JAVA_CLASSPATH) \
+	$(JAR) $(JAR_COMPRESS_FLAGS) $(BUILD_DIR)/tcljava.jar tcl
+
+
+#
+# Install tcljava, if the user did not build already
+# then this rule will do a regular build before installing
+#
+
+tcljava.install: tcljava.check
+	@echo "#"
+	@echo "# Installing tcljava"
+	@echo "#"
+	@for i in $(LIB_INSTALL_DIR) \
+		 $(BIN_INSTALL_DIR) \
+		 $(XP_LIB_INSTALL_DIR) ; \
 	    do \
-	    if [ ! -d $$i ] ; then \
+	    if test ! -d $$i  ; then \
 		echo "Making directory $$i"; \
 		mkdir -p $$i; \
 		chmod 755 $$i; \
 		else true; \
-		fi; \
-	    done;
-	@echo "Installing $(TCLBLEND_LIB_FILE) in $(LIB_INSTALL_DIR)"
-	@$(INSTALL_DATA) $(TCLBLEND_LIB_FILE) $(LIB_INSTALL_DIR)
-	@chmod 555 $(LIB_INSTALL_DIR)/$(TCLBLEND_LIB_FILE)
-	@echo "Installing tclblend.jar in $(LIB_INSTALL_DIR)"
-	@$(INSTALL_DATA) $(CLASS_DIR)/tclblend.jar $(LIB_INSTALL_DIR)
-	@echo "Installing jwish in $(BLEND_BIN_DIR)"
-	@$(INSTALL_PROGRAM) jwish $(BLEND_BIN_DIR)
-	chmod a+rx $(BLEND_BIN_DIR)/jwish
-	@echo "Installing jtclsh in $(BLEND_BIN_DIR)"
-	(cd $(BLEND_BIN_DIR); rm -f jtclsh; ln -s jwish jtclsh)
-	@echo "Installing pkgIndex.tcl in $(BLEND_LIB_INSTALL_DIR)"
-	@$(INSTALL_DATA) $(TOP_DIR)/src/pkgIndex.tcl $(BLEND_LIB_INSTALL_DIR)
+	    fi; \
+	done;
+	@echo "Installing tcljava.jar in $(XP_LIB_INSTALL_DIR)"
+	@$(INSTALL_DATA) $(BUILD_DIR)/tcljava.jar $(XP_LIB_INSTALL_DIR)
+
+
+
+#
+# We must be careful to only uninstall tcljava when both jacl and
+# tclblend have already been uninstalled.
+#
+
+tcljava.uninstall:
+	@echo "#"
+	@echo "# Uninstalling tcljava"
+	@echo "#"
+	@if test ! -f $(XP_LIB_INSTALL_DIR)/tclblend.jar && \
+		test ! -f $(XP_LIB_INSTALL_DIR)/jacl.jar ; then \
+	    echo "Uninstalling $(XP_LIB_INSTALL_DIR)/tcljava.jar" ; \
+	    rm -f $(XP_LIB_INSTALL_DIR)/tcljava.jar ; \
+	    for i in $(XP_LIB_INSTALL_DIR) \
+		 $(LIB_INSTALL_DIR) \
+		 $(BIN_INSTALL_DIR) ; \
+	    do \
+	        if test -d $$i && env rmdir -p $$i 2> /dev/null ; then \
+		    echo "Removing directory $$i" ; \
+	        fi; \
+	    done; \
+	fi
+
+#
+# Check to make sure tcljava is built
+#
+
+tcljava.check:
+	@if test ! -f tcljava.jar ; then \
+		$(MAKE) TCLJAVA=$(TCLJAVA) tcljava ; \
+	fi
+
+
+
+#----------------------------------------------------------------
+# Build regression tests files for jacl and tclblend
+#----------------------------------------------------------------
+
+test: test_$(TCLJAVA)
+
+test.build: test.clean test_tcljava.build test_$(TCLJAVA).build
+
+test_$(TCLJAVA): test_$(TCLJAVA).check test_$(TCLJAVA).exec
+
+test_tcljava.check:
+	@if test ! -f $(BUILD_DIR)/tests/.tcljava ; then \
+		$(MAKE) TCLJAVA=$(TCLJAVA) test_tcljava.build ; \
+	fi
+
+test_$(TCLJAVA).check:
+	@if test ! -f $(BUILD_DIR)/tests/.$(TCLJAVA) ; then \
+		$(MAKE) TCLJAVA=$(TCLJAVA) test_$(TCLJAVA).build ; \
+	fi
+
+test_jacl.build: jacl.check test_tcljava.check
+	@echo "#"
+	@echo "# Making test_jacl.build"
+	@echo "#"
+	@rm -f tests/.jacl
+	cd $(TEST_JACL_SRC_DIR) ;\
+	CLASSPATH=$(TEST_CLASSPATH) \
+	$(JAVAC) $(JAVAC_FLAGS) \
+		-d $(TEST_BUILD_DIR) tcl/lang/*.java
+	@touch tests/.jacl
+
+test_tclblend.build: tclblend.check test_tcljava.check
+	@echo "#"
+	@echo "# Making test_tclblend.build"
+	@echo "#"
+	@rm -f tests/.tclblend
+	cd $(TEST_TCLBLEND_SRC_DIR) ;\
+	CLASSPATH=$(TEST_CLASSPATH) \
+	$(JAVAC) $(JAVAC_FLAGS) \
+		-d $(TEST_BUILD_DIR) tests/*.java tcl/lang/*.java
+	@touch tests/.tclblend
+
+# only use test.clean on make clean or on test.build so that a shared
+# build of tclblend and jacl tests can co-exist in the tests directory.
+# we also must check to see that jacl or tclblend has been built at this
+# point or else we would get an error while compiling the tests cases
+# as the test cases make refrences to tcl.lang.Intep
+
+test_tcljava.build: $(TCLJAVA).check
+	@echo "#"
+	@echo "# Making test_tcljava.build"
+	@echo "#"
+	@rm -f tests/.tcljava
+	mkdir -p $(TEST_BUILD_DIR)
+	cd $(TEST_TCLJAVA_SRC_DIR) ;\
+	CLASSPATH=$(TEST_CLASSPATH) \
+	$(JAVAC) $(JAVAC_FLAGS) \
+		-d $(TEST_BUILD_DIR) pkg1/*.java pkg2/*.java \
+		tcl/lang/*.java tests/*.java tests/invoke/*.java \
+		tests/javainfo/*.java tests/signature/*.java \
+		tests/exec/*.java
+	mkdir -p $(TEST_BUILD_DIR)/javaload
+	@# workaround for bug in jikes (extra mkdir)
+	mkdir -p $(TEST_BUILD_DIR)/javaload/tests/javaload
+	@# workaround for bug in jikes (extra dir on CLASSPATH)
+	cd $(TEST_TCLJAVA_SRC_DIR) ;\
+	CLASSPATH=$(TEST_CLASSPATH):$(TEST_BUILD_DIR)/javaload \
+	$(JAVAC) $(JAVAC_FLAGS) \
+		-d $(TEST_BUILD_DIR)/javaload javaload/*.java
+	cd $(TEST_BUILD_DIR)/javaload; \
+	CLASSPATH=$(JAVA_CLASSPATH) \
+	$(JAR) $(JAR_COMPRESS_FLAGS) test9.jar Test9Extension.class; \
+	rm Test9Extension.class
+	cd $(TEST_BUILD_DIR)/javaload; \
+	CLASSPATH=$(JAVA_CLASSPATH) \
+	$(JAR) $(JAR_COMPRESS_FLAGS) test10.jar Test10Extension.class; \
+	rm Test10Extension.class
+	@touch tests/.tcljava
+
+
+test_jacl.exec: test_jacl.check
+	@(  echo \
+	  lappend auto_path [pwd]\; \
+	  cd $(TOP_DIR)/tests\; \
+	  puts \"pwd is [pwd]\"\; \
+	  puts \"CLASSPATH is [set env\(CLASSPATH\)]\"\; \
+	  puts \"auto_path is [set auto_path]\"\; \
+	  source all\; \
+	  puts \"Tests done.\"\; \
+          exit; ) | \
+	CLASSPATH=$(TEST_CLASSPATH) \
+	$(JAVA) $(JAVA_FLAGS) \
+		-DBUILD_DIR=$(BUILD_DIR) -DJAVA=$(JAVA) tcl.lang.Shell
 
 
 
 
+test_tclblend.exec: test_tclblend.check
+	@(  echo \
+	  lappend auto_path [pwd]\; \
+	  cd $(TOP_DIR)/tests\; \
+	  puts \"pwd is [pwd]\"\; \
+	  puts \"CLASSPATH is [set env\(CLASSPATH\)]\"\; \
+	  puts \"auto_path is [set auto_path]\"\; \
+	  source all\; \
+	  puts \"Tests done.\"\; \
+          exit; ) | \
+	LD_PRELOAD=$(TCLBLEND_LD_PRELOAD) \
+	LD_BIND_NOW=$(TCLBLEND_LD_BIND_NOW) \
+	LD_LIBRARY_PATH=$(BUILD_DIR):$(TCL_BIN_DIR):$(JAVA_ARCH_NATIVE_RUNTIME_LIBS):$(LD_LIBRARY_PATH) \
+	TCLBLEND_SHLIB_NAMES=$(TCLBLEND_SHLIB_NAMES) \
+	TCL_LIBRARY=$(TCL_LIBRARY_DIR) \
+	TCL_LIBRARY=$(TCL_LIBRARY_DIR) \
+	CLASSPATH=$(TEST_CLASSPATH) \
+	JAVA=$(JAVA) \
+	BUILD_DIR=$(BUILD_DIR) \
+	$(TCL_BIN_DIR)/tclsh
 
+#----------------------------------------------------------------
+# shell : used to drop the user into a jacl or tclblend shell
+#----------------------------------------------------------------
+
+
+shell: shell_$(TCLJAVA)
+
+shell_jacl: jacl.check
+	CLASSPATH=$(TEST_CLASSPATH) \
+	$(JAVA) $(JAVA_FLAGS) \
+		-DBUILD_DIR=$(BUILD_DIR) -DJAVA=$(JAVA) tcl.lang.Shell
+
+
+shell_tclblend: tclblend.check
+	LD_PRELOAD=$(TCLBLEND_LD_PRELOAD) \
+	LD_BIND_NOW=$(TCLBLEND_LD_BIND_NOW) \
+	LD_LIBRARY_PATH=$(BUILD_DIR):$(TCL_BIN_DIR):$(JAVA_ARCH_NATIVE_RUNTIME_LIBS):$(LD_LIBRARY_PATH) \
+	TCLBLEND_SHLIB_NAMES=$(TCLBLEND_SHLIB_NAMES) \
+	TCL_LIBRARY=$(TCL_LIBRARY_DIR) \
+	TCLLIBPATH=$(BUILD_DIR) \
+	CLASSPATH=$(TEST_CLASSPATH) \
+	JAVA=$(JAVA) \
+	BUILD_DIR=$(BUILD_DIR) \
+	$(TCL_BIN_DIR)/tclsh
+
+
+debug_jacl: jacl.check
+	CLASSPATH=$(TEST_CLASSPATH) \
+	$(JDB) $(JDB_FLAGS) \
+		-DBUILD_DIR=$(BUILD_DIR) -DJAVA=$(JAVA) tcl.lang.Shell
+
+
+#----------------------------------------------------------------
+# Demos
+#----------------------------------------------------------------
+
+demos: $(TCLJAVA).check demos.build
+
+demos.build: demos.clean
+	mkdir -p $(DEMOS_BUILD_DIR)
+	cp -fr $(DEMOS_SRC_DIR)/gluepkg $(DEMOS_BUILD_DIR)/gluepkg
+	cp -fr $(DEMOS_SRC_DIR)/gridDemo $(DEMOS_BUILD_DIR)/gridDemo
+	cp -fr $(DEMOS_SRC_DIR)/packDemo $(DEMOS_BUILD_DIR)/packDemo
+	cp -fr $(DEMOS_SRC_DIR)/pyramidpkg $(DEMOS_BUILD_DIR)/pyramidpkg
+	cp -fr $(DEMOS_SRC_DIR)/simplepkg $(DEMOS_BUILD_DIR)/simplepkg
+	cp -fr $(DEMOS_SRC_DIR)/watchpkg $(DEMOS_BUILD_DIR)/watchpkg
+	cd $(DEMOS_BUILD_DIR)/gluepkg; \
+	CLASSPATH=$(DEMOS_CLASSPATH) \
+	$(JAVAC) $(JAVAC_FLAGS) *.java
+	cd $(DEMOS_BUILD_DIR)/packDemo; \
+	CLASSPATH=$(DEMOS_CLASSPATH) \
+	$(JAVAC) $(JAVAC_FLAGS) *.java
+	cd $(DEMOS_BUILD_DIR)/pyramidpkg; \
+	CLASSPATH=$(DEMOS_CLASSPATH) \
+	$(JAVAC) $(JAVAC_FLAGS) *.java
+	cd $(DEMOS_BUILD_DIR)/simplepkg; \
+	CLASSPATH=$(DEMOS_CLASSPATH) \
+	$(JAVAC) $(JAVAC_FLAGS) *.java
+	cd $(DEMOS_BUILD_DIR)/watchpkg; \
+	CLASSPATH=$(DEMOS_CLASSPATH) \
+	$(JAVAC) $(JAVAC_FLAGS) *.java
+
+
+
+#----------------------------------------------------------------
+# Other functions
+#----------------------------------------------------------------
+
+depend:
+	@if test "$(TCLJAVA)" = "jacl"; then \
+	    echo "'make depend' only works with tclblend" ; \
+	    exit -1 ; \
+        fi
+	@#create empty javaNative.h file if it is not there already
+	@touch javaNative.h
+	makedepend -- $(DEPEND_SWITCHES) -- $(SRCS)
+
+jaclsh: $(UNIX_DIR)/jaclsh.in
+	./config.status
+
+jtclsh: $(UNIX_DIR)/jtclsh.in
+	./config.status
+
+Makefile: $(UNIX_DIR)/Makefile.in
+	./config.status
+
+configure: $(UNIX_DIR)/configure.in
+	@echo "# running autoconf on configure.in"
+	cd $(UNIX_DIR) ;\
+	autoconf
+
+clean: tclblend.clean jacl.clean tcljava.clean \
+	demos.clean test.clean tmp.clean
+
+tclblend.clean:
+	rm -f  *.o $(TCLBLEND_LIB_FILE) custom javaNative.h
+	rm -rf $(TCLBLEND_BUILD_DIR)
+	rm -f  tclblend.jar
+	rm -f  pkgIndex.tcl
+
+jacl.clean:
+	rm -rf $(JACL_BUILD_DIR)
+	rm -f  jacl.jar
+
+tcljava.clean:
+	rm -rf $(TCLJAVA_BUILD_DIR)
+	rm -f  tcljava.jar
+
+demos.clean: 
+	rm -rf $(DEMOS_BUILD_DIR)
+
+test.clean:
+	rm -f  $(TEST_TCL_DIR)/core $(BUILD_DIR)/core
+	rm -rf $(TEST_BUILD_DIR)
+
+tmp.clean:
+	rm -rf META-INF so_locations
+
+distclean: clean
+	rm -f config.cache config.log config.status
+	rm -f lib.exp confdefs.h depend.out
+	rm -f Test.class Test.tcl Test.h Test.jar
+	rm -f Makefile jtclsh jaclsh
+
+
+#----------------------------------------------------------------
+# Distributions
+#----------------------------------------------------------------
+
+# Most of the rules below will only work on the tcljava distribution,
+# which consists of the combined Tcl Blend and Jacl sources.
+
+
+# Target to create a proper Tcl distribution from information in the
+# master source directory.  DISTDIR must be defined to indicate where
+# to put the distribution.
+#
+
+DISTDIR			= /tmp/tcljava
+TCLJAVA_VERSION		= @TCLJAVA_VERSION@
+TCLJAVA_NODOT_VERSION	= `echo @TCLJAVA_VERSION@ | sed -e 's/\.//g'`
+
+
+JACL_ZIPNAME		= jacl$(TCLJAVA_NODOT_VERSION).zip
+JACL_DISTNAME		= jacl$(TCLJAVA_VERSION)
+JACL_DISTDIR		= $(DISTDIR)/$(JACL_DISTNAME)
+
+TCLBLEND_ZIPNAME	= tclBlend$(TCLJAVA_NODOT_VERSION).zip
+TCLBLEND_DISTNAME	= tclBlend$(TCLJAVA_VERSION)
+TCLBLEND_DISTDIR	= $(DISTDIR)/$(TCLBLEND_DISTNAME)
+
+# Permissions to set the files in the distribution to.
+DIST_CHMOD_PERMS	= a+rX,u+w,go-w,g-s
+
+# This rule will build all the distributions
+dists: jaclDist tclblendDist
+
+
+#this is just used for debugging the dist name generation
+distnames:
+	-@echo "TCLJAVA_VERSION = $(TCLJAVA_VERSION)"
+	-@echo "TCLJAVA_NODOT_VERSION = $(TCLJAVA_NODOT_VERSION)"
+	-@echo "JACL_ZIPNAME = $(JACL_ZIPNAME)"
+	-@echo "JACL_DISTNAME = $(JACL_DISTNAME)"
+	-@echo "TCLBLEND_ZIPNAME = $(TCLBLEND_ZIPNAME)"
+	-@echo "TCLBLEND_DISTNAME = $(TCLBLEND_DISTNAME)"
+
+#----------------------------------------------------------------
+# tcljavaDist --
+#
+#	Builds the directory structure and copies files that are 
+# 	common in both tclblend and jacl.
+#----------------------------------------------------------------
+
+tcljavaDist: Makefile
+	@echo "#"
+	@echo "# Making tcljavaDist"
+	@echo "#"
+	rm -rf $(DISTDIR)
+	mkdir -p $(DISTDIR)
+	$(MAKE) TCLJAVA=$(TCLJAVA) DISTDIR=$(DISTDIR) tcljavaDemoDist 
+
+	cp -p $(TOP_DIR)/license.terms \
+		$(TOP_DIR)/changes.txt \
+		$(TOP_DIR)/diffs.txt \
+		$(TOP_DIR)/known_issues.txt \
+		$(DISTDIR)
+
+	mkdir -p $(DISTDIR)/unix
+	cp -p $(UNIX_DIR)/configure \
+		$(UNIX_DIR)/configure.in \
+		$(UNIX_DIR)/install-sh \
+		$(UNIX_DIR)/jtclsh.in \
+		$(UNIX_DIR)/Makefile.in \
+		$(TOP_DIR)/license.terms \
+		$(DISTDIR)/unix
+
+	chmod 644 $(DISTDIR)/unix/Makefile.in
+	chmod 755 $(DISTDIR)/unix/configure $(DISTDIR)/unix/configure.in
+	chmod 555 $(DISTDIR)/unix/install-sh
+
+	@#this makefile will be modified later
+	mkdir -p $(DISTDIR)/win
+	cp -p $(TOP_DIR)/win/makefile.vc \
+		$(DISTDIR)/win/makefile.vc
+	cp -p 	$(TOP_DIR)/license.terms \
+		$(DISTDIR)/win
+
+	@# Don't just blindly recursively copy, we are bound to pick up kruft.
+
+	mkdir -p $(DISTDIR)/src
+
+	cp -p $(TOP_DIR)/src/*.tcl \
+	       $(TOP_DIR)/src/*.java \
+	       $(DISTDIR)/src
+
+	mkdir -p $(DISTDIR)/src/empty/tcl/lang
+
+	cp -p  $(TOP_DIR)/src/empty/tcl/lang/*.java \
+		$(DISTDIR)/src/empty/tcl/lang
+
+	cp -p $(TOP_DIR)/src/empty/empty.jar \
+		$(TOP_DIR)/src/empty/README.txt \
+		$(DISTDIR)/src/empty
+
+	mkdir -p $(DISTDIR)/src/tcljava/tcl/lang
+	cp -p $(TOP_DIR)/src/tcljava/tcl/lang/*.java \
+		$(DISTDIR)/src/tcljava/tcl/lang
+
+	mkdir -p $(DISTDIR)/src/tcljava/tcl/lang/library/java
+	cp -p $(TOP_DIR)/src/tcljava/tcl/lang/library/java/javalock.tcl \
+		$(DISTDIR)/src/tcljava/tcl/lang/library/java
+
+	mkdir -p $(DISTDIR)/src/tcljava/tcl/lang/reflect
+	cp -p $(TOP_DIR)/src/tcljava/tcl/lang/reflect/PkgInvoker.java \
+		$(DISTDIR)/src/tcljava/tcl/lang/reflect
+
+	mkdir -p $(DISTDIR)/src/tests/tcljava/tests
+	cp -p $(TOP_DIR)/src/tests/tcljava/tests/*.java \
+		$(DISTDIR)/src/tests/tcljava/tests
+
+	mkdir -p $(DISTDIR)/src/tests/tcljava/tests/exec
+	cp -p $(TOP_DIR)/src/tests/tcljava/tests/exec/*.java \
+		$(DISTDIR)/src/tests/tcljava/tests/exec
+
+	mkdir -p $(DISTDIR)/src/tests/tcljava/tests/invoke
+	cp -p $(TOP_DIR)/src/tests/tcljava/tests/invoke/*.java \
+		$(DISTDIR)/src/tests/tcljava/tests/invoke
+
+	mkdir -p $(DISTDIR)/src/tests/tcljava/tests/javainfo
+	cp -p $(TOP_DIR)/src/tests/tcljava/tests/javainfo/*.java \
+		$(DISTDIR)/src/tests/tcljava/tests/javainfo
+
+	mkdir -p $(DISTDIR)/src/tests/tcljava/tests/signature
+	cp -p $(TOP_DIR)/src/tests/tcljava/tests/signature/*.java \
+		$(DISTDIR)/src/tests/tcljava/tests/signature
+
+	mkdir -p $(DISTDIR)/src/tests/tcljava/javaload
+	cp -p $(TOP_DIR)/src/tests/tcljava/javaload/*.java \
+		$(DISTDIR)/src/tests/tcljava/javaload
+
+	mkdir -p $(DISTDIR)/src/tests/tcljava/pkg1
+	cp -p $(TOP_DIR)/src/tests/tcljava/pkg1/*.java \
+		$(DISTDIR)/src/tests/tcljava/pkg1
+
+	mkdir -p $(DISTDIR)/src/tests/tcljava/pkg2
+	cp -p $(TOP_DIR)/src/tests/tcljava/pkg2/*.java \
+		$(DISTDIR)/src/tests/tcljava/pkg2
+
+	mkdir -p $(DISTDIR)/src/tests/tcljava/tcl/lang
+	cp -p $(TOP_DIR)/src/tests/tcljava/tcl/lang/*.java \
+		$(DISTDIR)/src/tests/tcljava/tcl/lang
+
+	mkdir -p $(DISTDIR)/tests/tcljava
+	cp -p $(TOP_DIR)/tests/README \
+		$(TOP_DIR)/tests/all \
+		$(TOP_DIR)/tests/defs \
+		$(DISTDIR)/tests
+
+	cp -p $(TOP_DIR)/tests/tcljava/*.test \
+		$(DISTDIR)/tests/tcljava
+
+	mkdir -p $(DISTDIR)/docs \
+		$(DISTDIR)/docs/Keywords \
+		$(DISTDIR)/docs/TclJava \
+		$(DISTDIR)/docs/TclJavaLib \
+
+	cp -p $(TOP_DIR)/docs/*.html \
+		$(DISTDIR)/docs
+	cp -p $(TOP_DIR)/docs/Keywords/*.htm \
+		$(DISTDIR)/docs/Keywords
+	cp -p $(TOP_DIR)/docs/TclJava/*.html \
+		$(DISTDIR)/docs/TclJava
+	cp -p $(TOP_DIR)/docs/TclJavaLib/*.htm \
+		$(DISTDIR)/docs/TclJavaLib
+
+
+#----------------------------------------------------------------
+# tcljavaDemoDist --
+#
+#	Builds the directory structure and copies demos that are 
+# 	common in both tclblend and jacl.
+#----------------------------------------------------------------
+
+tcljavaDemoDist: Makefile
+	@echo "#"
+	@echo "# Making tcljavaDemoDist"
+	@echo "#"
+	mkdir -p $(DISTDIR)/demos/gluepkg \
+		$(DISTDIR)/demos/watchpkg \
+		$(DISTDIR)/demos/simplepkg \
+		$(DISTDIR)/demos/gridDemo \
+		$(DISTDIR)/demos/packDemo \
+		$(DISTDIR)/demos/pyramidpkg
+
+	cp -p $(TOP_DIR)/demos/README \
+		$(DISTDIR)/demos
+	cp -p $(TOP_DIR)/demos/gluepkg/*.java \
+		$(TOP_DIR)/demos/gluepkg/*.tcl \
+		$(TOP_DIR)/demos/gluepkg/*.jar \
+		$(TOP_DIR)/demos/gluepkg/README \
+		$(TOP_DIR)/license.terms \
+		$(DISTDIR)/demos/gluepkg
+	cp -p $(TOP_DIR)/demos/simplepkg/*.java \
+		$(TOP_DIR)/demos/simplepkg/*.tcl \
+		$(TOP_DIR)/demos/simplepkg/README \
+		$(TOP_DIR)/license.terms \
+		$(DISTDIR)/demos/simplepkg
+	cp -p $(TOP_DIR)/demos/watchpkg/*.java \
+		$(TOP_DIR)/demos/watchpkg/*.tcl \
+		$(TOP_DIR)/demos/watchpkg/README \
+		$(TOP_DIR)/license.terms \
+		$(DISTDIR)/demos/watchpkg
+	cp -p $(TOP_DIR)/demos/gridDemo/*.tcl \
+		$(TOP_DIR)/demos/gridDemo/README \
+		$(DISTDIR)/demos/gridDemo
+	cp -p $(TOP_DIR)/demos/packDemo/*.tcl \
+		$(TOP_DIR)/demos/packDemo/*.java \
+		$(TOP_DIR)/demos/packDemo/README \
+		$(DISTDIR)/demos/packDemo
+	cp -p $(TOP_DIR)/demos/pyramidpkg/*.java \
+		$(TOP_DIR)/demos/pyramidpkg/*.html \
+		$(TOP_DIR)/demos/pyramidpkg/changeDefs.tcl \
+		$(TOP_DIR)/demos/pyramidpkg/README \
+		$(TOP_DIR)/license.terms \
+		$(DISTDIR)/demos/pyramidpkg
+
+#----------------------------------------------------------------
+# jaclDist --
+#
+#	Builds the directory structure and copies files that are 
+# 	unique to Jacl.  Before this is done, the targets 
+#	tcljavaDist and tcljavaDemoDist MUST be built.
+#----------------------------------------------------------------
+jaclDist: $(UNIX_DIR)/configure Makefile
+	@echo "#"
+	@echo "# Making jaclDist"
+	@echo "#"
+	$(MAKE) tcljavaDist DISTDIR=$(JACL_DISTDIR) TCLJAVA=jacl
+
+	cp -p $(TOP_DIR)/README.jacl \
+		$(JACL_DISTDIR)/README
+	cp -p $(TOP_DIR)/unix/README.jacl \
+		$(JACL_DISTDIR)/unix/README
+	cp -p $(TOP_DIR)/win/README.jacl \
+		$(JACL_DISTDIR)/win/README
+
+	mkdir -p $(JACL_DISTDIR)/src/tests/jacl/tcl/lang
+	cp -p $(TOP_DIR)/src/tests/jacl/tcl/lang/*.java \
+		$(JACL_DISTDIR)/src/tests/jacl/tcl/lang
+
+	mkdir -p $(JACL_DISTDIR)/src/jacl
+	cp $(JACL_SRC_DIR)/oro.jar $(JACL_DISTDIR)/src/jacl
+
+	mkdir -p $(JACL_DISTDIR)/src/jacl/tcl/lang
+	cp -p $(TOP_DIR)/src/jacl/tcl/lang/*.java \
+		$(JACL_DISTDIR)/src/jacl/tcl/lang
+
+	mkdir -p $(JACL_DISTDIR)/src/jacl/tcl/lang/library
+
+	cp -p $(JACL_SRC_DIR)/tcl/lang/library/*.tcl \
+		$(JACL_SRC_DIR)/tcl/lang/library/tclIndex \
+		$(TOP_DIR)/license.terms \
+		$(JACL_DISTDIR)/src/jacl/tcl/lang/library
+
+	mkdir -p $(JACL_DISTDIR)/src/jacl/tcl/regex
+	cp -p $(TOP_DIR)/src/jacl/tcl/regex/*.java \
+		$(JACL_DISTDIR)/src/jacl/tcl/regex
+
+	mkdir -p $(JACL_DISTDIR)/tests/jacl
+	cp -p $(TOP_DIR)/tests/jacl/*.test \
+		$(JACL_DISTDIR)/tests/jacl
+
+	mkdir -p $(JACL_DISTDIR)/tests/tcl
+	cp -p $(TOP_DIR)/tests/tcl/*.test \
+		$(JACL_DISTDIR)/tests/tcl
+
+	mkdir -p $(JACL_DISTDIR)/unix
+	cp -p $(TOP_DIR)/unix/jaclsh.in \
+		$(JACL_DISTDIR)/unix
+
+	mkdir -p $(JACL_DISTDIR)/win
+	cp -p $(TOP_DIR)/win/jaclsh.bat \
+		$(JACL_DISTDIR)/win
+
+	@# Substitute in TCLJAVA=jacl
+	cat $(TOP_DIR)/win/makefile.vc | \
+	sed -e 's/TCLJAVA[	 ]*= [a-z]*$$/TCLJAVA		= jacl/g' \
+		-e 's/tclBlend@TCLJAVA_VERSION@/jacl@TCLJAVA_VERSION@/g' >\
+		$(JACL_DISTDIR)/win/makefile.vc
+
+	rm -f $(DISTDIR)/$(JACL_DISTNAME).tar.Z \
+		$(DISTDIR)/$(JACL_DISTNAME).tar.gz \
+		$(DISTDIR)/$(JACL_ZIPNAME) 
+	cd $(DISTDIR);\
+		chmod -R $(DIST_CHMOD_PERMS) $(JACL_DISTNAME); \
+		tar -cf $(JACL_DISTNAME).tar $(JACL_DISTNAME); \
+		compress -c $(JACL_DISTNAME).tar > $(JACL_DISTNAME).tar.Z; \
+		zip -qr8 $(JACL_ZIPNAME) $(JACL_DISTNAME); \
+		gzip --best $(JACL_DISTNAME).tar
+
+
+
+# Sanity check by building, installing, running tests
+jaclDistBuild:
+	mkdir -p $(DISTDIR)/jacltest
+	cd $(JACL_DISTDIR)/unix; \
+		$(UNIX_DIR)/configure --prefix=$(DISTDIR)/jacltest ; \
+		$(MAKE) install; \
+		$(MAKE) test_jacl.build; \
+		$(MAKE) test
+
+
+#----------------------------------------------------------------
+# tclblendDist --
+#
+#	Builds the directory structure and copies files that are 
+# 	unique to tclblend.  Before this is done, the targets 
+#	tcljavaDist and tcljavaDemoDist MUST be built.
+#----------------------------------------------------------------
+
+tclblendDist: $(UNIX_DIR)/configure Makefile
+	@echo "#"
+	@echo "# Making tclblendDist"
+	@echo "#"
+	$(MAKE) DISTDIR=$(TCLBLEND_DISTDIR) TCLJAVA=tclblend tcljavaDist
+
+	cp -p $(TOP_DIR)/README.tclblend \
+		$(TCLBLEND_DISTDIR)/README
+	cp -p $(TOP_DIR)/unix/README.tclblend \
+		$(TCLBLEND_DISTDIR)/unix/README
+	cp -p $(TOP_DIR)/win/README.tclblend \
+		$(TCLBLEND_DISTDIR)/win/README
+
+	mkdir -p $(TCLBLEND_DISTDIR)/src
+	cp -p $(TOP_DIR)/src/pkgIndex.tcl \
+		$(TCLBLEND_DISTDIR)/src
+
+	mkdir -p $(TCLBLEND_DISTDIR)/src/native
+	cp -p $(NATIVE_SRC_DIR)/*.c \
+		$(NATIVE_SRC_DIR)/*.h \
+		$(TCLBLEND_DISTDIR)/src/native
+
+	cp -p $(UNIX_DIR)/custom.c \
+		$(UNIX_DIR)/unixNotifier.c \
+		$(TCLBLEND_DISTDIR)/unix
+
+	cp -p $(WIN_DIR)/winNotifier.c \
+		$(WIN_DIR)/tclRegexp.h \
+		$(TCLBLEND_DISTDIR)/win
+
+	@# Substitute in TCLJAVA=tclblend
+	cat $(TOP_DIR)/win/makefile.vc | \
+		sed -e 's/TCLJAVA[	 ]*= [a-z]*$$/TCLJAVA		= tclblend/g' >\
+			$(TCLBLEND_DISTDIR)/win/makefile.vc
+
+	mkdir -p $(TCLBLEND_DISTDIR)/src/tests/tclblend/tests
+	mkdir -p $(TCLBLEND_DISTDIR)/src/tests/tclblend/tcl/lang
+
+	cp -p $(TOP_DIR)/src/tests/tclblend/tests/*.java \
+		$(TCLBLEND_DISTDIR)/src/tests/tclblend/tests
+
+	cp -p $(TOP_DIR)/src/tests/tclblend/tcl/lang/*.java \
+		$(TCLBLEND_DISTDIR)/src/tests/tclblend/tcl/lang
+
+	mkdir -p $(TCLBLEND_DISTDIR)/src/tclblend/tcl/lang
+	cp -p $(TCLBLEND_SRC_DIR)/tcl/lang/*.java \
+		$(TCLBLEND_DISTDIR)/src/tclblend/tcl/lang
+
+	mkdir -p $(TCLBLEND_DISTDIR)/tests/tclblend
+	cp -p  $(TOP_DIR)/tests/tclblend/*.test \
+		$(TCLBLEND_DISTDIR)/tests/tclblend
+
+	rm -f   $(DISTDIR)/$(TCLBLEND_DISTNAME).tar.Z \
+		$(DISTDIR)/$(TCLBLEND_DISTNAME).tar.gz \
+		$(DISTDIR)/$(TCLBLEND_ZIPNAME)
+
+	cd $(DISTDIR);\
+		chmod -R $(DIST_CHMOD_PERMS) $(TCLBLEND_DISTNAME); \
+		tar -cf $(TCLBLEND_DISTNAME).tar $(TCLBLEND_DISTNAME); \
+		compress -c $(TCLBLEND_DISTNAME).tar > $(TCLBLEND_DISTNAME).tar.Z; \
+		zip -rq8 $(TCLBLEND_ZIPNAME) $(TCLBLEND_DISTNAME); \
+		gzip --best $(TCLBLEND_DISTNAME).tar
+
+
+# Sanity check by building, installing, running tests
+tclblendDistBuild:
+	mkdir -p $(DISTDIR)/tbtest
+	cd $(TCLBLEND_DISTDIR)/unix; \
+		$(UNIX_DIR)/configure --prefix=$(DISTDIR)/tbtest \
+			--with-tcl=$(TCL_BIN_DIR) ; \
+		$(MAKE) install; \
+		$(MAKE) test_tclblend.build; \
+		$(MAKE) test
+
+
+
+
+############################################################################
+#
 # Purify is a commercial software package that finds leaks and memory
 # access errors in C programs.  The rules below build a purified
 # executable.
-# Before you run green.pure, you will have to set the following variables:
-# setenv CLASSPATH $(JAVA_CLASSPATH):`pwd`/tclblend.jar
+# Before you run custom.pure, you will have to set the following variables:
 # setenv LD_LIBRARY_PATH .:${LD_LIBRARY_PATH}
+#
+############################################################################
 
 PURIFYOPTIONS = -automount-prefix=/tmp_mnt:/vol -best-effort -cache-dir=/tmp/pv -always-use-cache-dir=yes -ignore_signals=SIGPOLL -threads=yes -use_internal_locks=yes
 PUREDIR =	/usr/eesww/pure/purify
 PURETHREADS =	$(PUREDIR)/solaris2_threads.so
 PURIFY =	$(PUREDIR)/purify
 
-green.pure.build:
-	@$(MAKE) green.pure \
-		SRC_CLASSPATH=$(TCLBLEND_CLASSPATH) TCLJAVA=tclblend \
-		SRC_DIR=$(NATIVE_SRC_DIR)
+custom.pure.build:
+	@$(MAKE) TCLJAVA=tclblend custom.pure 
 
-
-
-green.pure: .purify green.o libtclblend$(SHLIB_SUFFIX)
+custom.pure: .purify tclblend.check custom.check
 	$(PURIFY) $(PURIFYOPTIONS) \
-	$(CC) -o $@ -g green.o $(PURETHREADS) \
-	libtclblend$(SHLIB_SUFFIX) $(LIBS)
+	$(CC) -o $@ -g custom.o $(PURETHREADS) $(TCLBLEND_LIB_FILE) $(LIBS)
 
 # The .purify file is read by the purify program
 # The first two lines must be present for purify to work properly.
@@ -446,31 +1313,31 @@ green.pure: .purify green.o libtclblend$(SHLIB_SUFFIX)
 	echo "suppress umr qst; qsort; initReader" >> $@
 	echo "suppress umr TclCleanupByteCode; FreeByteCodeInternalRep" >> $@
 
-green.pure.test.exec: .purify
+custom.pure.test.exec: .purify
 	( echo lappend auto_path [pwd]\; cd $(TOP_DIR)/tests\; \
 	  source all\; exit; ) | \
-	LD_LIBRARY_PATH=$(BUILD_DIR):$(TCL_BIN_DIR):$(JAVA_ARCH_LIB):$(JAVA_ARCH_RUNTIME_LIBS):$(LD_LIBRARY_PATH) \
-	CLASSPATH=$(JAVA_CLASSPATH):$(CLASS_DIR)/$(TCLJAVA):$(BUILD_DIR) \
+	LD_LIBRARY_PATH=$(BUILD_DIR):$(TCL_BIN_DIR):$(JAVA_ARCH_GREEN_RUNTIME_LIBS):$(LD_LIBRARY_PATH) \
+	CLASSPATH=$(TEST_CLASSPATH) \
 	BUILD_DIR=$(BUILD_DIR) \
-	$(BUILD_DIR)/green.pure
+	$(BUILD_DIR)/custom.pure
 
 QUANTIFYDIR =	/usr/eesww/pure/quantify
 QUANTIFYTHREADS =	$(QUANTIFYDIR)/solaris2_threads.so
 QUANTIFY =	$(QUANTIFYDIR)/quantify
 
-green.quantify.build:
-	@$(MAKE) green.quantify \
-		SRC_CLASSPATH=$(TCLBLEND_CLASSPATH) TCLJAVA=tclblend \
-		SRC_DIR=$(NATIVE_SRC_DIR)
+custom.quantify.build:
+	@$(MAKE) TCLJAVA=tclblend custom.quantify
 
-green.quantify: .purify green.o libtclblend$(SHLIB_SUFFIX)
+custom.quantify: .purify tclblend.check custom.check
 	$(QUANTIFY) $(PURIFYOPTIONS) \
-	$(CC) -o $@ -g green.o $(QUANTIFYTHREADS) \
-	libtclblend$(SHLIB_SUFFIX) $(LIBS)
+	$(CC) -o $@ -g custom.o $(QUANTIFYTHREADS) $(TCLBLEND_LIB_FILE) $(LIBS)
+
 
 
 #----------------------------------------------------------------
+#
 # Java Scope test case code coverage rules
+#
 #----------------------------------------------------------------
 
 # The variables below are for the SunTest JavaScope code coverage tool
@@ -494,41 +1361,39 @@ JSRESTORE =	jsrestore
 JSCLASSPATH = 	/users/ptdesign/vendors/sun/JavaScope/JavaScope.zip
 
 jsinstr:
-	$(JSINSTR) $(JSINTRFLAGS) $(JSRCS)
+	$(JSINSTR) $(JSINTRFLAGS)
 
 # If the jsoriginal directory does not exist, then instrument the Java files.
 # Note that $(wildcard) is a GNU make extension 
-$(TOP_DIR)/src/tclblend/tcl/lang/jsoriginal:
+$(TCLBLEND_SRC_DIR)/tcl/lang/jsoriginal:
 	@echo "Creating $@"
-	cd $(TOP_DIR)/src/tclblend/tcl/lang; \
-	if [ ! -d jsoriginal ]; then \
+	cd $(TCLBLEND_SRC_DIR)/tcl/lang; \
+	if test ! -d jsoriginal ; then \
 		$(JSINSTR) $(JSINTRFLAGS) *.java; \
 	fi
 
-$(TOP_DIR)/src/tcljava/tcl/lang/jsoriginal:
+$(TCLJAVA_SRC_DIR)/tcl/lang/jsoriginal:
 	@echo "Creating $@"
-	cd $(TOP_DIR)/src/tcljava/tcl/lang; \
-	if [ ! -d jsoriginal ]; then \
+	cd $(TCLJAVA_SRC_DIR)/tcl/lang; \
+	if test ! -d jsoriginal ; then \
 		$(JSINSTR) $(JSINTRFLAGS) *.java; \
 	fi
 
 # Compile the instrumented Java classes and include JavaScope.zip
 jstclblend.depend:
-	$(MAKE) tclblend.build AUX_CLASSPATH=:$(JSCLASSPATH) TCLJAVA=tclblend \
-		SRC_DIR=$(NATIVE_SRC_DIR)
+	$(MAKE) tclblend.build AUX_CLASSPATH=:$(JSCLASSPATH) TCLJAVA=tclblend
 
 
 # Run the test_jsimple rule with the proper classpath  
-jstclblendTest: $(TCLTEST)
-	@$(MAKE) test_tclblend.build test_tclblend.exec \
-		AUX_CLASSPATH=":$(JSCLASSPATH)" TCLJAVA=tclblend 
+jstclblendTest:
+	@$(MAKE) TCLJAVA=tclblend AUX_CLASSPATH=":$(JSCLASSPATH)" test_tclblend
 	@echo "To view code coverage results, run javascope or jsreport"
 	@echo "To get a summary, run jsreport -dbsummary" 
 
 
 # If necessary, instrument the classes, then rebuild, then run the tests
-jsall: $(TOP_DIR)/src/tclblend/tcl/lang/jsoriginal \
-		$(TOP_DIR)/src/tcljava/tcl/lang/jsoriginal
+jsall: $(TCLBLEND_SRC_DIR)/tcl/lang/jsoriginal \
+		$(TCLJAVA_SRC_DIR)/tcl/lang/jsoriginal
 	$(MAKE) clean
 	$(MAKE) jstclblend.depend
 	$(MAKE) install
@@ -537,939 +1402,14 @@ jsall: $(TOP_DIR)/src/tclblend/tcl/lang/jsoriginal \
 
 # Back out the instrumentation.
 jsrestore:
-	cd $(TOP_DIR)/src/tclblend/tcl/lang; $(JSRESTORE) *.java
-	-rm -f $(TOP_DIR)/src/tclblend/tcl/lang/jsoriginal/README
-	-rmdir $(TOP_DIR)/src/tclblend/tcl/lang/jsoriginal
-	cd $(TOP_DIR)/src/tcljava/tcl/lang; $(JSRESTORE) *.java
-	-rm -f $(TOP_DIR)/src/tcljava/tcl/lang/jsoriginal/README
-	-rmdir $(TOP_DIR)/src/tcljava/tcl/lang/jsoriginal
+	cd $(TCLBLEND_SRC_DIR)/tcl/lang; $(JSRESTORE) *.java
+	-rm -f $(TCLBLEND_SRC_DIR)/tcl/lang/jsoriginal/README
+	-rmdir $(TCLBLEND_SRC_DIR)/tcl/lang/jsoriginal
+	cd $(TCLJAVA_SRC_DIR)/tcl/lang; $(JSRESTORE) *.java
+	-rm -f $(TCLJAVA_SRC_DIR)/tcl/lang/jsoriginal/README
+	-rmdir $(TCLJAVA_SRC_DIR)/tcl/lang/jsoriginal
 
 
-#----------------------------------------------------------------
-# Build Jacl
-#----------------------------------------------------------------
-
-jacl: jaclsh jacl.jar
-
-jacl.build: tcljava
-	mkdir -p $(JACL_BUILD_DIR)/tcl/lang/library
-	cp -pf $(JACL_SRC_DIR)/tcl/lang/library/*.tcl \
-		$(JACL_SRC_DIR)/tcl/lang/library/license.terms \
-		$(JACL_SRC_DIR)/tcl/lang/library/tclIndex \
-		$(JACL_BUILD_DIR)/tcl/lang/library
-
-	mkdir -p $(JACL_BUILD_DIR)/tcl/regex
-	cp $(JACL_SRC_DIR)/tcl/regex/*.class \
-		$(JACL_BUILD_DIR)/tcl//regex
-
-	mkdir -p $(JACL_BUILD_DIR)/com/oroinc/text/regex
-	cp $(JACL_SRC_DIR)/com/oroinc/text/regex/*.class \
-		$(JACL_BUILD_DIR)/com/oroinc/text/regex
-
-	cd $(JACL_SRC_DIR) ;\
-	$(JAVAC) $(JAVAC_FLAGS) -classpath $(JACL_CLASSPATH) \
-		-d $(JACL_BUILD_DIR) \
-		tcl/lang/*.java tcl/regex/*.java
-
-jacl.jar: jacl.build
-	cd $(JACL_BUILD_DIR) ;\
-	$(JAR) $(JAR_FLAGS) $(CLASS_DIR)/jacl.jar tcl/lang/*.class \
-		tcl/lang/library tcl/regex/*.class com
-
-
-# Install Jacl
-install_jacl: #jacl.jar
-	@echo "#"
-	@echo "# Installing jacl"
-	@echo "#"
-	@for i in $(LIB_INSTALL_DIR) \
-		$(exec_prefix)/bin \
-		; \
-	    do \
-	    if [ ! -d $$i ] ; then \
-		echo "Making directory $$i"; \
-		mkdir -p $$i; \
-		chmod 755 $$i; \
-		else true; \
-		fi; \
-	    done;
-	@echo "Installing jacl.jar in $(LIB_INSTALL_DIR)"
-	@$(INSTALL_DATA) $(CLASS_DIR)/jacl.jar $(LIB_INSTALL_DIR)
-	@echo "Installing jaclsh in $(exec_prefix)/bin"
-	@$(INSTALL_PROGRAM) jaclsh $(exec_prefix)/bin
-	@chmod 755 $(exec_prefix)/bin/jaclsh
-
-
-#----------------------------------------------------------------
-# Build the TclJava Package.
-#----------------------------------------------------------------
-
-tcljava: tcljava.jar
-
-tcljava.build: $(BUILD_DIR)/tcljava/tcl/lang/library/java/javalock
-	@echo "#"
-	@echo "# Making tcljava.build"
-	@echo "#"
-	mkdir -p $(BUILD_DIR)/tcljava/tcl/lang/reflect
-	cd $(TCLJAVA_SRC_DIR) ;\
-	$(JAVAC) $(JAVAC_FLAGS) -classpath $(TCLJAVA_CLASSPATH) \
-		-d $(BUILD_DIR)/tcljava \
-		tcl/lang/*.java tcl/lang/reflect/*.java
-
-$(BUILD_DIR)/tcljava/tcl/lang/library/java/javalock:
-	if [ ! -d $(BUILD_DIR)/tcljava/tcl/lang/library/java ]; then \
-		mkdir -p $(BUILD_DIR)/tcljava/tcl/lang/library/java; \
-	fi
-	cp -f $(TCLJAVA_SRC_DIR)/tcl/lang/library/java/javalock.tcl \
-		$(BUILD_DIR)/tcljava/tcl/lang/library/java
-
-# tcljava.jar needs to depend on tcljava.build so that it
-# gets rebuilt each time the .class files are built
-tcljava.jar: tcljava.build
-	cd $(TCLJAVA_BUILD_DIR) ;\
-	$(JAR) $(JAR_FLAGS) $(CLASS_DIR)/tcljava.jar tcl/lang/*.class \
-		tcl/lang/reflect/*.class tcl/lang/library
-
-# Install tcljava
-install_tcljava:
-	@echo "Installing tcljava.jar in $(LIB_INSTALL_DIR)"
-	@$(INSTALL_DATA) $(CLASS_DIR)/tcljava.jar $(LIB_INSTALL_DIR)
-
-
-
-
-#----------------------------------------------------------------
-# Build tests
-#----------------------------------------------------------------
-
-test: test_$(TCLJAVA).build test_$(TCLJAVA)
-
-test_jacl: test_jacl.exec
-
-test_tclblend: test_tclblend.exec
-
-test_jacl.build: test.build
-	cd $(TEST_SRC_DIR) ;\
-	$(JAVAC) $(JAVAC_FLAGS) -classpath $(TEST_CLASSPATH) \
-		-d $(TEST_CLASS_DIR) tests/exec/*.java $(JACL_TCL_LANG_TESTS)
-
-test_tclblend.build: test.build
-	cd $(TEST_SRC_DIR) ;\
-	$(JAVAC) $(JAVAC_FLAGS) -classpath $(TEST_CLASSPATH) \
-		-d $(TEST_CLASS_DIR) $(BLEND_TCL_LANG_TESTS)
-
-
-test.build: clean_test
-	@echo "#"
-	@echo "# Making test.build"
-	@echo "#"
-	mkdir -p $(TEST_CLASS_DIR)
-	cd $(TEST_SRC_DIR); \
-	$(JAVAC) $(JAVAC_FLAGS) -classpath $(TEST_CLASSPATH) \
-		-d $(TEST_CLASS_DIR) \
-		pkg1/*.java pkg2/*.java \
-		tests/*.java tests/invoke/*.java \
-		tests/javainfo/*.java tests/signature/*.java \
-		$(COMMON_TCL_LANG_TESTS)	
-	mkdir -p $(TEST_CLASS_DIR)/javaload
-	cd $(TEST_SRC_DIR); \
-	$(JAVAC) $(JAVAC_FLAGS) -classpath $(TEST_CLASSPATH) \
-		-d $(TEST_CLASS_DIR)/javaload \
-		javaload/*.java
-	( cd $(TEST_CLASS_DIR)/javaload; \
-	$(JAR) $(JAR_FLAGS) test9.jar Test9Extension.class; \
-	rm Test9Extension.class; )
-	( cd $(TEST_CLASS_DIR)/javaload; \
-	$(JAR) $(JAR_FLAGS) test10.jar Test10Extension.class; \
-	rm Test10Extension.class; )
-
-test_jacl.exec:
-	(  echo \
-	  lappend auto_path [pwd]\; \
-	  cd $(TOP_DIR)/tests\; \
-	  puts \"CLASSPATH is [set env\(CLASSPATH\)]\"\; \
-	  puts \"CWD is [pwd]\"\; \
-	  puts \"auto_path is [set auto_path]\"\; \
-	  source all\; \
-	  puts \"Tests done, about to call exit.\"\; \
-          exit; ) | \
-	$(JAVA) $(JAVA_FLAGS) -classpath $(TEST_CLASSPATH) \
-		-DBUILD_DIR=$(BUILD_DIR) -DJAVA=$(JAVA) tcl.lang.Shell
-
-# Don't include $(TCL_BIN_DIR) in $LD_LIBRARY_PATH or 
-# common/JavaInvoke.test will fail.
-test_tclblend.exec:
-	@echo "#"
-	@echo "# Making test_tclblend.exec"
-	@echo "#"
-	cp $(TOP_DIR)/src/pkgIndex.tcl $(BUILD_DIR)
-	( echo \
-	  lappend auto_path [pwd]\; \
-	  cd $(TOP_DIR)/tests\; \
-	  puts \"CLASSPATH is [set env\(CLASSPATH\)]\"\; \
-	  puts \"CWD is [pwd]\"\; \
-	  puts \"auto_path is [set auto_path]\"\; \
-	  source all\; \
-	  puts \"Tests done, about to call exit.\"\; \
-	  puts \" Note that sometimes we get a Java crash here.\"\; \
-	  puts \" The cause seems to be TclEvent-1.3.\"\; \
-	  puts \" See know_issues.txt for more information.\"\; \
-          exit; ) | \
-	LD_LIBRARY_PATH=$(BUILD_DIR):$(TCL_BIN_DIR):$(JAVA_ARCH_LIB):$(JAVA_ARCH_RUNTIME_LIBS):$(LD_LIBRARY_PATH) \
-	BUILD_DIR=$(BUILD_DIR) \
-	CLASSPATH=$(TEST_CLASSPATH) \
-	$(TCL_BIN_DIR)/tclsh
-
-$(TCLTEST):
-	(cd $(TCL_BIN_DIR); $(MAKE) tcltest BUILD_DIR=$(BUILD_DIR))
-
-
-#----------------------------------------------------------------
-# shell : used to drop the user into a Jacl or Tcl Blend shell
-#----------------------------------------------------------------
-
-
-shell: shell_$(TCLJAVA).exec
-
-shell_jacl.exec: check_jacl
-	$(JAVA) $(JAVA_FLAGS) -classpath $(TEST_CLASSPATH) \
-		-DBUILD_DIR=$(BUILD_DIR) -DJAVA=$(JAVA) tcl.lang.Shell
-
-
-shell_tclblend.exec: check_tclblend
-	cp $(MISC_DIR)/pkgIndex.tcl $(BUILD_DIR)
-	TCLLIBPATH=$(BUILD_DIR) \
-	LD_LIBRARY_PATH=$(BUILD_DIR):$(TCL_BIN_DIR):$(JAVA_ARCH_LIB):$(JAVA_ARCH_RUNTIME_LIBS):$(LD_LIBRARY_PATH) \
-	BUILD_DIR=$(BUILD_DIR) \
-	CLASSPATH=$(TEST_CLASSPATH) \
-	$(TCL_BIN_DIR)/tclsh
-
-#----------------------------------------------------------------
-# Demos
-#----------------------------------------------------------------
-
-demos: demos.build
-
-demos.build:
-	mkdir -p $(DEMO_BUILD_DIR) \
-		$(DEMO_BUILD_DIR)/simplepkg \
-		$(DEMO_BUILD_DIR)/watchpkg \
-		$(DEMO_BUILD_DIR)/gluepkg \
-		$(DEMO_BUILD_DIR)/pyramidpkg
-	(cd $(DEMO_SRC_DIR)/simplepkg; \
-	$(JAVAC) $(JAVAC_FLAGS) -classpath $(DEMO_CLASSPATH) \
-		-d $(DEMO_BUILD_DIR)/simplepkg *.java)
-	(cd $(DEMO_SRC_DIR)/watchpkg; \
-	$(JAVAC) $(JAVAC_FLAGS) -classpath $(DEMO_CLASSPATH) \
-		-d $(DEMO_BUILD_DIR)/watchpkg *.java)
-	(cd $(DEMO_SRC_DIR)/gluepkg; \
-	$(JAVAC) $(JAVAC_FLAGS) -classpath $(DEMO_CLASSPATH) \
-		-d $(DEMO_BUILD_DIR)/gluepkg *.java)
-	(cd $(DEMO_SRC_DIR)/pyramidpkg; \
-	$(JAVAC) $(JAVAC_FLAGS) -classpath $(DEMO_CLASSPATH) \
-		-d $(DEMO_BUILD_DIR)/pyramidpkg *.java)
-
-
-
-#----------------------------------------------------------------
-# Tcl Bean
-#----------------------------------------------------------------
-
-bean: bean.depend
-
-bean.depend:
-	@if [ ${STUDIO_LIB_DIR} = NONE ]; then \
-		echo "STUDIO_LIB_DIR not set by configure script"; \
-		echo "Re-configure and use the --with-studio=<dirname>"; \
-		echo "to specify the location of the Java Studio classes"; \
-		exit 1; \
-	fi
-	@$(MAKE) bean.jar
-
-bean.build:
-	mkdir -p $(BEAN_BUILD_DIR)/tcl/bean/scripts
-	mkdir -p $(BEAN_BUILD_DIR)/tcl/bean/images
-	mkdir -p $(BEAN_BUILD_DIR)/tcl/bean/html/JaclCmd
-	cp -fr $(BEAN_SRC_DIR)/images/*.gif \
-		$(BEAN_BUILD_DIR)/tcl/bean/images
-	cp -fr $(BEAN_SRC_DIR)/html/JaclCmd/*.htm \
-		$(BEAN_BUILD_DIR)/tcl/bean/html/JaclCmd
-	cp -fr $(BEAN_SRC_DIR)/scripts/*.tcl \
-		$(BEAN_BUILD_DIR)/tcl/bean/scripts
-	cp -fr $(BEAN_SRC_DIR)/help.htm \
-		$(BEAN_BUILD_DIR)/tcl/bean
-	mkdir -p $(BUILD_DIR)/bean/tcl/bean
-	(cd $(TCLJAVA_SRC_DIR); \
-	$(JAVAC) $(JAVAC_FLAGS) \
-		-classpath $(BEAN_CLASSPATH) \
-		-d $(BEAN_BUILD_DIR) tcl/bean/*.java)
-
-bean.jar: bean.build
-	(cd $(BEAN_BUILD_DIR); \
-	$(JAR) $(JAR_FLAGS)m $(CLASS_DIR)/tclbean.jar \
-		$(BEAN_SRC_DIR)/bean.manifest tcl/bean/*.class \
-		tcl/bean/scripts tcl/bean/images tcl/bean/html)
-
-
-
-
-#----------------------------------------------------------------
-# Other functions
-#----------------------------------------------------------------
-
-depend:  
-	makedepend -- $(DEPEND_SWITCHES) -- $(SRCS)
-
-Makefile: $(UNIX_DIR)/Makefile.in
-	./config.status
-
-jwish: $(UNIX_DIR)/jwish.in
-	./config.status
-
-jaclsh: $(UNIX_DIR)/jaclsh.in
-	./config.status
-
-$(UNIX_DIR)/configure: $(UNIX_DIR)/configure.in
-	autoconf $(UNIX_DIR)/configure.in > $(UNIX_DIR)/configure
-
-clean: clean_bean clean_tclblend clean_jacl \
-		clean_tcljava clean_demos clean_test
-
-clean_bean:
-	rm -rf $(CLASS_DIR)/bean $(CLASS_DIR)/tclbean.jar
-
-clean_tclblend:
-	rm -f *.o lib*$(SHLIB_SUFFIX) green
-	rm -f javaNative.h
-	rm -rf $(CLASS_DIR)/tclblend.jar $(TCLBLEND_BUILD_DIR)/tcl/lang/*.class
-
-clean_jacl:
-	rm -rf $(CLASS_DIR)/jacl.jar $(JACL_BUILD_DIR)/tcl/lang/*.class
-
-clean_tcljava:
-	rm -rf $(CLASS_DIR)/tcljava.jar $(TCLJAVA_BUILD_DIR)/tcl/lang/*.class
-	rm -rf $(TCLJAVA_BUILD_DIR)/tcl/lang/reflect/*.class
-
-clean_demos: 
-	rm -f ../demos/*/*.class demos/*/*.class
-
-clean_test:
-	rm -f $(TEST_CLASS_DIR)/*/*.class \
-		$(TEST_CLASS_DIR)/*/*/*.class\
-		$(TEST_CLASS_DIR)/*/*/*/*.class
-
-distclean: clean
-	rm -f config.cache config.log config.status lib.exp confdefs.h 
-	rm -f depend.out Test.class Makefile jwish jaclsh
-
-
-
-
-
-#----------------------------------------------------------------
-# HTML documentation targets
-#----------------------------------------------------------------
-
-$(DOC_DIR)/html/JaclCmd/java.htm: $(DOC_DIR)/java.n
-	@$(MAKE) webpage.build
-
-$(DOC_DIR)/html/JaclCmd/javaload.htm: $(DOC_DIR)/javaload.n
-	@$(MAKE) webpage.build
-
-$(DOC_DIR)/html/JaclCmd/javabind.htm: $(DOC_DIR)/javabind.n
-	@$(MAKE) webpage.build
-
-$(DOC_DIR)/html/JaclCmd/studio.htm: $(DOC_DIR)/studio.n
-	@$(MAKE) webpage.build
-
-$(DOC_DIR)/html/JaclCmd/studiocustom.htm: $(DOC_DIR)/studiocustom.n
-	@$(MAKE) webpage.build
-
-
-
-
-#----------------------------------------------------------------
-# Distributions
-#----------------------------------------------------------------
-
-# Most of the rules below will only work on the tcljava distribution,
-# which consists of the combined Tcl Blend and Jacl sources.
-
-
-# Target to create a proper Tcl distribution from information in the
-# master source directory.  DISTDIR must be defined to indicate where
-# to put the distribution.
-#
-
-DISTDIR			= /tmp/tcljava
-
-JACL_BIN_ZIPNAME	= jacl@TCLJAVA_MAJOR_VERSION@@TCLJAVA_MINOR_VERSION@$(PATCHLEVEL).zip
-
-JACL_SRC_ZIPNAME	= jaclSrc@TCLJAVA_MAJOR_VERSION@@TCLJAVA_MINOR_VERSION@$(PATCHLEVEL).zip
-JACL_SRC_DISTNAME	= jaclSrc$(VERSION)
-JACL_DISTNAME		= jacl$(VERSION)
-JACL_DISTDIR		= $(DISTDIR)/$(JACL_DISTNAME)
-
-BLEND_SRC_ZIPNAME	= tclBlendSrc@TCLJAVA_MAJOR_VERSION@@TCLJAVA_MINOR_VERSION@$(PATCHLEVEL).zip
-BLEND_SRC_DISTNAME	= tclBlendSrc$(VERSION)
-BLEND_DISTNAME		= tclBlend$(VERSION)
-BLEND_DISTDIR		= $(DISTDIR)/$(BLEND_DISTNAME)
-
-# Permissions to set the files in the distribution to.
-DIST_CHMOD_PERMS	= a+rX,u+w,go-w,g-s
-
-# This rule will build all the distributions.
-# See ../tests/testbuild.mk for ways to test the distributions
-dists: 	jaclSrcDist tclblendSrcDist jaclBinDist tclblendBinDist tcljavaDist
-
-
-
-#----------------------------------------------------------------
-# tcljavaSrcDist --
-#
-#	Builds the directory structure and copies files that are 
-# 	common in both blend and jacl.  Source releases only.
-#----------------------------------------------------------------
-
-tcljavaSrcDist: Makefile
-	rm -rf $(DISTDIR)
-	$(MAKE) TCLJAVA=$(TCLJAVA) DISTDIR=$(DISTDIR) tcljavaDemoDist 
-	mkdir -p $(DISTDIR)
-
-	cp -p $(TOP_DIR)/license.terms \
-		$(TOP_DIR)/changes.txt \
-		$(TOP_DIR)/diffs.txt \
-		$(TOP_DIR)/known_issues.txt \
-		$(DISTDIR)
-	cp -p $(TOP_DIR)/README.$(TCLJAVA) \
-		$(DISTDIR)/README
-	cp -p $(TOP_DIR)/tclbean_install.$(TCLJAVA) \
-		$(DISTDIR)/tclbean_install.txt
-
-	mkdir -p $(DISTDIR)/unix
-	cp -p $(UNIX_DIR)/configure \
-		$(UNIX_DIR)/configure.in \
-		$(UNIX_DIR)/install-sh \
-		$(UNIX_DIR)/jwish.in \
-		$(UNIX_DIR)/Makefile.in \
-		$(UNIX_DIR)/Test.java \
-		$(TOP_DIR)/license.terms \
-		$(DISTDIR)/unix
-
-	chmod 664 $(DISTDIR)/unix/Makefile.in
-	chmod 775 $(DISTDIR)/unix/configure $(DISTDIR)/unix/configure.in
-	chmod 555 $(DISTDIR)/unix/install-sh
-
-	# makefile gets specially edited
-	mkdir -p $(DISTDIR)/win
-	cp -p 	$(TOP_DIR)/license.terms \
-		$(DISTDIR)/win
-
-	# Don't just blindly recursively copy, we are bound to pick up kruft.
-	# src/pkgIndex.tcl are tclblend only
-
-	mkdir -p $(DISTDIR)/src/empty
-	cp -p $(TOP_DIR)/src/empty/README.txt \
-		$(TOP_DIR)/src/empty/empty.jar \
-		$(DISTDIR)/src/empty
-
-	mkdir -p $(DISTDIR)/src/empty/tcl/lang
-	cp -p $(TOP_DIR)/src/empty/tcl/lang/CObject.java \
-		$(TOP_DIR)/src/empty/tcl/lang/Interp.java \
-		$(TOP_DIR)/src/empty/tcl/lang/Notifier.java \
-		$(TOP_DIR)/src/empty/tcl/lang/TclList.java \
-		$(TOP_DIR)/src/empty/tcl/lang/Util.java \
-		$(DISTDIR)/src/empty/tcl/lang
-
-	mkdir -p $(DISTDIR)/src/tcljava/tcl/bean
-	cp -p $(TOP_DIR)/src/tcljava/tcl/bean/*.java \
-		$(TOP_DIR)/src/tcljava/tcl/bean/bean.manifest \
-		$(TOP_DIR)/src/tcljava/tcl/bean/help.htm \
-		$(DISTDIR)/src/tcljava/tcl/bean
-
-	mkdir -p $(DISTDIR)/src/tcljava/tcl/bean/html/JaclCmd
-	cp -p $(TOP_DIR)/src/tcljava/tcl/bean/html/JaclCmd/*.htm \
-		$(DISTDIR)/src/tcljava/tcl/bean/html/JaclCmd
-
-	mkdir -p $(DISTDIR)/src/tcljava/tcl/bean/images
-	cp -p $(TOP_DIR)/src/tcljava/tcl/bean/images/*.gif \
-		$(DISTDIR)/src/tcljava/tcl/bean/images
-
-	mkdir -p $(DISTDIR)/src/tcljava/tcl/bean/scripts
-	cp -p $(TOP_DIR)/src/tcljava/tcl/bean/scripts/*.tcl \
-		$(DISTDIR)/src/tcljava/tcl/bean/scripts
-
-	mkdir -p $(DISTDIR)/src/tcljava/tcl/lang
-	cp -p $(TOP_DIR)/src/tcljava/tcl/lang/*.java \
-		$(DISTDIR)/src/tcljava/tcl/lang
-
-	mkdir -p $(DISTDIR)/src/tcljava/tcl/lang/library/java
-	cp -p $(TOP_DIR)/src/tcljava/tcl/lang/library/java/javalock.tcl \
-		$(DISTDIR)/src/tcljava/tcl/lang/library/java
-
-	mkdir -p $(DISTDIR)/src/tcljava/tcl/lang/reflect
-	cp -p $(TOP_DIR)/src/tcljava/tcl/lang/reflect/PkgInvoker.java \
-		$(DISTDIR)/src/tcljava/tcl/lang/reflect
-
-	# Don't copy src/tests/exec, those tests are only run with jacl
-
-	mkdir -p $(DISTDIR)/src/tests/tests
-	cp -p $(TOP_DIR)/src/tests/tests/*.java \
-		$(DISTDIR)/src/tests/tests
-
-	mkdir -p $(DISTDIR)/src/tests/tests/invoke
-	cp -p $(TOP_DIR)/src/tests/tests/invoke/*.java \
-		$(DISTDIR)/src/tests/tests/invoke
-
-	mkdir -p $(DISTDIR)/src/tests/tests/javainfo
-	cp -p $(TOP_DIR)/src/tests/tests/javainfo/*.java \
-		$(DISTDIR)/src/tests/tests/javainfo
-
-	mkdir -p $(DISTDIR)/src/tests/javaload
-	cp -p $(TOP_DIR)/src/tests/javaload/*.java \
-		$(DISTDIR)/src/tests/javaload
-
-	mkdir -p $(DISTDIR)/src/tests/pkg1
-	cp -p $(TOP_DIR)/src/tests/pkg1/*.java \
-		$(DISTDIR)/src/tests/pkg1
-
-	mkdir -p $(DISTDIR)/src/tests/pkg2
-	cp -p $(TOP_DIR)/src/tests/pkg2/*.java \
-		$(DISTDIR)/src/tests/pkg2
-
-	mkdir -p $(DISTDIR)/src/tests/tests/signature
-	cp -p $(TOP_DIR)/src/tests/tests/signature/*.java \
-		$(DISTDIR)/src/tests/tests/signature
-
-	mkdir -p $(DISTDIR)/src/tests/tcl/lang
-	cp -p $(COMMON_TCL_LANG_TESTS) \
-		$(DISTDIR)/src/tests/tcl/lang
-
-	# The following tests are only used by tclblend
-	# IdleHandlerTest.java
-	# TimerHandlerTest.java
-	# TestObjectCmd.java
-	# VarTraceTest.java
-	cp -p $(TOP_DIR)/src/tests/tests/Compare.java \
-		$(TOP_DIR)/src/tests/tests/ConvertTest.java \
-		$(TOP_DIR)/src/tests/tests/DownReference.java \
-		$(TOP_DIR)/src/tests/tests/JavaTest.java \
-		$(TOP_DIR)/src/tests/tests/JavaTestSub.java \
-		$(TOP_DIR)/src/tests/tests/RetArray.java \
-		$(DISTDIR)/src/tests/tests
-
-	mkdir -p $(DISTDIR)/doc
-	cp -p 	$(TOP_DIR)/doc/license.htm \
-		$(TOP_DIR)/license.terms \
-		$(DISTDIR)/doc
-
-	mkdir -p $(DISTDIR)/doc/html
-	cp -p $(TOP_DIR)/doc/html/*.htm \
-		$(DISTDIR)/doc/html
-
-	mkdir -p $(DISTDIR)/doc/html/Keywords
-	cp -p $(TOP_DIR)/doc/html/Keywords/*.htm \
-		$(DISTDIR)/doc/html/Keywords
-
-	mkdir -p $(DISTDIR)/doc/html/Studio
-	cp -p $(TOP_DIR)/doc/html/Studio/*.htm \
-		$(DISTDIR)/doc/html/Studio
-
-	mkdir -p $(DISTDIR)/doc/html/TclJava
-	cp -p $(TOP_DIR)/doc/html/TclJava/*.htm \
-		$(DISTDIR)/doc/html/TclJava
-
-	mkdir -p $(DISTDIR)/doc/html/TclJavaLib
-	cp -p $(TOP_DIR)/doc/html/TclJavaLib/*.htm \
-		$(DISTDIR)/doc/html/TclJavaLib
-
-	mkdir -p $(DISTDIR)/tests/tcljava
-	cp -r $(TOP_DIR)/tests/README \
-		$(TOP_DIR)/tests/all \
-		$(TOP_DIR)/tests/defs \
-		$(DISTDIR)/tests
-	cp -r $(TOP_DIR)/tests/tcljava/*.test \
-		$(DISTDIR)/tests/tcljava
-
-	mkdir -p $(DISTDIR)/tests/jacl
-	cp -r $(TOP_DIR)/tests/jacl/*.test \
-		$(DISTDIR)/tests/jacl
-
-#----------------------------------------------------------------
-# tcljavaBinDist --
-#
-#	Builds the directory structure and copies files that are 
-# 	common in both blend and jacl.  Binary releases only.
-#----------------------------------------------------------------
-
-tcljavaBinDist: 
-	rm -rf $(DISTDIR)
-	$(MAKE) TCLJAVA=$(TCLJAVA) DISTDIR=$(DISTDIR) tcljava.jar
-	$(MAKE) TCLJAVA=$(TCLJAVA) DISTDIR=$(DISTDIR) tcljavaDemoDist
-	mkdir -p $(DISTDIR)
-
-	cp -p $(TOP_DIR)/license.terms \
-		$(TOP_DIR)/diffs.txt \
-		$(TOP_DIR)/changes.txt \
-		$(TOP_DIR)/README_tclbean \
-		$(DISTDIR)
-	cp -p $(TOP_DIR)/README.$(TCLJAVA) \
-		$(DISTDIR)/README
-	cp -p $(TOP_DIR)/tclbean_install.$(TCLJAVA) \
-		$(DISTDIR)/tclbean_install.txt
-
-	cp -p $(DEMO_BUILD_DIR)/gluepkg/*.class $(DISTDIR)/demos/gluepkg
-	cp -p $(DEMO_BUILD_DIR)/watchpkg/*.class $(DISTDIR)/demos/watchpkg
-	cp -p $(DEMO_BUILD_DIR)/simplepkg/*.class $(DISTDIR)/demos/simplepkg
-
-	mkdir -p $(DISTDIR)/doc
-	cp -p 	$(TOP_DIR)/doc/license.htm \
-		$(TOP_DIR)/license.terms \
-		$(DISTDIR)/doc
-	cp -rp $(TOP_DIR)/doc/html \
-		$(DISTDIR)/doc/html
-
-
-#----------------------------------------------------------------
-# tcljavaDemoDist --
-#
-#	Builds the directory structure and copies demos that are 
-# 	common in both blend and jacl.  This target is used for
-#	both binary and source releases.
-#----------------------------------------------------------------
-
-tcljavaDemoDist: Makefile
-	mkdir -p $(DISTDIR)/demos/gluepkg \
-		$(DISTDIR)/demos/watchpkg \
-		$(DISTDIR)/demos/simplepkg \
-		$(DISTDIR)/demos/guiDemo \
-		$(DISTDIR)/demos/pyramidpkg
-
-	cp -p $(DEMO_SRC_DIR)/README \
-		$(DISTDIR)/demos
-	cp -p $(DEMO_SRC_DIR)/gluepkg/*.java \
-		$(DEMO_SRC_DIR)/gluepkg/*.tcl \
-		$(DEMO_SRC_DIR)/gluepkg/*.jar \
-		$(DEMO_SRC_DIR)/gluepkg/README \
-		$(TOP_DIR)/license.terms \
-		$(DISTDIR)/demos/gluepkg
-	cp -p $(DEMO_SRC_DIR)/simplepkg/*.java \
-		$(DEMO_SRC_DIR)/simplepkg/README \
-		$(TOP_DIR)/license.terms \
-		$(DISTDIR)/demos/simplepkg
-	cp -p $(DEMO_SRC_DIR)/watchpkg/*.java \
-		$(DEMO_SRC_DIR)/watchpkg/*.tcl \
-		$(DEMO_SRC_DIR)/watchpkg/README \
-		$(TOP_DIR)/license.terms \
-		$(DISTDIR)/demos/watchpkg
-	cp -p $(DEMO_SRC_DIR)/guiDemo/*.tcl \
-		$(DEMO_SRC_DIR)/guiDemo/README \
-		$(TOP_DIR)/license.terms \
-		$(DISTDIR)/demos/guiDemo
-	cp -p $(DEMO_SRC_DIR)/pyramidpkg/*.java \
-		$(DEMO_SRC_DIR)/pyramidpkg/*.html \
-		$(DEMO_SRC_DIR)/pyramidpkg/changeDefs.tcl \
-		$(DEMO_SRC_DIR)/pyramidpkg/README \
-		$(TOP_DIR)/license.terms \
-		$(DISTDIR)/demos/pyramidpkg
-
-#----------------------------------------------------------------
-# jaclSrcDist --
-#
-#	Builds the directory structure and copies files that are 
-# 	unique to Jacl.  Before this is done, the targets 
-#	commonSrcDist and tcljavaDemoDist MUST be built.
-#----------------------------------------------------------------
-jaclSrcDist: $(UNIX_DIR)/configure Makefile
-	$(MAKE) tcljavaSrcDist DISTDIR=$(JACL_DISTDIR) TCLJAVA=jacl
-
-	mkdir -p $(JACL_DISTDIR)/src/tests/tests/exec
-	cp -p $(TOP_DIR)/src/tests/tests/exec/*.java \
-		$(JACL_DISTDIR)/src/tests/tests/exec
-
-
-	cp -p $(JACL_TCL_LANG_TESTS) \
-		$(JACL_DISTDIR)/src/tests/tcl/lang
-
-	mkdir -p $(JACL_DISTDIR)/src/jacl/com/oroinc/text/regex
-	cp -p $(JACL_SRC_DIR)/com/oroinc/text/regex/*.class \
-		$(TOP_DIR)/license.terms \
-		$(JACL_DISTDIR)/src/jacl/com/oroinc/text/regex
-
-	mkdir -p $(JACL_DISTDIR)/src/jacl/tcl/lang/library
-	cp -p $(JACL_SRC_DIR)/tcl/lang/*.java \
-		$(TOP_DIR)/license.terms \
-		$(JACL_DISTDIR)/src/jacl/tcl/lang
-	cp -p $(JACL_SRC_DIR)/tcl/lang/library/*.tcl \
-		$(JACL_SRC_DIR)/tcl/lang/library/tclIndex \
-		$(TOP_DIR)/license.terms \
-		$(JACL_DISTDIR)/src/jacl/tcl/lang/library
-
-	mkdir -p $(JACL_DISTDIR)/src/jacl/tcl/regex
-	cp -p $(JACL_SRC_DIR)/tcl/regex/*.java \
-		$(JACL_SRC_DIR)/tcl/regex/*.class \
-		$(TOP_DIR)/license.terms \
-		$(JACL_DISTDIR)/src/jacl/tcl/regex
-
-	mkdir -p $(JACL_DISTDIR)/tests/tcl
-	cp -p $(TOP_DIR)/tests/tcl/*.test \
-		$(JACL_DISTDIR)/tests/tcl
-
-	mkdir -p $(JACL_DISTDIR)/unix
-	cp -p $(TOP_DIR)/unix/jaclsh.in \
-		$(JACL_DISTDIR)/unix
-
-	cp -p $(UNIX_DIR)/README.jacl \
-		$(JACL_DISTDIR)/unix/README
-
-	cp -p $(WIN_DIR)/README.jacl \
-		$(JACL_DISTDIR)/win/README
-
-	mkdir -p $(JACL_DISTDIR)/win
-	cp -p $(TOP_DIR)/win/jaclsh.bat \
-		$(JACL_DISTDIR)/win
-
-	# Substitute in TCLJAVA=jacl
-	cat $(TOP_DIR)/win/makefile.vc | \
-	sed -e 's/TCLJAVA[	 ]*= [a-z]*$$/TCLJAVA		= jacl/' \
-		-e 's/tclBlend$(VERSION)/jacl$(VERSION)/' >\
-		$(JACL_DISTDIR)/win/makefile.vc
-
-	rm -f $(DISTDIR)/$(JACL_SRC_DISTNAME).tar.Z \
-		$(DISTDIR)/$(JACL_SRC_DISTNAME).tar.gz \
-		$(DISTDIR)/$(JACL_SRC_ZIPNAME) 
-	cd $(DISTDIR);\
-		chmod -R $(DIST_CHMOD_PERMS) $(JACL_DISTDIR); \
-		tar cf $(JACL_SRC_DISTNAME).tar $(JACL_DISTNAME); \
-		gzip --best -c $(JACL_SRC_DISTNAME).tar > $(JACL_SRC_DISTNAME).tar.gz; \
-		compress $(JACL_SRC_DISTNAME).tar; \
-		zip -qr $(JACL_SRC_ZIPNAME) $(JACL_DISTNAME); \
-		rm -f $(JACL_SRC_DISTNAME).tar
-
-#----------------------------------------------------------------
-# tclblendSrcDist --
-#
-#	Builds the directory structure and copies files that are 
-# 	unique to Blend.  Before this is done, the targets 
-#	tcljavaSrcDist and tcljavaDemoDist MUST be built.
-#----------------------------------------------------------------
-
-tclblendSrcDist: $(UNIX_DIR)/configure Makefile
-	$(MAKE) tcljavaSrcDist DISTDIR=$(BLEND_DISTDIR) TCLJAVA=tclblend
-
-	mkdir -p $(BLEND_DISTDIR)/src
-	cp -p $(TOP_DIR)/src/pkgIndex.tcl \
-		$(BLEND_DISTDIR)/src
-
-	mkdir -p $(BLEND_DISTDIR)/src/native
-	cp -p $(NATIVE_SRC_DIR)/*.c \
-		$(NATIVE_SRC_DIR)/*.h \
-		$(BLEND_DISTDIR)/src/native
-
-	cp -p $(UNIX_DIR)/green.c \
-		$(UNIX_DIR)/unixNotifier.c \
-		$(BLEND_DISTDIR)/unix
-
-	cp -p $(UNIX_DIR)/README.tclblend \
-		$(BLEND_DISTDIR)/unix/README
-
-	cp -p $(WIN_DIR)/README.tclblend \
-		$(BLEND_DISTDIR)/win/README
-
-	cp -p $(WIN_DIR)/winNotifier.c \
-		$(WIN_DIR)/tclRegexp.h \
-		$(BLEND_DISTDIR)/win
-
-	# Substitute in TCLJAVA=tclblend
-	cat $(TOP_DIR)/win/makefile.vc | \
-		sed 's/TCLJAVA[	 ]*= [a-z]*$$/TCLJAVA		= tclblend/' >\
-			$(BLEND_DISTDIR)/win/makefile.vc
-
-	cp -p $(TOP_DIR)/src/tests/tests/IdleHandlerTest.java \
-		$(TOP_DIR)/src/tests/tests/TestObjectCmd.java \
-		$(TOP_DIR)/src/tests/tests/TimerHandlerTest.java \
-		$(TOP_DIR)/src/tests/tests/VarTraceTest.java \
-		$(BLEND_DISTDIR)/src/tests/tests
-
-	cp -p $(BLEND_TCL_LANG_TESTS) \
-		$(BLEND_DISTDIR)/src/tests/tcl/lang
-
-	mkdir -p $(BLEND_DISTDIR)/src/tclblend/tcl/lang
-	cp -p $(TCLBLEND_SRC_DIR)/tcl/lang/*.java \
-		$(TOP_DIR)/license.terms \
-		$(BLEND_DISTDIR)/src/tclblend/tcl/lang
-
-	mkdir -p $(BLEND_DISTDIR)/tests/tclblend
-	cp -p  $(TOP_DIR)/tests/tclblend/*.test \
-		$(TOP_DIR)/license.terms \
-		$(BLEND_DISTDIR)/tests/tclblend
-
-	rm -f \
-		$(DISTDIR)/$(BLEND_SRC_DISTNAME).tar.Z \
-		$(DISTDIR)/$(BLEND_SRC_DISTNAME).tar.gz \
-		$(DISTDIR)/$(BLEND_SRC_ZIPNAME)
-	cd $(DISTDIR);\
-		chmod -R $(DIST_CHMOD_PERMS) $(BLEND_DISTDIR); \
-		tar cf $(BLEND_SRC_DISTNAME).tar $(BLEND_DISTNAME); \
-		gzip -9 -c $(BLEND_SRC_DISTNAME).tar > \
-			$(BLEND_SRC_DISTNAME).tar.gz; \
-		compress $(BLEND_SRC_DISTNAME).tar; \
-		zip -rq $(BLEND_SRC_ZIPNAME) $(BLEND_DISTNAME); \
-		rm -f $(BLEND_SRC_DISTNAME).tar 
-
-#----------------------------------------------------------------
-# tcljavaDist --
-#
-#       Build a tar file consisting of the the Tcl Blend and Jacl Sources
-# 
-#----------------------------------------------------------------
-SRCEX			= /tmp/tcljavaDist.ex
-TCLJAVA_DISTNAME	= tcljava$(VERSION)
-TCLJAVA_TAR		= $(DISTDIR)/$(TCLJAVA_DISTNAME).tar
-
-# GNU tar.  Solaris tar will have problems excluding .o files
-GTAR = gtar
-tcljavaDist: $(SRCEX)
-	cd $(TOP_DIR)/..; \
-		$(GTAR) cfX $(TCLJAVA_TAR) $(SRCEX) tcljava; \
-		gzip --best -c $(TCLJAVA_TAR) > $(TCLJAVA_TAR).gz
-
-# GNU tar reads this file and excludes anything that matches
-# We need to ship .jar and .class files
-$(SRCEX): Makefile.in
-	echo '*/#*#' > $@
-	echo '*/*~' >> $@
-	echo '*/*.a' >> $@
-	echo '*/*.dll' >> $@
-	echo '*/*.o' >> $@
-	echo '*/*.obj' >> $@
-	echo '*/*.so' >> $@
-	echo '*/,*' >> $@
-	echo '*/SCCS' >> $@
-	echo '*/CVS' >> $@
-	echo '*/RCS' >> $@
-	echo '*/adm' >> $@
-	echo '*/core' >> $@
-	echo '*/jsdatabase' >> $@
-	echo '*/unix/*.class' >> $@
-	echo '*/unix/*.jar' >> $@
-	echo '*/unix/*.so' >> $@
-	echo '*/unix/Makefile' >> $@
-	echo '*/unix/bean' >> $@
-	echo '*/unix/confdefs.h' >> $@
-	echo '*/unix/config.cache' >> $@
-	echo '*/unix/config.log' >> $@
-	echo '*/unix/config.status' >> $@
-	echo '*/unix/jacl' >> $@
-	echo '*/unix/jaclsh' >> $@
-	echo '*/unix/jwish' >> $@
-	echo '*/unix/tclblend' >> $@
-	echo '*/unix/tcljava' >> $@
-
-#----------------------------------------------------------------
-# jaclBinDist --
-#
-#	Before any files are copied, make the jar file for jacl.
-#	Currently the class files for the TclBean are also 
-# 	included.  After this is done, the targets 
-#	tcljavaBinDist and tcljavaDemoDist MUST be built.  Then
-#	copy files unique to the binary dist of Jacl.
-#----------------------------------------------------------------
-
-jaclBinDist: $(UNIX_DIR)/configure Makefile
-	$(MAKE) clean_jacl clean_bean clean_demos
-	$(MAKE) jacl.jar demos TCLJAVA=jacl 
-	$(MAKE) bean TCLJAVA=jacl
-
-	$(MAKE) tcljavaBinDist DISTDIR=$(JACL_DISTDIR) TCLJAVA=jacl
-
-	cp -p $(UNIX_DIR)/README.jacl \
-		$(JACL_DISTDIR)/INSTALL.txt
-
-	cp -p $(CLASS_DIR)/jacl.jar \
-		$(CLASS_DIR)/tclbean.jar \
-		$(CLASS_DIR)/tcljava.jar \
-		$(JACL_DISTDIR)
-
-	mkdir -p $(JACL_DISTDIR)/demos/pyramidpkg
-	cp -pf $(DEMO_SRC_DIR)/pyramidpkg/*.java \
-		$(DEMO_BUILD_DIR)/pyramidpkg/*.class \
-		$(DEMO_SRC_DIR)/pyramidpkg/*.html \
-		$(DEMO_SRC_DIR)/pyramidpkg/changeDefs.tcl \
-		$(DEMO_SRC_DIR)/pyramidpkg/README \
-		$(TOP_DIR)/license.terms \
-		$(JACL_DISTDIR)/demos/pyramidpkg
-
-	cp -f $(TOP_DIR)/binary.license.terms \
-		$(JACL_DISTDIR)/license.terms
-	cp -f $(TOP_DIR)/binary.license.terms \
-		$(JACL_DISTDIR)/demos/gluepkg/license.terms
-	cp -f $(TOP_DIR)/binary.license.terms \
-		$(JACL_DISTDIR)/demos/guiDemo/license.terms
-	cp -f $(TOP_DIR)/binary.license.terms \
-		$(JACL_DISTDIR)/demos/pyramidpkg/license.terms
-	cp -f $(TOP_DIR)/binary.license.terms \
-		$(JACL_DISTDIR)/demos/simplepkg/license.terms
-	cp -f $(TOP_DIR)/binary.license.terms \
-		$(JACL_DISTDIR)/demos/watchpkg/license.terms
-	cp -f $(TOP_DIR)/binary.license.terms \
-		$(JACL_DISTDIR)/doc/license.terms
-	cp -f $(TOP_DIR)/binary.license.terms \
-		$(JACL_DISTDIR)/doc/html/license.terms
-	#cp -f $(TOP_DIR)/binary.license.terms \
-	#	$(JACL_DISTDIR)/doc/html/JaclCmd/license.terms
-
-	rm -f $(DISTDIR)/$(JACL_DISTNAME).tar.Z \
-		$(DISTDIR)/$(JACL_DISTNAME).tar.gz \
-		$(DISTDIR)/$(JACL_BIN_ZIPNAME).tar.gz
-	cd $(DISTDIR);\
-		chmod -R $(DIST_CHMOD_PERMS) $(JACL_DISTNAME); \
-		tar cf $(JACL_DISTNAME).tar $(JACL_DISTNAME); \
-		gzip -9 -c $(JACL_DISTNAME).tar > $(JACL_DISTNAME).tar.gz; \
-		compress $(JACL_DISTNAME).tar; \
-		zip -rq $(JACL_BIN_ZIPNAME) $(JACL_DISTNAME); \
-		rm -f $(JACL_DISTNAME).tar 
-
-#----------------------------------------------------------------
-# tclblendBinDist --
-#
-#	Before any files are copied, make the jar file for blend.
-# 	After this is done, the targets tcljavaBinDist and
-#	tcljavaDemoDist MUST be built.  Then copy files unique
-#	to the binary dist of Blend.
-#----------------------------------------------------------------
-
-tclblendBinDist: $(UNIX_DIR)/configure Makefile
-	$(MAKE) clean_jacl clean_bean clean_demos
-	$(MAKE) tclblend.jar demos
-	$(MAKE) bean TCLJAVA=tclblend
-
-	$(MAKE) tcljavaBinDist DISTDIR=$(BLEND_DISTDIR) TCLJAVA=tclblend
-
-	mkdir -p $(BLEND_DISTDIR)
-	cp -p $(TOP_DIR)/src/pkgIndex.tcl \
-		$(BUILD_DIR)/jwish \
-		$(BUILD_DIR)/libtclblend$(SHLIB_SUFFIX) \
-		$(BUILD_DIR)/tclbean.jar \
-		$(BUILD_DIR)/tclblend.jar \
-		$(BUILD_DIR)/tcljava.jar \
-		$(BLEND_DISTDIR)
-	cp -p $(UNIX_DIR)/README.tclblend \
-		$(BLEND_DISTDIR)/README
-
-	rm -f $(DISTDIR)/$(BLEND_DISTNAME).solaris.tar.Z \
-		$(DISTDIR)/$(BLEND_DISTNAME).solaris.tar.gz
-	cd $(DISTDIR);\
-		chmod -R $(DIST_CHMOD_PERMS) $(BLEND_DISTNAME); \
-		tar cf $(BLEND_DISTNAME).solaris.tar $(BLEND_DISTNAME); \
-		gzip -9 -c $(BLEND_DISTNAME).solaris.tar > $(BLEND_DISTNAME).solaris.tar.gz; \
-		compress $(BLEND_DISTNAME).solaris.tar; \
-		rm -f $(BLEND_DISTNAME).solaris.tar
-
-
-
-README.dist:
-	cp -f $(TOOLS_DIR)/README.dist $(DISTDIR)/README
 
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
