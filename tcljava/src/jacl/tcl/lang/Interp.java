@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.17 1999/07/16 05:47:10 mo Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.18 1999/08/03 02:25:18 mo Exp $
  *
  */
 
@@ -474,20 +474,6 @@ dispose()
     } catch (TclException e) {
 	// Ignore it -- same behavior as Tcl 8.0.
     }
-
-    // FIXME : remove later
-    /*
-    // Delete all commands.
-
-    if (cmdTable != null) {
-	for (Enumeration e = cmdTable.keys(); e.hasMoreElements();) {
-	    String cmdName = (String)e.nextElement();
-	    deleteCommand(cmdName);
-	}
-	cmdTable = null;
-    }
-    */
-
 
     // Tear down the math function table.
 
@@ -1314,7 +1300,7 @@ untraceVar(
 /*
  *----------------------------------------------------------------------
  *
- * createCommand --
+ * Tcl_CreateCommand -> createCommand
  *
  *	Define a new command in the interpreter.
  *
@@ -1325,10 +1311,7 @@ untraceVar(
  *	If a command named cmdName already exists for interp, it is
  *	deleted. In the future, when cmdName is seen as the name of a
  *	command by eval(), cmd will be called. When the command is
- 
-
-
-*	deleted from the table, cmd.disposeCmd() be called if cmd
+ *	deleted from the table, cmd.disposeCmd() be called if cmd
  *	implements the CommandWithDispose interface.
  *
  *----------------------------------------------------------------------
@@ -1342,8 +1325,15 @@ createCommand(
 {
     //ImportRef oldRef = null;
     NamespaceCmd.Namespace ns, dummy1, dummy2;
-    Command cmd, refCmd;
+    WrappedCommand cmd, refCmd;
     String tail;
+
+    if (deleted) {
+	// The interpreter is being deleted.  Don't create any new
+	// commands; it's not safe to muck with the interpreter anymore.
+
+	return;
+    }
 
     // Determine where the command should reside. If its name contains 
     // namespace qualifiers, we put it in the specified namespace; 
@@ -1362,8 +1352,6 @@ createCommand(
 			 dummy1Arr, dummy2Arr, tailArr);
 
 	ns = nsArr[0];
-	//dummy1 = dummy1Arr[0];
-	//dummy2 = dummy2Arr[0];
 	tail = tailArr[0];
 
        if ((ns == null) || (tail == null)) {
@@ -1374,7 +1362,7 @@ createCommand(
 	tail = cmdName;
     }
 
-    cmd = (Command) ns.cmdTable.get(tail);
+    cmd = (WrappedCommand) ns.cmdTable.get(tail);
     if (cmd != null) {
 	// Command already exists. Delete the old one.
 	// Be careful to preserve any existing import links so we can
@@ -1382,26 +1370,31 @@ createCommand(
 	// command and its import status will remain intact.
 
 	//oldRef = cmd.importRef;
-	//cmd.importRefPtr = null;
+	//cmd.importRef = null;
 
 	deleteCommandFromToken(cmd);
 
-	// FIXME : double check the skipped part here?
+	// FIXME : create a test case for this condition!
 
-	/*
-	hPtr = Tcl_CreateHashEntry(&nsPtr->cmdTable, tail, &new);
-	if (!new) {
+	cmd = (WrappedCommand) ns.cmdTable.get(tail);
+	if (cmd != null) {
 	    // If the deletion callback recreated the command, just throw
             // away the new command (if we try to delete it again, we
             // could get stuck in an infinite loop).
-
-	    ckfree((char*) Tcl_GetHashValue(hPtr));
+	    
+	    cmd.table.remove(cmd.hashKey);
 	}
-	*/
     }
 
-    cmd = cmdImpl;
+    cmd = new WrappedCommand();
     ns.cmdTable.put(tail, cmd);
+    cmd.table = ns.cmdTable;
+    cmd.hashKey = tail;
+    cmd.ns = ns;
+    cmd.cmd = cmdImpl;
+    cmd.deleted = false;
+    // FIXME : import feature not implemented
+    //cmd.importRef = null;
 
     /*
     // Plug in any existing import references found above.  Be sure
@@ -1411,20 +1404,17 @@ createCommand(
 	cmd.importRef = oldRef;
 	while (oldRef != null) {
 	    refCmd = oldRef.importedCmd;
-	    data = (ImportedCmdData) refCmdPtr->objClientData;
+	    data = (ImportedCmdData) refCmd.objClientData;
 	    data.realCmd = cmd;
 	    oldRef = oldRef.nextPtr;
 	}
     }
     */
 
-    // We just created a command, so in its namespace and all of its parent
-    // namespaces, it may shadow global commands with the same name. If any
-    // shadowed commands are found, invalidate all cached command references
-    // in the affected namespaces.
-    
-    // FIXME: is this needed?
-    //TclResetShadowedCmdRefs(interp, cmdPtr);
+
+    // There are no shadowed commands in Jacl because they are only
+    // used in the 8.0 compiler
+
     return;
 }
 
@@ -1449,34 +1439,26 @@ createCommand(
 
 String getCommandFullName(
     Interp interp,		// Interpreter containing the command.
-    Command command	        // Token for command returned by a previous
-				// call to Tcl_CreateCommand. The command
-				// must not have been deleted.
-    )
+    WrappedCommand cmd)	        // Token for the command.
 {
-    String name = null;
+    StringBuffer name = new StringBuffer();
 
     // Add the full name of the containing namespace, followed by the "::"
     // separator, and the command name.
 
-    // FIXME : how can we find the command name from the Command ref 
-    /*
-
-    if (cmdPtr != NULL) {
-	if (cmdPtr->nsPtr != NULL) {
-	    Tcl_AppendToObj(objPtr, cmdPtr->nsPtr->fullName, -1);
-	    if (cmdPtr->nsPtr != iPtr->globalNsPtr) {
-		Tcl_AppendToObj(objPtr, "::", 2);
+    if (cmd != null) {
+	if (cmd.ns != null) {
+	    name.append(cmd.ns.fullName);
+	    if (cmd.ns != interp.globalNs) {
+		name.append("::");
 	    }
 	}
-	if (cmdPtr->hPtr != NULL) {
-	    name = Tcl_GetHashKey(cmdPtr->hPtr->tablePtr, cmdPtr->hPtr);
-	    Tcl_AppendToObj(objPtr, name, -1);
+	if (cmd.table != null) {
+	    name.append(cmd.hashKey);
 	}
     }
 
-    */
-    return name;
+    return name.toString();
 }
 
 /*
@@ -1502,7 +1484,7 @@ public int
 deleteCommand(
     String cmdName)		// Name of command to remove.
 {
-    Command cmd;
+    WrappedCommand cmd;
 
     //  Find the desired command and delete it.
 
@@ -1539,12 +1521,11 @@ deleteCommand(
 
 protected int
 deleteCommandFromToken(
-    Command cmd)                // Token for command to delete.
+    WrappedCommand cmd)                // Wrapper Token for command to delete.
 {
     if (cmd == null) {
 	return -1;
     }
-
 
     //ImportRef ref, nextRef;
     //Command importCmd;
@@ -1557,48 +1538,28 @@ deleteCommandFromToken(
     // flag allows us to detect these cases and skip nested deletes.
 
     // FIXME : how can this be implemented in Jacl?
-    /*
-    if (cmdPtr->deleted) {
+
+    if (cmd.deleted) {
 	// Another deletion is already in progress.  Remove the hash
 	// table entry now, but don't invoke a callback or free the
 	// command structure.
 
-        Tcl_DeleteHashEntry(cmdPtr->hPtr);
-	cmdPtr->hPtr = NULL;
+	cmd.table.remove(cmd.hashKey);
+	cmd.table = null;
+	cmd.hashKey = null;
 	return 0;
     }
-    */
 
-
-    /*
-    cmdPtr->deleted = 1;
-    if (cmdPtr->deleteProc != NULL) {
-	// Delete the command's client data. If this was an imported command
-	// created when a command was imported into a namespace, this client
-	// data will be a pointer to a ImportedCmdData structure describing
-	// the "real" command that this imported command refers to.
-	
-	(*cmdPtr->deleteProc)(cmdPtr->deleteData);
+    cmd.deleted = true;
+    if (cmd.cmd instanceof CommandWithDispose) {
+	((CommandWithDispose) cmd.cmd).disposeCmd();
     }
-    */
-
-
-    // FIXME: We need to be able to find the command name this command
-    // is currently mapped to so that we know what namespace cmdTable
-    // to remove the command from.
-    //cmdTable.remove(cmdName);
-
-    // FIXME: this needs to be added back in later!
-    /*
-    if (cmd instanceof CommandWithDispose) {
-	((CommandWithDispose) cmd).disposeCmd();
-    }
-    */
-
 
     // If this command was imported into other namespaces, then imported
     // commands were created that refer back to this command. Delete these
     // imported commands now.
+
+    // FIXME: imported command not implemented
 
     /*
     for (refPtr = cmdPtr->importRefPtr;  refPtr != NULL;
@@ -1609,21 +1570,143 @@ deleteCommandFromToken(
     }
     */
 
-    // FIXME : what does this mean??
+    // FIXME : what does this mean? Is this a mistake in the C comment?
 
     // Don't use hPtr to delete the hash entry here, because it's
     // possible that the deletion callback renamed the command.
     // Instead, use cmdPtr->hptr, and make sure that no-one else
     // has already deleted the hash entry.
 
-    // FIXME : what do we do here?
-    /*
-    if (cmdPtr->hPtr != NULL) {
-	Tcl_DeleteHashEntry(cmdPtr->hPtr);
+    if (cmd.table != null) {
+	cmd.table.remove(cmd.hashKey);
+	cmd.table = null;
+	cmd.hashKey = null;
     }
-    */
+
+    // Drop the reference to the Command instance inside the WrappedCommand
+
+    cmd.cmd = null;
+
+    // We do not need to cleanup the WrappedCommand because GC will get it.
 
     return 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclRenameCommand -> renameCommand
+ *
+ *      Called to give an existing Tcl command a different name. Both the
+ *      old command name and the new command name can have "::" namespace
+ *      qualifiers. If the new command has a different namespace context,
+ *      the command will be moved to that namespace and will execute in
+ *	the context of that new namespace.
+ *
+ *      If the new command name is null or the empty string, the command is
+ *      deleted.
+ *
+ * Results:
+ *      Returns if successful, raises TclException if anything goes wrong.
+ *
+ *----------------------------------------------------------------------
+ */
+
+protected void renameCommand(
+	          String oldName,    // Existing command name.
+		  String newName)    // New command name.
+    throws TclException
+{
+    Interp interp = this;
+    String newTail;
+    NamespaceCmd.Namespace cmdNs, newNs, dummy1, dummy2;
+    WrappedCommand cmd;
+    Hashtable table,   oldTable;
+    String    hashKey, oldHashKey;
+    //Tcl_HashEntry *hPtr, *oldHPtr;
+    //int new, result;
+
+    // Find the existing command. An error is returned if cmdName can't
+    // be found.
+
+    cmd = NamespaceCmd.findCommand(interp, oldName, null, 0);
+    if (cmd == null) {
+	throw new TclException(interp, "can't " +
+	    (((newName == null)||(newName.length() == 0)) ? "delete" : "rename") +
+	    " \"" + oldName + "\": command doesn't exist");
+    }
+    cmdNs = cmd.ns;
+
+    // If the new command name is NULL or empty, delete the command. Do this
+    // with Tcl_DeleteCommandFromToken, since we already have the command.
+    
+    if ((newName == null) || (newName.length() == 0)) {
+	deleteCommandFromToken(cmd);
+	return;
+    }
+
+    // Make sure that the destination command does not already exist.
+    // The rename operation is like creating a command, so we should
+    // automatically create the containing namespaces just like
+    // Tcl_CreateCommand would.
+
+    NamespaceCmd.Namespace[] newNsArr   = new NamespaceCmd.Namespace[1];
+    NamespaceCmd.Namespace[] dummy1Arr  = new NamespaceCmd.Namespace[1];
+    NamespaceCmd.Namespace[] dummy2Arr  = new NamespaceCmd.Namespace[1];
+    String[]                 newTailArr = new String[1];
+
+    NamespaceCmd.getNamespaceForQualName(interp, newName, null,
+        NamespaceCmd.CREATE_NS_IF_UNKNOWN, newNsArr,
+	dummy1Arr, dummy2Arr, newTailArr);
+
+    newNs   = newNsArr[0];
+    newTail = newTailArr[0];
+
+    if ((newNs == null) || (newTail == null)) {
+	throw new TclException(interp,
+	    "can't rename to \"" + newName + "\": bad command name");
+    }
+    if (newNs.cmdTable.get(newTail) != null) {
+	throw new TclException(interp,
+	    "can't rename to \"" + newName + "\": command already exists");
+    }
+
+    // Warning: any changes done in the code here are likely
+    // to be needed in Tcl_HideCommand() code too.
+    // (until the common parts are extracted out)     --dl
+
+    // Put the command in the new namespace so we can check for an alias
+    // loop. Since we are adding a new command to a namespace, we must
+    // handle any shadowing of the global commands that this might create.
+
+    oldTable    = cmd.table;
+    oldHashKey  = cmd.hashKey;
+    newNs.cmdTable.put(newTail, cmd);
+    cmd.table   = newNs.cmdTable;
+    cmd.hashKey = newTail;
+    cmd.ns      = newNs;
+
+    /*
+    // Now check for an alias loop. If we detect one, put everything back
+    // the way it was and report the error.
+
+    result = TclPreventAliasLoop(interp, interp, (Tcl_Command) cmdPtr);
+    if (result != TCL_OK) {
+        Tcl_DeleteHashEntry(cmdPtr->hPtr);
+        cmdPtr->hPtr = oldHPtr;
+        cmdPtr->nsPtr = cmdNsPtr;
+        return;
+    }
+
+    */
+
+    // The new command name is okay, so remove the command from its
+    // current namespace. This is like deleting the command, so bump
+    // the cmdEpoch to invalidate any cached references to the command.
+
+    oldTable.remove(oldHashKey);
+
+    return;
 }
 
 /*
@@ -1649,12 +1732,16 @@ getCommand(
 {
     //  Find the desired command and return it.
 
+    WrappedCommand cmd;
+
     try {
-	return NamespaceCmd.findCommand(this, cmdName, null, 0);
+	cmd = NamespaceCmd.findCommand(this, cmdName, null, 0);
     } catch (TclException e) {
 	// This should never happen
 	throw new TclRuntimeError("unexpected TclException: " + e);
     }
+
+    return ((cmd == null) ? null : cmd.cmd);
 }
 
 /*
