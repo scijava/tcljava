@@ -1,3 +1,22 @@
+2002-01-18  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* new_features.txt: Add note about new socket
+	command.
+	* docs/TclJava/JavaImportCmd.html: Attempt to
+	make it more clear that importing all classes
+	from a package is not supported by the
+	java::import command.
+	* src/jacl/tcl/lang/OpenCmd.java (cmdProc): Avoid
+	calling unnecessary TclString constructor.
+	* src/jacl/tcl/lang/PutsCmd.java (cmdProc): When
+	writing out a string with a newline, invoke the
+	write method of the channel driver twice to match
+	Tcl's implementation.
+	* src/tcljava/tcl/lang/TclString.java: Update
+	comment for newInstance method to make it clear
+	that a passed in StringBuffer should not be
+	modified by the caller.
+
 2002-01-15  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* tests/README: Update README so that it is

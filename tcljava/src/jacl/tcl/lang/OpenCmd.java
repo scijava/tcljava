@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: OpenCmd.java,v 1.2 2000/08/01 06:50:48 mo Exp $
+ * RCS: @(#) $Id: OpenCmd.java,v 1.3 2002/01/19 00:11:37 mdejong Exp $
  *
  */
 
@@ -111,7 +111,7 @@ class OpenCmd implements Command {
 	        FileChannel file = new FileChannel();
 		file.open(interp, argv[1].toString(), modeFlags);
 		TclIO.registerChannel(interp, file);
-		interp.setResult(TclString.newInstance(file.getChanName()));
+		interp.setResult(file.getChanName());
 	    } catch (IOException e) {
 		throw new TclException(interp, "cannot open file: " + 
                         argv[1].toString());

@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclString.java,v 1.2 2000/10/29 06:00:42 mdejong Exp $
+ * RCS: @(#) $Id: TclString.java,v 1.3 2002/01/19 00:11:37 mdejong Exp $
  *
  */
 
@@ -70,8 +70,9 @@ public class TclString implements InternalRep {
     }
 
     /**
-     * Create a new TclObject that has a string representation with
-     * the string value specified 
+     * Create a new TclObject that make use of the given StringBuffer
+     * object. The passed in StringBuffer should not be modified after
+     * it is passed to this method.
      */
     static TclObject newInstance(StringBuffer sb) {
 	return new TclObject(new TclString(sb));

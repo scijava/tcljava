@@ -231,4 +231,10 @@ An implementation of Tcl's interp command has been added to Jacl.
 This new command passes all of the Tcl regression tests for the
 interp command. Thanks go to Christian Krone for this command.
 
+(NEW COMMAND FOR JACL)
+
+The socket command has been added to Jacl. Both client sockets
+and server sockets are supported. Thanks go to Neil Madden
+for the initial implementation of this command.
+
 </PRE></BODY></HTML>
