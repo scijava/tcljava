@@ -1,3 +1,24 @@
+2001-11-17  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/jacl/tcl/lang/Channel.java (flush): Turn the
+	flush method into a concrete implementation
+	instead of an abstract method.
+	* src/jacl/tcl/lang/FileChannel.java (flush): Invoke
+	Channel.flush() inside FileChannel's flush() method to
+	check for error writing to a read only channel.
+	* src/jacl/tcl/lang/ServerSocketChannel.java (flush):
+	Avoid passing unneeded 3rd argument to TclException
+	constructor.
+	* src/jacl/tcl/lang/SocketChannel.java (flush):
+	Avoid passing unneeded 3rd argument to TclException
+	constructor. Invoke Channel.flush() inside flush
+	method instead of dealing directly with the channel.
+	* src/jacl/tcl/lang/StdChannel.java (flush, write):
+	Remove flush() implementation since it is now handled
+	in the Channel class. Add call to flush in the write
+	method for the stderr stream to maintain the appearance
+	of an unbuffered stream.
+
 2001-11-16  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* src/jacl/tcl/lang/Channel.java (chanName, close,

@@ -44,7 +44,7 @@ public class SocketChannel extends Channel {
         if (async)
             throw new TclException(interp,
                 "Asynchronous socket connection not " +
-                "currently implemented", TCL.ERROR);
+                "currently implemented");
 
         // Resolve addresses
         if (!localAddr.equals(""))
@@ -56,7 +56,7 @@ public class SocketChannel extends Channel {
             catch (UnknownHostException e)
             {
                 throw new TclException(interp, "host unknown: "
-                    + localAddr, TCL.ERROR);
+                    + localAddr);
             }
         }
 
@@ -66,8 +66,7 @@ public class SocketChannel extends Channel {
         }
         catch (UnknownHostException e)
         {
-            throw new TclException(interp, "host unknown: "
-                + address, TCL.ERROR);
+            throw new TclException(interp, "host unknown: " + address);
         }
 
 
@@ -84,7 +83,7 @@ public class SocketChannel extends Channel {
         }
         catch (IOException ex)
         {
-            throw new TclException(interp, ex.getMessage(), TCL.ERROR);
+            throw new TclException(interp, ex.getMessage());
         }
 
         // Get the Input and Output streams
@@ -95,7 +94,7 @@ public class SocketChannel extends Channel {
         }
         catch (IOException ex)
         {
-            throw new TclException(interp, ex.getMessage(), TCL.ERROR);
+            throw new TclException(interp, ex.getMessage());
         }
 
         try
@@ -105,7 +104,7 @@ public class SocketChannel extends Channel {
         }
         catch (IOException ex)
         {
-            throw new TclException(interp, ex.getMessage(), TCL.ERROR);
+            throw new TclException(interp, ex.getMessage());
         }
 
         // If we got this far, then the socket has been created.
@@ -131,7 +130,7 @@ public class SocketChannel extends Channel {
         }
         catch (IOException ex)
         {
-            throw new TclException(interp, ex.getMessage(), TCL.ERROR);
+            throw new TclException(interp, ex.getMessage());
         }
 
         try
@@ -141,7 +140,7 @@ public class SocketChannel extends Channel {
         }
         catch (IOException ex)
         {
-            throw new TclException(interp, ex.getMessage(), TCL.ERROR);
+            throw new TclException(interp, ex.getMessage());
         }
 
         // If we got this far, then the socket has been created.
@@ -169,7 +168,7 @@ public class SocketChannel extends Channel {
         // Check mode.
         if ((mode & (TclIO.RDONLY|TclIO.RDWR)) == 0)
             throw new TclException(interp, "channel " + getChanName() +
-                    " wasn't opened for reading", TCL.ERROR);
+                    " wasn't opened for reading");
 
         if ((numBytes < 1) || (readType == TclIO.READ_ALL))
             numBytes = BUF_SIZE;
@@ -207,7 +206,7 @@ public class SocketChannel extends Channel {
                 default:
                     // Broken?
                     throw new TclException(interp, "unknown read mode: "
-                        + readType, TCL.ERROR);
+                        + readType);
             }
         }
         catch (EOFException e)
@@ -249,7 +248,7 @@ public class SocketChannel extends Channel {
     {
         if ((mode & (TclIO.WRONLY|TclIO.RDWR)) == 0)
             throw new TclException(interp, "channel " + getChanName() +
-                    " wasn't opened for writing.", TCL.ERROR);
+                    " wasn't opened for writing.");
         // Write to the Socket
         try
         {
@@ -297,26 +296,14 @@ public class SocketChannel extends Channel {
 
     void flush(Interp interp) throws IOException, TclException
     {
-        // Check mode.
-        if ((mode & (TclIO.WRONLY|TclIO.RDWR)) == 0)
-            throw new TclException(interp, "channel " + getChanName() +
-                    " not opened for writing", TCL.ERROR);
         try
         {
-            writer.flush();
-        }
-        catch (EOFException e)
-        {
-            eofCond = true;
-            errorMsg = e.getMessage();
+            super.flush(interp);
         }
         catch (IOException e)
         {
             errorMsg = e.getMessage();
-        }
-        catch (Exception e)
-        {
-            throw new IOException(e.getMessage());
+            throw e;
         }
     }
 

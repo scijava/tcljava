@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Channel.java,v 1.5 2001/11/17 07:58:18 mdejong Exp $
+ * RCS: @(#) $Id: Channel.java,v 1.6 2001/11/18 06:21:02 mdejong Exp $
  */
 
 package tcl.lang;
@@ -124,9 +124,23 @@ abstract class Channel {
      * @exception IOEcception is thrown for all other flush errors.
      */
 
-    abstract void flush(Interp interp) 
-            throws IOException, TclException ;
+    void flush(Interp interp) 
+        throws IOException, TclException {
 
+        if ((mode & (TclIO.WRONLY|TclIO.RDWR)) == 0)
+            throw new TclException(interp, "channel \"" + getChanName() +
+                    "\" wasn't opened for writing");
+
+        if (writer != null) {
+            try {
+                writer.flush();
+            } catch (EOFException e) {
+                // FIXME: We need to clear eofCond on next write if set!
+                eofCond = true;
+                throw e;
+            }
+        }
+    }
 
     /** 
      * Interface move the current Channel pointer.

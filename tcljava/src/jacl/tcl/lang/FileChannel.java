@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FileChannel.java,v 1.8 2001/11/17 07:58:18 mdejong Exp $
+ * RCS: @(#) $Id: FileChannel.java,v 1.9 2001/11/18 06:21:02 mdejong Exp $
  *
  */
 
@@ -221,6 +221,7 @@ class FileChannel extends Channel {
 	    throw new TclRuntimeError(
                     "FileChannel.write(): null file object");
 	}
+        // FIXME: Is this broken in the case of RDWR? Testcase?
 	if ((mode & TclIO.RDONLY) != 0) {
 	    throw new TclException(interp, "channel \"" +
 	        getChanName() + "\" wasn't opened for writing");
@@ -248,13 +249,15 @@ class FileChannel extends Channel {
      * Flush the a file.  The file MUST be open or a TclRuntimeError
      * is thrown.
      * Note: Since we only have synchronous file IO right now, this 
-     * is a no-op.  
+     * is a no-op.
      */
 
     void flush(Interp interp) throws IOException, TclException {
 	if (file == null) {
 	    throw new TclRuntimeError("FileChannel.flush(): null file object");
 	}
+
+        super.flush(interp);
     }
 
 
@@ -268,7 +271,7 @@ class FileChannel extends Channel {
      */
 
     void seek(long offset, int mode)  throws IOException {
-      
+
 	if (file == null) {
 	    throw new TclRuntimeError("FileChannel.seek(): null file object");
 	}

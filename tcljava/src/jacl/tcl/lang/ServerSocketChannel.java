@@ -67,8 +67,7 @@ public class ServerSocketChannel extends Channel {
             }
             catch (UnknownHostException e)
             {
-                throw new TclException(interp, "host unkown: "
-                    + localAddr, TCL.ERROR);
+                throw new TclException(interp, "host unkown: " + localAddr);
             }
         }
         this.mode = TclIO.CREAT; // Allow no reading or writing on channel
@@ -85,7 +84,7 @@ public class ServerSocketChannel extends Channel {
         }
         catch (IOException ex)
         {
-            throw new TclException(interp, ex.getMessage(), TCL.ERROR);
+            throw new TclException(interp, ex.getMessage());
         }
 
         acceptThread = new AcceptThread(sock, this);
@@ -127,8 +126,7 @@ public class ServerSocketChannel extends Channel {
     String read(Interp interp, int readType, int numBytes)
         throws IOException, TclException
     {
-        throw new TclException(interp, "cannot read from a server socket",
-            TCL.ERROR);
+        throw new TclException(interp, "cannot read from a server socket");
     }
 
     /**
@@ -138,8 +136,7 @@ public class ServerSocketChannel extends Channel {
     void write(Interp interp, String outStr)
         throws IOException, TclException
     {
-        throw new TclException(interp, "cannot write to a server socket",
-            TCL.ERROR);
+        throw new TclException(interp, "cannot write to a server socket");
     }
 
     void close() throws IOException
@@ -152,15 +149,21 @@ public class ServerSocketChannel extends Channel {
         super.close();
     }
 
+
+    /**
+     * Override to provide specific errors for server socket.
+     **/
+
     void flush(Interp interp) throws IOException, TclException
     {
-        throw new TclException(interp, "cannot flush a server socket",
-            TCL.ERROR);
+        throw new TclException(interp, "cannot flush a server socket");
     }
+
     void seek(long offset, int mode) throws IOException
     {
         throw new IOException("seek is not supported for socket channels");
     }
+
     long tell() throws IOException
     {
         throw new IOException("tell is not supported for socket channels");

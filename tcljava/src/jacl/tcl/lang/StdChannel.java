@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: StdChannel.java,v 1.8 2001/11/17 07:58:18 mdejong Exp $
+ * RCS: @(#) $Id: StdChannel.java,v 1.9 2001/11/18 06:21:02 mdejong Exp $
  *
  */
 
@@ -156,6 +156,7 @@ class StdChannel extends Channel {
 		return sbuf.toString();
 	    } 
 	    case TclIO.READ_LINE: {
+                // FIXME: Can we check for EOF using reader.ready() ???
 		String line = reader.readLine();
 		if (line == null) {
 		    eofCond = true;
@@ -199,35 +200,14 @@ class StdChannel extends Channel {
 	        getChanName() + "\" wasn't opened for writing");
 	}
 
-        writer.write(s, 0, s.length());
+        writer.write(s);
+
+        // The OutputStreamWriter class will buffer even if you don't
+        // wrap it in a BufferedWriter. The stderr file object must
+        // not require an explicit flush so we just hack a flush in.
+        if (stdType == STDERR)
+            flush(interp);
     }
-
-    /**
-     * Flush all data from the StdChannel.  This is an error if called
-     * on a STDIN channel.
-     */
-
-    void flush(Interp interp) throws IOException, TclException  {
-
-        // FIXME: Check for error using flag in super class, not here!
-
-        switch (stdType) {
-            case STDIN: {
-	        throw new TclException(interp, "channel \"" +
-                        getChanName() + "\" wasn't opened for writing");
-	    }
-            case STDOUT:
-	    case STDERR: {
-	        writer.flush();
-		break;
-	    }
-	    default: {
-	        throw new TclRuntimeError(
-                        "Error: unexpected stdType for StdChannel");
-	    }
-	}
-    }
-
 
     /**
      * Not sure what this means on stdio channels???
