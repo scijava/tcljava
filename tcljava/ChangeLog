@@ -1,9 +1,16 @@
+2000-05-24  Mo DeJong  <mdejong@redhat.com>
+
+	* src/jacl/tcl/lang/Interp.java (evalResource):
+	* src/tclblend/tcl/lang/Interp.java (evalResource):
+	Changed class that getResourceAsStream is called on
+	so that we don't use a system class loader.
+
 2000-05-21  Mo DeJong  <mdejong@redhat.com>
 
 	* src/jacl/tcl/lang/Shell.java: Removed
 	unused bits of old code that were
 	still lying around. Added FIXME comment
-	about TCL.OK which is not accessable.
+	about TCL.OK which is not accessible.
 
 2000-05-21  Mo DeJong  <mdejong@redhat.com>
 

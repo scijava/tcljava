@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.30 2000/05/14 23:10:20 mo Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.31 2000/05/24 08:04:32 mo Exp $
  *
  */
 
@@ -2441,7 +2441,7 @@ throws
     InputStream stream = null;
 
     try {
-	stream = Class.class.getResourceAsStream(resName);
+	stream = Interp.class.getResourceAsStream(resName);
     } catch (SecurityException e2) {
 	// This catch is necessary if Jacl is to work in an applet
         // at all. Note that java::new will not work from within Jacl
