@@ -9,7 +9,7 @@
 # Version: @(#)jaclsh.in	1.1 08/07/98
 #
 # Copyright (c) 1998, 1999, 2000 Moses DeJong
-# All Rights Reserved, see license.term for license information.
+# All Rights Reserved, see license.terms for license information.
 
 # Install prefix for jacl package, defaults to /usr/local
 prefix=@prefix@
