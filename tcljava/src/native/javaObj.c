@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaObj.c,v 1.15 2002/12/30 05:53:29 mdejong Exp $
+ * RCS: @(#) $Id: javaObj.c,v 1.16 2002/12/31 05:22:16 mdejong Exp $
  */
 
 #include "java.h"
@@ -609,7 +609,7 @@ Java_tcl_lang_CObject_makeRef(
 {
     Tcl_Obj *objPtr = *(Tcl_Obj **) &obj;
     Tcl_ObjType *oldTypePtr;
-    JavaInfo* jcache = JavaGetCache();
+    int non_tclobject_cmd = 0;
 
     if (!objPtr) {
 	ThrowNullPointerException(env, NULL);
@@ -624,15 +624,26 @@ Java_tcl_lang_CObject_makeRef(
 
     /*
      * Free the old internalRep before setting the new one.
+     * Watch for the special case of a command internal rep
+     * that does not have a ref to a TclObject. We avoid
+     * freeing the internal rep and add a ref in that case.
      */
 
+    if ((objPtr->typePtr == cmdTypePtr) &&
+	    (objPtr->internalRep.twoPtrValue.ptr2 == NULL)) {
+	non_tclobject_cmd = 1;
+    }
+
     oldTypePtr = objPtr->typePtr;
-    if ((oldTypePtr != NULL) && (oldTypePtr->freeIntRepProc != NULL)) {
+    if ((oldTypePtr != NULL) &&
+	    (oldTypePtr->freeIntRepProc != NULL) &&
+	    !non_tclobject_cmd) {
 	oldTypePtr->freeIntRepProc(objPtr);
     }
 
     object = (*env)->NewGlobalRef(env, object);
-    objPtr->typePtr = &tclObjectType;
+    if (!non_tclobject_cmd)
+	objPtr->typePtr = &tclObjectType;
     objPtr->internalRep.twoPtrValue.ptr2 = (VOID*) object;
 
     /*
@@ -1000,4 +1011,44 @@ JavaIsRef(
     return ((objPtr->typePtr == &tclObjectType) ||
             ((objPtr->typePtr == cmdTypePtr) &&
                     (objPtr->internalRep.twoPtrValue.ptr2) != NULL));
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * JavaObjType --
+ *
+ *	Return a string that describes the internal rep type for objPtr.
+ *
+ * Results:
+ *	A Tcl_Obj*.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj*
+JavaObjType(
+    Tcl_Obj *objPtr)		/* Object to check .*/
+{
+    char *type;
+    Tcl_ObjType *stringTypePtr =  Tcl_GetObjType("string");
+
+    if (objPtr->typePtr == &tclObjectType)
+        type = "tclobject";
+    else if ((objPtr->typePtr == cmdTypePtr) &&
+            ((objPtr->internalRep.twoPtrValue.ptr2) != NULL))
+        type = "cmdtclobject";
+    else if (objPtr->typePtr == cmdTypePtr)
+        type = "cmd";
+    else if (objPtr->typePtr == listTypePtr)
+        type = "list";
+    else if (objPtr->typePtr == stringTypePtr)
+        type = "string";
+    else
+        type = "unknown";
+
+    return Tcl_NewStringObj(type, -1);
 }

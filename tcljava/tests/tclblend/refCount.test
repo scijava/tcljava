@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: refCount.test,v 1.2 2002/12/21 04:03:35 mdejong Exp $
+# RCS: @(#) $Id: refCount.test,v 1.3 2002/12/31 05:22:16 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -316,6 +316,8 @@ test refcount-7.2 {SetJavaCmdFromAny} {
     lappend results [$copy toString]
     lappend results [btest refcount $o] [jtest refcount $o]
     unset o
+    # Toss cmd+ref internal rep, cmd table must be searched again.
+    llength $copy
     lappend results [catch {$copy toString} err] \
         [string equal $err "invalid command name \"$copy\""]
 } {1 1 foo 1 1 1 1}

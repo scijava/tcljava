@@ -1,5 +1,33 @@
 2002-12-30  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/native/java.h: Add JavaObjType decl.
+	* src/native/javaInterp.c (BTestCmd): Add
+	btest type subcommand, used for testing.
+	* src/native/javaObj.c (Java_tcl_lang_CObject_makeRef):
+	When the makeRef function is called with a command
+	internal rep that does not have a ptr2 jobject ref,
+	just set the ref without freeing the internal
+	rep or changing the typePtr.
+	* src/tcljava/tcl/lang/ReflectObject.java (cmdProc):
+	Pass argv[0] as the second argument to JavaInvoke.callMethod().
+	I think this was not done earlier because of bugs in the
+	ref counting implementation. This change combined with
+	the fix in makeRef allow for the conversion from an
+	unknown object to a command with a jobject ref.
+	* src/tests/tclblend/tcl/lang/IntNullConvertCmd.java:
+	Add test case for possible bug in CObject.makeRef().
+	* tests/tclblend/javaInterp.test: Add llength
+	call to free internal rep of object that was
+	turned into a cmd+ref type.
+	* tests/tclblend/javaObj.test: Add tests for conversion
+	from an unknown type to a cmd+ref type via a call
+	to ReflectObject.cmdProc().
+	* tests/tclblend/refCount.test: Add llength
+	call to free internal rep of object that was
+	turned into a cmd+ref type.
+
+2002-12-30  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/tcljava/tcl/lang/JavaTryCmd.java (cmdProc, eval):
 	Rewrite java::try command to take advantage of the
 	fact that exceptions are now propagated by Tcl Blend.

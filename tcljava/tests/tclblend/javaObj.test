@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: javaObj.test,v 1.7 2002/12/30 02:43:54 mdejong Exp $
+# RCS: @(#) $Id: javaObj.test,v 1.8 2002/12/31 05:22:16 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -210,6 +210,45 @@ test javaObj-12.1 {JavaBreakRef} {
     rename testlistlength {}
     set results
 } {1 0}
+
+test javaObj-13.1 {convert ref to cmd+ref internal rep} {
+    set results [list]
+    set obj [java::new tests.JavaTest]
+    lappend results [btest type $obj]
+    $obj voidimethod
+    lappend results [btest type $obj]
+} {tclobject cmdtclobject}
+
+test javaObj-13.2 {convert ref to cmd+ref internal rep} {
+    set results [list]
+    set obj [java::new tests.JavaTest]
+    set copy $obj
+    lappend results [btest type $copy]
+    $copy voidimethod
+    lappend results [btest type $copy]
+    lappend results [btest type $obj]
+} {tclobject cmdtclobject cmdtclobject}
+
+test javaObj-13.3 {convert string to cmd+ref internal rep} {
+    set results [list]
+    set obj [java::new tests.JavaTest]
+    lappend results [btest type $obj]
+    set copy [format %s $obj]
+    lappend results [btest type $copy]
+    $obj voidimethod
+    lappend results [btest type $obj]
+    $copy voidimethod
+    lappend results [btest type $copy]
+} {tclobject string cmdtclobject cmdtclobject}
+
+test javaObj-14.1 {check for crash in CObject.makeRef()} {
+    [java::getinterp] createCommand testintnullconvert \
+        [java::new tcl.lang.IntNullConvertCmd]
+    set result [testintnullconvert java0x0]
+    rename testintnullconvert {}
+    set result
+} ok
+
 
 # cleanup
 catch {interp delete [interp slaves]}

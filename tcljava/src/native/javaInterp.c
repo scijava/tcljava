@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaInterp.c,v 1.18 2002/12/30 05:53:29 mdejong Exp $
+ * RCS: @(#) $Id: javaInterp.c,v 1.19 2002/12/31 05:22:15 mdejong Exp $
  */
 
 #include "java.h"
@@ -1722,10 +1722,10 @@ int BTestCmd(
 {
     int index;
     static CONST char *options[] = { 
-	"compcode", "refcount", "isjobject", NULL 
+	"compcode", "isjobject", "refcount", "type", NULL 
     };
     enum options { 
-	BTEST_COMPCODE, BTEST_REFCOUNT, BTEST_ISJOBJECT
+	BTEST_COMPCODE, BTEST_ISJOBJECT, BTEST_REFCOUNT, BTEST_TYPE
     };
 
     if (objc < 2) {
@@ -1768,6 +1768,14 @@ int BTestCmd(
 	    }
 	    // refCount - 1 to account for the ref added for this method
 	    Tcl_SetObjResult(interp, Tcl_NewIntObj(objv[2]->refCount - 1));
+	    break;
+	}
+	case BTEST_TYPE: {
+	    if (objc < 3 || objc > 3) {
+		Tcl_WrongNumArgs(interp, 2, objv, "obj");
+		return TCL_ERROR;
+	    }
+	    Tcl_SetObjResult(interp, JavaObjType(objv[2]));
 	    break;
 	}
     }
