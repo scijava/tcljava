@@ -1,5 +1,5 @@
 /*
- * JavaInfoCmd.java --
+ * JavaNullCmd.java --
  *
  *	Implements the built-in "java::null" command.
  *
@@ -9,23 +9,17 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaNullCmd.java,v 1.1 1998/10/14 21:09:14 cvsadmin Exp $
+ * RCS: @(#) $Id: JavaNullCmd.java,v 1.2 1999/05/09 22:19:45 dejong Exp $
  *
  */
 
 package tcl.lang;
 
-/*
+/**
  * Implements the built-in "java::null" command.
  */
 
 class JavaNullCmd implements Command {
-
-/*
- * The internal representation of java::null.
- */
-
-private static final String nullRep = "java0x0";
 
 /*----------------------------------------------------------------------
  *
@@ -48,54 +42,10 @@ public void
 cmdProc(
     Interp interp,			// Current interpreter.
     TclObject argv[])			// Argument list.
+    throws TclException
 {
-    interp.setResult(nullRep);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- *  getNullObj --
- *
- *	Returns a string containing the Tcl representation of null.
- *
- * Results:
- *	Returns a string containing the Tcl representation of null.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-static TclObject
-getNullObj()
-{
-    return TclString.newInstance(nullRep);
+    interp.setResult(ReflectObject.newInstance(interp,null,null));
 }
 
-
-/*
- *----------------------------------------------------------------------
- *
- *  getNullString --
- *
- *	Returns a Java string containing the Tcl representation of null.
- *
- * Results:
- *	Returns a Java string containing the Tcl representation of null.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-static String
-getNullString()
-{
-    return nullRep;
-}
-
-} // end CallCmd
+} // end JavaNullCmd
 
