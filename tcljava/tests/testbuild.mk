@@ -2,7 +2,7 @@
 # This file need not be shipped with Jacl or Tcl Blend, it should
 # only be in the tcljava tar file that includes both Jacl and Tcl Blend.
 
-# RCS: @(#) $Id: testbuild.mk,v 1.7 1999/01/15 03:06:54 hylands Exp $
+# RCS: @(#) $Id: testbuild.mk,v 1.8 1999/03/02 15:42:54 hylands Exp $
 
 # To run these tests, do
 # cd ../unix 
@@ -41,7 +41,7 @@ WISH =		$(TCLBINDIR)/wish
 
 # Values for JDK1.1
 JDK =		/opt/jdk1.1.6
-JDK_LD_LIBRARY_PATH =	$(JDK1.1)/lib/sparc
+JDK_LD_LIBRARY_PATH =	$(JDK)/lib/sparc/native_threads
 JDK_VERSION =	1.1.6
 
 # Values for JDK1.2
@@ -50,6 +50,7 @@ JDK_VERSION =	1.1.6
 #JDK_VERSION =	1.2fcs
 
 TMPPATH =	$(JDK)/bin:/usr/bin:/usr/local/bin:/usr/ccs/bin:$(TCLBINDIR):.:
+TMP_LD_LIBRARY_PATH = $(JDK_LD_LIBRARY_PATH)
 
 # Cleanup
 testbuild_clean: clean_jaclSrcBuild clean_blendSrcBuild \
@@ -276,6 +277,8 @@ blendBinBuild: $(BLENDBINTEST_DIR)
 	@echo "#"
 	@echo "# Smoke testing from Blend Bin tar file"
 	@echo "#"
+	@echo "# If this seg faults, check for a libtclblend.so in "
+	@echo "# the current directory"
 	rm -f $(SMOKETEST_RESULTS_FILE) $(OK_SMOKETEST_RESULTS_FILE)
 	echo $(BLEND_GOOD_SMOKETEST_RESULTS) > $(OK_SMOKETEST_RESULTS_FILE)
 	cd $(BLENDBINTEST_DIR); \
