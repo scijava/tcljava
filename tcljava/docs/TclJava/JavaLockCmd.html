@@ -29,7 +29,7 @@ Tcl variable's internal rep is changed (e.g. to a Tcl List), the
 pointer to the Java Object is removed, and the Java object is garbage
 collected. The <B>java::lock</B> maintains a copy of <I>javaObj</I>'s
 internal rep, so the Java object will be preserved.  Multiple locks
-can be placed on the same Tcl variable. If <I>javaObject</I> is not a
+can be placed on the same Java object. If <I>javaObject</I> is not a
 valid reference to a Java object, a Tcl error is generated. It is
 important to note that use of the <B>java::lock</B> command is optional
 and is not required. A Java object handle that is stored in a Tcl variable
@@ -46,3 +46,4 @@ will not be garbage collected until the Tcl variable is unset.
 
 </BODY>
 </HTML>
+
