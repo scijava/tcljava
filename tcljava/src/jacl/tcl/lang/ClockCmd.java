@@ -3,7 +3,7 @@
  *
  *	Implements the built-in "clock" Tcl command.
  *
- * Copyright (c) 1998 Christian Krone.
+ * Copyright (c) 1998-1999 Christian Krone.
  * Copyright (c) 1997 Cornell University.
  * Copyright (c) 1995-1997 Sun Microsystems, Inc.
  * Copyright (c) 1992-1995 Karl Lehenbauer and Mark Diekhans.
@@ -12,7 +12,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ClockCmd.java,v 1.2 1999/05/16 06:16:37 dejong Exp $
+ * RCS: @(#) $Id: ClockCmd.java,v 1.3 2000/01/06 00:18:05 mo Exp $
  *
  */
 
@@ -27,7 +27,7 @@ import java.text.*;
 
 class ClockCmd implements Command {
 
-    static final private String validCmds[] = {
+    static final private String[] validCmds = {
 	"clicks",
 	"format",
 	"scan",
@@ -39,7 +39,7 @@ class ClockCmd implements Command {
     static final private int CMD_SCAN		= 2;
     static final private int CMD_SECONDS	= 3;
 
-    static final private String formatOpts[] = {
+    static final private String[] formatOpts = {
 	"-format",
 	"-gmt"
     };
@@ -47,7 +47,7 @@ class ClockCmd implements Command {
     static final private int OPT_FORMAT_FORMAT 	= 0;
     static final private int OPT_FORMAT_GMT	= 1;
 
-    static final private String scanOpts[] = {
+    static final private String[] scanOpts = {
 	"-base",
 	"-gmt"
     };
@@ -78,7 +78,7 @@ class ClockCmd implements Command {
 public void
 cmdProc(
     Interp interp,		// Current interpreter.
-    TclObject argv[])		// Argument list.
+    TclObject[] objv)		// Argument list.
 throws 
     TclException 		// A standard Tcl exception.
 {
@@ -91,17 +91,16 @@ throws
     Date baseClock;		// User specified time value.
     Date date;			// Parsed date value.
 
-    if (argv.length < 2) {
-	throw new TclNumArgsException(interp, 1, argv, "option ?arg ...?");
+    if (objv.length < 2) {
+	throw new TclNumArgsException(interp, 1, objv, "option ?arg ...?");
     }
-    int cmd = TclIndex.get(interp, argv[1], validCmds, "option", 0);
+    int cmd = TclIndex.get(interp, objv[1], validCmds, "option", 0);
 
     switch (cmd) {
 	case CMD_CLICKS: {
-	    if (argv.length != 2) {
-		throw new TclNumArgsException(interp, 2, argv, null);
+	    if (objv.length != 2) {
+		throw new TclNumArgsException(interp, 2, objv, null);
 	    }
-	    //long millis = new java.util.Date().getTime();
 	    long millis = System.currentTimeMillis();
 	    int clicks = (int)(millis%Integer.MAX_VALUE);
 	    interp.setResult(clicks);
@@ -109,28 +108,28 @@ throws
 	}
 
 	case CMD_FORMAT: {
-	    if ((argv.length < 3) || (argv.length > 7)) {
-		throw new TclNumArgsException(interp, 2, argv,
+	    if ((objv.length < 3) || (objv.length > 7)) {
+		throw new TclNumArgsException(interp, 2, objv,
 		    "clockval ?-format string? ?-gmt boolean?");
 	    }
-	    clockVal = TclInteger.get(interp, argv[2]);
+	    clockVal = TclInteger.get(interp, objv[2]);
 
-	    for (argIx = 3; argIx+1 < argv.length; argIx += 2) {
-	        int formatOpt = TclIndex.get(interp, argv[argIx],
+	    for (argIx = 3; argIx+1 < objv.length; argIx += 2) {
+	        int formatOpt = TclIndex.get(interp, objv[argIx],
 				    formatOpts, "switch", 0);
 	        switch (formatOpt) {
 		    case OPT_FORMAT_FORMAT: {
-		        format = argv[argIx+1].toString();
+		        format = objv[argIx+1].toString();
 		        break;
 		    }
 		    case OPT_FORMAT_GMT: {
-		        useGmt = TclBoolean.get(interp, argv[argIx+1]);
+		        useGmt = TclBoolean.get(interp, objv[argIx+1]);
 		        break;
 		    }
 		}
 	    }
-	    if (argIx < argv.length) {
-		throw new TclNumArgsException(interp, 2, argv,
+	    if (argIx < objv.length) {
+		throw new TclNumArgsException(interp, 2, objv,
 		    "clockval ?-format string? ?-gmt boolean?");
 	    }
 	    FormatClock(interp, clockVal, useGmt, format);
@@ -138,32 +137,33 @@ throws
 	}
 
 	case CMD_SCAN: {
-	    if ((argv.length < 3) || (argv.length > 7)) {
-		throw new TclNumArgsException(interp, 2, argv,
+	    if ((objv.length < 3) || (objv.length > 7)) {
+		throw new TclNumArgsException(interp, 2, objv,
 		    "dateString ?-base clockValue? ?-gmt boolean?");
 	    }
-	    dateString = argv[2].toString();
+	    dateString = objv[2].toString();
 
-	    for (argIx = 3; argIx+1 < argv.length; argIx += 2) {
-	        int scanOpt = TclIndex.get(interp, argv[argIx],
+	    for (argIx = 3; argIx+1 < objv.length; argIx += 2) {
+	        int scanOpt = TclIndex.get(interp, objv[argIx],
 				  scanOpts, "switch", 0);
 	        switch (scanOpt) {
 		    case OPT_SCAN_BASE: {
-		        baseObj = argv[argIx+1];
+		        baseObj = objv[argIx+1];
 		        break;
 		    }
 		    case OPT_SCAN_GMT: {
-		        useGmt = TclBoolean.get(interp, argv[argIx+1]);
+		        useGmt = TclBoolean.get(interp, objv[argIx+1]);
 		        break;
 		    }
 		}
 	    }
-	    if (argIx < argv.length) {
-		throw new TclNumArgsException(interp, 2, argv,
+	    if (argIx < objv.length) {
+		throw new TclNumArgsException(interp, 2, objv,
 		    "clockval ?-format string? ?-gmt boolean?");
 	    }
 	    if (baseObj != null) {
-	        baseClock = new Date(TclInteger.get(interp, baseObj)*1000);
+		long seconds = TclInteger.get(interp, baseObj);
+	        baseClock = new Date(seconds*1000);
 	    } else {
 	        baseClock = new Date();
 	    }
@@ -181,10 +181,10 @@ throws
 	}
 
 	case CMD_SECONDS: {
-	    if (argv.length != 2) {
-		throw new TclNumArgsException(interp, 2, argv, null);
+	    if (objv.length != 2) {
+		throw new TclNumArgsException(interp, 2, objv, null);
 	    }
-	    long millis = new java.util.Date().getTime();
+	    long millis = System.currentTimeMillis();
 	    int seconds = (int)(millis/1000);
 	    interp.setResult(seconds);
 	    break;
@@ -427,8 +427,7 @@ private int
 GetWeek(
     Calendar calendar,		// Calendar containing Date.
     int firstDayOfWeek,		// this day starts a week (MONDAY/SUNDAY).
-    boolean iso			// evaluate according to ISO?
-)
+    boolean iso)		// evaluate according to ISO?
 {
     if (iso) {
         firstDayOfWeek = Calendar.MONDAY;
@@ -454,6 +453,40 @@ GetWeek(
     }
 
     return week;
+}
+
+/**
+ *-----------------------------------------------------------------------------
+ *
+ * SetWeekday --
+ *
+ *      The date of the given calendar will be incremented, so that it will
+ *	match the weekday in the diff object. If dayOrdinal is bigger than 1,
+ *	additional weeks will be added.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Modifies the given calendar.
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+private void
+SetWeekday(
+    Calendar calendar,		// Calendar containing Date.
+    ClockRelTimespan diff)	// time difference to evaluate
+{
+    int weekday = diff.getWeekday();
+    int dayOrdinal = diff.getDayOrdinal();
+
+    while (calendar.get(Calendar.DAY_OF_WEEK) != weekday) {
+	calendar.add(Calendar.DATE, 1);
+    }
+    if (dayOrdinal > 1) {
+	calendar.add(Calendar.DATE, 7*(dayOrdinal-1));
+    }
 }
 
 /**
@@ -504,7 +537,7 @@ GetDate(
 	    hasZone++;
 	} else if (ParseDate(dt, parsePos, calendar)) {
 	    hasDate++;
-	} else if (ParseDay(dt, parsePos, calendar)) {
+	} else if (ParseDay(dt, parsePos, diff)) {
 	    hasDay++;
 	} else if (ParseRel(dt, parsePos, diff)) {
 	    hasRel++;
@@ -547,6 +580,10 @@ GetDate(
 	calendar.add(Calendar.MONTH, diff.getMonths());
     }
 
+    if (hasDay > 0 && hasDate == 0) {
+	SetWeekday(calendar, diff);
+    }
+
     return calendar.getTime();
 }
 
@@ -578,8 +615,7 @@ private boolean
 ParseTime (
     ClockToken[] dt,		// Input as scanned array of tokens
     ParsePosition parsePos,	// Current position in input
-    Calendar calendar		// calendar object to set
-)
+    Calendar calendar)		// calendar object to set
 {
     int pos = parsePos.getIndex();
 
@@ -663,8 +699,7 @@ private boolean
 ParseZone (
     ClockToken[] dt,		// Input as scanned array of tokens
     ParsePosition parsePos,	// Current position in input
-    Calendar calendar		// calendar object to set
-)
+    Calendar calendar)		// calendar object to set
 {
     int pos = parsePos.getIndex();
 
@@ -703,8 +738,8 @@ ParseZone (
  *	        ;
  *
  * Results:
- *      True, if a day was read (parsePos was incremented and calendar
- *	was set according to the read day); false otherwise.
+ *	True, if a day was read (parsePos was incremented and the time
+ *	difference was set according to the read day); false otherwise.
  *
  * Side effects:
  *      None.
@@ -716,30 +751,29 @@ private boolean
 ParseDay (
     ClockToken[] dt,		// Input as scanned array of tokens
     ParsePosition parsePos,	// Current position in input
-    Calendar calendar		// calendar object to set
-)
+    ClockRelTimespan diff)	// time difference to evaluate
 {
     int pos = parsePos.getIndex();
 
     if (pos+1 < dt.length &&
 	dt[pos].is(ClockToken.DAY) &&
 	dt[pos+1].is(',')) {
-	calendar.set(Calendar.DAY_OF_MONTH, dt[pos].getInt());
-        parsePos.setIndex(pos+2);
-        return true;
+	diff.setWeekday(dt[pos].getInt());
+	parsePos.setIndex(pos+2);
+	return true;
     }
     if (pos+1 < dt.length &&
 	dt[pos].isUNumber() &&
 	dt[pos+1].is(ClockToken.DAY)) {
-	calendar.set(Calendar.DAY_OF_MONTH, dt[pos+1].getInt());
-        parsePos.setIndex(pos+2);
-        return true;
+	diff.setWeekday(dt[pos+1].getInt(), dt[pos].getInt());
+	parsePos.setIndex(pos+2);
+	return true;
     }
     if (pos < dt.length &&
 	dt[pos].is(ClockToken.DAY)) {
-	calendar.set(Calendar.DAY_OF_MONTH, dt[pos].getInt());
-        parsePos.setIndex(pos+1);
-        return true;
+	diff.setWeekday(dt[pos].getInt());
+	parsePos.setIndex(pos+1);
+	return true;
     }
     return false;
 }
@@ -774,8 +808,7 @@ private boolean
 ParseDate (
     ClockToken[] dt,		// Input as scanned array of tokens
     ParsePosition parsePos,	// Current position in input
-    Calendar calendar		// calendar object to set
-)
+    Calendar calendar)		// calendar object to set
 {
     int pos = parsePos.getIndex();
 
@@ -872,8 +905,7 @@ ParseNumber (
     ClockToken[] dt,		// Input as scanned array of tokens
     ParsePosition parsePos,	// Current position in input
     Calendar calendar,		// calendar object to set
-    boolean mayBeYear		// number is considered to be year?
-)
+    boolean mayBeYear)		// number is considered to be year?
 {
     int pos = parsePos.getIndex();
 
@@ -919,8 +951,7 @@ private boolean
 ParseRel (
     ClockToken[] dt,		// Input as scanned array of tokens
     ParsePosition parsePos,	// Current position in input
-    ClockRelTimespan diff	// time difference to evaluate
-)
+    ClockRelTimespan diff)	// time difference to evaluate
 {
     if (ParseRelUnit(dt, parsePos, diff)) {
         int pos = parsePos.getIndex();
@@ -968,8 +999,7 @@ private boolean
 ParseRelUnit (
     ClockToken[] dt,		// Input as scanned array of tokens
     ParsePosition parsePos,	// Current position in input
-    ClockRelTimespan diff	// time difference to evaluate
-)
+    ClockRelTimespan diff)	// time difference to evaluate
 {
     int pos = parsePos.getIndex();
 
@@ -1036,8 +1066,7 @@ ParseMeridianAndSetHour(
     ClockToken[] dt,		// Input as scanned array of tokens
     ParsePosition parsePos,	// Current position in input
     Calendar calendar,		// calendar object to set
-    int hour			// hour value (1-12 or 0-23) to set.
-)
+    int hour)			// hour value (1-12 or 0-23) to set.
 {
     int pos = parsePos.getIndex();
     int hourField;
@@ -1076,8 +1105,7 @@ ParseMeridianAndSetHour(
 private ClockToken[]
 GetTokens (
     String in,		// String to parse
-    boolean debug	// Send the generated token list to stderr?
-)
+    boolean debug)	// Send the generated token list to stderr?
 {
     ParsePosition parsePos = new ParsePosition(0);
     ClockToken dt;
@@ -1124,8 +1152,7 @@ GetTokens (
 private ClockToken
 GetNextToken (
     String in,			// String to parse
-    ParsePosition parsePos	// Current position in input
-)
+    ParsePosition parsePos)	// Current position in input
 {
     int pos = parsePos.getIndex();
     int sign;
@@ -1196,8 +1223,7 @@ GetNextToken (
  */
 
 private ClockToken LookupWord(
-    String word			// word to lookup
-)
+    String word)		// word to lookup
 {
     int ix;
     String[] names;
@@ -1329,7 +1355,7 @@ private ClockToken LookupWord(
  *
  * CLASS ClockToken --
  *
- *      An object of this class represents a lexical unit of the human
+ *	An object of this class represents a lexical unit of the human
  *	readable date string. It can be one of the following variants:
  *
  *	- signed number,
@@ -1433,12 +1459,12 @@ class ClockToken {
  *
  * CLASS ClockRelTimespan --
  *
- *      An object of this class can be used to track the time difference during
+ *	An object of this class can be used to track the time difference during
  *	the analysis of a relative time specification.
  *
- *	It has two read only properties 'seconds' and 'months', which are set
- *	to 0 during initialization and which can be modified by means of the
- *	addSeconds(), addMonths() and negate() methods.
+ *	It has four read only properties seconds, months, weekday and dayOrdinal,
+ *	which are set to 0 during initialization and which can be modified by
+ *	means of the addSeconds(), addMonths(), setWeekday() and negate() methods.
  *
  *-----------------------------------------------------------------------------
  */
@@ -1447,12 +1473,21 @@ class ClockRelTimespan {
     ClockRelTimespan() {
         seconds = 0;
 	months = 0;
+	weekday = 0;
+	dayOrdinal = 0;
     }
     void addSeconds(int s) {
         seconds += s;
     }
     void addMonths(int m) {
         months += m;
+    }
+    void setWeekday(int w, int ord) {
+	weekday = w;
+	dayOrdinal = ord;
+    }
+    void setWeekday(int w) {
+	setWeekday(w, 1);
     }
     void negate() {
         seconds = -seconds;
@@ -1464,6 +1499,14 @@ class ClockRelTimespan {
     int getMonths() {
         return months;
     }
+    int getWeekday() {
+        return weekday;
+    }
+    int getDayOrdinal() {
+        return dayOrdinal;
+    }
     private int seconds;
     private int months;
+    private int weekday;
+    private int dayOrdinal;
 }

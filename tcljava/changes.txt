@@ -1,6 +1,6 @@
 Recent user-visible changes to Jacl & Tcl Blend:
 
-RCS: @(#) $Id: changes.txt,v 1.35 2000/01/05 23:59:10 mo Exp $
+RCS: @(#) $Id: changes.txt,v 1.36 2000/01/06 00:18:05 mo Exp $
 
 ----------------- Released 1.0a1, 10/22/97 -----------------------
 
@@ -997,4 +997,7 @@ an error, we now copy the variant into env(CLASSPATH) if necessary.
 Moved checks for tcl version numbers inside src/native/tclResult.c
 to fix build problems under windows. Only the makefile.vc build
 was effected by this bug, the TEA build worked just fine.
+
+01/05/2000 (Bug fixes for Jacl's clock command)
+Added the patch submitted by Christian Krone <krischan@sql.de>.
 
