@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Channel.java,v 1.8 2001/11/20 00:08:29 mdejong Exp $
+ * RCS: @(#) $Id: Channel.java,v 1.9 2001/11/20 00:53:07 mdejong Exp $
  */
 
 package tcl.lang;
@@ -177,12 +177,14 @@ abstract class Channel {
     }
 
     /** 
-     * Interface to tell the value for the Channel pointer.
-     * Used in file channels to return the current file pointer.
+     * Return the current file pointer. If tell is not supported on the
+     * given channel then -1 will be returned. A subclass should override
+     * this method if it supports the tell operation.
      */
 
-    abstract long tell()  throws IOException;
-
+    long tell() throws IOException {
+        return (long) -1;
+    }
 
     /**
      * Returns true if the last read reached the EOF.

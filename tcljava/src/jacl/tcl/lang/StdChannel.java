@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: StdChannel.java,v 1.11 2001/11/20 00:08:29 mdejong Exp $
+ * RCS: @(#) $Id: StdChannel.java,v 1.12 2001/11/20 00:53:07 mdejong Exp $
  *
  */
 
@@ -203,14 +203,4 @@ class StdChannel extends Channel {
         if (stdType == STDERR)
             flush(interp);
     }
-
-    /**
-     * Not sure what this means on stdio channels???
-     * 
-     * @return For now just return -1
-     */
-    long tell()  throws IOException {
-        return((long) -1);
-    }
-
 }

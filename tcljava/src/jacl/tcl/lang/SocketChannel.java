@@ -295,13 +295,4 @@ public class SocketChannel extends Channel {
         }
     }
 
-    /**
-     * Tell the value of the Channel pointer.
-     * Undefined in sockets.
-     **/
-
-    long tell() throws IOException
-    {
-        throw new IOException("tell is not supported for socket channels");
-    }
 }

@@ -1,5 +1,16 @@
 2001-11-19  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/jacl/tcl/lang/Channel.java (tell): Turn the tell
+	method into a concrete implementation instead of an
+	abstract method. It currently just returns -1.
+	* src/jacl/tcl/lang/ServerSocketChannel.java (tell):
+	* src/jacl/tcl/lang/SocketChannel.java (tell):
+	* src/jacl/tcl/lang/StdChannel.java (tell):
+	Remove tell command since it is now handled in the
+	super class.
+
+2001-11-19  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/jacl/tcl/lang/Channel.java (seek): Properly indent
 	some throws clauses on methods. Turn the seek method into
 	a concrete implementation instead of an abstract method.

@@ -164,11 +164,6 @@ public class ServerSocketChannel extends Channel {
         throw new TclPosixException(interp, TclPosixException.EACCES, true,
 		"error during seek on \"" + getChanName() + "\"");
     }
-
-    long tell() throws IOException
-    {
-        throw new IOException("tell is not supported for socket channels");
-    }
 }
 
 
