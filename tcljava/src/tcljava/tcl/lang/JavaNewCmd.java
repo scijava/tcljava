@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaNewCmd.java,v 1.1 1998/10/14 21:09:13 cvsadmin Exp $
+ * RCS: @(#) $Id: JavaNewCmd.java,v 1.2 1999/05/09 22:18:05 dejong Exp $
  *
  */
 
@@ -52,21 +52,17 @@ throws
 		"signature ?arg arg ...?");
     }
 
-    /*
-     * The "java::new" command can take both array signatures and
-     * constructor signatures. We want to know what type of signature
-     * is given without throwing and catching exceptions. Thus, we
-     * call ArraySig.looksLikeArraySig() to determine quickly whether
-     * a argv[1] can be interpreted as an array signature or a
-     * constructor signature. This is a much less expensive way than
-     * calling ArraySig.get() and then calling JavaInvoke.newInstance()
-     * if that fails.
-     */
+    // The "java::new" command can take both array signatures and
+    // constructor signatures. We want to know what type of signature
+    // is given without throwing and catching exceptions. Thus, we
+    // call ArraySig.looksLikeArraySig() to determine quickly whether
+    // a argv[1] can be interpreted as an array signature or a
+    // constructor signature. This is a much less expensive way than
+    // calling ArraySig.get() and then calling JavaInvoke.newInstance()
+    // if that fails.
 
     if (ArraySig.looksLikeArraySig(interp, argv[1])) {
-	/*
-	 * Create a new Java array object.
-	 */
+	// Create a new Java array object.
 
 	if ((argv.length < 3) || (argv.length > 4)) {
 	    throw new TclNumArgsException(interp, 2, argv,
@@ -91,19 +87,15 @@ throws
 	    valueListObj = argv[3];
 	}
 
-	/*
-	 * Initialize arrayObj according to dimensions of both
-	 * sizeListObj and valueListObj.
-	 */
+	// Initialize arrayObj according to dimensions of both
+	// sizeListObj and valueListObj.
 
 	Object obj = ArrayObject.initArray(interp, sizeListObj, 
 		sizeListLen,  0, dimensions, componentType, valueListObj);
 
 	interp.setResult(ReflectObject.newInstance(interp,componentType,obj));
     } else {
-	/*
-	 * Create a new (scalar) Java object.
-	 */
+	// Create a new (scalar) Java object.
 
 	int startIdx = 2;
 	int count = argv.length - startIdx;
@@ -116,26 +108,20 @@ throws
 } // end JavaNewCmd
 
 
-/*
- * The ArraySig class is used internally by the JavaNewCmd
- * class. ArraySig implements a new Tcl object type that represents an
- * array signature used for creating Java arrays. Examples or array
- * signatures are "int[][]", "java.lang.Object[]" or "[[D".
- */
+// The ArraySig class is used internally by the JavaNewCmd
+// class. ArraySig implements a new Tcl object type that represents an
+// array signature used for creating Java arrays. Examples or array
+// signatures are "int[][]", "java.lang.Object[]" or "[[D".
 
 class ArraySig extends InternalRep {
 
-/*
- * The base component type of the array. For example, the component
- * type for int[][][] is int.
- */
+// The base component type of the array. For example, the component
+// type for int[][][] is int.
 
 Class componentType;
 
-/*
- * The number of dimensions specified by the signature. For example, 
- * int[][][] has a dimension of 3.
- */
+// The number of dimensions specified by the signature. For example, 
+// int[][][] has a dimension of 3.
 
 int dimensions;
 
@@ -211,11 +197,9 @@ throws
     InternalRep rep = signature.getInternalRep();
 
     if (rep instanceof FuncSig) {
-	/*
-	 * The string rep of FuncSig can never represent an ArraySig,
-	 * so we know for sure that signature doesn't look like an
-	 * ArraySig.
-	 */
+	// The string rep of FuncSig can never represent an ArraySig,
+	// so we know for sure that signature doesn't look like an
+	// ArraySig.
 
 	return false;
     }
@@ -263,9 +247,7 @@ throws
 {
     InternalRep rep = signature.getInternalRep();
     if ((rep instanceof ArraySig)) {
-	/*
-	 * The cached internal rep is a valid array signature, return it.
-	 */
+	// The cached internal rep is a valid array signature, return it.
 
 	return (ArraySig)rep;
     }
@@ -283,19 +265,15 @@ throws
 	int dimensions = 0;
 
 	if (clsName.charAt(0) == '[') {
-	    /*
-	     * If the string begins with '[', count the leading '['s.
-	     */
+	    // If the string begins with '[', count the leading '['s.
     
 	    String tmp = clsName;
 	    while (tmp.charAt(++dimensions) == '[') {
 	    }
 
 	} else {
-	    /*
-	     * If the string is of the form className[][]..., count
-	     * the trailing "[]"s.
-	     */
+	    // If the string is of the form className[][]..., count
+	    // the trailing "[]"s.
     
 	    String tmp = clsName;
 	    for (; tmp.endsWith("[]"); dimensions++) {

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: JavaLoadCmd.java,v 1.1 1998/10/14 21:09:14 cvsadmin Exp $
+ * RCS: @(#) $Id: JavaLoadCmd.java,v 1.2 1999/05/09 22:17:14 dejong Exp $
  */
 
 package tcl.lang;
@@ -18,9 +18,7 @@ import java.util.*;
 
 class JavaLoadCmd implements Command {
 
-/*
- * List of switches that are legal in the lsort command.
- */
+// Switches that are legal in this command.
 
 private static final String validOpts[] = {"-classpath"};
 
@@ -62,10 +60,8 @@ throws
 		"?-classpath arg? packageName");
     }
     
-    /*
-     * Populate the classpath array with arguments from command line, if 
-     * the -classpath option was specified.
-     */
+    // Populate the classpath array with arguments from command line, if 
+    // the -classpath option was specified.
 
     if (argv.length == 4) {
 	TclIndex.get(interp, argv[1], validOpts, "switch", 0);
@@ -78,27 +74,21 @@ throws
 
     errorMsg = "load \"" + packageName + "\" failed: ";
 
-    /*
-     * The class loader dosen't want .class at the end, so strip
-     * it off if it exists.
-     */
+    // The class loader dosen't want .class at the end, so strip
+    // it off if it exists.
     
     if (packageName.endsWith(".class")) {
 	packageName = packageName.substring(0,
 		packageName.lastIndexOf(".class"));
     }
 	
-    /*
-     * Create a new TclClassLoader.  The classpath and env(TCL_CLASSPATH) 
-     * arrays are stored inside the Loader for recursive references
-     * to other Classes inside the main Extension class being loaded.
-     */
+    // Create a new TclClassLoader.  The classpath and env(TCL_CLASSPATH) 
+    // arrays are stored inside the Loader for recursive references
+    // to other Classes inside the main Extension class being loaded.
 
     tclClassLoader = new TclClassLoader(interp, classpath);
 
-    /*
-     * Dynamically load the class
-     */
+    // Dynamically load the class
 
     try {
 	validLoad = false;
@@ -113,13 +103,11 @@ throws
     } catch (SecurityException e) {
 	throw new TclException(interp, errorMsg + e);
     } finally {
-	/* 
-	 * If we did not have a valid load, the packageName
-	 * must be removed from the static tclClassLoader's 
-	 * cache of loaded classes.  If this is not done
-	 * any other attempts to load this package will always
-	 * use this tclClassLoader and will always fail.
-	 */
+	// If we did not have a valid load, the packageName
+	// must be removed from the static tclClassLoader's 
+	// cache of loaded classes.  If this is not done
+	// any other attempts to load this package will always
+	// use this tclClassLoader and will always fail.
 	
 	if (!validLoad) {
 	    tclClassLoader.removeCache(packageName);
@@ -127,20 +115,16 @@ throws
     }
     
     try {
-	/*
-	 * Create an instance of the class.  It is important that the class
-	 * be casted to a class that was created by the System ClassLoader.
-	 * This bridges the super class of the pkgClass with other classes
-	 * instantiated by the System ClassLoader.
-	 */
+	// Create an instance of the class.  It is important that the class
+	// be casted to a class that was created by the System ClassLoader.
+	// This bridges the super class of the pkgClass with other classes
+	// instantiated by the System ClassLoader.
 
 	validLoad = false;
 	pkg = (Extension)pkgClass.newInstance();
 
-	/*
-	 * Initialize the given package. Usually, some new commands will
-	 * be created inside the interp.
-	 */
+	// Initialize the given package. Usually, some new commands will
+	// be created inside the interp.
 	
 	pkg.init(interp);
 	validLoad = true;
@@ -158,19 +142,17 @@ throws
 	throw new TclException (interp, errorMsg +
 		"can't find class \"" + e.getMessage() + "\"");
     } finally {
-	/* 
-	 * If we did not have a valid load, the packageName
-	 * must be removed from the static tclClassLoader's 
-	 * cache of loaded classes.  If this is not done
-	 * any other attempts to load this package will always
-	 * use this tclClassLoader and will always fail.
-	 */
+	// If we did not have a valid load, the packageName
+	// must be removed from the static tclClassLoader's 
+	// cache of loaded classes.  If this is not done
+	// any other attempts to load this package will always
+	// use this tclClassLoader and will always fail.
 	
 	if (!validLoad) {
 	    tclClassLoader.removeCache(packageName);
 	}
     }
 }
-}
 
+} // end JavaLoadCmd
 
