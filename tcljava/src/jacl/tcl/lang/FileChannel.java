@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FileChannel.java,v 1.18 2002/01/23 09:53:49 mdejong Exp $
+ * RCS: @(#) $Id: FileChannel.java,v 1.19 2003/03/06 22:53:06 mdejong Exp $
  *
  */
 
@@ -52,14 +52,30 @@ class FileChannel extends Channel {
 
 	mode = modeFlags;
 	File fileObj = FileUtil.getNewFileObj(interp, fileName);
-	
-	if (((modeFlags & TclIO.CREAT) != 0)  && !fileObj.exists() ) {
+
+	// Raise error if file exists and both CREAT and EXCL are set
+
+	if (((modeFlags & TclIO.CREAT) != 0) &&
+	        ((modeFlags & TclIO.EXCL) != 0) &&
+	        fileObj.exists()) {
+	    throw new TclException (interp, "couldn't open \"" +
+	            fileName + "\": file exists");
+	}
+
+	if (((modeFlags & TclIO.CREAT) != 0) && !fileObj.exists() ) {
 	    // Creates the file and closes it so it may be
 	    // reopened with the correct permissions. (w, w+, a+)
 
 	    file = new RandomAccessFile(fileObj, "rw");
 	    file.close();
-	} 
+	}
+
+	// Truncate file to zero length if it exists.
+
+	if (((modeFlags & TclIO.TRUNC) != 0) && fileObj.exists()) {
+	    file = new RandomAccessFile(fileObj, "rw");
+	    file.close ();
+	}
 
 	if ((modeFlags & TclIO.RDWR) != 0) { 
 	    // Opens file (r+), error if file does not exist.

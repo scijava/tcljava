@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: OpenCmd.java,v 1.3 2002/01/19 00:11:37 mdejong Exp $
+ * RCS: @(#) $Id: OpenCmd.java,v 1.4 2003/03/06 22:53:07 mdejong Exp $
  *
  */
 
@@ -43,51 +43,86 @@ class OpenCmd implements Command {
 	}
 
 	if (argv.length > 2) {
-	    String modeStr = argv[2].toString();
+	    TclObject mode = argv[2];
+	    String modeStr = mode.toString();
 	    int len = modeStr.length();
 
-	    if ((len == 0) || (len > 2)) {
+	    if ((len == 0)) {
 	        throw new TclException(interp, 
                          "illegal access mode \"" + modeStr + "\"");
 	    }
 
-	    switch (modeStr.charAt(0)) {
-	        case 'r': {
-		    if (len == 1) {
-		        modeFlags = TclIO.RDONLY;
-			break;
-		    } else if (modeStr.charAt(1) == '+') {
-		        modeFlags = TclIO.RDWR;
-			break;
+            if (len <  3) { // "r", "w", "r+", "w+" and so on
+	        switch (modeStr.charAt(0)) {
+	            case 'r': {
+		        if (len == 1) {
+		            modeFlags = TclIO.RDONLY;
+			    break;
+		        } else if (modeStr.charAt(1) == '+') {
+		            modeFlags = TclIO.RDWR;
+			    break;
+		        }
 		    }
-		}
-	        case 'w': {
-		    File f = FileUtil.getNewFileObj(interp, 
-			    argv[1].toString());
-		    if (f.exists()) {
-			f.delete();
+	            case 'w': {
+		        File f = FileUtil.getNewFileObj(interp, 
+			        argv[1].toString());
+		        if (f.exists()) {
+			    f.delete();
+		        }
+		        if (len == 1) {
+		            modeFlags = (TclIO.WRONLY|TclIO.CREAT);
+			    break;
+		        } else if (modeStr.charAt(1) == '+') {
+		            modeFlags = (TclIO.RDWR|TclIO.CREAT);
+			    break;
+		        }
 		    }
-		    if (len == 1) {
-		        modeFlags = (TclIO.WRONLY|TclIO.CREAT);
-			break;
-		    } else if (modeStr.charAt(1) == '+') {
-		        modeFlags = (TclIO.RDWR|TclIO.CREAT);
-			break;
+	            case 'a': {
+		        if (len == 1) {
+		            modeFlags = (TclIO.WRONLY|TclIO.APPEND);
+			    break;
+		        } else if (modeStr.charAt(1) == '+') {
+		            modeFlags = (TclIO.RDWR|TclIO.CREAT|TclIO.APPEND);
+			    break;
+		        }
 		    }
-		}
-	        case 'a': {
-		    if (len == 1) {
-		        modeFlags = (TclIO.WRONLY|TclIO.APPEND);
-			break;
-		    } else if (modeStr.charAt(1) == '+') {
-		        modeFlags = (TclIO.RDWR|TclIO.CREAT|TclIO.APPEND);
-			break;
+	            default: {
+		        throw new TclException(interp, "illegal access mode \""
+                                + modeStr + "\"");
 		    }
-		}
-	        default: {
-		    throw new TclException(interp, "illegal access mode \""
-                            + modeStr + "\"");
-		}
+	        }
+            } else {
+	        modeFlags = 0;
+	        boolean gotRorWflag = false;
+	        final int mlen = TclList.getLength(interp, mode);
+	        for (int i=0; i < mlen; i++) {
+	            TclObject marg = TclList.index(interp, mode, i);
+	            if (marg.toString().equals("RDONLY")) {
+	                modeFlags |= TclIO.RDONLY;
+	                gotRorWflag = true;
+	            } else if (marg.toString().equals("WRONLY")) {
+	                modeFlags |= TclIO.WRONLY;
+	                gotRorWflag = true;
+	            } else if (marg.toString().equals("RDWR")) {
+	                modeFlags |= TclIO.RDWR;
+	                gotRorWflag = true;
+	            } else if (marg.toString().equals("APPEND")) {
+	                modeFlags |= TclIO.APPEND;
+	            } else if (marg.toString().equals("CREAT")) {
+	                modeFlags |= TclIO.CREAT;
+	            } else if (marg.toString().equals("EXCL")) {
+	                modeFlags |= TclIO.EXCL;
+	            } else if (marg.toString().equals("TRUNC")) {
+	                modeFlags |= TclIO.TRUNC;
+	            } else {
+	                throw new TclException(interp,
+	                        "illegal access mode \"" + marg.toString() + "\"");
+	            }
+	        }
+	        if (!gotRorWflag) {
+	            throw new TclException(interp,
+	                    "must specify one of RDONLY, WRONLY, or RDWR");
+	        }
 	    }
 	}
 

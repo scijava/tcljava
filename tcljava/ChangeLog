@@ -1,3 +1,15 @@
+2003-03-06  Bruce Johnson  <bruce_johnson@merck.com>,
+            Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/jacl/tcl/lang/FileChannel.java (open):
+	Add logic to handle EXCL and TRUNC options.
+	* src/jacl/tcl/lang/OpenCmd.java (cmdProc):
+	Add proc essing of access flags, the
+	RDONLY, WRONLY, RDWR, APPEND, CREAT, EXCL,
+	and TRUNC options are now processed correctly.
+	* src/jacl/tcl/lang/TclIO.java: Add the
+	EXCL and TRUNC values.
+
 2003-03-05  Tom Poindexter  <tpoindex@nyx.net>,
             Mo DeJong  <mdejong@users.sourceforge.net>
 
