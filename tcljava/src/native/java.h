@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: java.h,v 1.1 1998/10/14 21:09:18 cvsadmin Exp $
+ * RCS: @(#) $Id: java.h,v 1.2 1999/08/31 00:46:37 redman Exp $
  */
 
 #ifndef _JAVA
@@ -33,6 +33,12 @@ typedef struct Tcl_SavedResult {
     int appendUsed;
     char resultSpace[TCL_RESULT_SIZE+1];
 } Tcl_SavedResult;
+
+TCLBLEND_EXTERN void Tcl_SaveResult(Tcl_Interp *interp,
+	  			    Tcl_SavedResult *statePtr);
+TCLBLEND_EXTERN void Tcl_RestoreResult(Tcl_Interp *interp,
+				       Tcl_SavedResult *statePtr);
+EXTERN void panic(char*);
 
 #endif
 
