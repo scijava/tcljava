@@ -8,7 +8,7 @@
 #  See the file "license.terms" for information on usage and 
 #  redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-#  Version: $Id: glue.tcl,v 1.2 1998/11/04 23:43:39 hylands Exp $
+#  RCS: @(#) $Id: glue.tcl,v 1.3 1998/11/04 23:46:46 hylands Exp $
 
 
 # Load the package necessary to run the new commands.
