@@ -1,5 +1,14 @@
 2003-01-20  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* Makefile.in: Split creation of JNI_example
+	shared lib into a compile an link step to
+	match the makefile.vc impl of same.
+	* win/makefile.vc: Add \ to output dir
+	name, hard code dll name. This fixes a
+	minor build problem with last checkin.
+
+2003-01-20  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* Makefile.in: Add jni_example target, this
 	provides a very simple test case to ensure
 	that the JVM can load a generated shared lib.

@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.22 2003/01/20 21:04:44 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.23 2003/01/20 21:38:11 mdejong Exp $
 
 SHELL = /bin/sh
 
@@ -392,10 +392,10 @@ custom_shell_native:
 $(SHLIB_PREFIX)JNI_example$(SHLIB_SUFFIX):
 	CLASSPATH=$(JAVA_CLASSPATH) \
 	$(JAVAC) $(JAVAC_D_FLAG) . $(TOP_DIR)/extras/JNI_example/JNI_example.java
+	$(CC) $(CC_OBJ_FLAG) $(CC_SWITCHES) \
+	    $(TOP_DIR)/extras/JNI_example/JNI_example.c
 	$(SHLIB_LD) -o $(SHLIB_PREFIX)JNI_example$(SHLIB_SUFFIX) \
-	    $(JAVA_INCLUDE_FLAGS) \
-	    $(TOP_DIR)/extras/JNI_example/JNI_example.c \
-	    $(JAVA_LIB_FLAGS)
+	    JNI_example.o $(JAVA_LIB_FLAGS)
 
 jni_example: $(SHLIB_PREFIX)JNI_example$(SHLIB_SUFFIX)
 	CLASSPATH=$(JAVA_CLASSPATH):. \

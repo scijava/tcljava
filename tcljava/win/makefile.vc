@@ -778,12 +778,12 @@ $(BUILD_DIR)\javaNative.h:
 JNI_example.dll:
 	set CLASSPATH=$(JAVA_CLASSPATH)
 	$(JAVAC) $(JAVAC_FLAGS) -d . $(TOP_DIR)/extras/JNI_example/JNI_example.java
-	$(cc32) $(CFLAGS) /Fo$(BUILD_DIR) \
+	$(cc32) $(CFLAGS) /Fo$(BUILD_DIR)\ \
 	    $(TOP_DIR)/extras/JNI_example/JNI_example.c
 	set LIB=$(TOOLS32)\lib
         $(link32) $(ldebug) $(dlllflags) /out:$@ \
 		$(JAVA_LIB) $(guilibsdll) JNI_example.obj
 
-jni_example: $(SHLIB_PREFIX)JNI_example$(SHLIB_SUFFIX)
+jni_example: JNI_example.dll
 	set CLASSPATH=$(JAVA_CLASSPATH);.
 	$(JAVA) $(JAVA_FLAGS) JNI_example
