@@ -2,7 +2,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run to configure the
 dnl	Makefile in this directory.
 AC_INIT(../src/tcljava/tcl/lang/InternalRep.java)
-# RCS: @(#) $Id: configure.in,v 1.17 1999/07/28 04:21:48 mo Exp $
+# RCS: @(#) $Id: configure.in,v 1.18 1999/08/03 05:11:50 mo Exp $
 
 
 #--------------------------------------------------------------------
@@ -218,7 +218,7 @@ else
         AC_MSG_ERROR([--with-jdk can not be used with the --with-$JAVA_NAME option.])
     fi
 
-    if test ! -d "$JDK_DIR"; then
+    if test "$JDK_DIR" != "yes" && test ! -d "$JDK_DIR"; then
         AC_MSG_ERROR([directory '$JDK_DIR' given to --with-jdk option does not exist.])
     fi
 
