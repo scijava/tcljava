@@ -1,6 +1,6 @@
 # This Makefile is used to the java loadable module.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.10 1998/11/07 02:15:57 hylands Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.11 1998/11/09 19:43:41 hylands Exp $
 
 # The version of TclJava, used in this Makefile
 VERSION = @TCLJAVA_VERSION@
@@ -1323,7 +1323,7 @@ tcljavaDist: $(SRCEX)
 
 # GNU tar reads this file and excludes anything that matches
 # We need to ship .jar and .class files
-$(SRCEX):
+$(SRCEX): Makefile.in
 	echo '*/#*#' > $@
 	echo '*/*~' >> $@
 	echo '*/*.a' >> $@
@@ -1337,11 +1337,18 @@ $(SRCEX):
 	echo '*/RCS' >> $@
 	echo '*/core' >> $@
 	echo '*/jsdatabase' >> $@
+	echo '*/unix/*.class' >> $@
+	echo '*/unix/*.jar' >> $@
+	echo '*/unix/*.so' >> $@
+	echo '*/unix/Makefile' >> $@
 	echo '*/unix/bean' >> $@
 	echo '*/unix/confdefs.h' >> $@
 	echo '*/unix/config.cache' >> $@
 	echo '*/unix/config.log' >> $@
+	echo '*/unix/config.status' >> $@
 	echo '*/unix/jacl' >> $@
+	echo '*/unix/jaclsh' >> $@
+	echo '*/unix/jwish' >> $@
 	echo '*/unix/tclblend' >> $@
 	echo '*/unix/tcljava' >> $@
 
