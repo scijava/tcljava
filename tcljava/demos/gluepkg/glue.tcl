@@ -41,10 +41,15 @@ proc Main { } {
     # the users know whats going on.
     
     puts "Creating the AWT threads...\n"
-    
+
     set jarFile [filedialog]
 
+    puts "Done with file dialog"
+
+    # This command will not return until items are selected
     set filesToExtract [SelectFilesToExtract $jarFile]
+
+    puts "Files to extract are \{$filesToExtract\}"
 
     set fileContent [ExtractFiles $jarFile $filesToExtract]
 
@@ -75,6 +80,7 @@ proc Main { } {
 #      listbox.
 
 proc SelectFilesToExtract { jarFile } {
+    global ExtractFiles ListBox
 
     if {$jarFile == {}} {
 	return {}
@@ -90,11 +96,66 @@ proc SelectFilesToExtract { jarFile } {
     # listbox command is another list of the 
     # selected items.
 
-    set selectedFiles [eval listbox $jarFileContent]
+    set ListBox [eval listbox $jarFileContent]
 
-    return $selectedFiles
+    # Bind button presses to the Tcl callback
+    java::bind [java::field $ListBox okButton] actionPerformed {
+	ButtonPressed [java::event]
+    }
+    
+    java::bind [java::field $ListBox cancelButton] actionPerformed {
+	ButtonPressed [java::event]
+    }
+
+    # Dont return from this method until the user
+    # presses one of the "Ok" or "Cancel" buttons.
+    vwait ExtractFiles
+
+    return $ExtractFiles
 }
 
+
+# ButtonPressed is called when the user presses one
+# of the buttons in the "select file to extract" dialog.
+
+proc ButtonPressed { ActionEvent } {
+    global ExtractFiles ListBox
+
+    puts "ButtonPressed \"[$ActionEvent getActionCommand]\""
+
+    switch [$ActionEvent getActionCommand] {
+	"Cancel" {
+	    # Destory the Java frame widget before setting the variable
+	    #[java::field $ListBox frm] dispose
+
+	    set ExtractFiles {}
+	}
+	"OK" {
+	    # Get the list of selected items. items
+	    # is null if no item selected
+
+	    set items [[java::field $ListBox lst] getSelectedItems]
+
+	    # If there were selected items returned,
+	    # append each one onto the list
+
+	    set result {}
+	    if {! [java::isnull $items]} {
+		for {set i 0} {$i < [$items length]} {incr i} {
+		    lappend result [$items get $i]
+		}
+	    }
+	    
+	    # Destory the Java frame widget before setting the variable
+	    [java::field $ListBox frm] dispose
+
+	    set ExtractFiles $result
+	}
+	default {
+	    error "unknown branch"
+	}
+    }
+}
 
 #  ExtractFiles --
 #  

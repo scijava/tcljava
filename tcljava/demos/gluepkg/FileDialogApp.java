@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FileDialogApp.java,v 1.2 1999/05/08 23:14:11 dejong Exp $
+ * RCS: @(#) $Id: FileDialogApp.java,v 1.3 1999/08/27 23:19:21 mo Exp $
  *
  */
 
@@ -23,7 +23,9 @@ import java.io.*;
 
 public class FileDialogApp {
 
-    // The Java AWT FileDialog. 
+    /**
+     * The Java AWT FileDialog. 
+     */
 
     private FileDialog fd;              
 
@@ -38,7 +40,6 @@ public class FileDialogApp {
 	Frame f = new Frame();
 	fd = new FileDialog(f, "Select a JAR File.");
 	fd.setFilenameFilter(new JarFilenameFilter());
-	fd.setFile("*.java");
 	fd.show();
     }
 
@@ -49,7 +50,7 @@ public class FileDialogApp {
      */
 
     public String getFile() {
-        return(fd.getFile());
+        return fd.getFile();
     }
 
     /**
@@ -59,7 +60,7 @@ public class FileDialogApp {
      */
 
     public String getDirectory() {
-        return(fd.getDirectory());
+        return fd.getDirectory();
     }
 
     /**
@@ -84,7 +85,7 @@ class JarFilenameFilter implements FilenameFilter {
     
     public boolean accept(File dir, String name) {
         System.out.println("Name: " + name);
-        if (name.endsWith(".jar")) {
+        if (name.endsWith(".jar") || name.endsWith(".zip")) {
 	    return(true);
 	} else {
 	    return(false);

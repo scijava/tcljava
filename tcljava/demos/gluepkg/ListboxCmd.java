@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ListboxCmd.java,v 1.2 1999/05/08 23:20:30 dejong Exp $
+ * RCS: @(#) $Id: ListboxCmd.java,v 1.3 1999/08/27 23:19:21 mo Exp $
  *
  */
 
@@ -18,8 +18,8 @@ import tcl.lang.*;
  *
  * The role of the GUI is to take a list of TclObjects and add them to an
  * AWT List component.  Two Buttons are added; OK and Cancel.  When either
- * of the buttons are pressed, the class variable 'items' is set to the 
- * selected item(s) or null if no items are selected or Cancel was pressed.
+ * of the buttons are pressed, an event is generated and handled un the
+ * callbacks defined in glue.tcl
  */
 
 public class ListboxCmd implements Command {
@@ -33,7 +33,7 @@ public class ListboxCmd implements Command {
      * If dir and file are valid the result is set to the valid absolute path.
      */
 
-    public void cmdProc(Interp interp, TclObject argv[])
+    public void cmdProc(Interp interp, TclObject[] objv)
             throws TclException {
 
 	TclObject  result = null;   // The Tcl result if this command
@@ -42,35 +42,20 @@ public class ListboxCmd implements Command {
 	String[]   args;            // Args passed to Listbox constructor
 	String[]   items;           // List of selected list items
 
-	if ((argv.length < 2)) {
-	    throw new TclNumArgsException(interp, 1, argv, "arg ?arg...?");
+	if ((objv.length < 2)) {
+	    throw new TclNumArgsException(interp, 1, objv, "arg ?arg...?");
 	}
 
-	args = new String[argv.length - 1];
-	for (int i = 1; i < argv.length; i++) {
-	    args[i-1] = argv[i].toString();
+	args = new String[objv.length - 1];
+	for (int i = 1; i < objv.length; i++) {
+	    args[i-1] = objv[i].toString();
 	}
 
 	listbox = new ListboxApp(args);
 
-	// Get the list of selected items.  items is null 
-	// if no item selected
+	// Return the ListboxApp object we just created
 
-	items = listbox.getSelectedItems();
-
-	// If there were selected items returned, append 
-	// each one onto the list
-	
-	if (items != null) {
-	    result = TclList.newInstance();
-	
-	    for (int i = 0; i < items.length; i++) {
-	        TclList.append(interp, result, 
-                        TclString.newInstance(items[i]));
-	    }
-	}
-	if (result != null) {
-	    interp.setResult(result);
-	}
+	interp.setResult(
+	    ReflectObject.newInstance(interp, ListboxApp.class, listbox));
     }
 }
