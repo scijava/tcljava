@@ -1,3 +1,10 @@
+2003-01-09  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/jacl/tcl/lang/Parser.java (parseCommand,
+	commandComplete):
+	The info complete subcommand now passes all
+	the Tcl regression tests. [Bug 223973]
+
 2003-01-08  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	Re-implement ref counting system for Jacl to

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Parser.java,v 1.12 2003/01/09 02:15:39 mdejong Exp $
+ * RCS: @(#) $Id: Parser.java,v 1.13 2003/01/09 23:07:21 mdejong Exp $
  */
 
 package tcl.lang;
@@ -155,7 +155,8 @@ parseCommand(
 	  while (true) {
 	    cur = script_array[script_index];
 	    if (script_index == parse.endIndex) {
-	      parse.incomplete = true;
+	      if (nested)
+	        parse.incomplete = true;
 	      parse.commentSize = script_index - parse.commentStart;
 	      break;
 	    } else if (cur == '\\') {
@@ -1628,7 +1629,6 @@ commandComplete(
 	if (src.index >= length) {
 	    break;
 	}
-	src.index++;
     } while (parse.result == TCL.OK);
 
     if (parse.incomplete) {
