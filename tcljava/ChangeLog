@@ -1,3 +1,9 @@
+2001-05-12  Christian Krone  <christian.krone@softwareag.com>
+
+	* src/jacl/tcl/lang/Interp.java (removeInterpResolver):
+	Use Vector.removeElement()instead of Vector.remove()
+	which is not supported by JDK 1.1.
+
 2001-05-05  Mo DeJong  <mdejong@redhat.com>
 
 	* tests/tcljava/JavaImportCmd.test: Fix incorrectly

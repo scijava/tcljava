@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.36 2001/05/05 22:38:13 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.37 2001/05/12 21:54:40 mdejong Exp $
  *
  */
 
@@ -3887,7 +3887,7 @@ removeInterpResolver(
     //  If we found the scheme, delete it.
 
     if (found) {
-	resolvers.remove(name);
+	resolvers.removeElement(name);
     }
 
     return found;
