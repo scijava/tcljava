@@ -1,3 +1,12 @@
+2000-07-31  Mo DeJong  <mdejong@redhat.com>
+
+	* src/jacl/tcl/lang/FconfigureCmd.java: Don't
+	raise error when -buffering option is given,
+	just silently do nothing for now.
+	* src/jacl/tcl/lang/ReadCmd.java: Fix bug
+	that caused channel open with r+ to not
+	work with the read command.
+
 2000-07-31  Christian Krone  <krischan@sql.de>
 
 	* src/jacl/tcl/lang/Channel.java: Add refCount.

@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FconfigureCmd.java,v 1.2 1999/05/09 00:10:53 dejong Exp $
+ * RCS: @(#) $Id: FconfigureCmd.java,v 1.3 2000/08/01 06:55:09 mo Exp $
  *
  */
 
@@ -70,7 +70,6 @@ class FconfigureCmd implements Command {
 	    int index = TclIndex.get(interp, argv[2], validCmds, 
                     "option", 0);
 
-
 	    switch (index) {
 	        case OPT_BLOCKING: {    // -blocking
 		    break;
@@ -117,7 +116,12 @@ class FconfigureCmd implements Command {
                                 "bad value for -buffering: must be " +
 				"one of full, line, or none");
 		    }
-		    break;
+		    //break;
+		    // FIXME : at this point we just silently accept
+		    // a [fconfigure $fd -buffering line] without
+		    // actually doing anything so that we can run our
+		    // tests file which uses fconfigure.
+		    return;
 		}
 	        case OPT_BUFFERSIZE: {    // -buffersize
 		    break;
