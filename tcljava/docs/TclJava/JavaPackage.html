@@ -1,0 +1,106 @@
+<HTML>
+<TITLE>
+Java Package
+</TITLE>
+
+<BODY>
+<HR>
+<H3>
+Java Package
+</H3>
+
+<HR>
+
+
+<DL>
+
+<H3>
+About:
+</H3>
+
+<DD>
+
+<b>package require java ?version?</b>
+
+<P>
+<B>package require java</B> loads the <B>java</B> package into the
+interpreter. The <B>java</B> package provides an interface for creating and
+manipulating Java objects via <I>object handles</I>. Object handles are
+references to Java objects in Tcl. Many of the commands in the java
+package take arguments and return values that are object handles.
+
+<P>
+
+Before you can use the <B>java</B> commands you must load the <B>java</B>
+package by executing a <B>package require java</B> command.
+
+<P>
+
+When the <B>java</B> package is loaded into Tcl Blend, Tcl will create
+a JVM in Tcl's process space.
+
+<P>
+
+When the <B>java</B> package is loaded into Jacl, each of the <b>java</b>
+commands will be created inside the Jacl interpreter.
+
+<P>
+
+
+When a JDK 1.2 JVM is created by Tcl Blend while initializing the
+<b>java</b> package, it reads the <B>tclblend_init</B>
+Tcl global variable, and passes its value along to the Java Virtual Machine.
+
+Example values include:
+<dl>
+<dt><B>-Djava.compiler=NONE </B>
+<dd> disable Just In Time Compiler
+
+<dt> <B>-Djava.library.path=c:&#92jdk&#92lib&#92tools.jar</B>
+<dd> set native library path on a Windows system
+
+<dt> <B>-verbose:jni</B>
+<dd>print debugging messages
+</dl>
+
+<P>
+
+For <B>-verbose</B>, the value should be a string with one or
+more comma separated names (i.e. <B>class,jni</B>).  In JDK1.2
+the standard names are:
+	 <B>class</B>, <B>gc</B>, <B>jni</B>
+To see what other options are available, run <B>java -help</B>
+from the command line.
+ <p>
+In addition <B>tclblend_init</B> can have the following values:
+<dl>
+<dt> <B>help</B>
+<dd> Print a help message and then stop JVM initialization.
+<dt> <B>debug</B>
+<dd> Print out debugging messages while start up.
+</dl>
+
+To use <B>tclblend_init</B>, set it before loading the <B>java</B>
+package:
+
+<code>
+<pre>
+set tclblend_init -verbose:jni
+package require java
+</pre>
+</code>
+
+Note that <B>tclblend_init</B> is only read if the Tcl Blend C shared
+library was compiled with JDK1.2.  
+
+<P>
+
+</DL>
+
+<PRE>
+<A HREF="../license.html">Copyright</A> &#169; 1997-1998 Sun Microsystems, Inc.
+</PRE>
+
+
+</BODY>
+</HTML>

@@ -1,0 +1,181 @@
+<HTML>
+<TITLE>
+Java Signatures
+</TITLE>
+
+<BODY>
+<HR>
+<H3>
+Java Signatures
+</H3>
+
+<HR>
+
+
+<DL>
+
+<H3>
+About:
+</H3>
+
+<DD>
+
+A <I>signature</I> is a list that specifies a class constructor,
+an instance method, or a static method, thereby distinguishing
+it from other constructors, instance methods, or static methods.
+
+<P>
+
+Two forms of signatures are accepted: simple and full. A <I>simple
+signature</I> is a single element list containing the name of the
+method or constructor. In most cases a simple signature is all that is
+needed as the Java method resolver is able to disambiguate overloaded
+Java methods based on the types of Java object arguments. There are
+some cases where the Java method resolver is unable to determine
+which Java method you intended to invoke so you will need to use
+the <I>full signature</I> for the method or constructor.
+The <I>full signature</I> is used to distinguish between two or
+more methods or constructors that have the same number of arguments.
+The <I>full signature</I> of a method is a Tcl list containing the
+method name followed by the name of the Java object type for each
+parameter of the method.
+
+
+<P>
+
+</DL>
+
+
+<DL>
+
+<H3>
+Examples:
+</H3>
+
+<DD>
+
+This command will create a Java String object and store a reference to
+it in a Tcl variable.
+
+<P>
+
+<code>
+set jstr [java::new String "I am a Java string"]
+</code>
+
+<P>
+
+There are a couple of things that you should note about this example.
+First, the constructor signature used here is a simple signature
+meaning a list containing a single element {String}. The system
+will automatically check to see if a class name that containes
+no dots is really in the <code>java.lang</code> package. In this
+case the class name <code>String</code> is found to exist in
+the <code>java.lang</code> package so an instance of the class
+<code>java.lang.String</code> will be allocated. The second thing
+you should notice about this example is that the Java method
+resolver is being used to disambiguate between overloaded
+constructors in the <code>String</code> class.
+
+<P>
+
+Here is a list of the <code>java.lang.String</code> constructors
+that take a single argument.
+
+<P>
+
+
+<code>
+<pre>
+String(byte[])
+String(char[])
+String(String)
+String(StringBuffer)
+</pre>
+</code>
+
+<P>
+
+By default a Tcl string will be converted to a <code>java.lang.String</code>
+so in this case the method resolver picks the <code>String(String)</code>
+constructor.
+
+<P>
+
+One could also invoke the constructor using a full signature.
+
+<P>
+
+<code>
+set jstr [java::new {String String} "I am a Java string"]
+</code>
+
+<P>
+
+In this case the Tcl string is converted to a <code>java.lang.String</code>
+and the <code>String(String)</code> constructor is invoked. The only
+difference is that the Java method resolver is not used when a full
+signature is provided.
+
+<P>
+
+Lets looks at another more compicated example. Assume that we are using
+a Java class which is defined like this.
+
+<P>
+
+<code>
+<pre>
+import java.util.*;
+public class A {
+  public String foo(Hashtable h) {return "H";}
+  public String foo(Vector v) {return "V";}
+}
+</pre>
+</code>
+
+<P>
+
+One could use a full signature to invoke the overloaded <code>foo</code>
+method, but it is easier to give a simple signature and let the method
+resolver do the work for us.
+
+<P>
+
+<code>
+<pre>
+% set hash [java::new java.util.Hashtable]
+% set A [java::new A]
+% $A foo $hash
+H
+</pre>
+</code>
+
+<P>
+
+There is also the possibility that the method resolver will not be able
+to choose a method to invoke based on the type(s) of the argument(s).
+If this occures, the method resolver will give up and return an error
+message indicating which methods could not be disambiguated.
+
+<P>
+
+
+<code>
+% $A foo "a string"<br>
+ambiguous method signature, could not choose between {foo java.util.Hashtable} {foo java.util.Vector}
+</code>
+
+</DL>
+
+<P>
+
+</DL>
+
+<PRE>
+<A HREF="../license.html">Copyright</A> &#169; 1997-1998 Sun Microsystems, Inc.
+</PRE>
+
+
+</BODY>
+</HTML>

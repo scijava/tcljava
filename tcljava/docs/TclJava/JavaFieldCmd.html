@@ -1,0 +1,49 @@
+<HTML>
+<TITLE>
+The java::field Command
+</TITLE>
+
+<BODY>
+<HR>
+
+<H3>
+The java::field Command
+</H3>
+
+<HR>
+
+<DL>
+
+<H3>
+Usage:
+</H3>
+
+<DD><B>java::field</B> ?<B>-noconvert</B>? <I>objOrClass field</I> ?<I>value field value ...</I>?
+
+<P>
+
+The <B>java::field</B> command is used to manipulate public fields from
+Tcl. The <I>objOrClass</I> argument specifies either a fully qualified
+name of the declaring class of the field to access, or an object
+handle. The <I>field</I> argument specifies which field to
+manipulate.  If an additional <I>value</I> parameter exists,
+then the field will be set to <I>value</I>, otherwise
+the current value of the field is returned.  Multiple fields may be
+set via additional parameters by alternating field signatures and
+values. A full field signature is is required to specify shadowed
+fields of superclasses.
+
+<P>
+
+The <A HREF="JavaConversions.html">Conversions</a> section describes the effect
+of the optional <B>-noconvert</B> flag on the result.
+
+</DL>
+
+<PRE>
+<A HREF="../license.html">Copyright</A> &#169; 1997-1998 Sun Microsystems, Inc.
+</PRE>
+
+
+</BODY>
+</HTML>
