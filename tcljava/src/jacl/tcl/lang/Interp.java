@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.19 1999/08/05 03:37:15 mo Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.20 1999/08/09 08:52:36 mo Exp $
  *
  */
 
@@ -211,7 +211,7 @@ private TclObject m_result;
 
 private TclObject m_nullResult;
 
-// Used ONLY by the PackageCmd.
+// Used ONLY by PackageCmd.
 
 Hashtable packageTable;
 String packageUnknown;
@@ -226,6 +226,8 @@ TclToken[]      parserTokens;
 int             parserTokensUsed;
 
 
+// Used ONLY by JavaImportCmd
+Hashtable[] importTable = {new Hashtable(), new Hashtable()};
 
 
 
@@ -969,7 +971,8 @@ throws
  *	Get the value of a variable.
  *
  * Results:
- *	Returns the value of the variable.
+ *	Returns the value of the variable. If the variable is not defined
+ *      a TclException will be raised.
  *
  * Side effects:
  *	May trigger traces.
@@ -997,7 +1000,8 @@ throws
  *	Get the value of a variable.
  *
  * Results:
- *	Returns the value of the variable.
+ *	Returns the value of the variable. If the variable is not defined
+ *      a TclException will be raised.
  *
  * Side effects:
  *	May trigger traces.

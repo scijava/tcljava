@@ -2,7 +2,7 @@ empty.jar is used to work around a problem that occurs when compiling
 Jacl or Tcl Blend that results in extra classes being included in the
 tcljava.jar file.
 
-For example, when we are building the classes below
+When building, the classes below
  tcl/lang/CObject.class
  tcl/lang/Interp.class
  tcl/lang/Notifier.class

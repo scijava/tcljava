@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaInvoke.java,v 1.8 1999/05/15 23:48:01 dejong Exp $
+ * RCS: @(#) $Id: JavaInvoke.java,v 1.9 1999/08/09 08:52:36 mo Exp $
  *
  */
 
@@ -627,15 +627,26 @@ throws
 	    try {
 		result = tclClassLoader.loadClass(prefix_buf + clsName + suffix_buf);
 	    } catch (ClassNotFoundException e) {
-		// The code below should really be in a java::import command.
-		// Since we dont have one yet, do a simple check for the class
-		// in java.lang.  If the system class loader cannot resolve the
-		// class, than a SecurityException is thrown, catch this and 
+		// If the class loader can not find the class then check with
+		// the "import" feature to see if the given clsName maps to
+		// a fully qualified class name.
+
+		String fullyqualified = JavaImportCmd.getImport(interp, clsName);
+
+		// If we do not find a fully qualified name in the import table
+		// then try to fully qualify the class with the java.lang prefix 
+		
+		if (fullyqualified == null) {
+		    fullyqualified = "java.lang." + clsName;
+		}
+
+		// If the system class loader cannot resolve the class, than a
+		// SecurityException is thrown, catch this and 
 		// throw the standard error.
-	    
+
 		try {
-		    result = tclClassLoader.loadClass(prefix_buf + "java.lang." +
-			    clsName + suffix_buf);
+		    result = tclClassLoader.loadClass(prefix_buf +
+			        fullyqualified +  suffix_buf);
 		} catch (SecurityException e2) {
 		    result = null;
 		}

@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.7 1999/05/17 03:52:36 dejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.8 1999/08/09 08:52:36 mo Exp $
  *
  */
 
@@ -73,6 +73,10 @@ private Notifier notifier;
 // when this interpreter is deleted.
 
 Hashtable assocDataTab;
+
+// Used ONLY by JavaImportCmd
+Hashtable[] importTable = {new Hashtable(), new Hashtable()};
+
 
 
 /*

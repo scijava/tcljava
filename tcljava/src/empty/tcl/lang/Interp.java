@@ -11,9 +11,14 @@ public class Interp {
 
 public Interp() {}
 
+// Used ONLY by ReflectObject
 Hashtable reflectObjTable = null;
 long reflectObjCount = 0;
 Hashtable reflectIDTable = null;
+
+// Used ONLY by JavaImportCmd
+Hashtable[] importTable = null;
+
 
 public void dispose() {}
 
