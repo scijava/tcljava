@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TraceCmd.java,v 1.1 1998/10/14 21:09:19 cvsadmin Exp $
+ * RCS: @(#) $Id: TraceCmd.java,v 1.2 1999/05/29 22:37:17 dejong Exp $
  *
  */
 
@@ -17,7 +17,7 @@ package tcl.lang;
 
 import java.util.*;
 
-/*
+/**
  * The TraceCmd class implements the Command interface for specifying
  * a new Tcl command. The method cmdProc implements the built-in Tcl
  * command "trace" which is used to manupilate variable traces.  See
@@ -26,26 +26,22 @@ import java.util.*;
 
 class TraceCmd implements Command {
 
-/*
- * Valid sub-commands for the trace command.
- */
+// Valid sub-commands for the trace command.
 
-static final private String validCmds[] = {
+static final private String[] validCmds = {
     "variable",
     "vdelete",
     "vinfo",
 };
 
-static final private int OPT_VARIABLE 	= 0;
+static final private int OPT_VARIABLE   = 0;
 static final private int OPT_VDELETE   	= 1;
-static final private int OPT_VINFO 		= 2;
+static final private int OPT_VINFO      = 2;
 
-/*
- * An array for quickly generating the Tcl strings corresponding to
- * the TCL.TRACE_READS, TCL.TRACE_WRITES and TCL.TRACE_UNSETS flags.
- */
+// An array for quickly generating the Tcl strings corresponding to
+// the TCL.TRACE_READS, TCL.TRACE_WRITES and TCL.TRACE_UNSETS flags.
 
-private static TclObject opStr[] = initOptStr();
+private static TclObject[] opStr = initOptStr();
 
 /*
  *----------------------------------------------------------------------
@@ -67,7 +63,7 @@ private static TclObject opStr[] = initOptStr();
 private static TclObject[]
 initOptStr()
 {
-    TclObject strings[] = new TclObject[8];
+    TclObject[] strings = new TclObject[8];
     strings[0] = TclString.newInstance("error");
     strings[1] = TclString.newInstance("r");
     strings[2] = TclString.newInstance("w");
@@ -103,10 +99,10 @@ initOptStr()
  */
 
 public void cmdProc(
-    Interp interp,	/* Current interpreter. */
-    TclObject argv[])	/* Argument list. */
+    Interp interp,	// Current interpreter.
+    TclObject[] argv)	// Argument list.
 throws 
-    TclException 	/* A standard Tcl exception. */
+    TclException 	// A standard Tcl exception.
 {
     int len;
 
@@ -160,17 +156,15 @@ throws
 	    CmdTraceProc trace = new CmdTraceProc(argv[4].toString(), flags);
 	    interp.varFrame.traceVar(argv[2], trace, flags);
 	} else {
-	    /*
-	     * Search through all of our traces on this variable to
-	     * see if there's one with the given command.  If so, then
-	     * delete the first one that matches.
-	     */
+	    // Search through all of our traces on this variable to
+	    // see if there's one with the given command.  If so, then
+	    // delete the first one that matches.
 		
 	    Vector traces = interp.varFrame.getTraces(argv[2], 0);
 	    if (traces != null) {
 		len = traces.size();
 		for (int i = 0; i < len; i++) {
-		    TraceRecord rec = (TraceRecord)traces.elementAt(i);
+		    TraceRecord rec = (TraceRecord) traces.elementAt(i);
 
 		    if (rec.trace instanceof CmdTraceProc) {
 			CmdTraceProc proc = (CmdTraceProc)(rec.trace);
@@ -200,7 +194,7 @@ throws
 
 	    try {
 		for (int i = 0; i < len; i++) {
-		    TraceRecord rec = (TraceRecord)traces.elementAt(i);
+		    TraceRecord rec = (TraceRecord) traces.elementAt(i);
 
 		    if (rec.trace instanceof CmdTraceProc) {
 			CmdTraceProc proc = (CmdTraceProc)(rec.trace);
@@ -227,16 +221,12 @@ throws
 
 } // TraceCmd
 
-/*
- * The CmdTraceProc object holds the information for a specific
- * trace.
- */
+// The CmdTraceProc object holds the information for a specific
+// trace.
 class CmdTraceProc implements VarTrace {
 
-/*
- * The command holds the Tcl script that will execute. The flags
- * hold the mode flags that define what conditions to fire under.
- */
+// The command holds the Tcl script that will execute. The flags
+// hold the mode flags that define what conditions to fire under.
 
 String command;
 int flags;
@@ -316,12 +306,10 @@ throws
 	    throw new TclRuntimeError("unexpected TclException: " + e);
 	}
 
-	/*
-	 * Execute the command.
-	 */
+	// Execute the command.
 
 	interp.eval(sbuf.toString(), 0);
     }
 }
 
-} //CmdTraceProc
+} // CmdTraceProc
