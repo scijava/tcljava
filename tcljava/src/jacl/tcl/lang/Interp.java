@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.35 2000/08/20 06:08:42 mo Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.36 2001/05/05 22:38:13 mdejong Exp $
  *
  */
 
@@ -167,6 +167,12 @@ boolean isSafe;
 
 int termOffset;
 
+// List of name resolution schemes added to this interpreter.
+// Schemes are added/removed by calling addInterpResolver and
+// removeInterpResolver.
+
+Vector resolvers;
+
 // The expression parser for this interp.
 
 Expression expr;
@@ -275,7 +281,7 @@ static final int INVOKE_NO_TRACEBACK = 4;
 /*
  *----------------------------------------------------------------------
  *
- * Interp --
+ * Tcl_CreateInterp -> Interp
  *	Initializes an interpreter object.
  *
  * Side effects:
@@ -316,7 +322,7 @@ Interp()
     packageUnknown   = null;
     cmdCount         = 0;
     termOffset       = 0;
-    //resolver       = null;
+    resolvers        = null;
     evalFlags        = 0;
     scriptFile       = null;
     flags            = 0;
@@ -547,6 +553,7 @@ eventuallyDispose()
 
     frame = null;
     varFrame = null;    
+    resolvers = null;
 
     resetResult();
 }
@@ -3720,6 +3727,170 @@ void
 allowExceptions()
 {
     evalFlags |= Parser.TCL_ALLOW_EXCEPTIONS;
+}
+
+
+class ResolverScheme {
+    String name;		// Name identifying this scheme.
+    Resolver resolver;
+
+    ResolverScheme(String name, Resolver resolver) {
+	this.name = name;
+	this.resolver = resolver;
+    }
+}
+  
+
+/**
+ *----------------------------------------------------------------------
+ *
+ * Tcl_AddInterpResolvers -> addInterpResolver
+ *
+ *	Adds a set of command/variable resolution procedures to an
+ *	interpreter.  These procedures are consulted when commands
+ *	are resolved in NamespaceCmd.findCommand, and when variables are
+ *	resolved in NamespaceCmd.findNamespaceVar and thus Var.lookupVar.
+ *	Each namespace may also have its own resolution object
+ *	which take precedence over those for the interpreter.
+ *
+ *	When a name is resolved, it is handled as follows.  First,
+ *	the name is passed to the resolution objects for the
+ *	namespace.  If not resolved, the name is passed to each of
+ *	the resolution procedures added to the interpreter.  Finally,
+ *	if still not resolved, the name is handled using the default
+ *	Tcl rules for name resolution.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The list of resolvers of the given interpreter is modified.
+ *
+ *----------------------------------------------------------------------
+ */
+
+public void
+addInterpResolver(
+    String name,		// Name of this resolution scheme.
+    Resolver resolver)		// Object to resolve commands/variables.
+{
+    Enumeration enum;
+    ResolverScheme res;
+
+    //  Look for an existing scheme with the given name.
+    //  If found, then replace its rules.
+
+    if (resolvers != null) {
+	for (enum = resolvers.elements(); enum.hasMoreElements();) {
+	    res = (ResolverScheme) enum.nextElement();
+	    if (name.equals(res.name)) {
+		res.resolver = resolver;
+		return;
+	    }
+        }
+    }
+
+    if (resolvers == null) {
+	resolvers = new Vector();
+    }
+
+    //  Otherwise, this is a new scheme.  Add it to the FRONT
+    //  of the linked list, so that it overrides existing schemes.
+
+    res = new ResolverScheme(name, resolver);
+
+    resolvers.insertElementAt(res, 0);
+}
+
+/**
+ *----------------------------------------------------------------------
+ *
+ * Tcl_GetInterpResolvers -> getInterpResolver
+ *
+ *	Looks for a set of command/variable resolution procedures with
+ *	the given name in an interpreter.  These procedures are
+ *	registered by calling addInterpResolver.
+ *
+ * Results:
+ *	If the name is recognized, this procedure returns the object
+ *	implementing the name resolution procedures.
+ *	If the name is not recognized, this procedure returns null.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+public Resolver 
+getInterpResolver(
+    String name)		// Look for a scheme with this name.
+{
+    ResolverScheme res;
+    Enumeration enum;
+
+    //  Look for an existing scheme with the given name.  If found,
+    //  then return pointers to its procedures.
+
+    if (resolvers != null) {
+	for (enum = resolvers.elements(); enum.hasMoreElements();) {
+	    res = (ResolverScheme) enum.nextElement();
+	    if (name.equals(res.name)) {
+		return res.resolver;
+	    }
+	}
+    }
+
+    return null;
+}
+
+/**
+ *----------------------------------------------------------------------
+ *
+ * Tcl_RemoveInterpResolvers -> removeInterpResolver
+ *
+ *	Removes a set of command/variable resolution procedures
+ *	previously added by addInterpResolver.  The next time
+ *	a command/variable name is resolved, these procedures
+ *	won't be consulted.
+ *
+ * Results:
+ *	Returns true if the name was recognized and the
+ *	resolution scheme was deleted.  Returns false otherwise.
+ *
+ * Side effects:
+ *	The list of resolvers of the given interpreter may be modified.
+ *
+ *----------------------------------------------------------------------
+ */
+
+boolean
+removeInterpResolver(
+    String name)		// Name of the scheme to be removed.
+{
+    ResolverScheme res;
+    Enumeration enum;
+    boolean found = false;
+
+    //  Look for an existing scheme with the given name.
+
+    if (resolvers != null) {
+	enum = resolvers.elements();
+	while (!found && enum.hasMoreElements()) {
+	    res = (ResolverScheme) enum.nextElement();
+	    if (name.equals(res.name)) {
+		found = true;
+	    }
+        }
+    }
+
+    //  If we found the scheme, delete it.
+
+    if (found) {
+	resolvers.remove(name);
+    }
+
+    return found;
 }
 
 } // end Interp

@@ -15,7 +15,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: NamespaceCmd.java,v 1.11 2000/10/29 06:00:41 mdejong Exp $
+ * RCS: @(#) $Id: NamespaceCmd.java,v 1.12 2001/05/05 22:38:13 mdejong Exp $
  */
 
 package tcl.lang;
@@ -420,10 +420,7 @@ public class NamespaceCmd implements InternalRep, Command {
 	//ns.cmdRefEpoch        = 0;
 	//ns.resolverEpoch      = 0;
 
-	// FIXME : if cmdResProc or varResProc is used we need to uncomment these
-	//ns.cmdResProc         = null;
-	//ns.varResProc         = null;
-	//ns.compiledVarResProc = null;
+	ns.resolver = null;
 	
 	if (parent != null) {
 	    parent.childTable.put(simpleName, ns);
@@ -1751,7 +1748,7 @@ public class NamespaceCmd implements InternalRep, Command {
 	)
 	throws TclException
     {
-	//ResolverScheme res; // not current implemented in Jacl
+	Interp.ResolverScheme res;
 	Namespace cxtNs;
 	Namespace[] ns = new Namespace[2];
 	String simpleName;
@@ -1774,37 +1771,32 @@ public class NamespaceCmd implements InternalRep, Command {
 	else {
 	    cxtNs = getCurrentNamespace(interp);
 	}
-	
-	// FIXME : Jacl do not currently support Namespace.cmdResProc or Interp.resolver.
-	// If this changes in the future this code will need to be revisited
-	/*
-	if (cxtNsPtr->cmdResProc != NULL || interp->resolverPtr != NULL) {
-	    resPtr = iPtr->resolverPtr;
-	    
-	    if (cxtNsPtr->cmdResProc) {
-		result = (*cxtNsPtr->cmdResProc)(interp, name,
-						 (Tcl_Namespace *) cxtNsPtr, flags, &cmd);
-	    } else {
-		result = TCL_CONTINUE;
-	    }
-	    
-	    while (result == TCL_CONTINUE && resPtr) {
-		if (resPtr->cmdResProc) {
-		    result = (*resPtr->cmdResProc)(interp, name,
-						   (Tcl_Namespace *) cxtNsPtr, flags, &cmd);
+
+	if (cxtNs.resolver != null || interp.resolvers != null) {
+	    try {
+		if (cxtNs.resolver != null) {
+		    cmd = cxtNs.resolver.resolveCmd(interp,
+			      name, cxtNs, flags);
+		} else {
+		    cmd = null;
 		}
-		resPtr = resPtr->nextPtr;
-	    }
-	    
-	    if (result == TCL_OK) {
-		return cmd;
-	    }
-	    else if (result != TCL_CONTINUE) {
-		return (Tcl_Command) NULL;
+
+		if (cmd == null && interp.resolvers != null) {
+		    Enumeration enum = interp.resolvers.elements();
+		    while (cmd == null && enum.hasMoreElements()) {
+			res = (Interp.ResolverScheme) enum.nextElement();
+			cmd = res.resolver.resolveCmd(interp,
+				  name, cxtNs, flags);
+		    }
+		}
+
+		if (cmd != null) {
+		    return cmd;
+		}
+	    } catch (TclException e) {
+		return null;
 	    }
 	}
-	*/
-
 
 	// Java does not support passing an address so we pass
 	// an array of size 1 and then assign arr[0] to the value
@@ -1892,7 +1884,7 @@ public class NamespaceCmd implements InternalRep, Command {
 	)
 	throws TclException
     {
-	//ResolverScheme *resPtr;
+	Interp.ResolverScheme res;
 	Namespace cxtNs;
 	Namespace[] ns = new Namespace[2];
 	String simpleName;
@@ -1915,36 +1907,31 @@ public class NamespaceCmd implements InternalRep, Command {
 	    cxtNs = getCurrentNamespace(interp);
 	}
 
-	// FIXME : Jacl do not currently support Namespace.cmdResProc or Interp.resolver.
-	// If this changes in the future this code will need to be revisited
-	/*
-	if (cxtNsPtr->varResProc != NULL || iPtr->resolverPtr != NULL) {
-	    resPtr = iPtr->resolverPtr;
-	    
-	    if (cxtNsPtr->varResProc) {
-		result = (*cxtNsPtr->varResProc)(interp, name,
-						 (Tcl_Namespace *) cxtNsPtr, flags, &var);
-	    } else {
-		result = TCL_CONTINUE;
-	    }
-	    
-	    while (result == TCL_CONTINUE && resPtr) {
-		if (resPtr->varResProc) {
-		    result = (*resPtr->varResProc)(interp, name,
-						   (Tcl_Namespace *) cxtNsPtr, flags, &var);
+	if (cxtNs.resolver != null || interp.resolvers != null) {
+	    try {
+		if (cxtNs.resolver != null) {
+		    var = cxtNs.resolver.resolveVar(interp,
+			      name, cxtNs, flags);
+		} else {
+		    var = null;
 		}
-		resPtr = resPtr->nextPtr;
-	    }
-	    
-	    if (result == TCL_OK) {
-		return var;
-	    }
-	    else if (result != TCL_CONTINUE) {
-		return (Tcl_Var) NULL;
+
+		if (var == null && interp.resolvers != null) {
+		    Enumeration enum = interp.resolvers.elements();
+		    while (var == null && enum.hasMoreElements()) {
+			res = (Interp.ResolverScheme) enum.nextElement();
+			var = res.resolver.resolveVar(interp,
+				  name, cxtNs, flags);
+		    }
+		}
+
+		if (var != null) {
+		    return var;
+		}
+	    } catch (TclException e) {
+		return null;
 	    }
 	}
-	*/
-
 
 	// Java does not support passing an address so we pass
 	// an array of size 1 and then assign arr[0] to the value
@@ -2064,6 +2051,90 @@ public class NamespaceCmd implements InternalRep, Command {
 	return ns;
     }
 
+    /**
+     *----------------------------------------------------------------------
+     *
+     * Tcl_SetNamespaceResolvers -> setNamespaceResolver
+     *
+     *	Sets the command/variable resolution object for a namespace,
+     *	thereby changing the way that command/variable names are
+     *	interpreted.  This allows extension writers to support different
+     *	name resolution schemes, such as those for object-oriented
+     *	packages.
+     *
+     *	Command resolution is handled by the following method:
+     *
+     *  resolveCmd (Interp interp, String name,
+     *      NamespaceCmd.Namespace context, int flags)
+     *  throws TclException;
+     *          
+     *	Whenever a command is executed or NamespaceCmd.findCommand is invoked
+     *	within the namespace, this method is called to resolve the
+     *	command name.  If this method is able to resolve the name,
+     *	it should return the corresponding WrappedCommand.  Otherwise,
+     *	the procedure can return null, and the command will
+     *	be treated under the usual name resolution rules.  Or, it can
+     *	throw a TclException, and the command will be considered invalid.
+     *
+     *	Variable resolution is handled by the following method:
+     *
+     *  resolveVar (Interp interp, String name,
+     *      NamespaceCmd.Namespace context, int flags)
+     *  throws TclException;
+     *
+     *  If this method is able to resolve the name, it should return
+     *  the variable as Var object.  The method may also
+     *	return null, and the variable will be treated under the usual
+     *  name resolution rules.  Or, it can throw a TclException,
+     *	and the variable will be considered invalid.
+     *
+     * Results:
+     *	See above.
+     *
+     * Side effects:
+     *	None.
+     *
+     *----------------------------------------------------------------------
+     */
+
+    static void
+    setNamespaceResolver(
+	Namespace namespace,	// Namespace whose resolution rules
+				// are being modified.
+	Resolver resolver)	// command and variable resolution
+    {
+	//  Plug in the new command resolver.
+
+	namespace.resolver = resolver;
+    }
+  
+    /**
+     *----------------------------------------------------------------------
+     *
+     * Tcl_GetNamespaceResolvers -> getNamespaceResolver
+     *
+     *	Returns the current command/variable resolution object
+     *	for a namespace.  By default, these objects are null.
+     *	New objects can be installed by calling setNamespaceResolver,
+     *  to provide new name resolution rules.
+     *
+     * Results:
+     *	Returns the esolver object assigned to this namespace.
+     *	Returns null otherwise.
+     *
+     * Side effects:
+     *	None.
+     *
+     *----------------------------------------------------------------------
+     */
+
+    static Resolver
+    getNamespaceResolver(
+	Namespace namespace)	// Namespace whose resolution rules
+				// are being queried.
+    {
+	return namespace.resolver;
+    }
 
     /*
      *----------------------------------------------------------------------
@@ -3497,33 +3568,13 @@ public class NamespaceCmd implements InternalRep, Command {
 				 // space is currently allocated.
 
 	
-	// FIXME : do we need these for the Namespace implementation?
-
-	/*
-
-	Tcl_ResolveCmdProc *cmdResProc;
-	                         // If non-null, this procedure overrides
-	                         // the usual command resolution mechanism
-				 // in Tcl.  This procedure is invoked
-				 // within Tcl_FindCommand to resolve all
-				 // command references within the namespace.
-
-        Tcl_ResolveVarProc *varResProc;
-				 // If non-null, this procedure overrides
-				 // the usual variable resolution mechanism
-				 // in Tcl.  This procedure is invoked
-				 // within Tcl_FindNamespac Var to resolve all
-				 // variable references within the namespace
-				 // at runtime.
-
-	Tcl_ResolveCompiledVarProc *compiledVarResProc;
-				 // If non-null, this procedure overrides
-				 // the usual variable resolution mechanism
-				 // in Tcl.  This procedure is invoked
-				 // within LookupCompiledLocal to resolve
-				 // variable references within the namespace
-				 // at compile time.
-	*/
+	Resolver resolver;
+	                         // If non-null, this object overrides the
+	                         // usual command and variable resolution
+				 // mechanism in Tcl. This procedure is invoked
+				 // within findCommand and findNamespaceVar to
+				 // resolve all command and variable references
+				 // within the namespace.
 
 	// When printing out a Namespace use the full namespace name string
 

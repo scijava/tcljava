@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Var.java,v 1.9 1999/08/15 19:38:42 mo Exp $
+ * RCS: @(#) $Id: Var.java,v 1.10 2001/05/05 22:38:13 mdejong Exp $
  *
  */
 package tcl.lang;
@@ -400,7 +400,7 @@ class Var {
 				// are -1. These are needed to restore
 				// the parens after parsing the name.
 	NamespaceCmd.Namespace varNs, cxtNs;
-	//ResolverScheme res;
+	Interp.ResolverScheme res;
 	int p;
 	int i, result;
 
@@ -450,34 +450,27 @@ class Var {
 	    cxtNs = interp.varFrame.ns;
 	}
 
-	// FIXME : skipped namespace resolver stuff
-	/*
-	if (cxtNsPtr->varResProc != NULL || iPtr->resolverPtr != NULL) {
-	    resPtr = iPtr->resolverPtr;
-
-	    if (cxtNsPtr->varResProc) {
-		result = (*cxtNsPtr->varResProc)(interp, part1,
-		    (Tcl_Namespace *) cxtNsPtr, flags, &var);
-	    } else {
-		result = TCL_CONTINUE;
-	    }
-
-	    while (result == TCL_CONTINUE && resPtr) {
-		if (resPtr->varResProc) {
-		    result = (*resPtr->varResProc)(interp, part1,
-			(Tcl_Namespace *) cxtNsPtr, flags, &var);
+	if (cxtNs.resolver != null || interp.resolvers != null) {
+	    try {
+		if (cxtNs.resolver != null) {
+		    var = cxtNs.resolver.resolveVar(interp,
+			      part1, cxtNs, flags);
+		} else {
+		    var = null;
 		}
-		resPtr = resPtr->nextPtr;
+
+		if (var == null && interp.resolvers != null) {
+		    Enumeration enum = interp.resolvers.elements();
+		    while (var == null && enum.hasMoreElements()) {
+			res = (Interp.ResolverScheme) enum.nextElement();
+			var = res.resolver.resolveVar(interp,
+				  part1, cxtNs, flags);
+		    }
+		}
+	    } catch (TclException e) {
+		var = null;
 	    }
-	    
-	    if (result == TCL_OK) {
-		varPtr = (Var *) var;
-		goto lookupVarPart2;
-	    } else if (result != TCL_CONTINUE) {
-		return (Var *) NULL;
-	    }
-	}
-	*/
+ 	}
 
 	// Look up part1. Look it up as either a namespace variable or as a
 	// local variable in a procedure call frame (varFrame).

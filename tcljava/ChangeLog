@@ -1,3 +1,18 @@
+2001-05-05  Christian Krone  <christian.krone@softwareag.com>
+
+	* src/jacl/tcl/lang/Interp.java (resolvers,
+	Interp, eventuallyDispose, ResolverScheme,
+	addInterpResolver, getInterpResolver,
+	removeInterpResolver):
+	* src/jacl/tcl/lang/NamespaceCmd.java (createNamespace,
+	findCommand, findNamespaceVar, setNamespaceResolver,
+	getNamespaceResolver, Namespace):
+	* src/jacl/tcl/lang/Resolver.java: New file.
+	* src/jacl/tcl/lang/Var.java (lookupVar):
+	* src/jacl/tcl/lang/library/init.tcl (unknown):
+	Add interp and namespace variable and command
+	resolver implementation.
+
 2001-02-07  Christian Sorensen  <cs@maerskdata.dk>
 
 	* src/jacl/tcl/lang/FileCmd.java (getMtime):
