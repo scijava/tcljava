@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Notifier.java,v 1.4 2000/10/29 06:00:41 mdejong Exp $
+ * RCS: @(#) $Id: Notifier.java,v 1.5 2003/03/10 02:18:43 mdejong Exp $
  *
  */
 
@@ -351,7 +351,7 @@ deleteEvents(
  *----------------------------------------------------------------------
  */
 
-synchronized int
+int
 serviceEvent(
     int flags)			// Indicates what events should be processed.
 				// May be any combination of TCL.WINDOW_EVENTS
@@ -371,7 +371,8 @@ serviceEvent(
     // Loop through all the events in the queue until we find one
     // that can actually be handled.
 
-    for (evt = firstEvent; evt != null; evt = evt.next) {
+    evt = null;
+    while ((evt = getAvailableEvent(evt)) != null) {
 	// Call the handler for the event.  If it actually handles the
 	// event then free the storage for the event.  There are two
 	// tricky things here, both stemming from the fact that the event
@@ -396,6 +397,7 @@ serviceEvent(
 		    evt.notifyAll();
 		}
 	    }
+	    synchronized (this) {
 	    if (firstEvent == evt) {
 		firstEvent = evt.next;
 		if (evt.next == null) {
@@ -416,6 +418,7 @@ serviceEvent(
 		    markerEvent = prev;
 		}
 	    }
+	    } // synchronized (this)
 	    return 1;
 	} else {
 	    // The event wasn't actually handled, so we have to
@@ -431,6 +434,43 @@ serviceEvent(
 	continue;
     }
     return 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * getAvailableEvent --
+ *
+ *	Search through the internal event list to find the first event
+ *	that is has not being processed AND the event is not equal to the given
+ *	'skipEvent'.  This method is concurrent safe.
+ *	
+ * Results:
+ *	The return value is a pointer to the first found event that can be
+ * 	processed.  If no event is found, this method returns null.
+ *
+ * Side effects:
+ *	This method synchronizes on the 'notifierMutex', which will block any
+ *	other thread from adding or removing events from the event queue.
+ *
+ *----------------------------------------------------------------------
+ */
+    
+private synchronized TclEvent
+getAvailableEvent(
+    TclEvent    skipEvent)	// Indicates that the given event should not
+				// be returned.  This argument can be null.
+{
+    TclEvent evt;
+
+    for (evt = firstEvent ; evt != null ; evt = evt.next) {
+	if ((evt.isProcessing == false) &&
+		(evt.isProcessed  == false) &&
+		(evt != skipEvent)) {
+	    return evt;
+	}
+    }
+    return null;
 }
 
 /*
@@ -459,7 +499,7 @@ serviceEvent(
  *----------------------------------------------------------------------
  */
 
-public synchronized int
+public int
 doOneEvent(
     int flags)			// Miscellaneous flag values: may be any
 				// combination of TCL.DONT_WAIT,
@@ -539,6 +579,15 @@ doOneEvent(
 	//
 
 	try {
+            // Don't acquire the monitor until we are about to wait
+            // for notification from another thread. It is critical
+            // that this entire method not be synchronized since
+            // a call to processEvent via serviceEvent could take
+            // a very long time. We don't want the monitor held
+            // during that time since that would force calls to
+            // queueEvent in other threads to wait.
+
+            synchronized (this) {
 	    if (timerList.size() > 0) {
 		TimerHandler h = (TimerHandler)timerList.elementAt(0);
 		long waitTime = h.atTime - sysTime;
@@ -548,6 +597,7 @@ doOneEvent(
 	    } else {
 		wait();
 	    }
+            } // synchronized (this)
 	} catch (InterruptedException e) {
 	    // We ignore any InterruptedException and loop continuously
 	    // until we receive an event.

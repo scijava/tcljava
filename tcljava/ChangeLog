@@ -1,3 +1,18 @@
+2003-03-09  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/jacl/tcl/lang/Notifier.java (serviceEvent,
+	getAvailableEvent, doOneEvent): Rework synchronization
+	approach used by Jacl's notifier class. Don't
+	synchronize the serviceEvent and doOneEvent methods,
+	instead synchronize only when waiting and when
+	reading or changing the queue. This lets us queue up
+	a new event while another is still being processed.
+	* src/tests/tcljava/tests/EventQueueLockThread.java:
+	Add new test case for event queue while another
+	event is being processed.
+	* tests/tcljava/TclEvent.test: Add test that
+	makes use of EventQueueLockThread.
+
 2003-03-07  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	Initial port of Tcl IO layer from Tcl 8.4. This
