@@ -1,6 +1,6 @@
 # This Makefile is used to the java loadable module.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.7 1998/11/05 23:51:17 hylands Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.8 1998/11/06 00:18:23 hylands Exp $
 
 # The version of TclJava, used in this Makefile
 VERSION = @TCLJAVA_VERSION@
@@ -1236,7 +1236,7 @@ jaclSrcDist: $(UNIX_DIR)/configure Makefile
 		tar cf $(JACL_SRC_DISTNAME).tar $(JACL_DISTNAME); \
 		gzip --best -c $(JACL_SRC_DISTNAME).tar > $(JACL_SRC_DISTNAME).tar.gz; \
 		compress $(JACL_SRC_DISTNAME).tar; \
-		zip -qr8 $(JACL_ZIPNAME) $(JACL_DISTNAME); \
+		zip -qr $(JACL_ZIPNAME) $(JACL_DISTNAME); \
 		rm -f $(JACL_SRC_DISTNAME).tar
 
 #----------------------------------------------------------------
@@ -1301,7 +1301,7 @@ tclblendSrcDist: $(UNIX_DIR)/configure Makefile
 		gzip -9 -c $(BLEND_SRC_DISTNAME).tar > \
 			$(BLEND_SRC_DISTNAME).tar.gz; \
 		compress $(BLEND_SRC_DISTNAME).tar; \
-		zip -rq8 $(BLEND_ZIPNAME) $(BLEND_DISTNAME); \
+		zip -rq $(BLEND_ZIPNAME) $(BLEND_DISTNAME); \
 		rm -f $(BLEND_SRC_DISTNAME).tar 
 
 #----------------------------------------------------------------
@@ -1398,7 +1398,7 @@ jaclBinDist: $(UNIX_DIR)/configure Makefile
 		tar cf $(JACL_DISTNAME).tar $(JACL_DISTNAME); \
 		gzip -9 -c $(JACL_DISTNAME).tar > $(JACL_DISTNAME).tar.gz; \
 		compress $(JACL_DISTNAME).tar; \
-		zip -rq8 $(JACL_ZIPNAME) $(JACL_DISTNAME); \
+		zip -rq $(JACL_ZIPNAME) $(JACL_DISTNAME); \
 		rm -f $(JACL_DISTNAME).tar 
 
 #----------------------------------------------------------------
