@@ -10,52 +10,43 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Procedure.java,v 1.1 1998/10/14 21:09:20 cvsadmin Exp $
+ * RCS: @(#) $Id: Procedure.java,v 1.2 1999/05/29 22:44:58 dejong Exp $
  *
  */
 
 package tcl.lang;
 
-/*
+/**
  * This class implements the body of a Tcl procedure.
  */
 
 class Procedure implements Command, CommandWithDispose {
 
-/*
- * The formal parameters of the procedure and their default values.
- *     argList[0][0] = name of the 1st formal param
- *     argList[0][1] = if non-null, default value of the 1st formal param
- */
+// The formal parameters of the procedure and their default values.
+//     argList[0][0] = name of the 1st formal param
+//     argList[0][1] = if non-null, default value of the 1st formal param
 
-TclObject argList[][];
 
-/*
- * True if this proc takes an variable number of arguments. False
- * otherwise.
- */
+TclObject[][] argList;
+
+// True if this proc takes an variable number of arguments. False
+// otherwise.
 
 boolean isVarArgs;
 
-/*
- * The body of the procedure.
- */
+// The body of the procedure.
 
 CharPointer body;
 int body_length;
 
 
-/*
- * Name of the source file that contains this procedure. May be null, which
- * indicates that the source file is unknown.
- */
+// Name of the source file that contains this procedure. May be null, which
+// indicates that the source file is unknown.
 
 String srcFileName;
 
-/*
- * Position where the body of the procedure starts in the source file.
- * 1 means the first line in the source file.
- */
+// Position where the body of the procedure starts in the source file.
+// 1 means the first line in the source file.
 
 int srcLineNumber;
 
@@ -90,18 +81,14 @@ throws
     srcFileName = sFileName;
     srcLineNumber = sLineNumber;
 
-    /*
-     * Break up the argument list into argument specifiers, then process
-     * each argument specifier.
-     */
+    // Break up the argument list into argument specifiers, then process
+    // each argument specifier.
 
     int numArgs = TclList.getLength(interp, args);
     argList = new TclObject[numArgs][2];
 
     for (int i=0; i<numArgs; i++) {
-	/*
-	 * Now divide the specifier up into name and default.
-	 */
+	// Now divide the specifier up into name and default.
 
 	TclObject argSpec = TclList.index(interp, args, i);
 	int specLen = TclList.getLength(interp, argSpec);
@@ -159,15 +146,11 @@ cmdProc(
 throws
     TclException		// Standard Tcl exception.
 {
-    /*
-     * Create the call frame and parameter bindings
-     */
+    // Create the call frame and parameter bindings
 
     CallFrame frame = interp.newCallFrame(this, argv);
 
-    /*
-     * Execute the body
-     */
+    // Execute the body
 
     interp.pushDebugStack(srcFileName, srcLineNumber);
     try {
@@ -198,19 +181,17 @@ throws
     } finally {
 	interp.popDebugStack();
 
-	/*
-	 * The check below is a hack.  The problem is that there
-	 * could be unset traces on the variables, which cause
-	 * scripts to be evaluated.  This will clear the
-	 * errInProgress flag, losing stack trace information if
-	 * the procedure was exiting with an error.  The code
-	 * below preserves the flag.  Unfortunately, that isn't
-	 * really enough: we really should preserve the errorInfo
-	 * variable too (otherwise a nested error in the trace
-	 * script will trash errorInfo).  What's really needed is
-	 * a general-purpose mechanism for saving and restoring
-	 * interpreter state.
-	 */
+	// The check below is a hack.  The problem is that there
+	// could be unset traces on the variables, which cause
+	// scripts to be evaluated.  This will clear the
+	// errInProgress flag, losing stack trace information if
+	// the procedure was exiting with an error.  The code
+	// below preserves the flag.  Unfortunately, that isn't
+	// really enough: we really should preserve the errorInfo
+	// variable too (otherwise a nested error in the trace
+	// script will trash errorInfo).  What's really needed is
+	// a general-purpose mechanism for saving and restoring
+	// interpreter state.
 
 	if (interp.errInProgress) {
 	    frame.dispose();
