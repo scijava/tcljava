@@ -1,6 +1,6 @@
 Recent user-visible changes to Jacl & Tcl Blend:
 
-RCS: @(#) $Id: changes.txt,v 1.4 1999/01/08 01:05:51 hylands Exp $
+RCS: @(#) $Id: changes.txt,v 1.5 1999/01/08 02:31:52 hylands Exp $
 
 ----------------- Released 1.0a1, 10/22/97 -----------------------
 
@@ -364,13 +364,21 @@ in /usr/bin, and we need to look in /usr/include/java and
 /usr/include/java/alpha. Substitute in $JAVA_INC_DIR instead of hardwiring
 in $(JAVA_DIR)/include. (CXH)
 
-1/7/98 (unix configure)
+1/7/99 (unix configure)
 Search for tcl8.0.4 instead of tcl8.0.3 (CXH) 
 
-1/7/98 (windows line separator)
+1/7/99 (windows line separator)
 src/jacl/tcl/lang/Interp.java:
 Fix for properly handling \r \n under Windows.  This also fixes problems
 with multi-line commands.  Added new method translateLineSeparators(), which
 is called when we read in a file and when we eval a resource.
 Based on code from Christian Krone <krischan@sql.de>.  Also added
 test to test/jacl/Interp.java (CXH)
+
+1/7/99 (line numbers in jacl error messages)
+Line numbers in error messages were being lost in tcl.lang.Interp evalFile()
+  "A similar thing might be necessary in interp.eval, but since
+  interp.evalFile calls interp.eval, I am not yet sure how to prevent eval
+  from adding to errorInfo, if it was called by evalFile. Maybe a
+  protected and a public version of interp.eval is necessary."
+Harald Kirsch <kir@iitb.fhg.de>
