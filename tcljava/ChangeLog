@@ -1,5 +1,10 @@
 2000-04-01  Mo DeJong  <mdejong@redhat.com>
 
+	* src/tcljava/tcl/lang/ReflectObject.java: improved some
+	error and debug messages.
+
+2000-04-01  Mo DeJong  <mdejong@redhat.com>
+
 	* unix/Makefile.in: added "make check" rule as an alias
 	to "make test" to conform to the GNU coding standards.
 
