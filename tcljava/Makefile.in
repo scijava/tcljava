@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the actual
 # Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.6 1999/09/18 00:59:27 wart Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.7 1999/09/23 23:34:17 redman Exp $
 
 #========================================================================
 # Edit the following few lines when writing a new extension
@@ -17,8 +17,9 @@
 # library that we are building.
 #========================================================================
 
-lib_BINARIES=$(TCLBLEND_LIB_FILE) tclblend.jar tcljava.jar
-BINARIES=$(lib_BINARIES)
+jar_BINARIES= tclblend.jar tcljava.jar
+lib_BINARIES=$(TCLBLEND_LIB_FILE)
+BINARIES=$(lib_BINARIES) $(jar_BINARIES)
 
 #========================================================================
 # Enumerate the names of the source files included in this package.
@@ -471,6 +472,9 @@ install-lib-binaries: installdirs
 	    $(RANLIB) $(DESTDIR)$(bindir)/$$p; \
 	  else :; fi; \
 	done
+	@list='$(jar_BINARIES)'; for p in $$list; do \
+	  $(INSTALL_DATA) $$p $(DESTDIR)$(pkglibdir)/$$p; \
+	done
 	$(INSTALL_DATA) pkgIndex.tcl $(pkglibdir)
 
 
@@ -495,21 +499,21 @@ install-libraries: libraries
 	done;
 
 install-doc: doc
-	$(mkinstalldirs) $(mandir)/html/TclJava
-	$(mkinstalldirs) $(mandir)/html/TclJavaLib
-	$(mkinstalldirs) $(mandir)/html/Keywords
+	$(mkinstalldirs) $(prefix)/doc/@PACKAGE@/TclJava
+	$(mkinstalldirs) $(prefix)/doc/@PACKAGE@/TclJavaLib
+	$(mkinstalldirs) $(prefix)/doc/@PACKAGE@/Keywords
 	@echo "Installing HTML docs"
 	@for i in $(srcdir)/docs/*.htm* ; do \
-	    $(INSTALL_DATA) $$i $(mandir)/html ; \
+	    $(INSTALL_DATA) $$i $(prefix)/doc/@PACKAGE@ ; \
 	done;
 	@for i in $(srcdir)/docs/Keywords/*.htm* ; do \
-	    $(INSTALL_DATA) $$i $(mandir)/html/Keywords ; \
+	    $(INSTALL_DATA) $$i $(prefix)/doc/@PACKAGE@/Keywords ; \
 	done;
 	@for i in $(srcdir)/docs/TclJava/*.htm* ; do \
-	    $(INSTALL_DATA) $$i $(mandir)/html/TclJava ; \
+	    $(INSTALL_DATA) $$i $(prefix)/doc/@PACKAGE@/TclJava ; \
 	done;
 	@for i in $(srcdir)/docs/TclJavaLib/*.htm* ; do \
-	    $(INSTALL_DATA) $$i $(mandir)/html/TclJavaLib ; \
+	    $(INSTALL_DATA) $$i $(prefix)/doc/@PACKAGE@/TclJavaLib ; \
 	done;
 
 
