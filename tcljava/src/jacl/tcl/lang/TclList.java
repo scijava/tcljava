@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclList.java,v 1.3 2000/10/29 06:00:41 mdejong Exp $
+ * RCS: @(#) $Id: TclList.java,v 1.4 2003/01/08 02:10:20 mdejong Exp $
  *
  */
 
@@ -54,6 +54,8 @@ public class TclList implements InternalRep {
     }
 
     /**
+     * DupListInternalRep -> duplicate
+     *
      * Returns a dupilcate of the current object.
      *
      * @param obj the TclObject that contains this internalRep.
@@ -159,8 +161,9 @@ public class TclList implements InternalRep {
 
 
     /**
-     * Appends a list element to a TclObject object. This method is
-     * equivalent to Tcl_ListObjAppendElement in Tcl 8.0.
+     * Tcl_ListObjAppendElement -> TclList.append()
+     * 
+     * Appends a TclObject element to a list object.
      *
      * @param interp current interpreter.
      * @param tobj the TclObject to append an element to.
@@ -170,6 +173,9 @@ public class TclList implements InternalRep {
     public static final void append(Interp interp, TclObject tobj,
 	    TclObject elemObj)
 	    throws TclException {
+	if (tobj.isShared()) {
+	    throw new TclRuntimeError("TclList.append() called with shared object");
+	}
 	setListFromAny(interp, tobj);
 	tobj.invalidateStringRep();
 
@@ -273,6 +279,9 @@ public class TclList implements InternalRep {
     static final void insert(Interp interp, TclObject tobj, int index,
 	    TclObject elements[], int from, int to)
 	    throws TclException {
+	if (tobj.isShared()) {
+	    throw new TclRuntimeError("TclList.insert() called with shared object");
+	}
 	replace(interp, tobj, index, 0, elements, from, to);
     }
 
@@ -298,6 +307,9 @@ public class TclList implements InternalRep {
     public static final void replace(Interp interp, TclObject tobj, int index,
 	    int count, TclObject elements[], int from, int to)
 	    throws TclException {
+	if (tobj.isShared()) {
+	    throw new TclRuntimeError("TclList.replace() called with shared object");
+	}
 	setListFromAny(interp, tobj);
 	tobj.invalidateStringRep();
 	TclList tlist = (TclList) tobj.getInternalRep();

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Parser.java,v 1.10 2000/08/20 08:37:47 mo Exp $
+ * RCS: @(#) $Id: Parser.java,v 1.11 2003/01/08 02:10:19 mdejong Exp $
  */
 
 package tcl.lang;
@@ -915,7 +915,7 @@ logCommandInfo(
 /*
  *----------------------------------------------------------------------
  *
- * evalTokens --
+ * Tcl_EvalTokensStandard -> evalTokens
  *
  *	Given an array of tokens parsed from a Tcl command (e.g., the
  *	tokens that make up a word or the index for an array variable)
@@ -1207,7 +1207,7 @@ throws
 		// Execute the command and free the objects for its words.
 		try {
 		    evalObjv(interp, objv, /*src,*/ bytesLeft, 0);
-		} catch (java.lang.StackOverflowError e) {
+		} catch (StackOverflowError e) {
 		    interp.setResult("too many nested calls" +
 			    " to eval (infinite loop?)");
 		    throw new TclException(TCL.ERROR); 

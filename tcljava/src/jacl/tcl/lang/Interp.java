@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.39 2002/04/12 21:00:26 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.40 2003/01/08 02:10:18 mdejong Exp $
  *
  */
 
@@ -1943,7 +1943,12 @@ setResult(
 	throw new NullPointerException(
 		"Interp.setResult() called with null TclObject argument.");
     }
+
     if (m_result != m_nullResult) {
+	if (m_result == r) {
+	    // Setting result to current value is a no-op
+	    return;
+	}
 	m_result.release();
     }
 
@@ -2092,7 +2097,7 @@ resetResult()
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_AppendElement --
+ * Tcl_AppendElement -> Interp.appendElement()
  *
  *	Convert a string to a valid Tcl list element and append it to the
  *	result (which is ostensibly a list).

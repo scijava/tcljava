@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: TclList.java,v 1.4 2002/12/21 04:02:54 mdejong Exp $
+ * RCS: @(#) $Id: TclList.java,v 1.5 2003/01/08 02:10:20 mdejong Exp $
  */
 
 package tcl.lang;
@@ -175,7 +175,7 @@ throws
 /*
  *----------------------------------------------------------------------
  *
- * append --
+ * Tcl_ListObjAppendElement -> TclList.append()
  *
  *	Appends a list element to a TclObject.
  *
@@ -196,6 +196,9 @@ append(
 throws
     TclException		// If tobj cannot be converted into a list.
 {
+    if (tobj.isShared()) {
+        throw new TclRuntimeError("TclList.append() called with shared object");
+    }
     setListFromAny(interp, tobj);
     tobj.invalidateStringRep();
 
@@ -351,6 +354,9 @@ replace(
 throws
     TclException		// If tobj is not a valid list.
 {
+    if (tobj.isShared()) {
+        throw new TclRuntimeError("TclList.replace() called with shared object");
+    }
     setListFromAny(interp, tobj);
     tobj.invalidateStringRep();
     TclList tlist = (TclList)tobj.getInternalRep();

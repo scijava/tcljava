@@ -1,4 +1,20 @@
-2003-01-31  Mo DeJong  <mdejong@users.sourceforge.net>
+2003-01-07  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/jacl/tcl/lang/CallFrame.java (dispose):
+	Clear out the var hashtable before setting it
+	to null. This does not change the functionality.
+	* src/jacl/tcl/lang/Interp.java (setResult):
+	Optimize the case where the interp result is set
+	to the same object as the current result.
+	* src/jacl/tcl/lang/Parser.java: Minor doc
+	improvement, no code changes.
+	* src/jacl/tcl/lang/TclList.java (append,
+	insert, replace):
+	* src/tclblend/tcl/lang/TclList.java (append,
+	replace): Raise a specific error if a method
+	is incorrectly called with a shared object.
+
+2003-01-01  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* configure: Regen.
 	* tcljava.m4 (AC_JAVA_CLASSPATH): Add additional
