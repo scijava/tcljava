@@ -1,5 +1,15 @@
 2000-10-25  Mo DeJong  <mdejong@redhat.com>
 
+	* src/native/javaObj.c: Added comment about
+	how CObject.newInstance() is invoked.
+	* src/tclblend/tcl/lang/CObject.java: CObject
+	now extends TclEvent. When a dangling reference
+	to a Tcl_Obj* is found in the CObject.finalize()
+	method, it is freed in the creating thread instead
+	of the JVM's GC thread.
+
+2000-10-25  Mo DeJong  <mdejong@redhat.com>
+
 	* docs/TclJavaLib/InternalRep.htm:
 	* docs/TclJavaLib/ReflectObject.htm:
 	* docs/TclJavaLib/TclBoolean.htm:
