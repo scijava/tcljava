@@ -1,25 +1,31 @@
 # Primitive tests of the build under Unix 
 
-# RCS: @(#) $Id: testbuild.mk,v 1.1 1998/11/04 23:54:11 hylands Exp $
+# RCS: @(#) $Id: testbuild.mk,v 1.2 1998/11/05 00:47:17 hylands Exp $
 
 # To run these tests, do
 # cd ../unix 
 # make dists
 # configure --with-tcl=/users/cxh/pt/obj.sol2.5/tcltk/tcl8.0.3/unix/ `/users/cxh/pt/src/tcltk/java_studio`
-# make -f ../test/testbuild.mk buildtest
+# make -f ../tests/testbuild.mk buildtest
 
 
-buildtest: jaclSrcBuild blendSrcBuild
+buildtest: srcBuild binBuild
+
+srcBuild: jaclSrcBuild blendSrcBuild 
+binBuild: jaclBinBuild blendBinBuild
+
+
 
 # Include the Unix Makefile
 include ../unix/Makefile
 
+# Edit these to suit yourself.
+
 GTAR =		gtar
-
 WITH_TCL = 	/users/cxh/pt/obj.sol2.5/tcltk/tcl8.0.3/unix
-
 TCLSH = 	/users/cxh/pt/bin.sol2.5/tclsh
 WISH =		/users/cxh/pt/bin.sol2.5/wish
+
 
 JDK1.1 = 	/opt/jdk1.1.6
 JDK1.1_LD_LIBRARY_PATH =	$(JDK1.1)/lib/sparc
