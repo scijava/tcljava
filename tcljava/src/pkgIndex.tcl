@@ -1,7 +1,7 @@
 # Cross platform init script for Tcl Blend. Known to work on unix and windows.
 # 
 # Author:  Christopher Hylands
-# RCS: @(#) $Id: pkgIndex.tcl,v 1.2 1998/11/16 06:18:29 hylands Exp $
+# RCS: @(#) $Id: pkgIndex.tcl,v 1.3 1998/11/24 04:25:08 hylands Exp $
 #
 # Copyright (c) 1997-1998 The Regents of the University of California.
 # 	All Rights Reserved.
@@ -139,7 +139,21 @@ proc loadtclblend {dir} {
 
     # Load the tclblend native lib after the .class files are loaded.
     if [catch {load $native_lib} errMsg] {
-        error "Loading '$native_lib' failed:\n $errMsg"
+	switch $tcl_platform(platform) {
+        windows {
+    	    error "Loading '$native_lib' failed.\n\
+	    This can happen if the appropriate Java .dlls are not in your\
+	    path.\nUnder JDK1.1, tclblend uses javai.dll, which is usually\n\
+	    found in c:\\jdk1.1.6\\bin.\n\
+	    Under JDK1.2, tclblend uses jvm.lib, which is usually\n\
+	    found in c:\\jdk1.1.2\\jre\\bin\\classic.\n\
+	    You may need to add the appropriate directory to your PATH.\n\
+	    The error was:\n $errMsg"
+	}
+	default {
+	    error "Loading '$native_lib' failed:\n $errMsg"
+	} 
+	}
     }
 
     # The version is also set in
