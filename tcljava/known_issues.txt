@@ -57,10 +57,9 @@ c:\jdk1.2beta4\bin;c:\jdk1.2beta4\jre\bin;c:\jdk1.2beta4\jre\bin\classic;c:\Prog
 
 
 (JDK1.2beta4 tests)
-tests/tcljava/PkgInvoker.tcl fails.  The cause seems to be connected
-with the forName method in java.lang.Class
-Update:
-This JDK bug has been fixed for JDK1.2fcs on Solaris but not for Windows.
+tests/tcljava/PkgInvoker.tcl fails.
+The cause seems to be connected with the forName method in java.lang.Class
+This JDK bug has been fixed in JDK1.2fcs.
 
 
 (JDK1.2beta4 tests)
