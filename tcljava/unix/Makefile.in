@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.30 1999/11/01 18:31:36 redman Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.31 1999/11/02 02:41:47 redman Exp $
 
 # The directory containing the Tcl sources and headers appropriate
 # for this version of Tk ("srcdir" will be replaced or has already
@@ -1341,21 +1341,21 @@ tclblendDist: $(UNIX_DIR)/configure Makefile
 	cp -p $(NATIVE_SRC_DIR)/*.c \
 		$(NATIVE_SRC_DIR)/*.h \
 		$(TCLBLEND_DISTDIR)/src/native
-        cp -p $(TOP_DIR)/configure \
-                $(TOP_DIR)/configure.in \
-                $(TOP_DIR)/Makefile.in \
-                $(TOP_DIR)/mkIndex.tcl.in \
-                $(TOP_DIR)/aclocal.m4 \
-                $(TOP_DIR)/tcl.m4 \
-                $(TOP_DIR)/install-sh \
-                $(TOP_DIR)/mkinstalldirs \
-                $(TCLBLEND_DISTDIR)
+	cp -p $(TOP_DIR)/configure \
+		$(TOP_DIR)/configure.in \
+		$(TOP_DIR)/Makefile.in \
+		$(TOP_DIR)/mkIndex.tcl.in \
+		$(TOP_DIR)/aclocal.m4 \
+		$(TOP_DIR)/tcl.m4 \
+		$(TOP_DIR)/install-sh \
+		$(TOP_DIR)/mkinstalldirs \
+		$(TCLBLEND_DISTDIR)
 
-        chmod 644 $(TCLBLEND_DISTDIR)/Makefile.in \
+	chmod 644 $(TCLBLEND_DISTDIR)/Makefile.in \
 		$(TCLBLEND_DISTDIR)/configure.in
-        chmod 755 $(TCLBLEND_DISTDIR)/configure \
+	chmod 755 $(TCLBLEND_DISTDIR)/configure \
 		$(TCLBLEND_DISTDIR)/install-sh
-        chmod 755 $(TCLBLEND_DISTDIR)/mkinstalldirs
+	chmod 755 $(TCLBLEND_DISTDIR)/mkinstalldirs
 		cp -p $(UNIX_DIR)/custom.c \
 		$(UNIX_DIR)/unixNotifier.c \
 		$(TCLBLEND_DISTDIR)/unix
