@@ -1,6 +1,6 @@
 # This Makefile is used to the java loadable module.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.9 1998/11/06 16:46:05 hylands Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.10 1998/11/07 02:15:57 hylands Exp $
 
 # The version of TclJava, used in this Makefile
 VERSION = @TCLJAVA_VERSION@
@@ -695,7 +695,7 @@ test_jacl.exec:
 	  puts \"Tests done, about to call exit.\"\; \
           exit; ) | \
 	$(JAVA) $(JAVA_FLAGS) -classpath $(TEST_CLASSPATH) \
-		-DBUILD_DIR=$(BUILD_DIR) tcl.lang.Shell
+		-DBUILD_DIR=$(BUILD_DIR) -DJAVA=$(JAVA) tcl.lang.Shell
 
 # Don't include $(TCL_BIN_DIR) in $LD_LIBRARY_PATH or 
 # common/JavaInvoke.test will fail.
