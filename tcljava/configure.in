@@ -710,7 +710,11 @@ use tclblend. See http://www.javasoft.com/products/jdk/1.1/index.html.])
             ARCH_LIB=${ARCH_LIBNAME}/${ARCH}
 
             JAVA_SHLIB=libjava.so
-            TCLBLEND_LIBS="-lthread -L${JAVA_DIR}/${ARCH_LIBNAME} -ljava"
+	    if test -f ${JAVA_DIR}/${ARCH_LIBNAME}/libjava.so ; then
+	        TCLBLEND_LIBS="-lthread -L${JAVA_DIR}/${ARCH_LIBNAME} -ljava"
+	    elif test -f ${JAVA_DIR}/jre/${ARCH_LIB}/libjava.so ; then
+	        TCLBLEND_LIBS="-lthread -L${JAVA_DIR}/jre/${ARCH_LIB} -ljava"
+	    fi
             TCLBLEND_SHLIB_NAMES="libthread.so libjava.so"
 
             TCLBLEND_LD_PRELOAD=

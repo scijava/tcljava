@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the actual
 # Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.1 1999/08/31 00:46:32 redman Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.2 1999/08/31 23:56:25 redman Exp $
 
 #========================================================================
 # Edit the following few lines when writing a new extension
@@ -219,6 +219,7 @@ JDB_FLAGS          =
 JAVA_INCLUDE             = @JAVA_INCLUDE@
 JAVA_INCLUDE_NATIVE      = @JAVA_INCLUDE_NATIVE@
 JAVA_ARCH_INCLUDE_NATIVE = @JAVA_ARCH_INCLUDE_NATIVE@
+JAVA_ARCH_NATIVE_RUNTIME_LIBS = @JAVA_ARCH_NATIVE_RUNTIME_LIBS@
 JAVA_CLASSPATH           = @JAVA_CLASSPATH@
 
 # Java sources
@@ -504,7 +505,12 @@ install-doc: doc
 	cp -rp $(srcdir)/docs/* $(mandir)/html
 	chmod -R 444 $(mandir)/html
 
+
 test: test_$(TCLJAVA)
+
+# Run extra tests, some which won't pass with TclBlend, but
+# needed to compare against Jacl.
+test.all: test_$(TCLJAVA).all
 
 test_tclblend: $(BINARIES) tests/tclblend
 	(  echo \
@@ -527,14 +533,40 @@ test_tclblend: $(BINARIES) tests/tclblend
 	BUILD_DIR=$(BUILD_DIR_NATIVE) \
 	$(TCLSH_PROG)
 
+
+# Run extra tests, some which won't pass with TclBlend, but
+# needed to compare against Jacl.
+test_tclblend.all: $(BINARIES) tests/tclblend
+	(  echo \
+	  set auto_path [concat [pwd] [set auto_path]]\; \
+	  cd \{$(FULL_SRCDIR_NATIVE)/tests\}\; \
+	  puts \"pwd is [pwd]\"\; \
+	  puts \"CLASSPATH is [set env\(CLASSPATH\)]\"\; \
+	  puts \"auto_path is [set auto_path]\"\; \
+	  source all\; \
+	  puts \"Tests done.\"\; \
+          exit; ) | \
+	TCLBLEND_RUN_ALL_TESTS=1 \
+	LD_PRELOAD=$(TCLBLEND_LD_PRELOAD) \
+	LD_BIND_NOW=$(TCLBLEND_LD_BIND_NOW) \
+	LD_LIBRARY_PATH=$(BUILD_DIR):$(TCL_BIN_DIR):$(JAVA_ARCH_NATIVE_RUNTIME_LIBS):$(LD_LIBRARY_PATH) \
+	PATH="$(BUILD_DIR)":"$(TCL_BIN_DIR)":"$(PATH)" \
+	TCLBLEND_SHLIB_NAMES=$(TCLBLEND_SHLIB_NAMES) \
+	TCL_LIBRARY=$(TCL_LIBRARY_DIR) \
+	CLASSPATH=$(TEST_CLASSPATH) \
+	JAVA=$(JAVA) \
+	BUILD_DIR=$(BUILD_DIR_NATIVE) \
+	$(TCLSH_PROG)
+
 depend:
 
 clean:  
 	-test -z "$(BINARIES)" || rm -f $(BINARIES)
-	-rm -f *.o core *.core Test.class Test.h Test.tcl
+	-rm -f *.o core *.core Test.class Test.h Test.tcl pkgIndex.tcl
 	-rm -f *.$(OBJEXT)
 	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 	-rm -rf $(TCLJAVA_BUILD_DIR) $(TCLBLEND_BUILD_DIR)
+	-rm -rf $(TEST_BUILD_DIR) META-INF
 
 distclean: clean
 	-rm -f *.tab.c
