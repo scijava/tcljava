@@ -10,12 +10,13 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.6 1999/01/08 02:31:30 hylands Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.7 1999/05/09 00:39:19 dejong Exp $
  *
  */
 
 package tcl.lang;
 
+import java.lang.reflect.*;
 import java.util.*;
 import java.io.*;
 import java.net.*;
@@ -26,264 +27,193 @@ import java.net.*;
 
 public class Interp {
 
-/*
- * The following three variables are used to maintain a translation
- * table between ReflectObject's and their string names. These two
- * variables are accessed by the ReflectObject class (the variables
- * are here because we want one translation table per Interp).
- */
+// The following three variables are used to maintain a translation
+// table between ReflectObject's and their string names. These two
+// variables are accessed by the ReflectObject class (the variables
+// are here because we want one translation table per Interp).
 
-/*
- * Translates integer ID to ReflectObject.
- */
+//  Translates integer ID to ReflectObject.
+
 
 Hashtable reflectIDTable;
 
-/*
- * Translates Object to ReflectObject. This makes sure we have only
- * one ReflectObject internalRep for the same Object -- this
- * way Object identity can be done by string comparison.
- */
+// Translates Object to ReflectObject. This makes sure we have only
+// one ReflectObject internalRep for the same Object -- this
+// way Object identity can be done by string comparison.
 
 Hashtable reflectObjTable;
 
-/*
- * Number of reflect objects created so far inside this Interp
- * (including those that have be freed)
- */
+// Number of reflect objects created so far inside this Interp
+// (including those that have be freed)
 
 long reflectObjCount;
 
-/*
- * The interpreter will execute scripts only inside this thread. All
- * calls to Interp.eval() by any other thread will be routed to this
- * thread.
- */
+// The interpreter will execute scripts only inside this thread. All
+// calls to Interp.eval() by any other thread will be routed to this
+// thread.
 
 private Thread primaryThread;
 
-/*
- * The number of chars to copy from an offending command into error
- * message.
- */
+// The number of chars to copy from an offending command into error
+// message.
 
 private static final int MAX_ERR_LENGTH = 200;
 
-/*
- * We pretend this is Tcl 8.0, patch level 0.
- */
+
+// We pretend this is Tcl 8.0, patch level 0.
 
 static final String TCL_VERSION     = "8.0";
 static final String TCL_PATCH_LEVEL = "8.0";
 
-/*
- * Total number of times a command procedure
- * has been called for this interpreter.
- */
+
+// Total number of times a command procedure
+// has been called for this interpreter.
 
 protected int cmdCount = 0;
 
-/*
- * Table of commands for this interpreter.
- */
+
+// Table of commands for this interpreter.
 
 Hashtable cmdTable;
 
-/*
- * Table of channels currently registered in this interp.
- */
+// Table of channels currently registered in this interp.
 
 Hashtable interpChanTable;
 
-/*
- * The Notifier associated with this Interp.
- */
+// The Notifier associated with this Interp.
 
 private Notifier notifier;
 
-/*
- * Hash table for associating data with this interpreter. Cleaned up
- * when this interpreter is deleted.
- */
+// Hash table for associating data with this interpreter. Cleaned up
+// when this interpreter is deleted.
 
 Hashtable assocDataTab;
 
-/*
- * Current working directory.
- */
+// Current working directory.
 
 private File workingDir;
 
-/*
- * Points to top-most in stack of all nested procedure
- * invocations.  NULL means there are no active procedures.
- */
+// Points to top-most in stack of all nested procedure
+// invocations.  NULL means there are no active procedures.
 
 CallFrame frame;
 
-/*
- * Points to the call frame whose variables are currently in use
- * (same as framePtr unless an "uplevel" command is being
- * executed).  NULL means no procedure is active or "uplevel 0" is
- * being exec'ed.
- */
+// Points to the call frame whose variables are currently in use
+// (same as framePtr unless an "uplevel" command is being
+// executed).  NULL means no procedure is active or "uplevel 0" is
+// being exec'ed.
 
 CallFrame varFrame;
 
-/*
- * Points to the global variable frame.
- */
+// Points to the global variable frame.
 
 CallFrame globalFrame;
 
-/*
- * The script file currently under execution. Can be null if the
- * interpreter is not evaluating any script file.
- */
+// The script file currently under execution. Can be null if the
+// interpreter is not evaluating any script file.
 
 String scriptFile;
 
-/*
- * Number of times the interp.eval() routine has been recursively
- * invoked.
- */
+// Number of times the interp.eval() routine has been recursively
+// invoked.
 
 int nestLevel;
 
-/*
- * Used to catch infinite loops in Parser.eval2.
- */
+// Used to catch infinite loops in Parser.eval2.
 
 int maxNestingDepth;
 
-/*
- * Flags used when evaluating a command.
- */
+// Flags used when evaluating a command.
 
 int evalFlags;
 
-/*
- * Flags used when evaluating a command.
- */
+// Flags used when evaluating a command.
 
 int flags;
 
-/*
- * Offset of character just after last one compiled or executed
- * by Parser.eval2().
- */
+// Offset of character just after last one compiled or executed
+// by Parser.eval2().
 
 int termOffset;
 
-/*
- * The expression parser for this interp.
- */
+// The expression parser for this interp.
 
 Expression expr;
 
-/*
- * Used by the Expression class.  If it is equal to zero, then the 
- * parser will evaluate commands and retrieve variable values from 
- * the interp.
- */
+// Used by the Expression class.  If it is equal to zero, then the 
+// parser will evaluate commands and retrieve variable values from 
+// the interp.
 
 int noEval;
 
-/*
- * Used in the Expression.java file for the 
- * SrandFunction.class and RandFunction.class.
- * Set to true if a seed has been set.
- */
+// Used in the Expression.java file for the 
+// SrandFunction.class and RandFunction.class.
+// Set to true if a seed has been set.
 
 boolean randSeedInit;
 
-/*
- * Used in the Expression.java file for the SrandFunction.class and
- * RandFunction.class.  Stores the value of the seed.
- */
+// Used in the Expression.java file for the SrandFunction.class and
+// RandFunction.class.  Stores the value of the seed.
 
 long randSeed;
 
-/*
- * If returnCode is TCL.ERROR, stores the errorInfo.
- */
+// If returnCode is TCL.ERROR, stores the errorInfo.
 
 String errorInfo = null;
 
-/*
- * If returnCode is TCL.ERROR, stores the errorCode.
- */
+// If returnCode is TCL.ERROR, stores the errorCode.
 
 String errorCode = null;
 
-/*
- * Completion code to return if current procedure exits with a
- * TCL_RETURN code.
- */
+// Completion code to return if current procedure exits with a
+// TCL_RETURN code.
 
 protected int returnCode;
 
-/* 
- * True means the interpreter has been deleted: don't process any
- * more commands for it, and destroy the structure as soon as all
- * nested invocations of eval() are done.
- */
+// True means the interpreter has been deleted: don't process any
+// more commands for it, and destroy the structure as soon as all
+// nested invocations of eval() are done.
 
 protected boolean deleted;
-
-/* 
- * True means an error unwind is already in progress. False
- * means a command proc has been invoked since last error occured.
- */
+ 
+// True means an error unwind is already in progress. False
+// means a command proc has been invoked since last error occured.
 
 protected boolean errInProgress;
 
-/*
- * True means information has already been logged in $errorInfo
- * for the current eval() instance, so eval() needn't log it
- * (used to implement the "error" command).
- */
+// True means information has already been logged in $errorInfo
+// for the current eval() instance, so eval() needn't log it
+// (used to implement the "error" command).
 
 protected boolean errAlreadyLogged;
 
-/*
- * True means that addErrorInfo has been called to record
- * information for the current error. False means Interp.eval
- * must clear the errorCode variable if an error is returned.
- */
+// True means that addErrorInfo has been called to record
+// information for the current error. False means Interp.eval
+// must clear the errorCode variable if an error is returned.
 
 protected boolean errCodeSet;
 
-/*
- * When TCL_ERROR is returned, this gives the line number within
- * the command where the error occurred (1 means first line).
- */
+// When TCL_ERROR is returned, this gives the line number within
+// the command where the error occurred (1 means first line).
+
 
 int errorLine;
 
-/*
- * Stores the current result in the interpreter.
- */
+// Stores the current result in the interpreter.
 
 private TclObject m_result;
 
-/*
- * Value m_result is set to when resetResult() is called.
- */
+// Value m_result is set to when resetResult() is called.
 
 private TclObject m_nullResult;
 
-/*
- * Used ONLY by the PackageCmd.
- */
+// Used ONLY by the PackageCmd.
 
 Hashtable packageTable;
 String packageUnknown;
 
 
-/*
- * Used ONLY by the Parser.
- */
+// Used ONLY by the Parser.
 
 TclObject[][][] parserObjv;
 int[]           parserObjvUsed;
@@ -329,9 +259,6 @@ Interp()
     assocDataTab     = null;
     randSeedInit     = false;
 
-    //init reflection stuff
-    ReflectObject.init(this);
-
     errorLine        = 0;
     deleted          = false;
     errInProgress    = false;
@@ -344,50 +271,43 @@ Interp()
     packageTable = new Hashtable();
     packageUnknown = null;
 
-    //init parser variables
+    // init parser variables
     Parser.init(this);
     TclParse.init(this);
     
-    /*
-     * An empty result is used pretty often. We will use a shared
-     * TclObject instance to represent the empty result so that we
-     * don't need to create a new TclObject instance every time the
-     * interpreter result is set to empty.
-     */
+    // An empty result is used pretty often. We will use a shared
+    // TclObject instance to represent the empty result so that we
+    // don't need to create a new TclObject instance every time the
+    // interpreter result is set to empty.
 
     m_nullResult = TclString.newInstance("");
     m_nullResult.preserve();
     m_result = m_nullResult;
 
-    /*
-     * Initialize the Global (static) channel table and the local
-     * interp channel table.
-     */
+    // Initialize the Global (static) channel table and the local
+    // interp channel table.
 
     interpChanTable = TclIO.getInterpChanTable(this);
 
-    /*
-     * Sets up the variable trace for tcl_precision.
-     */
+    // Sets up the variable trace for tcl_precision.
 
     Util.setupPrecisionTrace(this);
 
-    /*
-     * Create the built-in commands.
-     */
+    // Create the built-in commands.
 
     createCommands();
 
     try {
-	/*
-	 * Set up tcl_platform, tcl_version, tcl_library and other
-	 * global variables.
-	 */
+	// Set up tcl_platform, tcl_version, tcl_library and other
+	// global variables.
 
 	setVar("tcl_platform", "platform", "java", TCL.GLOBAL_ONLY);
+/*
+// FIXME : delete tcl_platform(javaVersion) from jacl if not needed
 	setVar("tcl_platform", "javaVersion", 
 		Util.tryGetSystemProperty("java.version", "?"),
 		TCL.GLOBAL_ONLY);
+*/
 	setVar("tcl_platform", "byteOrder", "bigEndian", TCL.GLOBAL_ONLY);
 	
 	setVar("tcl_platform", "os", 
@@ -412,24 +332,18 @@ Interp()
 		    TCL.GLOBAL_ONLY);
 	}
 
-	/*
-	 * Create the env array an populated it with proper
-	 * values.
-	 */
+	// Create the env array an populated it with proper
+	// values.
 
 	Env.initialize(this);
 
-	/*
-	 * Register Tcl's version number.  Note: This MUST be 
-	 * done before the call to evalResource, otherwise
-	 * calls to "package require tcl" will fail.
-	 */
+	// Register Tcl's version number. Note: This MUST be 
+	// done before the call to evalResource, otherwise
+	// calls to "package require tcl" will fail.
 	
 	pkgProvide("Tcl", TCL_VERSION);
 	
-	/*
-	 * Source the init.tcl script to initialize auto-loading.
-	 */
+	// Source the init.tcl script to initialize auto-loading.
 	
 	evalResource("/tcl/lang/library/init.tcl");
 
@@ -477,31 +391,26 @@ dispose()
         throw new TclRuntimeError("dispose() called with active evals");
     }
 
-    /*
-     * Remove our association with the notifer (if we had one).
-     */
+    // Remove our association with the notifer (if we had one).
 
     if (notifier != null) {
 	notifier.release();
 	notifier = null;
     }
 
-    /*
-     * Dismantle everything in the global namespace except for the
-     * "errorInfo" and "errorCode" variables. These might be needed
-     * later on if errors occur while deleting commands. We are careful
-     * to destroy and recreate the "errorInfo" and "errorCode"
-     * variables, in case they had any traces on them.
-     *
-     * Dismantle the namespace here, before we clear the assocData. If any
-     * background errors occur here, they will be deleted below.
-     */
-    
-    // [ToDo] TclTeardownNamespace(iPtr->globalNsPtr);
+    // Dismantle everything in the global namespace except for the
+    // "errorInfo" and "errorCode" variables. These might be needed
+    // later on if errors occur while deleting commands. We are careful
+    // to destroy and recreate the "errorInfo" and "errorCode"
+    // variables, in case they had any traces on them.
+    //
+    // Dismantle the namespace here, before we clear the assocData. If any
+    // background errors occur here, they will be deleted below.
 
-    /*
-     * Delete all variables.
-     */
+    
+    // FIXME : TclTeardownNamespace(iPtr->globalNsPtr);
+
+    // Delete all variables.
 
     TclObject errorInfoObj = null, errorCodeObj = null;
 
@@ -536,14 +445,10 @@ dispose()
 	    errorCodeObj.release();
 	}
     } catch (TclException e) {
-	/*
-	 * Ignore it -- same behavior as Tcl 8.0.
-	 */
+	// Ignore it -- same behavior as Tcl 8.0.
     }
 
-    /*
-     * Delete all commands.
-     */
+    // Delete all commands.
 
     if (cmdTable != null) {
 	for (Enumeration e = cmdTable.keys(); e.hasMoreElements();) {
@@ -553,17 +458,13 @@ dispose()
 	cmdTable = null;
     }
 
-    /*
-     * Tear down the math function table.
-     */
+    // Tear down the math function table.
 
     expr = null;
 
-    /*
-     * Remove all the assoc data tied to this interp and invoke
-     * deletion callbacks; note that a callback can create new
-     * callbacks, so we iterate.
-     */
+    // Remove all the assoc data tied to this interp and invoke
+    // deletion callbacks; note that a callback can create new
+    // callbacks, so we iterate.
 
     while (assocDataTab != null) {
 	Hashtable table = assocDataTab;
@@ -577,17 +478,14 @@ dispose()
 	}
     }
 
-    /*
-     * Finish deleting the global namespace.
-     */
-    
-    // [ToDo] Tcl_DeleteNamespace((Tcl_Namespace *) iPtr->globalNsPtr);
+    // Finish deleting the global namespace.
 
-    /*
-     * Free up the result *after* deleting variables, since variable
-     * deletion could have transferred ownership of the result string
-     * to Tcl.
-     */
+    
+    // FIXME : Tcl_DeleteNamespace((Tcl_Namespace *) iPtr->globalNsPtr);
+
+    // Free up the result *after* deleting variables, since variable
+    // deletion could have transferred ownership of the result string
+    // to Tcl.
 
     globalFrame.dispose();
     frame = null;
@@ -647,6 +545,7 @@ createCommands()
     Extension.loadOnDemand(this, "case",	  "tcl.lang.CaseCmd");
     Extension.loadOnDemand(this, "catch",	  "tcl.lang.CatchCmd");
     Extension.loadOnDemand(this, "cd",	  	  "tcl.lang.CdCmd");
+    Extension.loadOnDemand(this, "clock",	  "tcl.lang.ClockCmd");
     Extension.loadOnDemand(this, "close",	  "tcl.lang.CloseCmd");
     Extension.loadOnDemand(this, "continue",  	  "tcl.lang.ContinueCmd");
     Extension.loadOnDemand(this, "concat",	  "tcl.lang.ConcatCmd");
@@ -701,24 +600,6 @@ createCommands()
     Extension.loadOnDemand(this, "subst",	  "tcl.lang.SubstCmd");
     Extension.loadOnDemand(this, "switch",	  "tcl.lang.SwitchCmd");
     Extension.loadOnDemand(this, "tell",  	  "tcl.lang.TellCmd");
-    
-    
-    /*
-    //Mo: moved loading of test commands into JavaTestExtension.java
-    Extension.loadOnDemand(this, "testcmdinfo", 
-	    "tcl.lang.TestcmdinfoCmd");
-    Extension.loadOnDemand(this, "testdcall", 
-	    "tcl.lang.TestdcallCmd");
-    Extension.loadOnDemand(this, "testfhandle", 
-	    "tcl.lang.TestfhandleCmd");
-    Extension.loadOnDemand(this, "testgetplatform", 
-	    "tcl.lang.TestgetplatformCmd");
-    Extension.loadOnDemand(this, "testsetplatform", 
-	    "tcl.lang.TestsetplatformCmd");
-    Extension.loadOnDemand(this, "testtranslatefilename", 
-	    "tcl.lang.TesttranslatefilenameCmd");
-    */
-
     Extension.loadOnDemand(this, "time",	  "tcl.lang.TimeCmd");
     Extension.loadOnDemand(this, "trace",	  "tcl.lang.TraceCmd");
     Extension.loadOnDemand(this, "unset",	  "tcl.lang.UnsetCmd");
@@ -728,10 +609,27 @@ createCommands()
     Extension.loadOnDemand(this, "vwait",	  "tcl.lang.VwaitCmd");
     Extension.loadOnDemand(this, "while",	  "tcl.lang.WhileCmd");
 
-    /*
-     * Commands in the Java package.
-     */
 
+    // Add "regexp" and related commands to this interp.
+    RegexpCmd.init(this);
+
+
+    // The Java package is only loaded when the user does a
+    // "package require java" in the interp. We need to create a small
+    // command that will load when "package require java" is called.
+
+    Extension.loadOnDemand(this, "jaclloadjava", "tcl.lang.JaclLoadJavaCmd");
+    
+    try {
+        eval("package ifneeded java 1.2.1 jaclloadjava");
+    } catch (TclException e) {
+	System.out.println(getResult());
+	e.printStackTrace();
+	throw new TclRuntimeError("unexpected TclException: " + e);
+    }
+
+
+/*
     try {
 	(new BlendExtension()).init(this);
 	RegexpCmd.init(this);
@@ -740,6 +638,8 @@ createCommands()
 	e.printStackTrace();
 	throw new TclRuntimeError("unexpected TclException: " + e);
     }
+*/
+
 }
 
 /*
@@ -1879,11 +1779,11 @@ throws
 	eval(fileContent, 0);
     }
     catch( TclException e) {
-        if( e.getCompletionCode()==TCL.ERROR ) {
-            addErrorInfo("\n    (file \"" + s + "\" line "
-            + errorLine + ")");
-        }
-        throw e;
+	if( e.getCompletionCode() == TCL.ERROR ) {
+	    addErrorInfo("\n    (file \"" + s + "\" line " 
+			 + errorLine + ")");
+	}
+	throw e;
     }
     finally {
 	scriptFile = oldScript;
@@ -1971,7 +1871,7 @@ readScriptFromFile(
     try {
 	byte charArray[] = new byte[fs.available()];
 	fs.read(charArray);
-        return translateLineSeparators(charArray, charArray.length);
+	return new String(charArray);
     } catch (IOException e) {
 	return null;
     } finally {
@@ -2007,17 +1907,47 @@ readScriptFromURL(
     try {
 	url = new URL(context, s);
     }
-    catch (MalformedURLException e1) {
+    catch (MalformedURLException e) {
 	return null;
     }
 
     try {
 	content = url.getContent();
     }
-    catch (IOException e2) {
+    catch (UnknownServiceException e) {
+	Class jar_class;
+	
+	try {
+	    jar_class = Class.forName("java.net.JarURLConnection");
+	} catch (Exception e2) {
+	    return null;
+	}
+
+	Object jar;
+	try {
+	    jar = url.openConnection();
+	} catch (IOException e2) {
+	    return null;
+	}
+
+	if ( jar == null ) {
+	    return null;
+	}
+	
+	// We must call JarURLConnection.getInputStream() dynamically
+	// Because the class JarURLConnection does not exist in JDK1.1
+	
+	try {
+	    Method m = jar_class.getMethod("openConnection",null);
+	    content = m.invoke(jar,null);
+	} catch (Exception e2) {
+	    return null;
+	}
+    }
+    catch (IOException e) {
 	return null;
     }
-    catch (SecurityException sec_e) {
+    catch (SecurityException e) {
 	return null;
     }
 
@@ -2027,10 +1957,11 @@ readScriptFromURL(
 	InputStream fs = (InputStream)content;
 
 	try {
+// FIXME : read does not check return values
 	    byte charArray[] = new byte[fs.available()];
 	    fs.read(charArray);
 	    return new String(charArray);
-	} catch (IOException e) {
+	} catch (IOException e2) {
 	    return null;
 	} finally {
 	    closeInputStream(fs);
@@ -2069,58 +2000,6 @@ closeInputStream(
 /*
  *----------------------------------------------------------------------
  *
- * translateLineSeparators --
- *
- *	If the line.Separator property is not \n, then translate all
- *      occurrences of the line.Separator to \n.
- *
- * Results:
- *	A String containing the properly translated results.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-private String
-translateLineSeparators(
-    byte [] byteArray,		// Input byte array.
-    int used)			// Only operate on 'used' chars.
-{
-    String sep = System.getProperty("line.separator");
-    if (sep.equals("\n")) {
-        return new String(byteArray, 0, used);
-    }
-
-    /*
-     * If we come to this place, a translation from "\r\n" (on Windows)
-     * or "\r" (on Mac?) into "\n" is needed.
-     */
-
-    int sepLength = sep.length();
-    String str = new String(byteArray, 0, used);
-    char tmpArray[] = new char[used];
-
-    int srcPos = 0;
-    int dstPos = 0;
-    int srcEnd;
-    while ((srcEnd = str.indexOf(sep, srcPos)) >= 0) {
-        str.getChars(srcPos, srcEnd, tmpArray, dstPos);
-        dstPos += srcEnd-srcPos;
-        tmpArray[dstPos++] = '\n';
-        srcPos = srcEnd+sepLength;
-    }
-    srcEnd = str.length();
-    str.getChars(srcPos, srcEnd, tmpArray, dstPos);
-    dstPos += srcEnd-srcPos;
-
-    return new String(tmpArray, 0, dstPos);
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * evalResource --
  *
  *	Execute a Tcl script stored in the given Java resource location.
@@ -2147,27 +2026,7 @@ evalResource(
 throws 
     TclException
 {
-    InputStream stream = null;
-
-    try {
-        stream = getClass().getResourceAsStream(resName);
-    } catch (SecurityException e2) {
-        // This catch is necessary if Jacl is to work in an applet
-        // at all. Note that java::new will not work from within Jacl
-        // in an applet.
-        // FIXME: we should be able to download the resource properly
-        // here.  
-        System.err.println("evalResource: Ignoring SecurityException, " +
-                "it is likely we are running in an applet: " +
-                "cannot read resource \"" + resName
-    		+ "\"" + e2);
-
-        return;
-    } catch (Exception e) {
-        throw new TclException(this, "cannot read resource \"" + resName
-    		+ "\"" + e);
-    }
-
+    InputStream stream = Class.class.getResourceAsStream(resName);
     if (stream == null) {
 	throw new TclException(this, "cannot read resource \"" + resName
 		+ "\"");
@@ -2175,15 +2034,20 @@ throws
 
     try {
 	
-        // We must do a workaround for compressed files BUG in JDK1.2beta4
-        // and JDK1.2fcs.
+	// Do a workaround for compressed files BUG in JDK1.2
+        // this bug first showed up in  JDK1.2beta4. I have sent
+        // a number of emails to Sun but they have deemed this a "feature"
+        // of 1.2. This is flat out wrong but I can not seem to change thier
+        // minds. Because of this, there is no way to do non blocking IO
+        // on a compressed Stream in Java. (mo)
 
         if ((System.getProperty("java.version").equals("1.2beta4") ||
-            System.getProperty("java.version").equals("1.2fcs")) &&
+            System.getProperty("java.version").equals("1.2fcs") ||
+            System.getProperty("java.version").equals("1.2")) &&
             stream.getClass().getName().equals("java.util.zip.ZipFile$1")) {
 	  int used = 0;
 	  int cur;
-	  int size = stream.available() * 4;
+	  int size = 1024 * 8;  // A good default size ??
 
 	  byte[] byteArray = new byte[size];
 
@@ -2191,7 +2055,7 @@ throws
 
 	  while (cur != -1) {
 	    
-	    // Expand the byte array if we need to make more room.
+	    // Expand the byte array if we need to make more room
 	    if (used >= size) {
 	      byte[] oldArray = byteArray;
 	      int new_size = size * 2;
@@ -2206,11 +2070,11 @@ throws
 	    cur = stream.read();
 	  }
 	  
-	  // Now we are done reading the stream so eval it.
-          eval(translateLineSeparators(byteArray,used), 0);
+	  // Now we are done reading the stream so eval it
+	  eval(new String(byteArray,0,used), 0);	  
 	  
 	} else {	  
-	  // Other systems do not need the compressed jar hack.
+	  // Other systems do not need the compressed jar hack
 
 	  int num = stream.available();
 	  byte[] byteArray = new byte[num];
@@ -2221,8 +2085,9 @@ throws
 	    num -= readLen;
 	  }
 
-          eval(translateLineSeparators(byteArray, byteArray.length), 0);
-      }
+	  eval(new String(byteArray), 0);
+	}
+
     } catch (IOException e) {
 	return;
     } finally {
@@ -2296,11 +2161,9 @@ setErrorCode(
 	setVar("errorCode", null, code, TCL.GLOBAL_ONLY);
 	errCodeSet = true;
     } catch (TclException excp) {
-	/*
-	 * Ignore any TclException's, possibly caused by variable traces on
-	 * the errorCode variable. This is compatible with the behavior of
-	 * the Tcl C API.
-	 */
+	// Ignore any TclException's, possibly caused by variable traces on
+	// the errorCode variable. This is compatible with the behavior of
+	// the Tcl C API.
     }
 }
 
@@ -2336,8 +2199,6 @@ public void
 addErrorInfo(
     String message)		// The message to record.
 {
-    int flags = 0;
-
     if (!errInProgress) {
 	errInProgress = true;
 
@@ -2345,23 +2206,17 @@ addErrorInfo(
 	    setVar("errorInfo", null, getResult().toString(),
 		   TCL.GLOBAL_ONLY);
 	} catch (TclException e1) {
-	    /*
-	     * Ignore (see try-block above).
-	     */
+	    // Ignore (see try-block above).
 	}
 
-	/*
-	 * If the errorCode variable wasn't set by the code
-	 * that generated the error, set it to "NONE".
-	 */
+	// If the errorCode variable wasn't set by the code
+	// that generated the error, set it to "NONE".
 
 	if (!errCodeSet) {
 	    try {
 		setVar("errorCode", null, "NONE", TCL.GLOBAL_ONLY);
 	    } catch (TclException e1) {
-		/*
-		 * Ignore (see try-block above).
-		 */
+		// Ignore (see try-block above).
 	    }
 	}
     }
@@ -2370,9 +2225,7 @@ addErrorInfo(
 	setVar("errorInfo", null, message,
 		TCL.APPEND_VALUE|TCL.GLOBAL_ONLY);
     }  catch (TclException e1) {
-	/*
-	 * Ignore (see try-block above).
-	 */
+	// Ignore (see try-block above).
     }
 }
 
@@ -2416,11 +2269,9 @@ updateReturnInfo()
 	    setVar("errorCode", null, (errorCode != null) ? errorCode : "NONE",
 		    TCL.GLOBAL_ONLY);
 	} catch (TclException e) {
-	    /*
-	     * An error may happen during a trace to errorCode. We ignore it.
-	     * This may leave error messages inside Interp.result (which
-	     * is compatible with Tcl 8.0 behavior.
-	     */
+	    // An error may happen during a trace to errorCode. We ignore it.
+	    // This may leave error messages inside Interp.result (which
+	    // is compatible with Tcl 8.0 behavior.
 	}
 	errCodeSet = true;
 
@@ -2428,12 +2279,10 @@ updateReturnInfo()
 	    try {
 		setVar("errorInfo", null, errorInfo, TCL.GLOBAL_ONLY);
 	    } catch (TclException e) {
-		/*
-		 * An error may happen during a trace to errorInfo. We
-		 * ignore it.  This may leave error messages inside
-		 * Interp.result (which is compatible with Tcl 8.0
-		 * behavior.
-		 */
+		// An error may happen during a trace to errorInfo. We
+		// ignore it.  This may leave error messages inside
+		// Interp.result (which is compatible with Tcl 8.0
+		// behavior.
 	    }
 	    errInProgress = true;
 	}
@@ -2548,14 +2397,13 @@ throws
 {
     File dirObj = FileUtil.getNewFileObj(this, dirName);
 
-    /*
-     *  Use the canonical name of the path, if possible.
-     */
+    //  Use the canonical name of the path, if possible.
 
     try {
 	dirObj = new File(dirObj.getCanonicalPath());
     } catch (IOException e) {
     }
+
 
     if (dirObj.isDirectory()) {
 	workingDir = dirObj;
@@ -2698,7 +2546,7 @@ throws
 
 protected DebugInfo dbg;
 
-/*
+/**
  * Initialize the debugging information.
  * @return a DebugInfo object used by Interp in non-debugging mode.
  */
@@ -2708,7 +2556,7 @@ initDebugInfo()
     return new DebugInfo(null, 1);
 }
 
-/*
+/**
  * Add more more level at the top of the debug stack.
  *
  * @param fileName the filename for the new stack level
@@ -2722,7 +2570,7 @@ void pushDebugStack(
     // do nothing.
 }
 
-/*
+/**
  * Remove the top-most level of the debug stack.
  */
 void 
@@ -2731,7 +2579,7 @@ throws
     TclRuntimeError {
     // do nothing
 }
-/*
+/**
  * Returns the name of the script file currently under execution.
  *
  * @return the name of the script file currently under execution.
@@ -2740,7 +2588,7 @@ String getScriptFile()
 {
     return dbg.fileName;
 }
-/*
+/**
  * Returns the line number where the given command argument begins. E.g, if
  * the following command is at line 10:
  *
@@ -2763,3 +2611,4 @@ getArgLineNumber(
 
 
 } // end Interp
+
