@@ -63,7 +63,7 @@ TCLBLEND_LD_BIND_NOW=@TCLBLEND_LD_BIND_NOW@
 TCLBLEND_SHLIB_NAMES="@TCLBLEND_SHLIB_NAMES@"
 
 
-# Tcl Blend under Linux AWT Workaround!
+# Tcl Blend under Linux AWT Workaround! (Required before JDK 1.1.8 from Blackdown)
 #
 # If you want to use the AWT in Tcl Blend on a Linux system with
 # the Blackdown port of the JDK then you should uncomment the
