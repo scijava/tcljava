@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: FuncSig.java,v 1.6 2000/10/29 06:00:42 mdejong Exp $
+ * RCS: @(#) $Id: FuncSig.java,v 1.7 2002/12/07 13:14:36 mdejong Exp $
  *
  */
 
@@ -200,16 +200,20 @@ throws
     Object match;
     int sigLength = TclList.getLength(interp, signature);
     String methodName = null;
+    TclObject class_or_method;
 
     if (sigLength == 0) {
 	throw new TclException(interp, "bad signature \"" + signature + "\"");
+    } else if (sigLength == 1) {
+	class_or_method = signature;
+    } else {
+	class_or_method = TclList.index(interp, signature, 0);
     }
 
     if (isConstructor) {
-	cls = JavaInvoke.getClassByName(interp,
-		  TclList.index(interp,signature, 0).toString() );
+	cls = JavaInvoke.getClassByName(interp, class_or_method.toString() );
     } else {
-	methodName = TclList.index(interp, signature, 0).toString();
+	methodName = class_or_method.toString();
     }
 
     if ((sigLength > 1) || (sigLength == 1 && count == 0)) {
@@ -252,7 +256,7 @@ throws
     }
 
     FuncSig sig = new FuncSig(cls, PkgInvoker.getPkgInvoker(cls), match);
-    signature.setInternalRep(sig);
+    //signature.setInternalRep(sig);
 
     return sig;
 }

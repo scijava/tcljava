@@ -5,7 +5,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: FuncSig.test,v 1.5 2000/12/22 09:47:15 mdejong Exp $
+# RCS: @(#) $Id: FuncSig.test,v 1.6 2002/12/07 13:14:36 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -18,17 +18,20 @@ setupJavaPackage
 # get
 #
 
+# The next two tests used to return tcl.lang.FuncSig but
+# the function signature caching was disabled.
+
 test FuncSig-1.1 {get} {
     set m Object
     java::new $m
     jtest type $m
-} tcl.lang.FuncSig
+} tcl.lang.TclList
 
 test FuncSig-1.2 {get} {
     set m toString
     [java::new Object] $m
     jtest type $m
-} tcl.lang.FuncSig
+} tcl.lang.TclList
 
 test FuncSig-1.3 {get, overloaded methods} {
     set m imethod

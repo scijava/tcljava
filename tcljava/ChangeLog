@@ -1,5 +1,21 @@
 2002-12-07  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/tcljava/tcl/lang/FieldSig.java (get):
+	* src/tcljava/tcl/lang/FuncSig.java (get):
+	* src/tcljava/tcl/lang/JavaNewCmd.java (get,
+	looksLikeArraySig):
+	* tests/tcljava/FuncSig.test:
+	* tests/tcljava/JavaNewCmd.test:
+	Optimize TclList use by getting the string
+	representation of lists we know have a
+	length of 1. This avoids an unneeded
+	allocation of a native object wrapper
+	in Tcl Blend. Comment out the pointless
+	setting of an internal rep in FuncSig
+	and update test cases.
+
+2002-12-07  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/native/java.h:
 	* src/native/javaCmd.c (FreeJavaCache, JavaSetupJava):
 	* src/native/javaObj.c (JavaObjInit, JavaGetTclObject):

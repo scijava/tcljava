@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaNewCmd.java,v 1.3 2000/10/29 06:00:42 mdejong Exp $
+ * RCS: @(#) $Id: JavaNewCmd.java,v 1.4 2002/12/07 13:14:36 mdejong Exp $
  *
  */
 
@@ -201,6 +201,8 @@ throws
     TclException
 {
     InternalRep rep = signature.getInternalRep();
+    int sigLen;
+    String clsName;
 
     if (rep instanceof FuncSig) {
 	// The string rep of FuncSig can never represent an ArraySig,
@@ -213,11 +215,15 @@ throws
 	return true;
     }
 
-    if (TclList.getLength(interp, signature) < 1) {
+    sigLen = TclList.getLength(interp, signature);
+    if (sigLen < 1) {
 	return false;
+    } else if (sigLen == 1) {
+	clsName = signature.toString();
+    } else {
+	clsName = TclList.index(interp, signature, 0).toString();
     }
 
-    String clsName = TclList.index(interp, signature, 0).toString();
     if (clsName.endsWith("[]") || clsName.startsWith("[")) {
 	return true;
     } else {
@@ -263,7 +269,7 @@ throws
 	    break trying;
 	}
 
-	String clsName = TclList.index(interp, signature, 0).toString();
+	String clsName = signature.toString();
 	if (!(clsName.endsWith("[]")) && !(clsName.startsWith("["))) {
 	    break trying;
 	}

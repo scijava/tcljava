@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: FieldSig.java,v 1.3 2000/10/29 06:00:42 mdejong Exp $
+ * RCS: @(#) $Id: FieldSig.java,v 1.4 2002/12/07 13:14:36 mdejong Exp $
  *
  */
 
@@ -147,8 +147,13 @@ throws
 		signature + "\"");
     }
 
-    fieldName = TclList.index(interp, signature, 0).toString();
-    sigClsObj = TclList.index(interp, signature, 1);
+    if (len == 1) {
+	fieldName = signature.toString();
+	sigClsObj = null;
+    } else {
+	fieldName = TclList.index(interp, signature, 0).toString();
+	sigClsObj = TclList.index(interp, signature, 1);
+    }
 
     if (sigClsObj != null) {
 	sigCls = ClassRep.get(interp, sigClsObj);
