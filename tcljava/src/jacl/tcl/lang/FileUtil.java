@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FileUtil.java,v 1.3 1998/11/05 00:24:24 hylands Exp $
+ * RCS: @(#) $Id: FileUtil.java,v 1.4 1999/05/09 00:15:34 dejong Exp $
  *
  */
 
@@ -61,9 +61,7 @@ getWinHomePath(
 {
     int pIndex, oldIndex, firstNonSlash;
 
-    /* 
-     * The first 2 or more chars must be slashes.
-     */
+    // The first 2 or more chars must be slashes.
 
     for(pIndex = 0; pIndex < path.length(); pIndex++) {
 	if (path.charAt(pIndex) != '/') {
@@ -76,9 +74,8 @@ getWinHomePath(
     }
     firstNonSlash = pIndex;
 
-    /* 
-     * The next 1 or more chars may not be slashes.
-     */
+
+    // The next 1 or more chars may not be slashes.
 
     for (; pIndex < path.length(); pIndex++) {
 	if (path.charAt(pIndex) == '/') {
@@ -93,9 +90,7 @@ getWinHomePath(
     absBuf.append("//");
     absBuf.append(path.substring(firstNonSlash, pIndex));
 
-    /* 
-     * The next 1 or more chars must be slashes.
-     */
+    // The next 1 or more chars must be slashes.
 
     oldIndex = pIndex;
     for (; pIndex < path.length(); pIndex++) {
@@ -105,9 +100,7 @@ getWinHomePath(
 		return 0;
 	    }
 
-	    /* 
-	     * We know that the path fits the pattern.
-	     */
+	    // We know that the path fits the pattern.
 
 	    if (stopEarly) {
 		absBuf.setLength(0);
@@ -115,10 +108,8 @@ getWinHomePath(
 	    }
 	    firstNonSlash = pIndex;
 
-	    /* 
-	     * Traverse the path until a new slash (or end of string) is found.
-	     * Return the index of the new slash.
-	     */
+	    // Traverse the path until a new slash (or end of string) is found.
+	    // Return the index of the new slash.
 
 	    pIndex++;
 	    for (; pIndex < path.length(); pIndex++) {
@@ -261,9 +252,7 @@ getDegenerateUnixPath(
 	++pIndex;
     }
 
-    /*
-     * "path" doesn't begin with a '/'.
-     */
+    // "path" doesn't begin with a '/'.
 
     if (pIndex == 0) {
 	return 0;
@@ -281,7 +270,6 @@ getDegenerateUnixPath(
 	    ++pIndex;
 	}
     }
-    int lastSlashIndex = pIndex;
     if ((pIndex < path.length()) && (path.charAt(pIndex) == '.')) {
 	++pIndex;
     }
@@ -289,9 +277,7 @@ getDegenerateUnixPath(
 	++pIndex;
     }
 
-    /*
-     * pIndex may be 1 past the end of "path".
-     */
+    // pIndex may be 1 past the end of "path".
 
     return pIndex;
 }
@@ -327,10 +313,8 @@ getPathType(
     case JACL.PLATFORM_WINDOWS:	
 	path = path.replace('\\', '/');
 
-	/* 
-	 * Windows absolute pathes start with '~' or [a-zA-Z]:/ or home
-	 * path.
-	 */
+	// Windows absolute pathes start with '~' or [a-zA-Z]:/ or home
+	// path.
 
 	c = path.charAt(0);
 	if (c == '~') {
@@ -359,11 +343,9 @@ getPathType(
 
 	switch (path.indexOf(':')) {
 	case -1:
-	    /*
-	     * Unix-style name contains no colons.  Return absolute iff "path"
-	     * begins with '/' and is not degenerate.  Otherwise, return
-	     * relative.
-	     */
+	    // Unix-style name contains no colons.  Return absolute iff "path"
+	    // begins with '/' and is not degenerate.  Otherwise, return
+	    // relative.
 
 	    if ((path.charAt(0) == '/') &&
 		    (getDegenerateUnixPath(path) < path.length())) {
@@ -371,24 +353,18 @@ getPathType(
 	    }
 	    break;
 	case 0: 
-	    /*
-	     * Mac-style name contains a colon in the first position.
-	     */
+	    // Mac-style name contains a colon in the first position.
 
 	    return PATH_RELATIVE;
 	default:
-	    /*
-	     * Mac-style name contains a colon, but not in the first position.
-	     */
+	    // Mac-style name contains a colon, but not in the first position.
 
 	    return PATH_ABSOLUTE;
 	}
 	return PATH_RELATIVE;
 
     default:
-	/*
-	 * Unix absolute pathes start with either '/' or '~'.
-	 */
+	// Unix absolute pathes start with either '/' or '~'.
 
 	c = path.charAt(0);
 	if ((c == '/') || (c == '~')) {
@@ -420,15 +396,23 @@ getNewFileObj(
     String fileName)  			// File to create object for.
 throws 
     TclException
-{	
-    File f;
+{
+    final boolean debug = false;
     fileName = translateFileName(interp, fileName);
-    if (getPathType(fileName) == PATH_ABSOLUTE) {
-	f = new File(fileName);
-    } else {
-	f = new File (interp.getWorkingDir(), fileName);
+    if (debug) {
+	System.out.println("File name is \"" + fileName + "\"");
     }
-    return f;
+    if (getPathType(fileName) == PATH_ABSOLUTE) {
+	if (debug) {
+	    System.out.println("File name is PATH_ABSOLUTE");
+	}
+	return new File(fileName);
+    } else {
+	if (debug) {
+	    System.out.println("File name is relative");
+	}
+	return new File(interp.getWorkingDir(), fileName);
+    }
 }
 
 /*
@@ -457,18 +441,14 @@ appendComponent(
     for (; compIndex < component.length(); compIndex++) {
 	char c = component.charAt(compIndex);
 	if (c == '/') {
-	    /*
-	     * Eliminate duplicate slashes.
-	     */
+	    // Eliminate duplicate slashes.
 	    
 	    while ((compIndex < compSize)
 		    && (component.charAt(compIndex + 1) == '/')) {
 		compIndex++;
 	    }
 
-	    /*
-	     * Only add a slash if following non-slash elements exist.
-	     */
+	    // Only add a slash if following non-slash elements exist.
 	    
 	    if (compIndex < compSize) {
 		buf.ensureCapacity(buf.length() + 1);
@@ -511,11 +491,9 @@ throws
 	
     switch (JACL.PLATFORM) {
     case JACL.PLATFORM_WINDOWS:
-	/*
-	 * Iterate over all of the components.  If a component is
-	 * absolute, then reset the result and start building the
-	 * path from the current component on.
-	 */
+	// Iterate over all of the components.  If a component is
+	// absolute, then reset the result and start building the
+	// path from the current component on.
 
 	for (int i = startIndex; i < endIndex; i++) {
 
@@ -530,34 +508,26 @@ throws
 	    StringBuffer absBuf = new StringBuffer(0);
 	    pIndex = getWinAbsPath(p, absBuf);
 	    if (pIndex > 0) {
-		/*
-		 * If the path is absolute or volume relative (except those
-		 * beginning with '~'), reset the result buffer to the absolute
-		 * substring. 
-		 */
+		// If the path is absolute or volume relative (except those
+		// beginning with '~'), reset the result buffer to the absolute
+		// substring. 
 
 		result = absBuf;
 	    } else if (p.charAt(0) == '~') {
-		/*
-		 * If the path begins with '~', reset the result buffer to "".
-		 */
+		// If the path begins with '~', reset the result buffer to "".
 
  		result.setLength(0);
 	    } else {
-		/*
-		 * This is a relative path.  Remove the ./ from tilde prefixed
-		 * elements unless it is the first component.
-		 */
+		// This is a relative path.  Remove the ./ from tilde prefixed
+		// elements unless it is the first component.
 
 		if ((result.length() != 0)
 			&& (p.regionMatches(pIndex, "./~", 0, 3))) {
 			pIndex = 2;
 		}
 		
-		/*
-		 * Check to see if we need to append a separator before adding
-		 * this relative component.
-		 */
+		// Check to see if we need to append a separator before adding
+		// this relative component.
 		
 		if (result.length() != 0) {
 		    char c = result.charAt(result.length() - 1);
@@ -568,9 +538,7 @@ throws
 		}
 	    }
 	    
-	    /*
-	     * Append the element.
-	     */
+	    // Append the element.
 	    
 	    appendComponent(p, pIndex, pLastIndex, result);
 	    pIndex = p.length();
@@ -578,11 +546,10 @@ throws
 	return result.toString();
    
     case JACL.PLATFORM_MAC:
-	/*
-	 * Iterate over all of the components.  If a component is
-	 * absolute, then reset the result and start building the
-	 * path from the current component on.
-	 */
+	// Iterate over all of the components.  If a component is
+	// absolute, then reset the result and start building the
+	// path from the current component on.
+
 
 	boolean needsSep = true;
 	for (int i = startIndex; i < endIndex; i++) {
@@ -594,10 +561,8 @@ throws
 		continue;
 	    }
 	    
-	    /*
-	     * If 1st path element is absolute, reset the result to "" and
-	     * append the 1st path element to it. 
-	     */
+	    // If 1st path element is absolute, reset the result to "" and
+	    // append the 1st path element to it. 
 
 	    int start = 0;
 	    String p = splitArrayObj[0].toString();
@@ -608,12 +573,10 @@ throws
 		needsSep = false;
 	    }
 
-	    /*
-	     * Now append the rest of the path elements, skipping
-	     * : unless it is the first element of the path, and
-	     * watching out for :: et al. so we don't end up with
-	     * too many colons in the result.
-	     */
+	    // Now append the rest of the path elements, skipping
+	    // : unless it is the first element of the path, and
+	    // watching out for :: et al. so we don't end up with
+	    // too many colons in the result.
 
 	    for (int j = start; j < splitArrayObj.length; j++) {
 
@@ -649,11 +612,9 @@ throws
 	    }
 	}
 	return result.toString();
-    
+
     default:
-	/*
-	 * Unix platform.
-	 */
+	// Unix platform.
 	
 	for (int i = startIndex; i < endIndex; i++) {
 	    
@@ -666,10 +627,8 @@ throws
 	    }
 	    
 	    if (p.charAt(pIndex) == '/') {
-		/*
-		 * If the path is absolute (except those beginning with '~'), 
-		 * reset the result buffer to the absolute substring. 
-		 */
+		// If the path is absolute (except those beginning with '~'), 
+		// reset the result buffer to the absolute substring. 
 
 		while ((pIndex <= pLastIndex) 
 			&& (p.charAt(pIndex) == '/')) {
@@ -678,25 +637,19 @@ throws
 		result.setLength(0);
 		result.append('/');
 	    } else if (p.charAt(pIndex) == '~') {
-		/*
-		 * If the path begins with '~', reset the result buffer to "".
-		 */
+		// If the path begins with '~', reset the result buffer to "".
 
 		result.setLength(0);
 	    } else {
-		/*
-		 * This is a relative path.  Remove the ./ from tilde prefixed
-		 * elements unless it is the first component.
-		 */
+		// This is a relative path.  Remove the ./ from tilde prefixed
+		// elements unless it is the first component.
 
 		if ((result.length() != 0)
 			&& (p.regionMatches(pIndex, "./~", 0, 3))) {
 		    pIndex += 2;
 		}
 
-		/*
-		 * Append a separator if needed.
-		 */
+		// Append a separator if needed.
 	    
 		if ((result.length() != 0)
 			&& (result.charAt(result.length() - 1) != '/')) {
@@ -704,10 +657,8 @@ throws
 		    result.append('/');
 		}
 	    }
-	
-	    /*
-	     * Append the element.
-	     */
+
+	    // Append the element.
 	    
 	    appendComponent(p, pIndex, pLastIndex, result);
 	    pIndex = p.length();
@@ -751,17 +702,13 @@ throws
     boolean prependColon = false;
     String thisDir = "./";
 
-    /*
-     * If the path is the empty string, returnan empty result list.
-     */
+    // If the path is the empty string, returnan empty result list.
 
     if (path.length() == 0) {
 	return resultListObj;
     }
 
-    /*
-     * Handling the 1st component is file system dependent.
-     */
+    // Handling the 1st component is file system dependent.
 
     switch (JACL.PLATFORM) {
     case JACL.PLATFORM_WINDOWS:
@@ -778,23 +725,20 @@ throws
 	break;
 
     case JACL.PLATFORM_MAC:
+
 	tmpPath = "";
 	thisDir = ":";
 
 	switch (path.indexOf(':')) {
 	case -1:
-	    /*
-	     * Unix-style name contains no colons.
-	     */
-
+	    // Unix-style name contains no colons.
+	    
 	    if (path.charAt(0) != '/') {
 		tmpPath = path;
 		convertDotToColon = true;
 		if (path.charAt(0) == '~') {
-		    /*
-		     * If '~' is the first char, then append a colon to end
-		     * of the 1st component. 
-		     */
+		    // If '~' is the first char, then append a colon to end
+		    // of the 1st component. 
 
 		    appendColon = true;
 		}
@@ -802,11 +746,10 @@ throws
 	    }
 	    int degenIndex = getDegenerateUnixPath(path);
 	    if (degenIndex < path.length()) {
-		/*
-		 * First component of absolute unix path is followed by a ':',
-		 * instead of being preceded by a degenerate unix-style
-		 * pattern.
-		 */
+		// First component of absolute unix path is followed by a ':',
+		// instead of being preceded by a degenerate unix-style
+		// pattern.
+		
     
 		tmpPath = path.substring(degenIndex);
 		convertDotToColon = true;
@@ -814,49 +757,42 @@ throws
 		break;
 	    }
 
-	    /*
-	     * Degenerate unix path can't be split.  Return a list with one
-	     * element:  ":" prepended to "path".
-	     */
+	    // Degenerate unix path can't be split.  Return a list with one
+	    // element:  ":" prepended to "path".
     
 	    componentObj = TclString.newInstance(":" + path);
 	    TclList.append(interp, resultListObj, componentObj);
 	    return resultListObj;
 	case 0: 
-	    /*
-	     * Relative mac-style name contains a colon in the first position.
-	     */
+	    // Relative mac-style name contains a colon in the first position.
 
 	    if (path.length() == 1) {
-		/*
-		 * If path == ":", then return a list with ":" as its only
-		 * element.
-		 */
+		// If path == ":", then return a list with ":" as its only
+		// element.
 
 		componentObj = TclString.newInstance(":");
 		TclList.append(interp, resultListObj, componentObj);
 		return resultListObj;
 	    }
 
-	    /*
-	     * For each component, if slashes exist in the remaining filename,
-	     * prepend a colon to the component.  Since this path is relative,
-	     * pretend that we have already processed 1 components so a
-	     * tilde-prefixed 1st component will have ":" prepended to it.
-	     */
+
+	    // For each component, if slashes exist in the remaining filename,
+	    // prepend a colon to the component.  Since this path is relative,
+	    // pretend that we have already processed 1 components so a
+	    // tilde-prefixed 1st component will have ":" prepended to it.
+	    
 
 	    tmpPath = path.substring(1);
 	    foundComponent = true;
 	    prependColon = true;
 	    isColonSeparator = true;
 	    break;
+
 	default:
-	    /*
-	     * Absolute mac-style name contains a colon, but not in the first
-	     * position.   Append a colon to the first component, and, for each
-	     * following component, if slashes exist in the remaining filename,
-	     * prepend a colon to the component.
-	     */
+	    // Absolute mac-style name contains a colon, but not in the first
+	    // position.   Append a colon to the first component, and, for each
+	    // following component, if slashes exist in the remaining filename,
+	    // prepend a colon to the component.
 
 	    tmpPath = path;
 	    appendColon = true;
@@ -867,10 +803,8 @@ throws
 	break;
 
     default:
-	/*
-	 * Unix file name: if the first char is a "/", append "/" to the result
-	 * list. 
-	 */
+	// Unix file name: if the first char is a "/", append "/" to the result
+	// list. 
 
 	if (path.charAt(0) == '/') {
 	    componentObj = TclString.newInstance("/");
@@ -882,17 +816,13 @@ throws
 	}
     }
 
-    /*
-     * Iterate over all of the components of the path.
-     */
+    // Iterate over all of the components of the path.
 
     int sIndex = 0;
     while (sIndex != -1) {
 	if (isColonSeparator) {
 	    sIndex = tmpPath.indexOf(":");
-	    /* 
-	     * process adjacent ':'
-	     */
+	    // process adjacent ':'
 	    
 	    if (sIndex == 0) {
 		componentObj = TclString.newInstance("::");
@@ -903,9 +833,7 @@ throws
 	    }
 	} else {
 	    sIndex = tmpPath.indexOf("/");
-	    /* 
-	     * Ignore a redundant '/'
-	     */
+	    // Ignore a redundant '/'
 	    
 	    if (sIndex == 0) {
 		tmpPath = tmpPath.substring(sIndex + 1);
@@ -913,9 +841,7 @@ throws
 	    }
 	}
 	if (sIndex == -1) {
-	    /*
-	     * Processing the last component.  If it is empty, exit loop.
-	     */
+	    // Processing the last component.  If it is empty, exit loop.
 
 	    if (tmpPath.length() == 0) {
 		break;
@@ -927,26 +853,20 @@ throws
 	
 	if (convertDotToColon &&
 		(component.equals(".") || component.equals(".."))) {
-	    /*
-	     * If platform = MAC, convert .. to :: or . to ::
-	     */
+	    // If platform = MAC, convert .. to :: or . to :
 
 	    component = component.replace('.',':');
 	}
 	if (foundComponent) {
 	    if (component.charAt(0) == '~') {	    
-		/*
-		 * If a '~' preceeds a component (other than the 1st one), then
-		 * prepend "./" or ":" to the component.
-		 */
+		// If a '~' preceeds a component (other than the 1st one), then
+		// prepend "./" or ":" to the component.
 
 		component = thisDir + component;
 	    } else if (prependColon) {	    
-		/*
-		 * If the prependColon flag is set, either unset it or prepend
-		 * ":" to the component, depending on whether any '/'s remain
-		 * in tmpPath.
-		 */
+		// If the prependColon flag is set, either unset it or prepend
+		// ":" to the component, depending on whether any '/'s remain
+		// in tmpPath.
 
 		if (tmpPath.indexOf('/') == -1) {
 		    prependColon = false;
@@ -955,9 +875,7 @@ throws
 		}
 	    }
 	} else if (appendColon) {
-	    /*
-	     * If platform = MAC, append a ':' to the first component.
-	     */
+	    //If platform = MAC, append a ':' to the first component.
 
 	    component = component + ":";
 	}
@@ -1007,12 +925,10 @@ throws
 	}
 	return dir;
     }
-	
-    /* 
-     * WARNING:  Java does not support other users.  "dir" is always null,
-     * but it should be the home directory (corresponding to the user name), as
-     * specified in the password file.
-     */
+
+    // WARNING:  Java does not support other users.  "dir" is always null,
+    // but it should be the home directory (corresponding to the user name), as
+    // specified in the password file.
 
     dir = null;
     if (dir == null) {	
@@ -1059,14 +975,14 @@ throws
 
 	String user = splitArrayObj[0].toString().substring(1);
 
-	/*
-	 * Strip the trailing ':' off of a Mac path
-	 * before passing the user name to DoTildeSubst.
-	 */
+
+	// Strip the trailing ':' off of a Mac path
+	// before passing the user name to DoTildeSubst.
 	
 	if ((JACL.PLATFORM == JACL.PLATFORM_MAC) && (user.endsWith(":"))) {
 	    user = user.substring(0, user.length() - 1);
 	}
+
 	user = doTildeSubst(interp, user);
 
 // 	if (splitArrayObj.length < 2) {
@@ -1078,10 +994,9 @@ throws
 // 	}
     }
 
-    /*
-     * Convert forward slashes to backslashes in Windows paths because
-     * some system interfaces don't accept forward slashes.
-     */
+
+    // Convert forward slashes to backslashes in Windows paths because
+    // some system interfaces don't accept forward slashes.
 
     if (JACL.PLATFORM == JACL.PLATFORM_WINDOWS) {
 	fileName = fileName.replace('/','\\');
