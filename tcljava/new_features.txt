@@ -163,11 +163,12 @@ collected. This can be really handy when you want to quickly
 test out a java class without the hassle of garbage collection.
 
 
-(TCL BLEND NOW SUPPORTS TCL 8.1)
+(TCL BLEND NOW SUPPORTS TCL 8.1 and Tcl 8.2)
 
-The new 8.1 version of the Tcl core can now be used with Tcl Blend.
-Support is still at an early stage and more feedback is needed but
-this is still an exciting development for users of Tcl Blend.
+The new 8.1 and 8.2 versions of the Tcl core can now be used
+with Tcl Blend. Support is still at an early stage and more
+feedback is needed but this is still an exciting development
+for users of Tcl Blend.
 
 
 (JACL NOW SUPPORTS NAMESPACES)
