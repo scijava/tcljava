@@ -1,6 +1,6 @@
 # This Makefile is used to the java loadable module.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.3 1998/10/29 22:35:38 hylands Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.4 1998/11/04 22:44:11 hylands Exp $
 
 # The version of TclJava, used in this Makefile
 VERSION = @TCLJAVA_VERSION@
@@ -56,6 +56,9 @@ JAVA_ARCH_INCLUDE	= @JAVA_ARCH_INCLUDE@
 
 # Architecture dependent lib dir, /opt/jdk1.1.4/lib/sparc/native_threads
 JAVA_ARCH_LIB		= @JAVA_ARCH_LIB@
+
+# Shared libraries necessary at runtime
+JAVA_ARCH_RUNTIME_LIBS	= @JAVA_ARCH_RUNTIME_LIBS@
 
 # Colon separated list of directories to search for libraries at runtime 
 LIB_RUNTIME_DIR		= $(JAVA_ARCH_LIB):$(TCL_BIN_DIR)
@@ -260,7 +263,7 @@ BLEND_TCL_LANG_TESTS = \
 
 # Default is to build whatever is specified by the
 # TCLJAVA variable (jacl or tclblend).
-all: $(TCLJAVA)
+all: Makefile $(TCLJAVA)
 
 install: install_$(TCLJAVA) install_tcljava
 
@@ -268,7 +271,7 @@ install: install_$(TCLJAVA) install_tcljava
 # Build Tcl Blend
 #----------------------------------------------------------------
 
-tclblend: tclblend.jar
+tclblend: jwish tclblend.jar
 
 # tclblend.jar needs to depend on tclblend.build so that it
 # gets rebuilt each time the .class files are built
@@ -462,7 +465,7 @@ green.pure: .purify green.o libtclblend$(SHLIB_SUFFIX)
 green.pure.test.exec: .purify
 	( echo lappend auto_path [pwd]\; cd $(TOP_DIR)/tests\; \
 	  source all\; exit; ) | \
-	LD_LIBRARY_PATH="$(TCL_BIN_DIR):$(BUILD_DIR):$(LD_LIBRARY_PATH):$(JAVA_DIR)/lib/sparc/$(JTHREADS)_threads" \
+	LD_LIBRARY_PATH=$(BUILD_DIR):$(TCL_BIN_DIR):$(JAVA_ARCH_LIB):$(JAVA_ARCH_RUNTIME_LIBS):$(LD_LIBRARY_PATH) \
 	CLASSPATH=$(JAVA_CLASSPATH):$(CLASS_DIR)/$(TCLJAVA):$(BUILD_DIR) \
 	BUILD_DIR=$(BUILD_DIR) \
 	$(BUILD_DIR)/green.pure
@@ -562,7 +565,7 @@ jsrestore:
 # Build Jacl
 #----------------------------------------------------------------
 
-jacl: jacl.jar
+jacl: jaclsh jacl.jar
 
 jacl.build: tcljava
 	mkdir -p $(JACL_BUILD_DIR)/tcl/lang/library
@@ -726,7 +729,7 @@ test_tclblend.exec:
 	  source all\; \
 	  puts \"Tests done, about to call exit.\"\; \
           exit; ) | \
-	LD_LIBRARY_PATH="$(BUILD_DIR):$(LD_LIBRARY_PATH):$(JAVA_DIR)/lib/sparc/$(JTHREADS)_threads:$(JAVA_DIR)/lib/sparc" \
+	LD_LIBRARY_PATH=$(BUILD_DIR):$(TCL_BIN_DIR):$(JAVA_ARCH_LIB):$(JAVA_ARCH_RUNTIME_LIBS):$(LD_LIBRARY_PATH) \
 	BUILD_DIR=$(BUILD_DIR) \
 	CLASSPATH=$(TEST_CLASSPATH) \
 	$(TCL_BIN_DIR)/tclsh
@@ -734,15 +737,26 @@ test_tclblend.exec:
 $(TCLTEST):
 	(cd $(TCL_BIN_DIR); $(MAKE) tcltest BUILD_DIR=$(BUILD_DIR))
 
-test_tclblend.jar:
-	@echo "This test builds tclblend, then jacl, then tries"
-	@echo "the tclblend test suite.  This "
-	$(MAKE) TCLJAVA=tclblend
-	$(MAKE) TCLJAVA=tclblend test
-	$(MAKE) TCLJAVA=jacl
-	$(MAKE) TCLJAVA=jacl test
-	$(MAKE) TCLJAVA=tclblend test
 
+#----------------------------------------------------------------
+# shell : used to drop the user into a Jacl or Tcl Blend shell
+#----------------------------------------------------------------
+
+
+shell: shell_$(TCLJAVA).exec
+
+shell_jacl.exec: check_jacl
+	$(JAVA) $(JAVA_FLAGS) -classpath $(TEST_CLASSPATH) \
+		-DBUILD_DIR=$(BUILD_DIR) -DJAVA=$(JAVA) tcl.lang.Shell
+
+
+shell_tclblend.exec: check_tclblend
+	cp $(MISC_DIR)/pkgIndex.tcl $(BUILD_DIR)
+	TCLLIBPATH=$(BUILD_DIR) \
+	LD_LIBRARY_PATH=$(BUILD_DIR):$(TCL_BIN_DIR):$(JAVA_ARCH_LIB):$(JAVA_ARCH_RUNTIME_LIBS):$(LD_LIBRARY_PATH) \
+	BUILD_DIR=$(BUILD_DIR) \
+	CLASSPATH=$(TEST_CLASSPATH) \
+	$(TCL_BIN_DIR)/tclsh
 
 #----------------------------------------------------------------
 # Demos
@@ -821,6 +835,12 @@ depend:
 	makedepend -- $(DEPEND_SWITCHES) -- $(SRCS)
 
 Makefile: $(UNIX_DIR)/Makefile.in
+	./config.status
+
+jwish: $(UNIX_DIR)/jwish.in
+	./config.status
+
+jaclsh: $(UNIX_DIR)/jaclsh.in
 	./config.status
 
 $(UNIX_DIR)/configure: $(UNIX_DIR)/configure.in
@@ -910,7 +930,8 @@ BLEND_DISTDIR		= $(DISTDIR)/$(BLEND_DISTNAME)
 # Permissions to set the files in the distribution to.
 DIST_CHMOD_PERMS	= a+rX,u+w,go-w,g-s
 
-# This rule will build all the distributions
+# This rule will build all the distributions.
+# See ../tests/testbuild.mk for ways to test the distributions
 dists: 	jaclSrcDist tclblendSrcDist jaclBinDist tclblendBinDist tcljavaDist
 
 
@@ -1049,14 +1070,32 @@ tcljavaSrcDist: Makefile
 		$(TOP_DIR)/src/tests/tests/RetArray.java \
 		$(DISTDIR)/src/tests/tests
 
-	mkdir -p $(DISTDIR)/doc/html
+	mkdir -p $(DISTDIR)/doc
 	cp -p $(TOP_DIR)/doc/*.[13n] \
 		$(TOP_DIR)/doc/license.htm \
 		$(TOP_DIR)/doc/man.macros \
 		$(TOP_DIR)/license.terms \
 		$(DISTDIR)/doc
-	cp -p $(TOP_DIR)/doc/html/placeholder.html \
+
+	mkdir -p $(DISTDIR)/doc/html
+	cp -p $(TOP_DIR)/doc/html/*.htm \
 		$(DISTDIR)/doc/html
+
+	mkdir -p $(DISTDIR)/doc/html/Keywords
+	cp -p $(TOP_DIR)/doc/html/Keywords/*.htm \
+		$(DISTDIR)/doc/html/Keywords
+
+	mkdir -p $(DISTDIR)/doc/html/Studio
+	cp -p $(TOP_DIR)/doc/html/Studio/*.htm \
+		$(DISTDIR)/doc/html/Studio
+
+	mkdir -p $(DISTDIR)/doc/html/TclJava
+	cp -p $(TOP_DIR)/doc/html/TclJava/*.htm \
+		$(DISTDIR)/doc/html/TclJava
+
+	mkdir -p $(DISTDIR)/doc/html/TclJavaLib
+	cp -p $(TOP_DIR)/doc/html/TclJavaLib/*.htm \
+		$(DISTDIR)/doc/html/TclJavaLib
 
 	mkdir -p $(DISTDIR)/tests/tcljava
 	cp -r $(TOP_DIR)/tests/README \
@@ -1213,25 +1252,6 @@ jaclSrcDist: $(UNIX_DIR)/configure Makefile
 		zip -qr8 $(JACL_ZIPNAME) $(JACL_DISTNAME); \
 		rm -f $(JACL_SRC_DISTNAME).tar
 
-# Sanity check by building, installing, running tests
-jaclSrcBuild:
-	mkdir -p $(DISTDIR)/jacltest
-	cd $(JACL_DISTDIR)/unix; \
-		configure --prefix=$(DISTDIR)/jacltest \
-		--with-studio=$(STUDIO_LIB_DIR); \
-		$(MAKE) install; \
-		$(MAKE) test_jacl.build; \
-		$(MAKE) test
-
-
-# Test out jaclBinDist rule.  Run 'make jaclSrcDist jaclSrcBuild' first
-jaclBinTest:
-	rm -rf $(DISTDIR)/jaclbintest
-	mkdir -p $(DISTDIR)/jaclbintest
-	cd $(JACL_DISTDIR)/unix; \
-		$(MAKE) jaclBinDist DISTDIR=$(DISTDIR)/jaclbintest
-
-
 #----------------------------------------------------------------
 # tclblendSrcDist --
 #
@@ -1298,16 +1318,6 @@ tclblendSrcDist: $(UNIX_DIR)/configure Makefile
 		zip -rq8 $(BLEND_ZIPNAME) $(BLEND_DISTNAME); \
 		rm -f $(BLEND_SRC_DISTNAME).tar 
 
-# Sanity check by building, installing, running tests
-tclblendSrcBuild:
-	mkdir -p $(DISTDIR)/tbtest
-	cd $(BLEND_DISTDIR)/unix; \
-		configure -with-tcl=$(TCL_BIN_DIR) \
-			 --prefix=$(DISTDIR)/tbtest; \
-		$(MAKE) install; \
-		$(MAKE) test_tclblend.build; \
-		$(MAKE) test
-
 #----------------------------------------------------------------
 # tcljavaDist --
 #
@@ -1320,7 +1330,7 @@ TCLJAVA_TAR		= $(DISTDIR)/$(TCLJAVA_DISTNAME).tar
 
 tcljavaDist: $(SRCEX)
 	cd $(TOP_DIR)/..; \
-		tar cfX $(TCLJAVA_TAR) $(SRCEX) $(TCLJAVA_DISTNAME); \
+		tar cfX $(TCLJAVA_TAR) $(SRCEX) tcljava; \
 		gzip --best -c $(TCLJAVA_TAR) > $(TCLJAVA_TAR).gz
 
 # GNU tar reads this file and excludes anything that matches
@@ -1338,13 +1348,6 @@ $(SRCEX):
 	echo 'SCCS' >> $@
 	echo 'core' >> $@
 	echo 'jsdatabase' >> $@
-
-# Sanity check
-tcljavaDiff:
-	rm -rf $(DISTDIR)/tcljavatst
-	mkdir $(DISTDIR)/tcljavatst
-	cd $(DISTDIR)/tcljavatst; tar -xf $(TCLJAVA_TAR)
-	diff -r $(TOP_DIR) $(DISTDIR)/tcljavatst/$(TCLJAVA_DISTNAME)
 
 #----------------------------------------------------------------
 # jaclBinDist --
@@ -1425,16 +1428,17 @@ tclblendBinDist: $(UNIX_DIR)/configure Makefile
 
 	$(MAKE) tcljavaBinDist DISTDIR=$(BLEND_DISTDIR) TCLJAVA=tclblend
 
-	mkdir -p $(BLEND_DISTDIR)/unix
+	mkdir -p $(BLEND_DISTDIR)
 	cp -p $(UNIX_DIR)/green.c \
-		$(BUILD_DIR)/*.o \
+		$(BUILD_DIR)/jwish \
+		$(BUILD_DIR)/jwish.tcl \
 		$(BUILD_DIR)/libtclblend$(SHLIB_SUFFIX) \
 		$(BUILD_DIR)/tclbean.jar \
 		$(BUILD_DIR)/tclblend.jar \
 		$(BUILD_DIR)/tcljava.jar \
-		$(BLEND_DISTDIR)/unix
+		$(BLEND_DISTDIR)
 	cp -p $(UNIX_DIR)/README.tclblend \
-		$(BLEND_DISTDIR)/unix/README
+		$(BLEND_DISTDIR)/README
 
 	rm -f $(DISTDIR)/$(BLEND_DISTNAME).solaris.tar.Z \
 		$(DISTDIR)/$(BLEND_DISTNAME).solaris.tar.gz
