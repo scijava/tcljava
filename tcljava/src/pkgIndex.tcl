@@ -1,7 +1,7 @@
 # Cross platform init script for Tcl Blend. Known to work on unix and windows.
 # 
 # Author:  Christopher Hylands
-# RCS: @(#) $Id: pkgIndex.tcl,v 1.1 1998/10/14 21:09:10 cvsadmin Exp $
+# RCS: @(#) $Id: pkgIndex.tcl,v 1.2 1998/11/16 06:18:29 hylands Exp $
 #
 # Copyright (c) 1997-1998 The Regents of the University of California.
 # 	All Rights Reserved.
@@ -41,6 +41,11 @@ proc loadtclblend {dir} {
         }
         windows {
             set pre_lib ""
+	    # JDK1.2 requires that tclblend.dll either be in the users's path
+	    # or that we use an absolute pathname. 
+            if [ file exists "$dir/tclblend[info sharedlibextension]"] {
+		set pre_lib "$dir/"
+            }
             set sep ";"
             # Expand the pathname in case it is something like
             # c:/Progra~1/Tcl/lib/tclblend1.1
