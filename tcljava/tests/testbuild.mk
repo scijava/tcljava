@@ -2,7 +2,7 @@
 # This file need not be shipped with Jacl or Tcl Blend, it should
 # only be in the tcljava tar file that includes both Jacl and Tcl Blend.
 
-# RCS: @(#) $Id: testbuild.mk,v 1.5 1998/11/05 23:49:09 hylands Exp $
+# RCS: @(#) $Id: testbuild.mk,v 1.6 1998/11/16 06:10:24 hylands Exp $
 
 # To run these tests, do
 # cd ../unix 
@@ -71,10 +71,10 @@ SMOKETEST_RESULTS_FILE =	$(DISTDIR)/smoketest_results
 OK_SMOKETEST_RESULTS_FILE =	$(DISTDIR)/ok_smoketest_results
 
 # Correct output for Jacl
-JACL_GOOD_SMOKETEST_RESULTS =	"% java package: 1.1, jdkVersion: $(JDK_VERSION), patchLevel: 1.1a1 "
+JACL_GOOD_SMOKETEST_RESULTS =	"% java package: 1.1, jdkVersion: $(JDK_VERSION), patchLevel: 1.1b1 "
 
 # Correct output for Tcl Blend
-BLEND_GOOD_SMOKETEST_RESULTS =	"java package: 1.1, jdkVersion: $(JDK_VERSION), patchLevel: 1.1a1 "
+BLEND_GOOD_SMOKETEST_RESULTS =	"java package: 1.1, jdkVersion: $(JDK_VERSION), patchLevel: 1.1b1 "
 
 
 ######################################################################
