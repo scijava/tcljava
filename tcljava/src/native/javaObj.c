@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaObj.c,v 1.10 2002/12/18 03:39:53 mdejong Exp $
+ * RCS: @(#) $Id: javaObj.c,v 1.11 2002/12/18 07:39:40 mdejong Exp $
  */
 
 #include "java.h"
@@ -889,3 +889,28 @@ SetJavaCmdFromAny(
     return result;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * JavaIsRef --
+ *
+ *	Return true if this Tcl_Obj* contains a ref to a TclObject.
+ *
+ * Results:
+ *	1 or 0.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+JavaIsRef(
+    Tcl_Obj *objPtr)		/* Object to check .*/
+{
+    return ((objPtr->typePtr == &tclObjectType) ||
+            ((objPtr->typePtr == cmdTypePtr) &&
+                    (objPtr->internalRep.twoPtrValue.ptr2) != NULL));
+}

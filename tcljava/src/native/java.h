@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: java.h,v 1.11 2002/12/18 03:39:53 mdejong Exp $
+ * RCS: @(#) $Id: java.h,v 1.12 2002/12/18 07:39:40 mdejong Exp $
  */
 
 #ifndef _JAVA
@@ -149,6 +149,7 @@ TCLBLEND_EXTERN Tcl_Obj *	JavaGetTclObj(JNIEnv *env, jobject object);
 TCLBLEND_EXTERN jobject		JavaGetTclObject(JNIEnv *env, Tcl_Obj *objPtr,
 			    	    int *isLocal);
 TCLBLEND_EXTERN void		JavaBreakRef(JNIEnv *env, Tcl_Obj *objPtr);
+TCLBLEND_EXTERN int		JavaIsRef(Tcl_Obj *objPtr);
 TCLBLEND_EXTERN int		JavaSetupJava(JNIEnv *env, Tcl_Interp *interp);
 TCLBLEND_EXTERN int		JavaInitBlend(JNIEnv *env, Tcl_Interp *interp,
 			    	    jobject interpObj);

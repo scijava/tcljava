@@ -1,5 +1,15 @@
 2002-12-17  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/native/java.h (JavaIsRef):
+	* src/native/javaInterp.c (BTestCmd):
+	* src/native/javaObj.c (JavaIsRef):
+	* tests/tclblend/javaObj.test: Add new
+	btest isjobject method and use it to
+	check that the recently added JavaBreakRef
+	works as expected.
+
+2002-12-17  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/native/javaInterp.c (BTestCmd,
 	Java_tcl_lang_Interp_createBTestCommand):  Add
 	new btest command via createBTestCommand().
