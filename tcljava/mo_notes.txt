@@ -398,49 +398,6 @@ there is no way to know the current name of the command when
 we want to delete it from the interp.
 
 
-(TODO)
-figure out why reflected null objects do not come up as typed
-in an automated signature. AutoSig 4.5 is a good example of this.
-It only happend when java::autolock is on. Later, it looks like
-the eval command is to blame as it converts in the concat.
-
-
-
-(TODO)
-
-Can the auto name stuff be fixed for null??
-
-# This is like eval except that it does not convert java variables
-# into strings so it will keep java references alive unlike eval.
-
-proc java::seval { args } {
-  set num 0
-  set cmd {}
-  set copies {}
-
-  foreach arg $args {
-    if {! [catch {java::isnull $arg} err]} {
-          java::lock $arg
-    }
-
-    foreach subarg $arg {
-      incr num
-
-      if {! [catch {java::isnull $subarg} err]} {
-          java::lock $subarg
-      }
-
-      set $num $subarg
-      #puts "$num is [set $num]"
-      append cmd "\$[set num] "
-    }
-  }
-  #puts "cmd is \{$cmd\}"
-  eval $cmd
-}
-
-
-
 
 (TODO)
 
@@ -501,6 +458,10 @@ invoke-10.1.25
     "0.0"}
 
       unknown floating-point error, errno = 84
+
+
+(UPDATE)
+(JavaInvoke.test seems to be working for me!)
 
 
 
@@ -569,11 +530,6 @@ inprogress/ExprCmd.test
 
 
 
-(REMOVE FROM CVS)
-
-src/jacl 800K
-tcljava/tests/jacl/FileCmd.test,v      133 k
-tcljava/unix/configure,v            120 k
 
 
 
