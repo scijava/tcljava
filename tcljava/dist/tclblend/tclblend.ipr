@@ -1,0 +1,56 @@
+[Language]
+LanguageSupport0=0009
+
+[OperatingSystem]
+OSSupport=0000000000011011
+
+[Data]
+CurrentMedia=Tcl Blend 1.1
+CurrentComponentDef=Default.cdf
+ProductName=Tcl Blend 1.1
+set_mifserial=
+DevEnvironment=Microsoft Visual C++
+AppExe=
+set_dlldebug=No
+EmailAddresss=
+Instructions=Instructions.txt
+set_testmode=No
+set_mif=No
+SummaryText=
+Department=
+HomeURL=
+Author=
+Type=Software Development Application
+InstallRoot=D:\Users\cxh\installwizard\Tcl Blend
+Version=1.1
+InstallationGUID=bb52ea38-1ddd-11d2-81ad-3a5963000000
+set_level=Level 3
+CurrentFileGroupDef=Default.fdf
+Notes=Notes.txt
+set_maxerr=50
+set_args=
+set_miffile=Status.mif
+set_dllcmdline=
+Copyright=
+set_warnaserr=No
+CurrentPlatform=
+Category=Computer Language
+set_preproc=
+CurrentLanguage=English
+CompanyName=UC Berkeley Ptolemy Project
+Description=Description.txt
+set_maxwarn=50
+set_crc=Yes
+set_compileb4build=No
+
+[MediaInfo]
+mediadata0=Default/Media\Default
+mediadata1=Tcl Blend 1.1/Media\Tcl Blend 1.0up2
+
+[General]
+PassData=
+ReadOnly=N
+Type=INSTALLMAIN
+Version=1.10.000
+PassOn=N
+

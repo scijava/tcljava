@@ -1,0 +1,1178 @@
+// setup.rul file for InstallWizard Tcl Blend installation
+/*
+Author: Christopher Hylands, 9/98
+Version identification: @(#)$Id: setup.rul,v 1.1 1999/01/15 18:37:20 hylands Exp $
+
+Copyright (c) 1998-1998 The Regents of the University of California.
+All rights reserved.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in all
+copies of this software.
+
+IN NO EVENT SHALL THE UNIVERSITY OF CALIFORNIA BE LIABLE TO ANY PARTY
+FOR DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN IF
+THE UNIVERSITY OF CALIFORNIA HAS BEEN ADVISED OF THE POSSIBILITY OF
+SUCH DAMAGE.
+
+THE UNIVERSITY OF CALIFORNIA SPECIFICALLY DISCLAIMS ANY WARRANTIES,
+INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. THE SOFTWARE
+PROVIDED HEREUNDER IS ON AN "AS IS" BASIS, AND THE UNIVERSITY OF
+CALIFORNIA HAS NO OBLIGATION TO PROVIDE MAINTENANCE, SUPPORT, UPDATES,
+ENHANCEMENTS, OR MODIFICATIONS.
+
+                                                PT_COPYRIGHT_VERSION_2
+                                                COPYRIGHTENDKEY
+Portions of this file are:
+ (c) 1996-1997, InstallShield Software Corporation
+ (c) 1990-1996, InstallShield Corporation
+ All Rights Reserved.
+*/
+
+#include "sdlang.h"
+#include "sddialog.h"
+
+#define UNINST_LOGFILE_NAME      "Uninst.isu"
+#define HWND_BROADCAST 0xFFFF
+#define WM_SETTINGCHANGE 0x001A
+
+prototype User32.SendMessageTimeout(HWND, INT, LONG, LONG, INT, INT,
+POINTER);
+
+  // ---- script prototypes -----
+
+     // generated
+     prototype ShowDialogs();
+     prototype MoveFileData();
+     prototype HandleMoveDataError( NUMBER );
+     prototype ProcessBeforeDataMove();
+     prototype ProcessAfterDataMove();
+     prototype SetupRegistry();
+     prototype SetupFolders();
+     prototype CleanUpInstall();
+     prototype SetupInstall();
+     prototype SetupScreen();
+     prototype CheckRequirements();
+     prototype DialogShowSdWelcome();
+     prototype DialogShowSdLicense();
+     prototype DialogShowSdAskDestPath();
+     prototype DialogShowSdSelectFolder();
+     prototype DialogShowSdStartCopy();
+
+     // Custom prototypes
+     prototype FindTcl();
+     prototype FindJava();
+     prototype SdAskTclPath(STRING, STRING, BYREF STRING, NUMBER);
+     prototype DialogSetupType();
+     prototype UpdatePath(STRING);
+     prototype SetEnv(STRING, STRING);
+     prototype SetupFinish();
+     #define WIN_SW_SHOW 5 // Windows Constant
+     #define EXTENSION ".htm"
+     #define NETSCAPE_EXE "Netscape.exe"
+
+     prototype Shell32.ShellExecuteA(HWND,STRING,STRING,STRING,STRING,INT);
+     prototype Shell.ShellExecute(HWND,STRING,STRING,STRING,STRING,INT);
+
+     prototype _ISLaunchBrowser(STRING);
+
+
+
+  // ----- global variables ------
+
+     // generated
+     BOOL        bWinNT, bIsShellExplorer, bInstallAborted, bIs32BitSetup;
+     STRING      svDir;
+     STRING      svName, svCompany, svSerial;
+     STRING      svDefGroup;
+     STRING      szAppPath;
+     STRING      svSetupType;
+     LIST        listStartCopy;
+     NUMBER      nResult;
+
+
+     // Custom global variables
+     STRING     svTclBlendLibDir;	// Location of the Tcl Blend library.
+     STRING		svTclBinDir;		// Location of the Tcl bin directory.
+     STRING		svTclDir;			// Location of the Tcl directory.
+     STRING		svJavaMsg;			// Message describing what JDK versions are installed.
+     STRING		svWishCmdLine;		// Command line to start up wish.
+     BOOL		bUpdatedEnv;		// True if we updated the Environment.
+     BOOL		bUpdateTCLLIBDIR;	// True if we need to set TCLLIBDIR.
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//   MAIN PROGRAM
+//
+//      The setup begins here by hiding the visible setup
+//      window.  This is done to allow all the titles, images, etc. to
+//      be established before showing the main window.  The following
+//      logic then performs the setup in a series of steps.
+//
+///////////////////////////////////////////////////////////////////////////////
+program
+    Disable( BACKGROUND );
+
+    SdShowMsg( "Checking system requirements, " +
+               "including Tcl and Java installations...", TRUE);
+    Delay(1);
+    CheckRequirements();
+
+    SdShowMsg( "Checking system requirements...", FALSE);
+
+    SetupInstall();
+
+    SetupScreen();
+
+    if (ShowDialogs()<0) goto end_install;
+
+    if (ProcessBeforeDataMove()<0) goto end_install;
+
+    if (MoveFileData()<0) goto end_install;
+
+    if (ProcessAfterDataMove()<0) goto end_install;
+
+    if (SetupRegistry()<0) goto end_install;
+
+    if (SetupFolders()<0) goto end_install;
+
+    SetupFinish();
+
+
+  end_install:
+
+    CleanUpInstall();
+
+     // If an unrecoverable error occurred, clean up the partial installation.
+     // Otherwise, exit normally.
+
+    if (bInstallAborted) then
+        abort;
+    endif;
+
+endprogram
+
+///////////////////////////////////////////////////////////////////////////////
+//                                                                           //
+// Function:  ShowDialogs                                                    //
+//                                                                           //
+//  Purpose:  This function manages the display and navigation               //
+//            the standard dialogs that exist in a setup.                    //
+//                                                                           //
+///////////////////////////////////////////////////////////////////////////////
+function ShowDialogs()
+    NUMBER  nResult;
+ begin
+
+    Dlg_Start:
+        // beginning of dialogs label
+
+    Dlg_SdWelcome:
+        nResult = DialogShowSdWelcome();
+        if (nResult = BACK) goto Dlg_Start;
+
+    Dlg_SdLicense:
+        nResult = DialogShowSdLicense();
+        if (nResult = BACK) goto Dlg_SdWelcome;
+
+    Dlg_SdAskDestPath:
+        nResult = DialogShowSdAskDestPath();
+        if (nResult = BACK) goto Dlg_SdLicense;
+
+    Dlg_SdSelectFolder:
+        nResult = DialogShowSdSelectFolder();
+        if (nResult = BACK) goto Dlg_SdAskDestPath;
+
+	Dlg_SetupType:
+        nResult = DialogSetupType();
+        if (nResult = BACK) goto Dlg_SdSelectFolder;
+
+    Dlg_SdStartCopy:
+        nResult = DialogShowSdStartCopy();
+        if (nResult = BACK) goto Dlg_SetupType;
+
+    return 0;
+
+ end;
+
+///////////////////////////////////////////////////////////////////////////////
+//                                                                           //
+// Function: ProcessBeforeDataMove                                           //
+//                                                                           //
+//  Purpose: This function performs any necessary operations prior to the    //
+//           actual data move operation.                                     //
+//                                                                           //
+///////////////////////////////////////////////////////////////////////////////
+function ProcessBeforeDataMove()
+    STRING svLogFile;
+    NUMBER nResult;
+ begin
+
+  nResult = InstallationInfo( @COMPANY_NAME, @PRODUCT_NAME, @PRODUCT_VERSION, @PRODUCT_KEY );
+  if (nResult < 0) then
+      SprintfBox(SEVERE, "InstallationInfo Failed",
+        "InstallationInfo(%s,%s,%s,%s)\nfailed, returning %d",
+        @COMPANY_NAME, @PRODUCT_NAME, @PRODUCT_VERSION, @PRODUCT_KEY, nResult);
+  endif;
+  svLogFile = UNINST_LOGFILE_NAME;
+
+  nResult = DeinstallStart( svDir, svLogFile, @UNINST_KEY, 0 );
+  if (nResult < 0) then
+     SprintfBox(SEVERE, "DeinstallStart Failed",
+        "%s\nDeinstallStart( %s,%s, %s) returned nResult",
+        @ERROR_UNINSTSETUP,
+        svDir, svLogFile, @UNINST_KEY, nResult);
+      //MessageBox( @ERROR_UNINSTSETUP, WARNING );
+  endif;
+
+  szAppPath = TARGETDIR;
+
+  if ((bIs32BitSetup) && (bIsShellExplorer)) then
+      RegDBSetItem( REGDB_APPPATH, szAppPath );
+      RegDBSetItem( REGDB_APPPATH_DEFAULT, szAppPath ^ @PRODUCT_KEY );
+      RegDBSetItem( REGDB_UNINSTALL_NAME, @UNINST_DISPLAY_NAME );
+  endif;
+
+  if (CreateDir(svTclBlendLibDir) < 0) then
+           SprintfBox(INFORMATION,
+            "Error creating Tcl Blend Library Directory",
+            "Cannot create %s directory.",
+           	svTclBlendLibDir);
+  endif;
+  return 0;
+ end;
+
+///////////////////////////////////////////////////////////////////////////////
+//                                                                           //
+// Function:  MoveFileData                                                   //
+//                                                                           //
+//  Purpose:  This function handles the data movement for                    //
+//            the setup.                                                     //
+//                                                                           //
+///////////////////////////////////////////////////////////////////////////////
+function MoveFileData()
+    NUMBER nResult, nDisk;
+ begin
+
+  nDisk = 1;
+  SetStatusWindow( 0, "" );
+  Disable( DIALOGCACHE );
+  Enable( STATUS );
+  StatusUpdate( ON, 100 );
+  nResult = ComponentMoveData( MEDIA, nDisk, 0 );
+
+  HandleMoveDataError( nResult );
+
+  Disable( STATUS );
+
+  return nResult;
+
+ end;
+
+
+///////////////////////////////////////////////////////////////////////////////
+//                                                                           //
+// Function: HandleMoveDataError                                             //
+//                                                                           //
+//  Purpose: This function handles the error (if any) during the move data   //
+//           operation.                                                      //
+//                                                                           //
+///////////////////////////////////////////////////////////////////////////////
+function HandleMoveDataError( nResult )
+    STRING svMedia, svComponent, svFileGroup, svFile;
+    NUMBER nvError;
+ begin
+
+  switch (nResult)
+  case 0:
+       return 0;
+  default:
+       ComponentError(svMedia, svComponent, svFileGroup, svFile, nvError);
+       SprintfBox(SEVERE, "ComponentMoveData Error Information",
+            "ComponentMoveData had the following error:\n\n" +
+            "Media Name: %s\nComponent: %s\nFile Group: %s\n" +
+            "File: %s\nError Number: %ld (refer to the online help)",
+            svMedia, svComponent, svFileGroup, svFile, nvError);
+       bInstallAborted = TRUE;
+       return nResult;
+  endswitch;
+
+ end;
+
+///////////////////////////////////////////////////////////////////////////////
+//                                                                           //
+// Function: ProcessAfterDataMove                                            //
+//                                                                           //
+//  Purpose: This function performs any necessary operations needed after    //
+//           all data has been moved.                                        //
+//                                                                           //
+///////////////////////////////////////////////////////////////////////////////
+function ProcessAfterDataMove()
+    STRING szReferenceFile;
+ begin
+
+  // TODO : update self-registered files and other processes that
+  //        should be performed after the data has been moved.
+
+  // DeinstallSetReference specifies a file to be checked before
+  // uninstallation. If the file is in use, uninstallation will not proceed.
+
+  szReferenceFile = svDir ^ @PRODUCT_KEY; // TODO : If your file is in a subdir of svDir add that here
+  DeinstallSetReference( szReferenceFile );
+  return 0;
+ end;
+
+///////////////////////////////////////////////////////////////////////////////
+//                                                                           //
+// Function: SetupRegistry                                                   //
+//                                                                           //
+//  Purpose: This function makes the registry entries for this setup.        //
+//                                                                           //
+///////////////////////////////////////////////////////////////////////////////
+function SetupRegistry()
+ begin
+	
+  // TODO : Add all your registry entry keys here
+  //
+  //
+  //    RegDBCreateKeyEx, RegDBSetKeyValueEx....
+  //
+  	bUpdatedEnv = FALSE;
+	if ( svSetupType = "JDK 1_2") then
+		// If we are running under JDK1.2, the add the directory that contains tclblend.dll
+		UpdatePath(svTclBlendLibDir);
+	endif;
+	if (bUpdateTCLLIBDIR) then
+		// If the Scriptics\Tcl key could not be found, then set the TCLLIBDIR environment variable.
+		SetEnv("TCLLIBDIR", svTclDir ^ "lib");
+	endif;
+  return 0;
+ end;
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Function: SetupFolders
+//
+//  Purpose: This function creates all the folders and shortcuts for the
+//           setup.  This includes program groups and items for Windows 3.1.
+//
+///////////////////////////////////////////////////////////////////////////////
+function SetupFolders()
+    STRING svFolder, svReadmePath, svChangesPath, svKnownIssuesPath, svLicensePath, svTclbeanInstallPath, svDocPath, svJwishPath;
+ begin
+  svFolder = FOLDER_PROGRAMS ^ @PRODUCT_NAME;
+  svReadmePath = TARGETDIR ^ "README.txt";
+  svChangesPath = TARGETDIR ^ "changes.txt";
+  svKnownIssuesPath = TARGETDIR ^ "known_issues.txt";
+  svLicensePath = TARGETDIR ^ "license.terms";
+  svTclbeanInstallPath = TARGETDIR ^ "tclbean_install.txt";
+
+  LongPathToQuote ( svReadmePath , TRUE );
+  AddFolderIcon ( svFolder , "README" ,
+                  WINDIR ^ "notepad.exe " + svReadmePath ,
+                  "" , "" , 0 , "" , REPLACE );
+
+  LongPathToQuote ( svChangesPath , TRUE );
+  AddFolderIcon ( svFolder , "Changes" ,
+                  WINDIR ^ "notepad.exe " + svChangesPath ,
+                  "" , "" , 0 , "" , REPLACE );
+
+  LongPathToQuote ( svKnownIssuesPath , TRUE );
+  AddFolderIcon ( svFolder , "Known Issues" ,
+                  WINDIR ^ "notepad.exe " + svKnownIssuesPath ,
+                  "" , "" , 0 , "" , REPLACE );
+
+  LongPathToQuote ( svLicensePath , TRUE );
+  AddFolderIcon ( svFolder , "License" ,
+                  WINDIR ^ "notepad.exe " + svLicensePath ,
+                  "" , "" , 0 , "" , REPLACE );
+
+  LongPathToQuote ( svTclbeanInstallPath , TRUE );
+  AddFolderIcon ( svFolder , "Tcl Bean" ,
+                  WINDIR ^ "notepad.exe " + svTclbeanInstallPath ,
+                  "" , "" , 0 , "" , REPLACE );
+  svDocPath = TARGETDIR ^ "doc\\html\\contents.htm";
+  LongPathToQuote (svDocPath, TRUE);
+  AddFolderIcon ( svFolder , "Tcl Blend Documentation" ,
+                  svDocPath,
+                  "" , "" , 0 , "" , REPLACE );
+  return 0;
+ end;
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Function: SetupFinish
+//
+//  Purpose: Display the finish window
+//
+///////////////////////////////////////////////////////////////////////////////
+function SetupFinish()
+    BOOL bvOpt1, bvOpt2;
+    STRING svWishMsg;
+ begin
+ 	svWishMsg = "";
+ 	if (bUpdatedEnv = FALSE) then
+ 		// Only display the start wish option if we have not set the path.
+ 		// The problem is that InstallWizard does not listen to the SendMessage() call.	
+ 		svWishMsg = "Start Wish (you will need to type" +
+        	" 'package require java')";
+    endif;
+ 	SdFinish("", @PRODUCT_NAME + "installation is almost complete " +
+    	"To start up " + @PRODUCT_NAME + " start tclsh and type: \n\n" +
+    	"        package require java", "",
+        "View the README", svWishMsg, bvOpt1, bvOpt2);
+    if(bvOpt1) then
+    	LaunchAppAndWait(WINDIR^'Notepad.exe',TARGETDIR ^ "README",WAIT);
+    endif;
+
+	if(bvOpt2) then
+    	LaunchApp(svTclBinDir ^ "\\Wish80.exe", "");
+    endif;   	
+ end;
+
+///////////////////////////////////////////////////////////////////////////////
+//                                                                           //
+// Function: CleanUpInstall                                                  //
+//                                                                           //
+//  Purpose: This cleans up the setup.  Anything that should                 //
+//           be released or deleted at the end of the setup should           //
+//           be done here.                                                   //
+//                                                                           //
+///////////////////////////////////////////////////////////////////////////////
+function CleanUpInstall()
+ begin
+
+  ListDestroy( listStartCopy );
+
+  if (bInstallAborted) then
+      return 0;
+  endif;
+
+  if (BATCH_INSTALL) then // ensure locked files are properly written
+      CommitSharedFiles(0);
+  endif;
+
+  return 0;
+ end;
+
+///////////////////////////////////////////////////////////////////////////////
+//                                                                           //
+// Function: SetupInstall                                                    //
+//                                                                           //
+//  Purpose: This will setup the installation.  Any general initialization   //
+//           needed for the installation should be performed here.           //
+//                                                                           //
+///////////////////////////////////////////////////////////////////////////////
+function SetupInstall()
+ begin
+
+  Enable( CORECOMPONENTHANDLING );
+
+  bInstallAborted = FALSE;
+
+  if (bIs32BitSetup) then
+      //svDir = PROGRAMFILES ^ @COMPANY_NAME ^ @PRODUCT_NAME;
+      svDir = PROGRAMFILES ^ @PRODUCT_NAME;
+  else
+      //svDir = PROGRAMFILES ^ @COMPANY_NAME16 ^ @PRODUCT_NAME16; // use shorten names
+      svDir = PROGRAMFILES ^ @PRODUCT_NAME16;
+  endif;
+
+  TARGETDIR  = svDir;
+  Disable( DIALOGCACHE );
+
+  SdProductName( @PRODUCT_NAME );
+
+  return 0;
+ end;
+
+///////////////////////////////////////////////////////////////////////////////
+//                                                                           //
+// Function:  SetupScreen                                                    //
+//                                                                           //
+//  Purpose:  This function establishes  the screen look.  This includes     //
+//            colors, fonts, and text to be displayed.                       //
+//                                                                           //
+///////////////////////////////////////////////////////////////////////////////
+function SetupScreen()
+ begin
+
+  Enable( FULLWINDOWMODE );
+  SetTitle( @TITLE_MAIN, 24, WHITE );
+
+  SetTitle( @TITLE_CAPTIONBAR, 0, BACKGROUNDCAPTION ); // Caption bar text.
+
+  Enable( BACKGROUND );
+
+  Delay( 1 );
+ end;
+
+///////////////////////////////////////////////////////////////////////////////
+//                                                                           //
+// Function:  CheckRequirements                                              //
+//                                                                           //
+//  Purpose:  This function checks all minimum requirements for the          //
+//            application being installed.  If any fail, then the user       //
+//            is informed and the setup is terminated.                       //
+//                                                                           //
+///////////////////////////////////////////////////////////////////////////////
+function CheckRequirements()
+    NUMBER  nvDx, nvDy, nvResult;
+    STRING  svResult;
+
+ begin
+
+  bWinNT           = FALSE;
+  bIsShellExplorer = FALSE;
+
+  // Check screen resolution.
+  GetExtents( nvDx, nvDy );
+
+  if (nvDy < 480) then
+      MessageBox( @ERROR_VGARESOLUTION, WARNING );
+      abort;
+  endif;
+
+  // set 'setup' operation mode
+  bIs32BitSetup = TRUE;
+  GetSystemInfo( ISTYPE, nvResult, svResult );
+  if (nvResult = 16) then
+      bIs32BitSetup = FALSE; // running 16-bit setup
+      return 0; // no additional information required
+  endif;
+
+  // --- 32-bit testing after this point ---
+
+  // Determine the target system's operating system.
+  GetSystemInfo( OS, nvResult, svResult );
+
+  if (nvResult =  IS_WINDOWSNT) then
+      // Running Windows NT.
+      bWinNT = TRUE;
+
+      // Check to see if the shell being used is EXPLORER shell.
+      if (GetSystemInfo( OSMAJOR, nvResult, svResult ) = 0) then
+          if (nvResult >= 4) then
+              bIsShellExplorer = TRUE;
+          endif;
+      endif;
+
+  elseif (nvResult = IS_WINDOWS95 ) then
+      bIsShellExplorer = TRUE;
+
+  endif;
+  if (FindTcl () < 0) then
+  		// We did not find Tcl, so we will need to set TCLLIBDIR in the user's env.
+  		// This is especially necessary because of a bug in init.tcl in Tcl8.0.3
+  		// if the user compiled Tcl8.0.3 themselves and the Scriptics\Tcl key is not
+  		// set.  This bug will probably not be present in 8.0.4
+  		bUpdateTCLLIBDIR = TRUE;
+        if (AskYesNo("Tcl was not found.\n" +
+                "To use Tcl Blend, you must have Tcl and Java installed.\n" +
+                "Click on Yes to open your browser on the Tcl Website at\n" +
+                "http://www.scriptics.com/software/8.0.html\n" +
+                "Then install Tcl and restart the Tcl Blend setup.\n" +
+                "Click on No to continue with the Tcl Blend setup.", YES) = YES) then
+            nResult=_ISLaunchBrowser("http://www.scriptics.com/software/8.0.html");
+            if (nResult<0) then
+                MessageBox("No default browser could be located or launched.",INFORMATION);
+            endif;
+        endif;
+    endif;
+
+    if (FindJava () < 0) then
+        if (AskYesNo("JavaSoft JDK 1.1 was not found in your Registry.\n" +
+                "To use Tcl Blend, you must have Tcl and Java installed.\n\n" +
+                "Click on Yes to open your browser on the\n" +
+                "JavaSoft Website at\n" +
+                "http://www.javasoft.com/products/jdk/1.1\n" +
+                "Then install JDK 1.1 and restart the Tcl Blend setup.\n\n" +
+                "Click on No to continue with the Tcl Blend setup.", YES) = YES) then
+            nResult=_ISLaunchBrowser("http://www.javasoft.com/products/jdk/1.1");
+            if (nResult<0) then
+                 MessageBox("No default browser could be located or launched.",INFORMATION);
+            endif;
+        endif;
+    endif;
+ end;
+
+
+///////////////////////////////////////////////////////////////////////////////
+//                                                                           //
+// Function: DialogShowSdWelcome                                             //
+//                                                                           //
+//  Purpose: This function handles the standard welcome dialog.              //
+//                                                                           //
+//                                                                           //
+///////////////////////////////////////////////////////////////////////////////
+function DialogShowSdWelcome()
+    NUMBER nResult;
+    STRING szTitle, szMsg;
+ begin
+
+  szTitle = "";
+  szMsg   = "";
+  nResult = SdWelcome( szTitle, szMsg );
+
+  return nResult;
+ end;
+
+
+///////////////////////////////////////////////////////////////////////////////
+//                                                                           //
+// Function: DialogShowSdLicense                                             //
+//                                                                           //
+//  Purpose: This function displays the license agreement dialog.            //
+//                                                                           //
+//                                                                           //
+///////////////////////////////////////////////////////////////////////////////
+function DialogShowSdLicense()
+    NUMBER nResult;
+    STRING szTitle, szMsg, szQuestion, szLicenseFile;
+ begin
+
+  szLicenseFile = SUPPORTDIR ^ "license.txt";
+  szTitle    = "";
+  szMsg      = "";
+  szQuestion = "";
+  nResult    = SdLicense( szTitle, szMsg, szQuestion, szLicenseFile );
+
+  return nResult;
+ end;
+
+
+///////////////////////////////////////////////////////////////////////////////
+//                                                                           //
+// Function: DialogShowSdAskDestPath                                         //
+//                                                                           //
+//  Purpose: This function asks the user for the destination directory.      //
+//                                                                           //
+///////////////////////////////////////////////////////////////////////////////
+function DialogShowSdAskDestPath()
+    NUMBER nResult;
+    STRING szTitle, szMsg;
+ begin
+
+  szTitle = "";
+  szMsg   = "";
+  nResult = SdAskDestPath( szTitle, szMsg, svDir, 0 );
+
+  TARGETDIR = svDir;
+
+  return nResult;
+ end;
+
+
+///////////////////////////////////////////////////////////////////////////////
+//                                                                           //
+// Function: DialogShowSdSelectFolder                                        //
+//                                                                           //
+//  Purpose: This function displays the standard folder selection dialog.    //
+//                                                                           //
+//                                                                           //
+///////////////////////////////////////////////////////////////////////////////
+function DialogShowSdSelectFolder()
+    NUMBER nResult;
+    STRING szTitle, szMsg;
+ begin
+
+  if (svDefGroup = "") then
+      svDefGroup = @FOLDER_NAME;
+  endif;
+
+  szTitle    = "";
+  szMsg      = "";
+  nResult    = SdSelectFolder( szTitle, szMsg, svDefGroup );
+
+  return nResult;
+ end;
+
+///////////////////////////////////////////////////////////////////////////////
+//                                                                           //
+// Function: DialogSetupType                                                 //
+//                                                                           //
+//   Purpose: Ask the user what type of setup they want, set svSetyupType    //
+//                                                                           //
+///////////////////////////////////////////////////////////////////////////////
+function DialogSetupType()
+    NUMBER nResult;
+    STRING szTitle, szMsg;
+ begin
+
+  nResult = SdSetupTypeEx( @PRODUCT_NAME + "Installation Type",
+  	svJavaMsg, "", svSetupType, 0 );
+  return nResult;
+ end;
+///////////////////////////////////////////////////////////////////////////////
+//                                                                           //
+// Function: DialogShowSdStartCopy                                           //
+//                                                                           //
+//   Purpose: This function displays the dialog preceding the start of the   //
+//            file copying process.                                          //
+//                                                                           //
+///////////////////////////////////////////////////////////////////////////////
+function DialogShowSdStartCopy()
+    NUMBER nResult;
+    STRING szTitle, szMsg;
+ begin
+
+  szTitle = "";
+  szMsg   = "";
+  listStartCopy = ListCreate(STRINGLIST);
+  ListAddString(listStartCopy, "Destination Directory:", AFTER);
+  ListAddString(listStartCopy, "           " + svDir, AFTER);
+
+  ListAddString(listStartCopy, "Installation type:", AFTER);
+  ListAddString(listStartCopy, "           " + svSetupType, AFTER);
+
+  ListAddString(listStartCopy, "Tcl Blend Library Directory:", AFTER);
+  ListAddString(listStartCopy, "           " + svTclBlendLibDir, AFTER);
+
+  nResult = SdStartCopy( szTitle, szMsg, listStartCopy );
+
+  return nResult;
+ end;
+
+
+// All functions below here are custom built by the Ptolemy group at
+// UC Berkeley, unless otherwise noted.
+
+
+///////////////////////////////////////////////////////////////////////////////
+//                                                                           //
+// Function: FindTcl                                                         //
+//                                                                           //
+//   Purpose: Find the Tcl directory, sets svTclBinDir and svTclBlendLibDir	 //                                         //
+//                                                                           //
+///////////////////////////////////////////////////////////////////////////////
+
+function FindTcl()
+   STRING   szFolderName, szItemName, svCmdLine, svWrkDir, svIconPath;
+   STRING   svShortCutKey, svGroupPath, szTitle, szMsg, szInfo, svMinFlag;
+   STRING   svMinimizeFlag;
+   NUMBER   nvIconIndex, nvMinimizeFlag, nResult, lResult, nvMinFlag;
+   NUMBER	nvType, nvSize;
+
+   LIST     listInfo, listID;
+
+begin
+   nResult = 1;
+   // Set variables for QueryProgItem.
+   //szFolderName = "Tcl";
+
+   //ProgDefGroupType(COMMON);
+
+   // Get the wish command line so we can use it later.
+   //szItemName   = "WISH";
+   //nResult = QueryProgItem (szFolderName, szItemName, svCmdLine, svWrkDir,
+   //                         svIconPath, nvIconIndex, svShortCutKey,
+   //                        nvMinimizeFlag);
+   //svWishCmdLine = svCmdLine;
+
+
+   // Search the registry for the Tcl key
+   if (RegDBSetDefaultRoot(HKEY_LOCAL_MACHINE) < 0) then
+      MessageBox("Failed to set Registry Root Key to HKEY_LOCAL_MACHINE", WARNING);
+   else
+      if (RegDBGetKeyValueEx("SOFTWARE\\Scriptics\\Tcl\\8.0", "",
+      	nvType, svTclDir, nvSize) < 0) then
+  		    //MessageBox("Failed to find Scriptics Tcl Installation " +
+  		    //	"The Registry Key we were looking for was " +
+  		    //	"HKEY_LOCAL_MACHINE\\SOFTWARE\\Scriptics\\Tcl\\8.0", SEVERE);
+  		    //nResult = -2;
+  		    //goto tcl_error;
+  		  svTclDir = "C:\\Program Files\\Tcl";
+  	askTclPath:
+  		  SdAskTclPath("Enter the Tcl Directory" ,
+  		    "Failed to find the Tcl Installation, please enter the directory that "+
+  		    "contains the Tcl bin and lib directories", svTclDir,0);	
+  	   endif;
+   endif;
+
+
+
+   if (ExistsDir(svTclDir) < 0) then
+      nResult = -2;
+      szMsg = "warning: %s directory does not exist.\n" +
+              "Is Tcl properly installed?";
+           SprintfBox(INFORMATION, szTitle, szMsg, svTclDir);
+      goto askTclPath;
+   else
+       nResult = 2;
+   	  // Location of the Tcl binary directory, tclblend.dll goes here.
+   	  svTclBinDir = svTclDir ^ "\\bin";
+      if (ExistsDir(svTclBinDir) < 0) then
+    	  nResult = -2;
+     	  szMsg = "%s directory does not exist.\n" +
+      	          "Is Tcl properly installed?";
+          SprintfBox(INFORMATION, szTitle, szMsg, svTclBinDir);
+      endif;
+      // Location of the Tcl Blend library directory.
+      // Needs to be under the tcl8.0 lib dir so package require java works
+      // The version number is so we can have multiple versions
+      svTclBlendLibDir = svTclDir ^ "\\lib\\tclblend" + @PRODUCT_SHORT_VERSION;
+
+
+      ComponentSetTarget( MEDIA, "<svTclBinDir>", svTclBinDir );
+      ComponentSetTarget( MEDIA, "<svTclBlendLibDir>", svTclBlendLibDir );
+
+   endif;
+
+   return nResult;
+
+   tcl_error:
+
+   return nResult;
+end;
+
+///////////////////////////////////////////////////////////////////////////////
+//                                                                           //
+// Function: FindJava                                                        //
+//                                                                           //
+//   Purpose: Determine if Java is installed                                 //
+//                                                                           //
+///////////////////////////////////////////////////////////////////////////////
+
+function FindJava()
+    NUMBER nResult, nRootKey;
+    STRING szTitle;
+begin
+    nResult = 1;
+    szTitle = "Searching for Java Development Kit";
+    svJavaMsg = "";
+
+    nRootKey = HKEY_LOCAL_MACHINE;
+    if (RegDBSetDefaultRoot(nRootKey) < 0) then
+        MessageBox("Can't set the Registry Root key to HKEY_LOCAL_MACHINE", SEVERE);
+
+    endif;
+
+    if (RegDBKeyExist("SOFTWARE\\JavaSoft\\Java Development Kit\\1.1") < 0) then
+        nResult = -1;
+    endif;
+
+    if (RegDBKeyExist("SOFTWARE\\JavaSoft\\Java Development Kit\\1.2") >= 0) then
+       	if (nResult = -1) then
+       		svJavaMsg = "JavaSoft JDK 1.2 installation found. " +
+       			"The " + @PRODUCT_NAME + " installer includes binaries for " +
+       			"both JDK 1.1 and JDK 1.2. " +
+       			"You should probably choose to install the files compiled for JDK 1.2.";
+       		svSetupType = "JDK1_2";
+       		nResult = 2;
+       	else
+       		svJavaMsg = "Both JDK 1.1 and 1.2 installations found. " +
+       			"The " + @PRODUCT_NAME + " installer includes binaries for " +
+       			"both JDK 1.1 and JDK 1.2. " +
+       			"You may choose to install files compiled for either JDK.";
+       		svSetupType = "JDK1_2";
+       	endif;
+    else
+    	if (nResult = -1) then
+    		svJavaMsg = "Neither JDK 1.1 or 1.2 were found. " +
+    			"The " + @PRODUCT_NAME + " installer includes binaries for " +
+       			"both JDK 1.1 and JDK 1.2. " +
+       			"If you already have a JDK installed, you should choose to install " +
+       			"the files compiled for that JDK.";
+    		nResult = -2;
+    	else
+    		svJavaMsg = "JavaSoft JDK 1.1 installation found. " +
+       			"The " + @PRODUCT_NAME + " installer includes binaries for " +
+       			"both JDK 1.1 and JDK 1.2. " +
+       			"You should probably choose to install the files compiled for JDK 1.1.";
+       		svSetupType = "JDK1_1";
+       	endif;
+    endif;
+    return nResult;
+end;
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Function: Add the szPathToAdd Directory to the PATH if necessary
+//
+//
+///////////////////////////////////////////////////////////////////////////////
+function UpdatePath(szPathToAdd)
+    NUMBER nResult, nRootKey, nType, nSize;
+    STRING szKey, szKeyName, szKeyValue, svResult, szDir, svErrorMessage;
+    BOOL bDir, bSearch;
+    LIST   listID;
+    STRING szString, szDelimiterSet, svString, szPath;
+    POINTER ptr;
+    LONG dwResult;
+
+begin
+   szKeyName  = "PATH";
+   nType      = REGDB_STRING;
+   nSize      = -1;
+
+   Disable(LOGGING);
+   svErrorMessage = "You will need to set the PATH environment variable later to include "  + szPathToAdd;
+   nRootKey = HKEY_LOCAL_MACHINE;
+   if (RegDBSetDefaultRoot(nRootKey) < 0) then
+   NonAdmin:
+      nRootKey = HKEY_CURRENT_USER;
+      if (RegDBSetDefaultRoot(nRootKey) < 0) then
+      		MessageBox("Failed to set Registry Root Key to HKEY_CURRENT_USER. " + svErrorMessage, WARNING);
+  			goto Cleanup;
+      else
+        szKey      = "Environment";
+        if (RegDBGetKeyValueEx(szKey, szKeyName, nType, szKeyValue, nSize) < 0) then
+        	MessageBox("Failed to get PATH environment variable in the registry. " + svErrorMessage, WARNING);
+         	goto Cleanup;
+        endif;
+      endif;
+   else
+   	  // Congrats, the user has administrative priviledges.
+      szKey      = "SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment";
+       if (RegDBGetKeyValueEx(szKey, szKeyName, nType, szKeyValue, nSize) < 0) then
+      		goto NonAdmin;
+  	  endif;
+   endif;
+
+   listID         = ListCreate(STRINGLIST);
+
+   szDelimiterSet = ";";
+
+   if (StrGetTokens(listID, szKeyValue, szDelimiterSet) < 0) then
+   	  MessageBox("StrGetTokens failed.", SEVERE);
+   endif;
+
+   //SdShowInfoList("Path contents", "The following is a list of the strings in listID:", listID);
+
+   ListGetFirstString(listID, szString);
+
+    // If the szPathToAdd is not in the PATH, add it
+    nResult = ListFindString(listID, szPathToAdd);
+    if (nResult == END_OF_LIST) then
+        //MessageBox("ListFindString did not find " + szKeyValue + " " + szPathToAdd, INFORMATION);
+        szKeyValue = szKeyValue + ";" + szPathToAdd;
+        bUpdatedEnv = TRUE;
+        if (RegDBSetKeyValueEx(szKey, szKeyName, nType, szKeyValue, nSize) < 0) then
+        	// FIXME: we could have problems here if the user does not have administrator priviledges       		
+        	MessageBox("Failed to set " + szKey + " " + szKeyName + " " + szKeyValue +
+        		 " " + svErrorMessage, WARNING);
+   		endif;
+   		// FIXME: Not sure if this is right, but it works for me with administrative priviledges
+   		szKey = "Environment";
+   		ptr = &szKey;
+   		//SendMessage(HWND_BROADCAST, WM_SETTINGCHANGE, 0, ptr);
+   		SendMessageTimeout(HWND_BROADCAST, WM_SETTINGCHANGE, 0, ptr,
+   		2, // SMTO_ABORTIFHUNG
+     	3000, // 3 seconds
+     	&dwResult);
+    else
+    	if (nResult < 0) then
+			MessageBox("ListFindString had problems finding '" + szPathToAdd +
+				"'in the PATH " + szKeyValue + ". " + svErrorMessage, WARNING);
+		endif;
+	endif;	
+	
+ Cleanup:
+   // Destroy the list.
+   ListDestroy(listID);
+
+   Enable(LOGGING);
+   return nResult;
+end;
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Function: Set an environment variable
+//
+//
+///////////////////////////////////////////////////////////////////////////////
+function SetEnv(szKeyName, szKeyValue)
+    NUMBER nResult, nRootKey, nType, nSize;
+    STRING szKey, svResult, szDir, svErrorMessage;
+    POINTER ptr;
+    LONG dwResult;
+
+begin
+
+   nType      = REGDB_STRING;
+   nSize      = -1;
+
+   Disable(LOGGING);
+   svErrorMessage = "You will need to set the " + szKeyName + " environment variable later to include "  + szKeyValue;
+   nRootKey = HKEY_LOCAL_MACHINE;
+   if (RegDBSetDefaultRoot(nRootKey) < 0) then
+   NonAdmin:
+      nRootKey = HKEY_CURRENT_USER;
+      if (RegDBSetDefaultRoot(nRootKey) < 0) then
+      		MessageBox("Failed to set Registry Root Key to HKEY_CURRENT_USER. " + svErrorMessage, WARNING);
+  			goto Cleanup;
+      else
+        szKey = "Environment";
+        //if (RegDBGetKeyValueEx(szKey, szKeyName, nType, szKeyValue, nSize) < 0) then
+        //	MessageBox("Failed to get " + szKeyName + " environment variable from the registry. " + svErrorMessage, WARNING);
+        // 	goto Cleanup;
+        //endif;
+      endif;
+   else
+   	  // Congrats, the user has administrative priviledges.
+      szKey = "SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment";
+      //if (RegDBGetKeyValueEx(szKey, szKeyName, nType, szKeyValue, nSize) < 0) then
+      //		goto NonAdmin;
+  	  //endif;
+   endif;
+
+   bUpdatedEnv = TRUE;
+   if (RegDBSetKeyValueEx(szKey, szKeyName, nType, szKeyValue, nSize) < 0) then
+   		// FIXME: we could have problems here if the user does not have administrator priviledges       		
+        MessageBox("Failed to set " + szKey + " " + szKeyName + " " + szKeyValue +
+        		 " " + svErrorMessage, WARNING);
+   	else
+   		// FIXME: Not sure if this is right, but it works for me with administrative priviledges
+   		szKey = "Environment";
+   		ptr = &szKey;
+   		//SendMessage(HWND_BROADCAST, WM_SETTINGCHANGE, 0, ptr);
+   		SendMessageTimeout(HWND_BROADCAST, WM_SETTINGCHANGE, 0, ptr,
+   		2, // SMTO_ABORTIFHUNG
+     	3000, // 3 seconds
+     	&dwResult);
+	endif;	
+	
+ Cleanup:
+   Enable(LOGGING);
+   return nResult;
+
+end;
+
+////////////////////////////////////////////////////////////////////////////
+//                                                                        //
+//   Function: SdAskTclPath                                               //
+//                                                                        //
+//   Descrip:  This dialog will ask user for the Tcl directory            //
+//   Origin: Based on InstallWizard SdAskPath							  //
+//                                                                        //
+////////////////////////////////////////////////////////////////////////////
+function SdAskTclPath(szTitle, szMsg, svDir, nStyle)
+          STRING  szDlg, svDirLoc, szTemp;
+          INT     nId, nTemp;
+          HWND    hwndDlg;
+          BOOL    bDone;
+        begin
+
+          szDlg     = SD_DLG_ASKDESTPATH;
+          nSdDialog = SD_NDLG_ASKDESTPATH;
+          svDirLoc = svDir;
+
+          // record data produced by this dialog
+          if (MODE=SILENTMODE) then
+            SdMakeName( szAppKey, szDlg, szTitle, nSdAskDestPath );
+            SilentReadData( szAppKey, "Result", DATA_NUMBER, szTemp, nId );
+            if ((nId != BACK) && (nId != CANCEL)) then
+               SilentReadData( szAppKey, "szDir", DATA_STRING, svDir, nTemp );
+            endif;
+
+            return nId;
+          endif;
+
+          // ensure general initialization is complete
+          if (!bSdInit) then
+             SdInit();
+          endif;
+
+         if (EzDefineDialog( szDlg, "", "", SD_NDLG_ASKDESTPATH ) = DLG_ERR) then
+            return -1;
+          endif;
+
+          // Loop in dialog until the user selects a standard button
+          bDone = FALSE;
+
+          while (!bDone)
+
+             nId = WaitOnDialog( szDlg );
+
+             switch (nId)
+             case DLG_INIT:
+                  CtrlSetText( szDlg, 0x80000000 | SD_STA_DESTDIR, svDirLoc );
+
+                  if(szMsg != "") then
+                      SdSetStatic( szDlg, SD_STA_CHANGEDIRMSG, szMsg );
+                  endif;
+
+                  hwndDlg = CmdGetHwndDlg( szDlg );
+                  SdGeneralInit( szDlg, hwndDlg, nStyle, szSdProduct );
+
+                  if(szTitle != "") then
+                      SetWindowText( hwndDlg, szTitle );
+                  endif;
+
+             case SD_PBUT_CHANGEDIR:
+                  nTemp = MODE;
+                  MODE  = NORMALMODE;
+                  SelectDir( szTitle,
+                             "Enter the Tcl directory",
+                             svDirLoc,
+                             TRUE );
+                  CtrlSetText( szDlg, 0x80000000 | SD_STA_DESTDIR, svDirLoc );
+                  MODE = nTemp;
+
+             case SD_PBUT_CONTINUE:
+                  svDir = svDirLoc;
+                  nId   = NEXT;
+                  bDone = TRUE;
+
+             case BACK:
+                  nId    = BACK;
+                  bDone  = TRUE;
+
+             case DLG_ERR:
+                  SdError( -1, "SdAskDestPath" );
+                  nId   = -1;
+                  bDone = TRUE;
+
+             case DLG_CLOSE:
+                  SdCloseDlg( hwndDlg, nId, bDone );
+
+             default:
+                  // check standard handling
+                  if (SdIsStdButton( nId ) && SdDoStdButton( nId )) then
+                      bDone = TRUE;
+                  endif;
+             endswitch;
+
+          endwhile;
+
+          EndDialog( szDlg );
+          ReleaseDialog( szDlg );
+
+          SdUnInit( );
+
+          // record data produced by this dialog
+          SdMakeName( szAppKey, szDlg, szTitle, nSdAskDestPath );
+          SilentWriteData( szAppKey, "szDir", DATA_STRING, svDir, 0 );
+          SilentWriteData( szAppKey, "Result", DATA_NUMBER, "", nId );
+
+          return nId;
+        end;
+
+
+
+ // --- include script file section ---
+#include "LaunchBrowser.rul"
+#include "sddialog.rul"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

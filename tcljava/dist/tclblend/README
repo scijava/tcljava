@@ -1,0 +1,10 @@
+$Id: README,v 1.1 1999/01/15 18:37:19 hylands Exp $
+
+This directory contains the source files necessary to create
+an Installshield Windows installer for Tcl Blend.
+This directory need not be shipped with the Tcl Blend or Jacl source
+distributions, it should only be present in the tcljava master distribution.
+
+Setup.psd.gz	- Adobe Photoshop splash screen
+setup.rul	- Installshield script
+tclblend.ipr	- Installshield description file
