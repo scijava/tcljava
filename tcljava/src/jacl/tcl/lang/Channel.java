@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Channel.java,v 1.9 2001/11/20 00:53:07 mdejong Exp $
+ * RCS: @(#) $Id: Channel.java,v 1.10 2001/11/20 01:01:23 mdejong Exp $
  */
 
 package tcl.lang;
@@ -121,12 +121,10 @@ abstract class Channel {
 
         if (reader != null) {
             try { reader.close(); } catch (IOException e) { ex = e; }
-            reader.close();
             reader = null;
         }
         if (writer != null) {
            try { writer.close(); } catch (IOException e) { ex = e; }
-            writer.close();
             writer = null;
         }
 

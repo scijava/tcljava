@@ -1,5 +1,11 @@
 2001-11-19  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/jacl/tcl/lang/Channel.java (close): Fix silly
+	cut and paste error that was closing the underlying
+	channel twice.
+
+2001-11-19  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/jacl/tcl/lang/Channel.java (tell): Turn the tell
 	method into a concrete implementation instead of an
 	abstract method. It currently just returns -1.
