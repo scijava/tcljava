@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.5 1999/05/15 23:35:37 dejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.6 1999/05/17 03:01:16 dejong Exp $
  *
  */
 
@@ -861,7 +861,7 @@ throws
         // minds. Because of this, there is no way to do non blocking IO
         // on a compressed Stream in Java. (mo)
 
-        if (System.getProperty("java.version").equals("1.2") &&
+        if (System.getProperty("java.version").startsWith("1.2") &&
             stream.getClass().getName().equals("java.util.zip.ZipFile$1")) {
 	    
 	  ByteArrayOutputStream baos = new ByteArrayOutputStream(1024);
