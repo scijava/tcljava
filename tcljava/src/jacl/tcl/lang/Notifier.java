@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Notifier.java,v 1.7 2003/03/11 01:45:53 mdejong Exp $
+ * RCS: @(#) $Id: Notifier.java,v 1.8 2003/03/11 02:21:14 mdejong Exp $
  *
  */
 
@@ -439,10 +439,9 @@ serviceEvent(
 	//    can't depend on pointers found now still being valid when
 	//    the handler returns.
 
-	boolean b = evt.isProcessing;
 	evt.isProcessing = true;
 
-	if ((b == false) && (evt.processEvent(flags) != 0)) {
+	if (evt.processEvent(flags) != 0) {
 	    evt.isProcessed = true;
 	    // Don't allocate/grab the monitor for the event unless sync()
 	    // has been called in another thread. This is thread safe
@@ -461,7 +460,7 @@ serviceEvent(
 	    // restore the isProcessing field to allow the event to be
 	    // attempted again.
 
-	    evt.isProcessing = b;
+	    evt.isProcessing = false;
 	}
 
 	// The handler for this event asked to defer it.  Just go on to

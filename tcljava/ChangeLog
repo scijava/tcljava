@@ -1,6 +1,15 @@
 2003-03-10  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* src/jacl/tcl/lang/Notifier.java (serviceEvent):
+	* src/tclblend/tcl/lang/Notifier.java (serviceEvent):
+	No need for extra logic that deals with the
+	isProcessing field of the TclEvent class since
+	the getAvailableEvent does not return a TclEvent
+	that has isProcessing set to true.
+
+2003-03-10  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/jacl/tcl/lang/Notifier.java (serviceEvent):
 	Rework synchronization on a TclEvent inside
 	serviceEvent. Now the monitor on the TclEvent
 	object is only locked if the sync() method
