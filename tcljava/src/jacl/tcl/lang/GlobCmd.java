@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: GlobCmd.java,v 1.1 1998/10/14 21:09:19 cvsadmin Exp $
+ * RCS: @(#) $Id: GlobCmd.java,v 1.2 1998/11/04 22:37:00 hylands Exp $
  *
  */
 
@@ -127,9 +127,7 @@ throws
 	    separators = "/";
 	}
 	  
-	/*
-	 * Perform tilde substitution, if needed.
-	 */
+	// Perform tilde substitution, if needed.
 
 	index = 0;
 	if (arg.startsWith("~")) {
@@ -348,14 +346,13 @@ throws
 	count++;
     }
 
-    /*
-     * Deal with path separators.  On the Mac, we have to watch out
-     * for multiple separators, since they are special in Mac-style
-     * paths.
-     */
+    // Deal with path separators.  On the Mac, we have to watch out
+    // for multiple separators, since they are special in Mac-style
+    // paths.
 	
     switch (JACL.PLATFORM) {
     case JACL.PLATFORM_MAC:
+
 	if (separators.charAt(0) == '/') {
 	    if (((headLen == 0) && (count == 0))
 		    || ((headLen > 0) && (lastChar != ':'))) {
@@ -376,13 +373,12 @@ throws
 	    }
 	}
 	break;
+
     case JACL.PLATFORM_WINDOWS:
-	/*
-	 * If this is a drive relative path, add the colon and the
-	 * trailing slash if needed.  Otherwise add the slash if
-	 * this is the first absolute element, or a later relative
-	 * element.  Add an extra slash if this is a UNC path.
-	 */
+	// If this is a drive relative path, add the colon and the
+	// trailing slash if needed.  Otherwise add the slash if
+	// this is the first absolute element, or a later relative
+	// element.  Add an extra slash if this is a UNC path.
 	if (name.startsWith(":")) {
  	    headBuf.append(":");
 	    if (count > 1) {
