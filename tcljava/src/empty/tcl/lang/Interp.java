@@ -15,6 +15,7 @@ public Interp() {}
 Hashtable reflectObjTable = null;
 long reflectObjCount = 0;
 Hashtable reflectIDTable = null;
+Hashtable reflectConflictTable = null;
 
 // Used ONLY by JavaImportCmd
 Hashtable[] importTable = null;

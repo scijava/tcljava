@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.32 2000/06/03 13:03:43 mo Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.33 2000/07/13 17:05:26 mo Exp $
  *
  */
 
@@ -47,6 +47,10 @@ Hashtable reflectObjTable = new Hashtable();
 // (including those that have be freed)
 
 long reflectObjCount = 0;
+
+// Table used to store reflect hash index conflicts
+
+Hashtable reflectConflictTable = new Hashtable();
 
 // The number of chars to copy from an offending command into error
 // message.

@@ -1,3 +1,13 @@
+2000-07-13  Mo DeJong  <mdejong@redhat.com>
+
+	* src/empty/empty.jar: Regen.
+	* src/empty/tcl/lang/Interp.java:
+	* src/jacl/tcl/lang/Interp.java:
+	* src/tclblend/tcl/lang/Interp.java: Add conflict table variable.
+	* src/tcljava/tcl/lang/ReflectObject.java: Overhaul reflect table
+	implementation to avoid problem with object hash overlap in JDK
+	1.2. We now use a second conflict table to store hash conflicts.
+
 2000-06-15  Mo DeJong  <mdejong@redhat.com>
 
 	* src/native/java.h:

@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: ReflectObject.java,v 1.10 2000/04/03 06:47:19 mo Exp $
+ * RCS: @(#) $Id: ReflectObject.java,v 1.11 2000/07/13 17:05:27 mo Exp $
  *
  */
 
@@ -106,6 +106,11 @@ protected static final String CMD_PREFIX = "java0x";
 
 private static final boolean debug = false;
 
+// set to true to see dump the relfect table
+// we adding or removing an object from the table
+
+private static final boolean dump = false;
+
 
 // Private helper for creating reflected null objects
 
@@ -124,6 +129,24 @@ private static ReflectObject makeNullObject(Interp i, Class c) {
     return ro;
 }
 
+
+// Return the string used to hash this Java object into the reflect table
+// or the conflict table (in case of a duplicate hash in reflect table.
+// For example: java.lang.Object.546464 -> ReflectObject
+
+private static String getHashString(Class cl, Object obj) {
+    StringBuffer buff = new StringBuffer();
+    buff.append(JavaInfoCmd.getNameFromClass(cl));
+    buff.append('.');
+
+    // A bad hash would suck in terms of performance but it should not
+    // generate any errors. Use '1' for an extreme test of this case.
+    //buff.append('1');
+    buff.append(System.identityHashCode(obj));
+
+    return buff.toString();
+}
+
 // Private helper used to add a reflect object to the reflect table
 
 private static void addToReflectTable(ReflectObject roRep)
@@ -133,38 +156,46 @@ private static void addToReflectTable(ReflectObject roRep)
     Object obj = roRep.javaObj;
     String id = roRep.refID;
 
-
-    // now we hash a string combination of the class and the identity hash code
-    // so that we get a unique string for this pairing of {Class Object}.
-    
-    StringBuffer ident_buff = new StringBuffer();
-    ident_buff.append(JavaInfoCmd.getNameFromClass(cl));
-    ident_buff.append('.');
-    ident_buff.append(System.identityHashCode(obj));
-    String ident = ident_buff.toString();
-    
-    ReflectObject found = (ReflectObject) interp.reflectObjTable.get(ident);
+    String hash = getHashString(cl, obj);
+    ReflectObject found = (ReflectObject) interp.reflectObjTable.get(hash);
     
     if (found == null) {
-	// there is no reflect object for this java object, just add
-	// a single reflect object to the reflectObjTable in the interp
+	// There was no mapping for this hash value, add one now.
 	
 	if (debug) {
-	    System.out.println("new reflect object for " + id +
-			       " with ident \"" + ident + "\"");
+	    System.out.println("new reflect table entry for " + id +
+			       " with hash \"" + hash + "\"");
 	}
 	
-	interp.reflectObjTable.put(ident, roRep);
+	interp.reflectObjTable.put(hash, roRep);
     } else {
-	// This should never happen, if there is a problem in the hash
-	// table because of System.identityHashCode(), it should generate
-	// a descriptive exception in findInReflectTable().
+	// If there is already an entry for this hash value, it means
+	// that there are two different objects of the same class that
+	// have the same hash value. In this case, add the ReflectObject
+	// to the conflict table for this hash value.
+	// java.lang.Object.546464 -> {ReflectObject ReflectObject ReflectObject}
 
-	throw new TclRuntimeError("reflectObjectTable returned non-null for " + id +
-				  " with ident \"" + ident + "\"");
+	if (debug) {
+	    System.out.println("hash conflict in reflect table for " + id +
+			       " with hash \"" + hash + "\"");
+	}
+
+	Vector conflicts = (Vector) interp.reflectConflictTable.get(hash);
+
+	if (conflicts == null) {
+	    conflicts = new Vector();
+	    interp.reflectConflictTable.put(hash, conflicts);
+	}
+
+	if (debug) {
+	    if (conflicts.contains(roRep)) {
+		throw new TclRuntimeError("the conflict table already contains the ReflectObject");
+	    }
+	}
+
+	conflicts.addElement(roRep);
     }
 }
-
 
 // Private helper used to remove a reflected object from the reflect table.
 
@@ -175,60 +206,111 @@ private static void removeFromReflectTable(ReflectObject roRep)
   Object obj = roRep.javaObj;
   String id = roRep.refID;
 
-  // now we hash a string combination of the class and the identity hash code
-  // so that we get a unique string for this pairing of {Class Object}.
-
-  StringBuffer ident_buff = new StringBuffer();
-  ident_buff.append(JavaInfoCmd.getNameFromClass(cl));
-  ident_buff.append('.');
-  ident_buff.append(System.identityHashCode(obj));
-  String ident = ident_buff.toString();
-
-  ReflectObject found = (ReflectObject) interp.reflectObjTable.get(ident);
+  String hash = getHashString(cl, obj);
+  ReflectObject found = (ReflectObject) interp.reflectObjTable.get(hash);
 
   // This should never happen
   if (found == null) {
 
-      throw new TclRuntimeError("reflectObjectTable returned null for " + id +
-				" with ident \"" + ident + "\"");
+      throw new TclRuntimeError("reflect table returned null for " + id +
+				" with hash \"" + hash + "\"");
   } else {
 
-      // Sanity check, if this ever happened it would be VERY BAD!
+      // In the first case, the ReflectObject we hashed to is the same as the
+      // one we passed in, we can just remove it from the reflect table.
+      // Be careful to also check the conflict table, if there is 1 entry
+      // in the conflict table then toast the conflict table and remap the
+      // reflect object in the conflict table. Otherwise, grab the first
+      // value out of the conflict table and hash that in the reflect table.
 
-      if (found != roRep) {
-	  StringBuffer sb = new StringBuffer();
-	  sb.append("(remove) table entry \"");
-	  sb.append(ident);
-	  sb.append("\" mapped to an invalid entry, ");
-	  sb.append("Searched (");
-	  sb.append("refID = \"" + id + "\" ");
-	  sb.append("Class = \"" + JavaInfoCmd.getNameFromClass(cl) + "\" ");
-	  sb.append("identityHashCode = \"" + System.identityHashCode(obj) + "\"");
-	  sb.append("hashCode = \"" + obj.hashCode() + "\"");
-	  sb.append(") Found ( ");
-	  sb.append("refID = \"" + found.refID + "\" ");
-	  sb.append("Class = \"" + JavaInfoCmd.getNameFromClass(found.javaClass) + "\" ");
-	  sb.append("identityHashCode = \"" + System.identityHashCode(found.javaObj) + "\"");
-	  sb.append("hashCode = \"" + found.javaObj.hashCode() + "\"");
-	  sb.append(") Equality Tests ( ");
-	  sb.append("Class  == \"" + (found.javaClass == cl) + "\" ");
-	  sb.append("Object == \"" + (found.javaObj == obj) + "\" ");
-	  sb.append("Object.equals() == \"" + (obj.equals(found.javaObj)) + "\" ");
-	  sb.append("Interp == \"" + (found.ownerInterp == interp) + "\")");
+      if (found == roRep) {
+	  interp.reflectObjTable.remove(hash);
 
-	  throw new TclRuntimeError(sb.toString());
+	  if (debug) {
+	      System.out.println("removing reflect table entry " + hash);
+	  }
+
+	  Vector conflicts = (Vector) interp.reflectConflictTable.get(hash);
+
+	  if (conflicts != null) {
+	      Object first = conflicts.elementAt(0);
+	      conflicts.removeElementAt(0);
+
+	      if (conflicts.isEmpty()) {
+		  interp.reflectConflictTable.remove(hash);
+	      }
+
+	      interp.reflectObjTable.put(hash, first);
+
+	      if (debug) {
+		  System.out.println("replaced reflect table entry from conflict " + hash);
+	      }
+	  }
+      } else {
+
+	  // In the second case, the ReflectObject we hashed to did not match
+	  // the entry in the reflect table. This means it must be in the
+	  // conflict table so remove it from there. Be sure to remove the
+	  // conflict table mapping if we are removing the last conflict!
+
+	  Vector conflicts = (Vector) interp.reflectConflictTable.get(hash);
+
+	  // This should never happen!
+
+	  if (conflicts == null) {
+	      throw new TclRuntimeError("conflict table mapped to null for " + id +
+				" with hash \"" + hash + "\"");
+	  }
+
+	  if (debug) {
+	      System.out.println("removing conflict table entry for " + id +
+				 " with hash \"" + hash + "\"");
+	  }
+
+	  // FIXME: double check that this uses == compare
+	  // This remove should never fail!
+
+	  if (! conflicts.removeElement(roRep)){
+	      throw new TclRuntimeError("no entry in conflict table for " + id +
+				" with hash \"" + hash + "\"");
+	  }
+
+	  if (conflicts.isEmpty()) {
+	      interp.reflectConflictTable.remove(hash);
+	  }
       }
-
-      if (debug) {
-          System.out.println("removing entry for " + id +
-			     " with ident \"" + ident + "\"");
-      }
-
-      interp.reflectObjTable.remove(ident);
   }
 }
 
 
+// Find in ConflictTable will search the reflect hash conflict table
+// for a given {Class Object} pair. If the pair exists its ReflectObject
+// will be returned. If not, null will be returned. In the case where
+// we want to add a new object that conflicts, the table will not
+// exists yet so we can't find a match.
+    
+private static ReflectObject findInConflictTable(Interp interp, Object obj, String hash)
+{
+    Vector conflicts = (Vector) interp.reflectConflictTable.get(hash);
+
+    if (conflicts == null) {
+	return null;
+    }
+
+    for (Enumeration e = conflicts.elements(); e.hasMoreElements() ; ) {
+	ReflectObject found = (ReflectObject) e.nextElement();
+	if (found.javaObj == obj) {
+	    if (debug) {
+		System.out.println("found conflict table entry for hash " +
+				   hash);
+	    }
+
+	    return found;
+	}
+    }
+
+    return null;
+}
 
 // Find in ReflectTable will search the reflect table for a given
 // {Class Object} pair. If the pair exists its ReflectObject
@@ -236,56 +318,35 @@ private static void removeFromReflectTable(ReflectObject roRep)
     
 private static ReflectObject findInReflectTable(Interp interp, Class cl, Object obj)
 {
-    // now we hash a string combination of the class and the identity hash code
-    // so that we get a unique string for this pairing of {Class Object}.
+    String hash = getHashString(cl, obj);
+    ReflectObject found = (ReflectObject) interp.reflectObjTable.get(hash);
 
-    StringBuffer ident_buff = new StringBuffer();
-    ident_buff.append(JavaInfoCmd.getNameFromClass(cl));
-    ident_buff.append('.');
-    ident_buff.append(System.identityHashCode(obj));
-    String ident = ident_buff.toString();
-    
-    ReflectObject found = (ReflectObject) interp.reflectObjTable.get(ident);
-    
+    // If there is no mapping in the reflect table for this object, return null
+
     if (found == null) {
 	if (debug) {
-	    System.out.println("could not find reflect object for ident \""
-			       + ident + "\"");
+	    System.out.println("could not find reflect object for hash \""
+			       + hash + "\"");
 	}
 	
 	return null;
     } else {
-	if (debug) {
-	    System.out.println("found match for id " + found.refID +
-			       " with ident \"" + ident + "\"");
+	// If we find a mapping in the reflect table there are two cases
+	// we need to worry about. If the object we mapped to is the same
+	// object as the one we are have, then just return it. In the
+	// case where the object we map to is not the same, we need
+	// to look in the reflect table because it could be in there.
+
+	if (found.javaObj == obj) {
+	    if (debug) {
+		System.out.println("found reflect table match for id " + found.refID +
+				   " with hash \"" + hash + "\"");
+	    }
+
+	    return found;
+	} else {
+	    return findInConflictTable(interp, obj, hash);
 	}
-
-	// Sanity check, if this ever happened it would be VERY BAD!
-
-	if (found.javaClass != cl || found.javaObj != obj || found.ownerInterp != interp) {
-	    StringBuffer sb = new StringBuffer();
-	    sb.append("(find) table entry \"");
-	    sb.append(ident);
-	    sb.append("\" mapped to an invalid entry, ");
-	    sb.append("Searched (");
-	    sb.append("Class = \"" + JavaInfoCmd.getNameFromClass(cl) + "\" ");
-	    sb.append("identityHashCode = \"" + System.identityHashCode(obj) + "\"");
-	    sb.append("hashCode = \"" + obj.hashCode() + "\"");
-	    sb.append(") Found ( ");
-	    sb.append("refID = \"" + found.refID + "\" ");
-	    sb.append("Class = \"" + JavaInfoCmd.getNameFromClass(found.javaClass) + "\" ");
-	    sb.append("identityHashCode = \"" + System.identityHashCode(found.javaObj) + "\"");
-	    sb.append("hashCode = \"" + found.javaObj.hashCode() + "\"");
-	    sb.append(") Equality Tests ( ");
-	    sb.append("Class  == \"" + (found.javaClass == cl) + "\" ");
-	    sb.append("Object == \"" + (found.javaObj == obj) + "\" ");
-	    sb.append("Object.equals() == \"" + (obj.equals(found.javaObj)) + "\" ");
-	    sb.append("Interp == \"" + (found.ownerInterp == interp) + "\")");
-
-	    throw new TclRuntimeError(sb.toString());
-	}
-
-	return found;
     }
 }
 
@@ -295,14 +356,18 @@ private static ReflectObject findInReflectTable(Interp interp, Class cl, Object 
 // This method is only used for debugging, it will dump the contents of the
 // reflect table in a human readable form. The dump is to stdout.
 
-public static void dump(Interp interp)
-{ 
+// dump the table from a Tcl/Java shell like this
+// set i [java::getinterp]
+// java::call tcl.lang.ReflectObject dump $i
+
+
+public static void dump(Interp interp) { 
     try {
     System.out.println("BEGIN DUMP -------------------------------");
     System.out.println("interp.reflectObjCount = " + interp.reflectObjCount);
     System.out.println("interp.reflectIDTable.size() = " + interp.reflectIDTable.size());
     System.out.println("interp.reflectObjTable.size() = " + interp.reflectObjTable.size());
-
+    System.out.println("interp.reflectConflictTable.size() = " + interp.reflectConflictTable.size());
 
     System.out.println("dumping reflectIDTable");
 
@@ -315,6 +380,12 @@ public static void dump(Interp interp)
         if (roRep == null) {
 	    throw new RuntimeException("Reflect ID Table entry \"" + refID + "\" hashed to null");
         }
+
+	// If the ReflectObject does not match, check in the Conflict table
+	if (! refID.equals(roRep.refID)) {
+	    roRep = findInConflictTable(interp, roRep.javaObj,
+					getHashString(roRep.javaClass, roRep.javaObj));
+	}
 
         // do sanity check
         if (! refID.equals(roRep.refID)) {
@@ -332,10 +403,17 @@ public static void dump(Interp interp)
         System.out.println("javaClass = \"" +
             JavaInfoCmd.getNameFromClass(roRep.javaClass) + "\"");
 
-
-	System.out.println("javaObj.hashCode() = \"" + roRep.javaObj.hashCode() + "\"");
 	System.out.println("System.identityHashCode(javaObj) = \"" +
 			   System.identityHashCode(roRep.javaObj) + "\"");
+
+	if (roRep.javaObj.hashCode() != System.identityHashCode(roRep.javaObj)) {
+	    System.out.println("javaObj.hashCode() = \"" + roRep.javaObj.hashCode() + "\"");
+	}
+
+	/*
+	// FIXME: This "sanity check" will get into an infinite loop because
+	// the object deletes itself and then saves itself and deletes itself ...
+	// this happes because dump() is getting called after the delete!
 
         // do sanity check
         TclObject tobj = TclString.newInstance(roRep.refID);
@@ -350,6 +428,10 @@ public static void dump(Interp interp)
             + JavaInfoCmd.getNameFromClass(tclass)
             + "\" in the interp");
         }
+	// Drop the ReflectObject interp rep from this Tcl Object, otherwise
+	// the use count would go up every time we called dump()
+	TclString.append(tobj,"Z");
+	*/
 
         System.out.println("useCount = \"" + roRep.useCount + "\"");
         System.out.println("isValid = \"" + roRep.isValid + "\"");
@@ -365,23 +447,6 @@ public static void dump(Interp interp)
         if (command == null) {
 	    System.out.println("could not find command named \"" + roRep.refID + "\"");
         }
-
-
-	// Make sure this ReflectObject hashes to itself in the reflectObjTable
-
-	StringBuffer ident_buff = new StringBuffer();
-	ident_buff.append(JavaInfoCmd.getNameFromClass(roRep.javaClass));
-	ident_buff.append('.');
-	ident_buff.append(System.identityHashCode(roRep.javaObj));
-	String ident = ident_buff.toString();
-
-	ReflectObject found = (ReflectObject) interp.reflectObjTable.get(ident);
-
-	// do sanity check
-        if (roRep != found) {
-	    throw new RuntimeException("Reflect ID table entry \"" + ident +
-				       "\" did not hash to its own ReflectObject");
-        }
     }
     System.out.println();
 
@@ -394,41 +459,50 @@ public static void dump(Interp interp)
 
     for (Enumeration keys = interp.reflectObjTable.keys() ; keys.hasMoreElements() ;) {
         System.out.println();
-        String ident = (String) keys.nextElement();
-        ReflectObject roRep = (ReflectObject) interp.reflectObjTable.get(ident);
+        String hash = (String) keys.nextElement();
+        ReflectObject roRep = (ReflectObject) interp.reflectObjTable.get(hash);
 
-        // do sanity check
         if (roRep == null) {
-	    throw new RuntimeException("Reflect table entry \"" + ident + "\" hashed to null");
+	    throw new RuntimeException("Reflect table entry \"" + hash + "\" hashed to null");
         }
 
-	// do sanity check, check the reflectIDTable to ensure we hast to this ReflectObject
+	// do sanity check, check the reflectIDTable to ensure we hashed to this ReflectObject
         if (roRep != interp.reflectIDTable.get(roRep.refID)) {
-	    throw new RuntimeException("Reflect table entry \"" + ident +
+	    throw new RuntimeException("Reflect table entry \"" + hash +
 				       "\" did not hash to its own ReflectObject");
         }
 
-	// Check that the string we hashed to is valid for this object class combo
-	StringBuffer ident_buff = new StringBuffer();
-	ident_buff.append(JavaInfoCmd.getNameFromClass(roRep.javaClass));
-	ident_buff.append('.');
-	ident_buff.append(System.identityHashCode(roRep.javaObj));
+	String hash2 = getHashString(roRep.javaClass, roRep.javaObj);
 
-	if (! ident.equals(ident_buff.toString())) {
-	    throw new RuntimeException("ident \"" + ident + "\" is not equal to calculated" +
-				       " ident \"" + ident_buff.toString());
+	if (! hash.equals(hash2)) {
+	    throw new RuntimeException("hash \"" + hash + "\" is not equal to calculated" +
+				       " hash \"" + hash2);
 	}
 	
-	System.out.println("ident \"" + ident + "\" corresponds to ReflectObject with " +
+	System.out.println("hash \"" + hash + "\" corresponds to ReflectObject with " +
 			   "refID \"" + roRep.refID + "\"");
+
+
+	Vector conflicts = (Vector) interp.reflectConflictTable.get(hash);
+
+	if (conflicts != null) {
+	    System.out.println("Found conflict table for hash " + hash);
+
+	    for (Enumeration e = conflicts.elements(); e.hasMoreElements() ; ) {
+		ReflectObject found = (ReflectObject) e.nextElement();
+
+		// do sanity check, check the reflectIDTable to ensure we hashed to this ReflectObject
+		if (roRep != interp.reflectIDTable.get(roRep.refID)) {
+		    throw new RuntimeException("Conflict table entry for \"" + hash +
+					       "\" did not hash to its own ReflectObject");
+		}
+
+		System.out.println("hash conflict for \"" + hash + "\" corresponds to ReflectObject with " +
+			   "refID \"" + found.refID + "\"");
+	    }
+	}
     }
-
-
-    // dump the table from a Tcl/Java shell like this
-    // java::call tcl.lang.ReflectObject dump [java::getinterp]
-
     } catch (Throwable e) { e.printStackTrace(System.out); }
-
 }
 
 
@@ -517,8 +591,14 @@ makeReflectObject(
     ReflectObject roRep = findInReflectTable(interp, cl, obj);
 
     if (roRep != null) {
-	// If it is already in the table just increment the use count
+	// If it is already in the table just increment the use count and return it
+
 	roRep.useCount++;
+
+	if (debug) {
+	    System.out.println("incr useCount of found object " + roRep.refID + " to " + roRep.useCount);
+	}
+
 	return roRep;
     } else {
 	if (cl.isArray()) {
@@ -541,7 +621,7 @@ makeReflectObject(
 	        JavaInfoCmd.getNameFromClass(roRep.javaClass));
 	}
 
-	if (debug) {
+	if (dump) {
 	    System.out.println("PRE REGISTER DUMP");
 	    dump(interp);
 	}
@@ -553,6 +633,14 @@ makeReflectObject(
 	roRep.refID = CMD_PREFIX + Long.toHexString(interp.reflectObjCount);
 	
 	interp.createCommand(roRep.refID,roRep);
+
+        // FIXME: we may want to revisit the need for this reflectIDTable.
+	// It is only used to recover a ReflectObject from a TclObject
+	// that lost its internal representation. It is questionable if
+	// we should really allow this. If we had an internal rep that
+	// could not be lost then we could save a lot of memory! Why
+	// can't we just get the ReflectObject from the CMD? I think
+	// this is because of unimplemented bit in Tcl Blend!
 	interp.reflectIDTable.put(roRep.refID,roRep);
 	
 	addToReflectTable(roRep);
@@ -567,7 +655,7 @@ makeReflectObject(
 	roRep.useCount = 1;
 	roRep.isValid  = true;	
 	
-	if (debug) {
+	if (dump) {
 	    System.out.println("POST REGISTER DUMP");
 	    dump(interp);
 	}
@@ -614,7 +702,7 @@ dispose()
                 " is no longer being used");
         }
 
-	if (debug) {
+	if (dump) {
 	    System.out.println("PRE DELETE DUMP");
 	    dump(ownerInterp);
 	}
@@ -657,6 +745,11 @@ protected InternalRep
 duplicate()
 {
     useCount++;
+
+    if (debug) {
+	System.out.println("duplicate(): incr useCount of " + refID + " to " + useCount);
+    }
+
     return this;
 }
 
@@ -707,6 +800,12 @@ throws
 	  roRep = (ReflectObject) interp.reflectIDTable.get(s);
 	  if ((roRep != null) && (roRep.isValid)) {
 	    roRep.useCount++;
+
+	    if (debug) {
+	      System.out.println("setReflectObjectFromAny(): incr useCount of " + roRep.refID
+				 + " to " + roRep.useCount);
+	    }
+
 	    tobj.setInternalRep(roRep);
 	    return;
 	  }
