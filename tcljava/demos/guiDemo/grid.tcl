@@ -9,7 +9,7 @@
 # redistribution of this file, and for a DISCLAIMER OF ALL
 # WARRANTIES.
 # 
-# RCS: @(#) $Id: grid.tcl,v 1.1 1998/10/14 21:09:23 cvsadmin Exp $
+# RCS: @(#) $Id: grid.tcl,v 1.2 1998/11/04 22:34:00 hylands Exp $
 
 
 # Save the constants from the GridBagLayout class into an array
@@ -109,6 +109,9 @@ proc grid {master slave args} {
     if ![java::instanceof $layout java.awt.GridBagLayout] {
 	set layout [java::new java.awt.GridBagLayout]
 	$master setLayout $layout
+    } else {
+	# If it is a GridBagLayout cast it up from LayoutManager
+	set layout [java::cast java.awt.GridBagLayout $layout]
     }
 
     $layout setConstraints $slave $constr
