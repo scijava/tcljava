@@ -1,5 +1,13 @@
 2003-01-09  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/tcljava/tcl/lang/TclIndex.java (get): Don't
+	add a comma to the error message when there are
+	only two items. This matches the Tcl 8.3 impl.
+	* tests/tcljava/JavaInfoCmd.test: Update
+	error messages to account for TclIndex change.
+
+2003-01-09  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/jacl/tcl/lang/Parser.java (parseCommand,
 	commandComplete):
 	The info complete subcommand now passes all

@@ -11,7 +11,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclIndex.java,v 1.4 2000/10/29 06:00:42 mdejong Exp $
+ * RCS: @(#) $Id: TclIndex.java,v 1.5 2003/01/10 01:35:58 mdejong Exp $
  */
 
 package tcl.lang;
@@ -63,6 +63,8 @@ public class TclIndex implements InternalRep {
     }
 
     /**
+     * Tcl_GetIndexFromObj -> get
+     *
      * Gets the index into the table of the object.  Generate an error
      * it it doesn't occur.  This also converts the object to an index
      * which should catch the lookup for speed improvement.
@@ -127,7 +129,7 @@ public class TclIndex implements InternalRep {
 		sbuf.append(table[0]);
 		for (int i = 1; i < tableLen; i++) {
 		    if (i == (tableLen - 1)) {
-			sbuf.append(", or ");
+			sbuf.append((i>1) ? ", or " : " or ");
 		    } else {
 			sbuf.append(", ");
 		    }
