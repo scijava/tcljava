@@ -9,77 +9,57 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: TclParse.java,v 1.1 1998/10/14 21:09:20 cvsadmin Exp $
+ * RCS: @(#) $Id: TclParse.java,v 1.2 1999/05/09 01:33:45 dejong Exp $
  */
 
 package tcl.lang;
 
 class TclParse {
 
-/* 
- * The original command string passed to Parser.parseCommand. 
- */
+// The original command string passed to Parser.parseCommand. 
 
 char[] string;		
 
-/* 
- * Index into 'string' that is the character just after the last 
- * one in the command string. 
- */
+// Index into 'string' that is the character just after the last 
+// one in the command string.
 
 int endIndex;
-
-/* 
- * Index into 'string' that is the # that begins the first of 
- * one or more comments preceding the command. 
- */
+ 
+// Index into 'string' that is the # that begins the first of 
+// one or more comments preceding the command. 
 
 int commentStart;
-
-/* 
- * Number of bytes in comments (up through newline character 
- * that terminates the last comment).  If there were no
- * comments, this field is 0. 
- */
+ 
+// Number of bytes in comments (up through newline character 
+// that terminates the last comment).  If there were no
+// comments, this field is 0.
 
 int commentSize;
-
-/* 
- * Index into 'string' that is the first character in first 
- * word of command. 
- */
+ 
+// Index into 'string' that is the first character in first 
+// word of command.
 
 int commandStart;
 
-/* 
- * Number of bytes in command, including first character of 
- * first word, up through the terminating newline, close 
- * bracket, or semicolon. 
- */
+// Number of bytes in command, including first character of 
+// first word, up through the terminating newline, close 
+// bracket, or semicolon. 
 
 int commandSize;
 
-/* 
- * Total number of words in command.  May be 0. 
- */
+// Total number of words in command.  May be 0. 
 
 int numWords;
 
-/* 
- * Stores the tokens that compose the command.
- */
+// Stores the tokens that compose the command.
 
 TclToken[] tokenList;
 
-/* 
- * Total number of tokens in command. 
- */
+// Total number of tokens in command. 
 
 int numTokens;
 
-/*
- *  Total number of tokens available at token.
- */
+//  Total number of tokens available at token.
 
 int tokensAvailable;	
 
@@ -93,52 +73,39 @@ int tokensAvailable;
  *----------------------------------------------------------------------
  */
 
-/* 
- * Interpreter to use for error reporting, or null.
- */
+// Interpreter to use for error reporting, or null.
 
 Interp interp;
 
-/*
- * Name of file from which script came, or null.  Used for error
- * messages.
- */
+// Name of file from which script came, or null.  Used for error
+// messages.
 
 String fileName;
 
-/* 
- * Line number corresponding to first character in string. 
- */
+// Line number corresponding to first character in string. 
 
 int lineNum;
-
-/* 
- * Points to character in string that terminated most recent token. 
- * Filled in by Parser.parseTokens.  If an error occurs, points to
- * beginning of region where the error occurred (e.g. the open brace
- * if the close brace is missing).
- */
+ 
+// Points to character in string that terminated most recent token. 
+// Filled in by Parser.parseTokens.  If an error occurs, points to
+// beginning of region where the error occurred (e.g. the open brace
+// if the close brace is missing).
 
 int termIndex;
 
-/*
- * This field is set to true by Parser.parseCommand if the command
- * appears to be incomplete.  This information is used by 
- * Parser.commandComplete.
- */
+// This field is set to true by Parser.parseCommand if the command
+// appears to be incomplete.  This information is used by 
+// Parser.commandComplete.
 
 boolean incomplete;
 
-/*
- * When a TclParse is the return value of a method, result is set to
- * a standard Tcl result, indicating the return of the method.
- */
+// When a TclParse is the return value of a method, result is set to
+// a standard Tcl result, indicating the return of the method.
+
 
 int result;
 
-/*
- * Default size of the tokenList array.
- */
+// Default size of the tokenList array.
 
 private static final int INITIAL_NUM_TOKENS = 20;
   private static final int MAX_CACHED_TOKENS = 50; //my tests show 50 is best
@@ -220,7 +187,7 @@ getToken(
 }
 
 
-//release internal resources that this TclParser object might have allocated
+// Release internal resources that this TclParser object might have allocated
 
 void
 release() {
@@ -235,7 +202,7 @@ release() {
 
 
 
-//creating an interpreter will cause this init method to be called
+// Creating an interpreter will cause this init method to be called
 
 static void init(Interp interp) {
   TclToken[] TOKEN_CACHE = new TclToken[MAX_CACHED_TOKENS];
@@ -250,18 +217,18 @@ static void init(Interp interp) {
 
 private TclToken grabToken() {
   if (interp == null || interp.parserTokensUsed == MAX_CACHED_TOKENS) {
-    //either we do not have a cache because the interp is null or we have already
-    //used up all the open cache slots, we just allocate a new one in this case
+    // either we do not have a cache because the interp is null or we have already
+    // used up all the open cache slots, we just allocate a new one in this case
     return new TclToken();
   } else {
-    //the cache has an avaliable slot so grab it
+    // the cache has an avaliable slot so grab it
     return interp.parserTokens[interp.parserTokensUsed++];
   }
 }
 
 private void releaseToken(TclToken token) {
   if (interp != null && interp.parserTokensUsed > 0) {
-    //if cache is not full put the object back in the cache
+    // if cache is not full put the object back in the cache
     interp.parserTokensUsed -= 1;
     interp.parserTokens[interp.parserTokensUsed] = token;
   }
@@ -301,7 +268,7 @@ private void releaseToken(TclToken token) {}
 void
 expandTokenArray(int needed)
 {
-    //make sure there is at least enough room for needed tokens
+    // Make sure there is at least enough room for needed tokens
     while (needed >= tokensAvailable) {
       tokensAvailable *= 2;
     }
@@ -359,8 +326,19 @@ get()
     String typeString;
     int nextIndex;
     String cmd;
-    int i, flags;
+    int i;
    
+
+    final boolean debug = false;
+    
+    if (debug) {
+	System.out.println();
+	System.out.println("Entered TclParse.get()");
+	System.out.println("numTokens is " + numTokens);
+    }
+
+
+
     obj = TclList.newInstance();
     try {
 	if (commentSize > 0) {
@@ -379,6 +357,11 @@ get()
 	TclList.append(interp, obj, TclInteger.newInstance(numWords));
 	
 	for (i = 0; i < numTokens; i++) {
+	    if (debug) {
+		System.out.println("processing token " + i);
+	    }
+
+
 	    token = tokenList[i];
 	    switch (token.type) {
 		case Parser.TCL_TOKEN_WORD:
@@ -403,6 +386,11 @@ get()
 		    typeString = "??";
 		    break;
 	    }
+
+	    if (debug) {
+		System.out.println("typeString is " + typeString);
+	    }
+
 	    TclList.append(interp, obj, TclString.newInstance(typeString));
 	    TclList.append(interp, obj, 
 		    TclString.newInstance(token.getTokenString()));
@@ -412,11 +400,11 @@ get()
 	nextIndex = commandStart + commandSize;
 	TclList.append(interp, obj, TclString.newInstance(
 	        new String(string, nextIndex, (endIndex-nextIndex))));
+
     } catch (TclException e) {
-	/*
-	 * Do Nothing.
-	 */
+	// Do Nothing.
     }
+
     return obj;
 }
 } // end TclParse
