@@ -7,7 +7,7 @@
 # Copyright (c) 1998-2000 Ajuba Solutions.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: all.tcl,v 1.2 2002/12/18 01:48:33 mdejong Exp $
+# RCS: @(#) $Id: all.tcl,v 1.3 2004/10/01 06:08:31 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
 
@@ -25,8 +25,13 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 }
 
 # Set verbose to max
-#configure -verbose pb
-
+if {0} {
+    if {$tcl_platform(platform) == "java"} {
+        set tcltest::verbose pb
+    } else {
+        configure -verbose pb
+    }
+}
 
 set ::tcltest::testSingleFile false
 set ::tcltest::testsDirectory [file dir [info script]]

@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.44 2003/07/25 16:38:35 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.45 2004/10/01 06:08:31 mdejong Exp $
  *
  */
 
@@ -2444,27 +2444,29 @@ readScriptFromFile(
     String s)			// The name of the file.
 {
     File sourceFile;
-    FileInputStream fs;
-    try {
-	sourceFile = FileUtil.getNewFileObj(this, s);
-	fs = new FileInputStream(sourceFile);
-    } catch (TclException e) {
-	resetResult();	
-	return null;
-    } catch (FileNotFoundException e) {
-	return null;
-    } catch (SecurityException sec_e) {
-	return null;
-    }
+    FileChannel fchan = new FileChannel();
+    boolean wasOpened = false;
+    TclObject result = TclString.newInstance(new StringBuffer(64));
 
     try {
-	byte charArray[] = new byte[fs.available()];
-	fs.read(charArray);
-	return new String(charArray);
+        sourceFile = FileUtil.getNewFileObj(this, s);
+        fchan.open(this, sourceFile.getPath(), TclIO.RDONLY);
+        wasOpened = true;
+        fchan.read(this, result, TclIO.READ_ALL, 0);
+        return result.toString();
+    } catch (TclException e) {
+        resetResult();
+        return null;
+    } catch (FileNotFoundException e) {
+        return null;
     } catch (IOException e) {
-	return null;
+        return null;
+    } catch (SecurityException e) {
+        return null;
     } finally {
-	closeInputStream(fs);
+        if (wasOpened) {
+            closeChannel(fchan);
+        }
     }
 }
 
@@ -2541,23 +2543,70 @@ readScriptFromURL(
     }
 
     if (content instanceof String) {
-	return (String)content;
-    } else if (content instanceof InputStream) {
-// FIXME : use custom stream handler
-	InputStream fs = (InputStream) content;
+        // When Java returns a String object as content
+        // we need to convert \r\n sequences to \n.
 
-	try {
-// FIXME : read does not check return values
-	    byte charArray[] = new byte[fs.available()];
-	    fs.read(charArray);
-	    return new String(charArray);
-	} catch (IOException e2) {
-	    return null;
-	} finally {
-	    closeInputStream(fs);
-	}
+        String str = (String) content;
+        StringBuffer sb = new StringBuffer(str.length());
+        char c, prev = '\n';
+        final int length = str.length();
+        for (int i = 0 ; i < length ; i++) {
+            c = str.charAt(i);
+            if (c == '\n' && prev == '\r') {
+                sb.setCharAt(sb.length()-1, '\n');
+                prev = '\n';
+            } else {
+                sb.append(c);
+                prev = c;
+            }
+        }
+        return sb.toString();
+    } else if (content instanceof InputStream) {
+        return readScriptFromInputStream((InputStream) content);
     } else {
 	return null;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * readScriptFromInputStream --
+ *
+ *	Read a script from a Java InputStream into a string.
+ *
+ * Results:
+ *	Returns the content of the script.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+private String
+readScriptFromInputStream(
+    InputStream s)			// Java InputStream containing script
+{
+    TclObject result = TclString.newInstance(new StringBuffer(64));
+    ReadInputStreamChannel rc = new ReadInputStreamChannel(this, s);
+
+    try {
+        rc.read(this, result, TclIO.READ_ALL, 0);
+        return result.toString();
+    } catch (TclException e) {
+        resetResult();
+        return null;
+    } catch (FileNotFoundException e) {
+        return null;
+    } catch (IOException e) {
+        return null;
+    } catch (SecurityException e) {
+        return null;
+    } finally {
+        closeChannel(rc);
+        // FIXME: Closing the channel should close the stream!
+        closeInputStream(s);
     }
 }
 
@@ -2585,6 +2634,32 @@ closeInputStream(
 	fs.close();
     }
     catch (IOException e) {;}
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * closeChannel --
+ *
+ *	Close the Channel; catch any IOExceptions and ignore them.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+private void
+closeChannel(
+    Channel chan)
+{
+    try {
+	chan.close();
+    }
+    catch (IOException e) {}
 }
 
 /*
@@ -2637,50 +2712,9 @@ throws
 		+ "\"");
     }
 
-    try {
-	// FIXME : ugly JDK 1.2 only hack
-	// Ugly workaround for compressed files BUG in JDK1.2
-        // this bug first showed up in  JDK1.2beta4. I have sent
-        // a number of emails to Sun but they have deemed this a "feature"
-        // of 1.2. This is flat out wrong but I do not seem to change thier
-        // minds. Because of this, there is no way to do non blocking IO
-        // on a compressed Stream in Java. (mo)
+    String script = readScriptFromInputStream(stream);
 
-        if (System.getProperty("java.version").startsWith("1.2") &&
-            stream.getClass().getName().equals("java.util.zip.ZipFile$1")) {
-	    
-	  ByteArrayOutputStream baos = new ByteArrayOutputStream(1024);
-	  byte[] buffer = new byte[1024];
-	  int numRead;
-
-	  // Read all data from the stream into a resizable buffer
-	  while ((numRead = stream.read(buffer, 0, buffer.length)) != -1) {
-	      baos.write(buffer, 0, numRead);
-	  }
-
-	  // Convert bytes into a String and eval them
-	  eval(new String(baos.toByteArray()), 0);	  
-	  
-	} else {	  
-	  // Other systems do not need the compressed jar hack
-
-	  int num = stream.available();
-	  byte[] byteArray = new byte[num];
-	  int offset = 0;
-	  while ( num > 0 ) {
-	    int readLen = stream.read( byteArray, offset, num );
-	    offset += readLen;
-	    num -= readLen;
-	  }
-
-	  eval(new String(byteArray), 0);
-	}
-
-    } catch (IOException e) {
-	return;
-    } finally {
-	closeInputStream(stream);
-    }
+    eval(script, 0);
 }
 
 /*

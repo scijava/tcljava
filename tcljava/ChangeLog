@@ -1,3 +1,23 @@
+2004-09-30  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/jacl/tcl/lang/FileChannel.java (close): Set file
+	member to null after closing.
+	* src/jacl/tcl/lang/Interp.java (readScriptFromFile,
+	readScriptFromURL, readScriptFromInputStream, evalResource):
+	Use new Tcl IO layer to filter CRLF to LF when
+	sourcing data from a file. Use new ReadInputStreamChannel
+	class to read and filter data from an InputStream
+	either from a resource or a URL. This removes any
+	attempts to use the available method to do any sort
+	of non-blocking IO in the Interp class.
+	* src/jacl/tcl/lang/ReadInputStreamChannel.java: Add
+	new class to read data from an InputStream as a Channel.
+	* tests/all.tcl: Fixup tcltest variable setting
+	so that it works in Jacl.
+	* tests/jacl/Interp.test: Add test cases for CRLF to LF
+	conversion when sourcing a file or a URL.
+	[Bug 1000176]
+
 2004-09-28  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* src/jacl/tcl/lang/TclOutputStream.java (flushChannel):
