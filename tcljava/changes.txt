@@ -1,6 +1,6 @@
 Recent user-visible changes to Jacl & Tcl Blend:
 
-RCS: @(#) $Id: changes.txt,v 1.16 1999/05/15 23:06:11 dejong Exp $
+RCS: @(#) $Id: changes.txt,v 1.17 1999/05/15 23:07:48 dejong Exp $
 
 ----------------- Released 1.0a1, 10/22/97 -----------------------
 
@@ -738,12 +738,13 @@ The jaclsh wrapper script was not including the
 CLASSPATH set by the parent shell. After the fix
 the parent CLASSPATH is appended to the CLASSPATH. (Mo)
 
-3/17/99 (updated ORO classes to version 1.1)
+3/17/99 (updated ORO classes to version 1.1 in Jacl)
 The 1.0 version of the ORO matcher classes did not
 work in JDK 1.2. To get things working an ugly hack
 directly on the .class files was needed. Recently,
 new 1.1 versions of the oro code have been created
-so those are now used instead of the hacked versions. (Mo)
+so those are now used instead of the hacked versions.
+A new license.oro file was also added to Jacl. (Mo)
 
 3/18/99 (fixed sorted java methods implementation)
 The 1.2.1 release included a first try at a sorted method
@@ -788,4 +789,17 @@ sessions to keep java object references from being garbage
 collected. This can be really handy when you want to quickly
 test out a java class without the hassle of garbage collection. (Mo)
 
+3/22/99 (fix for NaN problem in Jacl's format command)
+Jacl's format command did not use Java's NaN primitives to
+test if a number was NaN. A test for NaN was added to
+FormatCmd.java and a regression test was added to
+tcljava/JavaFieldCmd.test. (CXH)
+
+3/23/99 (fix for character echo bug in jacl shell)
+A bug in the Windows version of the JDK kept Jacl from
+echoing characters typed into the shell until return
+is pressed. This problem has now been fixed by using
+blocking IO calls under windows which does echo chars. (Mo)
+
+----------------- Released 1.2.2, 3/23/99 -----------------------
 
