@@ -592,7 +592,8 @@ if test $TCLJAVA = "tclblend" || test $BOTH = "true"; then
     # Keep case statements in alphabetical order.
     case "`uname -s`" in
 	HP-UX)
-	    if test ! -d $JAVA_INCLUDE/native_threads; then
+	    if test "$JAVA_VERSION" = "1.1" && \
+	        test ! -d $JAVA_INCLUDE/native_threads; then
                 AC_MSG_ERROR(['$JAVA_INCLUDE/native_threads'
 does not exist. You must install the JDK Native Threads Pack to use tclblend.
 See http://www.hp.com/esy/technology/jdk/products/software.html.])
@@ -601,20 +602,26 @@ See http://www.hp.com/esy/technology/jdk/products/software.html.])
             JAVA_ARCH_INCLUDE=$JAVA_INCLUDE/hp-ux
 
             ARCH=PA_RISC
-            ARCH_LIBNAME=lib
+	    
+	    ARCH_LIBNAME=lib
             ARCH_LIB=${ARCH_LIBNAME}/${ARCH}
-          if test -d ${JAVA_DIR}/${ARCH_LIB}/native_threads ; then
-               ARCH_LIBPATH=${ARCH_LIB}/native_threads
-          elif test -d  ${JAVA_DIR}/${ARCH_LIB}/native ; then
-               ARCH_LIBPATH=${ARCH_LIB}/native
-          elif test -d  ${JAVA_DIR}/${ARCH_LIB}/green_threads ; then
-               ARCH_LIBPATH=${ARCH_LIB}/green_threads
-          elif test -d  ${JAVA_DIR}/${ARCH_LIB}/green ; then
-               ARCH_LIBPATH=${ARCH_LIB}/green
-          fi
+
+	    if test "$JAVA_VERSION" = "1.1"; then
+	        if test -d ${JAVA_DIR}/${ARCH_LIB}/native_threads ; then
+                    ARCH_LIBPATH=${ARCH_LIB}/native_threads
+	        elif test -d  ${JAVA_DIR}/${ARCH_LIB}/native ; then
+                    ARCH_LIBPATH=${ARCH_LIB}/native
+	        elif test -d  ${JAVA_DIR}/${ARCH_LIB}/green_threads ; then
+       		    ARCH_LIBPATH=${ARCH_LIB}/green_threads
+                elif test -d  ${JAVA_DIR}/${ARCH_LIB}/green ; then
+         	    ARCH_LIBPATH=${ARCH_LIB}/green
+	        fi
+	        TCLBLEND_LIBS="-lpthread -L${JAVA_DIR}/${ARCH_LIBPATH} -ljava"
+	    else
+	        TCLBLEND_LIBS="-lpthread -L${JAVA_DIR}/jre/lib/${ARCH} -L${JAVA_DIR}/jre/lib/${ARCH}/classic -ljava"
+	    fi
 
             JAVA_SHLIB=libjava.sl
-            TCLBLEND_LIBS="-lpthread -L${JAVA_DIR}/${ARCH_LIBPATH} -ljava"
             TCLBLEND_SHLIB_NAMES="libpthread.sl libjava.sl"
 
             TCLBLEND_LD_PRELOAD=
