@@ -1,5 +1,13 @@
 2002-04-12  Shawn Boyce  <shawn@qcominc.com>
 
+	* src/jacl/tcl/lang/FileCmd.java (copyRenameOneFile):
+	Treat data copied via 'file copy' as binary. Fix
+	array bound bug that was causing the copy command
+	to fail. Fixup error message when too few arguments
+	are passed to the 'file join' command.
+
+2002-04-12  Shawn Boyce  <shawn@qcominc.com>
+
 	* src/jacl/tcl/lang/FileCmd.java (cmdProc):
 	Implement 'file volumes' command using the JDK 1.2
 	method File.listRoots(). Reflection is used to preserve

@@ -11,7 +11,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FileCmd.java,v 1.6 2002/04/12 18:13:37 mdejong Exp $
+ * RCS: @(#) $Id: FileCmd.java,v 1.7 2002/04/12 20:07:03 mdejong Exp $
  *
  */
 
@@ -278,6 +278,9 @@ throws
 	return;
 	
     case OPT_JOIN:
+	if (argv.length < 3) {
+	    throw new TclNumArgsException(interp, 2, argv, "name ?name ...?");
+	}
 	interp.setResult(FileUtil.joinPath(interp, argv, 2, argv.length));
 	return;
 
@@ -1161,24 +1164,21 @@ throws
 	// Perform the copy procedure.
 
 	try {
-	    // Read source to "cbuf" char array one line at a time.
-	    // For each line, Write cbuf to target.
+            BufferedInputStream bin = new BufferedInputStream(
+                new FileInputStream(sourceFileObj));
+            BufferedOutputStream bout = new BufferedOutputStream(
+                new FileOutputStream(targetFileObj));
 
-	    BufferedReader reader = 
-		new BufferedReader(new FileReader(sourceFileObj));
-	    BufferedWriter writer = 
-		new BufferedWriter(new FileWriter(targetFileObj));
-	    char cbuf[] = new char[256];
-	    int currentIndex = 0;
-	    int numChars = reader.read(cbuf, 0, 256);
-	    while (numChars != -1) {
-		writer.write(cbuf, currentIndex, numChars); 
-		currentIndex += 256;
-		numChars = reader.read(cbuf, currentIndex, 256);
-	    }
-	    reader.close();
-	    writer.close();
-	} catch (Exception e) {
+            final int bsize = 1024;
+            byte[] buff = new byte[bsize];
+            int numChars = bin.read(buff, 0, bsize);
+            while (numChars != -1) {
+                bout.write(buff, 0, numChars);
+                numChars = bin.read(buff, 0, bsize);
+            }
+            bin.close();
+            bout.close();
+	} catch (IOException e) {
 	    throw new TclException(interp, "error copying: " + e.getMessage());
 	}
     }
