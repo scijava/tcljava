@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.2 1998/11/04 22:37:24 hylands Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.3 1998/11/06 22:38:15 hylands Exp $
  *
  */
 
@@ -2096,10 +2096,12 @@ throws
 
     try {
 	
-	//we must do a workaround for compressed files BUG in JDK1.2B4
+        // We must do a workaround for compressed files BUG in JDK1.2beta4
+        // and JDK1.2fcs.
 
-	if (System.getProperty("java.version").equals("1.2beta4") &&
-	    stream.getClass().getName().equals("java.util.zip.ZipFile$1")) {
+        if ((System.getProperty("java.version").equals("1.2beta4") ||
+            System.getProperty("java.version").equals("1.2fcs")) &&
+            stream.getClass().getName().equals("java.util.zip.ZipFile$1")) {
 	  int used = 0;
 	  int cur;
 	  int size = stream.available() * 4;
