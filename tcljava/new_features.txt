@@ -291,4 +291,10 @@ a constructor. In the new implementation, these package scoped
 entities are only considered when a custom package invoker
 is defined for the package.
 
+(PASSING MULTIPLE JVM OPTIONS)
+
+The tclblend_init variable has provided a means to pass a single
+JVM option to a JDK 1.2 or newer JVM. This support has been
+improved so that multiple JVM options can now be passed.
+
 </PRE></BODY></HTML>

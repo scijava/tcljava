@@ -1,5 +1,6 @@
 2002-12-24  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* new_features.txt: Mention tclblend_init change.
 	* src/native/javaCmd.c (JavaInitEnv): Treat
 	tclblend_init as a list and pass each element
 	as a JVM option.
