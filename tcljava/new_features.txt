@@ -1,5 +1,5 @@
 <HTML><BODY BGCOLOR=#FFFFFF><PRE>
-RCS: @(#) $Id: new_features.txt,v 1.1 1999/05/08 05:24:33 dejong Exp $
+RCS: @(#) $Id: new_features.txt,v 1.2 1999/05/15 23:18:20 dejong Exp $
 
 What's new in Tcl/Java 1.1?
 
@@ -154,5 +154,13 @@ able to manage multiple error conditions unlike the standard catch
 command in Tcl. The command can also be used to catch Tcl errors and
 Java exceptions independently. See the docs on the java::try command
 for more information.
+
+(NEW COMMAND FOR JACL AND TCLBLEND)
+
+The new java::autolock command can be used in interactive
+sessions to keep java object references from being garbage
+collected. This can be really handy when you want to quickly
+test out a java class without the hassle of garbage collection.
+
 
 </PRE></BODY></HTML>
