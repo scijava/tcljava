@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaInterp.c,v 1.7.2.3 2000/08/08 19:03:41 mo Exp $
+ * RCS: @(#) $Id: javaInterp.c,v 1.7.2.4 2000/08/27 05:09:00 mo Exp $
  */
 
 #include "java.h"
@@ -824,6 +824,7 @@ JavaTraceProc(
     jobject exception, interpObj;
     Tcl_SavedResult state;
     JNIEnv *env = JavaGetEnv();
+    JavaInfo* jcache = JavaGetCache();
 
     result = NULL;
     if (tPtr->errMsg != NULL) {
@@ -851,7 +852,7 @@ JavaTraceProc(
 	 * Invoke the command and check for an exception.
 	 */
 
-	(*env)->CallVoidMethod(env, tPtr->trace, java.traceProc,
+	(*env)->CallVoidMethod(env, tPtr->trace, jcache->traceProc,
 		interpObj, name1Str, name2Str, flags);
 	exception = (*env)->ExceptionOccurred(env);
 	(*env)->ExceptionClear(env);
@@ -954,9 +955,10 @@ JavaCmdDeleteProc(
 {
     jobject cmd = (jobject)clientData;
     JNIEnv *env = JavaGetEnv();
+    JavaInfo* jcache = JavaGetCache();
 
-    if ((*env)->IsInstanceOf(env, cmd, java.CommandWithDispose)) {
-	(*env)->CallVoidMethod(env, cmd, java.disposeCmd);
+    if ((*env)->IsInstanceOf(env, cmd, jcache->CommandWithDispose)) {
+	(*env)->CallVoidMethod(env, cmd, jcache->disposeCmd);
     }
     (*env)->DeleteGlobalRef(env, (jobject)clientData);
 }
@@ -991,6 +993,7 @@ JavaCmdProc(
     jobject value, exception, interpObj;
     int i, result;
     JNIEnv *env = JavaGetEnv();
+    JavaInfo* jcache = JavaGetCache();
 
     interpObj = (jobject) Tcl_GetAssocData(interp, "java", NULL);
 
@@ -998,7 +1001,7 @@ JavaCmdProc(
      * Construct the argument array.
      */
 
-    args = (*env)->NewObjectArray(env, objc, java.TclObject, NULL);
+    args = (*env)->NewObjectArray(env, objc, jcache->TclObject, NULL);
     for (i = 0; i < objc; i++) {
 	int isLocal;
 
@@ -1023,7 +1026,7 @@ JavaCmdProc(
      */
 
     result = (*env)->CallIntMethod(env, interpObj,
-	    java.callCommand, cmd, args);
+	    jcache->callCommand, cmd, args);
     exception = (*env)->ExceptionOccurred(env);
 
     if (exception) {
@@ -1337,6 +1340,7 @@ JavaGetInterp(
 {
     jlong interpPtr;
     Tcl_Interp *interp;
+    JavaInfo* jcache = JavaGetCache();
 
     if (!interpObj) {
 	return NULL;
@@ -1346,7 +1350,7 @@ JavaGetInterp(
      * Get the Tcl_Interp * from the Interp object.
      */
 
-    interpPtr = (*env)->GetLongField(env, interpObj, java.interpPtr);
+    interpPtr = (*env)->GetLongField(env, interpObj, jcache->interpPtr);
 
     /*
      * Copy the pointer out of the jlong.  We have to do it this way since the

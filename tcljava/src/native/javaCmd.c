@@ -10,7 +10,7 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  *
- * RCS: @(#) $Id: javaCmd.c,v 1.9.2.5 2000/08/27 04:15:54 mo Exp $
+ * RCS: @(#) $Id: javaCmd.c,v 1.9.2.6 2000/08/27 05:08:59 mo Exp $
  */
 
 /*
@@ -52,7 +52,7 @@ ENHANCEMENTS, OR MODIFICATIONS.
  * Exported state variables.
  */
 
-JavaInfo java;		/* Cached class & method ids. */
+static JavaInfo javaCMF;		/* Cached class & method & field ids. */
 
 /*
  * The following pointer is used to keep track of the current Java
@@ -175,6 +175,7 @@ EXPORT(int,Tclblend_Init)(
     jlong lvalue;
     jobject interpObj, local;
     JNIEnv *env;
+    JavaInfo* jcache = JavaGetCache();
 
 #ifdef TCLBLEND_DEBUG
     fprintf(stderr, "TCLBLEND_DEBUG: Tclblend_Init\n");
@@ -196,8 +197,8 @@ EXPORT(int,Tclblend_Init)(
 
     env = JavaGetEnv();
     *(Tcl_Interp**)&lvalue = interp;
-    local = (*env)->NewObject(env, java.Interp,
-	    java.interpC, lvalue);
+    local = (*env)->NewObject(env, jcache->Interp,
+	    jcache->interpC, lvalue);
     if (!local) {
 	Tcl_Obj *obj;
 	jobject exception = (*env)->ExceptionOccurred(env);
@@ -304,6 +305,37 @@ JavaGetEnv()
 
     return tsdPtr->currentEnv;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * JavaGetCache --
+ *
+ *	Retrieve the JNI class, method, and field cache for the
+ *	current thread.
+ *
+ * Results:
+ *	Returns the JavaInfo pointer for the current thread.
+ *	This method  must be called after JavaSetupJava has been called.
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+
+TCLBLEND_EXTERN JavaInfo *
+JavaGetCache()
+{
+/*
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+
+    assert(tsdPtr->initialized_currentEnv);
+
+    return tsdPtr->currentEnv;
+*/
+    return &javaCMF;
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -621,6 +653,7 @@ JavaInitBlend(
     Tcl_Obj *obj;
     jobject blend, exception;
     int result;
+    JavaInfo* jcache = JavaGetCache();
 
 #ifdef TCLBLEND_DEBUG
     fprintf(stderr, "TCLBLEND_DEBUG: called JavaInitBlend\n");
@@ -637,8 +670,8 @@ JavaInitBlend(
      * Initialize the BlendExtension.
      */
 
-    blend = (*env)->NewObject(env, java.BlendExtension, java.blendC);
-    (*env)->CallVoidMethod(env, blend, java.init, interpObj);
+    blend = (*env)->NewObject(env, jcache->BlendExtension, jcache->blendC);
+    (*env)->CallVoidMethod(env, blend, jcache->init, interpObj);
     if (exception = (*env)->ExceptionOccurred(env)) {
       (*env)->ExceptionDescribe(env);
       (*env)->ExceptionClear(env);
@@ -688,6 +721,7 @@ JavaInterpDeleted(
 {
     jobject interpObj = (jobject) clientData;
     JNIEnv *env = JavaGetEnv();
+    JavaInfo* jcache = JavaGetCache();
 
     /*
      * Set the Interp.interpPtr field to 0 so any further attempts to use
@@ -695,13 +729,13 @@ JavaInterpDeleted(
      * try to delete the interpreter again.  
      */
 
-    (*env)->SetLongField(env, interpObj, java.interpPtr, 0);
+    (*env)->SetLongField(env, interpObj, jcache->interpPtr, 0);
 
     /*
      * Call Interp.dispose() to release any state kept in Java.
      */
 
-    (*env)->CallVoidMethod(env, interpObj, java.dispose);
+    (*env)->CallVoidMethod(env, interpObj, jcache->dispose);
     (*env)->DeleteGlobalRef(env, interpObj);
 
     /* FIXME : detach the JNIEnv, but only if this is the last interp in the thread ??? */
@@ -770,7 +804,7 @@ JavaSetupJava(
         goto ok;
     }
 
-    jcache = &java;
+    jcache = JavaGetCache();
     memset(jcache, 0, sizeof(JavaInfo));
 
     /*
@@ -1060,8 +1094,9 @@ ToString(
     int length;
     char *buf;
     jobject exc;
+    JavaInfo* jcache = JavaGetCache();
 
-    str = (*env)->CallObjectMethod(env, obj, java.toString);
+    str = (*env)->CallObjectMethod(env, obj, jcache->toString);
     exc = (*env)->ExceptionOccurred(env);
     if (exc) {
 	(*env)->ExceptionClear(env);
@@ -1104,6 +1139,7 @@ JavaThrowTclException(
 {
     jobject exc;
     jstring msg;
+    JavaInfo* jcache = JavaGetCache();
 
     if (!interp) {
 	msg = NULL;
@@ -1111,7 +1147,7 @@ JavaThrowTclException(
 	msg = (*env)->NewStringUTF(env,
 		Tcl_GetStringFromObj(Tcl_GetObjResult(interp), NULL));
     }
-    exc = (*env)->NewObject(env, java.TclException, java.tclexceptionC, NULL, msg,
+    exc = (*env)->NewObject(env, jcache->TclException, jcache->tclexceptionC, NULL, msg,
 	    result);
     (*env)->Throw(env, exc);
     if (msg) {

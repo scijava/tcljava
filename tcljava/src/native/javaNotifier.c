@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaNotifier.c,v 1.2.2.2 2000/08/08 19:03:41 mo Exp $
+ * RCS: @(#) $Id: javaNotifier.c,v 1.2.2.3 2000/08/27 05:09:00 mo Exp $
  */
 
 #include "java.h"
@@ -172,8 +172,9 @@ NotifierSetup(
     int flags)			/* Same as for Tcl_DoOneEvent. */
 {
     JNIEnv *env = JavaGetEnv();
+    JavaInfo* jcache = JavaGetCache();
 
-    if ((*env)->CallBooleanMethod(env, globalNotifierObj, java.hasEvents)
+    if ((*env)->CallBooleanMethod(env, globalNotifierObj, jcache->hasEvents)
 	    == JNI_TRUE) {
 	Tcl_Time timeout = { 0, 0 };
 	Tcl_SetMaxBlockTime(&timeout);
@@ -202,8 +203,9 @@ NotifierCheck(
     ClientData data,		/* Not used. */
     int flags)			/* Same as for Tcl_DoOneEvent. */
 {
-    JNIEnv *env = JavaGetEnv();
     Tcl_Event *ePtr;
+    JNIEnv *env = JavaGetEnv();
+    JavaInfo* jcache = JavaGetCache();
 
     /*
      * Only queue a new event if there isn't already one queued and
@@ -211,7 +213,7 @@ NotifierCheck(
      */
 
     if (!eventQueued && (*env)->CallBooleanMethod(env, globalNotifierObj,
-	    java.hasEvents) == JNI_TRUE) {
+	    jcache->hasEvents) == JNI_TRUE) {
 	ePtr = (Tcl_Event *) ckalloc(sizeof(Tcl_Event));
 	ePtr->proc = JavaEventProc;
 	Tcl_QueueEvent(ePtr, TCL_QUEUE_TAIL);
@@ -242,6 +244,7 @@ JavaEventProc(
     int flags)			/* The flags passed to Tcl_ServiceEvent. */
 {
     JNIEnv *env = JavaGetEnv();
+    JavaInfo* jcache = JavaGetCache();
     
     /*
      * Call Notifier.serviceEvent() to handle invoking the next event and
@@ -255,7 +258,7 @@ JavaEventProc(
      * state of the world after we return.
      */
     
-    (void) (*env)->CallIntMethod(env, globalNotifierObj, java.serviceEvent,
+    (void) (*env)->CallIntMethod(env, globalNotifierObj, jcache->serviceEvent,
 	    flags);
     return 1;
 }

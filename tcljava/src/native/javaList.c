@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaList.c,v 1.2.2.1 2000/07/30 07:17:09 mo Exp $
+ * RCS: @(#) $Id: javaList.c,v 1.2.2.2 2000/08/27 05:09:00 mo Exp $
  */
 
 #include "java.h"
@@ -113,6 +113,7 @@ Java_tcl_lang_TclList_getElements(
     Tcl_Obj **objvPtr;
     int objc, i;
     jarray array;
+    JavaInfo* jcache = JavaGetCache();
 
     if (!listPtr) {
 	jclass nullClass = (*env)->FindClass(env,
@@ -130,7 +131,7 @@ Java_tcl_lang_TclList_getElements(
 	JavaThrowTclException(env, NULL, TCL_ERROR);
     }
 
-    array = (*env)->NewObjectArray(env, objc, java.TclObject, NULL);
+    array = (*env)->NewObjectArray(env, objc, jcache->TclObject, NULL);
     for (i = 0; i < objc; i++) {
 	(*env)->SetObjectArrayElement(env, array, i,
 		JavaGetTclObject(env, objvPtr[i], NULL));

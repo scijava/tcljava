@@ -1,5 +1,18 @@
 2000-08-26  Mo DeJong  <mdejong@redhat.com>
 
+	* src/native/java.h (java, JavaGetCache): Remove
+	global java variable, replaced it with JavaGetCache().
+	* src/native/javaCmd.c:
+	* src/native/javaIdle.c:
+	* src/native/javaInterp.c:
+	* src/native/javaList.c:
+	* src/native/javaNotifier.c:
+	* src/native/javaObj.c:
+	* src/native/javaTimer.c: Call JavaGetCache() to get
+	the JavaInfo pointer for the current thread.
+
+2000-08-26  Mo DeJong  <mdejong@redhat.com>
+
 	* src/native/java.h: Add method that corresponds
 	to tcl.lang.Exceptions's constructor to the JavaInfo struct.
 	* src/native/javaCmd.c (AddToClassCache, AddToMethodCache,

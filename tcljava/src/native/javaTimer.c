@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaTimer.c,v 1.2.2.2 2000/08/08 19:03:41 mo Exp $
+ * RCS: @(#) $Id: javaTimer.c,v 1.2.2.3 2000/08/27 05:09:00 mo Exp $
  */
 
 #include "java.h"
@@ -114,14 +114,15 @@ JavaTimerProc(
     ClientData clientData)	/* Pointer to TimerInfo. */
 {
     TimerInfo *infoPtr = (TimerInfo *) clientData;
-    JNIEnv *env = JavaGetEnv();
     jobject exception;
+    JNIEnv *env = JavaGetEnv();
+    JavaInfo* jcache = JavaGetCache();
 
     /*
      * Call TimerHandler.invoke.
      */
 
-    (*env)->CallVoidMethod(env, infoPtr->obj, java.invokeTimer);
+    (*env)->CallVoidMethod(env, infoPtr->obj, jcache->invokeTimer);
     exception = (*env)->ExceptionOccurred(env);
     (*env)->ExceptionClear(env);
 

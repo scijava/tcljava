@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaIdle.c,v 1.2.2.2 2000/08/08 19:03:40 mo Exp $
+ * RCS: @(#) $Id: javaIdle.c,v 1.2.2.3 2000/08/27 05:08:59 mo Exp $
  */
 
 #include "java.h"
@@ -121,12 +121,13 @@ JavaIdleProc(
     JNIEnv *env = JavaGetEnv();
     jobject exception;
     jobject idle = (jobject) clientData;
+    JavaInfo* jcache = JavaGetCache();
 
     /*
      * Call IdleHandler.invoke.
      */
 
-    (*env)->CallVoidMethod(env, idle, java.invokeIdle);
+    (*env)->CallVoidMethod(env, idle, jcache->invokeIdle);
     exception = (*env)->ExceptionOccurred(env);
     (*env)->ExceptionClear(env);
 
