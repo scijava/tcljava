@@ -14,7 +14,7 @@
 
 # Specify which system to build.  (either jacl or tclblend)
 TCLJAVA		= tclblend
-TCLJAVA_VERSION	= 1.2.4
+TCLJAVA_VERSION	= 1.2.5
 
 # Location you will be installing into
 TCL_DIR		= C:\Tcl

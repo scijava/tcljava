@@ -2,13 +2,13 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run to configure the
 dnl	Makefile in this directory.
 AC_INIT(../src/tcljava/tcl/lang/InternalRep.java)
-# RCS: @(#) $Id: configure.in,v 1.20 1999/08/29 17:16:33 mo Exp $
+# RCS: @(#) $Id: configure.in,v 1.21 1999/08/31 00:54:37 redman Exp $
 
 
 #--------------------------------------------------------------------
 # 	Version identification info (also set in source files)
 #--------------------------------------------------------------------
-TCLJAVA_VERSION=1.2.4
+TCLJAVA_VERSION=1.2.5
 
 # Convert into full path name
 srcdir=`cd $srcdir ; pwd`
