@@ -6,11 +6,12 @@
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: trace.test,v 1.1 1998/10/14 21:09:26 cvsadmin Exp $
+# RCS: @(#) $Id: trace.test,v 1.2 1999/08/15 19:39:22 mo Exp $
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 
@@ -25,6 +26,10 @@ proc traceScalarAppend {name1 name2 op} {
 proc traceArray {name1 name2 op} {
     global info
     set info [list $name1 $name2 $op [catch {uplevel set [set name1]($name2)} msg] $msg]
+}
+proc traceArray2 {name1 name2 op} {
+    global info
+    set info [list $name1 $name2 $op]
 }
 proc traceProc {name1 name2 op} {
     global info
@@ -80,20 +85,48 @@ test trace-1.5 {trace array element reads} {
     trace var x(2) r traceArray
     list [catch {set x(2)} msg] $msg $info
 } {0 zzz {x 2 r 0 zzz}}
-test trace-1.6 {trace reads on whole arrays} {
+test trace-1.6 {trace array element reads} {
+    catch {unset x}
+    set info {}
+    trace variable x r traceArray2
+    proc p {} {
+        global x
+        set x(2) willi
+        return $x(2)
+    }
+    list [catch {p} msg] $msg $info
+} {0 willi {x 2 r}}
+test trace-1.7 {trace array element reads, create element undefined if nonexistant} {
+    catch {unset x}
+    set info {}
+    trace variable x r q
+    proc q {name1 name2 op} {
+        global info
+        set info [list $name1 $name2 $op]
+        global $name1
+        set ${name1}($name2) wolf
+    }
+    proc p {} {
+        global x
+        set x(X) willi
+        return $x(Y)
+    }
+    list [catch {p} msg] $msg $info
+} {0 wolf {x Y r}}
+test trace-1.8 {trace reads on whole arrays} {
     catch {unset x}
     set info {}
     trace var x r traceArray
     list [catch {set x(2)} msg] $msg $info
 } {1 {can't read "x(2)": no such variable} {}}
-test trace-1.7 {trace reads on whole arrays} {
+test trace-1.9 {trace reads on whole arrays} {
     catch {unset x}
     set x(2) zzz
     set info {}
     trace var x r traceArray
     list [catch {set x(2)} msg] $msg $info
 } {0 zzz {x 2 r 0 zzz}}
-test trace-1.8 {trace variable reads} {
+test trace-1.10 {trace variable reads} {
     catch {unset x}
     set x 444
     set info {}
@@ -142,6 +175,11 @@ test trace-2.5 {trace variable writes} {
     set info
 } {}
 
+# append no longer triggers read traces when fetching the old values of
+# variables before doing the append operation. However, lappend _does_
+# still trigger these read traces. Also lappend triggers only one write
+# trace: after appending all arguments to the list.
+
 test trace-3.1 {trace variable read-modify-writes} {
     catch {unset x}
     set info {}
@@ -150,7 +188,7 @@ test trace-3.1 {trace variable read-modify-writes} {
     append x 456
     lappend x 789
     set info
-} {x {} r 1 {can't read "x": no such variable} x {} r 0 123 x {} r 0 123456}
+} {x {} r 0 123456}
 test trace-3.2 {trace variable read-modify-writes} {
     catch {unset x}
     set info {}
@@ -158,7 +196,7 @@ test trace-3.2 {trace variable read-modify-writes} {
     append x 123
     lappend x 456
     set info
-} {x {} r 1 {can't read "x": no such variable} x {} w 0 123 x {} r 0 123 x {} w 0 {123 456}}
+} {x {} w 0 123 x {} r 0 123 x {} w 0 {123 456}}
 
 # Basic unset-tracing on variables
 
@@ -335,10 +373,9 @@ test trace-7.3 {error returns from traces} {
     catch {unset x}
     set x 123
     set info {}
-    trace var x r traceError
-    trace var x w traceScalar
+    trace var x w traceError
     list [catch {append x 44} msg] $msg $info
-} {1 {can't read "x": trace returned error} {}}
+} {1 {can't set "x": trace returned error} {}}
 test trace-7.4 {error returns from traces} {
     catch {unset x}
     set x 123
@@ -574,7 +611,7 @@ test trace-12.1 {delete one trace from another} {
 
 test trace-13.1 {trace command (overall)} {
     list [catch {trace} msg] $msg
-} {1 {wrong # args: should be "trace option arg ?arg ...?"}}
+} {1 {wrong # args: should be "trace option [arg arg ...]"}}
 test trace-13.2 {trace command (overall)} {
     list [catch {trace gorp} msg] $msg
 } {1 {bad option "gorp": must be variable, vdelete, or vinfo}}
@@ -927,4 +964,8 @@ test trace-17.1 {unset traces on procedure returns} {
 
 catch {unset x}
 catch {unset y}
-concat {}
+
+# cleanup
+#::tcltest::cleanupTests
+return
+
