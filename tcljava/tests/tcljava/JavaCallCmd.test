@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: JavaCallCmd.test,v 1.1 1998/10/14 21:09:24 cvsadmin Exp $
+# RCS: @(#) $Id: JavaCallCmd.test,v 1.2 1999/05/10 03:03:03 dejong Exp $
 
 # Note: This test file must be sourced from the parent directory
 #       or else the defs file may not be properly loaded.
@@ -79,7 +79,7 @@ test javaCall-4.3 {arrays} {
 	set x [java::call tests.invoke.ArrayTestClass green 5]
 	set y [java::call tests.invoke.ArrayTestClass green $x 6]
    } msg] $msg
-} {0 {green clovers, java.awt.Button[][]}}
+} {0 {green clovers, java.lang.Integer[][]}}
 
 test javaCall-5.1 {void return} {
     java::call tests.JavaTest voidsmethod
