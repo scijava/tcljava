@@ -1,5 +1,12 @@
 2004-11-17  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/jacl/tcl/lang/Interp.java (setWorkingDir):
+	Fixup error message from cd command so that
+	it matches the Tcl implementation.
+	[Bug 896209]
+
+2004-11-17  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/jacl/tcl/lang/ExecCmd.java (cmdProc)
 	Update exec for JDK 1.3 or newer so that
 	another thread is created to read data

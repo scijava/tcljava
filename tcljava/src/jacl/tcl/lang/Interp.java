@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.46 2004/10/01 21:29:41 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.47 2004/11/18 04:38:34 mdejong Exp $
  *
  */
 
@@ -3094,9 +3094,15 @@ throws
     if (dirObj.isDirectory()) {
 	workingDir = dirObj;
     } else {
+        String dname = FileUtil.translateFileName(this, dirName);
+        if (FileUtil.getPathType(dname) == FileUtil.PATH_RELATIVE) {
+            dname = dirName;
+        } else {
+            dname = dirObj.getPath();
+        }
 	throw new TclException(this, 
 		"couldn't change working directory to \""
-                + dirObj.getName() + "\": no such file or directory");
+                + dname + "\": no such file or directory");
     }    
 }
 
