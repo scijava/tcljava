@@ -1,3 +1,10 @@
+2004-09-18  Alexander James Pasadyn  <ajpasadyn@users.sourceforge.net>
+
+	* src/tcljava/tcl/lang/TCL.java: Make the TCL.NO_EVAL,
+	TCL.EVAL_GLOBAL, and TCL.EVAL_DIRECT constants public
+	so that they can be used outside the tcl.lang package.
+	[bug 1000263]
+
 2004-09-18  Alf Watt  <alfwatt@users.sourceforge.net>
 
 	* configure: Regen.

@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TCL.java,v 1.4 2000/05/14 23:10:20 mo Exp $
+ * RCS: @(#) $Id: TCL.java,v 1.5 2004/09/18 22:04:27 mdejong Exp $
  *
  */
 
@@ -106,9 +106,9 @@ public static final int EXACT	= 1;	// Matches must be exact.
 
 // Note: EVAL_DIRECT is not currently used in Jacl.
 
-static final int NO_EVAL	= 0x10000;
-static final int EVAL_GLOBAL	= 0x20000;
-static final int EVAL_DIRECT	= 0x40000;
+public static final int NO_EVAL		= 0x10000;
+public static final int EVAL_GLOBAL	= 0x20000;
+public static final int EVAL_DIRECT	= 0x40000;
 
 } // end TCL
 
