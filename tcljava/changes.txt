@@ -1,6 +1,6 @@
 Recent user-visible changes to Jacl & Tcl Blend:
 
-RCS: @(#) $Id: changes.txt,v 1.1 1998/10/14 21:09:07 cvsadmin Exp $
+RCS: @(#) $Id: changes.txt,v 1.2 1998/11/05 18:12:10 hylands Exp $
 
 ----------------- Released 1.0a1, 10/22/97 -----------------------
 
@@ -323,3 +323,6 @@ regular expression code so we can ship them. (MD)
 
 10/9/98 (configure) Properly handle configuring both Jacl and Tcl Blend
 at the same time. (MD)
+
+11/5/98 (man pages) Removed Unix style man pages, the html versions
+are more up to date. (MD)
