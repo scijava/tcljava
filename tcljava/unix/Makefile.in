@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.37 2000/04/08 04:25:39 mo Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.38 2000/05/13 10:25:06 mo Exp $
 
 # The directory containing the Tcl sources and headers appropriate
 # for this version of Tk ("srcdir" will be replaced or has already
@@ -13,9 +13,10 @@ TCL_LIBRARY_DIR = @TCL_SRC_DIR@/library
 # The directory containing the Tcl library archive file appropriate
 # for this version of Tcl:
 TCL_BIN_DIR = @TCL_BIN_DIR@
+TCL_BIN_TCLSH=$(TCL_BIN_DIR)/tclsh
 
 # The directory where the Tcl library archive file is installed
-TCL_INSTALL_BIN_DIR = @TCL_INSTALL_BIN_DIR@
+TCL_INSTALL_LIB_DIR = @TCL_INSTALL_LIB_DIR@
 
 # The full path name of the tclsh executable after it is installed
 TCLSH=@TCLSH@
@@ -38,6 +39,7 @@ JAVAC			= @JAVAC@
 JAVAH			= @JAVAH@
 JAR			= @JAR@
 JDB			= @JDB@
+GDB			= @GDB@
 DDD			= @DDD@
 XTERM			= xterm
 JAVA_FLAGS		= @JAVA_FLAGS@
@@ -99,7 +101,7 @@ TCLJAVA_VERSION		= @TCLJAVA_VERSION@
 TCLJAVA_NODOT_VERSION	= @TCLJAVA_NODOT_VERSION@
 
 # directories to search for shared libs, needed for TCL_LD_SEARCH_FLAGS
-LIB_RUNTIME_DIR		= $(JAVA_ARCH_NATIVE_RUNTIME_LIBS):$(TCL_INSTALL_BIN_DIR)
+LIB_RUNTIME_DIR		= $(JAVA_ARCH_NATIVE_RUNTIME_LIBS):$(TCL_INSTALL_LIB_DIR)
 TCL_LD_SEARCH_FLAGS 	= @TCL_LD_SEARCH_FLAGS@
 TCLBLEND_LIB_FILE 	= $(SHLIB_PREFIX)tclblend$(TCLJAVA_DBGX)$(SHLIB_SUFFIX)
 TCLBLEND_LIBS		= @TCLBLEND_LIBS@
@@ -791,7 +793,7 @@ test_tclblend.exec: test_tclblend.check
 	CLASSPATH=$(TEST_CLASSPATH) \
 	JAVA=$(JAVA) \
 	BUILD_DIR=$(BUILD_DIR) \
-	$(TCL_BIN_DIR)/tclsh
+	$(TCL_BIN_TCLSH)
 
 #----------------------------------------------------------------
 # shell : used to drop the user into a jacl or tclblend shell
@@ -817,7 +819,7 @@ shell_tclblend: tclblend.check
 	CLASSPATH=$(TEST_CLASSPATH) \
 	JAVA=$(JAVA) \
 	BUILD_DIR=$(BUILD_DIR) \
-	$(TCL_BIN_DIR)/tclsh
+	$(TCL_BIN_TCLSH)
 
 
 #----------------------------------------------------------------
@@ -866,6 +868,8 @@ jdb_local_jacl: jacl.check
 		-DBUILD_DIR=$(BUILD_DIR) -DJAVA=$(JAVA) tcl.lang.Shell
 
 
+gdb_jacl: jacl.check
+	echo "NOT IMPLEMENTED"
 
 
 # Invoke remote (two process) DDD-jdb debug session for Jacl.
@@ -915,13 +919,19 @@ ddd_local_jacl : jacl.check
 # Invoke ddd to debug Tcl Blend session (you still will need to attach inside DDD)
 
 ddd_tclblend : tclblend.check
-	$(DDD) $(DDD_FLAGS) --gdb $(TCL_BIN_DIR)/tclsh &
+	$(DDD) $(DDD_FLAGS) --gdb $(TCL_BIN_TCLSH) &
 	@$(MAKE) TCLJAVA=tclblend shell
 
+gdb_tclblend : tclblend.check
+	@$(MAKE) TCLJAVA=tclblend shell TCL_BIN_TCLSH="$(GDB) $(TCL_BIN_TCLSH)"
 
 # Invoke the debug session for Jacl or Tcl Blend "make ddd"
 
 ddd : ddd_$(TCLJAVA)
+
+# Invoke the debug session for Tcl Blend "make gdb"
+
+gdb : gdb_$(TCLJAVA)
 
 
 

@@ -2,7 +2,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run to configure the
 dnl	Makefile in this directory.
 AC_INIT(../src/tcljava/tcl/lang/InternalRep.java)
-# RCS: @(#) $Id: configure.in,v 1.30 2000/04/08 04:25:39 mo Exp $
+# RCS: @(#) $Id: configure.in,v 1.31 2000/05/13 10:25:06 mo Exp $
 
 
 #--------------------------------------------------------------------
@@ -454,14 +454,19 @@ fi
 
 #------------------------------------------------------------------
 #
-#	Look on the path for ddd, if it is not found do nothing
-#	ddd functionality will not be tested by the configure script
+#	Look on the path for debuggers:
+#	We do not test debuggers so don't worry if they are not found.
 #
 #------------------------------------------------------------------
 
 AC_PATH_PROG(TMP_DDD, ddd)
 if test -x "$TMP_DDD"; then
     DDD=$TMP_DDD
+fi
+
+AC_PATH_PROG(TMP_GDB, gdb)
+if test -x "$TMP_GDB"; then
+    GDB=$TMP_GDB
 fi
 
 
@@ -1332,7 +1337,7 @@ if test $TCLJAVA = "tclblend" || test $BOTH = "true"; then
   # We also assume that wish is going to be installed in the same
   # location, which could be incorrect but oh well.
 
-  TCL_INSTALL_BIN_DIR=$TCL_EXEC_PREFIX/lib
+  TCL_INSTALL_LIB_DIR=$TCL_EXEC_PREFIX/lib
   TCLSH=$TCL_EXEC_PREFIX/bin/tclsh$TCL_VERSION
   WISH=$TCL_EXEC_PREFIX/bin/wish$TCL_VERSION
 
@@ -1342,7 +1347,7 @@ if test $TCLJAVA = "tclblend" || test $BOTH = "true"; then
 
   AC_SUBST(WISH)
   AC_SUBST(TCLSH)
-  AC_SUBST(TCL_INSTALL_BIN_DIR)
+  AC_SUBST(TCL_INSTALL_LIB_DIR)
 
 fi
 
@@ -1361,6 +1366,7 @@ AC_SUBST(JAVAH)
 AC_SUBST(JAR)
 AC_SUBST(JDB)
 AC_SUBST(DDD)
+AC_SUBST(GDB)
 
 AC_SUBST(JAVA_CLASSPATH)
 AC_SUBST(JAVA_FLAGS)

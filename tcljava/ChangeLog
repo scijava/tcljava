@@ -1,5 +1,14 @@
 2000-05-13  Mo DeJong  <mdejong@redhat.com>
 
+	* unix/Makefile.in: Changed var named
+	TCL_INSTALL_BIN_DIR to TCL_INSTALL_LIB_DIR.
+	Added "make gdb" rule for Tcl Blend debugging.
+	* unix/configure.in: Added search on PATH for
+	gdb. Changed var named TCL_INSTALL_BIN_DIR to
+	TCL_INSTALL_LIB_DIR.
+
+2000-05-13  Mo DeJong  <mdejong@redhat.com>
+
 	* src/jacl/tcl/lang/Notifier.java:
 	Fixed small typo in a comment.
 
