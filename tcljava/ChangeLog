@@ -1,5 +1,11 @@
 2000-12-23  Mo DeJong  <mdejong@redhat.com>
 
+	* tests/all.tcl: Add missing test init file.
+	* tests/defs: Add Tcl only implementations
+	of test commands like testsetassocdata.
+
+2000-12-23  Mo DeJong  <mdejong@redhat.com>
+
 	* tests/tcl/CdCmd.test:
 	* tests/tcl/FileCmd.test:
 	* tests/tcl/Procedure.test:

@@ -28,19 +28,19 @@ proc setupJavaPackage {} {
 	set cls tcl.lang.NativeTestExtension
     }
 
-    if [catch {java::load $cls} errMsg] {
+    if {[catch {java::load $cls} errMsg]} {
 	puts "Unable to load $cls. Some tests may fail.\n$errMsg"
     }
 }
 
 
 
-
+if {$tcl_platform(platform) == "java"} {
 
 # Tcl only implementation of commands defined in generic/tclTest.c
 
-
 proc testgetplatform { } {
+  package require java
   if {[java::call System getProperty file.separator] == "\\"} {
     return "windows"
   } else {
@@ -106,3 +106,33 @@ proc testsetnoerr { args } {
   }
 }
 
+
+
+# These commands are used in tcl/assocd.test file
+
+proc testsetassocdata {var data} {
+    package require java
+    set this [java::getinterp]
+    set assocData [java::new tcl.lang.Test2AssocData $data]
+    $this setAssocData $var $assocData
+}
+
+proc testgetassocdata {var} {
+    package require java
+    set this [java::getinterp]
+    set assocData [$this getAssocData $var]
+    set assocData [java::cast {tcl.lang.Test2AssocData} $assocData]
+    if {[java::isnull $assocData]} {
+        return
+    }
+    $assocData getData
+}
+
+proc testdelassocdata {var} {
+    package require java
+    set this [java::getinterp]
+    $this deleteAssocData $var
+}
+
+
+} ; # end Jacl only test defines block
