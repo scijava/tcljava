@@ -6,7 +6,7 @@
 # fields and creates jwish.
 
 # Author:  Christopher Hylands
-# Version: $Id: jwish.in,v 1.4 1998/11/04 23:39:19 hylands Exp $
+# Version: $Id: jwish.in,v 1.5 1998/11/05 22:54:49 hylands Exp $
 #
 # Copyright (c) 1997-1998 The Regents of the University of California.
 # 	All Rights Reserved.
@@ -37,7 +37,7 @@
 LIB_INSTALL_DIR=@exec_prefix@/lib
 
 # Location of your tclBlend distribution
-TCLBLEND=$LIB_INSTALL_DIR/tclblend
+TCLBLEND=$LIB_INSTALL_DIR/tclblend@TCLJAVA_VERSION@
 
 # Full path name of wish and tclsh
 WISH80=@WISH80@
