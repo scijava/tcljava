@@ -338,4 +338,10 @@ to build binaries of Jacl or Tcl Blend. See the supplied README
 file for Jacl or Tcl Blend for more information about how to
 build under Windows.
 
+(NEW IO SUBSYSTEM FOR JACL)
+
+The Tcl IO subsystem has been ported to Jacl. Encoding, buffering,
+and line translations for channels now match Tcl semantics.
+Non-blocking IO and the fileevent command are not implemented.
+
 </PRE></BODY></HTML>

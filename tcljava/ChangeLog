@@ -1,5 +1,13 @@
 2003-03-10  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* diffs.txt: Move fblocked, fconfigure, and
+	socket from the unsupported list to the
+	partially supported list.
+	* new_features.txt: Add note about new
+	Jacl IO subsystem.
+
+2003-03-10  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/tcljava/tcl/lang/FieldSig.java
 	(getAccessibleFields, getAccessibleField):
 	Don't return a private field as a result of

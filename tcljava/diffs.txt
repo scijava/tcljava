@@ -1,6 +1,6 @@
 diffs.txt --  DIFFERENCES BETWEEN TCL and JACL
 
-RCS: @(#) $Id: diffs.txt,v 1.9 2003/01/09 02:15:35 mdejong Exp $
+RCS: @(#) $Id: diffs.txt,v 1.10 2003/03/11 10:54:14 mdejong Exp $
 
 This file contains a list of differences between Tcl 8.x and Jacl 1.x.
 
@@ -32,8 +32,8 @@ find errors other than those we have described.
 - Currently, the I/O commands handle only synchronous I/O.  The
   following IO commands work but are limited to what Java allows. 
 
-	close, eof, file, flush, gets, open, puts
-	read, seek, tell, write, glob
+	close, eof, fblocked, fconfigure, file, flush, gets, glob,
+	open, puts, read, seek, tell, write, socket
 
 - Environment variable array "env" doesn't have the same indices
   defined in Jacl as in native Tcl.  USER and HOME are the only
@@ -58,8 +58,7 @@ What Does Not Work
 
 - Tcl commands that are not yet implemented in Jacl
 
-	auto_mkindex, fblocked, fcopy, fconfigure, fileevent
-	load, pkg_mkIndex, pid, socket
+	auto_mkindex, fcopy, fileevent, load, pkg_mkIndex, pid
 
 
 ----------
