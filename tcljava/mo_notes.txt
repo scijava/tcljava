@@ -483,18 +483,6 @@ prone and should not be done for every implementation.
 
 
 (TODO)
-
-need to come up with test cases for the stdin read implementations
-and the file read implementation that make sure the EOF stuff
-is managed properly. It looks like a big mess right now and
-I am not sure if it works. Also the FileChannel does an ugly
-window-unix line conversion hack that should be in a more
-generic Channel driver.
-
-
-
-
-(TODO)
 It seems like the error message
 "cannot load new class into java or tcl package" would be alot
 more helpful if it included the name of the class that could
@@ -557,15 +545,6 @@ Could this be related to the expr problems?
 (test run on solaris 2.5.1, native threads, 1.1a1 3.4sec, 1.2.2 13 sec)
 
 
-
-(TODO)
-
-Look into problems reading files bigger than the buffer size with the read
-command. This seems to be related to the other IO problems I have been
-running into. The fix seems to be related to the stdin fixes that were
-created a little while back.
-
-
 (TODO)
 
 Check into problem with exec messages getting tossed out by Jacl
@@ -575,9 +554,6 @@ exec command. Could adding the message to the error help?
 (TODO)
 Look into a class file flushing system so that classes that
 are not being used can be removed from the cache at runtime.
-
-
-
 
 
 
@@ -603,25 +579,11 @@ inprogress/ExprCmd.test
 
 
 
-
-(TODO)
-(make sure license files get copied into dists!)
-Make sure the license.oro and license.ucb files are added!.
-
-
-
+(REMOVE FROM CVS)
 
 src/jacl 800K
 tcljava/tests/jacl/FileCmd.test,v      133 k
 tcljava/unix/configure,v            120 k
-
-
-
-
-
-
-(TODO)
-add Tcl 8.0.6 to configure search!
 
 
 
@@ -631,16 +593,6 @@ happen a lot sooner in the configure script. It does all the java
 checkes and then does the Tcl checks. This can be a pain sometimes.
 If it would just check to see if the directory for Tcl was valid
 that would be enough!
-
-
-
-
-
-(TODO)
-inprogress/CdCmd.test should be move into a the working set (as of 8.0.5)
-
-
-
 
 
 (TODO)
