@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FconfigureCmd.java,v 1.1 1998/10/14 21:09:20 cvsadmin Exp $
+ * RCS: @(#) $Id: FconfigureCmd.java,v 1.2 1999/05/09 00:10:53 dejong Exp $
  *
  */
 
@@ -28,6 +28,13 @@ class FconfigureCmd implements Command {
 	"-translation",
     };
 
+    static final int OPT_BLOCKING	= 0;
+    static final int OPT_BUFFERING	= 1;
+    static final int OPT_BUFFERSIZE	= 2;
+    static final int OPT_EOFCHAR	= 3;
+    static final int OPT_TRANSLATION	= 4;
+
+
     /**
      * This procedure is invoked to process the "fconfigure" Tcl command.
      * See the user documentation for details on what it does.
@@ -39,7 +46,7 @@ class FconfigureCmd implements Command {
     public void cmdProc(Interp interp, TclObject argv[])
             throws TclException {
 	      
-	Channel chan;        /* The channel being operated on this method */
+	Channel chan;        // The channel being operated on this method
 
         if ((argv.length < 2) || (((argv.length % 2) == 1) && 
                 (argv.length != 3))) {
@@ -54,33 +61,30 @@ class FconfigureCmd implements Command {
 	}
 
 	if (argv.length == 2) {
-	    /*
-	     * return list of all name/value pairs for this channelId
-	     */
+	    // return list of all name/value pairs for this channelId
 
 	}
 	if (argv.length == 3) {
-	    /*
-	     * return value for supplied name
-	     */
+	    // return value for supplied name
 
 	    int index = TclIndex.get(interp, argv[2], validCmds, 
                     "option", 0);
 
+
 	    switch (index) {
-	        case 0: {    /* -blocking  */
+	        case OPT_BLOCKING: {    // -blocking
 		    break;
 		}
-	        case 1: {    /* -buffering */
+	        case OPT_BUFFERING: {    // -buffering
 		    break;
 		}
-	        case 2: {    /* -buffersize */
+	        case OPT_BUFFERSIZE: {    // -buffersize
 		    break;
 		}
-	        case 3: {    /* -eofchar */
+	        case OPT_EOFCHAR: {    // -eofchar
 		    break;
 		}
-	        case 4: {    /* -translation */
+	        case OPT_TRANSLATION: {    // -translation
 		    break;
 		}
 	        default: {
@@ -90,19 +94,17 @@ class FconfigureCmd implements Command {
 	    }
 	}
 	for (int i = 3; i < argv.length; i += 2) {
-	    /*
-	     * Iterate through the list setting the name with the 
-	     * corresponding value.
-	     */
+	    // Iterate through the list setting the name with the 
+	    // corresponding value.
 
 	    int index = TclIndex.get(interp, argv[i-1], validCmds, 
                     "option", 0);
 
 	    switch (index) {
-	        case 0: {    /* -blocking  */
+	        case OPT_BLOCKING: {    // -blocking
 		  break;
 		}
-	        case 1: {    /* -buffering */
+	        case OPT_BUFFERING: {    // -buffering
 		    String arg = argv[i].toString();
 		    if (arg.equals("full")) {
 
@@ -117,13 +119,13 @@ class FconfigureCmd implements Command {
 		    }
 		    break;
 		}
-	        case 2: {    /* -buffersize */
+	        case OPT_BUFFERSIZE: {    // -buffersize
 		    break;
 		}
-	        case 3: {    /* -eofchar */
+	        case OPT_EOFCHAR: {    // -eofchar
 		    break;
 		}
-	        case 4: {    /* -translation */
+	        case OPT_TRANSLATION: {    // -translation
 		    String arg = argv[i].toString();
 		    if (arg.equals("auto")) {
 
@@ -149,7 +151,6 @@ class FconfigureCmd implements Command {
 	    }
 	}
 
-	throw new TclException(interp,
-                "fconfigure command not implemented yet");
+	throw new TclException(interp, "fconfigure command not implemented yet");
     }
 }
