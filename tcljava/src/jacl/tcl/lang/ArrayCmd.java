@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ArrayCmd.java,v 1.2 1999/05/08 23:51:17 dejong Exp $
+ * RCS: @(#) $Id: ArrayCmd.java,v 1.3 1999/08/03 02:48:26 mo Exp $
  *
  */
 
@@ -48,46 +48,69 @@ class ArrayCmd implements Command {
      * See the user documentation for details on what it does.
      */
 
-    public void cmdProc(Interp interp, TclObject argv[])
+    public void cmdProc(Interp interp, TclObject[] objv)
             throws TclException {
-	if (argv.length < 3) {
-	    throw new TclNumArgsException(interp, 1, argv, 
+	Var var = null, array = null;
+	boolean notArray = false;
+	String varName, msg;
+	int index, result;
+
+	if (objv.length < 3) {
+	    throw new TclNumArgsException(interp, 1, objv, 
 		    "option arrayName ?arg ...?");
 	}
 
-	boolean notArray = false;
-	Var var = (Var)interp.varFrame.varTable.get(argv[2].toString());
-	if (var != null && (var.flags & Var.UNDEFINED) != 0) {
-	    var = null;
+	index = TclIndex.get(interp, objv[1], validCmds, "option", 0);
+
+	// Locate the array variable (and it better be an array).
+	
+	varName = objv[2].toString();
+	Var[] retArray = Var.lookupVar(interp, varName, null, 0,
+				       null, false, false);
+
+	// Assign the values returned in the array
+	if (retArray != null) {
+	    var = retArray[0];
+	    array = retArray[1];
 	}
-	if (var != null && (var.flags & Var.UPVAR) != 0) {
-	    var = (Var)var.value;
-	}
-	if (var == null || (var.flags & Var.ARRAY) == 0) {
+
+	if ((var == null) || !var.isVarArray() ||
+	    var.isVarUndefined()) {
 	    notArray = true;
 	}
 
-	int index = TclIndex.get(interp, argv[1], validCmds, "option", 0);
+	// Special array trace used to keep the env array in sync for
+	// array names, array get, etc.
+
+	if (var != null && var.traces != null) {
+	    msg = Var.callTraces(interp, array, var, varName, null,
+		    (TCL.LEAVE_ERR_MSG|TCL.NAMESPACE_ONLY|TCL.GLOBAL_ONLY|
+		     TCL.TRACE_ARRAY));
+	    if (msg != null) {
+		throw new TclVarException(interp, varName, null,
+					  "trace array", msg);
+	    }
+	}
 
 	switch (index) {
 	    case OPT_ANYMORE: {
-	        if (argv.length != 4) {
-		    throw new TclNumArgsException(interp, 1, argv, 
-		            "anymore arrayName searchId");
+	        if (objv.length != 4) {
+		    throw new TclNumArgsException(interp, 2, objv, 
+		            "arrayName searchId");
 	        }
 	        if (notArray) {
-	            errorNotArray(interp, argv[2].toString());
+	            errorNotArray(interp, objv[2].toString());
 	        }
 
 	        if (var.sidVec == null) {
-	            errorIllegalSearchId(interp, argv[2].toString(),
-                            argv[3].toString());
+	            errorIllegalSearchId(interp, objv[2].toString(),
+                            objv[3].toString());
 	        }
 
-	        Enumeration e = var.getSearch(argv[3].toString());
+	        Enumeration e = var.getSearch(objv[3].toString());
 	        if (e == null) {
-	            errorIllegalSearchId(interp, argv[2].toString(),
-                            argv[3].toString());
+	            errorIllegalSearchId(interp, objv[2].toString(),
+                            objv[3].toString());
 	        }
 
 	        if (e.hasMoreElements()) {
@@ -99,117 +122,114 @@ class ArrayCmd implements Command {
 	    }
 	    case OPT_DONESEARCH: {
 
-	        if (argv.length != 4) {
-		    throw new TclNumArgsException(interp, 1, argv, 
-		            "donesearch arrayName searchId");
+	        if (objv.length != 4) {
+		    throw new TclNumArgsException(interp, 2, objv, 
+		            "arrayName searchId");
 	        }
 	        if (notArray) {
-	            errorNotArray(interp, argv[2].toString());
+	            errorNotArray(interp, objv[2].toString());
 	        }
 
 		boolean rmOK = true;
 	        if (var.sidVec != null) {
-		  rmOK = (var.removeSearch(argv[3].toString()));
+		  rmOK = (var.removeSearch(objv[3].toString()));
 		}
 		if ((var.sidVec == null) || !rmOK) {
-	            errorIllegalSearchId(interp, argv[2].toString(),
-                            argv[3].toString());
+	            errorIllegalSearchId(interp, objv[2].toString(),
+                            objv[3].toString());
 		}
 		break;
 	    }
 	    case OPT_EXISTS: {
 
-                if (argv.length != 3) {
-		    throw new TclNumArgsException(interp, 1, argv, 
-		            "exists arrayName");
+                if (objv.length != 3) {
+		    throw new TclNumArgsException(interp, 2, objv, 
+		            "arrayName");
 	        }
 	        interp.setResult(!notArray);
 		break;
 	    }
 	    case OPT_GET: {
+		// Due to the differences in the hashtable implementation 
+		// from the Tcl core and Java, the output will be rearranged.
+		// This is not a negative side effect, however, test results 
+		// will differ.
 
-	        /*
-		 * Due to the differences in the hashtable implementation 
-		 * from the Tcl core and Java, the output will be rearranged.
-		 * This is not a negative side effect, however, test results 
-		 * will differ.
-		 */
-
-	        if ((argv.length != 3) && (argv.length != 4) ) {
-		    throw new TclNumArgsException(interp, 1, argv, 
-		            "get arrayName ?pattern?");
+	        if ((objv.length != 3) && (objv.length != 4) ) {
+		    throw new TclNumArgsException(interp, 2, objv, 
+		            "arrayName ?pattern?");
 	        }
 		if (notArray) {
 	            return;
 	        }
 
 	        String pattern = null;
-	        if (argv.length == 4) {
-	            pattern = argv[3].toString();
+	        if (objv.length == 4) {
+	            pattern = objv[3].toString();
 	        }
 	    
-		Hashtable table = (Hashtable)var.value;
+		Hashtable table = (Hashtable) var.value;
 	        TclObject tobj = TclList.newInstance();
-	        String arrayName = argv[2].toString();
+	        String arrayName = objv[2].toString();
 	        String key, strValue;
-		Var elem;
+		Var var2;
 
- 	        /*
-		 * Go through each key in the hash table.  If there is a 
-		 * pattern, test for a match.  Each valid key and its value 
-		 * is written into sbuf, which is returned.
-		 */
+		// Go through each key in the hash table.  If there is a 
+		// pattern, test for a match.  Each valid key and its value 
+		// is written into sbuf, which is returned.
 
-		for (Enumeration e = ((Hashtable)var.value).keys();
+		// FIXME : do we need to port over the 8.1 code for this loop?
+
+		for (Enumeration e = table.keys();
 			e.hasMoreElements(); ) {
 
- 	            key = (String)e.nextElement();
-		    elem = (Var)table.get(key);
-		    if ((elem.flags & Var.UNDEFINED) == 0) {
-		        strValue = interp.getVar(arrayName, key, 0).toString();
-			if (pattern != null) {
-			    if (!Util.stringMatch(key, pattern)) {
-			        continue;
-			    }
-			}
-			TclList.append(interp, tobj, 
-                                TclString.newInstance(key));
-			TclList.append(interp, tobj, 
-			        TclString.newInstance(strValue));
+ 	            key = (String) e.nextElement();
+		    var2 = (Var) table.get(key);
+		    if (var2.isVarUndefined()) {
+			continue;
 		    }
+
+		    if (pattern != null && !Util.stringMatch(key, pattern)) {
+			continue;
+		    }
+
+		    strValue = interp.getVar(arrayName, key, 0).toString();
+		    
+		    TclList.append(interp, tobj, 
+				   TclString.newInstance(key));
+		    TclList.append(interp, tobj, 
+				   TclString.newInstance(strValue));
 		}
 		interp.setResult(tobj);
 		break;
 	    }
 	    case OPT_NAMES: {
 
-	        if ((argv.length != 3) && (argv.length != 4)) {
-		    throw new TclNumArgsException(interp, 1, argv, 
-		            "names arrayName ?pattern?");
+	        if ((objv.length != 3) && (objv.length != 4)) {
+		    throw new TclNumArgsException(interp, 2, objv, 
+		            "arrayName ?pattern?");
 	        }
 	        if (notArray) {
 	            return;
 	        }
 
 	        String pattern = null;
-	        if (argv.length == 4) {
-	            pattern = argv[3].toString();
+	        if (objv.length == 4) {
+	            pattern = objv[3].toString();
 	        }
 
 		Hashtable table = (Hashtable)var.value;
 	        TclObject tobj = TclList.newInstance();
 	        String key;
 
- 	        /*
-		 * Go through each key in the hash table.  If there is a 
-		 * pattern, test for a match. Each valid key and its value 
-		 * is written into sbuf, which is returned.
-		 */
+		// Go through each key in the hash table.  If there is a 
+		// pattern, test for a match. Each valid key and its value 
+		// is written into sbuf, which is returned.
 
 		for (Enumeration e = table.keys(); e.hasMoreElements(); ) {
- 	            key = (String)e.nextElement();
-		    Var elem = (Var)table.get(key);
-		    if ((elem.flags & Var.UNDEFINED) == 0) {
+ 	            key = (String) e.nextElement();
+		    Var elem = (Var) table.get(key);
+		    if (! elem.isVarUndefined()) {
 			if (pattern != null) {
 			    if (!Util.stringMatch(key, pattern)) {
 				continue;
@@ -224,23 +244,23 @@ class ArrayCmd implements Command {
 	    }
 	    case OPT_NEXTELEMENT: {
 
-                if (argv.length != 4) {
-		    throw new TclNumArgsException(interp, 1, argv, 
-		            "nextelement arrayName searchId");
+                if (objv.length != 4) {
+		    throw new TclNumArgsException(interp, 2, objv, 
+		            "arrayName searchId");
 	        }
 	        if (notArray) {
-	            errorNotArray(interp, argv[2].toString());
+	            errorNotArray(interp, objv[2].toString());
 	        }
 
 	        if (var.sidVec == null) {
-	            errorIllegalSearchId(interp, argv[2].toString(),
-                            argv[3].toString());
+	            errorIllegalSearchId(interp, objv[2].toString(),
+                            objv[3].toString());
 	        }
 
-	        Enumeration e = var.getSearch(argv[3].toString());
+	        Enumeration e = var.getSearch(objv[3].toString());
 	        if (e == null) {
-	            errorIllegalSearchId(interp, argv[2].toString(),
-                            argv[3].toString());
+	            errorIllegalSearchId(interp, objv[2].toString(),
+                            objv[3].toString());
 	        }
 	        if (e.hasMoreElements()) {
 		    Hashtable table = (Hashtable)var.value;
@@ -257,27 +277,25 @@ class ArrayCmd implements Command {
 	    }
 	    case OPT_SET: {
 
-                if (argv.length != 4) {
-		    throw new TclNumArgsException(interp, 1, argv, 
-		            "set arrayName list");
+                if (objv.length != 4) {
+		    throw new TclNumArgsException(interp, 2, objv, 
+		            "arrayName list");
 	        }
-	        int size = TclList.getLength(interp, argv[3]);
+	        int size = TclList.getLength(interp, objv[3]);
 	        if ( size%2 != 0 ) {
 	            throw new TclException(interp, 
                             "list must have an even number of elements");
 	        }
 	    
 		int i;
-		String name1 = argv[2].toString();
+		String name1 = objv[2].toString();
 		String name2, strValue;
 
-		/*
-		 * Set each of the array variable names in the interp
-		 */
+		// Set each of the array variable names in the interp
 
 		for ( i=0; i<size; i++) {
-		    name2 = TclList.index(interp, argv[3], i++).toString();
-	            strValue = TclList.index(interp, argv[3], i).toString();
+		    name2 = TclList.index(interp, objv[3], i++).toString();
+	            strValue = TclList.index(interp, objv[3], i).toString();
 		    interp.setVar(name1, name2, 
                             TclString.newInstance(strValue), 0); 
 	        }
@@ -285,9 +303,9 @@ class ArrayCmd implements Command {
 	    }
 	    case OPT_SIZE: {
 
-	        if (argv.length != 3) {
-		    throw new TclNumArgsException(interp, 1, argv, 
-		            "size arrayName");
+	        if (objv.length != 3) {
+		    throw new TclNumArgsException(interp, 2, objv, 
+		            "arrayName");
 	        }
 	        if (notArray) {
 		    interp.setResult(0);
@@ -306,39 +324,37 @@ class ArrayCmd implements Command {
 	    }
 	    case OPT_STARTSEARCH: {
 
-                if (argv.length != 3) {
-		    throw new TclNumArgsException(interp, 1, argv, 
-		            "startsearch arrayName");
+                if (objv.length != 3) {
+		    throw new TclNumArgsException(interp, 2, objv, 
+		            "arrayName");
 	        }
 	        if (notArray) {
-	            errorNotArray(interp, argv[2].toString());
+	            errorNotArray(interp, objv[2].toString());
 	        }
 	    
 		if (var.sidVec == null) {
 	            var.sidVec = new Vector();
 		}
 
-		/*
-		 * Create a SearchId Object:
-		 * To create a new SearchId object, a unique string
-		 * identifier needs to be composed and we need to
-		 * create an Enumeration of the array keys.  The
-		 * unique string identifier is created from three
-		 * strings:
-		 *
-		 *     "s-"   is the default prefix
-		 *     "i"    is a unique number that is 1+ the greatest
-		 *	      SearchId index currently on the ArrayVar.
-		 *     "name" is the name of the array
-		 *
-		 * Once the SearchId string is created we construct a
-		 * new SearchId object using the string and the
-		 * Enumeration.  From now on the string is used to
-		 * uniquely identify the SearchId object.
-		 */
+		// Create a SearchId Object:
+		// To create a new SearchId object, a unique string
+		// identifier needs to be composed and we need to
+		// create an Enumeration of the array keys.  The
+		// unique string identifier is created from three
+		// strings:
+		//
+		//     "s-"   is the default prefix
+		//     "i"    is a unique number that is 1+ the greatest
+		//	      SearchId index currently on the ArrayVar.
+		//     "name" is the name of the array
+		//
+		// Once the SearchId string is created we construct a
+		// new SearchId object using the string and the
+		// Enumeration.  From now on the string is used to
+		// uniquely identify the SearchId object.
 
 		int i = var.getNextIndex();
-		String s = "s-" + i  + "-" + argv[2].toString();
+		String s = "s-" + i  + "-" + objv[2].toString();
 		Enumeration e = ((Hashtable)var.value).keys();
 		var.sidVec.addElement(new SearchId(e,s,i));
 		interp.setResult(s);
