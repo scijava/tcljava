@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: BgErrorMgr.java,v 1.1 1998/10/14 21:09:19 cvsadmin Exp $
+ * RCS: @(#) $Id: BgErrorMgr.java,v 1.2 1999/07/28 02:06:17 mo Exp $
  *
  */
 
@@ -98,33 +98,35 @@ addBgError()
 {
     BgError bgErr = new BgError(interp.getNotifier());
 
+    // The addErrorInfo() call below (with an empty string)
+    // ensures that errorInfo gets properly set.  It's needed in
+    // cases where the error came from a utility procedure like
+    // Interp.getVar() instead of Interp.eval(); in these cases
+    // errorInfo still won't have been set when this procedure is
+    // called.
+
+    interp.addErrorInfo("");
+
+    bgErr.errorMsg  = interp.getResult();
+    bgErr.errorInfo = null;
     try {
-
-	/*
-	 * The addErrorInfo() call below (with an empty string)
-	 * ensures that errorInfo gets properly set.  It's needed in
-	 * cases where the error came from a utility procedure like
-	 * Interp.getVar() instead of Interp.eval(); in these cases
-	 * errorInfo still won't have been set when this procedure is
-	 * called.
-	 */
-
-	interp.addErrorInfo("");
-
-	bgErr.errorMsg  = interp.getResult();
 	bgErr.errorInfo = interp.getVar("errorInfo", null, 
-	    	TCL.GLOBAL_ONLY|TCL.DONT_THROW_EXCEPTION);
-	bgErr.errorCode = interp.getVar("errorCode", null, 
-	    	TCL.GLOBAL_ONLY|TCL.DONT_THROW_EXCEPTION);
-
-	bgErr.errorMsg.preserve();
-	bgErr.errorInfo.preserve();
-	bgErr.errorCode.preserve();
+					TCL.GLOBAL_ONLY);
     } catch (TclException e) {
-	System.out.println(interp.getResult());
-	e.printStackTrace();
-	throw new TclRuntimeError("unexpected TclException: " + e);
+	// Do nothing if var does not exist.
     }
+
+    bgErr.errorCode = null;
+    try {
+	bgErr.errorCode = interp.getVar("errorCode", null, 
+					TCL.GLOBAL_ONLY);
+    } catch (TclException e) {
+	// Do nothing if var does not exist.
+    }
+
+    bgErr.errorMsg.preserve();
+    bgErr.errorInfo.preserve();
+    bgErr.errorCode.preserve();
 
     errors.addElement(bgErr);
 }
