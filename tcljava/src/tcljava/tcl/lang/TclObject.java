@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclObject.java,v 1.7 2002/12/21 04:04:04 mdejong Exp $
+ * RCS: @(#) $Id: TclObject.java,v 1.8 2002/12/31 20:16:27 mdejong Exp $
  *
  */
 
@@ -274,6 +274,39 @@ public final class TclObject {
      */
     final int getRefCount() {
 	return refCount;
+    }
+
+    /**
+     * Returns the Tcl_Obj* objPtr member for a CObject or TclList.
+     * This method is only called from Tcl Blend.
+     */
+
+    final long getCObjectPtr() {
+	if (internalRep instanceof CObject) {
+	    return ((CObject) internalRep).getCObjectPtr();
+	} else {
+	    return 0;
+	}
+    }
+
+    /**
+     * Returns 2 if the internal rep is a TclList.
+     * Returns 1 if the internal rep is a CObject.
+     * Otherwise returns 0.
+     * This method provides an optimization over
+     * invoking getInternalRep() and two instanceof
+     * checks via JNI. It is only used by Tcl Blend.
+     */
+
+    final int getCObjectInst() {
+	if (internalRep instanceof CObject) {
+	    if (internalRep instanceof TclList)
+	        return 2;
+	    else
+	        return 1;
+	} else {
+	    return 0;
+	}
     }
 
     /**

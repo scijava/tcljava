@@ -10,7 +10,7 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  *
- * RCS: @(#) $Id: javaCmd.c,v 1.22 2002/12/30 05:53:29 mdejong Exp $
+ * RCS: @(#) $Id: javaCmd.c,v 1.23 2002/12/31 20:16:27 mdejong Exp $
  */
 
 /*
@@ -1102,8 +1102,10 @@ JavaSetupJava(
                                       &jcache->TclObject, "()V", 0) ||
 	AddToMethodCache(env, interp, &jcache->release, "_release",
                                       &jcache->TclObject, "()V", 0) ||
-	AddToMethodCache(env, interp, &jcache->getInternalRep, "getInternalRep",
-                                      &jcache->TclObject, "()Ltcl/lang/InternalRep;", 0) ||
+	AddToMethodCache(env, interp, &jcache->getCObjectPtr, "getCObjectPtr",
+                                      &jcache->TclObject, "()J", 0) ||
+	AddToMethodCache(env, interp, &jcache->getCObjectInst, "getCObjectInst",
+                                      &jcache->TclObject, "()I", 0) ||
 	AddToMethodCache(env, interp, &jcache->init, "init",
                                       &jcache->Extension, "(Ltcl/lang/Interp;)V", 0) ||
 	AddToMethodCache(env, interp, &jcache->blendC, "<init>",
@@ -1126,8 +1128,7 @@ JavaSetupJava(
      * Load fields needed by this module.
      */
 
-    if (AddToFieldCache(env, interp, &jcache->interpPtr, "interpPtr", &jcache->Interp, "J") ||
-        AddToFieldCache(env, interp, &jcache->objPtr, "objPtr", &jcache->CObject, "J")) {
+    if (AddToFieldCache(env, interp, &jcache->interpPtr, "interpPtr", &jcache->Interp, "J")) {
 	goto error;
     }
 

@@ -1,3 +1,29 @@
+2002-12-31  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/empty/empty.jar: Regen.
+	* src/empty/tcl/lang/CObject.java (getCObjectPtr):
+	Add method decl.
+	* src/native/java.h: Remove getInternalRep method
+	and add getCObjectPtr and getCObjectInst. Remove
+	objPtr field since we get that with getCObjectPtr.
+	* src/native/javaCmd.c (JavaSetupJava): Init
+	getCObjectPtr and getCObjectInst methods, remove
+	getInternalRep and objPtr.
+	* src/native/javaObj.c (JavaGetTclObj, JavaBreakRef):
+	Call getCObjectPtr or getCObjectInst instead of calling
+	getInternalRep and then calling instanceof. This
+	implementation should be more efficient since it
+	replaces multiple JNI calls with a single one.
+	* src/tclblend/tcl/lang/CObject.java (getCObjectPtr):
+	Add method to return the objPtr member.
+	* src/tcljava/tcl/lang/TclObject.java (getCObjectPtr,
+	getCObjectInst): Add method to return the Tcl_Obj*
+	with a single JNI call. Add method to do instanceof
+	checks in a Java method instead of with multiple
+	JNI calls.
+	* tests/tclblend/javaObj.test: Add additional
+	JavaBreakRef test.
+
 2002-12-30  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* configure: Regen.

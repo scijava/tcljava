@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaObj.c,v 1.16 2002/12/31 05:22:16 mdejong Exp $
+ * RCS: @(#) $Id: javaObj.c,v 1.17 2002/12/31 20:16:27 mdejong Exp $
  */
 
 #include "java.h"
@@ -370,7 +370,6 @@ JavaGetTclObj(
     jobject object)		/* TclObject. */
 {
     Tcl_Obj *objPtr;
-    jobject internalRep;
     jlong objRef;
     JavaInfo* jcache = JavaGetCache();
 
@@ -378,20 +377,18 @@ JavaGetTclObj(
 	(*env)->ExceptionDescribe(env);
 	panic("JavaGetTclObj : unexpected pending exception");
     }
-    
-    internalRep = (*env)->CallObjectMethod(env, object, jcache->getInternalRep);
+
+    objRef = (*env)->CallLongMethod(env, object, jcache->getCObjectPtr);
     if ((*env)->ExceptionOccurred(env)) {
 	(*env)->ExceptionDescribe(env);
-	panic("JavaGetTclObj : exception in TclObject.getInternalRep()");
+	panic("JavaGetTclObj : exception in TclObject.getCObjectPtr()");
     }
 
-    if ((*env)->IsInstanceOf(env, internalRep, jcache->CObject) == JNI_TRUE) {
+    if (objRef != 0) {
 	/*
-	 * This object is a C reference so we extract the Tcl_Obj* from the
-	 * internal representation.
+	 * This is either a TclList or a CObject, convert to Tcl_Obj*.
 	 */
 
-	objRef = (*env)->GetLongField(env, internalRep, jcache->objPtr);
 	objPtr = *(Tcl_Obj**)&objRef;
 
 #ifdef TCL_MEM_DEBUG
@@ -421,7 +418,6 @@ JavaGetTclObj(
 	    panic("JavaGetTclObj : exception in TclObject._preserve()");
 	}
     }
-    (*env)->DeleteLocalRef(env, internalRep);
     return objPtr;
 }
 
@@ -681,8 +677,8 @@ JavaBreakRef(
     Tcl_Obj *objPtr)		/* Object to check. */
 {
     jobject object;
-    int isTclList=0, isCObject, dummy;
-    jobject internalRep;
+    int isTclList, isCObject, dummy;
+    int inst;
     JavaInfo* jcache = JavaGetCache();
 
 #ifdef TCL_MEM_DEBUG
@@ -694,26 +690,21 @@ JavaBreakRef(
     if ((objPtr->typePtr == &tclObjectType)
             || ((objPtr->typePtr == cmdTypePtr) &&
                     (objPtr->internalRep.twoPtrValue.ptr2) != NULL)) {
-        object = (jobject)(objPtr->internalRep.twoPtrValue.ptr2);
-        internalRep = (*env)->CallObjectMethod(env, object,
-	        jcache->getInternalRep);
+	object = (jobject)(objPtr->internalRep.twoPtrValue.ptr2);
+	inst = (*env)->CallIntMethod(env, object, jcache->getCObjectInst);
 	if ((*env)->ExceptionOccurred(env)) {
 	    (*env)->ExceptionDescribe(env);
-	    panic("JavaBreakRef : exception in TclObject.getInternalRep()");
+	    panic("JavaBreakRef : exception in TclObject.getCObjectInst()");
 	}
-	isCObject = (*env)->IsInstanceOf(env, internalRep,
-	        jcache->CObject) == JNI_TRUE;
-	if (isCObject) {
-	    isTclList = (*env)->IsInstanceOf(env, internalRep,
-	            jcache->TclList) == JNI_TRUE;
-	}
-	(*env)->DeleteLocalRef(env, internalRep);
+	/* Constants returned by getCObjectInst() to indicate type. */
+	isCObject = (inst == 1);
+	isTclList = (inst == 2);
 
 	if (isTclList) {
 	    /*fprintf(stderr, "breaking ref for TclList \"%s\"\n", Tcl_GetString(objPtr));*/
 	    Tcl_ListObjLength((Tcl_Interp *) NULL, objPtr, &dummy);
 	} else if (isCObject) {
-	    /*fprintf(stderr, "breaking ref for string \"%s\"\n", Tcl_GetString(objPtr));*/
+	    /*fprintf(stderr, "breaking ref for String \"%s\"\n", Tcl_GetString(objPtr));*/
 	    Tcl_GetCharLength(objPtr);
 	}
     }

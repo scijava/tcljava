@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: javaObj.test,v 1.8 2002/12/31 05:22:16 mdejong Exp $
+# RCS: @(#) $Id: javaObj.test,v 1.9 2002/12/31 20:16:27 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -210,6 +210,21 @@ test javaObj-12.1 {JavaBreakRef} {
     rename testlistlength {}
     set results
 } {1 0}
+
+test javaObj-12.2 {JavaBreakRef} {
+    # Changing from a ReflectObject to a TclList internal
+    # rep will break the Tcl_Obj -> TclObject ref.
+
+    set results [list]
+    [java::getinterp] createCommand testlistlength \
+        [java::new tests.ListLengthCmd]
+    set obj [java::new String "1 2 3"]
+    lappend results [btest type $obj]
+    testlistlength $obj
+    lappend results [btest type $obj]
+    rename testlistlength {}
+    set results
+} {tclobject list}
 
 test javaObj-13.1 {convert ref to cmd+ref internal rep} {
     set results [list]

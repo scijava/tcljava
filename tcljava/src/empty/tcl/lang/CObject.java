@@ -14,4 +14,6 @@ void makeReference(TclObject object) {}
 final void decrRefCount() {}
 final void incrRefCount() {}
 
+final long getCObjectPtr() { return 0; }
+
 } // end CObject
