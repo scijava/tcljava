@@ -98,9 +98,12 @@ if test ! -d ${XP_TCLJAVA_INSTALL_DIR} ; then
     exit 3
 fi
 
-# Set up our LD_LIBRARY_PATH or SHLIB_PATH
+# Set up our PATH, LD_LIBRARY_PATH, or SHLIB_PATH
 
-if test "`uname -s`" = "HP-UX" ; then
+if test "$OSTYPE" = "msys"; then
+    PATH=${JAVA_LIB_RUNTIME_PATH}:${PATH}
+    export PATH
+elif test "`uname -s`" = "HP-UX" ; then
     SHLIB_PATH=${JAVA_LIB_RUNTIME_PATH}:${SHLIB_PATH}
     export SHLIB_PATH
     # Export the Kaffe library path in case we are running Kaffe

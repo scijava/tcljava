@@ -1,3 +1,14 @@
+2003-08-07  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* Makefile.in: Create a tmp directory and
+	run install check for tclblend in this
+	dir. This avoids a problem under Windows
+	where the install rule crashes when a
+	tclblend.dll is loaded from two different
+	localtions on the file system.
+	* jtclsh.in: Set the PATH env var to
+	include Java and Tcl Blend shared lib locations.
+
 2003-07-25  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* Makefile.in: Fix install of xputils package

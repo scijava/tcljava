@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.28 2003/07/26 00:08:33 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.29 2003/08/07 07:04:38 mdejong Exp $
 
 SHELL = /bin/sh
 
@@ -455,12 +455,16 @@ tclblend.install: tclblend.check
 	@chmod a+rx $(BIN_INSTALL_DIR)/jtclsh
 	@echo "Installing jwish in $(BIN_INSTALL_DIR)"
 	@cd $(BIN_INSTALL_DIR); rm -f jwish; ln -s jtclsh jwish
-	@if env $(BIN_INSTALL_DIR)/jtclsh Test.tcl; then \
+	@rm -rf tclblend_test
+	@mkdir tclblend_test
+	@cp Test.tcl Test.class tclblend_test
+	@cd tclblend_test ; \
+	if env $(BIN_INSTALL_DIR)/jtclsh Test.tcl; then \
 		DO=NOTHING ; \
 	else \
 		echo "Test failed ... you may need to edit $(BIN_INSTALL_DIR)/jtclsh by hand to set the correct paths" ;   \
 	fi
-
+	@rm -rf tclblend_test
 
 
 tclblend.uninstall:
