@@ -1,6 +1,6 @@
 # This Makefile is used to the java loadable module.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.8 1998/11/06 00:18:23 hylands Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.9 1998/11/06 16:46:05 hylands Exp $
 
 # The version of TclJava, used in this Makefile
 VERSION = @TCLJAVA_VERSION@
@@ -1337,6 +1337,13 @@ $(SRCEX):
 	echo '*/RCS' >> $@
 	echo '*/core' >> $@
 	echo '*/jsdatabase' >> $@
+	echo '*/unix/bean' >> $@
+	echo '*/unix/confdefs.h' >> $@
+	echo '*/unix/config.cache' >> $@
+	echo '*/unix/config.log' >> $@
+	echo '*/unix/jacl' >> $@
+	echo '*/unix/tclblend' >> $@
+	echo '*/unix/tcljava' >> $@
 
 #----------------------------------------------------------------
 # jaclBinDist --
