@@ -9,13 +9,16 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaPropCmd.java,v 1.2 1999/05/09 22:23:44 dejong Exp $
+ * RCS: @(#) $Id: JavaPropCmd.java,v 1.3 1999/05/09 22:23:46 dejong Exp $
  *
  */
 
 package tcl.lang;
 
-// This class implements the built-in "java::prop" command.
+/**
+ * This class implements the built-in "java::prop" command.
+ * The java::prop command is used to manipulate Java Bean properties from Tcl. 
+ */
 
 class JavaPropCmd implements Command {
 
@@ -114,8 +117,7 @@ usage(
     TclObject cmd)		// The command name.
 {
     return "wrong # args: should be \"" +
-	    cmd + " ?-noconvert? object property\" or \"" + 
-	    cmd + " object property value ?property value ...?\"";
+	    cmd + " ?-noconvert? javaObj property ?value property value ...?\"";
 }
 
 } // end JavaPropCmd
