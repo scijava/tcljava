@@ -1,6 +1,6 @@
 Recent user-visible changes to Jacl & Tcl Blend:
 
-RCS: @(#) $Id: changes.txt,v 1.30 1999/08/30 11:56:00 mo Exp $
+RCS: @(#) $Id: changes.txt,v 1.31 1999/08/30 14:43:49 mo Exp $
 
 ----------------- Released 1.0a1, 10/22/97 -----------------------
 
@@ -968,4 +968,6 @@ cause big problems if the tclsh executable was not the
 same one that we compiled Tcl Blend against. Tcl Blend
 now requires that you install and use the executable
 that was built from the Tcl source.
+
+----------------- Released 1.2.4, 8/30/99 -----------------------
 
