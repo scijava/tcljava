@@ -1,5 +1,17 @@
 2000-02-23  Mo DeJong  <mdejong@redhat.com>
 
+	* src/jacl/tcl/lang/HistoryCmd.java:
+	* docs/cFunctions.html:
+	* docs/TclJavaLib/Eval.htm:
+	* src/jacl/tcl/lang/ConsoleEvent.java:
+	* src/jacl/tcl/lang/Interp.java:
+	* src/jacl/tcl/lang/library/history.tcl:
+	* src/jacl/tcl/lang/library/init.tcl: Added implementation of
+	the history command to Jacl. The implementation was donated
+	by Christian Krone <krischan@sql.de>.
+
+2000-02-23  Mo DeJong  <mdejong@redhat.com>
+
 	* README.jacl:
 	* diffs.txt:
 	* new_features.txt:

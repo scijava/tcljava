@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.2 1999/05/09 01:41:08 dejong Exp $
+# RCS: @(#) $Id: init.tcl,v 1.3 2000/02/23 22:14:17 mo Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -196,26 +196,20 @@ proc unknown {args} {
 	set errorCode $savedErrorCode
 	set errorInfo $savedErrorInfo
 
-	# The following cases are temporarily commented out until the
-	# Tcl history, regexp, and regsub commands are implemented in
-	# Jacl.  No replacement code is necessary.
+	if {$name == "!!"} {
+	    set newcmd [history event]
+	} elseif {[regexp {^!(.+)$} $name dummy event]} {
+	    set newcmd [history event $event]
+	} elseif {[regexp {^\^([^^]*)\^([^^]*)\^?$} $name dummy old new]} {
+	    set newcmd [history event -1]
+	    catch {regsub -all -- $old $newcmd $new newcmd}
+	}
 
-	# if {$name == "!!"} \{
-	#    set newcmd [history event]
-	# \} elseif {[regexp {^!(.+)$} $name dummy event]} \{
-	#    set newcmd [history event $event]
-	# \} elseif {[regexp {^\^([^^]*)\^([^^]*)\^?$} $name dummy old new]} \{
-	#    set newcmd [history event -1]
-	#    catch {regsub -all -- $old $newcmd $new newcmd}
-	# \}
-
-	# if [info exists newcmd] \{
-	#     tclLog $newcmd
-	#     history change $newcmd 0
-	#     return [uplevel $newcmd]
-	# \}
-
-	# end temporary comments
+	if [info exists newcmd] {
+	    tclLog $newcmd
+	    history change $newcmd 0
+	    return [uplevel $newcmd]
+	}
 
 	set ret [catch {set cmds [info commands $name*]} msg]
 	if {[string compare $name "::"] == 0} {
