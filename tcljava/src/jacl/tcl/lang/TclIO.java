@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclIO.java,v 1.6 2001/12/24 06:04:35 mdejong Exp $
+ * RCS: @(#) $Id: TclIO.java,v 1.7 2001/12/24 08:01:12 mdejong Exp $
  *
  */
 
@@ -192,7 +192,7 @@ class TclIO {
     }
 
     /*
-     * Return a numerical identifier for the given translation string.
+     * Return a numerical identifier for the given -translation string.
      */
 
     static int getTranslationID(String translation) {
@@ -211,4 +211,37 @@ class TclIO {
         else
             return -1;
     }
+
+    /*
+     * Return a string description for a -buffering id defined above.
+     */
+
+    static String getBufferingString(int buffering) {
+        switch (buffering) {
+            case BUFF_FULL:
+                return "full";
+            case BUFF_LINE:
+                return "line";
+            case BUFF_NONE:
+                return "none";
+            default:
+                throw new TclRuntimeError("bad buffering id");
+        }
+    }
+
+    /*
+     * Return a numerical identifier for the given -buffering string.
+     */
+
+    static int getBufferingID(String buffering) {
+        if (buffering.equals("full"))
+            return BUFF_FULL;
+        else if (buffering.equals("line"))
+            return BUFF_LINE;
+        else if (buffering.equals("none"))
+            return BUFF_NONE;
+        else
+            return -1;
+    }
+
 }

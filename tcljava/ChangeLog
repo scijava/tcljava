@@ -1,3 +1,12 @@
+2001-12-23  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/jacl/tcl/lang/FconfigureCmd.java (cmdProc):
+	Use new getBufferingString and getBufferingID
+	methods from the TclIO class.
+	* src/jacl/tcl/lang/TclIO.java (getBufferingString,
+	getBufferingID): Add helper methods to simplify
+	the code in the fconfigure command.
+
 2001-12-23  Bruce Johnson  <bruce_johnson@merck.com>,
             Mo DeJong  <mdejong@users.sourceforge.net>
 

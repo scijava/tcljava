@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FconfigureCmd.java,v 1.6 2001/12/24 06:04:35 mdejong Exp $
+ * RCS: @(#) $Id: FconfigureCmd.java,v 1.7 2001/12/24 08:01:12 mdejong Exp $
  *
  */
 
@@ -72,20 +72,8 @@ class FconfigureCmd implements Command {
                 TclBoolean.newInstance(chan.getBlocking()));
 
             TclList.append(interp, list, TclString.newInstance("-buffering"));
-            switch (chan.getBuffering()) {
-                case TclIO.BUFF_FULL:
-                    TclList.append(interp, list,
-                        TclString.newInstance("full"));
-                    break;
-                case TclIO.BUFF_LINE:
-                    TclList.append(interp, list,
-                        TclString.newInstance("line"));
-                    break;
-                case TclIO.BUFF_NONE:
-                    TclList.append(interp, list,
-                        TclString.newInstance("none"));
-                    break;
-            }
+            TclList.append(interp, list, TclString.newInstance(
+                TclIO.getBufferingString(chan.getBuffering())));
 
             TclList.append(interp, list, TclString.newInstance("-buffersize"));
             TclList.append(interp, list,
@@ -143,17 +131,9 @@ class FconfigureCmd implements Command {
                     break;
                 }
                 case OPT_BUFFERING: {    // -buffering
-                    switch (chan.getBuffering()) {
-                        case TclIO.BUFF_FULL:
-                            interp.setResult("full");
-                            break;
-                        case TclIO.BUFF_LINE:
-                            interp.setResult("line");
-                            break;
-                        case TclIO.BUFF_NONE:
-                            interp.setResult("none");
-                            break;
-                    }
+                    interp.setResult(
+                        TclIO.getBufferingString(
+                            chan.getBuffering()));
                     break;
                 }
                 case OPT_BUFFERSIZE: {    // -buffersize
@@ -216,18 +196,15 @@ class FconfigureCmd implements Command {
                     break;
                 }
                 case OPT_BUFFERING: {    // -buffering
-                    String arg = argv[i].toString();
-                    if (arg.equals("full")) {
-                        chan.setBuffering(TclIO.BUFF_FULL);
-                    } else if (arg.equals("line")) {
-                        chan.setBuffering(TclIO.BUFF_LINE);
-                    } else if (arg.equals("none")) {
-                        chan.setBuffering(TclIO.BUFF_NONE);
-                    } else {
-                        throw new TclException(interp, 
+                    int id = TclIO.getBufferingID(argv[i].toString());
+
+                    if (id == -1) {
+                        throw new TclException(interp,
                             "bad value for -buffering: must be " +
                             "one of full, line, or none");
                     }
+
+                    chan.setBuffering(id);
                     break;
                 }
                 case OPT_BUFFERSIZE: {    // -buffersize
