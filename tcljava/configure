@@ -1657,13 +1657,30 @@ if test "${with_tcl+set}" = set; then
   withval="$with_tcl"
   TCL_BIN_DIR=$withval
 else
-  TCL_BIN_DIR="$srcdir/../tcl8.3.2/unix"
+  TCL_BIN_DIR=default
 fi;
 
+    # See if a default directory exist
+    if test "$TCL_BIN_DIR" = "default" ; then
+        if test -d $srcdir/../tcl8.4.1/unix ; then
+            TCL_BIN_DIR=$srcdir/../tcl8.4.1/unix
+        else
+            TCL_BIN_DIR=
+        fi
+    fi
+
+    if test "$TCL_BIN_DIR" = "" || test "$TCL_BIN_DIR" = "no" ; then
+        { { echo "$as_me:$LINENO: error: Use the --with-tcl=<dirName> configure flag to indicate
+where the Tcl build directory is." >&5
+echo "$as_me: error: Use the --with-tcl=<dirName> configure flag to indicate
+where the Tcl build directory is." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
+
     if test ! -d "$TCL_BIN_DIR"; then
-        { { echo "$as_me:$LINENO: error: Tcl directory $TCL_BIN_DIR could not be located.
+        { { echo "$as_me:$LINENO: error: Tcl build directory $TCL_BIN_DIR could not be located.
 Use the --with-tcl=<dirName> configure flag to specify the location." >&5
-echo "$as_me: error: Tcl directory $TCL_BIN_DIR could not be located.
+echo "$as_me: error: Tcl build directory $TCL_BIN_DIR could not be located.
 Use the --with-tcl=<dirName> configure flag to specify the location." >&2;}
    { (exit 1); exit 1; }; }
     else
@@ -1745,8 +1762,25 @@ if test "${with_thread+set}" = set; then
   withval="$with_thread"
   THREAD_BIN_DIR=$withval
 else
-  THREAD_BIN_DIR="$srcdir/../thread/unix"
+  THREAD_BIN_DIR=default
 fi;
+
+    # See if a default directory exist
+    if test "$THREAD_BIN_DIR" = "default" ; then
+        if test -d $srcdir/../thread/unix ; then
+            THREAD_BIN_DIR=$srcdir/../thread/unix
+        else
+            THREAD_BIN_DIR=
+        fi
+    fi
+
+    if test "$THREAD_BIN_DIR" = "" || test "$THREAD_BIN_DIR" = "no" ; then
+        { { echo "$as_me:$LINENO: error: Use the --with-thread=<dirName> configure flag to indicate
+where the required Thread extension build directory is." >&5
+echo "$as_me: error: Use the --with-thread=<dirName> configure flag to indicate
+where the required Thread extension build directory is." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
 
     if test ! -d "$THREAD_BIN_DIR"; then
         { { echo "$as_me:$LINENO: error: Thread directory $THREAD_BIN_DIR could not be located.
@@ -2033,8 +2067,8 @@ echo "${ECHO_T}no" >&6
 fi
 
         if test "x$JAVAC" = "x" ; then
-            { { echo "$as_me:$LINENO: error: javac not found on PATH" >&5
-echo "$as_me: error: javac not found on PATH" >&2;}
+            { { echo "$as_me:$LINENO: error: javac not found on PATH ... did you forget --with-jdk=DIR" >&5
+echo "$as_me: error: javac not found on PATH ... did you forget --with-jdk=DIR" >&2;}
    { (exit 1); exit 1; }; }
         fi
     fi
@@ -2166,7 +2200,7 @@ echo "${ECHO_T}$ac_java_classpath" >&6
 echo $ECHO_N "checking to see if the java compiler works... $ECHO_C" >&6
 
     cat << \EOF > conftest.java
-// #line 2169 "configure"
+// #line 2203 "configure"
 
 
 public class conftest {
@@ -2211,7 +2245,7 @@ echo $ECHO_N "checking type of jvm... $ECHO_C" >&6
     if test "x$ac_java_jvm_name" = "x" ; then
 
     cat << \EOF > conftest.java
-// #line 2214 "configure"
+// #line 2248 "configure"
 import kaffe.lang.Application;
 
 public class conftest {
@@ -2238,7 +2272,7 @@ EOF
     if test "x$ac_java_jvm_name" = "x" ; then
 
     cat << \EOF > conftest.java
-// #line 2241 "configure"
+// #line 2275 "configure"
 import gnu.java.io.EncodingManager;
 
 public class conftest {
@@ -2287,7 +2321,7 @@ echo $ECHO_N "checking java API version... $ECHO_C" >&6
 
 
     cat << \EOF > conftest.java
-// #line 2290 "configure"
+// #line 2324 "configure"
 import java.lang.StrictMath;
 
 public class conftest {
@@ -2315,7 +2349,7 @@ EOF
     if test "x$ac_java_jvm_version" = "x" ; then
 
     cat << \EOF > conftest.java
-// #line 2318 "configure"
+// #line 2352 "configure"
 import java.lang.Package;
 
 public class conftest {
@@ -2344,7 +2378,7 @@ EOF
     if test "x$ac_java_jvm_version" = "x" ; then
 
     cat << \EOF > conftest.java
-// #line 2347 "configure"
+// #line 2381 "configure"
 import java.lang.reflect.Method;
 
 public class conftest {

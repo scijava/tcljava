@@ -247,7 +247,7 @@ AC_DEFUN([AC_PROG_JAVAC], [
     if test "x$JAVAC" = "x" ; then
         AC_PATH_PROG(JAVAC, javac)
         if test "x$JAVAC" = "x" ; then
-            AC_MSG_ERROR([javac not found on PATH])
+            AC_MSG_ERROR([javac not found on PATH ... did you forget --with-jdk=DIR])
         fi
     fi
     if test ! -f "$JAVAC" ; then
@@ -962,10 +962,24 @@ if test $TCLJAVA = "tclblend" || test $TCLJAVA = "both"; then
     #--------------------------------------------------------------------
     
     AC_ARG_WITH(tcl, [  --with-tcl=DIR          build directory for Tcl 8.3.2 (or newer) source release from DIR],
-    	TCL_BIN_DIR=$withval, TCL_BIN_DIR="$srcdir/../tcl8.3.2/unix")
+    	TCL_BIN_DIR=$withval, TCL_BIN_DIR=default)
+
+    # See if a default directory exist
+    if test "$TCL_BIN_DIR" = "default" ; then
+        if test -d $srcdir/../tcl8.4.1/unix ; then
+            TCL_BIN_DIR=$srcdir/../tcl8.4.1/unix
+        else
+            TCL_BIN_DIR=
+        fi
+    fi
+
+    if test "$TCL_BIN_DIR" = "" || test "$TCL_BIN_DIR" = "no" ; then
+        AC_MSG_ERROR([Use the --with-tcl=<dirName> configure flag to indicate
+where the Tcl build directory is.])
+    fi
 
     if test ! -d "$TCL_BIN_DIR"; then
-        AC_MSG_ERROR([Tcl directory $TCL_BIN_DIR could not be located.
+        AC_MSG_ERROR([Tcl build directory $TCL_BIN_DIR could not be located.
 Use the --with-tcl=<dirName> configure flag to specify the location.])
     else
 	TCL_BIN_DIR=`cd $TCL_BIN_DIR; pwd`
@@ -1046,7 +1060,21 @@ AC_DEFUN([TCLJAVA_WITH_THREAD], [
 if test $TCLJAVA = "tclblend" || test $TCLJAVA = "both"; then
 
     AC_ARG_WITH(thread, [  --with-thread=DIR          build directory for Tcl Thread Extension],
-    	THREAD_BIN_DIR=$withval, THREAD_BIN_DIR="$srcdir/../thread/unix")
+    	THREAD_BIN_DIR=$withval, THREAD_BIN_DIR=default)
+
+    # See if a default directory exist
+    if test "$THREAD_BIN_DIR" = "default" ; then
+        if test -d $srcdir/../thread/unix ; then
+            THREAD_BIN_DIR=$srcdir/../thread/unix
+        else
+            THREAD_BIN_DIR=
+        fi
+    fi
+
+    if test "$THREAD_BIN_DIR" = "" || test "$THREAD_BIN_DIR" = "no" ; then
+        AC_MSG_ERROR([Use the --with-thread=<dirName> configure flag to indicate
+where the required Thread extension build directory is.])
+    fi
 
     if test ! -d "$THREAD_BIN_DIR"; then
         AC_MSG_ERROR([Thread directory $THREAD_BIN_DIR could not be located.

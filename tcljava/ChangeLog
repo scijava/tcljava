@@ -1,5 +1,13 @@
 2002-12-20  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* configure: Regen.
+	* tcljava.m4 (AC_PROG_JAVAC, TCLJAVA_WITH_TCL,
+	TCLJAVA_WITH_THREAD): Print better error
+	message if user does not pass a --with-tcl,
+	--with-thread, or --with-jdk options.
+
+2002-12-20  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	Implement new ref count system for Tcl Blend,
 	see JavaRefCount.html for complete description.
 
