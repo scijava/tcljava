@@ -6,11 +6,12 @@
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: rename.test,v 1.1 1998/10/14 21:09:25 cvsadmin Exp $
+# RCS: @(#) $Id: rename.test,v 1.2 1999/08/27 23:50:51 mo Exp $
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 
@@ -163,10 +164,33 @@ test rename-6.1 {old code invalidated (epoch incremented) when cmd with compile 
     set msg
 } {called "incr" with too many arguments}
 
+test rename-6.2 {TclRenameCommand, check for command shadowing by newly renamed cmd} {
+    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {rename p ""}
+    catch {rename q ""}
+    proc p {} {
+        return "p in [namespace current]"
+    }
+    proc q {} {
+        return "q in [namespace current]"
+    }
+    namespace eval test_ns_basic {
+        proc callP {} {
+            p
+        }
+    }
+    list [test_ns_basic::callP] \
+         [rename q test_ns_basic::p] \
+         [test_ns_basic::callP]
+} {{p in ::} {} {q in ::test_ns_basic}}
+
+
+
+# cleanup
 catch {rename incr {}}
 catch {rename incr.old incr}
 
-# Make the file return an empty string (cleaner.).
-
 set x ""
 
+#::tcltest::cleanupTests
+return
