@@ -7,14 +7,14 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ListboxApp.java,v 1.1 1998/10/14 21:09:23 cvsadmin Exp $
+ * RCS: @(#) $Id: ListboxApp.java,v 1.2 1999/05/08 23:18:04 dejong Exp $
  *
  */
 
 import java.awt.*;
 import java.awt.event.*;
 
-/*
+/**
  * A simple application that displays a listbox, with one or more 
  * items, and two buttons, 'OK' and 'Cancel'.  Once the constructor
  * is called, it runs the "application" and polls until an actionEvent
@@ -25,27 +25,18 @@ import java.awt.event.*;
 
 public class ListboxApp implements ActionListener {
 
-    /*
-     * Used to implement a wait mechanism
-     */
-
+    // Used to implement a wait mechanism
     boolean wait = true;
 
-    /*
-     * The list of selected items from the AWT List widget.
-     */
-
+    // The list of selected items from the AWT List widget.
     private String[] items;
 
-    /*
-     * The Java AWT Widgets (ummm... I mean Components.) 
-     */
-
+    // The Java AWT Widgets (ummm... I mean Components.) 
     private List     lst;
     private Frame    frm;
     private Button   but;
 
-    /*
+    /**
      * ListboxApp --
      *
      * Create the application and insert listItems into the AWT List.
@@ -62,6 +53,9 @@ public class ListboxApp implements ActionListener {
 	gbc.gridwidth = GridBagConstraints.REMAINDER;
 	gbc.gridx = 0;
 	gbc.gridy = 0;
+	gbc.fill = GridBagConstraints.BOTH;
+	gbc.weightx = 1.0;
+	gbc.weighty = 1.0;
 		
 	lst = new List(6, true);
 	for (int i = 0; i < listItems.length; i++) {
@@ -69,6 +63,10 @@ public class ListboxApp implements ActionListener {
 	}
 	gbl.setConstraints(lst, gbc);
 	frm.add(lst);
+
+	gbc.fill = GridBagConstraints.NONE;
+	gbc.weightx = 0.0;
+	gbc.weighty = 0.0;
 
 	gbc.gridwidth = 1;
 	gbc.gridx = 0;
@@ -90,24 +88,20 @@ public class ListboxApp implements ActionListener {
 	frm.setSize(170,170);
 	frm.show();
 	
-	/*
-	 * Since the current version of Jacl dosent have event bindins
-	 * or vwait, we must poll until an action event occurs.  Otherwise
-	 * there is now clean way to grab the selected list items.
-	 */
+	// Since the current version of Jacl dosent have event bindings
+	// or vwait, we must poll until an action event occurs.  Otherwise
+	// there is now clean way to grab the selected list items.
 
 	try {
 	    while (wait) {
 	        Thread.currentThread().sleep(100); 
 	    }
 	} catch (InterruptedException e) {
-	    /*
-	     * Do nothing...
-	     */ 
+	    // Do nothing...
 	}
     }
 
-    /*
+    /**
      * getSelectedItems --
      *
      * Gets the selected list items.
@@ -117,7 +111,7 @@ public class ListboxApp implements ActionListener {
         return(items);
     }
 
-   /*
+   /**
     * actionPerformed --
     *
     * This is the callback when either 'OK' or 'Cancel' are pressed.
@@ -129,14 +123,13 @@ public class ListboxApp implements ActionListener {
 
     public void actionPerformed(ActionEvent evt) {
 	
-	if ("Cancel".equals(evt.getActionCommand())) {
+	if (evt.getActionCommand().equals("Cancel")) {
 	    items = null;
-	} else if ("OK".equals(evt.getActionCommand())) {
+	} else if (evt.getActionCommand().equals("OK")) {
 	    items = lst.getSelectedItems();
 	}
 	frm.dispose();
 	wait = false;
     }
 }
-
 
