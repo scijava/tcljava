@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: InfoCmd.java,v 1.7 1999/08/05 03:35:03 mo Exp $
+ * RCS: @(#) $Id: InfoCmd.java,v 1.8 2001/11/16 23:57:13 mdejong Exp $
  *
  */
 
@@ -874,22 +874,26 @@ class InfoCmd implements Command {
 
     private static void InfoNameOfExecutableCmd(Interp interp, TclObject[] objv)
 	    throws TclException {
-	String nameOfExecutable;
-	
-	if (objv.length != 2) {
-	    throw new TclNumArgsException(interp, 2, objv, null);
-	}
 
-	// FIXME : implement something for this later
-	// "$PATH/java tcl.lang.Shell"
-	// $PATH/jtclsh
+        if (objv.length != 2) {
+            throw new TclNumArgsException(interp, 2, objv, null);
+        }
 
-	//nameOfExecutable = Tcl_GetNameOfExecutable();
-	nameOfExecutable = null;
+        // We depend on a user defined property named "JAVA" since
+        // the JDK provides no means to learn the name of the executable
+        // that launched the application.
 
-	if (nameOfExecutable != null) {
-	    interp.setResult(nameOfExecutable);
-	}
+        String nameOfExecutable = System.getProperty("JAVA");
+
+        if (nameOfExecutable != null) {
+            TclObject result = TclList.newInstance();
+            TclList.append(interp, result,
+                TclString.newInstance(nameOfExecutable));
+            TclList.append(interp, result,
+                TclString.newInstance("tcl.lang.Shell"));
+            interp.setResult(result);
+        }
+
 	return;
     }
 
