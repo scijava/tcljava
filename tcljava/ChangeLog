@@ -1,3 +1,20 @@
+2003-03-13  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* extras/GuiShell/GuiShell.java (processCommand):
+	Remove call to interp.updateReturnInfo() and
+	check for TCL.OK. This is already handled by
+	the interp.eval() method.
+	* src/jacl/tcl/lang/Interp.java (eval):
+	Don't create a new TclException when catching,
+	just reset the completion code in case it was
+	changed because TCL.RETURN was raised. This
+	matches the implementation used elsewhere.
+	Fixup some comments about the eval method.
+	* src/jacl/tcl/lang/Shell.java (processEvent):
+	Remove call to interp.updateReturnInfo() and
+	check for TCL.OK. This is already handled by
+	the interp.eval() method.
+
 2003-03-10  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* diffs.txt: Move fblocked, fconfigure, and

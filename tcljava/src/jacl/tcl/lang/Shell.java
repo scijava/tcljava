@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Shell.java,v 1.12 2003/03/08 03:42:44 mdejong Exp $
+ * RCS: @(#) $Id: Shell.java,v 1.13 2003/03/13 22:28:11 mdejong Exp $
  */
 
 package tcl.lang;
@@ -322,16 +322,7 @@ public synchronized void run() {
 			}
 
 			int code = e.getCompletionCode();
-
-		    check_code: {
-			    if (code == TCL.RETURN) {
-				code = interp.updateReturnInfo();
-				if (code == TCL.OK) { // FIXME : TCL.OK not accessable outside!!
-				    break check_code;
-				}
-			    }
-
-			    switch (code) {
+			switch (code) {
 			    case TCL.ERROR:
 				// This really sucks. The getMessage() call on
 				// a TclException will not always return a msg.
@@ -346,7 +337,6 @@ public synchronized void run() {
 				break;
 			    default:
 				putLine(err, "command returned bad code: " + code);
-			    }
 			}
 		    } finally {
 			commandObj.release();

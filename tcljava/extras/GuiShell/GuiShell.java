@@ -225,16 +225,7 @@ public class GuiShell {
     } else {
       TclException e = evt.evalException;
       int code = e.getCompletionCode();
-      
-      check_code: {
-	if (code == TCL.RETURN) {
-	  code = interp.updateReturnInfo();
-	  if (code == TCL.OK) {
-	    break check_code;
-	  }
-	}
-	
-	switch (code) {
+      switch (code) {
 	case TCL.ERROR:
 	  append(interp.getResult().toString());
 	  append("\n");
@@ -247,7 +238,6 @@ public class GuiShell {
 	  break;
 	default:
 	  append("command returned bad code: " + code + "\n");
-	}
       }
     }
     

@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.42 2003/03/05 23:19:25 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.43 2003/03/13 22:28:10 mdejong Exp $
  *
  */
 
@@ -2159,7 +2159,7 @@ throws
  *
  * eval --
  *
- *	Execute a Tcl command in a string or Tcl Object.
+ *	Execute a Tcl command in a string.
  *
  * Results:
  *	The return value is void.  However, a standard Tcl Exception
@@ -2182,7 +2182,7 @@ throws
     TclException 	// A standard Tcl exception.
 {
     int evalFlags = this.evalFlags;
-    this.evalFlags &= ~ Parser.TCL_ALLOW_EXCEPTIONS;
+    this.evalFlags &= ~Parser.TCL_ALLOW_EXCEPTIONS;
 
     CharPointer script = new CharPointer(string);
     try {
@@ -2195,7 +2195,8 @@ throws
 
 	// Update the interpreter's evaluation level count. If we are again at
 	// the top level, process any unusual return code returned by the
-	// evaluated code.
+	// evaluated code. Note that we don't propagate an exception that
+	// has a TCL.RETURN error code when updateReturnInfo() returns TCL.OK.
 
 	int result = e.getCompletionCode();
 
@@ -2207,7 +2208,8 @@ throws
 	    processUnexpectedResult(result);
 	}
 	if (result != TCL.OK) {
-	    throw new TclException(this, e.getMessage(), result);
+	    e.setCompletionCode(result);
+	    throw e;
 	}
     }
 }
@@ -2217,7 +2219,7 @@ throws
  *
  * eval --
  *
- *	Execute a Tcl command in a string or Tcl Object.
+ *	Execute a Tcl command in a string.
  *
  * Results:
  *	The return value is void.  However, a standard Tcl Exception
@@ -2246,7 +2248,7 @@ throws
  *
  * eval --
  *
- *	Execute a Tcl command in a string or Tcl Object.
+ *	Execute a Tcl command in a TclObject.
  *
  * Results:
  *	The return value is void.  However, a standard Tcl Exception
