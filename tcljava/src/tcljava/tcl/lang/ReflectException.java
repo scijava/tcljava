@@ -10,14 +10,14 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ReflectException.java,v 1.1 1998/10/14 21:09:13 cvsadmin Exp $
+ * RCS: @(#) $Id: ReflectException.java,v 1.2 1999/05/09 22:29:36 dejong Exp $
  *
  */
 package tcl.lang;
 
 import java.lang.reflect.*;
 
-/*
+/**
  * This class handles Exception's caught while invoking the Reflection
  * API. It records the string form of the Exception into the result
  * of the interpreter and stores the actual Exception object in the
@@ -58,13 +58,11 @@ ReflectException(
     if (interp != null) {
 	Throwable t = e;
 	if (t instanceof InvocationTargetException) {
-	    /*
-	     * The original exception is wrapped in InvocationTargetException
-	     * for us by the Java Reflection API. This fact doesn't provide
-	     * any interesting information to script writers, so we'll
-	     * unwrap it so that is more convenient for scripts to
-	     * figure out the exception.
-	     */
+	    // The original exception is wrapped in InvocationTargetException
+	    // for us by the Java Reflection API. This fact doesn't provide
+	    // any interesting information to script writers, so we'll
+	    // unwrap it so that is more convenient for scripts to
+	    // figure out the exception.
 
 	    t = ((InvocationTargetException) t).getTargetException();
 	}
@@ -81,14 +79,13 @@ ReflectException(
 	    throw new TclRuntimeError("unexpected TclException: " + tclex);
 	}
 
-	/*
-	 * interp.setErrorCode() may fail silently if there is an bad
-	 * trace on the "errorCode" variable. If that happens, the
-	 * errCode list we created above may hang around
-	 * forever. Hence, we added the pair of preserve() + release()
-	 * calls to ensure that errCode will get cleaned up if
-	 * interp.setErrorCode() fails.
-	 */
+	// interp.setErrorCode() may fail silently if there is an bad
+	// trace on the "errorCode" variable. If that happens, the
+	// errCode list we created above may hang around
+	// forever. Hence, we added the pair of preserve() + release()
+	// calls to ensure that errCode will get cleaned up if
+	// interp.setErrorCode() fails.
+
 
 	interp.setErrorCode(errCode);
 	errCode.release();

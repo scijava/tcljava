@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: PropertySig.java,v 1.1 1998/10/14 21:09:14 cvsadmin Exp $
+ * RCS: @(#) $Id: PropertySig.java,v 1.2 1999/05/09 22:27:33 dejong Exp $
  *
  */
 
@@ -20,31 +20,25 @@ import tcl.lang.reflect.*;
 import java.lang.reflect.*;
 import java.beans.*;
 
-/*
+/**
  * This class implements the internal representation of a Java Property
  * signature.
  */
 
 class PropertySig extends InternalRep {
 
-/*
- * The class that the property signature is used against. It is the
- * class of the java object specified in the java::prop command.
- * targetCls is used to test the validity of a cached PropertySig
- * internal rep.
- */
+// The class that the property signature is used against. It is the
+// class of the java object specified in the java::prop command.
+// targetCls is used to test the validity of a cached PropertySig
+// internal rep.
 
 Class targetCls;
 
-/*
- * Property descriptor of the property.
- */
+// Property descriptor of the property.
 
 PropertyDescriptor desc;
 
-/*
- * The PkgInvoker used to access the property. 
- */
+// The PkgInvoker used to access the property. 
 
 PkgInvoker pkgInvoker;
 
@@ -123,10 +117,8 @@ throws
 
     if ((rep instanceof PropertySig) &&
 		(targetCls == ((PropertySig)rep).targetCls)) {
-	/*
-	 * The cached internal rep is a valid property signature for
-	 * the given targetCls. Return it.
-	 */
+	// The cached internal rep is a valid property signature for
+	// the given targetCls. Return it.
 
 	return (PropertySig)rep;
     }
@@ -149,9 +141,7 @@ throws
 	    break search_prop;
 	}
 
-	/*
-	 * Search for a property that has the same name as propName.
-	 */
+	// Search for a property that has the same name as propName.
 
 	for (int i = 0; i < descriptors.length; i++) {
 	    if (descriptors[i].getName().equals(propName)) {
