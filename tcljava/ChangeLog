@@ -1,3 +1,16 @@
+2000-11-19  Christian Krone  <christian.krone@softwareag.com>
+
+	* src/jacl/tcl/lang/StdChannel.java: (Bug #121678:) The recently
+	introduced method StdChannel.getChanName() was removed again,
+	since with its existence the standard channels no longer occupy
+	the first three slots in filename channel.
+	* src/jacl/tcl/lang/ReadCmd.java:
+	* src/jacl/tcl/lang/PutsCmd.java:
+	* src/jacl/tcl/lang/GetsCmd.java: These command implementations
+	now check themself for the needed read/write access, since the
+	underlying channel don't know the user specified name of the
+	channel.
+
 2000-11-14  Mo DeJong  <mdejong@redhat.com>
 
 	* tcljava.m4: The AC_FD_LOG macro was renamed
