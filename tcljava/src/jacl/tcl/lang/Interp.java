@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.9 1999/05/09 00:41:39 dejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.10 1999/05/15 23:29:51 dejong Exp $
  *
  */
 
@@ -621,24 +621,12 @@ createCommands()
     Extension.loadOnDemand(this, "jaclloadjava", "tcl.lang.JaclLoadJavaCmd");
     
     try {
-        eval("package ifneeded java 1.2.1 jaclloadjava");
+        eval("package ifneeded java 1.2.2 jaclloadjava");
     } catch (TclException e) {
 	System.out.println(getResult());
 	e.printStackTrace();
 	throw new TclRuntimeError("unexpected TclException: " + e);
     }
-
-
-/*
-    try {
-	(new BlendExtension()).init(this);
-	RegexpCmd.init(this);
-    } catch (TclException e) {
-	System.out.println(getResult());
-	e.printStackTrace();
-	throw new TclRuntimeError("unexpected TclException: " + e);
-    }
-*/
 
 }
 
@@ -2049,7 +2037,7 @@ throws
     }
 
     try {
-	
+	// FIXME : ugly JDK 1.2 only hack
 	// Ugly workaround for compressed files BUG in JDK1.2
         // this bug first showed up in  JDK1.2beta4. I have sent
         // a number of emails to Sun but they have deemed this a "feature"
