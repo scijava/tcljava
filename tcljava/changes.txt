@@ -1,6 +1,6 @@
 Recent user-visible changes to Jacl & Tcl Blend:
 
-RCS: @(#) $Id: changes.txt,v 1.27 1999/08/15 19:37:43 mo Exp $
+RCS: @(#) $Id: changes.txt,v 1.28 1999/08/15 21:01:50 mo Exp $
 
 ----------------- Released 1.0a1, 10/22/97 -----------------------
 
@@ -940,3 +940,8 @@ off automatic loading of the java package. This has
 been fixed by moving the reflect table init code into
 the interp class where it belongs. (Mo)
 
+8/15/99 (test for wrong case in env(CLASSPATH) for Tcl Blend)
+Some users reported problems with Tcl Blend under NT when
+the CLASSPATH env variable was stored as ClassPath. There
+is now a check in the Tcl Blend pkgIndex.tcl file that
+makes sure env(CLASSPATH) uses all uppercase letters. 
