@@ -1,6 +1,6 @@
 Recent user-visible changes to Jacl & Tcl Blend:
 
-RCS: @(#) $Id: changes.txt,v 1.37 2000/01/06 01:30:50 mo Exp $
+RCS: @(#) $Id: changes.txt,v 1.38 2000/01/25 21:48:19 mo Exp $
 
 ----------------- Released 1.0a1, 10/22/97 -----------------------
 
@@ -1007,3 +1007,8 @@ really strange cases. To address this issue, I added a helpful
 error message that would tell the user which class they were
 loading when something went wrong along with the .jar file
 that we found it in if there was one. (Mo)
+
+01/25/2000 (Minor Docs fix up)
+Fixed a number of small problems in the documentation, I also
+added some more code examples to the documentation. (Mo)
+
