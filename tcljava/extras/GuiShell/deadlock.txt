@@ -1,0 +1,42 @@
+Record of bug in GuiShell:
+
+
+the event loop thread.
+
+
+  [1] tcl.lang.TclEvent.sync (TclEvent:126)
+  [2] tcl.lang.EventAdaptor._processEvent (EventAdaptor:346)
+  [3] tcl.lang.Adaptor0.method0 (pc 22)
+  [4] tcl.lang.TesterBean.fire0 (TesterBean:49)
+  [5] tcl.lang.TclPkgInvoker.invokeMethod (TclPkgInvoker:81)
+  [6] tcl.lang.JavaInvoke.call (JavaInvoke:253)
+  [7] tcl.lang.JavaInvoke.callMethod (JavaInvoke:116)
+  [8] tcl.lang.ReflectObject.cmdProc (ReflectObject:682)
+  [9] tcl.lang.Parser.evalObjv (Parser:740)
+
+
+
+  [48] tcl.lang.Parser.eval2 (Parser:1138)
+  [49] tcl.lang.Interp.eval (Interp:1773)
+  [50] tcl.lang.GuiShell$ConsoleEvent.processEvent (GuiShell$ConsoleEvent:257)
+  [51] tcl.lang.Notifier.serviceEvent (Notifier:429)
+  [52] tcl.lang.Notifier.doOneEvent (Notifier:561)
+  [53] tcl.lang.GuiShell$ThreadedTclEventLoop.run (GuiShell$ThreadedTclEventLoop:93)
+  [54] java.lang.Thread.run (Thread:474)
+
+
+
+
+stream reader thread
+
+
+
+  [1] java.io.PipedInputStream.read (PipedInputStream:201)
+  [2] java.io.PipedInputStream.read (PipedInputStream:242)
+  [3] java.io.InputStream.read (InputStream:80)
+  [4] java.io.InputStreamReader.fill (InputStreamReader:165)
+  [5] java.io.InputStreamReader.read (InputStreamReader:235)
+  [6] java.io.BufferedReader.fill (BufferedReader:144)
+  [7] java.io.BufferedReader.readLine (BufferedReader:232)
+  [8] tcl.lang.GuiShell$ThreadedStreamReader.run (GuiShell$ThreadedStreamReader:138)
+  [9] java.lang.Thread.run (Thread:474)
