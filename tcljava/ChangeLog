@@ -1,3 +1,8 @@
+2003-05-30  Kenneth H. Cox  <tclunit@attbi.com>
+
+	* src/native/javaInterp.c (BTestCmd): Change
+	C++ style comment to C style comment.
+
 2003-04-30  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* README.tclblend: Update min version of the

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaInterp.c,v 1.21 2002/12/31 21:39:38 mdejong Exp $
+ * RCS: @(#) $Id: javaInterp.c,v 1.22 2003/05/30 20:06:41 mdejong Exp $
  */
 
 #include "java.h"
@@ -1864,7 +1864,7 @@ int BTestCmd(
 		Tcl_WrongNumArgs(interp, 2, objv, "obj");
 		return TCL_ERROR;
 	    }
-	    // refCount - 1 to account for the ref added for this method
+	    /* refCount - 1 to account for the ref added for this method */
 	    Tcl_SetObjResult(interp, Tcl_NewIntObj(objv[2]->refCount - 1));
 	    break;
 	}
