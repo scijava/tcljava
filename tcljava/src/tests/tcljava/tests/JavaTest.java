@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: JavaTest.java,v 1.1 1999/05/10 04:09:02 dejong Exp $
+ * RCS: @(#) $Id: JavaTest.java,v 1.2 1999/05/16 00:06:03 dejong Exp $
  */
 
 package tests;
@@ -65,8 +65,8 @@ public class JavaTest implements CommandWithDispose {
     public char ichar		= 'J';
     public String istr		= "test string";
 
-    public Object iobj1		= new Integer(123);
-    public Object iobj2		= new String("test string obj");
+    public Integer iobj1	= new Integer(123);
+    public String iobj2		= new String("test string obj");
     public Object iobj3		= new Vector();
     public Object iobjnull	= null;
 

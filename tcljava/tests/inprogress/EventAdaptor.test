@@ -688,7 +688,7 @@ test EventAdaptor-11.1 {EventAdaptor._return_Object} {
     java::bind $x tcl.lang.Tester1Listener.method_Object {
 	return [java::new {Integer int} 1234]
     }
-    set msg [list [catch {$x fire_Object [java::null]} msg] $msg $errorInfo]
+    set msg [list [catch {[$x fire_Object [java::null]] toString} msg] $msg $errorInfo]
     update
     list [lindex $info 0] [lindex $info 2] $msg
 } {{} {} {0 1234 {}}}
