@@ -699,10 +699,14 @@ See http://www.blackdown.org/java-linux.html.])
 	    fi
 
             JAVA_SHLIB=libjava.so
-            TCLBLEND_LIBS="-lpthread -L${JAVA_DIR}/${ARCH_LIBPATH} -ljava"
+	    if test -f ${JAVA_DIR}/${ARCH_LIBNAME}/libjava.so ; then
+	        TCLBLEND_LIBS="-lpthread -L${JAVA_DIR}/${ARCH_LIBNAME} -ljava"
+	    elif test -f ${JAVA_DIR}/jre/${ARCH_LIB}/libjava.so ; then
+	        TCLBLEND_LIBS="-lpthread -L${JAVA_DIR}/jre/${ARCH_LIB} -ljava"
+	    fi
             TCLBLEND_SHLIB_NAMES="libpthread.so libjava.so"
 
-            TCLBLEND_LD_PRELOAD="libpthread.so libjava.so"
+            TCLBLEND_LD_PRELOAD=
             TCLBLEND_LD_BIND_NOW=1
 
             MSG="Using AWT GUI components under Tcl Blend with the Linux port of the JDK from Blackdown requires a special modification to jtclsh and the Makefile. See known_issues.txt for more info."
