@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the actual
 # Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.3 1999/09/14 23:46:22 redman Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.4 1999/09/15 00:59:52 wart Exp $
 
 #========================================================================
 # Edit the following few lines when writing a new extension
@@ -744,12 +744,6 @@ tests/tcljava: $(TEST_BUILD_DIR)/tcljava
 Makefile: $(srcdir)/Makefile.in  $(top_builddir)/config.status $(BUILT_SOURCES)
 	cd $(top_builddir) \
 	  && CONFIG_FILES=$@ CONFIG_HEADERS= $(SHELL) ./config.status
-
-config.status: $(srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
-	$(SHELL) ./config.status --recheck
-$(srcdir)/configure: $(srcdir)/configure.in $(ACLOCAL_M4) $(CONFIGURE_DEPENDENCIES)
-	cd $(srcdir) && $(AUTOCONF)
-
 
 uninstall-binaries:
 	@$(NORMAL_UNINSTALL)
