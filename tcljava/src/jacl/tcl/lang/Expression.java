@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Expression.java,v 1.2 1999/01/11 16:51:48 hylands Exp $
+ * RCS: @(#) $Id: Expression.java,v 1.3 1999/05/09 00:08:01 dejong Exp $
  *
  */
 
@@ -21,11 +21,9 @@ import java.util.*;
  */
 class Expression {
 
-    /*
-     * The token types are defined below.  In addition, there is a
-     * table associating a precedence with each operator.  The order
-     * of types is important.  Consult the code before changing it.
-     */
+    // The token types are defined below.  In addition, there is a
+    // table associating a precedence with each operator.  The order
+    // of types is important.  Consult the code before changing it.
 
     static final int VALUE	 = 0;
     static final int OPEN_PAREN  = 1;
@@ -34,9 +32,7 @@ class Expression {
     static final int END 	 = 4;
     static final int UNKNOWN	 = 5;
 
-    /*
-     * Binary operators:
-     */
+    // Binary operators:
 
     static final int MULT	 = 8;
     static final int DIVIDE	 = 9;
@@ -59,40 +55,34 @@ class Expression {
     static final int QUESTY	 = 26;
     static final int COLON	 = 27;
 
-    /*
-     * Unary operators:
-     */
+    // Unary operators:
 
     static final int UNARY_MINUS = 28;
     static final int UNARY_PLUS  = 29;
     static final int NOT	 = 30;
     static final int BIT_NOT	 = 31;
 
-    /*
-     * Precedence table.  The values for non-operator token types are ignored.
-     */
+    // Precedence table.  The values for non-operator token types are ignored.
 
     static int precTable[] = {
 	0, 0, 0, 0, 0, 0, 0, 0,
-	12, 12, 12,			/* MULT, DIVIDE, MOD */
-	11, 11,				/* PLUS, MINUS */
-	10, 10,				/* LEFT_SHIFT, RIGHT_SHIFT */
-	9, 9, 9, 9,			/* LESS, GREATER, LEQ, GEQ */
-	8, 8,				/* EQUAL, NEQ */
-	7,				/* BIT_AND */
-	6,				/* BIT_XOR */
-	5,				/* BIT_OR */
-	4,				/* AND */
-	3,				/* OR */
-	2,				/* QUESTY */
-	1,				/* COLON */
-	13, 13, 13, 13			/* UNARY_MINUS, UNARY_PLUS, NOT,
-					 * BIT_NOT */
+	12, 12, 12,			// MULT, DIVIDE, MOD
+	11, 11,				// PLUS, MINUS
+	10, 10,				// LEFT_SHIFT, RIGHT_SHIFT
+	9, 9, 9, 9,			// LESS, GREATER, LEQ, GEQ
+	8, 8,				// EQUAL, NEQ
+	7,				// BIT_AND
+	6,				// BIT_XOR
+	5,				// BIT_OR
+	4,				// AND
+	3,				// OR
+	2,				// QUESTY
+	1,				// COLON
+	13, 13, 13, 13			// UNARY_MINUS, UNARY_PLUS, NOT,
+					// BIT_NOT
     };
 
-    /*
-     * Mapping from operator numbers to strings;  used for error messages.
-     */
+    // Mapping from operator numbers to strings;  used for error messages.
 
     static String operatorStrings[] = {
         "VALUE", "(", ")", ",", "END", "UNKNOWN", "6", "7",
@@ -177,14 +167,12 @@ class Expression {
     Expression() {
 	mathFuncTable = new Hashtable();
 
-	/*
-	 * rand  -- missing
-	 * srand -- missing
-	 * hypot -- needs testing
-	 * fmod  -- needs testing
-	 *              try [expr fmod(4.67, 2.2)]
-	 *              the answer should be .27, but I got .2699999999999996
-	 */
+	// rand  -- needs testing
+	// srand -- needs testing
+	// hypot -- needs testing
+	// fmod  -- needs testing
+	//              try [expr fmod(4.67, 2.2)]
+	//              the answer should be .27, but I got .2699999999999996
 
 	mathFuncTable.put("atan2", new Atan2Function());
 	mathFuncTable.put("pow",   new PowFunction());
@@ -230,11 +218,9 @@ class Expression {
     private final ExprValue ExprTopLevel(Interp interp, String string)
 	    throws TclException {
 
-	/*
-	 * Saved the state variables so that recursive calls to expr
-	 * can work:
-	 *	expr {[expr 1+2] + 3}
-	 */
+	// Saved the state variables so that recursive calls to expr
+	// can work:
+	//	expr {[expr 1+2] + 3}
 
         String m_expr_saved = m_expr;
 	int m_len_saved     = m_len;
@@ -315,19 +301,35 @@ class Expression {
 	    throws TclException {
 
 	int len = s.length();
+
+/*
+	System.out.println("now to ExprParseString ->" + s +
+		 "<- of length " + len);
+*/
+
+	// Take shortcut when string is of length 0, as there is
+        // only a string rep for an empty string (no int or double rep)
+        // this will happend a lot so this shortcut will speed things up!
+
+	if (len == 0) {
+		return new ExprValue(s);
+	}
+
+	// The strings "0" and "1" are going to occure a lot
+        // it might be wise to include shortcuts for these cases
+
+
 	int i;
 	if (ExprLooksLikeInt(s, len, 0)) {
-	    long value;
+	    //System.out.println("string looks like an int");
 
-	    /*
-	     * Note: use strtoul instead of strtol for integer conversions
-	     * to allow full-size unsigned numbers, but don't depend on
-	     * strtoul to handle sign characters;  it won't in some
-	     * implementations.
-	     */
+	    // Note: use strtoul instead of strtol for integer conversions
+	    // to allow full-size unsigned numbers, but don't depend on
+	    // strtoul to handle sign characters;  it won't in some
+	    // implementations.
     
 	    for (i = 0; Character.isWhitespace(s.charAt(i)); i++) {
-		/* Empty loop body. */
+		// Empty loop body.
 	    }
 
 	    StrtoulResult res;
@@ -342,12 +344,34 @@ class Expression {
 		res = Util.strtoul(s, i, 0);
 	    }
 
+            if (res.errno == 0) {
+		// We treat this string as a number if all the charcters
+		// following the parsed number are a whitespace char
+		// E.g.: " 1", "1", "1 ", and " 1 "  are all good numbers
+
+                boolean trailing_blanks = true;
+
+	        for (i = res.index; i < len ; i++) {
+                    if (! Character.isWhitespace( s.charAt(i) )) {
+                        trailing_blanks = false;
+                    }
+	        }
+
+                if (trailing_blanks) {
+	            //System.out.println("string is an Integer of value " + res.value);
+		    m_token = VALUE;
+		    return new ExprValue(res.value);
+                }
+            } else if (res.errno == TCL.INTEGER_RANGE) {
+		    IntegerTooLarge(interp);
+            }
+
+
+/*
 	    if (res.index == len) {
-		/*
-		 * We treat this string as a number only if the number
-		 * ends at the end of the string. E.g.: " 1", "1" are
-		 * good numbers but "1 " is not.
-		 */
+		// We treat this string as a number only if the number
+		// ends at the end of the string. E.g.: " 1", "1" are
+		// good numbers but "1 " is not.
 
 		if (res.errno == TCL.INTEGER_RANGE) {
 		    IntegerTooLarge(interp);
@@ -356,24 +380,57 @@ class Expression {
 		    return new ExprValue(res.value);
 		}
 	    }
+*/
 	} else {
+	    //System.out.println("string does not look like an int, checking for Double");
+
 	    StrtodResult res = Util.strtod(s, 0);
-	    if (res.index == len) {
-                if (res.errno == 0) { // then double conversion worked!
-                    m_token = VALUE;
-                    return new ExprValue(res.value);
-                } else if (res.errno == TCL.DOUBLE_RANGE) {
-                    DoubleTooLarge(interp);
+
+            if (res.errno == 0) {
+		// Trailing whitespaces are treated just like the Integer case
+
+                boolean trailing_blanks = true;
+
+	        for (i = res.index; i < len ; i++) {
+                    if (! Character.isWhitespace( s.charAt(i) )) {
+                        trailing_blanks = false;
+                    }
+	        }
+
+                if (trailing_blanks) {
+	            //System.out.println("string is a Double of value " + res.value);
+		    m_token = VALUE;
+		    return new ExprValue(res.value);
                 }
-                // If res.errno is any other value (like TCL.INVALID_DOUBLE)
-                // just fall through and use the string rep.
+
+            } else if (res.errno == TCL.DOUBLE_RANGE) {
+                DoubleTooLarge(interp);
             }
+            // if res.errno is any other value (like TCL.INVALID_DOUBLE)
+            // just fall through and use the string rep
+
+
+/*
+	    if (res.index == len) {
+
+		if (res.errno == 0) {
+	            //System.out.println("string is a Double of value " + res.value);
+		    m_token = VALUE;
+		    return new ExprValue(res.value);
+		} else if (res.errno == TCL.DOUBLE_RANGE) {
+		    DoubleTooLarge(interp);
+		}
+	    }
+*/
+
+
 	}
 
-	/*
-	 * Not a valid number.  Save a string value (but don't do anything
-	 * if it's already the value).
-	 */
+	//System.out.println("string is not a valid number, returning as string");
+
+	// Not a valid number.  Save a string value (but don't do anything
+	// if it's already the value).
+
 	return new ExprValue(s);
     }
 
@@ -389,23 +446,22 @@ class Expression {
     private ExprValue ExprGetValue(Interp interp, int prec)
 	    throws TclException {
 	int operator;
-	boolean gotOp = false;		/* True means already lexed the
-					 * operator (while picking up value
-					 * for unary operator).  Don't lex
-					 * again. */
+	boolean gotOp = false;		// True means already lexed the
+					// operator (while picking up value
+					// for unary operator).  Don't lex
+					// again.
 	ExprValue value, value2;
 
-        /*
-	 * There are two phases to this procedure.  First, pick off an
-	 * initial value.  Then, parse (binary operator, value) pairs
-	 * until done.
-	 */
+	// There are two phases to this procedure.  First, pick off an
+	// initial value.  Then, parse (binary operator, value) pairs
+	// until done.
+
 	value = ExprLex(interp);
 
 	if (m_token == OPEN_PAREN) {
-	    /*
-	     * Parenthesized sub-expression.
-	     */
+
+	    // Parenthesized sub-expression.
+
 	    value = ExprGetValue(interp, -1);
 	    if (m_token != CLOSE_PAREN) {
 		throw new TclException(interp, "unmatched parentheses in " + 
@@ -420,9 +476,8 @@ class Expression {
 	    }
 	    if (m_token >= UNARY_MINUS) {
 
-		/*
-		 * Process unary operators.
-		 */
+		// Process unary operators.
+
 		operator = m_token;
 		value = ExprGetValue(interp, precTable[m_token]);
 
@@ -479,9 +534,7 @@ class Expression {
 	    SyntaxError(interp);
 	}
 
-	/*
-	 * Got the first operand.  Now fetch (operator, operand) pairs.
-	 */
+	// Got the first operand.  Now fetch (operator, operand) pairs.
 
 	if (!gotOp) {
 	    value2 = ExprLex(interp);
@@ -501,11 +554,9 @@ class Expression {
 		return value;	// (goto done)
 	    }
 
-	    /*
-	     * If we're doing an AND or OR and the first operand already
-	     * determines the result, don't execute anything in the
-	     * second operand:  just parse.  Same style for ?: pairs.
-	     */
+	    // If we're doing an AND or OR and the first operand already
+	    // determines the result, don't execute anything in the
+	    // second operand:  just parse.  Same style for ?: pairs.
 
 	    if ((operator == AND) || (operator == OR) ||(operator == QUESTY)){
 
@@ -517,11 +568,9 @@ class Expression {
 			IllegalType(interp, ExprValue.STRING, operator);
 		    }
 
-		    /*
-		     * Must set value.intValue to avoid referencing
-		     * uninitialized memory in the "if" below;  the actual
-		     * value doesn't matter, since it will be ignored.
-		     */
+		    // Must set value.intValue to avoid referencing
+		    // uninitialized memory in the "if" below;  the actual
+		    // value doesn't matter, since it will be ignored.
 		    
 		    value.intValue = 0;
 		}
@@ -538,11 +587,9 @@ class Expression {
 		    }
 		    continue;
 		} else if (operator == QUESTY) {
-		    /*
-		     * Special note:  ?: operators must associate right to
-		     * left.  To make this happen, use a precedence one lower
-		     * than QUESTY when calling ExprGetValue recursively.
-		     */
+		    // Special note:  ?: operators must associate right to
+		    // left.  To make this happen, use a precedence one lower
+		    // than QUESTY when calling ExprGetValue recursively.
 
 		    if (value.intValue != 0) {
 			value = ExprGetValue(interp, precTable[QUESTY] - 1);
@@ -587,19 +634,15 @@ class Expression {
 		continue;
 	    }
 
-	    /*
-	     * At this point we've got two values and an operator.  Check
-	     * to make sure that the particular data types are appropriate
-	     * for the particular operator, and perform type conversion
-	     * if necessary.
-	     */
+	    // At this point we've got two values and an operator.  Check
+	    // to make sure that the particular data types are appropriate
+	    // for the particular operator, and perform type conversion
+	    // if necessary.
 
 	    switch (operator) {
 
-	    /*
-	     * For the operators below, no strings are allowed and
-	     * ints get converted to floats if necessary.
-	     */
+	    // For the operators below, no strings are allowed and
+	    // ints get converted to floats if necessary.
 
 	    case MULT: case DIVIDE: case PLUS: case MINUS:
 		if ((value.type == ExprValue.STRING)
@@ -619,9 +662,7 @@ class Expression {
 		}
 		break;
 
-	    /*
-	     * For the operators below, only integers are allowed.
-	     */
+	    // For the operators below, only integers are allowed.
 
 	    case MOD: case LEFT_SHIFT: case RIGHT_SHIFT:
 	    case BIT_AND: case BIT_XOR: case BIT_OR:
@@ -632,11 +673,9 @@ class Expression {
 		 }
 		 break;
 
-	    /*
-	     * For the operators below, any type is allowed but the
-	     * two operands must have the same type.  Convert integers
-	     * to floats and either to strings, if necessary.
-	     */
+	    // For the operators below, any type is allowed but the
+	    // two operands must have the same type.  Convert integers
+	    // to floats and either to strings, if necessary.
 
 	    case LESS: case GREATER: case LEQ: case GEQ:
 	    case EQUAL: case NEQ:
@@ -661,10 +700,8 @@ class Expression {
 		}
 		break;
 
-	    /*
-	     * For the operators below, no strings are allowed, but
-	     * no int->double conversions are performed.
-	     */
+	    // For the operators below, no strings are allowed, but
+	    // no int->double conversions are performed.
 
 	    case AND: case OR:
 		if (value.type == ExprValue.STRING) {
@@ -675,25 +712,20 @@ class Expression {
 		}
 		break;
 
-	    /*
-	     * For the operators below, type and conversions are
-	     * irrelevant:  they're handled elsewhere.
-	     */
+	    // For the operators below, type and conversions are
+	    // irrelevant:  they're handled elsewhere.
 
 	    case QUESTY: case COLON:
 		break;
 
-	    /*
-	     * Any other operator is an error.
-	     */
+	    // Any other operator is an error.
+
 	    default:
 		throw new TclException(interp,
 			"unknown operator in expression");
 	    }
 
-	    /*
-	     * Carry out the function of the specified operator.
-	     */
+	    // Carry out the function of the specified operator.
 
 	    switch (operator) {
 	    case MULT:
@@ -713,13 +745,11 @@ class Expression {
 		        DivideByZero(interp);
 		    }
 
-		    /*
-		     * The code below is tricky because C doesn't guarantee
-		     * much about the properties of the quotient or
-		     * remainder, but Tcl does:  the remainder always has
-		     * the same sign as the divisor and a smaller absolute
-		     * value.
-		     */
+		    // The code below is tricky because C doesn't guarantee
+		    // much about the properties of the quotient or
+		    // remainder, but Tcl does:  the remainder always has
+		    // the same sign as the divisor and a smaller absolute
+		    // value.
 
 		    divisor = value2.intValue;
 		    negative = false;
@@ -760,20 +790,18 @@ class Expression {
 		}
 		break;
 	    case LEFT_SHIFT:
-		value.intValue <<= (int)value2.intValue;
+		value.intValue <<= (int) value2.intValue;
 		break;
 	    case RIGHT_SHIFT:
-		/*
-		 * The following code is a bit tricky:  it ensures that
-		 * right shifts propagate the sign bit even on machines
-		 * where ">>" won't do it by default.
-		 */
+		// The following code is a bit tricky:  it ensures that
+		// right shifts propagate the sign bit even on machines
+		// where ">>" won't do it by default.
 
 		if (value.intValue < 0) {
 		    value.intValue =
 			    ~((~value.intValue) >> value2.intValue);
 		} else {
-		    value.intValue >>= (int)value2.intValue;
+		    value.intValue >>= (int) value2.intValue;
 		}
 		break;
 	    case LESS:
@@ -864,11 +892,9 @@ class Expression {
 		value.intValue |= value2.intValue;
 		break;
 
-	    /*
-	     * For AND and OR, we know that the first value has already
-	     * been converted to an integer.  Thus we need only consider
-	     * the possibility of int vs. double for the second value.
-	     */
+	    // For AND and OR, we know that the first value has already
+	    // been converted to an integer.  Thus we need only consider
+	    // the possibility of int vs. double for the second value.
 
 	    case AND:
 		if (value2.type == ExprValue.DOUBLE) {
@@ -909,20 +935,19 @@ class Expression {
 	char c, c2;
 
 	while (m_ind < m_len && Character.isWhitespace(m_expr.charAt(m_ind))) {
-	    m_ind ++;
+	    m_ind++;
 	}
 	if (m_ind >= m_len) {
 	    m_token = END;
 	    return null;
 	}
 
-	/*
-	 * First try to parse the token as an integer or
-	 * floating-point number.  Don't want to check for a number if
-	 * the first character is "+" or "-".  If we do, we might
-	 * treat a binary operator as unary by
-	 * mistake, which will eventually cause a syntax error.
-	 */
+	// First try to parse the token as an integer or
+	// floating-point number.  Don't want to check for a number if
+	// the first character is "+" or "-".  If we do, we might
+	// treat a binary operator as unary by
+	// mistake, which will eventually cause a syntax error.
+
 	c = m_expr.charAt(m_ind);
 	if (m_ind < m_len-1) {
 	    c2 = m_expr.charAt(m_ind+1);
@@ -932,7 +957,6 @@ class Expression {
 
 	if ((c != '+')  && (c != '-')) {
 	    if (ExprLooksLikeInt(m_expr, m_len, m_ind)) {
-		long value;
 		StrtoulResult res = Util.strtoul(m_expr, m_ind, 0);
 
 		if (res.errno == 0) {
@@ -989,11 +1013,20 @@ class Expression {
 	case '"':
 	    m_token = VALUE;
 
+
+	    //System.out.println("now to parse from ->" + m_expr + "<- at index "
+	//	+ m_ind);
+
 	    pres = ParseAdaptor.parseQuotes(interp, m_expr, m_ind, m_len);
 	    m_ind = pres.nextIndex;
+
+	 //   System.out.println("after parse next index is " + m_ind);
+
 	    if (interp.noEval != 0) {
+	  //      System.out.println("returning noEval zero value");
 		return new ExprValue(0);
 	    } else {
+	   //     System.out.println("returning value string ->" + pres.value.toString() + "<-" );
 		return ExprParseString(interp, pres.value.toString());
 	    }
 
@@ -1125,11 +1158,10 @@ class Expression {
 
 	default:
 	    if (Character.isLetter(c)) {
-		/*
-		 * Oops, re-adjust m_ind so that it points to the beginning
-		 * of the function name.
-		 */
-		m_ind --;
+		// Oops, re-adjust m_ind so that it points to the beginning
+		// of the function name.
+
+		m_ind--;
 		return mathFunction(interp);
 	    }
 	    m_token = UNKNOWN;
@@ -1153,11 +1185,9 @@ class Expression {
 	TclObject argv[] = null;
 	int numArgs;
 
-	/*
-	 * Find the end of the math function's name and lookup the MathFunc
-	 * record for the function.  Search until the char at m_ind is not
-	 * alphanumeric or '_'
-	 */
+	// Find the end of the math function's name and lookup the MathFunc
+	// record for the function.  Search until the char at m_ind is not
+	// alphanumeric or '_'
 
 	for (; m_ind<m_len; m_ind++) {
 	    if (!(Util.isLetterOrDigit(m_expr.charAt(m_ind)) ||
@@ -1166,35 +1196,29 @@ class Expression {
 	    }
 	}
 
-	/*
-	 * Get the funcName BEFORE calling ExprLex, so the funcName
-	 * will not have trailing whitespace.
-	 */
+	// Get the funcName BEFORE calling ExprLex, so the funcName
+	// will not have trailing whitespace.
 
 	funcName = m_expr.substring(startIdx, m_ind);
 
-	/*
-	 * Parse errors are thrown BEFORE unknown function names
-	 */
+	// Parse errors are thrown BEFORE unknown function names
 
 	ExprLex(interp);
 	if (m_token != OPEN_PAREN) {
 	    SyntaxError(interp);
 	}
 
-	/*
-	 * Now test for unknown funcName.  Doing the above statements
-	 * out of order will cause some tests to fail.
-	 */
-	mathFunc = (MathFunction)mathFuncTable.get(funcName);
+	// Now test for unknown funcName.  Doing the above statements
+	// out of order will cause some tests to fail.
+
+	mathFunc = (MathFunction) mathFuncTable.get(funcName);
 	if (mathFunc == null) {
 	    throw new TclException(interp,
 		    "unknown math function \"" + funcName + "\"");
 	}
 
-	/*
-	 * Scan off the arguments for the function, if there are any.
-	 */
+	// Scan off the arguments for the function, if there are any.
+
 	numArgs = mathFunc.argTypes.length;
 
 	if (numArgs == 0) {
@@ -1212,16 +1236,15 @@ class Expression {
 			"argument to math function didn't have numeric value");
 		}
     
-		/*
-		 * Copy the value to the argument record, converting it if
-		 * necessary.
-		 */    
+		// Copy the value to the argument record, converting it if
+		// necessary.
+
 		if (value.type == ExprValue.INT) {
 		    if (mathFunc.argTypes[i] == MathFunction.DOUBLE) {
-			argv[i] = TclDouble.newInstance((int)value.intValue);
+			argv[i] = TclDouble.newInstance((int) value.intValue);
 		    } else {
-			argv[i] = TclInteger.newInstance((int)
-				value.intValue);
+			argv[i] = TclInteger.newInstance(
+				(int) value.intValue);
 		    }
 		} else {
 		    if (mathFunc.argTypes[i] == MathFunction.INT) {
@@ -1232,10 +1255,8 @@ class Expression {
 		    }
 		}
     
-		/*
-		 * Check for a comma separator between arguments or a
-		 * close-paren to end the argument list.
-		 */
+		// Check for a comma separator between arguments or a
+		// close-paren to end the argument list.
     
 		if (i == (numArgs-1)) {
 		    if (m_token == CLOSE_PAREN) {
@@ -1279,7 +1300,7 @@ class Expression {
 
     private static boolean ExprLooksLikeInt(String s, int len, int i) {
 	while (i < len && Character.isWhitespace(s.charAt(i))) {
-	    i ++;
+	    i++;
 	}
 	if (i >= len) {
 	    return false;
@@ -1292,19 +1313,34 @@ class Expression {
 	    }
 	    c = s.charAt(i);
 	}
-	if (!Character.isDigit(c)) {
+	if (! Character.isDigit(c)) {
 	    return false;
 	}
 	while (i < len && Character.isDigit(s.charAt(i))) {
+	    //System.out.println("'" + s.charAt(i) + "' is a digit");
 	    i++;
 	}
+	if (i >= len) {
+            return true;
+	}
+
+//ported from C code
+        c = s.charAt(i);
+        if ((c != '.') && (c != 'e') && (c != 'E')) {
+            return true;
+        }
+
+//original
+/*
 	if (i < len) {
 	    c = s.charAt(i);
 	    if ((c == '.') || (c == 'e') || (c == 'E')) {
 		return false;
 	    }
 	}
-	return true;
+*/
+
+	return false;
     }
 
     /**
@@ -1665,23 +1701,23 @@ class TanhFunction extends UnaryMathFunction {
 }
 
 class RandFunction extends NoArgMathFunction {
-    /*
-     * Generate the random number using the linear congruential
-     * generator defined by the following recurrence:
-     *		seed = ( IA * seed ) mod IM
-     * where IA is 16807 and IM is (2^31) - 1.  In order to avoid
-     * potential problems with integer overflow, the  code uses
-     * additional constants IQ and IR such that
-     *		IM = IA*IQ + IR
-     * For details on how this algorithm works, refer to the following
-     * papers: 
-     *
-     *	S.K. Park & K.W. Miller, "Random number generators: good ones
-     *	are hard to find," Comm ACM 31(10):1192-1201, Oct 1988
-     *
-     *	W.H. Press & S.A. Teukolsky, "Portable random number
-     *	generators," Computers in Physics 6(5):522-524, Sep/Oct 1992.
-     */
+
+    // Generate the random number using the linear congruential
+    // generator defined by the following recurrence:
+    //		seed = ( IA * seed ) mod IM
+    // where IA is 16807 and IM is (2^31) - 1.  In order to avoid
+    // potential problems with integer overflow, the  code uses
+    // additional constants IQ and IR such that
+    //		IM = IA*IQ + IR
+    // For details on how this algorithm works, refer to the following
+    // papers: 
+    //
+    //	S.K. Park & K.W. Miller, "Random number generators: good ones
+    //	are hard to find," Comm ACM 31(10):1192-1201, Oct 1988
+    //
+    //	W.H. Press & S.A. Teukolsky, "Portable random number
+    //	generators," Computers in Physics 6(5):522-524, Sep/Oct 1992.
+
 
     private static final int randIA   = 16807;
     private static final int randIM   = 2147483647;
@@ -1706,7 +1742,6 @@ class RandFunction extends NoArgMathFunction {
     static ExprValue statApply(Interp interp, TclObject argv[])  
 	    throws TclException {
 
-	double dResult;
 	int tmp;
 
 	if (!(interp.randSeedInit)) {
@@ -1715,15 +1750,13 @@ class RandFunction extends NoArgMathFunction {
 	}
 
 	if (interp.randSeed == 0) {
-	    /*
-	     * Don't allow a 0 seed, since it breaks the generator.  Shift
-	     * it to some other value.
-	     */
+	    // Don't allow a 0 seed, since it breaks the generator.  Shift
+	    // it to some other value.
 
 	    interp.randSeed = 123459876;
 	}
 
-	tmp = (int)(interp.randSeed / randIQ);
+	tmp = (int) (interp.randSeed / randIQ);
 	interp.randSeed = ((randIA * (interp.randSeed - tmp * randIQ))
                 - randIR*tmp);
 	    
@@ -1741,17 +1774,15 @@ class SrandFunction extends UnaryMathFunction {
     ExprValue apply(Interp interp, TclObject argv[])
 	    throws TclException {
 
-        /*
-	 * Reset the seed.
-	 */
+	// Reset the seed.
+
 	interp.randSeedInit = true;
-	interp.randSeed     = (long)TclDouble.get(interp, argv[0]);
+	interp.randSeed     = (long) TclDouble.get(interp, argv[0]);
 	
-	/*
-	 * To avoid duplicating the random number generation code we simply
-	 * call the static random number generator in the RandFunction 
-	 * class.
-	 */
+	// To avoid duplicating the random number generation code we simply
+	// call the static random number generator in the RandFunction 
+	// class.
+
 	return (RandFunction.statApply(interp, null));
     }
 }
