@@ -470,12 +470,6 @@ AC_DEFUN([AC_JAVA_CLASSPATH], [
         AC_MSG_ERROR([jvm directory not set])
     fi
 
-    # Use the CLASSPATH env variable is the user set it
-    if test "x$CLASSPATH" != "x" ; then
-        AC_MSG_LOG([Grabbing user supplied CLASSPATH env var])
-        ac_java_classpath=$CLASSPATH
-    fi
-
     # GNU gcj does not need to set the CLASSPATH.
 
     # Kaffe 1.X
@@ -526,6 +520,14 @@ AC_DEFUN([AC_JAVA_CLASSPATH], [
             AC_MSG_LOG([Found $ac_java_jvm_dir/$F], 1)
             ac_java_classpath=$ac_java_jvm_dir/$F
         fi
+    fi
+
+    # Append CLASSPATH if env var is set. Avoid append
+    # under msys because CLASSPATH is in Win32 format
+    # and we can't combine it with a msys path.
+    if test "x$CLASSPATH" != "x" && test "$ac_cv_tcl_win32" != "yes" ; then
+        AC_MSG_LOG([Adding user supplied CLASSPATH env var])
+        ac_java_classpath="${ac_java_classpath}:${CLASSPATH}"
     fi
 
     AC_MSG_LOG([Using CLASSPATH=$ac_java_classpath], 1)

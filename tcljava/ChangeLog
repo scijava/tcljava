@@ -1,3 +1,14 @@
+2003-09-09  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* configure: Regen.
+	* tcljava.m4 (AC_JAVA_CLASSPATH): Avoid using
+	an existing CLASSPATH env var under msys+mingw
+	since the mixing of Win32 and Unix style paths
+	was causing problems. Append an existing CLASSPATH
+	env var value to the detected ac_java_classpath
+	instead of skipping the detection step when a
+	CLASSPATH is set.
+
 2003-09-02  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* Makefile.in: Update the tclblendDist rule
