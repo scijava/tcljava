@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: ArrayObject.java,v 1.3 2002/12/27 02:44:41 mdejong Exp $
+ * RCS: @(#) $Id: ArrayObject.java,v 1.4 2002/12/30 02:30:54 mdejong Exp $
  *
  */
 
@@ -370,8 +370,8 @@ throws
     Object arrayObj;
     try {
 	arrayObj = Array.newInstance(compCls, arrayLength);
-    } catch (Exception ex) {
-	throw new ReflectException(interp, ex);
+    } catch (NegativeArraySizeException ex) {
+	throw new TclException(interp, "negative array size " + arrayLength);
     }
 
     if (compCls.isArray()) {

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: JavaDefineClassCmd.java,v 1.1 1998/10/14 21:09:14 cvsadmin Exp $
+ * RCS: @(#) $Id: JavaDefineClassCmd.java,v 1.2 2002/12/30 02:30:54 mdejong Exp $
  */
 
 package tcl.lang;
@@ -54,12 +54,8 @@ throws
     tclClassLoader = new TclClassLoader(interp, null);
     result = tclClassLoader.defineClass(null, classData);
     
-    try {
-	interp.setResult(ReflectObject.newInstance(interp,
-					      Class.class, result));
-    } catch (Exception e) {
-	throw new ReflectException(interp, e);
-    }
+    interp.setResult(ReflectObject.newInstance(interp,
+            Class.class, result));
 }
 
 } // end JavaNewCmd
