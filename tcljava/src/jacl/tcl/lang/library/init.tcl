@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.1 1998/10/14 21:09:21 cvsadmin Exp $
+# RCS: @(#) $Id: init.tcl,v 1.2 1999/05/09 01:41:08 dejong Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -37,11 +37,17 @@ package require -exact Tcl 8.0
 
 # Compute the auto path to use in this interpreter.
 # (auto_path could be already set, in safe interps for instance)
-if {![info exists auto_path]} {
-    if [catch {set auto_path $env(TCLLIBPATH)}] {
-	set auto_path ""
-    }
+
+if {[info exists env(TCLLIBPATH)]} {
+    lappend auto_path $env(TCLLIBPATH)
 }
+
+#if {![info exists auto_path]} {
+#    if [catch {set auto_path $env(TCLLIBPATH)}] {
+#	set auto_path ""
+#    }
+#}
+
 if {[lsearch -exact $auto_path [info library]] < 0} {
     lappend auto_path [info library]
 }
@@ -96,9 +102,9 @@ if {[info commands tclLog] == ""} {
 # args -	A list whose elements are the words of the original
 #		command, including the command name.
 
-proc unknown args {
+proc unknown {args} {
     global auto_noexec auto_noload env unknown_pending tcl_interactive
-    global errorCode errorInfo
+    global errorCode errorInfo tcl_platform
 
     # Save the values of errorCode and errorInfo variables, since they
     # may get modified if caught errors occur below.  The variables will
@@ -107,11 +113,11 @@ proc unknown args {
     set savedErrorCode $errorCode
     set savedErrorInfo $errorInfo
     set name [lindex $args 0]
-    if ![info exists auto_noload] {
+    if {! [info exists auto_noload]} {
 	#
 	# Make sure we're not trying to load the same proc twice.
 	#
-	if [info exists unknown_pending($name)] {
+	if {[info exists unknown_pending($name)]} {
 	    return -code error "self-referential recursion in \"unknown\" for command \"$name\"";
 	}
 	set unknown_pending($name) pending;
@@ -121,10 +127,10 @@ proc unknown args {
 	    return -code $ret -errorcode $errorCode \
 		"error while autoloading \"$name\": $msg"
 	}
-	if ![array size unknown_pending] {
+	if {! [array size unknown_pending]} {
 	    catch {unset unknown_pending}
 	}
-	if $msg {
+	if {$msg} {
 	    set errorCode $savedErrorCode
 	    set errorInfo $savedErrorInfo
 	    set code [catch {uplevel 1 $args} msg]
@@ -146,31 +152,46 @@ proc unknown args {
     if {([info level] == 1) && ([info script] == "") \
 	    && [info exists tcl_interactive] && $tcl_interactive} {
 
-	# The following code is temporarily replaced until exec and
-	# environment varibale issues are resolved.
+	# Java does not provide a way to read environmental variables
+	# so we have to do a nasty workaround here so that exec will
+	# work from an unknown command.
 
-	#if ![info exists auto_noexec] {
-	#    set new [auto_execok $name]
-	#    if {$new != ""} {
-	#	set errorCode $savedErrorCode
-	#	set errorInfo $savedErrorInfo
-	#	set redir ""
-	#	if {[info commands console] == ""} {
-	#	    set redir ">&@stdout <@stdin"
-	#	}
-	#	return [uplevel exec $redir $new [lrange $args 1 end]]
-	#    }
-	#}
+	if {$tcl_platform(host_platform) == "unix"} {
 
-	# The temporary replacement code will simply exec the command
-	# and catch the result.
+	    # Hack to get the PATH environmental var on UNIX
+	    if {! [info exists env(PATH)]} {
+		set env(PATH) [exec /bin/sh -c "echo \$PATH"]
+	    }
 
-	set code [catch {uplevel exec $args} msg] 
-	if {$code != 1} {
-	    return -code $code $msg
-	} 
+	    if {! [info exists auto_noexec]} {
+		set new [auto_execok $name]
+		if {$new != ""} {
+		    set errorCode $savedErrorCode
+		    set errorInfo $savedErrorInfo
+		    set redir ""
+                    # redirection is not supported by Jacl's exec
+		    #if {[info commands console] == ""} {
+		    #    set redir ">&@stdout <@stdin"
+		    #}
+		    return [uplevel exec $redir $new [lrange $args 1 end]]
+		}
+	    }
 
-	# end temporary replacement code
+	} else {
+
+	    # No PATH workaround exists for Windows systems. The only thing
+	    # we can do is try to exec the program. If an error is raised
+	    # we have no way to tell if the error was caused by a non existent
+	    # program or one that raised and error. Only return non error results.
+
+	    if {! [info exists auto_noexec]} {
+
+		set code [catch {uplevel exec $args} msg] 
+		if {$code == 0} {
+		    return -code $code $msg
+		}
+	    }
+	}
 
 	set errorCode $savedErrorCode
 	set errorInfo $savedErrorInfo
@@ -390,10 +411,10 @@ proc auto_execok name {
 
 # Unix version.
 #
-proc auto_execok name {
+proc auto_execok {name} {
     global auto_execs env
 
-    if [info exists auto_execs($name)] {
+    if {[info exists auto_execs($name)]} {
 	return $auto_execs($name)
     }
     set auto_execs($name) ""
