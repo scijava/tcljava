@@ -1,5 +1,10 @@
 2000-07-13  Mo DeJong  <mdejong@redhat.com>
 
+	* tcljava.m4: Add doublequotes around
+	test variables that might be empty.
+
+2000-07-13  Mo DeJong  <mdejong@redhat.com>
+
 	* src/empty/empty.jar: Regen.
 	* src/empty/tcl/lang/Interp.java:
 	* src/jacl/tcl/lang/Interp.java:

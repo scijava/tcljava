@@ -58,7 +58,7 @@ AC_DEFUN([TCLJAVA_VERSION_CHECK], [
     TOOLS=$srcdir/unix/tools
 
     # The tools directory is not distributed in dist .tar files.
-    if test -d $TOOLS ; then
+    if test -d "$TOOLS" ; then
 
         # Check that grep is working by looking for the match to the
         # current version number in the configure.in file.
@@ -160,7 +160,7 @@ AC_DEFUN([AC_JAVA_WITH_JDK], [
     AC_ARG_WITH(jdk, [  --with-jdk=DIR          use Sun's JDK from DIR], ok=$withval, ok=no)
     if test "$ok" = "no" ; then
         NO=op
-    elif test "$ok" = "yes" || test ! -d $ok; then
+    elif test "$ok" = "yes" || test ! -d "$ok"; then
         AC_MSG_ERROR([--with-jdk=DIR option, must pass a valid DIR])
     elif test "$ok" != "no" ; then
         ac_java_jvm_dir=$ok
@@ -186,7 +186,7 @@ AC_DEFUN([AC_JAVA_WITH_KAFFE], [
     AC_ARG_WITH(kaffe, [  --with-kaffe=DIR        use Kaffe Open JVM], ok=$withval, ok=no)
     if test "$ok" = "no" ; then
         NO=op
-    elif test "$ok" = "yes" || test ! -d $ok; then
+    elif test "$ok" = "yes" || test ! -d "$ok"; then
         AC_MSG_ERROR([--with-kaffe=DIR option, must pass a valid DIR])
     elif test "$ok" != "no" ; then
         ac_java_jvm_dir=$ok
@@ -223,7 +223,7 @@ AC_DEFUN([AC_JAVA_WITH_JIKES], [
         else
             JIKES=$ok
         fi
-        if test ! -f $JIKES ; then
+        if test ! -f "$JIKES" ; then
             AC_MSG_ERROR([jikes executable '$JIKES' does not exist or is not executable.])
         fi
         AC_MSG_LOG([Using JIKES=$JIKES], 1)
@@ -877,7 +877,7 @@ if test $TCLJAVA = "tclblend" || test $TCLJAVA = "both"; then
     AC_ARG_WITH(tcl, [  --with-tcl=DIR          build directory for Tcl 8.3.1 (or newer) source release from DIR],
     	TCL_BIN_DIR=$withval, TCL_BIN_DIR="$srcdir/../tcl8.3.1/unix")
 
-    if test ! -d $TCL_BIN_DIR; then
+    if test ! -d "$TCL_BIN_DIR"; then
         AC_MSG_ERROR([Tcl directory $TCL_BIN_DIR could not be located.
 Use the --with-tcl=<dirName> configure flag to specify the location.])
     else
@@ -903,8 +903,8 @@ Use the --with-tcl=<dirName> configure flag to specify the location.])
 
     file=$TCL_BIN_DIR/tclConfig.sh
     . $file
-    if test $TCL_SHARED_BUILD -eq 0 ; then
-	AC_MSG_ERROR([Tcl was not built correctly.  
+    if test "$TCL_SHARED_BUILD" = "0" ; then
+        AC_MSG_ERROR([Tcl was not built correctly.  
 Make sure Tcl was configured with --enable-shared.])
     fi
 
@@ -1009,7 +1009,7 @@ if test $TCLJAVA = "tclblend" || test $TCLJAVA = "both"; then
   TCLSH=$TCL_EXEC_PREFIX/bin/tclsh$TCL_VERSION
   WISH=$TCL_EXEC_PREFIX/bin/wish$TCL_VERSION
 
-  if test ! -x $TCLSH; then
+  if test ! -x "$TCLSH"; then
       AC_MSG_WARN([Tcl has not been installed yet, it must be installed before installing Tcl Blend])
   fi
 

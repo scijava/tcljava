@@ -99,7 +99,7 @@ do
     continue
   fi
 
-  ac_optarg=`echo "$ac_option" | sed -n 's/^[^=]*=//p'`
+  ac_optarg=`expr "x$ac_option" : 'x[^=]*=\(.*\)'`
 
   # Accept the important Cygnus configure options, so we can diagnose typos.
 
@@ -132,7 +132,7 @@ do
     datadir=$ac_optarg ;;
 
   -disable-* | --disable-*)
-    ac_feature=`echo "$ac_option" |sed -e 's/-*disable-//'`
+    ac_feature=`expr "x$ac_option" : 'x-*disable-\(.*\)'`
     # Reject names that are not valid shell variable names.
     expr "x$ac_feature" : ".*[^-a-zA-Z0-9_]" >/dev/null &&
       { echo "configure: error: invalid feature name: $ac_feature" >&2; exit 1; }
@@ -140,7 +140,7 @@ do
     eval "enable_$ac_feature=no" ;;
 
   -enable-* | --enable-*)
-    ac_feature=`echo "$ac_option" | sed -e 's/-*enable-//;s/=.*//'`
+    ac_feature=`expr "x$ac_option" : 'x-*enable-\([^=]*\)'`
     # Reject names that are not valid shell variable names.
     expr "x$ac_feature" : ".*[^-a-zA-Z0-9_]" >/dev/null &&
       { echo "configure: error: invalid feature name: $ac_feature" >&2; exit 1; }
@@ -172,10 +172,8 @@ do
     ac_init_help=short ;;
 
   -host | --host | --hos | --ho)
-    cross_compiling=yes
     ac_prev=host_alias ;;
   -host=* | --host=* | --hos=* | --ho=*)
-    cross_compiling=yes
     host_alias=$ac_optarg ;;
 
   -includedir | --includedir | --includedi | --included | --include \
@@ -323,7 +321,7 @@ do
     ac_init_version=: ;;
 
   -with-* | --with-*)
-    ac_package=`echo "$ac_option"|sed -e 's/-*with-//;s/=.*//'`
+    ac_package=`expr "x$ac_option" : 'x-*with-\([^=]*\)'`
     # Reject names that are not valid shell variable names.
     expr "x$ac_package" : ".*[^-a-zA-Z0-9_]" >/dev/null &&
       { echo "configure: error: invalid package name: $ac_package" >&2; exit 1; }
@@ -332,15 +330,15 @@ do
       *=*) ac_optarg=`echo "$ac_optarg" | sed "s/'/'\\\\\\\\''/g"`;;
       *) ac_optarg=yes ;;
     esac
-    eval "with_${ac_package}='$ac_optarg'" ;;
+    eval "with_$ac_package='$ac_optarg'" ;;
 
   -without-* | --without-*)
-    ac_package=`echo "$ac_option" |sed -e 's/-*without-//'`
+    ac_package=`expr "x$ac_option" : 'x-*without-\(.*\)'`
     # Reject names that are not valid shell variable names.
     expr "x$ac_package" : ".*[^-a-zA-Z0-9_]" >/dev/null &&
       { echo "configure: error: invalid package name: $ac_package" >&2; exit 1; }
     ac_package=`echo $ac_package | sed 's/-/_/g'`
-    eval "with_${ac_package}=no" ;;
+    eval "with_$ac_package=no" ;;
 
   --x)
     # Obsolete; use --with-x.
@@ -365,7 +363,7 @@ Try \`configure --help' for more information." >&2; exit 1; }
     ;;
 
   *=*)
-    ac_envvar=`echo "$ac_option" | sed -e 's/=.*//'`
+    ac_envvar=`expr "x$ac_option" : 'x\([^=]*\)='`
     # Reject names that are not valid shell variable names.
     expr "x$ac_envvar" : ".*[^a-zA-Z0-9_]" >/dev/null &&
       { echo "configure: error: invalid variable name: $ac_envvar" >&2; exit 1; }
@@ -374,6 +372,7 @@ Try \`configure --help' for more information." >&2; exit 1; }
     export $ac_envvar ;;
 
   *)
+    # FIXME: should be removed in autoconf 3.0.
     echo "configure: WARNING: you should use --build, --host, --target" >&2
     expr "x$ac_option" : ".*[^a-zA-Z0-9.]" >/dev/null &&
       echo "configure: WARNING: invalid host type: $ac_option" >&2
@@ -406,6 +405,17 @@ done
 build=$build_alias
 host=$host_alias
 target=$target_alias
+
+# FIXME: should be removed in autoconf 3.0.
+if test "x$host_alias" != x; then
+  if test "x$build_alias" = x; then
+    cross_compiling=maybe
+    echo "configure: WARNING: If you wanted to set the --build type, don't use --host.
+    If a cross compiler is detected then cross compile mode will be used." >&2
+  elif test "x$build_alias" != "x$host_alias"; then
+    cross_compiling=yes
+  fi
+fi
 
 ac_tool_prefix=
 test -n "$host_alias" && ac_tool_prefix=$host_alias-
@@ -659,8 +669,15 @@ for ac_site_file in $CONFIG_SITE; do
 done
 
 if test -r "$cache_file"; then
-  test "x$cache_file" != "x/dev/null" && echo "loading cache $cache_file"
-      test -f "$cache_file" && . $cache_file
+  # Some versions of bash will fail to source /dev/null (special
+  # files actually), so we avoid doing that.
+  if test -f "$cache_file"; then
+    echo "loading cache $cache_file"
+    case $cache_file in
+      [\\/]* | ?:[\\/]* ) . $cache_file;;
+      *)                      . ./$cache_file;;
+    esac
+  fi
 else
   echo "creating cache $cache_file"
   >$cache_file
@@ -701,7 +718,7 @@ srcdir=`cd $srcdir ; pwd`
     TOOLS=$srcdir/unix/tools
 
     # The tools directory is not distributed in dist .tar files.
-    if test -d $TOOLS ; then
+    if test -d "$TOOLS" ; then
 
         # Check that grep is working by looking for the match to the
         # current version number in the configure.in file.
@@ -815,7 +832,7 @@ else
   TCL_BIN_DIR="$srcdir/../tcl8.3.1/unix"
 fi
 
-    if test ! -d $TCL_BIN_DIR; then
+    if test ! -d "$TCL_BIN_DIR"; then
         { echo "configure: error: Tcl directory $TCL_BIN_DIR could not be located.
 Use the --with-tcl=<dirName> configure flag to specify the location." >&2; exit 1; }
     else
@@ -842,8 +859,8 @@ Use the --with-tcl=<dirName> configure flag to specify the location." >&2; exit 
 
     file=$TCL_BIN_DIR/tclConfig.sh
     . $file
-    if test $TCL_SHARED_BUILD -eq 0 ; then
-	{ echo "configure: error: Tcl was not built correctly.
+    if test "$TCL_SHARED_BUILD" = "0" ; then
+        { echo "configure: error: Tcl was not built correctly.
 Make sure Tcl was configured with --enable-shared." >&2; exit 1; }
     fi
 
@@ -915,7 +932,7 @@ if test $TCLJAVA = "tclblend" || test $TCLJAVA = "both"; then
        ' > tcl_version.tcl
 
   if test "`$TCLSH_LOC tcl_version.tcl 2>&5`" = "1"; then
-      echo "configure:769: result: Tcl executable $TCLSH_LOC works" >&5
+      echo "configure:785: result: Tcl executable $TCLSH_LOC works" >&5
 echo "${ECHO_T}Tcl executable $TCLSH_LOC works" >&6
       rm -f tcl_version.tcl
   else
@@ -932,7 +949,7 @@ echo "${ECHO_T}Tcl executable $TCLSH_LOC works" >&6
   TCLSH=$TCL_EXEC_PREFIX/bin/tclsh$TCL_VERSION
   WISH=$TCL_EXEC_PREFIX/bin/wish$TCL_VERSION
 
-  if test ! -x $TCLSH; then
+  if test ! -x "$TCLSH"; then
       echo "configure: WARNING: Tcl has not been installed yet, it must be installed before installing Tcl Blend" >&2
   fi
 
@@ -949,7 +966,7 @@ else
 fi
     if test "$ok" = "no" ; then
         NO=op
-    elif test "$ok" = "yes" || test ! -d $ok; then
+    elif test "$ok" = "yes" || test ! -d "$ok"; then
         { echo "configure: error: --with-jdk=DIR option, must pass a valid DIR" >&2; exit 1; }
     elif test "$ok" != "no" ; then
         ac_java_jvm_dir=$ok
@@ -967,7 +984,7 @@ else
 fi
     if test "$ok" = "no" ; then
         NO=op
-    elif test "$ok" = "yes" || test ! -d $ok; then
+    elif test "$ok" = "yes" || test ! -d "$ok"; then
         { echo "configure: error: --with-kaffe=DIR option, must pass a valid DIR" >&2; exit 1; }
     elif test "$ok" != "no" ; then
         ac_java_jvm_dir=$ok
@@ -989,7 +1006,7 @@ fi
         if test "$ok" = "yes"; then
             # Extract the first word of "jikes", so it can be a program name with args.
 set dummy jikes; ac_word=$2
-echo "configure:833: checking for $ac_word" >&5
+echo "configure:849: checking for $ac_word" >&5
 echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
 if test "${ac_cv_path_JIKES+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -1016,17 +1033,17 @@ esac
 fi
 JIKES=$ac_cv_path_JIKES
 if test -n "$JIKES"; then
-  echo "configure:859: result: $JIKES" >&5
+  echo "configure:875: result: $JIKES" >&5
 echo "${ECHO_T}$JIKES" >&6
 else
-  echo "configure:862: result: no" >&5
+  echo "configure:878: result: no" >&5
 echo "${ECHO_T}no" >&6
 fi
 
         else
             JIKES=$ok
         fi
-        if test ! -f $JIKES ; then
+        if test ! -f "$JIKES" ; then
             { echo "configure: error: jikes executable '$JIKES' does not exist or is not executable." >&2; exit 1; }
         fi
 
@@ -1048,7 +1065,7 @@ fi
     if test "x$JAVAC" = "x" ; then
         # Extract the first word of "javac", so it can be a program name with args.
 set dummy javac; ac_word=$2
-echo "configure:884: checking for $ac_word" >&5
+echo "configure:900: checking for $ac_word" >&5
 echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
 if test "${ac_cv_path_JAVAC+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -1074,10 +1091,10 @@ esac
 fi
 JAVAC=$ac_cv_path_JAVAC
 if test -n "$JAVAC"; then
-  echo "configure:909: result: $JAVAC" >&5
+  echo "configure:925: result: $JAVAC" >&5
 echo "${ECHO_T}$JAVAC" >&6
 else
-  echo "configure:912: result: no" >&5
+  echo "configure:928: result: no" >&5
 echo "${ECHO_T}no" >&6
 fi
 
@@ -1104,7 +1121,7 @@ fi
 
     # Look for a setting for the CLASSPATH, we might need one to run JAVAC
 
-    echo "configure:934: checking for zip or jar files to include on CLASSPATH" >&5
+    echo "configure:950: checking for zip or jar files to include on CLASSPATH" >&5
 echo $ECHO_N "checking for zip or jar files to include on CLASSPATH... $ECHO_C" >&6
 
     if test "x$ac_java_jvm_dir" = "x" ; then
@@ -1176,7 +1193,7 @@ echo $ECHO_N "checking for zip or jar files to include on CLASSPATH... $ECHO_C" 
 
     echo Using CLASSPATH=$ac_java_classpath >&5
 
-    echo "configure:981: result: $ac_java_classpath" >&5
+    echo "configure:997: result: $ac_java_classpath" >&5
 echo "${ECHO_T}$ac_java_classpath" >&6
 
     # FIXME : add detection of command line arguments for JAVAC
@@ -1184,11 +1201,11 @@ echo "${ECHO_T}$ac_java_classpath" >&6
     JAVAC_FLAGS=-g
     JAVAC_D_FLAG=-d
 
-        echo "configure:986: checking to see if the java compiler works" >&5
+        echo "configure:1002: checking to see if the java compiler works" >&5
 echo $ECHO_N "checking to see if the java compiler works... $ECHO_C" >&6
 
     cat << \EOF > conftest.java
-// #line 989 "configure"
+// #line 1005 "configure"
 
 public class conftest {
     public static void main(String[] argv) {
@@ -1210,7 +1227,7 @@ EOF
             fi
 
     if test "$works" = "yes" ; then
-        echo "configure:1007: result: $works" >&5
+        echo "configure:1023: result: $works" >&5
 echo "${ECHO_T}$works" >&6
     else
         { echo "configure: error: Could not compile simple Java program with '$JAVAC'" >&2; exit 1; }
@@ -1221,13 +1238,13 @@ echo "${ECHO_T}$works" >&6
 
     # Try to detect non JDK JVMs. If we can't, then just assume a jdk
 
-    echo "configure:1015: checking type of jvm" >&5
+    echo "configure:1031: checking type of jvm" >&5
 echo $ECHO_N "checking type of jvm... $ECHO_C" >&6
 
     if test "x$ac_java_jvm_name" = "x" ; then
 
     cat << \EOF > conftest.java
-// #line 1019 "configure"
+// #line 1035 "configure"
 import kaffe.lang.Application;
 
 public class conftest {
@@ -1254,7 +1271,7 @@ EOF
     if test "x$ac_java_jvm_name" = "x" ; then
 
     cat << \EOF > conftest.java
-// #line 1040 "configure"
+// #line 1056 "configure"
 import gnu.java.io.EncodingManager;
 
 public class conftest {
@@ -1282,7 +1299,7 @@ EOF
        ac_java_jvm_name=jdk
     fi
 
-    echo "configure:1062: result: $ac_java_jvm_name" >&5
+    echo "configure:1078: result: $ac_java_jvm_name" >&5
 echo "${ECHO_T}$ac_java_jvm_name" >&6
 
     case "$ac_java_jvm_name" in
@@ -1294,13 +1311,13 @@ echo "${ECHO_T}$ac_java_jvm_name" >&6
 
     # Try to detect the version of java that is installed
 
-    echo "configure:1071: checking java API version" >&5
+    echo "configure:1087: checking java API version" >&5
 echo $ECHO_N "checking java API version... $ECHO_C" >&6
 
     # The class java.lang.StrictMath is new to 1.3
 
     cat << \EOF > conftest.java
-// #line 1075 "configure"
+// #line 1091 "configure"
 import java.lang.StrictMath;
 
 public class conftest {
@@ -1327,7 +1344,7 @@ EOF
     if test "x$ac_java_jvm_version" = "x" ; then
 
     cat << \EOF > conftest.java
-// #line 1096 "configure"
+// #line 1112 "configure"
 import java.lang.Package;
 
 public class conftest {
@@ -1356,7 +1373,7 @@ EOF
     if test "x$ac_java_jvm_version" = "x" ; then
 
     cat << \EOF > conftest.java
-// #line 1118 "configure"
+// #line 1134 "configure"
 import java.lang.reflect.Method;
 
 public class conftest {
@@ -1384,7 +1401,7 @@ EOF
         { echo "configure: error: Could not detect Java version 1.1 or newer" >&2; exit 1; }
     fi
 
-    echo "configure:1140: result: $ac_java_jvm_version" >&5
+    echo "configure:1156: result: $ac_java_jvm_version" >&5
 echo "${ECHO_T}$ac_java_jvm_version" >&6
 
 # Find all the Java tools like java, jar, and javah
@@ -1392,7 +1409,7 @@ echo "${ECHO_T}$ac_java_jvm_version" >&6
     if test "$cross_compiling" = "yes" ; then
         # Extract the first word of "java", so it can be a program name with args.
 set dummy java; ac_word=$2
-echo "configure:1146: checking for $ac_word" >&5
+echo "configure:1162: checking for $ac_word" >&5
 echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
 if test "${ac_cv_path_JAVA+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -1418,17 +1435,17 @@ esac
 fi
 JAVA=$ac_cv_path_JAVA
 if test -n "$JAVA"; then
-  echo "configure:1171: result: $JAVA" >&5
+  echo "configure:1187: result: $JAVA" >&5
 echo "${ECHO_T}$JAVA" >&6
 else
-  echo "configure:1174: result: no" >&5
+  echo "configure:1190: result: no" >&5
 echo "${ECHO_T}no" >&6
 fi
 
     else
         # Extract the first word of "java", so it can be a program name with args.
 set dummy java; ac_word=$2
-echo "configure:1180: checking for $ac_word" >&5
+echo "configure:1196: checking for $ac_word" >&5
 echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
 if test "${ac_cv_path_JAVA+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -1454,10 +1471,10 @@ esac
 fi
 JAVA=$ac_cv_path_JAVA
 if test -n "$JAVA"; then
-  echo "configure:1205: result: $JAVA" >&5
+  echo "configure:1221: result: $JAVA" >&5
 echo "${ECHO_T}$JAVA" >&6
 else
-  echo "configure:1208: result: no" >&5
+  echo "configure:1224: result: no" >&5
 echo "${ECHO_T}no" >&6
 fi
 
@@ -1475,7 +1492,7 @@ fi
     if test "$cross_compiling" = "yes" ; then
         # Extract the first word of "java_g", so it can be a program name with args.
 set dummy java_g; ac_word=$2
-echo "configure:1221: checking for $ac_word" >&5
+echo "configure:1237: checking for $ac_word" >&5
 echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
 if test "${ac_cv_path_JAVA_G+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -1501,17 +1518,17 @@ esac
 fi
 JAVA_G=$ac_cv_path_JAVA_G
 if test -n "$JAVA_G"; then
-  echo "configure:1246: result: $JAVA_G" >&5
+  echo "configure:1262: result: $JAVA_G" >&5
 echo "${ECHO_T}$JAVA_G" >&6
 else
-  echo "configure:1249: result: no" >&5
+  echo "configure:1265: result: no" >&5
 echo "${ECHO_T}no" >&6
 fi
 
     else
         # Extract the first word of "java_g", so it can be a program name with args.
 set dummy java_g; ac_word=$2
-echo "configure:1255: checking for $ac_word" >&5
+echo "configure:1271: checking for $ac_word" >&5
 echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
 if test "${ac_cv_path_JAVA_G+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -1537,10 +1554,10 @@ esac
 fi
 JAVA_G=$ac_cv_path_JAVA_G
 if test -n "$JAVA_G"; then
-  echo "configure:1280: result: $JAVA_G" >&5
+  echo "configure:1296: result: $JAVA_G" >&5
 echo "${ECHO_T}$JAVA_G" >&6
 else
-  echo "configure:1283: result: no" >&5
+  echo "configure:1299: result: no" >&5
 echo "${ECHO_T}no" >&6
 fi
 
@@ -1556,7 +1573,7 @@ fi
     if test "$cross_compiling" = "yes" ; then
         # Extract the first word of "$TOOL", so it can be a program name with args.
 set dummy $TOOL; ac_word=$2
-echo "configure:1295: checking for $ac_word" >&5
+echo "configure:1311: checking for $ac_word" >&5
 echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
 if test "${ac_cv_path_JAVAH+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -1582,17 +1599,17 @@ esac
 fi
 JAVAH=$ac_cv_path_JAVAH
 if test -n "$JAVAH"; then
-  echo "configure:1320: result: $JAVAH" >&5
+  echo "configure:1336: result: $JAVAH" >&5
 echo "${ECHO_T}$JAVAH" >&6
 else
-  echo "configure:1323: result: no" >&5
+  echo "configure:1339: result: no" >&5
 echo "${ECHO_T}no" >&6
 fi
 
     else
         # Extract the first word of "$TOOL", so it can be a program name with args.
 set dummy $TOOL; ac_word=$2
-echo "configure:1329: checking for $ac_word" >&5
+echo "configure:1345: checking for $ac_word" >&5
 echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
 if test "${ac_cv_path_JAVAH+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -1618,10 +1635,10 @@ esac
 fi
 JAVAH=$ac_cv_path_JAVAH
 if test -n "$JAVAH"; then
-  echo "configure:1354: result: $JAVAH" >&5
+  echo "configure:1370: result: $JAVAH" >&5
 echo "${ECHO_T}$JAVAH" >&6
 else
-  echo "configure:1357: result: no" >&5
+  echo "configure:1373: result: no" >&5
 echo "${ECHO_T}no" >&6
 fi
 
@@ -1636,7 +1653,7 @@ fi
     if test "$cross_compiling" = "yes" ; then
         # Extract the first word of "jar", so it can be a program name with args.
 set dummy jar; ac_word=$2
-echo "configure:1368: checking for $ac_word" >&5
+echo "configure:1384: checking for $ac_word" >&5
 echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
 if test "${ac_cv_path_JAR+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -1662,17 +1679,17 @@ esac
 fi
 JAR=$ac_cv_path_JAR
 if test -n "$JAR"; then
-  echo "configure:1393: result: $JAR" >&5
+  echo "configure:1409: result: $JAR" >&5
 echo "${ECHO_T}$JAR" >&6
 else
-  echo "configure:1396: result: no" >&5
+  echo "configure:1412: result: no" >&5
 echo "${ECHO_T}no" >&6
 fi
 
     else
         # Extract the first word of "jar", so it can be a program name with args.
 set dummy jar; ac_word=$2
-echo "configure:1402: checking for $ac_word" >&5
+echo "configure:1418: checking for $ac_word" >&5
 echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
 if test "${ac_cv_path_JAR+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -1698,10 +1715,10 @@ esac
 fi
 JAR=$ac_cv_path_JAR
 if test -n "$JAR"; then
-  echo "configure:1427: result: $JAR" >&5
+  echo "configure:1443: result: $JAR" >&5
 echo "${ECHO_T}$JAR" >&6
 else
-  echo "configure:1430: result: no" >&5
+  echo "configure:1446: result: no" >&5
 echo "${ECHO_T}no" >&6
 fi
 
@@ -1718,7 +1735,7 @@ fi
     if test "$cross_compiling" = "yes" ; then
         # Extract the first word of "jdb", so it can be a program name with args.
 set dummy jdb; ac_word=$2
-echo "configure:1442: checking for $ac_word" >&5
+echo "configure:1458: checking for $ac_word" >&5
 echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
 if test "${ac_cv_path_JDB+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -1744,17 +1761,17 @@ esac
 fi
 JDB=$ac_cv_path_JDB
 if test -n "$JDB"; then
-  echo "configure:1467: result: $JDB" >&5
+  echo "configure:1483: result: $JDB" >&5
 echo "${ECHO_T}$JDB" >&6
 else
-  echo "configure:1470: result: no" >&5
+  echo "configure:1486: result: no" >&5
 echo "${ECHO_T}no" >&6
 fi
 
     else
         # Extract the first word of "jdb", so it can be a program name with args.
 set dummy jdb; ac_word=$2
-echo "configure:1476: checking for $ac_word" >&5
+echo "configure:1492: checking for $ac_word" >&5
 echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
 if test "${ac_cv_path_JDB+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -1780,10 +1797,10 @@ esac
 fi
 JDB=$ac_cv_path_JDB
 if test -n "$JDB"; then
-  echo "configure:1501: result: $JDB" >&5
+  echo "configure:1517: result: $JDB" >&5
 echo "${ECHO_T}$JDB" >&6
 else
-  echo "configure:1504: result: no" >&5
+  echo "configure:1520: result: no" >&5
 echo "${ECHO_T}no" >&6
 fi
 
@@ -1795,7 +1812,7 @@ fi
 
 # Extract the first word of "ddd", so it can be a program name with args.
 set dummy ddd; ac_word=$2
-echo "configure:1512: checking for $ac_word" >&5
+echo "configure:1528: checking for $ac_word" >&5
 echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
 if test "${ac_cv_path_DDD+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -1821,16 +1838,16 @@ esac
 fi
 DDD=$ac_cv_path_DDD
 if test -n "$DDD"; then
-  echo "configure:1537: result: $DDD" >&5
+  echo "configure:1553: result: $DDD" >&5
 echo "${ECHO_T}$DDD" >&6
 else
-  echo "configure:1540: result: no" >&5
+  echo "configure:1556: result: no" >&5
 echo "${ECHO_T}no" >&6
 fi
 
 # Extract the first word of "gdb", so it can be a program name with args.
 set dummy gdb; ac_word=$2
-echo "configure:1545: checking for $ac_word" >&5
+echo "configure:1561: checking for $ac_word" >&5
 echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
 if test "${ac_cv_path_GDB+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -1856,10 +1873,10 @@ esac
 fi
 GDB=$ac_cv_path_GDB
 if test -n "$GDB"; then
-  echo "configure:1570: result: $GDB" >&5
+  echo "configure:1586: result: $GDB" >&5
 echo "${ECHO_T}$GDB" >&6
 else
-  echo "configure:1573: result: no" >&5
+  echo "configure:1589: result: no" >&5
 echo "${ECHO_T}no" >&6
 fi
 
@@ -1883,7 +1900,7 @@ esac
 
   # Extract the first word of "${ac_tool_prefix}gcc", so it can be a program name with args.
 set dummy ${ac_tool_prefix}gcc; ac_word=$2
-echo "configure:1591: checking for $ac_word" >&5
+echo "configure:1607: checking for $ac_word" >&5
 echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
 if test "${ac_cv_prog_CC+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -1901,22 +1918,60 @@ ac_cv_prog_CC="${ac_tool_prefix}gcc"
 break
 done
 
-  test -z "$ac_cv_prog_CC" && ac_cv_prog_CC="gcc"
 fi
 fi
 CC=$ac_cv_prog_CC
 if test -n "$CC"; then
-  echo "configure:1613: result: $CC" >&5
+  echo "configure:1628: result: $CC" >&5
 echo "${ECHO_T}$CC" >&6
 else
-  echo "configure:1616: result: no" >&5
+  echo "configure:1631: result: no" >&5
 echo "${ECHO_T}no" >&6
+fi
+
+if test -z "$ac_cv_prog_CC"; then
+  if test -n "$ac_tool_prefix"; then
+    # Extract the first word of "gcc", so it can be a program name with args.
+set dummy gcc; ac_word=$2
+echo "configure:1638: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
+if test "${ac_cv_prog_ac_ct_CC+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  if test -n "$ac_ct_CC"; then
+  ac_cv_prog_ac_ct_CC="$ac_ct_CC" # Let the user override the test.
+else
+  ac_save_IFS=$IFS; IFS=':'
+ac_dummy="$PATH"
+for ac_dir in $ac_dummy; do
+  IFS=$ac_save_IFS
+  test -z "$ac_dir" && ac_dir=.
+  test -f $ac_dir/$ac_word || continue
+ac_cv_prog_ac_ct_CC="gcc"
+break
+done
+
+fi
+fi
+ac_ct_CC=$ac_cv_prog_ac_ct_CC
+if test -n "$ac_ct_CC"; then
+  echo "configure:1659: result: $ac_ct_CC" >&5
+echo "${ECHO_T}$ac_ct_CC" >&6
+else
+  echo "configure:1662: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+    CC="$ac_ct_CC"
+  else
+    CC=""
+  fi
 fi
 
   if test -z "$CC"; then
     # Extract the first word of "cc", so it can be a program name with args.
 set dummy cc; ac_word=$2
-echo "configure:1622: checking for $ac_word" >&5
+echo "configure:1673: checking for $ac_word" >&5
 echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
 if test "${ac_cv_prog_CC+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -1957,10 +2012,10 @@ fi
 fi
 CC=$ac_cv_prog_CC
 if test -n "$CC"; then
-  echo "configure:1662: result: $CC" >&5
+  echo "configure:1713: result: $CC" >&5
 echo "${ECHO_T}$CC" >&6
 else
-  echo "configure:1665: result: no" >&5
+  echo "configure:1716: result: no" >&5
 echo "${ECHO_T}no" >&6
 fi
 
@@ -1969,7 +2024,7 @@ fi
 do
 # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
-echo "configure:1673: checking for $ac_word" >&5
+echo "configure:1724: checking for $ac_word" >&5
 echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
 if test "${ac_cv_prog_CC+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -1991,10 +2046,10 @@ fi
 fi
 CC=$ac_cv_prog_CC
 if test -n "$CC"; then
-  echo "configure:1694: result: $CC" >&5
+  echo "configure:1745: result: $CC" >&5
 echo "${ECHO_T}$CC" >&6
 else
-  echo "configure:1697: result: no" >&5
+  echo "configure:1748: result: no" >&5
 echo "${ECHO_T}no" >&6
 fi
 
@@ -2006,10 +2061,10 @@ done
 
 test -z "$CC" && { echo "configure: error: no acceptable cc found in \$PATH" >&2; exit 1; }
 
-echo "configure:1705: checking whether the C compiler works" >&5
+echo "configure:1756: checking whether the C compiler works" >&5
 echo $ECHO_N "checking whether the C compiler works... $ECHO_C" >&6
 cat >conftest.$ac_ext <<EOF
-#line 1708 "configure"
+#line 1759 "configure"
 #include "confdefs.h"
 
 int
@@ -2020,27 +2075,36 @@ main ()
   return 0;
 }
 EOF
-if { (eval echo configure:1717: \"$ac_link\") >&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
-  # If not cross compiling, check that we can run a simple program.
-if test $cross_compiling != yes; then
-  if { ac_try='./conftest'; { (eval echo configure:1720: \"$ac_try\") >&5; (eval $ac_try) 2>&5; }; }; then :; else
-    echo "configure:1721: result: no" >&5
-echo "${ECHO_T}no" >&6
-    { echo "configure: error: cannot run C compiled programs.
+if { (eval echo configure:1768: \"$ac_link\") >&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+  # FIXME : these cross compiler hacks should be removed for autoconf 3.0
+# If not cross compiling, check that we can run a simple program.
+if test "$cross_compiling" != yes; then
+  if { ac_try='./conftest'; { (eval echo configure:1772: \"$ac_try\") >&5; (eval $ac_try) 2>&5; }; }; then
+    cross_compiling=no
+  else
+    if test "$cross_compiling" = maybe; then
+      cross_compiling=yes
+    else
+      { echo "configure: error: cannot run C compiled programs.
 To enable cross compilation, use \`--host'." >&2; exit 1; }
+    fi
   fi
 fi
-echo "configure:1727: result: yes" >&5
+echo "configure:1783: result: yes" >&5
 echo "${ECHO_T}yes" >&6
 else
   echo "configure: failed program was:" >&5
   cat conftest.$ac_ext >&5
-  echo "configure:1732: result: no" >&5
+  echo "configure:1788: result: no" >&5
 echo "${ECHO_T}no" >&6
 { echo "configure: error: C compiler cannot create executables" >&2; exit 77; }
 fi
-rm -f conftest*
-echo "configure:1737: checking whether we are using GNU C" >&5
+rm -f conftest*echo "configure:1792: checking whether we are cross compiling" >&5
+echo $ECHO_N "checking whether we are cross compiling... $ECHO_C" >&6
+echo "configure:1794: result: $cross_compiling" >&5
+echo "${ECHO_T}$cross_compiling" >&6
+
+echo "configure:1796: checking whether we are using GNU C" >&5
 echo $ECHO_N "checking whether we are using GNU C... $ECHO_C" >&6
 if test "${ac_cv_prog_gcc+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -2050,13 +2114,13 @@ else
   yes;
 #endif
 EOF
-if { ac_try='${CC-cc} -E conftest.c'; { (eval echo configure:1747: \"$ac_try\") >&5; (eval $ac_try) 2>&5; }; } | egrep yes >/dev/null 2>&1; then
+if { ac_try='${CC-cc} -E conftest.c'; { (eval echo configure:1806: \"$ac_try\") >&5; (eval $ac_try) 2>&5; }; } | egrep yes >/dev/null 2>&1; then
   ac_cv_prog_gcc=yes
 else
   ac_cv_prog_gcc=no
 fi
 fi
-echo "configure:1753: result: $ac_cv_prog_gcc" >&5
+echo "configure:1812: result: $ac_cv_prog_gcc" >&5
 echo "${ECHO_T}$ac_cv_prog_gcc" >&6
 if test $ac_cv_prog_gcc = yes; then
   GCC=yes
@@ -2067,7 +2131,7 @@ fi
 ac_test_CFLAGS=${CFLAGS+set}
 ac_save_CFLAGS=$CFLAGS
 CFLAGS=
-echo "configure:1763: checking whether ${CC-cc} accepts -g" >&5
+echo "configure:1822: checking whether ${CC-cc} accepts -g" >&5
 echo $ECHO_N "checking whether ${CC-cc} accepts -g... $ECHO_C" >&6
 if test "${ac_cv_prog_cc_g+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -2081,7 +2145,7 @@ fi
 rm -f conftest*
 
 fi
-echo "configure:1776: result: $ac_cv_prog_cc_g" >&5
+echo "configure:1835: result: $ac_cv_prog_cc_g" >&5
 echo "${ECHO_T}$ac_cv_prog_cc_g" >&6
 if test "$ac_test_CFLAGS" = set; then
   CFLAGS=$ac_save_CFLAGS
@@ -2098,13 +2162,13 @@ else
     CFLAGS=
   fi
 fi
-echo "configure:1793: checking for Cygwin environment" >&5
+echo "configure:1852: checking for Cygwin environment" >&5
 echo $ECHO_N "checking for Cygwin environment... $ECHO_C" >&6
 if test "${ac_cv_cygwin+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   cat >conftest.$ac_ext <<EOF
-#line 1799 "configure"
+#line 1858 "configure"
 #include "confdefs.h"
 
 int
@@ -2118,7 +2182,7 @@ return __CYGWIN__;
   return 0;
 }
 EOF
-if { (eval echo configure:1812: \"$ac_compile\") >&5; (eval $ac_compile) 2>&5; }; then
+if { (eval echo configure:1871: \"$ac_compile\") >&5; (eval $ac_compile) 2>&5; }; then
   ac_cv_cygwin=yes
 else
   echo "configure: failed program was:" >&5
@@ -2127,16 +2191,16 @@ else
 fi
 rm -f conftest*
 fi
-echo "configure:1821: result: $ac_cv_cygwin" >&5
+echo "configure:1880: result: $ac_cv_cygwin" >&5
 echo "${ECHO_T}$ac_cv_cygwin" >&6
 test "$ac_cv_cygwin" = yes && CYGWIN=yes
-echo "configure:1824: checking for mingw32 environment" >&5
+echo "configure:1883: checking for mingw32 environment" >&5
 echo $ECHO_N "checking for mingw32 environment... $ECHO_C" >&6
 if test "${ac_cv_mingw32+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   cat >conftest.$ac_ext <<EOF
-#line 1830 "configure"
+#line 1889 "configure"
 #include "confdefs.h"
 
 int
@@ -2147,7 +2211,7 @@ return __MINGW32__;
   return 0;
 }
 EOF
-if { (eval echo configure:1840: \"$ac_compile\") >&5; (eval $ac_compile) 2>&5; }; then
+if { (eval echo configure:1899: \"$ac_compile\") >&5; (eval $ac_compile) 2>&5; }; then
   ac_cv_mingw32=yes
 else
   echo "configure: failed program was:" >&5
@@ -2156,16 +2220,16 @@ else
 fi
 rm -f conftest*
 fi
-echo "configure:1849: result: $ac_cv_mingw32" >&5
+echo "configure:1908: result: $ac_cv_mingw32" >&5
 echo "${ECHO_T}$ac_cv_mingw32" >&6
 test "$ac_cv_mingw32" = yes && MINGW32=yes
-echo "configure:1852: checking for EMX OS/2 environment" >&5
+echo "configure:1911: checking for EMX OS/2 environment" >&5
 echo $ECHO_N "checking for EMX OS/2 environment... $ECHO_C" >&6
 if test "${ac_cv_emxos2+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   cat >conftest.$ac_ext <<EOF
-#line 1858 "configure"
+#line 1917 "configure"
 #include "confdefs.h"
 
 int
@@ -2176,7 +2240,7 @@ return __EMX__;
   return 0;
 }
 EOF
-if { (eval echo configure:1868: \"$ac_compile\") >&5; (eval $ac_compile) 2>&5; }; then
+if { (eval echo configure:1927: \"$ac_compile\") >&5; (eval $ac_compile) 2>&5; }; then
   ac_cv_emxos2=yes
 else
   echo "configure: failed program was:" >&5
@@ -2185,10 +2249,10 @@ else
 fi
 rm -f conftest*
 fi
-echo "configure:1877: result: $ac_cv_emxos2" >&5
+echo "configure:1936: result: $ac_cv_emxos2" >&5
 echo "${ECHO_T}$ac_cv_emxos2" >&6
 test "$ac_cv_emxos2" = yes && EMXOS2=yes
-echo "configure:1880: checking for executable suffix" >&5
+echo "configure:1939: checking for executable suffix" >&5
 echo $ECHO_N "checking for executable suffix... $ECHO_C" >&6
 if test "${ac_cv_exeext+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -2197,7 +2261,7 @@ else
   ac_cv_exeext=.exe
 else
   cat >conftest.$ac_ext <<EOF
-#line 1889 "configure"
+#line 1948 "configure"
 #include "confdefs.h"
 
 int
@@ -2208,7 +2272,7 @@ main ()
   return 0;
 }
 EOF
-if { (eval echo configure:1898: \"$ac_link\") >&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+if { (eval echo configure:1957: \"$ac_link\") >&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
   for ac_file in conftest.*; do
      case $ac_file in
        *.$ac_ext | *.o | *.obj | *.xcoff) ;;
@@ -2224,19 +2288,19 @@ rm -f conftest*
   test -n "$ac_cv_exeext" && ac_cv_exeext=no
 fi
 fi
-echo "configure:1914: result: $ac_cv_exeext" >&5
+echo "configure:1973: result: $ac_cv_exeext" >&5
 echo "${ECHO_T}$ac_cv_exeext" >&6
 EXEEXT=
 test "$ac_cv_exeext" != no && EXEEXT=$ac_cv_exeext
 ac_exeext=$EXEEXT
 
-echo "configure:1919: checking for object suffix" >&5
+echo "configure:1978: checking for object suffix" >&5
 echo $ECHO_N "checking for object suffix... $ECHO_C" >&6
 if test "${ac_cv_objext+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   cat >conftest.$ac_ext <<EOF
-#line 1925 "configure"
+#line 1984 "configure"
 #include "confdefs.h"
 
 int
@@ -2247,7 +2311,7 @@ main ()
   return 0;
 }
 EOF
-if { (eval echo configure:1934: \"$ac_compile\") >&5; (eval $ac_compile) 2>&5; }; then
+if { (eval echo configure:1993: \"$ac_compile\") >&5; (eval $ac_compile) 2>&5; }; then
   for ac_file in conftest.*; do
     case $ac_file in
       *.$ac_ext) ;;
@@ -2261,7 +2325,7 @@ else
 fi
 rm -f conftest*
 fi
-echo "configure:1948: result: $ac_cv_objext" >&5
+echo "configure:2007: result: $ac_cv_objext" >&5
 echo "${ECHO_T}$ac_cv_objext" >&6
 OBJEXT=$ac_cv_objext
 ac_objext=$ac_cv_objext
@@ -2302,7 +2366,7 @@ ac_link='${CC-cc} -o conftest${ac_exeext} $CFLAGS $CPPFLAGS $LDFLAGS conftest.$a
 
     # Make sure a simple #include <jni.h> will compile.
 
-    echo "configure:1981: checking to see if jni.h can be included" >&5
+    echo "configure:2040: checking to see if jni.h can be included" >&5
 echo $ECHO_N "checking to see if jni.h can be included... $ECHO_C" >&6
 if test "${ac_java_jvm_jni_working+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -2316,7 +2380,7 @@ ac_link='${CC-cc} -o conftest${ac_exeext} $CFLAGS $CPPFLAGS $LDFLAGS conftest.$a
         ac_saved_cflags=$CFLAGS
         CFLAGS="$CFLAGS $ac_java_jvm_jni_include_flags"
         cat >conftest.$ac_ext <<EOF
-#line 1994 "configure"
+#line 2053 "configure"
 #include "confdefs.h"
 
             #include <jni.h>
@@ -2329,7 +2393,7 @@ return 0;
   return 0;
 }
 EOF
-if { (eval echo configure:2005: \"$ac_compile\") >&5; (eval $ac_compile) 2>&5; }; then
+if { (eval echo configure:2064: \"$ac_compile\") >&5; (eval $ac_compile) 2>&5; }; then
   ac_java_jvm_jni_working=yes
 else
   echo "configure: failed program was:" >&5
@@ -2346,7 +2410,7 @@ ac_link='${CC-cc} -o conftest${ac_exeext} $CFLAGS $CPPFLAGS $LDFLAGS conftest.$a
         CFLAGS=$ac_saved_cflags
 
 fi
-echo "configure:2020: result: $ac_java_jvm_jni_working" >&5
+echo "configure:2079: result: $ac_java_jvm_jni_working" >&5
 echo "${ECHO_T}$ac_java_jvm_jni_working" >&6
 
     # FIXME: should we look for or require a include/native_threads dir?
@@ -2577,7 +2641,7 @@ echo "${ECHO_T}$ac_java_jvm_jni_working" >&6
 
     # Make sure we can compile and link a trivial JNI program
 
-    echo "configure:2173: checking to see if we can link a JNI application" >&5
+    echo "configure:2232: checking to see if we can link a JNI application" >&5
 echo $ECHO_N "checking to see if we can link a JNI application... $ECHO_C" >&6
 if test "${ac_java_jvm_working_jni_link+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -2591,7 +2655,7 @@ ac_link='${CC-cc} -o conftest${ac_exeext} $CFLAGS $CPPFLAGS $LDFLAGS conftest.$a
         ac_saved_cflags=$CFLAGS
         CFLAGS="$CFLAGS $ac_java_jvm_jni_include_flags $ac_java_jvm_jni_lib_flags"
         cat >conftest.$ac_ext <<EOF
-#line 2186 "configure"
+#line 2245 "configure"
 #include "confdefs.h"
 
             #include <jni.h>
@@ -2604,7 +2668,7 @@ JNI_GetCreatedJavaVMs(NULL,0,NULL);
   return 0;
 }
 EOF
-if { (eval echo configure:2197: \"$ac_link\") >&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+if { (eval echo configure:2256: \"$ac_link\") >&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
   ac_java_jvm_working_jni_link=yes
 else
   echo "configure: failed program was:" >&5
@@ -2622,14 +2686,14 @@ ac_link='${CC-cc} -o conftest${ac_exeext} $CFLAGS $CPPFLAGS $LDFLAGS conftest.$a
         CFLAGS=$ac_saved_cflags
 
 fi
-echo "configure:2213: result: $ac_java_jvm_working_jni_link" >&5
+echo "configure:2272: result: $ac_java_jvm_working_jni_link" >&5
 echo "${ECHO_T}$ac_java_jvm_working_jni_link" >&6
 
 fi
 
 # Do a more in depth test of the Java tools (JAVAC, JAVA, JAVAH, and JAR)
 
-echo "configure:2217: checking the Java compiler" >&5
+echo "configure:2276: checking the Java compiler" >&5
 echo $ECHO_N "checking the Java compiler... $ECHO_C" >&6
 
 CLASSPATH=$ac_java_classpath
@@ -2647,10 +2711,10 @@ rm -f Test.class
 
 if ( $JAVAC $JAVAC_FLAGS $JAVAC_D_FLAG . $srcdir/src/Test.java 1>&5 2>&5 ) &&
     test -f Test.class ; then
-    echo "configure:2228: result: the Java compiler works" >&5
+    echo "configure:2287: result: the Java compiler works" >&5
 echo "${ECHO_T}the Java compiler works" >&6
 
-    echo "configure:2230: checking the -native flag to the Java runtime" >&5
+    echo "configure:2289: checking the -native flag to the Java runtime" >&5
 echo $ECHO_N "checking the -native flag to the Java runtime... $ECHO_C" >&6
 
     CLASSPATH=$ac_java_classpath:.
@@ -2715,7 +2779,7 @@ echo $ECHO_N "checking the -native flag to the Java runtime... $ECHO_C" >&6
 
     if test $TCLJAVA = "tclblend" || test $TCLJAVA = "both"; then
         #test out the javah program on our Test.class file and generate Test.h
-        echo "configure:2273: checking the Java header generation program" >&5
+        echo "configure:2332: checking the Java header generation program" >&5
 echo $ECHO_N "checking the Java header generation program... $ECHO_C" >&6
 
         CLASSPATH=$ac_java_classpath:.
@@ -2763,7 +2827,7 @@ echo $ECHO_N "checking the Java header generation program... $ECHO_C" >&6
             fi
 
             if test "$JAVAH_WORKED" = "1" ; then
-                echo "configure:2301: result: the Java header generation program works" >&5
+                echo "configure:2360: result: the Java header generation program works" >&5
 echo "${ECHO_T}the Java header generation program works" >&6
             else
 
@@ -2778,7 +2842,7 @@ generated by $JAVAH" >&2; exit 1; }
         fi
     fi
 
-    echo "configure:2312: checking the Java archive program" >&5
+    echo "configure:2371: checking the Java archive program" >&5
 echo $ECHO_N "checking the Java archive program... $ECHO_C" >&6
 
     # Flags we will pass to the jar executable
@@ -2798,7 +2862,7 @@ echo $ECHO_N "checking the Java archive program... $ECHO_C" >&6
     echo $JAR $JAR_NOCOMPRESS_FLAGS Test.jar Test.class >&5
 
     if ($JAR $JAR_NOCOMPRESS_FLAGS Test.jar Test.class 2>&5) && test -f Test.jar; then
-        echo "configure:2325: result: the jar program creates uncompressed archives" >&5
+        echo "configure:2384: result: the jar program creates uncompressed archives" >&5
 echo "${ECHO_T}the jar program creates uncompressed archives" >&6
     else
 	
@@ -2814,7 +2878,7 @@ echo "${ECHO_T}the jar program creates uncompressed archives" >&6
     echo $JAR $JAR_EXTRACT_FLAGS Test.jar >&5
 
     if ($JAR $JAR_EXTRACT_FLAGS Test.jar 2>&5) && test -f Test.class; then
-        echo "configure:2336: result: the jar program extracts uncompressed archives" >&5
+        echo "configure:2395: result: the jar program extracts uncompressed archives" >&5
 echo "${ECHO_T}the jar program extracts uncompressed archives" >&6
     else
 
@@ -2829,7 +2893,7 @@ echo "${ECHO_T}the jar program extracts uncompressed archives" >&6
     echo $JAR $JAR_COMPRESS_FLAGS Test.jar Test.class >&5
 
     if ($JAR $JAR_COMPRESS_FLAGS Test.jar Test.class 2>&5) && test -f Test.jar; then
-        echo "configure:2346: result: the jar program creates compressed archives" >&5
+        echo "configure:2405: result: the jar program creates compressed archives" >&5
 echo "${ECHO_T}the jar program creates compressed archives" >&6
     else
 
@@ -2845,7 +2909,7 @@ echo "${ECHO_T}the jar program creates compressed archives" >&6
     echo $JAR $JAR_EXTRACT_FLAGS Test.jar >&5
 
     if ($JAR $JAR_EXTRACT_FLAGS Test.jar 2>&5) && test -f Test.class; then
-        echo "configure:2356: result: the jar program extracts compressed archives" >&5
+        echo "configure:2415: result: the jar program extracts compressed archives" >&5
 echo "${ECHO_T}the jar program extracts compressed archives" >&6
     else
 
@@ -2860,7 +2924,7 @@ echo "${ECHO_T}the jar program extracts compressed archives" >&6
     # Run Test.class again so that we are sure the jar
     # programs did not screw it up
 
-    echo "configure:2366: checking that the jar program did not corrupt the test file" >&5
+    echo "configure:2425: checking that the jar program did not corrupt the test file" >&5
 echo $ECHO_N "checking that the jar program did not corrupt the test file... $ECHO_C" >&6
 
     CLASSPATH=$ac_java_classpath:.
@@ -2871,7 +2935,7 @@ echo $ECHO_N "checking that the jar program did not corrupt the test file... $EC
     echo $JAVA Test >&5
 
     if test "`$JAVA Test 2>&5`" = "OK"; then
-        echo "configure:2373: result: it did not" >&5
+        echo "configure:2432: result: it did not" >&5
 echo "${ECHO_T}it did not" >&6
     else
         { echo "configure: error: Test.class has been corrupted." >&2; exit 1; }
@@ -2913,6 +2977,7 @@ if test "$TCLJAVA" = "both" ; then
     TCLJAVA=tclblend
 fi
 
+ac_config_files="$ac_config_files Makefile jaclsh jtclsh tcljavaConfig.sh"
 trap '' 1 2 15
 cat >confcache <<\EOF
 # This file is a shell script that caches the results of configure
@@ -2920,7 +2985,7 @@ cat >confcache <<\EOF
 # scripts and configure runs.  It is not useful on other systems.
 # If it contains results you don't want to keep, you may remove or edit it.
 #
-# By default, configure uses ./config.cache as the cache file,
+# By default, configure uses `config.cache' as the cache file,
 # creating it if it does not exist already.  You can give configure
 # the --cache-file=FILE option to use a different cache file; that is
 # what configure does when it calls configure scripts in
@@ -2982,6 +3047,8 @@ fi
 # take arguments), then we branch to the cleanup section.  Otherwise,
 # look for a macro that doesn't take arguments.
 cat >confdef2opt.sed <<\EOF
+t clear
+: clear
 s%^[ 	]*#[ 	]*define[ 	][ 	]*\([^ 	(][^ 	(]*([^)]*)\)[ 	]*\(.*\)%-D\1=\2%g
 t cleanup
 s%^[ 	]*#[ 	]*define[ 	][ 	]*\([^ 	][^ 	]*\)[ 	]*\(.*\)%-D\1=\2%g
@@ -3043,9 +3110,26 @@ debug=false
 me=`echo "$0" | sed -e 's,.*/,,'`
 SHELL=${CONFIG_SHELL-/bin/sh}
 
+EOF
+
 # Files that config.status was made for.
-config_files="\
-  Makefile jaclsh jtclsh tcljavaConfig.sh"
+if test -n "$ac_config_files"; then
+  echo "config_files=\"$ac_config_files\"" >>$CONFIG_STATUS
+fi
+
+if test -n "$ac_config_headers"; then
+  echo "config_headers=\"$ac_config_headers\"" >>$CONFIG_STATUS
+fi
+
+if test -n "$ac_config_links"; then
+  echo "config_links=\"$ac_config_links\"" >>$CONFIG_STATUS
+fi
+
+if test -n "$ac_config_commands"; then
+  echo "config_commands=\"$ac_config_commands\"" >>$CONFIG_STATUS
+fi
+
+cat >>$CONFIG_STATUS <<\EOF
 
 ac_cs_usage="\
 \`$me' instantiates files from templates according to the
@@ -3083,8 +3167,8 @@ while test $# != 0
 do
   case $1 in
   --*=*)
-    ac_option=`echo "$1" | sed -e 's/=.*//'`
-    ac_optarg=`echo "$1" | sed -e 's/[^=]*=//'`
+    ac_option=`expr "x$1" : 'x\([^=]*\)='`
+    ac_optarg=`expr "x$1" : 'x[^=]*=\(.*\)'`
     shift
     set dummy "$ac_option" "$ac_optarg" ${1+"$@"}
     shift
@@ -3113,7 +3197,7 @@ Try \`$me --help' for more information."; exit 1 ;;
   --help | --hel | -h )
     echo "$ac_cs_usage"; exit 0 ;;
   --debug | --d* | -d )
-    debug=:; shift ;;
+    debug=: ;;
   --file | --fil | --fi | --f )
     shift
     CONFIG_FILES="$CONFIG_FILES $1"
@@ -3217,6 +3301,7 @@ s%@JDB@%$JDB%;t t
 s%@DDD@%$DDD%;t t
 s%@GDB@%$GDB%;t t
 s%@CC@%$CC%;t t
+s%@ac_ct_CC@%$ac_ct_CC%;t t
 s%@EXEEXT@%$EXEEXT%;t t
 s%@OBJEXT@%$OBJEXT%;t t
 s%@SHLIB_CFLAGS@%$SHLIB_CFLAGS%;t t
