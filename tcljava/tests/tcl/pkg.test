@@ -9,20 +9,36 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: pkg.test,v 1.1 1998/10/14 21:09:26 cvsadmin Exp $
+# RCS: @(#) $Id: pkg.test,v 1.2 1999/07/28 02:36:05 mo Exp $
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 
-#this test is now DESTRUCTIVE because it does a package forget
-#for all of the packages currently in the interp. We therefore
-#need to ensure that this test is done AFTER all other tests that
-#might need to use package features of the interp
 
-#the only other way to fix this test is to add the interp command
-#to the Jacl interpreter so that it can use the same tests a tcl
+# To ensure that these tests do not destroy interp state that other
+# tests might need access to we save the package info and restore it.
 
+catch {unset packages}
 
+# Ensure that the java package has been loaded
+package require java
+
+foreach pkg [package names] {
+  set vers [package versions $pkg]
+
+  if {[llength $vers] == 0} {
+    # empty built in package (like Tcl)
+    set packages($pkg) ""
+  } else {
+    foreach ver $vers {
+      set packages($pkg,$ver) [package ifneeded $pkg $ver]
+    }
+  }
+}
+
+# delete all currently known packages
 eval package forget [package names]
+
+set savedUnknown [package unknown]
 package unknown {}
 set oldPath auto_path
 set auto_path ""
@@ -482,7 +498,7 @@ test pkg-3.52 {Tcl_PackageCmd procedure, "vsatisfies" option} {
 } {0}
 test pkg-3.53 {Tcl_PackageCmd procedure, "versions" option} {
     list [catch {package foo} msg] $msg
-} {1 {bad option "foo": must be forget, ifneeded, names, provide, require, unknown, vcompare, versions, or vsatisfies}}
+} {1 {bad option "foo": must be forget, ifneeded, names, present, provide, require, unknown, vcompare, versions, or vsatisfies}}
 
 # No tests for FindPackage;  can't think up anything detectable
 # errors.
@@ -554,5 +570,106 @@ test pkg-6.9 {ComparePkgVersions procedure} {
     package vsatisfies 2 1
 } {0}
 
+
+test pkg-7.1 {Tcl_PkgPresent procedure, any version} {
+    package forget t
+    package provide t 2.4
+    package present t
+} {2.4}
+test pkg-7.2 {Tcl_PkgPresent procedure, correct version} {
+    package forget t
+    package provide t 2.4
+    package present t 2.4
+} {2.4}
+test pkg-7.3 {Tcl_PkgPresent procedure, satisfying version} {
+    package forget t
+    package provide t 2.4
+    package present t 2.0
+} {2.4}
+test pkg-7.4 {Tcl_PkgPresent procedure, not satisfying version} {
+    package forget t
+    package provide t 2.4
+    list [catch {package present t 2.6} msg] $msg
+} {1 {version conflict for package "t": have 2.4, need 2.6}}
+test pkg-7.5 {Tcl_PkgPresent procedure, not satisfying version} {
+    package forget t
+    package provide t 2.4
+    list [catch {package present t 1.0} msg] $msg
+} {1 {version conflict for package "t": have 2.4, need 1.0}}
+test pkg-7.6 {Tcl_PkgPresent procedure, exact version} {
+    package forget t
+    package provide t 2.4
+    package present -exact t 2.4
+} {2.4}
+test pkg-7.7 {Tcl_PkgPresent procedure, not exact version} {
+    package forget t
+    package provide t 2.4
+    list [catch {package present -exact t 2.3} msg] $msg
+} {1 {version conflict for package "t": have 2.4, need 2.3}}
+test pkg-7.8 {Tcl_PkgPresent procedure, unknown package} {
+    package forget t
+    list [catch {package present t} msg] $msg
+} {1 {package t is not present}}
+test pkg-7.9 {Tcl_PkgPresent procedure, unknown package} {
+    package forget t
+    list [catch {package present t 2.4} msg] $msg
+} {1 {package t 2.4 is not present}}
+test pkg-7.10 {Tcl_PkgPresent procedure, unknown package} {
+    package forget t
+    list [catch {package present -exact t 2.4} msg] $msg
+} {1 {package t 2.4 is not present}}
+test pkg-7.11 {Tcl_PackageCmd procedure, "present" option} {
+    list [catch {package present} msg] $msg
+} {1 {wrong # args: should be "package present ?-exact? package ?version?"}}
+test pkg-7.12 {Tcl_PackageCmd procedure, "present" option} {
+    list [catch {package present a b c} msg] $msg
+} {1 {wrong # args: should be "package present ?-exact? package ?version?"}}
+test pkg-7.13 {Tcl_PackageCmd procedure, "present" option} {
+    list [catch {package present -exact a b c} msg] $msg
+} {1 {wrong # args: should be "package present ?-exact? package ?version?"}}
+test pkg-7.14 {Tcl_PackageCmd procedure, "present" option} {
+    list [catch {package present -bs a b} msg] $msg
+} {1 {wrong # args: should be "package present ?-exact? package ?version?"}}
+test pkg-7.15 {Tcl_PackageCmd procedure, "present" option} {
+    list [catch {package present x a.b} msg] $msg
+} {1 {expected version number but got "a.b"}}
+test pkg-7.16 {Tcl_PackageCmd procedure, "present" option} {
+    list [catch {package present -exact x a.b} msg] $msg
+} {1 {expected version number but got "a.b"}}
+test pkg-7.17 {Tcl_PackageCmd procedure, "present" option} {
+    list [catch {package present -exact x} msg] $msg
+} {1 {wrong # args: should be "package present ?-exact? package ?version?"}}
+test pkg-7.18 {Tcl_PackageCmd procedure, "present" option} {
+    list [catch {package present -exact} msg] $msg
+} {1 {wrong # args: should be "package present ?-exact? package ?version?"}}
+
+
 set auto_path oldPath
 concat
+package unknown $savedUnknown
+unset savedUnknown
+
+# restore old packages
+foreach pkg [array names packages] {
+  #see if this is a built in package
+  set pair [split $pkg ,]
+  if {[llength $pair] == 1} {
+    # it is a built in package
+    set name [lindex $pair 0]
+    package ifneeded $name 1 "package provide $name 1"
+  } else {
+    # it is not a built in package
+    set name [lindex $pair 0]
+    set ver  [lindex $pair 1]
+    package ifneeded $name $ver $packages($name,$ver)
+  }
+}
+
+# Special hack to recreate the jaclloadjava command
+# which is deleted from the interp after the java
+# package is loaded into Jacl for the first time.
+# Doing a package forget means that future calls to
+# "package require java" will generate an error
+# because the jaclloadjava command can not be found.
+
+[java::getinterp] createCommand jaclloadjava [java::new tcl.lang.JaclLoadJavaCmd]
