@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: JavaFieldCmd.test,v 1.1 1998/10/14 21:09:24 cvsadmin Exp $
+# RCS: @(#) $Id: JavaFieldCmd.test,v 1.2 1999/05/10 03:06:25 dejong Exp $
 
 # Note: This test file must be sourced from the parent directory
 #       or else the defs file may not be properly loaded.
@@ -16,15 +16,16 @@ if {[string compare test [info procs test]] == 1} then {source defs}
 
 setupJavaPackage
 
-set usage {1 {wrong # args: should be "java::field ?-noconvert? object field" or "java::field object field value ?field value ...?"}}
+#set usage {1 {wrong # args: should be "java::field ?-noconvert? object field" or "java::field object field value ?field value ...?"}}
 
+set usage {1 {wrong # args: should be "java::field ?-noconvert? objOrClass field ?value field value ...?}}
 
 test javaFieldCmd-1.1 {argument errors} {
     list [catch {java::field} msg] $msg
 }  $usage
 test javaFieldCmd-1.2 {argument errors} {
     list [catch {java::field foo} msg] $msg
-} $usage 
+} $usage
 test javaFieldCmd-1.3 {argument errors} {
     list [catch {java::field foo bar baz blat} msg] $msg
 } $usage
@@ -233,4 +234,12 @@ test javaFieldCmd-6.3 {null value} {
     java::field $o istr [java::null]
     string compare [java::field -noconvert $o istr] [java::null]
 } 0
+
+test javaFieldCmd-6.4 {get class field} {
+    list [catch {java::field Integer class} cl] [java::info class $cl] [$cl getName]
+} {0 java.lang.Class java.lang.Integer}
+
+test javaFieldCmd-6.5 {get class field} {
+    catch {java::field Integer class [java::null]}
+} 1
 
