@@ -10,7 +10,7 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  *
- * RCS: @(#) $Id: javaCmd.c,v 1.3 1999/05/09 01:53:24 dejong Exp $
+ * RCS: @(#) $Id: javaCmd.c,v 1.4 1999/05/17 02:33:51 dejong Exp $
  */
 
 /*
@@ -576,17 +576,19 @@ JavaGetEnv(
         vm_args.version = 0x00010001;
 	JNI_GetDefaultJavaVMInitArgs(&vm_args);
 	
-#ifdef INCREASE_STACK_SIZE
+#ifdef TCLBLEND_INCREASE_STACK_SIZE
         vm_args.nativeStackSize = vm_args.nativeStackSize *4;
         vm_args.javaStackSize = vm_args.javaStackSize *4;
         vm_args.minHeapSize = vm_args.minHeapSize *4;
         vm_args.maxHeapSize = vm_args.maxHeapSize *4;
+#ifdef TCLBLEND_DEBUG
         fprintf(stderr,"Tcl Blend debug: vm_args: "
                 "nativeStackSize = %d  javaStackSize = %d\n"
                 "minHeapSize = %d      maxHeapSize = %d\n",
                 vm_args.nativeStackSize, vm_args.javaStackSize,
                 vm_args.minHeapSize, vm_args.maxHeapSize);
-#endif
+#endif /* TCLBLEND_DEBUG */
+#endif /* TCLBLEND_INCREASE_STACK_SIZE */
 	/*
 	 * Add the classpath as a prefix to the default classpath.
 	 */
