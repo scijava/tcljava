@@ -1,3 +1,14 @@
+2002-01-15  Shawn Boyce  <shawn@qcominc.com>
+
+	* src/jacl/tcl/lang/ExecCmd.java
+	(cmdProc, execWin, execReflection):
+	Use new Runtime.exec API to avoid PWD hack
+	with JDK 1.3 or newer. The API is called
+	via reflection so that code can continue
+	to be compiled on a JDK 1.1 system.
+	Update the system name check in execWin
+	to work with Windows 2000.
+
 2002-01-14  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* src/jacl/tcl/lang/SocketChannel.java

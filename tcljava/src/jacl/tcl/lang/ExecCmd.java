@@ -10,18 +10,38 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ExecCmd.java,v 1.6 2001/11/16 05:31:07 mdejong Exp $
+ * RCS: @(#) $Id: ExecCmd.java,v 1.7 2002/01/15 22:48:12 mdejong Exp $
  */
 
 package tcl.lang;
+
 import java.util.*;
 import java.io.*;
+import java.lang.reflect.Method;
+import java.lang.reflect.InvocationTargetException;
+
 
 /*
  * This class implements the built-in "exec" command in Tcl.
  */
 
 class ExecCmd implements Command {
+
+/**
+ * Reference to Runtime.exec, null when JDK < 1.3
+ */
+private static Method execMethod;
+
+static {
+    // Runtime.exec(String[] cmdArr, String[] envArr, File currDir)
+    Class[] parameterTypes = {String[].class, String[].class, File.class };
+    try {
+        execMethod = Runtime.getRuntime().getClass().getMethod("exec",
+            parameterTypes);
+    } catch (NoSuchMethodException e) {
+        execMethod = null;
+    }
+}
 
 
 /*
@@ -103,7 +123,9 @@ throws
 	 * we simply call exec and give it our "best shot"
 	 */
 
-        if (Util.isUnix()) {
+        if (execMethod != null) {
+	    p = execReflection(interp, argv, firstWord, argLen);
+        } else if (Util.isUnix()) {
 	    p = execUnix(interp, argv, firstWord, argLen);
 	} else if (Util.isWindows()) {
 	    p = execWin(interp, argv, firstWord, argLen);
@@ -365,7 +387,8 @@ private Process
     String jacl1 = "C:\\TEMP\\jacl1.bat";
     String jacl2 = "C:\\TEMP\\jacl2.bat";
     
-    boolean isNT = System.getProperty("os.name").toLowerCase().equals("windows nt");
+    boolean isNT = System.getProperty("os.name").toLowerCase().equals("windows nt") ||
+                   System.getProperty("os.name").toLowerCase().equals("windows 2000");
     
     File jacl1_file = new File(jacl1);
     File jacl2_file = new File(jacl2);
@@ -480,5 +503,60 @@ execDefault (Interp interp, TclObject argv[], int first, int last)
     return Runtime.getRuntime().exec(strv);
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * execReflection --
+ *
+ *	This procedure is invoked to process the "exec" call using the
+ *	new Runtime.exec( String[] cmdArr, String[] envArr, File currDir )
+ *      call in JDK1.3. The method invocation is done using Reflection to
+ *      allow for JDK1.1/1.2 compatibility.
+ *
+ * Results:
+ *	Returns the new process.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+private Process 
+execReflection (Interp interp, TclObject argv[], int first, int last) 
+        throws IOException {
+
+    String[] strv = new String[last - first];
+
+    for (int i=first, j=0; i < last; j++, i++) {
+        strv[j] = argv[i].toString();
+    }
+
+    Object[] methodArgs = new Object[3];
+    methodArgs[0] = strv; // exec command arguments
+    methodArgs[1] = null;  // inherit all environment variables
+    methodArgs[2] = interp.getWorkingDir();
+
+    try
+    {
+        return (Process)
+            execMethod.invoke(Runtime.getRuntime(), methodArgs);
+    } catch (IllegalAccessException ex) {
+        throw new TclRuntimeError("IllegalAccessException in execReflection");
+    } catch (IllegalArgumentException ex) {
+        throw new TclRuntimeError("IllegalArgumentException in execReflection");
+    } catch (InvocationTargetException ex) {
+        Throwable t = ex.getTargetException();
+
+        if (t instanceof Error) {
+            throw (Error) t;
+        } else if (t instanceof IOException) {
+            throw (IOException) t;
+        } else {
+           throw new TclRuntimeError("unexected exception in execReflection"); 
+        }
+    }
+}
 
 } // end ExecCmd
