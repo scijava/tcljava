@@ -522,6 +522,16 @@ AC_DEFUN([AC_JAVA_CLASSPATH], [
         fi
     fi
 
+    # JDK 1.4 under Darwin
+    F=/System/Library/Frameworks/JavaVM.framework/Versions/CurrentJDK/Classes/classes.jar
+    if test "x$ac_java_classpath" = "x" ; then
+        AC_MSG_LOG([Looking for $F], 1)
+        if test -f $F ; then
+            AC_MSG_LOG([Found $F], 1)
+            ac_java_classpath=$F
+        fi
+    fi
+
     # Append CLASSPATH if env var is set. Avoid append
     # under msys because CLASSPATH is in Win32 format
     # and we can't combine it with a msys path.

@@ -2327,6 +2327,22 @@ echo "$as_me: error: jvm directory not set" >&2;}
         fi
     fi
 
+    # JDK 1.4 under Darwin
+    F=/System/Library/Frameworks/JavaVM.framework/Versions/CurrentJDK/Classes/classes.jar
+    if test "x$ac_java_classpath" = "x" ; then
+
+    echo Looking for $F >&5
+
+
+        if test -f $F ; then
+
+    echo Found $F >&5
+
+
+            ac_java_classpath=$F
+        fi
+    fi
+
     # Append CLASSPATH if env var is set. Avoid append
     # under msys because CLASSPATH is in Win32 format
     # and we can't combine it with a msys path.
@@ -2355,7 +2371,7 @@ echo "${ECHO_T}$ac_java_classpath" >&6
 echo $ECHO_N "checking to see if the java compiler works... $ECHO_C" >&6
 
     cat << \EOF > conftest.java
-// #line 2358 "configure"
+// #line 2374 "configure"
 
 
 public class conftest {
@@ -2426,7 +2442,7 @@ echo $ECHO_N "checking type of jvm... $ECHO_C" >&6
     if test "x$ac_java_jvm_name" = "x" ; then
 
     cat << \EOF > conftest.java
-// #line 2429 "configure"
+// #line 2445 "configure"
 import kaffe.lang.Application;
 
 public class conftest {
@@ -2453,7 +2469,7 @@ EOF
     if test "x$ac_java_jvm_name" = "x" ; then
 
     cat << \EOF > conftest.java
-// #line 2456 "configure"
+// #line 2472 "configure"
 import gnu.java.io.EncodingManager;
 
 public class conftest {
@@ -2502,7 +2518,7 @@ echo $ECHO_N "checking java API version... $ECHO_C" >&6
 
 
     cat << \EOF > conftest.java
-// #line 2505 "configure"
+// #line 2521 "configure"
 import java.lang.StrictMath;
 
 public class conftest {
@@ -2530,7 +2546,7 @@ EOF
     if test "x$ac_java_jvm_version" = "x" ; then
 
     cat << \EOF > conftest.java
-// #line 2533 "configure"
+// #line 2549 "configure"
 import java.lang.Package;
 
 public class conftest {
@@ -2559,7 +2575,7 @@ EOF
     if test "x$ac_java_jvm_version" = "x" ; then
 
     cat << \EOF > conftest.java
-// #line 2562 "configure"
+// #line 2578 "configure"
 import java.lang.reflect.Method;
 
 public class conftest {
