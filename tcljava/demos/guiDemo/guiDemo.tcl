@@ -9,14 +9,15 @@
 # redistribution of this file, and for a DISCLAIMER OF ALL
 # WARRANTIES.
 # 
-# RCS: @(#) $Id: guiDemo.tcl,v 1.1 1998/10/14 21:09:23 cvsadmin Exp $
+# RCS: @(#) $Id: guiDemo.tcl,v 1.2 1998/11/04 22:34:57 hylands Exp $
 
+package require java
 source grid.tcl
 
 # setButtons --
 #
 #	Enable/disable the buttons depending on whether an entry
-#	has beel selected in the corresponding listbox.
+#	has been selected in the corresponding listbox.
 
 proc setButtons {} {
     global list1 list2 b1 b2
