@@ -60,8 +60,10 @@ makefile variable must not be an absolute pathname.  If it is
 an absolute pathname, then tclsh80 will crash with a segfault
 
 (Tcl Blend guiDemo)
-Under Tcl Blend with Tcl 8.0.3, guiDemo does not work, employees
-cannot be moved over.  When the arrow is clicked on, the message:
+Under Tcl Blend with Tcl 8.0.3, guiDemo sometimes does not work,
+especially when run on a remote display over the network.
+The problem is that employees cannot be moved over.
+When the arrow is clicked on, the message:
 	can't wait for variable "done":  would wait forever
 appears
 
