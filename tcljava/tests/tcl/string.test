@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: string.test,v 1.1 1998/10/14 21:09:26 cvsadmin Exp $
+# RCS: @(#) $Id: string.test,v 1.2 2000/03/17 23:31:31 mo Exp $
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 
@@ -233,10 +233,10 @@ test string-7.11 {string range} {
 } {1 {wrong # args: should be "string range string first last"}}
 test string-7.12 {string range} {
     list [catch {string range abc abc 1} msg] $msg
-} {1 {bad index "abc": must be integer or "end"}}
+} {1 {bad index "abc": must be integer or end?-integer?}}
 test string-7.13 {string range} {
     list [catch {string range abc 1 eof} msg] $msg
-} {1 {bad index "eof": must be integer or "end"}}
+} {1 {bad index "eof": must be integer or end?-integer?}}
 test string-7.14 {string range} {
     string range abcdefghijklmnop end end
 } {p}

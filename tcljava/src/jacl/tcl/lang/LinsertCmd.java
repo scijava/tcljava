@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: LinsertCmd.java,v 1.1 1998/10/14 21:09:21 cvsadmin Exp $
+ * RCS: @(#) $Id: LinsertCmd.java,v 1.2 2000/03/17 23:31:30 mo Exp $
  *
  */
 
@@ -32,7 +32,7 @@ class LinsertCmd implements Command {
         }
 
 	int size = TclList.getLength(interp, argv[1]);
-	int index = TclInteger.getForIndex(interp, argv[2], size);
+	int index = Util.getIntForIndex(interp, argv[2], size);
 	TclObject list = argv[1];
 
 	list.preserve();

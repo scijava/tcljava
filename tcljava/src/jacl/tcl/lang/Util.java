@@ -1,7 +1,7 @@
 /* 
  * Util.java --
  *
- *	This class handles Tcl expressions.
+ *	This class provides useful Tcl utility methods.
  *
  * Copyright (c) 1997 Cornell University.
  * Copyright (c) 1997-1999 by Sun Microsystems, Inc.
@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Util.java,v 1.6 2000/03/10 18:05:02 mo Exp $
+ * RCS: @(#) $Id: Util.java,v 1.7 2000/03/17 23:31:30 mo Exp $
  */
 
 package tcl.lang;
@@ -311,7 +311,118 @@ throws
 	return (int)(  res.value);
     }
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclGetIntForIndex -> Util.getIntForIndex
+ *
+ *	This procedure returns an integer corresponding to the list index
+ *	held in a Tcl object. The Tcl object's value is expected to be
+ *	either an integer or a string of the form "end([+-]integer)?". 
+ *
+ * Results:
+ *	The return value is the index that is found from the string. If
+ *	the Tcl object referenced by tobj has the value "end", the
+ *	value stored is endValue. If tobj's value is not of the form
+ *	"end([+-]integer)?" and it
+ *	can not be converted to an integer, an exception is raised.
+ *
+ * Side effects:
+ *	The object referenced by tobj might be converted to an
+ *	integer object.
+ *
+ *----------------------------------------------------------------------
+ */
+static final int getIntForIndex(Interp interp, TclObject tobj, int endValue)
+    throws TclException {
+    int length, offset;
 
+    if (tobj.getInternalRep() instanceof TclInteger) {
+	return TclInteger.get(interp, tobj);
+    }
+
+    String bytes = tobj.toString();
+    length = bytes.length();
+
+    String intforindex_error = "bad index \"" + bytes +
+	    "\": must be integer or end?-integer?" + checkBadOctal(interp, bytes);
+
+    // FIXME : should we replace this call to regionMatches with a generic strncmp?
+    if (! "end".regionMatches(0, bytes, 0, (length > 3) ? 3 : length)) {
+	try {
+	    offset = TclInteger.get(null, tobj);
+	} catch (TclException e) {
+	    throw new TclException(interp, intforindex_error);
+	}
+	return offset;
+    }
+
+    if (length <= 3) {
+	return endValue;
+    } else if (bytes.charAt(3) == '-') {
+	// This is our limited string expression evaluator
+
+	offset = Util.getInt(interp, bytes.substring(3));
+	return endValue + offset;
+    } else {
+	throw new TclException(interp, intforindex_error);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclCheckBadOctal ->  Util.checkBadOctal
+ *
+ *	This procedure checks for a bad octal value and returns a
+ *	meaningful error that should be appended to the interp's result.
+ *
+ * Results:
+ *	Returns error message if it was a bad octal.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static final String
+checkBadOctal(
+	      Interp interp,    // Interpreter to use for error reporting.
+	                        // If NULL, then no error message is returned.
+	      String value)
+{
+    int p = 0;
+    final int len = value.length();
+
+    // A frequent mistake is invalid octal values due to an unwanted
+    // leading zero. Try to generate a meaningful error message.
+
+    while (p < len && Character.isWhitespace(value.charAt(p))) {
+	p++;
+    }
+    if ((p < len) && (value.charAt(p) == '+' || value.charAt(p) == '-')) {
+	p++;
+    }
+    if ((p < len) && (value.charAt(p) == '0')) {
+	while ((p < len) &&
+	       Character.isDigit(value.charAt(p))) { // INTL: digit.
+	    p++;
+	}
+	while ((p < len) &&
+	       Character.isWhitespace(value.charAt(p))) { // INTL: ISO space.
+	    p++;
+	}
+	if (p >= len) {
+	    // Reached end of string
+	    if (interp != null) {
+		return " (looks like invalid octal number)";
+	    }
+	}
+    }
+    return "";
+}
 
 /*
  *----------------------------------------------------------------------

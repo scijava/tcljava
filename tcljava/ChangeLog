@@ -1,3 +1,31 @@
+2000-03-17 Mo DeJong  <mdejong@redhat.com>
+
+	* docs/cFunctions.html:
+	* docs/TclJavaLib/TclInteger.htm:
+	* src/jacl/tcl/lang/LindexCmd.java:
+	* src/jacl/tcl/lang/LinsertCmd.java:
+	* src/jacl/tcl/lang/LrangeCmd.java:
+	* src/jacl/tcl/lang/LreplaceCmd.java:
+	* src/jacl/tcl/lang/LsortCmd.java:
+	* src/jacl/tcl/lang/StringCmd.java:
+	* src/jacl/tcl/lang/Util.java:
+	* src/tcljava/tcl/lang/TclInteger.java:
+	* tests/tcl/lindex.test:
+	* tests/tcl/linsert.test:
+	* tests/tcl/lrange.test:
+	* tests/tcl/lreplace.test:
+	* tests/tcl/string.test:
+	Renamed and moved the TclInteger.getForIndex() method
+	to Util.getIntForIndex(). It is a
+	mapping for the TclGetIntForIndex function
+	which is private, so it did not belong
+	in TclInteger. Along with this change, I
+	updated the implementation of getIntForIndex
+	so that it is compatible with Tcl 8.3, which
+	also required adding the Util.checkBadOctal()
+	method. A number of regression test were update
+	to account for these changes.
+
 2000-03-14  Mo DeJong  <mdejong@redhat.com>
 
 	* demos/packDemo/StringSplitter.java: Removed file.

@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: LreplaceCmd.java,v 1.2 1999/05/09 00:43:41 dejong Exp $
+ * RCS: @(#) $Id: LreplaceCmd.java,v 1.3 2000/03/17 23:31:30 mo Exp $
  *
  */
 
@@ -34,8 +34,8 @@ class LreplaceCmd implements Command {
 	int first;
 	int last;
 
-	first = TclInteger.getForIndex(interp, argv[2], size-1);
-	last  = TclInteger.getForIndex(interp, argv[3], size-1);
+	first = Util.getIntForIndex(interp, argv[2], size-1);
+	last  = Util.getIntForIndex(interp, argv[3], size-1);
 
 	if (first < 0) {
 	    first = 0;

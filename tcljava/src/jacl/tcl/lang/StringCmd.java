@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: StringCmd.java,v 1.2 2000/03/10 18:05:02 mo Exp $
+ * RCS: @(#) $Id: StringCmd.java,v 1.3 2000/03/17 23:31:30 mo Exp $
  *
  */
 
@@ -152,11 +152,11 @@ class StringCmd implements Command {
 		int first, strlen, last;
 		strlen = str.length();
 
-		first = TclInteger.getForIndex(interp, argv[3], strlen-1);
+		first = Util.getIntForIndex(interp, argv[3], strlen-1);
 		if (first < 0) {
 		    first = 0;
 		}
-		last = TclInteger.getForIndex(interp, argv[4], strlen-1);
+		last = Util.getIntForIndex(interp, argv[4], strlen-1);
 		if (last >= strlen) {
 		    last = strlen-1;
 		}
