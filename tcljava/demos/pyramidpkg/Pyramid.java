@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Pyramid.java,v 1.1 1998/10/14 21:09:23 cvsadmin Exp $
+ * RCS: @(#) $Id: Pyramid.java,v 1.2 1999/05/08 23:25:23 dejong Exp $
  */
 
 import tcl.lang.*;
@@ -17,7 +17,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.applet.*;
 
-/*
+/**
  * This class implements an applet with three components:
  * 1) a drawing of a partially built pyramid,
  * 2) buttons which allow the user to complete or erase the drawing, and
@@ -38,35 +38,27 @@ public class Pyramid extends Applet {
     public int numBlocks;
     private int maxBlocks;
 
-    /*
-     * Initialize the applet.
-     */
+    // Initialize the applet.
 
     public void init() {
 	numBlocks = 4;
 	maxBlocks = 6;
 
-	/*
-	 * Create buttons to manipulate the pyramid.
-	 */
+	// Create buttons to manipulate the pyramid.
 
 	buildButton = new Button(" Build ");
 	removeButton = new Button(" remove ");
 	add(buildButton);
 	add(removeButton);
 
-	/*
-	 * Create an interpreter.  Add two new commands to the
-	 * interpreter:  build and remove.
-	 */
+	// Create an interpreter.  Add two new commands to the
+	// interpreter:  build and remove.
 
 	interp = new Interp();
 	interp.createCommand("build", new BuildCmd(this));
 	interp.createCommand("remove", new RemoveCmd(this));
 
-	/*
-	 * Create an AppletConsole and add it to the applet.
-	 */
+	// Create an AppletConsole and add it to the applet.
 
 	console = new AppletConsole(interp, 15, 50);
 	add(console.GetText());
@@ -76,19 +68,17 @@ public class Pyramid extends Applet {
 	removeButton.addActionListener(new RemoveButtonListener(interp, console));
     }
 
-    /*
-     * Update the pyramid as shown in the applet.
-     */
+    // Update the pyramid as shown in the applet.
 
     public void paint(Graphics g) {
 
-	int w       = 70;        /* width of each block */
-	int dRow    = w + 30;    /* dist btw base of two adjacent rows */
-	int h       = 35;        /* height of each block */
-	int dColumn = h + 30;    /* dist btw left side of two adjacent cols */
-	int dTop    = 300;       /* dist from top of window */
+	int w       = 70;        // width of each block
+	int dRow    = w + 30;    // dist btw base of two adjacent rows
+	int h       = 35;        // height of each block
+	int dColumn = h + 30;    // dist btw left side of two adjacent cols
+	int dTop    = 300;       // dist from top of window
 
-	int dLeft   = dRow / 2;  /* dist from left side of window */
+	int dLeft   = dRow / 2;  // dist from left side of window
 	int tempBlocks = 0;
 
  	for (int column = 3; column >= 1; column--) { 
@@ -110,9 +100,7 @@ public class Pyramid extends Applet {
 	}
     }
 
-    /*
-     * Build 1 block in the pyramid.
-     */
+    // Build 1 block in the pyramid.
 
     public boolean buildBlock() {
 	if (numBlocks >= maxBlocks) {
@@ -123,9 +111,7 @@ public class Pyramid extends Applet {
 	return true;
     }
 
-    /*
-     * Remove 1 block from the pyramid.
-     */
+    // Remove 1 block from the pyramid.
 
     public boolean removeBlock() {
 	if (numBlocks == 0) {
@@ -137,7 +123,7 @@ public class Pyramid extends Applet {
     }
 }
 
-/*
+/**
  * This class implements the "build" button in the Pyramid applet.
  *
  * Pressing the "build" button simply results in the invocation of
@@ -156,7 +142,7 @@ class BuildButtonListener implements ActionListener {
     }
 }
 
-/*
+/**
  * This class implements the "remove" button in the Pyramid applet.
  *
  * Pressing the "remove" button results in the evaluation of the 
@@ -193,7 +179,7 @@ class RemoveButtonListener implements ActionListener {
     }
 }
 
-/*
+/**
  * This class implements the "build" command in PyramidPackage.
  */
 
@@ -205,7 +191,7 @@ class BuildCmd extends Applet implements Command {
 	pyr = p;
     }
 
-    /*
+    /**
      * This procedure is invoked to process the "build" Tcl command.
      * We simply call the pyramid's buildBlock method.
      */
@@ -224,7 +210,7 @@ class BuildCmd extends Applet implements Command {
     }
 }
 
-/*
+/**
  * This class implements the "remove" command in PyramidPackage.
  */
 
@@ -236,10 +222,8 @@ class RemoveCmd extends Applet implements Command {
 	pyr = p;
     }
 
-    /*
-     * This procedure is invoked to process the "remove" Tcl command.
-     * We simply call the pyramid's removeBlock method.
-     */
+    // This procedure is invoked to process the "remove" Tcl command.
+    // We simply call the pyramid's removeBlock method.
 
     public void cmdProc(Interp interp, TclObject argv[])
 	    throws TclException {

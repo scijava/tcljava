@@ -9,14 +9,14 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: AppletConsole.java,v 1.1 1998/10/14 21:09:23 cvsadmin Exp $
+ * RCS: @(#) $Id: AppletConsole.java,v 1.2 1999/05/08 23:24:33 dejong Exp $
  */
 
 import java.awt.*;
 import java.awt.event.*;
 import tcl.lang.*;
 
-/*
+/**
  * The AppletConsole object is essentially a thread containing a text box.
  * This thread allows the user to alternate between interacting with other 
  * features of the applet and the embedded tcl console.
@@ -31,19 +31,15 @@ public class AppletConsole extends Thread {
 	StringBuffer sbuf = new StringBuffer();
 	interp = i;
 	
-	/*
-	 * Create a text box and capture the key and mouse events via
-	 * the ConsoleKeyListener and ConsoleMouseListener interfaces.
-	 */
+	// Create a text box and capture the key and mouse events via
+	// the ConsoleKeyListener and ConsoleMouseListener interfaces.
 
 	text = new TextArea(rows, columns);
 	text.addKeyListener(new ConsoleKeyListener(this));
 	text.addMouseListener(new ConsoleMouseListener());
 
-	/*
-	 * The console thread runs as a daemon so that it gets terminated 
-	 * automatically when all other user threads are terminated.
-	 */
+	// The console thread runs as a daemon so that it gets terminated 
+	// automatically when all other user threads are terminated.
 
 	setDaemon(true);
     }
@@ -60,7 +56,7 @@ public class AppletConsole extends Thread {
 	text.insert(s, 100000);
     }
 
-    /*
+    /**
      * The AppletConsole thread loops waiting for notification from the
      * ConsoleKeyListener object, via the LineReadyNotify method.
      */
@@ -83,7 +79,7 @@ public class AppletConsole extends Thread {
 	}
     }
 
-    /*
+    /**
      * The ConsoleKeyListener object tells the console thread that a 
      * line of input is available and run() can proceed.
      */
@@ -93,7 +89,7 @@ public class AppletConsole extends Thread {
 	notify();
     }
 
-    /*
+    /**
      * If sbuf contains a complete command, evaluate it and display the
      * result in the text box.  Otherwise, display the secondary prompt.
      */

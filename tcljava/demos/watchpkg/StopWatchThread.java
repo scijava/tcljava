@@ -9,13 +9,13 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: StopWatchThread.java,v 1.1 1998/10/14 21:09:23 cvsadmin Exp $
+ * RCS: @(#) $Id: StopWatchThread.java,v 1.2 1999/05/08 23:28:22 dejong Exp $
  */
 
 import java.awt.*;
 import java.awt.event.*;
 
-/*
+/**
  * The StopWatchThread class implements a thread which operates the GUI 
  * and acts as a monitor for the stopwatch's internal time.  
  */
@@ -25,25 +25,21 @@ public class StopWatchThread extends Thread {
     private int internalTime;          /* stopwatch's time */
     private boolean currentlyCounting; /* whether the stopwatch is counting */
 
-    /*
-     * Declare GUI objects
-     */
+    // Declare GUI objects
 
     private Frame swFrame;
     private Button quitButton;
     private Label timeLabel;
     private Label statusLabel;
     
-    /*
-     * constructor initializes private variables and GUI
-     */
+    // constructor initializes private variables and GUI
 
     public StopWatchThread() {
 
         internalTime = 0;
 	currentlyCounting = false;
         
-	swFrame = new Frame("Jacl StopWatch");
+	swFrame = new Frame("StopWatch");
         timeLabel = new Label(internalTime + " seconds       ");
         statusLabel = new Label("halted:          ");
 	
@@ -87,7 +83,7 @@ public class StopWatchThread extends Thread {
   	swFrame.show();
     }
 
-    /*
+    /**
      * When the sw.start() method is called, this is the method
      * that runs.
      *
@@ -97,32 +93,24 @@ public class StopWatchThread extends Thread {
     public synchronized void run() {
 
  	while (true) {
-	    /*
-	     * wait for other synchronized methods to call notify()
-	     */
+	    // wait for other synchronized methods to call notify()
 
  	    try {
  		wait();
   	    } catch (Exception e) {System.out.println("Exception on wait");}
 
-	    /*
-	     * countdown loop alternates between updating values and
-	     * waiting 1 second
-	     */
+	    // countdown loop alternates between updating values and
+	    // waiting 1 second
 
 	    while ((internalTime > 0) && currentlyCounting) {
-		/*
-		 * Decrement internal time value.
-		 */
+		// Decrement internal time value.
 
 		--internalTime;
 		timeLabel.setText(internalTime + " seconds       ");
 		swFrame.repaint();
 
-		/*
-		 * If internal time is 0, update GUI and currentlyCounting flag
-		 * accordingly, and break out of the countdown loop.
-		 */
+		// If internal time is 0, update GUI and currentlyCounting flag
+		// accordingly, and break out of the countdown loop.
 
 		if (internalTime < 1) {
 		    currentlyCounting = false;
@@ -131,10 +119,8 @@ public class StopWatchThread extends Thread {
 		    break;
 		}
 
-		/*
-		 * Wait up to 1 second for other synchronized methods to call 
-		 * notify().
-		 */
+		// Wait up to 1 second for other synchronized methods to call 
+		// notify().
 
 		try {
 		    wait(1000);
@@ -143,7 +129,7 @@ public class StopWatchThread extends Thread {
  	}
     }
 
-    /*
+    /**
      * setTime() updates the stopwatch's internal time and resumes the countdown
      */
 
@@ -154,7 +140,7 @@ public class StopWatchThread extends Thread {
 	return;
     }
 
-    /*
+    /**
      * resumeCountdown() sets the stopwatch's counting status to true and
      * wakes the thread from wait call in run() method, thereby inducing
      * the countdown.
@@ -169,27 +155,23 @@ public class StopWatchThread extends Thread {
 	statusLabel.setText("counting:        ");
 	swFrame.repaint();
 
-	/*
-	 * The thread sleeps for 1 second before inducing the countdown
-	 * to ensure the clock is stable for at least 1 second before
-	 * its value is decremented.
-	 */
+	// The thread sleeps for 1 second before inducing the countdown
+	// to ensure the clock is stable for at least 1 second before
+	// its value is decremented.
 
 	currentlyCounting = false;
  	try {
  	    sleep(1000);
  	} catch (Exception e) {System.out.println("Exception on sleep");}
 
-	/*
-	 * Wake the thread up and allow it to enter the countdown loop.
-	 */
+	// Wake the thread up and allow it to enter the countdown loop.
 
 	currentlyCounting = true;
 	notify();
 	return internalTime;
     }
 
-    /*
+    /**
      * stopCountdown() wakes the thread from wait call in run() method, thereby
      * forcing it to exit the countdown loop.
      *
@@ -204,9 +186,7 @@ public class StopWatchThread extends Thread {
 	return internalTime;
     }
 
-    /*
-     * die() disposes of the GUI and permanently stops the thread.
-     */
+    // die() disposes of the GUI and permanently stops the thread.
 
     public synchronized void die() {
 	swFrame.dispose();
@@ -215,9 +195,7 @@ public class StopWatchThread extends Thread {
     }
 }
 
-/*
- * This class implements the "quit" button in the StopWatch GUI.
- */
+// This class implements the "quit" button in the StopWatch GUI.
 
 class QuitButtonListener implements ActionListener {
 

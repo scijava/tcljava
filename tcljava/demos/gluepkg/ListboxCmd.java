@@ -7,16 +7,16 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ListboxCmd.java,v 1.1 1998/10/14 21:09:23 cvsadmin Exp $
+ * RCS: @(#) $Id: ListboxCmd.java,v 1.2 1999/05/08 23:20:30 dejong Exp $
  *
  */
 
 import tcl.lang.*;
 
-/*
+/**
  * This class implements the "listbox" demo command.
  *
- * The role of the GUI is to take a list od TclObjects and add them to an
+ * The role of the GUI is to take a list of TclObjects and add them to an
  * AWT List component.  Two Buttons are added; OK and Cancel.  When either
  * of the buttons are pressed, the class variable 'items' is set to the 
  * selected item(s) or null if no items are selected or Cancel was pressed.
@@ -24,7 +24,7 @@ import tcl.lang.*;
 
 public class ListboxCmd implements Command {
   
-    /*
+    /**
      * cmdProc --
      *
      * This procedure is invoked to process the listbox command.
@@ -36,11 +36,11 @@ public class ListboxCmd implements Command {
     public void cmdProc(Interp interp, TclObject argv[])
             throws TclException {
 
-	TclObject  result = null;   /* The Tcl result if this command     */
-        ListboxApp listbox;         /* The List widget                    */
-	String     dirName = null;  /* The dir to start with, if any      */
-	String[]   args;            /* Args passed to Listbox constructor */
-	String[]   items;           /* List of selected list items        */
+	TclObject  result = null;   // The Tcl result if this command
+        ListboxApp listbox;         // The List widget
+	String     dirName = null;  // The dir to start with, if any
+	String[]   args;            // Args passed to Listbox constructor
+	String[]   items;           // List of selected list items
 
 	if ((argv.length < 2)) {
 	    throw new TclNumArgsException(interp, 1, argv, "arg ?arg...?");
@@ -53,17 +53,13 @@ public class ListboxCmd implements Command {
 
 	listbox = new ListboxApp(args);
 
-	/*
-	 * Get the list of selected items.  items is null 
-	 * if no item selected
-	 */
+	// Get the list of selected items.  items is null 
+	// if no item selected
 
 	items = listbox.getSelectedItems();
 
-	/*
-	 * If there were selected items returned, append 
-	 * each one onto the list
-	 */
+	// If there were selected items returned, append 
+	// each one onto the list
 	
 	if (items != null) {
 	    result = TclList.newInstance();

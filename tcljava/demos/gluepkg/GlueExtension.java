@@ -7,12 +7,12 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: GlueExtension.java,v 1.1 1998/10/14 21:09:23 cvsadmin Exp $
+ * RCS: @(#) $Id: GlueExtension.java,v 1.2 1999/05/08 23:16:38 dejong Exp $
  */
 
 import tcl.lang.*; 
 
-/*
+/**
  * This class implements a simple Tcl extension package "GUIExtension". This
  * package contains one Tcl command "sayhello". See the API documentation of
  * the tcl.lang.Extension class for details.
@@ -20,11 +20,8 @@ import tcl.lang.*;
 
 public class GlueExtension extends Extension {
 
-    /*
-     * init --
-     *
-     * Create all the commands in the Simple package. 
-     */
+    // init --
+    // Create all the commands in the Simple package. 
 
     public void init(Interp interp) {
       	interp.createCommand("filedialog", new FileDialogCmd());

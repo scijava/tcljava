@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: JarCmd.java,v 1.1 1998/10/14 21:09:23 cvsadmin Exp $
+ * RCS: @(#) $Id: JarCmd.java,v 1.2 1999/05/08 23:17:10 dejong Exp $
  *
  */
 
@@ -16,19 +16,19 @@ import java.util.*;
 import java.util.zip.*;
 import java.io.*;
 
-/*
+/**
  * This class implements the "jar" demo command.
  */
 
 class JarCmd implements Command {
 
-    /*
-     * An array of acceptable options.
-     */
+    // An array of acceptable options.
 
-    static final private String cmds[] = {
+    private static final String cmds[] = {
         "-extract"
     };
+
+    private final int OPT_EXTRACT = 0;
 
     /*
      * cmdProc --
@@ -43,14 +43,14 @@ class JarCmd implements Command {
 
     public void cmdProc(Interp interp, TclObject argv[])
             throws TclException {
-	TclObject   result;                  /* Stores the TclResult      */
-        String      jarFileName;             /* Name of jar file          */
-        String      extFileName = null;      /* Name of file to extract   */
-	ZipFile     zFileObj    = null;      /* Handle to opened jar file */
-	ZipEntry    zEntry;                  /* Handle to each jar entry  */
-	Enumeration enum;                    /* Enum of each jar entry    */
-	boolean     extract = false;         /* True if extracting a file */
-	int         index;                   /* Result of TclIndex.get()  */
+	TclObject   result;                  // Stores the TclResult
+        String      jarFileName;             // Name of jar file
+        String      extFileName = null;      // Name of file to extract
+	ZipFile     zFileObj    = null;      // Handle to opened jar file
+	ZipEntry    zEntry;                  // Handle to each jar entry
+	Enumeration enum;                    // Enum of each jar entry
+	boolean     extract = false;         // True if extracting a file
+	int         index;                   // Result of TclIndex.get()
 
 	if ((argv.length != 2) && (argv.length != 4))  {
 	    throw new TclNumArgsException(interp, 1, argv, 
@@ -60,7 +60,7 @@ class JarCmd implements Command {
 	if (argv.length == 4) {
 	    index = TclIndex.get(interp, argv[2], cmds, "option", 0);
 	    switch (index) {
-  	        case 0: 
+  	        case OPT_EXTRACT: 
 		    extract = true;
 		    extFileName = argv[3].toString();
 		    break;
@@ -78,25 +78,19 @@ class JarCmd implements Command {
 	    zEntry = (ZipEntry)enum.nextElement();
 
 	    if (!extract) {
-	        /*
-		 * If not extracting, simply append each filename to the 
-		 * end of the TclList.
-		 */
+		// If not extracting, simply append each filename to the 
+		// end of the TclList.
 
 	        TclList.append(interp, result, 
 	                TclString.newInstance(zEntry.getName()));
 	    } else {
-	        /*
-		 * We are extracrting a file, so see if the current ZipEntry's
-		 * name equals the file we want to extract.
-		 */
+		// We are extracting a file, so see if the current ZipEntry's
+		// name equals the file we want to extract.
 
 	        if (extFileName.equals(zEntry.getName())) {
-		    /*
-		     * If the file that we want to extract is found, extract
-		     * the contents, convert it to a TclString, set the 
-		     * result and return.
-		     */
+		    // If the file that we want to extract is found, extract
+		    // the contents, convert it to a TclString, set the 
+		    // result and return.
 
 		    String s = null;
 
@@ -145,19 +139,17 @@ class JarCmd implements Command {
 	return (sbuf.toString());
     } 
 
-    /* 
-     * openZipFile --
-     *
-     * Opens a file, specified by fileName, in the form of a ZipFile
-     * Returns the ZipFile object.
-     */
+    // openZipFile --
+    //
+    // Opens a file, specified by fileName, in the form of a ZipFile
+    // Returns the ZipFile object.
 
     private static ZipFile openZipFile(Interp interp, String fileName) 
             throws TclException {
-	boolean zipErr = false;    /* True if not a jar file        */
-	boolean ioErr  = false;    /* True if file dosent exist     */
-	ZipFile zf     = null;     /* The return value, set to null *
-				    * to make the compilier happy   */
+	boolean zipErr = false;    // True if not a jar file
+	boolean ioErr  = false;    // True if file dosent exist
+	ZipFile zf     = null;     // The return value, set to null
+				   // to make the compilier happy
 
 	try {
 	    zf = new ZipFile(fileName);

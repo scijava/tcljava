@@ -9,12 +9,12 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: SimpleExtension.java,v 1.1 1998/10/14 21:09:23 cvsadmin Exp $
+ * RCS: @(#) $Id: SimpleExtension.java,v 1.2 1999/05/08 23:27:42 dejong Exp $
  */
 
 import tcl.lang.*; 
 
-/*
+/**
  * This class implements a simple Tcl extension package "SimpleExtension".
  * This extension contains one Tcl command "sayhello".  See the API 
  * documentation of the tcl.lang.Extension class for details.
@@ -22,9 +22,7 @@ import tcl.lang.*;
 
 public class SimpleExtension extends Extension {
 
-    /*
-     * Create all the commands in the Simple package. 
-     */
+    // Create all the commands in the Simple package. 
 
     public void init(Interp interp) {
 	interp.createCommand("sayhello", new SayhelloCmd());
