@@ -598,3 +598,11 @@ that would be enough!
 (TODO)
 Tcl 8.1 seems to have added a new "package present" command. This should
 also be added to the Jacl implementation when I get some time.
+
+
+(TODO)
+
+There seems to be some problem with the positive and negative infinity
+description string on different platforms. If Tcl should have one or
+the other then Tcl may need to be fixed. The test cases in the regular
+Tcl dist does not check for this.
