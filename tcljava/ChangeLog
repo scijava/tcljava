@@ -1,3 +1,13 @@
+2000-05-14  Mo DeJong  <mdejong@redhat.com>
+
+	* src/jacl/tcl/lang/ConsoleEvent.java: Removed
+	class as it is no longer needed after changes to Shell.
+	* src/jacl/tcl/lang/Shell.java: Overhauled the
+	way the Shell program interacts with the Interp.
+	The old way was not thread safe. The prompt displayed
+	when a command is not yet complete has also been
+	changed to match recent verisons of Tcl.
+
 2000-05-13  Mo DeJong  <mdejong@redhat.com>
 
 	* src/pkgIndex.tcl: Added missing

@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Shell.java,v 1.6 2000/05/13 09:15:16 mo Exp $
+ * RCS: @(#) $Id: Shell.java,v 1.7 2000/05/14 20:34:29 mo Exp $
  */
 
 package tcl.lang;
@@ -269,9 +269,7 @@ ConsoleThread(
  *----------------------------------------------------------------------
  */
 
-public synchronized void
-run()
-{
+public synchronized void run() {
     if (debug) {
         System.out.println("entered ConsoleThread run() method");
     }
@@ -288,116 +286,150 @@ run()
 	// received inside getLine(). (2) when the "exit" command is
 	// executed in the script.
 
-	TclObject prompt;
-
         getLine();
+
+	final String command = sbuf.toString();
 
         if (debug) {
             System.out.println("got line from console");
-            System.out.println("\"" + sbuf + "\"");
+            System.out.println("\"" + command + "\"");
         }
 
-	// We have a complete command now. Execute it.
+	// When interacting with the interpreter, one must
+	// be careful to never call a Tcl method from
+	// outside of the event loop thread. If we did
+	// something like just call interp.eval() it
+	// could crash the whole process because two
+	// threads might write over each other.
 
-	if (Interp.commandComplete(sbuf.toString())) {
-            if (debug) {
-                System.out.println("line was a complete command");
-            }
+	// The only safe way to interact with Tcl is
+	// to create an event and add it to the thread
+	// safe event queue.
 
-	    ConsoleEvent evt = new ConsoleEvent(interp, sbuf.toString());
-	    interp.getNotifier().queueEvent(evt, TCL.QUEUE_TAIL);
-	    evt.sync();
+	TclEvent event = new TclEvent() {
+	    public int processEvent (int flags) {
+		
+		// See if the command is a complete Tcl command
 
-	    if (evt.evalException == null) { // No error was generated
-		String s = evt.evalResult.toString();
+		if (Interp.commandComplete(command)) {
+		    if (debug) {
+			System.out.println("line was a complete command");
+		    }
 
-                if (debug) {
-                    System.out.println("eval result was \"" + s + "\"");
-                }
+		    boolean eval_exception = true;
 
-		if (s.length() > 0) {
-		    putLine(out, s);
-		}
-	    } else { // Tcl error was generated !
-                if (debug) {
-                    System.out.println("eval returned exceptional condition");
-                }
+		    try {
+			interp.recordAndEval(TclString.newInstance(command), 0);
+			eval_exception = false;
+		    } catch (TclException e) {
+			if (debug) {
+			    System.out.println("eval returned exceptional condition");
+			}
 
-		int code = evt.evalException.getCompletionCode();
+			int code = e.getCompletionCode();
 
-		// This really sucks, but the getMessage() call on the exception
-		// does not always return the msg! See TclException for super()!
-		String msg = evt.evalResult.toString();
+		    check_code: {
+			    if (code == TCL.RETURN) {
+				code = interp.updateReturnInfo();
+				if (code == TCL.OK) {
+				    break check_code;
+				}
+			    }
 
-		check_code: {
-		    if (code == TCL.RETURN) {
-			// FIXME : not thread safe!
-			code = interp.updateReturnInfo();
-			if (code == TCL.OK) {
-			    break check_code;
+			    switch (code) {
+			    case TCL.ERROR:
+				// This really sucks. The getMessage() call on
+				// a TclException will not always return a msg.
+				// See TclException for super() problem.
+				putLine(err, interp.getResult().toString());
+				break;
+			    case TCL.BREAK:
+				putLine(err, "invoked \"break\" outside of a loop");
+				break;
+			    case TCL.CONTINUE:
+				putLine(err, "invoked \"continue\" outside of a loop");
+				break;
+			    default:
+				putLine(err, "command returned bad code: " + code);
+			    }
 			}
 		    }
 
-		    switch (code) {
-		    case TCL.ERROR:
-			putLine(err, msg);
-			break;
-		    case TCL.BREAK:
-			putLine(err, "invoked \"break\" outside of a loop");
-			break;
-		    case TCL.CONTINUE:
-			putLine(err, "invoked \"continue\" outside of a loop");
-			break;
-		    default:
-			putLine(err, "command returned bad code: " + code);
+		    if (!eval_exception) {
+			if (debug) {
+			    System.out.println("eval returned normally");
+			}
+
+			String evalResult = interp.getResult().toString();
+
+			if (debug) {
+			    System.out.println("eval result was \"" + evalResult + "\"");
+			}
+
+			if (evalResult.length() > 0) {
+			    putLine(out, evalResult);
+			}
 		    }
+
+		    // Empty out the incoming command buffer
+		    sbuf.setLength(0);
+
+		    // See if the user set a custom shell prompt for the next command
+
+		    TclObject prompt;
+
+		    try {
+			prompt = interp.getVar("tcl_prompt1", TCL.GLOBAL_ONLY);
+		    } catch (TclException e) {
+			prompt = null;
+		    }
+		    if (prompt != null) {
+			try {
+			    interp.eval(prompt.toString(), TCL.GLOBAL_ONLY);
+			} catch (TclException e) {
+			    put(out, "% ");
+			}
+		    } else {
+			put(out, "% ");
+		    }
+
+		    return 1;
+		} else { // Interp.commandComplete() returned false
+
+		    if (debug) {
+			System.out.println("line was not a complete command");
+		    }
+
+		    // We don't have a complete command yet. Print out a level 2
+		    // prompt message and wait for further inputs.
+
+		    TclObject prompt;
+
+		    try {
+			prompt = interp.getVar("tcl_prompt2", TCL.GLOBAL_ONLY);
+		    } catch (TclException e) {
+			prompt = null;
+		    }
+		    if (prompt != null) {
+			try {
+			    interp.eval(prompt.toString(), TCL.GLOBAL_ONLY);
+			} catch (TclException e) {
+			    put(out, "");
+			}
+		    } else {
+			put(out, "");
+		    }
+
+		    return 1;
 		}
-	    }
+	    } // end processEvent method
+	}; // end TclEvent innerclass
 
-	    evt.evalResult.release(); // we are done with the interp result
-	    sbuf.setLength(0); // empty out sbuf
+	// Add the event to the thread safe event queue
+	interp.getNotifier().queueEvent(event, TCL.QUEUE_TAIL);
 
-	    // FIXME : not thread safe!
-	    try {
-		prompt = interp.getVar("tcl_prompt1", TCL.GLOBAL_ONLY);
-	    } catch (TclException e) {
-		prompt = null;
-	    }
-	    if (prompt != null) {
-		try {
-		    // FIXME : not thread safe
-		    interp.eval(prompt.toString(), TCL.GLOBAL_ONLY);
-		} catch (TclException e) {
-		    put(out, "% ");
-		}
-	    } else {
-		put(out, "% ");
-	    }
-	} else {
-            if (debug) {
-                System.out.println("line was not a complete command");
-            }
-
-	    // We don't have a complete command yet. Print out a level 2
-	    // prompt message and wait for further inputs.
-
-	    try {
-		// FIXME : not thread safe!
-		prompt = interp.getVar("tcl_prompt2", TCL.GLOBAL_ONLY);
-	    } catch (TclException e) {
-		prompt = null;
-	    }
-	    if (prompt != null) {
-		try {
-		    // FIXME : not thread safe
-		    interp.eval(prompt.toString(), TCL.GLOBAL_ONLY);
-		} catch (TclException e) {
-		    put(out, "> ");
-		}
-	    } else {
-		put(out, "> ");
-	    }
-	}
+	// Tell this thread to wait until the event has been processed.
+	event.sync();
     }
 }
 
