@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ExprValue.java,v 1.1 1998/10/14 21:09:21 cvsadmin Exp $
+ * RCS: @(#) $Id: ExprValue.java,v 1.2 1999/05/09 00:03:00 dejong Exp $
  *
  */
 
@@ -47,19 +47,22 @@ class ExprValue {
     int type;
 
     /**
-     * Constructor.
+     * Constructors.
      */
     ExprValue() {
 	type = ERROR;
     }
+
     ExprValue(long i) {
 	intValue = i;
 	type = INT;
     }
+
     ExprValue(double d) {
 	doubleValue = d;
 	type = DOUBLE;
     }
+
     ExprValue(String s) {
 	stringValue = s;
 	type = STRING;
