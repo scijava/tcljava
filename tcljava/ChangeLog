@@ -1,5 +1,12 @@
 2001-05-12  Christian Krone  <christian.krone@softwareag.com>
 
+	* src/jacl/tcl/lang/Util.java (findElement): Fix parsing of
+	nested quoted braces in lists.
+	* tests/tcl/lindex.test: Add test for parsing of nested
+	quoted braces in list.
+
+2001-05-12  Christian Krone  <christian.krone@softwareag.com>
+
 	* tests/jacl/Interp.test: Add braces around the result
 	for the Interp-5.1 test.
 
