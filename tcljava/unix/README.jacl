@@ -1,5 +1,5 @@
 Jacl
-RCS: @(#) $Id: README.jacl,v 1.1 1998/10/14 21:09:22 cvsadmin Exp $
+RCS: @(#) $Id: README.jacl,v 1.2 1998/11/04 22:45:09 hylands Exp $
 
 This is the directory where you configure, compile, test, and install 
 UNIX versions of Jacl.
@@ -14,10 +14,16 @@ for a PC running Windows, see the README file in the directory ../win.
 How To Install Jacl (Binary Release Only):
 ------------------------------------------
 
-(a) In the top-level directory there is a file named jacl.jar.  Set your
-    CLASSPATH environment variable to point to the Java jar file, jacl.jar.  
-    On some versions of UNIX this can be done by typing "setenv CLASSPATH 
-    ${CLASSPATH}:/home/user/jacl1.0/jacl.jar".
+(a) In the top-level directory there are two jar files, jacl.jar
+    and tclblend.jar	
+
+    Set your CLASSPATH environment variable to include jacl.jar and
+    tclblend.jar 
+
+    For example, if the Jacl distribution was at /usr/local/jacl1.1a1,
+    and you had not set CLASSPATH previously:
+
+    setenv CLASSPATH /usr/local/jacl1.1a1/jacl.jar:/usr/local/jacl1.1a1/tclblend.jar
 
 (b) At this point you can play with Jacl by typing "java tcl.lang.Shell".  
     If you haven't set the CLASSPATH variable correctly, you will see a 
@@ -40,9 +46,13 @@ How To Compile And Install Jacl (Source Release Only):
     of it that describe the things you might want to change and how to 
     change them.
 
-(e) Set your CLASSPATH environment variable to include the jacl directory.  
-    On some versions of UNIX this can be done by typing "setenv CLASSPATH 
-    ${CLASSPATH}:/home/user/jacl1.0/unix/jacl".
+(e) Set your CLASSPATH environment variable to include jacl.jar and
+    tclblend.jar 
+
+    For example, if the Jacl distribution was at /usr/local/jacl1.1a1,
+    and you had not set CLASSPATH previously:
+
+    setenv CLASSPATH /usr/local/jacl1.1a1/jacl.jar:/usr/local/jacl1.1a1/tclblend.jar
 
 (f) At this point you can play with Jacl by typing "java tcl.lang.Shell".  
     If you haven't set the CLASSPATH variable correctly, you will see a 
@@ -58,12 +68,3 @@ occur, you'll see a much more substantial printout for each error.  See the
 README file in the "tests" directory for more information on the test suite.  
 Note: don't run the tests as superuser: this will cause several of them to 
 fail.
-
-The Jacl & Tcl Blend team
--------------------------
-
-Ray Johnson - Project Manager
-Melissa Hirschl
-Ioi Lam
-Bryan Surles
-Special thanks to Scott Stanton who implemented Tcl Blend.

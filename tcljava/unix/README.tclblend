@@ -1,5 +1,5 @@
 Tcl Blend
-RCS: @(#) $Id: README.tclblend,v 1.1 1998/10/14 21:09:22 cvsadmin Exp $
+RCS: @(#) $Id: README.tclblend,v 1.2 1998/11/04 22:45:31 hylands Exp $
 
 This is the directory where you configure, compile, test, and install 
 UNIX versions Tcl Blend.  This directory also contains source files for 
@@ -22,23 +22,32 @@ How To Install Tcl Blend (Binary Release Only):
     NOTE: Tcl Blend does not work with the alpha release of Tcl8.1.
 
     NOTE: Tcl Blend is not entirely compatable with the beta release
-    of the Java Development Kit 1.2.
+    of the Java Development Kit 1.2.  If you want to use JDK1.2
+    with Tcl Blend, you will have to compile the sources by hand,
+    the Tcl Blend binary release will only work with JDK1.1.x
 
 (b) The environment variable LD_LIBRARY_PATH must contain a path that 
     points to the install directory for Tcl Blend.  You may want to
     edit your .cshrc and add something like:
-        setenv LD_LIBRARY_PATH ${LD_LIBRARY_PATH}:/opt/java/tclBlend1.0
+        setenv LD_LIBRARY_PATH ${LD_LIBRARY_PATH}:/opt/java/tclBlend1.1
 
 (c) The environment variable LD_LIBRARY_PATH must also contain a path that 
     points to the java libraries.  You may want to
     edit your .cshrc and add something like:
         setenv LD_LIBRARY_PATH \
-          ${LD_LIBRARY_PATH}:/opt/jdk1.1.5/lib/sparc/native_threads
+          ${LD_LIBRARY_PATH}:/opt/jdk1.1.6/lib/sparc/native_threads
+
 
 (d) Tcl Blend is a dynamically loaded module.  To add the Tcl Blend
     functions to the interperter, run tclsh from the install
-    directory, and type "lappend auto_path [pwd]" followed by "package
-    require java".  At this point, Tcl Blend is ready to be used. 
+    directory, and type:
+	lappend auto_path [pwd]
+	package require java
+    At this point, Tcl Blend is ready to be used.  To see if Tcl Blend
+    is working, try the commands below 
+	set java::jdkVersion
+	set c [java::new java.util.GregorianCalendar]
+	$c toString
 
 
 How To Compile And Install Tcl Blend (Source Release Only):
@@ -98,20 +107,29 @@ How To Compile And Install Tcl Blend (Source Release Only):
 				itself as a shared library if it can figure
 				out how to do that on this platform.
 
-(f) Type "make tclblend.jar".  This will create a library archive called
-    "libtclblend.a" or "libtclblend.so", as well as a jar file
-    "tclblend.jar" that contains all of the Java class files.
+    Note that the value of the --prefix directory is used to by the
+    'make install' rule so that Tcl Blend will automatically be loaded
+    by 'package require java'
+
+    You can determine the proper value for --prefix by starting up tclsh
+    and typing 'set tcl_library', for example:
+	user 1% tclsh
+	% set tcl_library
+	/usr/local/tcltk/tcl/lib/tcl8.0
+	% 	
+    In this case --prefix should be set to /users/local/tcltk/tcl
+
+(f) Type "make".  This will create a library archive called
+    "libtclblend.so", as well as two jar files tclblend.jar and tcljava.jar
+    that contains all of the Java class files.
 
 (g) The environment variable LD_LIBRARY_PATH must contain a path that 
     points to the install directory for Tcl Blend and the JDK
     libraries.  Refer to instructions (b) and (c) for the binary
     release above.
 
-(i) Tcl Blend is a dynamically loaded module.  To add the Tcl Blend
-    functions to the interperter, run tclsh from this directory, and
-    type "lappend auto_path [pwd]" followed by "package require java".
-    At this point, Tcl Blend is ready to be used. 
-
+(i) Tcl Blend is a dynamically loaded module.  Refer to step (d) 
+    of the binary release above.
 
 Installing Tcl Blend into the Tcl Lib Directory:
 -----------------------------------------------
@@ -119,22 +137,17 @@ Installing Tcl Blend into the Tcl Lib Directory:
 Tcl will automatically locate Tcl Blend if it is properly installed
 into the Tcl8.0 lib directory.  This will eliminate the need to append
 the Tcl Blend directory to the auto_path before loading the package.
-The steps to do this are as follows:
 
-(a) Locate the "lib" directory created when Tcl8.0 was installed. For
-    the rest of this example, this is assumed to be /usr/local/lib, but
-    may be different on your machine.
+If you have set --prefix properly (see above), then
+	make install
+should install the necessary files automatically for you.
 
-(b) Create a directory called "/usr/local/lib/tclBlend1.0".
+Tcl Blend also includes a jwish script that will automatically start
+up a wish and properly load Tcl Blend.  If you cannot install Tcl
+Blend directly in the Tcl library, you can use jwish instead.
 
-(c) Copy tclblend.jar, libtclblend.so and pkgIndex.tcl to the
-    tclBlend1.0 directory. 
-
-(d) Set your LD_LIBRARY_PATH to contain the /usr/local/lib/tclBlend1.0
-    path.
-
-(e) Start tclsh and type "package require java".  At this point, Tcl
-    Blend is ready to be used. 
+jtclsh will start up a tclsh and load Tcl Blend for you.  jtclsh 
+is merely a link to jwish.
 
 
 Test suite (Source Release Only)
@@ -147,13 +160,3 @@ you'll see a much more substantial printout for each error.  See the README
 file in the "tests" directory for more information on the test suite.  Note: 
 don't run the tests as superuser: this will cause several of them to 
 fail.
-
-
-The Jacl & Tcl Blend team
--------------------------
-
-Ray Johnson - Project Manager
-Melissa Hirschl
-Ioi Lam
-Bryan Surles
-Special thanks to Scott Stanton who implemented Tcl Blend.
