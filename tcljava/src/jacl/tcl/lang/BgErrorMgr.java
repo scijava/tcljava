@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: BgErrorMgr.java,v 1.3 2000/05/14 23:10:20 mo Exp $
+ * RCS: @(#) $Id: BgErrorMgr.java,v 1.4 2000/08/19 22:08:46 mo Exp $
  *
  */
 
@@ -227,46 +227,39 @@ BgError(
 public void
 processIdleEvent()
 {
-    /*
-     * During the execution of this method, elements may be removed from
-     * the errors list (because a TCL.BREAK was returned by the bgerror
-     * command, or because the interp was deleted). We remove this
-     * BgError instance from the list first so that this instance won't
-     * be deleted twice.
-     */
+
+    // During the execution of this method, elements may be removed from
+    // the errors list (because a TCL.BREAK was returned by the bgerror
+    // command, or because the interp was deleted). We remove this
+    // BgError instance from the list first so that this instance won't
+    // be deleted twice.
 
     errors.removeElement(this);
 
-    /*
-     * Restore important state variables to what they were at
-     * the time the error occurred.
-     */
+    // Restore important state variables to what they were at
+    // the time the error occurred.
 
     try {
 	interp.setVar("errorInfo", null, errorInfo, TCL.GLOBAL_ONLY);
     } catch (TclException e) {
-	/*
-	 * Ignore any TclException's, possibly caused by variable traces on
-	 * the errorInfo variable. This is compatible with the behavior of
-	 * the Tcl C API.
-	 */
+
+	// Ignore any TclException's, possibly caused by variable traces on
+	// the errorInfo variable. This is compatible with the behavior of
+	// the Tcl C API.
     }
 
     try {
 	interp.setVar("errorCode", null, errorCode, TCL.GLOBAL_ONLY);
     } catch (TclException e) {
-	/*
-	/*
-	 * Ignore any TclException's, possibly caused by variable traces on
-	 * the errorCode variable. This is compatible with the behavior of
-	 * the Tcl C API.
-	 */
+
+	// Ignore any TclException's, possibly caused by variable traces on
+	// the errorCode variable. This is compatible with the behavior of
+	// the Tcl C API.
     }
 
     try {
-	/*
-	 * Invoke the bgerror command.
-	 */
+
+	// Invoke the bgerror command.
 
 	TclObject argv[] = new TclObject[2];
 	argv[0] = bgerrorCmdObj;
@@ -294,21 +287,20 @@ processIdleEvent()
                 }
                 chan.flush(interp);
             } catch (TclException e1) {
-		/*
-		 * Ignore.
-		 */
+
+		// Ignore.
+
 	    } catch (IOException e2) {
-		/*
-		 * Ignore.
-		 */
+
+		// Ignore, too.
+
 	    }
 	    break;
 
 	case TCL.BREAK:
-	    /*
-	     * Break means cancel any remaining error reports for this
-	     * interpreter.
-	     */
+
+	    // Break means cancel any remaining error reports for this
+	    // interpreter.
 
 	    for (int i = errors.size() - 1; i >=0; i--) {
 		BgError bgErr = (BgError)errors.elementAt(i);
