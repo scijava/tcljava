@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ExecCmd.java,v 1.7 2002/01/15 22:48:12 mdejong Exp $
+ * RCS: @(#) $Id: ExecCmd.java,v 1.8 2002/01/19 00:15:01 mdejong Exp $
  */
 
 package tcl.lang;
@@ -135,7 +135,7 @@ throws
 
 
 	//note to self : buffer reading should be done in
-	//a seperate thread and not by calling waitFor()
+	//a separate thread and not by calling waitFor()
 	//because a process that is waited for can block
 
 	
@@ -317,7 +317,7 @@ static String escapeWinString(String str) {
 
 private Process 
 execUnix (Interp interp, TclObject argv[], int first, int last) 
-        throws IOException, InterruptedException {
+        throws IOException {
     String[] argStrs = new String[3];
 
     argStrs[0] = "sh";
@@ -367,8 +367,8 @@ execUnix (Interp interp, TclObject argv[], int first, int last)
  */
 
 private Process 
-  execWin (Interp interp, TclObject argv[], int first, int last) 
-    throws IOException, InterruptedException {
+ execWin (Interp interp, TclObject argv[], int first, int last) 
+    throws IOException {
 
     // when running on NT we need to write out two files
     // the first is in C:/TEMP/jacl1.bat and the second is C:/TEMP/jacl2.bat
@@ -486,7 +486,7 @@ private Process
 
 private Process 
 execDefault (Interp interp, TclObject argv[], int first, int last) 
-        throws IOException, InterruptedException {
+        throws IOException {
 
     //we can not do anything to change the current directory in Java
 

@@ -6,6 +6,9 @@
 	make it more clear that importing all classes
 	from a package is not supported by the
 	java::import command.
+	* src/jacl/tcl/lang/ExecCmd.java: Don't include
+	InterruptedException in throws declaration for
+	methods that can't raise this exception.
 	* src/jacl/tcl/lang/OpenCmd.java (cmdProc): Avoid
 	calling unnecessary TclString constructor.
 	* src/jacl/tcl/lang/PutsCmd.java (cmdProc): When
