@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: CharPointer.java,v 1.3 1999/07/28 01:50:46 mo Exp $
+ * RCS: @(#) $Id: CharPointer.java,v 1.4 1999/08/05 03:33:44 mo Exp $
  */
 
 package tcl.lang;
@@ -165,10 +165,7 @@ length()
  *
  * toString --
  *
- *	Get debug info about the string being referenced.  The attempt
- *	is to print the array and a ^ below the output that indicates
- *	where the index is pointing to.  This only work if the string
- *	fits on one line of text.
+ *	Get the entire string held in this CharPointer's array.
  *
  * Results:
  *	A String used for debug.
@@ -183,18 +180,5 @@ public String
 toString() 
 {
     return new String(array,0,array.length-1);
-
-    /*
-    String str = new String(array,array.length-1,
-
-    StringBuffer sbuf = new StringBuffer();
-    sbuf.append(new String(array));
-    sbuf.append("\n");
-    for(int i=0; i<index; i++) {
-	sbuf.append(" ");
-    }
-    sbuf.append("^");
-    return (sbuf.toString());
-    */
 }
 } // end CharPointer
