@@ -1,7 +1,7 @@
 Tcl Test Suite
 --------------
 
-RCS: @(#) $Id: README,v 1.1 1998/10/14 21:09:24 cvsadmin Exp $
+RCS: @(#) $Id: README,v 1.2 1999/05/10 02:40:49 dejong Exp $
 
 This directory contains a set of validation tests for the Tcl
 commands.  Each of the files whose name ends in ".test" is
@@ -15,8 +15,8 @@ You can run the tests in two ways:
         file (for example, type "source parse.test").  To run all
 	of the tests, type "source all".
 In either case no output will be generated if all goes well, except
-for a listing of the tests..  If there are errors then additional
-messages will appear in the format described below.  Note: don't
+for a listing of the tests. If there are errors then additional
+messages will appear in the format described below. Note: don't
 run the tests as superuser, since this will cause several of the tests
 to fail.
 
@@ -31,18 +31,18 @@ Definitions file:
 -----------------
 
 The file "defs" defines a collection of procedures and variables
-used to run the tests.  It is read in automatically by each of the
+used to run the tests. It is read in automatically by each of the
 .test files if needed, but once it has been read once it will not
-be read again by the .test files.  If you change defs while running
+be read again by the .test files. If you change defs while running
 tests you'll have to "source" it by hand to load its new contents.
 
 Test output:
 ------------
 
-Normally, output only appears when there are errors.  However, if
+Normally, output only appears when there are errors. However, if
 the variable VERBOSE is set to 1 then tests will be run in "verbose"
 mode and output will be generated for each test regardless of
-whether it succeeded or failed.  Test output consists of the
+whether it succeeded or failed. Test output consists of the
 following information:
 
     - the test identifier (which can be used to locate the test code
