@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: EventuallyFreed.java,v 1.1 2000/08/20 06:08:42 mo Exp $
+ * RCS: @(#) $Id: EventuallyFreed.java,v 1.2 2001/06/03 21:19:46 mdejong Exp $
  */
 
 package tcl.lang;
@@ -111,7 +111,7 @@ release()
  *----------------------------------------------------------------------
  */
 
-void
+public void
 dispose()
 {
     // See if there is a reference for this pointer.  If so, set its
