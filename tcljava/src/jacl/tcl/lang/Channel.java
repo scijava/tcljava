@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Channel.java,v 1.14 2001/11/27 16:26:15 mdejong Exp $
+ * RCS: @(#) $Id: Channel.java,v 1.15 2001/11/27 18:05:25 mdejong Exp $
  */
 
 package tcl.lang;
@@ -62,16 +62,29 @@ abstract class Channel {
     protected boolean eofCond = false;
 
     /**
-     * Buffer size used when reading blocks of input.
-     */
-
-    protected static final int BUF_SIZE = 1024;
-
-    /**
      * Set to false when channel is in non-blocking mode.
      */
     
     protected boolean blocking = true;
+
+    /**
+     * Buffering (full,line, or none)
+     */
+
+    protected int buffering = TclIO.BUFF_FULL;
+
+    /**
+     * Buffer size, in bytes, allocated for channel to store input or output
+     */
+
+    protected int bufferSize = 4096;
+
+    /**
+     * Type of encoding for this Channel.
+     * A null value means use no encoding (binary).
+     */
+    
+    protected String encoding = "iso8859-1";
 
     /**
      * Read data from the Channel.
@@ -96,11 +109,11 @@ abstract class Channel {
 
         switch (readType) {
             case TclIO.READ_ALL: {
-                char[] charArr = new char[BUF_SIZE];
-                StringBuffer sbuf = new StringBuffer(BUF_SIZE);
+                char[] charArr = new char[bufferSize];
+                StringBuffer sbuf = new StringBuffer(bufferSize);
                 int numRead;
 
-                while((numRead = reader.read(charArr, 0, BUF_SIZE)) != -1) {
+                while((numRead = reader.read(charArr, 0, bufferSize)) != -1) {
                     sbuf.append(charArr,0, numRead);
                 }
                 eofCond = true;
@@ -288,10 +301,86 @@ abstract class Channel {
 
     /** 
      * Set blocking mode.
+     *
+     * @param blocking new blocking mode
      */
 
     void setBlocking(boolean blocking) {
         this.blocking = blocking;
+    }
+
+    /** 
+     * Query buffering mode.
+     */
+
+    int getBuffering() {
+        return buffering;
+    }
+
+
+    /** 
+     * Set buffering mode
+     *
+     * @param buffering One of TclIO.BUFF_FULL, TclIO.BUFF_LINE,
+     *     or TclIO.BUFF_NONE
+     */
+
+    void setBuffering(int buffering) {
+        if (buffering < TclIO.BUFF_FULL || buffering > TclIO.BUFF_NONE)
+            throw new TclRuntimeError(
+                "invalid buffering mode in Channel.setBlocking()");
+
+        this.buffering = buffering;
+    }
+
+    /** 
+     * Query buffer size
+     */
+
+    int getBufferSize() {
+        return bufferSize;
+    }
+
+
+    /** 
+     * Tcl_SetChannelBufferSize -> setBufferSize
+     *
+     * @param size new buffer size
+     */
+
+    void setBufferSize(int size) {
+
+        // If the buffer size is smaller than 10 bytes or larger than 1 Meg
+        // do not accept the requested size and leave the current buffer size.
+
+        if ((size < 10) || (size > (1024 * 1024))) {
+            return;
+        }
+
+        bufferSize = size;
+    }
+
+    /** 
+     * Query encoding
+     *
+     * @return Name of Channel's encoding (null if no encoding)
+     */
+
+    String getEncoding() {
+        return encoding;
+    }
+
+
+    /** 
+     * Set new encoding
+     *
+     */
+
+    void setEncoding(String en) {
+        if (encoding.equals("binary") || encoding.equals(""))
+            encoding = null;
+        else
+            encoding = en;
     }
 
 }

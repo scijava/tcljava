@@ -1,4 +1,18 @@
-2001-11-27  Mo DeJong  <mdejong@users.sourceforge.net>
+2001-11-27  Bruce Johnson  <bruce_johnson@merck.com>,
+	Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/jacl/tcl/lang/Channel.java (buffering, getBuffering,
+	setBuffering, BUF_SIZE, bufferSize, getBufferSize,
+	setBufferSize, encoding, getEncoding, setEncoding): Add
+	new members and get/set methods.
+	* src/jacl/tcl/lang/FconfigureCmd.java (cmdProc):
+	Get and set channel values for -buffering, -buffersize,
+	and -encoding options.
+	* src/jacl/tcl/lang/TclIO.java (BUFF_FULL, BUFF_LINE,
+	BUFF_NONE): Add new fields for use in Channel code.
+
+2001-11-27  Bruce Johnson  <bruce_johnson@merck.com>,
+	Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* src/jacl/tcl/lang/Channel.java (blocking, getBlocking,
 	setBlocking): Add new blocking state.

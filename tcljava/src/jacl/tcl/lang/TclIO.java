@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclIO.java,v 1.4 2001/11/20 20:32:23 mdejong Exp $
+ * RCS: @(#) $Id: TclIO.java,v 1.5 2001/11/27 18:05:25 mdejong Exp $
  *
  */
 
@@ -30,6 +30,10 @@ class TclIO {
     static final int RDWR   = 4;
     static final int APPEND = 8;
     static final int CREAT  = 16;
+
+    static final int BUFF_FULL  = 0;
+    static final int BUFF_LINE  = 1;
+    static final int BUFF_NONE  = 2;
 
     /**
      * Table of channels currently registered for all interps.  The 

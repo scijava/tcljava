@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FconfigureCmd.java,v 1.4 2001/11/27 16:26:15 mdejong Exp $
+ * RCS: @(#) $Id: FconfigureCmd.java,v 1.5 2001/11/27 18:05:25 mdejong Exp $
  *
  */
 
@@ -71,15 +71,31 @@ class FconfigureCmd implements Command {
             TclList.append(interp, list,
                 TclBoolean.newInstance(chan.getBlocking()));
 
-            // FIXME: Placeholders below.
             TclList.append(interp, list, TclString.newInstance("-buffering"));
-            TclList.append(interp, list, TclString.newInstance("full"));
+            switch (chan.getBuffering()) {
+                case TclIO.BUFF_FULL:
+                    TclList.append(interp, list,
+                        TclString.newInstance("full"));
+                    break;
+                case TclIO.BUFF_LINE:
+                    TclList.append(interp, list,
+                        TclString.newInstance("line"));
+                    break;
+                case TclIO.BUFF_NONE:
+                    TclList.append(interp, list,
+                        TclString.newInstance("none"));
+                    break;
+            }
 
             TclList.append(interp, list, TclString.newInstance("-buffersize"));
-            TclList.append(interp, list, TclString.newInstance("0"));
+            TclList.append(interp, list,
+                TclInteger.newInstance(chan.getBufferSize()));
 
             TclList.append(interp, list, TclString.newInstance("-encoding"));
-            TclList.append(interp, list, TclString.newInstance("ascii"));
+            String encoding = chan.getEncoding();
+            if (encoding == null)
+                encoding = "binary";
+            TclList.append(interp, list, TclString.newInstance(encoding));
 
             TclList.append(interp, list, TclString.newInstance("-eofchar"));
             TclList.append(interp, list, TclString.newInstance(""));
@@ -101,12 +117,27 @@ class FconfigureCmd implements Command {
                     break;
                 }
                 case OPT_BUFFERING: {    // -buffering
+                    switch (chan.getBuffering()) {
+                        case TclIO.BUFF_FULL:
+                            interp.setResult("full");
+                            break;
+                        case TclIO.BUFF_LINE:
+                            interp.setResult("line");
+                            break;
+                        case TclIO.BUFF_NONE:
+                            interp.setResult("none");
+                            break;
+                    }
                     break;
                 }
                 case OPT_BUFFERSIZE: {    // -buffersize
+                    interp.setResult(chan.getBufferSize());
                     break;
                 }
                 case OPT_ENCODING: {    // -encoding
+                    String encoding = chan.getEncoding();
+                    interp.setResult((encoding == null)
+                        ? "binary" : encoding);
                     break;
                 }
                 case OPT_EOFCHAR: {    // -eofchar
@@ -130,30 +161,30 @@ class FconfigureCmd implements Command {
 
             switch (index) {
                 case OPT_BLOCKING: {    // -blocking
-                    chan.setBlocking( TclBoolean.get(interp, argv[i]) );
+                    chan.setBlocking(TclBoolean.get(interp, argv[i]));
                     break;
                 }
                 case OPT_BUFFERING: {    // -buffering
                     String arg = argv[i].toString();
                     if (arg.equals("full")) {
-
+                        chan.setBuffering(TclIO.BUFF_FULL);
                     } else if (arg.equals("line")) {
-
+                        chan.setBuffering(TclIO.BUFF_LINE);
                     } else if (arg.equals("none")) {
-
+                        chan.setBuffering(TclIO.BUFF_NONE);
                     } else {
                         throw new TclException(interp, 
                             "bad value for -buffering: must be " +
                             "one of full, line, or none");
                     }
-                    //break;
-                    // FIXME : at this point we just silently accept
-                    // a [fconfigure $fd -buffering line] without
-                    // actually doing anything so that we can run our
-                    // tests file which uses fconfigure.
-                    return;
+                    break;
                 }
                 case OPT_BUFFERSIZE: {    // -buffersize
+                    chan.setBufferSize(TclInteger.get(interp,argv[i]));
+                    break;
+                }
+                case OPT_ENCODING: {    // -encoding
+                    chan.setEncoding(argv[i].toString());
                     break;
                 }
                 case OPT_EOFCHAR: {    // -eofchar
