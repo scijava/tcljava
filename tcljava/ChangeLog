@@ -1,3 +1,10 @@
+2002-01-14  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/jacl/tcl/lang/SocketChannel.java
+	(read, write, close, flush): Don't retain a
+	errorMsg member since it is not used anywhere
+	and makes things more complex.
+
 2002-01-08  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* Makefile.in: Add JDB_ATTACH_FLAGS to deal

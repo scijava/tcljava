@@ -23,12 +23,6 @@ public class SocketChannel extends Channel {
     private Socket sock;
 
     /**
-     * A string which holds the message of the last exception thrown.
-     **/
-
-    private String errorMsg;
-
-    /**
      * Constructor - creates a new SocketChannel object with the given
      * options. Also creates an underlying Socket object, and Input and
      * Output Streams.
@@ -110,7 +104,6 @@ public class SocketChannel extends Channel {
         // If we got this far, then the socket has been created.
         // Create the channel name
         setChanName(TclIO.getNextDescriptor(interp, "sock"));
-        errorMsg = new String();
     }
 
     /**
@@ -146,114 +139,19 @@ public class SocketChannel extends Channel {
         // If we got this far, then the socket has been created.
         // Create the channel name
         setChanName(TclIO.getNextDescriptor(interp, "sock"));
-        errorMsg = new String();
     }
 
-    /**
-     * Perform a read on a SocketChannel.
-     *
-     * @param interp is used for TclExceptions.
-     * @param readType is used to specify the type of read (line, all, etc).
-     * @param numBytes is the number of bytes to read (if applicable).
-     * @return String of data that was read from the Channel (can not be null)
-     * @exception TclExceptiom is thrown if read occurs on WRONLY channel.
-     * @exception IOException is thrown when an IO error occurs that was not
-     *                  correctly tested for. Most cases should be caught.
-     */
-
-    String read(Interp interp, int readType, int numBytes)
-        throws IOException, TclException
-    {
-        String returnStr;
-
-        // FIXME: Why are we catching these exceptions here?
-        // Why can we just delete this whole method and
-        // depend on the super.read() method to take care of it?
-        // Also, why are they not thrown again?
-
-        try
-        {
-            returnStr = super.read(interp, readType, numBytes);
-        }
-        catch (EOFException e)
-        {
-            eofCond = true;
-            errorMsg = e.getMessage();
-            returnStr = "";
-        }
-        catch (IOException e)
-        {
-            errorMsg = e.getMessage();
-            returnStr = "";
-        }
-
-        if (returnStr == null)
-        {
-            eofCond = true;
-            returnStr = "";
-        }
-
-        return returnStr;
-    }
-
-    /**
-     * Write data to the Socket.
-     *
-     * @param interp is used for TclExceptions.
-     * @param outStr the String to write to the Socket.
-     */
-
-    void write(Interp interp, String outStr)
-        throws IOException, TclException
-    {
-        try
-        {
-            super.write(interp, outStr);
-        }
-        catch (IOException e)
-        {
-            errorMsg = e.getMessage();
-            throw e;
-        }
-    }
-        
     /**
      * Close the SocketChannel.
      */
 
     void close() throws IOException
     {
-        IOException ex = null;
-
         // Invoke super.close() first since it might write an eof char
-        try { super.close(); } catch (IOException e) { ex = e; }
-        try { sock.close(); } catch (IOException e) { ex = e; }
-
-        if (ex != null) {
-            errorMsg = ex.getMessage();
-            throw ex;
+        try {
+            super.close();
+        } finally {
+            sock.close();
         }
     }
-
-    /**
-     * Flush the socket.
-     *
-     * @exception TclException is thrown when attempting to flush a
-     *              read only channel.
-     * @exception IOException is thrown for all other flush errors.
-     */
-
-    void flush(Interp interp) throws IOException, TclException
-    {
-        try
-        {
-            super.flush(interp);
-        }
-        catch (IOException e)
-        {
-            errorMsg = e.getMessage();
-            throw e;
-        }
-    }
-
 }
