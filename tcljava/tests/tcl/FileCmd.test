@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: FileCmd.test,v 1.1 1999/08/03 03:42:39 mo Exp $
+# RCS: @(#) $Id: FileCmd.test,v 1.2 1999/08/05 03:44:38 mo Exp $
 
 # Note: This test file must be sourced from the parent directory
 #       or else the defs file may not be properly loaded.
@@ -17,20 +17,40 @@ if {[string compare test [info procs test]] == 1} then {source defs}
 setupJavaPackage
 
 # Write out a file of some length
+# We make a zero buffer of length 1000 ahead of time so
+# that we do not spend a ton of time writing in a loop.
+
+set zero ""
+set buf 0000000000
+for {set i 0} {$i < 10} {incr i} {
+ append zero $buf
+}
+# zero buffer is now 100 zeros long!
+unset buf
 
 proc writeZero { name len } {
+    global zero
     file delete -force $name
     set fd [open $name w]
     catch {fconfigure stdout -buffering full -translation binary}
 
+    set written 0
+    set zerosize [string length $zero]
+    while {$len >= $zerosize} {
+        puts -nonewline $fd $zero
+        incr len -$zerosize
+        incr written $zerosize
+    }
+
     for {set i 0} {$i < $len} {incr i} {
 	puts -nonewline $fd 0
+	incr written 1
     }
     close $fd
 
     #check the size of the file
-    if {[file size $name] != $len} {
-	error "file size is [file size $name], it should have been $len"
+    if {[file size $name] != $written} {
+	error "file size is [file size $name], it should have been $written"
     }
 }
 
