@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: CallFrame.java,v 1.5 1999/07/06 12:19:34 mo Exp $
+ * RCS: @(#) $Id: CallFrame.java,v 1.6 1999/07/12 02:38:27 mo Exp $
  *
  */
 
@@ -248,54 +248,69 @@ class CallFrame {
     }
 
     /**
-     * Returns a frame given by the level specifier.
+     * Tcl_GetFrame -> getFrame
      *
-     * @param s a string that specifies the level.
-     * @return null if s is not a valid level specifier.
+     *	Given a description of a procedure frame, such as the first
+     *	argument to an "uplevel" or "upvar" command, locate the
+     *	call frame for the appropriate level of procedure.
+     *
+     *	The return value is 1 if string was either a number or a number
+     *  preceded by "#" and it specified a valid frame. 0 is returned
+     *  if string isn't one of the two things above (in this case,
+     *  the lookup acts as if string were "1"). The frameArr[0] reference
+     *  will be filled by the reference of the desired frame (unless an
+     *  error occurs, in which case it isn't modified).
+     *
+     * @param string a string that specifies the level.
+
      * @exception TclException if s is a valid level specifier but
      *     refers to a bad level that doesn't exist.
      */
 
-    CallFrame getFrame(String s) throws TclException {
-	int i = -1;
+    static int getFrame(Interp interp, String string,
+			      CallFrame[] frameArr) throws TclException {
+	int curLevel, level, result;
+	CallFrame frame;
 
-	if ((s.length() > 0) && (s.charAt(0) == '#')) {
-	    String sub = s.substring(1, s.length());
-	    int j = Util.getInt(interp, sub);
-	    if (j < 0) {
-		throw new TclException(interp, "bad level \"" + s + "\"");
+	// Parse string to figure out which level number to go to.
+	
+	result = 1;
+	curLevel = (interp.varFrame == null) ? 0 : interp.varFrame.level;
+
+	if ((string.length() > 0) && (string.charAt(0) == '#')) {
+	    level = Util.getInt(interp, string.substring(1));
+	    if (level < 0) {
+		throw new TclException(interp, "bad level \"" + string + "\"");
 	    }
-	    i = level - j;
+	} else if ((string.length() > 0) && Character.isDigit(string.charAt(0))) {
+	    level = Util.getInt(interp, string);
+	    level = curLevel - level;
 	} else {
-	    try {
-		i = Util.getInt(interp, s);
-	    } catch (TclException e) {
-		// FIXME : double check varFrame is null condition for global frame!
-		if (interp.varFrame == null) {
-		    throw new TclException(interp, "bad level \"" + s + "\"");
+	    level = curLevel - 1;
+	    result = 0;
+	}
+
+	// FIXME: is this a bad comment from some other proc?
+	// Figure out which frame to use, and modify the interpreter so
+	// its variables come from that frame.
+	
+	if (level == 0) {
+	    frame = null;
+	} else {
+	    for (frame = interp.varFrame; frame != null;
+		 frame = frame.callerVar) {
+		if (frame.level == level) {
+		    break;
 		}
-		return null;
 	    }
-	}
-
-	if (i < 0) {
-	    throw new TclException(interp, "bad level \"" + s + "\"");
-	}
-
-	CallFrame frame = interp.varFrame;
-	for (int j=0; j<i; j++) {
-	    // FIXME : double check that callerVar is set to null for global frame!
 	    if (frame == null) {
-		// You asked for more levels that you can travel up to.
-
-		throw new TclException(interp, "bad level \"" + s + "\"");
-	    } else {
-		frame = frame.callerVar;
+		throw new TclException(interp, "bad level \"" + string + "\"");
 	    }
 	}
-
-	return frame;
+	frameArr[0] = frame;
+	return result;
     }
+
 
     /**
      * This method is called when this CallFrame is no longer needed.
