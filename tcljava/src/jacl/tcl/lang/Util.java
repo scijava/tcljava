@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Util.java,v 1.2 1999/05/09 01:38:44 dejong Exp $
+ * RCS: @(#) $Id: Util.java,v 1.3 1999/08/03 03:16:33 mo Exp $
  */
 
 package tcl.lang;
@@ -551,8 +551,8 @@ throws
 static String 
 concat(
     int from, 		// The starting index.
-    int to,  		// The endinf index (inclusive).
-    TclObject argv[]) 	// The CmdArgs.
+    int to,  		// The ending index (inclusive).
+    TclObject[] argv) 	// The CmdArgs.
 {
     StringBuffer sbuf;
 
@@ -973,7 +973,7 @@ throws
 /*
  *----------------------------------------------------------------------
  *
- * scanElement --
+ *  Tcl_ScanElement -> scanElement
  *
  *	This procedure is a companion procedure to convertElement.
  *	It scans a string to see what needs to be done to it (e.g.
@@ -1118,7 +1118,7 @@ throws
 /*
  *----------------------------------------------------------------------
  *
- * convertElement --
+ * Tcl_ConvertElement -> convertElement
  *
  *	This is a companion procedure to scanElement.  Given the
  * 	information produced by scanElement, this procedure converts
@@ -1737,8 +1737,13 @@ throws
     // safe interpreters messing up the precision of other
     // interpreters).
 
-    TclObject tobj = interp.getVar(name1, name2, 
-	    (flags & TCL.GLOBAL_ONLY) | TCL.DONT_THROW_EXCEPTION);
+    TclObject tobj = null;
+    try {
+	tobj = interp.getVar(name1, name2, (flags & TCL.GLOBAL_ONLY));
+    } catch (TclException e) {
+	// Do nothing when var does not exist.
+    }
+
     String value;
 
     if (tobj != null) {
