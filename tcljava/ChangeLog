@@ -1,5 +1,12 @@
 2002-12-30  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* configure: Regen.
+	* tcljava.m4 (TCLJAVA_WITH_TCL): Add TCL_CFLAGS_DEBUG
+	or TCL_CFLAGS_OPTIMIZE to the CFLAGS that appear in
+	the Makefile.
+
+2002-12-30  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/native/javaInterp.c (JavaCmdProc):
 	Scan the Tcl_Obj array passed into JavaCmdProc,
 	if the same Tcl_Obj is passed more than once,

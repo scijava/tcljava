@@ -1025,6 +1025,13 @@ Make sure Tcl was configured with --enable-shared.])
     #    TCLJAVA_DBGX=_g
     #fi
 
+    # Add -g to compile flags
+    if test "$TCL_DBGX" = "g"; then
+        TCL_CFLAGS=$TCL_CFLAGS_DEBUG
+    else
+        TCL_CFLAGS=$TCL_CFLAGS_OPTIMIZE
+    fi
+
 #FIXME: replace this, does this happend in Tcl 8.3?
     # Fix up the TCL_LD_SEARCH_FLAGS (known problem fixed by TEA)
 
