@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Expression.java,v 1.3 1999/05/09 00:08:01 dejong Exp $
+ * RCS: @(#) $Id: Expression.java,v 1.4 2000/03/10 18:05:01 mo Exp $
  *
  */
 
@@ -1190,7 +1190,7 @@ class Expression {
 	// alphanumeric or '_'
 
 	for (; m_ind<m_len; m_ind++) {
-	    if (!(Util.isLetterOrDigit(m_expr.charAt(m_ind)) ||
+	    if (!(Character.isLetterOrDigit(m_expr.charAt(m_ind)) ||
 		  m_expr.charAt(m_ind) == '_')){
 		break;
 	    }

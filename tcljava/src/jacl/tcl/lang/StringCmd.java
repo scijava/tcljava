@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: StringCmd.java,v 1.1 1998/10/14 21:09:19 cvsadmin Exp $
+ * RCS: @(#) $Id: StringCmd.java,v 1.2 2000/03/10 18:05:02 mo Exp $
  *
  */
 
@@ -277,7 +277,7 @@ class StringCmd implements Command {
 		}
 		for (cur = index ; cur < length; cur++) {
 		    char c = strArray[cur];
-		    if (!Util.isLetterOrDigit(c) && (c != '_')) {
+		    if (!Character.isLetterOrDigit(c) && (c != '_')) {
 			break;
 		    }
 		}
@@ -308,7 +308,7 @@ class StringCmd implements Command {
 		}
 		for (cur = index ; cur >= 0; cur--) {
 		    char c = strArray[cur];
-		    if (!Util.isLetterOrDigit(c) && (c != '_')) {
+		    if (!Character.isLetterOrDigit(c) && (c != '_')) {
 			break;
 		    }
 		}

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Util.java,v 1.5 2000/02/23 22:07:23 mo Exp $
+ * RCS: @(#) $Id: Util.java,v 1.6 2000/03/10 18:05:02 mo Exp $
  */
 
 package tcl.lang;
@@ -70,10 +70,6 @@ static final double powersOf10[] = {
     1.0e128,
     1.0e256
 };
-
-// Determines if the VM has a broken implementation of this method.
-
-static boolean broken_isLetterOrDigit = checkIsLetterOrDigit();
 
 // Default precision for converting floating-point values to strings.
 
@@ -1377,66 +1373,6 @@ throws
 
     throw new TclException(interp, "expected boolean value but got \"" +
 	    string + "\"");
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * checkIsLetterOrDigit --
- *
- *	Checks if this VM has a broken Character.isLetterOrDigit()
- * 	implementation.
- *
- * Results:
- *	if this VM has a broken Character.isLetterOrDigit()
- * 	implementation.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-final static boolean 
-checkIsLetterOrDigit() 
-{
-    try {
-	Character.isLetterOrDigit('c');
-	return false;
-    }
-    catch (Exception e) {
-	return true;
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * isLetterOrDigit --
- *
- *	Character.IsLetterOrDigit() is broken in MS JDK. This function is a
- * 	work-around. If it detects the bug, it uses a simplified algorithm
- * 	that returns whether the character is an ASCII letter or digit.
- *
- * Results:
- *	Trye if this character is a letter or digit.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-final static boolean
-isLetterOrDigit(
-    char c)		// The character toi check.
-{
-    if (!broken_isLetterOrDigit) {
-	return Character.isLetterOrDigit(c);
-    } else {
-	return ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') ||
-		(c >= '0' && c <= '9'));
-    }
 }
 
 
