@@ -2,7 +2,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run to configure the
 dnl	Makefile in this directory.
 AC_INIT(../src/tcljava/tcl/lang/InternalRep.java)
-# RCS: @(#) $Id: configure.in,v 1.15 1999/07/28 04:15:01 mo Exp $
+# RCS: @(#) $Id: configure.in,v 1.16 1999/07/28 04:20:52 mo Exp $
 
 
 #--------------------------------------------------------------------
@@ -33,7 +33,7 @@ if test -d $TOOLS ; then
     if env grep "TCLJAVA_VERSION=$TCLJAVA_VERSION" $srcdir/configure.in > /dev/null; then
         DO=nothing
     else
-	AC_MSG_ERROR([TCLJAVA_VERSION grep failed, did you rerun autoconf after changing the version number in configure.in?])
+	AC_MSG_ERROR([TCLJAVA_VERSION grep failed])
     fi
 
     # Check that the files we need actually exist
@@ -75,8 +75,8 @@ fi
 
 #--------------------------------------------------------------------
 #	Locate which java tool to build.  If the --with-build option
-#	is used, that overides everthing.  Otherwise look for Tcl Blend
-#	first then tclBlend.
+#	is used, that overides everthing.  Otherwise configure for
+#	both Tcl Blend and Jacl.
 #--------------------------------------------------------------------
 
 AC_ARG_WITH(build, [  --with-build=DIR        select which system to build (jacl or tclblend)],
@@ -309,7 +309,7 @@ fi
 
 
 #
-# Check that we have the java that corresponds with JAVA_DIR in our path
+# Check for the java runtime
 #
 AC_MSG_CHECKING([for the java runtime])
 case "$JAVA_NAME" in
@@ -325,11 +325,27 @@ else
   Cannot find $JAVA_DIR/bin/$NAME.])
 fi
 
+#
+# Check for the remote debug java_g runtime
+#
+AC_MSG_CHECKING([for the java_g runtime])
+case "$JAVA_NAME" in
+    jdk) NAME=java_g ;;
+    kaffe) NAME=kaffe ;;
+esac
+if test -x $JAVA_DIR/bin/$NAME; then
+    JAVA_G=$JAVA_DIR/bin/$NAME
+    echo "Using JAVA_G=$JAVA_G" >&5
+    AC_MSG_RESULT($JAVA_G)
+else
+    AC_MSG_ERROR([
+  Cannot find $JAVA_DIR/bin/$NAME.])
+fi
 
 
 
 #
-# Check that we have the javac that corresponds with JAVA_DIR in our path
+# Check for the javac compiler
 #
 
 AC_MSG_CHECKING([for the java compiler])
@@ -351,7 +367,7 @@ fi
 
 
 #
-# Check that we have the javah that corresponds with JAVA_DIR in our path
+# Check that we have the javah .h header generator
 #
 
 if test $TCLJAVA = "tclblend" || test $BOTH = "true"; then
@@ -374,7 +390,7 @@ fi
 
 
 #
-# Check that we have the jar that corresponds with JAVA_DIR in our path
+# Check that we have the jar archive utility
 #
 AC_MSG_CHECKING([for the java archive program])
 case "$JAVA_NAME" in
@@ -394,8 +410,8 @@ fi
 
 
 #
-# Check that we have the jdb that corresponds with JAVA_DIR in our path
-# jdb will not be tested like the other java utils
+# Check that we have the jdb java debugger program
+# jdb functionality will not be tested by the configure script
 #
 
 if test $TCLJAVA = "jacl" || test $BOTH = "true"; then
@@ -415,6 +431,17 @@ else
 fi
 
 fi
+
+
+#
+# Look on the path for ddd, if it is not found do nothing
+# ddd functionality will not be tested by the configure script
+#
+AC_PATH_PROG(TMP_DDD, ddd)
+if test -x "$TMP_DDD"; then
+    DDD=$TMP_DDD
+fi
+
 
 
 
@@ -612,7 +639,7 @@ does not exist. You must install the JDK Native Threads Pack to use tclblend.
 See http://www.blackdown.org/java-linux.html.])
             fi
 
-            if test "$JAVA_VERSION" = "1.1"; then
+            if test -d $JAVA_INCLUDE/genunix; then
                 JAVA_ARCH_INCLUDE=$JAVA_INCLUDE/genunix
             else
                 JAVA_ARCH_INCLUDE=$JAVA_INCLUDE/linux
@@ -621,6 +648,7 @@ See http://www.blackdown.org/java-linux.html.])
             case "`uname -m`" in
                 alpha)  ARCH=alpha ;;
                 i?86)   ARCH=i386 ;;
+                mips)   ARCH=mips ;;
                 ppc)    ARCH=ppc ;;
                 sparc)  ARCH=sparc ;;
                 *)      AC_MSG_ERROR([ARCH '`uname -m`' is not supported]) ;;
@@ -935,9 +963,11 @@ if env $JAVAC -d . $srcdir/../src/Test.java 1>&5 2>&5 &&
 
         # -native does not work correctly under JDK 1.1.7 from Blackdown.
         # The problem is related to IO from a shell script.
-        if test "$JAVA_VERSION" = "1.1" && test "`uname -s`" = "Linux"; then
+	# Currentlywe ignore the JAVA_VERISON FLAG but we really should
+	# fix that so that it works for the blackdown port of 1.2. 
+        if test "`uname -s`" = "Linux"; then
             JAVA_FLAGS=""
-            MSG="skipping -native option because jacl has some problems running with native threads on linux with JDK 1.1"
+            MSG="skipping -native option because jacl has some problems running with native threads on linux with JDK 1.1 from Blackdown"
             echo $MSG >&5
             AC_MSG_WARN([$MSG])
         fi
@@ -1261,7 +1291,7 @@ if test $TCLJAVA = "tclblend" || test $BOTH = "true"; then
           WISH80=$WISH_LOC
           MSG="found wish version 8.0 at $WISH80"
           echo $MSG >&5
-          AC_MSG_RESULT([$MSG])
+          AC_MSG_WARN([$MSG])
       else
           MSG="could not find working wish8.0"
           echo $MSG >&5
@@ -1307,10 +1337,12 @@ BUILD_DIR=`pwd`
 AC_SUBST(BUILD_DIR)
 
 AC_SUBST(JAVA)
+AC_SUBST(JAVA_G)
 AC_SUBST(JAVAC)
 AC_SUBST(JAVAH)
 AC_SUBST(JAR)
 AC_SUBST(JDB)
+AC_SUBST(DDD)
 
 AC_SUBST(JAVA_CLASSPATH)
 AC_SUBST(JAVA_FLAGS)
