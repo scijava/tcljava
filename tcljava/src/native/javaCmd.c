@@ -10,7 +10,7 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  *
- * RCS: @(#) $Id: javaCmd.c,v 1.11 2000/10/30 03:22:30 mdejong Exp $
+ * RCS: @(#) $Id: javaCmd.c,v 1.12 2002/07/20 05:36:54 mdejong Exp $
  */
 
 /*
@@ -168,6 +168,8 @@ EXPORT(int,Tclblend_Init)(
     fprintf(stderr, "TCLBLEND_DEBUG: Tclblend_Init\n");
     fprintf(stderr, "TCLBLEND_DEBUG: CLASSPATH is \"%s\"\n", getenv("CLASSPATH"));
 #endif /* TCLBLEND_DEBUG */
+
+    TclBlendTrace("Entrypoint Tclblend_Init");
 
     /*
      * Init the JVM, the JNIEnv pointer, and any global data. Pass a
@@ -381,7 +383,7 @@ JavaInitEnv(
      * Since we do not need to create a JVM and we do not need to
      * attach the current thread, we just set currentEnv and return.
      * Also note that we would never need to access the javaVM pointer
-     * if Tcl Blend was loaded into from Java.
+     * if Tcl Blend was loaded into Java.
      */
 
     if (env) {
@@ -567,6 +569,7 @@ JavaInitEnv(
 
 	Tcl_CreateThreadExitHandler(DestroyJVM, NULL);
 
+	TclBlendTrace("Created JVM");
     } else { /* (nVMs == 0) */
 
 #ifdef TCLBLEND_DEBUG
@@ -591,6 +594,8 @@ JavaInitEnv(
 	/* Create a thread exit handler to detach this Tcl thread from the JVM */
 	
 	Tcl_CreateThreadExitHandler(DetachTclThread, NULL);
+
+	TclBlendTrace("Attached to JVM");
     }
 
 #ifdef TCLBLEND_DEBUG
@@ -721,6 +726,8 @@ JavaInterpDeleted(
 #ifdef TCLBLEND_DEBUG
     fprintf(stderr, "TCLBLEND_DEBUG: called JavaInterpDeleted\n");
 #endif /* TCLBLEND_DEBUG */
+
+    TclBlendTrace("JavaInterpDeleted");
 }
 
 /*
@@ -781,6 +788,7 @@ DestroyJVM(ClientData clientData)
      */
 
     tsdPtr->initialized = 0;
+    TclBlendTrace("Destroyed JVM");
 }
 
 /*
@@ -825,6 +833,7 @@ DetachTclThread(ClientData clientData)
      */
 
     tsdPtr->initialized = 0;
+    TclBlendTrace("DetachTclThread");
 }
 
 /*
@@ -873,6 +882,8 @@ FreeJavaCache(ClientData clientData)
 
      /* FIXME : we dont add or release a global ref for jcache->Void
         or jcache->VoidTYPE class, should we ? */
+
+    TclBlendTrace("FreeJavaCache");
 }
 
 /*
@@ -881,6 +892,7 @@ FreeJavaCache(ClientData clientData)
  * JavaSetupJava --
  *
  *	This is the entry point for a Tcl interpreter created from Java.
+ *	This method is also called with env=NULL when loaded from Tcl.
  *	This method will save the JVM JNIEnv pointer by calling JavaInitEnv
  *	if this was the first time JavaSetupJava was called for the current
  *	thread. It will also set up the cache of class and method ids if this
@@ -905,8 +917,14 @@ JavaSetupJava(
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
 #ifdef TCLBLEND_DEBUG
-    fprintf(stderr, "TCLBLEND_DEBUG: called JavaSetupJava\n");
+    if (env)
+        fprintf(stderr, "TCLBLEND_DEBUG: Entrypoint JavaSetupJava\n");
+    else
+        fprintf(stderr, "TCLBLEND_DEBUG: called JavaSetupJava\n");
 #endif /* TCLBLEND_DEBUG */
+
+    if (env)
+        TclBlendTrace("Entrypoint JavaSetupJava");
 
     /*
      * Check to see if the thread local data has already been
@@ -918,6 +936,8 @@ JavaSetupJava(
 #ifdef TCLBLEND_DEBUG
     fprintf(stderr, "TCLBLEND_DEBUG: thread specific data has already been initialized\n");
 #endif /* TCLBLEND_DEBUG */
+
+        TclBlendTrace("TSD already initialized");
 
         goto ok;
     }
@@ -934,6 +954,8 @@ JavaSetupJava(
 #ifdef TCLBLEND_DEBUG
     fprintf(stderr, "TCLBLEND_DEBUG: initializing jcache\n");
 #endif /* TCLBLEND_DEBUG */
+
+    TclBlendTrace("Initialized Java Cache");
 
     jcache = &(tsdPtr->jcache);
     memset(jcache, 0, sizeof(JavaInfo));
@@ -1361,4 +1383,34 @@ JavaGetString(
     }
     return buf;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclBlendTrace --
+ *
+ *	Check to see if the special env variable TCLBLEND_TRACE is
+ *	defined and write init/shutdown info to a file if it is.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
 
+void
+TclBlendTrace(char *str)
+{
+    FILE *file;
+    char *fname;
+
+    fname = getenv("TCLBLEND_TRACE");
+    if (fname == NULL)
+        return;
+    file = fopen(fname, "a");
+    fprintf(file,"%s\n",str);
+    fclose(file);
+}

@@ -788,6 +788,7 @@ Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-tcl=DIR          build directory for Tcl 8.3.2 (or newer) source release from DIR
+  --with-thread=DIR          build directory for Tcl Thread Extension
   --with-jdk=DIR          use Sun's JDK from DIR
   --with-kaffe=DIR        use Kaffe Open JVM
   --with-jikes=PROG       use jikes compiler given by PROG, if PROG is not given look for jikes on the PATH.
@@ -1445,14 +1446,32 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 #
 #	Check to see if the --with-tcl command line option is given.
 #	If it was, then load Tcl configure info from tclConfig.sh
+#	This option is not used when configuring for Jacl.
 #
 # Arguments:
 #	NONE
 #
 # VARIABLES SET:
-#	FIXME
+#	TCL_BIN_DIR
+#	Vars defined by tclConfig.sh
 #------------------------------------------------------------------------
 
+
+
+
+#------------------------------------------------------------------------
+# TCLJAVA_WITH_THREAD
+#
+#	Check to see if the --with-thread command line option is given.
+#	If it was, use the tcl thread extension located in that directory.
+#	This option is not used when configuring for Jacl.
+#
+# Arguments:
+#	NONE
+#
+# VARIABLES SET:
+#	THREAD_BIN_DIR : DIR when Tcl Thread extension has been built.
+#------------------------------------------------------------------------
 
 
 
@@ -1710,6 +1729,46 @@ Make sure Tcl was configured with --enable-shared." >&2;}
             TCL_LD_SEARCH_FLAGS=`echo ${TCL_LD_SEARCH_FLAGS} | sed -e 's/-Wl,-rpath,/-rpath /'`
             ;;
     esac
+
+fi
+
+
+# Process the --with-thread command line option
+
+
+
+if test $TCLJAVA = "tclblend" || test $TCLJAVA = "both"; then
+
+
+# Check whether --with-thread or --without-thread was given.
+if test "${with_thread+set}" = set; then
+  withval="$with_thread"
+  THREAD_BIN_DIR=$withval
+else
+  THREAD_BIN_DIR="$srcdir/../thread/unix"
+fi;
+
+    if test ! -d "$THREAD_BIN_DIR"; then
+        { { echo "$as_me:$LINENO: error: Thread directory $THREAD_BIN_DIR could not be located.
+Use the --with-thread=<dirName> configure flag to specify the location." >&5
+echo "$as_me: error: Thread directory $THREAD_BIN_DIR could not be located.
+Use the --with-thread=<dirName> configure flag to specify the location." >&2;}
+   { (exit 1); exit 1; }; }
+    else
+	THREAD_BIN_DIR=`cd $THREAD_BIN_DIR; pwd`
+    fi
+
+
+    echo checking for Thread build in $THREAD_BIN_DIR >&5
+    echo checking for Thread build in $THREAD_BIN_DIR
+
+
+    if test ! -f $THREAD_BIN_DIR/pkgIndex.tcl; then
+        { { echo "$as_me:$LINENO: error: Thread pkgIndex.tcl not found in the directory $THREAD_BIN_DIR." >&5
+echo "$as_me: error: Thread pkgIndex.tcl not found in the directory $THREAD_BIN_DIR." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
+
 
 fi
 
@@ -2098,7 +2157,7 @@ echo "${ECHO_T}$ac_java_classpath" >&6
 echo $ECHO_N "checking to see if the java compiler works... $ECHO_C" >&6
 
     cat << \EOF > conftest.java
-// #line 2101 "configure"
+// #line 2160 "configure"
 
 
 public class conftest {
@@ -2143,7 +2202,7 @@ echo $ECHO_N "checking type of jvm... $ECHO_C" >&6
     if test "x$ac_java_jvm_name" = "x" ; then
 
     cat << \EOF > conftest.java
-// #line 2146 "configure"
+// #line 2205 "configure"
 import kaffe.lang.Application;
 
 public class conftest {
@@ -2170,7 +2229,7 @@ EOF
     if test "x$ac_java_jvm_name" = "x" ; then
 
     cat << \EOF > conftest.java
-// #line 2173 "configure"
+// #line 2232 "configure"
 import gnu.java.io.EncodingManager;
 
 public class conftest {
@@ -2219,7 +2278,7 @@ echo $ECHO_N "checking java API version... $ECHO_C" >&6
 
 
     cat << \EOF > conftest.java
-// #line 2222 "configure"
+// #line 2281 "configure"
 import java.lang.StrictMath;
 
 public class conftest {
@@ -2247,7 +2306,7 @@ EOF
     if test "x$ac_java_jvm_version" = "x" ; then
 
     cat << \EOF > conftest.java
-// #line 2250 "configure"
+// #line 2309 "configure"
 import java.lang.Package;
 
 public class conftest {
@@ -2276,7 +2335,7 @@ EOF
     if test "x$ac_java_jvm_version" = "x" ; then
 
     cat << \EOF > conftest.java
-// #line 2279 "configure"
+// #line 2338 "configure"
 import java.lang.reflect.Method;
 
 public class conftest {
@@ -5143,6 +5202,7 @@ s,@ECHO_C@,$ECHO_C,;t t
 s,@ECHO_N@,$ECHO_N,;t t
 s,@ECHO_T@,$ECHO_T,;t t
 s,@LIBS@,$LIBS,;t t
+s,@THREAD_BIN_DIR@,$THREAD_BIN_DIR,;t t
 s,@JIKES@,$JIKES,;t t
 s,@JAVAC@,$JAVAC,;t t
 s,@JAVA@,$JAVA,;t t

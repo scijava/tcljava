@@ -30,6 +30,10 @@ TCLJAVA_ENABLE_JACL_OR_TCLBLEND
 
 TCLJAVA_WITH_TCL
 
+# Process the --with-thread command line option
+
+TCLJAVA_WITH_THREAD
+
 # Check that Tcl install works and is the correct version.
 
 TCLJAVA_CHECK_TCLSH

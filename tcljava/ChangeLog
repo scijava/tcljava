@@ -1,3 +1,29 @@
+2002-07-19  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* Makefile.in: Add support for THREAD_BIN_DIR.
+	Include pkgIndex.tcl files from the blend build
+	dir, the src dir, and the THREAD_BIN_DIR.
+	* configure: Regen.
+	* configure.in: Require the Thread package at
+	configure time via the --with-thread option.
+	This is required so that we can test interaction
+	with Tcl threads.
+	* tcljava.m4 (TCLJAVA_WITH_THREAD): Define
+	--with-thread option macro.
+	* src/native/java.h: Add TclBlendTrace header.
+	* src/native/javaCmd.c (Tclblend_Init, JavaInitEnv,
+	DestroyJVM, DetachTclThread, FreeJavaCache,
+	JavaSetupJava, TclBlendTrace): Add new TclBlendTrace
+	method and use it in key methods to print low
+	level loading info.
+	* src/tests/tclblend/tests/JavaEval.java:
+	* src/tests/tclblend/tests/JavaLoadTclBlend.java:
+	* src/tests/tclblend/tests/JavaThreadLoadTclBlend.java:
+	* src/tests/tclblend/tests/JavaThreadsLoadTclBlend.java:
+	Add test helpers that deal with loading Tcl into a JVM.
+	* tests/tclblend/loading.test: Add a host of tests
+	for loading Tcl Blend into Tcl and into an existing JVM.
+
 2002-05-16  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* configure: Regen.

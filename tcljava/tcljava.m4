@@ -912,12 +912,14 @@ AC_DEFUN([AC_JAVA_JNI_LIBS], [
 #
 #	Check to see if the --with-tcl command line option is given.
 #	If it was, then load Tcl configure info from tclConfig.sh
+#	This option is not used when configuring for Jacl.
 #
 # Arguments:
 #	NONE
 #
 # VARIABLES SET:
-#	FIXME
+#	TCL_BIN_DIR
+#	Vars defined by tclConfig.sh
 #------------------------------------------------------------------------
 
 AC_DEFUN([TCLJAVA_WITH_TCL], [
@@ -994,6 +996,44 @@ Make sure Tcl was configured with --enable-shared.])
 fi
 ])
 
+
+#------------------------------------------------------------------------
+# TCLJAVA_WITH_THREAD
+#
+#	Check to see if the --with-thread command line option is given.
+#	If it was, use the tcl thread extension located in that directory.
+#	This option is not used when configuring for Jacl.
+#
+# Arguments:
+#	NONE
+#
+# VARIABLES SET:
+#	THREAD_BIN_DIR : DIR when Tcl Thread extension has been built.
+#------------------------------------------------------------------------
+
+AC_DEFUN([TCLJAVA_WITH_THREAD], [
+
+if test $TCLJAVA = "tclblend" || test $TCLJAVA = "both"; then
+
+    AC_ARG_WITH(thread, [  --with-thread=DIR          build directory for Tcl Thread Extension],
+    	THREAD_BIN_DIR=$withval, THREAD_BIN_DIR="$srcdir/../thread/unix")
+
+    if test ! -d "$THREAD_BIN_DIR"; then
+        AC_MSG_ERROR([Thread directory $THREAD_BIN_DIR could not be located.
+Use the --with-thread=<dirName> configure flag to specify the location.])
+    else
+	THREAD_BIN_DIR=`cd $THREAD_BIN_DIR; pwd`
+    fi
+
+    AC_MSG_LOG([checking for Thread build in $THREAD_BIN_DIR])
+
+    if test ! -f $THREAD_BIN_DIR/pkgIndex.tcl; then
+        AC_MSG_ERROR([Thread pkgIndex.tcl not found in the directory $THREAD_BIN_DIR.])
+    fi
+
+    AC_SUBST(THREAD_BIN_DIR)
+fi
+])
 
 #------------------------------------------------------------------------
 # TCLJAVA_CHECK_TCLSH
