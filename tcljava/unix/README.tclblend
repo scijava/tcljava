@@ -1,5 +1,5 @@
 Tcl Blend
-RCS: @(#) $Id: README.tclblend,v 1.2 1998/11/04 22:45:31 hylands Exp $
+RCS: @(#) $Id: README.tclblend,v 1.3 1998/11/24 04:23:31 hylands Exp $
 
 This is the directory where you configure, compile, test, and install 
 UNIX versions Tcl Blend.  This directory also contains source files for 
@@ -160,3 +160,14 @@ you'll see a much more substantial printout for each error.  See the README
 file in the "tests" directory for more information on the test suite.  Note: 
 don't run the tests as superuser: this will cause several of them to 
 fail.
+
+Jar files
+---------
+The Tcl Blend release consists of two jar files:
+tclblend.jar -  which contains the Tcl Blend specific class files
+tcljava.jar -   which contains the class files that are common to both
+		Jacl and Tcl Blend
+
+While building tcljava.jar we use a stub file called empty.jar to
+avoid including extra class files in tcljava.jar.  For more information,
+see src/empty/README.txt
