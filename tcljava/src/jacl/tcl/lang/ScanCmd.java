@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ScanCmd.java,v 1.1 1998/10/14 21:09:18 cvsadmin Exp $
+ * RCS: @(#) $Id: ScanCmd.java,v 1.2 1999/05/09 01:22:09 dejong Exp $
  *
  */
 
@@ -48,31 +48,30 @@ class ScanCmd implements Command {
 	            "string format ?varName varName ...?");
 	};
 
-	StrtoulResult strul;      /* Return value for parcing the scanArr when
-				   * extracting integers/longs */
-	StrtodResult  strd;;      /* Return value for parcing the scanArr when
-				   * extracting doubles */
-	char[]  scanArr;          /* Array containing parce info */
-	char[]  frmtArr;          /* Array containing info on how to 
-				   * parse the scanArr */
-	int     scanIndex;        /* Index into the scan array */
-	int     frmtIndex;        /* Index into the frmt array */
-	int     tempIndex;        /* Temporary index holder */
-	int     argIndex;         /* Index into the current arg */
-	int     width;            /* Stores the user specified result width */
-	int     base;             /* Base of the integer being converted */
-	int     numUnMatched;	  /* Number of fields actually set. */
-	int     numMatched;	  /* Number of fields actually matched. */
-	int     suppress;         /* Current field is assignment-suppressed. */
-	int     negateScan;       /* Mult by result, set to -1 if true */
-	int     i;                /* Generic variable */
-	char    ch;               /* Generic variable */
-	boolean cont;             /* Used in loops to indicate when to stop */
-	boolean scanOK;           /* Set to false if strtoul/strtod fails */
-	boolean scanArrDone;      /* Set to false if strtoul/strtod fails */
-	boolean widthFlag;        /* True is width is specified */
-	boolean discardFlag;      /* If a "%*" is in the formatString dont 
-				   * write output to arg */
+	StrtoulResult strul;      // Return value for parcing the scanArr when
+				  // extracting integers/longs
+	StrtodResult  strd;;      // Return value for parcing the scanArr when
+				  // extracting doubles
+	char[]  scanArr;          // Array containing parce info
+	char[]  frmtArr;          // Array containing info on how to 
+				  // parse the scanArr
+	int     scanIndex;        // Index into the scan array
+	int     frmtIndex;        // Index into the frmt array
+	int     tempIndex;        // Temporary index holder
+	int     argIndex;         // Index into the current arg
+	int     width;            // Stores the user specified result width 
+	int     base;             // Base of the integer being converted
+	int     numUnMatched;	  // Number of fields actually set.
+	int     numMatched;	  // Number of fields actually matched.
+	int     negateScan;       // Mult by result, set to -1 if true
+	int     i;                // Generic variable
+	char    ch;               // Generic variable
+	boolean cont;             // Used in loops to indicate when to stop
+	boolean scanOK;           // Set to false if strtoul/strtod fails
+	boolean scanArrDone;      // Set to false if strtoul/strtod fails
+	boolean widthFlag;        // True is width is specified
+	boolean discardFlag;      // If a "%*" is in the formatString dont 
+				  // write output to arg
 
 	scanArr     = argv[1].toString().toCharArray();
 	frmtArr     = argv[2].toString().toCharArray();
@@ -82,41 +81,33 @@ class ScanCmd implements Command {
 	scanArrDone = false;
 	argIndex    = 3;
 
-	/*
-	 * Skip all (if any) of the white space before getting to a char
-	 */
+	// Skip all (if any) of the white space before getting to a char
 
 	frmtIndex = skipWhiteSpace(frmtArr, frmtIndex);	 
 
-	/*
-	 * Search through the frmtArr.  If the next char is a '%' parse the
-	 * next chars and determine the type (if any) of the format specifier.
-	 * If the scanArr has been fully searched, do nothing but incerment
-	 * "numUnMatched".  The reason to continue the frmtArr search is for 
-	 * consistency in output.  Previously scan format errors were reported
-	 * before arg input mismatch, so this maintains the same level of error
-	 * checking.
-	 */
+	// Search through the frmtArr.  If the next char is a '%' parse the
+	// next chars and determine the type (if any) of the format specifier.
+	// If the scanArr has been fully searched, do nothing but incerment
+	// "numUnMatched".  The reason to continue the frmtArr search is for 
+	// consistency in output.  Previously scan format errors were reported
+	// before arg input mismatch, so this maintains the same level of error
+	// checking.
 
 	while (frmtIndex < frmtArr.length){
 	    discardFlag = widthFlag = false;
 	    negateScan  = 1;
 	    cont        = true;
 
-	    /*
-	     * Parce the format array and read in the correct value from the 
-	     * scan array.  When the correct value is retrieved, set the 
-	     * variable (from argv) in the interp.
-	     */
+	    // Parce the format array and read in the correct value from the 
+	    // scan array.  When the correct value is retrieved, set the 
+	    // variable (from argv) in the interp.
 
 	    if (frmtArr[frmtIndex] == '%') {
 
 		frmtIndex++;
 		checkOverFlow(interp, frmtArr, frmtIndex);
 		
-		/*
-		 * Two '%'s in a row, do nothing...
-		 */
+		// Two '%'s in a row, do nothing...
 
 		if (frmtArr[frmtIndex] == '%') {
 		    frmtIndex++;
@@ -124,9 +115,7 @@ class ScanCmd implements Command {
 		    continue;
 		}
 
-		/*
-		 * Check for a discard field flag
-		 */
+		// Check for a discard field flag
 
 		if (frmtArr[frmtIndex] == '*') {
 		    discardFlag = true;
@@ -134,14 +123,12 @@ class ScanCmd implements Command {
 		    checkOverFlow(interp, frmtArr, frmtIndex);
 		}
 
-		/*
-		 * Check for a width field and accept the 'h', 'l', 'L'
-		 * characters, but do nothing with them.
-		 *
-		 * Note: The order of the width specifier and the other
-		 * chars is unordered, so we need to iterate until all
-		 * of the specifiers are identified.
-		 */
+		// Check for a width field and accept the 'h', 'l', 'L'
+		// characters, but do nothing with them.
+		//
+		// Note: The order of the width specifier and the other
+		// chars is unordered, so we need to iterate until all
+		// of the specifiers are identified.
 
 		while (cont) {
 		    cont = false;
@@ -150,9 +137,7 @@ class ScanCmd implements Command {
 		        case 'h': 
 		        case 'l': 
 		        case 'L': {
-			    /*
-			     * Just ignore these values
-			     */
+			    // Just ignore these values
 
 		            frmtIndex++;
 		            cont = true;
@@ -172,10 +157,8 @@ class ScanCmd implements Command {
 		    checkOverFlow(interp, frmtArr, frmtIndex);
 		}
 
-		/*
-		 * On all conversion specifiers except 'c', move the
-		 * scanIndex to the next non-whitespace.
-		 */
+		// On all conversion specifiers except 'c', move the
+		// scanIndex to the next non-whitespace.
 
 		ch = frmtArr[frmtIndex];
 		if ((ch != 'c') && (ch != '[') && !scanArrDone) {
@@ -187,10 +170,8 @@ class ScanCmd implements Command {
 
 		if ((scanIndex < scanArr.length) && (ch != 'c') 
                         && (ch != '[')) {
-		    /*
-		     * Since strtoul dosent take signed numbers, make the
-		     * value positive and store the sign.
-		     */
+		    // Since strtoul dosent take signed numbers, make the
+		    // value positive and store the sign.
 
 		    if (scanArr[scanIndex] == '-') {
 		        negateScan = -1;
@@ -201,11 +182,9 @@ class ScanCmd implements Command {
 			width--;
 		    }
 
-		    /*
-		     * The width+scanIndex might be greater than
-		     * the scanArr so we need to re-adjust when this
-		     * happens.
-		     */
+		    // The width+scanIndex might be greater than
+		    // the scanArr so we need to re-adjust when this
+		    // happens.
 
 		    if (widthFlag && (width+scanIndex > scanArr.length)) {
 		        width = scanArr.length - scanIndex;
@@ -216,10 +195,8 @@ class ScanCmd implements Command {
 		    scanArrDone = true;
 		}
 		  
-		/* 
-		 * Foreach iteration we want strul and strd to be
-		 * null since we error check on this case.
-		 */
+		// Foreach iteration we want strul and strd to be
+		// null since we error check on this case.
 
 		strul = null;
 		strd  = null;
@@ -239,13 +216,11 @@ class ScanCmd implements Command {
 			        base = 16;
 			    }
 			
-			    /*
-			     * If the widthFlag is set then convert only 
-			     * "width" characters to an ascii representation, 
-			     * else read in until the end of the integer.  The 
-			     * scanIndex is moved to the point where we stop
-			     * reading in.
-			     */
+			    // If the widthFlag is set then convert only 
+			    // "width" characters to an ascii representation, 
+			    // else read in until the end of the integer.  The 
+			    // scanIndex is moved to the point where we stop
+			    // reading in.
 
 			    if (widthFlag) {
 			        strul = Util.strtoul(new String(scanArr,
@@ -282,13 +257,11 @@ class ScanCmd implements Command {
 		    }
 		    case 's': {
 			if (!scanArrDone) {
-			    /*
-			     * If the wisthFlag is set then read only "width"
-			     * characters into the string, else read in until 
-			     * the first whitespace or endArr is found.  The 
-			     * scanIndex is moved to the point where we stop 
-			     * reading in.
-			     */
+			    // If the widthFlag is set then read only "width"
+			    // characters into the string, else read in until 
+			    // the first whitespace or endArr is found.  The 
+			    // scanIndex is moved to the point where we stop 
+			    // reading in.
 			    
 			    tempIndex = scanIndex;			    
 			    if (!widthFlag) {
@@ -318,13 +291,11 @@ class ScanCmd implements Command {
 		    case 'f': 
 		    case 'g': {
 		        if (!scanArrDone) {
-			    /*
-			     * If the wisthFlag is set then read only "width"
-			     * characters into the string, else read in until 
-			     * the first whitespace or endArr is found.  The 
-			     * scanIndex is moved to the point where we stop 
-			     * reading in.
-			     */
+			    // If the wisthFlag is set then read only "width"
+			    // characters into the string, else read in until 
+			    // the first whitespace or endArr is found.  The 
+			    // scanIndex is moved to the point where we stop 
+			    // reading in.
 
 			    if (widthFlag) {
 			        strd = Util.strtod(new String(scanArr,
@@ -371,9 +342,7 @@ class ScanCmd implements Command {
 			    throw new TclException(interp, unmatched);
 			}
 
-			/* 
-			 * Extract the list of chars for matching.
-			 */
+			// Extract the list of chars for matching.
 
 			while (frmtArr[frmtIndex] != ']') {
 			    if ((++frmtIndex) >= frmtArr.length) {
@@ -385,10 +354,8 @@ class ScanCmd implements Command {
 
 			startIndex = scanIndex;
 			if (charNotMatch) {
-			    /*
-			     * Format specifier contained a '^' so interate
-			     * until one of the chars in tempArr is found.
-			     */
+			    // Format specifier contained a '^' so interate
+			    // until one of the chars in tempArr is found.
 
 			    while (scanOK && !charMatchFound) {
 			        if (scanIndex >= scanArr.length) {
@@ -410,10 +377,8 @@ class ScanCmd implements Command {
 				}
 			    }
 			} else {	
-			    /*
-			     * Iterate until the char in the scanArr is not 
-			     * in the tempArr.
-			     */
+			    // Iterate until the char in the scanArr is not 
+			    // in the tempArr.
 
 			     charMatchFound = true;
 			     while (scanOK && charMatchFound) {
@@ -439,9 +404,7 @@ class ScanCmd implements Command {
 			    }
 			}
 		
-			/*
-			 * Indicates nothing was found.
-			 */
+			// Indicates nothing was found.
 
 			endIndex = scanIndex-startIndex;
 			if (endIndex <= 0) {
@@ -462,13 +425,11 @@ class ScanCmd implements Command {
 		    }
 		}
 
-		/*
-		 * As long as the scan was successful (scanOK), the format
-		 * specifier did not contain a '*' (discardFlag), and
-		 * we are not at the end of the scanArr (scanArrDone);
-		 * increment the num of vars set in the interp.  Otherwise
-		 * increment the number of valid format specifiers.
-		 */
+		// As long as the scan was successful (scanOK), the format
+		// specifier did not contain a '*' (discardFlag), and
+		// we are not at the end of the scanArr (scanArrDone);
+		// increment the num of vars set in the interp.  Otherwise
+		// increment the number of valid format specifiers.
 
 		if (scanOK && !discardFlag && !scanArrDone) {
 		    numMatched++;
@@ -480,18 +441,14 @@ class ScanCmd implements Command {
 
 	    } else if (scanIndex < scanArr.length &&
                       scanArr[scanIndex] == frmtArr[frmtIndex]) {
-	        /*
-		 * No '%' was found, but the characters matched
-		 */
+		// No '%' was found, but the characters matched
 
 	        scanIndex++;
 	        frmtIndex++;
 
 	    } else {
-	        /*
-		 * No '%' found and the characters int frmtArr & scanArr
-		 * did not match.
-		 */
+		// No '%' found and the characters int frmtArr & scanArr
+		// did not match.
 
 		 frmtIndex++;
 		
@@ -499,11 +456,9 @@ class ScanCmd implements Command {
 
 	}
 
-	/*
-	 * The numMatched is the return value: a count of the num of vars set.
-	 * While the numUnMatched is the number of formatSpecifiers that
-	 * passed the parsing stage, but did not match anything in the scanArr.
-	 */
+	// The numMatched is the return value: a count of the num of vars set.
+	// While the numUnMatched is the number of formatSpecifiers that
+	// passed the parsing stage, but did not match anything in the scanArr.
 
 	if ((numMatched + numUnMatched) != (argv.length - 3)) {
 	    errorDiffVars(interp);
