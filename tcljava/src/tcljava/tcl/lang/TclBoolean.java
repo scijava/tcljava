@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclBoolean.java,v 1.1 1998/10/14 21:09:14 cvsadmin Exp $
+ * RCS: @(#) $Id: TclBoolean.java,v 1.2 2000/10/29 06:00:42 mdejong Exp $
  *
  */
 
@@ -17,7 +17,7 @@ package tcl.lang;
  * This class implements the boolean object type in Tcl.
  */
 
-public class TclBoolean extends InternalRep {
+public class TclBoolean implements InternalRep {
     /**
      * Internal representation of a boolean value.
      */
@@ -49,9 +49,15 @@ public class TclBoolean extends InternalRep {
      *
      * @param tobj the TclObject that contains this ObjType.
      */
-    protected InternalRep duplicate() {
+    public InternalRep duplicate() {
 	return new TclBoolean(value);
     }
+
+    /**
+     * Implement this no-op for the InternalRep interface.
+     */
+
+    public void dispose() {}
 
     /**
      * Called to query the string representation of the Tcl object. This

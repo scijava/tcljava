@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaUtil.c,v 1.5 2000/06/15 09:47:07 mo Exp $
+ * RCS: @(#) $Id: javaUtil.c,v 1.6 2000/10/29 06:00:42 mdejong Exp $
  */
 
 #include "java.h"
@@ -57,9 +57,7 @@ Java_tcl_lang_Util_getBoolean(
     int bool;
     const char *str;
     Tcl_Interp *interp = JavaGetInterp(env, interpObj);
-    JNIEnv *oldEnv;
 
-    PUSH_JAVA_ENV();
     str = (string) ? (*env)->GetStringUTFChars(env, string, NULL) : "";
 
     if (Tcl_GetBoolean(interp, (/*UNCONST*/ char*) str, &bool) != TCL_OK) {
@@ -69,7 +67,6 @@ Java_tcl_lang_Util_getBoolean(
     if (string) {
 	(*env)->ReleaseStringUTFChars(env, string, str);
     }
-    POP_JAVA_ENV();
     return (bool) ? JNI_TRUE : JNI_FALSE;
 }
 
@@ -103,9 +100,7 @@ Java_tcl_lang_Util_getDouble(
     double doubleVal;
     const char *str;
     Tcl_Interp *interp = JavaGetInterp(env, interpObj);
-    JNIEnv *oldEnv;
 
-    PUSH_JAVA_ENV();
     str = (string) ? (*env)->GetStringUTFChars(env, string, NULL) : "";
 
     if (Tcl_GetDouble(interp, (/*UNCONST*/ char*) str, &doubleVal) != TCL_OK) {
@@ -115,7 +110,6 @@ Java_tcl_lang_Util_getDouble(
     if (string) {
 	(*env)->ReleaseStringUTFChars(env, string, str);
     }
-    POP_JAVA_ENV();
     return (jdouble) doubleVal;
 }
 
@@ -149,9 +143,7 @@ Java_tcl_lang_Util_getInt(
     int intVal;
     const char *str;
     Tcl_Interp *interp = JavaGetInterp(env, interpObj);
-    JNIEnv *oldEnv;
 
-    PUSH_JAVA_ENV();
     str = (string) ? (*env)->GetStringUTFChars(env, string, NULL) : "";
 
     if (Tcl_GetInt(interp, (/*UNCONST*/ char*) str, &intVal) != TCL_OK) {
@@ -161,7 +153,6 @@ Java_tcl_lang_Util_getInt(
     if (string) {
 	(*env)->ReleaseStringUTFChars(env, string, str);
     }
-    POP_JAVA_ENV();
     return (jint) intVal;
 }
 
@@ -192,13 +183,10 @@ Java_tcl_lang_Util_printDouble(
     jdouble value)		/* Value to convert. */
 {
     char buf[TCL_DOUBLE_SPACE+1];
-    JNIEnv *oldEnv;
     jobject obj;
 
-    PUSH_JAVA_ENV();
     Tcl_PrintDouble(NULL, value, buf);
     obj = (*env)->NewStringUTF(env, buf);
-    POP_JAVA_ENV();
     return obj;
 }
 
@@ -227,15 +215,12 @@ Java_tcl_lang_Util_getCwd(
     JNIEnv *env,		/* Java environment. */
     jclass utilClass)		/* Handle to Util class. */
 {
-    JNIEnv *oldEnv;
     jobject obj;
     Tcl_DString ds;
 
-    PUSH_JAVA_ENV();
     obj = (*env)->NewStringUTF(env, Tcl_GetCwd(NULL,&ds));
     Tcl_DStringFree(&ds);
 
-    POP_JAVA_ENV();
     return obj;
 }
 
@@ -264,7 +249,6 @@ Java_tcl_lang_Util_stringMatch(
 {
     const char *str, *pat;
     jboolean result;
-    JNIEnv *oldEnv;
     
     if (!pattern || !string) {
 	jclass nullClass = (*env)->FindClass(env,
@@ -273,14 +257,12 @@ Java_tcl_lang_Util_stringMatch(
 	return JNI_FALSE;
     }
 
-    PUSH_JAVA_ENV();
     str = (*env)->GetStringUTFChars(env, string, NULL);
     pat = (*env)->GetStringUTFChars(env, pattern, NULL);
     result = (Tcl_StringMatch((/*UNCONST*/ char *) str,
 	    (/*UNCONST*/ char *) pat) ? JNI_TRUE : JNI_FALSE);
     (*env)->ReleaseStringUTFChars(env, string, str);
     (*env)->ReleaseStringUTFChars(env, pattern, pat);
-    POP_JAVA_ENV();
     return result;
 }
 

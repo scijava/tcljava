@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.14 2000/06/03 12:50:51 mo Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.15 2000/10/29 06:00:39 mdejong Exp $
 
 SHELL = /bin/sh
 
@@ -202,8 +202,7 @@ OBJS = \
 	javaList.o \
 	javaNotifier.o \
 	javaTimer.o \
-	javaUtil.o \
-	unixNotifier.o
+	javaUtil.o
 
 SRCS = \
 	$(NATIVE_SRC_DIR)/javaCmd.c \
@@ -213,10 +212,9 @@ SRCS = \
 	$(NATIVE_SRC_DIR)/javaList.c \
 	$(NATIVE_SRC_DIR)/javaNotifier.c \
 	$(NATIVE_SRC_DIR)/javaTimer.c \
-	$(NATIVE_SRC_DIR)/javaUtil.c \
-	$(UNIX_DIR)/unixNotifier.c
+	$(NATIVE_SRC_DIR)/javaUtil.c
 
-TCLBLEND_CLASS_NAMES = \
+TCLBLEND_JNI_HEADER_CLASS_NAMES = \
 	tcl.lang.CObject \
 	tcl.lang.IdleHandler \
 	tcl.lang.Interp \
@@ -318,12 +316,9 @@ javaTimer.o: $(NATIVE_SRC_DIR)/javaTimer.c
 javaUtil.o: $(NATIVE_SRC_DIR)/javaUtil.c
 	$(CC) $(CC_OBJ_FLAG) $(CC_SWITCHES) $(NATIVE_SRC_DIR)/javaUtil.c
 
-unixNotifier.o: $(UNIX_DIR)/unixNotifier.c
-	$(CC) $(CC_OBJ_FLAG) $(CC_SWITCHES) $(UNIX_DIR)/unixNotifier.c
-
 javaNative.h:
 	CLASSPATH=$(TCLBLEND_CLASSPATH) \
-	$(JAVAH) -jni -o javaNative.h $(TCLBLEND_CLASS_NAMES)
+	$(JAVAH) -jni -o javaNative.h $(TCLBLEND_JNI_HEADER_CLASS_NAMES)
 
 custom.warn:
 	@echo ""

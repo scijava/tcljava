@@ -56,7 +56,8 @@ public class Bind implements Runnable {
 	}
 
 	// Now invoke the callback (from a different thread)
-	actionListener.actionPerformed(new ActionEvent(this));
+	if (actionListener != null)
+	    actionListener.actionPerformed(new ActionEvent(this));
 
 	stopped = true;
 	t = null;

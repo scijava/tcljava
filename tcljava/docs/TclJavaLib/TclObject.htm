@@ -65,7 +65,7 @@ objects for each list element. Dual-ported objects avoid most runtime
 type conversions.  This improves the speed of many operations
 since an appropriate representation is immediately available.
 <P>
-Currently, the following internal representations are supported:
+A number internal representations are supported, including:
 TclBoolean, TclDouble, TclList, TclIndex, TclInteger, TclString and
 ReflectObject. Most of these internal representations have a
 newInstance() method, which can be used to create a new TclObject
@@ -75,7 +75,7 @@ methods; use the &quot;new&quot; operator to create TclObject instances only
 when you are writing new internal representations.
 <P>
 The type of the internal representation of Tcl objects can mutate.
-Methods such as <B>setInternalRep</B> and <B>invalidateStringlRep</B>
+Methods such as <B>setInternalRep</B> and <B>invalidateStringRep</B>
 are facilities for mutating the internal rep.
 <P>
 To improve memory efficiency, TclObject supports copy-on-write
@@ -86,8 +86,8 @@ value, call the <B>release</B> method. Internally, each call to
 TclObject by one; conversely, each call to <B>release</B> decrements
 the reference count by one.
 <P>
-Some methods of classes derrived from the <B><A HREF="../TclJavaLib/InternalRep.htm">InternalRep</A></B> class,
-such as <B><A HREF="../TclJavaLib/TclList.htm">TclList</A></B>.<B>append()</B> and <B><A HREF="../TclJavaLib/TclInteger.htm">TclInteger</A></B>.<B>set()</B>,
+Some methods, such as <B><A HREF="../TclJavaLib/TclList.htm">TclList</A></B>.
+<B>append()</B> and <B><A HREF="../TclJavaLib/TclInteger.htm">TclInteger</A></B>.<B>set()</B>,
 modify the contents of a TclObject.  When you are about to call these
 methods to modify the value of a TclObject, you must call <B>preserve</B> (if
 you haven't already done so) and then call <B>takeExclusive</B>.

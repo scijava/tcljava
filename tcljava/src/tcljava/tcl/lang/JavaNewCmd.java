@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaNewCmd.java,v 1.2 1999/05/09 22:18:05 dejong Exp $
+ * RCS: @(#) $Id: JavaNewCmd.java,v 1.3 2000/10/29 06:00:42 mdejong Exp $
  *
  */
 
@@ -113,7 +113,7 @@ throws
 // array signature used for creating Java arrays. Examples or array
 // signatures are "int[][]", "java.lang.Object[]" or "[[D".
 
-class ArraySig extends InternalRep {
+class ArraySig implements InternalRep {
 
 // The base component type of the array. For example, the component
 // type for int[][][] is int.
@@ -163,11 +163,17 @@ ArraySig(
  *----------------------------------------------------------------------
  */
 
-protected InternalRep
-duplicate()
+public InternalRep duplicate()
 {
     return new ArraySig(componentType, dimensions);
 }
+
+/**
+  * Implement this no-op for the InternalRep interface.
+  */
+
+public void dispose() {}
+
 
 /*
  *----------------------------------------------------------------------

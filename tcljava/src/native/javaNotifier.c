@@ -8,18 +8,24 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaNotifier.c,v 1.2 2000/06/15 09:47:07 mo Exp $
+ * RCS: @(#) $Id: javaNotifier.c,v 1.3 2000/10/29 06:00:42 mdejong Exp $
  */
 
 #include "java.h"
 #include "javaNative.h"
 
-/*
- * Global Notifier object.
- */
+typedef struct ThreadSpecificData {
 
-static jobject globalNotifierObj;
-static int eventQueued = 0;
+  jobject notifierObj;
+
+  int eventQueued;
+
+} ThreadSpecificData;
+
+static Tcl_ThreadDataKey dataKey;
+
+/* Define this here so that we do not need to include tclInt.h */
+#define TCL_TSD_INIT(keyPtr)	(ThreadSpecificData *)Tcl_GetThreadData((keyPtr), sizeof(ThreadSpecificData))
 
 /*
  * Declarations for functions used only in this file.
@@ -45,23 +51,24 @@ static void	NotifierSetup(ClientData data, int flags);
  *----------------------------------------------------------------------
  */
 
-void JNICALL
+jlong JNICALL
 Java_tcl_lang_Notifier_init(
     JNIEnv *env,		/* Java environment. */
     jobject notifierObj)	/* Handle to Notifier object. */
 {
-    JNIEnv *oldEnv;
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+
+    tsdPtr->notifierObj    = (*env)->NewGlobalRef(env, notifierObj);
+    tsdPtr->eventQueued    = 0;
 
     /* If we segfault near here under Windows, try removing tclblend.dll
      * from the current directory.  Tcl Blend has problems loading
      * dlls from a remote directory if there is a dll with the
      * same name in the local directory.
      */
-    PUSH_JAVA_ENV();
     Tcl_CreateEventSource(NotifierSetup, NotifierCheck, NULL);
-    JavaInitNotifier();
-    globalNotifierObj = (*env)->NewGlobalRef(env, notifierObj);
-    POP_JAVA_ENV();
+
+    return (jlong) Tcl_GetCurrentThread();
 }
 
 /*
@@ -85,14 +92,11 @@ Java_tcl_lang_Notifier_dispose(
     JNIEnv *env,		/* Java environment. */
     jobject notifierObj)	/* Handle to Notifier object. */
 {
-    JNIEnv *oldEnv;
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-    PUSH_JAVA_ENV();
     Tcl_DeleteEventSource(NotifierSetup, NotifierCheck, NULL);
-    JavaDisposeNotifier();
-    (*env)->DeleteGlobalRef(env, globalNotifierObj);
-    globalNotifierObj = NULL;
-    POP_JAVA_ENV();
+    (*env)->DeleteGlobalRef(env, tsdPtr->notifierObj);
+    tsdPtr->notifierObj = NULL;
 }
 
 /*
@@ -122,11 +126,8 @@ Java_tcl_lang_Notifier_doOneEvent(
 				 * or others defined by event sources. */
 {
     int result;
-    JNIEnv *oldEnv;
 
-    PUSH_JAVA_ENV();
     result = Tcl_DoOneEvent(flags);
-    POP_JAVA_ENV();
     return result;
 }
 
@@ -149,14 +150,11 @@ Java_tcl_lang_Notifier_doOneEvent(
 void JNICALL
 Java_tcl_lang_Notifier_alertNotifier(
     JNIEnv *env,		/* Java environment. */
-    jobject notifierObj)	/* Handle to Notifier object. */
+    jobject notifierObj,        /* Handle to Notifier object. */
+    jlong tid)	                /* Tcl_ThreadId for the notifier thread */
 {
-    /*
-     * This interface is intended to be called from other threads,
-     * so we should not grab the monitor.
-     */
-
-    JavaAlertNotifier();
+    /* FIXME: there has got to be a better way to do this */
+    Tcl_ThreadAlert((Tcl_ThreadId) tid);
 }
 
 /*
@@ -181,9 +179,11 @@ NotifierSetup(
     ClientData data,		/* Not used. */
     int flags)			/* Same as for Tcl_DoOneEvent. */
 {
-    JNIEnv *env = JavaGetEnv(NULL);
+    JNIEnv *env = JavaGetEnv();
+    JavaInfo* jcache = JavaGetCache();
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-    if ((*env)->CallBooleanMethod(env, globalNotifierObj, java.hasEvents)
+    if ((*env)->CallBooleanMethod(env, tsdPtr->notifierObj, jcache->hasEvents)
 	    == JNI_TRUE) {
 	Tcl_Time timeout = { 0, 0 };
 	Tcl_SetMaxBlockTime(&timeout);
@@ -212,20 +212,23 @@ NotifierCheck(
     ClientData data,		/* Not used. */
     int flags)			/* Same as for Tcl_DoOneEvent. */
 {
-    JNIEnv *env = JavaGetEnv(NULL);
     Tcl_Event *ePtr;
+    JNIEnv *env = JavaGetEnv();
+    JavaInfo* jcache = JavaGetCache();
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     /*
      * Only queue a new event if there isn't already one queued and
      * there are events on the Java event queue.
      */
 
-    if (!eventQueued && (*env)->CallBooleanMethod(env, globalNotifierObj,
-	    java.hasEvents) == JNI_TRUE) {
+    if (!tsdPtr->eventQueued && 
+        (*env)->CallBooleanMethod(env, tsdPtr->notifierObj,
+                                  jcache->hasEvents) == JNI_TRUE) {
 	ePtr = (Tcl_Event *) ckalloc(sizeof(Tcl_Event));
 	ePtr->proc = JavaEventProc;
 	Tcl_QueueEvent(ePtr, TCL_QUEUE_TAIL);
-	eventQueued = 1;
+	tsdPtr->eventQueued = 1;
     }
 }
 
@@ -251,24 +254,19 @@ JavaEventProc(
     Tcl_Event *evPtr,		/* The event that is being processed. */
     int flags)			/* The flags passed to Tcl_ServiceEvent. */
 {
-    JNIEnv *env = JavaGetEnv(NULL);
-    
+    JNIEnv *env = JavaGetEnv();
+    JavaInfo* jcache = JavaGetCache();
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+
     /*
      * Call Notifier.serviceEvent() to handle invoking the next event and
      * signaling any threads that are waiting on the event.
      */
 
-    eventQueued = 0;
-
-    /*
-     * It is safe to leave the monitor here since we assume nothing about the
-     * state of the world after we return.
-     */
+    tsdPtr->eventQueued = 0;
     
-    JAVA_UNLOCK();
-    (void) (*env)->CallIntMethod(env, globalNotifierObj, java.serviceEvent,
-	    flags);
-    JAVA_LOCK();
+    (void) (*env)->CallIntMethod(env, tsdPtr->notifierObj, 
+                                 jcache->serviceEvent, flags);
     return 1;
 }
 

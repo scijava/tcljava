@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: FuncSig.java,v 1.5 1999/05/15 23:38:14 dejong Exp $
+ * RCS: @(#) $Id: FuncSig.java,v 1.6 2000/10/29 06:00:42 mdejong Exp $
  *
  */
 
@@ -28,7 +28,7 @@ import java.util.*;
  * signature."
  */
 
-class FuncSig extends InternalRep {
+class FuncSig implements InternalRep {
 
 // The class that a method signature is used against. In the case of a
 // static method call by java::call, targetCls is given by the <class>
@@ -116,11 +116,17 @@ FuncSig(
  *----------------------------------------------------------------------
  */
 
-protected InternalRep
-duplicate()
+public InternalRep duplicate()
 {
     return new FuncSig(targetCls, pkgInvoker, func);
 }
+
+/**
+  * Implement this no-op for the InternalRep interface.
+  */
+
+public void dispose() {}
+
 
 /*
  *----------------------------------------------------------------------

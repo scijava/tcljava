@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: java.h,v 1.6 2000/06/15 09:47:06 mo Exp $
+ * RCS: @(#) $Id: java.h,v 1.7 2000/10/29 06:00:41 mdejong Exp $
  */
 
 #ifndef _JAVA
@@ -110,6 +110,7 @@ typedef struct JavaInfo {
     jmethodID release;
     jmethodID getInternalRep;
     jclass TclException;
+    jmethodID tclexceptionC;
     jclass CommandWithDispose;
     jmethodID disposeCmd;
     jclass CObject;
@@ -126,58 +127,18 @@ typedef struct JavaInfo {
     jclass Notifier;
     jmethodID serviceEvent;
     jmethodID hasEvents;
-    jclass NativeLock;
     jclass IdleHandler;
     jmethodID invokeIdle;
     jclass TimerHandler;
     jmethodID invokeTimer;
 } JavaInfo;
 
-extern JavaInfo java;
-
-/*
- * The following macros are used to enter and leave the global
- * monitor around native code and to set up the VM environment
- * pointer.
- */
-
-/* Uncomment these macros and comment the other ones to
-   completely avoid using the global Java monitor.
-
-#define JAVA_LOCK()
-#define JAVA_UNLOCK()
-*/
-
-#define JAVA_LOCK() \
-{ \
-    (*env)->MonitorEnter(env, java.NativeLock); \
-}
-
-#define JAVA_UNLOCK() \
-{ \
-    (*env)->MonitorExit(env, java.NativeLock); \
-}
-
-#define PUSH_JAVA_ENV()	\
-{ \
-    JAVA_LOCK(); \
-    oldEnv = JavaSetEnv(env); \
-}
-
-#define POP_JAVA_ENV()	\
-{ \
-    JavaSetEnv(oldEnv); \
-    JAVA_UNLOCK(); \
-}
-
-
 /*
  * Declarations for functions shared across files.
  */
 
-TCLBLEND_EXTERN void		JavaAlertNotifier();
-TCLBLEND_EXTERN void		JavaDisposeNotifier();
-TCLBLEND_EXTERN JNIEnv *	JavaGetEnv(Tcl_Interp *interp);
+TCLBLEND_EXTERN JNIEnv *	JavaGetEnv();
+TCLBLEND_EXTERN JavaInfo *	JavaGetCache();
 TCLBLEND_EXTERN Tcl_Interp *	JavaGetInterp(JNIEnv *env, jobject interpObj);
 TCLBLEND_EXTERN char *		JavaGetString(JNIEnv *env, jstring str,
 			    	    int *lengthPtr);
@@ -187,11 +148,9 @@ TCLBLEND_EXTERN jobject		JavaGetTclObject(JNIEnv *env, Tcl_Obj *objPtr,
 TCLBLEND_EXTERN int		JavaSetupJava(JNIEnv *env, Tcl_Interp *interp);
 TCLBLEND_EXTERN int		JavaInitBlend(JNIEnv *env, Tcl_Interp *interp,
 			    	    jobject interpObj);
-TCLBLEND_EXTERN void		JavaInitNotifier();
 TCLBLEND_EXTERN void		JavaInterpDeleted(ClientData clientData,
 			    	    Tcl_Interp *interp);
 TCLBLEND_EXTERN void		JavaObjInit();
-TCLBLEND_EXTERN JNIEnv * 	JavaSetEnv(JNIEnv *env);
 TCLBLEND_EXTERN void		JavaThrowTclException(JNIEnv *env,
 				    Tcl_Interp *interp, int result);
 

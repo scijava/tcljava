@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaIdle.c,v 1.2 2000/06/15 09:47:06 mo Exp $
+ * RCS: @(#) $Id: javaIdle.c,v 1.3 2000/10/29 06:00:42 mdejong Exp $
  */
 
 #include "java.h"
@@ -41,11 +41,7 @@ Java_tcl_lang_IdleHandler_doWhenIdle(
     JNIEnv *env,		/* Java environment. */
     jobject idle)		/* Handle to IdleHandler object. */
 {
-    JNIEnv *oldEnv;
-
-    PUSH_JAVA_ENV();
     Tcl_DoWhenIdle(JavaIdleProc, (ClientData) (*env)->NewGlobalRef(env, idle));
-    POP_JAVA_ENV();
 }
 
 /*
@@ -68,9 +64,7 @@ void JNICALL
 Java_tcl_lang_IdleHandler_cancelIdleCall(
     JNIEnv *env,		/* Java environment. */
     jobject idle)		/* Handle to IdleHandler object. */
-{
-    JNIEnv *oldEnv;
-    
+{    
     /*
      * Make a global reference, which should have the same numeric value
      * as the one we used in the client data argument.
@@ -80,9 +74,7 @@ Java_tcl_lang_IdleHandler_cancelIdleCall(
     jobject tmpIdle;
 
     tmpIdle = (*env)->NewGlobalRef(env, idle);
-    PUSH_JAVA_ENV();
     Tcl_CancelIdleCall(JavaIdleProc, (ClientData) tmpIdle); 
-    POP_JAVA_ENV();
 
     /*
      * Delete the ref in the local scope.
@@ -94,9 +86,7 @@ Java_tcl_lang_IdleHandler_cancelIdleCall(
 #else
     /* This code causes tests/native/javaIdle.c to fail under JDK1.2 */
     idle = (*env)->NewGlobalRef(env, idle);
-    PUSH_JAVA_ENV();
     Tcl_CancelIdleCall(JavaIdleProc, (ClientData) idle);
-    POP_JAVA_ENV();
 
     /*
      * Delete both the ref in the local scope and the one that was used
@@ -128,19 +118,18 @@ static void
 JavaIdleProc(
     ClientData clientData)	/* Global IdleHandler reference */
 {
-    JNIEnv *env = JavaGetEnv(NULL);
+    JNIEnv *env = JavaGetEnv();
     jobject exception;
     jobject idle = (jobject) clientData;
+    JavaInfo* jcache = JavaGetCache();
 
     /*
      * Call IdleHandler.invoke.
      */
 
-    JAVA_UNLOCK();
-    (*env)->CallVoidMethod(env, idle, java.invokeIdle);
+    (*env)->CallVoidMethod(env, idle, jcache->invokeIdle);
     exception = (*env)->ExceptionOccurred(env);
     (*env)->ExceptionClear(env);
-    JAVA_LOCK();
 
     /*
      * Release the ref to the idle object now that it has fired.

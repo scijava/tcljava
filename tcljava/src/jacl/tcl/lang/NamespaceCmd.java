@@ -15,7 +15,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: NamespaceCmd.java,v 1.10 1999/08/27 23:56:39 mo Exp $
+ * RCS: @(#) $Id: NamespaceCmd.java,v 1.11 2000/10/29 06:00:41 mdejong Exp $
  */
 
 package tcl.lang;
@@ -29,7 +29,7 @@ import java.util.Enumeration;
  */
 
 
-public class NamespaceCmd extends InternalRep implements Command {
+public class NamespaceCmd implements InternalRep, Command {
 
     // Flag passed to getNamespaceForQualName to indicate that it should
     // search for a namespace rather than a command or variable inside a
@@ -85,14 +85,6 @@ public class NamespaceCmd extends InternalRep implements Command {
     
     private ResolvedNsName otherValue = null;
 
-
-
-    // FIXME : is this needed ? Can we just extend InternalRep?
-
-    static void initNamespaceSubsystem() {
-	// call Tcl_RegisterObjType(&tclNsNameType);
-	// register the InternalRep ?
-    }
 
     /*
      *----------------------------------------------------------------------
@@ -3227,7 +3219,7 @@ public class NamespaceCmd extends InternalRep implements Command {
      *----------------------------------------------------------------------
      */
     
-    protected void dispose()
+    public void dispose()
     {
 	final boolean debug = false;
 	if (debug) {
@@ -3279,7 +3271,7 @@ public class NamespaceCmd extends InternalRep implements Command {
      *----------------------------------------------------------------------
      */
     
-    protected InternalRep duplicate()
+    public InternalRep duplicate()
     {
 	final boolean debug = false;
 	if (debug) {

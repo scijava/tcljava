@@ -9,37 +9,36 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Notifier.java,v 1.2 2000/01/25 03:42:25 mo Exp $
+ * RCS: @(#) $Id: Notifier.java,v 1.3 2000/10/29 06:00:42 mdejong Exp $
  *
  */
 
 package tcl.lang;
 
-import java.util.*;
+import java.util.Hashtable;
+import java.util.Vector;
 
-/*
- * Implements the Blend version of the Notifier class. The Notifier is
- * the lowest-level part of the event system. It is used by
- * higher-level event sources such as file, JavaBean and timer
- * events. The Notifier manages an event queue that holds TclEvent
- * objects.
- *
- * The Notifier is designed to run in a multi-threaded
- * environment. Each notifier instance is associated with a primary
- * thread. Any thread can queue (or dequeue) events using the
- * queueEvent (or deleteEvents) call. However, only the primary thread
- * may process events in the queue using the doOneEvent()
- * call. Attepmts to call doOneEvent from a non-primary thread will
- * cause a TclRuntimeError.
- *
- * This class does not have a public constructor and thus cannot be
- * instantiated. The only way to for a Tcl extension to get an
- * Notifier is to call Interp.getNotifier() (or
- * Notifier.getNotifierForThread), which returns the Notifier for that
- * interpreter (thread).
- */
+// Implements the Tcl Blend version of the Notifier class. The Notifier is
+// the lowest-level part of the event system. It is used by
+// higher-level event sources such as file, JavaBean and timer
+// events. The Notifier manages an event queue that holds TclEvent
+// objects.
+//
+// The Tcl Blend Notifier is designed to run in a multi-threaded
+// environment. Each notifier instance is associated with a primary
+// thread. Any thread can queue (or dequeue) events using the
+// queueEvent (or deleteEvents) call. However, only the primary thread
+// may process events in the queue using the doOneEvent()
+// call. Attepmts to call doOneEvent() from a non-primary thread will
+// cause a TclRuntimeError.
+//
+// This class does not have a public constructor and thus cannot be
+// instantiated. The only way to for a Tcl extension to get an
+// Notifier is to call Interp.getNotifier() (or
+// Notifier.getNotifierForThread() ), which returns the Notifier for that
+// interpreter (thread).
 
-public class Notifier {
+public class Notifier implements EventDeleter {
 
 private static Notifier globalNotifier;
 
@@ -64,6 +63,21 @@ Thread primaryThread;
 // is no longer needed.
 
 int refCount;
+
+// Stores the Notifier for each thread.
+
+private static Hashtable notifierTable = new Hashtable();
+
+// tcl ThreadId
+
+private long tclThreadId;
+
+// Mutex used to protect concurrent access to the internals of this Notifier
+// object.  For example, the queueing and dequeueing of objects from the
+// event list.
+
+private final Object notifierMutex = new Object();
+
 
 /*
  *----------------------------------------------------------------------
@@ -82,12 +96,12 @@ private
 Notifier(
     Thread primaryTh)		// The primary thread for this Notifier.
 {
-    primaryThread = primaryTh;
+    primaryThread     = primaryTh;
     firstEvent        = null;
     lastEvent         = null;
     markerEvent       = null;
-    refCount = 0;
-    init();
+    tclThreadId       = init();
+    refCount          = 0;
 }
 
 /*
@@ -96,8 +110,7 @@ Notifier(
  * getNotifierForThread --
  *
  *	Get the notifier for this thread, creating the Notifier,
- *	when necessary. Note that this is a partial implementation
- *	that only supports a single notifier thread.
+ *	when necessary.
  *
  * Results:
  *	The Notifier for this thread.
@@ -112,12 +125,13 @@ public static synchronized Notifier
 getNotifierForThread(
     Thread thread)		// The thread that owns this Notifier.
 {
-    if (globalNotifier == null) {
-	globalNotifier = new Notifier(thread);
-    } else if (globalNotifier.primaryThread != thread) {
-	return null;
-    } 
-    return globalNotifier;
+    Notifier notifier = (Notifier) notifierTable.get(thread);
+    if (notifier == null) {
+	notifier = new Notifier(thread);
+	notifierTable.put(thread, notifier);
+    }
+
+    return notifier;
 }
 
 /*
@@ -127,7 +141,7 @@ getNotifierForThread(
  *
  *	Increment the reference count of the notifier. The notifier will
  *	be kept in the notifierTable (and alive) as long as its reference
- *	count is greater than zero.
+ *	count is greater than zero.  This method is concurrent safe.
  *
  * Results:
  *	None.
@@ -138,13 +152,16 @@ getNotifierForThread(
  *----------------------------------------------------------------------
  */
 
-public synchronized void
+public void
 preserve()
 {
-    if (refCount < 0) {
-	throw new TclRuntimeError("Attempting to preserve a freed Notifier");
+    synchronized (notifierMutex) {
+        if (refCount < 0) {
+	    throw new TclRuntimeError(
+	        "Attempting to preserve a freed Notifier");
+        }
+        ++refCount;
     }
-    ++refCount;
 }
 
 /*
@@ -153,7 +170,8 @@ preserve()
  * release --
  *
  *	Decrement the reference count of the notifier. The notifier will
- *	be free when its refCount goes from one to zero.
+ *	be freed when its refCount goes from one to zero.  This method is
+ *	concurrent safe.
  *
  * Results:
  *	None.
@@ -165,9 +183,11 @@ preserve()
  *----------------------------------------------------------------------
  */
 
-public synchronized void
+public void
 release()
 {
+    synchronized (notifierMutex) {
+// FIXME: indent this block properly later.
     if ((refCount == 0) && (primaryThread != null)) {
 	throw new TclRuntimeError(
 		"Attempting to release a Notifier before it's preserved");
@@ -177,9 +197,10 @@ release()
     }
     --refCount;
     if (refCount == 0) {
+	notifierTable.remove(primaryThread);
 	primaryThread = null;
-	globalNotifier = null;
 	dispose();
+    }
     }
 }
 
@@ -193,7 +214,8 @@ release()
  *	Events inserted before the marker will be processed in
  *	first-in-first-out order, but before any events inserted at
  *	the tail of the queue.  Events inserted at the head of the
- *	queue will be processed in last-in-first-out order.
+ *	queue will be processed in last-in-first-out order.  This method is
+ *	concurrent safe. 
  *
  * Results:
  *	None.
@@ -206,7 +228,7 @@ release()
  *----------------------------------------------------------------------
  */
 
-public synchronized void
+public void
 queueEvent(
     TclEvent evt,		// The event to put in the queue.
     int position)		// One of TCL.QUEUE_TAIL,
@@ -214,9 +236,10 @@ queueEvent(
 {
     evt.notifier = this;
 
+    synchronized (notifierMutex) {
+//FIXME: indent this block properly
     if (position == TCL.QUEUE_TAIL) {
 	// Append the event on the end of the queue.
-
 	evt.next = null;
 
 	if (firstEvent == null) {
@@ -227,7 +250,6 @@ queueEvent(
 	lastEvent = evt;
     } else if (position == TCL.QUEUE_HEAD) {
 	// Push the event on the head of the queue.
-
 	evt.next = firstEvent;
 	if (firstEvent == null) {
 	    lastEvent = evt;
@@ -236,7 +258,6 @@ queueEvent(
     } else if (position == TCL.QUEUE_MARK) {
 	// Insert the event after the current marker event and advance
 	// the marker to the new event.
-
 	if (markerEvent == null) {
 	    evt.next = firstEvent;
 	    firstEvent = evt;
@@ -250,13 +271,13 @@ queueEvent(
 	}
     } else {
 	// Wrong flag.
-
 	throw new TclRuntimeError("wrong position \"" + position +
 	       "\", must be TCL.QUEUE_HEAD, TCL.QUEUE_TAIL or TCL.QUEUE_MARK");
     }
+    }
 
     if (Thread.currentThread() != primaryThread) {
-	alertNotifier();
+	alertNotifier(tclThreadId);
     }
 }
 
@@ -267,7 +288,8 @@ queueEvent(
  *
  *	Calls an EventDeleter for each event in the queue and deletes
  *	those for which deleter.deleteEvent() returns 1. Events
- *	for which the deleter returns 0 are left in the queue.
+ *	for which the deleter returns 0 are left in the queue.   This 
+ *	method is concurrent safe. 
  *
  * Results:
  *	None.
@@ -278,13 +300,15 @@ queueEvent(
  *----------------------------------------------------------------------
  */
 
-public synchronized void
+public void
 deleteEvents(
     EventDeleter deleter)	// The deleter that checks whether an event
 				// should be removed.
 {
     TclEvent evt, prev;
 
+    synchronized (notifierMutex) {
+//FIXME: indent this block properly
     for (prev = null, evt = firstEvent; evt != null; evt = evt.next) {
         if (deleter.deleteEvent(evt) == 1) {
             if (firstEvent == evt) {
@@ -292,16 +316,49 @@ deleteEvents(
                 if (evt.next == null) {
                     lastEvent = null;
                 }
+		    if (markerEvent == evt) {
+			markerEvent = null;
+		    }
             } else {
                 prev.next = evt.next;
+		    if (evt.next == null) {
+			lastEvent = prev;
             }
 	    if (markerEvent == evt) {
-		markerEvent = null;
+			markerEvent = prev;
+		    }
 	    }
         } else {
             prev = evt;
         }
     }
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * deleteEvent --
+ *
+ *	This method is required for this class being an EventDeleter.
+ *	Checks the given event to see if it is already processed.
+ *	This method together with 'deleteEvents' are used by serviceEvent to
+ *	remove an event that is just processed in a concurrent safe manor.
+ *
+ * Results:
+ *	Returns 1 if the given event is processed, 0 otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+public int
+deleteEvent(
+    TclEvent evt) {		// Check whether this event should be removed.
+    return ((evt.isProcessing == true) &&
+	    (evt.isProcessed  == true)) ? 1 : 0;
 }
 
 /*
@@ -309,7 +366,8 @@ deleteEvents(
  *
  * serviceEvent --
  *
- *	Process one event from the event queue.
+ *	Process one event from the event queue.  This method is concurrent 
+ *	safe and can be reentered recursively.
  *
  * Results:
  *	The return value is 1 if the procedure actually found an event
@@ -322,8 +380,7 @@ deleteEvents(
  *
  *----------------------------------------------------------------------
  */
-
-synchronized int
+int
 serviceEvent(
     int flags)			// Indicates what events should be processed.
 				// May be any combination of TCL.WINDOW_EVENTS
@@ -343,7 +400,8 @@ serviceEvent(
     // Loop through all the events in the queue until we find one
     // that can actually be handled.
 
-    for (evt = firstEvent; evt != null; evt = evt.next) {
+    evt = null;
+    while ((evt = getAvailableEvent(evt)) != null) {
 	// Call the handler for the event.  If it actually handles the
 	// event then free the storage for the event.  There are two
 	// tricky things here, both stemming from the fact that the event
@@ -357,37 +415,19 @@ serviceEvent(
 	//    change almost arbitrarily while handling the event, so we
 	//    can't depend on pointers found now still being valid when
 	//    the handler returns.
-
+	synchronized (evt) {
+//FIXME: indent this properly
 	boolean b = evt.isProcessing;
 	evt.isProcessing = true;
 
 	if ((b == false) && (evt.processEvent(flags) != 0)) {
 	    evt.isProcessed = true;
 	    if (evt.needsNotify) {
-		synchronized(evt) {
 		    evt.notifyAll();
 		}
-	    }
-	    if (firstEvent == evt) {
-		firstEvent = evt.next;
-		if (evt.next == null) {
-		    lastEvent = null;
-		}
-		if (markerEvent == evt) {
-		    markerEvent = null;
-		}
-	    } else {
-		for (prev = firstEvent; prev.next != evt; prev = prev.next) {
-		    // Empty loop body.
-		}
-		prev.next = evt.next;
-		if (evt.next == null) {
-		    lastEvent = prev;
-		}
-		if (markerEvent == evt) {
-		    markerEvent = prev;
-		}
-	    }
+		
+		deleteEvents(this);	// this takes care of deletion of the
+					// just processed event
 	    return 1;
 	} else {
 	    // The event wasn't actually handled, so we have to
@@ -395,14 +435,54 @@ serviceEvent(
 	    // attempted again.
 
 	    evt.isProcessing = b;
-	}
 
 	// The handler for this event asked to defer it.  Just go on to
-	// the next event.
-
-	continue;
+		// the next event.  we will try to find another event to
+		// process when the while loop continues
+	    }
+	}
     }
+
     return 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * getAvailableEvent --
+ *
+ *	Search through the internal event list to find the first event
+ *	that is has not being processed AND the event is not equal to the given
+ *	'skipEvent'.  This method is concurrent safe.
+ *	
+ * Results:
+ *	The return value is a pointer to the first found event that can be
+ * 	processed.  If no event is found, this method returns null.
+ *
+ * Side effects:
+ *	This method synchronizes on the 'notifierMutex', which will block any
+ *	other thread from adding or removing events from the event queue.
+ *
+ *----------------------------------------------------------------------
+ */
+    
+private TclEvent
+getAvailableEvent(
+    TclEvent    skipEvent)	// Indicates that the given event should not
+				// be returned.  This argument can be null.
+{
+    TclEvent evt;
+    
+    synchronized(notifierMutex) {
+	for (evt = firstEvent ; evt != null ; evt = evt.next) {
+	    if ((evt.isProcessing == false) &&
+		(evt.isProcessed  == false) &&
+		(evt != skipEvent)) {
+		return evt;
+	    }
+	}
+    }
+    return null;
 }
 
 /*
@@ -458,7 +538,8 @@ doOneEvent(
  */
 
 private final native void
-alertNotifier();
+alertNotifier(long tid);
+
 
 /*
  *----------------------------------------------------------------------
@@ -476,7 +557,7 @@ alertNotifier();
  *----------------------------------------------------------------------
  */
 
-private final native void
+private final native long
 init();
 
 /*
@@ -503,7 +584,8 @@ dispose();
  *
  * hasEvents --
  *
- *	Check to see if there are events waiting to be processed.
+ *	Check to see if there are events waiting to be processed.  This
+ *	method is concurrent safe.
  *
  * Results:
  *	Returns true if there are events on the Notifier queue.
@@ -514,10 +596,12 @@ dispose();
  *----------------------------------------------------------------------
  */
 
-private final synchronized boolean
+private final boolean 
 hasEvents()
 {
-    return (firstEvent != null);
+    boolean result = (getAvailableEvent(null) != null);
+
+    return result;
 }
 
 } // end Notifier

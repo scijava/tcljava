@@ -874,8 +874,8 @@ if test $TCLJAVA = "tclblend" || test $TCLJAVA = "both"; then
     #	not, assume that its top-level directory is a sibling of ours.
     #--------------------------------------------------------------------
     
-    AC_ARG_WITH(tcl, [  --with-tcl=DIR          build directory for Tcl 8.3.1 (or newer) source release from DIR],
-    	TCL_BIN_DIR=$withval, TCL_BIN_DIR="$srcdir/../tcl8.3.1/unix")
+    AC_ARG_WITH(tcl, [  --with-tcl=DIR          build directory for Tcl 8.3.2 (or newer) source release from DIR],
+    	TCL_BIN_DIR=$withval, TCL_BIN_DIR="$srcdir/../tcl8.3.2/unix")
 
     if test ! -d "$TCL_BIN_DIR"; then
         AC_MSG_ERROR([Tcl directory $TCL_BIN_DIR could not be located.
@@ -946,7 +946,8 @@ fi
 #	Check for the installed version of tclsh and wish. we need to use the
 #	one we compiled against because you can not compile with one version
 #	and then load into another. If you compiled Tcl Blend with Tcl 8.1 and
-#	then load it into a Tcl 8.0 interp, it will segfault.
+#	then load it into a Tcl 8.0 interp, it will segfault. Also make
+#	sure that this shell was compiled with threads support.
 #
 # Arguments:
 #	NONE
@@ -966,7 +967,7 @@ if test $TCLJAVA = "tclblend" || test $TCLJAVA = "both"; then
     AC_MSG_ERROR([Tcl was configued in $TCL_BIN_DIR, but it has not been built, please build it and run configure again.])
   fi
 
-  # Double check that tclsh works and that it is tcl 8.3.1 or better
+  # Double check that tclsh works and that it is tcl 8.3.2 or better
   # We need to set LD_LIBRARY_PATH and SHLIB_PATH so that Tcl can find its
   # shared library in the build directory on a Unix or HP-UX system.
 
@@ -997,8 +998,28 @@ if test $TCLJAVA = "tclblend" || test $TCLJAVA = "both"; then
       rm -f tcl_version.tcl
   else
       rm -f tcl_version.tcl
-      AC_MSG_ERROR([$TCLSH_LOC is not version 8.3.1 or newer])
+      AC_MSG_ERROR([$TCLSH_LOC is not version 8.3.2 or newer])
   fi
+
+  # Check that Tcl was compiled with thread support.
+
+  echo '
+        if {! [[info exists tcl_platform(threaded)]]} {
+          puts stderr $err
+          exit -1
+        }
+        puts 1
+        exit 0
+       ' > tcl_threads.tcl
+
+  if test "`$TCLSH_LOC tcl_threads.tcl 2>&AC_FD_LOG`" = "1"; then
+      AC_MSG_RESULT([Tcl was compiled with Thread support])
+      rm -f tcl_threads.tcl
+  else
+      rm -f tcl_threads.tcl
+      AC_MSG_ERROR([Tcl must be compiled with Thread support (--enable-threads)])
+  fi
+
 
   # Now check to see if "make install" has been run in the tcl directory.
   # The installed executable name is something like tclsh8.3.

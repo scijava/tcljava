@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclInteger.java,v 1.4 2000/04/08 04:25:38 mo Exp $
+ * RCS: @(#) $Id: TclInteger.java,v 1.5 2000/10/29 06:00:42 mdejong Exp $
  *
  */
 
@@ -17,7 +17,7 @@ package tcl.lang;
  * This class implements the integer object type in Tcl.
  */
 
-public class TclInteger extends InternalRep {
+public class TclInteger implements InternalRep {
     /**
      * Internal representation of a integer value.
      */
@@ -47,9 +47,15 @@ public class TclInteger extends InternalRep {
      * Returns a dupilcate of the current object.
      * @param obj the TclObject that contains this internalRep.
      */
-    protected InternalRep duplicate() {
+    public InternalRep duplicate() {
 	return new TclInteger(value);
     }
+
+    /**
+     * Implement this no-op for the InternalRep interface.
+     */
+
+    public void dispose() {}
 
     /**
      * Called to query the string representation of the Tcl object. This

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaObj.c,v 1.4 2000/06/15 09:47:07 mo Exp $
+ * RCS: @(#) $Id: javaObj.c,v 1.5 2000/10/29 06:00:42 mdejong Exp $
  */
 
 #include "java.h"
@@ -43,6 +43,12 @@ Tcl_ObjType tclObjectType = {
 static Tcl_ObjType oldCmdType;
 static Tcl_ObjType *cmdTypePtr = NULL;
 
+/*
+ * Mutex to serialize access to cmdTypePtr.
+ */
+
+static Tcl_Mutex cmdTypePtrLock;
+
 
 /*
  *----------------------------------------------------------------------
@@ -63,18 +69,30 @@ static Tcl_ObjType *cmdTypePtr = NULL;
 void
 JavaObjInit()
 {
-    Tcl_RegisterObjType(&tclObjectType);
-    
     /*
-     * Interpose on the "cmdName" type to preserve 
-     * java objects.
+     * The JavaObjInit method could get called
+     * from multiple threads. We only want to
+     * init the object type once.
      */
 
-    cmdTypePtr = Tcl_GetObjType("cmdName");
-    oldCmdType = *cmdTypePtr;
-    cmdTypePtr->freeIntRepProc = FreeJavaCmdInternalRep;
-    cmdTypePtr->dupIntRepProc = DupJavaCmdInternalRep;
-    cmdTypePtr->setFromAnyProc = SetJavaCmdFromAny;
+    Tcl_MutexLock(&cmdTypePtrLock);
+
+    if (cmdTypePtr == NULL) {
+        Tcl_RegisterObjType(&tclObjectType);
+    
+        /*
+         * Interpose on the "cmdName" type to preserve 
+         * java objects.
+         */
+
+        cmdTypePtr = Tcl_GetObjType("cmdName");
+        oldCmdType = *cmdTypePtr;
+        cmdTypePtr->freeIntRepProc = FreeJavaCmdInternalRep;
+        cmdTypePtr->dupIntRepProc = DupJavaCmdInternalRep;
+        cmdTypePtr->setFromAnyProc = SetJavaCmdFromAny;
+    }
+
+    Tcl_MutexUnlock(&cmdTypePtrLock);
 }
 
 /*
@@ -99,7 +117,8 @@ printString(
     JNIEnv *env,		/* Java environment. */
     jobject object)
 {
-    jstring string = (*env)->CallObjectMethod(env, object, java.toString);
+    JavaInfo* jcache = JavaGetCache();
+    jstring string = (*env)->CallObjectMethod(env, object, jcache->toString);
     const char *str = (*env)->GetStringUTFChars(env, string, NULL);
     printf("toString: %x '%s'\n", (unsigned int) object, str);
     (*env)->ReleaseStringUTFChars(env, string, str);
@@ -128,7 +147,8 @@ DupTclObject(
     Tcl_Obj *destPtr)
 {
     jobject object = (jobject)(srcPtr->internalRep.twoPtrValue.ptr2);
-    JNIEnv *env = JavaGetEnv(NULL);
+    JNIEnv *env = JavaGetEnv();
+    JavaInfo* jcache = JavaGetCache();
 
     /*
      * Add a global reference to represent the new copy.
@@ -137,7 +157,7 @@ DupTclObject(
     object = (*env)->NewGlobalRef(env, object);
     destPtr->typePtr = srcPtr->typePtr;
     destPtr->internalRep.twoPtrValue.ptr2 = (VOID*) object;
-    (*env)->CallVoidMethod(env, object, java.preserve);
+    (*env)->CallVoidMethod(env, object, jcache->preserve);
 }
 
 /*
@@ -162,9 +182,10 @@ FreeTclObject(
     Tcl_Obj *objPtr)		/* Object to free. */
 {
     jobject object = (jobject)(objPtr->internalRep.twoPtrValue.ptr2);
-    JNIEnv *env = JavaGetEnv(NULL);
+    JNIEnv *env = JavaGetEnv();
+    JavaInfo* jcache = JavaGetCache();
 
-    (*env)->CallVoidMethod(env, object, java.release);
+    (*env)->CallVoidMethod(env, object, jcache->release);
     (*env)->DeleteGlobalRef(env, object);
 }
 
@@ -218,9 +239,10 @@ UpdateTclObject(Tcl_Obj *objPtr)
 {
     jstring string;
     jobject object = (jobject)(objPtr->internalRep.twoPtrValue.ptr2);
-    JNIEnv *env = JavaGetEnv(NULL);
+    JNIEnv *env = JavaGetEnv();
+    JavaInfo* jcache = JavaGetCache();
 
-    string = (*env)->CallObjectMethod(env, object, java.toString);
+    string = (*env)->CallObjectMethod(env, object, jcache->toString);
     objPtr->bytes = JavaGetString(env, string, &objPtr->length);
     (*env)->DeleteLocalRef(env, string);
 }
@@ -251,16 +273,17 @@ JavaGetTclObj(
     Tcl_Obj *objPtr;
     jobject internalRep;
     jlong objRef;
+    JavaInfo* jcache = JavaGetCache();
     
-    internalRep = (*env)->CallObjectMethod(env, object, java.getInternalRep);
+    internalRep = (*env)->CallObjectMethod(env, object, jcache->getInternalRep);
 
-    if ((*env)->IsInstanceOf(env, internalRep, java.CObject) == JNI_TRUE) {
+    if ((*env)->IsInstanceOf(env, internalRep, jcache->CObject) == JNI_TRUE) {
 	/*
 	 * This object is a C reference so we extract the Tcl_Obj* from the
 	 * internal representation.
 	 */
 
-	objRef = (*env)->GetLongField(env, internalRep, java.objPtr);
+	objRef = (*env)->GetLongField(env, internalRep, jcache->objPtr);
 	objPtr = *(Tcl_Obj**)&objRef;
 
     } else {
@@ -279,7 +302,7 @@ JavaGetTclObj(
 	 * Increment the reference count on the TclObject.
 	 */
 
-	(*env)->CallVoidMethod(env, object, java.preserve);
+	(*env)->CallVoidMethod(env, object, jcache->preserve);
     }
     (*env)->DeleteLocalRef(env, internalRep);
     return objPtr;
@@ -315,8 +338,7 @@ Java_tcl_lang_CObject_getString(
     jchar *buf;
     char *str;
     jstring result;
-    int length, i;
-    JNIEnv *oldEnv;
+    int length;
     char *p, *end;
     Tcl_UniChar *w;
 
@@ -326,7 +348,6 @@ Java_tcl_lang_CObject_getString(
 	(*env)->ThrowNew(env, nullClass, "Invalid CObject.");
     }
 
-    PUSH_JAVA_ENV();
     /*
      * Convert the string rep into a Unicode string.
      */
@@ -365,7 +386,6 @@ Java_tcl_lang_CObject_getString(
     } else {
 	result = (*env)->NewString(env, NULL, 0);
     }
-    POP_JAVA_ENV();
     return result;
 }
 
@@ -396,16 +416,13 @@ Java_tcl_lang_CObject_incrRefCount(
     jlong obj)			/* Value of CObject.objPtr. */
 {
     Tcl_Obj *objPtr = *(Tcl_Obj **) &obj;
-    JNIEnv *oldEnv;
 
     if (!objPtr) {
 	jclass nullClass = (*env)->FindClass(env,
 		"java/lang/NullPointerException");
 	(*env)->ThrowNew(env, nullClass, "Invalid CObject.");
     }
-    PUSH_JAVA_ENV();
     Tcl_IncrRefCount(objPtr);
-    POP_JAVA_ENV();
 }
 
 /*
@@ -434,16 +451,13 @@ void JNICALL Java_tcl_lang_CObject_decrRefCount(
     jlong obj)			/* Value of CObject.objPtr. */
 {
     Tcl_Obj *objPtr = *(Tcl_Obj **) &obj;
-    JNIEnv *oldEnv;
 
     if (!objPtr) {
 	jclass nullClass = (*env)->FindClass(env,
 		"java/lang/NullPointerException");
 	(*env)->ThrowNew(env, nullClass, "Invalid CObject.");
     }
-    PUSH_JAVA_ENV();
     Tcl_DecrRefCount(objPtr);
-    POP_JAVA_ENV();
 }
 
 /*
@@ -476,7 +490,7 @@ Java_tcl_lang_CObject_makeRef(
 {
     Tcl_Obj *objPtr = *(Tcl_Obj **) &obj;
     Tcl_ObjType *oldTypePtr;
-    JNIEnv *oldEnv;
+    JavaInfo* jcache = JavaGetCache();
 
     if (!objPtr) {
 	jclass nullClass = (*env)->FindClass(env,
@@ -484,7 +498,6 @@ Java_tcl_lang_CObject_makeRef(
 	(*env)->ThrowNew(env, nullClass, "Invalid CObject.");
     }
 
-    PUSH_JAVA_ENV();
     /*
      * Free the old internalRep before setting the new one.
      */
@@ -503,8 +516,7 @@ Java_tcl_lang_CObject_makeRef(
      * now represents and additional reference.
      */
 
-    (*env)->CallVoidMethod(env, object, java.preserve);
-    POP_JAVA_ENV();
+    (*env)->CallVoidMethod(env, object, jcache->preserve);
 }
 
 /*
@@ -535,15 +547,12 @@ Java_tcl_lang_CObject_newCObject(
 {
     Tcl_Obj *objPtr;
     jlong obj;
-    JNIEnv *oldEnv;
 
-    PUSH_JAVA_ENV();
     objPtr = Tcl_NewObj();
     if (string) {
 	objPtr->bytes = JavaGetString(env, string, &objPtr->length);
     }
     *(Tcl_Obj **)&obj = objPtr;
-    POP_JAVA_ENV();
     return obj;	
 }
 
@@ -576,6 +585,7 @@ JavaGetTclObject(
 {
     jobject object;
     jlong lvalue;
+    JavaInfo* jcache = JavaGetCache();
 
     if (!objPtr) {
 	return NULL;
@@ -597,11 +607,13 @@ JavaGetTclObject(
 	/*
 	 * This object is of an unknown type, so we create a new TclObject
 	 * with an internal rep of CObject that points to the Tcl_Obj *.
+	 *
+	 * Calls : TclObject tobj = CObject.newInstance(long objPtr);
 	 */
 
 	*(Tcl_Obj **)&lvalue = objPtr;
-	object = (*env)->CallStaticObjectMethod(env, java.CObject,
-		java.newCObjectInstance, lvalue);
+	object = (*env)->CallStaticObjectMethod(env, jcache->CObject,
+		jcache->newCObjectInstance, lvalue);
 	if (isLocalPtr) {
 	    *isLocalPtr = 1;
 	}
@@ -719,7 +731,8 @@ SetJavaCmdFromAny(
     } else if ((objPtr->typePtr == cmdTypePtr)
 	    && (objPtr->internalRep.twoPtrValue.ptr2 != NULL)) {
 	jobject object = (jobject)(objPtr->internalRep.twoPtrValue.ptr2);
-	JNIEnv *env = JavaGetEnv(NULL);
+	JNIEnv *env = JavaGetEnv();
+	JavaInfo* jcache = JavaGetCache();
 
 	/*
 	 * If we are converting from something that is already a java command
@@ -732,10 +745,10 @@ SetJavaCmdFromAny(
 	 */
 
 	object = (*env)->NewGlobalRef(env, object);
-	(*env)->CallVoidMethod(env, object, java.preserve);
+	(*env)->CallVoidMethod(env, object, jcache->preserve);
 	result = (oldCmdType.setFromAnyProc)(interp, objPtr);
 	if (result != TCL_OK) {
-	    (*env)->CallVoidMethod(env, object, java.release);
+	    (*env)->CallVoidMethod(env, object, jcache->release);
 	    (*env)->DeleteGlobalRef(env, object);
 	} else {
 	    objPtr->internalRep.twoPtrValue.ptr2 = (VOID*) object;

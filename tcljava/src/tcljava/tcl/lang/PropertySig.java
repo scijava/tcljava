@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: PropertySig.java,v 1.3 1999/05/09 22:28:28 dejong Exp $
+ * RCS: @(#) $Id: PropertySig.java,v 1.4 2000/10/29 06:00:42 mdejong Exp $
  *
  */
 
@@ -25,7 +25,7 @@ import java.beans.*;
  * signature.
  */
 
-class PropertySig extends InternalRep {
+class PropertySig implements InternalRep {
 
 // The class that the property signature is used against. It is the
 // class of the java object specified in the java::prop command.
@@ -82,11 +82,17 @@ PropertySig(
  *----------------------------------------------------------------------
  */
 
-protected InternalRep
-duplicate()
+public InternalRep duplicate()
 {
     return new PropertySig(targetCls, pkgInvoker, desc);
 }
+
+/**
+  * Implement this no-op for the InternalRep interface.
+  */
+
+public void dispose() {}
+
 
 /*
  *----------------------------------------------------------------------

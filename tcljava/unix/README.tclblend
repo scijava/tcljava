@@ -1,9 +1,8 @@
 Tcl Blend
-RCS: @(#) $Id: README.tclblend,v 1.4 1999/05/10 03:19:17 dejong Exp $
+RCS: @(#) $Id: README.tclblend,v 1.5 2000/10/29 06:00:43 mdejong Exp $
 
-This is the directory where you configure, compile, test, and install 
-UNIX versions Tcl Blend.  This directory also contains source files for 
-Tcl Blend that are specific to UNIX.
+This directory contains source files for Tcl Blend that are specific to UNIX.
+This file also describes how to build under UNIX systems.
 
 The rest of this file contains instructions on how to do this.  The 
 release should compile and run either "out of the box" or with trivial 

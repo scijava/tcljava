@@ -1,8 +1,8 @@
 Jacl
-RCS: @(#) $Id: README.jacl,v 1.7 1999/05/10 03:19:00 dejong Exp $
+RCS: @(#) $Id: README.jacl,v 1.8 2000/10/29 06:00:43 mdejong Exp $
 
-This is the directory where you configure, compile, test, and install 
-UNIX versions of Jacl.
+This directory contains source files for Jacl that are specific to UNIX.
+This file also describes how to build under UNIX systems.
 
 The rest of this file contains instructions on how to do this.  The 
 release should compile and run either "out of the box" or with trivial 

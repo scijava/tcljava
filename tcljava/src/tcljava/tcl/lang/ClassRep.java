@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: ClassRep.java,v 1.2 1999/05/09 21:16:22 dejong Exp $
+ * RCS: @(#) $Id: ClassRep.java,v 1.3 2000/10/29 06:00:42 mdejong Exp $
  *
  */
 
@@ -23,7 +23,7 @@ import java.lang.reflect.*;
  * name.
  */
 
-class ClassRep extends InternalRep {
+class ClassRep implements InternalRep {
 
 // The class referred to by this ClassRep.
 
@@ -65,11 +65,17 @@ ClassRep(
  *----------------------------------------------------------------------
  */
 
-protected InternalRep
-duplicate()
+public InternalRep duplicate()
 {
     return new ClassRep(cls);
 }
+
+
+/**
+  * Implement this no-op for the InternalRep interface.
+  */
+
+public void dispose() {}
 
 /*
  *----------------------------------------------------------------------

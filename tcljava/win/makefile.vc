@@ -33,16 +33,16 @@ JAVA_DIR	= C:\jdk1.1.8
 JAVA_VERSION	= 1.1
 JAVA_CLASSPATH	= $(JAVA_DIR)\lib\classes.zip;.
 
-# JDK1.2 users should uncomment this section
+# JDK1.2 (or newer) users should uncomment this section
 #JAVA_DIR	= C:\jdk1.2
 #JAVA_VERSION	= 1.2
 #JAVA_CLASSPATH	= $(JAVA_DIR)\lib\tools.jar;$(JAVA_DIR)\jre\lib\rt.jar;.
 
 
 #Tcl version info needed by the rest of the scripts
-TCL_DOTVERSION	= 8.2.3
+TCL_DOTVERSION	= 8.3.2
 #TCL_DOTVERSION	= 8.0.5
-TCL_VERSION	= 82
+TCL_VERSION	= 83
 #TCL_VERSION	= 80
 
 
@@ -83,7 +83,7 @@ DELETEDIR		= deltree /y
 !ENDIF
 
 # Directory in which to install tclblend.dll:
-LIB_INSTALL_DIR 	= $(TCL_DIR)\lib
+LIB_INSTALL_DIR 	= $(TCL_DIR)\lib\tclblend
 
 # Directory containing platform dependent binaries
 BIN_INSTALL_DIR 	= $(TCL_DIR)\bin
@@ -290,12 +290,13 @@ clean: 	tclblend.clean jacl.clean tcljava.clean \
 tclblend.clean: tmp.clean
 	-@del javaNative.h
 	-@$(DELETEDIR) $(TCLBLEND_BUILD_DIR)
-	del $(BUILD_DIR)\tclblend.jar
-	del pkgIndex.tcl
+	-@del $(BUILD_DIR)\tclblend.jar
+	-@del pkgIndex.tcl
+	-@$(DELETEDIR) $(BUILD_DIR)\xputils
 
 jacl.clean:
 	-@$(DELETEDIR) $(JACL_BUILD_DIR)
-	del $(BUILD_DIR)\jacl.jar
+	-@del $(BUILD_DIR)\jacl.jar
 
 tcljava.clean:
 	-@$(DELETEDIR) $(TCLJAVA_BUILD_DIR)
@@ -313,9 +314,9 @@ tmp.clean:
 	-@cd $(BUILD_DIR)
 	-@del *.exp
 	-@del *.lib
-	del   *.dll
-	del   *.exe
-        del   *.obj
+	-@del *.dll
+	-@del *.exe
+        -@del *.obj
         -@del *.res
         -@del *.class
         -@del *.pdb
@@ -576,6 +577,8 @@ tclblend.jar: tclblend.build
 
 tclblend: tclblend.jar tclblend.lib
 	copy $(MISC_DIR)\pkgIndex.tcl $(BUILD_DIR)
+	mkdir $(BUILD_DIR)\xputils
+	copy $(MISC_DIR)\xputils\*.tcl $(BUILD_DIR)\xputils
 
 #
 # Install tclBlend, if the user did not build tclblend already
@@ -586,13 +589,17 @@ tclblend.install: tclblend.check
 	-@echo #
 	-@echo # Installing tclblend
 	-@echo #
-	-@echo Installing $(TCLBLEND_LIB_FILE) in $(BIN_INSTALL_DIR)
-	-@copy $(BUILD_DIR)\$(TCLBLEND_LIB_FILE) $(BIN_INSTALL_DIR)
+	-@echo Installing $(TCLBLEND_LIB_FILE) in $(LIB_INSTALL_DIR)
+	-@copy $(BUILD_DIR)\$(TCLBLEND_LIB_FILE) $(LIB_INSTALL_DIR)
 	-@echo Installing tclblend.jar in $(LIB_INSTALL_DIR)
 	-@copy $(BUILD_DIR)\tclblend.jar $(LIB_INSTALL_DIR)
 	-@mkdir $(TCLBLEND_LIBRARY)
 	-@echo Installing pkgIndex.tcl in $(TCLBLEND_LIBRARY)
 	-@copy $(MISC_DIR)\pkgIndex.tcl $(TCLBLEND_LIBRARY)
+	-@echo Installing xputils package in $(TCL_DIR)\lib
+	-@$(DELETEDIR) $(TCL_DIR)\lib\xputils
+	-@mkdir $(TCL_DIR)\lib\xputils
+	-@$(COPYDIR) $(BUILD_DIR)\xputils $(TCL_DIR)\lib\xputils
 
 
 #
@@ -621,9 +628,7 @@ TCLBLEND_OBJS = \
 	$(BUILD_DIR)\javaObj.obj \
 	$(BUILD_DIR)\javaList.obj \
 	$(BUILD_DIR)\javaTimer.obj \
-	$(BUILD_DIR)\javaUtil.obj \
-	$(BUILD_DIR)\tclResult.obj \
-	$(BUILD_DIR)\winNotifier.obj
+	$(BUILD_DIR)\javaUtil.obj
 
 
 TCLBLEND_CLASS_NAMES = \

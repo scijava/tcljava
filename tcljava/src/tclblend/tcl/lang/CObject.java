@@ -9,26 +9,22 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: CObject.java,v 1.1 1998/10/14 21:09:10 cvsadmin Exp $
+ * RCS: @(#) $Id: CObject.java,v 1.2 2000/10/29 06:00:42 mdejong Exp $
  */
 
 package tcl.lang;
 
-/*
- * The CObject class encapsulates a reference to a Tcl_Obj implemented in
- * native code.  When an object is passed to Java from C, a new CObject is
- * constructed to hold the object pointer.  There is always one reference added
- * to the C object for each instance of this class that refers to a given
- * Tcl_Obj*.
- */
+// The CObject class encapsulates a reference to a Tcl_Obj implemented in
+// native code.  When an object is passed to Java from C, a new CObject is
+// constructed to hold the object pointer.  There is always one reference added
+// to the C object for each instance of this class that refers to a given
+// Tcl_Obj*.
 
-class CObject extends InternalRep {
+class CObject extends TclEvent implements InternalRep {
 
-/*
- * This long really contains a Tcl_Obj*.  It is declared with package
- * visibility so that subclasses that define type specific functionality
- * can get to the Tcl_Obj.
- */
+// This long really contains a Tcl_Obj*.  It is declared with package
+// visibility so that subclasses that define type specific functionality
+// can get to the Tcl_Obj*. This field can be read from C code.
 
 long objPtr;
 
@@ -51,8 +47,7 @@ long objPtr;
 
 CObject()
 {
-    this.objPtr = newCObject(null);
-    incrRefCount(objPtr);
+    this(newCObject(null));
 }
 
 /*
@@ -76,6 +71,12 @@ CObject(
 {
     this.objPtr = objPtr;
     incrRefCount(objPtr);
+
+    // Use the notifier member from the TclEvent class
+    // to hold a ref to the Notifier this CObject
+    // was created in.
+
+    notifier = Notifier.getNotifierForThread(Thread.currentThread());
 }
 
 /*
@@ -180,6 +181,7 @@ toString()
  * newInstance --
  *
  *	Construct a new TclObject from a Tcl_Obj*.  This routine is only
+ *	called from C. It is also the only CObject method that can be
  *	called from C.
  *
  * Results:
@@ -217,14 +219,43 @@ newInstance(
 protected void finalize() throws Throwable
 {
     if (objPtr != 0) {
-	/*
-	 * If the object is finalized while the reference is still valid, 
-	 * we need to sever the connection to the underlying Tcl_Obj*.
-	 */
+        // If a CObject is finalized while the reference is still valid,
+        // we need to send the reference back to the thread that created it.
+        // We can then sever the connection to the underlying Tcl_Obj* by
+        // calling decrRefCount() in that thread. Note that we can not wait
+        // for the event to be processed, as that would block the GC thread.
+        // Also note that this is a little tricky because the object has
+        // already been finalized by the time be put it back into the queue.
+        // This is ok because the memory will not be garbage collected until
+        // after the event has been processed and the last reference dropped.
 
-	decrRefCount(objPtr);
+        //System.err.println("queueing cleanup for " + objPtr);
+        notifier.queueEvent(this, TCL.QUEUE_TAIL);
     }
     super.finalize();
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * processEvent --
+ *
+ *	This method is part of the TclEvent interface. It gets
+ *	invoked when the event is pulled off the queue and processed.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+public int processEvent(int flags) {
+    //System.err.println("calling decrRefCount from processEvent for " + objPtr);
+    decrRefCount(objPtr);
+    return 1;
 }
 
 /*
@@ -282,7 +313,6 @@ incrRefCount(
  *
  *----------------------------------------------------------------------
  */
-
 
 static final native long
 newCObject(
