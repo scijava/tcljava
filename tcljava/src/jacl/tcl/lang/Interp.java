@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.1 1998/10/14 21:09:20 cvsadmin Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.2 1998/11/04 22:37:24 hylands Exp $
  *
  */
 
@@ -653,7 +653,9 @@ createCommands()
     Extension.loadOnDemand(this, "eof",	 	  "tcl.lang.EofCmd");
     Extension.loadOnDemand(this, "eval",	  "tcl.lang.EvalCmd");
     Extension.loadOnDemand(this, "error",	  "tcl.lang.ErrorCmd");
-    Extension.loadOnDemand(this, "exec",	  "tcl.lang.ExecCmd");
+    if (! Util.isMac()) {
+	Extension.loadOnDemand(this, "exec",	  "tcl.lang.ExecCmd");
+    }
     Extension.loadOnDemand(this, "exit",	  "tcl.lang.ExitCmd");
     Extension.loadOnDemand(this, "expr",	  "tcl.lang.ExprCmd");
     Extension.loadOnDemand(this, "fblocked", 	  "tcl.lang.FblockedCmd");
