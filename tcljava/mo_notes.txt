@@ -691,9 +691,17 @@ Blackdown JDK 1.1.7 v3 and Tcl 8.1.1 : PASSED
 Blackdown JDK 1.1.7 v3 and Tcl 8.2.0 : PASSED
 
 Solaris 5.6 on Sparc chip (built with gcc)
-Sun JDK 1.1.6 (reference release) with Tcl 8.2.0 : FAILED (passes tests, crashes when installed)
+Sun JDK 1.1.6 (reference release) with Tcl 8.0.5 : PASSED
+Sun JDK 1.1.6 (reference release) with Tcl 8.1.1 : PASSED
+Sun JDK 1.1.6 (reference release) with Tcl 8.2.0 : PASSED
 
+IRIX 6.2 on MIPS (built with gcc)
+SGI JDK 3.1.1  (Sun 1.1.6N) and Tcl 8.0.5 : PASSED (tclevent tests freeze up)
+SGI JDK 3.1.1  (Sun 1.1.6N) and Tcl 8.1.1 : PASSED
+SGI JDK 3.1.1  (Sun 1.1.6N) and Tcl 8.2.0 : PASSED
 
+Win95 with IBM JDK 1.1.7 and Tcl 8.0.5 : PASSED
+Win95 with IBM JDK 1.1.7 and Tcl 8.2.0 : PASSED
 
 Jacl 1.2.4 --------------------------------
 
@@ -702,4 +710,9 @@ Linux with Blackdown JDK 1.1.7 v3 : PASSED
 
 Solaris 5.6 on Sparc chip
 Sun JDK 1.1.6 (reference release) : PASSED
+
+IRIX 6.2 on MIPS
+SGI JDK 3.1.1  (Sun 1.1.6N) : PASSED
+
+Win95 with IBM JDK 1.1.7 : PASSED
 
