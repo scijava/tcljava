@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaCallCmd.java,v 1.1 1998/10/14 21:09:14 cvsadmin Exp $
+ * RCS: @(#) $Id: JavaCallCmd.java,v 1.2 2002/12/07 20:46:58 mdejong Exp $
  *
  */
 
@@ -71,8 +71,13 @@ throws
     int startIdx = classIdx + 2;
     int count = argv.length - startIdx;
 
-    interp.setResult(JavaInvoke.callStaticMethod(interp, argv[classIdx],
-	    argv[classIdx + 1], argv, startIdx, count, convert));
+    TclObject result = JavaInvoke.callStaticMethod(interp, argv[classIdx],
+            argv[classIdx + 1], argv, startIdx, count, convert);
+
+    if (result == null)
+        interp.resetResult();
+    else
+        interp.setResult(result);
 }
 
 } // end JavaCallCmd

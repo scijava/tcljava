@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: ReflectObject.java,v 1.13 2000/10/29 06:00:42 mdejong Exp $
+ * RCS: @(#) $Id: ReflectObject.java,v 1.14 2002/12/07 20:46:58 mdejong Exp $
  *
  */
 
@@ -903,9 +903,14 @@ throws
     int startIdx = sigIdx + 1;
     int count = argv.length - startIdx;
 
-    interp.setResult(JavaInvoke.callMethod(interp,
+    TclObject result = JavaInvoke.callMethod(interp,
 	new TclObject(this),
-	argv[sigIdx], argv, startIdx, count, convert));
+	argv[sigIdx], argv, startIdx, count, convert);
+
+    if (result == null)
+        interp.resetResult();
+    else
+        interp.setResult(result);
 }
 
 /*

@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaInvoke.java,v 1.11 2000/01/06 00:54:18 mo Exp $
+ * RCS: @(#) $Id: JavaInvoke.java,v 1.12 2002/12/07 20:46:58 mdejong Exp $
  *
  */
 
@@ -82,7 +82,7 @@ throws
  * Results:
  *      When successful, this method returns the Java object that the
  *      Java method would have returned. If the Java method has a void
- *      return type the an empty Tcl string object is returned.
+ *      return type then null is returned.
  *
  * Side effects:
  *	The method can cause arbitrary side effects.
@@ -115,7 +115,7 @@ throws
 	    argv, startIdx, count);
 
     if (method.getReturnType() == Void.TYPE) {
-	return TclString.newInstance("");
+	return null;
     } else {
 	return wrap(interp, method.getReturnType(), result, convert);
     }
@@ -129,9 +129,9 @@ throws
  *	Call the specified static method of the given object.
  *
  * Results:
- *	When successful, returns an array: Object result[2]. result[0]
- *	is the object returned by the method; result[1] is the return
- *	type of the method.
+ *      When successful, this method returns the Java object that the
+ *      Java method would have returned. If the Java method has a void
+ *      return type then null is returned.
  *
  * Side effects:
  *	The method can cause arbitrary side effects.
@@ -168,7 +168,7 @@ throws
 	    argv, startIdx, count);
 
     if (method.getReturnType() == Void.TYPE) {
-	return TclString.newInstance("");
+	return null;
     } else {
 	return wrap(interp, method.getReturnType(), result, convert);
     }

@@ -1,5 +1,16 @@
 2002-12-07  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/tcljava/tcl/lang/JavaCallCmd.java (cmdProc):
+	* src/tcljava/tcl/lang/JavaInvoke.java (callMethod,
+	callStaticMethod):
+	* src/tcljava/tcl/lang/ReflectObject.java (cmdProc):
+	* tests/tclblend/javaObj.test:
+	Don't set the interp result after invoking a
+	void Java method. This is functionally equivalent
+	and saves a wrapper object allocation.
+
+2002-12-07  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/tcljava/tcl/lang/FieldSig.java (get):
 	* src/tcljava/tcl/lang/FuncSig.java (get):
 	* src/tcljava/tcl/lang/JavaNewCmd.java (get,
