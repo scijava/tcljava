@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.22 1999/05/24 12:57:46 mo Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.23 1999/07/26 01:53:12 mo Exp $
 
 # The directory containing the Tcl sources and headers appropriate
 # for this version of Tk ("srcdir" will be replaced or has already
@@ -102,7 +102,7 @@ TCLBLEND_LIBS		= @TCLBLEND_LIBS@
 
 #TCLBLEND_LD_PRELOAD="@TCLBLEND_LD_PRELOAD@ libXt.so libXm.so libXext.so"
 
-# If you are using neither Motif nor LessTif then comment out this line
+# If you are using Motif or LessTif then comment out this line
 
 TCLBLEND_LD_PRELOAD	= "@TCLBLEND_LD_PRELOAD@"
 
