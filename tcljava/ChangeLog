@@ -1,5 +1,11 @@
 2000-08-20  Christian Krone  <krischan@sql.de>
 
+	* src/jacl/tcl/lang/ClockCmd.java:
+	* tests/tcl/clock.test: Update Jacl's clock
+	command to be Tcl 8.4 compliant.
+
+2000-08-20  Christian Krone  <krischan@sql.de>
+
 	* configure.in: Pass -ms5m -mx22m in JAVA_FLAGS.
 	* diffs.txt: Add note about new interp command.
 	* jaclsh.in: Dont set JAVA_FLAGS here.

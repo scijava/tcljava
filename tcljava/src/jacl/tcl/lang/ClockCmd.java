@@ -12,7 +12,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ClockCmd.java,v 1.4 2000/07/16 18:03:59 mo Exp $
+ * RCS: @(#) $Id: ClockCmd.java,v 1.5 2000/08/20 06:36:14 mo Exp $
  *
  */
 
@@ -1078,12 +1078,8 @@ ParseNumber (
  *      Parse a relative time specification and sets the time difference.
  *	A relative time specification is valid, if it confirms to the
  *	following yacc rule:
- *	relspec : '+' tUNUMBER unit ago
- *		| '-' tUNUMBER unit ago
- *	        | tUNUMBER unit ago
- *	        | tNEXT unit
- *	        | tNEXT tUNUMBER unit
- *	        | unit ago
+ *	relspec : relunits tAGO
+ *		| relunits
  *		;
  *
  * Results:
@@ -1103,7 +1099,52 @@ ParseRelSpec (
     ParsePosition parsePos,	// Current position in input
     ClockRelTimespan diff)	// time difference to evaluate
 {
-    boolean found = false;	// Already found a valid relspec?
+    if (!ParseRelUnits(dt, parsePos, diff)) {
+	return false;
+    }
+
+    int pos = parsePos.getIndex();
+    if (pos < dt.length &&
+	dt[pos].is(ClockToken.AGO)) {
+	diff.negate();
+	parsePos.setIndex(pos+1);
+    }
+    return true;
+}
+
+/**
+ *-----------------------------------------------------------------------------
+ *
+ * ParseRelUnits --
+ *
+ *      Parse a relative time unit and sets the time difference.
+ *	A relative time unit is valid, if it confirms to the
+ *	following yacc rule:
+ *	relspec : '+' tUNUMBER unit
+ *		| '-' tUNUMBER unit
+ *	        | tUNUMBER unit
+ *	        | tNEXT unit
+ *	        | tNEXT tUNUMBER unit
+ *	        | unit
+ *		;
+ *
+ * Results:
+ *      True, if a relative time specification was read (parsePos was
+ *	incremented and the time difference was set according to the read
+ *	relative time specification); false otherwise.
+ *
+ * Side effects:
+ *      None.
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+private boolean
+ParseRelUnits (
+    ClockToken[] dt,		// Input as scanned array of tokens
+    ParsePosition parsePos,	// Current position in input
+    ClockRelTimespan diff)	// time difference to evaluate
+{
     int pos = parsePos.getIndex();
 
     if (pos+2 < dt.length &&
@@ -1112,22 +1153,22 @@ ParseRelSpec (
 	dt[pos+2].isUnit()) {
         diff.addUnit(dt[pos+2], dt[pos+1].getInt());
         parsePos.setIndex(pos+3);
-        found = true;
+        return true;
     }
-    else if (pos+2 < dt.length &&
+    if (pos+2 < dt.length &&
 	dt[pos].is('-') &&
 	dt[pos+1].isUNumber() &&
 	dt[pos+2].isUnit()) {
         diff.addUnit(dt[pos+2], -dt[pos+1].getInt());
         parsePos.setIndex(pos+3);
-        found = true;
+        return true;
     }
-    else if (pos+1 < dt.length &&
+    if (pos+1 < dt.length &&
 	dt[pos].isUNumber() &&
 	dt[pos+1].isUnit()) {
         diff.addUnit(dt[pos+1], dt[pos].getInt());
         parsePos.setIndex(pos+2);
-        found = true;
+        return true;
     }
     else if (pos+2 < dt.length &&
 	dt[pos].is(ClockToken.NEXT) &&
@@ -1135,33 +1176,22 @@ ParseRelSpec (
 	dt[pos+2].isUnit()) {
         diff.addUnit(dt[pos+2], dt[pos+1].getInt());
         parsePos.setIndex(pos+3);
-        return true; // no trailing ago possible...
+        return true;
     }
-    else if (pos+1 < dt.length &&
+    if (pos+1 < dt.length &&
 	dt[pos].is(ClockToken.NEXT) &&
 	dt[pos+1].isUnit()) {
         diff.addUnit(dt[pos+1]);
         parsePos.setIndex(pos+2);
-        return true; // no trailing ago possible...
+        return true;
     }
-    else if (pos < dt.length &&
+    if (pos < dt.length &&
 	dt[pos].isUnit()) {
         diff.addUnit(dt[pos]);
         parsePos.setIndex(pos+1);
-        found = true;
+        return true;
     }
-
-    if (!found) {
-	return false;
-    }
-
-    pos = parsePos.getIndex();
-    if (pos < dt.length &&
-	dt[pos].is(ClockToken.AGO)) {
-	diff.negate();
-	parsePos.setIndex(pos+1);
-    }
-    return true;
+    return false;
 }
 
 /**
@@ -1464,13 +1494,15 @@ GetNextToken (
 	char c = in.charAt(pos);
 	if (Character.isDigit(c)) {
 	    int number = 0;
+	    int count = 0;
 	    while (pos < in.length() 
 		   && Character.isDigit(c = in.charAt(pos))) {
 	        number = 10 * number + c - '0';
 		pos++;
+		count++;
 	    }
 	    parsePos.setIndex(pos);
-	    return new ClockToken(number, number >= 100000);
+	    return new ClockToken(number, count >= 6);
 	}
 	if (Character.isLetter(c)) {
 	    int beginPos = pos;
