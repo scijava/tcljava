@@ -67,11 +67,17 @@ TCLBLEND_SHLIB_NAMES="@TCLBLEND_SHLIB_NAMES@"
 #
 # If you want to use the AWT in Tcl Blend on a Linux system with
 # the Blackdown port of the JDK then you should uncomment the
-# next command. It will preload the X toolkit and Motif libs into your
-# Tcl Blend shell so that you will not get a "no awt in shared lib path"
-# error when displaying a Java GUI component. This should also work
-# with LessTif but it has not been tested.
- 
+# command you need in the next section. This will preload the
+# X toolkit and Motif libs into your Tcl Blend shell so
+# that you will not get a "no awt in shared lib path"
+# error when displaying a Java GUI component.
+
+# If you are using Motif then uncomment this line
+
+#TCLBLEND_LD_PRELOAD="${TCLBLEND_LD_PRELOAD} libXm.so libXpm.so libXt.so libSM.so libICE.so libXext.so libX11.so"
+
+# If you are using LessTif then uncomment this line
+
 #TCLBLEND_LD_PRELOAD="${TCLBLEND_LD_PRELOAD} libXt.so libXm.so libXext.so"
 
 

@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.19 1999/05/16 00:24:21 dejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.20 1999/05/17 02:24:20 dejong Exp $
 
 # The directory containing the Tcl sources and headers appropriate
 # for this version of Tk ("srcdir" will be replaced or has already
@@ -93,13 +93,19 @@ TCLBLEND_LIBS		= @TCLBLEND_LIBS@
 # Extra shared lib stuff needed on some systems.
 # If you want to run the TclBlend tests on a Linux system
 # with the Blackdown JDK port you will need to install Motif or LessTif.
-# You will then need to uncomment the definition of
-# TCLBLEND_LD_PRELOAD that includes the X libs and
-# comment out the other definition of TCLBLEND_LD_PRELOAD.
 
-#TCLBLEND_LD_PRELOAD	= "@TCLBLEND_LD_PRELOAD@ libXt.so libXm.so libXext.so"
+# If you are using Motif then uncomment this line
+
+#TCLBLEND_LD_PRELOAD="@TCLBLEND_LD_PRELOAD@ libXm.so libXpm.so libXt.so libSM.so libICE.so libXext.so libX11.so"
+
+# If you are using LessTif then uncomment this line
+
+#TCLBLEND_LD_PRELOAD="@TCLBLEND_LD_PRELOAD@ libXt.so libXm.so libXext.so"
+
+# If you are using neither Motif nor LessTif then comment out this line
 
 TCLBLEND_LD_PRELOAD	= "@TCLBLEND_LD_PRELOAD@"
+
 TCLBLEND_LD_BIND_NOW	= @TCLBLEND_LD_BIND_NOW@
 TCLBLEND_SHLIB_NAMES	= "@TCLBLEND_SHLIB_NAMES@"
 
