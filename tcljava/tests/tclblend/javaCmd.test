@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: javaCmd.test,v 1.1 1998/10/14 21:09:24 cvsadmin Exp $
+# RCS: @(#) $Id: javaCmd.test,v 1.2 1999/05/10 02:59:49 dejong Exp $
 
 # Note: This test file must be sourced from the parent directory
 #       or else the defs file may not be properly loaded.
@@ -34,6 +34,7 @@ test javaCmd-1.1 {Tclblend_Init} {
 	set msg
     }
 } {wrong # args: should be "java::new signature ?arg arg ...?"}
+
 test javaCmd-1.2 {Tclblend_Init} {
     set i [java::new tcl.lang.Interp]
     catch {$i {eval String} {java::new}}
@@ -52,4 +53,3 @@ test javaCmd-2.1 {JavaInterpDeleted} {
 } {1 {java.lang.NullPointerException: Invalid interpreter.}}
 
 # JavaSetupJava, ToString, JavaThrowTclException do not have tests
-
