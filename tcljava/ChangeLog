@@ -1,3 +1,8 @@
+2000-10-27  Mo DeJong  <mdejong@redhat.com>
+
+	* src/jacl/tcl/lang/Notifier.java: Change
+	comments from C style to Java style.
+
 2000-10-25  Mo DeJong  <mdejong@redhat.com>
 
 	* src/native/javaObj.c: Added comment about
