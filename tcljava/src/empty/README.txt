@@ -1,11 +1,8 @@
-src/misc/README.txt
-
-
 empty.jar is used to work around a problem that occurs when compiling
-Jacl and Tcl Blend that results in extra classes being included in the
+Jacl or Tcl Blend that results in extra classes being included in the
 tcljava.jar file.
 
-For example, when we are building Tcl Blend, the classes below
+For example, when we are building the classes below
  tcl/lang/CObject.class
  tcl/lang/Interp.class
  tcl/lang/Notifier.class
@@ -30,13 +27,12 @@ compiling system.
 
 
 To do this set your CLASSPATH to include ROOT/src/tcljava and then
-execute the following comands in the dir ROOT/src/misc/empty.
+execute the following comands in the dir ROOT/src/empty.
 
 mkdir -p tmp1/tcl/lang tmp2/tcl/lang
 javac -d tmp1 tcl/lang/*.java
 
-
-Then copy the listed classes from tmp1 to tmp2 like this.
+# Then copy the listed classes from tmp1 to tmp2 like this.
 
 cp tmp1/tcl/lang/Interp.class \
    tmp1/tcl/lang/TclList.class \
@@ -46,14 +42,14 @@ cp tmp1/tcl/lang/Interp.class \
    tmp2/tcl/lang
 
 
-Then cd to tmp2 and make a jar file for the classes like this.
+# Then cd to tmp2 and make a jar file for the classes like this.
 
 cd tmp2
 jar -cf ../empty.jar tcl
 cd ..
 
 
-Then clean up the tmp dirs like this.
+# Finally clean up the tmp dirs like this.
 
 rm -rf tmp1 tmp2
 
