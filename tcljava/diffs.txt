@@ -1,8 +1,8 @@
 diffs.txt --  DIFFERENCES BETWEEN TCL and JACL
 
-RCS: @(#) $Id: diffs.txt,v 1.1 1998/10/14 21:09:07 cvsadmin Exp $
+RCS: @(#) $Id: diffs.txt,v 1.2 1999/01/14 18:13:17 hylands Exp $
 
-This file contains a list of differences between Tcl 8.x and Jacl 1.0.
+This file contains a list of differences between Tcl 8.x and Jacl 1.1.
 
 What Works
 
@@ -13,19 +13,16 @@ any behavior that deviates from that of native Tcl.
 
 	break, bgerror, case, catch, continue, exit,
 	for, foreach, if, proc, return, while
-	switch:	-regexp option only works in binary release
+	switch
 
 - General Tcl commands that are completely implemented in Jacl.
 
 	after, append, auto_load, cd, concat, eval, expr, format,
 	global, incr, join, lappend, lindex, linsert list, llength,
-	lrange, lreplace, lsort, package, pwd, rename, scan, seek,
-	set, source, split, string, subst, tell, time, trace, unknown,
-	unset, update, uplevel, upvar, vwait
-	
-	lsearch: -regexp option only works in binary release
-	regexp:	 only works in binary release
-	regsub:	 only works in binary release
+	lrange, lreplace, lsearch, lsort, package, pwd, rename,
+	regexp, regsub, scan, seek, set, source, split, string, subst,
+	tell, time, trace, unknown, unset, update, uplevel, upvar,
+	vwait
 
 ----------
 
@@ -41,17 +38,18 @@ find errors other than those we have described.
 	read, seek, tell, write
 	glob:	-buggy on windows
 
-- Regular experessions are only handled in Jacl's binary release.  Tcl
-  commands regexp and regsub and lsearch and switch with -regexp flag
-  are only fully functional in the binary release of Jacl.  We expect
-  there will be different behavior in Jacl's handling of regexps.  The
-  package we have included was designed to be compatible with perl5.
-  One difference we know of is that the '^' character means "a new
-  line begins with" in perl5, but in native Tcl, the '^' denotes
-  "strictly begins with".  For those who want to include the regexp
-  package in the Jacl source release, the download page is
+  - 'file nativename' was implemented by Mo DeJong for Jacl1.1
 
-	http://www.oroinc.com/downloads/index.html#OROMatcher
+- Regular expressions are only shipped as .class files. Tcl commands
+  regexp and regsub and lsearch and switch with -regexp flag are only
+  fully functional in both the binary and source releases of Jacl. We
+  expect there will be different behavior in Jacl's handling of
+  regexps.  The package we have included was designed to be compatible
+  with perl5.  One difference we know of is that the '^' character
+  means "a new line begins with" in perl5, but in native Tcl, the '^'
+  denotes "strictly begins with".
+
+  Jacl1.2 may use a different regexp parser.
 
 - Environment variable array "env" doesn't have the same indices
   defined in Jacl as in native Tcl.  USER and HOME are the only
@@ -73,6 +71,10 @@ What Does Not Work
 	binary, clock, fblocked, fcopy, fconfigure, fileevent
 	history, interp, load, namespace, pkg_mkIndex, pid
 	socket
+
+  An implementation of the clock command was written by
+  Christian Krone <krischan@sql.de>.  This code is not present in 
+  Jacl 1.1, but hopefully will make it into Jacl 1.2
 
 ----------
 
