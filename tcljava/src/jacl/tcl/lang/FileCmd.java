@@ -11,7 +11,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FileCmd.java,v 1.5 2001/02/07 11:54:21 mdejong Exp $
+ * RCS: @(#) $Id: FileCmd.java,v 1.6 2002/04/12 18:13:37 mdejong Exp $
  *
  */
 
@@ -19,12 +19,30 @@ package tcl.lang;
 
 import java.io.*;
 import java.util.*;
+import java.lang.reflect.Array;
+import java.lang.reflect.Method;
+import java.lang.reflect.InvocationTargetException;
 
 /*
  * This class implements the built-in "file" command in Tcl.
  */
 
 class FileCmd implements Command {
+
+/**
+ * Reference to File.listRoots, null when JDK < 1.2
+ */
+private static Method listRootsMethod;
+
+static {
+    // File.listRoots()
+    Class[] parameterTypes = new Class[0];
+    try {
+        listRootsMethod = File.class.getMethod("listRoots", parameterTypes);
+    } catch (NoSuchMethodException e) {
+        listRootsMethod = null;
+    }
+}
 
 static Class procClass = null;
 
@@ -122,9 +140,9 @@ cmdProc(
 throws
     TclException
 {
-    if (argv.length < 3) {
+    if (argv.length < 2) {
 	throw new TclNumArgsException(interp, 1, argv, 
-		"option name ?arg ...?");
+		"option ?arg ...?");
     }
 
     int opt = TclIndex.get(interp, argv[1], validCmds, "option", 0);
@@ -394,14 +412,46 @@ throws
 	return;
 
     case OPT_VOLUMES:
-        // FIXME:   not implemented yet
+	if (argv.length != 2) {
+	    throw new TclNumArgsException(interp, 2, argv, null);
+	}
 
-        // Java 1.2 has a new getRoots() method that would work here
+        // use Java 1.2's File.listRoots() method if available
 
-        throw new TclException(interp,
-		"sorry, \"file volumes\" is not implemented yet");
+        if (listRootsMethod == null)
+            throw new TclException(interp,
+                "\"file volumes\" is not supported");
 
-        //return; 
+        try {
+            File[] roots = (File[]) listRootsMethod.invoke(null,
+                new Object[0]);
+            if (roots != null) {
+                TclObject list = TclList.newInstance();
+                for (int i=0; i < roots.length; i++) {
+                    String root = roots[i].getPath();
+                    TclList.append(interp, list,
+                        TclString.newInstance(root));
+                }
+                interp.setResult(list);
+            }
+        } catch (IllegalAccessException ex) {
+            throw new TclRuntimeError(
+                "IllegalAccessException in volumes cmd");
+        } catch (IllegalArgumentException ex) {
+            throw new TclRuntimeError(
+                "IllegalArgumentException in volumes cmd");
+        } catch (InvocationTargetException ex) {
+            Throwable t = ex.getTargetException();
+
+            if (t instanceof Error) {
+                throw (Error) t;
+            } else {
+               throw new TclRuntimeError(
+                   "unexected exception in volumes cmd"); 
+            }
+        }
+
+        return; 
     case OPT_WRITABLE:
 	if (argv.length != 3) {
 	    throw new TclNumArgsException(interp, 2, argv, "name");

@@ -1,3 +1,11 @@
+2002-04-12  Shawn Boyce  <shawn@qcominc.com>
+
+	* src/jacl/tcl/lang/FileCmd.java (cmdProc):
+	Implement 'file volumes' command using the JDK 1.2
+	method File.listRoots(). Reflection is used to preserve
+	backward compatibility with JDK 1.1 systems. Fixed
+	number of args check so that 'file volumes' can be run.
+
 2002-04-11  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* src/jacl/tcl/lang/EncodingCmd.java: Map the
