@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.24 2003/01/21 09:42:52 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.25 2003/01/27 23:47:47 mdejong Exp $
 
 SHELL = /bin/sh
 
@@ -775,7 +775,7 @@ test_tcljava.build: $(TCLJAVA).check
 
 test_jacl.exec: test_jacl.check
 	@(  echo \
-	  cd $(TOP_DIR)/tests\; \
+	  cd $(TOP_DIR_NATIVE)/tests\; \
 	  puts \"pwd is [pwd]\"\; \
 	  puts \"CLASSPATH is [set env\(CLASSPATH\)]\"\; \
 	  puts \"auto_path is [set auto_path]\"\; \
@@ -792,7 +792,7 @@ test_jacl.exec: test_jacl.check
 test_tclblend.exec: test_tclblend.check
 	@(  echo \
 	  set auto_path [concat [pwd] [set auto_path]]\; \
-	  cd $(TOP_DIR)/tests\; \
+	  cd $(TOP_DIR_NATIVE)/tests\; \
 	  puts \"pwd is [pwd]\"\; \
 	  puts \"CLASSPATH is [set env\(CLASSPATH\)]\"\; \
 	  puts \"auto_path is [set auto_path]\"\; \
@@ -820,14 +820,14 @@ test_tclblend.exec: test_tclblend.check
 shell: shell_$(TCLJAVA)
 
 shell_jacl: jacl.check
-	@echo "To run test: cd $(TOP_DIR)/tests ; source all.tcl"
+	@echo "To run test: cd $(TOP_DIR_NATIVE)/tests ; source all.tcl"
 	CLASSPATH=$(TEST_CLASSPATH) \
 	$(JAVA) $(JAVA_FLAGS) \
 		-DBUILD_DIR=$(BUILD_DIR) -DJAVA=$(JAVA) tcl.lang.Shell
 
 
 shell_tclblend: tclblend.check
-	@echo "To run test: cd $(TOP_DIR)/tests ; source all.tcl"
+	@echo "To run test: cd $(TOP_DIR_NATIVE)/tests ; source all.tcl"
 	LD_PRELOAD=$(TCLBLEND_LD_PRELOAD) \
 	LD_BIND_NOW=$(TCLBLEND_LD_BIND_NOW) \
 	PATH=$(PATH):$(BUILD_DIR):$(TCL_BIN_DIR):$(THREAD_BIN_DIR):$(JAVA_LIB_RUNTIME_PATH) \
@@ -946,7 +946,7 @@ ddd_tclblend : tclblend.check
 	@$(MAKE) TCLJAVA=tclblend shell
 
 gdb_tclblend : tclblend.check
-	@echo "To run test: cd $(TOP_DIR)/tests ; source all.tcl"
+	@echo "To run test: cd $(TOP_DIR_NATIVE)/tests ; source all.tcl"
 	@echo "set env LD_PRELOAD=${TCLBLEND_LD_PRELOAD}" > gdb.run
 	@echo "set env LD_BIND_NOW=${TCLBLEND_LD_BIND_NOW}" >> gdb.run
 	@echo "set env LD_LIBRARY_PATH=${BUILD_DIR}:${TCL_BIN_DIR}:${THREAD_BIN_DIR}:${JAVA_LIB_RUNTIME_PATH}:${LD_LIBRARY_PATH}" >> gdb.run

@@ -1,3 +1,9 @@
+2003-01-27  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* Makefile.in: Use TOP_DIR_NATIVE instead of
+	TOP_DIR in build rules that require a Win32
+	style path instead of a unix style path.
+
 2003-01-21  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	Add initial and incomplete mingw build support.
