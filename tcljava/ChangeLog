@@ -1,3 +1,9 @@
+2002-12-25  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* tests/tcljava/JavaThrowCmd.test: Update test
+	JavaThrowCmd-1.3 to account for new Exception
+	constructors in JDK 1.4.
+
 2002-12-24  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* src/native/javaInterp.c (Java_tcl_lang_Interp_setResult,
