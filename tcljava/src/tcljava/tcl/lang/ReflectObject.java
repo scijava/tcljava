@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: ReflectObject.java,v 1.3 1999/05/09 22:41:16 dejong Exp $
+ * RCS: @(#) $Id: ReflectObject.java,v 1.4 1999/05/09 22:41:50 dejong Exp $
  *
  */
 
@@ -361,8 +361,10 @@ throws TclException
   Class obj_class = roRep.javaObj.getClass();
 
   if (! roRep.javaClass.isAssignableFrom(obj_class)) {
-    throw new TclException(interp,"object of type " + obj_class.getName()
-        + " can not be referenced as type " + roRep.javaClass.getName());
+    throw new TclException(interp,"object of type " +
+        JavaInfoCmd.getNameFromClass(obj_class) +
+        " can not be referenced as type " +
+        JavaInfoCmd.getNameFromClass(roRep.javaClass));
   }
 
 
@@ -384,7 +386,9 @@ throws TclException
 
   if (debug) {
      System.out.println("reflect object " + roRep.refID +
-         " of type " + roRep.javaClass.getName() + " registered");
+         " of type " +
+         JavaInfoCmd.getNameFromClass(roRep.javaClass) +
+         " registered");
   }
   
   roRep.useCount = 1;
@@ -908,7 +912,9 @@ public static void dump(
         System.out.println("refID = \"" + roRep.refID + "\"");
         System.out.println("javaObj.hashCode() = \"" + roRep.javaObj.hashCode()  + "\"");
 
-        System.out.println("javaClass = \"" + roRep.javaClass.getName() + "\"");
+
+        System.out.println("javaClass = \"" +
+            JavaInfoCmd.getNameFromClass(roRep.javaClass) + "\"");
 
         // do sanity check
         TclObject tobj = TclString.newInstance(roRep.refID);
@@ -920,7 +926,7 @@ public static void dump(
         }
         if (roRep.javaClass != tclass) {
             System.out.println("javaClass is not the same the reflect class type \"" +
-                tclass.getName() + "\" in the interp");
+            JavaInfoCmd.getNameFromClass(tclass) + "\" in the interp");
         }
 
 
@@ -957,7 +963,7 @@ public static void dump(
 	        roRep = (ReflectObject) refOrTable;
 
                 System.out.println("typetable is a single entry of type \""  +
-                    roRep.javaClass.getName() +  "\"");
+                    JavaInfoCmd.getNameFromClass(roRep.javaClass) + "\"");
             } else {
                 // the typetable is made up of a Hashtable
 	        Hashtable h = (Hashtable) refOrTable;
@@ -974,7 +980,7 @@ public static void dump(
                         roRep.refID + "\"");
 
                     System.out.println("typetable entry type is \""  +
-                        roRep.javaClass.getName() +  "\"");
+                        JavaInfoCmd.getNameFromClass(roRep.javaClass) + "\"");
                 }
 
             }
