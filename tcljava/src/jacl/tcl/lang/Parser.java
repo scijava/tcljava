@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Parser.java,v 1.2 1999/05/09 01:05:13 dejong Exp $
+ * RCS: @(#) $Id: Parser.java,v 1.3 1999/05/16 08:19:59 dejong Exp $
  */
 
 package tcl.lang;
@@ -1269,7 +1269,9 @@ throws
     } while (bytesLeft > 0);
 
     } finally {
-      parse.release(); // Let go of parser resources
+      if (parse != null) {
+          parse.release(); // Let go of parser resources
+      }
       releaseObjv(interp, objv); // Let go of objv buffer
     }
 
