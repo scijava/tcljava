@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Command.java,v 1.2 1999/07/28 03:40:28 mo Exp $
+ * RCS: @(#) $Id: Command.java,v 1.3 1999/08/05 03:43:27 mo Exp $
  */
 
 package tcl.lang;
@@ -27,7 +27,7 @@ public interface Command {
     abstract public void 
     cmdProc(			// The method cmdProc is called by interp.
 	Interp interp, 		// The interpreter for setting result etc.
-	TclObject argv[])	// The argument list for the command.
+	TclObject[] objv)	// The argument list for the command.
     throws 
 	TclException;		// Tcl exceptions are thown for Tcl errors.
 }
