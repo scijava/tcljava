@@ -1,6 +1,6 @@
 Recent user-visible changes to Jacl & Tcl Blend:
 
-RCS: @(#) $Id: changes.txt,v 1.15 1999/05/15 23:03:54 dejong Exp $
+RCS: @(#) $Id: changes.txt,v 1.16 1999/05/15 23:06:11 dejong Exp $
 
 ----------------- Released 1.0a1, 10/22/97 -----------------------
 
@@ -752,4 +752,40 @@ has now been fixed and the tests that require sorted
 methods have been activated. There is a slight runtime
 cost in using sorted methods but it is only done when
 java methods are first loaded into the cache. (Mo)
+
+3/19/99 (fixed reflected types of java objects)
+For example, a String referenced as an Object would
+get reflected as a String in some places. Some tests
+were also fixed as they broke because of this fix.
+*** POTENTIAL INCOMPATIBILITY *** (Mo)
+
+3/19/99 (changed conversions to and from java long values)
+Changed long conversion system so that attempt to convert
+to a java long will be made if a tcl integer conversion
+fails in a call to a Java method. In addition a Java long
+returned from a method or field will be converted to a
+string not an integer which would lose precision. (Mo)
+
+3/19/99 (fixed conversion bug for reflected primitive types)
+Fixed a problem with conversion of reflected Java objects
+that were getting passed to a Java method. Before this
+change calling a method like {foo long} with a Long
+argument would generate an error even though a Long
+is a perfectly acceptable representation for a long. (Mo)
+
+3/20/99 (added ability to rename java instance commands)
+The implementation of ReflectObject assumed that the
+name of the java object command is always of the form
+java0xNUM. This becomes a problem if the rename comamnd
+is used on a java instance command. ReflectObject was
+changed so that the instance command can be renamed.
+A problem remains as there is no way to tell what the
+instance command was renamed to, so we can not remove it. (Mo)
+
+3/20/99 (new java::autolock command added)
+The new java::autolock command can be used in interactive
+sessions to keep java object references from being garbage
+collected. This can be really handy when you want to quickly
+test out a java class without the hassle of garbage collection. (Mo)
+
 
