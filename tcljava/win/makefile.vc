@@ -17,20 +17,20 @@ TCLJAVA		= tclblend
 TCLJAVA_VERSION	= 1.2.3
 
 # Location you will be installing into
-TCL_DIR		= G:\mo\software\test_tcl
+TCL_DIR		= C:\Tcl
 #TCL_DIR	= C:\progra~1\tcl
 
 # Root directory of the distribution
-TOP_DIR		= G:\mo\software\test_tcl\src\$(TCLJAVA)$(TCLJAVA_VERSION)
+TOP_DIR		= C:\Tcl\$(TCLJAVA)$(TCLJAVA_VERSION)
 #TOP_DIR	= C:\users\cxh\java\tb\$(TCLJAVA)$(TCLJAVA_VERSION)
 
 # The root directory of your MS dev tools
-TOOLS32		= G:\mo\software\msdev
+TOOLS32		= C:\msdev\VC98
 #TOOLS32	= D:\Progra~1\DevStudio\Vc
 
 # JDK1.1 users should uncomment this section
 #JAVA_DIR	= C:\jdk1.1.7
-JAVA_DIR	= G:\mo\software\java\jdk1.1.7
+JAVA_DIR	= C:\java
 JAVA_VERSION	= 1.1
 JAVA_CLASSPATH	= $(JAVA_DIR)\lib\classes.zip;.
 
@@ -42,7 +42,9 @@ JAVA_CLASSPATH	= $(JAVA_DIR)\lib\classes.zip;.
 
 
 #Tcl version info needed by the rest of the scripts
-TCL_DOTVERSION	= 8.0.4
+#TCL_DOTVERSION	= 8.0.6
+TCL_DOTVERSION	= 8.0.5
+#TCL_DOTVERSION	= 8.0.4
 #TCL_DOTVERSION	= 8.0.3
 #TCL_DOTVERSION	= 8.0
 TCL_VERSION	= 80
@@ -335,7 +337,7 @@ test_tclblend.exec: test_tclblend.check
 	set CLASSPATH=$(TEST_CLASSPATH)
 	set PATH=$(BUILD_DIR);$(JAVA_RUNTIME_LIBS);$(PATH)
 	$(TCLSH) <<
-		set auto_path [concat [pwd] [set auto_path]]\; \
+		set auto_path [concat [pwd] [set auto_path]]
 		cd {$(TOP_DIR)\tests}
 		puts "pwd is [pwd]"
 		puts "CLASSPATH is [set env(CLASSPATH)]"
@@ -355,7 +357,7 @@ test_jacl.exec: test_jacl.check
 	set CLASSPATH=$(TEST_CLASSPATH)
 	$(JAVA) $(JAVA_FLAGS) \
 		-DBUILD_DIR=$(BUILD_DIR) -DJAVA=$(JAVA) tcl.lang.Shell <<
-		set auto_path [concat [pwd] [set auto_path]]\; \
+		set auto_path [concat [pwd] [set auto_path]]
 		cd {$(TOP_DIR)\tests}
 		puts "pwd is [pwd]"
 		puts "CLASSPATH is [set env(CLASSPATH)]"
