@@ -1,5 +1,10 @@
 2000-04-01  Mo DeJong  <mdejong@redhat.com>
 
+	* unix/Makefile.in: added "make check" rule as an alias
+	to "make test" to conform to the GNU coding standards.
+
+2000-04-01  Mo DeJong  <mdejong@redhat.com>
+
 	* unix/Makefile.in:
 	* win/makefile.vc: Fixed bug that caused the pyramidpkg
 	to get compiled and shipped with tclblend. This fix was

@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.35 2000/04/01 10:00:31 mo Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.36 2000/04/01 11:40:41 mo Exp $
 
 # The directory containing the Tcl sources and headers appropriate
 # for this version of Tk ("srcdir" will be replaced or has already
@@ -657,6 +657,7 @@ tcljava.check:
 # Build regression tests files for jacl and tclblend
 #----------------------------------------------------------------
 
+check: test
 test: test_$(TCLJAVA)
 
 test.build: test.clean test_tcljava.build test_$(TCLJAVA).build
