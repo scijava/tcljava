@@ -5,7 +5,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: loading.test,v 1.4 2002/12/25 00:01:16 mdejong Exp $
+# RCS: @(#) $Id: loading.test,v 1.5 2003/01/28 03:21:21 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -150,7 +150,7 @@ FreeJavaCache
 Destroyed JVM}
 
 test loading-2.3 {load into two threads then exit
-        to see if thread exit handlers for other thread are called} {
+        to see if thread exit handlers for other thread are called} {unimplemented} {
     set trace [makeFile {} tclblend.trace]
     file delete $trace
     set env(TCLBLEND_TRACE) $trace

@@ -1,5 +1,10 @@
 2003-01-27  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* tests/tclblend/loading.test: Add unimplemented
+	constraint so that loading-2.3 is not run.
+
+2003-01-27  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* README.jacl: Document shared UNIX/Windows
 	build for Jacl.
 	* README.tclblend: Document shared UNIX/Windows
