@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: CallFrame.java,v 1.2 1999/05/29 21:11:26 dejong Exp $
+ * RCS: @(#) $Id: CallFrame.java,v 1.3 1999/06/21 03:32:38 mo Exp $
  *
  */
 
@@ -64,18 +64,29 @@ class CallFrame {
 
     protected Interp interp;
 
+
     /**
-     * Stores the variables of this CallFrame.
+     * The Namespace this CallFrame is executing in.
+     * Used to resolve commands and global variables.
      */
 
-    protected Hashtable varTable;
+    NamespaceCmd.Namespace ns;
+
+    /**
+     * If true, the frame was pushed to execute a Tcl procedure
+     * and may have local vars. If false, the frame was pushed to execute
+     * a namespace command and var references are treated as references
+     * to namespace vars; varTable is ignored.
+     */
+
+    boolean isProcCallFrame;
 
     /**
      * Stores the arguments of the procedure associated with this CallFrame.
      * Is null for global level.
      */
 
-    TclObject[] m_argv;
+    TclObject[] objv;
 
     /**
      * Value of interp.frame when this procedure was invoked
@@ -92,12 +103,19 @@ class CallFrame {
      */
 
     protected CallFrame callerVar;
-    
+
     /**
      * Level of recursion. = 0 for the global level.
      */
 
-    protected int m_level;
+    protected int level;
+
+    /**
+     * Stores the variables of this CallFrame.
+     */
+
+    protected Hashtable varTable;
+
 
     /**
      * Creates a CallFrame for the global variables.
@@ -109,8 +127,8 @@ class CallFrame {
 	varTable   = new Hashtable();
 	caller     = null;
 	callerVar  = null;
-	m_argv     = null;
-	m_level    = 0;
+	objv     = null;
+	level    = 0;
     }
 
     /**
@@ -149,8 +167,8 @@ class CallFrame {
      */
     void chain(Procedure proc, TclObject[] argv)
 	    throws TclException {
-	m_argv          = argv;
-	m_level         = interp.varFrame.m_level + 1;
+	objv          = argv;
+	level         = interp.varFrame.level + 1;
 	caller          = interp.frame;
 	callerVar       = interp.varFrame;
 	interp.frame    = this;
@@ -1098,7 +1116,7 @@ class CallFrame {
 	    if (j < 0) {
 		throw new TclException(interp, "bad level \"" + s + "\"");
 	    }
-	    i = m_level - j;
+	    i = level - j;
 	} else {
 	    try {
 		i = Util.getInt(interp, s);

@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: InfoCmd.java,v 1.1 1998/10/14 21:09:20 cvsadmin Exp $
+ * RCS: @(#) $Id: InfoCmd.java,v 1.2 1999/06/21 03:32:38 mo Exp $
  *
  */
 
@@ -218,7 +218,7 @@ class InfoCmd implements Command {
 		    if (interp.varFrame == null) {
 			interp.setResult(0);
 		    } else {
-			interp.setResult(interp.varFrame.m_level);
+			interp.setResult(interp.varFrame.level);
 		    }
 		    return;
 		} else {
@@ -228,7 +228,7 @@ class InfoCmd implements Command {
 			    throw new TclException(interp, "bad level \""
 				    + level + "\"");
 			}
-			level -= interp.varFrame.m_level;
+			level -= interp.varFrame.level;
 		    }
 
 		    CallFrame currentFrame = interp.varFrame;
@@ -241,13 +241,13 @@ class InfoCmd implements Command {
 			counter++;
 		    }
 		    if ((currentFrame == null) ||
-			    (currentFrame.m_argv == null)) {
+			    (currentFrame.objv == null)) {
 			throw new TclException(interp, "bad level \"" +
 				level + "\"");
 		    }
 		    list = TclList.newInstance();
-		    for (int i = 0; i < currentFrame.m_argv.length; i++) {
-			s = TclString.newInstance(currentFrame.m_argv[i]);
+		    for (int i = 0; i < currentFrame.objv.length; i++) {
+			s = TclString.newInstance(currentFrame.objv[i]);
 			TclList.append(interp, list, s);
 		    }
 		    interp.setResult(list);

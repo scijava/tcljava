@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: VariableCmd.java,v 1.1 1999/05/30 01:16:54 dejong Exp $
+ * RCS: @(#) $Id: VariableCmd.java,v 1.2 1999/06/21 03:32:39 mo Exp $
  */
 
 package tcl.lang;
@@ -56,7 +56,7 @@ class VariableCmd implements Command {
     public void cmdProc(Interp interp, TclObject argv[])
 	    throws TclException {
 
-	// unimplemented.	 
+	// FIXME : unimplemented.	 
 
 	throw new TclException(interp, "variable command is not yet implemented");
     }

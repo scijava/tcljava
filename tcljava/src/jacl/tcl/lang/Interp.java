@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.13 1999/05/29 23:53:50 dejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.14 1999/06/21 03:32:38 mo Exp $
  *
  */
 
@@ -69,7 +69,7 @@ static final String TCL_PATCH_LEVEL = "8.0";
 // Total number of times a command procedure
 // has been called for this interpreter.
 
-protected int cmdCount = 0;
+protected int cmdCount;
 
 
 // Table of commands for this interpreter.
@@ -87,24 +87,29 @@ private Notifier notifier;
 // Hash table for associating data with this interpreter. Cleaned up
 // when this interpreter is deleted.
 
-Hashtable assocDataTab;
+Hashtable assocData;
 
 // Current working directory.
 
 private File workingDir;
 
 // Points to top-most in stack of all nested procedure
-// invocations.  NULL means there are no active procedures.
+// invocations.  null means there are no active procedures.
 
 CallFrame frame;
 
 // Points to the call frame whose variables are currently in use
-// (same as framePtr unless an "uplevel" command is being
-// executed).  NULL means no procedure is active or "uplevel 0" is
+// (same as frame unless an "uplevel" command is being
+// executed).  null means no procedure is active or "uplevel 0" is
 // being exec'ed.
 
 CallFrame varFrame;
 
+// The interpreter's global namespace.
+
+NamespaceCmd.Namespace globalNs;
+
+// FIXME : does globalFrame need to be replaced by globalNs?
 // Points to the global variable frame.
 
 CallFrame globalFrame;
@@ -159,11 +164,11 @@ long randSeed;
 
 // If returnCode is TCL.ERROR, stores the errorInfo.
 
-String errorInfo = null;
+String errorInfo;
 
 // If returnCode is TCL.ERROR, stores the errorCode.
 
-String errorCode = null;
+String errorCode;
 
 // Completion code to return if current procedure exits with a
 // TCL_RETURN code.
@@ -241,40 +246,10 @@ int             parserTokensUsed;
 public 
 Interp() 
 {
-    cmdTable         = new Hashtable();
-    frame            = newCallFrame();
-    varFrame         = frame;
-    globalFrame      = frame;
-    expr             = new Expression();
-    nestLevel        = 0;
-    maxNestingDepth  = 1000;
-    workingDir       = new File(Util.tryGetSystemProperty("user.dir", "."));
-    noEval           = 0;
-    scriptFile       = "";
 
-    primaryThread    = Thread.currentThread();
-    notifier	     = Notifier.getNotifierForThread(primaryThread);
-    notifier.preserve();
-
-    assocDataTab     = null;
-    randSeedInit     = false;
-
+    //freeProc         = null;
     errorLine        = 0;
-    deleted          = false;
-    errInProgress    = false;
-    errAlreadyLogged = false;
-    errCodeSet       = false;
-    returnCode       = TCL.OK;
 
-    dbg              = initDebugInfo();
-
-    packageTable = new Hashtable();
-    packageUnknown = null;
-
-    // init parser variables
-    Parser.init(this);
-    TclParse.init(this);
-    
     // An empty result is used pretty often. We will use a shared
     // TclObject instance to represent the empty result so that we
     // don't need to create a new TclObject instance every time the
@@ -282,7 +257,72 @@ Interp()
 
     m_nullResult = TclString.newInstance("");
     m_nullResult.preserve();
-    m_result = m_nullResult;
+    m_result = m_nullResult;  // correcponds to iPtr->objResultPtr
+
+    expr             = new Expression();
+    nestLevel        = 0;
+    maxNestingDepth  = 1000;
+
+    frame            = null;
+    varFrame         = null;
+    
+    /*
+      // FIXME : what should we do here ?
+    frame            = newCallFrame();
+    varFrame         = frame;
+    // FIXME : how will globalNs be initialised?
+    globalFrame      = frame;
+    */
+
+
+    returnCode       = TCL.OK;
+    errorInfo        = null;
+    errorCode        = null;
+
+    packageTable     = new Hashtable();
+    packageUnknown   = null;
+    cmdCount         = 0;
+    termOffset       = 0;
+    //resolver       = null;
+    evalFlags        = 0;
+    scriptFile       = null;
+    flags            = 0;
+    assocData        = null;
+
+
+    globalNs         = null; // force creation of global ns below
+    globalNs         = NamespaceCmd.createNamespace(this, null, null);
+    if (globalNs == null) {
+	throw new TclRuntimeError("Interp(): can't create global namespace");
+    }
+
+    
+
+    // Init things that are specific to the Jacl implementation
+
+    cmdTable         = new Hashtable();
+
+    workingDir       = new File(Util.tryGetSystemProperty("user.dir", "."));
+    noEval           = 0;
+
+    primaryThread    = Thread.currentThread();
+    notifier	     = Notifier.getNotifierForThread(primaryThread);
+    notifier.preserve();
+
+    randSeedInit     = false;
+
+    deleted          = false;
+    errInProgress    = false;
+    errAlreadyLogged = false;
+    errCodeSet       = false;
+    
+    dbg              = initDebugInfo();
+
+
+
+    // init parser variables
+    Parser.init(this);
+    TclParse.init(this);
 
     // Initialize the Global (static) channel table and the local
     // interp channel table.
@@ -302,12 +342,6 @@ Interp()
 	// global variables.
 
 	setVar("tcl_platform", "platform", "java", TCL.GLOBAL_ONLY);
-/*
-// FIXME : delete tcl_platform(javaVersion) from jacl if not needed
-	setVar("tcl_platform", "javaVersion", 
-		Util.tryGetSystemProperty("java.version", "?"),
-		TCL.GLOBAL_ONLY);
-*/
 	setVar("tcl_platform", "byteOrder", "bigEndian", TCL.GLOBAL_ONLY);
 	
 	setVar("tcl_platform", "os", 
@@ -408,7 +442,8 @@ dispose()
     // background errors occur here, they will be deleted below.
 
     
-    // FIXME : TclTeardownNamespace(iPtr->globalNsPtr);
+    // FIXME : check impl of TclTeardownNamespace
+    NamespaceCmd.teardownNamespace(globalNs);
 
     // Delete all variables.
 
@@ -466,9 +501,9 @@ dispose()
     // deletion callbacks; note that a callback can create new
     // callbacks, so we iterate.
 
-    while (assocDataTab != null) {
-	Hashtable table = assocDataTab;
-	assocDataTab = null;
+    while (assocData != null) {
+	Hashtable table = assocData;
+	assocData = null;
 
 	for (Enumeration e = table.keys(); e.hasMoreElements();) {
 	    Object key = e.nextElement();
@@ -479,9 +514,9 @@ dispose()
     }
 
     // Finish deleting the global namespace.
-
     
-    // FIXME : Tcl_DeleteNamespace((Tcl_Namespace *) iPtr->globalNsPtr);
+    // FIXME : check impl of Tcl_DeleteNamespace
+    NamespaceCmd.deleteNamespace(globalNs);
 
     // Free up the result *after* deleting variables, since variable
     // deletion could have transferred ownership of the result string
@@ -659,10 +694,10 @@ setAssocData(
     String name,		// Name for association.
     AssocData data)		// Object associated with the name.
 {
-    if (assocDataTab == null) {
-	assocDataTab = new Hashtable();
+    if (assocData == null) {
+	assocData = new Hashtable();
     }
-    assocDataTab.put(name, data);
+    assocData.put(name, data);
 }
 
 /*
@@ -686,11 +721,11 @@ public void
 deleteAssocData(
     String name)		// Name of association.
 {
-    if (assocDataTab == null) {
+    if (assocData == null) {
 	return;
     }
 
-    assocDataTab.remove(name);
+    assocData.remove(name);
 }
 
 /*
@@ -715,10 +750,10 @@ public AssocData
 getAssocData(
     String name)			// Name of association.
 {
-    if (assocDataTab == null) {
+    if (assocData == null) {
 	return null;
     } else {
-	return (AssocData)assocDataTab.get(name);
+	return (AssocData) assocData.get(name);
     }
 }
 
@@ -1336,13 +1371,13 @@ public int
 deleteCommand(
     String cmdName)		// Name of command to remove.
 {
-    Command cmd = (Command)cmdTable.get(cmdName);
+    Command cmd = (Command) cmdTable.get(cmdName);
     if (cmd == null) {
 	return -1;
     } else {
 	cmdTable.remove(cmdName);
 	if (cmd instanceof CommandWithDispose) {
-	    ((CommandWithDispose)cmd).disposeCmd();
+	    ((CommandWithDispose) cmd).disposeCmd();
 	}
 	return 0;
     }
@@ -1369,7 +1404,7 @@ public Command
 getCommand(
     String name) 		// String name of the command.
 {
-    return (Command)cmdTable.get(name);
+    return (Command) cmdTable.get(name);
 }
 
 /*
