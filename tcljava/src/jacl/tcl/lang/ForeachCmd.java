@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ForeachCmd.java,v 1.3 1999/08/03 04:00:16 mo Exp $
+ * RCS: @(#) $Id: ForeachCmd.java,v 1.4 1999/08/07 06:44:04 mo Exp $
  *
  */
 
@@ -87,13 +87,6 @@ class ForeachCmd implements Command {
 			} else {
 			    var = result[0];
 			}
-		    }
-
-		    // FIXME : is it an error to have an array var as the index?
-		    if ((var != null) && var.isVarArray()) {
-		        throw new TclException(interp, 
-			        "couldn't set loop variable: \"" +
-				name[x] + "\"");
 		    }
 
 		    try {
