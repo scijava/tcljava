@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ReadCmd.java,v 1.3 2000/08/01 06:55:09 mo Exp $
+ * RCS: @(#) $Id: ReadCmd.java,v 1.4 2000/11/19 17:15:42 krischan Exp $
  *
  */
 
@@ -59,7 +59,7 @@ class ReadCmd implements Command {
                     + argv[i].toString() + "\"");
 	}
 	if ((chan.getMode() & TclIO.WRONLY) != 0) {
-	    throw new TclException(interp, "channel \"" + chan.getChanName() 
+	    throw new TclException(interp, "channel \"" + argv[i].toString()
 	            + "\" wasn't opened for reading");
 	}
 
