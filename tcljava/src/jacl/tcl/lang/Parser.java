@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Parser.java,v 1.15 2003/02/05 09:24:40 mdejong Exp $
+ * RCS: @(#) $Id: Parser.java,v 1.16 2003/02/05 09:51:07 mdejong Exp $
  */
 
 package tcl.lang;
@@ -703,7 +703,7 @@ parseTokens(
     }
 
 
-    System.out.print("done printing tokens");
+    System.out.println("done printing tokens");
     
     }
 
@@ -1236,9 +1236,16 @@ throws
 		if ( e.getCompletionCode()== TCL.ERROR &&
 		     !(interp.errAlreadyLogged)) {
 		    commandLength = parse.commandSize;
+
 		    char term = script_array[parse.commandStart+commandLength-1];
 		    int type = charType(term);
-		    if (type == TYPE_COMMAND_END) {
+		    int terminators;
+		    if (nested) {
+		        terminators = TYPE_COMMAND_END | TYPE_CLOSE_BRACK;
+		    } else {
+		        terminators = TYPE_COMMAND_END;
+		    }
+		    if ((type & terminators) != 0) {
 			// The command where the error occurred didn't end 
 			// at the end of the script (i.e. it ended at a 
 			// terminator character such as ";".  Reduce the 

@@ -1,5 +1,14 @@
 2003-02-05  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/jacl/tcl/lang/Parser.java (eval2): When
+	invoking logCommandInfo while processing a
+	nested command, check for a close bracket
+	terminator in addition to a normal end of
+	command terminator. This allows a regression
+	test that was failing to pass.
+
+2003-02-05  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/jacl/tcl/lang/ParseAdaptor.java (parseNestedCmd):
 	Raise missing close-bracket exception for easy error case.
 	* src/jacl/tcl/lang/Parser.java (parseCommand):
