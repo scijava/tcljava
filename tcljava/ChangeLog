@@ -1,5 +1,29 @@
 2002-12-24  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/native/javaInterp.c (Java_tcl_lang_Interp_setResult,
+	Java_tcl_lang_Interp_setResult__Ltcl_lang_TclObject_2,
+	Java_tcl_lang_Interp_setResult__I,
+	Java_tcl_lang_Interp_setResult__Z): Add native
+	implementations of the setResult(boolean) and
+	setResult(int) methods of the Interp class.
+	This optimization makes a setResult with an
+	int or boolean argument about 4X faster.
+	* src/tclblend/tcl/lang/Interp.java (setResult):
+	Declare 2 addition native versions of setResult
+	instead of creating a wrapper TclObject.
+	* src/tests/tclblend/tests/SetInterpResultCmd.java:
+	Add test case for Interp.setResult().
+	* src/tests/tcljava/tcl/lang/JtestCmd.java:
+	Use setResult(boolean) directly instead of
+	wasteful call to setResult(TclObject) with
+	a TclBoolean object result.
+	* tests/tclblend/javaInterp.test:
+	Add test cases for Interp.setResult(), the
+	only user visible change is the internal rep
+	of an interp result.
+
+2002-12-24  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* docs/TclJava/JavaFieldCmd.html: Make the doc
 	more clear WRT shadowed fields in a superclass.
 

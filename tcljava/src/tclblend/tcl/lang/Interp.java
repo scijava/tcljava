@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.21 2002/12/21 04:02:54 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.22 2002/12/25 08:29:31 mdejong Exp $
  *
  */
 
@@ -696,9 +696,13 @@ setResult(
  *
  * setResult --
  *
- *	These routines are convenience wrappers that convert common
- *	types into the proper TclObject type and then set the
- *	interpreter result.
+ *	These routines are convenience wrappers that accept
+ *	commonly used Java types and set the interpreter result.
+ *	Some create a TclObject type wrapper before setting
+ *	the result to this object. Others use native code to
+ *	set the interp result directly in C code instead of
+ *	creating a TclObject wrapper, since a wrapper
+ *	involves a non-trivial amount of overhead.
  *
  * Results:
  *	None.
@@ -718,24 +722,19 @@ setResult(
 
 public final void
 setResult(
-    int r)			// Integer to use as result.
-{
-    setResult(TclInteger.newInstance(r));
-}
-
-public final void
-setResult(
-    boolean r)			// Boolean to use as result.
-{
-    setResult(TclBoolean.newInstance(r));
-}
-
-public final void
-setResult(
     double r)			// Double to use as result.
 {
     setResult(TclDouble.newInstance(r));
 }
+
+public final native void
+setResult(
+    int r);			// int to use as result.
+
+public final native void
+setResult(
+    boolean r);			// boolean to use as result.
+
 
 /*
  *----------------------------------------------------------------------

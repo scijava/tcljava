@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaInterp.c,v 1.16 2002/12/21 04:02:53 mdejong Exp $
+ * RCS: @(#) $Id: javaInterp.c,v 1.17 2002/12/25 08:29:31 mdejong Exp $
  */
 
 #include "java.h"
@@ -331,7 +331,7 @@ Java_tcl_lang_Interp_getResult(
  *
  * Java_tcl_lang_Interp_setResult --
  *
- *	Sets the current interpreter result.
+ *	Sets the interpreter result to a TclObject.
  *
  * Class:     tcl_lang_Interp
  * Method:    setResult
@@ -347,7 +347,7 @@ Java_tcl_lang_Interp_getResult(
  */
 
 void JNICALL
-Java_tcl_lang_Interp_setResult(
+Java_tcl_lang_Interp_setResult__Ltcl_lang_TclObject_2(
     JNIEnv *env,		/* Java environment. */
     jobject interpObj,		/* Handle to Interp object. */
     jobject result)		/* New result object. */
@@ -363,6 +363,82 @@ Java_tcl_lang_Interp_setResult(
 	return;
     }
     Tcl_SetObjResult(interp, JavaGetTclObj(env, result));
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Java_tcl_lang_Interp_setResult --
+ *
+ *	Sets the interpreter result to an int.
+ *
+ * Class:     tcl_lang_Interp
+ * Method:    setResult
+ * Signature: (I)V
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void JNICALL
+Java_tcl_lang_Interp_setResult__I(
+    JNIEnv *env,		/* Java environment. */
+    jobject interpObj,		/* Handle to Interp object. */
+    jint result)		/* New int result. */
+{
+    Tcl_Interp *interp = JavaGetInterp(env, interpObj);
+    /*
+     * Tcl will store an integer value in a long, so use
+     * a long instead of an int in case Java defines jint
+     * as a long.
+     */
+    long tcl_val = result;
+
+    if (!interp) {
+	ThrowNullPointerException(env, NULL);
+	return;
+    }
+    Tcl_SetObjResult(interp, Tcl_NewLongObj(tcl_val));
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Java_tcl_lang_Interp_setResult --
+ *
+ *	Sets the interpreter result to a boolean.
+ *
+ * Class:     tcl_lang_Interp
+ * Method:    setResult
+ * Signature: (Z)V
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void JNICALL
+Java_tcl_lang_Interp_setResult__Z(
+    JNIEnv *env,		/* Java environment. */
+    jobject interpObj,		/* Handle to Interp object. */
+    jboolean result)		/* New boolean result. */
+{
+    Tcl_Interp *interp = JavaGetInterp(env, interpObj);
+
+    if (!interp) {
+	ThrowNullPointerException(env, NULL);
+	return;
+    }
+    Tcl_SetObjResult(interp, Tcl_NewIntObj((result == JNI_TRUE) ? 1 : 0));
 }
 
 /*

@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: JtestCmd.java,v 1.2 2002/12/18 07:07:19 mdejong Exp $
+ * RCS: @(#) $Id: JtestCmd.java,v 1.3 2002/12/25 08:29:31 mdejong Exp $
  *
  */
 
@@ -58,7 +58,7 @@ class JtestCmd implements Command {
 	    TclObject obj1 = argv[2];
 	    TclObject obj2 = argv[3];
 
-	    interp.setResult(TclBoolean.newInstance(obj1 == obj2));
+	    interp.setResult(obj1 == obj2);
 	    break;
 
 	case OPT_GC:
