@@ -2,7 +2,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run to configure the
 dnl	Makefile in this directory.
 AC_INIT(../src/tcljava/tcl/lang/InternalRep.java)
-# RCS: @(#) $Id: configure.in,v 1.4 1998/11/16 05:58:17 hylands Exp $
+# RCS: @(#) $Id: configure.in,v 1.5 1998/11/16 08:04:52 hylands Exp $
 
 
 #--------------------------------------------------------------------
@@ -130,13 +130,19 @@ fi
 #
 if test $TCLJAVA = "tclblend" || test $BOTH = "true"; then
     JDK1_2BETA3=no
+    JAVA_INC_DIR=$JAVA_DIR/include
     #
     # Check to see that we can find the right pieces
     #
     if test ! -f $JAVA_DIR/include/StubPreamble.h; then
 	    if test ! -f $JAVA_DIR/include/jni.h; then
-		AC_MSG_ERROR([There's no StubPreamble.h in $JAVA_DIR/include.
-		Try --with-java=DIR, or set the JAVA_HOME environment variable.])
+		if test -f $JAVA_DIR/include/java/StubPreamble.h; then
+		    # JDK1.1.4 under Digital Unix 
+		    JAVA_INC_DIR=$JAVA_DIR/include/java
+		else
+		    AC_MSG_ERROR([There's no StubPreamble.h in $JAVA_DIR/include.
+		    Try --with-java=DIR, or set the JAVA_HOME environment variable.])
+		fi	
 	    else 
 		JDK1_2BETA3=yes
 		echo "Looks like you are running jdk1.2beta3 or later"
@@ -174,9 +180,11 @@ See http://www.javasoft.com/products/jdk/1.1/index.html.])
     # Find the proper platform include directory
     #
     case "`uname -s`" in
+	# Keep these alphabetical, please.
 	HP-UX) TMP_JAVA_ARCH_INCLUDE=$JAVA_DIR/include/hp-ux;;
-	Linux) TMP_JAVA_ARCH_INCLUDE=$JAVA_DIR/include/linux;;
 	IRIX)  TMP_JAVA_ARCH_INCLUDE=$JAVA_DIR/include/irix;;
+	Linux) TMP_JAVA_ARCH_INCLUDE=$JAVA_DIR/include/linux;;
+	OSF1)  TMP_JAVA_ARCH_INCLUDE=$JAVA_DIR/include/java/alpha;;
 	SunOS) TMP_JAVA_ARCH_INCLUDE=$JAVA_DIR/include/solaris;;
 	    *) TMP_JAVA_ARCH_INCLUDE=$JAVA_DIR/include/idontknow;;
     esac
@@ -198,13 +206,17 @@ of the architecture dependent include files in the JDK.])
     fi
 
     case "`uname -s`" in
+	# Keep these alphabetical, please.
 	HP-UX) TMP_JAVA_ARCH_LIB=$JAVA_DIR/lib/PA_RISC/green_threads
 	    JAVA_ARCH_LIB_CHK=libjava.sl
+	    ;;
+	IRIX) TMP_JAVA_ARCH_LIB=$JAVA_DIR/lib32/sgi/green_threads
+	    JAVA_ARCH_LIB_CHK=libjava.so
 	    ;;
 	Linux) TMP_JAVA_ARCH_LIB=$JAVA_DIR/lib/linux/green_threads
 	    JAVA_ARCH_LIB_CHK=libjava.so
 	    ;;
-	IRIX) TMP_JAVA_ARCH_LIB=$JAVA_DIR/lib32/sgi/green_threads
+	OSF1) TMP_JAVA_ARCH_LIB=$JAVA_DIR/shlib
 	    JAVA_ARCH_LIB_CHK=libjava.so
 	    ;;
 	SunOS) 
@@ -233,7 +245,7 @@ of the architecture dependent include files in the JDK.])
 	    ;;
 	*)TMP_JAVA_ARCH_LIB=$JAVA_DIR/lib/idontknow;;
     esac
-echo "TMP: $TMP_JAVA_ARCH_LIB"
+
     #
     # User specified Java architecture, used to find the jdk shared libs
     #
@@ -410,6 +422,7 @@ Make sure Tcl was configured with --enable-shared.])
     AC_SUBST(JAVA_ARCH_INCLUDE)
     AC_SUBST(JAVA_ARCH_LIB)
     AC_SUBST(JAVA_ARCH_RUNTIME_LIBS)
+    AC_SUBST(JAVA_INC_DIR)
     AC_SUBST(TCL_LD_SEARCH_FLAGS)
 fi
 

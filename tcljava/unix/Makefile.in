@@ -1,6 +1,6 @@
 # This Makefile is used to the java loadable module.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.12 1998/11/11 17:24:31 hylands Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.13 1998/11/16 08:04:52 hylands Exp $
 
 # The version of TclJava, used in this Makefile
 VERSION = @TCLJAVA_VERSION@
@@ -36,7 +36,7 @@ JTHREADS=native
 
 TOP_DIR			= @srcdir@/..
 JAVA_DIR		= @JAVA_DIR@
-JAVA_INC_DIR		= $(JAVA_DIR)/include
+JAVA_INC_DIR		= @JAVA_INC_DIR@
 JAVA_BIN_DIR		= $(JAVA_DIR)/bin
 JAVA_LIB_DIR		= $(JAVA_DIR)/lib
 JAVA_CLASSPATH		= @JAVA_CLASSPATH@
@@ -374,7 +374,6 @@ install_tclblend: #tclblend.jar #$(TCLBLEND_LIB_FILE)
 	    done;
 	@echo "Installing $(TCLBLEND_LIB_FILE) in $(LIB_INSTALL_DIR)"
 	@$(INSTALL_DATA) $(TCLBLEND_LIB_FILE) $(LIB_INSTALL_DIR)
-	@# Make the library readonly and executable for HPUX.
 	@chmod 555 $(LIB_INSTALL_DIR)/$(TCLBLEND_LIB_FILE)
 	@echo "Installing tclblend.jar in $(LIB_INSTALL_DIR)"
 	@$(INSTALL_DATA) $(CLASS_DIR)/tclblend.jar $(LIB_INSTALL_DIR)
