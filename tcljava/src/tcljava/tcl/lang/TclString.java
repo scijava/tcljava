@@ -7,21 +7,20 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclString.java,v 1.1 1998/10/14 21:09:14 cvsadmin Exp $
+ * RCS: @(#) $Id: TclString.java,v 1.1.1.1.10.1 2000/10/25 09:38:53 mdejong Exp $
  *
  */
 
 package tcl.lang;
 
-/**
- * This class implements the string object type in Tcl.
- */
+// This class implements the string object type in Tcl.
+
 public class TclString extends InternalRep {
-    /**
-     * Used to perform "append" operations. After an append op,
-     * sbuf.toString() will contain the latest value of the string and
-     * tobj.stringRep will be set to null.
-     */
+
+    // Used to perform "append" operations. After an append op,
+    // sbuf.toString() will contain the latest value of the string and
+    // tobj.stringRep will be set to null.
+
     private StringBuffer sbuf;
 
     private TclString() {
@@ -98,14 +97,12 @@ public class TclString extends InternalRep {
 	InternalRep rep = tobj.getInternalRep();
 
 	if (!(rep instanceof TclString)) {
-	    /*
-	     * make sure that this object now has a valid string rep.
-	     */
+	    // make sure that this object now has a valid string rep.
+
 	    tobj.toString();
 
-	    /*
-	     * Change the type of the object to TclString.
-	     */
+	    // Change the type of the object to TclString.
+
 	    tobj.setInternalRep(new TclString());
 	}
     }
@@ -130,7 +127,7 @@ public class TclString extends InternalRep {
     public static final void append(TclObject tobj, String string) {	
 	setStringFromAny(tobj);
 
-	TclString tstr = (TclString)tobj.getInternalRep();
+	TclString tstr = (TclString) tobj.getInternalRep();
 	if (tstr.sbuf == null) {
 	    tstr.sbuf = new StringBuffer(tobj.toString());
 	}

@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclObject.java,v 1.3 1999/08/15 19:38:55 mo Exp $
+ * RCS: @(#) $Id: TclObject.java,v 1.3.10.1 2000/10/25 09:38:53 mdejong Exp $
  *
  */
 
@@ -24,19 +24,16 @@ package tcl.lang;
  */
 
 public final class TclObject {
-    /**
-     * Internal representation of the object.
-     */
+    // Internal representation of the object.
+
     protected InternalRep internalRep;
 
-    /**
-     * Reference count of this object. When 0 the object will be deallocated.
-     */
+    // Reference count of this object. When 0 the object will be deallocated.
+
     protected int refCount;
 
-    /**
-     * String  representation of the object.
-     */
+    // String  representation of the object.
+
     protected String stringRep;
 
     /**

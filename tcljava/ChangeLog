@@ -1,3 +1,8 @@
+2000-10-25  Mo DeJong  <mdejong@redhat.com>
+
+	* src/tcljava/tcl/lang/TclObject.java:
+	* src/tcljava/tcl/lang/TclString.java: Comment fixup.
+
 2000-10-22  Mo DeJong  <mdejong@redhat.com>
 
 	* src/tests/tcljava/tests/javabind/Bind.java (run): Check
