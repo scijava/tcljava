@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Notifier.java,v 1.2 1999/05/09 00:46:11 dejong Exp $
+ * RCS: @(#) $Id: Notifier.java,v 1.3 2000/05/13 10:17:11 mo Exp $
  *
  */
 
@@ -147,7 +147,7 @@ Notifier(
  *
  * getNotifierForThread --
  *
- *	Get the notigier for this thread, creating the Notifier,
+ *	Get the notifier for this thread, creating the Notifier,
  *	when necessary.
  *
  * Results:
