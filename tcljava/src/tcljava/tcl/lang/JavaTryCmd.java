@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaTryCmd.java,v 1.2 1999/08/03 03:25:42 mo Exp $
+ * RCS: @(#) $Id: JavaTryCmd.java,v 1.3 1999/08/03 03:26:28 mo Exp $
  *
  */
 
@@ -513,6 +513,7 @@ public class JavaTryCmd implements Command
 
 	    TclObject res = interp.getResult();
 	    res.preserve();
+	    interp.resetResult();
 
 	    // evaluate the finally scipt and make sure that errors
 	    // in the finally script are caught and then thrown at
