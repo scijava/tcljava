@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclPosixException.java,v 1.1 1998/10/14 21:09:14 cvsadmin Exp $
+ * RCS: @(#) $Id: TclPosixException.java,v 1.2 2001/11/22 00:08:36 mdejong Exp $
  *
  */
 
@@ -139,9 +139,9 @@ throws
 
     TclObject threeEltListObj = TclList.newInstance();
     TclList.append(interp, threeEltListObj, 
-	    TclString.newInstance("posix"));
+	    TclString.newInstance("POSIX"));
     TclList.append(interp, threeEltListObj, 
-	    TclString.newInstance(getPosixId(errno).toLowerCase()));
+	    TclString.newInstance(getPosixId(errno)));
     TclList.append(interp, threeEltListObj, 
 	    TclString.newInstance(msg));
 
@@ -167,9 +167,9 @@ throws
     String msg = getPosixMsg(errno);
 
     TclObject threeEltListObj = TclList.newInstance();
-    TclList.append(interp, threeEltListObj, TclString.newInstance("posix"));
+    TclList.append(interp, threeEltListObj, TclString.newInstance("POSIX"));
     TclList.append(interp, threeEltListObj, 
-	    TclString.newInstance(getPosixId(errno).toLowerCase()));
+	    TclString.newInstance(getPosixId(errno)));
     TclList.append(interp, threeEltListObj, TclString.newInstance(msg));
 
     interp.setErrorCode(threeEltListObj);

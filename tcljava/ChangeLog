@@ -1,3 +1,9 @@
+2001-11-21  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/tcljava/tcl/lang/TclPosixException.java
+	(TclPosixException): Return posix errors in upper
+	case to match Tcl implementation.
+
 2001-11-20  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* src/jacl/tcl/lang/SocketCmd.java (cmdProc): Use the
