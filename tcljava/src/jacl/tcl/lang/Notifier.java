@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Notifier.java,v 1.3.2.1 2000/10/27 09:44:51 mdejong Exp $
+ * RCS: @(#) $Id: Notifier.java,v 1.3.2.2 2000/10/27 11:42:57 mdejong Exp $
  *
  */
 
@@ -35,7 +35,7 @@ import java.util.Vector;
 // This class does not have a public constructor and thus cannot be
 // instantiated. The only way to for a Tcl extension to get an
 // Notifier is to call Interp.getNotifier() (or
-// Notifier.getNotifierForThread), which returns the Notifier for that
+// Notifier.getNotifierForThread() ), which returns the Notifier for that
 // interpreter (thread).
 
 public class Notifier {
@@ -181,7 +181,7 @@ preserve()
  * release --
  *
  *	Decrement the reference count of the notifier. The notifier will
- *	be free when its refCount goes from one to zero.
+ *	be freed when its refCount goes from one to zero.
  *
  * Results:
  *	None.
@@ -237,7 +237,7 @@ public synchronized void
 queueEvent(
     TclEvent evt,		// The event to put in the queue.
     int position)		// One of TCL.QUEUE_TAIL,
-				// TCL.QUEUE_HEAD and TCL.QUEUE_MARK.
+				// TCL.QUEUE_HEAD or TCL.QUEUE_MARK.
 {
     evt.notifier = this;
 
@@ -312,6 +312,7 @@ deleteEvents(
 {
     TclEvent evt, prev;
 
+//FIXME: The Tcl Blend Notifier and Jacl version of this method don't match.
     for (prev = null, evt = firstEvent; evt != null; evt = evt.next) {
         if (deleter.deleteEvent(evt) == 1) {
             if (firstEvent == evt) {

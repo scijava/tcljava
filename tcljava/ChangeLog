@@ -1,3 +1,23 @@
+2000-10-27  Daniel Wickstrom <danw@rtp.ericsson.se>
+
+	* Makefile.in: Don't build unixNotifier.o.
+	* src/jacl/tcl/lang/Notifier.java: Minor
+	comment fixups.
+	* src/native/java.h (JavaAlertNotifier, JavaDisposeNotifier,
+	JavaInitNotifier): Remove declarations for unused functions.
+	* src/native/javaNotifier.c: Add thread local cache for
+	Notifier info, save the Tcl thread id in the Notifier instance.
+	* src/tclblend/tcl/lang/Notifier.java: Support Notifier
+	on a per thread basis.
+	* unix/README.jacl:
+	* unix/README.tclblend: Fixup build notes.
+	* unix/unixNotifier.c: Removed single threaded
+	Notifier implementation for Unix.
+	* win/makefile.vc: Don't build win/winNotifier.o.
+	* win/tclRegexp.h: Removed old support file.
+	* win/winNotifier.c: Removed single threaded
+	Notifier implementation for Windows.
+
 2000-10-27  Mo DeJong  <mdejong@redhat.com>
 
 	* src/jacl/tcl/lang/Notifier.java: Change

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: java.h,v 1.6.2.5 2000/08/27 05:08:59 mo Exp $
+ * RCS: @(#) $Id: java.h,v 1.6.2.6 2000/10/27 11:42:58 mdejong Exp $
  */
 
 #ifndef _JAVA
@@ -137,8 +137,6 @@ typedef struct JavaInfo {
  * Declarations for functions shared across files.
  */
 
-TCLBLEND_EXTERN void		JavaAlertNotifier();
-TCLBLEND_EXTERN void		JavaDisposeNotifier();
 TCLBLEND_EXTERN JNIEnv *	JavaGetEnv();
 TCLBLEND_EXTERN JavaInfo *	JavaGetCache();
 TCLBLEND_EXTERN Tcl_Interp *	JavaGetInterp(JNIEnv *env, jobject interpObj);
@@ -150,7 +148,6 @@ TCLBLEND_EXTERN jobject		JavaGetTclObject(JNIEnv *env, Tcl_Obj *objPtr,
 TCLBLEND_EXTERN int		JavaSetupJava(JNIEnv *env, Tcl_Interp *interp);
 TCLBLEND_EXTERN int		JavaInitBlend(JNIEnv *env, Tcl_Interp *interp,
 			    	    jobject interpObj);
-TCLBLEND_EXTERN void		JavaInitNotifier();
 TCLBLEND_EXTERN void		JavaInterpDeleted(ClientData clientData,
 			    	    Tcl_Interp *interp);
 TCLBLEND_EXTERN void		JavaObjInit();

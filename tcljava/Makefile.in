@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.14.2.1 2000/08/19 21:24:09 mo Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.14.2.2 2000/10/27 11:42:56 mdejong Exp $
 
 SHELL = /bin/sh
 
@@ -202,8 +202,7 @@ OBJS = \
 	javaList.o \
 	javaNotifier.o \
 	javaTimer.o \
-	javaUtil.o \
-	unixNotifier.o
+	javaUtil.o
 
 SRCS = \
 	$(NATIVE_SRC_DIR)/javaCmd.c \
@@ -213,8 +212,7 @@ SRCS = \
 	$(NATIVE_SRC_DIR)/javaList.c \
 	$(NATIVE_SRC_DIR)/javaNotifier.c \
 	$(NATIVE_SRC_DIR)/javaTimer.c \
-	$(NATIVE_SRC_DIR)/javaUtil.c \
-	$(UNIX_DIR)/unixNotifier.c
+	$(NATIVE_SRC_DIR)/javaUtil.c
 
 TCLBLEND_JNI_HEADER_CLASS_NAMES = \
 	tcl.lang.CObject \
@@ -317,9 +315,6 @@ javaTimer.o: $(NATIVE_SRC_DIR)/javaTimer.c
 
 javaUtil.o: $(NATIVE_SRC_DIR)/javaUtil.c
 	$(CC) $(CC_OBJ_FLAG) $(CC_SWITCHES) $(NATIVE_SRC_DIR)/javaUtil.c
-
-unixNotifier.o: $(UNIX_DIR)/unixNotifier.c
-	$(CC) $(CC_OBJ_FLAG) $(CC_SWITCHES) $(UNIX_DIR)/unixNotifier.c
 
 javaNative.h:
 	CLASSPATH=$(TCLBLEND_CLASSPATH) \

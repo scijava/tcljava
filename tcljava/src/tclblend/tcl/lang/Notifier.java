@@ -9,35 +9,34 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Notifier.java,v 1.2.4.1 2000/08/24 06:56:11 mo Exp $
+ * RCS: @(#) $Id: Notifier.java,v 1.2.4.2 2000/10/27 11:42:58 mdejong Exp $
  *
  */
 
 package tcl.lang;
 
-import java.util.*;
+import java.util.Hashtable;
+import java.util.Vector;
 
-/*
- * Implements the Blend version of the Notifier class. The Notifier is
- * the lowest-level part of the event system. It is used by
- * higher-level event sources such as file, JavaBean and timer
- * events. The Notifier manages an event queue that holds TclEvent
- * objects.
- *
- * The Notifier is designed to run in a multi-threaded
- * environment. Each notifier instance is associated with a primary
- * thread. Any thread can queue (or dequeue) events using the
- * queueEvent (or deleteEvents) call. However, only the primary thread
- * may process events in the queue using the doOneEvent()
- * call. Attepmts to call doOneEvent from a non-primary thread will
- * cause a TclRuntimeError.
- *
- * This class does not have a public constructor and thus cannot be
- * instantiated. The only way to for a Tcl extension to get an
- * Notifier is to call Interp.getNotifier() (or
- * Notifier.getNotifierForThread), which returns the Notifier for that
- * interpreter (thread).
- */
+// Implements the Tcl Blend version of the Notifier class. The Notifier is
+// the lowest-level part of the event system. It is used by
+// higher-level event sources such as file, JavaBean and timer
+// events. The Notifier manages an event queue that holds TclEvent
+// objects.
+//
+// The Tcl Blend Notifier is designed to run in a multi-threaded
+// environment. Each notifier instance is associated with a primary
+// thread. Any thread can queue (or dequeue) events using the
+// queueEvent (or deleteEvents) call. However, only the primary thread
+// may process events in the queue using the doOneEvent()
+// call. Attepmts to call doOneEvent() from a non-primary thread will
+// cause a TclRuntimeError.
+//
+// This class does not have a public constructor and thus cannot be
+// instantiated. The only way to for a Tcl extension to get an
+// Notifier is to call Interp.getNotifier() (or
+// Notifier.getNotifierForThread() ), which returns the Notifier for that
+// interpreter (thread).
 
 public class Notifier implements EventDeleter {
 
@@ -64,7 +63,15 @@ Thread primaryThread;
 // is no longer needed.
 
 int refCount;
-
+
+// Stores the Notifier for each thread.
+
+private static Hashtable notifierTable = new Hashtable();
+
+// tcl ThreadId
+
+private long tclThreadId;
+
 // Mutex used to protect concurrent access to the internals of this Notifier
 // object.  For example, the queueing and dequeueing of objects from the
 // event list.
@@ -89,12 +96,12 @@ private
 Notifier(
     Thread primaryTh)		// The primary thread for this Notifier.
 {
-    primaryThread = primaryTh;
+    primaryThread     = primaryTh;
     firstEvent        = null;
     lastEvent         = null;
     markerEvent       = null;
-    refCount = 0;
-    init();
+    tclThreadId       = init();
+    refCount          = 0;
 }
 
 /*
@@ -103,8 +110,7 @@ Notifier(
  * getNotifierForThread --
  *
  *	Get the notifier for this thread, creating the Notifier,
- *	when necessary. Note that this is a partial implementation
- *	that only supports a single notifier thread.
+ *	when necessary.
  *
  * Results:
  *	The Notifier for this thread.
@@ -119,12 +125,13 @@ public static synchronized Notifier
 getNotifierForThread(
     Thread thread)		// The thread that owns this Notifier.
 {
-    if (globalNotifier == null) {
-	globalNotifier = new Notifier(thread);
-    } else if (globalNotifier.primaryThread != thread) {
-	return null;
-    } 
-    return globalNotifier;
+    Notifier notifier = (Notifier) notifierTable.get(thread);
+    if (notifier == null) {
+	notifier = new Notifier(thread);
+	notifierTable.put(thread, notifier);
+    }
+
+    return notifier;
 }
 
 /*
@@ -149,11 +156,11 @@ public void
 preserve()
 {
     synchronized (notifierMutex) {
-    if (refCount < 0) {
+        if (refCount < 0) {
 	    throw new TclRuntimeError(
 	        "Attempting to preserve a freed Notifier");
-    }
-    ++refCount;
+        }
+        ++refCount;
     }
 }
 
@@ -163,7 +170,7 @@ preserve()
  * release --
  *
  *	Decrement the reference count of the notifier. The notifier will
- *	be free when its refCount goes from one to zero.  This method is
+ *	be freed when its refCount goes from one to zero.  This method is
  *	concurrent safe.
  *
  * Results:
@@ -180,6 +187,7 @@ public void
 release()
 {
     synchronized (notifierMutex) {
+// FIXME: indent this block properly later.
     if ((refCount == 0) && (primaryThread != null)) {
 	throw new TclRuntimeError(
 		"Attempting to release a Notifier before it's preserved");
@@ -189,8 +197,8 @@ release()
     }
     --refCount;
     if (refCount == 0) {
+	notifierTable.remove(primaryThread);
 	primaryThread = null;
-	globalNotifier = null;
 	dispose();
     }
     }
@@ -229,6 +237,7 @@ queueEvent(
     evt.notifier = this;
 
     synchronized (notifierMutex) {
+//FIXME: indent this block properly
     if (position == TCL.QUEUE_TAIL) {
 	// Append the event on the end of the queue.
 	evt.next = null;
@@ -268,7 +277,7 @@ queueEvent(
     }
 
     if (Thread.currentThread() != primaryThread) {
-	alertNotifier();
+	alertNotifier(tclThreadId);
     }
 }
 
@@ -299,6 +308,7 @@ deleteEvents(
     TclEvent evt, prev;
 
     synchronized (notifierMutex) {
+//FIXME: indent this block properly
     for (prev = null, evt = firstEvent; evt != null; evt = evt.next) {
         if (deleter.deleteEvent(evt) == 1) {
             if (firstEvent == evt) {
@@ -406,6 +416,7 @@ serviceEvent(
 	//    can't depend on pointers found now still being valid when
 	//    the handler returns.
 	synchronized (evt) {
+//FIXME: indent this properly
 	boolean b = evt.isProcessing;
 	evt.isProcessing = true;
 
@@ -527,7 +538,8 @@ doOneEvent(
  */
 
 private final native void
-alertNotifier();
+alertNotifier(long tid);
+
 
 /*
  *----------------------------------------------------------------------
@@ -545,7 +557,7 @@ alertNotifier();
  *----------------------------------------------------------------------
  */
 
-private final native void
+private final native long
 init();
 
 /*
