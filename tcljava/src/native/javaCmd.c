@@ -10,7 +10,7 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  *
- * RCS: @(#) $Id: javaCmd.c,v 1.9.2.2 2000/08/07 00:50:09 mo Exp $
+ * RCS: @(#) $Id: javaCmd.c,v 1.9.2.3 2000/08/07 08:50:16 mo Exp $
  */
 
 /*
@@ -237,45 +237,30 @@ EXPORT(int,Tclblend_Init)(
     JNIEnv *env;
 
 #ifdef TCLBLEND_DEBUG
-    fprintf(stderr, "Tcl Blend debug: Tclblend_Init called in javaCmd.c:\n");
-    fprintf(stderr, "Tcl Blend debug: CLASSPATH is \"%s\"\n", getenv("CLASSPATH"));
+    fprintf(stderr, "TCLBLEND_DEBUG: Tclblend_Init\n");
+    fprintf(stderr, "TCLBLEND_DEBUG: CLASSPATH is \"%s\"\n", getenv("CLASSPATH"));
 #endif /* TCLBLEND_DEBUG */
 
-    env = JavaGetEnv(interp);
-
     /*
-     * Check to see if initialization of the Java VM failed.
+     * The first time JavaGetEnv is called, it will create a JVM.
+     * Later calls will just attach the current thread to the JVM.
      */
 
-    if (env == NULL) {
+    if ((env = JavaGetEnv(interp)) == NULL) {
 
 #ifdef TCLBLEND_DEBUG
-    fprintf(stderr, "Tcl Blend debug: JVM init failed in javaCmd.c:\n");
+    fprintf(stderr, "TCLBLEND_DEBUG: JavaGetEnv returned NULL\n");
 #endif /* TCLBLEND_DEBUG */
 
 	return TCL_ERROR;
     }
 
-#ifdef TCLBLEND_DEBUG
-    fprintf(stderr, "Tcl Blend debug: JVM init succeeded in javaCmd.c:\n");
-#endif /* TCLBLEND_DEBUG */
-
-
     /*
      * Make sure the global VM information is properly intialized.
      */
 
-    if (!initialized_javaVM) {
-
-        
-#ifdef TCLBLEND_DEBUG
-    fprintf(stderr, "Tcl Blend debug: calling JavaSetupJava in javaCmd.c:\n");
-#endif /* TCLBLEND_DEBUG */
-
-
-	if (JavaSetupJava(env, interp) != TCL_OK) {
-	    return TCL_ERROR;
-	}
+    if (JavaSetupJava(env, interp) != TCL_OK) {
+        return TCL_ERROR;
     }
 
     /*
@@ -304,9 +289,8 @@ EXPORT(int,Tclblend_Init)(
 
 
 #ifdef TCLBLEND_DEBUG
-    fprintf(stderr, "Tcl Blend debug: Tclblend_Init finished in javaCmd.c:\n");
-    fprintf(stderr, "Tcl Blend debug: CLASSPATH is \"%s\"\n", getenv("CLASSPATH"));
-    fprintf(stderr, "Tcl Blend debug: JavaInitBlend() returned \"");
+    fprintf(stderr, "TCLBLEND_DEBUG: Tclblend_Init finished\n");
+    fprintf(stderr, "TCLBLEND_DEBUG: JavaInitBlend() returned ");
     if (result == TCL_ERROR) {
       fprintf(stderr, "TCL_ERROR");
     } else if (result == TCL_OK) {
@@ -314,7 +298,7 @@ EXPORT(int,Tclblend_Init)(
     } else {
       fprintf(stderr, "%d", result);
     }
-    fprintf(stderr, "\"\n");
+    fprintf(stderr, "\n");
 
 #endif /* TCLBLEND_DEBUG */
 
@@ -361,7 +345,7 @@ appendClasspathMessage(
         "Currently, the CLASSPATH environment variable ",
         "is set to:\n",
         getenv("CLASSPATH"), 
-        "\nThe JVM currently is using the following classpath:",
+        "\nThe JVM currently is using the following classpath:\n",
         vm_args.classpath, NULL);
 #endif
 }
@@ -383,19 +367,21 @@ appendClasspathMessage(
  *----------------------------------------------------------------------
  */
 
-#ifdef JDK1_2
-
-#define JAVA_CLASS_PATH_ARG "-Djava.class.path="
-
 TCLBLEND_EXTERN JNIEnv *
 JavaGetEnv(
     Tcl_Interp *interp)		/* Interp for error reporting. */
 {
     jsize nVMs;
-    char *path;
-    int size, maxOptions = 2;
+    char *path, *newPath;
+    int oldSize, size, maxOptions = 2;
+#ifdef JDK1_2
     JavaVMOption *options;
     JavaVMInitArgs vm_args;
+#elif defined TCLBLEND_KAFFE /* FIXME: Can we pass options to Kaffe ?? */
+    JavaVMInitArgs vm_args;
+#else
+    JDK1_1InitArgs vm_args;
+#endif /* JDK1_2 */
 
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
@@ -406,9 +392,16 @@ JavaGetEnv(
     /* FIXME  : we need to put a mutex around this create JVM/attach step */
 
 #ifdef TCLBLEND_DEBUG
-    fprintf(stderr, "Tcl Blend debug: init 1.2 JVM in javaCmd.c\n");
+    fprintf(stderr, "TCLBLEND_DEBUG: JavaGetEnv for %s JVM\n",
+#ifdef JDK1_2
+        "JDK1_2"
+#elif defined TCLBLEND_KAFFE
+        "Kaffe"
+#else
+        "JDK1_1"
+#endif
+);
 #endif /* TCLBLEND_DEBUG */
-
 
     /*
      * Check to see if the current process already has a Java VM.  If so,
@@ -418,7 +411,7 @@ JavaGetEnv(
     if (JNI_GetCreatedJavaVMs(&javaVM, 1, &nVMs) < 0) {
 
 #ifdef TCLBLEND_DEBUG
-    fprintf(stderr, "Tcl Blend debug: call to 1.2 JNI_GetCreatedJavaVMs failed in javaCmd.c\n");
+    fprintf(stderr, "TCLBLEND_DEBUG: JNI_GetCreatedJavaVMs failed\n");
 #endif /* TCLBLEND_DEBUG */
 
 	Tcl_AppendResult(interp, "JNI_GetCreatedJavaVMs failed", NULL);
@@ -428,20 +421,46 @@ JavaGetEnv(
     if (nVMs == 0) {
 
 #ifdef TCLBLEND_DEBUG
-    fprintf(stderr, "Tcl Blend debug: 0 1.2 JVMs in process, creating one in javaCmd.c\n");
+    fprintf(stderr, "TCLBLEND_DEBUG: No JVM, creating one\n");
 #endif /* TCLBLEND_DEBUG */
 
+        memset(&vm_args, 0, sizeof(vm_args));
+#ifdef JDK1_2
         options = (JavaVMOption *) ckalloc(sizeof(JavaVMOption) * maxOptions);
         vm_args.version = 0x00010002;
         vm_args.options = options;
         vm_args.ignoreUnrecognized= 1;
         vm_args.nOptions = 0;
+#else
+        vm_args.version = 0x00010001;
+        JNI_GetDefaultJavaVMInitArgs(&vm_args); /* FIXME: For 1.1 only ?? */
+#endif /* JDK1_2 */
+
+#ifdef TCLBLEND_INCREASE_STACK_SIZE
+        vm_args.nativeStackSize = vm_args.nativeStackSize *4;
+        vm_args.javaStackSize = vm_args.javaStackSize *4;
+        vm_args.minHeapSize = vm_args.minHeapSize *4;
+        vm_args.maxHeapSize = vm_args.maxHeapSize *4;
+#ifdef TCLBLEND_DEBUG
+        fprintf(stderr,"TCLBLEND_DEBUG: vm_args: "
+                "nativeStackSize = %d  javaStackSize = %d\n"
+                "minHeapSize = %d      maxHeapSize = %d\n",
+                vm_args.nativeStackSize, vm_args.javaStackSize,
+                vm_args.minHeapSize, vm_args.maxHeapSize);
+#endif /* TCLBLEND_DEBUG */
+#endif /* TCLBLEND_INCREASE_STACK_SIZE */
+
 
 	/*
 	 * Add the classpath as a prefix to the default classpath.
+	 * Under JDK 1.2, we can just pass a -D option. Under JDK
+	 * 1.1, we need to append to the vm_args.classpath.
 	 */
-         
+
 	path = getenv("CLASSPATH");
+
+#ifdef JDK1_2
+# define JAVA_CLASS_PATH_ARG "-Djava.class.path="
 	if (path) {
 	    size = strlen(path) + strlen(JAVA_CLASS_PATH_ARG);
             options[0].optionString = ckalloc(size+2);
@@ -450,12 +469,35 @@ JavaGetEnv(
 	    strcat(options[0].optionString, path);
 	    options[0].extraInfo = (void *)NULL;
 	}
+#else
+	if (path && vm_args.classpath) {
+	    oldSize = strlen(path);
+	    size = oldSize + strlen(vm_args.classpath);
+	    newPath = ckalloc(size+2);
+	    strcpy(newPath, path);
+# ifdef __WIN32__
+	    newPath[oldSize] = ';';
+# else
+	    newPath[oldSize] = ':';
+# endif /*  __WIN32__ */
+	    strcpy(newPath+oldSize+1, vm_args.classpath);
+	    vm_args.classpath = newPath;
+	} else if (path) {
+	    vm_args.classpath = path;
+	}
+#endif /* JDK1_2 */
 
 #ifdef TCLBLEND_DEBUG
-    fprintf(stderr, "Tcl Blend debug: 1.2 CLASSPATH is set to \"%s\", in javaCmd.c\n", options[0].optionString);
+    fprintf(stderr, "TCLBLEND_DEBUG: CLASSPATH is \"%s\"\n",
+#ifdef JDK1_2
+        options[0].optionString);
+#else
+        vm_args.classpath);
+#endif /* JDK1_2 */
 #endif /* TCLBLEND_DEBUG */
 
-        
+
+#ifdef JDK1_2
         /*
          * If the global tcl_variable tclblend_init is set, then pass its
          * value to the JVM. 
@@ -489,7 +531,7 @@ JavaGetEnv(
 #ifdef TCLBLEND_DEBUG
             {
             int i;
-            fprintf(stderr, "Tcl Blend debug: java_debug set in javaCmd.c: \n"
+            fprintf(stderr, "TCLBLEND_DEBUG: tclblend_init set\n"
                 " vm_args.version: %x\n"
                 " vm_args.nOptions: %d\n",
                 vm_args.version, vm_args.nOptions);
@@ -503,198 +545,57 @@ JavaGetEnv(
             }
 #endif /* TCLBLEND_DEBUG */
            
-        }       
+        }
+#endif /* JDK1_2 */
 
 #ifdef TCLBLEND_DEBUG
-    fprintf(stderr, "Tcl Blend debug: now to call to JNI_CreateJavaVM for 1.2 JVM in javaCmd.c\n");
+    fprintf(stderr, "TCLBLEND_DEBUG: JNI_CreateJavaVM\n");
 #endif /* TCLBLEND_DEBUG */
 
-	if (JNI_CreateJavaVM(&javaVM, (void **) &tsdPtr->currentEnv, &vm_args) < 0){
+	if (JNI_CreateJavaVM(&javaVM,
+#ifdef JDK1_2
+            (void **)
+#endif /* JDK1_2 */
+            &tsdPtr->currentEnv, &vm_args) < 0) {
 
 #ifdef TCLBLEND_DEBUG
-    fprintf(stderr, "Tcl Blend debug: call to JNI_CreateJavaVM for 1.2 JVM failed in javaCmd.c\n");
+    fprintf(stderr, "TCLBLEND_DEBUG: JNI_CreateJavaVM failed\n");
 #endif /* TCLBLEND_DEBUG */
 
-	    Tcl_AppendResult(interp, "JNI_CreateJavaVM failed", NULL);
-	    return NULL;
-	}
-
-
-#ifdef TCLBLEND_DEBUG
-    fprintf(stderr, "Tcl Blend debug: call to JNI_CreateJavaVM for 1.2 JVM worked in javaCmd.c\n");
-#endif /* TCLBLEND_DEBUG */
-
-        
-    } else {
-
-#ifdef TCLBLEND_DEBUG
-    fprintf(stderr, "Tcl Blend debug: a 1.2 JVM already existed in the process, now to attach in javaCmd.c\n");
-#endif /* TCLBLEND_DEBUG */
-
-	if ((*javaVM)->AttachCurrentThread(javaVM, (void **) &tsdPtr->currentEnv, (long)NULL) != 0) {
-
-#ifdef TCLBLEND_DEBUG
-    fprintf(stderr, "Tcl Blend debug: attach to 1.2 JVM failed in javaCmd.c\n");
-#endif /* TCLBLEND_DEBUG */
-
-	    Tcl_AppendResult(interp, "AttachCurrentThread failed", NULL);
-	    return NULL;
-	}
-
-#ifdef TCLBLEND_DEBUG
-    fprintf(stderr, "Tcl Blend debug: attach to 1.2 JVM worked in javaCmd.c\n");
-#endif /* TCLBLEND_DEBUG */
-
-    }
-
-    tsdPtr->initialized_currentEnv = 1;
-    return tsdPtr->currentEnv;
-}
-#else /* not JDK1_2, so it is a 1.1 JDK */
-TCLBLEND_EXTERN JNIEnv *
-JavaGetEnv(
-    Tcl_Interp *interp)		/* Interp for error reporting. */
-{
-    jsize nVMs;
-    char *path, *newPath;
-    int oldSize, size;
-
-#ifdef TCLBLEND_KAFFE
-    JavaVMInitArgs vm_args;
-#else
-    JDK1_1InitArgs vm_args;
-#endif
-
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-
-    if (tsdPtr->initialized_currentEnv) {
-	return tsdPtr->currentEnv;
-    }
-
-    /* FIXME: need to put a mutex around this create/attach step */
-
-#ifdef TCLBLEND_DEBUG
-    fprintf(stderr, "Tcl Blend debug: init 1.1 JVM in javaCmd.c: \n");
-#endif /* TCLBLEND_DEBUG */
-
-    /*
-     * Check to see if the current process already has a Java VM.  If so,
-     * attach to it, otherwise create a new one.
-     */
-
-    if (JNI_GetCreatedJavaVMs(&javaVM, 1, &nVMs) < 0) {
-
-#ifdef TCLBLEND_DEBUG
-    fprintf(stderr, "Tcl Blend debug: call to 1.1 JNI_GetCreatedJavaVMs failed in javaCmd.c\n");
-#endif /* TCLBLEND_DEBUG */
-
-	Tcl_AppendResult(interp, "JNI_GetCreatedJavaVMs failed", NULL);
-	return NULL;
-    }
-
-    if (nVMs == 0) {
-
-#ifdef TCLBLEND_DEBUG
-    fprintf(stderr, "Tcl Blend debug: 0 1.1 JVMs in process, creating one in javaCmd.c\n");
-#endif /* TCLBLEND_DEBUG */
-
-	memset(&vm_args, 0, sizeof(vm_args));
-        vm_args.version = 0x00010001;
-	JNI_GetDefaultJavaVMInitArgs(&vm_args);
-	
-#ifdef TCLBLEND_INCREASE_STACK_SIZE
-        vm_args.nativeStackSize = vm_args.nativeStackSize *4;
-        vm_args.javaStackSize = vm_args.javaStackSize *4;
-        vm_args.minHeapSize = vm_args.minHeapSize *4;
-        vm_args.maxHeapSize = vm_args.maxHeapSize *4;
-#ifdef TCLBLEND_DEBUG
-        fprintf(stderr,"Tcl Blend debug: vm_args: "
-                "nativeStackSize = %d  javaStackSize = %d\n"
-                "minHeapSize = %d      maxHeapSize = %d\n",
-                vm_args.nativeStackSize, vm_args.javaStackSize,
-                vm_args.minHeapSize, vm_args.maxHeapSize);
-#endif /* TCLBLEND_DEBUG */
-#endif /* TCLBLEND_INCREASE_STACK_SIZE */
-	/*
-	 * Add the classpath as a prefix to the default classpath.
-	 */
-
-	path = getenv("CLASSPATH");
-	if (path && vm_args.classpath) {
-	    oldSize = strlen(path);
-	    size = oldSize + strlen(vm_args.classpath);
-	    newPath = ckalloc(size+2);
-	    strcpy(newPath, path);
-#ifdef __WIN32__
-	    newPath[oldSize] = ';';
-#else
-	    newPath[oldSize] = ':';
-#endif
-	    strcpy(newPath+oldSize+1, vm_args.classpath);
-	    vm_args.classpath = newPath;
-	} else if (path) {
-	    vm_args.classpath = path;
-	}
-
-
-#ifdef TCLBLEND_DEBUG
-    fprintf(stderr, "Tcl Blend debug: 1.1 CLASSPATH is set to \"%s\", in javaCmd.c\n", vm_args.classpath);
-#endif /* TCLBLEND_DEBUG */
-
-
-
-#ifdef TCLBLEND_DEBUG
-    fprintf(stderr, "Tcl Blend debug: now to call to JNI_CreateJavaVM for 1.1 JVM in javaCmd.c\n");
-#endif /* TCLBLEND_DEBUG */
-
-	if (JNI_CreateJavaVM(&javaVM, &tsdPtr->currentEnv, &vm_args) < 0) {
-
-#ifdef TCLBLEND_DEBUG
-    fprintf(stderr, "Tcl Blend debug: call to JNI_CreateJavaVM for 1.1 JVM failed in javaCmd.c\n");
-#endif /* TCLBLEND_DEBUG */
-
-	    Tcl_AppendResult(interp, "JNI_CreateJavaVM() failed.\n"
+	    Tcl_AppendResult(interp, "JNI_CreateJavaVM failed",
                                      "Perhaps your CLASSPATH includes a "
-                                     "classes.zip file for a version other\n"
-                                     "the one Tcl Blend was compiled with?\n", 
+                                     "classes.zip file for a version other"
+                                     "than the one Tcl Blend was compiled with?\n", 
                                      NULL);
             appendClasspathMessage(interp);
 	    return NULL;
 	}
 
-#ifdef TCLBLEND_DEBUG
-    fprintf(stderr, "Tcl Blend debug: call to JNI_CreateJavaVM for 1.1 JVM worked in javaCmd.c\n");
-#endif /* TCLBLEND_DEBUG */
-
-        
     } else {
 
 #ifdef TCLBLEND_DEBUG
-    fprintf(stderr, "Tcl Blend debug: a 1.1 JVM already existed in the process, now to attach in javaCmd.c\n");
+    fprintf(stderr, "TCLBLEND_DEBUG: JVM in process, attaching\n");
 #endif /* TCLBLEND_DEBUG */
 
-	if ((*javaVM)->AttachCurrentThread(javaVM, &tsdPtr->currentEnv, NULL) != 0) {
+	if ((*javaVM)->AttachCurrentThread(javaVM,
+#ifdef JDK1_2
+            (void **)
+
+#endif /* JDK1_2 */
+            &tsdPtr->currentEnv, NULL) != 0) {
 
 #ifdef TCLBLEND_DEBUG
-    fprintf(stderr, "Tcl Blend debug: attach to 1.1 JVM failed in javaCmd.c\n");
+    fprintf(stderr, "TCLBLEND_DEBUG: attach failed\n");
 #endif /* TCLBLEND_DEBUG */
 
 	    Tcl_AppendResult(interp, "AttachCurrentThread failed", NULL);
 	    return NULL;
 	}
-
-#ifdef TCLBLEND_DEBUG
-    fprintf(stderr, "Tcl Blend debug: attach to 1.1 JVM worked in javaCmd.c\n");
-#endif /* TCLBLEND_DEBUG */
-
     }
 
     tsdPtr->initialized_currentEnv = 1;
     return tsdPtr->currentEnv;
 }
-#endif /* JDK1_2, so it is a 1.1 JDK */
-
-
 
 /*
  *----------------------------------------------------------------------
@@ -723,7 +624,7 @@ JavaInitBlend(
     int result;
 
 #ifdef TCLBLEND_DEBUG
-    fprintf(stderr, "Tcl Blend debug: called JavaInitBlend in javaCmd.c:\n");
+    fprintf(stderr, "TCLBLEND_DEBUG: called JavaInitBlend\n");
 #endif /* TCLBLEND_DEBUG */
     
     /*
@@ -746,7 +647,7 @@ JavaInitBlend(
       ToString(env, obj, exception);
 
 #ifdef TCLBLEND_DEBUG
-    fprintf(stderr, "Tcl Blend debug: Exception in init() method during JavaInitBlend() in javaCmd.c:\n");
+    fprintf(stderr, "TCLBLEND_DEBUG: Exception in init() method\n");
 #endif /* TCLBLEND_DEBUG */
 
 	result = TCL_ERROR;
@@ -757,7 +658,7 @@ JavaInitBlend(
 
 
 #ifdef TCLBLEND_DEBUG
-    fprintf(stderr, "Tcl Blend debug: JavaInitBlend returning in javaCmd.c:\n");
+    fprintf(stderr, "TCLBLEND_DEBUG: JavaInitBlend returning\n");
 #endif /* TCLBLEND_DEBUG */
 
     return result;
@@ -807,7 +708,7 @@ JavaInterpDeleted(
     /* FIXME : detach the JNIEnv */
 
 #ifdef TCLBLEND_DEBUG
-    fprintf(stderr, "Tcl Blend debug: called JavaInterpDeleted in javaCmd.c:\n");
+    fprintf(stderr, "TCLBLEND_DEBUG: called JavaInterpDeleted\n");
 #endif /* TCLBLEND_DEBUG */
 
   
@@ -840,7 +741,7 @@ JavaSetupJava(
 
 
 #ifdef TCLBLEND_DEBUG
-    fprintf(stderr, "Tcl Blend debug: called JavaSetupJava in javaCmd.c:\n");
+    fprintf(stderr, "TCLBLEND_DEBUG: called JavaSetupJava\n");
 #endif /* TCLBLEND_DEBUG */
 
 

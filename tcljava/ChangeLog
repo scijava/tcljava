@@ -1,3 +1,10 @@
+2000-08-07  Mo DeJong  <mdejong@redhat.com>
+
+	* src/native/javaCmd.c (JavaGetEnv): Rewrite
+	JavaGetEnv, it was implemented as two methods
+	that did the exact same thing for two different
+	versions of the JDK. It is now a single method.
+
 2000-08-06  Mo DeJong  <mdejong@redhat.com>
 
 	* src/native/java.h:
