@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: regexp.test,v 1.1 1998/11/04 22:41:57 hylands Exp $
+# SCCS: @(#) regexp.test 1.21 96/12/23 13:59:48
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 
@@ -203,11 +203,11 @@ test regexp-6.3 {regexp errors} {
 
 test regexp-6.4 {regexp errors} {
     list [catch {regexp a( b} msg] $msg
-} {1 {couldn't compile regular expression pattern:  Unmatched parentheses.}}
+} {1 {couldn't compile regular expression pattern: unmatched ()}}
 
 test regexp-6.5 {regexp errors} {
     list [catch {regexp a( b} msg] $msg
-} {1 {couldn't compile regular expression pattern:  Unmatched parentheses.}}
+} {1 {couldn't compile regular expression pattern: unmatched ()}}
 
 test regexp-6.6 {regexp errors} {
     list [catch {regexp a a f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1} msg] $msg
@@ -379,7 +379,7 @@ test regexp-10.5 {regsub errors} {
 
 test regexp-10.6 {regsub errors} {
     list [catch {regsub -nocase a( b c d} msg] $msg
-} {1 {couldn't compile regular expression pattern:  Unmatched parentheses.}}
+} {1 {couldn't compile regular expression pattern: unmatched ()}}
 
 test regexp-10.7 {regsub errors} {
     list [catch {regsub -nocase aaa aaa xxx f1(f2)} msg] $msg
