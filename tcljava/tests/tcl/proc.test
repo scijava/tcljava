@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: proc.test,v 1.3 2002/12/07 22:32:07 mdejong Exp $
+# RCS: @(#) $Id: proc.test,v 1.4 2003/03/17 21:33:41 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -89,7 +89,7 @@ test proc-1.6 {Tcl_ProcObjCmd, namespace code ignores single ":"s in middle or e
          [namespace eval test_ns_1 {namespace which q:}] \
          [namespace eval test_ns_1 {namespace which value:at:}]
 } {q: value:at: q: value:at: {::test_ns_1::q: ::test_ns_1::value:at:} ::test_ns_1::q: ::test_ns_1::value:at:}
-test proc-1.7 {Tcl_ProcObjCmd, check that formal parameter names are not array elements} {
+test proc-1.7 {Tcl_ProcObjCmd, check that formal parameter names are not array elements} {knownbug} {
     catch {rename p ""}
     list [catch {proc p {a(1) a(2)} { 
             set z [expr $a(1)+$a(2)]

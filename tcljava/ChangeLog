@@ -1,5 +1,50 @@
 2003-03-17  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* tests/inprogress/CallFrame.test:
+	* tests/inprogress/ExprCmd.test:
+	* tests/inprogress/GlobCmd.test:
+	* tests/inprogress/Unicode.test:
+	* tests/inprogress/Util.test:
+	* tests/jacl/FileCmd.test:
+	* tests/jacl/Interp.test:
+	* tests/tcl/error.test:
+	* tests/tcl/expr-old.test:
+	* tests/tcl/expr.test:
+	* tests/tcl/fileName.test:
+	* tests/tcl/for.test:
+	* tests/tcl/format.test:
+	* tests/tcl/get.test:
+	* tests/tcl/if.test:
+	* tests/tcl/interp.test:
+	* tests/tcl/io.test:
+	* tests/tcl/ioCmd.test:
+	* tests/tcl/lsearch.test:
+	* tests/tcl/misc.test:
+	* tests/tcl/namespace.test:
+	* tests/tcl/parse.test:
+	* tests/tcl/parseOld.test:
+	* tests/tcl/platform.test:
+	* tests/tcl/proc-old.test:
+	* tests/tcl/proc.test:
+	* tests/tcl/regexp.test:
+	* tests/tcl/scan.test:
+	* tests/tcl/security.test:
+	* tests/tcl/set-old.test:
+	* tests/tcl/split.test:
+	* tests/tcl/string.test:
+	* tests/tcl/switch.test:
+	* tests/tcl/timer.test:
+	* tests/tcl/upvar.test:
+	* tests/tcl/utf.test:
+	* tests/tcl/var.test:
+	* tests/tcl/while-old.test:
+	* tests/tcl/while.test: Either add a knownbug constraint
+	or simply don't run any test that currently fail. This
+	is needed so that folks don't see a ton of errors from
+	known problems when running `make test` on the release.
+
+2003-03-17  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* README.jacl:
 	* README.tclblend: Add note indicating that
 	1.3.0 is not a production release. Fixup

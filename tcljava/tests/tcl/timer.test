@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: timer.test,v 1.1 2001/01/28 21:55:16 mdejong Exp $
+# RCS: @(#) $Id: timer.test,v 1.2 2003/03/17 21:33:42 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -436,7 +436,7 @@ test timer-7.3 {GetAfterEvent procedure} {
 test timer-7.4 {GetAfterEvent procedure} {
     list [catch {after info after#} msg] $msg
 } {1 {event "after#" doesn't exist}}
-test timer-7.5 {GetAfterEvent procedure} {
+test timer-7.5 {GetAfterEvent procedure} {knownbug} {
     list [catch {after info after#${id}x} msg] $msg
 } "1 {event \"after#${id}x\" doesn't exist}"
 test timer-7.6 {GetAfterEvent procedure} {

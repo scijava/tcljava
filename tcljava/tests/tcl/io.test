@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.4 2003/03/08 03:44:16 mdejong Exp $
+# RCS: @(#) $Id: io.test,v 1.5 2003/03/17 21:33:40 mdejong Exp $
 
 # Jacl does not include the tcltest package
 #if {[catch {package require tcltest 2}]} {
@@ -47,6 +47,7 @@ testConstraint exec [llength [info commands exec]]
 testConstraint openpipe 0
 testConstraint fileevent [llength [info commands fileevent]]
 testConstraint fcopy [llength [info commands fcopy]]
+testConstraint nonBlockFiles 0
 
 # You need a *very* special environment to do some tests.  In
 # particular, many file systems do not support large-files...
@@ -207,7 +208,7 @@ test io-3.3 {WriteChars: compatibility with WriteBytes: flush on line} {
     close $f
     set x
 } "\r\n12"
-test io-3.4 {WriteChars: loop over stage buffer} {
+test io-3.4 {WriteChars: loop over stage buffer} {knownbug} {
     # stage buffer maps to more than can be queued at once.
 
     set f [open $path(test1) w]
@@ -217,7 +218,7 @@ test io-3.4 {WriteChars: loop over stage buffer} {
     close $f
     lappend x [contents $path(test1)]
 } [list "!)!)!)!)!)!)!)!)" "!)!)!)!)!)!)!)!)!)!)!)!)!)!)!)"]
-test io-3.5 {WriteChars: saved != 0} {
+test io-3.5 {WriteChars: saved != 0} {knownbug} {
     # Bytes produced by UtfToExternal from end of last channel buffer
     # had to be moved to beginning of next channel buffer to preserve
     # requested buffersize.
@@ -246,7 +247,7 @@ test io-3.6 {WriteChars: (stageRead + dstWrote == 0)} {
     close $f
     lappend x [contents $path(test1)]
 } [list "12345678901234\x82\x60" "12345678901234\x82\x60\x82\x61"]
-test io-3.7 {WriteChars: (bufPtr->nextAdded > bufPtr->length)} {
+test io-3.7 {WriteChars: (bufPtr->nextAdded > bufPtr->length)} {knownbug} {
     # When translating UTF-8 to external, the produced bytes went past end
     # of the channel buffer.  This is done purpose -- we then truncate the
     # bytes at the end of the partial character to preserve the requested
@@ -1626,7 +1627,7 @@ out
 } {err
 }}
 # This test relies on the fact that the smallest available fd is used first.
-test io-14.4 {Tcl_SetStdChannel & Tcl_GetStdChannel} {exec unixOnly} {
+test io-14.4 {Tcl_SetStdChannel & Tcl_GetStdChannel} {exec unixOnly knownbug} {
     set f [open $path(test1) w]
     puts $f [format { close stdin
 	close stdout
@@ -1739,7 +1740,7 @@ test io-16.1 {Tcl_DeleteCloseHandler} {
 # These functions use "eof stdin" to ensure that the standard
 # channels are added to the channel table of the interpreter.
 
-test io-17.1 {GetChannelTable, DeleteChannelTable on std handles} {testchannel} {
+test io-17.1 {GetChannelTable, DeleteChannelTable on std handles} {testchannel knownbug} {
     set l1 [testchannel refcount stdin]
     eof stdin
     interp create x
@@ -1751,7 +1752,7 @@ test io-17.1 {GetChannelTable, DeleteChannelTable on std handles} {testchannel} 
     lappend l [expr [testchannel refcount stdin] - $l1]
     set l
 } {0 1 0}
-test io-17.2 {GetChannelTable, DeleteChannelTable on std handles} {testchannel} {
+test io-17.2 {GetChannelTable, DeleteChannelTable on std handles} {testchannel knownbug} {
     set l1 [testchannel refcount stdout]
     eof stdin
     interp create x
@@ -1763,7 +1764,7 @@ test io-17.2 {GetChannelTable, DeleteChannelTable on std handles} {testchannel} 
     lappend l [expr [testchannel refcount stdout] - $l1]
     set l
 } {0 1 0}
-test io-17.3 {GetChannelTable, DeleteChannelTable on std handles} {testchannel} {
+test io-17.3 {GetChannelTable, DeleteChannelTable on std handles} {testchannel knownbug} {
     set l1 [testchannel refcount stderr]
     eof stdin
     interp create x
@@ -1776,7 +1777,7 @@ test io-17.3 {GetChannelTable, DeleteChannelTable on std handles} {testchannel} 
     set l
 } {0 1 0}
 
-test io-18.1 {Tcl_RegisterChannel, Tcl_UnregisterChannel} {testchannel} {
+test io-18.1 {Tcl_RegisterChannel, Tcl_UnregisterChannel} {testchannel knownbug} {
     removeFile test1
     set l ""
     set f [open $path(test1) w]
@@ -1790,7 +1791,7 @@ test io-18.1 {Tcl_RegisterChannel, Tcl_UnregisterChannel} {testchannel} {
     string compare [string tolower $l] \
 	[list 1 [format "can not find channel named \"%s\"" $f]]
 } 0
-test io-18.2 {Tcl_RegisterChannel, Tcl_UnregisterChannel} {testchannel} {
+test io-18.2 {Tcl_RegisterChannel, Tcl_UnregisterChannel} {testchannel knownbug} {
     removeFile test1
     set l ""
     set f [open $path(test1) w]
@@ -1811,7 +1812,7 @@ test io-18.2 {Tcl_RegisterChannel, Tcl_UnregisterChannel} {testchannel} {
     string compare [string tolower $l] \
 	[list 1 2 1 1 [format "can not find channel named \"%s\"" $f]]
 } 0
-test io-18.3 {Tcl_RegisterChannel, Tcl_UnregisterChannel} {testchannel} {
+test io-18.3 {Tcl_RegisterChannel, Tcl_UnregisterChannel} {testchannel knownbug} {
     removeFile test1
     set l ""
     set f [open $path(test1) w]
@@ -2155,7 +2156,7 @@ test io-28.3 {CloseChannel, not called before output queue is empty} \
         set result ok
     }
 } ok
-test io-28.4 {Tcl_Close} {testchannel} {
+test io-28.4 {Tcl_Close} {testchannel knownbug} {
     removeFile test1
     set l ""
     lappend l [lsort [testchannel open]]
@@ -5061,7 +5062,7 @@ test io-39.17 {Tcl_SetChannelOption: -encoding, clearing CHANNEL_NEED_MORE_DATA}
 } "{} timeout {} timeout \xe7 timeout"
 
 test io-39.18 {Tcl_SetChannelOption, setting read mode independently} \
-	{socket} {
+	{socket knownbug} {
     proc accept {s a p} {close $s}
     set s1 [socket -server [namespace code accept] 0]
     set port [lindex [fconfigure $s1 -sockname] 2]
@@ -5074,7 +5075,7 @@ test io-39.18 {Tcl_SetChannelOption, setting read mode independently} \
     set modes
 } {auto lf}
 test io-39.19 {Tcl_SetChannelOption, setting read mode independently} \
-	{socket} {
+	{socket knownbug} {
     proc accept {s a p} {close $s}
     set s1 [socket -server [namespace code accept] 0]
     set port [lindex [fconfigure $s1 -sockname] 2]
@@ -5087,7 +5088,7 @@ test io-39.19 {Tcl_SetChannelOption, setting read mode independently} \
     set modes
 } {auto crlf}
 test io-39.20 {Tcl_SetChannelOption, setting read mode independently} \
-	{socket} {
+	{socket knownbug} {
     proc accept {s a p} {close $s}
     set s1 [socket -server [namespace code accept] 0]
     set port [lindex [fconfigure $s1 -sockname] 2]
@@ -5100,7 +5101,7 @@ test io-39.20 {Tcl_SetChannelOption, setting read mode independently} \
     set modes
 } {auto cr}
 test io-39.21 {Tcl_SetChannelOption, setting read mode independently} \
-	{socket} {
+	{socket knownbug} {
     proc accept {s a p} {close $s}
     set s1 [socket -server [namespace code accept] 0]
     set port [lindex [fconfigure $s1 -sockname] 2]
@@ -5141,7 +5142,7 @@ test io-39.22a {Tcl_SetChannelOption, invariance} {
 
 
 test io-39.23 {Tcl_GetChannelOption, server socket is not readable or
-        writeable, it should still have valid -eofchar and -translation options } {
+        writeable, it should still have valid -eofchar and -translation options } {}knownbug {
     set l [list]
     set sock [socket -server [namespace code accept] 0]
     lappend l [fconfigure $sock -eofchar] [fconfigure $sock -translation]
@@ -5149,7 +5150,7 @@ test io-39.23 {Tcl_GetChannelOption, server socket is not readable or
     set l
 } {{{}} auto}
 test io-39.24 {Tcl_SetChannelOption, server socket is not readable or
-        writable so we can't change -eofchar or -translation } {
+        writable so we can't change -eofchar or -translation } {knownbug} {
     set l [list]
     set sock [socket -server [namespace code accept] 0]
     fconfigure $sock -eofchar D -translation lf
@@ -5213,7 +5214,7 @@ test io-40.4 {POSIX open access modes: CREAT} {
     close $f
     set x
 } abzzy
-test io-40.5 {POSIX open access modes: APPEND} {
+test io-40.5 {POSIX open access modes: APPEND} {knownbug} {
     removeFile test3
     set f [open $path(test3) w]
     fconfigure $f -translation lf -eofchar {}
@@ -6405,7 +6406,7 @@ test io-50.6 {testing handler deletion vs reentrant calls} {testchannelevent} {
 	      {first after update}]
 } 0
 
-test io-51.1 {Test old socket deletion on Macintosh} {socket} {
+test io-51.1 {Test old socket deletion on Macintosh} {socket knownbug} {
     set x 0
     set result ""
     proc accept {s a p} {

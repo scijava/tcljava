@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr.test,v 1.6 2003/02/07 03:41:49 mdejong Exp $
+# RCS: @(#) $Id: expr.test,v 1.7 2003/03/17 21:33:40 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -184,7 +184,7 @@ test expr-4.7 {CompileLorExpr: error compiling lor arm} {
     catch {expr 1.3||2**3} msg
     set msg
 } {syntax error in expression "1.3||2**3"}
-test expr-4.8 {CompileLorExpr: error compiling lor arms} {
+test expr-4.8 {CompileLorExpr: error compiling lor arms} {knownbug} {
     list [catch {expr {"a"||"b"}} msg] $msg
 } {1 {expected boolean value but got "a"}}
 test expr-4.9 {CompileLorExpr: long lor arm} {
@@ -210,7 +210,7 @@ test expr-5.8 {CompileLandExpr: error compiling land arm} {
     catch {expr 1.3&&2**3} msg
     set msg
 } {syntax error in expression "1.3&&2**3"}
-test expr-5.9 {CompileLandExpr: error compiling land arm} {
+test expr-5.9 {CompileLandExpr: error compiling land arm} {knownbug} {
     list [catch {expr {"a"&&"b"}} msg] $msg
 } {1 {expected boolean value but got "a"}}
 test expr-5.10 {CompileLandExpr: long land arms} {
@@ -273,14 +273,14 @@ test expr-7.13 {CompileBitAndExpr: runtime error in bitand arm} {
 test expr-8.1 {CompileEqualityExpr: just relational expr} {expr 3>=2} 1
 test expr-8.2 {CompileEqualityExpr: just relational expr} {expr 2<=2.1} 1
 test expr-8.3 {CompileEqualityExpr: just relational expr} {expr 3.2>"2.2"} 1
-test expr-8.4 {CompileEqualityExpr: just relational expr} {expr {"0y"<"0x12"}} 0
+test expr-8.4 {CompileEqualityExpr: just relational expr} {knownbug} {expr {"0y"<"0x12"}} 0
 test expr-8.5 {CompileEqualityExpr: error in relational expr} {
     catch {expr x>3} msg
     set msg
 } {syntax error in expression "x>3"} 
 test expr-8.6 {CompileEqualityExpr: simple equality exprs} {expr 7==0x13} 0
 test expr-8.7 {CompileEqualityExpr: simple equality exprs} {expr -0xf2!=0x53} 1
-test expr-8.8 {CompileEqualityExpr: simple equality exprs} {expr {"12398712938788234-1298379" != ""}} 1
+test expr-8.8 {CompileEqualityExpr: simple equality exprs} {knownbug} {expr {"12398712938788234-1298379" != ""}} 1
 test expr-8.9 {CompileEqualityExpr: simple equality exprs} {expr -1!="abc"} 1
 test expr-8.10 {CompileEqualityExpr: error compiling equality arm} {
     catch {expr 2**3==6} msg

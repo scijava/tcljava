@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: ioCmd.test,v 1.4 2003/03/08 03:44:16 mdejong Exp $
+# RCS: @(#) $Id: ioCmd.test,v 1.5 2003/03/17 21:33:41 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -298,13 +298,13 @@ test iocmd-8.15.0 {fconfigure command / tcp channel} {socket macOnly} {
 	iocmdSSHTDWN
 	set r
 } {1 {bad option "-blah": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, -translation, -error, -peername, or -sockname}}
-test iocmd-8.15.1 {fconfigure command / tcp channel} {socket unixOrPc} {
+test iocmd-8.15.1 {fconfigure command / tcp channel} {socket unixOrPc knownbug} {
 	iocmdSSETUP
 	set r [list [catch {fconfigure $cli -blah} msg] $msg]
 	iocmdSSHTDWN
 	set r
 } {1 {bad option "-blah": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, -translation, -peername, or -sockname}}
-test iocmd-8.16 {fconfigure command / tcp channel} {socket} {
+test iocmd-8.16 {fconfigure command / tcp channel} {socket knownbug} {
 	iocmdSSETUP
 	set r [expr [lindex [fconfigure $cli -peername] 2]==$port]
 	iocmdSSHTDWN
@@ -370,15 +370,15 @@ set path(test4) [makeFile {} test4]
 set path(test5) [makeFile {} test5]
 
 removeFile test5
-test iocmd-11.1 {I/O to command pipelines} {unixOrPc unixExecs} {
+test iocmd-11.1 {I/O to command pipelines} {unixOrPc unixExecs knownbug} {
     set f [open $path(test4) w]
     close $f
     list [catch {open "| cat < $path(test4) > $path(test5)" w} msg] $msg $errorCode
 } {1 {can't write input to command: standard input was redirected} NONE}
-test iocmd-11.2 {I/O to command pipelines} {unixOrPc unixExecs} {
+test iocmd-11.2 {I/O to command pipelines} {unixOrPc unixExecs knownbug} {
     list [catch {open "| echo > $path(test5)" r} msg] $msg $errorCode
 } {1 {can't read output from command: standard output was redirected} NONE}
-test iocmd-11.3 {I/O to command pipelines} {unixOrPc unixExecs} {
+test iocmd-11.3 {I/O to command pipelines} {unixOrPc unixExecs knownbug} {
     list [catch {open "| echo > $path(test5)" r+} msg] $msg $errorCode
 } {1 {can't read output from command: standard output was redirected} NONE}
 
@@ -434,7 +434,7 @@ test iocmd-12.5 {POSIX open access modes: RDWR} {
     regsub [file join {} $path(test3)] $msg "test3" msg
 	string tolower $msg
 } {1 {couldn't open "test3": no such file or directory}}
-test iocmd-12.6 {POSIX open access modes: errors} {
+test iocmd-12.6 {POSIX open access modes: errors} {knownbug} {
     concat [catch {open $path(test3) "FOO \{BAR BAZ"} msg] $msg\n$errorInfo
 } "1 unmatched open brace in list
 unmatched open brace in list

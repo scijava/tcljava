@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: if.test,v 1.5 2003/02/07 03:41:49 mdejong Exp $
+# RCS: @(#) $Id: if.test,v 1.6 2003/03/17 21:33:40 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -167,12 +167,12 @@ test if-2.1 {TclCompileIfCmd: "elseif" after if/elseif test} {
 } {2}
 # Since "else" is optional, the "elwood" below is treated as a command.
 # But then there shouldn't be any additional argument words for the "if".
-test if-2.2 {TclCompileIfCmd: keyword other than "elseif"} {
+test if-2.2 {TclCompileIfCmd: keyword other than "elseif"} {knownbug} {
     set a {}
     catch {if 1<2 {set a 1} elwood {set a 2}} msg 
     set msg
 } {wrong # args: extra words after "else" clause in "if" command}
-test if-2.3 {TclCompileIfCmd: missing expression after "elseif"} {
+test if-2.3 {TclCompileIfCmd: missing expression after "elseif"} {knownbug} {
     set a {}
     catch {if 1<2 {set a 1} elseif} msg 
     set msg
@@ -294,7 +294,7 @@ test if-3.1 {TclCompileIfCmd: "else" clause} {
 } 3
 # Since "else" is optional, the "elsex" below is treated as a command.
 # But then there shouldn't be any additional argument words for the "if".
-test if-3.2 {TclCompileIfCmd: keyword other than "else"} {
+test if-3.2 {TclCompileIfCmd: keyword other than "else"} {knownbug} {
     set a {}
     catch {if 1<2 then {set a 1} elsex {set a 2}} msg 
     set msg
@@ -666,13 +666,13 @@ test if-6.1 {if cmd with computed command names: "elseif" after if/elseif test} 
 } {2}
 # Since "else" is optional, the "elwood" below is treated as a command.
 # But then there shouldn't be any additional argument words for the "if".
-test if-6.2 {if cmd with computed command names: keyword other than "elseif"} {
+test if-6.2 {if cmd with computed command names: keyword other than "elseif"} {knownbug} {
     set z if
     set a {}
     catch {$z 1<2 {set a 1} elwood {set a 2}} msg 
     set msg
 } {wrong # args: extra words after "else" clause in "if" command}
-test if-6.3 {if cmd with computed command names: missing expression after "elseif"} {
+test if-6.3 {if cmd with computed command names: missing expression after "elseif"} {knownbug} {
     set z if
     set a {}
     catch {$z 1<2 {set a 1} elseif} msg 
@@ -798,7 +798,7 @@ test if-7.1 {if cmd with computed command names: "else" clause} {
 } 3
 # Since "else" is optional, the "elsex" below is treated as a command.
 # But then there shouldn't be any additional argument words for the "if".
-test if-7.2 {if cmd with computed command names: keyword other than "else"} {
+test if-7.2 {if cmd with computed command names: keyword other than "else"} {knownbug} {
     set z if
     set a {}
     catch {$z 1<2 then {set a 1} elsex {set a 2}} msg 

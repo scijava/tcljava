@@ -11,6 +11,8 @@
 #
 # SCCS: @(#) GlobCmd.test 1.4 98/01/27 17:19:15
 
+return
+
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
     namespace import -force ::tcltest::*

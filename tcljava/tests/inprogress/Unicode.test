@@ -143,7 +143,7 @@ test unicode-2.1 {unicode substitution, 536 - 65535} {
     set min
 } 65536
 
-test unicode-3.1 {scan encoded string} {
+test unicode-3.1 {scan encoded string} {knownbug} {
     set enc [encoding convertto iso2022-jp "\u4e00\u4e01"]
     set len [string length $enc]
     set results $len

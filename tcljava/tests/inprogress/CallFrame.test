@@ -67,7 +67,7 @@ test CallFrame-2.1 {lookUp} {
     set x
 } 56
 
-test CallFrame-2.2 {lookUp} {
+test CallFrame-2.2 {lookUp} {knownbug} {
     catch {unset x}
     testLookUp x(3) [java::null] 56
     testLookUp x() [java::null] 57

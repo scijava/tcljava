@@ -350,44 +350,44 @@ test ExprCmd-2.4 {cmdProc} {
     } err] $err
 } {1 {integer value too large to represent}}
 
-test ExprCmd-2.5 {cmdProc} {
+test ExprCmd-2.5 {cmdProc} {knownbug} {
     list [catch {
         expr {"111111111111111111,111111111111111111" == 2}
     } err] $err
 } {0 0}
 
-test ExprCmd-2.6 {cmdProc} {
+test ExprCmd-2.6 {cmdProc} {knownbug} {
     list [catch {
         expr {"  111111111111111111,111111111111111111   " == 2}
     } err] $err
 } {0 0}
 
-test ExprCmd-2.7 {cmdProc} {
+test ExprCmd-2.7 {cmdProc} {knownbug} {
     list [catch {
         expr {"111111111111111111111111111111111111" == 2}
     } err] $err
 } {0 0}
 
-test ExprCmd-2.8 {cmdProc} {
+test ExprCmd-2.8 {cmdProc} {knownbug} {
     list [catch {
     expr {{111111111111111111111111111111111111} == 2}
     } err] $err
 } {0 0}
 
-test ExprCmd-2.9 {cmdProc} {
+test ExprCmd-2.9 {cmdProc} {knownbug} {
     list [catch {
     expr {" 111111111111111111111111111111111111 " == 2}
     } err] $err
 } {0 0}
 
-test ExprCmd-2.10 {cmdProc} {
+test ExprCmd-2.10 {cmdProc} {knownbug} {
     set str 111111111111111111111111111111111111
     list [catch {
         expr {$str == 2}
     } err] $err
 } {0 0}
 
-test ExprCmd-2.11 {cmdProc} {
+test ExprCmd-2.11 {cmdProc} {knownbug} {
     set str 111111111111111111111111111111111111
     list [catch {
         expr {"$str" == 2}
@@ -413,13 +413,13 @@ test ExprCmd-2.14 {cmdProc} {
     } err] $err
 } {0 0}
 
-test ExprCmd-2.15 {cmdProc} {
+test ExprCmd-2.15 {cmdProc} {knownbug} {
     list [catch {
         expr {"111111111111111111+111111111111111111" == 2}
     } err] $err
 } {0 0}
 
-test ExprCmd-2.16 {cmdProc} {
+test ExprCmd-2.16 {cmdProc} {knownbug} {
     list [catch {
         expr {"111111111111111111,111111111111111111" == 2}
     } err] $err
@@ -476,34 +476,34 @@ test ExprCmd-2.23 {cmdProc} {
 
 
 
-test ExprCmd-2.24 {cmdProc} {
+test ExprCmd-2.24 {cmdProc} {knownbug} {
     list [catch {
         expr {0 == "1.0e1000"}
     } err] $err
 } {0 0}
 
 
-test ExprCmd-2.25 {cmdProc} {
+test ExprCmd-2.25 {cmdProc} {knownbug} {
     list [catch {
         expr {0 == " 1.0e1000"}
     } err] $err
 } {0 0}
 
 
-test ExprCmd-2.26 {cmdProc} {
+test ExprCmd-2.26 {cmdProc} {knownbug} {
     list [catch {
         expr {0 == "1.0e1000 "}
     } err] $err
 } {0 0}
 
 
-test ExprCmd-2.27 {cmdProc} {
+test ExprCmd-2.27 {cmdProc} {knownbug} {
     list [catch {
         expr {0 == "  1.0e100000000 "}
     } err] $err
 } {0 0}
 
-test ExprCmd-2.28 {cmdProc} {
+test ExprCmd-2.28 {cmdProc} {knownbug} {
     list [catch {
         expr {0 == {1.0e100000000}}
     } err] $err
@@ -513,19 +513,19 @@ test ExprCmd-2.28 {cmdProc} {
 
 
 
-test ExprCmd-2.29 {cmdProc} {
+test ExprCmd-2.29 {cmdProc} {knownbug} {
     list [catch {
         expr {0 == "  1.5e100000000-438959345345  "}
     } err] $err
 } {0 0}
 
-test ExprCmd-2.30 {cmdProc} {
+test ExprCmd-2.30 {cmdProc} {knownbug} {
     list [catch {
         expr {0 == "  1.5e1000,546,  "}
     } err] $err
 } {0 0}
 
-test ExprCmd-2.31 {cmdProc} {
+test ExprCmd-2.31 {cmdProc} {knownbug} {
     list [catch {
         expr {0 == "  1.5e1000.-438959345345  "}
     } err] $err

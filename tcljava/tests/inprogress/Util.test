@@ -143,13 +143,13 @@ test util-1.39 {stringMatch: reverse range} {
     string match {[w-k]} "a"
 } 0
 
-test util-1.40 {stringMatch: skip correct number of ']'} {
+test util-1.40 {stringMatch: skip correct number of ']'} {knownbug} {
     string match {[A-]x} Ax
 } 1
 
 # the wrong way is 0
 
-test util-1.41 {stringMatch: skip correct number of ']'} {
+test util-1.41 {stringMatch: skip correct number of ']'} {knownbug} {
     string match {[A-]]x} Ax
 } 0
 

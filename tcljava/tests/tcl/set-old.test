@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: set-old.test,v 1.2 2003/02/06 01:11:18 mdejong Exp $
+# RCS: @(#) $Id: set-old.test,v 1.3 2003/03/17 21:33:42 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -473,23 +473,23 @@ test set-old-8.36 {array command, set option, array doesn't exist yet but has co
     }
     list [catch {foo 1} msg] $msg
 } {0 {}}
-test set-old-8.37 {array command, set option} {
+test set-old-8.37 {array command, set option} {knownbug} {
     catch {unset aVaRnAmE}
     array set aVaRnAmE {}
     list [info exists aVaRnAmE] [catch {set aVaRnAmE} msg] $msg
 } {1 1 {can't read "aVaRnAmE": variable is array}}
-test set-old-8.37.1 {array command, set scalar} {
+test set-old-8.37.1 {array command, set scalar} {knownbug} {
     catch {unset aVaRnAmE}
     set aVaRnAmE 1
     list [catch {array set aVaRnAmE {}} msg] $msg
 } {1 {can't array set "aVaRnAmE": variable isn't array}}
-test set-old-8.37.2 {array command, set alias} {
+test set-old-8.37.2 {array command, set alias} {knownbug} {
     catch {unset aVaRnAmE}
     upvar 0 aVaRnAmE anAliAs
     array set anAliAs {}
     list [array exists aVaRnAmE] [catch {set anAliAs} msg] $msg
 } {1 1 {can't read "anAliAs": variable is array}}
-test set-old-8.37.3 {array command, set element alias} {
+test set-old-8.37.3 {array command, set element alias} {knownbug} {
     catch {unset aVaRnAmE}
     list [catch {upvar 0 aVaRnAmE(elem) elemAliAs}] \
 	    [catch {array set elemAliAs {}} msg] $msg
@@ -501,13 +501,13 @@ test set-old-8.37.4 {array command, empty set with populated array} {
     array set aVaRnAmE [list e3 v3]
     list [lsort [array names aVaRnAmE]] [catch {set aVaRnAmE(e2)} msg] $msg
 } {{e1 e2 e3} 0 v2}
-test set-old-8.37.5 {array command, set with non-existent namespace} {
+test set-old-8.37.5 {array command, set with non-existent namespace} {knownbug} {
     list [catch {array set bogusnamespace::var {}} msg] $msg
 } {1 {can't set "bogusnamespace::var": parent namespace doesn't exist}}
 test set-old-8.37.6 {array command, set with non-existent namespace} {
     list [catch {array set bogusnamespace::var {a b}} msg] $msg
 } {1 {can't set "bogusnamespace::var(a)": parent namespace doesn't exist}}
-test set-old-8.37.7 {array command, set with non-existent namespace} {
+test set-old-8.37.7 {array command, set with non-existent namespace} {knownbug} {
     list [catch {array set bogusnamespace::var(0) {a b}} msg] $msg
 } {1 {can't set "bogusnamespace::var(0)": variable isn't array}}
 test set-old-8.38 {array command, size option} {

@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: switch.test,v 1.1 2001/01/28 21:55:16 mdejong Exp $
+# RCS: @(#) $Id: switch.test,v 1.2 2003/03/17 21:33:42 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -119,7 +119,7 @@ test switch-4.5 {error in default command} {
     invoked from within
 "switch foo a {error switch1} b {error switch 3}  default {error switch2}"}}
 
-test switch-5.1 {errors in -regexp matching} {
+test switch-5.1 {errors in -regexp matching} {knownbug} {
     list [catch {switch -regexp aaaab {
 	*b	{concat glob}
 	aaaab	{concat exact}

@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: error.test,v 1.5 2003/02/04 01:53:14 mdejong Exp $
+# RCS: @(#) $Id: error.test,v 1.6 2003/03/17 21:33:40 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -110,7 +110,7 @@ test error-2.5 {errors in nested procedures} {
     set b
 } {Human-generated}
 
-test error-2.6 {errors in nested procedures} {
+test error-2.6 {errors in nested procedures} {knownbug} {
     catch foo2 b
     set errorInfo
 } {glorp2

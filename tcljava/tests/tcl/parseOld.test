@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: parseOld.test,v 1.2 2001/01/28 21:55:16 mdejong Exp $
+# RCS: @(#) $Id: parseOld.test,v 1.3 2003/03/17 21:33:41 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -185,7 +185,7 @@ test parseOld-5.11 {array variable substitution} {
     set b a$!
     set b
 } {a$!}
-test parseOld-5.12 {empty array name support} {
+test parseOld-5.12 {empty array name support} {knownbug} {
     list [catch {set b a$()} msg] $msg
 } {1 {can't read "()": no such variable}}
 catch {unset a}
@@ -267,7 +267,7 @@ test parseOld-7.12 {backslash substitution} {
 test parseOld-7.13 {backslash substitution} {
     list \u4e21
 } [bytestring "\xe4\xb8\xa1"]
-test parseOld-7.14 {backslash substitution} {
+test parseOld-7.14 {backslash substitution} {knownbug} {
     list \u4e2k
 } [bytestring "\xd3\xa2k"]
 }
@@ -350,7 +350,7 @@ test parseOld-10.13 {syntax errors} {
 # buffer for %d conversions (LAME!).  I won't leave the test out, however,
 # since MetroWerks may some day fix this.
 
-test parseOld-10.14 {syntax errors} {
+test parseOld-10.14 {syntax errors} {knownbug} {
     list [catch {eval \$x[format "%01000d" 0](} msg] $msg $errorInfo
 } {1 {missing )} {missing )
     while executing

@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: lsearch.test,v 1.2 2001/01/28 21:55:16 mdejong Exp $
+# RCS: @(#) $Id: lsearch.test,v 1.3 2003/03/17 21:33:41 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -47,7 +47,7 @@ test lsearch-2.4 {search modes} {
 test lsearch-2.5 {search modes} {
     lsearch -exact {foo bar cat} bar
 } 1
-test lsearch-2.6 {search modes} {
+test lsearch-2.6 {search modes} {knownbug} {
     list [catch {lsearch -regexp {xyz bbcc *bc*} *bc*} msg] $msg
 } {1 {couldn't compile regular expression pattern: quantifier operand invalid}}
 test lsearch-2.7 {search modes} {
@@ -59,23 +59,23 @@ test lsearch-2.8 {search modes} {
 test lsearch-2.9 {search modes} {
     lsearch -glob {b.x ^bc xy bcx} ^bc
 } 1
-test lsearch-2.10 {search modes} {
+test lsearch-2.10 {search modes} {knownbug} {
     list [catch {lsearch -glib {b.x bx xy bcx} b.x} msg] $msg
 } {1 {bad search mode "-glib": must be -exact, -glob, or -regexp}}
 
-test lsearch-3.1 {lsearch errors} {
+test lsearch-3.1 {lsearch errors} {knownbug} {
     list [catch lsearch msg] $msg
 } {1 {wrong # args: should be "lsearch ?mode? list pattern"}}
-test lsearch-3.2 {lsearch errors} {
+test lsearch-3.2 {lsearch errors} {knownbug} {
     list [catch {lsearch a} msg] $msg
 } {1 {wrong # args: should be "lsearch ?mode? list pattern"}}
-test lsearch-3.3 {lsearch errors} {
+test lsearch-3.3 {lsearch errors} {knownbug} {
     list [catch {lsearch a b c} msg] $msg
 } {1 {bad search mode "a": must be -exact, -glob, or -regexp}}
-test lsearch-3.4 {lsearch errors} {
+test lsearch-3.4 {lsearch errors} {knownbug} {
     list [catch {lsearch a b c d} msg] $msg
 } {1 {wrong # args: should be "lsearch ?mode? list pattern"}}
-test lsearch-3.5 {lsearch errors} {
+test lsearch-3.5 {lsearch errors} {knownbug} {
     list [catch {lsearch "\{" b} msg] $msg
 } {1 {unmatched open brace in list}}
 

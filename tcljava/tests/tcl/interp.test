@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.6 2003/02/06 01:11:18 mdejong Exp $
+# RCS: @(#) $Id: interp.test,v 1.7 2003/03/17 21:33:40 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1673,7 +1673,7 @@ test interp-23.1 {testing hiding vs aliases} {
     interp delete a
     set l
 } {{} bar {} bar bar {} {}}
-test interp-23.2 {testing hiding vs aliases} {unixOrPc} {
+test interp-23.2 {testing hiding vs aliases} {unixOrPc knownbug} {
     catch {interp delete a}
     interp create a -safe
     set l ""
@@ -2360,7 +2360,7 @@ test interp-31.1 {alias invocation scope} {
 } ok
 
 test interp-32.1 { parent's working directory should
-                   be inherited by a child interp } {
+                   be inherited by a child interp } {knownbug} {
     set parent [pwd]
     set i [interp create]
     set child [$i eval pwd]

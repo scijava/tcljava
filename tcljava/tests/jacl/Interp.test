@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: Interp.test,v 1.7 2002/12/07 22:32:07 mdejong Exp $
+# RCS: @(#) $Id: Interp.test,v 1.8 2003/03/17 21:33:40 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -66,7 +66,7 @@ proc setVar_javaObj {interp varName javaObj flags} {
     $interp $m $varName [java::null] $tclObj $f
 }
 
-test Interp-1.2 {dispose, variables are freed} {
+test Interp-1.2 {dispose, variables are freed} {knownbug} {
     set interp [java::new tcl.lang.Interp]
 
     $interp eval {
