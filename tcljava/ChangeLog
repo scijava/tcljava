@@ -1,5 +1,10 @@
 2000-05-13  Mo DeJong  <mdejong@redhat.com>
 
+	* src/pkgIndex.tcl: Added missing
+	namespace export of the java::import cmd.
+
+2000-05-13  Mo DeJong  <mdejong@redhat.com>
+
 	* src/native/javaCmd.c:
 	* src/native/javaObj.c:
 	* src/native/javaUtil.c:
