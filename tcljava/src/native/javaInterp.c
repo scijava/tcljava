@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaInterp.c,v 1.4 1999/08/31 00:46:37 redman Exp $
+ * RCS: @(#) $Id: javaInterp.c,v 1.5 2000/05/21 11:44:26 mo Exp $
  */
 
 #include "java.h"
@@ -130,7 +130,7 @@ Java_tcl_lang_Interp_create(
  *
  * Class:     tcl_lang_Interp
  * Method:    init
- * Signature: ()I
+ * Signature: (J)I
  *
  * Results:
  *	Returns TCL_OK on success, else TCL_ERROR.
@@ -232,7 +232,7 @@ Java_tcl_lang_Interp_doDispose(
  *
  * Class:     tcl_lang_Interp
  * Method:    eval
- * Signature: (Ljava/lang/String;)V
+ * Signature: (Ljava/lang/String;I)V
  *
  * Results:
  *	A standard Tcl result.
@@ -664,6 +664,10 @@ Java_tcl_lang_Interp_unsetVar(
  *
  *	Add a trace to a variable.
  *
+ * Class:     tcl_lang_Interp
+ * Method:    traceVar
+ * Signature: (Ljava/lang/String;Ljava/lang/String;Ltcl/lang/VarTrace;I)V
+ *
  * Results:
  *	None.
  *
@@ -749,6 +753,10 @@ Java_tcl_lang_Interp_traceVar(
  * Java_tcl_lang_Interp_untraceVar --
  *
  *	Remove a trace from a variable.
+ *
+ * Class:     tcl_lang_Interp
+ * Method:    untraceVar
+ * Signature: (Ljava/lang/String;Ljava/lang/String;Ltcl/lang/VarTrace;I)V
  *
  * Results:
  *	None.
@@ -1151,7 +1159,7 @@ Java_tcl_lang_Interp_deleteCommand(
  *
  * Class:     tcl_lang_Interp
  * Method:    commandComplete
- * Signature: (JLjava/lang/String;)Z
+ * Signature: (Ljava/lang/String;)Z
  *
  * Results:
  *	Returns true if the command is complete
@@ -1238,6 +1246,10 @@ Java_tcl_lang_Interp_setErrorCode(
  * Java_tcl_lang_Interp_addErrorInfo --
  *
  *	Add the given string to the errorInfo.
+ *
+ * Class:     tcl_lang_Interp
+ * Method:    addErrorInfo
+ * Signature: (Ljava/lang/String;)V
  *
  * Results:
  *	None.

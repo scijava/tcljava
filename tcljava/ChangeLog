@@ -1,5 +1,11 @@
 2000-05-21  Mo DeJong  <mdejong@redhat.com>
 
+	* src/native/javaInterp.c: Fixed
+	up JNI method signatures in comments
+	for JNI methods.
+
+2000-05-21  Mo DeJong  <mdejong@redhat.com>
+
 	* unix/Makefile.in: Changed target
 	name from dists to dist to conform
 	to GNU specs.
