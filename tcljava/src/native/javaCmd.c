@@ -10,7 +10,7 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  *
- * RCS: @(#) $Id: javaCmd.c,v 1.21 2002/12/28 22:45:14 mdejong Exp $
+ * RCS: @(#) $Id: javaCmd.c,v 1.22 2002/12/30 05:53:29 mdejong Exp $
  */
 
 /*
@@ -195,6 +195,11 @@ EXPORT(int,Tclblend_Init)(
 
     env = JavaGetEnv();
     jcache = JavaGetCache();
+
+    if ((*env)->ExceptionOccurred(env)) {
+	(*env)->ExceptionDescribe(env);
+	panic("Tclblend_Init : unexpected pending exception");
+    }
 
     lvalue = 0;
     *(Tcl_Interp**)&lvalue = interp;
@@ -780,6 +785,11 @@ JavaInterpDeleted(
     JNIEnv *env = JavaGetEnv();
     JavaInfo* jcache = JavaGetCache();
 
+    if ((*env)->ExceptionOccurred(env)) {
+	(*env)->ExceptionDescribe(env);
+	panic("JavaInterpDeleted : unexpected pending exception");
+    }
+
     /*
      * Set the Interp.interpPtr field to 0 so any further attempts to use
      * this interpreter from Java will fail and so Interp.dispose() won't
@@ -793,6 +803,12 @@ JavaInterpDeleted(
      */
 
     (*env)->CallVoidMethod(env, interpObj, jcache->dispose);
+
+    if ((*env)->ExceptionOccurred(env)) {
+	(*env)->ExceptionDescribe(env);
+	panic("JavaInterpDeleted : exception in Interp.dispose()");
+    }
+
     (*env)->DeleteGlobalRef(env, interpObj);
 
 #ifdef TCLBLEND_DEBUG
@@ -935,6 +951,11 @@ FreeJavaCache(ClientData clientData)
     fprintf(stderr, "TCLBLEND_DEBUG: called FreeJavaCache\n");
 #endif /* TCLBLEND_DEBUG */
 
+    if ((*env)->ExceptionOccurred(env)) {
+	(*env)->ExceptionDescribe(env);
+	panic("FreeJavaCache : unexpected pending exception");
+    }
+
     /* We need to delete any global refs to Java classes */
     
     (*env)->DeleteGlobalRef(env, jcache->Object);
@@ -1067,6 +1088,8 @@ JavaSetupJava(
                                       &jcache->Interp, "(J)V", 0) ||
 	AddToMethodCache(env, interp, &jcache->tclexceptionC, "<init>",
                                       &jcache->TclException, "(Ltcl/lang/Interp;Ljava/lang/String;I)V", 0) ||
+	AddToMethodCache(env, interp, &jcache->tclexceptionCcode, "getCompletionCode",
+                                      &jcache->TclException, "()I", 0) ||
 	AddToMethodCache(env, interp, &jcache->cmdProc, "cmdProc",
                                       &jcache->Command, "(Ltcl/lang/Interp;[Ltcl/lang/TclObject;)V", 0) ||
 	AddToMethodCache(env, interp, &jcache->disposeCmd, "disposeCmd",

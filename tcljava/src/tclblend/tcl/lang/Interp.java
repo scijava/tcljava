@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.23 2002/12/29 03:20:46 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.24 2002/12/30 05:53:29 mdejong Exp $
  *
  */
 
@@ -83,6 +83,9 @@ Hashtable[] importTable = {new Hashtable(), new Hashtable()};
 
 // Used ONLY by CObject
 Vector cobjCleanup = new Vector();
+
+// True when callCommand should propagate exceptions
+boolean propagateException = false;
 
 
 /*
@@ -775,12 +778,36 @@ resetResult();
  *----------------------------------------------------------------------
  */
 
-public native void 
-eval(
+private native void
+evalNative(
     String script,	// A script to evaluate.
     int flags)		// Flags, either 0 or TCL.EVAL_GLOBAL.
 throws 
     TclException; 	// A standard Tcl exception.
+
+
+public void 
+eval(
+    String script,	// A script to evaluate.
+    int flags)		// Flags, either 0 or TCL.EVAL_GLOBAL.
+throws 
+    TclException 	// A standard Tcl exception.
+{
+    boolean held = false;
+    if (!propagateException) {
+        propagateException = true;
+        held = true;
+    }
+    try {
+        evalNative(script, flags);
+    } finally {
+        if (held) {
+            if (propagateException == false)
+                throw new TclRuntimeError("propagateException was false");
+            propagateException = false;
+        }
+    }
+}
 
 
 public void 
@@ -976,6 +1003,12 @@ closeInputStream(
  * callCommand --
  *
  *	Invoke a Tcl command object and deal with any errors that result.
+ *	This method may or may not let the exceptions propagate up
+ *	to the caller, based on the propagateException flag. When
+ *	invoked from Tcl, we would not want to leave a Java
+ *	exception pending. When invoked from Java, we do want to
+ *	propagate the exception up to the caller. This method is
+ *	only ever invoked from function JavaCmdProc.
  *
  * Results:
  *	Returns the result code.
@@ -990,22 +1023,30 @@ private int
 callCommand(
     Command cmd,		// Command to invoke.
     TclObject argv[])		// Argument array for command.
+        throws TclException
 {
     try {
 	CObject.cleanupPush(this);
 	cmd.cmdProc(this, argv);
 	return TCL.OK;
     } catch (TclException e) {
-	return e.getCompletionCode();
+	if (propagateException)
+	    throw e;
+	else
+	    return e.getCompletionCode();
     } catch (RuntimeException e) {
 	// This should not happen, if it does it means there is
 	// a bug somewhere in the implementation of a command.
-	ByteArrayOutputStream baos = new ByteArrayOutputStream(1000);
-	PrintStream ps = new PrintStream(baos);
-	ps.println("RuntimeException in Java command implementation");
-	e.printStackTrace(ps);
-	setResult(baos.toString());
-	throw e;
+	if (propagateException)
+	    throw e;
+	} else {
+	    ByteArrayOutputStream baos = new ByteArrayOutputStream(1000);
+	    PrintStream ps = new PrintStream(baos);
+	    ps.println("RuntimeException in Java command implementation");
+	    e.printStackTrace(ps);
+	    setResult(baos.toString());
+	    return TCL.ERROR;
+	}
     } finally {
 	CObject.cleanupPop(this);
     }

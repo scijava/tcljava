@@ -1,5 +1,56 @@
 2002-12-29  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	Overhaul exception handling and propagation
+	in TclBlend. An exception raised during a
+	Java command will now be propagated up
+	to an Interp.eval() call. All other Tcl
+	callable method should now panic if called
+	with a pending JNI exception.
+
+	* src/native/java.h: Add TclException.getCompletionCode()
+	to method cache.
+	* src/native/javaCmd.c (Tclblend_Init, JavaInterpDeleted,
+	FreeJavaCache):
+	Check for a pending Java exception when entering a
+	method from Tcl. Check for exception after calling
+	Interp.dispose(). Add getCompletionCode method.
+	* src/native/javaIdle.c (JavaIdleProc):
+	Check for a pending Java exception when entering a
+	method from Tcl.
+	* src/native/javaInterp.c (eval, evalNative, JavaTraceProc,
+	JavaCmdDeleteProc, JavaCmdProc, BTestCmd): Rename eval
+	to evalNative to match change in Java code.
+	Check that there are no pending exceptions when entering
+	a method from Tcl. Check for exceptions after JNI
+	method calls. Get return value for JavaCmdProc from
+	a thrown TclException. Add comp code test to btest.
+	* src/native/javaNotifier.c (JavaEventProc): Check for a
+	pending Java exception when entering a method from Tcl.
+	Check for exception after JNI method call.
+	* src/native/javaObj.c (DupTclObject, FreeTclObject,
+	UpdateTclObject, JavaGetTclObj, JavaGetTclObject):
+	Check for a pending Java exception when entering a
+	method from Tcl. Rethrow the exception in some functions
+	to deal with the case where a wrapped TclObject internal
+	rep is freed while the stack is unwinding.
+	Check for exception after JNI method call.
+	* src/native/javaTimer.c (JavaTimerProc):
+	Check for a pending Java exception when entering a
+	method from Tcl.
+	* src/tclblend/tcl/lang/Interp.java (eval, evalNative,
+	callCommand): Use new propagateException flag in
+	callCommand to determine if an exception should be
+	handled or propagated up to an Interp.eval() call.
+	This fix combined with the exception handle and
+	re-throw changes in javaObj.c fix a long standing
+	bug where exceptions never made it back up the
+	stack to an eval().
+	* src/tests/tcljava/tcl/lang/JtestCmd.java:
+	* tests/tclblend/javaInterp.test: Add getCompletionCode()
+	tests for callCommand from Java and C.
+
+2002-12-29  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/tcljava/tcl/lang/ReflectObject.java (dispose):
 	Don't attempt to delete the command from the
 	interpreter if the interp was already deleted.

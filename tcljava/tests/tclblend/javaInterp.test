@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: javaInterp.test,v 1.7 2002/12/29 02:10:43 mdejong Exp $
+# RCS: @(#) $Id: javaInterp.test,v 1.8 2002/12/30 05:53:30 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -657,6 +657,14 @@ java::call System exit 0
     set err
 } {finalized interp has not been disposed
 finalized interp has not been disposed}
+
+test javaInterp-24.1 {callCommand completion code} {
+    btest compcode {testcompcode 1234 {}}
+} 1234
+
+test javaInterp-24.2 {callCommand completion code} {
+    jtest compcode {testcompcode 1234 {}}
+} 1234
 
 
 # JavaGetInterp is already tested by the rest of this file

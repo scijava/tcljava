@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaNotifier.c,v 1.6 2002/12/19 03:34:36 mdejong Exp $
+ * RCS: @(#) $Id: javaNotifier.c,v 1.7 2002/12/30 05:53:29 mdejong Exp $
  */
 
 #include "java.h"
@@ -265,6 +265,11 @@ JavaEventProc(
     JavaInfo* jcache = JavaGetCache();
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
+    if ((*env)->ExceptionOccurred(env)) {
+	(*env)->ExceptionDescribe(env);
+	panic("JavaEventProc : unexpected pending exception");
+    }
+
     /*
      * Call Notifier.serviceEvent() to handle invoking the next event and
      * signaling any threads that are waiting on the event.
@@ -274,6 +279,11 @@ JavaEventProc(
     
     (void) (*env)->CallIntMethod(env, tsdPtr->notifierObj, 
                                  jcache->serviceEvent, flags);
+    if ((*env)->ExceptionOccurred(env)) {
+	(*env)->ExceptionDescribe(env);
+	panic("JavaEventProc : exception in Notifier.serviceEvent()");
+    }
+
     return 1;
 }
 

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaIdle.c,v 1.5 2002/12/19 03:34:36 mdejong Exp $
+ * RCS: @(#) $Id: javaIdle.c,v 1.6 2002/12/30 05:53:29 mdejong Exp $
  */
 
 #include "java.h"
@@ -129,6 +129,11 @@ JavaIdleProc(
     int fromJNIMethod = JavaNotifierInDoOneEvent();
 
     /*fprintf(stderr, "JavaIdleProc got global ref %x\n", gref);*/
+
+    if ((*env)->ExceptionOccurred(env)) {
+	(*env)->ExceptionDescribe(env);
+	panic("JavaIdleProc : unexpected pending exception");
+    }
 
     /*
      * Call IdleHandler.invoke(). If an exception was raised and

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaTimer.c,v 1.6 2002/12/19 03:34:36 mdejong Exp $
+ * RCS: @(#) $Id: javaTimer.c,v 1.7 2002/12/30 05:53:29 mdejong Exp $
  */
 
 #include "java.h"
@@ -119,6 +119,11 @@ JavaTimerProc(
     JNIEnv *env = JavaGetEnv();
     JavaInfo* jcache = JavaGetCache();
     int fromJNIMethod = JavaNotifierInDoOneEvent();
+
+    if ((*env)->ExceptionOccurred(env)) {
+	(*env)->ExceptionDescribe(env);
+	panic("JavaTimerProc : unexpected pending exception");
+    }
 
     /*
      * Call TimerHandler.invoke(). If an exception was raised and

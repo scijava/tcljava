@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaObj.c,v 1.14 2002/12/25 00:29:25 mdejong Exp $
+ * RCS: @(#) $Id: javaObj.c,v 1.15 2002/12/30 05:53:29 mdejong Exp $
  */
 
 #include "java.h"
@@ -171,6 +171,15 @@ DupTclObject(
     jobject object = (jobject)(srcPtr->internalRep.twoPtrValue.ptr2);
     JNIEnv *env = JavaGetEnv();
     JavaInfo* jcache = JavaGetCache();
+    jobject exception;
+
+    /*
+     * Clear pending Java exception.
+     */
+
+    exception = (*env)->ExceptionOccurred(env);
+    if (exception)
+        (*env)->ExceptionClear(env);
 
     /*
      * Add a global reference to represent the new copy.
@@ -180,6 +189,19 @@ DupTclObject(
     destPtr->typePtr = srcPtr->typePtr;
     destPtr->internalRep.twoPtrValue.ptr2 = (VOID*) object;
     (*env)->CallVoidMethod(env, object, jcache->preserve);
+    if ((*env)->ExceptionOccurred(env)) {
+        (*env)->ExceptionDescribe(env);
+	panic("DupTclObject : exception in TclObject._preserve()");
+    }
+
+    /*
+     * Rethrow pending Java exception.
+     */
+
+    if (exception) {
+        (*env)->Throw(env, exception);
+        (*env)->DeleteLocalRef(env, exception);
+    }
 }
 
 /*
@@ -208,10 +230,36 @@ FreeTclObject(
     jobject object = (jobject)(objPtr->internalRep.twoPtrValue.ptr2);
     JNIEnv *env = JavaGetEnv();
     JavaInfo* jcache = JavaGetCache();
+    jobject exception;
+
+    /*
+     * Clear pending Java exception.
+     */
+
+    exception = (*env)->ExceptionOccurred(env);
+    if (exception)
+        (*env)->ExceptionClear(env);
+
+    /*
+     * Delete the global ref.
+     */
 
     (*env)->CallVoidMethod(env, object, jcache->release);
+    if ((*env)->ExceptionOccurred(env)) {
+        (*env)->ExceptionDescribe(env);
+	panic("FreeTclObject : exception in TclObject._release()");
+    }
     (*env)->DeleteGlobalRef(env, object);
     objPtr->internalRep.twoPtrValue.ptr2 = NULL;
+
+    /*
+     * Rethrow pending Java exception.
+     */
+
+    if (exception) {
+        (*env)->Throw(env, exception);
+        (*env)->DeleteLocalRef(env, exception);
+    }
 }
 
 /*
@@ -266,6 +314,19 @@ UpdateTclObject(Tcl_Obj *objPtr)
     jobject object = (jobject)(objPtr->internalRep.twoPtrValue.ptr2);
     JNIEnv *env = JavaGetEnv();
     JavaInfo* jcache = JavaGetCache();
+    jobject exception;
+
+    /*
+     * Clear pending Java exception.
+     */
+
+    exception = (*env)->ExceptionOccurred(env);
+    if (exception)
+        (*env)->ExceptionClear(env);
+
+    /*
+     * Update Tcl_Obj.bytes to result of TclObject.toString() call.
+     */
 
     string = (*env)->CallObjectMethod(env, object, jcache->toString);
     if ((*env)->ExceptionOccurred(env)) {
@@ -274,6 +335,15 @@ UpdateTclObject(Tcl_Obj *objPtr)
     }
     objPtr->bytes = JavaGetString(env, string, &objPtr->length);
     (*env)->DeleteLocalRef(env, string);
+
+    /*
+     * Rethrow pending Java exception.
+     */
+
+    if (exception) {
+        (*env)->Throw(env, exception);
+        (*env)->DeleteLocalRef(env, exception);
+    }
 }
 
 /*
@@ -303,6 +373,11 @@ JavaGetTclObj(
     jobject internalRep;
     jlong objRef;
     JavaInfo* jcache = JavaGetCache();
+
+    if ((*env)->ExceptionOccurred(env)) {
+	(*env)->ExceptionDescribe(env);
+	panic("JavaGetTclObj : unexpected pending exception");
+    }
     
     internalRep = (*env)->CallObjectMethod(env, object, jcache->getInternalRep);
     if ((*env)->ExceptionOccurred(env)) {
@@ -341,6 +416,10 @@ JavaGetTclObj(
 	 */
 
 	(*env)->CallVoidMethod(env, object, jcache->preserve);
+	if ((*env)->ExceptionOccurred(env)) {
+	    (*env)->ExceptionDescribe(env);
+	    panic("JavaGetTclObj : exception in TclObject._preserve()");
+	}
     }
     (*env)->DeleteLocalRef(env, internalRep);
     return objPtr;
@@ -773,6 +852,10 @@ JavaGetTclObject(
 	 */
 
 	(*env)->CallVoidMethod(env, object, jcache->preserve);
+	if ((*env)->ExceptionOccurred(env)) {
+	    (*env)->ExceptionDescribe(env);
+	    panic("JavaGetTclObject : exception in TclObject._preserve()");
+	}
 
 	if (isLocalPtr) {
 	    *isLocalPtr = 1;
@@ -893,7 +976,6 @@ SetJavaCmdFromAny(
     }
     return result;
 }
-
 
 /*
  *----------------------------------------------------------------------

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaInterp.c,v 1.17 2002/12/25 08:29:31 mdejong Exp $
+ * RCS: @(#) $Id: javaInterp.c,v 1.18 2002/12/30 05:53:29 mdejong Exp $
  */
 
 #include "java.h"
@@ -224,12 +224,12 @@ Java_tcl_lang_Interp_doDispose(
 /*
  *----------------------------------------------------------------------
  *
- * Java_tcl_lang_Interp_eval --
+ * Java_tcl_lang_Interp_evalNative --
  *
  *	Evaluate the given string.
  *
  * Class:     tcl_lang_Interp
- * Method:    eval
+ * Method:    evalNative
  * Signature: (Ljava/lang/String;I)V
  *
  * Results:
@@ -242,7 +242,7 @@ Java_tcl_lang_Interp_doDispose(
  */
 
 void JNICALL
-Java_tcl_lang_Interp_eval(
+Java_tcl_lang_Interp_evalNative(
     JNIEnv *env,		/* Java environment. */
     jobject interpObj,		/* Handle to Interp object. */
     jstring string,		/* String to eval. */
@@ -928,6 +928,11 @@ JavaTraceProc(
     JNIEnv *env = JavaGetEnv();
     JavaInfo* jcache = JavaGetCache();
 
+    if ((*env)->ExceptionOccurred(env)) {
+	(*env)->ExceptionDescribe(env);
+	panic("JavaTraceProc : unexpected pending exception");
+    }
+
     result = NULL;
     if (tPtr->errMsg != NULL) {
 	ckfree(tPtr->errMsg);
@@ -1059,8 +1064,17 @@ JavaCmdDeleteProc(
     JNIEnv *env = JavaGetEnv();
     JavaInfo* jcache = JavaGetCache();
 
+    if ((*env)->ExceptionOccurred(env)) {
+	(*env)->ExceptionDescribe(env);
+	panic("JavaCmdDeleteProc : unexpected pending exception");
+    }
+
     if ((*env)->IsInstanceOf(env, cmd, jcache->CommandWithDispose)) {
 	(*env)->CallVoidMethod(env, cmd, jcache->disposeCmd);
+	if ((*env)->ExceptionOccurred(env)) {
+	    (*env)->ExceptionDescribe(env);
+	    panic("JavaCmdDeleteProc : exception in CommandWithDispose.disposeCmd()");
+	}
     }
     (*env)->DeleteGlobalRef(env, (jobject)clientData);
 }
@@ -1099,6 +1113,11 @@ JavaCmdProc(
 
     interpObj = (jobject) Tcl_GetAssocData(interp, "java", NULL);
 
+    if ((*env)->ExceptionOccurred(env)) {
+	(*env)->ExceptionDescribe(env);
+	panic("JavaCmdProc : unexpected pending exception");
+    }
+
     /*
      * Construct the argument array. Note that we invoke
      * Tcl_Object._preserve() once for each argument object.
@@ -1114,6 +1133,10 @@ JavaCmdProc(
 	value = JavaGetTclObject(env, objv[i], &isLocal);
 	(*env)->SetObjectArrayElement(env, args, i, value);
 	(*env)->CallVoidMethod(env, value, jcache->preserve);
+	if ((*env)->ExceptionOccurred(env)) {
+	    (*env)->ExceptionDescribe(env);
+	    panic("JavaCmdProc : exception in TclObject._preserve()");
+	}
 
 	/*
 	 * Delete a newly created local ref expliticly since it may have
@@ -1152,17 +1175,31 @@ JavaCmdProc(
 	JavaBreakRef(env, objv[i]);
 	value = (*env)->GetObjectArrayElement(env, args, i);
 	(*env)->CallVoidMethod(env, value, jcache->release);
+	if ((*env)->ExceptionOccurred(env)) {
+	    (*env)->ExceptionDescribe(env);
+	    panic("JavaCmdProc : exception in TclObject._release()");
+	}
 	(*env)->DeleteLocalRef(env, value);
     }
 
     (*env)->DeleteLocalRef(env, args);
 
+    /*
+     * We want to let a TclException or a RuntimeException
+     * propagate up to the caller from Interp.callCommand().
+     * Tricky part is, if the exception was thrown, then
+     * we need to return the result of a call to
+     * TclException.getCompletionCode().
+     */
+
     if (exception) {
-	result = TCL_ERROR;
-	/*
-	 * FIXME: We really should not rethrow this exception
-	 * if called from Tcl (not via a JNI method call).
-	 */
+	if ((*env)->IsInstanceOf(env, exception, jcache->TclException)
+	        == JNI_TRUE) {
+	    result = (*env)->CallIntMethod(env, exception,
+	            jcache->tclexceptionCcode);
+	} else {
+	    result = TCL_ERROR;
+	}
 	(*env)->Throw(env, exception);
 	(*env)->DeleteLocalRef(env, exception);
     }
@@ -1685,10 +1722,10 @@ int BTestCmd(
 {
     int index;
     static CONST char *options[] = { 
-	"refcount", "isjobject", NULL 
+	"compcode", "refcount", "isjobject", NULL 
     };
     enum options { 
-	BTEST_REFCOUNT, BTEST_ISJOBJECT
+	BTEST_COMPCODE, BTEST_REFCOUNT, BTEST_ISJOBJECT
     };
 
     if (objc < 2) {
@@ -1702,6 +1739,20 @@ int BTestCmd(
     }
 
     switch ((enum options) index) {
+	case BTEST_COMPCODE: {
+	    int result;
+	    Tcl_Obj *objPtr;
+	    if (objc < 3 || objc > 3) {
+		Tcl_WrongNumArgs(interp, 2, objv, "script");
+		return TCL_ERROR;
+	    }
+	    objPtr = objv[2];
+	    Tcl_IncrRefCount(objPtr);
+	    result = Tcl_GlobalEvalObj(interp, objPtr);
+	    Tcl_DecrRefCount(objPtr);
+	    Tcl_SetObjResult(interp, Tcl_NewIntObj(result));
+	    break;
+	}
 	case BTEST_ISJOBJECT: {
 	    if (objc < 3 || objc > 3) {
 		Tcl_WrongNumArgs(interp, 2, objv, "obj");

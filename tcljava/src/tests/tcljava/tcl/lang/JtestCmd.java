@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: JtestCmd.java,v 1.3 2002/12/25 08:29:31 mdejong Exp $
+ * RCS: @(#) $Id: JtestCmd.java,v 1.4 2002/12/30 05:53:29 mdejong Exp $
  *
  */
 
@@ -24,6 +24,7 @@ import java.util.*;
 
 class JtestCmd implements Command {
     static final private String validCmds[] = {
+	"compcode",
 	"equal",
 	"gc",
 	"getobject",
@@ -31,11 +32,12 @@ class JtestCmd implements Command {
 	"type",
     };
 
-    static final private int OPT_EQUAL 		= 0;
-    static final private int OPT_GC		= 1;
-    static final private int OPT_GETOBJECT	= 2;
-    static final private int OPT_REFCOUNT	= 3;
-    static final private int OPT_TYPE 		= 4;
+    static final private int OPT_COMPCODE 	= 0;
+    static final private int OPT_EQUAL 		= 1;
+    static final private int OPT_GC		= 2;
+    static final private int OPT_GETOBJECT	= 3;
+    static final private int OPT_REFCOUNT	= 4;
+    static final private int OPT_TYPE 		= 5;
 
     public void cmdProc(Interp interp, TclObject argv[])
 	    throws TclException {
@@ -46,6 +48,26 @@ class JtestCmd implements Command {
 	int opt = TclIndex.get(interp, argv[1], validCmds, "option", 0);
 
 	switch (opt) {
+	case OPT_COMPCODE:
+	    /*
+	     * Returns a TclException completion code, or ""
+	     */
+	    if (argv.length != 3) {
+		throw new TclException(interp, "wrong # args: should be \"" +
+			argv[0] + " compcode script\"");
+	    }
+
+	    TclObject obj = argv[2];
+	    obj.preserve();
+	    try {
+	        interp.eval(obj, TCL.EVAL_GLOBAL);
+	    } catch (TclException e) {
+	        interp.setResult(e.getCompletionCode());
+	    } finally {
+	        obj.release();
+	    }
+	    break;
+
 	case OPT_EQUAL:
 	    /*
 	     * Returns if the two objects refer to the same Java object.
