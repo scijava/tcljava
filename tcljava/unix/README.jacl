@@ -1,5 +1,5 @@
 Jacl
-RCS: @(#) $Id: README.jacl,v 1.7.6.1 2000/04/11 05:27:00 mo Exp $
+RCS: @(#) $Id: README.jacl,v 1.7.6.2 2000/05/01 08:59:15 mo Exp $
 
 This is the directory where you configure, compile, test, and install 
 UNIX versions of Jacl.
@@ -8,7 +8,7 @@ The rest of this file contains instructions on how to do this.  The
 release should compile and run either "out of the box" or with trivial 
 changes on any UNIX-like system that approximates POSIX, BSD, or 
 System V.  We know that it runs on workstations from Sun.  To compile 
-for a PC running Windows, see the README file in the directory ../win.
+for a PC running Windows, see the README file in the ../win directory.
 
 How To Compile And Install Jacl
 ------------------------------------------------------
@@ -81,8 +81,7 @@ How To Compile And Install Jacl
 
 (4) After the make finishes you can quickly test out jacl by typing
     "make shell" which will drop you into a running jacl shell where
-    you can type in commands. You can also run the regression tests
-    for jacl by typing "make test".
+    you can enter Tcl commands.
 
 (5) When you are ready to install jacl type "make install" to install
     the jacl.jar and tcljava.jar libraries on your system. Doing the

@@ -1,5 +1,5 @@
 Jacl
-RCS: @(#) $Id: README.jacl,v 1.2.6.1 2000/04/11 05:27:00 mo Exp $
+RCS: @(#) $Id: README.jacl,v 1.2.6.2 2000/05/01 08:59:16 mo Exp $
 
 This is the directory where you configure, compile, test, and install 
 Windows versions of Jacl.
@@ -7,7 +7,7 @@ Windows versions of Jacl.
 The rest of this file contains instructions on how to do this.  The 
 release should compile and run either "out of the box" or with trivial 
 changes on a Win95, Win98, or WinNT system. To compile for a UNIX
-system, see the README file in the directory ../unix.
+system, see the README file in the ../unix directory.
 
 How To Compile And Install Jacl
 ------------------------------------------------------
@@ -28,20 +28,31 @@ How To Compile And Install Jacl
 (4) If the make fails then you most likely made a mistake
     setting the paths for your tools. You will need to
     double check the paths you set at the top of the
-    makefile and try again.(4) If the make fails then you most likely made a mistake
-    setting the paths for your tools. You will need to
-    double check the paths you set at the top of the
     makefile and try again.
 
 (5) After the make finishes you can quickly test out Jacl by typing
     "nmake shell" which will drop you into a running Jacl shell
-    where you can type in commands. You can also run the
-    regression tests for Jacl by typing "nmake test".
+    where you can enter Tcl commands.
 
 (6) When you are ready to install jacl type "nmake install"
     to install the jacl.jar and tcljava.jar libraries on your system.
-    The location where the files are installed depends on how you
+    The location where the libraries are installed depends on how you
     set up the variables at the top of makefile.
+
+(6) When you are ready to install jacl type "nmake install". This command
+    will install the jacl.jar and tcljava.jar libraries on your system.
+    The location where these libraries are installed depends on how you
+    set the TCL_DIR var at the top of makefile. After you install
+    Jacl, you will need to set your CLASSPATH env var to include
+    the fully qualified path names of the tcljava.jar and jacl.jar files.
+    For instance, if you installed into C:\Jacl you would set the
+    CLASSPATH like this:
+
+    set CLASSPATH=C:\Jacl\lib\tcljava.jar;C:\Jacl\lib\jacl.jar
+
+    You can then run Jacl with the java program like this:
+
+    java tcl.lang.Shell
 
 Test suite:
 -----------

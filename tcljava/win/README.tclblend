@@ -1,5 +1,5 @@
 Tcl Blend
-RCS: @(#) $Id: README.tclblend,v 1.2.6.1 2000/04/11 05:27:01 mo Exp $
+RCS: @(#) $Id: README.tclblend,v 1.2.6.2 2000/05/01 08:59:16 mo Exp $
 
 This is the directory where you configure, compile, test, and install 
 Windows versions Tcl Blend. This directory also contains source files for 
@@ -8,7 +8,7 @@ Tcl Blend that are specific to Windows.
 The rest of this file contains instructions on how to do this.  The 
 release should compile and run either "out of the box" or with trivial 
 changes on a Win95, Win98, or WinNT system. To compile for a UNIX
-system, see the README file in the directory ../unix.
+system, see the README file in the ../unix directory.
 
 How To Compile And Install Tcl Blend:
 ----------------------------------------------------------
@@ -38,13 +38,31 @@ How To Compile And Install Tcl Blend:
 
 (6) After the make finishes you can quickly test out Tcl Blend by typing
     "nmake shell" which will drop you into a running Tcl Blend shell
-    where you can type in commands. You can also run the regression
-    tests for Tcl Blend by running "nmake test".
+    where you can enter commands.
 
-(7) When you are ready to install type "nmake install"
-    to install the Tcl Blend libraries on your system. The location
-    where the files are installed depeds on how you set up the
-    variables at the top of makefile.
+(7) When you are ready to install, type "nmake install"
+    to install the Tcl Blend libraries on your system.
+    The location where the files are installed depends
+    on how you set the TCL_DIR var at the top of makefile.
+
+    You will need to set the PATH env var to include the
+    directories where your Tcl .dll files and Java .dll
+    files are installed.
+
+    For instance, if your Tcl install is located in C:\Tcl
+    and you have a JDK 1.1 install in C:\jdk1.1.8,
+    you would set the PATH like this:
+
+    set PATH=C:\Tcl\bin;C:\jdk1.1.8\bin;%PATH%
+
+    If using JDK 1.2, you would need to set the PATH
+    to include the Tcl .dll file(s), the Java .dll
+    file(s), and the TclBlend .dll file(s). If you have
+    installed JDK 1.2 into C:\jdk1.2.2, Tcl into
+    C:\Tcl, and Tcl Blend into the Tcl lib directory
+    C:\Tcl\lib, you would set your PATH to this:
+
+    set PATH=C:\Tcl\bin;C:\Tcl\lib\tclblend;C:\jdk1.2\jre\bin;C:\jdk1.2\jre\bin\classic;%PATH%
 
 Test suite:
 -----------
