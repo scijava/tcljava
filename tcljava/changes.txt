@@ -1,6 +1,6 @@
 Recent user-visible changes to Jacl & Tcl Blend:
 
-RCS: @(#) $Id: changes.txt,v 1.29 1999/08/27 23:56:37 mo Exp $
+RCS: @(#) $Id: changes.txt,v 1.30 1999/08/30 11:56:00 mo Exp $
 
 ----------------- Released 1.0a1, 10/22/97 -----------------------
 
@@ -960,4 +960,12 @@ and vwait commands. (Mo)
 8/27/99 (minor changes to the TclJava docs)
 Added some examples to the java::bind documentation,
 fixed some minor typos in other commands. (Mo)
+
+8/29/88 (changed install process for Tcl Blend)
+In earlier versions of Tcl Blend, the install process
+would look for a tclsh executable on the path. This would
+cause big problems if the tclsh executable was not the
+same one that we compiled Tcl Blend against. Tcl Blend
+now requires that you install and use the executable
+that was built from the Tcl source.
 
