@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: AdaptorGen.java,v 1.1 1998/10/14 21:09:14 cvsadmin Exp $
+ * RCS: @(#) $Id: AdaptorGen.java,v 1.2 1999/05/09 20:58:13 dejong Exp $
  */
 
 package tcl.lang;
@@ -20,7 +20,7 @@ import java.lang.reflect.*;
 import java.beans.*;
 import java.io.*;
 
-/*
+/**
  * AdaptorGen is the event adaptor class generator. It can generate an
  * event adaptor class that implements any given JavaBean event
  * interface. The generated class is used to provide a callback
@@ -34,9 +34,7 @@ import java.io.*;
 
 class AdaptorGen {
 
-/*
- * Constant pool types.
- */
+// Constant pool types.
 
 private static final int CONSTANT_Class 		= 7;
 private static final int CONSTANT_FieldRef 		= 9;
@@ -50,9 +48,7 @@ private static final int CONSTANT_Double		= 6;
 private static final int CONSTANT_NameAndType		= 12;
 private static final int CONSTANT_Utf8			= 1;
 
-/*
- * Java op-codes used by the adaptor class.
- */
+// Java op-codes used by the adaptor class.
 
 private static final int ALOAD		= 0x19;
 private static final int ALOAD_0 	= 0x2a;
@@ -85,18 +81,14 @@ private static final int IFEQ		= 0x99;
 private static final int ATHROW		= 0xbf;
 private static final int GOTO_W		= 0xc8;
 
-/*
- * Access modifiers.
- */
+// Access modifiers.
 
 private static final int ACC_PUBLIC = 0x0001;
 private static final int ACC_SUPER  = 0x0020;
 
-/*
- * These are internal variable shared among the methods of this
- * class. We declare them as member variables so that we don't need to
- * pass them explicitly to all methods.
- */
+// These are internal variable shared among the methods of this
+// class. We declare them as member variables so that we don't need to
+// pass them explicitly to all methods.
 
 private DataOutputStream ostream;
 private Class listenerCls;
@@ -104,145 +96,107 @@ private Method methods[];
 private String clsName;
 private Class superCls;
 
-/*
- * The number of items that have been added into the constant pool so
- * far. It starts at 1 because there is always an implicit item #0
- * in the constant pool.
- */
+// The number of items that have been added into the constant pool so
+// far. It starts at 1 because there is always an implicit item #0
+// in the constant pool.
 
 int cpSize;
 
-/*
- * This Vector is used to hold temporarily the constant pool elements
- * when we are counting the number of elements in the constant pool.
- */
+// This Vector is used to hold temporarily the constant pool elements
+// when we are counting the number of elements in the constant pool.
 
 Vector constPool;
 
-/*
- * Stores all the UTF string constants that are currently in the
- * constant pool. We use this information to avoid having duplicate
- * copies of the same string in the constant pool.
- */
+// Stores all the UTF string constants that are currently in the
+// constant pool. We use this information to avoid having duplicate
+// copies of the same string in the constant pool.
 
 Hashtable utf8Tab;
 
-/*
- * The hashtable stores the Class objects of all the Object types
- * referenced by the adaptor class, including:
- *
- *	+ Object types passed in as parameters to the methods of
- *	  the adaptor class.
- *	+ Object types returned by the methods of the adaptor class.
- *	+ Wrapper Object types used to pass event parameters
- *	  to _processEvent().
- *	+ Exception types thrown by the methods of the adaptor
- *	  class.
- */
+// The hashtable stores the Class objects of all the Object types
+// referenced by the adaptor class, including:
+//
+//	+ Object types passed in as parameters to the methods of
+//	  the adaptor class.
+//	+ Object types returned by the methods of the adaptor class.
+//	+ Wrapper Object types used to pass event parameters
+//	  to _processEvent().
+//	+ Exception types thrown by the methods of the adaptor
+//	  class.
 
 Hashtable allClasses;
 
-/*
- * This hashtable contains all the Class objects of the primitive
- * types used in the adaptor class.
- */
+// This hashtable contains all the Class objects of the primitive
+// types used in the adaptor class.
 
 Hashtable primClasses;
 
-/*
- * This hashtable contains all the primitive types returned by the
- * methods of the interface. It will also contain Object.class if
- * there is a method that returns an object (of any class).
- */
+// This hashtable contains all the primitive types returned by the
+// methods of the interface. It will also contain Object.class if
+// there is a method that returns an object (of any class).
 
 Hashtable returnTypes;
 
-/*
- * This hashtable contains the constant pool IDs for the _return_<type>
- * methods.
- */
+// This hashtable contains the constant pool IDs for the _return_<type>
+// methods.
 
 Hashtable returnMethodRef;
 
-/*
- * This hashtable stores the constant pool IDs for the constructors of
- * the wrapper classes that are used to pass parameters of primitive
- * types to the _processEvent() method.
- */
+// This hashtable stores the constant pool IDs for the constructors of
+// the wrapper classes that are used to pass parameters of primitive
+// types to the _processEvent() method.
 
 Hashtable wrapperConsRef;
 
-/*
- * This hashtable contains the constant pool IDs for all the classes
- * referenced by the adaptor class.
- */
+// This hashtable contains the constant pool IDs for all the classes
+// referenced by the adaptor class.
 
 Hashtable clsRef;
 
-/*
- * This hashtable contains the constant pool IDs for all the strings
- * referenced by the adaptor class.
- */
+// This hashtable contains the constant pool IDs for all the strings
+// referenced by the adaptor class.
 
 Hashtable stringRef;
 
-/*
- * The constant pool ID of the adaptor class.
- */
+// The constant pool ID of the adaptor class.
 
 short cp_this_class; 
 
-/*
- * The constant pool ID of the super class of the adaptor class
- * (tcl.lang.EventAdaptor).
- */
+// The constant pool ID of the super class of the adaptor class
+// (tcl.lang.EventAdaptor).
 
 short cp_super_class;
 
-/*
- * The constant pool ID of the event interface that the adaptor class
- * implements.
- */
+// The constant pool ID of the event interface that the adaptor class
+// implements.
 
 short cp_listener_interface;
 
-/*
- * The constant pool ID of the "Code" string, which is used to
- * identify a section of executable code in the class file.
- */
+// The constant pool ID of the "Code" string, which is used to
+// identify a section of executable code in the class file.
 
 short cp_code;
 
-/*
- * The constant pool ID of the constructor of the super class.
- */
+// The constant pool ID of the constructor of the super class.
 
 short cp_super_cons;
 
-/*
- * The constant pool ID of the _processEvent() method in the super
- * class.
- */
+// The constant pool ID of the _processEvent() method in the super
+// class.
 
 short cp_processEvent;
 
-/*
- * The constant pool ID of the _wrongException() method in the super
- * class.
- */
+// The constant pool ID of the _wrongException() method in the super
+// class.
 
 short cp_wrongException;
 
-/*
- * Stores information about each method in the adaptor class.
- * cp_methodDesc[i] contains info about method[i].
- */
+// Stores information about each method in the adaptor class.
+// cp_methodDesc[i] contains info about method[i].
 
 MethodDesc cp_methodDesc[];
 
-/*
- * Store information about the constructor of the adaptor class.
- */
+// Store information about the constructor of the adaptor class.
 
 MethodDesc cp_consDesc;
 
@@ -270,21 +224,17 @@ generate(
     Class superClass,
     String className)
 {
-    /*
-     * Copy these arguments into member variables so that they don't need
-     * to be passed into the internal methods called by generateByteCode().
-     */
+    // Copy these arguments into member variables so that they don't need
+    // to be passed into the internal methods called by generateByteCode().
 
     superCls = superClass;
     clsName  = className;
     listenerCls = desc.getListenerType();
     methods = listenerCls.getMethods();
 
-    /*
-     * Initialize other member variables used to generate the byte code.
-     * These variables must be re-initialize each time a new class is to
-     * be generated.
-     */
+    // Initialize other member variables used to generate the byte code.
+    // These variables must be re-initialize each time a new class is to
+    // be generated.
 
     allClasses = new Hashtable();
     primClasses = new Hashtable();
@@ -299,23 +249,17 @@ generate(
     analyzeListener();
     cpSize = 1;
 
-    /*
-     * Generate the data of the adaptor class that implements the
-     * event interface given by desc.
-     */
+    // Generate the data of the adaptor class that implements the
+    // event interface given by desc.
 
     try {
-	/*
-	 * Prepare the output streams.
-	 */
+	// Prepare the output streams.
 
 	ByteArrayOutputStream baos = new ByteArrayOutputStream();
 	DataOutputStream dos = new DataOutputStream(baos);
 	ostream = dos;
 
-	/*
-	 * Generate the data.
-	 */
+	// Generate the data.
 
 	generateByteCode();
 
@@ -372,18 +316,14 @@ analyzeListener()
     for (i = 0; i < methods.length; i++) {
 	Class params[] = methods[i].getParameterTypes();
 
-	/*
-	 * Record all classes (including wrapper classes) that will
-	 * be used to pass parameters to _processEvent().
-	 */
+	// Record all classes (including wrapper classes) that will
+	// be used to pass parameters to _processEvent().
 
 	for (j = 0; j < params.length; j++) {
 	    if (params[j].isPrimitive()) {
 		if (params[j] == Void.TYPE) {
-		    /*
-		     * Looks likes the JVM has loaded a bad interface class:
-		     * one of the parameter of an interface is of type void.
-		     */
+		    // Looks likes the JVM has loaded a bad interface class:
+		    // one of the parameter of an interface is of type void.
 
 		    throw new ClassFormatError(
 			    "Parameter type cannot be void");
@@ -397,18 +337,14 @@ analyzeListener()
 	    paramsDefined = true;
 	}
 
-	/*
-	 * Record all exceptions thrown by the methods.
-	 */
+	// Record all exceptions thrown by the methods.
 
 	Class exceptions[] = methods[i].getExceptionTypes();
 	for (j = 0; j < exceptions.length; j++) {
 	    allClasses.put(exceptions[j], exceptions[j]);
 	}
 
-	/*
-	 * Record information about the return types of the methods.
-	 */
+	// Record information about the return types of the methods.
 
 	Class retType = methods[i].getReturnType();
 	if (retType != Void.TYPE) {
@@ -450,52 +386,40 @@ throws
 				// declare it just to avoid putting
 				// catch statements everywhere.
 {
-    /*
-     * u4 magic.
-     * u2 minor_version
-     * u2 major_version
-     */
+    // u4 magic.
+    // u2 minor_version
+    // u2 major_version
 
     ostream.writeInt(0xCAFEBABE);
     ostream.writeShort(3);
     ostream.writeShort(45);
 
-    /*
-     * u2 constant_pool_count
-     * cp_info constant_pool[constant_pool_count-1]
-     */
+    // u2 constant_pool_count
+    // cp_info constant_pool[constant_pool_count-1]
 
     generateConstantPool();
 
-    /*
-     * u2 access_flags
-     * u2 this_class
-     * u2 super_class
-     */
+    // u2 access_flags
+    // u2 this_class
+    // u2 super_class
 
     ostream.writeShort(ACC_SUPER|ACC_PUBLIC);
     ostream.writeShort(cp_this_class);
     ostream.writeShort(cp_super_class);
 
-    /*
-     * u2 interfaces_count
-     * u2 interfaces[interfaces_count]
-     */
+    // u2 interfaces_count
+    // u2 interfaces[interfaces_count]
 
     ostream.writeShort(1);
     ostream.writeShort(cp_listener_interface);
 
-    /*
-     * u2 fields_count
-     * u2 field_info fields[fields_count]
-     */
+    // u2 fields_count
+    // u2 field_info fields[fields_count]
 
     ostream.writeShort(0);
 
-    /*
-     * u2 methods_count
-     * u2 method_info methods[methods_count]
-     */
+    // u2 methods_count
+    // u2 method_info methods[methods_count]
 
     ostream.writeShort(1 + methods.length);
     generateConstructor();
@@ -504,10 +428,8 @@ throws
 	generateMethod(i);
     }
 
-    /*
-     * u2 attributes_count
-     * u2 attribute_info attributes[attributes_count]
-     */
+    // u2 attributes_count
+    // u2 attribute_info attributes[attributes_count]
 
     ostream.writeShort(0);
 }
@@ -537,44 +459,36 @@ throws
 				// avoid putting catch statements
 				// everywhere.
 {
-    /* 
-     * We do this in three stages because inside the byte code, the
-     * constant_pool_count appears in front of the constant pool
-     * elements.
-     *
-     *	(1) Generate the constant pool elements and store them into a 
-     *	    Vector. When we are done we know the total number of
-     *	    constants we have.
-     *
-     *	(2) Find out how many elements we have written, and write
-     *      constant_pool_count into the byte array stream.
-     *
-     *	(3) Write the constant pool elements into the byte array
-     *	    stream.
-     *
-     */
+    // We do this in three stages because inside the byte code, the
+    // constant_pool_count appears in front of the constant pool
+    // elements.
+    //
+    //	(1) Generate the constant pool elements and store them into a 
+    //	    Vector. When we are done we know the total number of
+    //	    constants we have.
+    //
+    //	(2) Find out how many elements we have written, and write
+    //      constant_pool_count into the byte array stream.
+    //
+    //	(3) Write the constant pool elements into the byte array
+    //	    stream.
+    //
 
     constPool = new Vector();
 
-    /*
-     * Names of this class, its super class and the interface that
-     * this class implements.
-     */
+    // Names of this class, its super class and the interface that
+    // this class implements.
 
     cp_this_class  = cp_putClass(clsName); 
     cp_super_class = cp_putClass(superCls.getName());
 
     cp_listener_interface = cp_putClass(listenerCls.getName());
 
-    /*
-     * The UTF8 string "Code" is used to generate the body of methods.
-     */
+    // The UTF8 string "Code" is used to generate the body of methods.
 
     cp_code = cp_putUtf8("Code");
 
-    /*
-     * All the methods that the generated class calls.
-     */
+    // All the methods that the generated class calls.
 
     cp_super_cons = cp_putMethodRef(cp_super_class, "<init>", "()V");
     cp_processEvent = cp_putMethodRef(cp_super_class, "_processEvent", 
@@ -600,10 +514,8 @@ throws
 	hashPutShort(returnMethodRef, retType, ref);
     }
 
-    /*
-     * The constructor and methods that are defined in the generated
-     * class.
-     */
+    // The constructor and methods that are defined in the generated
+    // class.
 
     cp_consDesc = cp_putMethodDesc("<init>", "()V", false);
 
@@ -612,9 +524,7 @@ throws
 		getMethodDescriptor(methods[i]), true);
     }
 
-    /*
-     * All the classes referred to by the generated class.
-     */
+    // All the classes referred to by the generated class.
 
     for (Enumeration e = allClasses.keys(); e.hasMoreElements(); ) {
 	Class type = (Class)e.nextElement();
@@ -623,24 +533,20 @@ throws
 	hashPutShort(clsRef, type, ref);
     }
 
-    /*
-     * If the methods in the generated class receives parameter of
-     * primitive types, they must be wrapped in wrapper classes such
-     * as java.lang.Integer before they are passed to
-     * super._processEvent().
-     */
+    // If the methods in the generated class receives parameter of
+    // primitive types, they must be wrapped in wrapper classes such
+    // as java.lang.Integer before they are passed to
+    // super._processEvent().
 
     for (Enumeration e = primClasses.keys(); e.hasMoreElements(); ) {
-	/*
-	 * **** KLUDGE ****
-	 *
-	 * This loop works around a compiler bug in JAVAC 1.1.4. For
-	 * For some reasons, if this loop is not here, AdaptorGen.class will
-	 * contain incorrect byte code and causes a NullPoniterException.
-	 * 
-	 * This compiler bug happens only in JAVAC. MS JVC apparently
-	 * works fine.
-	 */
+	// FIXME : javac compiler bug workaround
+	//
+	// This loop works around a compiler bug in JAVAC 1.1.4. For
+	// For some reasons, if this loop is not here, AdaptorGen.class will
+	// contain incorrect byte code and causes a NullPoniterException.
+	// 
+	// This compiler bug happens only in JAVAC. MS JVC apparently
+	// works fine.
 
 	e.nextElement();
     }
@@ -648,15 +554,13 @@ throws
     for (Enumeration e = primClasses.keys(); e.hasMoreElements(); ) {
 	Class primType = (Class)e.nextElement();
 	short class_index = cp_getClass(getWrapperClass(primType));
-	short ref = ref = cp_putMethodRef(class_index,	"<init>",
+	short ref = cp_putMethodRef(class_index,	"<init>",
 		"(" + getTypeDesc(primType) + ")V");
 
 	hashPutShort(wrapperConsRef, primType, ref);
     }
 
-    /*
-     * Now we know the count. Let's write into the byte array.
-     */
+    // Now we know the count. Let's write into the byte array.
 
     ostream.writeShort(constPool.size() + 1);
     for (int i=0; i<constPool.size(); i++) {
@@ -823,10 +727,8 @@ throws
     int exStartPC, exEndPC;	// Exception start and end PC.
     int exHandlerPC = 0;	// Exception handler PC.
 
-    /*
-     * Calculate the max_stacks and max_locals variables for the
-     * method.
-     */
+    // Calculate the max_stacks and max_locals variables for the
+    // method.
 
     max_stacks = 6;
 
@@ -851,27 +753,23 @@ throws
     ostream.writeShort(cp_methodDesc[methodIdx].descriptor_index);
     ostream.writeShort(1);		// attr count
 
-    /*
-     * Generate the body of the code.
-     */
+    // Generate the body of the code.
 
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     DataOutputStream code = new DataOutputStream(baos);
 
-    /*
-     * [1] Create an array for passing parameters to super.processEvent():
-     *
-     *     Object params[] = new Object[numParams];
-     *
-     * NOTE:
-     *
-     *   - In all the generated code, it is sufficient to represent
-     *	   a local variable using a short because a Java method may
-     *	   have no more than 65535 local variables (including paramaters).
-     *
-     *   - This means the side of the params array is no more than 65535,
-     *     so we can specify its size using sipush.
-     */
+    // [1] Create an array for passing parameters to super.processEvent():
+    //
+    //     Object params[] = new Object[numParams];
+    //
+    // NOTE:
+    //
+    //   - In all the generated code, it is sufficient to represent
+    //	   a local variable using a short because a Java method may
+    //	   have no more than 65535 local variables (including paramaters).
+    //
+    //   - This means the side of the params array is no more than 65535,
+    //     so we can specify its size using sipush.
 
 
     code.writeByte(SIPUSH);		// sipush	#<numParams>
@@ -883,19 +781,15 @@ throws
     writeLoadStore(code, ASTORE,	// astore	param[]
 	    paramVarIdx);
 
-    /*
-     * [2] Copy the parameters into an object array:
-     *
-     *	   params[0] = new Integer(p0);
-     *	   params[1] = new Double(p0);
-     *	   params[2] = (Object)p2;
-     *	   // .... etc
-     */
+    // [2] Copy the parameters into an object array:
+    //
+    //	   params[0] = new Integer(p0);
+    //	   params[1] = new Double(p0);
+    //	   params[2] = (Object)p2;
+    //	   // .... etc
 
-    /*
-     * We start at local variable index 1, which is the first parameter.
-     * (index 0 is the "this" pointer).
-     */
+    // We start at local variable index 1, which is the first parameter.
+    // (index 0 is the "this" pointer).
      
     int paramIdx = 1;
 
@@ -948,13 +842,11 @@ throws
 	code.writeByte(AASTORE);	// aastore
     }
 
-    /*
-     * [3] Call super.processEvent():
-     *
-     *     try {
-     *	   	super.processEvent(params, <nameOfMethod>);
-     *     }
-     */
+    // [3] Call super.processEvent():
+    //
+    //     try {
+    //	   	super.processEvent(params, <nameOfMethod>);
+    //     }
 
     exStartPC = code.size();
 
@@ -971,17 +863,15 @@ throws
 
     exEndPC = code.size();
 
-    /*
-     * [4] Handle any exceptions thrown by processEvent():
-     *
-     *     catch (Throwable exception) {
-     *	       ....
-     *     }
-     *
-     *	   Note, we use WIDE version of load/store in all subsequent
-     *	   byte codes so that it's easy to calculate the offset
-     *	   for jumping to the "normal" return statement.)
-     */
+    // [4] Handle any exceptions thrown by processEvent():
+    //
+    //     catch (Throwable exception) {
+    //	       ....
+    //     }
+    //
+    //	   Note, we use WIDE version of load/store in all subsequent
+    //	   byte codes so that it's easy to calculate the offset
+    //	   for jumping to the "normal" return statement.)
 
     Class exceptions[] = methods[methodIdx].getExceptionTypes();
 
@@ -996,10 +886,8 @@ throws
     code.writeShort(exceptionVarIdx);
 
     for (int i = 0; i < exceptions.length; i++) {
-	/*
-	 * Write the exception handler for each of the checked exception
-	 * types. Each handler is 16 bytes long.
-	 */
+	// Write the exception handler for each of the checked exception
+	// types. Each handler is 16 bytes long.
 
 	code.writeByte(WIDE);		// aload	exception
 	code.writeByte(ALOAD);
@@ -1026,9 +914,7 @@ throws
     code.writeByte(INVOKEVT);		// invokevirtual _wrongExceptionError()
     code.writeShort(cp_wrongException);
 
-    /*
-     * [5] Normal return from this method.
-     */
+    // [5] Normal return from this method.
 
     Class retType = methods[methodIdx].getReturnType();
 
@@ -1048,10 +934,8 @@ throws
 	} else if (retType == Long.TYPE) {
 	    code.writeByte(LRETURN);	// lreturn
 	} else {
-	    /*
-	     * IRETURN is used for boolean,
-	     * byte, char, int and short.
-	     */
+	    // IRETURN is used for boolean,
+	    // byte, char, int and short.
 
 	    code.writeByte(IRETURN);	// ireturn
 	}
@@ -1072,10 +956,8 @@ throws
 
     int codeLength = code.size();
     
-    /*
-     * [6] Write the exception table: we catch all Throwable
-     *     classes.
-     */
+    // [6] Write the exception table: we catch all Throwable
+    //     classes.
 
     code.writeShort(1);			// exception_table_length
 
@@ -1086,16 +968,12 @@ throws
 	    cp_getClass(Throwable.class));
 
 
-    /*
-     * [7] The attributes table (empty)
-     */
+    // [7] The attributes table (empty)
 
     code.writeShort(0);			// attribute_count
 
-    /*
-     * [8] Now we are done. Emit the code section into the output
-     *     stream.
-     */
+    // [8] Now we are done. Emit the code section into the output
+    //     stream.
 
     code.close();
     byte codeBytes[] = baos.toByteArray();
@@ -1185,7 +1063,7 @@ hashGetShort(
     Hashtable hashtable,	// The hashtable.
     Object key)			// The key.
 {
-    return ((Short)hashtable.get(key)).shortValue();
+    return ((Short) hashtable.get(key)).shortValue();
 }
 
 /*
@@ -1379,11 +1257,9 @@ cp_putUtf8(
 
     shortObj = (Short)utf8Tab.get(string);
 
-    /*
-     * Check to make sure that the string is not already in the
-     * constant pool so that we won't have duplicated entries (which
-     * wastes space!).
-     */
+    // Check to make sure that the string is not already in the
+    // constant pool so that we won't have duplicated entries (which
+    // wastes space!).
 
     if (shortObj != null) {
 	return shortObj.shortValue();
@@ -1426,7 +1302,7 @@ cp_putString(
     cstr.string_index = cp_putUtf8(string);
     constPool.addElement(cstr);
 
-    short id = (short)cpSize++;
+    short id = (short) cpSize++;
     hashPutShort(stringRef, string, id);
     return id;
 }
@@ -1455,7 +1331,7 @@ cp_putClass(
     ccls.name_index = cp_putUtf8(internalClassName(className));
     constPool.addElement(ccls);
 
-    return (short)cpSize++;
+    return (short) cpSize++;
 }
 
 /*
@@ -1484,7 +1360,7 @@ cp_putNameAndType(
     cnat.desc_index = cp_putUtf8(type);
     constPool.addElement(cnat);
 
-    return (short)cpSize++;
+    return (short) cpSize++;
 }
 
 /*
@@ -1515,7 +1391,7 @@ cp_putMethodRef(
 
     constPool.addElement(cmref);
 
-    return (short)cpSize++;
+    return (short) cpSize++;
 }
 
 /*
@@ -1656,10 +1532,9 @@ cp_getReturnMethodRef(
     }
 }
 
-/*
- * The following five inner classes are used to store temporary copies
- * of constane pool items in a Vector.
- */
+
+// The following five inner classes are used to store temporary copies
+// of constane pool items in a Vector.
 
 class ConstUtf {
     String string;		// The string to put into the constant pool
@@ -1691,22 +1566,17 @@ class ConstMethodRef {
 				// method.
 }
 
-/*
- * This inner class stores the name and descriptor of the method to
- * generate.
- */
+
+// This inner class stores the name and descriptor of the method to
+// generate.
 
 class MethodDesc {
 
-/*
- * Index to the name of the method (a CONSTANT_String).
- */
+// Index to the name of the method (a CONSTANT_String).
 
 short name_index;
 
-/*
- * Index to the name of the method (a CONSTANT_String).
- */
+// Index to the name of the method (a CONSTANT_String).
 
 short descriptor_index;
 
