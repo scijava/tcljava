@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Notifier.java,v 1.1 1998/10/14 21:09:10 cvsadmin Exp $
+ * RCS: @(#) $Id: Notifier.java,v 1.2 2000/01/25 03:42:25 mo Exp $
  *
  */
 
@@ -43,35 +43,25 @@ public class Notifier {
 
 private static Notifier globalNotifier;
 
-/*
- * First pending event, or null if none.
- */
+// First pending event, or null if none.
 
 private TclEvent firstEvent;
 
-/*
- * Last pending event, or null if none.
- */
+// Last pending event, or null if none.
 
 private TclEvent lastEvent;
 
-/*
- * Last high-priority event in queue, or null if none.
- */
+// Last high-priority event in queue, or null if none.
 
 private TclEvent markerEvent;
 
-/*
- * The primary thread of this notifier. Only this thread should process
- * events from the event queue.
- */
+// The primary thread of this notifier. Only this thread should process
+// events from the event queue.
 
 Thread primaryThread;
 
-/*
- * Reference count of the notifier. It's used to tell when a notifier
- * is no longer needed.
- */
+// Reference count of the notifier. It's used to tell when a notifier
+// is no longer needed.
 
 int refCount;
 
@@ -225,9 +215,7 @@ queueEvent(
     evt.notifier = this;
 
     if (position == TCL.QUEUE_TAIL) {
-	/*
-	 * Append the event on the end of the queue.
-	 */
+	// Append the event on the end of the queue.
 
 	evt.next = null;
 
@@ -238,9 +226,7 @@ queueEvent(
 	}
 	lastEvent = evt;
     } else if (position == TCL.QUEUE_HEAD) {
-	/*
-	 * Push the event on the head of the queue.
-	 */
+	// Push the event on the head of the queue.
 
 	evt.next = firstEvent;
 	if (firstEvent == null) {
@@ -248,10 +234,8 @@ queueEvent(
 	}
 	firstEvent = evt;
     } else if (position == TCL.QUEUE_MARK) {
-	/*
-	 * Insert the event after the current marker event and advance
-	 * the marker to the new event.
-	 */
+	// Insert the event after the current marker event and advance
+	// the marker to the new event.
 
 	if (markerEvent == null) {
 	    evt.next = firstEvent;
@@ -265,9 +249,7 @@ queueEvent(
 	    lastEvent = evt;
 	}
     } else {
-	/*
-	 * Wrong flag.
-	 */
+	// Wrong flag.
 
 	throw new TclRuntimeError("wrong position \"" + position +
 	       "\", must be TCL.QUEUE_HEAD, TCL.QUEUE_TAIL or TCL.QUEUE_MARK");
@@ -352,35 +334,29 @@ serviceEvent(
 {
     TclEvent evt, prev;
 
-    /*
-     * No event flags is equivalent to TCL_ALL_EVENTS.
-     */
+    // No event flags is equivalent to TCL_ALL_EVENTS.
     
     if ((flags & TCL.ALL_EVENTS) == 0) {
 	flags |= TCL.ALL_EVENTS;
     }
 
-    /*
-     * Loop through all the events in the queue until we find one
-     * that can actually be handled.
-     */
+    // Loop through all the events in the queue until we find one
+    // that can actually be handled.
 
     for (evt = firstEvent; evt != null; evt = evt.next) {
-	/*
-	 * Call the handler for the event.  If it actually handles the
-	 * event then free the storage for the event.  There are two
-	 * tricky things here, both stemming from the fact that the event
-	 * code may be re-entered while servicing the event:
-	 *
-	 * 1. Set the "isProcessing" field to true. This is a signal to
-	 *    ourselves that we shouldn't reexecute the handler if the
-	 *    event loop is re-entered.
-	 * 2. When freeing the event, must search the queue again from the
-	 *    front to find it.  This is because the event queue could
-	 *    change almost arbitrarily while handling the event, so we
-	 *    can't depend on pointers found now still being valid when
-	 *    the handler returns.
-	 */
+	// Call the handler for the event.  If it actually handles the
+	// event then free the storage for the event.  There are two
+	// tricky things here, both stemming from the fact that the event
+	// code may be re-entered while servicing the event:
+	//
+	// 1. Set the "isProcessing" field to true. This is a signal to
+	//    ourselves that we shouldn't reexecute the handler if the
+	//    event loop is re-entered.
+	// 2. When freeing the event, must search the queue again from the
+	//    front to find it.  This is because the event queue could
+	//    change almost arbitrarily while handling the event, so we
+	//    can't depend on pointers found now still being valid when
+	//    the handler returns.
 
 	boolean b = evt.isProcessing;
 	evt.isProcessing = true;
@@ -402,7 +378,7 @@ serviceEvent(
 		}
 	    } else {
 		for (prev = firstEvent; prev.next != evt; prev = prev.next) {
-		    /* Empty loop body. */
+		    // Empty loop body.
 		}
 		prev.next = evt.next;
 		if (evt.next == null) {
@@ -414,19 +390,15 @@ serviceEvent(
 	    }
 	    return 1;
 	} else {
-	    /*
-	     * The event wasn't actually handled, so we have to
-	     * restore the isProcessing field to allow the event to be
-	     * attempted again.
-	     */
+	    // The event wasn't actually handled, so we have to
+	    // restore the isProcessing field to allow the event to be
+	    // attempted again.
 
 	    evt.isProcessing = b;
 	}
 
-	/*
-	 * The handler for this event asked to defer it.  Just go on to
-	 * the next event.
-	 */
+	// The handler for this event asked to defer it.  Just go on to
+	// the next event.
 
 	continue;
     }
@@ -549,7 +521,3 @@ hasEvents()
 }
 
 } // end Notifier
-
-
-
-

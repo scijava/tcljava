@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: AdaptorGen.java,v 1.2 1999/05/09 20:58:13 dejong Exp $
+ * RCS: @(#) $Id: AdaptorGen.java,v 1.3 2000/01/25 03:42:26 mo Exp $
  */
 
 package tcl.lang;
@@ -662,7 +662,7 @@ throws
  * generateMethod --
  *
  *	Generates an event handling method. This procedure is more
- *	complex because the method can reveice any parameters, throw
+ *	complex because the method can receive any parameters, throw
  *	any exceptions and return any value. Here is a canonical form
  *	of the kind of method generated:
  *

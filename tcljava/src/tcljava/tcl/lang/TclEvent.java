@@ -11,7 +11,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclEvent.java,v 1.1 1998/10/14 21:09:13 cvsadmin Exp $
+ * RCS: @(#) $Id: TclEvent.java,v 1.2 2000/01/25 03:42:26 mo Exp $
  *
  */
 
@@ -125,11 +125,9 @@ sync()
 	    try {
 		wait(0);
 	    } catch (InterruptedException e) {
-		/*
-		 * Another thread has sent us an "interrupt"
-		 * signal. We ignore it and continue sleeping until
-		 * the event is processed.
-		 */
+		// Another thread has sent us an "interrupt"
+		// signal. We ignore it and continue waiting until
+		// the event is processed.
 
 		continue;
 	    }
