@@ -54,13 +54,6 @@ eval AC_DEFINE_UNQUOTED(VERSION, "${VERSION}")
 
    AC_CYGWIN
 
-   #--------------------------------------------------------------------
-   # Determines the correct binary file extension (.o, .obj, .exe etc.)
-   #--------------------------------------------------------------------
-
-   AC_OBJEXT
-   AC_EXEEXT
-
 #--------------------------------------------------------------------
 # Check whether --enable-gcc or --disable-gcc was given.  Do this 
 # before AC_CYGWIN is called so the compiler can 
@@ -71,6 +64,13 @@ eval AC_DEFINE_UNQUOTED(VERSION, "${VERSION}")
 
 SC_ENABLE_GCC
 AC_PROG_INSTALL
+
+   #--------------------------------------------------------------------
+   # Determines the correct binary file extension (.o, .obj, .exe etc.)
+   #--------------------------------------------------------------------
+
+   AC_OBJEXT
+   AC_EXEEXT
 
 #--------------------------------------------------------------------
 # Checks to see if the make program sets the $MAKE variable.

@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the actual
 # Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.2 1999/08/31 23:56:25 redman Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.3 1999/09/14 23:46:22 redman Exp $
 
 #========================================================================
 # Edit the following few lines when writing a new extension
@@ -433,11 +433,6 @@ binaries: $(BINARIES)
 libraries:
 
 doc:
-	@echo "If you have documentation to create, place the commands to"
-	@echo "build the docs in the 'doc:' target.  For example:"
-	@echo ""
-	@echo "xml2nroff sha1.xml > sha1.n"
-	@echo "xml2html sha1.xml > sha1.html"
 
 install: all install-binaries install-libraries install-doc
 
@@ -476,7 +471,8 @@ install-lib-binaries: installdirs
 	    $(RANLIB) $(DESTDIR)$(bindir)/$$p; \
 	  else :; fi; \
 	done
-	$(TCLSH_PROG) mkIndex.tcl
+	cp -rp pkgIndex.tcl $(pkglibdir)
+
 
 #========================================================================
 # Install binary executables (e.g. .exe files)
@@ -503,7 +499,6 @@ install-doc: doc
 	$(mkinstalldirs) $(mandir)/html
 	echo "Installing HTML docs"
 	cp -rp $(srcdir)/docs/* $(mandir)/html
-	chmod -R 444 $(mandir)/html
 
 
 test: test_$(TCLJAVA)
