@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: QSort.java,v 1.1 1998/10/14 21:09:19 cvsadmin Exp $
+ * RCS: @(#) $Id: QSort.java,v 1.2 1999/05/09 01:14:07 dejong Exp $
  *
  */
 
@@ -58,9 +58,8 @@ final class QSort {
     static final int COMMAND    = 3;
     static final int DICTIONARY = 4;
 
-    /*
-     * Data used during sort.
-     */
+    // Data used during sort.
+
     private int sortMode;
     private int sortIndex;
     private boolean sortIncreasing;
@@ -89,27 +88,22 @@ final class QSort {
 	TclObject mid;
 
 	if ( hi0 > lo0) {
-
-	    /*
-	     * Arbitrarily establishing partition element as the midpoint of
-	     * the array.
-	     */
+	    // Arbitrarily establishing partition element as the midpoint of
+	    // the array.
 	    mid = a[ ( lo0 + hi0 ) / 2 ];
 
 	    // loop through the array until indices cross
 	    while( lo <= hi ) {
-		/*
-		 * find the first element that is greater than or equal to 
-		 * the partition element starting from the left Index.
-		 */
+		// find the first element that is greater than or equal to 
+		// the partition element starting from the left Index.
+
 		while( ( lo < hi0 ) && (compare(a[lo],mid) < 0)) {
 		    ++lo;
 		}
 
-		/*
-		 * find an element that is smaller than or equal to 
-		 * the partition element starting from the right Index.
-		 */
+		// find an element that is smaller than or equal to 
+		// the partition element starting from the right Index.
+
 		while( ( hi > lo0 ) && (compare(a[hi],mid) > 0)) {
 		    --hi;
 		}
@@ -122,18 +116,16 @@ final class QSort {
 		}
 	    }
 
-	    /*
-	     * If the right index has not reached the left side of array
-	     * must now sort the left partition.
-	     */
+	    // If the right index has not reached the left side of array
+	    // must now sort the left partition.
+
 	    if( lo0 < hi ) {
 		quickSort( a, lo0, hi );
 	    }
 
-	    /*
-	     * If the left index has not reached the right side of array
-	     * must now sort the right partition.
-	     */
+	    // If the left index has not reached the right side of array
+	    // must now sort the right partition.
+
 	    if( lo < hi0 ) {
 		quickSort( a, lo, hi0 );
 	    }
@@ -194,12 +186,10 @@ final class QSort {
 	int code = 0;
 
 	if (sortIndex != -1) {
-	    /*
-	     * The "-index" option was specified.  Treat each object as a
-	     * list, extract the requested element from each list, and
-	     * compare the elements, not the lists.  The special index "end"
-	     * is signaled here with a negative index (other than -1).
-	     */
+	    // The "-index" option was specified.  Treat each object as a
+	    // list, extract the requested element from each list, and
+	    // compare the elements, not the lists.  The special index "end"
+	    // is signaled here with a negative index (other than -1).
 
 	    TclObject obj;
 	    if (sortIndex < -1) {
@@ -291,9 +281,8 @@ final class QSort {
 	    break;
 
 	default:
-	    /*
-	     * Should never come to here.
-	     */
+	    // Should never come to here.
+
 	    throw new TclRuntimeError("Unknown sortMode " + sortMode);
 	}
 
@@ -329,13 +318,13 @@ final class QSort {
 
 	    if (Character.isDigit(str2.charAt(i2)) && 
 		    Character.isDigit(str1.charAt(i1))) {
-		/*
-		 * There are decimal numbers embedded in the two
-		 * strings.  Compare them as numbers, rather than
-		 * strings.  If one number has more leading zeros than
-		 * the other, the number with more leading zeros sorts
-		 * later, but only as a secondary choice.
-		 */
+
+		// There are decimal numbers embedded in the two
+		// strings.  Compare them as numbers, rather than
+		// strings.  If one number has more leading zeros than
+		// the other, the number with more leading zeros sorts
+		// later, but only as a secondary choice.
+
 		zeros = 0;
 		while ((i2 < (len2 - 1)) && (str2.charAt(i2) == '0')) {
 		    i2++;
@@ -350,12 +339,11 @@ final class QSort {
 		}
 
 
-		/*
-		 * The code below compares the numbers in the two
-		 * strings without ever converting them to integers.  It
-		 * does this by first comparing the lengths of the
-		 * numbers and then comparing the digit values.
-		 */
+		// The code below compares the numbers in the two
+		// strings without ever converting them to integers.  It
+		// does this by first comparing the lengths of the
+		// numbers and then comparing the digit values.
+
 		diff = 0;
 		while (true) {
 

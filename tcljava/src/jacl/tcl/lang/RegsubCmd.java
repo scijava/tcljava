@@ -9,12 +9,12 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: RegsubCmd.java,v 1.1 1998/10/14 21:09:20 cvsadmin Exp $
+ * RCS: @(#) $Id: RegsubCmd.java,v 1.3 1999/05/09 01:20:28 dejong Exp $
  */
 
 package tcl.lang;
 
-/*
+/**
  * This class implements the built-in "regsub" command in Tcl.
  */
 
@@ -64,7 +64,7 @@ throws TclException
     }
 
     try {
-	cmd = (Command)cmdClass.newInstance();
+	cmd = (Command) cmdClass.newInstance();
     } catch (IllegalAccessException e1) {
 	throw new TclException(interp,
 		"IllegalAccessException for class \"" + cmdClass.getName()
@@ -146,9 +146,7 @@ throws TclException
 	        "?switches? exp string subSpec varName");
     }
     
-    /*
-     * Convert the string and pattern to lower case, if desired.
-     */
+    // Convert the string and pattern to lower case, if desired.
 
     stringObjIndex = currentObjIndex + 1;
     matchIndex = stringObjIndex + 1;
