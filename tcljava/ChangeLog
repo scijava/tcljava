@@ -1,5 +1,14 @@
 2000-04-03  Mo DeJong  <mdejong@redhat.com>
 
+	* src/jacl/tcl/lang/ConsoleEvent.java:
+	* src/jacl/tcl/lang/Shell.java:
+	* src/tcljava/tcl/lang/TclException.java: Fixed
+	up the way an event is sent to an interp and
+	how the error result is returned so that
+	the Shell class is more thread safe.
+
+2000-04-03  Mo DeJong  <mdejong@redhat.com>
+
 	* diffs.txt: Added note about Interp.recordAndEval
 	* new_features.txt: Added note about the addition
 	of the history command.

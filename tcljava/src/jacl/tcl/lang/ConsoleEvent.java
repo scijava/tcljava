@@ -11,7 +11,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ConsoleEvent.java,v 1.4 2000/04/03 12:36:16 mo Exp $
+ * RCS: @(#) $Id: ConsoleEvent.java,v 1.5 2000/04/03 14:09:11 mo Exp $
  *
  */
 
@@ -26,8 +26,8 @@ class ConsoleEvent extends TclEvent {
 
 Interp interp;
 
-// The result of evaluating the user input string. Is null if an exception
-// occurred during the script evaluation.
+// The result of evaluating the user input string. If an exception
+// occurred it will be the interp result.
 
 TclObject evalResult;
 
@@ -88,10 +88,11 @@ processEvent(
 {
     try {
 	interp.recordAndEval(TclString.newInstance(script), 0);
-	evalResult = interp.getResult();
-	evalResult.preserve();
     } catch (TclException e) {
 	evalException = e;
+    } finally {
+	evalResult = interp.getResult();
+	evalResult.preserve();
     }
 
     return 1;

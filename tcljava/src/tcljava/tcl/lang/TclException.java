@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclException.java,v 1.1 1998/10/14 21:09:14 cvsadmin Exp $
+ * RCS: @(#) $Id: TclException.java,v 1.2 2000/04/03 14:09:11 mo Exp $
  *
  */
 
@@ -105,7 +105,7 @@ TclException(
  *
  * TclException --
  *
- *	Create an TclException with the given completion code.
+ *	Create a TclException with the given completion code.
  *
  * Results:
  *	None.
@@ -120,6 +120,7 @@ public
 TclException(
     int ccode)			// Completion code.
 {
+    super();
     if (ccode == TCL.OK) {
 	throw new TclRuntimeError(
 		"The reserved completion code TCL.OK (0) cannot be used");

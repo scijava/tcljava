@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Shell.java,v 1.4 1999/08/03 03:09:41 mo Exp $
+ * RCS: @(#) $Id: Shell.java,v 1.5 2000/04/03 14:09:11 mo Exp $
  */
 
 package tcl.lang;
@@ -309,7 +309,7 @@ run()
 	    interp.getNotifier().queueEvent(evt, TCL.QUEUE_TAIL);
 	    evt.sync();
 
-	    if (evt.evalResult != null) {
+	    if (evt.evalException == null) { // No error was generated
 		String s = evt.evalResult.toString();
 
                 if (debug) {
@@ -319,50 +319,20 @@ run()
 		if (s.length() > 0) {
 		    putLine(out, s);
 		}
-
-		// The "history limit" controls how many TclObject's
-		// we record from the results of the Console inputs.
-
-		int limit = 0;
-//		int limit = 10;
-
-		try {
-		    TclObject histLimit = interp.getVar("historyLimit",
-			    TCL.GLOBAL_ONLY);
-		    if (histLimit != null) {
-			limit = TclInteger.get(interp, histLimit);
-		    }
-		} catch (TclException e) {
-		    // histLimit doesn't exist or contains an invalid integer.
-		    // Ignore it.
-		}
-
-		// This cleans up all intermediate objects that
-		// are no longer referenced in Tcl. This check is
-		// needed to clean up object references in the
-		// string->object translation table.
-
-		if (limit > 0) {
-		    historyObjs.addElement(evt.evalResult);
-		} else {
-		    evt.evalResult.release();
-		}
-
-		if (historyObjs.size() > limit && historyObjs.size() > 0) {
-		    TclObject cobj =(TclObject)historyObjs.elementAt(0);
-		    historyObjs.removeElementAt(0);
-		    cobj.release();
-		}
-	    } else {
+	    } else { // Tcl error was generated !
                 if (debug) {
                     System.out.println("eval returned exceptional condition");
                 }
 
-		TclException e = evt.evalException;
-		int code = e.getCompletionCode();
+		int code = evt.evalException.getCompletionCode();
+
+		// This really sucks, but the getMessage() call on the exception
+		// does not always return the msg! See TclException for super()!
+		String msg = evt.evalResult.toString();
 
 		check_code: {
 		    if (code == TCL.RETURN) {
+			// FIXME : not thread safe!
 			code = interp.updateReturnInfo();
 			if (code == TCL.OK) {
 			    break check_code;
@@ -371,7 +341,7 @@ run()
 
 		    switch (code) {
 		    case TCL.ERROR:
-			putLine(err, interp.getResult().toString());
+			putLine(err, msg);
 			break;
 		    case TCL.BREAK:
 			putLine(err, "invoked \"break\" outside of a loop");
@@ -385,8 +355,10 @@ run()
 		}
 	    }
 
+	    evt.evalResult.release(); // we are done with the interp result
 	    sbuf.setLength(0); // empty out sbuf
 
+	    // FIXME : not thread safe!
 	    try {
 		prompt = interp.getVar("tcl_prompt1", TCL.GLOBAL_ONLY);
 	    } catch (TclException e) {
@@ -394,6 +366,7 @@ run()
 	    }
 	    if (prompt != null) {
 		try {
+		    // FIXME : not thread safe
 		    interp.eval(prompt.toString(), TCL.GLOBAL_ONLY);
 		} catch (TclException e) {
 		    put(out, "% ");
@@ -410,12 +383,14 @@ run()
 	    // prompt message and wait for further inputs.
 
 	    try {
+		// FIXME : not thread safe!
 		prompt = interp.getVar("tcl_prompt2", TCL.GLOBAL_ONLY);
 	    } catch (TclException e) {
 		prompt = null;
 	    }
 	    if (prompt != null) {
 		try {
+		    // FIXME : not thread safe
 		    interp.eval(prompt.toString(), TCL.GLOBAL_ONLY);
 		} catch (TclException e) {
 		    put(out, "> ");
@@ -463,13 +438,10 @@ private void getLine() {
 	    while (availableBytes == 0) {
                 availableBytes = System.in.available();
 
-                /*
-                if (debug) {
-                    System.out.println(availableBytes +
-                        " bytes can be read from System.in");
-                }
-                /*
-                */
+                //if (debug) {
+                //    System.out.println(availableBytes +
+                //        " bytes can be read from System.in");
+                //}
 
 		Thread.currentThread().sleep(100);
             }
