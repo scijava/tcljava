@@ -1,7 +1,36 @@
 # Windows makefile for tclblend and jacl
 # the tclblend target requires Visual C++
 #
+# Copyright (c) 1997 by Sun Microsystems, Inc.
+
 # Copyright (c) 1998 by Mo DeJong
+
+# Copyright (c) 1990-1998 The Regents of the University of California.
+# All rights reserved.
+# 
+# Permission is hereby granted, without written agreement and without
+# license or royalty fees, to use, copy, modify, and distribute this
+# software and its documentation for any purpose, provided that the
+# above copyright notice and the following two paragraphs appear in all
+# copies of this software.
+# 
+# IN NO EVENT SHALL THE UNIVERSITY OF CALIFORNIA BE LIABLE TO ANY PARTY
+# FOR DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+# ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN IF
+# THE UNIVERSITY OF CALIFORNIA HAS BEEN ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+# 
+# THE UNIVERSITY OF CALIFORNIA SPECIFICALLY DISCLAIMS ANY WARRANTIES,
+# INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+# MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. THE SOFTWARE
+# PROVIDED HEREUNDER IS ON AN "AS IS" BASIS, AND THE UNIVERSITY OF
+# CALIFORNIA HAS NO OBLIGATION TO PROVIDE MAINTENANCE, SUPPORT, UPDATES,
+# ENHANCEMENTS, OR MODIFICATIONS.
+# 
+# 						PT_COPYRIGHT_VERSION_2
+# 						COPYRIGHTENDKEY
+
+# Note that to compile you will need to get tclInt.h from somewhere.
 
 # Modify the settings below to match your system
 #
@@ -17,31 +46,29 @@
 #                   This directory is under the tcl\lib directory
 
 # Root directory of the distribution
-ROOT_DIR	= c:\users\cxh\java\tb\tclBlend1.1a1
+ROOT_DIR	= d:\users\cxh\src\tcljava
 #ROOT_DIR	= G:\mo\software\test_tcl\src\tclBlend1.1a1
 
-TOOLS32		= c:\Progra~1\DevStudio\Vc
+TOOLS32		= d:\Progra~1\Micros~2\VC98
 #TOOLS32	= G:\mo\software\msdev
 
 # JDK1.1 users should uncomment this section
-JAVA_DIR	= C:\jdk1.1.6
+JAVA_DIR	= D:\jdk1.1.6
 #JAVA_DIR	= G:\mo\software\java\jdk1.1.6
 JAVA_VERSION	= 1.1
 JAVA_CLASSPATH	= $(JAVA_DIR)\lib\classes.zip;.
 
 # JDK1.2 users should uncomment this section
-#JAVA_DIR	= C:\jdk1.2beta4
+JAVA_DIR	= D:\jdk1.2beta4
 #JAVA_DIR	= G:\mo\software\java\jdk1.1.2b4
-#JAVA_VERSION	= 1.2
-#JAVA_CLASSPATH	= $(JAVA_DIR)\lib\tools.jar;$(JAVA_DIR)\jre\lib\rt.jar;.
+JAVA_VERSION	= 1.2
+JAVA_CLASSPATH	= $(JAVA_DIR)\lib\tools.jar;$(JAVA_DIR)\jre\lib\rt.jar;.
 
 # Tcl version info needed by the rest of the scripts
 TCL_DOTVERSION	= 8.0.3
 #TCL_DOTVERSION	= 8.0
 TCL_VERSION	= 80
-
-
-TCL_DIR		= c:\progra~1\tcl
+TCL_DIR		= D:\progra~1\tcl
 #TCL_DIR	= G:\mo\software\test_tcl
 # If you are compiling from the Tcl Blast 8.0.3 cd, then uncomment these lines
 TCLSH		= tclsh80.exe
@@ -153,9 +180,9 @@ TEST_CLASSPATH		= ".;$(TEST_CLASS_DIR);$(CLASS_DIR)\$(TCLJAVA).jar;$(CLASS_DIR)\
 
 # Default is to build whatever is specified by the
 # TCLJAVA variable (jacl or tclblend).
-all: $(TCLJAVA) tcljava test_$(TCLJAVA).build
+all:  tcljava $(TCLJAVA)
 
-test: test_$(TCLJAVA).exec
+test:  test_$(TCLJAVA).build test_$(TCLJAVA).exec
 
 clean: 	clean_bean clean_$(TCLJAVA) clean_tcljava clean_demo \
 	clean_test clean_temp
@@ -192,10 +219,14 @@ BLEND_TCL_LANG_TESTS = \
 test_jacl.build: test.build
 	cd $(TEST_SRC_DIR)
 	$(JAVAC) $(JAVAC_FLAGS) -classpath $(TEST_CLASSPATH) \
-		-d $(TEST_CLASS_DIR) $(JACL_TCL_LANG_TESTS) \
+		-d $(TEST_CLASS_DIR) \
+		$(JACL_TCL_LANG_TESTS) \
 		tests\exec\*.java
-
 test_tclblend.build: test.build
+	cd $(TEST_SRC_DIR)
+	$(JAVAC) $(JAVAC_FLAGS) -classpath $(TEST_CLASSPATH) \
+		-d $(TEST_CLASS_DIR) \
+		$(BLEND_TCL_LANG_TESTS)
 
 test.build: clean_test
 	-mkdir $(TEST_CLASS_DIR)
@@ -203,8 +234,9 @@ test.build: clean_test
 	$(JAVAC) $(JAVAC_FLAGS) -classpath $(TEST_CLASSPATH) \
 		-d $(TEST_CLASS_DIR) \
 		pkg1\*.java pkg2\*.java \
-		tcl\lang\*.java tests\*.java tests\invoke\*.java \
-		tests\javainfo\*.java tests\signature\*.java
+		tests\*.java tests\invoke\*.java \
+		tests\javainfo\*.java tests\signature\*.java \
+		$(COMMON_TCL_LANG_TESTS)
 	-mkdir $(TEST_CLASS_DIR)\javaload
 	$(JAVAC) $(JAVAC_FLAGS) -classpath $(TEST_CLASSPATH) \
 		-d $(TEST_CLASS_DIR)\javaload \
@@ -233,10 +265,11 @@ clean_demo:
 	-del $(DEMO_SRC_DIR)\*\*.class 2> NUL
 
 clean_test:
-	-rd /S /Q $(TEST_CLASS_DIR)/tests 2> NUL
-	-rd /S /Q $(TEST_CLASS_DIR)/pkg1 2> NUL
-	-rd /S /Q $(TEST_CLASS_DIR)/pkg2 2> NUL
-	-rd /S /Q $(TEST_CLASS_DIR)/tcl 2> NUL
+	-rd /S /Q $(TEST_CLASS_DIR)\javaload 2> NUL
+	-rd /S /Q $(TEST_CLASS_DIR)\tests 2> NUL
+	-rd /S /Q $(TEST_CLASS_DIR)\pkg1 2> NUL
+	-rd /S /Q $(TEST_CLASS_DIR)\pkg2 2> NUL
+	-rd /S /Q $(TEST_CLASS_DIR)\tcl 2> NUL
 
 distclean: clean
 
@@ -268,6 +301,7 @@ install: install_$(TCLJAVA) install_tcljava
 # your are likely to get a crash.  Instead, set TCLSH = tclsh80.exe
 test_tclblend.exec:
 	cd $(WIN_DIR)
+	-del tclblend.dll
 	copy $(SRC_DIR)\pkgIndex.tcl .
 	copy $(SRC_DIR)\jwish.tcl .
 	set CLASSPATH=$(TEST_CLASSPATH)
@@ -295,8 +329,10 @@ test_jacl.exec:
 		cd ../tests
 		source all
 <<
-
-
+run_jacl:
+	cd $(WIN_DIR)
+	set CLASSPATH=$(TEST_CLASSPATH)
+	$(JAVA) $(JAVA_FLAGS) tcl.lang.Shell
 
 
 
