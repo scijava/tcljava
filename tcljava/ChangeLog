@@ -1,3 +1,10 @@
+2003-09-30  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* README.jacl:
+	* README.tclblend: Remove note claiming Jacl
+	and Tcl Blend were not ready for use in a
+	production system.
+
 2003-09-09  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* configure: Regen.

@@ -1,18 +1,6 @@
 Tcl Blend
 
-RCS: @(#) $Id: README.tclblend,v 1.13 2003/07/25 07:05:29 mdejong Exp $
-
-
-------------  STOP!  ------------
-
-Before going any farther, it needs to be made clear that this release
-of Tcl Blend is not considered stable enough to be used in production
-systems. There have been significant code changes since the last
-release, so additional testing and evaluation will need to be done
-before the 1.3 version of Tcl Blend can be considered ready for
-deployment in a production system.
-
----------------------------------
+RCS: @(#) $Id: README.tclblend,v 1.14 2003/09/30 15:56:17 mdejong Exp $
 
 1. Introduction
 ---------------
