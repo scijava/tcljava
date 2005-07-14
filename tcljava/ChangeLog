@@ -1,5 +1,14 @@
 2005-07-13  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/jacl/tcl/lang/Expression.java (ExprGetValue):
+	Check for a subexpression that has no right hand
+	operand and raise a syntax error if found.
+	* tests/tcl/expr.test: Check for error condition.
+	Thanks go to Jason Lohrey for this bug id and patch.
+	[Bug 1071611]
+
+2005-07-13  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/jacl/tcl/lang/Expression.java (ExprParseString):
 	Fix ancient number parsing bug dealing with expr
 	values. Expr should treat something that does not
