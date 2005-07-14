@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: CObject.java,v 1.2 2000/10/29 06:00:41 mdejong Exp $
+ * RCS: @(#) $Id: CObject.java,v 1.3 2005/07/14 02:31:58 mdejong Exp $
  */
 
 package tcl.lang;
@@ -44,6 +44,18 @@ final void makeReference(TclObject tobj)
 
 public String toString()
 {
+    throw new TclRuntimeError("This shouldn't be called");
+}
+
+final void incrRefCount() {
+    throw new TclRuntimeError("This shouldn't be called");
+}
+
+final void decrRefCount() {
+    throw new TclRuntimeError("This shouldn't be called");
+}
+
+final long getCObjectPtr() {
     throw new TclRuntimeError("This shouldn't be called");
 }
 

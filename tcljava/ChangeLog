@@ -1,5 +1,13 @@
 2005-07-13  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/jacl/tcl/lang/CObject.java:
+	Add stubbed out signatures for methods defined
+	by the TclBlend version of CObject. These methods
+	will never be called in Jacl.
+	[Patch 875166]
+
+2005-07-13  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/jacl/tcl/lang/Expression.java (ExprGetValue):
 	Check for a subexpression that has no right hand
 	operand and raise a syntax error if found.
