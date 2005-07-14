@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Expression.java,v 1.10 2003/02/04 00:35:41 mdejong Exp $
+ * RCS: @(#) $Id: Expression.java,v 1.11 2005/07/14 00:43:50 mdejong Exp $
  *
  */
 
@@ -369,25 +369,7 @@ class Expression {
 		    m_token = VALUE;
 		    return new ExprValue(res.value);
                 }
-            } else if (res.errno == TCL.INTEGER_RANGE) {
-		    IntegerTooLarge(interp);
             }
-
-
-/*
-	    if (res.index == len) {
-		// We treat this string as a number only if the number
-		// ends at the end of the string. E.g.: " 1", "1" are
-		// good numbers but "1 " is not.
-
-		if (res.errno == TCL.INTEGER_RANGE) {
-		    IntegerTooLarge(interp);
-		} else {
-		    m_token = VALUE;
-		    return new ExprValue(res.value);
-		}
-	    }
-*/
 	} else {
 	    //System.out.println("string does not look like an int, checking for Double");
 
@@ -410,31 +392,7 @@ class Expression {
 		    return new ExprValue(res.value);
                 }
 
-            } else if (res.errno == TCL.DOUBLE_RANGE) {
-		if (res.value != 0) {
-		    DoubleTooLarge(interp);
-		} else {
-		    DoubleTooSmall(interp);
-		}
             }
-            // if res.errno is any other value (like TCL.INVALID_DOUBLE)
-            // just fall through and use the string rep
-
-
-/*
-	    if (res.index == len) {
-
-		if (res.errno == 0) {
-	            //System.out.println("string is a Double of value " + res.value);
-		    m_token = VALUE;
-		    return new ExprValue(res.value);
-		} else if (res.errno == TCL.DOUBLE_RANGE) {
-		    DoubleTooLarge(interp);
-		}
-	    }
-*/
-
-
 	}
 
 	//System.out.println("string is not a valid number, returning as string");

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr.test,v 1.7 2003/03/17 21:33:40 mdejong Exp $
+# RCS: @(#) $Id: expr.test,v 1.8 2005/07/14 00:43:50 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -280,7 +280,7 @@ test expr-8.5 {CompileEqualityExpr: error in relational expr} {
 } {syntax error in expression "x>3"} 
 test expr-8.6 {CompileEqualityExpr: simple equality exprs} {expr 7==0x13} 0
 test expr-8.7 {CompileEqualityExpr: simple equality exprs} {expr -0xf2!=0x53} 1
-test expr-8.8 {CompileEqualityExpr: simple equality exprs} {knownbug} {expr {"12398712938788234-1298379" != ""}} 1
+test expr-8.8 {CompileEqualityExpr: simple equality exprs} {expr {"12398712938788234-1298379" != ""}} 1
 test expr-8.9 {CompileEqualityExpr: simple equality exprs} {expr -1!="abc"} 1
 test expr-8.10 {CompileEqualityExpr: error compiling equality arm} {
     catch {expr 2**3==6} msg
