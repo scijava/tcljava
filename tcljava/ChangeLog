@@ -1,3 +1,14 @@
+2005-07-13  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/tcljava/tcl/lang/TclInteger.java
+	(setIntegerFromAny): When converting a boolean
+	to an integer, convert by reparsing the string
+	rep unless the boolean has the string rep
+	"0" or "1". It is possible that a valid
+	integer like 10 would be converted to the
+	boolean 1 and we would not want to convert
+	that back to the integer 1.
+
 2005-01-12  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* demos/gluepkg/JarCmd.java:

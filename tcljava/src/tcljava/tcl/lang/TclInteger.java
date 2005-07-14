@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclInteger.java,v 1.5 2000/10/29 06:00:42 mdejong Exp $
+ * RCS: @(#) $Id: TclInteger.java,v 1.6 2005/07/14 00:19:44 mdejong Exp $
  *
  */
 
@@ -100,12 +100,21 @@ public class TclInteger implements InternalRep {
 	if (rep instanceof TclInteger) {
 	    // Do nothing.
 	} else if (rep instanceof TclBoolean) {
-	    boolean b = TclBoolean.get(interp, tobj);
-	    if (b) {
-		tobj.setInternalRep(new TclInteger(1));
-	    } else {
-		tobj.setInternalRep(new TclInteger(0));
+	    // A boolean with the string rep "0" or "1"
+	    // can be safely converted to an integer.
+	    String srep = tobj.toString();
+
+	    if (srep.length() == 1) {
+		char c = srep.charAt(0);
+		if (c == '0') {
+		    tobj.setInternalRep(new TclInteger(0));
+		    return;
+		} else if (c == '1') {
+		    tobj.setInternalRep(new TclInteger(1));
+		    return;
+		}
 	    }
+	    tobj.setInternalRep(new TclInteger(interp, srep));
 	} else {
 	    // (ToDo) other short-cuts
 
