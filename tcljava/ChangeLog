@@ -1,5 +1,14 @@
 2005-07-13  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/jacl/tcl/lang/StringCmd.java (cmdProc):
+	Handle empty string case for string is CLASS
+	subcommand.
+	* tests/tcl/string.test: Add test case for
+	empty string argument with string is.
+	[Bug 1237950]
+
+2005-07-13  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/jacl/tcl/lang/CObject.java:
 	Add stubbed out signatures for methods defined
 	by the TclBlend version of CObject. These methods

@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: StringCmd.java,v 1.4 2000/08/20 08:37:47 mo Exp $
+ * RCS: @(#) $Id: StringCmd.java,v 1.5 2005/07/14 03:36:32 mdejong Exp $
  *
  */
 
@@ -356,6 +356,8 @@ throws
 		if (strict) {
 		    result = false;
 		}
+		interp.setResult(result);
+		return;
 	    }
 
 	    switch (index) {
