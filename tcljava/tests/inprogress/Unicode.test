@@ -155,7 +155,7 @@ test unicode-3.1 {scan encoded string} {knownbug} {
     set results
 } {10 27 36 66 48 108 67 122 27 40 66}
 
-test unicode-3.2 {convert to encoded string} {
+test unicode-3.2 {convert to encoded string} {knownbug} {
     set str "\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"
     set enc [encoding convertto jis0208 $str]
     string compare $enc "!)!)!)!)!)!)!)!)!)!)!)!)!)!)!)"

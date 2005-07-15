@@ -5143,15 +5143,16 @@ JAVA_FLAGS="$JAVA_FLAGS -ms5m -mx22m"
 
 
 
-# We need to pass "tclblend" as the TCLJAVA name instead of "both"
+# Need to subst TCLJAVA="tclblend" not TCLJAVA="both".
+ORIG_TCLJAVA=$TCLJAVA
 if test "$TCLJAVA" = "both" ; then
     TCLJAVA=tclblend
 fi
 
 
-if test $TCLJAVA = "both"; then
+if test $ORIG_TCLJAVA = "both"; then
     OUTPUT_FILES="Makefile jtclsh jaclsh tcljavaConfig.sh"
-elif test $TCLJAVA = "tclblend"; then
+elif test $ORIG_TCLJAVA = "tclblend"; then
     OUTPUT_FILES="Makefile jtclsh tcljavaConfig.sh"
 else
     OUTPUT_FILES="Makefile jaclsh tcljavaConfig.sh"

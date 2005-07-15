@@ -1,3 +1,12 @@
+2005-07-14  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* configure: Regen.
+	* configure.in: Fixup subst variable needed
+	when configuring both tclblend and jacl.
+	* tests/inprogress/Unicode.test: Add knownbug
+	constraint to test that always fails due to
+	some bug in Java unicode libs.
+
 2005-07-13  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* src/jacl/tcl/lang/StringCmd.java (cmdProc):

@@ -374,15 +374,16 @@ AC_SUBST(JAR_NOCOMPRESS_FLAGS)
 AC_SUBST(TCLJAVA_VERSION)
 AC_SUBST(TCLJAVA_NODOT_VERSION)
 
-# We need to pass "tclblend" as the TCLJAVA name instead of "both"
+# Need to subst TCLJAVA="tclblend" not TCLJAVA="both".
+ORIG_TCLJAVA=$TCLJAVA
 if test "$TCLJAVA" = "both" ; then
     TCLJAVA=tclblend
 fi
 AC_SUBST(TCLJAVA)
 
-if test $TCLJAVA = "both"; then
+if test $ORIG_TCLJAVA = "both"; then
     OUTPUT_FILES="Makefile jtclsh jaclsh tcljavaConfig.sh"
-elif test $TCLJAVA = "tclblend"; then
+elif test $ORIG_TCLJAVA = "tclblend"; then
     OUTPUT_FILES="Makefile jtclsh tcljavaConfig.sh"
 else
     OUTPUT_FILES="Makefile jaclsh tcljavaConfig.sh"
