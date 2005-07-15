@@ -1,32 +1,32 @@
-This message is to announce the new 1.2.6 release of Jacl and
-Tcl Blend.  These releases are the result of a joint effort by
-Mo DeJong, Christopher Hylands, Bryan Surles, and Scott Redman. 
-The goal of this project is to extend and improve the 1.0 release 
-of Jacl and Tcl Blend which was originally started by the Sun Tcl team.
+This message is to announce the new 1.3.2 release of Jacl and
+Tcl Blend.  These releases are the result of efforts by Mo DeJong
+and the Jacl and Tcl Blend user community.
 
-The 1.2.6 release of Jacl and Tcl Blend are available for
+The 1.3.2 release of Jacl and Tcl Blend are available for
 downloading at the following URL:
 
-    http://www.scriptics.com/java
+    http://sourceforge.net/project/showfiles.php?group_id=13005
 
-The 1.2 version is a "production" release, it is considered
-stable enough to be used on an everyday basis. This stable
-release is the result of a years worth of development.
+The 1.3.2 version is a "production" ready release, it is
+considered stable enough to be used on an everyday basis.
+This release is being used by customers in production
+environments on a daily basis.
 
-What's New in the 1.2.6 Release?
+What's New in the 1.3.2 Release?
 ----------------------------------
 
-The new release includes no new features, but it does fix
-a couple of bugs present in the 1.2.5 release. Building
-Tcl Blend from the source under Windows was broken, it
-has now been fixed. The pkgIndex.tcl file does additional
-checks for CLASSPATH entries in the env array with the
-wrong case. A couple of bugs in Jacl's implementation of
-the clock command were fixed. Error messages provided
-by the TclClassLoader were also improved, and some
-additional examples were added to the HTML documentation.
-Additional support for the IBM JDK port for Linux has
-been added for both Jacl and Tcl Blend.
+The 1.3.2 release includes a couple of minor new features
+and some important bug fixes. Tcl Blend now includes the
+file win/libjvm.dll.a, it is needed to build with some broken
+JDKs in a Windows environment. The jaclsh startup script
+now returns a non-zero exit status if some error was
+encountered while processing a script. IO support in the
+Interp class has been re-implemented so that it makes use
+of the new IO layer. Jacl and Tcl Blend can now be compiled
+in a JDK 1.5 environment. A number of tricky expr command
+number parsing bugs have been fixed in Jacl. Also, the
+classloader issues that made it difficult to run Jacl in
+certain environments have been resolved.
 
 See the new_features.txt and changes.txt files for more info.
 
@@ -35,9 +35,8 @@ What is Jacl?
 
 Jacl is a 100% Java implementation of Tcl 8.  This allows Tcl to run
 in more environments and also brings the power of scripting to Java
-developers.  Jacl only implements a subset of the Tcl language (the C
-version of Tcl has a lot of features!).  However, the core of the
-language is implemented and well tested.
+developers.  Jacl implements almost all the features available in
+the C version of Tcl and is well tested.
 
 What is Tcl Blend?
 ------------------------
@@ -45,66 +44,19 @@ What is Tcl Blend?
 Tcl Blend is a Tcl Extension that allows you to have access to the
 Java VM from the Tcl interpreter.  The goal here is to allow Tcl
 developers to write new Tcl extensions in Java rather then C or C++
-for better portability.  Tcl Blend is known to work on Solaris,
-Windows 95/NT, IRIX, and Linux. Other systems have not been tested
-but it should be easy to port Tcl Blend to any system that supports
-dynamic loading and the Java JNI interface.
+for better portability.  A developer can also load both Tcl and
+Tcl Blend into an existing Java JVM. Tcl Blend is known to work on
+Solaris, Windows 95/NT, IRIX, and Linux. Other systems have not
+been tested but it should be easy to port Tcl Blend to any system
+that supports dynamic loading and the Java JNI interface.
 
 For additional information:
 ---------------------------------
 
-Scriptics Corporation maintains the download site for Jacl and Tcl
-Blend.  This site contains a variety of information about Tcl & Java
-integration: including FAQs, man pages, and the binary and source
-distributions for Jacl and Tcl Blend.  Please visit the following URL:
+The primary website for Tcl/Java related information is:
 
-    http://www.scriptics.com/java
+    http://tcljava.sourceforge.net/
 
-Christopher Hylands maintains his own page that lists a plethora of
-information.  There are links to related Web pages, his own personal
-notes about building and using Jacl and Tcl Blend, and in depth
-explanations about Tcl and Java integration.  This information can be
-found at the following URL:
-
-    http://ptolemy.eecs.berkeley.edu/~cxh/java/tclblend
-
-Comments and questions can be sent to the Tcl & Java integration
-mailing list at:
-
-    tcljava@scriptics.com
-
-Of course, you will need to join the mailing list first. You can do
-so by sending an email to this address.
-
-    tcljava-request@scriptics.com
-
-Scriptics support for Jacl and Tcl Blend:
--------------------------------------------------
-
-It is important to understand that this release is due entirely to the
-efforts of Christopher Hylands and Mo DeJong. Scriptics currently has
-a minor, facilitating role in Jacl and Tcl Blend. Scriptics does provide
-enterprise support for Tcl Blend through negotiable support agreements.
-
-If you have a problem with Jacl or Tcl Blend or you think you have
-a great idea for a feature, you should send an email to the tcljava
-mailing list. Please do not send email directly to the authors.
-
-Credits
----------
-The Jacl and Tcl Blend releases are brought to you by:
-
- Mo DeJong
- Christopher Hylands
- Scott Redman
- Bryan Surles
-
-We would like to thank the Jacl and Tcl Blend 1.0 team:
-
- Ray Johnson: Project Manager
- Melissa Hirschl
- Ioi Lam
- Bryan Surles
-
-And a special thanks to Scott Stanton who implemented Tcl Blend, and
-to John Reekie of UC Berkeley.
+The README file included in the Jacl and Tcl Blend releases
+includes lots or additional information including how
+to sign up for the tcljava mailing lists.

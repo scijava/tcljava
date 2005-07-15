@@ -28,8 +28,7 @@ $TCLSH $FSUB '(package +[a-z]* +java +)[0-9]+(\.[0-9]+)*' \
 # Update version numbers of the files with TCLJAVA_VERSION in them
 
 FILES=""
-#FILES="$FILES unix/configure.in"
-#FILES="$FILES unix/configure"
+FILES="$FILES configure.in"
 FILES="$FILES win/makefile.vc"
 FILES="$FILES $CUR"
 

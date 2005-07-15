@@ -344,4 +344,22 @@ The Tcl IO subsystem has been ported to Jacl. Encoding, buffering,
 and line translations for channels now match Tcl semantics.
 Non-blocking IO and the fileevent command are not implemented.
 
+(JDK 1.5 SUPPORT)
+
+Both Jacl and Tcl Blend can now be compiled with JDK 1.5 or
+newer. Earlier versions made use of variables named enum
+which is now a reserved word in JDK 1.5.
+
+(JACL EXEC COMMAND)
+
+Jacl can now exec a process in the background by passing
+the & flag on the exec command line. Exec will also use
+a second thread to read IO if running under JDK 1.3 or newer.
+Jacl exec now works properly under Win XP.
+
+(JACL INFO COMMAND)
+
+The info hostname command is now implemented in Jacl.
+
+
 </PRE></BODY></HTML>

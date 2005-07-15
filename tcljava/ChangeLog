@@ -1,5 +1,23 @@
 2005-07-14  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	Update version number to 1.3.2. Update README
+	and associated files.
+
+	* README.jacl:
+	* README.tclblend:
+	* announce:
+	* configure:
+	* configure.in:
+	* new_features.txt:
+	* src/pkgIndex.tcl:
+	* src/jacl/tcl/lang/Interp.java:
+	* src/tcljava/tcl/lang/BlendExtension.java:
+	* unix/tools/vutil/current:
+	* unix/tools/vutil/vsub.sh:
+	* win/makefile.vc:
+
+2005-07-14  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* configure: Regen.
 	* configure.in: Fixup subst variable needed
 	when configuring both tclblend and jacl.

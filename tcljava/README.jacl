@@ -1,6 +1,6 @@
 Jacl
 
-RCS: @(#) $Id: README.jacl,v 1.15 2003/09/30 15:56:17 mdejong Exp $
+RCS: @(#) $Id: README.jacl,v 1.16 2005/07/15 03:57:00 mdejong Exp $
 
 1. Introduction
 ---------------
@@ -22,11 +22,17 @@ Java Package enables the user to script Java.
 2. Documentation
 ----------------
 
-The new webste includes a getting started page that provides
-a good intro to using Tcl/Java. One can also find demos
-included in this release that provide examples of how to
-integrate Tcl and Java. The "docs" directory contains additional
-information.  See the "diffs.txt" file in this directory for a list of
+The Tcl/Java project website includes a getting started page that
+provides a good intro to interacting with Java from Tcl. The website
+can be viewed locally by opening docs/website/index.html in a web
+browser, or online at the following URL:
+
+http://tcljava.sourceforge.net
+
+One can also find demos included in this release that provide
+examples of how to integrate Tcl and Java. The manual page
+at docs/website/manual.html provides a useful API reference.
+See the "diffs.txt" file in this directory for a list of
 Tcl features and the extent to which they are implemented in Jacl.
 The "new_features.txt" file describes features that have been
 added in each release.
@@ -136,39 +142,31 @@ that you can not run the jaclsh before installing it.
 See the file "license.terms" for information on usage and 
 redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-6. Contact Information
-----------------------
-
-Jacl 1.0 was released by the now defunct SunScript group at Sun Labs.
-The majority of the Jacl/Tcl Blend developers spun out of Sun Labs
-into Scriptics.
-
-Jacl 1.1 and 1.2 were primarily by people outside of Scriptics,
-with assistance from Scriptics.
-
-Newer versions of Jacl are crafted by independent developers.
-
-7. Getting Help
+6. Getting Help
 ----------------
 
-Users of Tcl Blend or Jacl should make use of the tcljava-user mailing
-list at SourceForge. This is the place to ask questions or post scripts
-that are causing you trouble. Basically, any Jacl or Tcl Blend related
-question is fine on the user list.
+Users of Tcl Blend or Jacl should subscribe and post questions
+to the tcljava-user mailing list at SourceForge. This mailing
+list provides a forum to ask questions or post scripts that are
+causing you trouble. Basically, any Jacl or Tcl Blend related
+question is on topic for this mailing list.
 
 http://lists.sourceforge.net/lists/listinfo/tcljava-user
 
 There is also a mailing list for Jacl and Tcl Blend developers.
 If you have a specific question about some implementation feature,
 have a patch for Jacl or Tcl Blend, or are interested in implementing
-some feature, then you should post a note to the developers mailing list.
+some feature, then you should post a note to the developers
+mailing list.
 
 http://lists.sourceforge.net/lists/listinfo/tcljava-dev
 
 Note that you will have to subscribe to the mailing lists before
-posting to them. Some people this is is somehow "unfriendly", but
-if we did not do this the mailing list would be full of spam and
-it would be useful to nobody.
+posting to them. Some people think this subscription requirement
+is somehow "unfriendly", but without it the mailing list would
+be full of spam. It only takes a moment to subscribe and you
+can unsubscribe at any time. Posts from users that are not subscribed
+to the mailing list will be automatically rejected.
 
 In addition to the mailing lists, you can ask about Jacl or Tcl Blend
 or on the Tcl newsgroup. The network news group "comp.lang.tcl"
@@ -189,7 +187,7 @@ these additional pieces of information with the script:
     (d) What platform are you running on (Machine, OS, etc.)?
     (e) What releases of Tcl products are you using?
 
-8. Using Jacl in applets
+7. Using Jacl in applets
 -------------------------
 
 Currently there are many issues that make it difficult to run Jacl as
@@ -215,16 +213,23 @@ c) Netscape 4.0.x does not yet support the JDK 1.1 event model.  This
 Due to these current difficulties, we have decided not try to
 support the use of Jacl inside applets.
 
+8. Development History
+----------------------
+
+Jacl 1.0 was released by the now defunct SunScript group at
+Sun Labs. The majority of the Jacl developers spun out of
+Sun Labs into Scriptics.
+
+Newer versions of Jacl were developed primarily by people outside
+of Scriptics, with some assistance from Scriptics.
 
 The Jacl 1.0 & Tcl Blend 1.0 team at Sun Script
 -----------------------------------------------
-
 Ray Johnson - Project Manager
 Melissa Hirschl
 Ioi Lam
 Bryan Surles
 Special thanks to Scott Stanton who implemented Tcl Blend.
-
 
 The Jacl 1.1 & Tcl Blend 1.1 team
 ---------------------------------
