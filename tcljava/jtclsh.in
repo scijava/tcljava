@@ -101,7 +101,7 @@ fi
 # Set up our PATH, LD_LIBRARY_PATH, or SHLIB_PATH
 
 if test "$OSTYPE" = "msys"; then
-    PATH=${JAVA_LIB_RUNTIME_PATH}:${PATH}
+    PATH="${JAVA_LIB_RUNTIME_PATH}:${PATH}"
     export PATH
 elif test "`uname -s`" = "HP-UX" ; then
     SHLIB_PATH=${JAVA_LIB_RUNTIME_PATH}:${SHLIB_PATH}

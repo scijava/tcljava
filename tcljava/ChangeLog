@@ -1,3 +1,17 @@
+2005-07-16  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* Makefile.in: Place double quotes around setting of
+	runtime path variable in shell_tclblend and
+	test_tclblend.exec targets. This avoids an error
+	when the PATH contains a directory name that has
+	spaces in it under Win32.
+	* configure: Regen.
+	* jtclsh.in: Place double quotes around PATH value.
+	* tcljava.m4 (AC_JAVA_JNI_LIBS): Add detection for
+	Sun JDK 1.3 and 1.4 JVMs. Fixup IBM JDK 1.3 detection
+	so that it does not generate a false positive when
+	configuring with a Sun JDK 1.4 JVM.
+
 2005-07-14  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	Update version number to 1.3.2. Update README

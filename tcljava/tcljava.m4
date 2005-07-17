@@ -968,11 +968,35 @@ AC_DEFUN([AC_JAVA_JNI_LIBS], [
         if test "x$ac_java_jvm_jni_lib_flags" = "x" ; then
             AC_MSG_LOG([Looking for $ac_java_jvm_dir/$F], 1)
             if test -f $ac_java_jvm_dir/$F ; then
-                AC_MSG_LOG([Found $ac_java_jvm_dir/$F], 1)
-                D1=$ac_java_jvm_dir/jre/bin
-                D2=$ac_java_jvm_dir/jre/bin/classic
-                ac_java_jvm_jni_lib_runtime_path="${D1}:${D2}"
-                ac_java_jvm_jni_lib_flags="$ac_java_jvm_dir/$F"
+                # jre/bin/classic directory must contain jvm.dll
+                DLL=jre/bin/classic/jvm.dll
+                if test -f $ac_java_jvm_dir/$DLL ; then
+                    AC_MSG_LOG([Found $ac_java_jvm_dir/$F], 1)
+                    D1=$ac_java_jvm_dir/jre/bin
+                    D2=$ac_java_jvm_dir/jre/bin/classic
+                    ac_java_jvm_jni_lib_runtime_path="${D1}:${D2}"
+                    ac_java_jvm_jni_lib_flags="$ac_java_jvm_dir/$F"
+                fi
+            fi
+        fi
+
+        # Sun JDK 1.3 and 1.4 for Win32
+
+        F=lib/jvm.lib
+        if test "x$ac_java_jvm_jni_lib_flags" = "x" ; then
+            AC_MSG_LOG([Looking for $ac_java_jvm_dir/$F], 1)
+            if test -f $ac_java_jvm_dir/$F ; then
+                # jre/bin/client must contain jvm.dll
+                # jre/bin/server directory could also contain jvm.dll,
+                # just assume the user wants to use the client JVM.
+                DLL=jre/bin/client/jvm.dll
+                if test -f $ac_java_jvm_dir/$DLL ; then
+                    AC_MSG_LOG([Found $ac_java_jvm_dir/$F], 1)
+                    D1=$ac_java_jvm_dir/jre/bin
+                    D2=$ac_java_jvm_dir/jre/bin/client
+                    ac_java_jvm_jni_lib_runtime_path="${D1}:${D2}"
+                    ac_java_jvm_jni_lib_flags="$ac_java_jvm_dir/$F"
+                fi
             fi
         fi
     fi
