@@ -1,5 +1,9 @@
 #! /bin/sh
 # Wrapper script to start up Tcl/Tk 8.x shell with tcl blend
+if (uname -s | grep CYGWIN > /dev/null) ; then
+    echo "Must be run from msys shell" ;
+    exit 1 ;
+fi
 
 # Do not edit this script unless it is called jtclsh.in.
 # tclBlend/unix/configure takes jtclsh.in, substitutes the @xx@
@@ -99,6 +103,10 @@ if test ! -d ${XP_TCLJAVA_INSTALL_DIR} ; then
 fi
 
 # Set up our PATH, LD_LIBRARY_PATH, or SHLIB_PATH
+# Note that the directory that contains the Tcl Blend
+# shared library appears before the existing path
+# that that the install location is  searched before
+# the current directory.
 
 if test "$OSTYPE" = "msys"; then
     PATH="${JAVA_LIB_RUNTIME_PATH}:${PATH}"
@@ -117,7 +125,9 @@ else
     export KAFFELIBRARYPATH
 fi    
 
-# Extra shared lib stuff
+# Extra shared lib stuff for Unix
+
+if test "$OSTYPE" != "msys"; then
 
 LD_PRELOAD=${TCLBLEND_LD_PRELOAD}
 export LD_PRELOAD
@@ -126,6 +136,8 @@ LD_BIND_NOW=${TCLBLEND_LD_BIND_NOW}
 export LD_BIND_NOW
 
 export TCLBLEND_SHLIB_NAMES
+
+fi
 
 # set up the CLASSPATH environmental variable
 
@@ -158,6 +170,7 @@ case "`basename $0`" in
     exit 3
     ;;
 esac
-        
+
 # exec wish of tclsh with the env vars already set up
 exec $WISH_OR_TCLSH ${1+"$@"}
+

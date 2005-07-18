@@ -5,5 +5,7 @@
 
 #aclocal
 #autoheader
+rm -rf autom4*.cache
 autoconf
+rm -rf autom4*.cache
 #automake

@@ -1,5 +1,9 @@
 #!/bin/sh
 # Wrapper script to start up Jacl
+if (uname -s | grep CYGWIN > /dev/null) ; then
+    echo "Must be run from msys shell" ;
+    exit 1 ;
+fi
 
 # Do not edit this script unless it is called jaclsh.in.
 # configure takes jaclsh.in, substitutes the @xx@

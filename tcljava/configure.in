@@ -324,7 +324,7 @@ AC_SUBST(BUILD_DIR)
 
 TOP_DIR=$srcdir
 if test "$ac_cv_tcl_win32" = "yes"; then
-    TOP_DIR_NATIVE=`sh $srcdir/mingw_path.sh $TOP_DIR`
+    TOP_DIR_NATIVE=`sh $srcdir/mingw_path.sh "$TOP_DIR"`
 else
     TOP_DIR_NATIVE=$TOP_DIR
 fi
@@ -332,14 +332,14 @@ AC_SUBST(TOP_DIR)
 AC_SUBST(TOP_DIR_NATIVE)
 
 if test "$ac_cv_tcl_win32" = "yes"; then
-    BUILD_DIR_NATIVE=`sh $srcdir/mingw_path.sh $BUILD_DIR`
+    BUILD_DIR_NATIVE=`sh $srcdir/mingw_path.sh "$BUILD_DIR"`
 else
     BUILD_DIR_NATIVE=$BUILD_DIR
 fi
 AC_SUBST(BUILD_DIR_NATIVE)
 
 if test "$ac_cv_tcl_win32" = "yes"; then
-    THREAD_BIN_DIR_NATIVE=`sh $srcdir/mingw_path.sh $THREAD_BIN_DIR`
+    THREAD_BIN_DIR_NATIVE=`sh $srcdir/mingw_path.sh "$THREAD_BIN_DIR"`
 else
     THREAD_BIN_DIR_NATIVE=$THREAD_BIN_DIR
 fi
@@ -374,6 +374,29 @@ AC_SUBST(JAR_NOCOMPRESS_FLAGS)
 AC_SUBST(TCLJAVA_VERSION)
 AC_SUBST(TCLJAVA_NODOT_VERSION)
 
+# Subst variable that may need to be converted to Win32
+# native paths.
+
+if test "$ac_cv_tcl_win32" = "yes" ; then
+    JAVA_NATIVE=`sh $srcdir/mingw_path.sh "$JAVA"`
+    AC_SUBST(JAVA_NATIVE)
+    PREFIX_NATIVE=`sh $srcdir/mingw_path.sh "$prefix"`
+    AC_SUBST(PREFIX_NATIVE)
+    EXEC_PREFIX_NATIVE=$exec_prefix
+    if test "$EXEC_PREFIX_NATIVE" = "NONE"; then
+        EXEC_PREFIX_NATIVE=$PREFIX_NATIVE
+    else
+        EXEC_PREFIX_NATIVE=`sh $srcdir/mingw_path.sh "$EXEC_PREFIX_NATIVE"`
+    fi
+    AC_SUBST(EXEC_PREFIX_NATIVE)
+    TCLSH_NATIVE=`sh $srcdir/mingw_path.sh "$TCLSH"`
+    AC_SUBST(TCLSH_NATIVE)
+    JAVA_CLASSPATH_NATIVE=`sh $srcdir/mingw_paths.sh "$JAVA_CLASSPATH"`
+    AC_SUBST(JAVA_CLASSPATH_NATIVE)
+    JAVA_LIB_RUNTIME_PATH_NATIVE=`sh $srcdir/mingw_paths.sh "$JAVA_LIB_RUNTIME_PATH"`
+    AC_SUBST(JAVA_LIB_RUNTIME_PATH_NATIVE)
+fi
+
 # Need to subst TCLJAVA="tclblend" not TCLJAVA="both".
 ORIG_TCLJAVA=$TCLJAVA
 if test "$TCLJAVA" = "both" ; then
@@ -382,11 +405,20 @@ fi
 AC_SUBST(TCLJAVA)
 
 if test $ORIG_TCLJAVA = "both"; then
-    OUTPUT_FILES="Makefile jtclsh jaclsh tcljavaConfig.sh"
+    OUTPUT_FILES="Makefile tcljavaConfig.sh jaclsh jtclsh"
+    if test "$ac_cv_tcl_win32" = "yes" ; then
+        OUTPUT_FILES="$OUTPUT_FILES jaclsh.bat jtclsh.bat"
+    fi
 elif test $ORIG_TCLJAVA = "tclblend"; then
-    OUTPUT_FILES="Makefile jtclsh tcljavaConfig.sh"
+    OUTPUT_FILES="Makefile tcljavaConfig.sh jtclsh"
+    if test "$ac_cv_tcl_win32" = "yes" ; then
+        OUTPUT_FILES="$OUTPUT_FILES jtclsh.bat"
+    fi
 else
-    OUTPUT_FILES="Makefile jaclsh tcljavaConfig.sh"
+    OUTPUT_FILES="Makefile tcljavaConfig.sh jaclsh"
+    if test "$ac_cv_tcl_win32" = "yes" ; then
+        OUTPUT_FILES="$OUTPUT_FILES jaclsh.bat"
+    fi
 fi
 
 AC_OUTPUT([$OUTPUT_FILES])

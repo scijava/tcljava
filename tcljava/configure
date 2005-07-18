@@ -271,7 +271,7 @@ PACKAGE_STRING=
 PACKAGE_BUGREPORT=
 
 ac_unique_file="ChangeLog"
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS THREAD_BIN_DIR JIKES JAVAC JAVA JAVA_G JAVAH JAR JDB DDD GDB CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT SHLIB_CFLAGS SHLIB_LD SHLIB_LD_LIBS SHLIB_PREFIX SHLIB_SUFFIX SHLIB_VERSION TCL_BUILD_LIB_SPEC TCL_CFLAGS TCL_DEFS TCL_LIBS TCL_VERSION TCL_SRC_DIR TCL_BIN_DIR TCL_LD_SEARCH_FLAGS TCL_DBGX TCLJAVA_DBGX JAVA_INCLUDE_FLAGS JAVA_LIB_FLAGS JAVA_LIB_RUNTIME_PATH TCLBLEND_LD_PRELOAD TCLBLEND_LD_BIND_NOW WISH TCLSH TCL_BIN_TCLSH TCL_INSTALL_LIB_DIR BUILD_DIR TOP_DIR TOP_DIR_NATIVE BUILD_DIR_NATIVE THREAD_BIN_DIR_NATIVE JAVA_CLASSPATH JAVA_FLAGS JAVAC_FLAGS JAVAC_D_FLAG JAVA_G_FLAGS JDB_ATTACH_FLAGS JAR_EXTRACT_FLAGS JAR_COMPRESS_FLAGS JAR_NOCOMPRESS_FLAGS TCLJAVA_VERSION TCLJAVA_NODOT_VERSION TCLJAVA LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS THREAD_BIN_DIR JIKES JAVAC JAVA JAVA_G JAVAH JAR JDB DDD GDB CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT SHLIB_CFLAGS SHLIB_LD SHLIB_LD_LIBS SHLIB_PREFIX SHLIB_SUFFIX SHLIB_VERSION TCL_BUILD_LIB_SPEC TCL_CFLAGS TCL_DEFS TCL_LIBS TCL_VERSION TCL_SRC_DIR TCL_BIN_DIR TCL_LD_SEARCH_FLAGS TCL_DBGX TCLJAVA_DBGX JAVA_INCLUDE_FLAGS JAVA_LIB_FLAGS JAVA_LIB_RUNTIME_PATH TCLBLEND_LD_PRELOAD TCLBLEND_LD_BIND_NOW WISH TCLSH TCL_BIN_TCLSH TCL_INSTALL_LIB_DIR BUILD_DIR TOP_DIR TOP_DIR_NATIVE BUILD_DIR_NATIVE THREAD_BIN_DIR_NATIVE JAVA_CLASSPATH JAVA_FLAGS JAVAC_FLAGS JAVAC_D_FLAG JAVA_G_FLAGS JDB_ATTACH_FLAGS JAR_EXTRACT_FLAGS JAR_COMPRESS_FLAGS JAR_NOCOMPRESS_FLAGS TCLJAVA_VERSION TCLJAVA_NODOT_VERSION JAVA_NATIVE PREFIX_NATIVE EXEC_PREFIX_NATIVE TCLSH_NATIVE JAVA_CLASSPATH_NATIVE JAVA_LIB_RUNTIME_PATH_NATIVE TCLJAVA LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -5123,7 +5123,7 @@ BUILD_DIR=`pwd`
 
 TOP_DIR=$srcdir
 if test "$ac_cv_tcl_win32" = "yes"; then
-    TOP_DIR_NATIVE=`sh $srcdir/mingw_path.sh $TOP_DIR`
+    TOP_DIR_NATIVE=`sh $srcdir/mingw_path.sh "$TOP_DIR"`
 else
     TOP_DIR_NATIVE=$TOP_DIR
 fi
@@ -5131,14 +5131,14 @@ fi
 
 
 if test "$ac_cv_tcl_win32" = "yes"; then
-    BUILD_DIR_NATIVE=`sh $srcdir/mingw_path.sh $BUILD_DIR`
+    BUILD_DIR_NATIVE=`sh $srcdir/mingw_path.sh "$BUILD_DIR"`
 else
     BUILD_DIR_NATIVE=$BUILD_DIR
 fi
 
 
 if test "$ac_cv_tcl_win32" = "yes"; then
-    THREAD_BIN_DIR_NATIVE=`sh $srcdir/mingw_path.sh $THREAD_BIN_DIR`
+    THREAD_BIN_DIR_NATIVE=`sh $srcdir/mingw_path.sh "$THREAD_BIN_DIR"`
 else
     THREAD_BIN_DIR_NATIVE=$THREAD_BIN_DIR
 fi
@@ -5173,6 +5173,29 @@ JAVA_FLAGS="$JAVA_FLAGS -ms5m -mx22m"
 
 
 
+# Subst variable that may need to be converted to Win32
+# native paths.
+
+if test "$ac_cv_tcl_win32" = "yes" ; then
+    JAVA_NATIVE=`sh $srcdir/mingw_path.sh "$JAVA"`
+
+    PREFIX_NATIVE=`sh $srcdir/mingw_path.sh "$prefix"`
+
+    EXEC_PREFIX_NATIVE=$exec_prefix
+    if test "$EXEC_PREFIX_NATIVE" = "NONE"; then
+        EXEC_PREFIX_NATIVE=$PREFIX_NATIVE
+    else
+        EXEC_PREFIX_NATIVE=`sh $srcdir/mingw_path.sh "$EXEC_PREFIX_NATIVE"`
+    fi
+
+    TCLSH_NATIVE=`sh $srcdir/mingw_path.sh "$TCLSH"`
+
+    JAVA_CLASSPATH_NATIVE=`sh $srcdir/mingw_paths.sh "$JAVA_CLASSPATH"`
+
+    JAVA_LIB_RUNTIME_PATH_NATIVE=`sh $srcdir/mingw_paths.sh "$JAVA_LIB_RUNTIME_PATH"`
+
+fi
+
 # Need to subst TCLJAVA="tclblend" not TCLJAVA="both".
 ORIG_TCLJAVA=$TCLJAVA
 if test "$TCLJAVA" = "both" ; then
@@ -5181,11 +5204,20 @@ fi
 
 
 if test $ORIG_TCLJAVA = "both"; then
-    OUTPUT_FILES="Makefile jtclsh jaclsh tcljavaConfig.sh"
+    OUTPUT_FILES="Makefile tcljavaConfig.sh jaclsh jtclsh"
+    if test "$ac_cv_tcl_win32" = "yes" ; then
+        OUTPUT_FILES="$OUTPUT_FILES jaclsh.bat jtclsh.bat"
+    fi
 elif test $ORIG_TCLJAVA = "tclblend"; then
-    OUTPUT_FILES="Makefile jtclsh tcljavaConfig.sh"
+    OUTPUT_FILES="Makefile tcljavaConfig.sh jtclsh"
+    if test "$ac_cv_tcl_win32" = "yes" ; then
+        OUTPUT_FILES="$OUTPUT_FILES jtclsh.bat"
+    fi
 else
-    OUTPUT_FILES="Makefile jaclsh tcljavaConfig.sh"
+    OUTPUT_FILES="Makefile tcljavaConfig.sh jaclsh"
+    if test "$ac_cv_tcl_win32" = "yes" ; then
+        OUTPUT_FILES="$OUTPUT_FILES jaclsh.bat"
+    fi
 fi
 
           ac_config_files="$ac_config_files $OUTPUT_FILES"
@@ -5880,6 +5912,12 @@ s,@JAR_COMPRESS_FLAGS@,$JAR_COMPRESS_FLAGS,;t t
 s,@JAR_NOCOMPRESS_FLAGS@,$JAR_NOCOMPRESS_FLAGS,;t t
 s,@TCLJAVA_VERSION@,$TCLJAVA_VERSION,;t t
 s,@TCLJAVA_NODOT_VERSION@,$TCLJAVA_NODOT_VERSION,;t t
+s,@JAVA_NATIVE@,$JAVA_NATIVE,;t t
+s,@PREFIX_NATIVE@,$PREFIX_NATIVE,;t t
+s,@EXEC_PREFIX_NATIVE@,$EXEC_PREFIX_NATIVE,;t t
+s,@TCLSH_NATIVE@,$TCLSH_NATIVE,;t t
+s,@JAVA_CLASSPATH_NATIVE@,$JAVA_CLASSPATH_NATIVE,;t t
+s,@JAVA_LIB_RUNTIME_PATH_NATIVE@,$JAVA_LIB_RUNTIME_PATH_NATIVE,;t t
 s,@TCLJAVA@,$TCLJAVA,;t t
 s,@LIBOBJS@,$LIBOBJS,;t t
 s,@LTLIBOBJS@,$LTLIBOBJS,;t t
