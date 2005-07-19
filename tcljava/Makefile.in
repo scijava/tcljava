@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.34 2005/07/18 06:07:05 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.35 2005/07/19 23:10:51 mdejong Exp $
 
 SHELL = /bin/sh
 
@@ -338,9 +338,7 @@ custom.warn:
 	@echo ""
 	@echo "########################################################"
 	@echo "Using the custom tclblend shell may or may not work"
-	@echo "on your system. The green threads version of the"
-	@echo "custom shell may be less reliable than the native"
-	@echo "threads version. The custom shell option is for"
+	@echo "on your system. The custom shell option is for"
 	@echo "developers only as it can be more difficult to"
 	@echo "install and use when compared to the shared libs method."
 	@echo "########################################################"
@@ -349,10 +347,14 @@ custom.warn:
 custom.o: $(UNIX_DIR)/custom.c
 	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/custom.c
 
+# Build custom shell. This shell will create a JVM and then init Tcl Blend.
+# This shell links directly to the Java shared libraries and to the
+# Tcl Blend shared library.
+
 # Build the tclblend shared lib before building custom.o
 custom: tclblend.check custom.warn custom.o
-	LD_LIBRARY_PATH=$(BUILD_DIR):$(TCL_BIN_DIR):$(THREAD_BIN_DIR):$(JAVA_ARCH_NATIVE_RUNTIME_LIBS):$(LD_LIBRARY_PATH) \
-	SHLIB_PATH=$(BUILD_DIR):$(TCL_BIN_DIR):$(THREAD_BIN_DIR):$(JAVA_ARCH_NATIVE_RUNTIME_LIBS):$(SHLIB_PATH) \
+	LD_LIBRARY_PATH=$(BUILD_DIR):$(TCL_BIN_DIR):$(THREAD_BIN_DIR):$(JAVA_LIB_RUNTIME_PATH):$(LD_LIBRARY_PATH) \
+	SHLIB_PATH=$(BUILD_DIR):$(TCL_BIN_DIR):$(THREAD_BIN_DIR):$(JAVA_LIB_RUNTIME_PATH):$(SHLIB_PATH) \
 	$(CC) -o custom -g custom.o $(TCLBLEND_LIB_FILE) $(LIBS)
 
 custom.check:
@@ -360,40 +362,49 @@ custom.check:
 		$(MAKE) TCLJAVA=$(TCLJAVA) custom ; \
 	fi
 
+# Run the custom shell.
 
-# Run the green threads version of the tclblend cutom shell.
-# This rule does a little trick so that the custom shell is
-# linked to the green threads version of the java lib.
-
-custom_shell_green:
-	rm -f $(TCLBLEND_LIB_FILE)
-	$(MAKE) JAVA_ARCH_NATIVE_LIB=$(JAVA_ARCH_GREEN_LIB) \
-            JAVA_ARCH_NATIVE_RUNTIME_LIBS=$(JAVA_ARCH_GREEN_RUNTIME_LIBS) custom
+custom_shell: custom
 	TCL_LIBRARY=$(TCL_LIBRARY_DIR) \
 	TCLLIBPATH=$(TCLLIBPATH) \
-	LD_LIBRARY_PATH=$(BUILD_DIR):$(TCL_BIN_DIR):$(THREAD_BIN_DIR):$(JAVA_ARCH_GREEN_RUNTIME_LIBS):$(LD_LIBRARY_PATH) \
-	SHLIB_PATH=$(BUILD_DIR):$(TCL_BIN_DIR):$(THREAD_BIN_DIR):$(JAVA_ARCH_GREEN_RUNTIME_LIBS):$(SHLIB_PATH) \
+	PATH="$(BUILD_DIR):$(TCL_BIN_DIR):$(THREAD_BIN_DIR):$(JAVA_LIB_RUNTIME_PATH):$(PATH)" \
+	LD_LIBRARY_PATH=$(BUILD_DIR):$(TCL_BIN_DIR):$(THREAD_BIN_DIR):$(JAVA_LIB_RUNTIME_PATH):$(LD_LIBRARY_PATH) \
+	SHLIB_PATH=$(BUILD_DIR):$(TCL_BIN_DIR):$(THREAD_BIN_DIR):$(JAVA_LIB_RUNTIME_PATH):$(SHLIB_PATH) \
 	JAVA=$(JAVA) \
 	BUILD_DIR=$(BUILD_DIR) \
 	CLASSPATH=$(TEST_CLASSPATH) \
 	./custom
 
 
-# Run the native threads version of the tclblend custom shell
-# always rebuild TCLBLEND_LIB_FILE just in case it was linked to
-# to the green threads libs becasue we ran custom_shell_green
+# Build custom2 shell. This shell will create a JVM and execute the
+# main() method of a Java class named on the command line. This
+# shell co execute whatever Java code, but we are going to assume
+# that the class will load a Tcl Blend interp at runtime and
+# use it for something. This shell links directly to the Java
+# shared libraries and to the Tcl Blend shared library to aid
+# in debugging.
 
-custom_shell_native:
-	rm -f $(TCLBLEND_LIB_FILE)
-	$(MAKE) custom
+custom2.o: $(UNIX_DIR)/custom2.c
+	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/custom2.c
+
+# Build the tclblend shared lib before building custom2.o
+custom2: tclblend.check custom.warn custom2.o
+	LD_LIBRARY_PATH=$(BUILD_DIR):$(TCL_BIN_DIR):$(THREAD_BIN_DIR):$(JAVA_LIB_RUNTIME_PATH):$(LD_LIBRARY_PATH) \
+	SHLIB_PATH=$(BUILD_DIR):$(TCL_BIN_DIR):$(THREAD_BIN_DIR):$(JAVA_LIB_RUNTIME_PATH):$(SHLIB_PATH) \
+	$(CC) -o custom2 -g custom2.o $(TCLBLEND_LIB_FILE) $(LIBS)
+
+# Run the custom2 shell.
+
+custom2_shell: custom2
 	TCL_LIBRARY=$(TCL_LIBRARY_DIR) \
 	TCLLIBPATH=$(TCLLIBPATH) \
-	LD_LIBRARY_PATH=$(BUILD_DIR):$(TCL_BIN_DIR):$(THREAD_BIN_DIR):$(JAVA_ARCH_NATIVE_RUNTIME_LIBS):$(LD_LIBRARY_PATH) \
-	SHLIB_PATH=$(BUILD_DIR):$(TCL_BIN_DIR):$(THREAD_BIN_DIR):$(JAVA_ARCH_NATIVE_RUNTIME_LIBS):$(SHLIB_PATH) \
+	PATH="$(BUILD_DIR):$(TCL_BIN_DIR):$(THREAD_BIN_DIR):$(JAVA_LIB_RUNTIME_PATH):$(PATH)" \
+	LD_LIBRARY_PATH=$(BUILD_DIR):$(TCL_BIN_DIR):$(THREAD_BIN_DIR):$(JAVA_LIB_RUNTIME_PATH):$(LD_LIBRARY_PATH) \
+	SHLIB_PATH=$(BUILD_DIR):$(TCL_BIN_DIR):$(THREAD_BIN_DIR):$(JAVA_LIB_RUNTIME_PATH):$(SHLIB_PATH) \
 	JAVA=$(JAVA) \
 	BUILD_DIR=$(BUILD_DIR) \
 	CLASSPATH=$(TEST_CLASSPATH) \
-	./custom
+	./custom2 tests.JavaEval "puts HELLO ; set i 0" "0"
 
 
 # A simple example of a JNI class that is loaded into a JVM.

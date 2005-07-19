@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: JavaEval.java,v 1.2 2002/07/22 09:27:20 mdejong Exp $
+ * RCS: @(#) $Id: JavaEval.java,v 1.3 2005/07/19 23:10:55 mdejong Exp $
  */
 
 package tests;
@@ -48,13 +48,17 @@ public class JavaEval {
             expected = args[1];
         } else {
             System.out.println("Wrong # args : should be \"cmd ?expected?\"");
-            System.exit(-1);
+            System.exit(2);
         }
         result = eval(cmd);
         if (expected != null) {
-            if (!result.equals(expected))
+            if (result.compareTo(expected) != 0) {
                 System.out.println("result mismatch");
+                System.exit(3);
+            } else {
+                System.exit(0); // Result matched expected result
+            }
         }
-        System.exit(-2); // We expect the script to call exit
+        System.exit(1); // We expect the script to call exit when not matching
     }
 }

@@ -1,3 +1,23 @@
+2005-07-19  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* Makefile.in: Remove old green threads code
+	for "custom" target. Tcl Blend only works
+	with a native threads JVM anyway. Add new
+	custom2 shell which loads a JVM at runtime
+	and then loads Tcl Blend like a JVM would.
+	This shell make it easier to debug weird
+	loading issues in Tcl Blend.
+	* src/tests/tclblend/tests/JavaEval.java:
+	Make the program exit(0) when an expected
+	result matches the program result. Use
+	positive exit status.
+	* tests/tclblend/loading.test: Use the
+	expected compare test in the JavaEval
+	class.
+	* unix/custom2.c: Add new custom shell impl
+	that loads a JVM and then loads Tcl Blend into
+	the JVM.
+
 2005-07-18  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	Fix crashes when loading Tcl Blend into an
