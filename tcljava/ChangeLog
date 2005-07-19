@@ -1,3 +1,27 @@
+2005-07-18  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	Fix crashes when loading Tcl Blend into an
+	existing JVM by invoking Tcl_FindExecutable("java")
+	to init Tcl subsystems.
+
+	* src/native/javaCmd.c: Update comment.
+	* src/native/javaInterp.c (
+	Java_tcl_lang_Interp_create,
+	Java_tcl_lang_Interp_init,
+	Java_tcl_lang_Interp_initName): Add
+	TCLBLEND_DEBUG output statements.
+	Add initName() method that will init the
+	Tcl executable name when Tcl Blend is loaded
+	from Java.
+	* src/tclblend/tcl/lang/Interp.java (shlib_load,
+	initName):
+	Add initName() method mentioned above and
+	invoke it after loading the Tcl Blend shared lib.
+	* tests/tclblend/loading.test: Update tests
+	to account for executable name check. Add
+	test for [info nameofexecutable] in a Tcl Blend
+	interp loaded into Java.
+
 2005-07-17  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	Add startup .bat files for Jacl and Tcl Blend.

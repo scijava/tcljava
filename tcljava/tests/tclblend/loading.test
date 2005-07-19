@@ -5,7 +5,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: loading.test,v 1.6 2003/02/01 21:48:27 mdejong Exp $
+# RCS: @(#) $Id: loading.test,v 1.7 2005/07/19 07:14:22 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -25,7 +25,8 @@ exit 0
     viewFile tclblend.trace
 } {Entrypoint Tclblend_Init
 Created JVM
-Initialized Java Cache}
+Initialized Java Cache
+Skipped Calling Tcl_FindExecutable}
 
 test loading-1.2 {load into Tcl then exit} {
     set trace [makeFile {} tclblend.trace]
@@ -40,6 +41,7 @@ exit 0
 } {Entrypoint Tclblend_Init
 Created JVM
 Initialized Java Cache
+Skipped Calling Tcl_FindExecutable
 FreeJavaCache
 Destroyed JVM}
 
@@ -64,6 +66,7 @@ exit 0
 } {Entrypoint Tclblend_Init
 Created JVM
 Initialized Java Cache
+Skipped Calling Tcl_FindExecutable
 Entrypoint Tclblend_Init
 TSD already initialized
 FreeJavaCache
@@ -93,6 +96,7 @@ exit 0
 } {Entrypoint Tclblend_Init
 Created JVM
 Initialized Java Cache
+Skipped Calling Tcl_FindExecutable
 Entrypoint Tclblend_Init
 TSD already initialized
 JavaInterpDeleted
@@ -117,6 +121,7 @@ exit 0
 } {Entrypoint Tclblend_Init
 Created JVM
 Initialized Java Cache
+Skipped Calling Tcl_FindExecutable
 Entrypoint Tclblend_Init
 Attached to JVM
 Initialized Java Cache}
@@ -140,6 +145,7 @@ exit 0
 } {Entrypoint Tclblend_Init
 Created JVM
 Initialized Java Cache
+Skipped Calling Tcl_FindExecutable
 Entrypoint Tclblend_Init
 Attached to JVM
 Initialized Java Cache
@@ -168,6 +174,7 @@ exit 0
 } {Entrypoint Tclblend_Init
 Created JVM
 Initialized Java Cache
+Skipped Calling Tcl_FindExecutable
 Entrypoint Tclblend_Init
 Attached to JVM
 Initialized Java Cache
@@ -184,7 +191,8 @@ test loading-3.1 {load into Java, fails if TSD not cleaned up from Java} {
     exec $env(JAVA) -classpath $env(CLASSPATH) tests.JavaLoadTclBlend \
         >@stdout 2>@stderr
     viewFile tclblend.trace
-} {Entrypoint JavaSetupJava
+} {Called Tcl_FindExecutable
+Entrypoint JavaSetupJava
 Initialized Java Cache
 FreeJavaCache}
 
@@ -195,7 +203,8 @@ test loading-3.2 {load into a Java, 2 interps} {
     exec $env(JAVA) -classpath $env(CLASSPATH) tests.JavaLoadTclBlend2 \
         >@stdout 2>@stderr
     viewFile tclblend.trace
-} {Entrypoint JavaSetupJava
+} {Called Tcl_FindExecutable
+Entrypoint JavaSetupJava
 Initialized Java Cache
 Entrypoint JavaSetupJava
 TSD already initialized
@@ -209,7 +218,8 @@ test loading-3.3 {load into Java, exit from Tcl} {
     exec $env(JAVA) -classpath $env(CLASSPATH) tests.JavaEval $script \
         >@stdout 2>@stderr
     viewFile tclblend.trace
-} {Entrypoint JavaSetupJava
+} {Called Tcl_FindExecutable
+Entrypoint JavaSetupJava
 Initialized Java Cache
 FreeJavaCache}
 
@@ -220,7 +230,8 @@ test loading-3.4 {load into two Java threads} {
     exec $env(JAVA) -classpath $env(CLASSPATH) tests.JavaThreadsLoadTclBlend \
         >@stdout 2>@stderr
     viewFile tclblend.trace
-} {Entrypoint JavaSetupJava
+} {Called Tcl_FindExecutable
+Entrypoint JavaSetupJava
 Initialized Java Cache
 FreeJavaCache
 Entrypoint JavaSetupJava
@@ -240,7 +251,8 @@ exit 0
     exec $env(JAVA) -classpath $env(CLASSPATH) tests.JavaEval $script \
         >@stdout 2>@stderr
     viewFile tclblend.trace
-} {Entrypoint JavaSetupJava
+} {Called Tcl_FindExecutable
+Entrypoint JavaSetupJava
 Initialized Java Cache
 FreeJavaCache}
 
@@ -259,7 +271,8 @@ exit 0
     exec $env(JAVA) -classpath $env(CLASSPATH) tests.JavaEval $script \
         >@stdout 2>@stderr
     viewFile tclblend.trace
-} {Entrypoint JavaSetupJava
+} {Called Tcl_FindExecutable
+Entrypoint JavaSetupJava
 Initialized Java Cache
 Entrypoint Tclblend_Init
 TSD already initialized
@@ -283,6 +296,7 @@ exit 0
 } {Entrypoint Tclblend_Init
 Created JVM
 Initialized Java Cache
+Skipped Calling Tcl_FindExecutable
 Entrypoint JavaSetupJava
 TSD already initialized
 FreeJavaCache
@@ -306,6 +320,7 @@ exit 0
 } {Entrypoint Tclblend_Init
 Created JVM
 Initialized Java Cache
+Skipped Calling Tcl_FindExecutable
 FreeJavaCache
 Destroyed JVM}
 
@@ -326,6 +341,7 @@ exit 0
 } {Entrypoint Tclblend_Init
 Created JVM
 Initialized Java Cache
+Skipped Calling Tcl_FindExecutable
 Entrypoint JavaSetupJava
 Initialized Java Cache
 FreeJavaCache
@@ -346,7 +362,8 @@ exit 0
     exec $env(JAVA) -classpath $env(CLASSPATH) tests.JavaEval $script \
         >@stdout 2>@stderr
     viewFile tclblend.trace
-} {Entrypoint JavaSetupJava
+} {Called Tcl_FindExecutable
+Entrypoint JavaSetupJava
 Initialized Java Cache
 FreeJavaCache}
 
@@ -406,6 +423,27 @@ exit 1
 } loading.tcl]
     list [catch {exec $tcltest::tcltest $f >@stdout 2>@stderr} err] $err
 } {0 {}}
+
+# Note: The next test only gives the results we expect under Windows.
+# A JDK under Unix might do some funky stuff like create shell scripts
+# named java in different directories.
+
+test loading-8.1 {load into Java and then check the executable name} {pcOnly} {
+    set script {
+puts [info nameofexecutable]
+exit 0
+}
+    exec $env(JAVA) -classpath $env(CLASSPATH) tests.JavaEval $script
+} [string map {\\ /} $env(JAVA)]
+
+test loading-8.2 {load into Java, invoke puts, this script does not invoke
+        exit with an error status, it should exit with the status 0} {
+    set script {
+puts HELLO
+}
+    exec $env(JAVA) -classpath $env(CLASSPATH) tests.JavaEval $script
+} HELLO
+
 
 # cleanup
 if {[info exists env(TCLBLEND_TRACE)]} {

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaInterp.c,v 1.22 2003/05/30 20:06:41 mdejong Exp $
+ * RCS: @(#) $Id: javaInterp.c,v 1.23 2005/07/19 07:14:21 mdejong Exp $
  */
 
 #include "java.h"
@@ -112,6 +112,10 @@ Java_tcl_lang_Interp_create(
     jlong lvalue;
     Tcl_Interp *interp;
 
+#ifdef TCLBLEND_DEBUG
+    fprintf(stderr, "TCLBLEND_DEBUG: Calling Tcl_CreateInterp()\n");
+#endif /* TCLBLEND_DEBUG */
+
     interp = Tcl_CreateInterp();
     if (JavaSetupJava(env, interp) != TCL_OK) {
 	jclass err = (*env)->FindClass(env, "tcl/lang/TclRuntimeError");
@@ -158,17 +162,33 @@ Java_tcl_lang_Interp_init(
     Tcl_Interp *interp = *(Tcl_Interp **)&interpPtr;
     jint result;
 
+#ifdef TCLBLEND_DEBUG
+    fprintf(stderr, "TCLBLEND_DEBUG: Entered Interp.init(%X)\n", interp);
+#endif /* TCLBLEND_DEBUG */
+
     if (!interp) {
 	ThrowNullPointerException(env, NULL);
 	return TCL_ERROR;
     }
 
+#ifdef TCLBLEND_DEBUG
+    fprintf(stderr, "TCLBLEND_DEBUG: Calling Tcl_Init()\n");
+#endif /* TCLBLEND_DEBUG */
+
     if (Tcl_Init(interp) != TCL_OK) {
+#ifdef TCLBLEND_DEBUG
+    fprintf(stderr, "TCLBLEND_DEBUG: Tcl_Init() returned !OK in Interp.init()\n");
+#endif /* TCLBLEND_DEBUG */
+
 	result = TCL_ERROR;
     } else {
 	/*
 	 * Set up the Blend package.
 	 */
+
+#ifdef TCLBLEND_DEBUG
+    fprintf(stderr, "TCLBLEND_DEBUG: Tcl_Init() returned OK in Interp.init()\n");
+#endif /* TCLBLEND_DEBUG */
 
 	interpObj = (*env)->NewGlobalRef(env, interpObj);
 	result = JavaInitBlend(env, interp, interpObj);
@@ -1879,3 +1899,74 @@ int BTestCmd(
     }
     return TCL_OK;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Java_tcl_lang_Interp_initName --
+ *
+ *	Init Tcl executable name if it needs it to be done.
+ *
+ * Class:     tcl_lang_Interp
+ * Method:    initName
+ * Signature: ()V
+ *
+ * Results:
+ *	Returns a newly allocated TclObject.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void JNICALL
+Java_tcl_lang_Interp_initName(
+    JNIEnv *env,		/* Java environment. */
+    jclass interpClass)		/* Handle to Interp class. */
+{
+    CONST char * name;
+
+    /*
+     * Recent versions of Tcl require a call to Tcl_FindExecutable
+     * before creating/initializing interps, or Tcl will crash.
+     * When Tcl Blend is loaded into an existing Tcl interp,
+     * the executable name is already set. When Tcl Blend is
+     * loaded into an existing JVM, we need to set an
+     * executable name that makes some sort of sense. Note that
+     * the Win32 version of Tcl_FindExecutable() ignores the
+     * executable name you pass and looks up the original name
+     * of the executable using Win32 APIs. Pass "java" as the
+     * name of the executable for Unix systems.
+     */
+
+#ifdef TCLBLEND_DEBUG
+    fprintf(stderr, "TCLBLEND_DEBUG: Checking Tcl_GetNameOfExecutable()\n");
+#endif /* TCLBLEND_DEBUG */
+
+    name = Tcl_GetNameOfExecutable();
+
+    if (name == NULL) {
+#ifdef TCLBLEND_DEBUG
+    fprintf(stderr, "TCLBLEND_DEBUG: Executable name not known, calling Tcl_FindExecutable()\n");
+#endif /* TCLBLEND_DEBUG */
+
+        Tcl_FindExecutable("java");
+        name = Tcl_GetNameOfExecutable();
+#ifdef TCLBLEND_DEBUG
+    fprintf(stderr, "TCLBLEND_DEBUG: Done Calling Tcl_FindExecutable()\n");
+    fprintf(stderr, "TCLBLEND_DEBUG: Tcl exectable name is now \"%s\"\n", name);
+#endif /* TCLBLEND_DEBUG */
+
+        TclBlendTrace("Called Tcl_FindExecutable");
+    } else {
+#ifdef TCLBLEND_DEBUG
+    fprintf(stderr, "TCLBLEND_DEBUG: Executable name is already known\n");
+#endif /* TCLBLEND_DEBUG */
+
+        TclBlendTrace("Skipped Calling Tcl_FindExecutable");
+    }
+
+    return;
+}
+

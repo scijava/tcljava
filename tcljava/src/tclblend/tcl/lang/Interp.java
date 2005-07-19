@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.29 2004/11/20 22:36:49 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.30 2005/07/19 07:14:21 mdejong Exp $
  *
  */
 
@@ -37,14 +37,21 @@ public class Interp {
 
 private static boolean shlib_loaded = false;
 
-private static void shlib_load()
+private final static void shlib_load()
     throws UnsatisfiedLinkError
 {
     System.loadLibrary("tclblend");
     Interp.commandComplete("");
+    Interp.initName();
     shlib_loaded = true;
 }
 
+// Invoked after the Tcl Blend library has been loaded
+// and JNI native methods have been associated. This method
+// sets the name of the Tcl executable if it needs to be
+// done (when Tcl Blend is loaded into a JVM).
+
+private final static native void initName();
 
 // The interpPtr contains the C Tcl_Interp* used in native code.  This
 // field is declared with package visibility so that it can be passed
@@ -176,7 +183,8 @@ Interp()
  *	Call Tcl_CreateInterp to initialize a new interpreter.
  *
  * Results:
- *	Returns a new Tcl_Interp *.
+ *	Returns a new Tcl_Interp *. Will raise a TclRuntimeError
+ *	if an interp could not be created.
  *
  * Side effects:
  *	None.

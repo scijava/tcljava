@@ -10,7 +10,7 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  *
- * RCS: @(#) $Id: javaCmd.c,v 1.24 2003/01/20 09:33:15 mdejong Exp $
+ * RCS: @(#) $Id: javaCmd.c,v 1.25 2005/07/19 07:14:21 mdejong Exp $
  */
 
 /*
@@ -976,7 +976,7 @@ FreeJavaCache(ClientData clientData)
     }
 
     /* We need to delete any global refs to Java classes */
-    
+
     (*env)->DeleteGlobalRef(env, jcache->Object);
     (*env)->DeleteGlobalRef(env, jcache->Interp);
     (*env)->DeleteGlobalRef(env, jcache->Command);
@@ -1018,7 +1018,7 @@ FreeJavaCache(ClientData clientData)
 
 int
 JavaSetupJava(
-    JNIEnv *env,		/* JNI pointer for current thread. */
+    JNIEnv *env,		/* JNI pointer for current thread. Can be NULL */
     Tcl_Interp *interp)		/* Interpreter to use for reporting errors. Can be NULL */
 {
     jfieldID field;
