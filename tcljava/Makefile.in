@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.35 2005/07/19 23:10:51 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.36 2005/07/21 01:32:18 mdejong Exp $
 
 SHELL = /bin/sh
 
@@ -1208,6 +1208,8 @@ tcljavaDist: Makefile
 		$(TOP_DIR)/Makefile.in \
 		$(TOP_DIR)/bsjavac.sh \
 		$(TOP_DIR)/mingw_path.sh \
+		$(TOP_DIR)/mingw_paths.sh \
+		$(TOP_DIR)/mingw_path.test \
 		$(TOP_DIR)/mkIndex.tcl.in \
 		$(TOP_DIR)/tcl.m4 \
 		$(TOP_DIR)/tcljava.m4 \
@@ -1309,6 +1311,7 @@ tcljavaDist: Makefile
 		$(TOP_DIR)/tests/all.tcl \
 		$(TOP_DIR)/tests/defs \
 		$(TOP_DIR)/tests/tcltest.tcl \
+		$(TOP_DIR)/tests/tl.jar \
 		$(DISTDIR)/tests
 
 	mkdir -p $(DISTDIR)/tests/tcljava
@@ -1427,11 +1430,10 @@ jaclDist: Makefile
 		$(JACL_DISTDIR)/tests/tcl
 
 	cp -p $(TOP_DIR)/jaclsh.in \
+		$(TOP_DIR)/jaclsh.bat.in \
 		$(JACL_DISTDIR)
 
 	mkdir -p $(JACL_DISTDIR)/win
-	cp -p $(TOP_DIR)/win/jaclsh.bat \
-		$(JACL_DISTDIR)/win
 
 	mkdir -p $(JACL_DISTDIR)/extras/GuiShell
 	cp -p $(TOP_DIR)/extras/GuiShell/GuiShell.java \
@@ -1496,6 +1498,7 @@ tclblendDist: Makefile
 		$(TCLBLEND_DISTDIR)/README
 
 	cp -p $(TOP_DIR)/jtclsh.in \
+		$(TOP_DIR)/jtclsh.bat.in \
 		$(TCLBLEND_DISTDIR)
 
 	mkdir -p $(TCLBLEND_DISTDIR)/src
@@ -1513,6 +1516,7 @@ tclblendDist: Makefile
 		$(TCLBLEND_DISTDIR)/src/native
 
 	cp -p $(UNIX_DIR)/custom.c \
+		$(UNIX_DIR)/custom2.c \
 		$(TCLBLEND_DISTDIR)/unix
 
 	mkdir -p $(TCLBLEND_DISTDIR)/win

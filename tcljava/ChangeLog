@@ -1,3 +1,11 @@
+2005-07-20  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* Makefile.in: Copy new files into dist.
+	* tests/tclblend/loading.test: Rework test
+	so that it is only run under Win32 and
+	returns the proper result.
+	* win/jaclsh.bat: Removed old bat script.
+
 2005-07-19  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* Makefile.in: Remove old green threads code
