@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: BinaryCmd.java,v 1.2 2002/05/07 06:58:06 mdejong Exp $
+ * RCS: @(#) $Id: BinaryCmd.java,v 1.3 2005/07/22 04:47:24 mdejong Exp $
  *
  */
 
@@ -794,15 +794,37 @@ throws
 {
     if (type == 'd') {
 	double dvalue = TclDouble.get(interp, src);
+	//System.out.println("double value is \"" + dvalue + "\"");
 	long lvalue = Double.doubleToLongBits(dvalue);
+	//System.out.println("long hex value is \"" + Long.toHexString(lvalue) + "\"");
 	for (int ix = 7; ix >= 0; ix--) {
 	    resultBytes[cursor++] = (byte) (lvalue >> ix*8);
+	    //byte b = resultBytes[cursor - 1];
+	    //System.out.println("index " + ix + " is " + Integer.toHexString(b & 0xff));
 	}
     } else if (type == 'f') {
-	float fvalue = (float) TclDouble.get(interp, src);
+	float fvalue;
+	double dvalue = TclDouble.get(interp, src);
+	//System.out.println("double value is \"" + dvalue + "\"");
+	// Restrict the double value to the valid float range
+	if (dvalue == Double.POSITIVE_INFINITY) {
+	    fvalue = Float.POSITIVE_INFINITY;
+	} else if (dvalue == Double.NEGATIVE_INFINITY) {
+	    fvalue = Float.NEGATIVE_INFINITY;
+	} else if (Math.abs(dvalue) > (double) Float.MAX_VALUE) {
+	    fvalue = (dvalue >= 0.0) ? Float.MAX_VALUE : -Float.MAX_VALUE;
+	} else if (Math.abs(dvalue) < (double) Float.MIN_VALUE) {
+	    fvalue = (dvalue >= 0.0) ? 0.0f : -0.0f;
+	} else {
+	    fvalue = (float) dvalue;
+	}
+	//System.out.println("float value is \"" + fvalue + "\"");
 	int ivalue = Float.floatToIntBits(fvalue);
+	//System.out.println("int hex value is \"" + Integer.toHexString(ivalue) + "\"");
 	for (int ix = 3; ix >= 0; ix--) {
 	    resultBytes[cursor++] = (byte) (ivalue >> ix*8);
+	    //byte b = resultBytes[cursor - 1];
+	    //System.out.println("index " + ix + " is " + Integer.toHexString(b & 0xff));
 	}
     } else {
 	int value = TclInteger.get(interp, src);
@@ -893,14 +915,14 @@ ScanNumber(
 		       Float.intBitsToFloat(value));
 	}
 	case 'd': {
-	    long value = (src[pos+7] & 0xff) +
-		((src[pos+6] & 0xff) << 8) +
-		((src[pos+5] & 0xff) << 16) +
-		((src[pos+4] & 0xff) << 24) +
-		((src[pos+3] & 0xff) << 32) +
-		((src[pos+2] & 0xff) << 40) +
-		((src[pos+1] & 0xff) << 48) +
-		((src[pos] & 0xff) << 56);
+	    long value = (((long) src[pos+7]) & 0xff) +
+		(((long) (src[pos+6] & 0xff)) << 8) +
+		(((long) (src[pos+5] & 0xff)) << 16) +
+		(((long) (src[pos+4] & 0xff)) << 24) +
+		(((long) (src[pos+3] & 0xff)) << 32) +
+		(((long) (src[pos+2] & 0xff)) << 40) +
+		(((long) (src[pos+1] & 0xff)) << 48) +
+		(((long) (src[pos]   & 0xff)) << 56);
 	    return TclDouble.newInstance(
 		       Double.longBitsToDouble(value));
 	}

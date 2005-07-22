@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Util.java,v 1.10 2002/05/16 22:53:45 mdejong Exp $
+ * RCS: @(#) $Id: Util.java,v 1.11 2005/07/22 04:47:25 mdejong Exp $
  */
 
 package tcl.lang;
@@ -472,6 +472,11 @@ strtod(
 	return new StrtodResult(0, 0, TCL.INVALID_DOUBLE);
     }
 
+    // Return special value for the string "NaN"
+    if (s.substring(i).startsWith("NaN")) {
+        return new StrtodResult(Double.NaN, i + 3, 0);
+    }
+
     c = s.charAt(i);
     if (c == '-') {
 	sign = true;
@@ -481,6 +486,14 @@ strtod(
 	    i +=1;
 	}
 	sign = false;
+    }
+
+    // Return special value for the strings "Inf" and "-Inf"
+
+    if (s.substring(i).startsWith("Inf")) {
+        return new StrtodResult(
+            (sign ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY),
+            i + 3, 0);
     }
 
     // Count the number of digits in the mantissa (including the decimal

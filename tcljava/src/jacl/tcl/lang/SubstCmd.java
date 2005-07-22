@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: SubstCmd.java,v 1.3 2003/01/09 02:15:39 mdejong Exp $
+ * RCS: @(#) $Id: SubstCmd.java,v 1.4 2005/07/22 04:47:25 mdejong Exp $
  *
  */
 
@@ -118,7 +118,7 @@ class SubstCmd implements Command {
 		result.append( vres.value.toString() );
 		vres.release();
 	    } else if ((c == '\\') && doBackslashes) {
-		BackSlashResult bs = interp.backslash(s, i, len);
+		BackSlashResult bs = Interp.backslash(s, i, len);
 		i = bs.nextIndex;
 		if (bs.isWordSep) {
 		    break;

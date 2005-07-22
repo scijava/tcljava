@@ -1,3 +1,27 @@
+2005-07-21  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/jacl/tcl/lang/BinaryCmd.java (FormatNumber,
+	ScanNumber):
+	Handle edge cases when casting from a double
+	to a float. Rewrite scanning code so that
+	64 bit long value is used for shifting operation.
+	* src/jacl/tcl/lang/InfoCmd.java:
+	* src/jacl/tcl/lang/Shell.java:
+	* src/jacl/tcl/lang/SubstCmd.java:
+	Invoke static method via class name.
+	* src/jacl/tcl/lang/Util.java (strtod): Add
+	support for "NaN", "Inf", and "-Inf" strings
+ 	as valid double values.
+	* tests/tcl/binary.test: Enable test cases
+	that were not being run because they had
+	the nonPortable constraint. Java supports
+	only big endian primitive types so the
+	binary format and scan operations can
+	just assume big endian layout. Test that
+	assume little endian are not run via
+	addition of the littleEndian constraint.
+	Add test cases for double -> float edge cases.
+
 2005-07-20  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* Makefile.in: Copy new files into dist.
