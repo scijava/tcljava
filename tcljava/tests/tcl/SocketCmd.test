@@ -1,0 +1,24 @@
+# Very basic socket tests. Jacl can't currently run the
+# more complex tests in socket.test since non-blocking
+# IO is unsupported.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
+
+proc wiki_get {host port path} {
+    set s [socket $host $port]
+    puts $s "GET $path HTTP/1.0"
+    puts $s "Host: $host\n"
+    flush $s
+    set data [read $s]
+    close $s
+    return $data
+}
+
+test socket-1.1 {} {
+    set data [wiki_get wiki.tcl.tk 80 /2?Q=Jacl]
+    string equal [string first "Swank" $data] -1
+} 0
+

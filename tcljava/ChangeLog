@@ -1,3 +1,21 @@
+2005-07-23  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/jacl/tcl/lang/Channel.java (initOutput):
+	When initializing a channel of type "file",
+	set a flag to indicate that the channel
+	should be sync()'ed in addition to flushing.
+	* src/jacl/tcl/lang/FlushCmd.java: Print
+	IO exception stack trace, this should never
+	happen but if it did sa stack trace would
+	be helpful.
+	* src/jacl/tcl/lang/TclOutputStream.java (setSync,
+	flushChannel):
+	Add flag setting method so that an output
+	stream can be marked so that sync() will
+	be invoked when flushing.
+	* tests/tcl/SocketCmd.test: Add simple socket
+	test case that writes to and reads from a socket.
+
 2005-07-21  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* src/jacl/tcl/lang/BinaryCmd.java (FormatNumber,

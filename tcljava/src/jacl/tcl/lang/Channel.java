@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Channel.java,v 1.25 2003/03/08 03:42:43 mdejong Exp $
+ * RCS: @(#) $Id: Channel.java,v 1.26 2005/07/24 02:14:45 mdejong Exp $
  */
 
 package tcl.lang;
@@ -286,6 +286,9 @@ abstract class Channel {
         output.setBuffering(buffering);
         output.setBufferSize(bufferSize);
         output.setBlocking(blocking);
+        if (getChanType().equals("file")) {
+            output.setSync(true);
+        }
     }
 
     /**

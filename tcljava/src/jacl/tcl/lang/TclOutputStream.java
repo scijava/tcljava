@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclOutputStream.java,v 1.2 2004/09/28 19:27:35 mdejong Exp $
+ * RCS: @(#) $Id: TclOutputStream.java,v 1.3 2005/07/24 02:14:45 mdejong Exp $
  */
 
 // A TclOutputStream is a cross between a Java OutputStream and
@@ -134,6 +134,15 @@ class TclOutputStream {
     protected int refCount = 0;
 
     /**
+     * This flag is true when the OutputStream is from
+     * a file on disk that should be sync()'ed after
+     * a flush. A sync should not be used for non-file
+     * streams.
+     */
+
+    protected boolean canSync = false;
+
+    /**
      * Constructor for Tcl input stream class. We require
      * a byte stream source at init time, the stram can't
      * be changed after the TclInputStream is created.
@@ -141,6 +150,15 @@ class TclOutputStream {
 
     TclOutputStream(OutputStream inOutput) {
         output = inOutput;
+    }
+
+    /**
+     * Set the sync flag for a channel so that a
+     * sync will be invoked in addition to a flush.
+     */
+
+    void setSync(boolean canSync) {
+        this.canSync = canSync;
     }
 
     /**
@@ -582,9 +600,13 @@ class TclOutputStream {
 
             // In some implementations (Sun JDK 1.4 on Win32)
             // the flush method above does not actually sync
-            // output data. Call sync explicitly to make sure.
-            if (output instanceof FileOutputStream) {
-                ((FileOutputStream) output).getFD().sync();
+            // output data or files. Call sync when we know
+            // the object is a file and not something else
+            // like a socket stream.
+
+            if (canSync) {
+                FileOutputStream fos = (FileOutputStream) output;
+                fos.getFD().sync();
             }
         }
     }
