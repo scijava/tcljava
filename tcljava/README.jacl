@@ -1,6 +1,6 @@
 Jacl
 
-RCS: @(#) $Id: README.jacl,v 1.16 2005/07/15 03:57:00 mdejong Exp $
+RCS: @(#) $Id: README.jacl,v 1.17 2005/07/27 21:04:53 mdejong Exp $
 
 1. Introduction
 ---------------
@@ -60,9 +60,9 @@ Windows.
 
 http://sourceforge.net/project/showfiles.php?group_id=10894
 
-Unzip the msys_mingw package in a directory and click on the
-msys shortcut to start the msys shell. You can then run the
-configure script from inside this shell.
+See the README.TXT file in the msys_mingw download for info
+about running the msys shell. The configure script is
+run from the msys shell.
 
 To run the configure script, just type ./configure in the
 toplevel directory. This runs a configuration script created
@@ -134,7 +134,9 @@ can use to run jacl without setting the CLASSPATH. After the wrapper
 script has been installed a test program will be run to ensure that
 the installed program is working correctly. If you want to run jacl
 with special arguments you will need to edit the jaclsh script. Note
-that you can not run the jaclsh before installing it.
+that you can not run the jaclsh before installing it. Under Windows,
+a jaclsh.bat script will also be installed. This batch file can
+be used to start Jacl from the Windows explorer or a cmd shell.
 
 5. License Agreement
 ---------------------
