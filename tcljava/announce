@@ -9,8 +9,8 @@ downloading at the following URL:
 
 The 1.3.2 version is a "production" ready release, it is
 considered stable enough to be used on an everyday basis.
-This release is being used by customers in production
-environments on a daily basis.
+The code in this release is already being used by customers
+in production environments on a daily basis.
 
 What's New in the 1.3.2 Release?
 ----------------------------------
@@ -18,15 +18,19 @@ What's New in the 1.3.2 Release?
 The 1.3.2 release includes a couple of minor new features
 and some important bug fixes. Tcl Blend now includes the
 file win/libjvm.dll.a, it is needed to build with some broken
-JDKs in a Windows environment. The jaclsh startup script
-now returns a non-zero exit status if some error was
-encountered while processing a script. IO support in the
-Interp class has been re-implemented so that it makes use
-of the new IO layer. Jacl and Tcl Blend can now be compiled
-in a JDK 1.5 environment. A number of tricky expr command
-number parsing bugs have been fixed in Jacl. Also, the
-classloader issues that made it difficult to run Jacl in
-certain environments have been resolved.
+JDKs in a Windows environment. Running Jacl and Tcl Blend in
+a Windows environment is now easier as a batch file startup
+script is now installed as part of the default build.
+A pre-compiled Jacl release that includes only the files
+needed to run Jacl is now available. The jaclsh startup script
+now returns a non-zero exit status if some error was encountered
+while processing a script. IO support in the Interp class
+has been re-implemented so that it makes use of the new IO
+layer. Jacl and Tcl Blend can now be compiled in a JDK 1.5
+environment. A number of tricky expr command number parsing
+bugs have been fixed in Jacl. Also, the classloader issues that
+made it difficult to run Jacl in certain environments have
+been resolved.
 
 See the new_features.txt and changes.txt files for more info.
 
@@ -46,7 +50,7 @@ Java VM from the Tcl interpreter.  The goal here is to allow Tcl
 developers to write new Tcl extensions in Java rather then C or C++
 for better portability.  A developer can also load both Tcl and
 Tcl Blend into an existing Java JVM. Tcl Blend is known to work on
-Solaris, Windows 95/NT, IRIX, and Linux. Other systems have not
+Solaris, Windows 95/NT/XP, IRIX, and Linux. Other systems have not
 been tested but it should be easy to port Tcl Blend to any system
 that supports dynamic loading and the Java JNI interface.
 
