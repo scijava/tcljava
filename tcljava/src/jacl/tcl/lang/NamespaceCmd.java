@@ -15,7 +15,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: NamespaceCmd.java,v 1.13 2005/01/13 06:21:14 mdejong Exp $
+ * RCS: @(#) $Id: NamespaceCmd.java,v 1.14 2005/09/11 20:56:57 mdejong Exp $
  */
 
 package tcl.lang;
@@ -102,6 +102,7 @@ public class NamespaceCmd implements InternalRep, Command {
      *----------------------------------------------------------------------
      */
     
+    public
     static Namespace
     getCurrentNamespace(Interp interp)
     {
@@ -128,6 +129,7 @@ public class NamespaceCmd implements InternalRep, Command {
      *----------------------------------------------------------------------
      */
     
+    public
     static Namespace
     getGlobalNamespace(Interp interp)
     {
@@ -153,6 +155,7 @@ public class NamespaceCmd implements InternalRep, Command {
      *----------------------------------------------------------------------
      */
 
+    public
     static void
     pushCallFrame(
         Interp interp,           // Interpreter in which the new call frame
@@ -235,7 +238,8 @@ public class NamespaceCmd implements InternalRep, Command {
      *
      *----------------------------------------------------------------------
      */
-    
+
+    public
     static void popCallFrame(Interp interp)
     {
 	CallFrame frame = interp.frame;
@@ -305,6 +309,7 @@ public class NamespaceCmd implements InternalRep, Command {
      *----------------------------------------------------------------------
      */
     
+    public
     static Namespace createNamespace(
 	Interp interp,         // Interpreter in which a new namespace
                                // is being created
@@ -470,6 +475,7 @@ public class NamespaceCmd implements InternalRep, Command {
      *----------------------------------------------------------------------
      */
     
+    public
     static void deleteNamespace(Namespace namespace)
     {
 	Namespace ns = namespace;
@@ -621,24 +627,26 @@ public class NamespaceCmd implements InternalRep, Command {
 	//    properly if its elements are being deleted. We use only
 	//    the Tcl_FirstHashEntry function to be safe.
 
-	// FIXME : double check that using an enumeration for a hashtable
-	// that changes is ok in Java!
-	search = ns.childTable.elements();
-	while( search.hasMoreElements() ) {
-	    childNs = (Namespace) search.nextElement();
-	    deleteNamespace(childNs);
+	search = ns.childTable.keys();
+	while (search.hasMoreElements()) {
+	    String key = (String) search.nextElement();
+	    childNs = (Namespace) ns.childTable.get(key);
+	    if (childNs != null) {
+	        deleteNamespace(childNs);
+	    }
 	}
 
 	// Delete all commands in this namespace. Be careful when traversing the
 	// hash table: when each command is deleted, it removes itself from the
 	// command table.
 
-	// FIXME : double check that using an enumeration for a hashtable
-	// that changes is ok in Java! Also call deleteCommand... correctly!
-	search = ns.cmdTable.elements();
+	search = ns.cmdTable.keys();
 	while( search.hasMoreElements() ) {
-	    cmd = (WrappedCommand) search.nextElement();
-	    interp.deleteCommandFromToken(cmd);
+	    String key = (String) search.nextElement();
+	    cmd = (WrappedCommand) ns.cmdTable.get(key);
+	    if (cmd != null) {
+	        interp.deleteCommandFromToken(cmd);
+	    }
 	}
 	
 	ns.cmdTable.clear();
@@ -715,6 +723,7 @@ public class NamespaceCmd implements InternalRep, Command {
      *----------------------------------------------------------------------
      */
 
+    public
     static void exportList(
 	Interp interp,           // current interpreter
         Namespace namespace,     // Points to the namespace from which 
@@ -884,6 +893,7 @@ public class NamespaceCmd implements InternalRep, Command {
      *----------------------------------------------------------------------
      */
 
+    public
     static void importList(
         Interp interp,		// Current interpreter.
         Namespace namespace,    // reference to the namespace into which the
@@ -1198,6 +1208,7 @@ public class NamespaceCmd implements InternalRep, Command {
      *----------------------------------------------------------------------
      */
 
+    public
     static WrappedCommand getOriginalCommand(
         WrappedCommand command 	// The imported command for which the original
 				// command should be returned.
@@ -1383,11 +1394,10 @@ public class NamespaceCmd implements InternalRep, Command {
 	Namespace cxtNsPtr,	     // The namespace in which to start the
 				     // search for qualName's namespace. If null
 				     // start from the current namespace.
-				     // Ignored if TCL_GLOBAL_ONLY or
-				     // TCL_NAMESPACE_ONLY are set.
+				     // Ignored if TCL.GLOBAL_ONLY is set.
 	int flags,		     // Flags controlling the search: an OR'd
-				     // combination of TCL_GLOBAL_ONLY,
-				     // TCL_NAMESPACE_ONLY,
+				     // combination of TCL.GLOBAL_ONLY,
+				     // TCL.NAMESPACE_ONLY,
 				     // CREATE_NS_IF_UNKNOWN, and
 				     // FIND_ONLY_NS.
 	Namespace[] nsPtrPtr,	     // Address where procedure stores a pointer
@@ -1452,16 +1462,13 @@ public class NamespaceCmd implements InternalRep, Command {
 	int start_ind, end_ind, name_len;
 
 	// Determine the context namespace ns in which to start the primary
-	// search. If TCL.NAMESPACE_ONLY or FIND_ONLY_NS was specified, search
-	// from the current namespace. If the qualName name starts with a "::"
-	// or TCL.GLOBAL_ONLY was specified, search from the global
-	// namespace. Otherwise, use the given namespace given in cxtNsPtr, or
-	// if that is null, use the current namespace context. Note that we
-	// always treat two or more adjacent ":"s as a namespace separator.
+	// search.  If the qualName name starts with a "::" or TCL_GLOBAL_ONLY
+	// was specified, search from the global namespace. Otherwise, use the
+	// namespace given in cxtNs, or if that is null, use the current
+	// namespace context. Note that we always treat two or more
+	// adjacent ":"s as a namespace separator.
 
-	if ((flags & (TCL.NAMESPACE_ONLY | FIND_ONLY_NS)) != 0) {
-	    ns = getCurrentNamespace(interp);
-	} else if ((flags & TCL.GLOBAL_ONLY) != 0) {
+	if ((flags & TCL.GLOBAL_ONLY) != 0) {
 	    ns = globalNs;
 	} else if (ns == null) {
 	    if (interp.varFrame != null) {
@@ -1471,20 +1478,18 @@ public class NamespaceCmd implements InternalRep, Command {
 	    }
 	}
 
-
-	
 	start_ind = 0;
 	name_len = qualName.length();
-	
+
 	if ((name_len >= 2) &&
 	    (qualName.charAt(0) == ':') && (qualName.charAt(1) == ':')) {
 	    start_ind = 2; // skip over the initial ::
-	    
+
 	    while ((start_ind < name_len) &&
 		   (qualName.charAt(start_ind) == ':')) {
 		start_ind++;		// skip over a subsequent :
 	    }
-	    
+
 	    ns = globalNs;
 	    if (start_ind >= name_len) {  // qualName is just two or more ":"s
 		nsPtrPtr[0]        = globalNs;
@@ -1502,13 +1507,13 @@ public class NamespaceCmd implements InternalRep, Command {
 	// flag is set to search only the namespace cxtNs, ignore the
 	// alternate search path.
 
-	
+
 	altNs = globalNs;
 	if ((ns == globalNs)
 	    || ((flags & (TCL.NAMESPACE_ONLY | FIND_ONLY_NS)) != 0)) {
 	    altNs = null;
 	}
-	
+
 
 	// Loop to resolve each namespace qualifier in qualName.	
 
@@ -1558,14 +1563,14 @@ public class NamespaceCmd implements InternalRep, Command {
 		
 		nsName = qualName.substring(start_ind, start_ind+len);
 	    }
-	    
+
 
 
 	    // Look up the namespace qualifier nsName in the current namespace
 	    // context. If it isn't found but CREATE_NS_IF_UNKNOWN is set,
 	    // create that qualifying namespace. This is needed for procedures
 	    // like Tcl_CreateCommand that cannot fail.
-	    
+
 	    if (ns != null) {
 		entryNs = (Namespace) ns.childTable.get(nsName);
 		if (entryNs != null) {
@@ -1587,7 +1592,7 @@ public class NamespaceCmd implements InternalRep, Command {
 
 
 	    // Look up the namespace qualifier in the alternate search path too.
-	    
+
 	    if (altNs != null) {
 		altNs = (Namespace) altNs.childTable.get(nsName);
 	    }
@@ -1651,6 +1656,7 @@ public class NamespaceCmd implements InternalRep, Command {
      *----------------------------------------------------------------------
      */
     
+    public
     static Namespace findNamespace(
         Interp interp,		 // The interpreter in which to find the
                                  // namespace.
@@ -1664,11 +1670,9 @@ public class NamespaceCmd implements InternalRep, Command {
 				 // Otherwise, points to namespace in which
 				 // to resolve name; if null, look up name
 				 // in the current namespace.
-        int flags 		 // Flags controlling namespace lookup: an
+        int flags) 		 // Flags controlling namespace lookup: an
 				 // OR'd combination of TCL.GLOBAL_ONLY and
 				 // TCL.LEAVE_ERR_MSG flags.
-	)
-	throws TclException
     {
 	Namespace ns;
 
@@ -1725,6 +1729,7 @@ public class NamespaceCmd implements InternalRep, Command {
      *----------------------------------------------------------------------
      */
 
+    public
     static WrappedCommand findCommand(
         Interp interp,		 // The interpreter in which to find the
                                  // command.
@@ -1861,6 +1866,7 @@ public class NamespaceCmd implements InternalRep, Command {
      *----------------------------------------------------------------------
      */
 
+    public
     static Var findNamespaceVar(
         Interp interp,		 // The interpreter in which to find the
                                  // variable.
@@ -2097,6 +2103,7 @@ public class NamespaceCmd implements InternalRep, Command {
      *----------------------------------------------------------------------
      */
 
+    public
     static void
     setNamespaceResolver(
 	Namespace namespace,	// Namespace whose resolution rules
@@ -3496,7 +3503,7 @@ public class NamespaceCmd implements InternalRep, Command {
     // This interface is used to provide a callback when a namespace is deleted
     // (ported Tcl_NamespaceDeleteProc to NamespaceCmd.DeleteProc)
 
-    static interface DeleteProc {
+    public static interface DeleteProc {
 	public void delete();
     }
 
@@ -3507,39 +3514,46 @@ public class NamespaceCmd implements InternalRep, Command {
     // pointer along with some information that is used to check the cached
     // pointer's validity. (ported Tcl_Namespace to NamespaceCmd.Namespace)
     
-    static class Namespace {
-	String name;             // The namespace's simple (unqualified)
+    public static class Namespace {
+	public
+        String name;             // The namespace's simple (unqualified)
 	                         // name. This contains no ::'s. The name of
 	                         // the global namespace is "" although "::"
 	                         // is an synonym.
-
-	String fullName;         // The namespace's fully qualified name.
+        public
+        String fullName;         // The namespace's fully qualified name.
 	                         // This starts with ::.
-	
+        public
 	DeleteProc deleteProc;   // method to invoke when namespace is deleted
-	
+
+        public
 	Namespace parent;        // reference to the namespace that contains
                                  // this one. null is this is the global namespace.
-
+        public
 	Hashtable childTable;    // Contains any child namespaces. Indexed
 	                         // by strings; values are references to
 	                         // Namespace objects
-
+        public
 	long nsId;		 // Unique id for the namespace.
+        public
 	Interp interp;		 // The interpreter containing this namespace.
 
+        public
 	int flags;		 // OR-ed combination of the namespace
 	                         // status flags NS_DYING and NS_DEAD (listed below)
 
+        public
 	int activationCount;	 // Number of "activations" or active call
 	                         // frames for this namespace that are on
 	                         // the Tcl call stack. The namespace won't
 	                         // be freed until activationCount becomes zero.
 
+        public
 	int refCount;		 // Count of references by nsName
 				 // objects. The namespace can't be freed
 				 // until refCount becomes zero.
 
+        public
 	Hashtable cmdTable;	 // Contains all the commands currently
 				 // registered in the namespace. Indexed by
 				 // strings; values have type (WrappedCommand).
@@ -3548,11 +3562,11 @@ public class NamespaceCmd implements InternalRep, Command {
 				 // ImportedCmdRef structure) to the
 				 // Command structure in the source
 				 // namespace's command table.
-
+        public
 	Hashtable varTable;	 // Contains all the (global) variables
 				 // currently in this namespace. Indexed
 				 // by strings; values have type (Var).
-
+        public
 	String[] exportArray;    // Reference to an array of string patterns
 				 // specifying which commands are exported.
 				 // A pattern may include "string match"
@@ -3561,13 +3575,15 @@ public class NamespaceCmd implements InternalRep, Command {
 				 // qualifiers are allowed. null if no
 				 // export patterns are registered.
 
+        public
 	int numExportPatterns;	 // Number of export patterns currently
 				 // registered using "namespace export".
 
+        public
 	int maxExportPatterns;	 // Mumber of export patterns for which
 				 // space is currently allocated.
 
-	
+        public
 	Resolver resolver;
 	                         // If non-null, this object overrides the
 	                         // usual command and variable resolution

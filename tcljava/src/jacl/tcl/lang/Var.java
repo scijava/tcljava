@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Var.java,v 1.12 2005/01/13 06:21:14 mdejong Exp $
+ * RCS: @(#) $Id: Var.java,v 1.13 2005/09/11 20:56:57 mdejong Exp $
  *
  */
 package tcl.lang;
@@ -19,6 +19,7 @@ import java.util.*;
  * of the methods in generic/tclVar.c and the structure Tcl_Var from the C version.
  */
 
+public
 class Var {
 
     /**
@@ -101,6 +102,14 @@ class Var {
 	return ((flags & ARRAY_ELEMENT) != 0);
     }
 
+    final boolean isVarNamespace() {
+	return ((flags & NAMESPACE_VAR) != 0);
+    }
+
+    final boolean isVarInHashtable() {
+	return ((flags & IN_HASHTABLE) != 0);
+    }
+
     // Methods to ensure that various flag bits are set properly for variables.
 
     final void setVarScalar() {
@@ -123,8 +132,20 @@ class Var {
 	flags |= UNDEFINED;
     }
 
+    final void setVarNamespace() {
+	flags |= NAMESPACE_VAR;
+    }
+
+    final void setVarInHashtable() {
+        flags |= IN_HASHTABLE;
+    }
+
     final void clearVarUndefined() {
 	flags &= ~UNDEFINED;
+    }
+
+    final void clearVarInHashtable() {
+        flags &= ~IN_HASHTABLE;
     }
 
     /**
@@ -1803,6 +1824,7 @@ class Var {
      *----------------------------------------------------------------------
      */
 
+    public
     static String getVariableFullName(
          Interp interp,	        // Interpreter containing the variable.
 	 Var var                // Token for the variable returned by a

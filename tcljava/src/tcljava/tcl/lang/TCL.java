@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TCL.java,v 1.5 2004/09/18 22:04:27 mdejong Exp $
+ * RCS: @(#) $Id: TCL.java,v 1.6 2005/09/11 20:56:57 mdejong Exp $
  *
  */
 
@@ -55,11 +55,14 @@ public static final int RETURN     = 2;
 public static final int BREAK      = 3;
 public static final int CONTINUE   = 4;
 
-// TCL.OK is only used internally.  TclExceptions should never be thrown with
-// the completion code TCL.OK.  If the desired completion code is TCL.OK, no
-// exception should be thrown.
+// TCL.OK is not typically used as an exception completion code. A
+// TclException would not normally be invoked with the TCL.OK code,
+// but there are some cases where this value could be used. For
+// example, code that invoked Interp.updateReturnInfo() and
+// invokes the Command.cmdProc() API directly without using
+// Interp.eval().
 
-static final int OK = 0;
+public static final int OK = 0;
 
 // The following value is used by the Interp::commandComplete(). It's used
 // to report that a script is not complete.

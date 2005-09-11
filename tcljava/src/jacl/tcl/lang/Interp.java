@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.50 2005/07/15 03:57:02 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.51 2005/09/11 20:56:57 mdejong Exp $
  *
  */
 
@@ -232,7 +232,6 @@ protected boolean errCodeSet;
 
 // When TCL_ERROR is returned, this gives the line number within
 // the command where the error occurred (1 means first line).
-
 
 int errorLine;
 
@@ -735,6 +734,18 @@ createCommands()
     
     try {
         eval("package ifneeded java 1.3.2 jaclloadjava");
+    } catch (TclException e) {
+	System.out.println(getResult());
+	e.printStackTrace();
+	throw new TclRuntimeError("unexpected TclException: " + e);
+    }
+
+    // Load the Itcl package as a result of the user running "package require Itcl".
+
+    Extension.loadOnDemand(this, "jaclloaditcl", "itcl.lang.ItclExtension");
+
+    try {
+        eval("package ifneeded Itcl 3.3 {jaclloaditcl ; package provide Itcl 3.3}");
     } catch (TclException e) {
 	System.out.println(getResult());
 	e.printStackTrace();
@@ -1491,8 +1502,7 @@ createCommand(
     cmd.ns = ns;
     cmd.cmd = cmdImpl;
     cmd.deleted = false;
-    // FIXME : import feature not implemented
-    //cmd.importRef = null;
+    cmd.importRef = null;
 
     // Plug in any existing import references found above.  Be sure
     // to update all of these references to point to the new command.
@@ -1532,6 +1542,7 @@ createCommand(
  *----------------------------------------------------------------------
  */
 
+public
 String getCommandFullName(
     WrappedCommand cmd)	        // Token for the command.
 {
@@ -1554,6 +1565,38 @@ String getCommandFullName(
     }
 
     return name.toString();
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_GetCommandName -> getCommandName
+ *
+ *	Given a token returned by, e.g., Tcl_CreateCommand or
+ *	Tcl_FindCommand, this procedure returns the command's
+ *	name. The command's fully-qualified name may have changed due to renaming.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The command's name is returned.
+ *
+ *----------------------------------------------------------------------
+ */
+
+public
+String getCommandName(
+    WrappedCommand cmd)	        // Token for the command.
+{
+    if ((cmd == null) || (cmd.table == null)) {
+	// This should only happen if command was "created" after the
+	// interpreter began to be deleted, so there isn't really any
+	// command. Just return an empty string.
+
+	return "";
+    }
+    return cmd.hashKey;
 }
 
 /*
@@ -1614,7 +1657,7 @@ deleteCommand(
  *----------------------------------------------------------------------
  */
 
-protected int
+public int
 deleteCommandFromToken(
     WrappedCommand cmd)                // Wrapper Token for command to delete.
 {
@@ -1773,15 +1816,6 @@ protected void renameCommand(
     cmd.table   = newNs.cmdTable;
     cmd.hashKey = newTail;
     cmd.ns      = newNs;
-
-    // FIXME : this is a nasty hack that fixes renaming for Procedures
-    // that move from one namespace to another, but the real problem
-    // is that a rename does not work for Command instances in general
-
-    if (cmd.cmd instanceof Procedure) {
-	Procedure p = (Procedure) cmd.cmd;
-	p.ns = cmd.ns;
-    }
 
     // Now check for an alias loop. If we detect one, put everything back
     // the way it was and report the error.
@@ -2931,6 +2965,7 @@ addErrorInfo(
  *----------------------------------------------------------------------
  */
 
+public
 void
 processUnexpectedResult(
     int returnCode)		// The unexpected result code.
@@ -2951,9 +2986,9 @@ throws
 /*
  *----------------------------------------------------------------------
  *
- * updateReturnInfo --
+ * TclUpdateReturnInfo -> updateReturnInfo
  *
- *	This internal method is used by various parts of the Jacl
+ *	This method is used by various parts of the Jacl and external packages.
  *	interpreter when a TclException of TCL.RETURN is received. The
  *	most common case is when the "return" command is executed
  *	inside a Tcl procedure. This method examines fields such as
@@ -2965,9 +3000,8 @@ throws
  *	the Tcl procedure, instead of TCL.RETURN. It's the same
  *	value that was given to the "return -code" option.
  *
- *	If an internal value of TCL.OK is returned, it means than the
- *	caller of this method should ignore any TclException that it has
- *	just received and continue execution.
+ *	If TCL.OK is returned, it means than the caller of this method should
+ *	ignore any TclException that it has received.
  *
  * Side effects:
  *	The errorInfo and errorCode variables may get modified.
@@ -2975,7 +3009,7 @@ throws
  *----------------------------------------------------------------------
  */
 
-protected int
+public int
 updateReturnInfo()
 {
     int code;
@@ -4019,6 +4053,32 @@ removeInterpResolver(
     }
 
     return found;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * getErrorLine --
+ *
+ *	Query the interp.errorLine member. This is like accessing
+ *	the public Tcl_Interp.errorLine field in the C impl.
+ *	this method should be used by classes outside the
+ *	tcl.lang package.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+public int
+getErrorLine()
+{
+    return errorLine;
 }
 
 } // end Interp
