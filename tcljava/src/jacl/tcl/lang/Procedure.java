@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Procedure.java,v 1.4 1999/08/05 03:40:31 mo Exp $
+ * RCS: @(#) $Id: Procedure.java,v 1.5 2005/09/11 20:56:57 mdejong Exp $
  *
  */
 
@@ -20,6 +20,7 @@ package tcl.lang;
  * This class implements the body of a Tcl procedure.
  */
 
+public
 class Procedure implements Command, CommandWithDispose {
 
 // The formal parameters of the procedure and their default values.
@@ -39,8 +40,10 @@ boolean isVarArgs;
 CharPointer body;
 int body_length;
 
-// The namespace that the Command is defined in
-NamespaceCmd.Namespace ns;
+// The wrapped command that corresponds to this
+// procedure. This is used to find the namespace
+// a proc is currently defined in.
+WrappedCommand wcmd;
 
 // Name of the source file that contains this procedure. May be null, which
 // indicates that the source file is unknown.
@@ -81,7 +84,6 @@ Procedure(
 throws
     TclException		// Standard Tcl exception.
 {
-    this.ns = ns;
     srcFileName = sFileName;
     srcLineNumber = sLineNumber;
 

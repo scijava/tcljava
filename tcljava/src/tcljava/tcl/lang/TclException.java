@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclException.java,v 1.2 2000/04/03 14:09:11 mo Exp $
+ * RCS: @(#) $Id: TclException.java,v 1.3 2005/09/11 20:56:58 mdejong Exp $
  *
  */
 
@@ -220,6 +220,7 @@ getCompletionCode()
  *----------------------------------------------------------------------
  */
 
+public
 final void
 setCompletionCode(
     int ccode)			// New completion code. 

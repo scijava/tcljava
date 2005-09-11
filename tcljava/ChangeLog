@@ -1,5 +1,55 @@
 2005-09-11  Mo DeJong  <mdejong@users.sourceforge.net>
 
+        Add Itcl package for Jacl. This is a full port
+        of the C version of Itcl 3.2.1 over to Java. A
+        "package require Itcl" adds the itcl::class
+        and other commands.
+
+	* Makefile.in:
+	* license.itcl:
+	* src/itcl/itcl/lang/BiCmds.java:
+	* src/itcl/itcl/lang/Class.java:
+	* src/itcl/itcl/lang/Cmds.java:
+	* src/itcl/itcl/lang/Ensemble.java:
+	* src/itcl/itcl/lang/Itcl.java:
+	* src/itcl/itcl/lang/ItclExtension.java:
+	* src/itcl/itcl/lang/ItclInt.java:
+	* src/itcl/itcl/lang/Linkage.java:
+	* src/itcl/itcl/lang/Methods.java:
+	* src/itcl/itcl/lang/Migrate.java:
+	* src/itcl/itcl/lang/Objects.java:
+	* src/itcl/itcl/lang/Parse.java:
+	* src/itcl/itcl/lang/Util.java:
+	* src/itcl/itcl/lang/library/itcl.tcl:
+	* src/itcl/tcl/lang/ItclAccess.java:
+	* src/jacl/tcl/lang/CallFrame.java:
+	* src/jacl/tcl/lang/Interp.java:
+	* src/jacl/tcl/lang/NamespaceCmd.java:
+	* src/jacl/tcl/lang/ProcCmd.java:
+	* src/jacl/tcl/lang/Procedure.java:
+	* src/jacl/tcl/lang/Var.java:
+	* src/jacl/tcl/lang/WrappedCommand.java:
+	* src/tcljava/tcl/lang/TCL.java:
+	* src/tcljava/tcl/lang/TclException.java:
+	* tests/all.tcl:
+	* tests/itcl/basic.test:
+	* tests/itcl/body.test:
+	* tests/itcl/chain.test:
+	* tests/itcl/delete.test:
+	* tests/itcl/ensemble.test:
+	* tests/itcl/import.test:
+	* tests/itcl/info.test:
+	* tests/itcl/inherit.test:
+	* tests/itcl/interp.test:
+	* tests/itcl/local.test:
+	* tests/itcl/methods.test:
+	* tests/itcl/mkindex.test:
+	* tests/itcl/namespace.test:
+	* tests/itcl/protection.test:
+	* tests/itcl/scope.test:
+
+2005-09-11  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	Add tcljava-pre-itcl-merge tag.
 
 2005-08-08  Mo DeJong  <mdejong@users.sourceforge.net>

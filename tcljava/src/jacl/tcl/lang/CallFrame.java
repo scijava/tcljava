@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: CallFrame.java,v 1.10 2003/01/08 02:10:17 mdejong Exp $
+ * RCS: @(#) $Id: CallFrame.java,v 1.11 2005/09/11 20:56:57 mdejong Exp $
  *
  */
 
@@ -23,13 +23,13 @@ import java.util.*;
  * the Tcl interpreter.
  */
 
+public
 class CallFrame {
     /**
      * The interpreter associated with this call frame.
      */
 
-    protected Interp interp;
-
+    Interp interp;
 
     /**
      * The Namespace this CallFrame is executing in.
@@ -59,7 +59,7 @@ class CallFrame {
      * (i.e. next in stack of all active procedures).
      */
 
-    protected CallFrame caller;
+    CallFrame caller;
 
     /**
      * Value of interp.varFrame when this procedure was invoked
@@ -68,19 +68,19 @@ class CallFrame {
      * was active in the caller).
      */
 
-    protected CallFrame callerVar;
+    CallFrame callerVar;
 
     /**
      * Level of recursion. = 0 for the global level.
      */
 
-    protected int level;
+    int level;
 
     /**
      * Stores the variables of this CallFrame.
      */
 
-    protected Hashtable varTable;
+    Hashtable varTable;
 
 
     /**
@@ -135,8 +135,7 @@ class CallFrame {
      */
     void chain(Procedure proc, TclObject[] objv)
 	    throws TclException {
-	// FIXME: double check this ns thing in case where proc is renamed to different ns.
-	this.ns         = proc.ns;
+	this.ns         = proc.wcmd.ns;
 	this.objv       = objv;
 	// FIXME : quick level hack : fix later
 	level           = (interp.varFrame == null) ? 1 : (interp.varFrame.level + 1);

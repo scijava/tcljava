@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.36 2005/07/21 01:32:18 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.37 2005/09/11 20:56:57 mdejong Exp $
 
 SHELL = /bin/sh
 
@@ -89,6 +89,8 @@ JACL_SRC_DIR		= $(TOP_DIR)/src/jacl
 JACL_BUILD_DIR		= $(BUILD_DIR)/jacl
 TCLJAVA_SRC_DIR		= $(TOP_DIR)/src/tcljava
 TCLJAVA_BUILD_DIR	= $(BUILD_DIR)/tcljava
+ITCL_SRC_DIR		= $(TOP_DIR)/src/itcl
+ITCL_BUILD_DIR		= $(BUILD_DIR)/itcl
 NATIVE_SRC_DIR		= $(TOP_DIR)/src/native
 DEMOS_SRC_DIR		= $(TOP_DIR)/demos
 DEMOS_BUILD_DIR		= $(BUILD_DIR)/bdemos
@@ -189,7 +191,9 @@ TCLJAVA_CLASSPATH	= $(TCLJAVA_BUILD_DIR):$(MISC_DIR)/empty/empty.jar:$(JAVA_CLAS
 
 DEMOS_CLASSPATH		= $(BUILD_DIR)/$(TCLJAVA).jar:$(BUILD_DIR)/tcljava.jar:$(JAVA_CLASSPATH)$(AUX_CLASSPATH)
 
-TEST_CLASSPATH		= $(JAVA_CLASSPATH):$(TEST_BUILD_DIR):$(BUILD_DIR)/$(TCLJAVA).jar:$(BUILD_DIR)/tcljava.jar$(AUX_CLASSPATH):$(BUILD_DIR)/tl.jar
+TEST_CLASSPATH		= $(JAVA_CLASSPATH):$(TEST_BUILD_DIR):$(BUILD_DIR)/$(TCLJAVA).jar:$(BUILD_DIR)/tcljava.jar$(AUX_CLASSPATH):$(BUILD_DIR)/tl.jar:$(BUILD_DIR)/itcl.jar
+
+ITCL_CLASSPATH		= $(TEST_CLASSPATH)
 
 JACL_DEBUG_CLASSPATH	=  $(TEST_CLASSPATH):$(TCLJAVA_SRC_DIR):$(JACL_SRC_DIR)
 TCLBLEND_DEBUG_CLASSPATH = $(TEST_CLASSPATH):$(TCLJAVA_SRC_DIR):$(TCLBLEND_SRC_DIR)
@@ -250,10 +254,19 @@ TCLBLEND_JNI_HEADER_CLASS_NAMES = \
 #---------------------------------------
 
 all: tcljava $(TCLJAVA)
+	@if test "$(TCLJAVA)" == "jacl" ; then \
+		$(MAKE) TCLJAVA=$(TCLJAVA) itcl ; \
+	fi
 
 install: $(TCLJAVA).install.check tcljava.install $(TCLJAVA).install
+	@if test "$(TCLJAVA)" == "jacl" ; then \
+		$(MAKE) TCLJAVA=$(TCLJAVA) itcl.install ; \
+	fi
 
 uninstall: $(TCLJAVA).uninstall tcljava.uninstall
+	@if test "$(TCLJAVA)" == "jacl" ; then \
+		$(MAKE) TCLJAVA=$(TCLJAVA) itcl.uninstall ; \
+	fi
 
 # This rule is used to query the build CLASSPATH from an external program
 classpath:
@@ -294,6 +307,8 @@ tclblend.jar: tclblend.build
 	CLASSPATH=$(JAVA_CLASSPATH) \
 	$(JAR) $(JAR_NOCOMPRESS_FLAGS) $(BUILD_DIR)/tclblend.jar tcl
 
+# The tclblend: rule will always rebuild the .class files and
+# recreate the tclblend.jar file.
 
 tclblend: tclblend.jar $(TCLBLEND_LIB_FILE)
 	cp -f $(MISC_DIR)/pkgIndex.tcl $(BUILD_DIR)
@@ -530,9 +545,15 @@ tclblend.check: tcljava.check
 # Build Jacl
 #----------------------------------------------------------------
 
+# The jacl: rule will always rebuild the .class files and
+# recreate the jacl.jar file.
+
 jacl: jacl.jar
 
 jacl.build: jacl.clean tcljava.check
+	@echo "#"
+	@echo "# Making jacl.build"
+	@echo "#"
 	mkdir -p $(JACL_BUILD_DIR)
 	cd $(JACL_SRC_DIR) ;\
 	CLASSPATH=$(JACL_CLASSPATH) \
@@ -614,7 +635,9 @@ jacl.uninstall:
 
 
 #
-# Check to make sure jacl is built
+# Check to make sure jacl is built. This rule is used
+# in targets that require Jacl to be built. Invoking
+# the jacl: rule would always rebuild the Jacl code.
 #
 
 jacl.check: tcljava.check
@@ -623,10 +646,89 @@ jacl.check: tcljava.check
 	fi
 
 
+#----------------------------------------------------------------
+# Build Itcl for Jacl
+#----------------------------------------------------------------
+
+itcl: itcl.jar
+
+itcl.build: itcl.clean jacl.check
+	@echo "#"
+	@echo "# Making itcl.build"
+	@echo "#"
+	mkdir -p $(ITCL_BUILD_DIR)
+	cd $(ITCL_SRC_DIR) ;\
+	CLASSPATH=$(ITCL_CLASSPATH) \
+	$(JAVAC) $(JAVAC_FLAGS) \
+		$(JAVAC_D_FLAG) $(ITCL_BUILD_DIR) \
+		itcl/lang/*.java tcl/lang/*.java
+	mkdir -p $(ITCL_BUILD_DIR)/itcl/lang/library
+	cp -fr $(ITCL_SRC_DIR)/itcl/lang/library/itcl.tcl \
+		$(ITCL_BUILD_DIR)/itcl/lang/library
+
+# Only use this if you are developing jacl code and you need to recompile
+# a lot. It will not clean up before building and jacl.jar will not be
+# created. You really need to know what you are doing to use this rule.
+itcl.fastbuild:
+	@if test ! -d $(ITCL_BUILD_DIR); then \
+		echo "itcl must be built normally before a fastbuild" ; \
+		exit 1 ; \
+	fi
+	cd $(ITCL_SRC_DIR) ;\
+	CLASSPATH=$(ITCL_CLASSPATH) \
+	$(JAVAC) $(JAVAC_FLAGS) \
+		$(JAVAC_D_FLAG) $(ITCL_BUILD_DIR) \
+		itcl/lang/*.java tcl/lang/*.java
+
+# itcl.jar needs to depend on itcl.build so that the
+# classfiles get rebuilt each time the jar is built
+itcl.jar: itcl.build
+	cd $(ITCL_BUILD_DIR) ;\
+	CLASSPATH=$(JAVA_CLASSPATH) \
+	$(JAR) $(JAR_NOCOMPRESS_FLAGS) $(BUILD_DIR)/itcl.jar itcl tcl
+
+#
+# This rule is run before installing, it is used to do any checks that
+# are needed before we actually install itcl. Currently, there are none.
+#
+
+itcl.install.check:
+
+
+#
+# Install itcl, if the user did not build itcl already
+# it would have been built by the itcl.check rule
+#
+itcl.install: itcl.check
+	@echo "#"
+	@echo "# Installing itcl"
+	@echo "#"
+	@echo "Installing itcl.jar in $(XP_TCLJAVA_INSTALL_DIR)"
+	@$(INSTALL_DATA) $(BUILD_DIR)/itcl.jar $(XP_TCLJAVA_INSTALL_DIR)
+
+itcl.uninstall:
+	@echo "#"
+	@echo "# Uninstalling itcl"
+	@echo "#"
+	@echo "Uninstalling $(XP_TCLJAVA_INSTALL_DIR)/itcl.jar"
+	@rm -f $(XP_TCLJAVA_INSTALL_DIR)/itcl.jar
+
+#
+# Check to make sure itcl is built
+#
+
+itcl.check:
+	@if test ! -f itcl.jar ; then \
+		$(MAKE) TCLJAVA=$(TCLJAVA) itcl ; \
+	fi
+
 
 #----------------------------------------------------------------
 # Build the TclJava Package.
 #----------------------------------------------------------------
+
+# The tcljava: rule will always rebuild the .class files and
+# recreate the tcljava.jar file.
 
 tcljava: tcljava.jar
 
@@ -735,7 +837,7 @@ tcljava.check:
 
 check: test
 
-test: test_$(TCLJAVA).check test_$(TCLJAVA).exec
+test: test_$(TCLJAVA).check itcl.check test_$(TCLJAVA).exec
 
 test.build: test.clean test_tcljava.build test_$(TCLJAVA).build
 
@@ -1104,7 +1206,7 @@ configure: $(TOP_DIR)/configure.in
 
 clean: tclblend.clean jacl.clean tcljava.clean \
 	demos.clean test.clean tmp.clean \
-	jni_example.clean
+	jni_example.clean itcl.clean
 
 tclblend.clean:
 	rm -f  *.o $(TCLBLEND_LIB_FILE) custom javaNative.h
@@ -1120,11 +1222,16 @@ tcljava.clean:
 	rm -rf $(TCLJAVA_BUILD_DIR)
 	rm -f  tcljava.jar
 
+itcl.clean:
+	rm -rf $(ITCL_BUILD_DIR)
+	rm -f  itcl.jar
+
 demos.clean: 
 	rm -rf $(DEMOS_BUILD_DIR)
 
 test.clean:
 	rm -f  $(TEST_TCL_DIR)/core $(BUILD_DIR)/core
+	rm -f  hello.jar tl.jar
 	rm -rf $(TEST_BUILD_DIR)
 
 tmp.clean:
@@ -1397,8 +1504,23 @@ jaclDist: Makefile
 	@echo "# Making jaclDist"
 	@echo "#"
 	$(MAKE) TCLJAVA=$(TCLJAVA) tcljavaDist DISTDIR=$(JACL_DISTDIR) TCLJAVA=jacl
-	$(MAKE) TCLJAVA=$(TCLJAVA) DISTDIR=$(JACL_DISTDIR) jaclDemoDist 
+	$(MAKE) TCLJAVA=$(TCLJAVA) DISTDIR=$(JACL_DISTDIR) jaclDemoDist
+	$(MAKE) TCLJAVA=$(TCLJAVA) jaclDistSrc
+	$(MAKE) itclDistSrc
 
+	rm -f $(DISTDIR)/$(JACL_DISTNAME).tar.Z \
+		$(DISTDIR)/$(JACL_DISTNAME).tar.gz \
+		$(DISTDIR)/$(JACL_ZIPNAME) 
+	cd $(DISTDIR);\
+		chmod -R $(DIST_CHMOD_PERMS) $(JACL_DISTNAME); \
+		tar -cf $(JACL_DISTNAME).tar $(JACL_DISTNAME); \
+		zip -qr8 $(JACL_ZIPNAME) $(JACL_DISTNAME); \
+		gzip --best $(JACL_DISTNAME).tar
+
+
+# jaclDistSrc: Copy Jacl source files into JACL_DISTDIR
+
+jaclDistSrc:
 	cp -p $(TOP_DIR)/README.jacl \
 		$(JACL_DISTDIR)/README
 
@@ -1440,15 +1562,6 @@ jaclDist: Makefile
 		$(TOP_DIR)/extras/GuiShell/README \
 		$(TOP_DIR)/extras/GuiShell/swingempty.jar \
 		$(JACL_DISTDIR)/extras/GuiShell
-
-	rm -f $(DISTDIR)/$(JACL_DISTNAME).tar.Z \
-		$(DISTDIR)/$(JACL_DISTNAME).tar.gz \
-		$(DISTDIR)/$(JACL_ZIPNAME) 
-	cd $(DISTDIR);\
-		chmod -R $(DIST_CHMOD_PERMS) $(JACL_DISTNAME); \
-		tar -cf $(JACL_DISTNAME).tar $(JACL_DISTNAME); \
-		zip -qr8 $(JACL_ZIPNAME) $(JACL_DISTNAME); \
-		gzip --best $(JACL_DISTNAME).tar
 
 
 #----------------------------------------------------------------
@@ -1493,7 +1606,22 @@ tclblendDist: Makefile
 	@echo "# Making tclblendDist"
 	@echo "#"
 	$(MAKE) DISTDIR=$(TCLBLEND_DISTDIR) TCLJAVA=tclblend tcljavaDist
+	$(MAKE) tclblendDistSrc
 
+	rm -f   $(DISTDIR)/$(TCLBLEND_DISTNAME).tar.Z \
+		$(DISTDIR)/$(TCLBLEND_DISTNAME).tar.gz \
+		$(DISTDIR)/$(TCLBLEND_ZIPNAME)
+
+	cd $(DISTDIR);\
+		chmod -R $(DIST_CHMOD_PERMS) $(TCLBLEND_DISTNAME); \
+		tar -cf $(TCLBLEND_DISTNAME).tar $(TCLBLEND_DISTNAME); \
+		zip -rq8 $(TCLBLEND_ZIPNAME) $(TCLBLEND_DISTNAME); \
+		gzip --best $(TCLBLEND_DISTNAME).tar
+
+
+# tclblendDistSrc: Copy Tcl Blend source files into TCLBLEND_DISTDIR
+
+tclblendDistSrc:
 	cp -p $(TOP_DIR)/README.tclblend \
 		$(TCLBLEND_DISTDIR)/README
 
@@ -1548,16 +1676,6 @@ tclblendDist: Makefile
 	cp -p $(TOP_DIR)/extras/TclBlend.java \
 		$(TCLBLEND_DISTDIR)/extras
 
-	rm -f   $(DISTDIR)/$(TCLBLEND_DISTNAME).tar.Z \
-		$(DISTDIR)/$(TCLBLEND_DISTNAME).tar.gz \
-		$(DISTDIR)/$(TCLBLEND_ZIPNAME)
-
-	cd $(DISTDIR);\
-		chmod -R $(DIST_CHMOD_PERMS) $(TCLBLEND_DISTNAME); \
-		tar -cf $(TCLBLEND_DISTNAME).tar $(TCLBLEND_DISTNAME); \
-		zip -rq8 $(TCLBLEND_ZIPNAME) $(TCLBLEND_DISTNAME); \
-		gzip --best $(TCLBLEND_DISTNAME).tar
-
 
 # Sanity check by building, installing, running tests
 tclblendDistBuild:
@@ -1569,8 +1687,18 @@ tclblendDistBuild:
 		$(MAKE) test_tclblend.build; \
 		$(MAKE) test
 
+# itclDistSrc: Copy Itcl for Jacl source files into JACL_DISTDIR
 
-
+itclDistSrc:
+	mkdir -p $(JACL_DISTDIR)/src
+	mkdir -p $(JACL_DISTDIR)/src/itcl
+	mkdir -p $(JACL_DISTDIR)/src/itcl/itcl
+	mkdir -p $(JACL_DISTDIR)/src/itcl/itcl/lang
+	cp -p $(TOP_DIR)/src/itcl/itcl/lang/*.java \
+		$(JACL_DISTDIR)/src/itcl/itcl/lang
+	mkdir -p $(JACL_DISTDIR)/src/itcl/itcl/lang/library
+	cp -p $(TOP_DIR)/src/itcl/itcl/lang/library/*.tcl \
+		$(JACL_DISTDIR)/src/itcl/itcl/lang/library
 
 ############################################################################
 #

@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ProcCmd.java,v 1.2 1999/08/03 03:04:19 mo Exp $
+ * RCS: @(#) $Id: ProcCmd.java,v 1.3 2005/09/11 20:56:57 mdejong Exp $
  *
  */
 
@@ -105,9 +105,10 @@ class ProcCmd implements Command {
 	// later when the procedure is called to determine what namespace the
 	// procedure will run in. This will be different than the current
 	// namespace if the proc was renamed into a different namespace.
-	
-	// FIXME : we do not handle renaming into another namespace correctly yet!
-	//procPtr->cmdPtr = (Command *) cmd;
+
+	WrappedCommand wcmd = NamespaceCmd.findCommand(interp,
+	   ds.toString(), ns, TCL.NAMESPACE_ONLY);
+	proc.wcmd = wcmd;
 
 	return;
     }

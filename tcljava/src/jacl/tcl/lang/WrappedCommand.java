@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: WrappedCommand.java,v 1.2 1999/08/05 03:42:05 mo Exp $
+ * RCS: @(#) $Id: WrappedCommand.java,v 1.3 2005/09/11 20:56:57 mdejong Exp $
  */
 
 package tcl.lang;
@@ -26,21 +26,26 @@ import java.util.*;
  * the internal implementation of Jacl.
  */
 
+public
 class WrappedCommand {
+    public
     Hashtable table;  // Reference to the table that this command is
                       // defined inside. The hashKey member can be
-                      // used to lookup this CommandWrapper instance
-                      // in the table of CommandWrappers. The table
+                      // used to lookup this WrappedCommand instance
+                      // in the table of WrappedCommands. The table
                       // member combined with the hashKey member are
                       // are equivilent to the C version's Command->hPtr.
+    public
     String hashKey;   // A string that stores the name of the command.
                       // This name is NOT fully qualified.
 
-
+    public
     NamespaceCmd.Namespace ns; // The namespace where the command is located
 
+    public
     Command cmd;      // The actual Command interface that we are wrapping.
 
+    public
     boolean deleted;  // Means that the command is in the process
                       // of being deleted. Other attempts to
                       // delete the command should be ignored.
