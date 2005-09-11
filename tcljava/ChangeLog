@@ -1,5 +1,9 @@
 2005-09-11  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	Add tcljava-post-itcl-merge tag.
+
+2005-09-11  Mo DeJong  <mdejong@users.sourceforge.net>
+
         Add Itcl package for Jacl. This is a full port
         of the C version of Itcl 3.2.1 over to Java. A
         "package require Itcl" adds the itcl::class
