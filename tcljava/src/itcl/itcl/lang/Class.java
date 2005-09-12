@@ -23,7 +23,7 @@
  *           mmclennan@lucent.com
  *           http://www.tcltk.com/itcl
  *
- *     RCS:  $Id: Class.java,v 1.1 2005/09/11 20:56:57 mdejong Exp $
+ *     RCS:  $Id: Class.java,v 1.2 2005/09/12 00:00:50 mdejong Exp $
  * ========================================================================
  *           Copyright (c) 1993-1998  Lucent Technologies, Inc.
  * ------------------------------------------------------------------------
@@ -67,7 +67,7 @@ CreateClass(
 {
     String head, tail;
     WrappedCommand wcmd;
-    NamespaceCmd.Namespace classNs;
+    Namespace classNs;
     ItclClass cd;
     ItclVarDefn vdefn;
 
@@ -78,7 +78,7 @@ CreateClass(
     //  We'll just replace the namespace data below with the
     //  proper class data.
 
-    classNs = NamespaceCmd.findNamespace(interp, path,
+    classNs = Namespace.findNamespace(interp, path,
         null, 0);
 
     if (classNs != null && Class.IsClassNamespace(classNs)) {
@@ -91,7 +91,7 @@ CreateClass(
     //  usual Tcl commands from being clobbered when a programmer
     //  makes a bogus call like "class info".
 
-    wcmd = NamespaceCmd.findCommand(interp, path,
+    wcmd = Namespace.findCommand(interp, path,
         null, TCL.NAMESPACE_ONLY);
 
     if (wcmd != null && !Cmds.IsStub(wcmd)) {
@@ -103,7 +103,7 @@ CreateClass(
         if (path.indexOf("::") == -1) {
             buffer.append(
                 " in namespace \"" +
-                NamespaceCmd.getCurrentNamespace(interp).fullName +
+                Namespace.getCurrentNamespace(interp).fullName +
                 "\"");
         }
 
@@ -167,7 +167,7 @@ CreateClass(
     Util.PreserveData(cd);
 
     if (classNs == null) {
-        classNs = NamespaceCmd.createNamespace(interp, path,
+        classNs = Namespace.createNamespace(interp, path,
             new DestroyClassNamespImpl(cd));
     }
     else {
@@ -196,7 +196,7 @@ CreateClass(
     //  [incr Tcl].
 
     Resolver resolver = new ClassResolverImpl();
-    NamespaceCmd.setNamespaceResolver(classNs, resolver);
+    Namespace.setNamespaceResolver(classNs, resolver);
 
     //  Add the built-in "this" variable to the list of data members.
 
@@ -221,7 +221,7 @@ CreateClass(
     interp.createCommand(cd.fullname,
         new HandleClassCmd(cd));
 
-    cd.w_accessCmd = NamespaceCmd.findCommand(interp,
+    cd.w_accessCmd = Namespace.findCommand(interp,
         cd.fullname, null, TCL.NAMESPACE_ONLY);
     cd.accessCmd = cd.w_accessCmd.cmd;
 
@@ -313,7 +313,7 @@ DeleteClass(
     //    above, but it also disconnects this class from its
     //    base-class lists, and removes the class access command.
 
-    NamespaceCmd.deleteNamespace(cdefn.namesp);
+    Namespace.deleteNamespace(cdefn.namesp);
 }
 
 // Helper function used when DeleteClass fails
@@ -359,7 +359,7 @@ DestroyClass(
     cdefn.accessCmd = null;
     cdefn.w_accessCmd = null;
 
-    NamespaceCmd.deleteNamespace(cdefn.namesp);
+    Namespace.deleteNamespace(cdefn.namesp);
     Util.ReleaseData(cdefn);
 }
 
@@ -394,7 +394,7 @@ DestroyClassNamesp(ItclClass cdefn)
     elem = Util.FirstListElem(cdefn.derived);
     while (elem != null) {
         cd = (ItclClass) Util.GetListValue(elem);
-        NamespaceCmd.deleteNamespace(cd.namesp);
+        Namespace.deleteNamespace(cd.namesp);
 
 	// As the first namespace is now destroyed we have to get the
         // new first element of the hash table. We cannot go to the
@@ -469,7 +469,7 @@ DestroyClassNamesp(ItclClass cdefn)
 
 static
 class
-DestroyClassNamespImpl implements NamespaceCmd.DeleteProc {
+DestroyClassNamespImpl implements Namespace.DeleteProc {
 ItclClass cdefn;
 
 DestroyClassNamespImpl(ItclClass cdefn) {
@@ -612,7 +612,7 @@ FreeClass(
 static
 boolean
 IsClassNamespace(
-    NamespaceCmd.Namespace ns)  // namespace being tested
+    Namespace ns)  // namespace being tested
 {
     if (ns != null) {
         return (ns.deleteProc instanceof DestroyClassNamespImpl);
@@ -634,7 +634,7 @@ IsClassNamespace(
 static
 ItclClass
 GetClassFromNamespace(
-    NamespaceCmd.Namespace ns)  // namespace being tested
+    Namespace ns)  // namespace being tested
 {
     if (ns == null || !(ns.deleteProc instanceof DestroyClassNamespImpl)) {
         throw new TclRuntimeError("namespace is not a class namespace");
@@ -664,7 +664,7 @@ IsClass(
         hcc = (HandleClassCmd) wcmd.cmd;
     } else {
         // May be an imported command
-        origCmd = NamespaceCmd.getOriginalCommand(wcmd);
+        origCmd = Namespace.getOriginalCommand(wcmd);
         if ((origCmd != null) && (origCmd.cmd instanceof HandleClassCmd)) {
             hcc = (HandleClassCmd) origCmd.cmd;
         }
@@ -696,7 +696,7 @@ FindClass(
     String path,        // path name for class
     boolean autoload)   // should class be loaded automatically
 {
-    NamespaceCmd.Namespace classNs;
+    Namespace classNs;
 
     //  Search for a namespace with the specified name, and if
     //  one is found, see if it is a class namespace.
@@ -732,7 +732,7 @@ FindClass(
     sb.append("class \"");
     sb.append(path);
     sb.append("\" not found in context \"");
-    sb.append(NamespaceCmd.getCurrentNamespace(interp).fullName);
+    sb.append(Namespace.getCurrentNamespace(interp).fullName);
     sb.append("\"");
     interp.setResult(sb.toString());
 
@@ -764,20 +764,20 @@ FindClass(
  */
 
 static
-NamespaceCmd.Namespace
+Namespace
 FindClassNamespace(
     Interp interp,        // interpreter containing class
     String path)          // path name for class
 {
-    NamespaceCmd.Namespace contextNs = NamespaceCmd.getCurrentNamespace(interp);
-    NamespaceCmd.Namespace classNs;
+    Namespace contextNs = Namespace.getCurrentNamespace(interp);
+    Namespace classNs;
     StringBuffer buffer;
 
     //  Look up the namespace.  If the name is not absolute, then
     //  see if it's the current namespace, and try the global
     //  namespace as well.
 
-    classNs = NamespaceCmd.findNamespace(interp, path, null, 0);
+    classNs = Namespace.findNamespace(interp, path, null, 0);
 
     if ( classNs == null && contextNs.parent != null &&
          (!path.startsWith("::")) ) {
@@ -790,7 +790,7 @@ FindClassNamespace(
             buffer.append("::");
             buffer.append(path);
 
-            classNs = NamespaceCmd.findNamespace(interp,
+            classNs = Namespace.findNamespace(interp,
                 buffer.toString(), null, 0);
         }
     }
@@ -867,7 +867,7 @@ throws
         if ((cdefn.flags & ItclInt.OLD_STYLE) != 0) {
 
             frame = ItclAccess.newCallFrame(interp);
-            NamespaceCmd.pushCallFrame(interp, frame, cdefn.namesp, false);
+            Namespace.pushCallFrame(interp, frame, cdefn.namesp, false);
 
             cmdline = Util.CreateArgs(interp, null, objv, 2);
             cmdlinev = TclList.getElements(interp, cmdline);
@@ -876,7 +876,7 @@ throws
                 Util.EvalArgs(interp, cmdlinev);
                 return;
             } finally {
-                NamespaceCmd.popCallFrame(interp);
+                Namespace.popCallFrame(interp);
             }
         }
 
@@ -988,7 +988,7 @@ WrappedCommand
 ClassCmdResolver(
     Interp interp,		// current interpreter
     String name,		// name of the command being accessed
-    NamespaceCmd.Namespace context,	// namespace performing the resolution
+    Namespace context,	// namespace performing the resolution
     int flags)			// TCL.LEAVE_ERR_MSG => leave error messages
 				// in interp if anything goes wrong
         throws TclException
@@ -1082,7 +1082,7 @@ Var
 ClassVarResolver(
     Interp interp,       // current interpreter
     String name,	 // name of the variable being accessed
-    NamespaceCmd.Namespace context,   // namespace performing the resolution
+    Namespace context,   // namespace performing the resolution
     int flags)                // TCL.LEAVE_ERR_MSG => leave error messages
                               // in interp if anything goes wrong
         throws TclException
@@ -1186,7 +1186,7 @@ static class ClassResolverImpl implements Resolver {
     resolveCmd (
 	Interp interp,			// The current interpreter.
 	String name,			// Command name to resolve.
-	NamespaceCmd.Namespace context,	// The namespace to look in.
+	Namespace context,	// The namespace to look in.
 	int flags)			// 0 or TCL.LEAVE_ERR_MSG.
     throws
 	TclException		// Tcl exceptions are thrown for Tcl errors.
@@ -1198,7 +1198,7 @@ static class ClassResolverImpl implements Resolver {
     resolveVar (
 	Interp interp,			// The current interpreter.
 	String name,			// Variable name to resolve.
-	NamespaceCmd.Namespace context,	// The namespace to look in.
+	Namespace context,	        // The namespace to look in.
 	int flags)			// 0 or TCL.LEAVE_ERR_MSG.
     throws
 	TclException		// Tcl exceptions are thrown for Tcl errors.
@@ -1242,7 +1242,7 @@ BuildVirtualTables(
     ItclMemberFunc mfunc;
     ItclHierIter hier;
     ItclClass cd;
-    NamespaceCmd.Namespace ns;
+    Namespace ns;
     StringBuffer buffer, buffer2;
     boolean newEntry;
     Enumeration e;
@@ -1542,7 +1542,7 @@ GetCommonVar(
     //  security restrictions.
 
     frame = ItclAccess.newCallFrame(interp);
-    NamespaceCmd.pushCallFrame(interp, frame, contextClass.namesp, false);
+    Namespace.pushCallFrame(interp, frame, contextClass.namesp, false);
 
     try {
         TclObject val = interp.getVar(name, 0);
@@ -1554,7 +1554,7 @@ GetCommonVar(
     } catch (TclException ex) {
         return null;
     } finally {
-        NamespaceCmd.popCallFrame(interp);
+        Namespace.popCallFrame(interp);
     }
 }
 

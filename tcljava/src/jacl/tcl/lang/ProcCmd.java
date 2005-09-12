@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ProcCmd.java,v 1.3 2005/09/11 20:56:57 mdejong Exp $
+ * RCS: @(#) $Id: ProcCmd.java,v 1.4 2005/09/12 00:00:50 mdejong Exp $
  *
  */
 
@@ -34,7 +34,7 @@ class ProcCmd implements Command {
 	    throws TclException {
 	Procedure proc;
 	String fullName, procName;
-	NamespaceCmd.Namespace ns, altNs, cxtNs;
+	Namespace ns, altNs, cxtNs;
 	Command cmd;
 	StringBuffer ds;
 
@@ -51,12 +51,12 @@ class ProcCmd implements Command {
 
 	// Java does not support passing an address so we pass
 	// an array of size 1 and then assign arr[0] to the value
-	NamespaceCmd.Namespace[] nsArr    = new NamespaceCmd.Namespace[1];
-	NamespaceCmd.Namespace[] altNsArr = new NamespaceCmd.Namespace[1];
-	NamespaceCmd.Namespace[] cxtNsArr = new NamespaceCmd.Namespace[1];
+	Namespace[] nsArr    = new Namespace[1];
+	Namespace[] altNsArr = new Namespace[1];
+	Namespace[] cxtNsArr = new Namespace[1];
 	String[]     procNameArr          = new String[1];
 
-	NamespaceCmd.getNamespaceForQualName(interp, fullName, null,
+	Namespace.getNamespaceForQualName(interp, fullName, null,
 				   0, nsArr, altNsArr, cxtNsArr, procNameArr);
 
 	// Get the values out of the arrays
@@ -74,7 +74,7 @@ class ProcCmd implements Command {
 				           "\": bad procedure name");
 	}
 	// FIXME : could there be a problem with a command named ":command" ?
-	if ((ns != NamespaceCmd.getGlobalNamespace(interp))
+	if ((ns != Namespace.getGlobalNamespace(interp))
 	    && (procName != null)
 	    && ((procName.length() > 0) && (procName.charAt(0) == ':'))) {
 	    throw new TclException(interp, "can't create procedure \"" + procName +
@@ -93,7 +93,7 @@ class ProcCmd implements Command {
 	// generate a fully qualified name for it.
 
 	ds = new StringBuffer();
-	if (ns != NamespaceCmd.getGlobalNamespace(interp)) {
+	if (ns != Namespace.getGlobalNamespace(interp)) {
 	    ds.append(ns.fullName);
 	    ds.append("::");
 	}
@@ -106,7 +106,7 @@ class ProcCmd implements Command {
 	// procedure will run in. This will be different than the current
 	// namespace if the proc was renamed into a different namespace.
 
-	WrappedCommand wcmd = NamespaceCmd.findCommand(interp,
+	WrappedCommand wcmd = Namespace.findCommand(interp,
 	   ds.toString(), ns, TCL.NAMESPACE_ONLY);
 	proc.wcmd = wcmd;
 

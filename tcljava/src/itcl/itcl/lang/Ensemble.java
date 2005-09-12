@@ -23,7 +23,7 @@
  *           mmclennan@lucent.com
  *           http://www.tcltk.com/itcl
  *
- *     RCS:  $Id: Ensemble.java,v 1.1 2005/09/11 20:56:57 mdejong Exp $
+ *     RCS:  $Id: Ensemble.java,v 1.2 2005/09/12 00:00:50 mdejong Exp $
  * ========================================================================
  *           Copyright (c) 1993-1998  Lucent Technologies, Inc.
  * ------------------------------------------------------------------------
@@ -679,7 +679,7 @@ CreateEnsemble(
     //
     if (parentEnsData == null) {
         interp.createCommand(ensName, new HandleEnsemble(ensData));
-        wcmd = NamespaceCmd.findCommand(interp, ensName, null, 
+        wcmd = Namespace.findCommand(interp, ensName, null, 
             TCL.NAMESPACE_ONLY);
         ensData.wcmd = wcmd;
         return;
@@ -839,7 +839,7 @@ FindEnsemble(
     //  Use the first name to find the command for the top-level
     //  ensemble.
 
-    wcmd = NamespaceCmd.findCommand(interp, nameArgv[0], null,
+    wcmd = Namespace.findCommand(interp, nameArgv[0], null,
         TCL.LEAVE_ERR_MSG);
 
     if (wcmd == null || !(wcmd.cmd instanceof HandleEnsemble)) {
@@ -1513,13 +1513,13 @@ throws
 
     else {
         try {
-            wcmd = NamespaceCmd.findCommand(interp, ensName, null, 0);
+            wcmd = Namespace.findCommand(interp, ensName, null, 0);
         } catch (TclException ex) {
             wcmd = null;
         }
         if (wcmd == null) {
             CreateEnsemble(interp, null, ensName);
-            wcmd = NamespaceCmd.findCommand(interp, ensName, null, 0);
+            wcmd = Namespace.findCommand(interp, ensName, null, 0);
         }
         if (wcmd == null) {
             cmd = null;
@@ -1617,7 +1617,7 @@ EnsembleParser
 GetEnsembleParser(
     Interp interp)     // interpreter handling the ensemble
 {
-    NamespaceCmd.Namespace ns, childNs;
+    Namespace ns, childNs;
     EnsembleParser ensInfo;
     WrappedCommand wcmd;
 
@@ -1642,12 +1642,12 @@ GetEnsembleParser(
     //  Remove all namespaces and all normal commands from the
     //  parser interpreter.
 
-    ns = NamespaceCmd.getGlobalNamespace(ensInfo.parser);
+    ns = Namespace.getGlobalNamespace(ensInfo.parser);
 
     for (Enumeration e = ns.childTable.keys() ; e.hasMoreElements() ;) {
         String key = (String) e.nextElement();
-        childNs = (NamespaceCmd.Namespace) ns.childTable.get(key);
-        NamespaceCmd.deleteNamespace(childNs);
+        childNs = (Namespace) ns.childTable.get(key);
+        Namespace.deleteNamespace(childNs);
     }
 
     for (Enumeration e = ns.cmdTable.keys() ; e.hasMoreElements() ;) {

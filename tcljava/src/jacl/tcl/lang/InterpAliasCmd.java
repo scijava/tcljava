@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: InterpAliasCmd.java,v 1.1 2000/08/20 06:08:42 mo Exp $
+ * RCS: @(#) $Id: InterpAliasCmd.java,v 1.2 2005/09/12 00:00:50 mdejong Exp $
  *
  */
 
@@ -206,7 +206,7 @@ throws
     TclList.insert(interp, alias.prefix, 1, objv, objIx, objv.length-1);
 
     slaveInterp.createCommand(string, alias);
-    alias.slaveCmd = NamespaceCmd.findCommand(slaveInterp, string, null, 0);
+    alias.slaveCmd = Namespace.findCommand(slaveInterp, string, null, 0);
 
     try {
 	interp.preventAliasLoop(slaveInterp, alias.slaveCmd);
@@ -381,7 +381,7 @@ throws
 {
   TclObject objv[] = TclList.getElements(interp, prefix);
   String targetName = objv[0].toString();
-  return NamespaceCmd.findCommand(targetInterp, targetName, null, 0);
+  return Namespace.findCommand(targetInterp, targetName, null, 0);
 }
 
 /**

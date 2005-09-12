@@ -14,7 +14,7 @@
  *           mmclennan@lucent.com
  *           http://www.tcltk.com/itcl
  *
- *     RCS:  $Id: ItclAccess.java,v 1.1 2005/09/11 20:56:57 mdejong Exp $
+ *     RCS:  $Id: ItclAccess.java,v 1.2 2005/09/12 00:00:50 mdejong Exp $
  * ========================================================================
  *           Copyright (c) 1993-1998  Lucent Technologies, Inc.
  * ------------------------------------------------------------------------
@@ -44,7 +44,7 @@ public class ItclAccess
     }
 
     public static
-    NamespaceCmd.Namespace getCallFrameNamespace(CallFrame frame) {
+    Namespace getCallFrameNamespace(CallFrame frame) {
         return frame.ns;
     }
 
@@ -124,7 +124,7 @@ public class ItclAccess
     Procedure
     newProcedure(
         Interp interp,
-        NamespaceCmd.Namespace ns,
+        Namespace ns,
         String name,
         TclObject args,
         TclObject b,
@@ -174,7 +174,7 @@ public class ItclAccess
     void createObjVar(
         Var var,
         String key,
-        NamespaceCmd.Namespace ns,
+        Namespace ns,
         Hashtable table)
     {
         var.hashKey = key;
@@ -198,7 +198,7 @@ public class ItclAccess
     void createCommonVar(
         Var var,
         String key,
-        NamespaceCmd.Namespace ns,
+        Namespace ns,
         Hashtable table)
     {
         var.table = table;

@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Var.java,v 1.13 2005/09/11 20:56:57 mdejong Exp $
+ * RCS: @(#) $Id: Var.java,v 1.14 2005/09/12 00:00:50 mdejong Exp $
  *
  */
 package tcl.lang;
@@ -225,7 +225,7 @@ class Var {
      * a local variable in a Tcl procedure.
      */
 
-    NamespaceCmd.Namespace ns;
+    Namespace ns;
 
     /**
      * NewVar -> Var
@@ -420,7 +420,7 @@ class Var {
 				// parens around the index.  Otherwise they
 				// are -1. These are needed to restore
 				// the parens after parsing the name.
-	NamespaceCmd.Namespace varNs, cxtNs;
+	Namespace varNs, cxtNs;
 	Interp.ResolverScheme res;
 	int p;
 	int i, result;
@@ -517,18 +517,18 @@ class Var {
 	    // Don't pass TCL.LEAVE_ERR_MSG, we may yet create the variable,
 	    // or otherwise generate our own error!
 
-	    var = NamespaceCmd.findNamespaceVar(interp, part1, null,
+	    var = Namespace.findNamespaceVar(interp, part1, null,
 						flags & ~TCL.LEAVE_ERR_MSG);
 	    if (var == null) {
 		if (createPart1) {   // var wasn't found so create it
 
 		    // Java does not support passing an address so we pass
 		    // an array of size 1 and then assign arr[0] to the value
-		    NamespaceCmd.Namespace[] varNsArr  = new NamespaceCmd.Namespace[1];
-		    NamespaceCmd.Namespace[] dummyArr = new NamespaceCmd.Namespace[1];
+		    Namespace[] varNsArr  = new Namespace[1];
+		    Namespace[] dummyArr = new Namespace[1];
 		    String[]    tailArr   = new String[1];
 
-		    NamespaceCmd.getNamespaceForQualName(interp, part1, null,
+		    Namespace.getNamespaceForQualName(interp, part1, null,
 		       flags, varNsArr, dummyArr, dummyArr, tailArr);
 
 		    // Get the values out of the arrays!
@@ -1650,7 +1650,7 @@ class Var {
 	CallFrame varFrame;
 	CallFrame savedFrame = null;
 	Hashtable table;
-	NamespaceCmd.Namespace ns, altNs;
+	Namespace ns, altNs;
 	String tail;
 	boolean newvar = false;
 
@@ -1698,12 +1698,12 @@ class Var {
 
 	    // Java does not support passing an address so we pass
 	    // an array of size 1 and then assign arr[0] to the value
-	    NamespaceCmd.Namespace[] nsArr      = new NamespaceCmd.Namespace[1];
-	    NamespaceCmd.Namespace[] altNsArr   = new NamespaceCmd.Namespace[1];
-	    NamespaceCmd.Namespace[] dummyNsArr = new NamespaceCmd.Namespace[1];
+	    Namespace[] nsArr      = new Namespace[1];
+	    Namespace[] altNsArr   = new Namespace[1];
+	    Namespace[] dummyNsArr = new Namespace[1];
 	    String[]    tailArr                 = new String[1];
 
-	    NamespaceCmd.getNamespaceForQualName(interp, myName, null,
+	    Namespace.getNamespaceForQualName(interp, myName, null,
 		       myFlags, nsArr, altNsArr, dummyNsArr, tailArr);
 
 	    // Get the values out of the arrays!
@@ -1811,7 +1811,7 @@ class Var {
      *
      * Tcl_GetVariableFullName -> getVariableFullName
      *
-     *  Given a Var token returned by NamespaceCmd.FindNamespaceVar, this
+     *  Given a Var token returned by Namespace.FindNamespaceVar, this
      *	procedure appends to an object the namespace variable's full
      *	name, qualified by a sequence of parent namespace names.
      *
@@ -2019,7 +2019,7 @@ class Var {
 	int flags;
 	//ActiveVarTrace active;
 	TclObject obj;
-	NamespaceCmd.Namespace currNs = NamespaceCmd.getCurrentNamespace(interp);
+	Namespace currNs = Namespace.getCurrentNamespace(interp);
 
 	// Determine what flags to pass to the trace callback procedures.
 

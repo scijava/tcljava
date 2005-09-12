@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: InfoCmd.java,v 1.10 2005/07/22 04:47:24 mdejong Exp $
+ * RCS: @(#) $Id: InfoCmd.java,v 1.11 2005/09/12 00:00:50 mdejong Exp $
  *
  */
 
@@ -295,9 +295,9 @@ class InfoCmd implements Command {
 	    throws TclException {
 	String cmdName, pattern, simplePattern;
 	Enumeration search;
-	NamespaceCmd.Namespace ns;
-	NamespaceCmd.Namespace globalNs = NamespaceCmd.getGlobalNamespace(interp);
-	NamespaceCmd.Namespace currNs   = NamespaceCmd.getCurrentNamespace(interp);
+	Namespace ns;
+	Namespace globalNs = Namespace.getGlobalNamespace(interp);
+	Namespace currNs   = Namespace.getCurrentNamespace(interp);
 	TclObject list, elemObj;
 	boolean specificNsInPattern = false;  // Init. to avoid compiler warning.
 	WrappedCommand cmd;
@@ -320,12 +320,12 @@ class InfoCmd implements Command {
 
 	    // Java does not support passing an address so we pass
 	    // an array of size 1 and then assign arr[0] to the value
-	    NamespaceCmd.Namespace[] nsArr     = new NamespaceCmd.Namespace[1];
-	    NamespaceCmd.Namespace[] dummy1Arr = new NamespaceCmd.Namespace[1];
-	    NamespaceCmd.Namespace[] dummy2Arr = new NamespaceCmd.Namespace[1];
+	    Namespace[] nsArr     = new Namespace[1];
+	    Namespace[] dummy1Arr = new Namespace[1];
+	    Namespace[] dummy2Arr = new Namespace[1];
 	    String[]     simplePatternArr  = new String[1];
 
-	    NamespaceCmd.getNamespaceForQualName(interp, pattern, null,
+	    Namespace.getNamespaceForQualName(interp, pattern, null,
 	        0, nsArr, dummy1Arr, dummy2Arr, simplePatternArr);
 
 	    // Get the values out of the arrays!
@@ -548,7 +548,7 @@ class InfoCmd implements Command {
     private static void InfoGlobalsCmd(Interp interp, TclObject[] objv)
 	    throws TclException {
 	String varName, pattern;
-	NamespaceCmd.Namespace globalNs = NamespaceCmd.getGlobalNamespace(interp);
+	Namespace globalNs = Namespace.getGlobalNamespace(interp);
 	Enumeration search;
 	Var var;
 	TclObject list;
@@ -953,7 +953,7 @@ class InfoCmd implements Command {
     private static void InfoProcsCmd(Interp interp, TclObject[] objv)
 	    throws TclException {
 	String cmdName, pattern;
-	NamespaceCmd.Namespace currNs = NamespaceCmd.getCurrentNamespace(interp);
+	Namespace currNs = Namespace.getCurrentNamespace(interp);
 	Enumeration search;
 	WrappedCommand cmd, realCmd;
 	TclObject list;
@@ -979,7 +979,7 @@ class InfoCmd implements Command {
 	    // imported command that points to a "real" proc in a different
 	    // namespace.
 
-	    realCmd = NamespaceCmd.getOriginalCommand(cmd);
+	    realCmd = Namespace.getOriginalCommand(cmd);
 
 	    if (Procedure.isProc(cmd)
 	        || ((realCmd != null) && Procedure.isProc(realCmd))) {
@@ -1111,9 +1111,9 @@ class InfoCmd implements Command {
 	String varName, pattern, simplePattern;
 	Enumeration search;
 	Var var;
-	NamespaceCmd.Namespace ns;
-	NamespaceCmd.Namespace globalNs = NamespaceCmd.getGlobalNamespace(interp);
-	NamespaceCmd.Namespace currNs   = NamespaceCmd.getCurrentNamespace(interp);
+	Namespace ns;
+	Namespace globalNs = Namespace.getGlobalNamespace(interp);
+	Namespace currNs   = Namespace.getCurrentNamespace(interp);
 	TclObject list, elemObj;
 	boolean specificNsInPattern = false; // Init. to avoid compiler warning.
 
@@ -1136,12 +1136,12 @@ class InfoCmd implements Command {
 
 	    // Java does not support passing an address so we pass
 	    // an array of size 1 and then assign arr[0] to the value
-	    NamespaceCmd.Namespace[] nsArr     = new NamespaceCmd.Namespace[1];
-	    NamespaceCmd.Namespace[] dummy1Arr = new NamespaceCmd.Namespace[1];
-	    NamespaceCmd.Namespace[] dummy2Arr = new NamespaceCmd.Namespace[1];
+	    Namespace[] nsArr     = new Namespace[1];
+	    Namespace[] dummy1Arr = new Namespace[1];
+	    Namespace[] dummy2Arr = new Namespace[1];
 	    String[]     simplePatternArr  = new String[1];
 
-	    NamespaceCmd.getNamespaceForQualName(interp, pattern, null,
+	    Namespace.getNamespaceForQualName(interp, pattern, null,
 	        0, nsArr, dummy1Arr, dummy2Arr, simplePatternArr);
 
 	    // Get the values out of the arrays!

@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Procedure.java,v 1.5 2005/09/11 20:56:57 mdejong Exp $
+ * RCS: @(#) $Id: Procedure.java,v 1.6 2005/09/12 00:00:50 mdejong Exp $
  *
  */
 
@@ -75,7 +75,7 @@ int srcLineNumber;
 
 Procedure(
     Interp interp,		// Current interpreter.
-    NamespaceCmd.Namespace ns,  // The namespace that the proc is defined in.
+    Namespace ns,  // The namespace that the proc is defined in.
     String name,		// Name of the procedure.
     TclObject args,		// The formal arguments of this procedure.
     TclObject b,		// The body of the procedure.
@@ -271,7 +271,7 @@ static boolean isProc(WrappedCommand cmd)
 
     WrappedCommand origCmd;
 
-    origCmd = NamespaceCmd.getOriginalCommand(cmd);
+    origCmd = Namespace.getOriginalCommand(cmd);
     if (origCmd != null) {
 	cmd = origCmd;
     }
@@ -311,7 +311,7 @@ findProc(Interp interp, String procName)
     WrappedCommand origCmd;
     
     try {
-	cmd = NamespaceCmd.findCommand(interp, procName, null, 0);
+	cmd = Namespace.findCommand(interp, procName, null, 0);
     } catch (TclException e) {
 	// This should never happen
 	throw new TclRuntimeError("unexpected TclException: " + e);
@@ -321,7 +321,7 @@ findProc(Interp interp, String procName)
         return null;
     }
 
-    origCmd = NamespaceCmd.getOriginalCommand(cmd);
+    origCmd = Namespace.getOriginalCommand(cmd);
     if (origCmd != null) {
 	cmd = origCmd;
     }

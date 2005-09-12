@@ -22,7 +22,7 @@
  *           mmclennan@lucent.com
  *           http://www.tcltk.com/itcl
  *
- *     RCS:  $Id: Objects.java,v 1.1 2005/09/11 20:56:57 mdejong Exp $
+ *     RCS:  $Id: Objects.java,v 1.2 2005/09/12 00:00:50 mdejong Exp $
  * ========================================================================
  *           Copyright (c) 1993-1998  Lucent Technologies, Inc.
  * ------------------------------------------------------------------------
@@ -76,7 +76,7 @@ CreateObject(
 
     String head, tail;
     StringBuffer objName;
-    NamespaceCmd.Namespace parentNs;
+    Namespace parentNs;
     ItclContext context;
     ItclObject newObj;
     ItclClass cd;
@@ -90,13 +90,13 @@ CreateObject(
     //  find a global command, but that wouldn't be clobbered!
 
     WrappedCommand wcmd =
-        NamespaceCmd.findCommand(interp, name, null, TCL.NAMESPACE_ONLY);
+        Namespace.findCommand(interp, name, null, TCL.NAMESPACE_ONLY);
     //cmd = wcmd.cmd;
 
     if (wcmd != null && !Cmds.IsStub(wcmd)) {
         throw new TclException(interp, "command \"" +
             name + "\" already exists in namespace \"" +
-            NamespaceCmd.getCurrentNamespace(interp).fullName + "\"");
+            Namespace.getCurrentNamespace(interp).fullName + "\"");
     }
 
     //  Extract the namespace context and the simple object
@@ -112,15 +112,15 @@ CreateObject(
         if (parentNs == null) {
             throw new TclException(interp, "namespace \"" +
                 head + "\" not found in context \"" +
-                NamespaceCmd.getCurrentNamespace(interp).fullName +
+                Namespace.getCurrentNamespace(interp).fullName +
                 "\"");
         }
     } else {
-        parentNs = NamespaceCmd.getCurrentNamespace(interp);
+        parentNs = Namespace.getCurrentNamespace(interp);
     }
 
     objName = new StringBuffer();
-    if (parentNs != NamespaceCmd.getGlobalNamespace(interp)) {
+    if (parentNs != Namespace.getGlobalNamespace(interp)) {
         objName.append(parentNs.fullName);
     }
     objName.append("::");
@@ -145,7 +145,7 @@ CreateObject(
     Util.PreserveData(newObj);
     interp.createCommand(objName.toString(),
         new HandleInstanceCmd(newObj));
-    wcmd = NamespaceCmd.findCommand(interp, name, null, TCL.NAMESPACE_ONLY);
+    wcmd = Namespace.findCommand(interp, name, null, TCL.NAMESPACE_ONLY);
     newObj.w_accessCmd = wcmd;
     newObj.accessCmd = wcmd.cmd;
 
@@ -468,7 +468,7 @@ FindObject(
     String name)             // name of the object
         throws TclException
 {
-    NamespaceCmd.Namespace contextNs = null;
+    Namespace contextNs = null;
 
     String cmdName;
     WrappedCommand wcmd;
@@ -487,7 +487,7 @@ FindObject(
     //  the appropriate command handler.
 
     try {
-        wcmd = NamespaceCmd.findCommand(interp, cmdName, contextNs, 0);
+        wcmd = Namespace.findCommand(interp, cmdName, contextNs, 0);
     } catch (TclException ex) {
         wcmd = null;
     }
@@ -522,7 +522,7 @@ IsObject(
     //  This may be an imported command.  Try to get the real
     //  command and see if it represents an object.
 
-    wcmd = NamespaceCmd.getOriginalCommand(wcmd);
+    wcmd = Namespace.getOriginalCommand(wcmd);
     if ((wcmd != null) && (wcmd.cmd instanceof HandleInstanceCmd)) {
         return true;
     }
@@ -632,7 +632,7 @@ throws
             mfunc = null;
         }
         else if (mfunc.member.protection != Itcl.PUBLIC) {
-            NamespaceCmd.Namespace contextNs =
+            Namespace contextNs =
                 Util.GetTrueNamespace(interp,
                     mfunc.member.classDefn.info);
 
@@ -794,7 +794,7 @@ ReportObjectUsage(
             mfunc = null;
         }
         else if (mfunc.member.protection != Itcl.PUBLIC) {
-            NamespaceCmd.Namespace contextNs =
+            Namespace contextNs =
                 Util.GetTrueNamespace(interp, mfunc.member.classDefn.info);
 
             if (!Util.CanAccessFunc(mfunc, contextNs)) {
@@ -1138,7 +1138,7 @@ Var
 ScopedVarResolver(
     Interp interp,             // current interpreter
     String name,               // variable name being resolved
-    NamespaceCmd.Namespace contextNs,  // current namespace context
+    Namespace contextNs,  // current namespace context
     int flags)                 // TCL.LEAVE_ERR_MSG => leave error message
         throws TclException
 {
@@ -1170,7 +1170,7 @@ ScopedVarResolver(
     //  Look for the command representing the object and extract
     //  the object context.
     
-    WrappedCommand wcmd = NamespaceCmd.findCommand(interp,
+    WrappedCommand wcmd = Namespace.findCommand(interp,
         elems[1].toString(), null, 0);
     if (Objects.IsObject(wcmd)) {
         contextObj = Objects.GetContextFromObject(wcmd);
@@ -1199,7 +1199,7 @@ static class ScopedVarResolverImpl implements Resolver {
     resolveCmd (
 	Interp interp,			// The current interpreter.
 	String name,			// Command name to resolve.
-	NamespaceCmd.Namespace context,	// The namespace to look in.
+	Namespace context,		// The namespace to look in.
 	int flags)			// 0 or TCL.LEAVE_ERR_MSG.
     throws
 	TclException		// Tcl exceptions are thrown for Tcl errors.
@@ -1211,7 +1211,7 @@ static class ScopedVarResolverImpl implements Resolver {
     resolveVar (
 	Interp interp,			// The current interpreter.
 	String name,			// Variable name to resolve.
-	NamespaceCmd.Namespace context,	// The namespace to look in.
+	Namespace context,		// The namespace to look in.
 	int flags)			// 0 or TCL.LEAVE_ERR_MSG.
     throws
 	TclException		// Tcl exceptions are thrown for Tcl errors.

@@ -21,7 +21,7 @@
  *           mmclennan@lucent.com
  *           http://www.tcltk.com/itcl
  *
- *     RCS:  $Id: Util.java,v 1.1 2005/09/11 20:56:57 mdejong Exp $
+ *     RCS:  $Id: Util.java,v 1.2 2005/09/12 00:00:50 mdejong Exp $
  * ========================================================================
  *           Copyright (c) 1993-1998  Lucent Technologies, Inc.
  * ------------------------------------------------------------------------
@@ -1055,7 +1055,7 @@ static
 boolean
 CanAccess(
     ItclMember member,         // class member being tested
-    NamespaceCmd.Namespace fromNs)  // namespace requesting access
+    Namespace fromNs)          // namespace requesting access
 {
     ItclClass fromCd;
     Object entry;
@@ -1109,7 +1109,7 @@ static
 boolean
 CanAccessFunc(
     ItclMemberFunc mfunc,     // member function being tested
-    NamespaceCmd.Namespace fromNs)  // namespace requesting access
+    Namespace fromNs)         // namespace requesting access
 {
     ItclClass cd, fromCd;
     ItclMemberFunc ovlfunc;
@@ -1162,7 +1162,7 @@ CanAccessFunc(
  */
 
 static
-NamespaceCmd.Namespace
+Namespace
 GetTrueNamespace(
     Interp interp,             // interpreter being queried
     ItclObjectInfo info)       // object info associated with interp
@@ -1170,7 +1170,7 @@ GetTrueNamespace(
     int i;
     boolean transparent;
     CallFrame frame, transFrame;
-    NamespaceCmd.Namespace contextNs;
+    Namespace contextNs;
 
     //  See if the current call frame is on the list of transparent
     //  call frames.
@@ -1196,11 +1196,11 @@ GetTrueNamespace(
         if (frame != null) {
             contextNs = ItclAccess.getCallFrameNamespace(frame);
         } else {
-            contextNs = NamespaceCmd.getGlobalNamespace(interp);
+            contextNs = Namespace.getGlobalNamespace(interp);
         }
     }
     else {
-        contextNs = NamespaceCmd.getCurrentNamespace(interp);
+        contextNs = Namespace.getCurrentNamespace(interp);
     }
     return contextNs;
 }
@@ -1300,7 +1300,7 @@ DecodeScopedCommand(
     String name)		// string to be decoded
         throws TclException
 {
-    NamespaceCmd.Namespace ns = null;
+    Namespace ns = null;
     String cmdName;
     final int len = name.length();
     int pos;
@@ -1328,7 +1328,7 @@ DecodeScopedCommand(
                         "namespace inscope namesp command\"");
                 } else {
                     String findNS = listv[2].toString();
-                    ns = NamespaceCmd.findNamespace(interp,
+                    ns = Namespace.findNamespace(interp,
                         findNS,
                         null,
                         TCL.LEAVE_ERR_MSG);
@@ -1357,7 +1357,7 @@ DecodeScopedCommand(
 
 static
 class DecodeScopedCommandResult {
-    NamespaceCmd.Namespace rNS; // returns: namespace for scoped value
+    Namespace rNS;              // returns: namespace for scoped value
     String rCmd;                // returns: simple command word
 }
 
@@ -1391,7 +1391,7 @@ EvalArgs(
     // Resolve command name to WrappedCommand
 
     wcmd =
-        NamespaceCmd.findCommand(interp, objv[0].toString(), null, 0);
+        Namespace.findCommand(interp, objv[0].toString(), null, 0);
 
     cmdlinev = objv;
 
@@ -1400,7 +1400,7 @@ EvalArgs(
 
     if (wcmd == null) {
         wcmd =
-            NamespaceCmd.findCommand(interp, "unknown", null,
+            Namespace.findCommand(interp, "unknown", null,
                 TCL.GLOBAL_ONLY);
 
         if (wcmd == null) {

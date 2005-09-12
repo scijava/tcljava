@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.51 2005/09/11 20:56:57 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.52 2005/09/12 00:00:50 mdejong Exp $
  *
  */
 
@@ -100,7 +100,7 @@ CallFrame varFrame;
 
 // The interpreter's global namespace.
 
-NamespaceCmd.Namespace globalNs;
+Namespace globalNs;
 
 // Hash table used to keep track of hidden commands on a per-interp basis.
 
@@ -338,7 +338,7 @@ Interp()
 
 
     globalNs         = null; // force creation of global ns below
-    globalNs         = NamespaceCmd.createNamespace(this, null, null);
+    globalNs         = Namespace.createNamespace(this, null, null);
     if (globalNs == null) {
 	throw new TclRuntimeError("Interp(): can't create global namespace");
     }
@@ -510,9 +510,7 @@ eventuallyDispose()
     // Dismantle the namespace here, before we clear the assocData. If any
     // background errors occur here, they will be deleted below.
 
-    
-    // FIXME : check impl of TclTeardownNamespace
-    NamespaceCmd.teardownNamespace(globalNs);
+    Namespace.teardownNamespace(globalNs);
 
     // Delete all variables.
 
@@ -587,9 +585,8 @@ eventuallyDispose()
     }
 
     // Finish deleting the global namespace.
-    
-    // FIXME : check impl of Tcl_DeleteNamespace
-    NamespaceCmd.deleteNamespace(globalNs);
+
+    Namespace.deleteNamespace(globalNs);
     globalNs = null;
 
     // Free up the result *after* deleting variables, since variable
@@ -1433,7 +1430,7 @@ createCommand(
 				// cmdName.
 {
     ImportRef oldRef = null;
-    NamespaceCmd.Namespace ns;
+    Namespace ns;
     WrappedCommand cmd, refCmd;
     String tail;
     ImportedCmdData data;
@@ -1452,12 +1449,12 @@ createCommand(
     if (cmdName.indexOf("::") != -1) {
 	// Java does not support passing an address so we pass
 	// an array of size 1 and then assign arr[0] to the value
-	NamespaceCmd.Namespace[] nsArr     = new NamespaceCmd.Namespace[1];
-	NamespaceCmd.Namespace[] dummyArr  = new NamespaceCmd.Namespace[1];
+	Namespace[] nsArr     = new Namespace[1];
+	Namespace[] dummyArr  = new Namespace[1];
 	String[]    tailArr   = new String[1];
 
-	NamespaceCmd.getNamespaceForQualName(this, cmdName, null,
-		         NamespaceCmd.CREATE_NS_IF_UNKNOWN, nsArr,
+	Namespace.getNamespaceForQualName(this, cmdName, null,
+		         Namespace.CREATE_NS_IF_UNKNOWN, nsArr,
 			 dummyArr, dummyArr, tailArr);
 
 	ns = nsArr[0];
@@ -1627,7 +1624,7 @@ deleteCommand(
     //  Find the desired command and delete it.
 
     try {
-	cmd = NamespaceCmd.findCommand(this, cmdName, null, 0);
+	cmd = Namespace.findCommand(this, cmdName, null, 0);
     } catch (TclException e) {
 	// This should never happen
 	throw new TclRuntimeError("unexpected TclException: " + e);
@@ -1753,7 +1750,7 @@ protected void renameCommand(
 {
     Interp interp = this;
     String newTail;
-    NamespaceCmd.Namespace cmdNs, newNs;
+    Namespace cmdNs, newNs;
     WrappedCommand cmd;
     Hashtable table,   oldTable;
     String    hashKey, oldHashKey;
@@ -1761,7 +1758,7 @@ protected void renameCommand(
     // Find the existing command. An error is returned if cmdName can't
     // be found.
 
-    cmd = NamespaceCmd.findCommand(interp, oldName, null, 0);
+    cmd = Namespace.findCommand(interp, oldName, null, 0);
     if (cmd == null) {
 	throw new TclException(interp, "can't " +
 	    (((newName == null)||(newName.length() == 0)) ? "delete" : "rename") +
@@ -1782,12 +1779,12 @@ protected void renameCommand(
     // automatically create the containing namespaces just like
     // Tcl_CreateCommand would.
 
-    NamespaceCmd.Namespace[] newNsArr   = new NamespaceCmd.Namespace[1];
-    NamespaceCmd.Namespace[] dummyArr   = new NamespaceCmd.Namespace[1];
+    Namespace[] newNsArr   = new Namespace[1];
+    Namespace[] dummyArr   = new Namespace[1];
     String[]                 newTailArr = new String[1];
 
-    NamespaceCmd.getNamespaceForQualName(interp, newName, null,
-        NamespaceCmd.CREATE_NS_IF_UNKNOWN, newNsArr,
+    Namespace.getNamespaceForQualName(interp, newName, null,
+        Namespace.CREATE_NS_IF_UNKNOWN, newNsArr,
 	dummyArr, dummyArr, newTailArr);
 
     newNs   = newNsArr[0];
@@ -1932,7 +1929,7 @@ getCommand(
     WrappedCommand cmd;
 
     try {
-	cmd = NamespaceCmd.findCommand(this, cmdName, null, 0);
+	cmd = Namespace.findCommand(this, cmdName, null, 0);
     } catch (TclException e) {
 	// This should never happen
 	throw new TclRuntimeError("unexpected TclException: " + e);
@@ -3510,7 +3507,7 @@ throws
     // be found. Look up the command only from the global namespace.
     // Full path of the command must be given if using namespaces.
 
-    cmd = NamespaceCmd.findCommand(this, cmdName, null,
+    cmd = Namespace.findCommand(this, cmdName, null,
 	    /*flags*/ TCL.LEAVE_ERR_MSG | TCL.GLOBAL_ONLY);
 
     // Check that the command is really in global namespace
@@ -3622,7 +3619,7 @@ throws
     }
     
     // This is the global table
-    NamespaceCmd.Namespace ns = cmd.ns;
+    Namespace ns = cmd.ns;
 
     // It is an error to overwrite an existing exposed command as a result
     // of exposing a previously hidden command.
@@ -3771,10 +3768,10 @@ throws
         }
 	cmd = (WrappedCommand) hiddenCmdTable.get(cmdName);
     } else {
-	cmd = NamespaceCmd.findCommand(this, cmdName, null, TCL.GLOBAL_ONLY);
+	cmd = Namespace.findCommand(this, cmdName, null, TCL.GLOBAL_ONLY);
 	if (cmd == null) {
             if ((flags & INVOKE_NO_UNKNOWN) == 0) {
-		cmd = NamespaceCmd.findCommand(this, "unknown",
+		cmd = Namespace.findCommand(this, "unknown",
 			  null, TCL.GLOBAL_ONLY);
                 if (cmd != null) {
 		    localObjv = new TclObject[objv.length+1];
@@ -3819,7 +3816,7 @@ throws
     // move it into the hiddenCmdTable.
 
     if ((flags & INVOKE_HIDDEN) != 0) {
-	cmd = NamespaceCmd.findCommand(this, cmdName, null, TCL.GLOBAL_ONLY);
+	cmd = Namespace.findCommand(this, cmdName, null, TCL.GLOBAL_ONLY);
 	if (cmd != null) {
 	    // Basically just do the same as in hideCommand...
 	    cmd.table.remove(cmd.hashKey);
@@ -3910,8 +3907,8 @@ class ResolverScheme {
  *
  *	Adds a set of command/variable resolution procedures to an
  *	interpreter.  These procedures are consulted when commands
- *	are resolved in NamespaceCmd.findCommand, and when variables are
- *	resolved in NamespaceCmd.findNamespaceVar and thus Var.lookupVar.
+ *	are resolved in Namespace.findCommand, and when variables are
+ *	resolved in Namespace.findNamespaceVar and thus Var.lookupVar.
  *	Each namespace may also have its own resolution object
  *	which take precedence over those for the interpreter.
  *
@@ -4026,6 +4023,7 @@ getInterpResolver(
  *----------------------------------------------------------------------
  */
 
+public
 boolean
 removeInterpResolver(
     String name)		// Name of the scheme to be removed.

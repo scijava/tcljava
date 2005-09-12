@@ -23,7 +23,7 @@
  *           mmclennan@lucent.com
  *           http://www.tcltk.com/itcl
  *
- *     RCS:  $Id: Methods.java,v 1.1 2005/09/11 20:56:57 mdejong Exp $
+ *     RCS:  $Id: Methods.java,v 1.2 2005/09/12 00:00:50 mdejong Exp $
  * ========================================================================
  *           Copyright (c) 1993-1998  Lucent Technologies, Inc.
  * ------------------------------------------------------------------------
@@ -273,7 +273,7 @@ CreateMethod(
     interp.createCommand(qname, new ExecMethod(mfunc));
 
     mfunc.w_accessCmd =
-        NamespaceCmd.findCommand(interp, qname, null, TCL.NAMESPACE_ONLY);
+        Namespace.findCommand(interp, qname, null, TCL.NAMESPACE_ONLY);
     mfunc.accessCmd = mfunc.w_accessCmd.cmd;
 }
 
@@ -332,7 +332,7 @@ CreateProc(
     interp.createCommand(qname, new ExecProc(mfunc));
 
     mfunc.w_accessCmd =
-        NamespaceCmd.findCommand(interp, qname, null, TCL.NAMESPACE_ONLY);
+        Namespace.findCommand(interp, qname, null, TCL.NAMESPACE_ONLY);
     mfunc.accessCmd = mfunc.w_accessCmd.cmd;
 }
 
@@ -1302,7 +1302,7 @@ throws
     //  the current namespace context.
 
     if (mfunc.member.protection != Itcl.PUBLIC) {
-        NamespaceCmd.Namespace contextNs = Util.GetTrueNamespace(interp,
+        Namespace contextNs = Util.GetTrueNamespace(interp,
             contextClass.info);
 
         if (!Util.CanAccessFunc(mfunc, contextNs)) {
@@ -1385,7 +1385,7 @@ throws
     //  the current namespace context.
 
     if (mfunc.member.protection != Itcl.PUBLIC) {
-        NamespaceCmd.Namespace contextNs =
+        Namespace contextNs =
             Util.GetTrueNamespace(interp,
             mfunc.member.classDefn.info);
 
@@ -1449,7 +1449,7 @@ PushContext(
     //    This causes global variables to be handled properly
     //    inside methods/procs.
 
-    NamespaceCmd.pushCallFrame(interp, frame, contextClass.namesp, true);
+    Namespace.pushCallFrame(interp, frame, contextClass.namesp, true);
 
     context.classDefn = contextClass;
     context.compiledLocals = new Var[20];
@@ -1537,7 +1537,7 @@ PopContext(
 
     //  Remove the call frame.
 
-    NamespaceCmd.popCallFrame(interp);
+    Namespace.popCallFrame(interp);
 
     // Release compiledLocals
 
@@ -1564,8 +1564,8 @@ GetContext(
     Interp interp)                // current interpreter
         throws TclException
 {
-    NamespaceCmd.Namespace activeNs =
-        NamespaceCmd.getCurrentNamespace(interp);
+    Namespace activeNs =
+        Namespace.getCurrentNamespace(interp);
     ItclObjectInfo info;
     CallFrame frame;
     ItclClass cdefn;

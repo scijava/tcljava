@@ -22,7 +22,7 @@
  *           mmclennan@lucent.com
  *           http://www.tcltk.com/itcl
  *
- *     RCS:  $Id: BiCmds.java,v 1.1 2005/09/11 20:56:57 mdejong Exp $
+ *     RCS:  $Id: BiCmds.java,v 1.2 2005/09/12 00:00:50 mdejong Exp $
  * ========================================================================
  *           Copyright (c) 1993-1998  Lucent Technologies, Inc.
  * ------------------------------------------------------------------------
@@ -91,7 +91,7 @@ BiInit(
     Interp interp)           // current interpreter
         throws TclException
 {
-    NamespaceCmd.Namespace itclBiNs;
+    Namespace itclBiNs;
 
     // Declare all of the built-in methods as Java procedures.
 
@@ -149,13 +149,13 @@ BiInit(
     //  Export all commands in the built-in namespace so we can
     //  import them later on.
 
-    itclBiNs = NamespaceCmd.findNamespace(interp, "::itcl::builtin",
+    itclBiNs = Namespace.findNamespace(interp, "::itcl::builtin",
         null, TCL.LEAVE_ERR_MSG);
     if (itclBiNs == null) {
         throw new TclException(interp, interp.getResult().toString());
     }
 
-    NamespaceCmd.exportList(interp, itclBiNs, "*", true);
+    Namespace.exportList(interp, itclBiNs, "*", true);
 }
 
 /*
@@ -791,7 +791,7 @@ cmdProc(
 throws
     TclException
 {
-    NamespaceCmd.Namespace activeNs = NamespaceCmd.getCurrentNamespace(interp),
+    Namespace activeNs = Namespace.getCurrentNamespace(interp),
         contextNs = null;
 
     ItclClass contextClass;
@@ -864,7 +864,7 @@ cmdProc(
 throws
     TclException
 {
-    NamespaceCmd.Namespace activeNs = NamespaceCmd.getCurrentNamespace(interp);
+    Namespace activeNs = Namespace.getCurrentNamespace(interp);
 
     ItclClass contextClass;
     ItclObject contextObj;
@@ -936,7 +936,7 @@ cmdProc(
 throws
     TclException
 {
-    NamespaceCmd.Namespace activeNs = NamespaceCmd.getCurrentNamespace(interp);
+    Namespace activeNs = Namespace.getCurrentNamespace(interp);
 
     ItclClass contextClass;
     ItclObject contextObj;
@@ -1490,7 +1490,7 @@ throws
     //  then treat the procedure name as a normal Tcl procedure.
 
     if (!Class.IsClassNamespace(
-            NamespaceCmd.getCurrentNamespace(interp))) {
+            Namespace.getCurrentNamespace(interp))) {
         name = objv[1].toString();
         interp.eval("::info body {" + name + "}");
         return;
@@ -1568,7 +1568,7 @@ throws
     //  then treat the procedure name as a normal Tcl procedure.
 
     if (!Class.IsClassNamespace(
-            NamespaceCmd.getCurrentNamespace(interp))) {
+            Namespace.getCurrentNamespace(interp))) {
         name = objv[1].toString();
         interp.eval("::info args {" + name + "}");
         return;
@@ -1643,7 +1643,7 @@ throws
     //  Look for the usual "::info" command, and use it to
     //  evaluate the unknown option.
 
-    wcmd = NamespaceCmd.findCommand(interp, "::info", null, 0);
+    wcmd = Namespace.findCommand(interp, "::info", null, 0);
     if (wcmd == null) {
         name = objv[0].toString();
         interp.resetResult();

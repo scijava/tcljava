@@ -37,7 +37,7 @@
  *           mmclennan@lucent.com
  *           http://www.tcltk.com/itcl
  *
- *     RCS:  $Id: Parse.java,v 1.1 2005/09/11 20:56:57 mdejong Exp $
+ *     RCS:  $Id: Parse.java,v 1.2 2005/09/12 00:00:50 mdejong Exp $
  * ========================================================================
  *           Copyright (c) 1993-1998  Lucent Technologies, Inc.
  * ------------------------------------------------------------------------
@@ -77,13 +77,13 @@ ParseInit(
     ItclObjectInfo info)    // info regarding all known objects
         throws TclException
 {
-    NamespaceCmd.Namespace parserNs;
+    Namespace parserNs;
     ProtectionCmdInfo pInfo;
 
     //  Create the "itcl::parser" namespace used to parse class
     //  definitions.
 
-    parserNs = NamespaceCmd.createNamespace(interp, "::itcl::parser", null);
+    parserNs = Namespace.createNamespace(interp, "::itcl::parser", null);
 
     if (parserNs == null) {
         throw new TclException(interp,
@@ -143,7 +143,7 @@ ParseInit(
     //  the class definition.
 
     Resolver resolver = new ParseVarResolverImpl();
-    NamespaceCmd.setNamespaceResolver(parserNs, resolver);
+    Namespace.setNamespaceResolver(parserNs, resolver);
 
     //  Install the "class" command for defining new classes.
 
@@ -197,7 +197,7 @@ throws
     TclException
 {
     String className;
-    NamespaceCmd.Namespace parserNs;
+    Namespace parserNs;
     ItclClass cdefn;
     CallFrame frame;
 
@@ -212,7 +212,7 @@ throws
     //  Find the namespace to use as a parser for the class definition.
     //  If for some reason it is destroyed, bail out here.
 
-    parserNs = NamespaceCmd.findNamespace(interp, "::itcl::parser",
+    parserNs = Namespace.findNamespace(interp, "::itcl::parser",
         null, TCL.LEAVE_ERR_MSG);
 
     if (parserNs == null) {
@@ -231,14 +231,14 @@ throws
     //  can override the built-in commands.
 
     try {
-        NamespaceCmd.importList(interp, cdefn.namesp,
+        Namespace.importList(interp, cdefn.namesp,
             "::itcl::builtin::*", true);
     } catch (TclException ex) {
         interp.addErrorInfo(
             "\n    (while installing built-in commands for class \"" +
             className + "\")");
         
-        NamespaceCmd.deleteNamespace(cdefn.namesp);
+        Namespace.deleteNamespace(cdefn.namesp);
         throw ex;
     }
 
@@ -253,14 +253,14 @@ throws
 
     try {
         frame = ItclAccess.newCallFrame(interp);
-        NamespaceCmd.pushCallFrame(interp, frame, parserNs, false);
+        Namespace.pushCallFrame(interp, frame, parserNs, false);
         pushed = true;
         interp.eval(objv[2].toString());
     } catch (TclException ex) {
         pex = ex;
     } finally {
         if (pushed) {
-            NamespaceCmd.popCallFrame(interp);
+            Namespace.popCallFrame(interp);
         }
     }
 
@@ -271,7 +271,7 @@ throws
             "\n    (class \"" +
             className + "\" body line " + interp.getErrorLine() + ")");
 
-        NamespaceCmd.deleteNamespace(cdefn.namesp);
+        Namespace.deleteNamespace(cdefn.namesp);
         throw pex;
     }
 
@@ -282,7 +282,7 @@ throws
     try {
         BiCmds.InstallBiMethods(interp, cdefn);
     } catch (TclException ex) {
-        NamespaceCmd.deleteNamespace(cdefn.namesp);
+        Namespace.deleteNamespace(cdefn.namesp);
         throw ex;
     }
 
@@ -358,7 +358,7 @@ throws
     //  Validate each base class and add it to the "bases" list.
 
     frame = ItclAccess.newCallFrame(interp);
-    NamespaceCmd.pushCallFrame(interp, frame, cdefn.namesp.parent, false);
+    Namespace.pushCallFrame(interp, frame, cdefn.namesp.parent, false);
 
     for (int i = 1; i < objv.length ; i++) {
 
@@ -513,7 +513,7 @@ throws
         elem = Util.NextListElem(elem);
     }
 
-    NamespaceCmd.popCallFrame(interp);
+    Namespace.popCallFrame(interp);
 }
 } // end class ClassInheritCmd
 
@@ -528,7 +528,7 @@ ClassInheritCmdInheritError(Interp interp, ItclClass cdefn, String exmsg)
 {
     Itcl_ListElem elem;
 
-    NamespaceCmd.popCallFrame(interp);
+    Namespace.popCallFrame(interp);
 
     elem = Util.FirstListElem(cdefn.bases);
     while (elem != null) {
@@ -902,8 +902,7 @@ throws
 
     String name, init;
     ItclVarDefn vdefn;
-    //Tcl_HashEntry *entry;
-    NamespaceCmd.Namespace ns;
+    Namespace ns;
     Var var;
 
     if ((objv.length < 2) || (objv.length > 3)) {
@@ -1004,7 +1003,7 @@ Var
 ParseVarResolver(
     Interp interp,             // current interpreter
     String name,               // name of the variable being accessed
-    NamespaceCmd.Namespace contextNs,  // namespace context
+    Namespace contextNs,       // namespace context
     int flags)                 // TCL.GLOBAL_ONLY => global variable
                                // TCL.NAMESPACE_ONLY => namespace variable
         throws TclException
@@ -1045,7 +1044,7 @@ static class ParseVarResolverImpl implements Resolver {
     resolveCmd (
 	Interp interp,			// The current interpreter.
 	String name,			// Command name to resolve.
-	NamespaceCmd.Namespace context,	// The namespace to look in.
+	Namespace context,		// The namespace to look in.
 	int flags)			// 0 or TCL.LEAVE_ERR_MSG.
     throws
 	TclException		// Tcl exceptions are thrown for Tcl errors.
@@ -1057,7 +1056,7 @@ static class ParseVarResolverImpl implements Resolver {
     resolveVar (
 	Interp interp,			// The current interpreter.
 	String name,			// Variable name to resolve.
-	NamespaceCmd.Namespace context,	// The namespace to look in.
+	Namespace context,		// The namespace to look in.
 	int flags)			// 0 or TCL.LEAVE_ERR_MSG.
     throws
 	TclException		// Tcl exceptions are thrown for Tcl errors.

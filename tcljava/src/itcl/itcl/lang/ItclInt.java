@@ -18,7 +18,7 @@
  *           mmclennan@lucent.com
  *           http://www.tcltk.com/itcl
  *
- *     RCS:  $Id: ItclInt.java,v 1.1 2005/09/11 20:56:57 mdejong Exp $
+ *     RCS:  $Id: ItclInt.java,v 1.2 2005/09/12 00:00:50 mdejong Exp $
  * ========================================================================
  *           Copyright (c) 1993-1998  Lucent Technologies, Inc.
  * ------------------------------------------------------------------------
@@ -79,7 +79,7 @@ class ItclClass
     String name;                  // class name
     String fullname;              // fully qualified class name
     Interp interp;                // interpreter that manages this info
-    NamespaceCmd.Namespace namesp; // namespace representing class scope
+    Namespace namesp;             // namespace representing class scope
     Command accessCmd;            // access command for creating instances
     WrappedCommand w_accessCmd;   // WrappedCommand for accessCmd
 

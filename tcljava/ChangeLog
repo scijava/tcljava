@@ -1,5 +1,39 @@
 2005-09-11  Mo DeJong  <mdejong@users.sourceforge.net>
 
+        Make NamespaceCmd.Namespace inner class a
+        toplevel class in the tcl.lang package.
+        The Namespace class is now part of the
+        documented public API for Jacl. Add
+        API docs for classes/methods that are
+        only available with Jacl.
+
+	* diffs.txt:
+	* itcl/itcl/lang/BiCmds.java:
+	* itcl/itcl/lang/Class.java:
+	* itcl/itcl/lang/Cmds.java:
+	* itcl/itcl/lang/Ensemble.java:
+	* itcl/itcl/lang/ItclInt.java:
+	* itcl/itcl/lang/Methods.java:
+	* itcl/itcl/lang/Objects.java:
+	* itcl/itcl/lang/Parse.java:
+	* itcl/itcl/lang/Util.java:
+	* itcl/tcl/lang/ItclAccess.java:
+	* jacl/tcl/lang/CallFrame.java:
+	* jacl/tcl/lang/ImportedCmdData.java:
+	* jacl/tcl/lang/InfoCmd.java:
+	* jacl/tcl/lang/Interp.java:
+	* jacl/tcl/lang/InterpAliasCmd.java:
+	* jacl/tcl/lang/InterpSlaveCmd.java:
+	* jacl/tcl/lang/Namespace.java:
+	* jacl/tcl/lang/NamespaceCmd.java:
+	* jacl/tcl/lang/ProcCmd.java:
+	* jacl/tcl/lang/Procedure.java:
+	* jacl/tcl/lang/Resolver.java:
+	* jacl/tcl/lang/Var.java:
+	* jacl/tcl/lang/WrappedCommand.java:
+
+2005-09-11  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	Add tcljava-post-itcl-merge tag.
 
 2005-09-11  Mo DeJong  <mdejong@users.sourceforge.net>

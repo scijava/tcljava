@@ -21,7 +21,7 @@
  *           mmclennan@lucent.com
  *           http://www.tcltk.com/itcl
  *
- *     RCS:  $Id: Cmds.java,v 1.1 2005/09/11 20:56:57 mdejong Exp $
+ *     RCS:  $Id: Cmds.java,v 1.2 2005/09/12 00:00:50 mdejong Exp $
  * ========================================================================
  *           Copyright (c) 1993-1998  Lucent Technologies, Inc.
  * ------------------------------------------------------------------------
@@ -80,7 +80,7 @@ Initialize(
     Interp interp)  // interpreter to be updated
         throws TclException
 {
-    NamespaceCmd.Namespace itclNs;
+    Namespace itclNs;
     ItclObjectInfo info;
 
     String TCL_VERSION = "8.0";
@@ -204,7 +204,7 @@ Initialize(
     //  Export all commands in the "itcl" namespace so that they
     //  can be imported with something like "namespace import itcl::*"
 
-    itclNs = NamespaceCmd.findNamespace(interp, "::itcl", null,
+    itclNs = Namespace.findNamespace(interp, "::itcl", null,
         TCL.LEAVE_ERR_MSG);
 
     if (itclNs == null) {
@@ -216,16 +216,16 @@ Initialize(
     //  exported. This is done for concern that the itcl::is command
     //  imported might be confusing ("is").
 
-    NamespaceCmd.exportList(interp, itclNs, "body", true);
-    NamespaceCmd.exportList(interp, itclNs, "class", false);
-    NamespaceCmd.exportList(interp, itclNs, "code", false);
-    NamespaceCmd.exportList(interp, itclNs, "configbody", false);
-    NamespaceCmd.exportList(interp, itclNs, "delete", false);
-    NamespaceCmd.exportList(interp, itclNs, "delete_helper", false);
-    NamespaceCmd.exportList(interp, itclNs, "ensemble", false);
-    NamespaceCmd.exportList(interp, itclNs, "find", false);
-    NamespaceCmd.exportList(interp, itclNs, "local", false);
-    NamespaceCmd.exportList(interp, itclNs, "scope", false);
+    Namespace.exportList(interp, itclNs, "body", true);
+    Namespace.exportList(interp, itclNs, "class", false);
+    Namespace.exportList(interp, itclNs, "code", false);
+    Namespace.exportList(interp, itclNs, "configbody", false);
+    Namespace.exportList(interp, itclNs, "delete", false);
+    Namespace.exportList(interp, itclNs, "delete_helper", false);
+    Namespace.exportList(interp, itclNs, "ensemble", false);
+    Namespace.exportList(interp, itclNs, "find", false);
+    Namespace.exportList(interp, itclNs, "local", false);
+    Namespace.exportList(interp, itclNs, "scope", false);
 
     //  Set up the variables containing version info.
 
@@ -382,10 +382,10 @@ cmdProc(
 throws
     TclException
 {
-    NamespaceCmd.Namespace activeNs =
-        NamespaceCmd.getCurrentNamespace(interp);
-    NamespaceCmd.Namespace globalNs =
-        NamespaceCmd.getGlobalNamespace(interp);
+    Namespace activeNs =
+        Namespace.getCurrentNamespace(interp);
+    Namespace globalNs =
+        Namespace.getGlobalNamespace(interp);
     boolean forceFullNames = false;
 
     String pattern;
@@ -395,7 +395,7 @@ throws
     Hashtable unique;
     Itcl_Stack search;
     WrappedCommand cmd, originalCmd;
-    NamespaceCmd.Namespace ns;
+    Namespace ns;
     TclObject obj, result;
 
     if (objv.length > 2) {
@@ -424,7 +424,7 @@ throws
 
     handledActiveNs = false;
     while (Util.GetStackSize(search) > 0) {
-        ns = (NamespaceCmd.Namespace) Util.PopStack(search);
+        ns = (Namespace) Util.PopStack(search);
         if (ns == activeNs && handledActiveNs) {
             continue;
         }
@@ -434,7 +434,7 @@ throws
             cmd = (WrappedCommand) ns.cmdTable.get(key);
 
             if (Class.IsClass(cmd)) {
-                originalCmd = NamespaceCmd.getOriginalCommand(cmd);
+                originalCmd = Namespace.getOriginalCommand(cmd);
 
                 //  Report full names if:
                 //  - the pattern has namespace qualifiers
@@ -475,8 +475,8 @@ throws
 
         for (Enumeration e = ns.childTable.keys(); e.hasMoreElements() ; ) {
             String key = (String) e.nextElement();
-            NamespaceCmd.Namespace child =
-                (NamespaceCmd.Namespace) ns.childTable.get(key);
+            Namespace child =
+                (Namespace) ns.childTable.get(key);
             Util.PushStack(child, search);
         }
     }
@@ -520,10 +520,10 @@ cmdProc(
 throws
     TclException
 {
-    NamespaceCmd.Namespace activeNs =
-        NamespaceCmd.getCurrentNamespace(interp);
-    NamespaceCmd.Namespace globalNs =
-        NamespaceCmd.getGlobalNamespace(interp);
+    Namespace activeNs =
+        Namespace.getCurrentNamespace(interp);
+    Namespace globalNs =
+        Namespace.getGlobalNamespace(interp);
     boolean forceFullNames = false;
 
     String pattern = null;
@@ -538,7 +538,7 @@ throws
     Hashtable unique;
     Itcl_Stack search;
     WrappedCommand wcmd, originalCmd;
-    NamespaceCmd.Namespace ns;
+    Namespace ns;
     TclObject obj;
     TclObject result = TclList.newInstance();
     Enumeration e;
@@ -606,7 +606,7 @@ throws
 
     handledActiveNs = false;
     while (Util.GetStackSize(search) > 0) {
-        ns = (NamespaceCmd.Namespace) Util.PopStack(search);
+        ns = (Namespace) Util.PopStack(search);
         if (ns == activeNs && handledActiveNs) {
             continue;
         }
@@ -616,7 +616,7 @@ throws
             String key = (String) e.nextElement();
             wcmd = (WrappedCommand) ns.cmdTable.get(key);
             if (Objects.IsObject(wcmd)) {
-                originalCmd = NamespaceCmd.getOriginalCommand(wcmd);
+                originalCmd = Namespace.getOriginalCommand(wcmd);
                 if (originalCmd != null) {
                     wcmd = originalCmd;
                 }
@@ -673,8 +673,8 @@ throws
         e = ns.childTable.keys();
         while (e.hasMoreElements()) {
             String key = (String) e.nextElement();
-            NamespaceCmd.Namespace child =
-                (NamespaceCmd.Namespace) ns.childTable.get(key);
+            Namespace child =
+                (Namespace) ns.childTable.get(key);
 
             Util.PushStack(child, search);
         }
@@ -879,8 +879,8 @@ cmdProc(
 throws
     TclException
 {
-    NamespaceCmd.Namespace contextNs =
-        NamespaceCmd.getCurrentNamespace(interp);
+    Namespace contextNs =
+        Namespace.getCurrentNamespace(interp);
     String openParen = null;
     int openParenStart, openParenEnd;
 
@@ -1005,7 +1005,7 @@ throws
     else {
         StringBuffer buffer = new StringBuffer(64);
 
-        var = NamespaceCmd.findNamespaceVar(interp, token,
+        var = Namespace.findNamespaceVar(interp, token,
             contextNs, TCL.NAMESPACE_ONLY);
 
         if (var == null) {
@@ -1059,8 +1059,8 @@ cmdProc(
 throws
     TclException
 {
-    NamespaceCmd.Namespace contextNs =
-        NamespaceCmd.getCurrentNamespace(interp);
+    Namespace contextNs =
+        Namespace.getCurrentNamespace(interp);
 
     int pos;
     String token;
@@ -1080,7 +1080,7 @@ throws
                     "?-namespace name? command ?arg arg...?");
             } else {
                 token = objv[pos+1].toString();
-                contextNs = NamespaceCmd.findNamespace(interp, token,
+                contextNs = Namespace.findNamespace(interp, token,
                     null, TCL.LEAVE_ERR_MSG);
 
                 if (contextNs == null) {
@@ -1116,7 +1116,7 @@ throws
     TclList.append(interp, list,
         TclString.newInstance("inscope"));
 
-    if (contextNs == NamespaceCmd.getGlobalNamespace(interp)) {
+    if (contextNs == Namespace.getGlobalNamespace(interp)) {
         obj = TclString.newInstance("::");
     } else {
         obj = TclString.newInstance(contextNs.fullName);
@@ -1176,7 +1176,7 @@ throws
 
     interp.createCommand(cmdName, new HandleStubCmd());
 
-    wcmd = NamespaceCmd.findCommand(interp,
+    wcmd = Namespace.findCommand(interp,
         cmdName, null, TCL.NAMESPACE_ONLY);
     ((HandleStubCmd) wcmd.cmd).wcmd = wcmd;
 }
@@ -1214,7 +1214,7 @@ throws
     }
     cmdName = objv[1].toString();
 
-    wcmd = NamespaceCmd.findCommand(interp, cmdName, null, 0);
+    wcmd = Namespace.findCommand(interp, cmdName, null, 0);
 
     if (wcmd != null && Cmds.IsStub(wcmd)) {
         interp.setResult(true);
@@ -1376,7 +1376,7 @@ throws
     String          cmdName;
     String          token;
     WrappedCommand  wcmd;
-    NamespaceCmd.Namespace contextNs = null;
+    Namespace contextNs = null;
     ItclClass       classDefn = null;
     ItclObject      contextObj;
 
@@ -1424,7 +1424,7 @@ throws
     contextNs = res.rNS;
     cmdName = res.rCmd;
 
-    wcmd = NamespaceCmd.findCommand(interp, cmdName, contextNs, 0);
+    wcmd = Namespace.findCommand(interp, cmdName, contextNs, 0);
 
     //  Need the null test, or the test will fail if cmd is null
 
@@ -1485,7 +1485,7 @@ throws
     String         cname;
     String         name;
     ItclClass      classDefn = null;
-    NamespaceCmd.Namespace contextNs = null;
+    Namespace contextNs = null;
 
     //    Need itcl::is class classname
 

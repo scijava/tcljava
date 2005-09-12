@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ImportedCmdData.java,v 1.1 1999/08/05 03:42:54 mo Exp $
+ * RCS: @(#) $Id: ImportedCmdData.java,v 1.2 2005/09/12 00:00:50 mdejong Exp $
  */
 
 package tcl.lang;
@@ -44,7 +44,7 @@ class ImportedCmdData implements Command, CommandWithDispose {
 			TclObject[] objv)  // The argument list for the command.
 	throws TclException
     {
-	NamespaceCmd.invokeImportedCmd(interp, this, objv);
+	Namespace.invokeImportedCmd(interp, this, objv);
     }
 
     /**
@@ -52,6 +52,6 @@ class ImportedCmdData implements Command, CommandWithDispose {
      */
 
     public void disposeCmd() {
-	NamespaceCmd.deleteImportedCmd(this);
+	Namespace.deleteImportedCmd(this);
     }
 }

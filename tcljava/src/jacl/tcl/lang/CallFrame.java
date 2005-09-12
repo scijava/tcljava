@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: CallFrame.java,v 1.11 2005/09/11 20:56:57 mdejong Exp $
+ * RCS: @(#) $Id: CallFrame.java,v 1.12 2005/09/12 00:00:50 mdejong Exp $
  *
  */
 
@@ -36,7 +36,7 @@ class CallFrame {
      * Used to resolve commands and global variables.
      */
 
-    NamespaceCmd.Namespace ns;
+    Namespace ns;
 
     /**
      * If true, the frame was pushed to execute a Tcl procedure
