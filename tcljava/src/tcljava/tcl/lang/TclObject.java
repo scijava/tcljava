@@ -7,11 +7,14 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclObject.java,v 1.9 2003/01/09 02:15:40 mdejong Exp $
+ * RCS: @(#) $Id: TclObject.java,v 1.10 2005/09/21 21:22:56 mdejong Exp $
  *
  */
 
 package tcl.lang;
+
+import java.util.Hashtable;
+import java.util.Enumeration;
 
 /**
  * This class implements the basic notion of an "object" in Tcl. The
@@ -36,6 +39,13 @@ public final class TclObject {
 
     protected String stringRep;
 
+    // Setting to true will enable a feature that keeps
+    // track of TclObject allocation, internal rep allocation,
+    // and transitions from one internal rep to another.
+
+    static final boolean saveObjRecords = false;
+    static Hashtable objRecordMap = ( saveObjRecords ? new Hashtable() : null );
+
     /**
      * Creates a TclObject with the given InternalRep. This method should be
      * called only by an InternalRep implementation.
@@ -49,6 +59,17 @@ public final class TclObject {
 	internalRep = rep;
 	stringRep = null;
 	refCount = 0;
+
+	if (TclObject.saveObjRecords) {
+	    String key = "TclObject";
+	    Integer num = (Integer) TclObject.objRecordMap.get(key);
+	    if (num == null) {
+	        num = new Integer(1);
+	    } else {
+	        num = new Integer(num.intValue() + 1);
+	    }
+	    TclObject.objRecordMap.put(key, num);
+	}
     }
 
     /**
@@ -66,6 +87,17 @@ public final class TclObject {
 	internalRep = rep;
 	stringRep = s;
 	refCount = 0;
+
+	if (TclObject.saveObjRecords) {
+	    String key = "TclObject";
+	    Integer num = (Integer) TclObject.objRecordMap.get(key);
+	    if (num == null) {
+	        num = new Integer(1);
+	    } else {
+	        num = new Integer(num.intValue() + 1);
+	    }
+	    TclObject.objRecordMap.put(key, num);
+	}
     }
 
     /**
@@ -341,5 +373,33 @@ public final class TclObject {
 	    throw new TclRuntimeError("TclObject has been deallocated");
 	}
     }
+
+    /**
+     * Return a String that describes TclObject and internal
+     * rep type allocations and conversions. The string is
+     * in lines seperated by newlines. The saveObjRecords
+     * needs to be set to true and Jacl recompiled for
+     * this method to return a useful value.
+     */
+
+    public static String getObjRecords() {
+        if (TclObject.saveObjRecords) {
+            StringBuffer sb = new StringBuffer(64);
+            for ( Enumeration keys = TclObject.objRecordMap.keys() ;
+                    keys.hasMoreElements() ; ) {
+                String key = (String) keys.nextElement();
+                Integer num = (Integer) TclObject.objRecordMap.get(key);
+                sb.append(key);
+                sb.append(" ");
+                sb.append(num.intValue());
+                sb.append("\n");
+            }
+            TclObject.objRecordMap = new Hashtable();
+            return sb.toString();
+        } else {
+            return "";
+        }
+    }
+
 }
 

@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclDouble.java,v 1.2 2000/10/29 06:00:42 mdejong Exp $
+ * RCS: @(#) $Id: TclDouble.java,v 1.3 2005/09/21 21:22:56 mdejong Exp $
  *
  */
 
@@ -51,6 +51,17 @@ TclDouble(
     double i)		// Initial value.
 {
     value = i;
+
+    if (TclObject.saveObjRecords) {
+        String key = "TclDouble";
+        Integer num = (Integer) TclObject.objRecordMap.get(key);
+        if (num == null) {
+            num = new Integer(1);
+        } else {
+            num = new Integer(num.intValue() + 1);
+        }
+        TclObject.objRecordMap.put(key, num);
+    }
 }
 
 /*
@@ -78,6 +89,17 @@ throws
     TclException		// If error occurs in string conversion.
 {
     value = Util.getDouble(interp, str);
+
+    if (TclObject.saveObjRecords) {
+        String key = "TclDouble";
+        Integer num = (Integer) TclObject.objRecordMap.get(key);
+        if (num == null) {
+            num = new Integer(1);
+        } else {
+            num = new Integer(num.intValue() + 1);
+        }
+        TclObject.objRecordMap.put(key, num);
+    }
 }
 
 /*
@@ -98,6 +120,17 @@ throws
 
 public InternalRep duplicate()
 {
+    if (TclObject.saveObjRecords) {
+        String key = "TclDouble.duplicate()";
+        Integer num = (Integer) TclObject.objRecordMap.get(key);
+        if (num == null) {
+            num = new Integer(1);
+        } else {
+            num = new Integer(num.intValue() + 1);
+        }
+        TclObject.objRecordMap.put(key, num);
+    }
+
     return new TclDouble(value);
 }
 
@@ -176,6 +209,17 @@ throws
 	} else {
 	    tobj.setInternalRep(new TclDouble(0.0));
 	}
+
+	if (TclObject.saveObjRecords) {
+	    String key = "TclBoolean -> TclDouble";
+	    Integer num = (Integer) TclObject.objRecordMap.get(key);
+	    if (num == null) {
+	        num = new Integer(1);
+	    } else {
+	        num = new Integer(num.intValue() + 1);
+	    }
+	    TclObject.objRecordMap.put(key, num);
+	}
     } else if (rep instanceof TclInteger) {
 	/*
 	 * Short-cut.
@@ -183,9 +227,30 @@ throws
 
 	int i = TclInteger.get(interp, tobj);
 	tobj.setInternalRep(new TclDouble(i));
-    } else {
 
+	if (TclObject.saveObjRecords) {
+	    String key = "TclInteger -> TclDouble";
+	    Integer num = (Integer) TclObject.objRecordMap.get(key);
+	    if (num == null) {
+	        num = new Integer(1);
+	    } else {
+	        num = new Integer(num.intValue() + 1);
+	    }
+	    TclObject.objRecordMap.put(key, num);
+	}
+    } else {
 	tobj.setInternalRep(new TclDouble(interp, tobj.toString()));
+
+	if (TclObject.saveObjRecords) {
+	    String key = "TclString -> TclDouble";
+	    Integer num = (Integer) TclObject.objRecordMap.get(key);
+	    if (num == null) {
+	        num = new Integer(1);
+	    } else {
+	        num = new Integer(num.intValue() + 1);
+	    }
+	    TclObject.objRecordMap.put(key, num);
+	}
     }
 }
 
@@ -221,7 +286,7 @@ throws
 
     if (!(rep instanceof TclDouble)) {
 	setDoubleFromAny(interp, tobj);
-	tdouble = (TclDouble) (tobj.getInternalRep());
+	tdouble = (TclDouble) tobj.getInternalRep();
     } else {
 	tdouble = (TclDouble) rep;
     }

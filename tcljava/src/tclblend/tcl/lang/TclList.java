@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: TclList.java,v 1.5 2003/01/08 02:10:20 mdejong Exp $
+ * RCS: @(#) $Id: TclList.java,v 1.6 2005/09/21 21:22:56 mdejong Exp $
  */
 
 package tcl.lang;
@@ -43,6 +43,17 @@ protected
 TclList()
 {
     super();
+
+    if (TclObject.saveObjRecords) {
+        String key = "TclList";
+        Integer num = (Integer) TclObject.objRecordMap.get(key);
+        if (num == null) {
+            num = new Integer(1);
+        } else {
+            num = new Integer(num.intValue() + 1);
+        }
+        TclObject.objRecordMap.put(key, num);
+    }
 }
 
 /*
@@ -66,6 +77,17 @@ TclList(
     long objPtr)		// Tcl_Obj* from C.
 {
     super(objPtr);
+
+    if (TclObject.saveObjRecords) {
+        String key = "TclList";
+        Integer num = (Integer) TclObject.objRecordMap.get(key);
+        if (num == null) {
+            num = new Integer(1);
+        } else {
+            num = new Integer(num.intValue() + 1);
+        }
+        TclObject.objRecordMap.put(key, num);
+    }
 }
 
 /*
@@ -163,6 +185,17 @@ throws
 	    cleanupAdd(interp, tlist);
 	}
 	tobj.setInternalRep(tlist);
+
+	if (TclObject.saveObjRecords) {
+	    String key = "TclString -> TclList";
+	    Integer num = (Integer) TclObject.objRecordMap.get(key);
+	    if (num == null) {
+	        num = new Integer(1);
+	    } else {
+	        num = new Integer(num.intValue() + 1);
+	    }
+	    TclObject.objRecordMap.put(key, num);
+	}
     } else {
 	TclList tlist = (TclList) rep;
 	if (interp != null && tlist.emptyNeedsCleanup) {

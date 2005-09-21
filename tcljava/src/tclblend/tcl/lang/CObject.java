@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: CObject.java,v 1.5 2003/01/28 01:56:55 mdejong Exp $
+ * RCS: @(#) $Id: CObject.java,v 1.6 2005/09/21 21:22:56 mdejong Exp $
  */
 
 package tcl.lang;
@@ -71,6 +71,17 @@ protected CObject()
 {
     this(newCObject(null));
     emptyNeedsCleanup = true;
+    
+    if (TclObject.saveObjRecords) {
+        String key = "CObject";
+        Integer num = (Integer) TclObject.objRecordMap.get(key);
+        if (num == null) {
+            num = new Integer(1);
+        } else {
+            num = new Integer(num.intValue() + 1);
+        }
+	TclObject.objRecordMap.put(key, num);
+    }
 }
 
 /*
@@ -101,6 +112,17 @@ protected CObject(
     emptyNeedsCleanup = false;
     disposed = false;
     //System.err.println("new CObject() \"" + toString() + "\" " + Long.toHexString(objPtr));
+
+    if (TclObject.saveObjRecords) {
+        String key = "CObject";
+        Integer num = (Integer) TclObject.objRecordMap.get(key);
+        if (num == null) {
+            num = new Integer(1);
+        } else {
+            num = new Integer(num.intValue() + 1);
+        }
+	TclObject.objRecordMap.put(key, num);
+    }
 }
 
 /*
@@ -167,6 +189,18 @@ duplicate()
 {
     if (disposed)
         throw new TclRuntimeError("CObject was disposed");
+
+    if (TclObject.saveObjRecords) {
+        String key = "CObject.duplicate()";
+        Integer num = (Integer) TclObject.objRecordMap.get(key);
+        if (num == null) {
+            num = new Integer(1);
+        } else {
+            num = new Integer(num.intValue() + 1);
+        }
+	TclObject.objRecordMap.put(key, num);
+    }
+   
     return new CObject(objPtr);
 }
 

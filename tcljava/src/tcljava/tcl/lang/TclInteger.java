@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclInteger.java,v 1.6 2005/07/14 00:19:44 mdejong Exp $
+ * RCS: @(#) $Id: TclInteger.java,v 1.7 2005/09/21 21:22:56 mdejong Exp $
  *
  */
 
@@ -28,6 +28,17 @@ public class TclInteger implements InternalRep {
      */
     private TclInteger(int i) {
 	value = i;
+
+	if (TclObject.saveObjRecords) {
+	    String key = "TclInteger";
+	    Integer num = (Integer) TclObject.objRecordMap.get(key);
+	    if (num == null) {
+	        num = new Integer(1);
+	    } else {
+	        num = new Integer(num.intValue() + 1);
+	    }
+	    TclObject.objRecordMap.put(key, num);
+	}
     }
 
     /**
@@ -41,13 +52,34 @@ public class TclInteger implements InternalRep {
      */
     private TclInteger(Interp interp, String str) throws TclException {
 	value = Util.getInt(interp, str);
+
+	if (TclObject.saveObjRecords) {
+	    String key = "TclInteger";
+	    Integer num = (Integer) TclObject.objRecordMap.get(key);
+	    if (num == null) {
+	        num = new Integer(1);
+	    } else {
+	        num = new Integer(num.intValue() + 1);
+	    }
+	    TclObject.objRecordMap.put(key, num);
+	}
     }
 
     /**
      * Returns a dupilcate of the current object.
-     * @param obj the TclObject that contains this internalRep.
      */
     public InternalRep duplicate() {
+	if (TclObject.saveObjRecords) {
+	    String key = "TclInteger.duplicate()";
+	    Integer num = (Integer) TclObject.objRecordMap.get(key);
+	    if (num == null) {
+	        num = new Integer(1);
+	    } else {
+	        num = new Integer(num.intValue() + 1);
+	    }
+	    TclObject.objRecordMap.put(key, num);
+	}
+
 	return new TclInteger(value);
     }
 
@@ -115,10 +147,32 @@ public class TclInteger implements InternalRep {
 		}
 	    }
 	    tobj.setInternalRep(new TclInteger(interp, srep));
+
+	    if (TclObject.saveObjRecords) {
+	        String key = "TclBoolean -> TclInteger";
+	        Integer num = (Integer) TclObject.objRecordMap.get(key);
+	        if (num == null) {
+	            num = new Integer(1);
+	        } else {
+	            num = new Integer(num.intValue() + 1);
+	        }
+	        TclObject.objRecordMap.put(key, num);
+	    }
 	} else {
 	    // (ToDo) other short-cuts
 
 	    tobj.setInternalRep(new TclInteger(interp, tobj.toString()));
+
+	    if (TclObject.saveObjRecords) {
+	        String key = "TclString -> TclInteger";
+	        Integer num = (Integer) TclObject.objRecordMap.get(key);
+	        if (num == null) {
+	            num = new Integer(1);
+	        } else {
+	            num = new Integer(num.intValue() + 1);
+	        }
+	        TclObject.objRecordMap.put(key, num);
+	    }
 	}
     }
 

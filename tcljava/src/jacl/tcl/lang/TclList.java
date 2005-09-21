@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclList.java,v 1.5 2003/01/09 02:15:39 mdejong Exp $
+ * RCS: @(#) $Id: TclList.java,v 1.6 2005/09/21 21:22:56 mdejong Exp $
  *
  */
 
@@ -30,6 +30,17 @@ public class TclList implements InternalRep {
      */
     private TclList() {
 	vector = new Vector();
+
+	if (TclObject.saveObjRecords) {
+	    String key = "TclList";
+	    Integer num = (Integer) TclObject.objRecordMap.get(key);
+	    if (num == null) {
+	        num = new Integer(1);
+	    } else {
+	        num = new Integer(num.intValue() + 1);
+	    }
+	    TclObject.objRecordMap.put(key, num);
+	}
     }
 
     /**
@@ -40,6 +51,17 @@ public class TclList implements InternalRep {
      */
     private TclList(int size) {
 	vector = new Vector(size);
+
+	if (TclObject.saveObjRecords) {
+	    String key = "TclList";
+	    Integer num = (Integer) TclObject.objRecordMap.get(key);
+	    if (num == null) {
+	        num = new Integer(1);
+	    } else {
+	        num = new Integer(num.intValue() + 1);
+	    }
+	    TclObject.objRecordMap.put(key, num);
+	}
     }
 
     /**
@@ -58,7 +80,6 @@ public class TclList implements InternalRep {
      *
      * Returns a dupilcate of the current object.
      *
-     * @param obj the TclObject that contains this internalRep.
      */
     public InternalRep duplicate() {
 	int size = vector.size();
@@ -68,6 +89,17 @@ public class TclList implements InternalRep {
 	    TclObject tobj = (TclObject) vector.elementAt(i);
 	    tobj.preserve();
 	    newList.vector.addElement(tobj);
+	}
+
+	if (TclObject.saveObjRecords) {
+	    String key = "TclList.duplicate()";
+	    Integer num = (Integer) TclObject.objRecordMap.get(key);
+	    if (num == null) {
+	        num = new Integer(1);
+	    } else {
+	        num = new Integer(num.intValue() + 1);
+	    }
+	    TclObject.objRecordMap.put(key, num);
 	}
 
 	return newList;
@@ -126,6 +158,17 @@ public class TclList implements InternalRep {
 	    TclList tlist = new TclList();
 	    splitList(interp, tlist.vector, tobj.toString());
 	    tobj.setInternalRep(tlist);
+
+	    if (TclObject.saveObjRecords) {
+	        String key = "TclString -> TclList";
+	        Integer num = (Integer) TclObject.objRecordMap.get(key);
+	        if (num == null) {
+	            num = new Integer(1);
+	        } else {
+	            num = new Integer(num.intValue() + 1);
+	        }
+	        TclObject.objRecordMap.put(key, num);
+	    }
 	}
     }
 

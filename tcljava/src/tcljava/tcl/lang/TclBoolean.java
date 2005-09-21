@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclBoolean.java,v 1.2 2000/10/29 06:00:42 mdejong Exp $
+ * RCS: @(#) $Id: TclBoolean.java,v 1.3 2005/09/21 21:22:56 mdejong Exp $
  *
  */
 
@@ -104,11 +104,33 @@ public class TclBoolean implements InternalRep {
 	} else if (rep instanceof TclInteger) {
 	    int i = TclInteger.get(interp, tobj);
 	    tobj.setInternalRep(new TclBoolean(i != 0));
+
+	    if (TclObject.saveObjRecords) {
+	        String key = "TclInteger -> TclBoolean";
+	        Integer num = (Integer) TclObject.objRecordMap.get(key);
+	        if (num == null) {
+	            num = new Integer(1);
+	        } else {
+	            num = new Integer(num.intValue() + 1);
+	        }
+	        TclObject.objRecordMap.put(key, num);
+	    }
 	} else {
 	    /*
 	     * (ToDo) other short-cuts
 	     */
 	    tobj.setInternalRep(new TclBoolean(interp, tobj.toString()));
+
+	    if (TclObject.saveObjRecords) {
+	        String key = "TclString -> TclBoolean";
+	        Integer num = (Integer) TclObject.objRecordMap.get(key);
+	        if (num == null) {
+	            num = new Integer(1);
+	        } else {
+	            num = new Integer(num.intValue() + 1);
+	        }
+	        TclObject.objRecordMap.put(key, num);
+	    }
 	}
     }
 

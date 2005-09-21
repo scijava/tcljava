@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclString.java,v 1.5 2003/03/08 03:42:56 mdejong Exp $
+ * RCS: @(#) $Id: TclString.java,v 1.6 2005/09/21 21:22:56 mdejong Exp $
  *
  */
 
@@ -26,10 +26,32 @@ public class TclString implements InternalRep {
 
     private TclString() {
 	sbuf = null;
+
+	if (TclObject.saveObjRecords) {
+	    String key = "TclString";
+	    Integer num = (Integer) TclObject.objRecordMap.get(key);
+	    if (num == null) {
+	        num = new Integer(1);
+	    } else {
+	        num = new Integer(num.intValue() + 1);
+	    }
+	    TclObject.objRecordMap.put(key, num);
+	}
     }
 
     private TclString(StringBuffer sb) {
 	sbuf = sb;
+
+	if (TclObject.saveObjRecords) {
+	    String key = "TclString";
+	    Integer num = (Integer) TclObject.objRecordMap.get(key);
+	    if (num == null) {
+	        num = new Integer(1);
+	    } else {
+	        num = new Integer(num.intValue() + 1);
+	    }
+	    TclObject.objRecordMap.put(key, num);
+	}
     }
 
     /**
@@ -38,6 +60,17 @@ public class TclString implements InternalRep {
      */
 
     public InternalRep duplicate() {
+	if (TclObject.saveObjRecords) {
+	    String key = "TclString.duplicate()";
+	    Integer num = (Integer) TclObject.objRecordMap.get(key);
+	    if (num == null) {
+	        num = new Integer(1);
+	    } else {
+	        num = new Integer(num.intValue() + 1);
+	    }
+	    TclObject.objRecordMap.put(key, num);
+	}
+
 	return new TclString();
     }
 
@@ -112,6 +145,17 @@ public class TclString implements InternalRep {
 	    // Change the type of the object to TclString.
 
 	    tobj.setInternalRep(new TclString());
+
+	    if (TclObject.saveObjRecords) {
+	        String key = "String -> TclString";
+	        Integer num = (Integer) TclObject.objRecordMap.get(key);
+	        if (num == null) {
+	            num = new Integer(1);
+	        } else {
+	            num = new Integer(num.intValue() + 1);
+	        }
+	        TclObject.objRecordMap.put(key, num);
+	    }
 	}
     }
 

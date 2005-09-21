@@ -1,3 +1,22 @@
+2005-09-21  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        Add a constant boolean flag to the TclObject
+        class. If enabled, each TclObject allocation,
+        internal rep allocation, and internal rep
+        conversion will be counted. This will provide
+        a handy interactive record of the way that
+        objects behave. This code will be optimized
+        away when the flag is set to false.
+
+        * src/jacl/tcl/lang/TclList.java:
+        * src/tclblend/tcl/lang/CObject.java:
+        * src/tclblend/tcl/lang/TclList.java:
+        * src/tcljava/tcl/lang/TclBoolean.java:
+        * src/tcljava/tcl/lang/TclDouble.java:
+        * src/tcljava/tcl/lang/TclInteger.java:
+        * src/tcljava/tcl/lang/TclObject.java:
+        * src/tcljava/tcl/lang/TclString.java:
+
 2005-09-11  Mo DeJong  <mdejong@users.sourceforge.net>
 
         Make NamespaceCmd.Namespace inner class a
