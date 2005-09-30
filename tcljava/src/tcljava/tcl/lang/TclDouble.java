@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclDouble.java,v 1.3 2005/09/21 21:22:56 mdejong Exp $
+ * RCS: @(#) $Id: TclDouble.java,v 1.4 2005/09/30 02:12:17 mdejong Exp $
  *
  */
 
@@ -204,6 +204,19 @@ throws
 	 */
 
 	boolean b = TclBoolean.get(interp, tobj);
+
+	// Can't convert from a "pure" boolean
+	// to a "pure" double since it is possible
+	// that the expr code would want to check
+	// for an integer that was converted to
+	// a double. If a "pure" boolean has no
+	// string rep then generate one that
+	// looks like an integer.
+
+	if (tobj.hasNoStringRep()) {
+	    tobj.toString();
+	}
+
 	if (b) {
 	    tobj.setInternalRep(new TclDouble(1.0));
 	} else {
@@ -226,7 +239,20 @@ throws
 	 */
 
 	int i = TclInteger.get(interp, tobj);
-	tobj.setInternalRep(new TclDouble(i));
+
+	// Can't convert from a "pure" integer
+	// to a "pure" double since it is possible
+	// that the expr code would want to check
+	// for an integer that was converted to
+	// a double. If a "pure" integer has no
+	// string rep then generate one that
+	// looks like an integer.
+
+	if (tobj.hasNoStringRep()) {
+	    tobj.toString();
+	}
+
+	tobj.setInternalRep(new TclDouble((double) i));
 
 	if (TclObject.saveObjRecords) {
 	    String key = "TclInteger -> TclDouble";

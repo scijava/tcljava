@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclObject.java,v 1.10 2005/09/21 21:22:56 mdejong Exp $
+ * RCS: @(#) $Id: TclObject.java,v 1.11 2005/09/30 02:12:17 mdejong Exp $
  *
  */
 
@@ -401,5 +401,15 @@ public final class TclObject {
         }
     }
 
+    // Return true if this TclObject has no string rep.
+    // This could be the case with a "pure" integer
+    // or double, or boolean, that was created from
+    // a primitive value. Once the toString() method
+    // has been invoked, this method will return true
+    // unless the string rep is again invalidated.
+
+    final boolean hasNoStringRep() {
+        return (stringRep == null);
+    }
 }
 

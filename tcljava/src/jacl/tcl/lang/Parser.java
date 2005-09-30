@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Parser.java,v 1.17 2003/07/25 17:41:53 mdejong Exp $
+ * RCS: @(#) $Id: Parser.java,v 1.18 2005/09/30 02:12:17 mdejong Exp $
  */
 
 package tcl.lang;
@@ -1261,6 +1261,7 @@ throws
 	    } finally {
 		for (i = 0; i < objUsed; i++) {
 		    objv[i].release();
+		    objv[i] = null;
 		}
                 objUsed = 0;
 
@@ -1739,7 +1740,8 @@ backslash(
 		
 		String str = new String(script_array, script_index, 
 			endIndex - script_index);
-		StrtoulResult res = Util.strtoul(str, 0, 16);
+		StrtoulResult res = new StrtoulResult();
+		Util.strtoul(str, 0, 16, res);
 		if (res.errno == 0) {
 		    // We force res.value to be a 8-bit (ASCII) character
 		    // so that it is compatible with Tcl.

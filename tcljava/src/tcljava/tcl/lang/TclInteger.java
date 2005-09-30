@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclInteger.java,v 1.7 2005/09/21 21:22:56 mdejong Exp $
+ * RCS: @(#) $Id: TclInteger.java,v 1.8 2005/09/30 02:12:17 mdejong Exp $
  *
  */
 
@@ -132,21 +132,31 @@ public class TclInteger implements InternalRep {
 	if (rep instanceof TclInteger) {
 	    // Do nothing.
 	} else if (rep instanceof TclBoolean) {
-	    // A boolean with the string rep "0" or "1"
-	    // can be safely converted to an integer.
-	    String srep = tobj.toString();
-
-	    if (srep.length() == 1) {
-		char c = srep.charAt(0);
-		if (c == '0') {
-		    tobj.setInternalRep(new TclInteger(0));
-		    return;
-		} else if (c == '1') {
-		    tobj.setInternalRep(new TclInteger(1));
-		    return;
+	    boolean b = TclBoolean.get(interp, tobj);
+	    if (tobj.hasNoStringRep()) {
+		// A "pure" boolean can be converted
+		// directly to an integer.
+		tobj.setInternalRep(new TclInteger(b ? 1 : 0));
+	    } else if (b) {
+		// The integer "2" would be converted to
+		// a true boolean value. Converting it
+		// back to an integer should not return
+		// the value 1. If the string rep is "1"
+                // then take the shortcut. Otherwise,
+                // reparse the integer from the string.
+		TclInteger irep;
+		String srep = tobj.toString();
+		if (srep.compareTo("1") == 0) {
+		    irep = new TclInteger(1);
+		} else {
+		    irep = new TclInteger(interp, srep);
 		}
+		tobj.setInternalRep(irep);
+	    } else {
+		// A boolean false value can be converted
+		// directly to the integer value 0.
+		tobj.setInternalRep(new TclInteger(0));
 	    }
-	    tobj.setInternalRep(new TclInteger(interp, srep));
 
 	    if (TclObject.saveObjRecords) {
 	        String key = "TclBoolean -> TclInteger";
@@ -159,7 +169,9 @@ public class TclInteger implements InternalRep {
 	        TclObject.objRecordMap.put(key, num);
 	    }
 	} else {
-	    // (ToDo) other short-cuts
+	    // Note that conversion from a double to an
+	    // integer internal rep should always raise
+	    // an error.
 
 	    tobj.setInternalRep(new TclInteger(interp, tobj.toString()));
 
@@ -188,8 +200,15 @@ public class TclInteger implements InternalRep {
 
     public static int get(Interp interp, TclObject tobj)
 	    throws TclException {
-	setIntegerFromAny(interp, tobj);
-	TclInteger tint = (TclInteger) tobj.getInternalRep();
+	InternalRep rep = tobj.getInternalRep();
+	TclInteger tint;
+
+	if (!(rep instanceof TclInteger)) {
+	    setIntegerFromAny(interp, tobj);
+	    tint = (TclInteger) tobj.getInternalRep();
+	} else {
+	    tint = (TclInteger) rep;
+	}
 	return tint.value;
     }
 

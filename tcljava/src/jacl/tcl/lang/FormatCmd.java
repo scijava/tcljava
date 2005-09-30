@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FormatCmd.java,v 1.7 2003/02/01 00:56:29 mdejong Exp $
+ * RCS: @(#) $Id: FormatCmd.java,v 1.8 2005/09/30 02:12:17 mdejong Exp $
  *
  */
 
@@ -64,7 +64,7 @@ class FormatCmd implements Command {
 
 	StringBuffer sbuf;     // Stores the return value of the parsed
 	                       // format string
-	StrtoulResult stoul;   // A return object to the strtoul call
+	StrtoulResult stoul;   // A result object to pass to strtoul call
 	char[]  format;        // The format argument is converted to a char 
 			       // array and manipulated as such
 	int     phase;         // Stores the current phase of the parsing
@@ -156,10 +156,12 @@ class FormatCmd implements Command {
 		// Parce the format array looking for the end of
 		// the number. 
 
-		stoul = strtoul(format, fmtIndex);
+		stoul = interp.strtoulResult;
+		strtoul(format, fmtIndex, stoul);
 	        intValue = (int)stoul.value;
 		endIndex = stoul.index;
-		
+		stoul = null;
+
 		if (format[endIndex] == '$') {
 		    if (intValue == 0) {
 		        errorBadIndex(interp, true);
@@ -255,10 +257,11 @@ class FormatCmd implements Command {
 
 	    checkOverFlow(interp, format, fmtIndex);
 	    if (Character.isDigit(format[fmtIndex])) {
-		stoul = strtoul(format, fmtIndex);
+		stoul = interp.strtoulResult;
+		strtoul(format, fmtIndex, stoul);
 	        width = (int)stoul.value;
 		fmtIndex = stoul.index;
-
+		stoul = null;
 	    } else if (format[fmtIndex] == '*') {
 	        if (argv.length > argIndex) {
 	            width = TclInteger.get(interp, argv[argIndex]);
@@ -281,9 +284,11 @@ class FormatCmd implements Command {
 		if (Character.isDigit(format[fmtIndex])) {
 		    precisionSet = true;
 
-		    stoul = strtoul(format, fmtIndex);
+		    stoul = interp.strtoulResult;
+		    strtoul(format, fmtIndex, stoul);
 		    precision = (int)stoul.value;
 		    fmtIndex = stoul.index;
+		    stoul = null;
 		} else if (format[fmtIndex] == '*') {
 		    if (argv.length > argIndex) {
 		        precisionSet = true;
@@ -920,15 +925,17 @@ class FormatCmd implements Command {
     /**
      * Search through the array while the current char is a digit.  When end 
      * of array occurs or the char is not a digit, stop the loop, convert the
-     * sub-array into a long.  At this point return a StrtoulResult object
+     * sub-array into a long.  At this point update a StrtoulResult object
      * that contains the new long value and the current pointer to the array.
      *
      * @param arr - the array that contains a string representation of an int.
      * @param endIndex - the arr index where the numeric value begins.
-     * @return StrtoResult containing the value and new index/
+     * @param strtoulResult - location where results will be stored.
      */
 
-    private StrtoulResult strtoul(char[] arr, int endIndex) {
+    private void strtoul(char[] arr, int endIndex,
+            StrtoulResult strtoulResult)
+    {
 	int orgIndex;
 
 	orgIndex = endIndex;
@@ -937,8 +944,10 @@ class FormatCmd implements Command {
 	        break;
 	    }
 	}
-	return (new StrtoulResult(Long.parseLong(new String(arr, orgIndex, 
-                endIndex-orgIndex)), endIndex, 0));
+        strtoulResult.update(
+            Long.parseLong(new String(arr, orgIndex, endIndex-orgIndex)),
+            endIndex, 0);
+        return;
     }
 
 

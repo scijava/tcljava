@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Expression.java,v 1.12 2005/07/14 02:04:49 mdejong Exp $
+ * RCS: @(#) $Id: Expression.java,v 1.13 2005/09/30 02:12:17 mdejong Exp $
  *
  */
 
@@ -54,13 +54,15 @@ class Expression {
     static final int OR		 = 25;
     static final int QUESTY	 = 26;
     static final int COLON	 = 27;
+    static final int STREQ	 = 28;
+    static final int STRNEQ	 = 29;
 
     // Unary operators:
 
-    static final int UNARY_MINUS = 28;
-    static final int UNARY_PLUS  = 29;
-    static final int NOT	 = 30;
-    static final int BIT_NOT	 = 31;
+    static final int UNARY_MINUS = 30;
+    static final int UNARY_PLUS  = 31;
+    static final int NOT	 = 32;
+    static final int BIT_NOT	 = 33;
 
     // Precedence table.  The values for non-operator token types are ignored.
 
@@ -78,6 +80,7 @@ class Expression {
 	3,				// OR
 	2,				// QUESTY
 	1,				// COLON
+	8, 8,    			// STREQ, STRNEQ
 	13, 13, 13, 13			// UNARY_MINUS, UNARY_PLUS, NOT,
 					// BIT_NOT
     };
@@ -87,7 +90,7 @@ class Expression {
     static String operatorStrings[] = {
         "VALUE", "(", ")", ",", "END", "UNKNOWN", "6", "7",
 	"*", "/", "%", "+", "-", "<<", ">>", "<", ">", "<=",
-	">=", "==", "!=", "&", "^", "|", "&&", "||", "?", ":",
+	">=", "==", "!=", "&", "^", "|", "&&", "||", "?", ":", "eq", "ne",
 	"-", "+", "!", "~"
     };
 
@@ -116,7 +119,14 @@ class Expression {
     private int m_ind;
 
     /**
-     * Evaluate a Tcl expression.
+     * Cache of ExprValue objects. These are cached on a per-interp
+     * basis to speed up most expressions.
+     */
+
+    private ExprValue[] cachedExprValue;
+
+    /**
+     * Evaluate a Tcl expression and set the interp result to the value.
      *
      * @param interp the context in which to evaluate the expression.
      * @param string expression to evaluate.
@@ -124,19 +134,25 @@ class Expression {
      * @exception TclException for malformed expressions.
      */
 
-    TclObject eval(Interp interp, String string)
+    void evalSetResult(Interp interp, String string)
 	    throws TclException {
+	TclObject obj;
 	ExprValue value = ExprTopLevel(interp, string);
-	switch (value.type) {
+	switch (value.getType()) {
 	case ExprValue.INT:
-	    return TclInteger.newInstance((int) value.intValue);
+	    interp.setResult( value.getIntValue() );
+	    break;
 	case ExprValue.DOUBLE:
-	    return TclDouble.newInstance(value.doubleValue);
+	    interp.setResult( value.getDoubleValue() );
+	    break;
 	case ExprValue.STRING:
-	    return TclString.newInstance(value.stringValue);
+	    interp.setResult( value.getStringValue() );
+	    break;
 	default:
 	    throw new TclRuntimeError("internal error: expression, unknown");
 	}
+	releaseExprValue(value);
+	return;
     }
 
     /**
@@ -148,17 +164,23 @@ class Expression {
      */
     boolean evalBoolean(Interp interp, String string)
 	    throws TclException {
+	boolean b;
 	ExprValue value = ExprTopLevel(interp, string);
-	switch (value.type) {
+	switch (value.getType()) {
 	case ExprValue.INT:
-	    return (value.intValue != 0);
+	    b = (value.getIntValue() != 0);
+	    break;
 	case ExprValue.DOUBLE:
-	    return (value.doubleValue != 0.0);
+	    b = (value.getDoubleValue() != 0.0);
+	    break;
 	case ExprValue.STRING:
-	    return Util.getBoolean(interp, value.stringValue);
+	    b = Util.getBoolean(interp, value.getStringValue());
+	    break;
 	default:
 	    throw new TclRuntimeError("internal error: expression, unknown");
 	}
+	releaseExprValue(value);
+	return b;
     }
 
     /**
@@ -205,6 +227,11 @@ class Expression {
 	m_ind = 0;
 	m_len = 0;
 	m_token = UNKNOWN;
+
+	cachedExprValue = new ExprValue[20];
+	for (int i=0; i < cachedExprValue.length; i++) {
+	    cachedExprValue[i] = new ExprValue(0, null);
+	}
     }
 
     /**
@@ -292,6 +319,117 @@ class Expression {
 		"domain error: argument not in valid range");
     }
 
+    static void EmptyStringOperandError(Interp interp, int operator)
+        throws TclException
+    {
+	throw new TclException(interp, "can't use " +
+		"empty string" +
+	    	" as operand of \"" + operatorStrings[operator]+ "\"");
+    }
+
+    /**
+     * Given a TclObject, such as the result of a command or
+     * variable evaluation, generate a ExprValue that contains
+     * the parsed result. If the TclObject already has an
+     * internal rep that is a numeric type, then no need to parse.
+     * Note that this method does not change the internal rep
+     * of parsed objects.
+     */
+
+    ExprValue ExprParseObject(Interp interp, TclObject obj)
+	    throws TclException
+    {
+        // If the TclObject already has an integer, floating point,
+        // or boolean representation then use it.
+
+        InternalRep rep = obj.getInternalRep();
+        TclObject orig_obj = obj;
+
+        if (obj.hasNoStringRep() && (rep instanceof TclList)) {
+            if (TclList.getLength(interp, obj) == 1) {
+                // If a pure list is of length one, then use
+                // the list element in the typed tests below.
+                obj = TclList.index(interp, obj, 0);
+                rep = obj.getInternalRep();
+            }
+        }
+
+        if (rep instanceof TclBoolean) {
+            // A "pure" boolean created from a primitive
+            // type can be treated as an integer value.
+            // If the boolean has a string rep, then
+            // check to see if it is "0" or "1" and
+            // use an integer value. Otherwise, treat
+            // the object as a string since expr code
+            // can convert to a boolean value later
+            // on if needed.
+
+            if (obj.hasNoStringRep()) {
+                boolean bval = TclBoolean.get(interp, obj);
+                ExprValue value = grabExprValue();
+                value.setIntValue(bval ? 1 : 0);
+                return value;
+            } else {
+                String srep = obj.toString();
+                int slen = srep.length();
+                if (slen == 1 && srep.charAt(0) == '0') {
+                    ExprValue value = grabExprValue();
+                    value.setIntValue(0);
+                    return value;
+                } else if (slen == 1 && srep.charAt(0) == '1') {
+                    ExprValue value = grabExprValue();
+                    value.setIntValue(1);
+                    return value;
+                }
+            }
+        } else if (rep instanceof TclInteger) {
+            // If the object is a "pure" number, meaning it
+            // was created from a primitive type and there
+            // is no string rep, then generate a string
+            // from the primitive type later on, if needed.
+
+            ExprValue value = grabExprValue();
+            value.setIntValue(TclInteger.get(interp, obj),
+                (obj.hasNoStringRep() ? null : obj.toString()));
+            return value;
+        } else if (rep instanceof TclDouble) {
+            // An object with a double internal rep might
+            // actually be an integer that was converted
+            // to a double. Check to see if the double
+            // looks like an integer to handle this case.
+            // A "pure" double with no string rep is
+            // always valid.
+
+            double dval = TclDouble.get(interp, obj);
+            if (obj.hasNoStringRep()) {
+                ExprValue value = grabExprValue();
+                value.setDoubleValue(dval);
+                return value;
+            }
+            String str = obj.toString();
+            if (looksLikeInt(str, str.length(), 0, true)) {
+                // FIXME: Tcl seems to convert a double that
+                // looks like an int back into an
+                // integer internal rep in this case.
+                // That would avoid lots of pointless
+                // calls to looksLikeInt() in a loop.
+                ExprValue value = grabExprValue();
+                value.setIntValue((int) dval, str);
+                return value;
+            } else {
+                ExprValue value = grabExprValue();
+                value.setDoubleValue(dval, str);
+                return value;
+            }
+        }
+        // Parse value from String, use the original
+        // object in the case of a list of length 1.
+        if (obj != orig_obj) {
+            obj = orig_obj;
+        }
+        return ExprParseString(interp, obj.toString());
+    }
+
     /**
      * Given a string (such as one coming from command or variable
      * substitution), make a Value based on the string.  The value
@@ -307,59 +445,104 @@ class Expression {
     private ExprValue ExprParseString(Interp interp, String s)
 	    throws TclException {
 
+	char c;
 	int len = s.length();
+	ExprValue value = grabExprValue();
 
-/*
-	System.out.println("now to ExprParseString ->" + s +
-		 "<- of length " + len);
-*/
+	//System.out.println("now to ExprParseString ->" + s +
+	//	 "<- of length " + len);
 
 	// Take shortcut when string is of length 0, as there is
         // only a string rep for an empty string (no int or double rep)
         // this will happend a lot so this shortcut will speed things up!
 
 	if (len == 0) {
-		return new ExprValue(s);
-	}
-
-	// The strings "0" and "1" are going to occure a lot
-        // it might be wise to include shortcuts for these cases
-
+	    value.setStringValue(s);
+	    return value;
+	} else if (len == 1) {
+            // Check for really common strings of length 1
+            // that we know will be integers.
+            c = s.charAt(0);
+            switch (c) {
+                case '0':
+                case '1':
+                case '2':
+                case '3':
+                case '4':
+                case '5':
+                case '6':
+                case '7':
+                case '8':
+                case '9':
+		    m_token = VALUE;
+		    value.setIntValue(c - '0', s);
+		    return value;
+            }
+	} else if (len == 2) {
+            // Check for really common strings of length 2
+            // that we know will be integers.
+            if (s.compareTo("-1") == 0) {
+                m_token = VALUE;
+                value.setIntValue(-1, s);
+                return value;
+            }
+        } else if (len == 3) {
+            // Check for really common strings of length 3
+            // that we know will be doubles.
+            if (s.compareTo("0.0") == 0) {
+                m_token = VALUE;
+                value.setDoubleValue(0.0, s);
+                return value;
+            } else if (s.compareTo("0.5") == 0) {
+                m_token = VALUE;
+                value.setDoubleValue(0.5, s);
+                return value;
+            } else if (s.compareTo("1.0") == 0) {
+                m_token = VALUE;
+                value.setDoubleValue(1.0, s);
+                return value;
+            }
+        }
 
 	int i;
-	if (looksLikeInt(s, len, 0)) {
+	if (looksLikeInt(s, len, 0, false)) {
 	    //System.out.println("string looks like an int");
 
 	    // Note: use strtoul instead of strtol for integer conversions
 	    // to allow full-size unsigned numbers, but don't depend on
 	    // strtoul to handle sign characters;  it won't in some
 	    // implementations.
-    
-	    for (i = 0; Character.isWhitespace(s.charAt(i)); i++) {
+
+	    for (i = 0; (((c = s.charAt(i)) == ' ') ||
+                    Character.isWhitespace(c)) ; i++) {
 		// Empty loop body.
 	    }
 
-	    StrtoulResult res;
+	    StrtoulResult res = interp.strtoulResult;
 	    if (s.charAt(i) == '-') {
 		i++;
-		res = Util.strtoul(s, i, 0);
+		Util.strtoul(s, i, 0, res);
 		res.value = - res.value;
 	    } else if (s.charAt(i) == '+') {
 		i++;
-		res = Util.strtoul(s, i, 0);
+		Util.strtoul(s, i, 0, res);
 	    } else {
-		res = Util.strtoul(s, i, 0);
+		Util.strtoul(s, i, 0, res);
 	    }
+	    String token = s.substring(i, res.index);
+	    //System.out.println("token string from strtoul is \"" + token + "\"");
+	    //System.out.println("res.errno is " + res.errno);
 
             if (res.errno == 0) {
 		// We treat this string as a number if all the charcters
-		// following the parsed number are a whitespace char
+		// following the parsed number are a whitespace chars.
 		// E.g.: " 1", "1", "1 ", and " 1 "  are all good numbers
 
                 boolean trailing_blanks = true;
 
 	        for (i = res.index; i < len ; i++) {
-                    if (! Character.isWhitespace( s.charAt(i) )) {
+                    if ((c = s.charAt(i)) != ' ' &&
+                            !Character.isWhitespace(c)) {
                         trailing_blanks = false;
                     }
 	        }
@@ -367,13 +550,17 @@ class Expression {
                 if (trailing_blanks) {
 	            //System.out.println("string is an Integer of value " + res.value);
 		    m_token = VALUE;
-		    return new ExprValue(res.value);
+		    value.setIntValue((int) res.value, s);
+		    return value;
+                } else {
+		    //System.out.println("string failed trailing_blanks test, not an integer");
                 }
             }
 	} else {
 	    //System.out.println("string does not look like an int, checking for Double");
 
-	    StrtodResult res = Util.strtod(s, 0);
+	    StrtodResult res = interp.strtodResult;
+	    Util.strtod(s, 0, res);
 
             if (res.errno == 0) {
 		// Trailing whitespaces are treated just like the Integer case
@@ -381,7 +568,8 @@ class Expression {
                 boolean trailing_blanks = true;
 
 	        for (i = res.index; i < len ; i++) {
-                    if (! Character.isWhitespace( s.charAt(i) )) {
+                    if ((c = s.charAt(i)) != ' ' &&
+                            !Character.isWhitespace(c)) {
                         trailing_blanks = false;
                     }
 	        }
@@ -389,18 +577,20 @@ class Expression {
                 if (trailing_blanks) {
 	            //System.out.println("string is a Double of value " + res.value);
 		    m_token = VALUE;
-		    return new ExprValue(res.value);
+		    value.setDoubleValue(res.value, s);
+		    return value;
                 }
 
             }
 	}
 
-	//System.out.println("string is not a valid number, returning as string");
+	//System.out.println("string is not a valid number, returning as string \"" + s + "\"");
 
 	// Not a valid number.  Save a string value (but don't do anything
 	// if it's already the value).
 
-	return new ExprValue(s);
+ 	value.setStringValue(s);
+ 	return value;
     }
 
     /**
@@ -419,7 +609,7 @@ class Expression {
 					// operator (while picking up value
 					// for unary operator).  Don't lex
 					// again.
-	ExprValue value, value2;
+	ExprValue value, value2 = null;
 
 	// There are two phases to this procedure.  First, pick off an
 	// initial value.  Then, parse (binary operator, value) pairs
@@ -450,48 +640,7 @@ class Expression {
 		value = ExprGetValue(interp, precTable[m_token]);
 
 		if (interp.noEval == 0) {
-		    switch (operator) {
-		    case UNARY_MINUS:
-			if (value.type == ExprValue.INT) {
-			    value.intValue = -value.intValue;
-			} else if (value.type == ExprValue.DOUBLE){
-			    value.doubleValue = -value.doubleValue;
-			} else {
-			    IllegalType(interp, value.type, operator);
-			} 
-			break;
-		    case UNARY_PLUS:
-			if ((value.type != ExprValue.INT)
-				&& (value.type != ExprValue.DOUBLE)) {
-			    IllegalType(interp, value.type, operator);
-			} 
-			break;
-		    case NOT:
-			if (value.type == ExprValue.INT) {
-			    if (value.intValue != 0) {
-				value.intValue = 0;
-			    } else {
-				value.intValue = 1;
-			    }
-			} else if (value.type == ExprValue.DOUBLE) {
-			    if (value.doubleValue == 0.0) {
-				value.intValue = 1;
-			    } else {
-				value.intValue = 0;
-			    }
-			    value.type = ExprValue.INT;
-			} else {
-			    IllegalType(interp, value.type, operator);
-			}
-			break;
-		    case BIT_NOT:
-			if (value.type == ExprValue.INT) {
-			    value.intValue = ~value.intValue;
-			} else {
-			    IllegalType(interp, value.type, operator);
-			}
-			break;
-		    }
+		    evalUnaryOperator(interp, operator, value);
 		}
 		gotOp = true;
 	    } else if (m_token == CLOSE_PAREN) {
@@ -531,27 +680,26 @@ class Expression {
 
 	    if ((operator == AND) || (operator == OR) ||(operator == QUESTY)){
 
-		if (value.type == ExprValue.DOUBLE) {
-		    value.intValue = (value.doubleValue != 0) ? 1 : 0;
-		    value.type = ExprValue.INT;
-		} else if (value.type == ExprValue.STRING) {
+		if (value.isDoubleType()) {
+		    value.setIntValue( (value.getDoubleValue() != 0.0) ? 1 : 0 );
+		} else if (value.isStringType()) {
                    try {
-                       boolean b = Util.getBoolean(null, value.stringValue);
-                       value = new ExprValue(b ? 1 : 0);
+                       boolean b = Util.getBoolean(interp, value.getStringValue());
+                       value.setIntValue(b ? 1 : 0);
                    } catch (TclException e) {
                        if (interp.noEval == 0) {
-                           IllegalType(interp, ExprValue.STRING, operator);
+                           throw e;
                        }
 
                        // Must set value.intValue to avoid referencing
                        // uninitialized memory in the "if" below;  the actual
                        // value doesn't matter, since it will be ignored.
 
-                       value.intValue = 0;
+                       value.setIntValue(0);
                    }
 		}
-		if (((operator == AND) && (value.intValue == 0))
-		        || ((operator == OR) && (value.intValue != 0))) {
+		if (((operator == AND) && (value.getIntValue() == 0))
+		        || ((operator == OR) && (value.getIntValue() != 0))) {
 		    interp.noEval ++;
 		    try {
 			value2 = ExprGetValue(interp, precTable[operator]);
@@ -559,7 +707,7 @@ class Expression {
 			interp.noEval--;
 		    }
 		    if (operator == OR) {
-			value.intValue = 1;
+			value.setIntValue(1);
 		    }
 		    continue;
 		} else if (operator == QUESTY) {
@@ -567,7 +715,7 @@ class Expression {
 		    // left.  To make this happen, use a precedence one lower
 		    // than QUESTY when calling ExprGetValue recursively.
 
-		    if (value.intValue != 0) {
+		    if (value.getIntValue() != 0) {
 			value = ExprGetValue(interp, precTable[QUESTY] - 1);
 			if (m_token != COLON) {
 			    SyntaxError(interp);
@@ -613,30 +761,119 @@ class Expression {
 		continue;
 	    }
 
-	    // At this point we've got two values and an operator.  Check
-	    // to make sure that the particular data types are appropriate
-	    // for the particular operator, and perform type conversion
-	    // if necessary.
+	    evalBinaryOperator(interp, operator, value, value2);
+        } // end of while(true) loop
+    }
 
-	    switch (operator) {
+    // Evaluate the result of a unary operator ( - + ! ~)
+    // when it is applied to a value. The passed in value
+    // contains the result.
 
+    void evalUnaryOperator(
+        Interp interp,
+        int operator,
+        ExprValue value)
+            throws TclException
+    {
+        switch (operator) {
+	    case UNARY_MINUS:
+		if (value.isIntType()) {
+		    value.setIntValue( value.getIntValue() * -1 );
+		} else if (value.isDoubleType()) {
+		    value.setDoubleValue( value.getDoubleValue() * -1.0 );
+		} else {
+		    IllegalType(interp, value.getType(), operator);
+		}
+		break;
+	    case UNARY_PLUS:
+		if (!value.isIntOrDoubleType()) {
+		    IllegalType(interp, value.getType(), operator);
+		}
+		// Unary + operator on for numeric type is a no-op
+		break;
+	    case NOT:
+		if (value.isIntType()) {
+		    if (value.getIntValue() != 0) {
+		        value.setIntValue(0);
+		    } else {
+		        value.setIntValue(1);
+		    }
+		} else if (value.isDoubleType()) {
+		    if (value.getDoubleValue() == 0.0) {
+		        value.setIntValue(1);
+		    } else {
+		        value.setIntValue(0);
+		    }
+		} else if (value.isStringType()) {
+		    String s = value.getStringValue();
+		    int s_len = s.length();
+		    if ( s_len == 0 ) {
+		        EmptyStringOperandError(interp, operator);
+		    }
+		    String tok = getBooleanToken(s);
+		    // Reject a string like "truea"
+		    if ( tok != null && tok.length() == s_len) {
+		        if ( "true".startsWith(tok) ||
+		                "on".startsWith(tok) ||
+		                "yes".startsWith(tok) ) {
+		            value.setIntValue(0);
+		        } else {
+		            value.setIntValue(1);
+		        }
+		    } else {
+		        IllegalType(interp, value.getType(), operator);
+		    }
+		} else {
+		    IllegalType(interp, value.getType(), operator);
+		}
+		break;
+	    case BIT_NOT:
+		if (value.isIntType()) {
+		    value.setIntValue( ~ value.getIntValue() );
+		} else {
+		    IllegalType(interp, value.getType(), operator);
+		}
+		break;
+	    default:
+		throw new TclException(interp,
+			"unknown operator in expression");
+        }
+    }
+
+    // Evaluate the result of a binary operator (* / + - % << >> ...)
+    // when applied to a pair of values. The result is returned in
+    // the first (left hand) value. This method will check data
+    // types and perform conversions if needed before executing
+    // the operation. The value2 argument (right hand) will
+    // be released back into the value pool and should not be
+    // used after this method returns.
+
+    void evalBinaryOperator(
+        Interp interp,
+        int operator,
+        ExprValue value,    // value on left hand side
+        ExprValue value2)   // value on right hand side
+            throws TclException
+    {
+	switch (operator) {
 	    // For the operators below, no strings are allowed and
 	    // ints get converted to floats if necessary.
 
 	    case MULT: case DIVIDE: case PLUS: case MINUS:
-		if ((value.type == ExprValue.STRING)
-			|| (value2.type == ExprValue.STRING)) {
+		if (value.isStringType() || value2.isStringType()) {
+		    if ((value.getStringValue().length() == 0) ||
+		        (value2.getStringValue().length() == 0)) {
+		        EmptyStringOperandError(interp, operator);
+		    }
 		    IllegalType(interp, ExprValue.STRING, operator);
 		}
-		if (value.type == ExprValue.DOUBLE) {
-		    if (value2.type == ExprValue.INT) {
-			value2.doubleValue = value2.intValue;
-			value2.type = ExprValue.DOUBLE;
+		if (value.isDoubleType()) {
+		    if (value2.isIntType()) {
+			value2.setDoubleValue( (double) value2.getIntValue() );
 		    }
-		} else if (value2.type == ExprValue.DOUBLE) {
-		    if (value.type == ExprValue.INT) {
-			value.doubleValue = value.intValue;
-			value.type = ExprValue.DOUBLE;
+		} else if (value2.isDoubleType()) {
+		    if (value.isIntType()) {
+			value.setDoubleValue( (double) value.getIntValue() );
 		    }
 		}
 		break;
@@ -645,11 +882,18 @@ class Expression {
 
 	    case MOD: case LEFT_SHIFT: case RIGHT_SHIFT:
 	    case BIT_AND: case BIT_XOR: case BIT_OR:
-		 if (value.type != ExprValue.INT) {
-		     IllegalType(interp, value.type, operator);
-		 } else if (value2.type != ExprValue.INT) {
-		     IllegalType(interp, value2.type, operator);
+		 if (value.getType() != ExprValue.INT) {
+		     if (value.getStringValue().length() == 0) {
+		         EmptyStringOperandError(interp, operator);
+		     }
+		     IllegalType(interp, value.getType(), operator);
+		 } else if (value2.getType() != ExprValue.INT) {
+		     if (value2.getStringValue().length() == 0) {
+		         EmptyStringOperandError(interp, operator);
+		     }
+		     IllegalType(interp, value2.getType(), operator);
 		 }
+
 		 break;
 
 	    // For the operators below, any type is allowed but the
@@ -658,41 +902,42 @@ class Expression {
 
 	    case LESS: case GREATER: case LEQ: case GEQ:
 	    case EQUAL: case NEQ:
-		if (value.type == ExprValue.STRING) {
-		    if (value2.type != ExprValue.STRING) {
+		if (value.isStringType()) {
+		    if (!value2.isStringType()) {
 			ExprMakeString(interp, value2);
 		    }
-		} else if (value2.type == ExprValue.STRING) {
-		    if (value.type != ExprValue.STRING) {
+		} else if (value2.isStringType()) {
+		    if (!value.isStringType()) {
 			ExprMakeString(interp, value);
 		    }
-		} else if (value.type == ExprValue.DOUBLE) {
-		    if (value2.type == ExprValue.INT) {
-			value2.doubleValue = value2.intValue;
-			value2.type = ExprValue.DOUBLE;
+		} else if (value.isDoubleType()) {
+		    if (value2.isIntType()) {
+			value2.setDoubleValue( (double) value2.getIntValue() );
 		    }
-		} else if (value2.type == ExprValue.DOUBLE) {
-		     if (value.type == ExprValue.INT) {
-			value.doubleValue = value.intValue;
-			value.type = ExprValue.DOUBLE;
+		} else if (value2.isDoubleType()) {
+		     if (value.isIntType()) {
+			value.setDoubleValue( (double) value.getIntValue() );
 		    }
 		}
+		break;
+
+	    // For the 2 operators below, string comparison is always
+            // done.
+
+	    case STREQ: case STRNEQ:
+		// No-op
 		break;
 
 	    // For the operators below, no strings are allowed, but
 	    // no int->double conversions are performed.
 
 	    case AND: case OR:
-		if (value.type == ExprValue.STRING) {
-		    IllegalType(interp, value.type, operator);
+		if (value.isStringType()) {
+		    IllegalType(interp, value.getType(), operator);
 		}
-		if (value2.type == ExprValue.STRING) {
-		    try {
-                       boolean b = Util.getBoolean(null, value2.stringValue);
-                       value2 = new ExprValue(b ? 1 : 0);
-                   } catch (TclException e) {
-                       IllegalType(interp, value2.type, operator);
-                   }
+		if (value2.isStringType()) {
+		    boolean b = Util.getBoolean(interp, value2.getStringValue());
+		    value2.setIntValue(b ? 1 : 0);
 		}
 		break;
 
@@ -707,173 +952,249 @@ class Expression {
 	    default:
 		throw new TclException(interp,
 			"unknown operator in expression");
-	    }
+	}
 
-	    // Carry out the function of the specified operator.
+	// Carry out the function of the specified operator.
 
-	    switch (operator) {
+	switch (operator) {
 	    case MULT:
-		if (value.type == ExprValue.INT) {
-		    value.intValue = value.intValue * value2.intValue;
+		if (value.isIntType()) {
+		    value.setIntValue( value.getIntValue() * value2.getIntValue() );
 		} else {
-		    value.doubleValue *= value2.doubleValue;
+		    value.setDoubleValue( value.getDoubleValue() * value2.getDoubleValue() );
 		}
 		break;
 	    case DIVIDE:
-	    case MOD:
-		if (value.type == ExprValue.INT) {
-		    long divisor, quot, rem;
-		    boolean negative;
+		if (value.isIntType()) {
+		    int dividend, divisor, quotient;
 
-		    if (value2.intValue == 0) {
+		    if (value2.getIntValue() == 0) {
 		        DivideByZero(interp);
 		    }
 
-		    // The code below is tricky because C doesn't guarantee
-		    // much about the properties of the quotient or
-		    // remainder, but Tcl does:  the remainder always has
-		    // the same sign as the divisor and a smaller absolute
-		    // value.
+		    // quotient  = dividend / divisor
+		    //
+		    // When performing integer division, protect
+		    // against integer overflow. Round towards zero
+		    // when the quotient is positive, otherwise
+		    // round towards -Infinity.
 
-		    divisor = value2.intValue;
-		    negative = false;
-		    if (divisor < 0) {
-			divisor = -divisor;
-			value.intValue = -value.intValue;
-			negative = true;
+		    dividend = value.getIntValue();
+		    divisor = value2.getIntValue();
+
+		    if (dividend == Integer.MIN_VALUE && divisor == -1) {
+		        // Avoid integer overflow on (Integer.MIN_VALUE / -1)
+		        quotient = Integer.MIN_VALUE;
+		    } else {
+		        quotient = dividend / divisor;
+		        // Round down to a smaller negative number if
+		        // there is a remainder and the quotient is
+		        // negative or zero and the signs don't match.
+		        if (((quotient < 0) ||
+		                ((quotient == 0) &&
+		                    (((dividend < 0) && (divisor > 0)) ||
+		                    ((dividend > 0) && (divisor < 0))))) &&
+		                ((quotient * divisor) != dividend)) {
+		            quotient -= 1;
+		        }
 		    }
-		    quot = value.intValue / divisor;
-		    rem = value.intValue % divisor;
-		    if (rem < 0) {
-			rem += divisor;
-			quot -= 1;
-		    }
-		    if (negative) {
-			rem = -rem;
-		    }
-		    value.intValue = (operator == DIVIDE) ? quot : rem;
+		    value.setIntValue(quotient);
 		} else {
-		    if (value2.doubleValue == 0.0) {
+		    double divisor = value2.getDoubleValue();
+		    if (divisor == 0.0) {
 			DivideByZero(interp);
-		    }
-		    value.doubleValue /= value2.doubleValue;
+		    } 
+		    value.setDoubleValue(value.getDoubleValue() / divisor);
 		}
 		break;
-	    case PLUS:
-		if (value.type == ExprValue.INT) {
-		    value.intValue = value.intValue + value2.intValue;
+	    case MOD:
+		int dividend, divisor, remainder;
+		boolean neg_divisor = false;
+
+		if (value2.getIntValue() == 0) {
+		    DivideByZero(interp);
+		}
+
+		// remainder = dividend % divisor
+		//
+		// In Tcl, the sign of the remainder must match
+		// the sign of the divisor. The absolute value of
+		// the remainder must be smaller than the divisor.
+		//
+		// In Java, the remainder can be negative only if
+		// the dividend is negative. The remainder will
+		// always be smaller than the divisor.
+		//
+		// See: http://mindprod.com/jgloss/modulus.html
+
+		dividend = value.getIntValue();
+		divisor = value2.getIntValue();
+
+		if ( dividend == Integer.MIN_VALUE && divisor == -1 ) {
+		    // Avoid integer overflow on (Integer.MIN_VALUE % -1)
+		    remainder = 0;
 		} else {
-		    value.doubleValue += value2.doubleValue;
+		    if (divisor < 0) {
+		        divisor = -divisor;
+		        dividend = -dividend; // Note: -Integer.MIN_VALUE == Integer.MIN_VALUE
+		        neg_divisor = true;
+		    }
+		    remainder = dividend % divisor;
+
+		    // remainder is (remainder + divisor) when the
+		    // remainder is negative. Watch out for the
+		    // special case of a Integer.MIN_VALUE dividend
+		    // and a negative divisor. Don't add the divisor
+		    // in that case because the remainder should
+		    // not be negative.
+
+		    if (remainder < 0 && !(neg_divisor && (dividend == Integer.MIN_VALUE))) {
+		        remainder += divisor;
+		    }
+		}
+		if ((neg_divisor && (remainder > 0)) ||
+		        (!neg_divisor && (remainder < 0))) {
+		    remainder = -remainder;
+		}
+		value.setIntValue(remainder);
+		break;
+	    case PLUS:
+		if (value.isIntType()) {
+		    value.setIntValue( value.getIntValue() + value2.getIntValue() );
+		} else {
+		    value.setDoubleValue( value.getDoubleValue() + value2.getDoubleValue() );
 		}
 		break;
 	    case MINUS:
-		if (value.type == ExprValue.INT) {
-		    value.intValue = value.intValue - value2.intValue;
+		if (value.isIntType()) {
+		    value.setIntValue( value.getIntValue() - value2.getIntValue() );
 		} else {
-		    value.doubleValue -= value2.doubleValue;
+		    value.setDoubleValue( value.getDoubleValue() - value2.getDoubleValue() );
 		}
 		break;
 	    case LEFT_SHIFT:
-		value.intValue <<= (int) value2.intValue;
+		// In Java, a left shift operation will shift bits from 0
+		// to 31 places to the left. For an int left operand
+		// the right operand value is implicitly (value & 0x1f),
+		// so a negative shift amount is in the 0 to 31 range.
+
+		int left_shift_num = value.getIntValue();
+		int left_shift_by = value2.getIntValue();
+		if (left_shift_by >= 32) {
+		    left_shift_num = 0;
+		} else {
+		    left_shift_num <<= left_shift_by;
+		}
+		value.setIntValue(left_shift_num);
 		break;
 	    case RIGHT_SHIFT:
-		// The following code is a bit tricky:  it ensures that
-		// right shifts propagate the sign bit even on machines
-		// where ">>" won't do it by default.
+		// In Java, a right shift operation will shift bits from 0
+		// to 31 places to the right and propagate the sign bit.
+		// For an int left operand, the right operand is implicitly
+		// (value & 0x1f), so a negative shift is in the 0 to 31 range.
 
-		if (value.intValue < 0) {
-		    value.intValue =
-			    ~((~value.intValue) >> value2.intValue);
+		int right_shift_num = value.getIntValue();
+		int right_shift_by = value2.getIntValue();
+		if (right_shift_by >= 32) {
+		    if (right_shift_num < 0) {
+		        right_shift_num = -1;
+		    } else {
+		        right_shift_num = 0;
+		    }
 		} else {
-		    value.intValue >>= (int) value2.intValue;
+		    right_shift_num >>= right_shift_by;
 		}
+		value.setIntValue(right_shift_num);
 		break;
 	    case LESS:
-		if (value.type == ExprValue.INT) {
-		    value.intValue =
-			(value.intValue < value2.intValue) ? 1:0;
-		} else if (value.type == ExprValue.DOUBLE) {
-		    value.intValue =
-			(value.doubleValue < value2.doubleValue) ? 1:0;
+		if (value.isIntType()) {
+		    value.setIntValue(
+			(value.getIntValue() < value2.getIntValue()) ? 1:0);
+		} else if (value.isDoubleType()) {
+		    value.setIntValue(
+			(value.getDoubleValue() < value2.getDoubleValue()) ? 1:0);
 		} else {
-		    value.intValue = (value.stringValue.compareTo(
-			    value2.stringValue) < 0) ? 1:0;
+		    value.setIntValue( (value.getStringValue().compareTo(
+			    value2.getStringValue()) < 0) ? 1:0);
 		}
-		value.type = ExprValue.INT;
 		break;
 	    case GREATER:
-		if (value.type == ExprValue.INT) {
-		    value.intValue =
-			(value.intValue > value2.intValue) ? 1:0;
-		} else if (value.type == ExprValue.DOUBLE) {
-		    value.intValue =
-			(value.doubleValue > value2.doubleValue) ? 1:0;
+		if (value.isIntType()) {
+		    value.setIntValue(
+			(value.getIntValue() > value2.getIntValue()) ? 1:0);
+		} else if (value.isDoubleType()) {
+		    value.setIntValue(
+			(value.getDoubleValue() > value2.getDoubleValue()) ? 1:0);
 		} else {
-		    value.intValue = (value.stringValue.compareTo(
-			    value2.stringValue) > 0)? 1:0;
+		    value.setIntValue( (value.getStringValue().compareTo(
+			    value2.getStringValue()) > 0)? 1:0);
 		}
-		value.type = ExprValue.INT;
 		break;
 	    case LEQ:
-		if (value.type == ExprValue.INT) {
-		    value.intValue =
-			(value.intValue <= value2.intValue) ? 1:0;
-		} else if (value.type == ExprValue.DOUBLE) {
-		    value.intValue =
-			(value.doubleValue <= value2.doubleValue) ? 1:0;
+		if (value.isIntType()) {
+		    value.setIntValue(
+			(value.getIntValue() <= value2.getIntValue()) ? 1:0);
+		} else if (value.isDoubleType()) {
+		    value.setIntValue(
+			(value.getDoubleValue() <= value2.getDoubleValue()) ? 1:0);
 		} else {
-		    value.intValue = (value.stringValue.compareTo(
-			    value2.stringValue) <= 0) ? 1:0;
+		    value.setIntValue( (value.getStringValue().compareTo(
+			    value2.getStringValue()) <= 0) ? 1:0);
 		}
-		value.type = ExprValue.INT;
 		break;
 	    case GEQ:
-		if (value.type == ExprValue.INT) {
-		    value.intValue =
-			(value.intValue >= value2.intValue) ? 1:0;
-		} else if (value.type == ExprValue.DOUBLE) {
-		    value.intValue =
-			(value.doubleValue >= value2.doubleValue) ? 1:0;
+		if (value.isIntType()) {
+		    value.setIntValue(
+			(value.getIntValue() >= value2.getIntValue()) ? 1:0);
+		} else if (value.isDoubleType()) {
+		    value.setIntValue(
+			(value.getDoubleValue() >= value2.getDoubleValue()) ? 1:0);
 		} else {
-		    value.intValue = (value.stringValue.compareTo(
-			    value2.stringValue) >= 0) ? 1:0;
+		    value.setIntValue( (value.getStringValue().compareTo(
+			    value2.getStringValue()) >= 0) ? 1:0);
 		}
-		value.type = ExprValue.INT;
 		break;
 	    case EQUAL:
-		if (value.type == ExprValue.INT) {
-		    value.intValue =
-			(value.intValue == value2.intValue) ? 1:0;
-		} else if (value.type == ExprValue.DOUBLE) {
-		    value.intValue =
-			(value.doubleValue == value2.doubleValue) ? 1:0;
+		if (value.isIntType()) {
+		    value.setIntValue(
+			(value.getIntValue() == value2.getIntValue()) ? 1:0);
+		} else if (value.isDoubleType()) {
+		    value.setIntValue(
+			(value.getDoubleValue() == value2.getDoubleValue()) ? 1:0);
 		} else {
-		    value.intValue = (value.stringValue.compareTo(
-			    value2.stringValue) == 0) ? 1:0;
+		    value.setIntValue( (value.getStringValue().compareTo(
+			    value2.getStringValue()) == 0) ? 1:0);
 		}
-		value.type = ExprValue.INT;
 		break;
 	    case NEQ:
-		if (value.type == ExprValue.INT) {
-		    value.intValue =
-			(value.intValue != value2.intValue) ? 1:0;
-		} else if (value.type == ExprValue.DOUBLE) {
-		    value.intValue =
-			(value.doubleValue != value2.doubleValue) ? 1:0;
+		if (value.isIntType()) {
+		    value.setIntValue(
+			(value.getIntValue() != value2.getIntValue()) ? 1:0);
+		} else if (value.isDoubleType()) {
+		    value.setIntValue(
+			(value.getDoubleValue() != value2.getDoubleValue()) ? 1:0);
 		} else {
-		    value.intValue = (value.stringValue.compareTo(
-			    value2.stringValue) != 0) ? 1:0;
+		    value.setIntValue( (value.getStringValue().compareTo(
+			    value2.getStringValue()) != 0) ? 1:0);
 		}
-		value.type = ExprValue.INT;
+		break;
+	    case STREQ:
+		// Will compare original String values from token or variable
+		value.setIntValue( (value.getStringValue().compareTo(
+		    value2.getStringValue()) == 0) ? 1:0);
+		break;
+	    case STRNEQ:
+		value.setIntValue( (value.getStringValue().compareTo(
+		    value2.getStringValue()) == 0) ? 0:1);
 		break;
 	    case BIT_AND:
-		value.intValue &= value2.intValue;
+		value.setIntValue( value.getIntValue() & value2.getIntValue() );
 		break;
 	    case BIT_XOR:
-		value.intValue ^= value2.intValue;
+		value.setIntValue( value.getIntValue() ^ value2.getIntValue() );
 		break;
 	    case BIT_OR:
-		value.intValue |= value2.intValue;
+		value.setIntValue( value.getIntValue() | value2.getIntValue() );
 		break;
 
 	    // For AND and OR, we know that the first value has already
@@ -881,26 +1202,27 @@ class Expression {
 	    // the possibility of int vs. double for the second value.
 
 	    case AND:
-		if (value2.type == ExprValue.DOUBLE) {
-		    value2.intValue = (value2.doubleValue != 0) ? 1:0;
-		    value2.type = ExprValue.INT;
+		if (value2.isDoubleType()) {
+		    value2.setIntValue((value2.getDoubleValue() != 0.0) ? 1:0);
 		}
-		value.intValue =
-			((value.intValue!=0) && (value2.intValue!=0)) ? 1:0;
+		value.setIntValue(
+			((value.getIntValue()!=0) && (value2.getIntValue()!=0)) ? 1:0);
 		break;
 	    case OR:
-		if (value2.type == ExprValue.DOUBLE) {
-		    value2.intValue = (value2.doubleValue != 0) ? 1:0;
-		    value2.type = ExprValue.INT;
+		if (value2.isDoubleType()) {
+		    value2.setIntValue((value2.getDoubleValue() != 0.0) ? 1:0);
 		}
-		value.intValue = 
-			((value.intValue!=0) || (value2.intValue!=0)) ? 1:0;
+		value.setIntValue( 
+			((value.getIntValue()!=0) || (value2.getIntValue()!=0)) ? 1:0);
 		break;
 
 	    case COLON:
 		SyntaxError(interp);
-	    }
 	}
+
+	// release right hand value
+        releaseExprValue(value2);
+        return;
     }
 
     /**
@@ -919,7 +1241,8 @@ class Expression {
     private ExprValue ExprLex(Interp interp) throws TclException {
 	char c, c2;
 
-	while (m_ind < m_len && Character.isWhitespace(m_expr.charAt(m_ind))) {
+	while (m_ind < m_len && (((c = m_expr.charAt(m_ind)) == ' ') ||
+                Character.isWhitespace(c))) {
 	    m_ind++;
 	}
 	if (m_ind >= m_len) {
@@ -940,15 +1263,40 @@ class Expression {
 	    c2 = '\0';
 	}
 
-	if ((c != '+')  && (c != '-')) {
+	if ((c != '+') && (c != '-')) {
+	    if (m_ind == m_len - 1) {
+	        // Integer shortcut when only 1 character left
+	        switch (c) {
+	            case '0':
+	            case '1':
+	            case '2':
+	            case '3':
+	            case '4':
+	            case '5':
+	            case '6':
+	            case '7':
+	            case '8':
+	            case '9':
+	                m_ind++;
+	                m_token = VALUE;
+	                ExprValue value = grabExprValue();
+	                value.setIntValue(c - '0',
+	                    Character.toString(c));
+	                return value;
+	        }
+	    }
 	    final boolean startsWithDigit = Character.isDigit(c);
-	    if (startsWithDigit && looksLikeInt(m_expr, m_len, m_ind)) {
-		StrtoulResult res = Util.strtoul(m_expr, m_ind, 0);
+	    if (startsWithDigit && looksLikeInt(m_expr, m_len, m_ind, false)) {
+		StrtoulResult res = interp.strtoulResult;
+		Util.strtoul(m_expr, m_ind, 0, res);
 
 		if (res.errno == 0) {
+		    String token = m_expr.substring(m_ind, res.index);
 		    m_ind = res.index;
 		    m_token = VALUE;
-		    return new ExprValue(res.value);
+		    ExprValue value = grabExprValue();
+		    value.setIntValue((int) res.value, token);
+		    return value;
 		} else {
 		    if (res.errno == TCL.INTEGER_RANGE) {
 			IntegerTooLarge(interp);
@@ -956,11 +1304,16 @@ class Expression {
 		}
 	    } else if (startsWithDigit || (c == '.')
 		    || (c == 'n') || (c == 'N')) {
-		StrtodResult res = Util.strtod(m_expr, m_ind);
+		//StrtodResult res = new StrtodResult();
+		StrtodResult res = interp.strtodResult;
+		Util.strtod(m_expr, m_ind, res);
 		if (res.errno == 0) {
+                    String token = m_expr.substring(m_ind, res.index);
 		    m_ind = res.index;
 		    m_token = VALUE;
-		    return new ExprValue(res.value);
+		    ExprValue value = grabExprValue();
+		    value.setDoubleValue(res.value, token);
+		    return value;
 		} else {
 		    if (res.errno == TCL.DOUBLE_RANGE) {
 			if (res.value != 0) {
@@ -984,9 +1337,10 @@ class Expression {
 	    m_ind = pres.nextIndex;
 
 	    if (interp.noEval != 0) {
-		retval = new ExprValue(0);
+		retval = grabExprValue();
+		retval.setIntValue(0);
 	    } else {
-		retval = ExprParseString(interp, pres.value.toString());
+		retval = ExprParseObject(interp, pres.value);
 	    }
 	    pres.release();
 	    return retval;
@@ -996,9 +1350,10 @@ class Expression {
 	    m_ind = pres.nextIndex;
 
 	    if (interp.noEval != 0) {
-		retval = new ExprValue(0);
+		retval = grabExprValue();
+		retval.setIntValue(0);
 	    } else {
-		retval = ExprParseString(interp, pres.value.toString());
+		retval = ExprParseObject(interp, pres.value);
 	    }
 	    pres.release();
 	    return retval;
@@ -1016,10 +1371,11 @@ class Expression {
 
 	    if (interp.noEval != 0) {
 	  //      System.out.println("returning noEval zero value");
-		retval = new ExprValue(0);
+		retval = grabExprValue();
+		retval.setIntValue(0);
 	    } else {
 	   //     System.out.println("returning value string ->" + pres.value.toString() + "<-" );
-		retval = ExprParseString(interp, pres.value.toString());
+		retval = ExprParseObject(interp, pres.value);
 	    }
 	    pres.release();
 	    return retval;
@@ -1028,9 +1384,10 @@ class Expression {
 	    pres = ParseAdaptor.parseBraces(interp, m_expr, m_ind, m_len);
 	    m_ind = pres.nextIndex;
 	    if (interp.noEval != 0) {
-		retval = new ExprValue(0);
+		retval = grabExprValue();
+		retval.setIntValue(0);
 	    } else {
-		retval = ExprParseString(interp, pres.value.toString());
+		retval = ExprParseObject(interp, pres.value);
 	    }
 	    pres.release();
 	    return retval;
@@ -1150,12 +1507,46 @@ class Expression {
 	    m_token = BIT_NOT;
 	    return null;
 
+	case 'e':
+	case 'n':
+	    if (c == 'e' && c2 == 'q') {
+	        m_ind += 1;
+	        m_token = STREQ;
+	        return null;
+	    } else if (c == 'n' && c2 == 'e') {
+	        m_ind += 1;
+	        m_token = STRNEQ;
+	        return null;
+	    }
+            // Fall through to default
+
 	default:
 	    if (Character.isLetter(c)) {
 		// Oops, re-adjust m_ind so that it points to the beginning
-		// of the function name.
+		// of the function name or literal.
 
 		m_ind--;
+
+		//
+		// Check for boolean literals (true, false, yes, no, on, off)
+		//
+
+		String substr = m_expr.substring(m_ind);
+		/*
+		System.out.println("default char '" + c + "' str is \"" +
+		    m_expr + "\" and m_ind " + m_ind + " substring is \"" +
+		    substr + "\"");
+		*/
+
+		String tok = getBooleanToken(substr);
+		if (tok != null) {
+		    m_ind += tok.length();
+		    m_token = VALUE;
+		    ExprValue value = grabExprValue();
+		    value.setStringValue(tok);
+		    return value;
+		}
+
 		return mathFunction(interp);
 	    }
 	    m_token = UNKNOWN;
@@ -1176,7 +1567,7 @@ class Expression {
 	ExprValue value;
 	String funcName;
 	MathFunction mathFunc;
-	TclObject argv[] = null;
+	ExprValue[] values = null;
 	int numArgs;
 
 	// Find the end of the math function's name and lookup the MathFunc
@@ -1221,7 +1612,7 @@ class Expression {
 		SyntaxError(interp);
 	    }
 	} else {
-	    argv = new TclObject[numArgs];
+	    values = new ExprValue[numArgs];
 
 	    for (int i = 0; ; i++) {
 		value = ExprGetValue(interp, -1);
@@ -1237,33 +1628,11 @@ class Expression {
 		            "too few arguments for math function");
 		}
 
-		if (value.type == ExprValue.STRING) {
-		    throw new TclException(interp,
-			"argument to math function didn't have numeric value");
-		}
-    
-		// Copy the value to the argument record, converting it if
-		// necessary.
+		values[i] = value;
 
-		if (value.type == ExprValue.INT) {
-		    if (mathFunc.argTypes[i] == MathFunction.DOUBLE) {
-			argv[i] = TclDouble.newInstance((int) value.intValue);
-		    } else {
-			argv[i] = TclInteger.newInstance(
-				(int) value.intValue);
-		    }
-		} else {
-		    if (mathFunc.argTypes[i] == MathFunction.INT) {
-			argv[i] = TclInteger.newInstance((int)
-				value.doubleValue);
-		    } else {
-			argv[i] = TclDouble.newInstance(value.doubleValue);
-		    }
-		}
-    
 		// Check for a comma separator between arguments or a
 		// close-paren to end the argument list.
-    
+
 		if (i == (numArgs-1)) {
 		    if (m_token == CLOSE_PAREN) {
 			break;
@@ -1288,31 +1657,103 @@ class Expression {
 
 	m_token = VALUE;
 	if (interp.noEval != 0) {
-	    return new ExprValue(0);
+	    ExprValue rvalue = grabExprValue();
+	    rvalue.setIntValue(0);
+	    return rvalue;
 	} else {
-	    /*
-	     * Invoke the function and copy its result back into valuePtr.
-	     */
-	    return mathFunc.apply(interp, argv);
+	    // Invoke the function and copy its result back into valuePtr.
+	    return evalMathFunction(interp, mathFunc, values);
 	}
+    }
+
+    /**
+     * This procedure will lookup and invoke a math function
+     * given the name of the function and an array of ExprValue
+     * arguments. Each ExprValue is released before the function
+     * exits. This method is intended to be used by other modules
+     * that may need to invoke a math function at runtime. It is
+     * assumed that the caller has checked the number of arguments,
+     * the type of the arguments will be adjusted before invocation
+     * if needed.
+     */
+
+    ExprValue
+    evalMathFunction(Interp interp, String funcName, ExprValue[] values)
+        throws TclException
+    {
+        MathFunction mathFunc = (MathFunction) mathFuncTable.get(funcName);
+        if (mathFunc == null) {
+            throw new TclException(interp,
+        	    "unknown math function \"" + funcName + "\"");
+        }
+        return evalMathFunction(interp, mathFunc, values);
+    }
+
+    /**
+     * This procedure implement a math function invocation.
+     * See the comments for the function above, note that
+     * this method is used when the math function pointer
+     * has already been looked up.
+     */
+
+    ExprValue
+    evalMathFunction(Interp interp, MathFunction mathFunc, ExprValue[] values)
+        throws TclException
+    {
+        // Ensure that arguments match the int/double
+        // expectations of the math function.
+        if (mathFunc.argTypes.length != values.length) {
+            if (values.length < mathFunc.argTypes.length) {
+                throw new TclException(interp,
+                    "too few arguments for math function");
+            } else {
+                throw new TclException(interp,
+                    "too many arguments for math function");
+            }
+        }
+        for (int i=0; i < values.length ; i++) {
+            ExprValue value = values[i];
+            if (value.isStringType()) {
+                throw new TclException(interp,
+                    "argument to math function didn't have numeric value");
+            } else if (value.isIntType()) {
+                if (mathFunc.argTypes[i] == MathFunction.DOUBLE) {
+                    value.setDoubleValue((double) value.getIntValue());
+                }
+            } else {
+                if (mathFunc.argTypes[i] == MathFunction.INT) {
+                    value.setIntValue((int) value.getDoubleValue());
+                }
+            }
+        }
+
+        ExprValue rval = mathFunc.apply(interp, values);
+        // Release ExprValue elements in values array
+        for (int i=0; i < values.length ; i++) {
+            releaseExprValue(values[i]);
+        }
+        return rval;
     }
 
     /**
      * This procedure decides whether the leading characters of a
      * string look like an integer or something else (such as a
-     * floating-point number or string).
+     * floating-point number or string). If the whole flag is
+     * true then the entire string must look like an integer.
      * @return a boolean value indicating if the string looks like an integer.
      */
 
     static boolean
-    looksLikeInt(String s, int len, int i) {
-	while (i < len && Character.isWhitespace(s.charAt(i))) {
+    looksLikeInt(String s, int len, int i, boolean whole) {
+	char c;
+	while (i < len && (((c = s.charAt(i)) == ' ') ||
+                Character.isWhitespace(c))) {
 	    i++;
 	}
 	if (i >= len) {
 	    return false;
 	}
-	char c = s.charAt(i);
+	c = s.charAt(i);
 	if ((c == '+') || (c == '-')) {
 	    i++;
 	    if (i >= len) {
@@ -1331,21 +1772,40 @@ class Expression {
             return true;
 	}
 
-//ported from C code
         c = s.charAt(i);
-        if ((c != '.') && (c != 'e') && (c != 'E')) {
+
+        if (!whole && (c != '.') && (c != 'E') && (c != 'e') ) {
             return true;
         }
-
-//original
-/*
-	if (i < len) {
-	    c = s.charAt(i);
-	    if ((c == '.') || (c == 'e') || (c == 'E')) {
-		return false;
-	    }
-	}
-*/
+        if (c == 'e' || c == 'E') {
+            // Could be a double like 1e6 or 1e-1 but
+            // it could also be 1eq2. If the next
+            // character is not a digit or a + or -,
+            // then this must not be a double. If the
+            // whole string must look like an integer
+            // then we know this is not an integer.
+            if (whole) {
+                return false;
+            } else if (i+1 >= len) {
+                return true;
+            }
+            c = s.charAt(i+1);
+            if (c != '+' && c != '-' && !Character.isDigit(c)) {
+                // Does not look like "1e1", "1e+1", or "1e-1"
+                // so strtoul would parse the text leading up
+                // to the 'e' as an integer.
+                return true;
+            }
+        }
+        if (whole) {
+            while (i < len && (((c = s.charAt(i)) == ' ') ||
+                    Character.isWhitespace(c))) {
+                i++;
+            }
+            if (i >= len) {
+                return true;
+            }
+        }
 
 	return false;
     }
@@ -1357,12 +1817,9 @@ class Expression {
      */
 
     static void ExprMakeString(Interp interp, ExprValue value) {
-	if (value.type == ExprValue.INT) {
-	    value.stringValue = Long.toString(value.intValue);
-	} else if (value.type == ExprValue.DOUBLE) {
-	    value.stringValue = Double.toString(value.doubleValue);
+	if (value.isIntOrDoubleType()) {
+	    value.toStringType();
 	}
-	value.type = ExprValue.STRING;
     }
 
     static void checkIntegerRange(Interp interp,double d) throws TclException {
@@ -1384,6 +1841,122 @@ class Expression {
 	    Expression.DoubleTooLarge(interp);
 	}
     }
+
+    // If the string starts with a boolean token, then
+    // return the portion of the string that matched
+    // a boolean token. Otherwise, return null.
+
+    static String getBooleanToken(String tok) {
+        int length = tok.length();
+        if ( length == 0 ) {
+            return null;
+        }
+        char c = tok.charAt(0);
+        switch (c) {
+            case 'f':
+                if (tok.startsWith("false")) {
+                    return "false";
+                }
+                if (tok.startsWith("fals")) {
+                    return "fals";
+                }
+                if (tok.startsWith("fal")) {
+                    return "fal";
+                }
+                if (tok.startsWith("fa")) {
+                    return "fa";
+                }
+                if (tok.startsWith("f")) {
+                    return "f";
+                }
+            case 'n':
+                if (tok.startsWith("no")) {
+                    return "no";
+                }
+                if (tok.startsWith("n")) {
+                    return "n";
+                }
+            case 'o':
+                if (tok.startsWith("off")) {
+                    return "off";
+                }
+                if (tok.startsWith("of")) {
+                    return "of";
+                }
+                if (tok.startsWith("on")) {
+                    return "on";
+                }
+            case 't':
+                if (tok.startsWith("true")) {
+                    return "true";
+                }
+                if (tok.startsWith("tru")) {
+                    return "tru";
+                }
+                if (tok.startsWith("tr")) {
+                    return "tr";
+                }
+                if (tok.startsWith("t")) {
+                    return "t";
+                }
+            case 'y':
+                if (tok.startsWith("yes")) {
+                    return "yes";
+                }
+                if (tok.startsWith("ye")) {
+                    return "ye";
+                }
+                if (tok.startsWith("y")) {
+                    return "y";
+                }
+        }
+        return null;
+    }
+
+    // Get an ExprValue object out of the cache
+    // of ExprValues. These values will be released
+    // later on by a call to releaseExprValue. Don't
+    // bother with release on syntax or other errors
+    // since the exprValueCache will refill itself.
+
+    ExprValue grabExprValue() {
+        final int length = cachedExprValue.length;
+        for (int i=0; i < length; i++) {
+            if (cachedExprValue[i] != null) {
+                ExprValue val = cachedExprValue[i];
+                cachedExprValue[i] = null;
+                return val;
+            }
+        }
+        return new ExprValue(0, null);
+    }
+
+    void releaseExprValue(ExprValue val) {
+        final int length = cachedExprValue.length;
+        for (int i=0; i < length; i++) {
+            if (cachedExprValue[i] == null) {
+                cachedExprValue[i] = val;
+                return;
+            }
+        }
+        // The cache is already full, GC the value
+
+        // Check for duplicate objects
+        if (false) {
+        for (int i=0; i < cachedExprValue.length ; i++) {
+            for (int j=0; j < cachedExprValue.length ; j++) {
+                if ((j == i) || (cachedExprValue[i] == null)) {
+                    continue;
+                }
+                if (cachedExprValue[i] == cachedExprValue[j]) {
+                    throw new TclRuntimeError(
+                        "same object at " + i + " and " + j);
+                }
+            }
+        }
+        }
+    }
+
 }
 
 abstract class MathFunction {
@@ -1391,9 +1964,9 @@ abstract class MathFunction {
     static final int DOUBLE = 1;
     static final int EITHER = 2;
 
-    int argTypes[];
+    int[] argTypes;
 
-    abstract ExprValue apply(Interp interp, TclObject argv[])
+    abstract ExprValue apply(Interp interp, ExprValue[] values)
 	    throws TclException;
 }
 
@@ -1421,11 +1994,13 @@ abstract class NoArgMathFunction extends MathFunction {
 
 
 class Atan2Function extends BinaryMathFunction {
-    ExprValue apply(Interp interp, TclObject argv[])
+    ExprValue apply(Interp interp, ExprValue[] values)
 	    throws TclException {
-	return new ExprValue(Math.atan2(
-		TclDouble.get(interp, argv[0]),
-		TclDouble.get(interp, argv[1])));
+	ExprValue value = interp.expr.grabExprValue();
+	value.setDoubleValue(Math.atan2(
+		values[0].getDoubleValue(),
+		values[1].getDoubleValue()));
+	return value;
     }
 }
 
@@ -1435,23 +2010,25 @@ class AbsFunction extends MathFunction {
 	argTypes[0] = EITHER;
     }
 
-    ExprValue apply(Interp interp, TclObject argv[])
+    ExprValue apply(Interp interp, ExprValue[] values)
 	    throws TclException {
-	if (argv[0].getInternalRep() instanceof TclDouble) {
-	    double d = TclDouble.get(interp, argv[0]);
+	ExprValue value = interp.expr.grabExprValue();
+	if (values[0].isDoubleType()) {
+	    double d = values[0].getDoubleValue();
 	    if (d>0) {
-		return new ExprValue(d);
+		value.setDoubleValue(d);
 	    } else {
-		return new ExprValue(-d);
+		value.setDoubleValue(-d);
 	    }
 	} else {
-	    int i = TclInteger.get(interp, argv[0]);
+	    int i = values[0].getIntValue();
 	    if (i>0) {
-		return new ExprValue(i);
+		value.setIntValue(i);
 	    } else {
-		return new ExprValue(-i);
+		value.setIntValue(-i);
 	    }
 	}
+        return value;
     }
 }
 
@@ -1461,9 +2038,15 @@ class DoubleFunction extends MathFunction {
 	argTypes[0] = EITHER;
     }
 
-    ExprValue apply(Interp interp, TclObject argv[])
+    ExprValue apply(Interp interp, ExprValue[] values)
 	    throws TclException {
-	return new ExprValue(TclDouble.get(interp, argv[0]));
+	ExprValue value = interp.expr.grabExprValue();
+	if (values[0].isIntType()) {
+	    value.setDoubleValue( (double) values[0].getIntValue() );
+	} else {
+	    value.setDoubleValue( values[0].getDoubleValue() );
+	}
+	return value;
     }
 }
 
@@ -1473,11 +2056,17 @@ class IntFunction extends MathFunction {
 	argTypes[0] = EITHER;
     }
 
-    ExprValue apply(Interp interp, TclObject argv[])
+    ExprValue apply(Interp interp, ExprValue[] values)
 	    throws TclException {
-	double d = TclDouble.get(interp, argv[0]);
-	Expression.checkIntegerRange(interp, d);
-	return new ExprValue((int) d);
+	ExprValue value = interp.expr.grabExprValue();
+	if (values[0].isIntType()) {
+	    value.setIntValue( values[0].getIntValue() );
+	} else {
+	    double d = values[0].getDoubleValue();
+	    Expression.checkIntegerRange(interp, d);
+	    value.setIntValue( (int) d );
+	}
+	return value;
     }
 }
 
@@ -1487,31 +2076,35 @@ class RoundFunction extends MathFunction {
 	argTypes[0] = EITHER;
     }
 
-    ExprValue apply(Interp interp, TclObject argv[])
+    ExprValue apply(Interp interp, ExprValue[] values)
 	    throws TclException {
-	if (argv[0].getInternalRep() instanceof TclDouble) {
-	    double d = TclDouble.get(interp, argv[0]);
+	ExprValue value = interp.expr.grabExprValue();
+	if (values[0].isDoubleType()) {
+	    double d = values[0].getDoubleValue();
 	    if (d < 0) {
 		Expression.checkIntegerRange(interp, d-0.5);
-		return new ExprValue((int)(d-0.5));
+		value.setIntValue((int)(d-0.5));
 	    } else {
 		Expression.checkIntegerRange(interp, d+0.5);
-		return new ExprValue((int)(d+0.5));
+		value.setIntValue((int)(d+0.5));
 	    }
 	} else {
-	    return new ExprValue(TclInteger.get(interp, argv[0]));
+	    value.setIntValue( values[0].getIntValue() );
 	}
+        return value;
     }
 }
 
 class PowFunction extends BinaryMathFunction {
-    ExprValue apply(Interp interp, TclObject argv[])
+    ExprValue apply(Interp interp, ExprValue[] values)
 	    throws TclException {
 	double d = Math.pow(
-		TclDouble.get(interp, argv[0]),
-		TclDouble.get(interp, argv[1]));
+		values[0].getDoubleValue(),
+		values[1].getDoubleValue());
 	Expression.checkDoubleRange(interp, d);
-	return new ExprValue(d);
+	ExprValue value = interp.expr.grabExprValue();
+	value.setDoubleValue(d);
+	return value;
     }
 }
 
@@ -1537,131 +2130,158 @@ class $func\Function extends UnaryMathFunction {
  */
 
 class AcosFunction extends UnaryMathFunction {
-    ExprValue apply(Interp interp, TclObject argv[])
+    ExprValue apply(Interp interp, ExprValue[] values)
 	    throws TclException {
-	double d = TclDouble.get(interp, argv[0]);
+	double d = values[0].getDoubleValue();
 	if ((d < -1) || (d > 1)) {
 	    Expression.DomainError(interp);
 	}
-	return new ExprValue(Math.acos(d));
+	ExprValue value = interp.expr.grabExprValue();
+	value.setDoubleValue(Math.acos(d));
+	return value;
     }
 }
 
 class AsinFunction extends UnaryMathFunction {
-    ExprValue apply(Interp interp, TclObject argv[])
+    ExprValue apply(Interp interp, ExprValue[] values)
 	    throws TclException {
-	return new ExprValue(Math.asin(TclDouble.get(interp, argv[0])));
+	ExprValue value = interp.expr.grabExprValue();
+	value.setDoubleValue(Math.asin(values[0].getDoubleValue()));
+	return value;
     }
 }
 
 class AtanFunction extends UnaryMathFunction {
-    ExprValue apply(Interp interp, TclObject argv[])
+    ExprValue apply(Interp interp, ExprValue[] values)
 	    throws TclException {
-	return new ExprValue(Math.atan(TclDouble.get(interp, argv[0])));
+	ExprValue value = interp.expr.grabExprValue();
+	value.setDoubleValue(Math.atan(values[0].getDoubleValue()));
+	return value;
     }
 }
 
 
 class CeilFunction extends UnaryMathFunction {
-    ExprValue apply(Interp interp, TclObject argv[])
+    ExprValue apply(Interp interp, ExprValue[] values)
 	    throws TclException {
-	return new ExprValue(Math.ceil(TclDouble.get(interp, argv[0])));
+	ExprValue value = interp.expr.grabExprValue();
+	value.setDoubleValue(Math.ceil(values[0].getDoubleValue()));
+	return value;
     }
 }
 
 
 class CosFunction extends UnaryMathFunction {
-    ExprValue apply(Interp interp, TclObject argv[])
+    ExprValue apply(Interp interp, ExprValue[] values)
 	    throws TclException {
-	return new ExprValue(Math.cos(TclDouble.get(interp, argv[0])));
+	ExprValue value = interp.expr.grabExprValue();
+	value.setDoubleValue(Math.cos(values[0].getDoubleValue()));
+	return value;
     }
 }
 
 
 class CoshFunction extends UnaryMathFunction {
-    ExprValue apply(Interp interp, TclObject argv[])
+    ExprValue apply(Interp interp, ExprValue[] values)
 	    throws TclException {
-        double x = TclDouble.get(interp, argv[0]);
+	double x = values[0].getDoubleValue();
 	double d1 = Math.pow(Math.E, x);
 	double d2 = Math.pow(Math.E,-x);
 
 	Expression.checkDoubleRange(interp, d1);
 	Expression.checkDoubleRange(interp, d2);
-	return new ExprValue((d1+d2)/2);
+	ExprValue value = interp.expr.grabExprValue();
+	value.setDoubleValue((d1+d2)/2);
+	return value;
     }
 }
 
 class ExpFunction extends UnaryMathFunction {
-    ExprValue apply(Interp interp, TclObject argv[])
+    ExprValue apply(Interp interp, ExprValue[] values)
 	    throws TclException {
-	double d = Math.exp(TclDouble.get(interp, argv[0]));
+	double d = Math.exp(values[0].getDoubleValue());
 	if ((d == Double.NaN) ||
 		(d == Double.NEGATIVE_INFINITY) ||
 		(d == Double.POSITIVE_INFINITY)) {
 	    Expression.DoubleTooLarge(interp);
 	}
-	return new ExprValue(d);
+	ExprValue value = interp.expr.grabExprValue();
+	value.setDoubleValue(d);
+	return value;
     }
 }
 
 
 class FloorFunction extends UnaryMathFunction {
-    ExprValue apply(Interp interp, TclObject argv[])
+    ExprValue apply(Interp interp, ExprValue[] values)
 	    throws TclException {
-	return new ExprValue(Math.floor(TclDouble.get(interp, argv[0])));
+	ExprValue value = interp.expr.grabExprValue();
+	value.setDoubleValue(Math.floor(values[0].getDoubleValue()));
+	return value;
     }
 }
 
 
 class FmodFunction extends BinaryMathFunction {
-    ExprValue apply(Interp interp, TclObject argv[])
+    ExprValue apply(Interp interp, ExprValue[] values)
 	    throws TclException {
- 	return new ExprValue(Math.IEEEremainder(TclDouble.get(interp, 
-                argv[0]), TclDouble.get(interp, argv[1])));
+	double d1 = values[0].getDoubleValue();
+	double d2 = values[1].getDoubleValue();
+	ExprValue value = interp.expr.grabExprValue();
+	value.setDoubleValue(Math.IEEEremainder(d1, d2));
+	return value;
     }
 }
 
 class HypotFunction extends BinaryMathFunction {
-    ExprValue apply(Interp interp, TclObject argv[])
+    ExprValue apply(Interp interp, ExprValue[] values)
 	    throws TclException {
-	double x = TclDouble.get(interp, argv[0]);
-	double y = TclDouble.get(interp, argv[1]);
-	return new ExprValue(Math.sqrt( ((x * x) + (y * y)) )); 
+	double x = values[0].getDoubleValue();
+	double y = values[1].getDoubleValue();
+	ExprValue value = interp.expr.grabExprValue();
+	value.setDoubleValue(Math.sqrt(((x * x) + (y * y)))); 
+	return value;
     }
 }
 
 
 class LogFunction extends UnaryMathFunction {
-    ExprValue apply(Interp interp, TclObject argv[])
+    ExprValue apply(Interp interp, ExprValue[] values)
 	    throws TclException {
-	return new ExprValue(Math.log(TclDouble.get(interp, argv[0])));
+	ExprValue value = interp.expr.grabExprValue();
+	value.setDoubleValue(Math.log(values[0].getDoubleValue())); 
+	return value;
     }
 }
 
 
 class Log10Function extends UnaryMathFunction {
    private static final double log10 = Math.log(10);
-   ExprValue apply(Interp interp, TclObject argv[])
+   ExprValue apply(Interp interp, ExprValue[] values)
 	    throws TclException {
-	return new ExprValue(Math.log(TclDouble.get(interp, argv[0])) 
-                / log10);
-                
+	double d = values[0].getDoubleValue();
+	ExprValue value = interp.expr.grabExprValue();
+	value.setDoubleValue(Math.log(d / log10)); 
+	return value;
    }
 }
 
 
 class SinFunction extends UnaryMathFunction {
-    ExprValue apply(Interp interp, TclObject argv[])
+    ExprValue apply(Interp interp, ExprValue[] values)
 	    throws TclException {
-	return new ExprValue(Math.sin(TclDouble.get(interp, argv[0])));
+	double d = values[0].getDoubleValue();
+	ExprValue value = interp.expr.grabExprValue();
+	value.setDoubleValue(Math.sin(d));
+	return value;
     }
 }
 
 
 class SinhFunction extends UnaryMathFunction {
-   ExprValue apply(Interp interp, TclObject argv[])
+   ExprValue apply(Interp interp, ExprValue[] values)
 	    throws TclException {
-	double x = TclDouble.get(interp, argv[0]);
+	double x = values[0].getDoubleValue();
 
 	double d1 = Math.pow(Math.E, x);
 	double d2 = Math.pow(Math.E,-x);
@@ -1669,32 +2289,42 @@ class SinhFunction extends UnaryMathFunction {
 	Expression.checkDoubleRange(interp, d1);
 	Expression.checkDoubleRange(interp, d2);
 
-	return new ExprValue((d1-d2)/2);
+	ExprValue value = interp.expr.grabExprValue();
+	value.setDoubleValue((d1-d2)/2);
+	return value;
     }
 }
 
 
 class SqrtFunction extends UnaryMathFunction {
-    ExprValue apply(Interp interp, TclObject argv[])
+    ExprValue apply(Interp interp, ExprValue[] values)
 	    throws TclException {
-	return new ExprValue(Math.sqrt(TclDouble.get(interp, argv[0])));
+	double d = values[0].getDoubleValue();
+	ExprValue value = interp.expr.grabExprValue();
+	value.setDoubleValue(Math.sqrt(d));
+	return value;
     }
 }
 
 
 class TanFunction extends UnaryMathFunction {
-    ExprValue apply(Interp interp, TclObject argv[])
+    ExprValue apply(Interp interp, ExprValue[] values)
 	    throws TclException {
-	return new ExprValue(Math.tan(TclDouble.get(interp, argv[0])));
+	double d = values[0].getDoubleValue();
+	ExprValue value = interp.expr.grabExprValue();
+	value.setDoubleValue(Math.tan(d));
+	return value;
     }
 }
 
 class TanhFunction extends UnaryMathFunction {
-    ExprValue apply(Interp interp, TclObject argv[])
+    ExprValue apply(Interp interp, ExprValue[] values)
 	    throws TclException {
-	double x = TclDouble.get(interp, argv[0]);
+	double x = values[0].getDoubleValue();
+	ExprValue value = interp.expr.grabExprValue();
 	if (x == 0) {
-	    return new ExprValue(0.0);
+	    value.setDoubleValue(0.0);
+	    return value;
 	}
 
 	double d1 = Math.pow(Math.E, x);
@@ -1703,7 +2333,8 @@ class TanhFunction extends UnaryMathFunction {
 	Expression.checkDoubleRange(interp, d1);
 	Expression.checkDoubleRange(interp, d2);
 
-	return new ExprValue( (d1 - d2) / (d1 + d2));
+	value.setDoubleValue((d1 - d2) / (d1 + d2));
+	return value;
     }
 }
 
@@ -1740,16 +2371,17 @@ class RandFunction extends NoArgMathFunction {
      * statApply().
      */
 
-    ExprValue apply(Interp interp, TclObject argv[])
+    ExprValue apply(Interp interp, ExprValue[] values)
 	    throws TclException {
-        return(statApply(interp, argv));
+        return(statApply(interp, values));
     }
 
 
-    static ExprValue statApply(Interp interp, TclObject argv[])  
+    static ExprValue statApply(Interp interp, ExprValue[] values)
 	    throws TclException {
 
 	int tmp;
+	ExprValue value = interp.expr.grabExprValue();
 
 	if (!(interp.randSeedInit)) {
 	    interp.randSeedInit = true;
@@ -1771,21 +2403,22 @@ class RandFunction extends NoArgMathFunction {
 	    interp.randSeed += randIM;
 	}
 
-	return new ExprValue( interp.randSeed * (1.0/randIM) );
+	value.setDoubleValue( interp.randSeed * (1.0/randIM) );
+	return value;
     }
 }
 
 
 class SrandFunction extends UnaryMathFunction {
 
-    ExprValue apply(Interp interp, TclObject argv[])
+    ExprValue apply(Interp interp, ExprValue[] values)
 	    throws TclException {
 
 	// Reset the seed.
 
 	interp.randSeedInit = true;
-	interp.randSeed     = (long) TclDouble.get(interp, argv[0]);
-	
+	interp.randSeed     = (long) values[0].getDoubleValue();
+
 	// To avoid duplicating the random number generation code we simply
 	// call the static random number generator in the RandFunction 
 	// class.

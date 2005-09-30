@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.52 2005/09/12 00:00:50 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.53 2005/09/30 02:12:17 mdejong Exp $
  *
  */
 
@@ -267,6 +267,17 @@ int             parserTokensUsed;
 
 // Used ONLY by JavaImportCmd
 Hashtable[] importTable = {new Hashtable(), new Hashtable()};
+
+// Used by callers of Util.strtoul(), also used in FormatCmd.strtoul().
+// There is typically only one instance of a StrtoulResult around
+// at any one time. Callers should exercise care to use the results
+// before any other code could call strtoul() again.
+
+StrtoulResult strtoulResult = new StrtoulResult();
+
+// Used by callers of Util.strtod(). Usage is same as above.
+
+StrtodResult strtodResult = new StrtodResult();
 
 // List of unsafe commands:
 

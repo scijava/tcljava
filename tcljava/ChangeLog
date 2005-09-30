@@ -1,3 +1,61 @@
+2005-09-29  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/jacl/tcl/lang/AfterCmd.java (cmdProc, getAfterEvent):
+        Update Util.strtoul() caller.
+        * src/jacl/tcl/lang/ExprCmd.java (cmdProc):
+        Invoke new Expression.evalSetResult() method.
+        * src/jacl/tcl/lang/ExprValue.java:
+        Rewrite ExprValue class so that it is a mutable value
+        that can be passed around inside Jacl methods.
+        * src/jacl/tcl/lang/Expression.java:
+        Reimplement Jacl's expr module to use 32 bit integers
+        instead of 64 bit integers in calculations. Add support
+        for eq and ne string operators. Create per-interp cache
+        of ExprValue objects to speed up expr processing. When
+        parsing an expr, use the internal rep for integer, double,
+        and boolean types instead of always reparsing from the
+        string representation. Add shortcuts for common strings
+        as expr values. The expr div and mod as well as other
+        operators are now up to date WRT to CVS head of Tcl.
+        Parsing of boolean tokens in an expr has been fixed
+        and math functions have been reimplemented so that
+        they accept ExprValues instead of TclObject values.
+        * src/jacl/tcl/lang/FormatCmd.java (cmdProc):
+        Update Util.strtoul() caller.
+        * src/jacl/tcl/lang/Interp.java (strtoulResult, strtodResult):
+        Add parse result object to avoid allocation for
+        each parse operation.
+        * src/jacl/tcl/lang/Parser.java (eval2, backslash):
+        Set array member to null in case it helps gc faster,
+        update caller of Util.strtoul().
+        * src/jacl/tcl/lang/ScanCmd.java (cmdProc):
+        Update Util.strtoul() caller.
+        * src/jacl/tcl/lang/StringCmd.java (cmdProc):
+        Remove pointless TclBoolean internal rep checking.
+        Update calls to Expression.looksLikeInt() and
+        Util.strtod().
+        * src/jacl/tcl/lang/StrtodResult.java: Add support for
+        updating the result of an already allocated object.
+        * src/jacl/tcl/lang/StrtoulResult.java: Ditto.
+        * src/jacl/tcl/lang/Util.java (strtoul, getInt, getIntForIndex,
+        strtod, getDouble, findElement, getBoolean, traceProc):
+        Optimize number parsing routines. Pass an already allocated
+        object to strtoul and strtod so as to avoid lots of allocations.
+        Support a null interp argument in getInt, getIntForIndex,
+        and getDouble.
+        * src/tcljava/tcl/lang/TclDouble.java (setDoubleFromAny):
+        Check for double and integer objects with no string rep
+        and create a string rep for them if needed.
+        * src/tcljava/tcl/lang/TclInteger.java (setIntegerFromAny):
+        Check for boolean with string rep and optimized boolean
+        to integer cases.
+        * src/tcljava/tcl/lang/TclObject.java (hasNoStringRep):
+        Add access method to determine if object has no string rep.
+        This is needed to check for edge cases when converting
+        objects and during expr evaluations.
+        * tests/tcl/expr.test: Add expr tests from Tcl CVS.
+        * tests/tcl/string.test: Add missing string is tests.
+
 2005-09-21  Mo DeJong  <mdejong@users.sourceforge.net>
 
         Add a constant boolean flag to the TclObject

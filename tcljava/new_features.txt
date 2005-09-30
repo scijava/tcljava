@@ -362,4 +362,17 @@ Jacl exec now works properly under Win XP.
 The info hostname command is now implemented in Jacl.
 
 
+What's new in Tcl/Java 1.4?
+
+(ITCL SUPPORT IN JACL)
+
+The Itcl object extension for Tcl has been ported to Jacl.
+Run "package require Itcl" to load Itcl into Jacl.
+
+(JACL EXPR COMMAND)
+
+Jacl's expr implementation now supports the 'eq' and 'ne'
+string equality operators. The expr implementation has
+also been optimized to improve performance.
+
 </PRE></BODY></HTML>

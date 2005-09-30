@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: StrtodResult.java,v 1.1 1998/10/14 21:09:21 cvsadmin Exp $
+ * RCS: @(#) $Id: StrtodResult.java,v 1.2 2005/09/30 02:12:17 mdejong Exp $
  *
  */
 
@@ -43,27 +43,13 @@ int index;
 
 double value;
 
-
-/*
- *----------------------------------------------------------------------
- *
- * StrtodResult --
- *
- *	Constructs an StrtodResult instance.
- *
- * Results:
- *	None.
- *
- * Side effects.
- *	Fields are initialized.
- *
- *----------------------------------------------------------------------
- */
+// Update a StrtodResult. Note that there is typically
+// just one StrtodResult for each interp.
 
-StrtodResult(
-    double v,				// Initial value for the value field.
-    int i,				// Initial value for the index field.
-    int e)				// Initial value for the errno field.
+void update(
+    double v,				// value for the value field.
+    int i,				// value for the index field.
+    int e)				// value for the errno field.
 {
     value = v;
     index = i;

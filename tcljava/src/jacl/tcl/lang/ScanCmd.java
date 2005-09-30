@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ScanCmd.java,v 1.2 1999/05/09 01:22:09 dejong Exp $
+ * RCS: @(#) $Id: ScanCmd.java,v 1.3 2005/09/30 02:12:17 mdejong Exp $
  *
  */
 
@@ -145,12 +145,14 @@ class ScanCmd implements Command {
 		        }
 		        default: {
 		            if (Character.isDigit(frmtArr[frmtIndex])) {
-			        strul = Util.strtoul(new String(frmtArr), 
-			                frmtIndex, base);
+			        strul = interp.strtoulResult;
+			        Util.strtoul(new String(frmtArr), 
+			                frmtIndex, base, strul);
 			        frmtIndex = strul.index;
 			        width = (int)strul.value;
 			        widthFlag = true;
 			        cont = true;
+			        strul = null;
 		    	    }
 			}
 		    }
@@ -222,13 +224,14 @@ class ScanCmd implements Command {
 			    // scanIndex is moved to the point where we stop
 			    // reading in.
 
+			    strul = interp.strtoulResult;
 			    if (widthFlag) {
-			        strul = Util.strtoul(new String(scanArr,
+			        Util.strtoul(new String(scanArr,
                                         0, width+scanIndex),
-                                        scanIndex, base);
+                                        scanIndex, base, strul);
 			    } else {
-			        strul = Util.strtoul(new String(scanArr),
-                                        scanIndex, base);
+			        Util.strtoul(new String(scanArr),
+                                        scanIndex, base, strul);
 			    }
 			    if (strul.errno != 0) {
 			        scanOK = false;
@@ -298,11 +301,13 @@ class ScanCmd implements Command {
 			    // reading in.
 
 			    if (widthFlag) {
-			        strd = Util.strtod(new String(scanArr,
-                                          0, width+scanIndex), scanIndex);
+			        strd = interp.strtodResult;
+			        Util.strtod(new String(scanArr,
+                                          0, width+scanIndex), scanIndex, strd);
 			    } else {
-			        strd = Util.strtod(new String(scanArr), 
-				        scanIndex);
+			        strd = interp.strtodResult;
+			        Util.strtod(new String(scanArr), 
+				        scanIndex, strd);
 			    }
 			    if (strd.errno != 0) {
 			        scanOK = false;
@@ -463,7 +468,7 @@ class ScanCmd implements Command {
 	if ((numMatched + numUnMatched) != (argv.length - 3)) {
 	    errorDiffVars(interp);
 	}
- 	interp.setResult(TclInteger.newInstance(numMatched));
+ 	interp.setResult(numMatched);
 
     }
 

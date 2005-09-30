@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: AfterCmd.java,v 1.2 2002/04/12 21:00:26 mdejong Exp $
+ * RCS: @(#) $Id: AfterCmd.java,v 1.3 2005/09/30 02:12:17 mdejong Exp $
  *
  */
 
@@ -201,7 +201,7 @@ throws
 	    }
 	}
 	if (info == null) {
-	    info = getAfterEvent(arg.toString());
+	    info = getAfterEvent(interp, arg.toString());
 	}
 	arg.release();
 
@@ -270,7 +270,7 @@ throws
 	 * Return command and type of the given after id.
 	 */
 
-	info = getAfterEvent(argv[2].toString());
+	info = getAfterEvent(interp, argv[2].toString());
 	if (info == null) {
 	   throw new TclException(interp, "event \"" + argv[2] +
 		    "\" doesn't exist");
@@ -338,6 +338,7 @@ getCmdObject(
 
 private Object
 getAfterEvent(
+    Interp interp,
     String string)		// Textual identifier for after event, such
 				// as "after#6".
 {
@@ -345,7 +346,8 @@ getAfterEvent(
 	return null;
     }
 
-    StrtoulResult res = Util.strtoul(string, 6, 10);
+    StrtoulResult res = interp.strtoulResult;
+    Util.strtoul(string, 6, 10, res);
     if (res.errno != 0) {
 	return null;
     }

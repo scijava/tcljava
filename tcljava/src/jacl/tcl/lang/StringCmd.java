@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: StringCmd.java,v 1.5 2005/07/14 03:36:32 mdejong Exp $
+ * RCS: @(#) $Id: StringCmd.java,v 1.6 2005/09/30 02:12:17 mdejong Exp $
  *
  */
 
@@ -364,23 +364,14 @@ throws
 		case STR_IS_BOOL:
 		case STR_IS_TRUE:
 		case STR_IS_FALSE: {
-		    if (obj.getInternalRep() instanceof TclBoolean) {
-			if (((index == STR_IS_TRUE) &&
-			     !TclBoolean.get(interp, obj)) ||
-			    ((index == STR_IS_FALSE) &&
-			     TclBoolean.get(interp, obj))) {
-			  result = false;
-			}
-		    } else {
-			try {
-			    boolean i = TclBoolean.get(null, obj);
-			    if (((index == STR_IS_TRUE) && !i) ||
-				((index == STR_IS_FALSE) && i)) {
-			      result = false;
-			    }
-			} catch (TclException e) {
-			    result = false;
-			}
+		    try {
+		        boolean i = TclBoolean.get(null, obj);
+		        if (((index == STR_IS_TRUE) && !i) ||
+		                ((index == STR_IS_FALSE) && i)) {
+		            result = false;
+		        }
+		    } catch (TclException e) {
+		        result = false;
 		    }
 		    break;
 		}
@@ -400,10 +391,11 @@ throws
 		    // If strtoul gets to the end, we know we either
 		    // received an acceptable int, or over/underflow
 
-		    if (Expression.looksLikeInt(string1, length1, 0)) {
+		    if (Expression.looksLikeInt(string1, length1, 0, false)) {
 			char c = string1.charAt(0);
 			int signIx = (c == '-' || c == '+') ? 1 : 0;
-			StrtoulResult res = Util.strtoul(string1, signIx, 0);
+			StrtoulResult res = interp.strtoulResult;
+			Util.strtoul(string1, signIx, 0, res);
 			if (res.index == length1) {
 			    if (res.errno == TCL.INTEGER_RANGE) {
 				result = false;
@@ -415,7 +407,8 @@ throws
 
 		    char c = string1.charAt(0);
 		    int signIx = (c == '-' || c == '+') ? 1 : 0;
-		    StrtodResult res = Util.strtod(string1, signIx);
+		    StrtodResult res = interp.strtodResult;
+		    Util.strtod(string1, signIx, res);
 		    if (res.errno == TCL.DOUBLE_RANGE) {
 			// if (errno == ERANGE), then it was an over/underflow
 			// problem, but in this method, we only want to know
@@ -459,7 +452,8 @@ throws
 
 		    char c = string1.charAt(0);
 		    int signIx = (c == '-' || c == '+') ? 1 : 0;
-		    StrtoulResult res = Util.strtoul(string1, signIx, 0);
+		    StrtoulResult res = interp.strtoulResult;
+		    Util.strtoul(string1, signIx, 0, res);
 		    if (res.errno == TCL.INTEGER_RANGE) {
 			// if (errno == ERANGE), then it was an over/underflow
 			// problem, but in this method, we only want to know
@@ -553,7 +547,12 @@ throws
 	    // and we have indicated a valid fail index (>= 0)
 
 	    if ((!result) && (failVarObj != null)) {
-		interp.setVar(failVarObj, TclInteger.newInstance(failat), 0);
+//FIXME: Replace with direct int arg later after setVar() changes.
+		interp.setVar(failVarObj.toString(),
+		    null,
+		    //failat,
+		    TclInteger.newInstance(failat),
+		    0);
 	    }
 	    interp.setResult(result);
 	    break;

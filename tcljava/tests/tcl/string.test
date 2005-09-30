@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: string.test,v 1.6 2005/07/14 03:36:32 mdejong Exp $
+# RCS: @(#) $Id: string.test,v 1.7 2005/09/30 02:12:17 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -488,6 +488,13 @@ test string-6.70 {string is true, true} {
 test string-6.71 {string is true, true} {
     string is true on
 } 1
+test string-6.71-2 {string is true} {
+    list \
+        [string is true 1] \
+        [string is true 0] \
+        [string is true 10] \
+
+} {1 0 0}
 test string-6.72 {string is true, false} {
     list [string is true -fail var onto] $var
 } {0 0}

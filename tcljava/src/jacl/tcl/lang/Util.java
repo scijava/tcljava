@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Util.java,v 1.11 2005/07/22 04:47:25 mdejong Exp $
+ * RCS: @(#) $Id: Util.java,v 1.12 2005/09/30 02:12:17 mdejong Exp $
  */
 
 package tcl.lang;
@@ -139,16 +139,17 @@ Util()
  *----------------------------------------------------------------------
  */
 
-static StrtoulResult 
+static void 
 strtoul(
     String s, 		// String of ASCII digits, possibly preceded by
   			// white space.  For bases greater than 10, either
     			// lower- or upper-case digits may be used.
     int start, 		// The index of s where the number starts.
-    int base) 		// Base for conversion.  Must be less than 37.  If 0,
+    int base, 		// Base for conversion.  Must be less than 37.  If 0,
 			// then the base is chosen from the leading characters
 			// of string:  "0x" means hex, "0" means octal, 
 			// anything else means decimal.
+    StrtoulResult strtoulResult) // Location to store results in
 {
     long result = 0;
     int digit;
@@ -156,19 +157,21 @@ strtoul(
     int len = s.length();
     int i = start;
     char c;
-    
+
     // Skip any leading blanks.
-    
-    while (i < len && Character.isWhitespace(s.charAt(i))) {
-	i ++;
+
+    while (i < len && (((c = s.charAt(i)) == ' ') ||
+	    Character.isWhitespace(c))) {
+	i++;
     }
     if (i >= len) {
-	return new StrtoulResult(0, 0, TCL.INVALID_INTEGER);
+        strtoulResult.update(0, 0, TCL.INVALID_INTEGER);
+        return;
     }
-    
+
     // If no base was provided, pick one from the leading characters
     // of the string.
-    
+
     if (base == 0) {
 	c = s.charAt(i);
 	if (c == '0') {
@@ -223,15 +226,15 @@ strtoul(
 	result = result*base + digit;
 	anyDigits = true;
     }
-	    
+
     // See if there were any digits at all.
-	
+
     if (!anyDigits) {
-	return new StrtoulResult(0, 0, TCL.INVALID_INTEGER);
+        strtoulResult.update(0, 0, TCL.INVALID_INTEGER);
     } else if (overflowed) {
-	return new StrtoulResult(0, i, TCL.INTEGER_RANGE);
+        strtoulResult.update(0, i, TCL.INTEGER_RANGE);
     } else {
-	return new StrtoulResult(result, i, 0);
+        strtoulResult.update(result, i, 0);
     }
 }
 
@@ -253,7 +256,7 @@ strtoul(
 
 static int 
 getInt(
-    Interp interp, 	// The current interpreter.
+    Interp interp, 	// The current interpreter. Can be null.
     String s) 		// The string to convert from. Must be in valid
 			// Tcl integer format.
 throws
@@ -262,10 +265,12 @@ throws
     int len = s.length();
     boolean sign;
     int i = 0;
+    char c;
 
     // Skip any leading blanks.
 
-    while (i < len && Character.isWhitespace(s.charAt(i))) {
+    while (i < len && (((c = s.charAt(i)) == ' ') ||
+            Character.isWhitespace(c))) {
 	i ++;
     }
     if (i >= len) {
@@ -273,7 +278,7 @@ throws
 		s + "\"");
     }
 
-    char c = s.charAt(i);
+    c = s.charAt(i);
     if (c == '-') {
 	sign = true;
 	i +=1;
@@ -284,7 +289,13 @@ throws
 	sign = false;
     }
 
-    StrtoulResult res = strtoul(s, i, 0);
+    StrtoulResult res;
+    if (interp == null) {
+        res = new StrtoulResult();
+    } else {
+        res = interp.strtoulResult;
+    }
+    strtoul(s, i, 0, res);
     if (res.errno < 0) {
 	if (res.errno == TCL.INTEGER_RANGE) {
 	    if (interp != null) {
@@ -298,7 +309,8 @@ throws
 	}
     } else if (res.index < len) {
 	for (i = res.index; i<len; i++) {
-	    if (!Character.isWhitespace(s.charAt(i))) {
+	    if (((c = s.charAt(i)) != ' ') &&
+                    !Character.isWhitespace(c)) {
 		throw new TclException(interp, "expected integer but got \"" +
 			      s + "\"" + checkBadOctal(interp, s));
 	    }
@@ -306,9 +318,9 @@ throws
     }
 
     if (sign) {
-	return (int)(- res.value);
+	return (int) (-res.value);
     } else {
-	return (int)(  res.value);
+	return (int) res.value;
     }
 }
 
@@ -334,8 +346,12 @@ throws
  *
  *----------------------------------------------------------------------
  */
-static final int getIntForIndex(Interp interp, TclObject tobj, int endValue)
-    throws TclException {
+static final int getIntForIndex(
+        Interp interp, // Interp object, can be null
+        TclObject tobj,
+        int endValue)
+    throws TclException
+{
     int length, offset;
 
     if (tobj.getInternalRep() instanceof TclInteger) {
@@ -448,12 +464,13 @@ checkBadOctal(
  *----------------------------------------------------------------------
  */
 
-static StrtodResult 
+static void 
 strtod(
     String s, 	// String of ASCII digits, possibly preceded by
 	    	// white space.  For bases greater than 10, either lower- or
    		// upper-case digits may be used.
-    int start)	// The index to the char where the number starts.
+    int start,	// The index to the char where the number starts.
+    StrtodResult strtodResult) // place to store results
 {
     boolean sign = false;
     char c;
@@ -465,16 +482,19 @@ strtod(
 
     // Skip any leading blanks.
 
-    while (i < len && Character.isWhitespace(s.charAt(i))) {
-	i ++;
+    while (i < len && (((c = s.charAt(i)) == ' ') ||
+            Character.isWhitespace(c))) {
+	i++;
     }
     if (i >= len) {
-	return new StrtodResult(0, 0, TCL.INVALID_DOUBLE);
+	strtodResult.update(0, 0, TCL.INVALID_DOUBLE);
+        return;
     }
 
     // Return special value for the string "NaN"
     if (s.substring(i).startsWith("NaN")) {
-        return new StrtodResult(Double.NaN, i + 3, 0);
+	strtodResult.update(Double.NaN, i + 3, 0);
+        return;
     }
 
     c = s.charAt(i);
@@ -491,9 +511,10 @@ strtod(
     // Return special value for the strings "Inf" and "-Inf"
 
     if (s.substring(i).startsWith("Inf")) {
-        return new StrtodResult(
+	strtodResult.update(
             (sign ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY),
             i + 3, 0);
+        return;
     }
 
     // Count the number of digits in the mantissa (including the decimal
@@ -517,17 +538,29 @@ strtod(
 
     // Skim off the exponent.
 
-    if ((CharAt(s, i, len) == 'E') || (CharAt(s, i, len) == 'e')) {
+    c = CharAt(s, i, len);
+    if ((c == 'E') || (c == 'e')) {
 	i += 1;
-	if (CharAt(s, i, len) == '-') {
+        c = CharAt(s, i, len);
+	if (c == '-') {
 	    i += 1;
-	} else if (CharAt(s, i, len) == '+') {
+	} else if (c == '+') {
 	    i += 1;
 	}
 
-	while (Character.isDigit(CharAt(s, i, len))) {
-	    i += 1;
-	}
+        if (i >= len || !Character.isDigit(CharAt(s, i, len))) {
+            // A number like 1E+ or 1eq2 is not a double
+            // with an exponent part. In this case, return
+            // the number up to the 'E' or 'e'.
+            if (c == '-' || c == '+') {
+                i -= 1;
+            }
+            i -= 1;
+        } else {
+	    while (Character.isDigit(CharAt(s, i, len))) {
+	        i += 1;
+	    }
+        }
     }
 
     s = s.substring(start, i);
@@ -536,20 +569,24 @@ strtod(
     try {
 	result = Double.valueOf(s).doubleValue();
     } catch (NumberFormatException e) {
-	return new StrtodResult(0, 0, TCL.INVALID_DOUBLE);
+	strtodResult.update(0, 0, TCL.INVALID_DOUBLE);
+	return;
     }
 
     if ((result == Double.NEGATIVE_INFINITY) ||
 	(result == Double.POSITIVE_INFINITY) ||
 	(result == 0.0 && !maybeZero)) {
-	return new StrtodResult(result, i, TCL.DOUBLE_RANGE);
+	strtodResult.update(result, i, TCL.DOUBLE_RANGE);
+	return;
     }
 
     if (result == Double.NaN) {
-	return new StrtodResult(0, 0, TCL.INVALID_DOUBLE);
+	strtodResult.update(0, 0, TCL.INVALID_DOUBLE);
+	return;
     }
 
-    return new StrtodResult(result, i, 0);
+    strtodResult.update(result, i, 0);
+    return;
 }
 
 /*
@@ -601,7 +638,7 @@ CharAt(
 
 static double 
 getDouble(
-    Interp interp, 	// The current interpreter.
+    Interp interp, 	// The current interpreter, can be null.
     String s)	 	// The string to convert from. Must be in valid
 			// Tcl double format.
 throws 
@@ -610,18 +647,20 @@ throws
     int len = s.length();
     boolean sign;
     int i = 0;
+    char c;
 
     // Skip any leading blanks.
 
-    while (i < len && Character.isWhitespace(s.charAt(i))) {
-	i ++;
+    while (i < len && (((c = s.charAt(i)) == ' ') ||
+            Character.isWhitespace(c))) {
+	i++;
     }
     if (i >= len) {
 	throw new TclException(interp, 
 		"expected floating-point number but got \"" + s + "\"");
     }
 
-    char c = s.charAt(i);
+    c = s.charAt(i);
     if (c == '-') {
 	sign = true;
 	i +=1;
@@ -632,7 +671,13 @@ throws
 	sign = false;
     }
 
-    StrtodResult res = strtod(s, i);
+    StrtodResult res;
+    if (interp == null) {
+        res = new StrtodResult();
+    } else {
+        res = interp.strtodResult;
+    }
+    strtod(s, i, res);
     if (res.errno != 0) {
 	if (res.errno == TCL.DOUBLE_RANGE) {
 	    if (interp != null) {
@@ -646,7 +691,8 @@ throws
 	}
     } else if (res.index < len) {
 	for (i = res.index; i<len; i++) {
-	    if (!Character.isWhitespace(s.charAt(i))) {
+	    if ((c = s.charAt(i)) != ' ' &&
+                    !Character.isWhitespace(c)) {
 		throw new TclException(interp,
 			"expected floating-point number but got \"" +
 			s + "\"");
@@ -655,9 +701,9 @@ throws
     }
 
     if (sign) {
-	return (double)(- res.value);
+	return -res.value;
     } else {
-	return (double)(  res.value);
+	return res.value;
     }
 }
 
@@ -976,14 +1022,16 @@ throws
 {
     int openBraces = 0;
     boolean inQuotes = false;
+    char c;
 
-    for (; i<len && Character.isWhitespace(s.charAt(i)); i++) {
-	;
+    while (i<len && (((c = s.charAt(i)) == ' ') ||
+            Character.isWhitespace(c))) {
+	i++;
     }
     if (i >= len) {
 	return null;
     }
-    char c = s.charAt(i);
+    c = s.charAt(i);
     if (c == '{') {
 	openBraces = 1;
 	i++;
@@ -1512,24 +1560,50 @@ throws
     // The length of 's' needs to be > 1 if it begins with 'o', 
     // in order to compare between "on" and "off".
 
-    if (s.length() > 0) {
-	if ("yes".startsWith(s)) {
-	    return true;
-	} else if ("no".startsWith(s)) {
-	    return false;
-	} else if ("true".startsWith(s)) {
-	    return true;
-	} else if ("false".startsWith(s)) {
-	    return false;
-	} else if ("on".startsWith(s) && s.length() > 1) {
-	    return true;
-	} else if ("off".startsWith(s) && s.length() > 1) {
-	    return false;
-	} else if (s.equals("0")) {
-	    return false;
-	} else if (s.equals("1")) {
-	    return true;
-	}
+    int slen = s.length();
+
+    if (slen > 0) {
+    	char c = s.charAt(0);
+        switch (c) {
+            case '0':
+                if (slen == 1) {
+                    return false;
+                }
+                break;
+            case '1':
+                if (slen == 1) {
+                    return true;
+                }
+                break;
+            case 'f':
+                if ("false".startsWith(s)) {
+                    return false;
+                }
+                break;
+            case 'o':
+                if (slen > 1 && "on".startsWith(s)) {
+                    return true;
+                }
+                if (slen > 1 && "off".startsWith(s)) {
+                    return false;
+                }
+                break;
+            case 'n':
+                if ("no".startsWith(s)) {
+                    return false;
+                }
+                break;
+            case 't':
+                if ("true".startsWith(s)) {
+                    return true;
+                }
+                break;
+            case 'y':
+                if ("yes".startsWith(s)) {
+                    return true;
+                }
+                break;
+        }
     }
 
     throw new TclException(interp, "expected boolean value but got \"" +
@@ -1803,6 +1877,8 @@ throws
 
     if ((flags & TCL.TRACE_READS) != 0) {
 	interp.setVar(name1, name2,
+//FIXME: Replace with setVar() that accepts an int later!
+		//Util.precision,
 		TclInteger.newInstance(Util.precision),
 		flags & TCL.GLOBAL_ONLY);
 	return;
@@ -1830,12 +1906,15 @@ throws
 	value = "";
     }
 
-    StrtoulResult r = Util.strtoul(value, 0, 10);
+    StrtoulResult r = interp.strtoulResult;
+    Util.strtoul(value, 0, 10, r);
 
-    if ((r == null) || (r.value <= 0) || (r.value > TCL_MAX_PREC) ||
+    if ((r.value <= 0) || (r.value > TCL_MAX_PREC) ||
 	    (r.value > 100) || (r.index == 0) ||
 	    (r.index != value.length())) {
 	interp.setVar(name1, name2,
+//FIXME: Replace with setVar() that accepts an int later!
+		//Util.precision,
 		TclInteger.newInstance(Util.precision),
 		TCL.GLOBAL_ONLY);
 	throw new TclException(interp, "improper value for precision");

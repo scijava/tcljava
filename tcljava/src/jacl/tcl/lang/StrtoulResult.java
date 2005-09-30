@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: StrtoulResult.java,v 1.2 1999/05/09 01:30:54 dejong Exp $
+ * RCS: @(#) $Id: StrtoulResult.java,v 1.3 2005/09/30 02:12:17 mdejong Exp $
  *
  */
 
@@ -27,37 +27,23 @@ class StrtoulResult {
 // If the number cannot be converted to a valid unsigned 32-bit integer,
 // contains the error code (TCL.INTEGER_RANGE or TCL.INVALID_INTEGER).
 
-int errno;
+int errno = 0;
 
 // If errno is 0, points to the character right after the number
 
-int index;
+int index = -1;
 
 // If errno is 0, contains the value of the number.
 
-long value;
+long value = 0;
 
-
-/*
- *----------------------------------------------------------------------
- *
- * StrtoulResult --
- *
- *	Constructs an StrtoulResult instance.
- *
- * Results:
- *	None.
- *
- * Side effects.
- *	Fields are initialized.
- *
- *----------------------------------------------------------------------
- */
+// Update a StrtoulResult. Note that there is typically
+// just one StrtoulResult for each interp.
 
-StrtoulResult(
-    long v,				// Initial value for the value field.
-    int i,				// Initial value for the index field.
-    int e)				// Initial value for the errno field.
+void update(
+    long v,				// value for the value field.
+    int i,				// value for the index field.
+    int e)				// value for the errno field.
 {
     value = v;
     index = i;
