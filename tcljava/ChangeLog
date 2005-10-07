@@ -1,3 +1,18 @@
+2005-10-06  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        Add tclbench runtime performance testing support.
+        The existing output can be used to compare Tcl 8.4.11
+        to Jacl 1.3.2.
+
+        * tests/tclbench/data.bench:
+        * tests/tclbench/expr.bench:
+        * tests/tclbench/jacl132.out:
+        * tests/tclbench/libbench.tcl:
+        * tests/tclbench/list.test:
+        * tests/tclbench/loops.bench:
+        * tests/tclbench/runbench.tcl:
+        * tests/tclbench/tclsh8411.out:
+
 2005-09-29  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/jacl/tcl/lang/AfterCmd.java (cmdProc, getAfterEvent):

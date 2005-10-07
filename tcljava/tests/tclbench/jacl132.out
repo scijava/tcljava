@@ -1,0 +1,64 @@
+Sourcing data.bench
+Sourcing {DATA create in a list: 14982}
+Sourcing {DATA create in an array: 18056}
+Sourcing {DATA access in a list: 22462}
+Sourcing {DATA access in an array: 16444}
+{DATA access in an array} 16444
+{DATA access in a list} 22462
+{DATA create in an array} 18056
+{DATA create in a list} 14982
+Sourcing expr.bench
+Sourcing {EXPR $a == $b str (== len): 1092}
+Sourcing {EXPR $a != $b str (== len): 691}
+Sourcing {EXPR $a == $b str (!= len): 461}
+Sourcing {EXPR $a != $b str (!= len): 480}
+Sourcing {EXPR $a == $b int: 71}
+Sourcing {EXPR $a != $b int: 60}
+Sourcing {EXPR unbraced: 150}
+Sourcing {EXPR braced: 100}
+Sourcing {EXPR inline: 70}
+Sourcing {EXPR one operand: 20}
+Sourcing {EXPR ten operands: 50}
+Sourcing {EXPR fifty operands: 221}
+Sourcing {EXPR incr with incr: 30}
+Sourcing {EXPR incr with expr: 20}
+Sourcing {EXPR big expression: 120}
+{EXPR one operand} 20
+{EXPR $a != $b str (!= len)} 480
+{EXPR inline} 70
+{EXPR $a != $b int} 60
+{EXPR incr with expr} 20
+{EXPR ten operands} 50
+{EXPR $a == $b str (== len)} 1092
+{EXPR $a != $b str (== len)} 691
+{EXPR braced} 100
+{EXPR $a == $b int} 71
+{EXPR incr with incr} 30
+{EXPR fifty operands} 221
+{EXPR unbraced} 150
+{EXPR big expression} 120
+{EXPR $a == $b str (!= len)} 461
+Sourcing loops.bench
+Sourcing {LOOP for, iterate list: 19408}
+Sourcing {LOOP for-ten, iterate list: 51274}
+Sourcing {LOOP foreach, iterate list: 5388}
+Sourcing {LOOP foreach-ten, iterate list: 38515}
+Sourcing {LOOP for (to 500): 12178}
+Sourcing {LOOP while (to 500): 11466}
+Sourcing {LOOP while-ten (to 500): 46457}
+Sourcing {LOOP while 1 (to 500): 10976}
+Sourcing {LOOP while 1 (ten) (to 500): 47719}
+Sourcing {LOOP for, iterate string: 20539}
+Sourcing {LOOP foreach, iterate string: 5849}
+{LOOP foreach-ten, iterate list} 38515
+{LOOP while (to 500)} 11466
+{LOOP for, iterate string} 20539
+{LOOP foreach, iterate list} 5388
+{LOOP while-ten (to 500)} 46457
+{LOOP for, iterate list} 19408
+{LOOP while 1 (ten) (to 500)} 47719
+{LOOP while 1 (to 500)} 10976
+{LOOP for (to 500)} 12178
+{LOOP foreach, iterate string} 5849
+{LOOP for-ten, iterate list} 51274
+done

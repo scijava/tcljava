@@ -1,0 +1,93 @@
+proc expr-unbraced {a} {
+    set b 23
+    set c 4
+    set d 6
+    set e 7
+    expr $a*$b+log($c)-pow($d,$e)
+    expr $a*$b+log($c)-pow($d,$e)
+}
+proc expr-braced {a} {
+    set b 23
+    set c 4
+    set d 6
+    set e 7
+    expr {$a*$b+log($c)-pow($d,$e)}
+    expr {$a*$b+log($c)-pow($d,$e)}
+}
+
+proc expr-3.1 {a} {
+    expr {$a}
+}
+proc expr-3.2 {a} {
+    expr {$a + $a + $a + $a + $a + $a + $a + $a + $a + $a}
+}
+proc expr-3.3 {a} {
+    expr {$a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a +  $a + $a + $a + $a}
+}
+
+proc expr-incr-incr {value} {
+    incr value
+}
+proc expr-incr-expr {value} {
+    expr {$value + 1}
+}
+proc expr-streq {a b} {
+    expr {$a == $b}; expr {$a == $b}; expr {$a == $b}; expr {$a == $b}
+}
+proc expr-strneq {a b} {
+    expr {$a != $b}; expr {$a != $b}; expr {$a != $b}; expr {$a != $b}
+}
+
+proc expr-big {} {
+    expr {
+        1.0 + 5 /
+        (100 * 3000) +
+        11 + (5000 % 2) + (2135 / 3) -
+        16 - 17 - 22.0 +
+        double(1) + int(10.0) -
+        100 * 5.5 +
+        ((123&321) | 0xF4) +
+        (~0 / 2) *
+        11.0 +
+        (1<<31)/16 +
+        round(1.4)
+    }
+}
+
+if { [catch {string repeat "abc" 10}] } {
+    proc str-repeat {str num} {
+	set val {}
+	for {set i 0} {$i < $num} {incr i} { append val $str }
+	return $val
+    }
+} else {
+    proc str-repeat {str num} { string repeat $str $num }
+}
+set base [str-repeat a 100]
+set str1 "$base abc"
+set str2 "$base cde"
+set str3 "$base f"
+
+bench -desc "EXPR \$a == \$b str (== len)" -body {expr-streq $str1 $str2}
+bench -desc "EXPR \$a != \$b str (== len)" -body {expr-strneq $str1 $str2}
+bench -desc "EXPR \$a == \$b str (!= len)" -body {expr-streq $str1 $str3}
+bench -desc "EXPR \$a != \$b str (!= len)" -body {expr-strneq $str1 $str3}
+bench -desc "EXPR \$a == \$b int" -body {expr-streq 100 200}
+bench -desc "EXPR \$a != \$b int" -body {expr-strneq 100 200}
+
+bench -desc "EXPR unbraced" -body {expr-unbraced 12}
+bench -desc "EXPR braced" -body {expr-braced 12}
+bench -desc "EXPR inline" -body {
+    set a 12
+    set b 23
+    set c 4
+    set d 6
+    set e 7
+    expr {$a*$b+log($c)-pow($d,$e)}
+}
+bench -body {expr-3.1 1} -desc "EXPR one operand"
+bench -body {expr-3.2 1} -desc "EXPR ten operands"
+bench -body {expr-3.3 1} -desc "EXPR fifty operands"
+bench -body {expr-incr-incr 1} -desc "EXPR incr with incr"
+bench -body {expr-incr-expr 1} -desc "EXPR incr with expr"
+bench -body {expr-big} -desc "EXPR big expression"

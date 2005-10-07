@@ -1,0 +1,168 @@
+# Iterate over lists with for
+proc loops-for-list {list} {
+    set len [llength $list]
+    for {set i 0} {$i < $len} {incr i} {
+	set var [lindex $list $i]
+    }
+}
+
+# Iterate over list with for, this test differs from the one
+# above because the for loop body contains multiple commands
+# which tests reparsing of the loop body.
+
+proc loops-for-list-ten {list} {
+    set len [llength $list]
+    for {set i 0} {$i < $len} {incr i} {
+	set v1 [lindex $list $i]
+	set v2 $v1
+	set v3 $v2
+	set v4 $v3
+	set v5 $v4
+	set v6 $v5
+	set v7 $v6
+	set v8 $v7
+	set v9 $v8
+	set v10 $v9
+    }
+}
+
+
+# Iterate over lists with foreach
+proc loops-foreach-list {list} {
+    foreach elem $list {
+	set var $elem
+    }
+}
+
+proc loops-foreach-list-ten {list} {
+    foreach elem $list {
+	set v1 $elem
+	set v2 $v1
+	set v3 $v2
+	set v4 $v3
+	set v5 $v4
+	set v6 $v5
+	set v7 $v6
+	set v8 $v7
+	set v9 $v8
+	set v10 $v9
+    }
+}
+
+# Looping with for
+proc loops-foo-num {size} {
+    for {set i 0} {$i < $size} {incr i} {
+	set bogus abc
+    }
+}
+
+
+
+# Looping with while
+proc loops-while-num {size} {
+    set i 0
+    while {$i < $size} {
+	set bogus abc
+	incr i
+    }
+}
+
+proc loops-while-num-ten {size} {
+    set i 0
+    while {$i < $size} {
+	set bogus abc
+	incr i
+
+	set v1 $bogus
+	set v2 $v1
+	set v3 $v2
+	set v4 $v3
+	set v5 $v4
+	set v6 $v5
+	set v7 $v6
+	set v8 $v7
+	set v9 $v8
+	set v10 $v9
+    }
+}
+
+
+# Looping with while
+proc loops-while-1 {size} {
+    set i 0
+    while {1} {
+	if {[incr i] > $size} { break }
+    }
+}
+
+proc loops-while-1-ten {size} {
+    set i 0
+    while {1} {
+	if {[incr i] > $size} { break }
+
+	set v1 1
+	set v2 $v1
+	set v3 $v2
+	set v4 $v3
+	set v5 $v4
+	set v6 $v5
+	set v7 $v6
+	set v8 $v7
+	set v9 $v8
+	set v10 $v9
+    }
+}
+
+
+# iterate over chars in string using [string index]
+proc loops-for-string {s} {
+    set len [string length $s]
+    for {set i 0} {$i < $len} {incr i} {
+        set var [string index $s $i]
+    }
+}
+
+# iterate over chars in string using [foreach] and [split]
+proc loops-foreach-string {s} {
+    foreach c [split $s {}] {
+	set var $c
+    }
+}
+
+set list {}
+set string ""
+set size 500
+for {set i 0} {$i < $size} {incr i} {
+    lappend list $i
+    append string "0"
+}
+
+bench -desc "LOOP for, iterate list" \
+	-body {loops-for-list $list}
+bench -desc "LOOP for-ten, iterate list" \
+	-body {loops-for-list-ten $list}
+
+bench -desc "LOOP foreach, iterate list" \
+	-body {loops-foreach-list $list}
+bench -desc "LOOP foreach-ten, iterate list" \
+	-body {loops-foreach-list-ten $list}
+
+bench -desc "LOOP for (to $size)" \
+	-body {loops-foo-num $size}
+
+bench -desc "LOOP while (to $size)" \
+	-body {loops-while-num $size}
+bench -desc "LOOP while-ten (to $size)" \
+	-body {loops-while-num-ten $size}
+
+
+bench -desc "LOOP while 1 (to $size)" \
+	-body {loops-while-1 $size}
+bench -desc "LOOP while 1 (ten) (to $size)" \
+	-body {loops-while-1-ten $size}
+
+bench -desc "LOOP for, iterate string" \
+      -body {loops-for-string $string}
+bench -desc "LOOP foreach, iterate string" \
+      -body {loops-foreach-string $string}
+

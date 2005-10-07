@@ -1,0 +1,30 @@
+# Test case to check for case where pure list is passed into
+# the expr command. In the case where a pure list is compared
+# to the empty list, the code should not need to create a
+# string rep for the list to test against the empty list.
+
+package require java
+
+java::call tcl.lang.TclObject getObjRecords
+
+set empty 0
+set not_empty 0
+
+set max 1000
+for {set i 0} {$i < $max} {incr i} {
+    if {($i % 2) == 0} {
+        set l [list]
+    } else {
+        set l [list 1 2]
+    }
+    if {$l == {}} {
+        incr empty
+    } else {
+        incr not_empty
+    }
+}
+puts "empty is $empty"
+puts "not_empty is $not_empty"
+
+set record [java::call tcl.lang.TclObject getObjRecords]
+
