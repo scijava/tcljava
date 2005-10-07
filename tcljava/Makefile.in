@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.37 2005/09/11 20:56:57 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.38 2005/10/07 06:50:08 mdejong Exp $
 
 SHELL = /bin/sh
 
@@ -714,11 +714,11 @@ itcl.uninstall:
 	@rm -f $(XP_TCLJAVA_INSTALL_DIR)/itcl.jar
 
 #
-# Check to make sure itcl is built
+# Check to make sure itcl is built when configured for Jacl
 #
 
 itcl.check:
-	@if test ! -f itcl.jar ; then \
+	@if test "$(TCLJAVA)" = "jacl" && test ! -f itcl.jar ; then \
 		$(MAKE) TCLJAVA=$(TCLJAVA) itcl ; \
 	fi
 

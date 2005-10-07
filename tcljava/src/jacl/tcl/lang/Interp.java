@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.53 2005/09/30 02:12:17 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.54 2005/10/07 06:50:09 mdejong Exp $
  *
  */
 
@@ -243,6 +243,25 @@ private TclObject m_result;
 
 private TclObject m_nullResult;
 
+// Shared common result values. For common values, it
+// is much better to use a shared TclObject. These
+// common values are used in interp.setResult()
+// methods for built-in Java types. The internal rep
+// of these shared values should not be changed.
+
+private final TclObject m_falseBooleanResult;    // false
+private final TclObject m_trueBooleanResult;     // true
+
+private final TclObject m_minusoneIntegerResult; // -1
+private final TclObject m_zeroIntegerResult;     // 0
+private final TclObject m_oneIntegerResult;      // 1
+private final TclObject m_twoIntegerResult;      // 2
+
+private final TclObject m_zeroDoubleResult;      // 0.0
+private final TclObject m_onehalfDoubleResult;   // 0.5
+private final TclObject m_oneDoubleResult;       // 1.0
+private final TclObject m_twoDoubleResult;       // 2.0
+
 // Java thread this interp was created in. This is used
 // to check for user coding errors where the user tries
 // to create an interp in one thread and then invoke
@@ -318,12 +337,53 @@ Interp()
     // An empty result is used pretty often. We will use a shared
     // TclObject instance to represent the empty result so that we
     // don't need to create a new TclObject instance every time the
-    // interpreter result is set to empty.
+    // interpreter result is set to empty. Do the same for other
+    // common values.
 
     m_nullResult = TclString.newInstance("");
     m_nullResult.preserve();  // Increment refCount to 1
     m_nullResult.preserve();  // Increment refCount to 2 (shared)
     m_result = m_nullResult;  // correcponds to iPtr->objResultPtr
+
+    m_falseBooleanResult = TclBoolean.newInstance(false);
+    m_falseBooleanResult.preserve();  // Increment refCount to 1
+    m_falseBooleanResult.preserve();  // Increment refCount to 2 (shared)
+
+    m_trueBooleanResult = TclBoolean.newInstance(true);
+    m_trueBooleanResult.preserve();  // Increment refCount to 1
+    m_trueBooleanResult.preserve();  // Increment refCount to 2 (shared)
+
+    m_minusoneIntegerResult = TclInteger.newInstance(-1);
+    m_minusoneIntegerResult.preserve();  // Increment refCount to 1
+    m_minusoneIntegerResult.preserve();  // Increment refCount to 2 (shared)
+
+    m_zeroIntegerResult = TclInteger.newInstance(0);
+    m_zeroIntegerResult.preserve();  // Increment refCount to 1
+    m_zeroIntegerResult.preserve();  // Increment refCount to 2 (shared)
+
+    m_oneIntegerResult = TclInteger.newInstance(1);
+    m_oneIntegerResult.preserve();  // Increment refCount to 1
+    m_oneIntegerResult.preserve();  // Increment refCount to 2 (shared)
+
+    m_twoIntegerResult = TclInteger.newInstance(2);
+    m_twoIntegerResult.preserve();  // Increment refCount to 1
+    m_twoIntegerResult.preserve();  // Increment refCount to 2 (shared)
+
+    m_zeroDoubleResult = TclDouble.newInstance(0.0);
+    m_zeroDoubleResult.preserve();  // Increment refCount to 1
+    m_zeroDoubleResult.preserve();  // Increment refCount to 2 (shared)
+
+    m_onehalfDoubleResult = TclDouble.newInstance(0.5);
+    m_onehalfDoubleResult.preserve();  // Increment refCount to 1
+    m_onehalfDoubleResult.preserve();  // Increment refCount to 2 (shared)
+
+    m_oneDoubleResult = TclDouble.newInstance(1.0);
+    m_oneDoubleResult.preserve();  // Increment refCount to 1
+    m_oneDoubleResult.preserve();  // Increment refCount to 2 (shared)
+
+    m_twoDoubleResult = TclDouble.newInstance(2.0);
+    m_twoDoubleResult.preserve();  // Increment refCount to 1
+    m_twoDoubleResult.preserve();  // Increment refCount to 2 (shared)
 
     expr             = new Expression();
     nestLevel        = 0;
@@ -907,18 +967,20 @@ backgroundError()
  *----------------------------------------------------------------------
  */
 
-final TclObject 
+final
+TclObject
 setVar(
     TclObject nameObj,		// Name of variable, array, or array element
 				// to set.
     TclObject value,		// New value for variable.
     int flags)			// Various flags that tell how to set value:
 				// any of TCL.GLOBAL_ONLY, TCL.NAMESPACE_ONLY,
-				// TCL.APPEND_VALUE, or TCL.LIST_ELEMENT. 
-throws 
-    TclException 
+				// TCL.APPEND_VALUE, or TCL.LIST_ELEMENT.
+throws
+    TclException
 {
-    return Var.setVar(this, nameObj, value, (flags|TCL.LEAVE_ERR_MSG));
+    return Var.setVar(this, nameObj.toString(), null,
+        value, (flags|TCL.LEAVE_ERR_MSG));
 }
 
 /*
@@ -937,19 +999,19 @@ throws
  *----------------------------------------------------------------------
  */
 
-public final 
-TclObject 
+public final
+TclObject
 setVar(
     String name,		// Name of variable, array, or array element
 				// to set.
     TclObject value,		// New value for variable.
     int flags)			// Various flags that tell how to set value:
 				// any of TCL.GLOBAL_ONLY, TCL.NAMESPACE_ONLY,
-				// TCL.APPEND_VALUE, or TCL.LIST_ELEMENT. 
+				// TCL.APPEND_VALUE, or TCL.LIST_ELEMENT.
 throws
-    TclException 
+    TclException
 {
-    return Var.setVar(this, name, value, (flags|TCL.LEAVE_ERR_MSG));
+    return Var.setVar(this, name, null, value, (flags|TCL.LEAVE_ERR_MSG));
 }
 
 /*
@@ -968,11 +1030,12 @@ throws
  *----------------------------------------------------------------------
  */
 
-public final TclObject 
+public final
+TclObject
 setVar(
     String name1,		// If name2 is null, this is name of a scalar
 				// variable. Otherwise it is the name of an
-				// array. 
+				// array.
     String name2,		// Name of an element within an array, or
 				// null.
     TclObject value,		// New value for variable.
@@ -1001,18 +1064,19 @@ throws
  *----------------------------------------------------------------------
  */
 
-final void
+final
+TclObject
 setVar(
     String name,		// Name of variable, array, or array element
 				// to set.
     String strValue,		// New value for variable.
     int flags)			// Various flags that tell how to set value:
 				// any of TCL.GLOBAL_ONLY, TCL.NAMESPACE_ONLY,
-				// TCL.APPEND_VALUE, or TCL.LIST_ELEMENT. 
-throws 
-    TclException 
+				// TCL.APPEND_VALUE, or TCL.LIST_ELEMENT.
+throws
+    TclException
 {
-    Var.setVar(this, name, TclString.newInstance(strValue),
+    return Var.setVar(this, name, null, checkCommonString(strValue),
 	       (flags|TCL.LEAVE_ERR_MSG));
 }
 
@@ -1021,7 +1085,7 @@ throws
  *
  * setVar --
  *
- *	Set the value of a variable.
+ *	Set a variable to the value in a String argument.
  *
  * Results:
  *	Returns the new value of the variable.
@@ -1032,21 +1096,127 @@ throws
  *----------------------------------------------------------------------
  */
 
-final void
+public final
+TclObject
 setVar(
     String name1,		// If name2 is null, this is name of a scalar
 				// variable. Otherwise it is the name of an
-				// array.  
+				// array.
     String name2,		// Name of an element within an array, or
-				// null. 
-    String strValue,		// New value for variable. 
+				// null.
+    String strValue,		// New value for variable.
     int flags)			// Various flags that tell how to set value:
 				// any of TCL.GLOBAL_ONLY, TCL.NAMESPACE_ONLY,
 				// TCL.APPEND_VALUE, or TCL.LIST_ELEMENT.
-throws 
+throws
     TclException
 {
-    Var.setVar(this, name1, name2, TclString.newInstance(strValue),
+    return Var.setVar(this, name1, name2, checkCommonString(strValue),
+	    (flags|TCL.LEAVE_ERR_MSG));
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * setVar --
+ *
+ *	Set a variable to the value in an int argument.
+ *
+ * Results:
+ *	Returns the new value of the variable.
+ *
+ * Side effects:
+ *	May trigger traces.
+ *
+ *----------------------------------------------------------------------
+ */
+
+public final
+TclObject
+setVar(
+    String name1,		// If name2 is null, this is name of a scalar
+				// variable. Otherwise it is the name of an
+				// array.
+    String name2,		// Name of an element within an array, or
+				// null.
+    int intValue,		// New value for variable.
+    int flags)			// Various flags that tell how to set value:
+				// any of TCL.GLOBAL_ONLY, TCL.NAMESPACE_ONLY,
+				// TCL.APPEND_VALUE, or TCL.LIST_ELEMENT.
+throws
+    TclException
+{
+    return Var.setVar(this, name1, name2, checkCommonInteger(intValue),
+	    (flags|TCL.LEAVE_ERR_MSG));
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * setVar --
+ *
+ *	Set a variable to the value in a double argument.
+ *
+ * Results:
+ *	Returns the new value of the variable.
+ *
+ * Side effects:
+ *	May trigger traces.
+ *
+ *----------------------------------------------------------------------
+ */
+
+public final
+TclObject
+setVar(
+    String name1,		// If name2 is null, this is name of a scalar
+				// variable. Otherwise it is the name of an
+				// array.
+    String name2,		// Name of an element within an array, or
+				// null.
+    double dValue,		// New value for variable.
+    int flags)			// Various flags that tell how to set value:
+				// any of TCL.GLOBAL_ONLY, TCL.NAMESPACE_ONLY,
+				// TCL.APPEND_VALUE, or TCL.LIST_ELEMENT.
+throws
+    TclException
+{
+    return Var.setVar(this, name1, name2, checkCommonDouble(dValue),
+	    (flags|TCL.LEAVE_ERR_MSG));
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * setVar --
+ *
+ *	Set a variable to the value in a boolean argument.
+ *
+ * Results:
+ *	Returns the new value of the variable.
+ *
+ * Side effects:
+ *	May trigger traces.
+ *
+ *----------------------------------------------------------------------
+ */
+
+public final
+TclObject
+setVar(
+    String name1,		// If name2 is null, this is name of a scalar
+				// variable. Otherwise it is the name of an
+				// array.
+    String name2,		// Name of an element within an array, or
+				// null.
+    boolean bValue,		// New value for variable.
+    int flags)			// Various flags that tell how to set value:
+				// any of TCL.GLOBAL_ONLY, TCL.NAMESPACE_ONLY,
+				// TCL.APPEND_VALUE, or TCL.LIST_ELEMENT.
+throws
+    TclException
+{
+    return Var.setVar(this, name1, name2, checkCommonBoolean(bValue),
 	    (flags|TCL.LEAVE_ERR_MSG));
 }
 
@@ -1076,7 +1246,7 @@ getVar(
 throws
     TclException 
 {
-    return Var.getVar(this, nameObj, (flags|TCL.LEAVE_ERR_MSG));
+    return Var.getVar(this, nameObj.toString(), null, (flags|TCL.LEAVE_ERR_MSG));
 }
 
 /*
@@ -1105,7 +1275,7 @@ getVar(
 throws
     TclException
 {
-    return Var.getVar(this, name, (flags|TCL.LEAVE_ERR_MSG));
+    return Var.getVar(this, name, null, (flags|TCL.LEAVE_ERR_MSG));
 }
 
 /*
@@ -1165,7 +1335,7 @@ unsetVar(
 throws 
     TclException
 {
-    Var.unsetVar(this, nameObj, (flags|TCL.LEAVE_ERR_MSG));
+    Var.unsetVar(this, nameObj.toString(), null, (flags|TCL.LEAVE_ERR_MSG));
 }
 
 /*
@@ -1193,7 +1363,7 @@ unsetVar(
 throws 
     TclException 
 {
-    Var.unsetVar(this, name, (flags|TCL.LEAVE_ERR_MSG));
+    Var.unsetVar(this, name, null, (flags|TCL.LEAVE_ERR_MSG));
 }
 
 /*
@@ -1256,7 +1426,7 @@ traceVar(
 throws
     TclException
 {
-    Var.traceVar(this, nameObj, flags, trace);
+    Var.traceVar(this, nameObj.toString(), null, flags, trace);
 }
 
 /*
@@ -1288,7 +1458,7 @@ traceVar(
 throws
     TclException
 {
-    Var.traceVar(this, name, flags, trace);
+    Var.traceVar(this, name, null, flags, trace);
 }
 
 /*
@@ -1351,7 +1521,7 @@ untraceVar(
 				// TCL.TRACE_WRITES, TCL.TRACE_UNSETS,
 				// TCL.GLOBAL_ONLY and TCL.NAMESPACE_ONLY.
 {
-    Var.untraceVar(this, nameObj, flags, trace);
+    Var.untraceVar(this, nameObj.toString(), null, flags, trace);
 }
 
 /*
@@ -1380,7 +1550,7 @@ untraceVar(
 				// TCL.TRACE_WRITES, TCL.TRACE_UNSETS,
 				// TCL.GLOBAL_ONLY and TCL.NAMESPACE_ONLY.
 {
-    Var.untraceVar(this, name, flags, trace);
+    Var.untraceVar(this, name, null, flags, trace);
 }
 
 /*
@@ -2071,11 +2241,7 @@ public final void
 setResult(
     String r)		// A string result.
 {
-    if (r == null) {
-	resetResult();
-    } else {
-	setResult(TclString.newInstance(r));
-    }
+    setResult( checkCommonString(r) );
 }
 
 /*
@@ -2101,7 +2267,7 @@ public final void
 setResult(
     int r)		// An int result.
 {
-    setResult(TclInteger.newInstance(r));
+    setResult( checkCommonInteger(r) );
 }
 
 /*
@@ -2127,7 +2293,7 @@ public final void
 setResult(
     double r)		// A double result.
 {
-    setResult(TclDouble.newInstance(r));
+    setResult( checkCommonDouble(r) );
 }
 
 /*
@@ -2153,7 +2319,7 @@ public final void
 setResult(
     boolean r)		// A boolean result.
 {
-    setResult(TclBoolean.newInstance(r));
+    setResult( checkCommonBoolean(r) );
 }
 
 /*
@@ -4062,6 +4228,117 @@ removeInterpResolver(
     }
 
     return found;
+}
+
+/**
+ *----------------------------------------------------------------------
+ *
+ * checkCommonInteger()
+ *
+ *	If a given integer value is in the common value pool
+ *	the return a shared object for that integer. If the
+ *	integer value is not in the common pool then a new
+ *	TclInteger wrapped in a TclObject will be created.
+ *
+ *----------------------------------------------------------------------
+ */
+
+final
+TclObject checkCommonInteger(int value)
+{
+    TclObject obj;
+    switch ( value ) {
+        case -1:
+            obj = m_minusoneIntegerResult;
+            break;
+        case 0:
+            obj = m_zeroIntegerResult;
+            break;
+        case 1:
+            obj = m_oneIntegerResult;
+            break;
+        case 2:
+            obj = m_twoIntegerResult;
+            break;
+        default:
+            obj = TclInteger.newInstance( value );
+            break;
+    }
+    return obj;
+}
+
+/**
+ *----------------------------------------------------------------------
+ *
+ * checkCommonDouble()
+ *
+ *	If a given double value is in the common value pool
+ *	the return a shared object for that double. If the
+ *	double value is not in the common pool then a new
+ *	TclDouble wrapped in a TclObject will be created.
+ *
+ *----------------------------------------------------------------------
+ */
+
+final
+TclObject checkCommonDouble(double value)
+{
+    TclObject obj;
+    if ( value == 0.0 ) {
+        obj = m_zeroDoubleResult;
+    } else if ( value == 0.5 ) {
+        obj = m_onehalfDoubleResult;
+    } else if ( value == 1.0 ) {
+        obj = m_oneDoubleResult;
+    } else if ( value == 2.0 ) {
+        obj = m_twoDoubleResult;
+    } else {
+        obj = TclDouble.newInstance( value );
+    }
+    return obj;
+}
+
+/**
+ *----------------------------------------------------------------------
+ *
+ * checkCommonBoolean()
+ *
+ *	Always return a shared boolean TclObject.
+ *
+ *----------------------------------------------------------------------
+ */
+
+final
+TclObject checkCommonBoolean(boolean value)
+{
+    if ( value ) {
+        return m_trueBooleanResult;
+    } else {
+        return m_falseBooleanResult;
+    }
+}
+
+/**
+ *----------------------------------------------------------------------
+ *
+ * checkCommonString()
+ *
+ *	If a given String value is in the common value pool
+ *	the return a shared object for that String. If the
+ *	String value is not in the common pool then a new
+ *	TclString wrapped in a TclObject will be created.
+ *
+ *----------------------------------------------------------------------
+ */
+
+final
+TclObject checkCommonString(String value)
+{
+    if ( value == null || value.length() == 0 ) {
+        return m_nullResult;
+    } else {
+        return TclString.newInstance( value );
+    }
 }
 
 

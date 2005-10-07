@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Var.java,v 1.14 2005/09/12 00:00:50 mdejong Exp $
+ * RCS: @(#) $Id: Var.java,v 1.15 2005/10/07 06:50:09 mdejong Exp $
  *
  */
 package tcl.lang;
@@ -694,64 +694,6 @@ class Var {
 	return ret;
     }
 
-
-    /**
-     * Query the value of a variable whose name is stored in a Tcl object.
-     *
-     * @param interp the interp that holds the variable
-     * @param nameObj name of the variable.
-     * @param flags misc flags that control the actions of this method.
-     * @return the value of the variable.
-     */
-
-    static TclObject getVar(Interp interp, TclObject nameObj, int flags) 
-	    throws TclException {
-	return getVar(interp, nameObj.toString(), null, flags);
-    }
-
-    /**
-     * Query the value of a variable.
-     *
-     * @param interp the interp that holds the variable
-     * @param name name of the variable.
-     * @param flags misc flags that control the actions of this method.
-     * @return the value of the variable.
-     */
-
-    static TclObject getVar(Interp interp, String name, int flags) 
-	    throws TclException {
-	return getVar(interp, name, null, flags);
-    }
-
-    /**
-     * Tcl_ObjGetVar2 -> getVar
-     *
-     * Query the value of a variable.
-     *
-     * @param interp the interp that holds the variable
-     * @param part1 1st part of the variable name.
-     * @param part2 2nd part of the variable name.
-     * @param flags misc flags that control the actions of this method.
-     * @return the value of the variable.
-     */
-
-    static TclObject getVar(Interp interp, TclObject part1Obj,
-			                   TclObject part2Obj, int flags)
- 	throws TclException
-    {
-	String part1, part2;
-
-	part1 = part1Obj.toString();
-
-	if (part2Obj != null) {
-	    part2 = part2Obj.toString();
-	} else {
-	    part2 = null;
-	}
-
-	return getVar(interp, part1, part2, flags);
-    }
-
     /**
      * Tcl_GetVar2Ex -> getVar
      *
@@ -831,66 +773,7 @@ class Var {
 	}
 
 	return null;
-    }
-    
-    /**
-     * Set a variable whose name is stored in a Tcl object.
-     *
-     * @param interp the interp that holds the variable
-     * @param nameObj name of the variable.
-     * @param value the new value for the variable
-     * @param flags misc flags that control the actions of this method.
-     */
-
-    static TclObject setVar(Interp interp, TclObject nameObj, TclObject value, int flags)
-	    throws TclException {
-	return setVar(interp, nameObj.toString(), null, value, flags);
-    }
-
-    /**
-     * Set a variable.
-     *
-     * @param interp the interp that holds the variable
-     * @param name name of the variable.
-     * @param value the new value for the variable
-     * @param flags misc flags that control the actions of this method
-      */
-
-    static TclObject setVar(Interp interp, String name, TclObject value, int flags)
-	    throws TclException {
-	return setVar(interp, name, null, value, flags);
-    }
-
-    /**
-     * Tcl_ObjSetVar2 -> setVar
-     *
-     * Set the value of a variable.
-     *
-     * @param interp the interp that holds the variable
-     * @param part1 1st part of the variable name.
-     * @param part2 2nd part of the variable name.
-     * @param newValue the new value for the variable
-     * @param flags misc flags that control the actions of this method
-     */
-
-    static TclObject setVar(Interp interp, TclObject part1Obj,
-			                   TclObject part2Obj,
-			                   TclObject newValue, int flags)
- 	throws TclException
-    {
-	String part1, part2;
-
-	part1 = part1Obj.toString();
-
-	if (part2Obj != null) {
-	    part2 = part2Obj.toString();
-	} else {
-	    part2 = null;
-	}
-
-	return setVar(interp, part1, part2, newValue, flags);
-    }
-
+    }    
 
     /**
      * Tcl_SetVar2Ex -> setVar
@@ -1155,22 +1038,26 @@ class Var {
 				// on write).
 	int i;
 	boolean err;
+	String part1Str = part1.toString(), part2Str = null;
+	if (part2 != null) {
+	    part2Str = part2.toString();
+	}
 
 	// There are two possible error conditions that depend on the setting of
 	// TCL.LEAVE_ERR_MSG. an exception could be raised or null could be returned
 	err = false;
 	try {
-	    varValue = getVar(interp, part1, part2, flags);
+	    varValue = getVar(interp, part1Str, part2Str, flags);
 	} catch (TclException e) {
 	    err = true;
 	    throw e;
 	} finally {
 	    // FIXME : is this the correct way to catch the error?
-	    if (err || varValue == null)
+	    if (err || varValue == null) {
 		interp.addErrorInfo(
 		    "\n    (reading value of variable to increment)");
+            }
 	}
-
 
 	// Increment the variable's value. If the object is unshared we can
 	// modify it directly, otherwise we must create a new copy to modify:
@@ -1196,31 +1083,7 @@ class Var {
 
 	// Store the variable's new value and run any write traces.
 
-	return setVar(interp, part1, part2, varValue, flags);
-    }
-    
-    /**
-     * Unset a variable whose name is stored in a Tcl object.
-     *
-     * @param nameObj name of the variable.
-     * @param flags misc flags that control the actions of this method.
-     */
-
-    static void unsetVar(Interp interp, TclObject nameObj, int flags) 
-	    throws TclException {
-	unsetVar(interp, nameObj.toString(), null, flags);
-    }
-
-    /**
-     * Unset a variable.
-     *
-     * @param name name of the variable.
-     * @param flags misc flags that control the actions of this method.
-     */
-
-    static void unsetVar(Interp interp, String name, int flags) 
-	    throws TclException {
-	unsetVar(interp, name, null, flags);
+	return setVar(interp, part1Str, part2Str, varValue, flags);
     }
 
     /**
@@ -1362,33 +1225,6 @@ class Var {
 	}
     }
 
-
-    /**
-     * Trace a variable whose name is stored in a Tcl object.
-     *
-     * @param nameObj name of the variable.
-     * @param trace the trace to add.
-     * @param flags misc flags that control the actions of this method.
-     */
-
-    static void traceVar(Interp interp, TclObject nameObj, int flags, VarTrace proc) 
-	    throws TclException {
-	traceVar(interp, nameObj.toString(), null, flags, proc);
-    }
-
-    /**
-     * Trace a variable.
-     *
-     * @param name name of the variable.
-     * @param trace the trace to add.
-     * @param flags misc flags that control the actions of this method.
-     */
-
-    static void traceVar(Interp interp, String name, int flags, VarTrace proc) 
-	    throws TclException {
-	traceVar(interp, name, null, flags, proc);
-    }
-
     /**
      * Tcl_TraceVar2 -> traceVar
      *
@@ -1454,33 +1290,6 @@ class Var {
 	    array.sidVec = null;
 	}
 	*/
-    }
-
-    
-    /**
-     * Untrace a variable whose name is stored in a Tcl object.
-     *
-     * @param nameObj name of the variable.
-     * @param trace the trace to delete.
-     * @param flags misc flags that control the actions of this method.
-     */
-
-    static void untraceVar(Interp interp, TclObject nameObj, int flags, VarTrace proc) 
-    {
-	untraceVar(interp, nameObj.toString(), null, flags, proc);
-    }
-
-    /**
-     * Untrace a variable.
-     *
-     * @param name name of the variable.
-     * @param trace the trace to delete.
-     * @param flags misc flags that control the actions of this method.
-     */
-
-    static void untraceVar(Interp interp, String name, int flags, VarTrace proc) 
-    {
-	untraceVar(interp, name, null, flags, proc);
     }
 
     /**
@@ -1550,27 +1359,6 @@ class Var {
 	if (var.isVarUndefined()) {
 	    cleanupVar(var, null);
 	}
-    }
-
-    /**
-     * Tcl_VarTraceInfo -> getTraces
-     *
-     * @param interp Interpreter containing variable.
-     * @param name name of the variable.
-     * @param flags flags that control the actions of this method.
-     * @return the Vector of traces of a variable.
-     */
-
-    static protected Vector getTraces(
-        Interp interp, // Interpreter containing variable.
-	String name,   // Name of variable;  may end with "(index)"
-	               // to signify an array reference.
-	int flags      // OR-ed combination of TCL.GLOBAL_ONLY,
-	               // TCL.NAMESPACE_ONLY.
-	) 
-	throws TclException
-    {
-	return getTraces(interp, name, null, flags);
     }
 
     /**

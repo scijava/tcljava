@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TraceCmd.java,v 1.6 1999/08/15 19:38:36 mo Exp $
+ * RCS: @(#) $Id: TraceCmd.java,v 1.7 2005/10/07 06:50:09 mdejong Exp $
  *
  */
 
@@ -154,13 +154,13 @@ throws
 
 	if (opt == OPT_VARIABLE) {
 	    CmdTraceProc trace = new CmdTraceProc(objv[4].toString(), flags);
-	    Var.traceVar(interp, objv[2], flags, trace);
+	    Var.traceVar(interp, objv[2].toString(), null, flags, trace);
 	} else {
 	    // Search through all of our traces on this variable to
 	    // see if there's one with the given command.  If so, then
 	    // delete the first one that matches.
 		
-	    Vector traces = Var.getTraces(interp, objv[2].toString(), 0);
+	    Vector traces = Var.getTraces(interp, objv[2].toString(), null, 0);
 	    if (traces != null) {
 		len = traces.size();
 		for (int i = 0; i < len; i++) {
@@ -170,7 +170,7 @@ throws
 			CmdTraceProc proc = (CmdTraceProc) rec.trace;
 			if (proc.flags == flags && proc.command.toString().
 				equals(objv[4].toString())) {
-			    Var.untraceVar(interp, objv[2],
+			    Var.untraceVar(interp, objv[2].toString(), null,
 				    flags, proc);
 			    break;
 			}
@@ -185,7 +185,7 @@ throws
 	    throw new TclNumArgsException(interp, 2, objv, 
 		    "name");
 	}
-	Vector traces = Var.getTraces(interp, objv[2].toString(), 0);
+	Vector traces = Var.getTraces(interp, objv[2].toString(), null, 0);
 	if (traces != null) {
 	    len = traces.size();
 	    TclObject list = TclList.newInstance();

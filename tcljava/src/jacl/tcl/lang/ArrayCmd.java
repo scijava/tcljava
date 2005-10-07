@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ArrayCmd.java,v 1.4 2003/01/10 01:57:57 mdejong Exp $
+ * RCS: @(#) $Id: ArrayCmd.java,v 1.5 2005/10/07 06:50:09 mdejong Exp $
  *
  */
 
@@ -116,9 +116,9 @@ class ArrayCmd implements Command {
 	        }
 
 	        if (e.hasMoreElements()) {
-	            interp.setResult("1");
+	            interp.setResult(true);
 	        } else {
-	            interp.setResult("0");
+	            interp.setResult(false);
 	        }
 		break;
 	    }

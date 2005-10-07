@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: EofCmd.java,v 1.1 1998/10/14 21:09:18 cvsadmin Exp $
+ * RCS: @(#) $Id: EofCmd.java,v 1.2 2005/10/07 06:50:09 mdejong Exp $
  *
  */
 
@@ -43,9 +43,9 @@ class EofCmd implements Command {
 	}
 
 	if (chan.eof()) {
-	    interp.setResult(TclInteger.newInstance(1));
+	    interp.setResult(true);
 	} else {
-	    interp.setResult(TclInteger.newInstance(0));
+	    interp.setResult(false);
 	}
     }
 }

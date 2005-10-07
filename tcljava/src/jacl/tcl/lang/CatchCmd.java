@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: CatchCmd.java,v 1.2 2000/08/20 06:08:42 mo Exp $
+ * RCS: @(#) $Id: CatchCmd.java,v 1.3 2005/10/07 06:50:09 mdejong Exp $
  *
  */
 
@@ -56,7 +56,7 @@ class CatchCmd implements Command {
 	}
 
 	interp.resetResult();
-	interp.setResult(TclInteger.newInstance(code));
+	interp.setResult(code);
     }
 }
 

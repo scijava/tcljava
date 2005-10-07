@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Util.java,v 1.12 2005/09/30 02:12:17 mdejong Exp $
+ * RCS: @(#) $Id: Util.java,v 1.13 2005/10/07 06:50:09 mdejong Exp $
  */
 
 package tcl.lang;
@@ -1877,9 +1877,7 @@ throws
 
     if ((flags & TCL.TRACE_READS) != 0) {
 	interp.setVar(name1, name2,
-//FIXME: Replace with setVar() that accepts an int later!
-		//Util.precision,
-		TclInteger.newInstance(Util.precision),
+		Util.precision,
 		flags & TCL.GLOBAL_ONLY);
 	return;
     }
@@ -1913,9 +1911,7 @@ throws
 	    (r.value > 100) || (r.index == 0) ||
 	    (r.index != value.length())) {
 	interp.setVar(name1, name2,
-//FIXME: Replace with setVar() that accepts an int later!
-		//Util.precision,
-		TclInteger.newInstance(Util.precision),
+		Util.precision,
 		TCL.GLOBAL_ONLY);
 	throw new TclException(interp, "improper value for precision");
     }

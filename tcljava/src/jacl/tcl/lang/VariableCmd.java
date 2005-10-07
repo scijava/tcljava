@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: VariableCmd.java,v 1.3 1999/06/30 00:13:39 mo Exp $
+ * RCS: @(#) $Id: VariableCmd.java,v 1.4 2005/10/07 06:50:09 mdejong Exp $
  */
 
 package tcl.lang;
@@ -103,7 +103,7 @@ class VariableCmd implements Command {
 	    // we're in a Tcl procedure).
 
 	    if (i+1 < objv.length) {	// a value was specified
-		varValue = Var.setVar(interp, objv[i], null, objv[i+1],
+		varValue = Var.setVar(interp, objv[i].toString(), null, objv[i+1],
 				      (TCL.NAMESPACE_ONLY | TCL.LEAVE_ERR_MSG));
 
 		if (varValue == null) {

@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: InterpCmd.java,v 1.1 2000/08/20 06:08:43 mo Exp $
+ * RCS: @(#) $Id: InterpCmd.java,v 1.2 2005/10/07 06:50:09 mdejong Exp $
  *
  */
 
@@ -269,13 +269,12 @@ throws
 	    Interp slaveInterp = getInterp(interp, objv);
 
 	    TclObject result = TclList.newInstance();
-	    interp.setResult(result);
-
 	    Enumeration keys = slaveInterp.slaveTable.keys();
 	    while (keys.hasMoreElements()) {
 		String string = (String) keys.nextElement();
 		TclList.append(interp, result, TclString.newInstance(string));
 	    }
+	    interp.setResult(result);
 
 	    break;
 	}

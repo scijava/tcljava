@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TellCmd.java,v 1.1 1998/10/14 21:09:20 cvsadmin Exp $
+ * RCS: @(#) $Id: TellCmd.java,v 1.2 2005/10/07 06:50:09 mdejong Exp $
  *
  */
 
@@ -45,7 +45,7 @@ class TellCmd implements Command {
 	}
 
 	try {
-	    interp.setResult(TclInteger.newInstance((int)chan.tell()));
+	    interp.setResult((int)chan.tell());
 	} catch (IOException e) {
 	    throw new TclException(interp, "Error in TellCmd");
 	}

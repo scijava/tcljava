@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: StringCmd.java,v 1.6 2005/09/30 02:12:17 mdejong Exp $
+ * RCS: @(#) $Id: StringCmd.java,v 1.7 2005/10/07 06:50:09 mdejong Exp $
  *
  */
 
@@ -547,11 +547,9 @@ throws
 	    // and we have indicated a valid fail index (>= 0)
 
 	    if ((!result) && (failVarObj != null)) {
-//FIXME: Replace with direct int arg later after setVar() changes.
 		interp.setVar(failVarObj.toString(),
 		    null,
-		    //failat,
-		    TclInteger.newInstance(failat),
+		    failat,
 		    0);
 	    }
 	    interp.setResult(result);
