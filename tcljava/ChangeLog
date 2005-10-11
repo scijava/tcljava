@@ -1,3 +1,31 @@
+2005-10-11  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/jacl/tcl/lang/StringCmd.java (cmdProc):
+        Use Util.getBoolean() since TclBoolean.get()
+        now converts int and double values.
+        * src/tcljava/tcl/lang/TclBoolean.java (setBooleanFromAny):
+        Update conversion to boolean type to match Tcl 8.4
+        implementation where int and double numbers are
+        converted directly to boolean values. Get object
+        string rep to fix a bug where conversion of a
+        pure object would result in loss of info.
+        * src/tcljava/tcl/lang/TclIndex.java (testUpdateIndex):
+        Add a regression testing access methods use in TestObjCmd.
+        * src/tcljava/tcl/lang/TclString.java: Add FIXME.
+        * src/tests/jacl/tcl/lang/JavaTestExtension.java:
+        Create "testobj" and related commands.
+        * src/tests/tcljava/tcl/lang/TestObjCmd.java: Add
+        implementation of "testobj" and related commands.
+        * tests/tcl/listObj.test: Enable "testobj" conditional
+        code that was commented out.
+        * tests/tcl/obj.test: Update to Tcl 8.4 obj.test.
+        * tests/tcl/stringObj.test: Modify some tests so
+        that they pass even though Jacl uses slightly different
+        buffer allocation code for strings. Jacl also has no
+        "none" TclObject, a TclObject always has an internal
+        rep so make tests that depend on that pass too.
+        * tests/tcl/util.test: Tests not run currently.
+
 2005-10-06  Mo DeJong  <mdejong@users.sourceforge.net>
 
         Add optimized setVar() methods to the Interp class

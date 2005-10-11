@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: obj.test,v 1.1 2001/01/28 21:55:16 mdejong Exp $
+# RCS: @(#) $Id: obj.test,v 1.2 2005/10/11 20:03:23 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -25,9 +25,56 @@ if {[info commands testobj] == {}} {
     return
 }
 
+# Procedure to determine the integer range of the machine
+
+proc int_range {} {
+    for { set MIN_INT 1 } { $MIN_INT > 0 } {} {
+	set MIN_INT [expr { $MIN_INT << 1 }]
+    }
+    set MAX_INT [expr { ~ $MIN_INT }]
+    return [list $MIN_INT $MAX_INT]
+}
+
+# Procedure to determine the range of wide integers on the machine.
+
+proc wide_range {} {
+    # Jacl does not support 64 bit integers or wide() expr function
+    return [int_range]
+
+#    for { set MIN_WIDE [expr { wide(1) }] } { $MIN_WIDE > wide(0) } {} {
+#	set MIN_WIDE [expr { $MIN_WIDE << 1 }]
+#    }
+#    set MAX_WIDE [expr { ~ $MIN_WIDE }]
+#    return [list $MIN_WIDE $MAX_WIDE]
+}
+
+foreach { MIN_INT MAX_INT } [int_range] break
+foreach { MIN_WIDE MAX_WIDE } [wide_range] break
+::tcltest::testConstraint 32bit \
+    [expr { $MAX_INT == 0x7fffffff }]
+::tcltest::testConstraint wideBiggerThanInt \
+    0
+
+# Jacl does not support an end-offset internal rep
+::tcltest::testConstraint endminusoffsettype \
+    0
+
 test obj-1.1 {Tcl_AppendAllObjTypes, and InitTypeTable, Tcl_RegisterObjType} {
     set r 1
-    foreach {t} {list boolean cmdName bytecode string int double} {
+    foreach {t} {
+	{array search} 
+	boolean
+	bytearray
+	bytecode
+	double
+	end-offset
+	index
+	int
+	list
+	nsName
+	procbody
+	string
+    } {
         set first [string first $t [testobj types]]
         set r [expr {$r && ($first != -1)}]
     }
@@ -184,6 +231,18 @@ test obj-11.4 {Tcl_GetBooleanFromObj, error converting from "empty string"} {
     lappend result [catch {testbooleanobj not 1} msg]
     lappend result $msg
 } {{} 1 {expected boolean value but got ""}}
+test obj-11.5 {Tcl_GetBooleanFromObj, convert hex to boolean} {
+    set result ""
+    lappend result [teststringobj set 1 0xac]
+    lappend result [testbooleanobj not 1]
+    lappend result [testobj type 1]
+} {0xac 0 boolean}
+test obj-11.6 {Tcl_GetBooleanFromObj, convert float to boolean} {
+    set result ""
+    lappend result [teststringobj set 1 5.42]
+    lappend result [testbooleanobj not 1]
+    lappend result [testobj type 1]
+} {5.42 0 boolean}
 
 test obj-12.1 {DupBooleanInternalRep} {
     set result ""
@@ -528,20 +587,92 @@ test obj-30.1 {Ref counting and object deletion, simple types} {
     lappend result [testobj refcount 2]
 } {{} 1024 1024 int 4 4 0 boolean 3 2}
 
+
+test obj-31.1 {regenerate string rep of "end"} {endminusoffsettype} {
+    testobj freeallvars
+    teststringobj set 1 end
+    testobj convert 1 end-offset
+    testobj invalidateStringRep 1
+} end
+
+test obj-31.2 {regenerate string rep of "end-1"} {endminusoffsettype} {
+    testobj freeallvars
+    teststringobj set 1 end-0x1
+    testobj convert 1 end-offset
+    testobj invalidateStringRep 1
+} end-1
+
+test obj-31.3 {regenerate string rep of "end--1"} {endminusoffsettype} {
+    testobj freeallvars
+    teststringobj set 1 end--0x1
+    testobj convert 1 end-offset
+    testobj invalidateStringRep 1
+} end--1
+
+test obj-31.4 {regenerate string rep of "end-bigInteger"} {endminusoffsettype} {
+    testobj freeallvars
+    teststringobj set 1 end-0x7fffffff
+    testobj convert 1 end-offset
+    testobj invalidateStringRep 1
+} end-2147483647
+
+test obj-31.5 {regenerate string rep of "end--bigInteger"} {endminusoffsettype} {
+    testobj freeallvars
+    teststringobj set 1 end--0x7fffffff
+    testobj convert 1 end-offset
+    testobj invalidateStringRep 1
+} end--2147483647
+    
+
+test obj-31.6 {regenerate string rep of "end--bigInteger"} {endminusoffsettype nonPortable} {
+    testobj freeallvars
+    teststringobj set 1 end--0x80000000
+    testobj convert 1 end-offset
+    testobj invalidateStringRep 1
+} end--2147483648
+
+test obj-32.1 {integer overflow on input} {32bit wideBiggerThanInt} {
+    set x 0x8000; append x 0000
+    list [string is integer $x] [expr { wide($x) }]
+} {1 2147483648}
+
+test obj-32.2 {integer overflow on input} {32bit wideBiggerThanInt} {
+    set x 0xffff; append x ffff
+    list [string is integer $x] [expr { wide($x) }]
+} {1 4294967295}
+
+test obj-32.3 {integer overflow on input} {32bit wideBiggerThanInt} {
+    set x 0x10000; append x 0000
+    list [string is integer $x] [expr { wide($x) }]
+} {0 4294967296}
+
+test obj-32.4 {integer overflow on input} {32bit wideBiggerThanInt} {
+    set x -0x8000; append x 0000
+    list [string is integer $x] [expr { wide($x) }]
+} {1 -2147483648}
+
+test obj-32.5 {integer overflow on input} {32bit wideBiggerThanInt} {
+    set x -0x8000; append x 0001
+    list [string is integer $x] [expr { wide($x) }]
+} {1 -2147483649}
+
+test obj-32.6 {integer overflow on input} {32bit wideBiggerThanInt} {
+    set x -0xffff; append x ffff
+    list [string is integer $x] [expr { wide($x) }]
+} {1 -4294967295}
+
+test obj-32.7 {integer overflow on input} {32bit wideBiggerThanInt} {
+    set x -0x10000; append x 0000
+    list [string is integer $x] [expr { wide($x) }]
+} {0 -4294967296}
+
 testobj freeallvars
 
 # cleanup
 ::tcltest::cleanupTests
 return
 
-
-
-
-
-
-
-
-
-
-
+# Local Variables:
+# mode: tcl
+# End:
 

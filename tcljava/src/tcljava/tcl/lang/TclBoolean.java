@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclBoolean.java,v 1.3 2005/09/21 21:22:56 mdejong Exp $
+ * RCS: @(#) $Id: TclBoolean.java,v 1.4 2005/10/11 20:03:23 mdejong Exp $
  *
  */
 
@@ -33,21 +33,7 @@ public class TclBoolean implements InternalRep {
     }
 
     /**
-     * Construct a TclBoolean representation with the initial value taken
-     * from the given string.
-     *
-     * @param interp current interpreter.
-     * @exception TclException if the string is not a well-formed Tcl boolean
-     *    value.
-     */
-    private TclBoolean(Interp interp, String str) throws TclException {
-	value = Util.getBoolean(interp, str);
-    }
-
-    /**
      * Returns a dupilcate of the current object.
-     *
-     * @param tobj the TclObject that contains this ObjType.
      */
     public InternalRep duplicate() {
 	return new TclBoolean(value);
@@ -87,6 +73,8 @@ public class TclBoolean implements InternalRep {
     }
 
     /**
+     * SetBooleanFromAny -> setBooleanFromAny
+     *
      * Called to convert the other object's internal rep to boolean.
      *
      * @param interp current interpreter.
@@ -96,11 +84,11 @@ public class TclBoolean implements InternalRep {
     private static void setBooleanFromAny(Interp interp, TclObject tobj)
 	    throws TclException {
 	InternalRep rep = tobj.getInternalRep();
+	// Get the string representation. Make it up-to-date if necessary.
+	String string = tobj.toString();
 
 	if (rep instanceof TclBoolean) {
-	    /*
-	     * Do nothing.
-	     */
+	    // Do nothing.
 	} else if (rep instanceof TclInteger) {
 	    int i = TclInteger.get(interp, tobj);
 	    tobj.setInternalRep(new TclBoolean(i != 0));
@@ -115,11 +103,71 @@ public class TclBoolean implements InternalRep {
 	        }
 	        TclObject.objRecordMap.put(key, num);
 	    }
+	} else if (rep instanceof TclDouble) {
+	    double d = TclDouble.get(interp, tobj);
+	    tobj.setInternalRep(new TclBoolean(d != 0.0));
+
+	    if (TclObject.saveObjRecords) {
+	        String key = "TclDouble -> TclBoolean";
+	        Integer num = (Integer) TclObject.objRecordMap.get(key);
+	        if (num == null) {
+	            num = new Integer(1);
+	        } else {
+	            num = new Integer(num.intValue() + 1);
+	        }
+	        TclObject.objRecordMap.put(key, num);
+	    }
 	} else {
-	    /*
-	     * (ToDo) other short-cuts
-	     */
-	    tobj.setInternalRep(new TclBoolean(interp, tobj.toString()));
+	    // Copy the string converting its characters to lower case.
+
+	    string = string.toLowerCase();
+	    String lowerCase = string.toLowerCase();
+
+	    // Parse the string as a boolean. We use an implementation here that
+	    // doesn't report errors in interp if interp is null.
+
+	    boolean b;
+	    boolean badBoolean = false;
+
+	    try {
+	        b = Util.getBoolean(interp, lowerCase);
+	    } catch (TclException te) {
+	        // Boolean values can be extracted from ints or doubles.  Note
+	        // that we don't use strtoul or strtoull here because we don't
+	        // care about what the value is, just whether it is equal to
+	        // zero or not.
+
+                badBoolean = true;
+                b = false; // Always reassigned below
+                if (interp != null) {
+                    interp.resetResult();
+                }
+
+	        try {
+                    b = (Util.getInt(interp, lowerCase) != 0);
+                    badBoolean = false;
+	        } catch (TclException te2) {}
+
+                if (badBoolean) {
+	            try {
+                        b = (Util.getDouble(interp, lowerCase) != 0.0);
+                        badBoolean = false;
+	            } catch (TclException te2) {}
+                }
+	    }
+            if (badBoolean) {
+	        if (interp != null) {
+	            interp.resetResult();
+	        }
+	        throw new TclException(interp,
+	            "expected boolean value but got \"" +
+	            string + "\"");
+            }
+	    if (b) {
+	        tobj.setInternalRep(new TclBoolean(true));
+	    } else {
+	        tobj.setInternalRep(new TclBoolean(false));
+	    }
 
 	    if (TclObject.saveObjRecords) {
 	        String key = "TclString -> TclBoolean";
@@ -146,7 +194,7 @@ public class TclBoolean implements InternalRep {
     public static boolean get(Interp interp, TclObject tobj)
 	    throws TclException {
 	setBooleanFromAny(interp, tobj);
-	TclBoolean tbool = (TclBoolean)(tobj.getInternalRep());
+	TclBoolean tbool = (TclBoolean) tobj.getInternalRep();
 	return tbool.value;
     }
 }

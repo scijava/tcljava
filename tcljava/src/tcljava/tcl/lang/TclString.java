@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclString.java,v 1.6 2005/09/21 21:22:56 mdejong Exp $
+ * RCS: @(#) $Id: TclString.java,v 1.7 2005/10/11 20:03:23 mdejong Exp $
  *
  */
 
@@ -71,6 +71,7 @@ public class TclString implements InternalRep {
 	    TclObject.objRecordMap.put(key, num);
 	}
 
+// FIXME: param for function does not exist, an no dup seems to be returned here?
 	return new TclString();
     }
 
