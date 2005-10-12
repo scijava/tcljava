@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: TestObjCmd.java,v 1.1 2005/10/11 20:03:23 mdejong Exp $
+ * RCS: @(#) $Id: TestObjCmd.java,v 1.2 2005/10/12 22:39:39 mdejong Exp $
  */
 
 package tcl.lang;
@@ -1097,6 +1097,8 @@ IsSupportedType(
         return true;
     } else if (typeName.equals("double")) {
         return true;
+    } else if (typeName.equals("boolean")) {
+        return true;
     } else if (typeName.equals("end-offset")) {
         return true;
     } else {
@@ -1118,6 +1120,8 @@ ConvertToType(
         TclInteger.get(interp, tobj);
     } else if (typeName.equals("double")) {
         TclDouble.get(interp, tobj);
+    } else if (typeName.equals("boolean")) {
+        TclBoolean.get(interp, tobj);
     }
 }
 

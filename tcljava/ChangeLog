@@ -1,3 +1,19 @@
+2005-10-12  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/tcljava/tcl/lang/TclBoolean.java:
+        Reimplement TclBoolean class so that only two
+        instances of the TclBoolean internal rep will
+        ever exist. This matches the C Tcl impl.
+        In the get() method, check for an integer
+        with the value 0 or 1, and return a boolean
+        value without converting the internal rep
+        to a boolean type.
+        * src/tests/tcljava/tcl/lang/TestObjCmd.java:
+        Add support for "boolean" type so that
+        conversion tests will run as expected.
+        * tests/tcl/obj.test: Add int->boolean
+        conversion tests.
+
 2005-10-11  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/jacl/tcl/lang/StringCmd.java (cmdProc):

@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclBoolean.java,v 1.4 2005/10/11 20:03:23 mdejong Exp $
+ * RCS: @(#) $Id: TclBoolean.java,v 1.5 2005/10/12 22:39:39 mdejong Exp $
  *
  */
 
@@ -19,12 +19,18 @@ package tcl.lang;
 
 public class TclBoolean implements InternalRep {
     /**
-     * Internal representation of a boolean value.
+     * Internal representations for all TclBooleans.
      */
-    private boolean value;
+
+    private final static TclBoolean trueRep = new TclBoolean(true);
+    private final static TclBoolean falseRep = new TclBoolean(false);
+
+    private final boolean value;
 
     /**
      * Construct a TclBoolean representation with the given boolean value.
+     * Note that only two TclBoolean internal rep instances will ever
+     * exist.
      *
      * @param b initial boolean value.
      */
@@ -36,7 +42,7 @@ public class TclBoolean implements InternalRep {
      * Returns a dupilcate of the current object.
      */
     public InternalRep duplicate() {
-	return new TclBoolean(value);
+	return this;
     }
 
     /**
@@ -69,7 +75,7 @@ public class TclBoolean implements InternalRep {
      */
 
     public static TclObject newInstance(boolean b) {
-	return new TclObject(new TclBoolean(b));
+	return new TclObject(b ? trueRep : falseRep);
     }
 
     /**
@@ -91,7 +97,11 @@ public class TclBoolean implements InternalRep {
 	    // Do nothing.
 	} else if (rep instanceof TclInteger) {
 	    int i = TclInteger.get(interp, tobj);
-	    tobj.setInternalRep(new TclBoolean(i != 0));
+	    if (i == 0) {
+	        tobj.setInternalRep(falseRep);
+	    } else {
+	        tobj.setInternalRep(trueRep);
+	    }
 
 	    if (TclObject.saveObjRecords) {
 	        String key = "TclInteger -> TclBoolean";
@@ -105,7 +115,11 @@ public class TclBoolean implements InternalRep {
 	    }
 	} else if (rep instanceof TclDouble) {
 	    double d = TclDouble.get(interp, tobj);
-	    tobj.setInternalRep(new TclBoolean(d != 0.0));
+	    if (d == 0.0) {
+	        tobj.setInternalRep(falseRep);
+	    } else {
+	        tobj.setInternalRep(trueRep);
+	    }
 
 	    if (TclObject.saveObjRecords) {
 	        String key = "TclDouble -> TclBoolean";
@@ -164,9 +178,9 @@ public class TclBoolean implements InternalRep {
 	            string + "\"");
             }
 	    if (b) {
-	        tobj.setInternalRep(new TclBoolean(true));
+	        tobj.setInternalRep(trueRep);
 	    } else {
-	        tobj.setInternalRep(new TclBoolean(false));
+	        tobj.setInternalRep(falseRep);
 	    }
 
 	    if (TclObject.saveObjRecords) {
@@ -193,8 +207,27 @@ public class TclBoolean implements InternalRep {
      */
     public static boolean get(Interp interp, TclObject tobj)
 	    throws TclException {
-	setBooleanFromAny(interp, tobj);
-	TclBoolean tbool = (TclBoolean) tobj.getInternalRep();
+	InternalRep rep = tobj.getInternalRep();
+	TclBoolean tbool;
+
+	if (rep instanceof TclInteger) {
+	    // An integer with the value 0 or 1 can be
+	    // considered a boolean value, so there is
+	    // no need to change the internal rep.
+	    int ival = TclInteger.get(interp, tobj);
+	    if (ival == 0) {
+	        return false;
+	    } else if (ival == 1) {
+	        return true;
+	    }
+	}
+
+	if (!(rep instanceof TclBoolean)) {
+	    setBooleanFromAny(interp, tobj);
+	    tbool = (TclBoolean) tobj.getInternalRep();
+	} else {
+	    tbool = (TclBoolean) rep;
+	}
 	return tbool.value;
     }
 }
