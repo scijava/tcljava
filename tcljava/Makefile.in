@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.38 2005/10/07 06:50:08 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.39 2005/10/14 00:48:45 mdejong Exp $
 
 SHELL = /bin/sh
 
@@ -257,6 +257,13 @@ all: tcljava $(TCLJAVA)
 	@if test "$(TCLJAVA)" == "jacl" ; then \
 		$(MAKE) TCLJAVA=$(TCLJAVA) itcl ; \
 	fi
+	@$(MAKE) TCLJAVA=$(TCLJAVA) tcljavasrc.jar
+	@if test "$(TCLJAVA)" == "jacl" ; then \
+		$(MAKE) TCLJAVA=$(TCLJAVA) jaclsrc.jar ; \
+		$(MAKE) TCLJAVA=$(TCLJAVA) itclsrc.jar ; \
+	else \
+		$(MAKE) TCLJAVA=$(TCLJAVA) tclblendsrc.jar ; \
+ 	fi
 
 install: $(TCLJAVA).install.check tcljava.install $(TCLJAVA).install
 	@if test "$(TCLJAVA)" == "jacl" ; then \
@@ -453,7 +460,7 @@ tclblend.install.check:
 # Install tclBlend, if the user did not build tclblend already
 # it would have been built by the tcljava.install rule
 #
-tclblend.install: tclblend.check
+tclblend.install: tclblend.check tclblendsrc.jar
 	@echo "#"
 	@echo "# Installing tclblend"
 	@echo "#"
@@ -467,6 +474,8 @@ tclblend.install: tclblend.check
 	@chmod 555 $(TCLJAVA_INSTALL_DIR)/$(TCLBLEND_LIB_FILE)
 	@echo "Installing tclblend.jar in $(XP_TCLJAVA_INSTALL_DIR)"
 	@$(INSTALL_DATA) tclblend.jar $(XP_TCLJAVA_INSTALL_DIR)
+	@echo "Installing tclblendsrc.jar in $(XP_TCLJAVA_INSTALL_DIR)"
+	@$(INSTALL_DATA) tclblendsrc.jar $(XP_TCLJAVA_INSTALL_DIR)
 	@echo "Installing pkgIndex.tcl in $(XP_TCLJAVA_INSTALL_DIR)"
 	@$(INSTALL_DATA) pkgIndex.tcl $(XP_TCLJAVA_INSTALL_DIR)
 	@echo "Installing xputils package in $(prefix)/lib"
@@ -514,6 +523,8 @@ tclblend.uninstall:
 	@echo "Uninstalling $(XP_TCLJAVA_INSTALL_DIR)/tclblend.jar"
 	@rm -f $(XP_TCLJAVA_INSTALL_DIR)/tclblend.jar
 	@echo "Uninstalling $(XP_TCLJAVA_INSTALL_DIR)/pkgIndex.tcl"
+	@echo "Uninstalling $(XP_TCLJAVA_INSTALL_DIR)/tclblendsrc.jar"
+	@rm -f $(XP_TCLJAVA_INSTALL_DIR)/tclblendsrc.jar
 	@rm -f $(XP_TCLJAVA_INSTALL_DIR)/pkgIndex.tcl
 	@echo "Uninstalling $(BIN_INSTALL_DIR)/jtclsh"
 	@rm -f $(BIN_INSTALL_DIR)/jtclsh 
@@ -530,14 +541,9 @@ tclblend.uninstall:
 #
 
 tclblend.check: tcljava.check
-	@if test ! -f tclblend.jar ; then \
-		$(MAKE) TCLJAVA=$(TCLJAVA) tclblend.jar ; \
+	@if test ! -f tclblend.jar || test ! -f $(TCLBLEND_LIB_FILE) ; then \
+		$(MAKE) TCLJAVA=$(TCLJAVA) tclblend ; \
 	fi
-	@ if test ! -f $(TCLBLEND_LIB_FILE) ; then \
-		$(MAKE) TCLJAVA=$(TCLJAVA) $(TCLBLEND_LIB_FILE) ; \
-		cp -f $(MISC_DIR)/pkgIndex.tcl $(BUILD_DIR) ; \
-	fi
-
 
 
 
@@ -598,12 +604,14 @@ jacl.install.check:
 # Install jacl, if the user did not build jacl already
 # it would have been built by the jacl.check rule
 #
-jacl.install: jacl.check
+jacl.install: jacl.check jaclsrc.jar
 	@echo "#"
 	@echo "# Installing jacl"
 	@echo "#"
 	@echo "Installing jacl.jar in $(XP_TCLJAVA_INSTALL_DIR)"
 	@$(INSTALL_DATA) $(BUILD_DIR)/jacl.jar $(XP_TCLJAVA_INSTALL_DIR)
+	@echo "Installing jaclsrc.jar in $(XP_TCLJAVA_INSTALL_DIR)"
+	@$(INSTALL_DATA) $(BUILD_DIR)/jaclsrc.jar $(XP_TCLJAVA_INSTALL_DIR)
 	@echo "Installing jaclsh in $(BIN_INSTALL_DIR)"
 	@$(INSTALL_PROGRAM) $(BUILD_DIR)/jaclsh $(BIN_INSTALL_DIR)
 	@chmod 755 $(BIN_INSTALL_DIR)/jaclsh
@@ -630,6 +638,8 @@ jacl.uninstall:
 	@echo "#"
 	@echo "Uninstalling $(XP_TCLJAVA_INSTALL_DIR)/jacl.jar"
 	@rm -f $(XP_TCLJAVA_INSTALL_DIR)/jacl.jar
+	@echo "Uninstalling $(XP_TCLJAVA_INSTALL_DIR)/jaclsrc.jar"
+	@rm -f $(XP_TCLJAVA_INSTALL_DIR)/jaclsrc.jar
 	@echo "Uninstalling $(BIN_INSTALL_DIR)/jaclsh"
 	@rm -f $(BIN_INSTALL_DIR)/jaclsh 
 
@@ -699,12 +709,14 @@ itcl.install.check:
 # Install itcl, if the user did not build itcl already
 # it would have been built by the itcl.check rule
 #
-itcl.install: itcl.check
+itcl.install: itcl.check itclsrc.jar
 	@echo "#"
 	@echo "# Installing itcl"
 	@echo "#"
 	@echo "Installing itcl.jar in $(XP_TCLJAVA_INSTALL_DIR)"
 	@$(INSTALL_DATA) $(BUILD_DIR)/itcl.jar $(XP_TCLJAVA_INSTALL_DIR)
+	@echo "Installing itclsrc.jar in $(XP_TCLJAVA_INSTALL_DIR)"
+	@$(INSTALL_DATA) $(BUILD_DIR)/itclsrc.jar $(XP_TCLJAVA_INSTALL_DIR)
 
 itcl.uninstall:
 	@echo "#"
@@ -712,6 +724,8 @@ itcl.uninstall:
 	@echo "#"
 	@echo "Uninstalling $(XP_TCLJAVA_INSTALL_DIR)/itcl.jar"
 	@rm -f $(XP_TCLJAVA_INSTALL_DIR)/itcl.jar
+	@echo "Uninstalling $(XP_TCLJAVA_INSTALL_DIR)/itclsrc.jar"
+	@rm -f $(XP_TCLJAVA_INSTALL_DIR)/itclsrc.jar
 
 #
 # Check to make sure itcl is built when configured for Jacl
@@ -777,7 +791,7 @@ tcljava.jar: tcljava.build
 # then this rule will do a regular build before installing
 #
 
-tcljava.install: tcljava.check
+tcljava.install: tcljava.check tcljavasrc.jar
 	@echo "#"
 	@echo "# Installing tcljava"
 	@echo "#"
@@ -794,7 +808,8 @@ tcljava.install: tcljava.check
 	done;
 	@echo "Installing tcljava.jar in $(XP_TCLJAVA_INSTALL_DIR)"
 	@$(INSTALL_DATA) $(BUILD_DIR)/tcljava.jar $(XP_TCLJAVA_INSTALL_DIR)
-
+	@echo "Installing tcljavasrc.jar in $(XP_TCLJAVA_INSTALL_DIR)"
+	@$(INSTALL_DATA) $(BUILD_DIR)/tcljavasrc.jar $(XP_TCLJAVA_INSTALL_DIR)
 
 
 #
@@ -810,6 +825,8 @@ tcljava.uninstall:
 		test ! -f $(XP_TCLJAVA_INSTALL_DIR)/jacl.jar ; then \
 	    echo "Uninstalling $(XP_TCLJAVA_INSTALL_DIR)/tcljava.jar" ; \
 	    rm -f $(XP_TCLJAVA_INSTALL_DIR)/tcljava.jar ; \
+	    echo "Uninstalling $(XP_TCLJAVA_INSTALL_DIR)/tcljavasrc.jar" ; \
+	    rm -f $(XP_TCLJAVA_INSTALL_DIR)/tcljavasrc.jar ; \
 	    for i in $(XP_TCLJAVA_INSTALL_DIR) \
 		 $(TCLJAVA_INSTALL_DIR) \
 		 $(BIN_INSTALL_DIR) ; \
@@ -936,8 +953,6 @@ test_jacl.exec: test_jacl.check
 	CLASSPATH=$(TEST_CLASSPATH) \
 	$(JAVA) $(JAVA_FLAGS) \
 		-DBUILD_DIR=$(BUILD_DIR) -DJAVA=$(JAVA) tcl.lang.Shell
-
-
 
 
 test_tclblend.exec: test_tclblend.check
@@ -1206,7 +1221,16 @@ configure: $(TOP_DIR)/configure.in
 
 clean: tclblend.clean jacl.clean tcljava.clean \
 	demos.clean test.clean tmp.clean \
-	jni_example.clean itcl.clean
+	jni_example.clean itcl.clean \
+	tcljavasrc.clean tclblendsrc.clean \
+	jaclsrc.clean itclsrc.clean
+
+tcljava.clean:
+	rm -rf $(TCLJAVA_BUILD_DIR)
+	rm -f  tcljava.jar
+
+tcljavasrc.clean:
+	rm -f tcljavasrc.jar
 
 tclblend.clean:
 	rm -f  *.o $(TCLBLEND_LIB_FILE) custom javaNative.h
@@ -1214,17 +1238,22 @@ tclblend.clean:
 	rm -f  tclblend.jar
 	rm -f  pkgIndex.tcl
 
+tclblendsrc.clean:
+	rm -f tclblendsrc.jar
+
 jacl.clean:
 	rm -rf $(JACL_BUILD_DIR)
 	rm -f  jacl.jar
 
-tcljava.clean:
-	rm -rf $(TCLJAVA_BUILD_DIR)
-	rm -f  tcljava.jar
+jaclsrc.clean:
+	rm -f  jaclsrc.jar
 
 itcl.clean:
 	rm -rf $(ITCL_BUILD_DIR)
 	rm -f  itcl.jar
+
+itclsrc.clean:
+	rm -f  itclsrc.jar
 
 demos.clean: 
 	rm -rf $(DEMOS_BUILD_DIR)
@@ -1853,7 +1882,32 @@ jsrestore:
 	-rm -f $(TCLJAVA_SRC_DIR)/tcl/lang/jsoriginal/README
 	-rmdir $(TCLJAVA_SRC_DIR)/tcl/lang/jsoriginal
 
+# Targets used to create source JARs for debugging. For
+# example, create a tcljavasrc.jar file that contains
+# the Java source used to generate tcljava.jar. These
+# source JARS are really useful when debugging. To
+# enable a debug session, set the JACL_DEBUG env var
+# before invoking jaclsh.
 
+debug_src_jars: tcljavasrc.jar jaclsrc.jar tclblendsrc.jar itclsrc.jar
+
+tcljavasrc.jar:
+	cd $(TCLJAVA_SRC_DIR) ; \
+	$(JAR) $(JAR_COMPRESS_FLAGS) $(BUILD_DIR)/tcljavasrc.jar \
+	    tcl/lang/*.java tcl/lang/reflect/*.java
+
+jaclsrc.jar:
+	cd $(JACL_SRC_DIR) ; \
+	$(JAR) $(JAR_COMPRESS_FLAGS) $(BUILD_DIR)/jaclsrc.jar \
+	    tcl/lang/*.java sunlabs/brazil/util/regexp/*.java
+
+tclblendsrc.jar:
+	cd $(TCLBLEND_SRC_DIR) ; \
+	$(JAR) $(JAR_COMPRESS_FLAGS) $(BUILD_DIR)/tclblendsrc.jar tcl/lang/*.java
+
+itclsrc.jar:
+	cd $(ITCL_SRC_DIR) ; \
+	$(JAR) $(JAR_COMPRESS_FLAGS) $(BUILD_DIR)/itclsrc.jar itcl/lang/*.java
 
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.

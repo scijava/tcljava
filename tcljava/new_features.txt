@@ -375,4 +375,15 @@ Jacl's expr implementation now supports the 'eq' and 'ne'
 string equality operators. The expr implementation has
 also been optimized to improve performance.
 
+
+(JACL DEBUG SUPPORT)
+
+Jacl can now be automatically run in a debug mode that makes
+it easy to attach a Java debugger. A Java debugger that
+supports JPDA will automatically load and display the source
+code used to implement Jacl. Simply set the JACL_DEBUG env
+variable to "1" before running jaclsh or jaclsh.bat to
+start Jacl in this special debug mode.
+
+
 </PRE></BODY></HTML>

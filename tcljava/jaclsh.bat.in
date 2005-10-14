@@ -9,6 +9,27 @@ set XP_TCLJAVA_INSTALL_DIR=%PREFIX%/lib/tcljava@TCLJAVA_VERSION@
 
 set CLASSPATH=%CLASSPATH%;%XP_TCLJAVA_INSTALL_DIR%/tcljava.jar
 set CLASSPATH=%CLASSPATH%;%XP_TCLJAVA_INSTALL_DIR%/jacl.jar
+set CLASSPATH=%CLASSPATH%;%XP_TCLJAVA_INSTALL_DIR%/itcl.jar
+
+rem Debug CLASSPATH used when atteching a debugger to Jacl.
+set JACL_DEBUG_CLASSPATH=%CLASSPATH%;%XP_TCLJAVA_INSTALL_DIR%/tcljavasrc.jar
+set JACL_DEBUG_CLASSPATH=%JACL_DEBUG_CLASSPATH%;%XP_TCLJAVA_INSTALL_DIR%/jaclsrc.jar
+set JACL_DEBUG_CLASSPATH=%JACL_DEBUG_CLASSPATH%;%XP_TCLJAVA_INSTALL_DIR%/itclsrc.jar
+
+rem If JACL_DEBUG is set to 1, start the java executable with
+rem  debug flags so that a Java debugger can attach to the Jacl process.
+rem One can't typically run Jacl as a child in a debugger because
+rem interactive Jacl requires a console.
+
+IF "%JACL_DEBUG%"=="" goto skipdebug
+set JAVA_FLAGS=%JAVA_FLAGS% @JAVA_G_FLAGS@
+set CLASSPATH=%JACL_DEBUG_CLASSPATH%
+rem echo JACL_DEBUG_CLASSPATH is %CLASSPATH%
+
+set ATTACH=@JDB_ATTACH_FLAGS@
+IF "%ATTACH%"=="" goto skipdebug
+echo Attach to shell via %ATTACH%
+:skipdebug
 
 %JAVA% %JAVA_FLAGS% tcl.lang.Shell %1 %2 %3 %4 %5 %6 %7 %8 %9
 

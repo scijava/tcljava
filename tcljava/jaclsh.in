@@ -26,13 +26,35 @@ TCLJAVA_VERSION=@TCLJAVA_VERSION@
 XP_TCLJAVA_INSTALL_DIR=${prefix}/lib/tcljava${TCLJAVA_VERSION}
 
 # Add the .jar library files to the CLASSPATH
-JACL_CLASSPATH=@JAVA_CLASSPATH@:${XP_TCLJAVA_INSTALL_DIR}/tcljava.jar:${XP_TCLJAVA_INSTALL_DIR}/jacl.jar:
+JACL_CLASSPATH=@JAVA_CLASSPATH@:${XP_TCLJAVA_INSTALL_DIR}/tcljava.jar
+JACL_CLASSPATH=${JACL_CLASSPATH}:${XP_TCLJAVA_INSTALL_DIR}/jacl.jar
+JACL_CLASSPATH=${JACL_CLASSPATH}:${XP_TCLJAVA_INSTALL_DIR}/itcl.jar
+
+# Debug CLASSPATH used when atteching a debugger to Jacl.
+JACL_DEBUG_CLASSPATH=${JACL_CLASSPATH}:${XP_TCLJAVA_INSTALL_DIR}/tcljavasrc.jar
+JACL_DEBUG_CLASSPATH=${JACL_DEBUG_CLASSPATH}:${XP_TCLJAVA_INSTALL_DIR}/jaclsrc.jar
+JACL_DEBUG_CLASSPATH=${JACL_DEBUG_CLASSPATH}:${XP_TCLJAVA_INSTALL_DIR}/itclsrc.jar
 
 # Fully qualified path name of JVM executable
 JAVA=@JAVA@
 
 # The arguments to the JAVA command
 JAVA_FLAGS="@JAVA_FLAGS@"
+
+# If JACL_DEBUG is set to 1, start the java executable with
+# debug flags so that a Java debugger can attach to the Jacl process.
+# One can't typically run Jacl as a child in a debugger because
+# interactive Jacl requires a console.
+
+if test "${JACL_DEBUG}" = "1"; then
+    JAVA_FLAGS="${JAVA_FLAGS} @JAVA_G_FLAGS@"
+    JACL_CLASSPATH=${JACL_DEBUG_CLASSPATH}
+
+    ATTACH="@JDB_ATTACH_FLAGS@"
+    if test "${ATTACH}" != ""; then
+        echo "Attach to shell via $ATTACH"
+    fi
+fi
 
 # Run java with the args passed in from the calling environment
 # We must set the CLASSPATH env var instead of using the -classpath

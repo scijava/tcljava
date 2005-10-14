@@ -1,3 +1,25 @@
+2005-10-13  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        Enable Java debugger support for Jacl. When the
+        JACL_DEBUG=1 env var is set, both jaclsh and
+        jaclsh.bat will start the Jacl shell in a mode
+        that supports attaching a Java source debugger.
+        Jar files that contain the Java source code
+        for each package are now created and installed
+        so that a debugger can automatically display
+        the source code.
+
+        * Makefile.in: Create tcljavasrc.jar, jaclsrc.jar,
+        itclsrc.jar, and install them.
+        * configure: Regen.
+        * jaclsh.bat.in:
+        * jaclsh.in: Add itcl.jar to the CLASSPATH.
+        Add new debug source jars to CLASSPATH if the
+        JACL_DEBUG env var is set.
+        * new_features.txt: Mention debug mode for Jacl.
+        * tcljava.m4 (AC_JAVA_TOOLS): Update logic for
+        debug flags under Win32.
+
 2005-10-12  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/tcljava/tcl/lang/TclBoolean.java:
