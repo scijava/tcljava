@@ -1,6 +1,12 @@
 2005-10-14  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* configure: Regen.
+	* tcljava.m4 (AC_JAVA_JNI_LIBS): Remove
+	unused directory from search path in AMD 64 case.
+
+2005-10-14  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* configure: Regen.
 	* tcljava.m4 (AC_JAVA_JNI_LIBS): Add detection
 	code for AMD 64 bit JVM under Linux.
 
