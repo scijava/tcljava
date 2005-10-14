@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.39 2005/10/14 00:48:45 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.40 2005/10/14 09:11:29 mdejong Exp $
 
 SHELL = /bin/sh
 
@@ -254,24 +254,24 @@ TCLBLEND_JNI_HEADER_CLASS_NAMES = \
 #---------------------------------------
 
 all: tcljava $(TCLJAVA)
-	@if test "$(TCLJAVA)" == "jacl" ; then \
+	@if test "$(TCLJAVA)" = "jacl" ; then \
 		$(MAKE) TCLJAVA=$(TCLJAVA) itcl ; \
 	fi
 	@$(MAKE) TCLJAVA=$(TCLJAVA) tcljavasrc.jar
-	@if test "$(TCLJAVA)" == "jacl" ; then \
+	@if test "$(TCLJAVA)" = "jacl" ; then \
 		$(MAKE) TCLJAVA=$(TCLJAVA) jaclsrc.jar ; \
 		$(MAKE) TCLJAVA=$(TCLJAVA) itclsrc.jar ; \
 	else \
 		$(MAKE) TCLJAVA=$(TCLJAVA) tclblendsrc.jar ; \
- 	fi
+	fi
 
 install: $(TCLJAVA).install.check tcljava.install $(TCLJAVA).install
-	@if test "$(TCLJAVA)" == "jacl" ; then \
+	@if test "$(TCLJAVA)" = "jacl" ; then \
 		$(MAKE) TCLJAVA=$(TCLJAVA) itcl.install ; \
 	fi
 
 uninstall: $(TCLJAVA).uninstall tcljava.uninstall
-	@if test "$(TCLJAVA)" == "jacl" ; then \
+	@if test "$(TCLJAVA)" = "jacl" ; then \
 		$(MAKE) TCLJAVA=$(TCLJAVA) itcl.uninstall ; \
 	fi
 

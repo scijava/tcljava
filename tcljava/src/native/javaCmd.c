@@ -10,7 +10,7 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  *
- * RCS: @(#) $Id: javaCmd.c,v 1.25 2005/07/19 07:14:21 mdejong Exp $
+ * RCS: @(#) $Id: javaCmd.c,v 1.26 2005/10/14 09:11:29 mdejong Exp $
  */
 
 /*
@@ -179,6 +179,8 @@ EXPORT(int,Tclblend_Init)(
 #endif /* TCLBLEND_DEBUG */
 
     TclBlendTrace("Entrypoint Tclblend_Init");
+
+    assert(interp);
 
     /*
      * Init the JVM, the JNIEnv pointer, and any global data. Pass a
@@ -738,7 +740,10 @@ JavaInitBlend(
 #ifdef TCLBLEND_DEBUG
     fprintf(stderr, "TCLBLEND_DEBUG: called JavaInitBlend\n");
 #endif /* TCLBLEND_DEBUG */
-    
+
+    assert(interp);
+    assert(interpObj);
+
     /*
      * Associate the interpreter data with the interp object.
      */
@@ -1019,7 +1024,7 @@ FreeJavaCache(ClientData clientData)
 int
 JavaSetupJava(
     JNIEnv *env,		/* JNI pointer for current thread. Can be NULL */
-    Tcl_Interp *interp)		/* Interpreter to use for reporting errors. Can be NULL */
+    Tcl_Interp *interp)		/* Interpreter to use for reporting errors. */
 {
     jfieldID field;
     JavaInfo* jcache;

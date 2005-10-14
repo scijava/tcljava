@@ -1,3 +1,11 @@
+2005-10-14  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* Makefile.in: Fixup test syntax that was
+	generating errors under Linux.
+	* src/native/javaCmd.c (Tclblend_Init, JavaInitBlend):
+	Add assert calls to double check that interp
+	pointers are not NULL in the init path.
+
 2005-10-13  Mo DeJong  <mdejong@users.sourceforge.net>
 
         Enable Java debugger support for Jacl. When the
