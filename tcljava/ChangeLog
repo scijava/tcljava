@@ -1,5 +1,11 @@
 2005-10-14  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* configure: Regen.
+	* tcljava.m4 (AC_JAVA_JNI_LIBS): Add detection
+	code for AMD 64 bit JVM under Linux.
+
+2005-10-14  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* Makefile.in: Fixup test syntax that was
 	generating errors under Linux.
 	* src/native/javaCmd.c (Tclblend_Init, JavaInitBlend):
