@@ -1,8 +1,10 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.40 2005/10/14 09:11:29 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.41 2005/10/17 20:24:57 mdejong Exp $
 
 SHELL = /bin/sh
+
+MAKEFLAGS = --no-print-directory
 
 # Specify which Tcl/Java system to build (jacl or tclblend).
 TCLJAVA	= @TCLJAVA@
@@ -195,8 +197,8 @@ TEST_CLASSPATH		= $(JAVA_CLASSPATH):$(TEST_BUILD_DIR):$(BUILD_DIR)/$(TCLJAVA).ja
 
 ITCL_CLASSPATH		= $(TEST_CLASSPATH)
 
-JACL_DEBUG_CLASSPATH	=  $(TEST_CLASSPATH):$(TCLJAVA_SRC_DIR):$(JACL_SRC_DIR)
-TCLBLEND_DEBUG_CLASSPATH = $(TEST_CLASSPATH):$(TCLJAVA_SRC_DIR):$(TCLBLEND_SRC_DIR)
+JACL_DEBUG_CLASSPATH	=  $(TEST_CLASSPATH):$(BUILD_DIR)/tcljavasrc.jar:$(BUILD_DIR)/jaclsrc.jar:$(BUILD_DIR)/itclsrc.jar
+TCLBLEND_DEBUG_CLASSPATH = $(TEST_CLASSPATH):$(BUILD_DIR)/tcljavasrc.jar:$(BUILD_DIR)/tclblendsrc.jar
 
 # Libraries to use when linking: (used by SHLIB_LD_LIBS)
 LIBS			= $(TCL_LD_SEARCH_FLAGS) \
@@ -565,10 +567,10 @@ jacl.build: jacl.clean tcljava.check
 	CLASSPATH=$(JACL_CLASSPATH) \
 	$(JAVAC) $(JAVAC_FLAGS) \
 		$(JAVAC_D_FLAG) $(JACL_BUILD_DIR) \
-                tcl/lang/*.java sunlabs/brazil/util/regexp/*.java
-	cp -fr $(JACL_SRC_DIR)/tcl/lang/library\
+		tcl/lang/*.java \
+		sunlabs/brazil/util/regexp/*.java
+	cp -fr $(JACL_SRC_DIR)/tcl/lang/library \
 		$(JACL_BUILD_DIR)/tcl/lang/library
-
 
 # Only use this if you are developing jacl code and you need to recompile
 # a lot. It will not clean up before building and jacl.jar will not be
@@ -1156,7 +1158,21 @@ ddd : ddd_$(TCLJAVA)
 
 gdb : gdb_$(TCLJAVA)
 
+# Invoke a JPDA debug session for Jacl
 
+jpda:
+	@echo "Attach to shell via ${JDB_ATTACH_FLAGS}"
+	CLASSPATH=$(JACL_DEBUG_CLASSPATH) \
+	$(JAVA) $(JAVA_FLAGS) ${JAVA_G_FLAGS} \
+		-DBUILD_DIR=$(BUILD_DIR) -DJAVA=$(JAVA) tcl.lang.Shell
+
+# Invoke a debug session for either Tcl Blend or Jacl
+debug:
+	@if test "$(TCLJAVA)" = "jacl" ; then \
+		$(MAKE) TCLJAVA=$(TCLJAVA) jpda ; \
+	else \
+		$(MAKE) TCLJAVA=$(TCLJAVA) gdb ; \
+	fi
 
 
 #----------------------------------------------------------------
@@ -1230,7 +1246,7 @@ tcljava.clean:
 	rm -f  tcljava.jar
 
 tcljavasrc.clean:
-	rm -f tcljavasrc.jar
+	rm -f  tcljavasrc.jar
 
 tclblend.clean:
 	rm -f  *.o $(TCLBLEND_LIB_FILE) custom javaNative.h
@@ -1239,7 +1255,7 @@ tclblend.clean:
 	rm -f  pkgIndex.tcl
 
 tclblendsrc.clean:
-	rm -f tclblendsrc.jar
+	rm -f  tclblendsrc.jar
 
 jacl.clean:
 	rm -rf $(JACL_BUILD_DIR)

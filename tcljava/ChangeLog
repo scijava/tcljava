@@ -1,4 +1,11 @@
 2005-10-17  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* Makefile.in: Add "make debug" target that
+	will invoke a JPDA debug session for Jacl.
+	Add src jars like tcljavasrc.jar to the CLASSPATH
+	for the JPDA debug session.
+
+2005-10-17  Mo DeJong  <mdejong@users.sourceforge.net>
  
 	* src/jacl/tcl/lang/AfterCmd.java:
 	* src/jacl/tcl/lang/EvalCmd.java:
