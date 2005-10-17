@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: AfterCmd.java,v 1.3 2005/09/30 02:12:17 mdejong Exp $
+ * RCS: @(#) $Id: AfterCmd.java,v 1.4 2005/10/17 09:33:20 mdejong Exp $
  *
  */
 
@@ -307,12 +307,12 @@ throws
 private TclObject
 getCmdObject(
     TclObject argv[])		// Argument list passed to the "after" command.
+        throws TclException
 {
     if (argv.length == 3) {
 	return argv[2];
     } else {
-	TclObject cmd = TclString.newInstance(Util.concat(2, argv.length-1,
-		argv));
+	TclObject cmd = Util.concat(2, argv.length-1, argv);
 	return cmd;
     }
 }

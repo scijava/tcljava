@@ -15,7 +15,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: NamespaceCmd.java,v 1.15 2005/09/12 00:00:50 mdejong Exp $
+ * RCS: @(#) $Id: NamespaceCmd.java,v 1.16 2005/10/17 09:33:20 mdejong Exp $
  */
 
 package tcl.lang;
@@ -529,7 +529,8 @@ public class NamespaceCmd implements InternalRep, Command {
 	    if (objv.length == 4) {
 		interp.eval(objv[3],0);
 	    } else {
-		cmd = Util.concat(3,objv.length,objv);
+		TclObject obj = Util.concat(3,objv.length,objv);
+		cmd = obj.toString();
 
 		// eval() will delete the object when it decrements its
 		// refcount after eval'ing it.
@@ -844,7 +845,7 @@ public class NamespaceCmd implements InternalRep, Command {
 
 		concatObjv[0] = objv[3];
 		concatObjv[1] = list;
-		cmd = Util.concat(0, 1, concatObjv);
+		cmd = Util.concat(0, 1, concatObjv).toString();
 		interp.eval(cmd); // do not pass TCL_EVAL_DIRECT, for compiler only
 		list.release();   // we're done with the list object
 	    }

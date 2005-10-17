@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: UplevelCmd.java,v 1.3 1999/07/12 02:38:53 mo Exp $
+ * RCS: @(#) $Id: UplevelCmd.java,v 1.4 2005/10/17 09:33:20 mdejong Exp $
  *
  */
 
@@ -85,8 +85,7 @@ throws
     if (objc == 1) {
 	cmd = objv[objv_index];
     } else {
-	cmd = TclString.newInstance(Util.concat(objv_index, objv.length-1,
-						objv));
+	cmd = Util.concat(objv_index, objv.length-1, objv);
     }
     cmd.preserve();
     

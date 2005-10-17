@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Util.java,v 1.13 2005/10/07 06:50:09 mdejong Exp $
+ * RCS: @(#) $Id: Util.java,v 1.14 2005/10/17 09:33:20 mdejong Exp $
  */
 
 package tcl.lang;
@@ -710,12 +710,14 @@ throws
 /*
  *----------------------------------------------------------------------
  *
- * concat --
+ * Tcl_ConcatObj -> concat
  *
- *	Concatenates strings in an CmdArgs object into one string.
+ *	Concatenate the strings from a set of objects into a single string
+ *	object with spaces between the original strings.
  *
  * Results:
- *	The concatenated string.
+ *	The return value is a new string object containing a concatenation
+ *	of the strings in objv. Its ref count is zero.
  *
  * Side effects:
  *	None.
@@ -723,35 +725,119 @@ throws
  *----------------------------------------------------------------------
  */
 
-static String 
+static TclObject
 concat(
     int from, 		// The starting index.
     int to,  		// The ending index (inclusive).
-    TclObject[] argv) 	// The CmdArgs.
+    TclObject[] objv) 	// Array of objects to concatenate.
+        throws TclException
 {
-    StringBuffer sbuf;
+    int allocSize, elemLength, i, j;
+    String element;
+    StringBuffer concatStr;
+    TclObject obj, tlist;
+    boolean allList;
 
-    if (from > argv.length) {
-	return "";
+    if (from > objv.length) {
+	return TclString.newInstance("");
     }
-    if (to <= argv.length) {
-	to = argv.length - 1;
+    if (to <= objv.length) {
+	to = objv.length - 1;
     }
 
-    sbuf = new StringBuffer();
-    for (int i = from; i <= to; i++) {
-	String str = TrimLeft(argv[i].toString());
-	str = TrimRight(str);
-	if (str.length() == 0) {
+    // Check first to see if all the items are of list type.  If so,
+    // we will concat them together as lists, and return a list object.
+    // This is only valid when the lists have no current string
+    // representation, since we don't know what the original type was.
+    // An original string rep may have lost some whitespace info when
+    // converted which could be important.
+
+    allList = true;
+    for (i = from; i <= to; i++) {
+	obj = objv[i];
+	if (obj.hasNoStringRep() && (obj.getInternalRep() instanceof TclList)) {
+	    // A pure list element
+	} else {
+	    allList = false;
+	    break;
+	}
+    }
+    if (allList) {
+	tlist = TclList.newInstance();
+	for (i = from; i <= to; i++) {
+	    // Tcl_ListObjAppendList could be used here, but this saves
+	    // us a bit of type checking (since we've already done it)
+	    // Use of MAX_VALUE tells us to always put the new stuff on
+	    // the end.  It will be set right in Tcl_ListObjReplace.
+
+	    obj = objv[i];
+	    TclObject[] elements = TclList.getElements(null, obj);
+	    TclList.replace(null, tlist, Integer.MAX_VALUE, 0,
+	        elements, 0, elements.length-1);
+	}
+	return tlist;
+    }
+
+    allocSize = 0;
+    for (i = from; i <= to; i++) {
+	obj = objv[i];
+	element = obj.toString();
+	elemLength = element.length();
+	if ((element != null) && (elemLength > 0)) {
+	    allocSize += (elemLength + 1);
+	}
+    }
+    if (allocSize == 0) {
+	allocSize = 1;
+    }
+
+    // Allocate storage for the concatenated result.
+
+    concatStr = new StringBuffer(allocSize);
+
+    // Now concatenate the elements. Clip white space off the front and back
+    // to generate a neater result, and ignore any empty elements.
+
+    for (i = from; i <= to; i++) {
+	obj = objv[i];
+	element = obj.toString();
+	element = TrimLeft(element, " ");
+	elemLength = element.length();
+
+	// Trim trailing white space.  But, be careful not to trim
+	// a space character if it is preceded by a backslash: in
+	// this case it could be significant.
+
+	for (j = elemLength - 1; j >= 0; j--) {
+	    char c = element.charAt(j);
+	    if (c == ' ' || Character.isWhitespace(c)) {
+	        // A whitespace char
+                if (j > 0 && element.charAt(j-1) == '\\') {
+                    // Don't trim backslash space
+                    break;
+                }
+	    } else {
+	        // Not a whitespace char
+                break;
+            }
+	}
+        if (j != (elemLength - 1)) {
+            element = element.substring(0, j+1);
+        }
+	if (element.length() == 0) {
+	    /* Don't leave extra space in the buffer */
+	    if (i == to && (concatStr.length() > 0)) {
+	        concatStr.setLength( concatStr.length() - 1 );
+	    }
 	    continue;
 	}
-	sbuf.append(str);
+	concatStr.append(element);
 	if (i < to) {
-	    sbuf.append(" ");
+	    concatStr.append(' ');
 	}
     }
 
-    return sbuf.toString();
+    return TclString.newInstance(concatStr);
 }
 
 /*
@@ -1424,7 +1510,7 @@ convertElement(
 /*
  *----------------------------------------------------------------------
  *
- * trimLeft --
+ * TrimLeft --
  *
  *	Trim characters in "pattern" off the left of a string
  * 	If pattern isn't supplied, whitespace is trimmed
@@ -1444,16 +1530,20 @@ TrimLeft
 	String pattern) 
 {
     int i,j;
-    char c;
-    int strLen = str.length();
-    int patLen = pattern.length();
-    boolean done = false;
+    char c, p;
+    char[] strArray = str.toCharArray();
+    char[] patternArray = pattern.toCharArray();
+    final int strLen = strArray.length;
+    final int patLen = patternArray.length;
+    boolean done;
     
     for (i=0; i<strLen ; i++) {
 	c = str.charAt(i);
 	done = true;
 	for (j=0; j<patLen; j++) {
-	    if (c == pattern.charAt(j)) {
+	    p = pattern.charAt(j);
+	    if (c == p ||
+		    (p == ' ' && Character.isWhitespace(c))) {
 		done = false;
 		break;
 	    }
@@ -1509,15 +1599,28 @@ TrimRight (
     String str, 
     String pattern) 
 {
-    int last = str.length()-1;
-    char strArray[] = str.toCharArray();
-    int c;
-    
+    char[] strArray = str.toCharArray();
+    char[] patternArray = pattern.toCharArray();
+    final int patLen = patternArray.length;
+    char c, p;
+    int j;
+    boolean done;
+    int last = strArray.length - 1;
+
     // Remove trailing characters...
 
     while (last >= 0) {
 	c = strArray[last];
-	if (pattern.indexOf(c) == -1) {
+	done = true;
+	for (j=0; j<patLen; j++) {
+	    p = patternArray[j];
+	    if (c == p ||
+		    (p == ' ' && Character.isWhitespace(c))) {
+		done = false;
+		break;
+	    }
+	}
+	if (done) {
 	    break;
 	}
 	last--;
@@ -1773,7 +1876,7 @@ printDouble(
 	    return s;
 	}
     }
-    return s.concat(".0");
+    return s + ".0";
 }
 
 /*

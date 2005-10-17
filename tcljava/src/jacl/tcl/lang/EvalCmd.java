@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: EvalCmd.java,v 1.1 1998/10/14 21:09:18 cvsadmin Exp $
+ * RCS: @(#) $Id: EvalCmd.java,v 1.2 2005/10/17 09:33:20 mdejong Exp $
  *
  */
 
@@ -38,8 +38,8 @@ class EvalCmd implements Command {
 	    if (argv.length == 2) {
 		interp.eval(argv[1], 0);
 	    } else {
-		String s = Util.concat(1, argv.length-1, argv);
-		interp.eval(s, 0);
+		TclObject obj = Util.concat(1, argv.length-1, argv);
+		interp.eval(obj.toString(), 0);
 	    }
 	} catch (TclException e) {
 	    if (e.getCompletionCode() == TCL.ERROR) {

@@ -1,3 +1,19 @@
+2005-10-17  Mo DeJong  <mdejong@users.sourceforge.net>
+ 
+	* src/jacl/tcl/lang/AfterCmd.java:
+	* src/jacl/tcl/lang/EvalCmd.java:
+	* src/jacl/tcl/lang/NamespaceCmd.java:
+	* src/jacl/tcl/lang/UplevelCmd.java: Update
+	concat callers since it now returns a TclObject.
+	* src/jacl/tcl/lang/Util.java (concat):
+	Reimplement concat so that it behaves like
+	Tcl_ConcatObj from Tcl 8.4.
+	* tests/tcl/list.test: Add concat test case.
+	Update to Tcl 8.4 version.
+	* tests/tcl/util.test: Remove incorrect
+	code that would fail to run tests unless
+	testobj was defined. Update to Tcl 8.4 version.
+
 2005-10-14  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* configure: Regen.
