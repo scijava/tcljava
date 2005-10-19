@@ -1,3 +1,41 @@
+2005-10-19  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/jacl/tcl/lang/CharPointer.java:
+	* src/jacl/tcl/lang/FindElemResult.java:
+        Add elemStart member needed for calculation
+        of element ranges in new parser package.
+	* src/jacl/tcl/lang/Interp.java: Load
+        parser package via "package require parser".
+	* src/jacl/tcl/lang/Parser.java: Set the
+        parse.termIndex and parse.errorType fields
+        as needed by parser package. Add defs
+        for TCL_TOKEN_SUB_EXPR and TCL_TOKEN_OPERATOR,
+        though these are not implemented yet. Add
+        parse error type decls needed by parser package.
+	* src/jacl/tcl/lang/StringCmd.java (Utf8Count):
+        Make Utf8Count available to other Jacl classes.
+	* src/jacl/tcl/lang/TclParse.java: Add
+        the errorType member to match Tcl 8.4.
+        Also set termIndex to the end of the script.
+	* src/jacl/tcl/lang/TclParser.java:
+        Ported tclpro's parser package from the C
+        code in tclParser.c. The package is functional
+        except for the expr parser.
+	* src/jacl/tcl/lang/TclParserExtension.java:
+        Load parser package when required in Jacl.
+	* src/jacl/tcl/lang/TclToken.java: Add
+        printing code for TCL_TOKEN_SUB_EXPR and
+        TCL_TOKEN_OPERATOR types.
+	* src/jacl/tcl/lang/Util.java (findElement):
+        Update FindElemResult calls so that they take
+        an index for the start of the token.
+	* tests/all.tcl: Add tclparser tests.
+	* tests/tclparser/parse.test:
+	* tests/tclparser/parseCmd.test: Test cases for
+        parser package from tclpro. The expr tests and
+        tests that depend on embedded null handling are
+        currently disabled.
+
 2005-10-17  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* Makefile.in: Add "make debug" target that

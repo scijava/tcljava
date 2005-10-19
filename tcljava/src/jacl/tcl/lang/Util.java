@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Util.java,v 1.14 2005/10/17 09:33:20 mdejong Exp $
+ * RCS: @(#) $Id: Util.java,v 1.15 2005/10/19 23:37:38 mdejong Exp $
  */
 
 package tcl.lang;
@@ -1109,6 +1109,7 @@ throws
     int openBraces = 0;
     boolean inQuotes = false;
     char c;
+    int elemStart;
 
     while (i<len && (((c = s.charAt(i)) == ' ') ||
             Character.isWhitespace(c))) {
@@ -1126,6 +1127,7 @@ throws
 	i++;
     }
     StringBuffer sbuf = new StringBuffer();
+    elemStart = i;
 
     while (true) {
 	if (i >= len) {
@@ -1136,7 +1138,7 @@ throws
 		throw new TclException(interp, 
 			"unmatched open quote in list");
 	    }
-	    return new FindElemResult(i, sbuf.toString());
+	    return new FindElemResult(elemStart, i, sbuf.toString());
 	}
 
 	c = s.charAt(i);
@@ -1158,7 +1160,7 @@ throws
 	case '}':
 	    if (openBraces == 1) {
 		if (i == len-1 || Character.isWhitespace(s.charAt(i+1))) {
-		    return new FindElemResult(i+1, sbuf.toString());
+		    return new FindElemResult(elemStart, i+1, sbuf.toString());
 		} else {
 		    int errEnd;
 		    for (errEnd = i+1; errEnd<len; errEnd++) {
@@ -1203,7 +1205,7 @@ throws
 	case '\r':
 	case '\t':
 	    if ((openBraces == 0) && !inQuotes) {
-		return new FindElemResult(i+1, sbuf.toString());
+		return new FindElemResult(elemStart, i+1, sbuf.toString());
 	    } else {
 		sbuf.append(c);
 		i++;
@@ -1215,7 +1217,7 @@ throws
 	case '"':
 	    if (inQuotes) {
 		if (i == len-1 || Character.isWhitespace(s.charAt(i+1))) {
-		    return new FindElemResult(i+1, sbuf.toString());
+		    return new FindElemResult(elemStart, i+1, sbuf.toString());
 		} else {
 		    int errEnd;
 		    for (errEnd = i+1; errEnd<len; errEnd++) {

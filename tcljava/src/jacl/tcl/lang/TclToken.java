@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: TclToken.java,v 1.2 1999/05/09 01:34:50 dejong Exp $
+ * RCS: @(#) $Id: TclToken.java,v 1.3 2005/10/19 23:37:38 mdejong Exp $
  */
 
 package tcl.lang;
@@ -47,7 +47,7 @@ int numComponents;
 /*
  *----------------------------------------------------------------------
  *
- * TclToken --
+ * Tcl_Token -> TclToken
  *
  *	All class variables are accessed directly for speed.  The 
  *	consrructor only needs to allocate memory for the script.
@@ -151,6 +151,14 @@ toString() {
     }
     case Parser.TCL_TOKEN_VARIABLE: {
 	sbuf.append("\n  Token Type: TCL_TOKEN_VARIABLE");
+	break;
+    }
+    case Parser.TCL_TOKEN_SUB_EXPR: {
+	sbuf.append("\n  Token Type: TCL_TOKEN_SUB_EXPR");
+	break;
+    }
+    case Parser.TCL_TOKEN_OPERATOR: {
+	sbuf.append("\n  Token Type: TCL_TOKEN_OPERATOR");
 	break;
     }
     }

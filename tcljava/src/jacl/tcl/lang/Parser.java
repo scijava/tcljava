@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Parser.java,v 1.18 2005/09/30 02:12:17 mdejong Exp $
+ * RCS: @(#) $Id: Parser.java,v 1.19 2005/10/19 23:37:38 mdejong Exp $
  */
 
 package tcl.lang;
@@ -86,12 +86,21 @@ parseCommand(
 				// character at endIndex is set to \0.  This
 				// stores the value to return when finished.
 
+    final boolean debug = false;
+
+    if (debug) {
+    System.out.println();
+    System.out.println("Entered Parser.parseCommand()");
+    System.out.print("now to parse the string \"");
+    for (int k = script_index; k < script_array.length ; k++) {
+	System.out.print(script_array[k]);
+    }
+    System.out.println("\"");
+    }
 
     int saved_script_index = script_index; //save the original index
-    
 
     int script_length = script_array.length - 1;
-
 
     if (numBytes < 0) {
 	numBytes = script_length - script_index;
@@ -114,7 +123,6 @@ parseCommand(
 
     // Parse any leading space and comments before the first word of the
     // command.
-
 
     try {
 
@@ -155,8 +163,9 @@ parseCommand(
 	  while (true) {
 	    cur = script_array[script_index];
 	    if (script_index == parse.endIndex) {
-	      if (nested)
+	      if (nested) {
 	        parse.incomplete = true;
+	      }
 	      parse.commentSize = script_index - parse.commentStart;
 	      break;
 	    } else if (cur == '\\') {
@@ -176,15 +185,13 @@ parseCommand(
 	  }
 	}
 
-
-
 	// The following loop parses the words of the command, one word
 	// in each iteration through the loop.
 
 	parse.commandStart = script_index;
 
 	while (true) {
- 	    
+
 	    // Create the token for  the word.
 	    wordIndex = parse.numTokens;
 
@@ -193,7 +200,6 @@ parseCommand(
 
 	    // Skip white space before the word. Also skip a backslash-newline
 	    // sequence: it should be treated just like white space.
-
 
 	    while (true) {
 	      cur = script_array[script_index];
@@ -213,15 +219,17 @@ parseCommand(
 	      }
 	      break;
 	    }
-
 	    if ((type & terminators) != 0) {
+		parse.termIndex = script_index;
 		script_index++;
 		break;
 	    }
 
 	    if (script_index == parse.endIndex) {
 		if (nested && savedChar != ']') {
+		    //parse.termIndex = token.script_index;
 		    parse.incomplete = true;
+		    parse.errorType = Parser.TCL_PARSE_MISSING_BRACKET;
 		    throw new TclException(interp, "missing close-bracket");
 		}
 		break;
@@ -239,7 +247,7 @@ parseCommand(
 	    // unquoted word (anything else).
 
 	    cur = script_array[script_index];
-	    
+
 	    if (cur == '"') {
 	        script_index++;
 		parse = parseTokens(script_array,script_index, TYPE_QUOTE, parse);
@@ -249,6 +257,7 @@ parseCommand(
 		if (parse.string[parse.termIndex] != '"') {
 		    parse.termIndex = script_index - 1;
 		    parse.incomplete = true;
+		    parse.errorType = Parser.TCL_PARSE_MISSING_QUOTE;
 		    throw new TclException(parse.interp, "missing \"");
 		}
 		script_index = parse.termIndex + 1;
@@ -317,6 +326,7 @@ parseCommand(
 			parse.termIndex = 
 			    parse.getToken(wordIndex).script_index; 
 			parse.incomplete = true;
+			parse.errorType = Parser.TCL_PARSE_MISSING_BRACE;
 			throw new TclException(interp, "missing close-brace");
 		    } else {
 			script_index++;
@@ -339,7 +349,7 @@ parseCommand(
 		}
 		script_index = parse.termIndex;
 	    }
-	    
+
 	    // Finish filling in the token for the word and check for the
 	    // special case of a word consisting of a single range of
 	    // literal text.
@@ -377,23 +387,27 @@ parseCommand(
 		    continue;
 		}
 	    }
-
 	    if ((type & terminators) != 0) {
+		parse.termIndex = script_index;
 		script_index++;
 		break;
 	    }
 	    if (script_index == parse.endIndex) {
 		if (nested && savedChar != ']') {
+		    //parse.termIndex = token.script_index;
 		    parse.incomplete = true;
+		    parse.errorType = Parser.TCL_PARSE_MISSING_BRACKET;
 		    throw new TclException(interp, "missing close-bracket");
 		}
 		break;
 	    }
 	    parse.termIndex = script_index;
-	    if (script_array[script_index - 1] == '"') { 
+	    if (script_array[script_index - 1] == '"') {
+		parse.errorType = Parser.TCL_PARSE_QUOTE_EXTRA;
 		throw new TclException(interp, 
 			"extra characters after close-quote");
 	    } else {
+		parse.errorType = Parser.TCL_PARSE_BRACE_EXTRA;
 		throw new TclException(interp, 
 			"extra characters after close-brace");
 	    }
@@ -587,6 +601,7 @@ parseTokens(
 		if (nested.result != TCL.OK) {
 		    parse.termIndex = nested.termIndex;
 		    parse.incomplete = nested.incomplete;
+		    parse.errorType = nested.errorType;
 		    parse.result = nested.result;
 		    return parse;
 		}
@@ -600,6 +615,7 @@ parseTokens(
 		    }
 		    parse.termIndex = token.script_index;
 		    parse.incomplete = true;
+		    parse.errorType = Parser.TCL_PARSE_MISSING_BRACKET;
 		    parse.result = TCL.ERROR;
 		    return parse;
 		}
@@ -1431,6 +1447,7 @@ parseVarName(
 		}
 		parse.termIndex = token.script_index - 1;
 		parse.incomplete = true;
+		parse.errorType = Parser.TCL_PARSE_MISSING_VAR_BRACE;
 		parse.result = TCL.ERROR;
 		return parse;
 	    }
@@ -1508,6 +1525,7 @@ parseVarName(
 		}
 		parse.termIndex = script_index - 1;
 		parse.incomplete = true;
+		parse.errorType = Parser.TCL_PARSE_MISSING_PAREN;
 		parse.result = TCL.ERROR;
 		return parse;
 	    }
@@ -1984,6 +2002,32 @@ static char[] typeTable = {
 //				total number of nested tokens that make
 //				up the variable reference, including
 //				sub-tokens of TCL_TOKEN_VARIABLE tokens.
+// TCL_TOKEN_SUB_EXPR -		The token describes one subexpression of a
+//				expression, from the first non-blank
+//				character of the subexpression up to but not
+//				including the space, brace, or bracket
+//				that terminates the subexpression. 
+//				NumComponents counts the total number of
+//				following subtokens that make up the
+//				subexpression; this includes all subtokens
+//				for any nested TCL_TOKEN_SUB_EXPR tokens.
+//				For example, a numeric value used as a
+//				primitive operand is described by a
+//				TCL_TOKEN_SUB_EXPR token followed by a
+//				TCL_TOKEN_TEXT token. A binary subexpression
+//				is described by a TCL_TOKEN_SUB_EXPR token
+//				followed by the	TCL_TOKEN_OPERATOR token
+//				for the operator, then TCL_TOKEN_SUB_EXPR
+//				tokens for the left then the right operands.
+// TCL_TOKEN_OPERATOR -		The token describes one expression operator.
+//				An operator might be the name of a math
+//				function such as "abs". A TCL_TOKEN_OPERATOR
+//				token is always preceeded by one
+//				TCL_TOKEN_SUB_EXPR token for the operator's
+//				subexpression, and is followed by zero or
+//				more TCL_TOKEN_SUB_EXPR tokens for the
+//				operator's operands. NumComponents is
+//				always 0.
 
 static final int TCL_TOKEN_WORD		= 1;
 static final int TCL_TOKEN_SIMPLE_WORD	= 2;
@@ -1991,7 +2035,24 @@ static final int TCL_TOKEN_TEXT		= 4;
 static final int TCL_TOKEN_BS		= 8;
 static final int TCL_TOKEN_COMMAND	= 16;
 static final int TCL_TOKEN_VARIABLE	= 32;
+static final int TCL_TOKEN_SUB_EXPR	= 64;
+static final int TCL_TOKEN_OPERATOR	= 128;
 
+
+
+// Parsing error types.  On any parsing error, one of these values
+// will be stored in the error field of the TclParse class.
+
+static final int TCL_PARSE_SUCCESS		= 0;
+static final int TCL_PARSE_QUOTE_EXTRA		= 1;
+static final int TCL_PARSE_BRACE_EXTRA		= 2;
+static final int TCL_PARSE_MISSING_BRACE	= 3;
+static final int TCL_PARSE_MISSING_BRACKET	= 4;
+static final int TCL_PARSE_MISSING_PAREN	= 5;
+static final int TCL_PARSE_MISSING_QUOTE	= 6;
+static final int TCL_PARSE_MISSING_VAR_BRACE	= 7;
+static final int TCL_PARSE_SYNTAX		= 8;
+static final int TCL_PARSE_BAD_NUMBER		= 9;
 
 // Note: Most of the variables below will not be used until the
 // Compilier is implemented, but are left for consistency.

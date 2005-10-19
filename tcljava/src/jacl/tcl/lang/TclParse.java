@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: TclParse.java,v 1.2 1999/05/09 01:33:45 dejong Exp $
+ * RCS: @(#) $Id: TclParse.java,v 1.3 2005/10/19 23:37:38 mdejong Exp $
  */
 
 package tcl.lang;
@@ -62,6 +62,10 @@ int numTokens;
 //  Total number of tokens available at token.
 
 int tokensAvailable;	
+
+// One of the parsing error types defined in Parser class.
+
+int errorType;
 
 /*
  *----------------------------------------------------------------------
@@ -148,7 +152,9 @@ TclParse(
     this.commentSize = 0;
     this.commandStart = -1;
     this.commandSize = 0;
+    this.termIndex = endIndex;
     this.incomplete = false;
+    this.errorType = Parser.TCL_PARSE_SUCCESS;
 }
 
 /*

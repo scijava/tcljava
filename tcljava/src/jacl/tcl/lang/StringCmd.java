@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: StringCmd.java,v 1.8 2005/10/11 20:03:23 mdejong Exp $
+ * RCS: @(#) $Id: StringCmd.java,v 1.9 2005/10/19 23:37:38 mdejong Exp $
  *
  */
 
@@ -1010,7 +1010,8 @@ throws
 
 // return the number of Utf8 bytes that would be needed to store s
 
-private final int
+final
+static int
 Utf8Count(String s) {
     int p = 0;
     final int len = s.length();

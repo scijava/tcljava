@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: CharPointer.java,v 1.4 1999/08/05 03:33:44 mo Exp $
+ * RCS: @(#) $Id: CharPointer.java,v 1.5 2005/10/19 23:37:38 mdejong Exp $
  */
 
 package tcl.lang;
@@ -143,7 +143,7 @@ charAt(
  * length --
  *
  *	Since a '\0' char is stored at the end of the script the true
- *	length of the strinf is one less than the length of array.
+ *	length of the string is one less than the length of array.
  *
  * Results:
  *	The true size of the string.

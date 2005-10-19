@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FindElemResult.java,v 1.1 1998/10/14 21:09:21 cvsadmin Exp $
+ * RCS: @(#) $Id: FindElemResult.java,v 1.2 2005/10/19 23:37:38 mdejong Exp $
  *
  */
 
@@ -22,16 +22,17 @@ package tcl.lang;
 
 class FindElemResult {
 
-/*
- * The end of the element in the original string -- the index of the
- * character immediately behind the element.
- */
+// The start index of the element in the original string -- the index of the
+// first character in the element.
+
+int elemStart;
+
+// The end index of the element in the original string -- the index of the
+// character immediately behind the element.
 
 int elemEnd;
 
-/*
- * The element itself.
- */
+// The element itself.
 
 String elem;
 
@@ -53,11 +54,13 @@ String elem;
  */
 
 FindElemResult(
-    int i,			// Initial value for elemEnd.
-    String s)			// Initial value for elem.
+    int start,			// Initial value for elemStart.
+    int end,			// Initial value for elemEnd.
+    String e)			// Initial value for elem.
 {
-    elemEnd = i;
-    elem = s;
+    elemStart = start;
+    elemEnd = end;
+    elem = e;
 }
 
 } // end FindElemResult
