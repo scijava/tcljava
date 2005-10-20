@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclParserExtension.java,v 1.1 2005/10/19 23:37:38 mdejong Exp $
+ * RCS: @(#) $Id: TclParserExtension.java,v 1.2 2005/10/20 18:54:23 mdejong Exp $
  *
  */
 
@@ -46,8 +46,8 @@ TclParserExtension extends Extension implements Command {
     }
 
     /*
-     * Invoked when [package require Itcl] is run from Tcl.
-     * This method is needed so that Itcl can be loaded
+     * Invoked when [package require parser] is run from Tcl.
+     * This method is needed so that parser can be loaded
      * without having first loaded the Java package.
      */
 
