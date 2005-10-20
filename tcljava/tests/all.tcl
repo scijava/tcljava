@@ -7,20 +7,14 @@
 # Copyright (c) 1998-2000 Ajuba Solutions.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: all.tcl,v 1.5 2005/10/19 23:37:38 mdejong Exp $
+# RCS: @(#) $Id: all.tcl,v 1.6 2005/10/20 21:35:55 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
-
-    # Fake up the "tcltest" package with our own local copy
-    # if we can't load it in the Tcl shell.
-
-    if {[catch {package require tcltest}]} {
-        source tcltest.tcl
-    }
-
+    package require tcltest
     namespace import -force ::tcltest::*
-
-    # Load in some older helper procs
+}
+# Load in helper procs
+if {[info commands setupJavaPackage] == {}} {
     source defs
 }
 

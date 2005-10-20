@@ -6,6 +6,11 @@
 lappend auto_path [pwd]
 package require XpUtils
 
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
+
 cd ../../tests
 source defs
 

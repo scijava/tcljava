@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: InterpAliasCmd.java,v 1.3 2005/10/07 06:50:09 mdejong Exp $
+ * RCS: @(#) $Id: InterpAliasCmd.java,v 1.4 2005/10/20 21:35:55 mdejong Exp $
  *
  */
 
@@ -122,8 +122,8 @@ throws
 	}
     }
 
-    targetInterp.release();
     interp.transferResult(targetInterp, result);
+    targetInterp.release();
 }
 
 /**

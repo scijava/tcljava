@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.41 2005/10/17 20:24:57 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.42 2005/10/20 21:35:55 mdejong Exp $
 
 SHELL = /bin/sh
 
@@ -571,6 +571,9 @@ jacl.build: jacl.clean tcljava.check
 		sunlabs/brazil/util/regexp/*.java
 	cp -fr $(JACL_SRC_DIR)/tcl/lang/library \
 		$(JACL_BUILD_DIR)/tcl/lang/library
+	mkdir $(JACL_BUILD_DIR)/tcl/lang/library/tcltest
+	cp -fr $(TEST_TCL_DIR)/tcltest.tcl \
+		$(JACL_BUILD_DIR)/tcl/lang/library/tcltest
 
 # Only use this if you are developing jacl code and you need to recompile
 # a lot. It will not clean up before building and jacl.jar will not be

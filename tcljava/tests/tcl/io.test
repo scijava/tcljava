@@ -12,19 +12,13 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.5 2003/03/17 21:33:40 mdejong Exp $
-
-# Jacl does not include the tcltest package
-#if {[catch {package require tcltest 2}]} {
-#    puts stderr "Skipping tests in [info script].  tcltest 2 required."
-#    return
-#}
+# RCS: @(#) $Id: io.test,v 1.6 2005/10/20 21:35:55 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
-    source tests/tcltest.tcl
-    source tests/defs
-    setupJavaPackage
+    package require tcltest
+    namespace import -force ::tcltest::*
 }
+setupJavaPackage
 
 namespace eval ::tcl::test::io {
 

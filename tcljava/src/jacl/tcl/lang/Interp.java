@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.55 2005/10/19 23:37:38 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.56 2005/10/20 21:35:55 mdejong Exp $
  *
  */
 
@@ -793,6 +793,16 @@ createCommands()
     // Add "regexp" and related commands to this interp.
     RegexpCmd.init(this);
 
+    // Load tcltest package as a result of "package require tcltest"
+
+    try {
+        eval("package ifneeded tcltest 1.0 {source -url "+
+            "resource:/tcl/lang/library/tcltest/tcltest.tcl}");
+    } catch (TclException e) {
+	System.out.println(getResult());
+	e.printStackTrace();
+	throw new TclRuntimeError("unexpected TclException: " + e);
+    }
 
     // The Java package is only loaded when the user does a
     // "package require java" in the interp. We need to create a small
@@ -3599,6 +3609,11 @@ throws
 {
     if (sourceInterp == this) {
       return;
+    }
+
+    if (sourceInterp.deleted) {
+        // Can't interact with a deleted interp
+        throw new TclRuntimeError("sourceInterp is being deleted");
     }
 
     if (result == TCL.ERROR) {

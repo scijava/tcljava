@@ -10,9 +10,12 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: lsort.test,v 1.1 1998/10/14 21:09:26 cvsadmin Exp $
+# RCS: @(#) $Id: lsort.test,v 1.2 2005/10/20 21:35:55 mdejong Exp $
 
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
 
 test lsort-1.1 {lsort command} {
     lsort {abdeq ab 1 ac a}

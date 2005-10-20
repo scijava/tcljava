@@ -1,5 +1,29 @@
 2005-10-20  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* Makefile.in: Add tcltest.tcl to jacl.jar.
+	* src/jacl/tcl/lang/Interp.java (createCommands,
+        transferResult): Add tcltest package. Check for
+        deleted interp in transferResult.
+	* src/jacl/tcl/lang/InterpAliasCmd.java (cmdProc):
+	* src/jacl/tcl/lang/InterpSlaveCmd.java (eval, invokeHidden):
+	* src/jacl/tcl/lang/PackageCmd.java (checkVersion):
+        Check for version number with two . characters in a row.
+	* src/xputils/iload.test: Load tcltest package.
+	* src/xputils/xputils.test: Load tcltest package.
+	* tests/all.tcl: Load tcltest package instead of
+        directly sourcing tcltest.tcl.
+	* tests/defs (setupJavaPackage): Do nothing if Java
+        package was already loaded.
+	* tests/tcl/info.test: Load tcltest package.
+	* tests/tcl/io.test: Load tcltest package.
+	* tests/tcl/lsort.test: Load tcltest package.
+	* tests/tcl/pkg.test: Load tcltest package
+        into slave interp. These tests were not being
+        run before so some new bugs in the interp needed
+        to be fixed before the tests would pass.
+
+2005-10-20  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/jacl/tcl/lang/TclParserExtension.java:
 	Reformat to replace DOS CRLF with LF.
 

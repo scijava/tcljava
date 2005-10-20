@@ -6,6 +6,11 @@ package require XpUtils
 # We assume that these tests are run from tcljava/src/xputils,
 # if this changes the path to the defs file will need to be fixed
 
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
+
 cd ../../tests
 source defs
 

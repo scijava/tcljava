@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: PackageCmd.java,v 1.5 2005/01/13 06:21:14 mdejong Exp $
+ * RCS: @(#) $Id: PackageCmd.java,v 1.6 2005/10/20 21:35:55 mdejong Exp $
  */
 
 package tcl.lang;
@@ -700,7 +700,7 @@ throws
     TclException 
 {    
     int i, len;
-    char c;
+    char c, prevChar;
     boolean error = true;
     
     try {
@@ -712,16 +712,18 @@ throws
 	    return;
 	}
 	len = version.length();
-	for (i = 1; i < len; i++) {
+	for (prevChar = version.charAt(0), i = 1; i < len; i++) {
 	    c = version.charAt(i);
-	    if (!Character.isDigit(c) && (c != '.')) {
+	    if (!Character.isDigit(c) &&
+                    ((c != '.') || (prevChar == '.'))) {
 		return;
 	    }
+	    prevChar = c;
 	}
-	if (version.charAt(len - 1) == '.') {
+	if (prevChar != '.') {
+	    error = false;
 	    return;
 	}
-	error = false;
     } finally {
 	if (error) {
 	    throw new TclException(interp, 

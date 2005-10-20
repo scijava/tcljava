@@ -22,6 +22,11 @@ proc setupJavaPackage {} {
 	error "Unable to find the java package. Skipping entire test.:\n$errorInfo"
     }
 
+    if {[info command jtest] == "jtest"} {
+        # Extension already loaded
+        return
+    }
+
     if {$tcl_platform(platform) == "java"} {
 	set cls tcl.lang.JavaTestExtension
     } else {
