@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Util.java,v 1.15 2005/10/19 23:37:38 mdejong Exp $
+ * RCS: @(#) $Id: Util.java,v 1.16 2005/10/21 21:32:06 mdejong Exp $
  */
 
 package tcl.lang;
@@ -361,11 +361,7 @@ static final int getIntForIndex(
     String bytes = tobj.toString();
     length = bytes.length();
 
-    String intforindex_error = "bad index \"" + bytes +
-	    "\": must be integer or end?-integer?" + checkBadOctal(interp, bytes);
-
-    // FIXME : should we replace this call to regionMatches with a generic strncmp?
-    if (! "end".regionMatches(0, bytes, 0, (length > 3) ? 3 : length)) {
+    if ((length == 0) || !"end".regionMatches(0, bytes, 0, (length > 3) ? 3 : length)) {
 	try {
 	    offset = TclInteger.get(null, tobj);
 	} catch (TclException e) {
@@ -378,16 +374,22 @@ static final int getIntForIndex(
 
     if (length <= 3) {
 	return endValue;
-    } else if (bytes.charAt(3) == '-') {
+    } else if ((length > 4) && (bytes.charAt(3) == '-')) {
 	// This is our limited string expression evaluator
+	// Pass everything after "end-" to then reverse for offset.
 
-	offset = Util.getInt(interp, bytes.substring(3));
-	return endValue + offset;
-    } else {
-	throw new TclException(interp, "bad index \"" + bytes
+        try {
+	    offset = Util.getInt(interp, bytes.substring(4));
+	    offset = -offset;
+	    return endValue + offset;
+        } catch (TclException ex) {
+	    // Fall through to bad index error
+        }
+    }
+
+    throw new TclException(interp, "bad index \"" + bytes
 		      + "\": must be integer or end?-integer?"
 		      + checkBadOctal(interp, bytes.substring(3)));
-    }
 }
 
 /*

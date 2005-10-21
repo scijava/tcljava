@@ -1,3 +1,15 @@
+2005-10-21  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/jacl/tcl/lang/LindexCmd.java (cmdProc,
+        TclLindexList, TclLindexFlat): Implement Tcl TIP
+        22, multiple index arguments to lindex. This
+        matches the Tcl 8.4 implementation.
+	* src/jacl/tcl/lang/Util.java (getIntForIndex):
+        Update to match Tcl 8.4 implementation.
+	* tests/tcl/lindex.test:
+	* tests/tcl/string.test: Update tests to
+        those used in Tcl 8.4.
+
 2005-10-20  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* Makefile.in: Add tcltest.tcl to jacl.jar.
