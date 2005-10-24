@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: parseCmd.test,v 1.1 2005/10/19 23:37:38 mdejong Exp $
+# RCS: @(#) $Id: parseCmd.test,v 1.2 2005/10/24 00:36:36 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -49,15 +49,19 @@ test parseCmd-3.6 {ParseSetErrorCode} {
 test parseCmd-3.7 {ParseSetErrorCode} {
     list [catch {parse command {${foo}} {0 4}} msg] $msg $errorCode
 } {1 {missing close-brace for variable name} {PARSE missingVarBrace 1 {missing close-brace for variable name}}}
-test parseCmd-3.8 {ParseSetErrorCode} {unimplemented} {
+test parseCmd-3.8 {ParseSetErrorCode} {
     list [catch {parse expr {3+err} {}} msg] $msg $errorCode
 } {1 {syntax error in expression "3+err"} {PARSE syntax 2 {syntax error in expression "3+err"}}}
-test parseCmd-3.9 {ParseSetErrorCode} {unimplemented} {
+test parseCmd-3.9 {ParseSetErrorCode} {
     list [catch {parse expr {99999999999999999999999999999} {}} msg] $msg $errorCode
 } {1 {integer value too large to represent} {PARSE badNumber 0 {integer value too large to represent}}}
-test parseCmd-3.10 {ParseSetErrorCode} {unimplemented} {
+test parseCmd-3.10 {ParseSetErrorCode} {
     list [catch {parse expr {} {}} msg] $msg $errorCode
 } {1 {syntax error in expression ""} {PARSE syntax 0 {syntax error in expression ""}}}
+test parseCmd-3.11 {ParseSetErrorCode} {
+    list [catch {parse expr {1+} {}} msg] $msg $errorCode
+} {1 {syntax error in expression "1+"} {PARSE syntax 1 {syntax error in expression "1+"}}}
+
 
 test parseCmd-4.1 {ParseGetString} {
     parse getstring "foo\u00c7bar" {5 1}

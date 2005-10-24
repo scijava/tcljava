@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Parser.java,v 1.19 2005/10/19 23:37:38 mdejong Exp $
+ * RCS: @(#) $Id: Parser.java,v 1.20 2005/10/24 00:36:36 mdejong Exp $
  */
 
 package tcl.lang;
@@ -1700,15 +1700,15 @@ objCommandComplete(
 /*
  *----------------------------------------------------------------------
  *
- * backslash --
+ * TclParseBackslash -> backslash
  *
- *	Figure out how to handle a backslash sequence.  The index
- *	of the script must be pointing to the first \.
+ *	Figure out how to handle a backslash sequence.
+ *	The script_index value must be the index of the first \.
  *
  * Results:
  *	The return value is an instance of BackSlashResult that 
  *	contains the character that should be substituted in place 
- *	of the backslash sequence that starts at src.index, and
+ *	of the backslash sequence that starts at script_index, and
  *	an index to the next character after the backslash sequence.
  *
  * Side effects:
@@ -1719,8 +1719,8 @@ objCommandComplete(
 
 static BackSlashResult
 backslash(
-    char[] script_array,
-    int script_index)
+    char[] script_array,    // script
+    int script_index)       // index of first backslash
 {
     int result;
 
@@ -1851,12 +1851,298 @@ backslash(
 	}
     }
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_ParseBraces --
+ *
+ *	Given a string in braces such as a Tcl command argument or a string
+ *	value in a Tcl expression, this procedure parses the string and
+ *	returns information about the parse.  No more than numChars
+ *	characters will be scanned.
+ *
+ * Results:
+ *	The return value is a reference to a TclParse. The index of the
+ *	braced string terminating close-brace is returned in the
+ *	TclParse structure. If the parse was unsuccessful, then
+ *	a TclException will be raised.
+ *
+ * Side effects:
+ *	If there is insufficient space in parse to hold all the
+ *	information about the command, then additional space is
+ *	allocated.
+ *
+ *----------------------------------------------------------------------
+ */
 
+static
+TclParse
+ParseBraces(
+    Interp interp,		// Interpreter to use for error reporting;
+				// if null, then no error message is
+				// provided.
+    char[] script_array,	// Script containing the string in braces.
+				// The first character must be '{'.
+    int script_index,		// Script containing the string in braces.
+				// The first character must be '{'.
+    int numChars,		// Total number of characters in string. If < 0,
+				// the string consists of all characters up to
+				// the first null character.
+    TclParse parse,
+    				// Structure to fill in with information
+				// about the string.
+    boolean append)		// true means append tokens to existing
+				// information in parse; false means
+				// ignore existing tokens in parse and
+				// reinitialize it.
+        throws TclException
+{
+    TclToken token;
+    int src;
+    int startIndex, level, length;
+    char cur;
+    int type;
+    BackSlashResult bs;
 
+    if ((numChars == 0) || (script_array == null)) {
+	throw new TclException(interp, "empty script");
+    }
 
+    int script_length = script_array.length - 1;
 
+    if (numChars < 0) {
+	numChars = script_length - script_index;
+    }
+    int endIndex = script_index + numChars;
+    if (endIndex > script_length) {
+	endIndex = script_length;
+    }
 
+    if (script_array[script_index] != '{') {
+        throw new TclRuntimeError("expected open brace character at script_index");
+    }
 
+    if (!append) {
+	parse = new TclParse(interp, script_array, endIndex, null, -1);
+    }
+
+    src = script_index;
+    startIndex = parse.numTokens;
+
+    if (parse.numTokens == parse.tokensAvailable) {
+	parse.expandTokenArray(parse.numTokens+1);
+    }
+    token = parse.getToken(startIndex);
+    token.type = TCL_TOKEN_TEXT;
+    token.script_index = src + 1;
+    token.numComponents = 0;
+    level = 1;
+    while (true) {
+	for ( src++, numChars-- ; numChars > 0 ; src++, numChars-- ) {
+	    cur = script_array[src];
+	    type = ((cur > TYPE_MAX) ? TYPE_NORMAL : typeTable[cur]);
+	    if (type != TYPE_NORMAL) {
+		break;
+	    }
+	}
+	if (numChars == 0) {
+	    boolean openBrace = false;
+
+	    parse.errorType = TCL_PARSE_MISSING_BRACE;
+	    parse.termIndex = script_index;
+	    parse.incomplete = true;
+
+            String msg = "missing close-brace";
+
+            error: {
+	        if (interp == null) {
+	            break error; // Skip to exception code
+	        }
+
+	        //  Guess if the problem is due to comments by searching
+	        //  the source string for a possible open brace within the
+	        //  context of a comment.  Since we aren't performing a
+	        //  full Tcl parse, just look for an open brace preceded
+	        //  by a '<whitespace>#' on the same line.
+
+	        for (; src > script_index ; src--) {
+	            switch (script_array[src]) {
+	                case '{':
+	                    openBrace = true;
+	                    break;
+	                case '\n':
+	                    openBrace = false;
+	                    break;
+	                case '#' :
+	                    cur = script_array[src-1];
+	                    if (openBrace && Character.isWhitespace(cur)) {
+	                        msg = msg + ": possible unbalanced brace in comment";
+	                        break error;
+	                    }
+	                    break;
+	            }
+	        }
+            } // end error block
+
+            parse.release();
+	    throw new TclException(interp, msg);
+	}
+	cur = script_array[src];
+	switch (cur) {
+	    case '{':
+		level++;
+		break;
+	    case '}':
+		if (--level == 0) {
+
+		    // Decide if we need to finish emitting a
+		    // partially-finished token.  There are 3 cases:
+		    //     {abc \newline xyz} or {xyz}
+		    //		- finish emitting "xyz" token
+		    //     {abc \newline}
+		    //		- don't emit token after \newline
+		    //     {}	- finish emitting zero-sized token
+		    //
+		    // The last case ensures that there is a token
+		    // (even if empty) that describes the braced string.
+
+		    if ((src != token.script_index)
+			    || (parse.numTokens == startIndex)) {
+			token.size = (src - token.script_index);
+			parse.numTokens++;
+		    }
+		    parse.extra = src + 1;
+		    return parse;
+		}
+		break;
+	    case '\\':
+		bs = backslash(script_array, src);
+		length = src - bs.nextIndex;
+		if ((length > 1) && (script_array[src + 1] == '\n')) {
+		    // A backslash-newline sequence must be collapsed, even
+		    // inside braces, so we have to split the word into
+		    // multiple tokens so that the backslash-newline can be
+		    // represented explicitly.
+
+		    if (numChars == 2) {
+			parse.incomplete = true;
+		    }
+		    token.size = (src - token.script_index);
+		    if (token.size != 0) {
+			parse.numTokens++;
+		    }
+		    if ((parse.numTokens+1) >= parse.tokensAvailable) {
+			parse.expandTokenArray(parse.numTokens+1);
+		    }
+		    token = parse.getToken(parse.numTokens);
+		    token.type = TCL_TOKEN_BS;
+		    token.script_index = src;
+		    token.size = length;
+		    token.numComponents = 0;
+		    parse.numTokens++;
+
+		    src += length - 1;
+		    numChars -= length - 1;
+		    token = parse.getToken(parse.numTokens);
+		    token.type = TCL_TOKEN_TEXT;
+		    token.script_index = src + 1;
+		    token.numComponents = 0;
+		} else {
+		    src += length - 1;
+		    numChars -= length - 1;
+		}
+		break;
+	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_ParseQuotedString -> ParseQuotedString
+ *
+ *	Given a double-quoted string such as a quoted Tcl command argument
+ *	or a quoted value in a Tcl expression, this procedure parses the
+ *	string and returns information about the parse.  No more than
+ *	numBytes bytes will be scanned.
+ *
+ * Results:
+ *	The return value is a reference to a TclParse. The index of the
+ *	quoted string's terminating close-quote is returned in the
+ *	TclParse structure. If the parse was unsuccessful, then
+ *	a TclException will be raised.
+ *
+ * Side effects:
+ *	If there is insufficient space in parse to hold all the
+ *	information about the command, then additional space is
+ *	allocated.
+ *----------------------------------------------------------------------
+ */
+
+// Note: This method is ported from Tcl 8.4, it is not used by the parser
+// yet. Currently, this methods is only used in the expr parser.
+
+static
+TclParse
+ParseQuotedString(
+    Interp interp,		// Interpreter to use for error reporting;
+				// if null, then no error message is
+				// provided.
+    char[] script_array,	// String containing the quoted string. 
+				// The first character must be '"'.
+    int script_index,		// Index of first character in script_array.
+    int numBytes,		// Total number of bytes in string. If < 0,
+				// the string consists of all bytes up to
+				// the first null character.
+    TclParse parse,
+    				// Structure to fill in with information
+				// about the string.
+    boolean append)		// true means append tokens to existing
+				// information in parsePtr; false means
+				// ignore existing tokens in parsePtr and
+				// reinitialize it.
+        throws TclException
+{
+    if ((numBytes == 0) || (script_array == null)) {
+	throw new TclException(interp, "empty script");
+    }
+
+    int script_length = script_array.length - 1;
+
+    if (numBytes < 0) {
+	numBytes = script_length - script_index;
+    }
+    int endIndex = script_index + numBytes;
+    if (endIndex > script_length) {
+	endIndex = script_length;
+    }
+
+    if (script_array[script_index] != '"') {
+        throw new TclRuntimeError("expected quote character at script_index");
+    }
+
+    if (!append) {
+	parse = new TclParse(interp, script_array, endIndex, null, -1);
+    }
+
+    // FIXME: numBytes-1 not passed since field not supported by parseTokens().
+    parse = Parser.parseTokens(script_array, script_index+1, TYPE_QUOTE, parse);
+    if (parse.result != TCL.OK) {
+        // FIXME: look for other locations where parse.release() is not invoked!
+        parse.release(); // Tcl_FreeParse()
+        throw new TclException(parse.result);
+    }
+    if (script_array[parse.termIndex] != '"') {
+        parse.release(); // Tcl_FreeParse()
+	parse.errorType = Parser.TCL_PARSE_MISSING_QUOTE;
+	parse.termIndex = script_index;
+	parse.incomplete = true;
+        throw new TclException(interp, "missing \"");
+    }
+    parse.extra = parse.termIndex + 1;
+    return parse;
+}
 
 /*
  *----------------------------------------------------------------------

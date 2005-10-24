@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: TclParser.java,v 1.1 2005/10/19 23:37:38 mdejong Exp $
+ * RCS: @(#) $Id: TclParser.java,v 1.2 2005/10/24 00:36:36 mdejong Exp $
  */
 
 package tcl.lang;
@@ -223,7 +223,7 @@ ParseCommand(
 		ParseMakeByteRange(script, parse.commentStart, parse.commentSize));
     } else {
 	TclList.append(interp, resultPtr,
-		ParseMakeRange(script, index, 0));
+		ParseMakeRange(script, script.index, 0));
     }
     TclList.append(interp, resultPtr,
 	    ParseMakeByteRange(script, parse.commandStart, parse.commandSize));
@@ -266,29 +266,26 @@ ParseExpr(
     Interp interp,		// Current interpreter.
     UTF8CharPointer script,	// Script to parse.
     int index,			// Index to the starting point of the 
-				// script.
-    int length)			// Byte length of script be parsed.
+				// script, in bytes.
+    int length)			// Length of script be parsed, in bytes.
         throws TclException
 {
-/*
-    Tcl_Obj *resultPtr;
-    Tcl_Parse parse;
+    TclParse parse;
 
-    resultPtr = Tcl_GetObjResult(interp);
-    
-    if (Tcl_ParseExpr(interp, script + index, length, &parse)
-	    != TCL_OK) {
-	ParseSetErrorCode(interp, script, &parse);
-	return TCL_ERROR;
+    int charIndex = script.getCharIndex(index);
+    int charLength = script.getCharRange(index, length);
+
+    parse = ParseExpr.parseExpr(interp, script.array, charIndex, charLength);
+
+    if (parse.result != TCL.OK) {
+        ParseSetErrorCode(interp, script, parse);
     }
 
     // There is only one top level token, so just return it.
 
-    ParseMakeTokenList(script, &parse, 0, &resultPtr);
-    Tcl_SetObjResult(interp, resultPtr);
-    Tcl_FreeParse(&parse);
-    return TCL_OK;
-*/
+    ParseMakeTokenListResult lresult = new ParseMakeTokenListResult();
+    ParseMakeTokenList(script, parse, 0, lresult);
+    interp.setResult(lresult.newList);
 }
 
 /*

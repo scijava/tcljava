@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: TclParse.java,v 1.3 2005/10/19 23:37:38 mdejong Exp $
+ * RCS: @(#) $Id: TclParse.java,v 1.4 2005/10/24 00:36:36 mdejong Exp $
  */
 
 package tcl.lang;
@@ -106,13 +106,16 @@ boolean incomplete;
 // When a TclParse is the return value of a method, result is set to
 // a standard Tcl result, indicating the return of the method.
 
-
 int result;
+
+// Extra integer field used to return a value in a parse operation.
+
+int extra;
 
 // Default size of the tokenList array.
 
 private static final int INITIAL_NUM_TOKENS = 20;
-  private static final int MAX_CACHED_TOKENS = 50; //my tests show 50 is best
+private static final int MAX_CACHED_TOKENS = 50; //my tests show 50 is best
 
 
 /*
@@ -155,6 +158,7 @@ TclParse(
     this.termIndex = endIndex;
     this.incomplete = false;
     this.errorType = Parser.TCL_PARSE_SUCCESS;
+    this.result = TCL.OK;
 }
 
 /*
@@ -271,6 +275,7 @@ private void releaseToken(TclToken token) {}
  *
  *----------------------------------------------------------------------
  */
+
 void
 expandTokenArray(int needed)
 {
@@ -284,6 +289,39 @@ expandTokenArray(int needed)
     tokenList = newList;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * insertInTokenArray --
+ *
+ *      This helper method will expand the token array as needed and
+ *      insert new tokens in the array. This method is inlined in
+ *      the C impl, but broken out into a helper method here for
+ *      the sake of simplicity.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Can update the size of the token array.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+insertInTokenArray(int location, int numNew)
+{
+    int needed = numTokens+numNew;
+    if (needed > tokensAvailable) {
+        expandTokenArray(needed);
+    }
+
+    System.arraycopy(tokenList, location, tokenList,
+        location+numNew, tokenList.length-location-numNew);
+    for (int i=0;i<numNew;i++) {
+        tokenList[location+i]=grabToken();
+    }
+}
 
 /*
  *----------------------------------------------------------------------
