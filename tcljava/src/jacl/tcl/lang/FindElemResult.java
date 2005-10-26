@@ -10,15 +10,13 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FindElemResult.java,v 1.2 2005/10/19 23:37:38 mdejong Exp $
+ * RCS: @(#) $Id: FindElemResult.java,v 1.3 2005/10/26 19:17:08 mdejong Exp $
  *
  */
 
 package tcl.lang;
 
-/*
- * Result returned by Util.findElement().
- */
+// Result returned by Util.findElement().
 
 class FindElemResult {
 
@@ -31,6 +29,12 @@ int elemStart;
 // character immediately behind the element.
 
 int elemEnd;
+
+// The number of characters parsed from the original string, this can be
+// different than the length of the elem string when two characters
+// are collapsed into one in the case of a backslash.
+
+int size;
 
 // The element itself.
 
@@ -56,11 +60,13 @@ String elem;
 FindElemResult(
     int start,			// Initial value for elemStart.
     int end,			// Initial value for elemEnd.
-    String e)			// Initial value for elem.
+    String elem,		// Initial value for elem.
+    int size)			// Initial value for size.
 {
     elemStart = start;
     elemEnd = end;
-    elem = e;
+    this.elem = elem;
+    this.size = size;
 }
 
 } // end FindElemResult

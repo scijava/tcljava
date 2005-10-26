@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: BackSlashResult.java,v 1.1 1998/10/14 21:09:19 cvsadmin Exp $
+ * RCS: @(#) $Id: BackSlashResult.java,v 1.2 2005/10/26 19:17:08 mdejong Exp $
  *
  */
 
@@ -18,15 +18,20 @@ class BackSlashResult {
     char c;
     int nextIndex;
     boolean isWordSep;
-    BackSlashResult(char ch, int w) {
-	c = ch;
-	nextIndex = w;
-	isWordSep = false;
+    int count;
+
+    BackSlashResult(char c, int nextIndex, int count) {
+	this.c = c;
+	this.nextIndex = nextIndex;
+	this.isWordSep = false;
+	this.count = count;
     }
-    BackSlashResult(char ch, int w, boolean b) {
-	c = ch;
-	nextIndex = w;
-	isWordSep = b;
+
+    BackSlashResult(char c, int nextIndex, boolean isWordSep, int count) {
+	this.c = c;
+	this.nextIndex = nextIndex;
+	this.isWordSep = false;
+	this.count = count;
     }
 }
 

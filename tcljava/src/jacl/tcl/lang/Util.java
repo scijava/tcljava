@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Util.java,v 1.16 2005/10/21 21:32:06 mdejong Exp $
+ * RCS: @(#) $Id: Util.java,v 1.17 2005/10/26 19:17:08 mdejong Exp $
  */
 
 package tcl.lang;
@@ -1112,6 +1112,7 @@ throws
     boolean inQuotes = false;
     char c;
     int elemStart;
+    int size = 0;
 
     while (i<len && (((c = s.charAt(i)) == ' ') ||
             Character.isWhitespace(c))) {
@@ -1133,6 +1134,7 @@ throws
 
     while (true) {
 	if (i >= len) {
+	    size = (i - elemStart);
 	    if (openBraces != 0) {
 		throw new TclException(interp,
 			"unmatched open brace in list");
@@ -1140,7 +1142,7 @@ throws
 		throw new TclException(interp, 
 			"unmatched open quote in list");
 	    }
-	    return new FindElemResult(elemStart, i, sbuf.toString());
+	    return new FindElemResult(elemStart, i, sbuf.toString(), size);
 	}
 
 	c = s.charAt(i);
@@ -1161,8 +1163,9 @@ throws
 
 	case '}':
 	    if (openBraces == 1) {
+		size = (i - elemStart);
 		if (i == len-1 || Character.isWhitespace(s.charAt(i+1))) {
-		    return new FindElemResult(elemStart, i+1, sbuf.toString());
+		    return new FindElemResult(elemStart, i+1, sbuf.toString(), size);
 		} else {
 		    int errEnd;
 		    for (errEnd = i+1; errEnd<len; errEnd++) {
@@ -1207,7 +1210,8 @@ throws
 	case '\r':
 	case '\t':
 	    if ((openBraces == 0) && !inQuotes) {
-		return new FindElemResult(elemStart, i+1, sbuf.toString());
+		size = (i - elemStart);
+		return new FindElemResult(elemStart, i+1, sbuf.toString(), size);
 	    } else {
 		sbuf.append(c);
 		i++;
@@ -1218,8 +1222,9 @@ throws
 
 	case '"':
 	    if (inQuotes) {
+		size = (i - elemStart);
 		if (i == len-1 || Character.isWhitespace(s.charAt(i+1))) {
-		    return new FindElemResult(elemStart, i+1, sbuf.toString());
+		    return new FindElemResult(elemStart, i+1, sbuf.toString(), size);
 		} else {
 		    int errEnd;
 		    for (errEnd = i+1; errEnd<len; errEnd++) {

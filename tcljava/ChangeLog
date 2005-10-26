@@ -1,3 +1,27 @@
+2005-10-26  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/jacl/tcl/lang/BackSlashResult.java: Add
+        a count field that saves the number of characters
+        consumed by the backslash subst.
+	* src/jacl/tcl/lang/FindElemResult.java: Add
+        a size field that saves the number of characters
+        consumed from the script.
+	* src/jacl/tcl/lang/ParseExpr.java (ParseInfo, parseExpr):
+        Define start, next, prevEnd, and lastChar indexes like
+        Tcl 8.4 so that parser tests pass.
+	* src/jacl/tcl/lang/Parser.java (backslash, ParseHex):
+        Rewrite backslash subst impl so that it makes use
+        of a ParseHex helper like Tcl 8.4.
+	* src/jacl/tcl/lang/TclParser.java (ParseList,
+        ParseCountNewline):
+        Use new size member of FindElemResult to get the
+        correct number of characters in a list element.
+        Fix end index bug in ParseCountNewline so that
+        the correct number of newlines is returned.
+	* src/jacl/tcl/lang/TclToken.java:
+	* src/jacl/tcl/lang/Util.java (findElement):
+        Define size member of FindElemResult.
+
 2005-10-25  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* src/jacl/tcl/lang/Expression.java: Repalce call to

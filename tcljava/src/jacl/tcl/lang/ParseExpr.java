@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: ParseExpr.java,v 1.1 2005/10/24 00:36:36 mdejong Exp $
+ * RCS: @(#) $Id: ParseExpr.java,v 1.2 2005/10/26 19:17:08 mdejong Exp $
  */
 
 package tcl.lang;
@@ -112,15 +112,15 @@ class ParseInfo
     ParseInfo(TclParse parseObj, char[] script_array, int script_index, int length)
     {
         this.parseObj = parseObj;
-        originalExpr = script_array;
         lexeme = UNKNOWN;
+        originalExpr = script_array;
         originalExprStart = script_index;
-        start = script_index;
+        start = -1;
         originalExprSize = length;
         size = length;
-        next = 0;
-        prevEnd = -1;
-        lastChar = length;
+        next = script_index;
+        prevEnd = script_index;
+        lastChar = script_index + length;
     }
 
     // Return the original expression as a string. The start and size fields
@@ -165,8 +165,8 @@ TclParse parseExpr(
     Interp interp,               // Used for error reporting.
     char[]  script_array,        // References the script and contains an 
     int     script_index,        // index to the next character to parse.
-    int numBytes)                // Number of bytes in script. If < 0, the
-                                 // script consists of all bytes up to the
+    int numChars)                // Number of characters in script. If < 0, the
+                                 // script consists of all characters up to the
                                  // first null character.
 {
     int code;
@@ -177,10 +177,10 @@ TclParse parseExpr(
 
     int script_length = script_array.length - 1;
 
-    if (numBytes < 0) {
-	numBytes = script_length - script_index;
+    if (numChars < 0) {
+	numChars = script_length - script_index;
     }
-    int endIndex = script_index + numBytes;
+    int endIndex = script_index + numChars;
     if (endIndex > script_length) {
 	endIndex = script_length;
     }
@@ -190,7 +190,7 @@ TclParse parseExpr(
     // Initialize the ParseInfo structure that holds state while parsing
     // the expression.
 
-    info = new ParseInfo(parse, script_array, script_index, numBytes);
+    info = new ParseInfo(parse, script_array, script_index, numChars);
 
     try {
         // Get the first lexeme then parse the expression.
@@ -1609,7 +1609,7 @@ LogSyntaxError(
                         // about the syntax error.
         throws TclException
 {
-    int numBytes = (info.lastChar - info.originalExprStart);
+    //int numChars = (info.lastChar - info.originalExprStart);
     String expr = info.getOriginalExpr();
     if (expr.length() > 60) {
         expr = expr.substring(0, 60);

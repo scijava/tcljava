@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Parser.java,v 1.20 2005/10/24 00:36:36 mdejong Exp $
+ * RCS: @(#) $Id: Parser.java,v 1.21 2005/10/26 19:17:08 mdejong Exp $
  */
 
 package tcl.lang;
@@ -1719,84 +1719,82 @@ objCommandComplete(
 
 static BackSlashResult
 backslash(
-    char[] script_array,    // script
+    char[] script_array,    // script to parse
     int script_index)       // index of first backslash
 {
     int result;
+    char c;
+    int count;
+    int numChars; // Max number of characters to scan
+
+    // FIXME: max number of chars to parse is needed
+    // for embedded null support. This needs to be
+    // calculated in the caller.
+    numChars = script_array.length - script_index;
 
     script_index++;
     int endIndex = script_array.length - 1;
 
     if (script_index == endIndex) {
-	return new BackSlashResult('\\', script_index);
+	count = 1;
+	return new BackSlashResult('\\', script_index, count);
     }
 
-    char c = script_array[script_index];
+    count = 2;
+    c = script_array[script_index];
     switch (c) {
-    case 'a':
-	return new BackSlashResult((char)0x7, script_index+1);
-    case 'b':
-	return new BackSlashResult((char)0x8, script_index+1);
-    case 'f':
-	return new BackSlashResult((char)0xc, script_index+1);
-    case 'n':
-	return new BackSlashResult('\n', script_index+1);
-    case 'r':
-	return new BackSlashResult('\r', script_index+1);
-    case 't':
-	return new BackSlashResult('\t', script_index+1);
-    case 'v':
-	return new BackSlashResult((char)0xb, script_index+1);
-    case 'x':
+    case 'a': {
+	return new BackSlashResult((char)0x7, script_index+1, count);
+    }
+    case 'b': {
+	return new BackSlashResult((char)0x8, script_index+1, count);
+    }
+    case 'f': {
+	return new BackSlashResult((char)0xc, script_index+1, count);
+    }
+    case 'n': {
+	return new BackSlashResult('\n', script_index+1, count);
+    }
+    case 'r': {
+	return new BackSlashResult('\r', script_index+1, count);
+    }
+    case 't': {
+	return new BackSlashResult('\t', script_index+1, count);
+    }
+    case 'v': {
+	return new BackSlashResult((char)0xb, script_index+1, count);
+    }
+    case 'x': {
 	script_index++;
-	if (script_index < endIndex) {
-	    c = script_array[script_index];
+        ParseHexResult pr = ParseHex(script_array, script_index,
+            numChars-1);
+        count += pr.numScanned;
 
-	    if (((c >= '0') && (c <= '9')) ||
-		    ((c >= 'A') && (c <= 'F')) ||
-		    ((c >= 'a') && (c <= 'f'))) {
-		
-		String str = new String(script_array, script_index, 
-			endIndex - script_index);
-		StrtoulResult res = new StrtoulResult();
-		Util.strtoul(str, 0, 16, res);
-		if (res.errno == 0) {
-		    // We force res.value to be a 8-bit (ASCII) character
-		    // so that it is compatible with Tcl.
-		    
-		    char b = (char) (res.value & 0xff);
-		    return new BackSlashResult(b, script_index + res.index);
-		}
-	    }
-	}
-	return new BackSlashResult('x', script_index);
-    case 'u':
-	    int count, n;
-	    result = 0;
-	    for (count = 0; count < 4; count++) {
-		script_index++;
-		c = script_array[script_index];
-		if (((c >= '0') && (c <= '9'))
-			|| ((c >= 'a') && (c <= 'f'))
-			|| ((c >= 'A') && (c <= 'F'))) {
-		    n = c - '0';
-		    if (n > 9) {
-			n = n + '0' + 10 - 'A';
-		    }
-		    if (n > 16) {
-			n = n + 'A' - 'a';
-		    }
-		    result = (result << 4) + n;
-		} else {
-		    break;
-		}
-	    }
-	    if (count == 0) {
-		result = 'u';
-	    }
-	    return new BackSlashResult((char)result, script_index+1);
+        if (count == 2) {
+            // No hexadigits -> This is just "x".
+            c = 'x';
+        } else {
+            // Keep only the last byte (2 hex digits)
+            c = (char) (pr.result & 0xff);
+        }
+        return new BackSlashResult(c, script_index + pr.numScanned, count);
+    }
+    case 'u': {
+	script_index++;
+        ParseHexResult pr = ParseHex(script_array, script_index,
+            (numChars > 5) ? 4 : numChars-1);
+        count += pr.numScanned;
+
+        if (count == 2) {
+            // No hexadigits -> This is just "u".
+            c = 'u';
+        } else {
+            c = (char) pr.result;
+        }
+        return new BackSlashResult(c, script_index + pr.numScanned, count);
+    }
     case '\r':
-    case '\n':
+    case '\n': {
 	if (c == '\r') {
 	    if ((script_index + 1) < endIndex) {
 		if (script_array[script_index + 1] == '\n') {
@@ -1809,18 +1807,20 @@ backslash(
 	    c = script_array[script_index];
 	} while ((script_index < endIndex) && 
 		((c == ' ') || (c == '\t')));
-	return new BackSlashResult((char) ' ', script_index);
-    case 0:
-	return new BackSlashResult((char) '\\', script_index+1);
-    default:
+	return new BackSlashResult(' ', script_index, count);
+    }
+    case 0: {
+	return new BackSlashResult('\\', script_index+1, count);
+    }
+    default: {
 	if ((c >= '0') && (c <= '9')) {
 	    // Convert it to an octal number. This implementation is
 	    // compatible with tcl 7.6 - characters 8 and 9 are allowed.
-	    
+
 	    result = c - '0';
 	    script_index++;
-	    
-	getoctal: {
+
+	    getoctal: {
 		if (script_index == endIndex) {
 		    break getoctal;
 		}
@@ -1841,14 +1841,15 @@ backslash(
 		result = (result * 8) + (c - '0');
 		script_index++;
 	    }
-	    
+
 	    // We force result to be a 8-bit (ASCII) character so
 	    // that it compatible with Tcl 7.6.
-	    
-	    return new BackSlashResult((char) (result & 0xff), script_index);
+
+	    return new BackSlashResult((char) (result & 0xff), script_index, count);
 	} else {
-	    return new BackSlashResult(c, script_index+1);
+	    return new BackSlashResult(c, script_index+1, count);
 	}
+    }
     }
 }
 
@@ -2142,6 +2143,74 @@ ParseQuotedString(
     }
     parse.extra = parse.termIndex + 1;
     return parse;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclParseHex -> ParseHex
+ *
+ *	Scans a hexadecimal number as a character value.
+ *	(e.g., for parsing hex and unicode escape sequences).
+ *	At most numChars chars are scanned.
+ *
+ * Results:
+ *	A ParseHexResult containing the character value
+ *	and the number of characters consumed is returned.
+ *
+ * Notes:
+ *	Relies on the following properties of the ASCII
+ *	character set, with which UTF-8 is compatible:
+ *
+ *	The digits '0' .. '9' and the letters 'A' .. 'Z' and 'a' .. 'z' 
+ *	occupy consecutive code points, and '0' < 'A' < 'a'.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static class ParseHexResult {
+    int result;
+    int numScanned;
+}
+
+static
+ParseHexResult
+ParseHex(
+    char[] script_array,	// Array of characters to parse.
+    int script_index,		// Array of characters to parse.
+    int numChars)		// Max number of characters to scan
+{
+    int result = 0;
+    char digit;
+    int p = script_index;
+
+    for (; numChars > 0 ; numChars--) {
+	digit = script_array[p];
+
+	if (((digit >= '0') && (digit <= '9')) ||
+	        ((digit >= 'A') && (digit <= 'F')) ||
+	        ((digit >= 'a') && (digit <= 'f'))) {
+	    // This is a hex character
+	} else {
+            break;
+        }
+
+	p++;
+	result <<= 4;
+
+	if (digit >= 'a') {
+	    result |= (10 + digit - 'a');
+	} else if (digit >= 'A') {
+	    result |= (10 + digit - 'A');
+	} else {
+	    result |= (digit - '0');
+	}
+    }
+
+    ParseHexResult pr = new ParseHexResult();
+    pr.result = result;
+    pr.numScanned = p - script_index;
+    return pr;
 }
 
 /*

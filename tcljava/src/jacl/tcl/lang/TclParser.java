@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: TclParser.java,v 1.2 2005/10/24 00:36:36 mdejong Exp $
+ * RCS: @(#) $Id: TclParser.java,v 1.3 2005/10/26 19:17:08 mdejong Exp $
  */
 
 package tcl.lang;
@@ -359,7 +359,7 @@ ParseList(
 	listIndex = fer.elemEnd;
 	//charLength -= (listIndex - prevListIndex);
         elementIndex = fer.elemStart;
-        size = fer.elem.length();
+        size = fer.size;
 
 	// Check to see if this element was in quotes or braces.
 	// If it is, ensure that the range includes the quotes/braces
@@ -645,6 +645,12 @@ ParseMakeByteRange(
     int length)			// The length of the range, in chars.
         throws TclException
 {
+    if (start < 0) {
+        throw new TclRuntimeError("char index can't be < 0, was " + start);
+    }
+    if (length < 0) {
+        throw new TclRuntimeError("char length can't be < 0, was " + length);
+    }
     int byteStart = script.getByteIndex(start);
     int byteLength = script.getByteRange(start, length);
     return ParseMakeRange(script, byteStart, byteLength);
@@ -833,7 +839,7 @@ ParseCountNewline(
     }
 
     subStrIndex = offset;
-    endStrIndex = length;
+    endStrIndex = subStrIndex + length;
     numNewline = 0;
 
     // Count newlines in terms of byte range
