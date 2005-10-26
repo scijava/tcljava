@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Expression.java,v 1.13 2005/09/30 02:12:17 mdejong Exp $
+ * RCS: @(#) $Id: Expression.java,v 1.14 2005/10/26 00:22:03 mdejong Exp $
  *
  */
 
@@ -1281,7 +1281,7 @@ class Expression {
 	                m_token = VALUE;
 	                ExprValue value = grabExprValue();
 	                value.setIntValue(c - '0',
-	                    Character.toString(c));
+	                    String.valueOf(c));
 	                return value;
 	        }
 	    }
