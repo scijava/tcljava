@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaTestExtension.java,v 1.3 2005/10/11 20:03:23 mdejong Exp $
+ * RCS: @(#) $Id: JavaTestExtension.java,v 1.4 2005/10/27 20:43:20 mdejong Exp $
  *
  */
 
@@ -60,9 +60,91 @@ init(
 
     // Create "testobj" and friends
     TestObjCmd.init(interp);
+
+    // Create "T1" and "T2" test expr functions
+    createExprTestFunctions(interp);
+}
+
+void createExprTestFunctions(Interp interp) {
+    Expression expr = interp.expr;
+    expr.registerMathFunction("T1", new TestMathFunc(123));
+    expr.registerMathFunction("T2", new TestMathFunc(345));
+    expr.registerMathFunction("T3", new TestMathFunc2());
 }
 
 } // JavaTestExtension
+
+// Implement "T1" and "T2" expr math functions
+
+class TestMathFunc extends NoArgMathFunction {
+    int clientData;
+
+    TestMathFunc(int clientData) {
+        this.clientData = clientData;
+    }
+
+    ExprValue apply(Interp interp, ExprValue[] values)
+	    throws TclException {
+	ExprValue value = interp.expr.grabExprValue();
+        value.setIntValue(clientData);
+        return value;
+    }
+}
+
+// Implement "T3" expr math function
+
+class TestMathFunc2 extends MathFunction {
+
+    TestMathFunc2() {
+    	argTypes = new int[2];
+	argTypes[0] = EITHER;
+	argTypes[1] = EITHER;
+    }
+
+    // Return the maximum of the two arguments with the correct type.
+
+    ExprValue apply(Interp interp, ExprValue[] values)
+	    throws TclException
+    {
+        ExprValue arg0 = values[0];
+        ExprValue arg1 = values[1];
+        ExprValue value = interp.expr.grabExprValue();
+
+        if (arg0.isIntType()) {
+            int i0 = arg0.getIntValue();
+
+            if (arg1.isIntType()) {
+                int i1 = arg1.getIntValue();
+                value.setIntValue( ((i0 > i1)? i0 : i1) );
+            } else if (arg1.isDoubleType()) {
+                double d0 = (double) i0;
+                double d1 = arg1.getDoubleValue();
+                value.setDoubleValue( ((d0 > d1)? d0 : d1) );
+            } else {
+                throw new TclException(interp,
+                    "T3: wrong type for arg 2");
+            }
+        } else if (arg0.isDoubleType()) {
+            double d0 = arg0.getDoubleValue();
+
+            if (arg1.isIntType()) {
+                double d1 = (double) arg1.getIntValue();
+                value.setDoubleValue( ((d0 > d1)? d0 : d1) );
+            } else if (arg1.isDoubleType()) {
+                double d1 = arg1.getDoubleValue();
+                value.setDoubleValue( ((d0 > d1)? d0 : d1) );
+            } else {
+                throw new TclException(interp,
+                    "T3: wrong type for arg 2");
+            }
+        } else {
+            throw new TclException(interp,
+                "T3: wrong type for arg 1");
+        }
+        return value;
+    }
+}
+
 
 class TestAssocData implements AssocData {
 Interp interp;

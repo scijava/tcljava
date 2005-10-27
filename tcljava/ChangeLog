@@ -1,3 +1,22 @@
+2005-10-27  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/jacl/tcl/lang/Expression.java (Expression,
+        registerMathFunction, evalMathFunction, RoundFunction):
+        Add method to support registration of math functions.
+        Use it for built-in math functions in ctor.
+        Fix num args to math function check so that
+        a math function with no args is correctly handled.
+        Pass name of math function into evalMathFunction
+        in case it is needed for an error message.
+        Update round() math function implementation so that
+        Tcl 8.4 tests added to expr.test pass.
+	* src/tests/jacl/tcl/lang/JavaTestExtension.java:
+        Create T1(), T2(), and T3() math functions so that
+        tests in expr.test pass.
+	* tests/tcl/expr.test: Use constraints to limit
+        running tests that don't work instead of commenting
+        them out. Add round() tests from Tcl 8.4.
+
 2005-10-26  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* src/jacl/tcl/lang/BackSlashResult.java: Add

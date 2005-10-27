@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Expression.java,v 1.14 2005/10/26 00:22:03 mdejong Exp $
+ * RCS: @(#) $Id: Expression.java,v 1.15 2005/10/27 20:43:20 mdejong Exp $
  *
  */
 
@@ -196,32 +196,32 @@ class Expression {
 	//              try [expr fmod(4.67, 2.2)]
 	//              the answer should be .27, but I got .2699999999999996
 
-	mathFuncTable.put("atan2", new Atan2Function());
-	mathFuncTable.put("pow",   new PowFunction());
-        mathFuncTable.put("acos",  new AcosFunction());
-	mathFuncTable.put("asin",  new AsinFunction());
-	mathFuncTable.put("atan",  new AtanFunction());
-	mathFuncTable.put("ceil",  new CeilFunction());
-	mathFuncTable.put("cos",   new CosFunction());
-	mathFuncTable.put("cosh",  new CoshFunction());
-	mathFuncTable.put("exp",   new ExpFunction());
-	mathFuncTable.put("floor", new FloorFunction());
-	mathFuncTable.put("fmod",  new FmodFunction());
-	mathFuncTable.put("hypot", new HypotFunction());
-	mathFuncTable.put("log",   new LogFunction());
-	mathFuncTable.put("log10", new Log10Function());
-	mathFuncTable.put("rand",  new RandFunction());
-	mathFuncTable.put("sin",   new SinFunction());
-	mathFuncTable.put("sinh",  new SinhFunction());
-	mathFuncTable.put("sqrt",  new SqrtFunction());
-	mathFuncTable.put("srand", new SrandFunction());
-	mathFuncTable.put("tan",   new TanFunction());
-	mathFuncTable.put("tanh",  new TanhFunction());
+	registerMathFunction("atan2", new Atan2Function());
+	registerMathFunction("pow", new PowFunction());
+	registerMathFunction("acos", new AcosFunction());
+	registerMathFunction("asin", new AsinFunction());
+	registerMathFunction("atan", new AtanFunction());
+	registerMathFunction("ceil", new CeilFunction());
+	registerMathFunction("cos", new CosFunction());
+	registerMathFunction("cosh", new CoshFunction());
+	registerMathFunction("exp", new ExpFunction());
+	registerMathFunction("floor", new FloorFunction());
+	registerMathFunction("fmod", new FmodFunction());
+	registerMathFunction("hypot", new HypotFunction());
+	registerMathFunction("log", new LogFunction());
+	registerMathFunction("log10", new Log10Function());
+	registerMathFunction("rand", new RandFunction());
+	registerMathFunction("sin", new SinFunction());
+	registerMathFunction("sinh", new SinhFunction());
+	registerMathFunction("sqrt", new SqrtFunction());
+	registerMathFunction("srand", new SrandFunction());
+	registerMathFunction("tan", new TanFunction());
+	registerMathFunction("tanh", new TanhFunction());
 
-	mathFuncTable.put("abs",   new AbsFunction());
-	mathFuncTable.put("double",new DoubleFunction());
-	mathFuncTable.put("int",   new IntFunction());
-	mathFuncTable.put("round", new RoundFunction());
+	registerMathFunction("abs", new AbsFunction());
+	registerMathFunction("double", new DoubleFunction());
+	registerMathFunction("int", new IntFunction());
+	registerMathFunction("round", new RoundFunction());
 
 	m_expr = null;
 	m_ind = 0;
@@ -1662,7 +1662,7 @@ class Expression {
 	    return rvalue;
 	} else {
 	    // Invoke the function and copy its result back into valuePtr.
-	    return evalMathFunction(interp, mathFunc, values);
+	    return evalMathFunction(interp, funcName, mathFunc, values);
 	}
     }
 
@@ -1686,7 +1686,7 @@ class Expression {
             throw new TclException(interp,
         	    "unknown math function \"" + funcName + "\"");
         }
-        return evalMathFunction(interp, mathFunc, values);
+        return evalMathFunction(interp, funcName, mathFunc, values);
     }
 
     /**
@@ -1697,13 +1697,24 @@ class Expression {
      */
 
     ExprValue
-    evalMathFunction(Interp interp, MathFunction mathFunc, ExprValue[] values)
+    evalMathFunction(Interp interp, String funcName, MathFunction mathFunc, ExprValue[] values)
         throws TclException
     {
+        if (mathFunc.argTypes == null) {
+            throw new TclRuntimeError("math function \"" + funcName + "\" has null argTypes");
+        }
+
         // Ensure that arguments match the int/double
         // expectations of the math function.
-        if (mathFunc.argTypes.length != values.length) {
-            if (values.length < mathFunc.argTypes.length) {
+
+        int numArgs = mathFunc.argTypes.length;
+        int expectedArgs = 0;
+        if (values != null) {
+            expectedArgs = values.length;
+        }
+
+        if (numArgs != expectedArgs) {
+            if ((expectedArgs > 0) && (expectedArgs < numArgs)) {
                 throw new TclException(interp,
                     "too few arguments for math function");
             } else {
@@ -1711,28 +1722,46 @@ class Expression {
                     "too many arguments for math function");
             }
         }
-        for (int i=0; i < values.length ; i++) {
-            ExprValue value = values[i];
-            if (value.isStringType()) {
-                throw new TclException(interp,
-                    "argument to math function didn't have numeric value");
-            } else if (value.isIntType()) {
-                if (mathFunc.argTypes[i] == MathFunction.DOUBLE) {
-                    value.setDoubleValue((double) value.getIntValue());
-                }
-            } else {
-                if (mathFunc.argTypes[i] == MathFunction.INT) {
-                    value.setIntValue((int) value.getDoubleValue());
+
+        if (values != null) {
+            for (int i=0; i < values.length ; i++) {
+                ExprValue value = values[i];
+                if (value.isStringType()) {
+                    throw new TclException(interp,
+                        "argument to math function didn't have numeric value");
+                } else if (value.isIntType()) {
+                    if (mathFunc.argTypes[i] == MathFunction.DOUBLE) {
+                        value.setDoubleValue((double) value.getIntValue());
+                    }
+                } else {
+                    if (mathFunc.argTypes[i] == MathFunction.INT) {
+                        value.setIntValue((int) value.getDoubleValue());
+                    }
                 }
             }
         }
 
         ExprValue rval = mathFunc.apply(interp, values);
-        // Release ExprValue elements in values array
-        for (int i=0; i < values.length ; i++) {
-            releaseExprValue(values[i]);
+        if (values != null) {
+            // Release ExprValue elements in values array
+            for (int i=0; i < values.length ; i++) {
+                releaseExprValue(values[i]);
+            }
         }
         return rval;
+    }
+
+    /**
+     * This procedure will register a math function by
+     * adding it to the table of available math functions.
+     * This methods is used when regression testing the
+     * expr command.
+     */
+
+    void
+    registerMathFunction(String name, MathFunction mathFunc)
+    {
+	mathFuncTable.put(name, mathFunc);
     }
 
     /**
@@ -2081,12 +2110,20 @@ class RoundFunction extends MathFunction {
 	ExprValue value = interp.expr.grabExprValue();
 	if (values[0].isDoubleType()) {
 	    double d = values[0].getDoubleValue();
-	    if (d < 0) {
-		Expression.checkIntegerRange(interp, d-0.5);
-		value.setIntValue((int)(d-0.5));
+	    double i = (d < 0.0 ? Math.ceil(d) : Math.floor(d));
+	    double f = d - i;
+	    if (d < 0.0) {
+		if (f <= -0.5) {
+		    i += -1.0;
+		}
+		Expression.checkIntegerRange(interp, i);
+		value.setIntValue((int) i);
 	    } else {
-		Expression.checkIntegerRange(interp, d+0.5);
-		value.setIntValue((int)(d+0.5));
+		if (f >= 0.5) {
+		    i += 1.0;
+		}
+		Expression.checkIntegerRange(interp, i);
+		value.setIntValue((int) i);
 	    }
 	} else {
 	    value.setIntValue( values[0].getIntValue() );
