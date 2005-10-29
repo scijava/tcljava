@@ -8,15 +8,13 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: parse.test,v 1.4 2003/03/17 21:33:41 mdejong Exp $
-
-# Lots and lots of these tests fail, don't run them
-return
+# RCS: @(#) $Id: parse.test,v 1.5 2005/10/29 00:27:43 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
+setupJavaPackage
 
 if {[info commands testparser] == {}} {
     puts "This application hasn't been compiled with the \"testparser\""
@@ -25,7 +23,15 @@ if {[info commands testparser] == {}} {
     return 
 }
 
-test parse-1.1 {Tcl_ParseCommand procedure, computing string length} {
+if {[info commands tcltest::bytestring] == {}} {
+    # TclTest version does not define bytestring
+    proc tcltest::bytestring {string} {
+        return [encoding convertfrom identity $string]
+    }
+    namespace import -force tcltest::bytestring
+}
+
+test parse-1.1 {Tcl_ParseCommand procedure, computing string length} {embeddedNull} {
     testparser [bytestring "foo\0 bar"] -1
 } {- foo 1 simple foo 1 text foo 0 {}}
 test parse-1.2 {Tcl_ParseCommand procedure, computing string length} {
@@ -191,7 +197,9 @@ test parse-6.10 {ParseTokens procedure, incomplete sub-command} {
 test parse-6.11 {ParseTokens procedure, memory allocation for big nested command} {
     testparser {[$a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b)]} 0
 } {- {[$a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b)]} 1 word {[$a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b)]} 1 command {[$a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b)]} 0 {}}
-test parse-6.12 {ParseTokens procedure, missing close bracket} {
+# FIXME: This next test fails because the parse.termIndex is not set
+# properly in the parsed failed case.
+test parse-6.12 {ParseTokens procedure, missing close bracket} {unimplemented} {
     list [catch {testparser {[foo $x bar} 0} msg] $msg $errorInfo
 } {1 {missing close-bracket} {missing close-bracket
     (remainder of script: "[foo $x bar")
@@ -209,9 +217,13 @@ test parse-6.15 {ParseTokens procedure, backslash-newline} {
 test parse-6.16 {ParseTokens procedure, backslash substitution} {
     testparser {\n\a\x7f} 0
 } {- {\n\a\x7f} 1 word {\n\a\x7f} 3 backslash {\n} 0 backslash {\a} 0 backslash {\x7f} 0 {}}
-test parse-6.17 {ParseTokens procedure, null characters} {
+test parse-6.17 {ParseTokens procedure, null characters} {embeddedNull} {
     testparser [bytestring "foo\0zz"] 0
 } "- [bytestring foo\0zz] 1 word [bytestring foo\0zz] 3 text foo 0 text [bytestring \0] 0 text zz 0 {}"
+test parse-6.18 {ParseTokens procedure, seek past numBytes for close-bracket} {
+    # Test for Bug 681841
+    list [catch {testparser {[a]} 2} msg] $msg
+} {1 {missing close-bracket}}
 
 test parse-7.1 {Tcl_FreeParse and ExpandTokenArray procedures} {
     testparser {$a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) } 0
@@ -246,7 +258,7 @@ test parse-8.4 {Tcl_EvalObjv procedure, unknown commands} {
     rename unknown.old unknown
     list $x $msg
 } {1 {I don't like that command}}
-test parse-8.5 {Tcl_EvalObjv procedure, command traces} {
+test parse-8.5 {Tcl_EvalObjv procedure, command traces} {unimplemented} {
     testevalobjv 0 set x 123
     testcmdtrace tracetest {testevalobjv 0 set x $x}
 } {{testevalobjv 0 set x $x} {testevalobjv 0 set x 123} {set x 123} {set x 123}}
@@ -260,7 +272,7 @@ test parse-8.7 {Tcl_EvalObjv procedure, TCL_EVAL_GLOBAL flag} {
     set y 16
     x
 } {16 23}
-test parse-8.8 {Tcl_EvalObjv procedure, async handlers} {
+test parse-8.8 {Tcl_EvalObjv procedure, async handlers} {unimplemented} {
     proc async1 {result code} {
 	global aresult acode
 	set aresult $result
@@ -515,7 +527,7 @@ test parse-13.5 {Tcl_ParseVar procedure, error looking up variable} {
     list [catch {testparsevar {$abc([bogus x y z])}} msg] $msg
 } {1 {invalid command name "bogus"}}
 
-test parse-14.1 {Tcl_ParseBraces procedure, computing string length} {
+test parse-14.1 {Tcl_ParseBraces procedure, computing string length} {embeddedNull} {
     testparser [bytestring "foo\0 bar"] -1
 } {- foo 1 simple foo 1 text foo 0 {}}
 test parse-14.2 {Tcl_ParseBraces procedure, computing string length} {
@@ -552,7 +564,7 @@ test parse-14.12 {Tcl_ParseBraces procedure, missing close brace} {
     list [catch {testparser "foo \{xy\\\nz" 0} msg] $msg $errorInfo
 } {1 {missing close-brace} missing\ close-brace\n\ \ \ \ (remainder\ of\ script:\ \"\{xy\\\nz\")\n\ \ \ \ invoked\ from\ within\n\"testparser\ \"foo\ \\\{xy\\\\\\nz\"\ 0\"}
 
-test parse-15.1 {Tcl_ParseQuotedString procedure, computing string length} {
+test parse-15.1 {Tcl_ParseQuotedString procedure, computing string length} {embeddedNull} {
     testparser [bytestring "foo\0 bar"] -1
 } {- foo 1 simple foo 1 text foo 0 {}}
 test parse-15.2 {Tcl_ParseQuotedString procedure, computing string length} {
@@ -730,10 +742,20 @@ test parse-15.57 {CommandComplete procedure} {
 test parse-15.58 {CommandComplete procedure, memory leaks} {
     info complete "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22"
 } 1
+test parse-15.59 {CommandComplete procedure} {
+    # Test for Tcl Bug 684744
+    info complete [encoding convertfrom identity "\x00;if 1 \{"]
+} 0
 
-test parse-16.1 {Tcl_EvalEx, check termOffset is set correctly for non TCL_OK cases, bug 2535} {
+# FIXME: same termIndex setting issue mentioned above
+test parse-16.1 {Tcl_EvalEx, check termOffset is set correctly for non TCL_OK cases, bug 2535} {unimplemented} {
     subst {[eval {return foo}]bar}
 } foobar
+
+test parse-17.1 {Correct return codes from errors during substitution} {
+    catch {eval {w[continue]}}
+} 4
+
 
 # cleanup
 catch {unset a}

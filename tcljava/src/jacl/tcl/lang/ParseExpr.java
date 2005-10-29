@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: ParseExpr.java,v 1.2 2005/10/26 19:17:08 mdejong Exp $
+ * RCS: @(#) $Id: ParseExpr.java,v 1.3 2005/10/29 00:27:43 mdejong Exp $
  */
 
 package tcl.lang;
@@ -200,10 +200,9 @@ TclParse parseExpr(
         //System.out.println("after lex "+new String(info.originalExpr)+"  "+lexemeStrings[info.lexeme]);
         ParseCondExpr(interp, info);
 
-// FIXME: Is there a test case for this?
-//        if (info.lexeme != END) {
-//            LogSyntaxError(info, "extra tokens at end of expression");
-//        }
+        if (info.lexeme != END) {
+            LogSyntaxError(info, "extra tokens at end of expression");
+        }
     } catch (TclException te) {
 	parse.result = TCL.ERROR;
         return parse;
@@ -884,7 +883,7 @@ ParsePrimaryExpr(Interp interp, ParseInfo info) throws TclException
 	GetLexeme(interp,info); // skip over the '('
 	ParseCondExpr(interp, info);
 	if (info.lexeme != CLOSE_PAREN) {
-	    throw new TclException(interp,"ParsePrimaryExpr: syntax error");
+	    LogSyntaxError(info, "looking for close parenthesis");
 	}
 	GetLexeme(interp,info); // skip over the ')'
 	return;
@@ -935,8 +934,12 @@ ParsePrimaryExpr(Interp interp, ParseInfo info) throws TclException
 
 	dollar = (info.next - 1);
         //System.out.println("dollar "+dollar+" "+info.lastChar);	
-        parseObj = Parser.parseVarName(interp, info.originalExpr, dollar,
-                                 info.lastChar - dollar, parseObj, true);
+	parseObj = Parser.parseVarName(interp, info.originalExpr, dollar,
+            info.lastChar - dollar, parseObj, true);
+
+	if (parseObj.result != TCL.OK) {
+	    throw new TclException(parseObj.result);
+	}
 
 	info.next = dollar + parseObj.getToken(firstIndex).size;
 
@@ -974,7 +977,6 @@ ParsePrimaryExpr(Interp interp, ParseInfo info) throws TclException
 	    }
             parseObj.insertInTokenArray(firstIndex,1);
 	    parseObj.numTokens++;
-
 	    token = parseObj.getToken(firstIndex);
 
 	    exprToken = parseObj.getToken(exprIndex);
@@ -1064,9 +1066,9 @@ ParsePrimaryExpr(Interp interp, ParseInfo info) throws TclException
 	    if (parseObj.numTokens >= parseObj.tokensAvailable) {
 		parseObj.expandTokenArray(parseObj.numTokens+1);
 	    }
-            token = parseObj.getToken(firstIndex);
             parseObj.insertInTokenArray(firstIndex, 1);
 	    parseObj.numTokens++;
+            token = parseObj.getToken(firstIndex);
 
 	    exprToken = parseObj.getToken(exprIndex);
 //            exprToken.script_array = info.originalExpr; // Does not appear in C impl
@@ -1205,6 +1207,9 @@ GetLexeme(Interp interp,ParseInfo info) throws TclException
     }
     c = info.originalExpr[src];
     //System.out.println(new String(info.originalExpr,src,info.size));
+    // FIXME: This code should invoke Parser.ParseWhiteSpace()
+    // to handle embedded nulls properly. It is disabled for now.
+    // See parseExpr-1.1 in parseRxpr.test for a test case.
     while ((c == ' ') || Character.isWhitespace(c) || (c == '\\')) { // INTL: ISO space
 	if (c == '\\') {
 	    if (info.originalExpr[src+1] == '\n') {
@@ -1612,7 +1617,7 @@ LogSyntaxError(
     //int numChars = (info.lastChar - info.originalExprStart);
     String expr = info.getOriginalExpr();
     if (expr.length() > 60) {
-        expr = expr.substring(0, 60);
+        expr = expr.substring(0, 60) + "...";
     }
     StringBuffer msg = new StringBuffer();
     msg.append("syntax error in expression \"");

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: TestParsevarnameCmd.java,v 1.1 1999/05/10 04:08:51 dejong Exp $
+ * RCS: @(#) $Id: TestParsevarnameCmd.java,v 1.2 2005/10/29 00:27:43 mdejong Exp $
  */
 
 package tcl.lang;
@@ -19,7 +19,7 @@ public class TestParsevarnameCmd implements Command {
 public void
 cmdProc(
     Interp interp,		// Current interpreter.
-    TclObject objv[])		// The argument objects.
+    TclObject[] objv)		// The argument objects.
 throws 
     TclException
 {
@@ -50,16 +50,19 @@ throws
 	throw new TclException(TCL.ERROR);
     }
 
-    /*
-     * The parse completed successfully.  Just print out the contents
-     * of the parse structure into the interpreter's result.
-     */
+    // The parse completed successfully.  Just print out the contents
+    // of the parse structure into the interpreter's result.
 
     parse.commentSize = 0;
-    parse.commandStart = parse.termIndex + parse.tokenList[0].size;
+    parse.commandStart = script.index + parse.tokenList[0].size;
     parse.commandSize = 0;
-    parse.endIndex = string.length();
-    interp.setResult(parse.get());
+    try {
+        TclObject tlist = TclList.newInstance();
+        TestExprParserCmd.PrintParse(interp, parse, tlist);
+        interp.setResult(tlist);
+    } finally {
+        parse.release();
+    }
     return;
 }
 } // end TestParsevarnameCmd

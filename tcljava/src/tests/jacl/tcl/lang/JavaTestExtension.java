@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaTestExtension.java,v 1.4 2005/10/27 20:43:20 mdejong Exp $
+ * RCS: @(#) $Id: JavaTestExtension.java,v 1.5 2005/10/29 00:27:43 mdejong Exp $
  *
  */
 
@@ -46,10 +46,11 @@ init(
     Interp interp)
 {
     interp.createCommand("jtest", 	      new JtestCmd());
-    interp.createCommand("testeval2",         new TestEval2Cmd());
+    interp.createCommand("testevalex",        new TestEvalExCmd());
     interp.createCommand("testparser",        new TestParserCmd());
     interp.createCommand("testparsevar",      new TestParsevarCmd());
     interp.createCommand("testparsevarname",  new TestParsevarnameCmd());
+    interp.createCommand("testexprparser",    new TestExprParserCmd());
     interp.createCommand("testevalobjv",      new TestEvalObjvCmd());
     interp.createCommand("testcompcode",      new TestcompcodeCmd());
     interp.createCommand("testsetplatform",   new TestsetplatformCmd());

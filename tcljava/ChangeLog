@@ -1,3 +1,40 @@
+2005-10-28  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* Makefile.in: Add tcljava and jacl test
+        source directories to the CLASSPATH
+        for debug targets.
+	* src/jacl/tcl/lang/ParseExpr.java (parseExpr,
+        ParsePrimaryExpr, GetLexeme, LogSyntaxError):
+        Fix bugs causing expr test failures.
+	* src/jacl/tcl/lang/Parser.java (parseTokens,
+        backslash, ParseBraces, ParseQuotedString,
+        ParseWhiteSpace):
+        Add "count" member to BackSlashResult so that
+        caller can correctly determine the number of
+        characters parsed. Set this count field in
+        the backslash() method. Set the script_array
+        member of a TclToken when setting the
+        script_index. Add ParseWhitespaceResult
+        util, it is not used yet.
+	* src/jacl/tcl/lang/TclToken.java: Invoke
+        the getTokenString() method just once in toString();
+	* src/tests/jacl/tcl/lang/JavaTestExtension.java:
+        Replace testeval2 command with testevalex.
+        Add testexprparser command.
+	* src/tests/jacl/tcl/lang/TestEval2Cmd.java:
+	* src/tests/jacl/tcl/lang/TestEvalExCmd.java:
+        Rename TestEval2Cmd to TestEvalExCmd.
+	* src/tests/jacl/tcl/lang/TestEvalObjvCmd.java:
+        Update to match Tcl 8.4 implementation so
+        that test cases pass.
+	* src/tests/jacl/tcl/lang/TestExprParserCmd.java:
+        Port Tcl 8.4 implementation of test command.
+	* src/tests/jacl/tcl/lang/TestParserCmd.java:
+        Update to match Tcl 8.4 implementation.
+	* src/tests/jacl/tcl/lang/TestParsevarnameCmd.java:
+	* tests/tcl/parse.test: Update to Tcl 8.4 tests.
+	* tests/tcl/parseExpr.test: Update to Tcl 8.4 tests.
+
 2005-10-27  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* src/jacl/tcl/lang/Expression.java (Expression,

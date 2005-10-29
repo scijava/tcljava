@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: TestParserCmd.java,v 1.1 1999/05/10 04:08:51 dejong Exp $
+ * RCS: @(#) $Id: TestParserCmd.java,v 1.2 2005/10/29 00:27:43 mdejong Exp $
  */
 
 package tcl.lang;
@@ -34,8 +34,8 @@ public class TestParserCmd  implements Command {
 
 public void 
 cmdProc(
-    Interp interp,		/* Current interpreter. */
-    TclObject objv[])		/* The argument objects. */
+    Interp interp,		// Current interpreter.
+    TclObject[] objv)		// The argument objects.
 throws
     TclException
 {
@@ -44,9 +44,9 @@ throws
     TclParse parse = null;
     CharPointer script;
 
-    if (objv.length != 5) {
+    if (objv.length != 3) {
 	throw new TclNumArgsException(interp, 1, objv, 
-		"script length fileName lineNumber");
+		"script length");
     }
 
     string = objv[1].toString();
@@ -55,8 +55,8 @@ throws
 	length = string.length();
     }
     script = new CharPointer(string);
-    fileName = objv[3].toString();
-    lineNumber = TclInteger.get(interp, objv[4]);
+    fileName = "";
+    lineNumber = -1;
 
     parse = Parser.parseCommand(interp, script.array, script.index,
 	    length, fileName, lineNumber, false);
@@ -69,10 +69,8 @@ throws
 	throw new TclException(TCL.ERROR);
     }
 
-    /*
-     * The parse completed successfully.  Just print out the contents
-     * of the parse structure into the interpreter's result.
-     */
+    // The parse completed successfully.  Just print out the contents
+    // of the parse structure into the interpreter's result.
 
     parse.endIndex = string.length();
     interp.setResult(parse.get());

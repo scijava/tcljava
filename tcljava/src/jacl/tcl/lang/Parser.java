@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Parser.java,v 1.21 2005/10/26 19:17:08 mdejong Exp $
+ * RCS: @(#) $Id: Parser.java,v 1.22 2005/10/29 00:27:43 mdejong Exp $
  */
 
 package tcl.lang;
@@ -644,8 +644,18 @@ parseTokens(
 		}
 	    }
 	    token.type = TCL_TOKEN_BS;
-	    bs = backslash(script_array,script_index);
-	    token.size = bs.nextIndex - script_index;
+	    bs = backslash(script_array, script_index);
+	    //token.size = bs.nextIndex - script_index;
+	    token.size = bs.count;
+	    if (token.size == 1) {
+	        // Just a backslash, due to end of string
+	        token.type = TCL_TOKEN_TEXT;
+	        parse.numTokens++;
+	        script_index++;
+	        //numBytes--;
+	        continue;
+	    }
+            // FIXME: Add code for backslash newline processing
 	    parse.numTokens++;
 	    script_index += token.size;
 	} else if (cur == '\0') {
@@ -1795,24 +1805,30 @@ backslash(
     }
     case '\r':
     case '\n': {
+	// FIXME: This CR switch branch should not be needed in the Jacl parser.
 	if (c == '\r') {
 	    if ((script_index + 1) < endIndex) {
-		if (script_array[script_index + 1] == '\n') {
-		    script_index++;
-		}
+	        if (script_array[script_index + 1] == '\n') {
+	            script_index++;
+	            count++;
+	        }
 	    }
 	}
+	count--;
 	do {
 	    script_index++;
+	    count++;
 	    c = script_array[script_index];
-	} while ((script_index < endIndex) && 
-		((c == ' ') || (c == '\t')));
+	} while ((count < numChars) &&
+		((c == ' ') || (c == '\t') || Character.isWhitespace(c)));
 	return new BackSlashResult(' ', script_index, count);
     }
     case 0: {
 	return new BackSlashResult('\\', script_index+1, count);
     }
     default: {
+	// FIXME: This octal impl needs to be updated so that it does
+	// not allow 09 to match the Tcl 8.4 impl.
 	if ((c >= '0') && (c <= '9')) {
 	    // Convert it to an octal number. This implementation is
 	    // compatible with tcl 7.6 - characters 8 and 9 are allowed.
@@ -1828,6 +1844,7 @@ backslash(
 		if (!((c >= '0') && (c <= '9'))) {
 		    break getoctal;
 		}
+		count++;
 		result = (result * 8) + (c - '0');
 		script_index++;
 		
@@ -1838,6 +1855,7 @@ backslash(
 		if (!((c >= '0') && (c <= '9'))) {
 		    break getoctal;
 		}
+		count++;
 		result = (result * 8) + (c - '0');
 		script_index++;
 	    }
@@ -1936,6 +1954,7 @@ ParseBraces(
     }
     token = parse.getToken(startIndex);
     token.type = TCL_TOKEN_TEXT;
+    token.script_array = script_array;
     token.script_index = src + 1;
     token.numComponents = 0;
     level = 1;
@@ -2019,7 +2038,7 @@ ParseBraces(
 		break;
 	    case '\\':
 		bs = backslash(script_array, src);
-		length = src - bs.nextIndex;
+		length = bs.count;
 		if ((length > 1) && (script_array[src + 1] == '\n')) {
 		    // A backslash-newline sequence must be collapsed, even
 		    // inside braces, so we have to split the word into
@@ -2038,6 +2057,7 @@ ParseBraces(
 		    }
 		    token = parse.getToken(parse.numTokens);
 		    token.type = TCL_TOKEN_BS;
+		    token.script_array = script_array;
 		    token.script_index = src;
 		    token.size = length;
 		    token.numComponents = 0;
@@ -2047,6 +2067,7 @@ ParseBraces(
 		    numChars -= length - 1;
 		    token = parse.getToken(parse.numTokens);
 		    token.type = TCL_TOKEN_TEXT;
+		    token.script_array = script_array;
 		    token.script_index = src + 1;
 		    token.numComponents = 0;
 		} else {
@@ -2148,6 +2169,86 @@ ParseQuotedString(
 /*
  *----------------------------------------------------------------------
  *
+ * TclParseWhiteSpace -> ParseWhiteSpace
+ *
+ *	Scans up to numChars characters starting at script_index,
+ *	consuming white space as defined by Tcl's parsing rules.
+ *
+ * Results:
+ *	Returns a ParseWhitespaceResult that indicates the number of
+ *	characters of type whitespace along with the type of
+ *	non-whitespace character that terminated the scan.
+ *	Will set the incomplete member of the parse argument if 
+ *	the scanning indicates an incomplete command.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+// FIXME: Create a more general parse result object that is
+// returned by any of the parse operations, also make this
+// result an interp member so that an allocation is not needed
+// for each parse operation.
+
+static class ParseWhitespaceResult {
+    int numScanned;
+    int type;
+}
+
+ParseWhitespaceResult
+ParseWhiteSpace(
+    char[] script_array,	// Array of characters to parse.
+    int script_index,		// First index in character array.
+    int numChars,		// Max number of characters to scan
+    TclParse parse)		// Updated if parsing indicates
+				// an incomplete command.
+{
+    ParseWhitespaceResult pwsr = new ParseWhitespaceResult();
+    int type = TYPE_NORMAL;
+    int p = script_index;
+    char c;
+
+    while (true) {
+	while (numChars > 0) {
+	    c = script_array[p];
+	    type = ((c > TYPE_MAX) ? TYPE_NORMAL : typeTable[c]);
+	    if ((type & TYPE_SPACE) == 0) {
+	        break;
+	    }
+	    numChars--;
+	    p++;
+	}
+	if ((numChars > 0) && ((type & TYPE_SUBS) != 0)) {
+	    c = script_array[p];
+	    if (c != '\\') {
+		break;
+	    }
+	    if (--numChars == 0) {
+		break;
+	    }
+	    c = script_array[p+1];
+	    if (c != '\n') {
+		break;
+	    }
+	    p += 2;
+	    if (--numChars == 0) {
+		parse.incomplete = true;
+		break;
+	    }
+	    continue;
+	}
+	break;
+    }
+    pwsr.type = type;
+    pwsr.numScanned = (p - script_index);
+    return pwsr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclParseHex -> ParseHex
  *
  *	Scans a hexadecimal number as a character value.
@@ -2177,7 +2278,7 @@ static
 ParseHexResult
 ParseHex(
     char[] script_array,	// Array of characters to parse.
-    int script_index,		// Array of characters to parse.
+    int script_index,		// First index in character array.
     int numChars)		// Max number of characters to scan
 {
     int result = 0;

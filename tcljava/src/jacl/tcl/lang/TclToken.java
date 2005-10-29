@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: TclToken.java,v 1.4 2005/10/26 19:17:08 mdejong Exp $
+ * RCS: @(#) $Id: TclToken.java,v 1.5 2005/10/29 00:27:43 mdejong Exp $
  */
 
 package tcl.lang;
@@ -164,8 +164,10 @@ toString() {
 	break;
     }
     }
-    sbuf.append("\n  String:      " + getTokenString());
-    sbuf.append("\n  String Size: " + getTokenString().length());
+
+    String ts = getTokenString();
+    sbuf.append("\n  String:      " + ts);
+    sbuf.append("\n  String Size: " + ts.length());
     sbuf.append("\n  ScriptIndex: " + script_index);
     sbuf.append("\n  NumComponents: " + numComponents);
     sbuf.append("\n  Token Size: " + size);
