@@ -1,6 +1,8 @@
 #!/bin/sh
-# Wrapper script to start up Jacl
-if (uname -s | grep CYGWIN > /dev/null) ; then
+# Wrapper script to start up Jacl\
+if (uname -s | grep MINGW > /dev/null) ; then
+    no=op ;
+else
     echo "Must be run from msys shell" ;
     exit 1 ;
 fi
@@ -64,4 +66,14 @@ fi
 CLASSPATH=${JACL_CLASSPATH}:${CLASSPATH}
 export CLASSPATH
 
-exec ${JAVA} ${JAVA_FLAGS} tcl.lang.Shell ${1+"$@"}
+# If JACL_MAIN is set then use it as the name of the Java
+# class to execute. If it is not set, then use tcl.lang.Shell.
+# This provides an easy way to launch an alternative shell
+# without having to duplicate all the CLASSPATH and JAVA logic.
+
+if test "${JACL_MAIN}" = ""; then
+    JACL_MAIN=tcl.lang.Shell
+fi
+
+exec ${JAVA} ${JAVA_FLAGS} ${JACL_MAIN} ${1+"$@"}
+

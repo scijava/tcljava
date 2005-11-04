@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Expression.java,v 1.15 2005/10/27 20:43:20 mdejong Exp $
+ * RCS: @(#) $Id: Expression.java,v 1.16 2005/11/04 21:02:14 mdejong Exp $
  *
  */
 
@@ -529,7 +529,7 @@ class Expression {
 	    } else {
 		Util.strtoul(s, i, 0, res);
 	    }
-	    String token = s.substring(i, res.index);
+	    //String token = s.substring(i, res.index);
 	    //System.out.println("token string from strtoul is \"" + token + "\"");
 	    //System.out.println("res.errno is " + res.errno);
 

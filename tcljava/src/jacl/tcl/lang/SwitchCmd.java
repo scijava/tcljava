@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: SwitchCmd.java,v 1.2 1999/05/09 01:32:03 dejong Exp $
+ * RCS: @(#) $Id: SwitchCmd.java,v 1.3 2005/11/04 21:02:14 mdejong Exp $
  *
  */
 
@@ -50,20 +50,21 @@ private static final int LAST   = 3;
 public void 
 cmdProc(
     Interp interp,   			// Current interpreter. 
-    TclObject argv[])			// Arguments to "switch" statement.
+    TclObject[] objv)			// Arguments to "switch" statement.
 throws TclException
 {
-    int i, mode, body;
-    boolean matched;
+    int i, mode, pbStart, pbOffset;
+    boolean matched, foundmode, splitObjs;
     String string;
-    TclObject switchArgv[] = null;
+    TclObject[] switchObjv = null;
 
     mode = EXACT;
-    for (i = 1; i < argv.length; i++) {
-	if (!argv[i].toString().startsWith("-")) {
+    foundmode = false;
+    for (i = 1; i < objv.length; i++) {
+	if (!objv[i].toString().startsWith("-")) {
 	    break;
 	}
-	int opt = TclIndex.get(interp, argv[i], validCmds, "option", 1);
+	int opt = TclIndex.get(interp, objv[i], validCmds, "option", 0);
 	if (opt == LAST) {
 	    i++;
 	    break;
@@ -72,39 +73,141 @@ throws TclException
 		    "SwitchCmd.cmdProc: bad option " + opt 
 		    + " index to validCmds");
 	} else {
+	    if ( foundmode ) {
+		throw new TclException(interp, 
+		    "bad option \"" +
+                    objv[i] +
+		    "\": " +
+                    validCmds[mode] +
+                    " option already found");
+	    }
+	    foundmode = true;
 	    mode = opt;
 	}
     }
 
-    if (argv.length - i < 2) {
-	throw new TclNumArgsException(interp, 1, argv, 
+    if (objv.length - i < 2) {
+	throw new TclNumArgsException(interp, 1, objv,
 		"?switches? string pattern body ... ?default body?");
     }
-    string = argv[i].toString();
+    string = objv[i].toString();
     i++;
 
     // If all of the pattern/command pairs are lumped into a single
     // argument, split them out again.
-    
-    if (argv.length - i == 1) {
-	switchArgv = TclList.getElements(interp, argv[i]);
-	i = 0;
+
+    splitObjs = false;
+    if (objv.length - i == 1) {
+	switchObjv = TclList.getElements(interp, objv[i]);
+
+	// Ensure that the list is non-empty.
+
+        if ( switchObjv.length == 0 ) {
+	    throw new TclNumArgsException(interp, 1, objv,
+		    "?switches? string {pattern body ... ?default body?}");
+        }
+        pbStart = 0;
+        splitObjs = true;
     } else {
-	switchArgv = argv;
+	switchObjv = objv;
+        pbStart = i;
     }
 
-    for (; i < switchArgv.length; i += 2) {
-	if (i == (switchArgv.length-1)) {
-	    throw new TclException(interp,
-		    "extra switch pattern with no body");
-	}
+    if (((switchObjv.length - pbStart) % 2) != 0) {
+        interp.resetResult();
 
+	// Check if this can be due to a badly placed comment
+	// in the switch block.
+	//
+	// The following is an heuristic to detect the infamous
+	// "comment in switch" error: just check if a pattern
+	// begins with '#'.
+
+	if (splitObjs) {
+	    for ( int off=pbStart ; off < switchObjv.length ; off+=2) {
+		if (switchObjv[off].toString().startsWith("#")) {
+		    throw new TclException(interp,
+		        "extra switch pattern with no body" +
+		        ", this may be due to a " +
+		        "comment incorrectly placed outside of a " +
+		        "switch body - see the \"switch\" " +
+		        "documentation");
+		}
+	    }
+	}
+        throw new TclException(interp,
+            "extra switch pattern with no body");
+    }
+
+    // Find pattern that matches string, return offset from first pattern
+
+    pbOffset = SwitchCmd.getBodyOffset(interp, switchObjv, pbStart,
+        string, mode);
+
+    if (pbOffset != -1) {
+	try {
+	    interp.eval(switchObjv[pbStart + pbOffset], 0);
+	    return;
+	} catch (TclException e) {
+            // Figure out which pattern matched the body
+            int pIndex;
+	    for (pIndex = pbStart + pbOffset - 1; pIndex >= pbStart ; pIndex -= 2) {
+		if ( !switchObjv[pIndex].toString().equals("-") ) {
+		    break;
+		}
+	    }
+
+	    if (e.getCompletionCode() == TCL.ERROR) {
+		interp.addErrorInfo(
+		    "\n    (\"" + switchObjv[pIndex] + 
+		    "\" arm line " + interp.errorLine + ")");
+	    }
+	    throw e;
+	}
+    }
+
+    // Nothing matched:  return nothing.
+}
+
+// Util method that accepts switch command arguments and
+// returns an index indicating an offset from the first
+// pattern element for the script that should be executed.
+// This method assumes that a null body element is valid
+// and returns the index.
+
+static
+int
+getBodyOffset(
+    Interp interp,
+    TclObject[] switchObjv,   // array that contains pattern/body strings
+    int pbStart,              // index of first pattern in switchObjv
+    String string,            // String argument
+    int mode)                 // Match mode
+        throws TclException
+{
+    int body;
+    boolean matched;
+    final int slen = switchObjv.length;
+
+    // Complain if the last body is a continuation.  Note that this
+    // check assumes that the list is non-empty!
+
+    if ( switchObjv[slen-1] != null &&
+            switchObjv[slen-1].toString().equals("-") ) {
+	interp.resetResult();
+        throw new TclException(interp,
+            "no body specified for pattern \"" +
+            switchObjv[slen-2].toString() +
+            "\"");
+    }
+
+    for (int i = pbStart; i < slen; i += 2) {
 	// See if the pattern matches the string.
 
 	matched = false;
-	String pattern = switchArgv[i].toString();
-	
-	if ((i == switchArgv.length-2) && pattern.equals("default")) {
+	String pattern = switchObjv[i].toString();
+
+	if ((i == slen-2) && pattern.equals("default")) {
 	    matched = true;
 	} else {
 	    switch (mode) {
@@ -115,7 +218,7 @@ throws TclException
 		matched = Util.stringMatch(string, pattern);
 		break;
 	    case REGEXP:
-		matched = Util.regExpMatch(interp, string, switchArgv[i]);
+		matched = Util.regExpMatch(interp, string, switchObjv[i]);
 		break;
 	    }
 	}
@@ -127,30 +230,25 @@ throws TclException
 	// that are "-".
 
 	for (body = i+1; ; body += 2) {
-	    if (body >= switchArgv.length) {
-		throw new TclException(interp,
-			"no body specified for pattern \"" + 
-			switchArgv[i] + "\"");
+	    if (body >= slen) {
+	        // This shouldn't happen since we've checked that the
+	        // last body is not a continuation...
+		throw new TclRuntimeError(
+			"fall-out when searching for body to match pattern");
 	    }
-	    if (!switchArgv[body].toString().equals("-")) {
+
+	    if (switchObjv[body] == null ||
+		    !switchObjv[body].toString().equals("-")) {
 		break;
 	    }
 	}
-	
-	try {
-	    interp.eval(switchArgv[body], 0);
-	    return;
-	} catch (TclException e) {
-	    if (e.getCompletionCode() == TCL.ERROR) {
-		interp.addErrorInfo(
-		    "\n    (\"" + switchArgv[i] + 
-		    "\" arm line " + interp.errorLine + ")");
-	    }
-	    throw e;
-	}
+
+        // Return offset of match (from first pattern)
+        return body - pbStart;
     }
-    
+
     // Nothing matched:  return nothing.
+    return -1;
 }
 
 } // end SwitchCmd

@@ -31,7 +31,19 @@ IF "%ATTACH%"=="" goto skipdebug
 echo Attach to shell via %ATTACH%
 :skipdebug
 
-%JAVA% %JAVA_FLAGS% tcl.lang.Shell %1 %2 %3 %4 %5 %6 %7 %8 %9
+
+rem If JACL_MAIN is set then use it as the name of the Java
+rem class to execute. If it is not set, then use tcl.lang.Shell.
+rem This provides an easy way to launch an alternative shell
+rem without having to duplicate all the CLASSPATH and JAVA logic.
+
+IF "%JACL_MAIN%"=="" goto jacldefaultmain
+goto jaclcustommain
+:jacldefaultmain
+set JACL_MAIN=tcl.lang.Shell
+:jaclcustommain
+
+%JAVA% %JAVA_FLAGS% %JACL_MAIN% %1 %2 %3 %4 %5 %6 %7 %8 %9
 
 endlocal
 

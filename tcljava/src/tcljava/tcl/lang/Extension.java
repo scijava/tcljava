@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Extension.java,v 1.2 1999/05/09 21:18:54 dejong Exp $
+ * RCS: @(#) $Id: Extension.java,v 1.3 2005/11/04 21:02:14 mdejong Exp $
  *
  */
 
@@ -114,7 +114,21 @@ class AutoloadStub implements Command {
      * @param argv command arguments.
      * @exception TclException if error happens inside the real command proc.
      */
-    public void cmdProc(Interp interp, TclObject argv[]) throws TclException {
+    public void cmdProc(Interp interp, TclObject[] objv) throws TclException {
+	Command cmd = load(interp, objv[0].toString());
+	cmd.cmdProc(interp, objv);
+    }
+
+    /**
+     * Load the class that implements the given command, create
+     * the command in the interpreter, and return. This helper
+     * method is provided so to handle the case where a command
+     * wants to create a stub command without executing it.
+     * The qname argument should be the fully qualified name
+     * of the command.
+     */
+
+    Command load(Interp interp, String qname) throws TclException {
 	Class cmdClass = null;
 	Command cmd;
 	try {
@@ -140,8 +154,8 @@ class AutoloadStub implements Command {
 		    "ClassCastException for class \"" + cmdClass.getName()
 		    + "\"");
 	}
-	interp.createCommand(argv[0].toString(), cmd);
-	cmd.cmdProc(interp, argv);
+	interp.createCommand(qname, cmd);
+	return cmd;
     }
 }
 

@@ -1,3 +1,43 @@
+2005-11-04  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* Makefile.in: Copy files into library directory
+        without extra files and CVS dirs. Don't cd to
+        tests directory in source tree before running tests.
+	* jaclsh.bat.in:
+	* jaclsh.in: Check for JACL_MAIN env var when
+        starting shell, if it exists then use it as
+        the name of the Java main program. Default to
+        tcl.lang.Shell.
+	* src/jacl/tcl/lang/Expression.java: Comment
+        out unused String allocation.
+	* src/jacl/tcl/lang/ParseExpr.java (GetLexeme,
+        ParseMaxDoubleLength): Update GetLexeme to
+        match Tcl 8.4 implementation so that expr
+        parsing that depends on the eq or ne operator
+        works as expected.
+	* src/jacl/tcl/lang/ProcCmd.java (cmdProc,
+        FindCommandNamespace): Create util method
+        to lookup command given a name and use it
+        in the proc command.
+	* src/jacl/tcl/lang/SwitchCmd.java (cmdProc,
+        getBodyOffset): Update implementation of the
+        switch command so that it matches Tcl 8.4.
+        Move switch body logic into util method.
+	* src/tcljava/tcl/lang/Extension.java (load):
+        Move loading logic into util method.
+	* tests/all.tcl (testsDirectory): Update
+        test harness implementation so that tests
+        are run with the build directory as the
+        current directory. This keeps tmp files from
+        being created in the source tree and it matches
+        how Tcl 8.4 works.
+	* tests/tcl/SwitchCmd.test: Remove duplicate
+        of switch.test.
+	* tests/tcl/switch.test: Update error message
+        for switch command so that it matches Tcl 8.4.
+	* tests/tclparser/parseCmd.test: Add expr parse
+        test cases for eq and ne operators.
+
 2005-10-28  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* Makefile.in: Add tcljava and jacl test

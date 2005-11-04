@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.43 2005/10/29 00:27:42 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.44 2005/11/04 21:02:13 mdejong Exp $
 
 SHELL = /bin/sh
 
@@ -569,7 +569,10 @@ jacl.build: jacl.clean tcljava.check
 		$(JAVAC_D_FLAG) $(JACL_BUILD_DIR) \
 		tcl/lang/*.java \
 		sunlabs/brazil/util/regexp/*.java
-	cp -fr $(JACL_SRC_DIR)/tcl/lang/library \
+	mkdir $(JACL_BUILD_DIR)/tcl/lang/library
+	cp -f $(JACL_SRC_DIR)/tcl/lang/library/*.tcl \
+		$(JACL_BUILD_DIR)/tcl/lang/library
+	cp -f $(JACL_SRC_DIR)/tcl/lang/library/tclIndex \
 		$(JACL_BUILD_DIR)/tcl/lang/library
 	mkdir $(JACL_BUILD_DIR)/tcl/lang/library/tcltest
 	cp -fr $(TEST_TCL_DIR)/tcltest.tcl \
@@ -678,7 +681,7 @@ itcl.build: itcl.clean jacl.check
 		$(JAVAC_D_FLAG) $(ITCL_BUILD_DIR) \
 		itcl/lang/*.java tcl/lang/*.java
 	mkdir -p $(ITCL_BUILD_DIR)/itcl/lang/library
-	cp -fr $(ITCL_SRC_DIR)/itcl/lang/library/itcl.tcl \
+	cp -f $(ITCL_SRC_DIR)/itcl/lang/library/itcl.tcl \
 		$(ITCL_BUILD_DIR)/itcl/lang/library
 
 # Only use this if you are developing jacl code and you need to recompile
@@ -766,8 +769,10 @@ tcljava.build: tcljava.clean
 	$(JAVAC) $(JAVAC_FLAGS) \
 	$(JAVAC_D_FLAG) $(TCLJAVA_BUILD_DIR) \
 		tcl/lang/*.java
-	cp -fr $(TCLJAVA_SRC_DIR)/tcl/lang/library \
-		$(TCLJAVA_BUILD_DIR)/tcl/lang/library
+	mkdir $(TCLJAVA_BUILD_DIR)/tcl/lang/library
+	mkdir $(TCLJAVA_BUILD_DIR)/tcl/lang/library/java
+	cp -fr $(TCLJAVA_SRC_DIR)/tcl/lang/library/java/*.tcl \
+		$(TCLJAVA_BUILD_DIR)/tcl/lang/library/java
 
 # Only use this if you are developing tcljava code and you need to recompile
 # a lot. It will not clean up before building and tcljava.jar will not be
@@ -941,18 +946,17 @@ test_tcljava.build: $(TCLJAVA).check
 	cd $(TEST_BUILD_DIR)/hello ;\
 	$(JAR) $(JAR_NOCOMPRESS_FLAGS) hello.jar hello; \
 	rm -rf hello
-	cp -fr $(TEST_TCL_DIR)/tl.jar \
+	cp -f $(TEST_TCL_DIR)/tl.jar \
 		$(BUILD_DIR)
 	@touch $(TEST_BUILD_DIR)/.tcljava
 
 
 test_jacl.exec: test_jacl.check
 	@(  echo \
-	  cd $(TOP_DIR_NATIVE)/tests\; \
 	  puts \"pwd is [pwd]\"\; \
 	  puts \"CLASSPATH is [set env\(CLASSPATH\)]\"\; \
 	  puts \"auto_path is [set auto_path]\"\; \
-	  source all.tcl\; \
+	  source \"$(TOP_DIR_NATIVE)/tests/all.tcl\"\; \
 	  puts \"Tests done.\"\; \
           exit; ) | \
 	CLASSPATH=$(TEST_CLASSPATH) \
@@ -963,11 +967,10 @@ test_jacl.exec: test_jacl.check
 test_tclblend.exec: test_tclblend.check
 	@(  echo \
 	  set auto_path [concat [pwd] [set auto_path]]\; \
-	  cd $(TOP_DIR_NATIVE)/tests\; \
 	  puts \"pwd is [pwd]\"\; \
 	  puts \"CLASSPATH is [set env\(CLASSPATH\)]\"\; \
 	  puts \"auto_path is [set auto_path]\"\; \
-	  source all.tcl\; \
+	  source \"$(TOP_DIR_NATIVE)/tests/all.tcl\"\; \
 	  puts \"Tests done.\"\; \
           exit; ) | \
 	LD_PRELOAD=$(TCLBLEND_LD_PRELOAD) \

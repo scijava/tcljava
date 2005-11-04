@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: ParseExpr.java,v 1.3 2005/10/29 00:27:43 mdejong Exp $
+ * RCS: @(#) $Id: ParseExpr.java,v 1.4 2005/11/04 21:02:14 mdejong Exp $
  */
 
 package tcl.lang;
@@ -1184,7 +1184,7 @@ GetLexeme(Interp interp,ParseInfo info) throws TclException
     double doubleValue;		// Value of a scanned double literal.
     char c,c2;
     boolean startsWithDigit;
-    int  offset;
+    int offset, length;
     TclParse parseObj = info.parseObj;
     char ch;
     info.lexeme = UNKNOWN;
@@ -1257,29 +1257,43 @@ GetLexeme(Interp interp,ParseInfo info) throws TclException
 	            throw new TclException(interp, "parse bad number");
 		}
 	    }
-	} else if (startsWithDigit || (c == '.')
-	        || (c == 'n') || (c == 'N')) {
+	} else if ((length = ParseMaxDoubleLength(info.originalExpr,
+                src, info.lastChar)) > 0) {
+
+	    // There are length characters that could be a double.
+	    // Let strtod() tells us for sure.
+
+            s = new String(info.originalExpr, src, length);
+
 	    StrtodResult res = interp.strtodResult;
 	    Util.strtod(s, 0, res);
-	    if (res.errno == 0) {
+	    if (res.index > 0) {
+	        if (res.errno != 0) {
+	            parseObj.errorType = Parser.TCL_PARSE_BAD_NUMBER;
+	            if (res.errno == TCL.DOUBLE_RANGE) {
+	                if (res.value != 0) {
+	                    Expression.DoubleTooLarge(interp);
+	                } else {
+	                    Expression.DoubleTooSmall(interp);
+	                }
+	            } else {
+	                throw new TclException(interp, "parse bad number");
+	            }
+	        }
+
+	        // string was the start of a valid double, copied
+	        // from src.
+
 	        term = src + res.index;
 	        info.lexeme = LITERAL;
 	        info.start = src;
 	        info.size = (term - src);
-	        info.next = term;
-	        parseObj.termIndex = term;
+	        if (info.size > length) {
+	            info.size = length;
+	        }
+	        info.next = src + info.size;
+	        parseObj.termIndex = info.next;
 	        return;
-	    } else {
-	        parseObj.errorType = Parser.TCL_PARSE_BAD_NUMBER;
-	        if (res.errno == TCL.DOUBLE_RANGE) {
-	            if (res.value != 0) {
-	                Expression.DoubleTooLarge(interp);
-	            } else {
-	                Expression.DoubleTooSmall(interp);
-	            }
-                } else {
-	            throw new TclException(interp, "parse bad number");
-		}
 	    }
 	}
     }
@@ -1639,7 +1653,58 @@ LogSyntaxError(
     }
     throw new TclException(info.parseObj.interp, msg.toString());
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ParseMaxDoubleLength -> ParseMaxDoubleLength
+ *
+ *      Scans a sequence of characters checking that the characters could
+ *	be in a string rep of a double.
+ *
+ * Results:
+ *	Returns the number of characters starting with string, runing to, but
+ *	not including end, all of which could be part of a string rep.
+ *	of a double.  Only character identity is used, no actual
+ *	parsing is done.
+ *
+ *	The legal bytes are '0' - '9', 'A' - 'F', 'a' - 'f', 
+ *	'.', '+', '-', 'i', 'I', 'n', 'N', 'p', 'P', 'x',  and 'X'.
+ *	This covers the values "Inf" and "Nan" as well as the
+ *	decimal and hexadecimal representations recognized by a
+ *	C99-compliant strtod().
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
 
+static int
+ParseMaxDoubleLength(
+    char[] script_array,
+    int script_index,
+    int end)
+{
+    int p = script_index;
+    done: {
+    while (p < end) {
+	switch (script_array[p]) {
+	    case '0': case '1': case '2': case '3': case '4': case '5':
+	    case '6': case '7': case '8': case '9': case 'A': case 'B':
+	    case 'C': case 'D': case 'E': case 'F': case 'I': case 'N':
+	    case 'P': case 'X': case 'a': case 'b': case 'c': case 'd':
+	    case 'e': case 'f': case 'i': case 'n': case 'p': case 'x':
+	    case '.': case '+': case '-':
+		p++;
+		break;
+	    default:
+		break done;
+	}
+    }
+    } // end done block
+    return (p - script_index);
+}
 
 } // end class ParseExpr
 

@@ -7,15 +7,46 @@
 # Copyright (c) 1998-2000 Ajuba Solutions.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: all.tcl,v 1.6 2005/10/20 21:35:55 mdejong Exp $
+# RCS: @(#) $Id: all.tcl,v 1.7 2005/11/04 21:02:14 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
+
+set ::tcltest::testSingleFile false
+set ::tcltest::testsDirectory [file dir [info script]]
+
+# We need to ensure that the testsDirectory is absolute
+::tcltest::normalizePath ::tcltest::testsDirectory
+
+# Implement helper proc that will return the relative directory
+# in comparison to the original $::tcltest::testsDirectory.
+# This works like the proc in the newer TclTest module.
+
+proc tcltest::testsDirectory { {dir {}} } {
+    if {$dir == "INIT"} {
+        # Init vars
+        set ::tcltest::originalTestsDirectory $::tcltest::testsDirectory
+        set ::tcltest::currentTestsDirectory $::tcltest::testsDirectory
+    } elseif {$dir == "RESET"} {
+        # Release changed dir
+        set ::tcltest::currentTestsDirectory $::tcltest::originalTestsDirectory
+    } elseif {$dir == {}} {
+        # Query current dir
+        return $::tcltest::currentTestsDirectory
+    } else {
+        # Set new dir
+        set ::tcltest::currentTestsDirectory $dir
+    }
+}
+
+tcltest::testsDirectory INIT
+
+
 # Load in helper procs
 if {[info commands setupJavaPackage] == {}} {
-    source defs
+    source [tcltest::testsDirectory]/defs
 }
 
 # Set verbose to max
@@ -27,11 +58,6 @@ if {0} {
     }
 }
 
-set ::tcltest::testSingleFile false
-set ::tcltest::testsDirectory [file dir [info script]]
-
-# We need to ensure that the testsDirectory is absolute
-::tcltest::normalizePath ::tcltest::testsDirectory
 
 puts stdout "Tcl $tcl_patchLevel tests running in interp:  [info nameofexecutable]"
 puts stdout "Tests running in working dir:  $::tcltest::testsDirectory"
@@ -62,6 +88,7 @@ puts stdout "Tests began at [eval $timeCmd]"
 #    }
 #}
 
+cd [tcltest::testsDirectory]
 
 if {$tcl_platform(platform) == "java"} {
     # run the Jacl tests
@@ -105,6 +132,7 @@ if {0} {
     }
 }
 
+cd $env(BUILD_DIR)
 
 foreach i $tests {
 
@@ -116,7 +144,22 @@ foreach i $tests {
     puts stdout $i
     flush stdout
 
-    if {[catch {source $i} msg]} {
+    # Get tcltest::testsDirectory to report the directory that
+    # a .test file is being sourced from.
+    tcltest::testsDirectory RESET
+    #puts "check $i"
+    #puts "testsDirectory before change: [tcltest::testsDirectory]"
+    set dname [file dirname $i]
+    if {$dname != "."} {
+        tcltest::testsDirectory [file join [tcltest::testsDirectory] [file dirname $i]]
+    }
+    #puts "testsDirectory after change: [tcltest::testsDirectory]"
+    #puts "current directory after change: [pwd]"
+
+    set fname [file tail $i]
+    set ffname [file join [tcltest::testsDirectory] $fname]
+    #puts "source: \"$ffname\""
+    if {[catch {source $ffname} msg]} {
 	puts $msg
     }
 

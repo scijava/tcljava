@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: parseCmd.test,v 1.2 2005/10/24 00:36:36 mdejong Exp $
+# RCS: @(#) $Id: parseCmd.test,v 1.3 2005/11/04 21:02:14 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -137,6 +137,60 @@ test parseCmd-7.3 {parse list elements} {
     }
     list $range_str $results $strs
 } {{0 1 2} {{7 1} {9 1} {11 1}} {0 1 2}}
+
+
+test parseCmd-8.1 {parse expr} {
+    set script {1 == ""}
+    parse expr $script {0 end}
+} [list \
+    subexpr {0 7} \
+    [list \
+        {operator {2 2} {}} \
+        {subexpr {0 1} {{text {0 1} {}}}} \
+        {subexpr {5 2} {{text {6 0} {}}}} \
+    ] \
+  ]
+
+test parseCmd-8.2 {parse expr} {
+    set script {1 ne ""}
+    parse expr $script {0 end}
+} [list \
+    subexpr {0 7} \
+    [list \
+        {operator {2 2} {}} \
+        {subexpr {0 1} {{text {0 1} {}}}} \
+        {subexpr {5 2} {{text {6 0} {}}}} \
+    ] \
+  ]
+
+test parseCmd-8.3 {parse expr} {
+    set script {!1}
+    parse expr $script {0 end}
+} [list \
+    subexpr {0 2} \
+    [list \
+        {operator {0 1} {}} \
+        [list \
+            subexpr {1 1} \
+            [list \
+                {text {1 1} {}} \
+            ] \
+        ] \
+    ] \
+  ]
+
+test parseCmd-8.4 {parse expr} {
+    set script {[cmd] != {}}
+    parse expr $script {0 end}
+} [list \
+    subexpr {0 11} \
+    [list \
+        {operator {6 2} {}} \
+        {subexpr {0 5} {{command {0 5} {}}}} \
+        {subexpr {9 2} {{text {10 0} {}}}} \
+    ] \
+  ]
+
 
 # cleanup
 cleanupTests
