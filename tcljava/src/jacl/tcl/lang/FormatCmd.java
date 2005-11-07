@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FormatCmd.java,v 1.8 2005/09/30 02:12:17 mdejong Exp $
+ * RCS: @(#) $Id: FormatCmd.java,v 1.9 2005/11/07 07:41:51 mdejong Exp $
  *
  */
 
@@ -481,7 +481,7 @@ class FormatCmd implements Command {
             int precision, int flags, int base, char[] charSet, 
             String altPrefix) {
         StringBuffer sbuf   = new StringBuffer(100);
-        StringBuffer tmpBuf = new StringBuffer(0).append("");
+        StringBuffer tmpBuf = new StringBuffer();
 
 	int  i;
 	int  length;
@@ -854,9 +854,8 @@ class FormatCmd implements Command {
 	// (tmpBuf) with the correct number of spaces.
 
 	int nspace = width-length;
-	StringBuffer tmpBuf = new StringBuffer(0).append("");
+	StringBuffer tmpBuf = new StringBuffer();
 	if (nspace > 0) {
-	    tmpBuf = new StringBuffer(nspace);
 	    for (i=0; i < nspace; i++) {
 	        tmpBuf.append(" ");
 	    }

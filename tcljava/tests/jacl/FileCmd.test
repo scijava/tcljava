@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: FileCmd.test,v 1.4 2003/03/17 21:33:40 mdejong Exp $
+# RCS: @(#) $Id: FileCmd.test,v 1.5 2005/11/07 07:41:51 mdejong Exp $
 
 # Lots and lots of these tests fail, don't run them
 return
@@ -238,6 +238,18 @@ test filecmd-2.46 {cmdProc: dirname} {
     set env(HOME) $temp
     set result
 } {0 home:}
+
+test filecmd-2.47 {cmdProc: dirname} {
+    file dirname C:/foo/bar
+} {C:/foo}
+
+test filecmd-2.48 {cmdProc: dirname} {
+    file dirname AA:/foo/bar
+} {AA:/foo}
+
+test filecmd-2.49 {cmdProc: dirname} {
+    file dirname resource:/tcl/lang/library/init.tcl
+} {resource:/tcl/lang/library/init.tcl}
 
 # tail
 

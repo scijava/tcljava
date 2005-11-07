@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.56 2005/10/20 21:35:55 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.57 2005/11/07 07:41:51 mdejong Exp $
  *
  */
 
@@ -796,7 +796,7 @@ createCommands()
     // Load tcltest package as a result of "package require tcltest"
 
     try {
-        eval("package ifneeded tcltest 1.0 {source -url "+
+        eval("package ifneeded tcltest 1.0 {source "+
             "resource:/tcl/lang/library/tcltest/tcltest.tcl}");
     } catch (TclException e) {
 	System.out.println(getResult());
@@ -3004,9 +3004,18 @@ throws
 		+ "\"");
     }
 
-    String script = readScriptFromInputStream(stream);
+    // Define script name as resource so that [info script] can be used
+    // to construct names of other resources in the same resource directory.
 
-    eval(script, 0);
+    String oldScript = scriptFile;
+    scriptFile = "resource:" + resName;
+
+    try {
+        String script = readScriptFromInputStream(stream);
+        eval(script, 0);
+    } finally {
+        scriptFile = oldScript;
+    }
 }
 
 /*

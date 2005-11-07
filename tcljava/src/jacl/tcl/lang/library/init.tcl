@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.6 2004/09/18 21:29:58 mdejong Exp $
+# RCS: @(#) $Id: init.tcl,v 1.7 2005/11/07 07:41:51 mdejong Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -312,7 +312,7 @@ proc auto_load cmd {
 	    # (ToDo): a "url open" command to read the contents of the
 	    # file first.
 
-	    catch {source -url $dir/tclIndex}
+	    catch {source $dir/tclIndex}
 	}
     }
     if [info exists auto_index($cmd)] {

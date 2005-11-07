@@ -11,7 +11,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FileCmd.java,v 1.9 2003/02/03 01:39:02 mdejong Exp $
+ * RCS: @(#) $Id: FileCmd.java,v 1.10 2005/11/07 07:41:51 mdejong Exp $
  *
  */
 
@@ -206,6 +206,12 @@ throws
 
  	TclObject splitArrayObj[] = TclList.getElements(interp,
  		FileUtil.splitAndTranslate(interp, path));
+ 	if (false) {
+            for (int ii=0 ; ii < splitArrayObj.length; ii++) {
+                System.out.println("file path index " + ii + " is \"" +
+                    splitArrayObj[ii] + "\"");
+            }
+ 	}
 
 	if (splitArrayObj.length > 1) {
 	    interp.setResult(FileUtil.joinPath(interp, splitArrayObj, 0, 

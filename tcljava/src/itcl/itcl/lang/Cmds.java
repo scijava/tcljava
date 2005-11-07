@@ -21,7 +21,7 @@
  *           mmclennan@lucent.com
  *           http://www.tcltk.com/itcl
  *
- *     RCS:  $Id: Cmds.java,v 1.2 2005/09/12 00:00:50 mdejong Exp $
+ *     RCS:  $Id: Cmds.java,v 1.3 2005/11/07 07:41:51 mdejong Exp $
  * ========================================================================
  *           Copyright (c) 1993-1998  Lucent Technologies, Inc.
  * ------------------------------------------------------------------------
@@ -43,7 +43,7 @@ class Cmds {
 // directory and loads it in.
 
 static String initScript =
-"namespace eval ::itcl { source -url resource:/itcl/lang/library/itcl.tcl }";
+"namespace eval ::itcl { source resource:/itcl/lang/library/itcl.tcl }";
 
 // The following script is used to initialize Itcl in a safe interpreter.
 

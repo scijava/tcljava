@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: Interp.test,v 1.10 2004/10/01 21:29:42 mdejong Exp $
+# RCS: @(#) $Id: Interp.test,v 1.11 2005/11/07 07:41:51 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -256,7 +256,7 @@ test Interp-7.3 {source tl.tcl as resource from tl.jar} {
     # for loading via a resource to work.
     #if {![file exists tl.jar]} {error "file tl.jar does not exists in [pwd]"}
     #set env(TCL_CLASSPATH) [file join [pwd] tl.jar]
-    source -url resource:/tl/tl.tcl
+    source resource:/tl/tl.tcl
     #unset env(TCL_CLASSPATH)
     test_lengths
 } {1 1 1 1}

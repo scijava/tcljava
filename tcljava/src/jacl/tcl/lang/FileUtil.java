@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FileUtil.java,v 1.6 2003/02/02 00:59:16 mdejong Exp $
+ * RCS: @(#) $Id: FileUtil.java,v 1.7 2005/11/07 07:41:51 mdejong Exp $
  *
  */
 
@@ -321,7 +321,7 @@ getPathType(
 	    return PATH_ABSOLUTE;
 	}
 	if (c == '/') {
-	    StringBuffer absBuf = new StringBuffer(0);
+	    StringBuffer absBuf = new StringBuffer();
 	    if (getWinHomePath(path, true, absBuf) > 0) {
 		return PATH_ABSOLUTE;
 	    }
@@ -526,8 +526,8 @@ joinPath(
 throws 
     TclException  			// Thrown if TclList ops fail.
 {
-    StringBuffer result = new StringBuffer(10);
-	
+    StringBuffer result = new StringBuffer();
+
     switch (JACL.PLATFORM) {
     case JACL.PLATFORM_WINDOWS:
 	// Iterate over all of the components.  If a component is
@@ -539,12 +539,12 @@ throws
 	    String p = argv[i].toString().replace('\\', '/');
 	    int pIndex = 0;
 	    int pLastIndex = p.length() - 1;
-	    
+
 	    if (p.length() == 0) {
 		continue;
 	    }
 
-	    StringBuffer absBuf = new StringBuffer(0);
+	    StringBuffer absBuf = new StringBuffer();
 	    pIndex = getWinAbsPath(p, absBuf);
 	    if (pIndex > 0) {
 		// If the path is absolute or volume relative (except those
@@ -564,26 +564,25 @@ throws
 			&& (p.regionMatches(pIndex, "./~", 0, 3))) {
 			pIndex = 2;
 		}
-		
+
 		// Check to see if we need to append a separator before adding
 		// this relative component.
-		
+
 		if (result.length() != 0) {
 		    char c = result.charAt(result.length() - 1);
-		    if ((c != '/') && (c != ':')) {
-			result.ensureCapacity(result.length() + 1);
+		    if ((c != '/') /*&& (c != ':')*/) {
 			result.append('/');
 		    }
 		}
 	    }
-	    
+
 	    // Append the element.
-	    
+
 	    appendComponent(p, pIndex, pLastIndex, result);
 	    pIndex = p.length();
 	}
 	return result.toString();
-   
+
     case JACL.PLATFORM_MAC:
 	// Iterate over all of the components.  If a component is
 	// absolute, then reset the result and start building the
@@ -753,7 +752,7 @@ throws
     case JACL.PLATFORM_WINDOWS:
 	tmpPath = path.replace('\\', '/');
 
-	StringBuffer absBuf = new StringBuffer(0);
+	StringBuffer absBuf = new StringBuffer();
 	int absIndex = getWinAbsPath(tmpPath, absBuf);
 	if (absIndex > 0) {
 	    componentObj = TclString.newInstance(absBuf.toString());
@@ -788,8 +787,7 @@ throws
 		// First component of absolute unix path is followed by a ':',
 		// instead of being preceded by a degenerate unix-style
 		// pattern.
-		
-    
+
 		tmpPath = path.substring(degenIndex);
 		convertDotToColon = true;
 		appendColon = true;
@@ -873,7 +871,7 @@ throws
 	} else {
 	    sIndex = tmpPath.indexOf("/");
 	    // Ignore a redundant '/'
-	    
+
 	    if (sIndex == 0) {
 		tmpPath = tmpPath.substring(sIndex + 1);
 		continue;

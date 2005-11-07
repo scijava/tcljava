@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: SourceCmd.java,v 1.1 1998/10/14 21:09:20 cvsadmin Exp $
+ * RCS: @(#) $Id: SourceCmd.java,v 1.2 2005/11/07 07:41:51 mdejong Exp $
  *
  */
 
@@ -65,12 +65,10 @@ throws
     }
 
     try {
-	if (url) {
-	    if (fileName.startsWith("resource:/")) {
-		interp.evalResource(fileName.substring(9));
-	    } else {
-		interp.evalURL(null, fileName);
-	    }
+	if (fileName.startsWith("resource:/")) {
+            interp.evalResource(fileName.substring(9));
+	} else if (url) {
+	    interp.evalURL(null, fileName);
 	} else {
 	    interp.evalFile(fileName);
 	}
@@ -84,9 +82,7 @@ throws
 		throw e;
 	    }
 	} else if (code == TCL.ERROR) {
-	    /*
-	     * Record information telling where the error occurred.
-	     */
+	    // Record information telling where the error occurred.
 
 	    interp.addErrorInfo("\n    (file line " +
 		    interp.errorLine + ")");

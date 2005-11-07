@@ -1,3 +1,34 @@
+2005-11-06  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/itcl/itcl/lang/Cmds.java: Don't pass
+        -url to source of a resource.
+	* src/jacl/tcl/lang/FileCmd.java: Add debug
+        statement.
+	* src/jacl/tcl/lang/FileUtil.java: Fixup
+        broken use of StringBuffer, keep file path
+        from being munged with more than one character
+        appears before a colon.
+	* src/jacl/tcl/lang/FormatCmd.java: Fixup
+        broken StringBuffer usage.
+	* src/jacl/tcl/lang/Interp.java (createCommands,
+        evalResource):
+        Remove -url arguent to source of a resource.
+        Set the script name returned by info script
+        when sourcing a resource.
+	* src/jacl/tcl/lang/SourceCmd.java: If a
+        filename starts with "resource:" then
+        always treat it as a resource. The previous
+        code would only treat it as a resource if the
+        -url flag was also passed.
+	* src/jacl/tcl/lang/library/init.tcl:
+        Remove -url arguent to source of a resource.
+	* tests/jacl/FileCmd.test: Test for filename
+        bug that was keeping resource: prefixed
+        names from being dealt properly with the file
+        commands.
+	* tests/jacl/Interp.test:
+        Remove -url arguent to source of a resource.
+
 2005-11-04  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* Makefile.in: Copy files into library directory
