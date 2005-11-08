@@ -1,3 +1,16 @@
+2005-11-07  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/jacl/tcl/lang/ForeachCmd.java (cmdProc):
+        Remove unused var lookup code.
+	* src/jacl/tcl/lang/IfCmd.java (cmdProc):
+        Check for extra words after the else block
+        and generate an error if found.
+	* tests/tcl/foreach.test:
+	* tests/tcl/if.test:
+	* tests/tcl/while-old.test:
+	* tests/tcl/while.test: Update test to
+        those found in Tcl 8.4.
+
 2005-11-06  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* src/itcl/itcl/lang/Cmds.java: Don't pass

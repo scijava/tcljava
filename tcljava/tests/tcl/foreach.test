@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: foreach.test,v 1.3 2000/12/28 07:11:49 mdejong Exp $
+# RCS: @(#) $Id: foreach.test,v 1.4 2005/11/08 05:20:53 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -213,7 +213,7 @@ test foreach-5.4 {break tests} {
 
 # Test for incorrect "double evaluation" semantics
 
-test foreach-6.1 {delayed substitution of body} {knownBug} {
+test foreach-6.1 {delayed substitution of body} {
     proc foo {} {
        set a 0
        foreach a [list 1 2 3] "

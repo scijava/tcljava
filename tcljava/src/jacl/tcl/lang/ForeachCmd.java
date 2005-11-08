@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ForeachCmd.java,v 1.4 1999/08/07 06:44:04 mo Exp $
+ * RCS: @(#) $Id: ForeachCmd.java,v 1.5 2005/11/08 05:20:53 mdejong Exp $
  *
  */
 
@@ -75,20 +75,6 @@ class ForeachCmd implements Command {
 		int nSize = TclList.getLength(interp, name[x]);
 		base = nSize * c;
 		for (j=0; j < nSize; j++) {
-		    // Test and see if the name variable is an array.
-
-		    Var[] result = Var.lookupVar(interp, name[x].toString(),
-		        null, 0, null, false, false);
-		    Var var = null;
-
-		    if (result != null) {
-			if (result[1] != null) {
-			    var = result[1];
-			} else {
-			    var = result[0];
-			}
-		    }
-
 		    try {
 			if (base + j >= TclList.getLength(interp, value[x])) {
 			    interp.setVar(TclList.index(interp, name[x], j),

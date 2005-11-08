@@ -1,5 +1,5 @@
 /*
- * PutsCmd.java
+ * IfCmd.java
  *
  * Copyright (c) 1997 Cornell University.
  * Copyright (c) 1997 Sun Microsystems, Inc.
@@ -8,43 +8,39 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: IfCmd.java,v 1.2 2003/02/07 03:41:49 mdejong Exp $
+ * RCS: @(#) $Id: IfCmd.java,v 1.3 2005/11/08 05:20:53 mdejong Exp $
  *
  */
 
 package tcl.lang;
 
-/**
- * This class implements the built-in "if" command in Tcl.
- */
+// This class implements the built-in "if" command in Tcl.
+
 class IfCmd implements Command {
 
-    /**
-     * See Tcl user documentation for details.
-     * @exception TclException If incorrect number of arguments.
-     */
-    public void cmdProc(Interp interp, TclObject argv[])
+    // See Tcl user documentation for details.
+    // @exception TclException If incorrect number of arguments.
+
+    public void cmdProc(Interp interp, TclObject[] objv)
 	    throws TclException {
 	int i;
 	boolean value;
 
 	i = 1;
 	while (true) {
-	    /*
-	     * At this point in the loop, argv and argc refer to an
-	     * expression to test, either for the main expression or
-	     * an expression following an "elseif".  The arguments
-	     * after the expression must be "then" (optional) and a
-	     * script to execute if the expression is true.
-	     */
+	    // At this point in the loop, objv and argc refer to an
+	    // expression to test, either for the main expression or
+	    // an expression following an "elseif".  The arguments
+	    // after the expression must be "then" (optional) and a
+	    // script to execute if the expression is true.
 	     
-	    if (i >= argv.length) {
+	    if (i >= objv.length) {
 		throw new TclException(interp,
 			"wrong # args: no expression after \"" +
-		        argv[i-1] +  "\" argument");
+		        objv[i-1] +  "\" argument");
 	    }
 	    try {
-	        value = interp.expr.evalBoolean(interp, argv[i].toString());
+	        value = interp.expr.evalBoolean(interp, objv[i].toString());
 	    } catch (TclException e) {
 		switch (e.getCompletionCode()) {
 		case TCL.ERROR:
@@ -55,17 +51,17 @@ class IfCmd implements Command {
 	    }
 
 	    i++;
-	    if ((i < argv.length) && (argv[i].toString().equals("then"))) {
+	    if ((i < objv.length) && (objv[i].toString().equals("then"))) {
 		i++;
 	    }
-	    if (i >= argv.length) {
+	    if (i >= objv.length) {
 		throw new TclException(interp,
 	    		"wrong # args: no script following \"" +
-		    	argv[i-1] + "\" argument");
+		    	objv[i-1] + "\" argument");
 	    }
 	    if (value) {
 		try {
-		    interp.eval(argv[i], 0);
+		    interp.eval(objv[i], 0);
 		} catch (TclException e) {
 		    switch (e.getCompletionCode()) {
 		    case TCL.ERROR:
@@ -78,42 +74,46 @@ class IfCmd implements Command {
 		return;
 	    }
 
-	    /*
-	     * The expression evaluated to false.  Skip the command, then
-	     * see if there is an "else" or "elseif" clause.
-	     */
+	    // The expression evaluated to false.  Skip the command, then
+	    // see if there is an "else" or "elseif" clause.
 
 	    i++;
-	    if (i >= argv.length) {
+	    if (i >= objv.length) {
 		interp.resetResult();
-		return ;
+		return;
 	    }
-	    if (argv[i].toString().equals("elseif")) {
+	    if (objv[i].toString().equals("elseif")) {
 		i++;
 		continue;
 	    }
 	    break;
 	}
 
-	/*
-	 * Couldn't find a "then" or "elseif" clause to execute.
-	 * Check now for an "else" clause.  We know that there's at
-	 * least one more argument when we get here.
-	 */
+	// Couldn't find a "then" or "elseif" clause to execute.
+	// Check now for an "else" clause.  We know that there's at
+	// least one more argument when we get here.
 
-	if (argv[i].toString().equals("else")) {
+	if (objv[i].toString().equals("else")) {
 	    i++;
-	    if (i >= argv.length) {
+	    if (i >= objv.length) {
 		throw new TclException(interp,
 		       "wrong # args: no script following \"else\" argument");
-	    } else if (i != (argv.length - 1)) {
+	    } else if (i != (objv.length - 1)) {
 		throw new TclException(interp,
 		    "wrong # args: extra words after \"else\" clause in " +
 		    "\"if\" command");
 	    }
-	}
+	} else {
+            // Not else, if there is more than 1 more argument
+            // then generate an error.
+
+            if (i != (objv.length - 1)) {
+                throw new TclException(interp,
+                    "wrong # args: extra words after \"else\" clause in \"if\" command");
+            }
+        }
 	try {
-	    interp.eval(argv[i], 0);
+	    interp.eval(objv[i], 0);
 	} catch (TclException e) {
 	    switch (e.getCompletionCode()) {
 	    case TCL.ERROR:

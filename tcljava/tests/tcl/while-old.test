@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: while-old.test,v 1.2 2003/03/17 21:33:43 mdejong Exp $
+# RCS: @(#) $Id: while-old.test,v 1.3 2005/11/08 05:20:53 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -101,12 +101,15 @@ test while-old-4.5 {errors in while loops} {
     set err [catch {while {$x} {set x foo}} msg]
     list $err $msg
 } {1 {expected boolean value but got "foo"}}
-test while-old-4.6 {errors in while loops} {knownbug} {
+test while-old-4.6 {errors in while loops} {
     set err [catch {while {1} {error "loop aborted"}} msg]
     list $err $msg $errorInfo
 } {1 {loop aborted} {loop aborted
     while executing
-"error "loop aborted""}}
+"error "loop aborted""
+    ("while" body line 1)
+    invoked from within
+"while {1} {error "loop aborted"}"}}
 
 test while-old-5.1 {while return result} {
     while {0} {set a 400}
