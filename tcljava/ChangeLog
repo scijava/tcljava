@@ -1,5 +1,17 @@
 2005-11-16  Mo DeJong  <mdejong@users.sourceforge.net>
 
+        * src/jacl/tcl/lang/ForCmd.java (cmdProc):
+        Remove extra CONTINUE branch and add
+        default switch block.
+        * tests/tcl/for.test: Test for Tcl 8.4
+        results and remove knownBug contstraints.
+        * tests/tcl/interp.test: Use knownbug
+        not knownBug as constraint name.
+        * tests/tcl/switch.test: Update to switch
+        tests from Tcl 8.4.
+
+2005-11-16  Mo DeJong  <mdejong@users.sourceforge.net>
+
         * src/jacl/tcl/lang/EvalCmd.java (cmdProc):
         Invoke eval(TclObject) instead of eval(String).
         * src/jacl/tcl/lang/Interp.java (setResult, eval,

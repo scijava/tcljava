@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: for.test,v 1.4 2003/03/17 21:33:40 mdejong Exp $
+# RCS: @(#) $Id: for.test,v 1.5 2005/11/16 21:19:13 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -49,14 +49,14 @@ test for-1.7 {TclCompileForCmd: missing command body} {
     catch {for {set i 0} {$i < 5} {incr i}} msg
     set msg
 } {wrong # args: should be "for start test next command"}
-test for-1.8 {TclCompileForCmd: error compiling command body} {knownbug} {
+test for-1.8 {TclCompileForCmd: error compiling command body} {
     catch {for {set i 0} {$i < 5} {incr i} {set}} msg
     set errorInfo
 } {wrong # args: should be "set varName ?newValue?"
     while executing
 "set"
     ("for" body line 1)
-    while executing
+    invoked from within
 "for {set i 0} {$i < 5} {incr i} {set}"}
 catch {unset a}
 test for-1.9 {TclCompileForCmd: simple command body} {
@@ -83,15 +83,15 @@ test for-1.11 {TclCompileForCmd: computed command body} {
     for {set i 1} {$i<6} {set i [expr $i+1]} $x1$bb$x2
     set a
 } {x1}
-test for-1.12 {TclCompileForCmd: error in "next" command} {knownbug} {
-    catch {for {set i 0} {$i < 5} {set} {puts $i}} msg
+test for-1.12 {TclCompileForCmd: error in "next" command} {
+    catch {for {set i 0} {$i < 5} {set} {set j $i}} msg
     set errorInfo
 } {wrong # args: should be "set varName ?newValue?"
     while executing
 "set"
     ("for" loop-end command)
-    while executing
-"for {set i 0} {$i < 5} {set} {puts $i}"}
+    invoked from within
+"for {set i 0} {$i < 5} {set} {set j $i}"}
 test for-1.13 {TclCompileForCmd: long command body} {
     set a {}
     for {set i 1} {$i<6} {set i [expr $i+1]} {
@@ -587,7 +587,7 @@ test for-4.1 {break must reset the interp result} {
 
 # Test for incorrect "double evaluation" semantics
 
-test for-5.1 {possible delayed substitution of increment command} {knownBug} {
+test for-5.1 {possible delayed substitution of increment command} {
     # Increment should be 5, and lappend should always append 5
     catch {unset a}
     catch {unset i}
@@ -597,7 +597,7 @@ test for-5.1 {possible delayed substitution of increment command} {knownBug} {
     set i
 } {1 6 11}
 
-test for-5.2 {possible delayed substitution of body command} {knownBug} {
+test for-5.2 {possible delayed substitution of body command} {
     # Increment should be 5, and lappend should always append 5
     set a 5
     set i {}
@@ -747,8 +747,56 @@ test for-6.16 {Tcl_ForObjCmd: for command result} {
     set a [$z {set i 0} {$i < 5} {incr i} {if $i==3 break}]
     set a
 } {}
-
-
+test for-6.17 {Tcl_ForObjCmd: for command result} {
+    list \
+        [catch {for {break} {1} {} {}} err] $err \
+        [catch {for {continue} {1} {} {}} err] $err \
+        [catch {for {} {[break]} {} {}} err] $err \
+        [catch {for {} {[continue]} {} {}} err] $err \
+        [catch {for {} {1} {break} {}} err] $err \
+        [catch {for {} {1} {continue} {}} err] $err \
+} [list \
+    3 {} \
+    4 {} \
+    3 {} \
+    4 {} \
+    0 {} \
+    4 {} \
+    ]
+test for-6.18 {Tcl_ForObjCmd: for command result} {
+    proc p6181 {} {
+        for {break} {1} {} {}
+    }
+    proc p6182 {} {
+        for {continue} {1} {} {}
+    }
+    proc p6183 {} {
+        for {} {[break]} {} {}
+    }
+    proc p6184 {} {
+        for {} {[continue]} {} {}
+    }
+    proc p6185 {} {
+        for {} {1} {break} {}
+    }
+    proc p6186 {} {
+        for {} {1} {continue} {}
+    }
+    list \
+        [catch {p6181} err] $err \
+        [catch {p6182} err] $err \
+        [catch {p6183} err] $err \
+        [catch {p6184} err] $err \
+        [catch {p6185} err] $err \
+        [catch {p6186} err] $err
+} [list \
+    1 {invoked "break" outside of a loop} \
+    1 {invoked "continue" outside of a loop} \
+    1 {invoked "break" outside of a loop} \
+    1 {invoked "continue" outside of a loop} \
+    0 {} \
+    1 {invoked "continue" outside of a loop} \
+    ]
 
 # cleanup
 ::tcltest::cleanupTests

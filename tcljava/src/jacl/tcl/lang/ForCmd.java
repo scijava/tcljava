@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ForCmd.java,v 1.1 1998/10/14 21:09:19 cvsadmin Exp $
+ * RCS: @(#) $Id: ForCmd.java,v 1.2 2005/11/16 21:19:13 mdejong Exp $
  *
  */
 
@@ -82,13 +82,13 @@ class ForCmd implements Command {
 		    case TCL.BREAK:
 			done = true;
 			break;
-			
-		    case TCL.CONTINUE:
-			break;
 
-		    default:
+		    case TCL.ERROR:
 			interp.addErrorInfo(
 				"\n    (\"for\" loop-end command)");
+			throw e;
+
+		    default:
 			throw e;
 		    }
 		}
