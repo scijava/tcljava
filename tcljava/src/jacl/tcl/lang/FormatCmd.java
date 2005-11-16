@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FormatCmd.java,v 1.9 2005/11/07 07:41:51 mdejong Exp $
+ * RCS: @(#) $Id: FormatCmd.java,v 1.10 2005/11/16 20:39:30 mdejong Exp $
  *
  */
 
@@ -771,8 +771,7 @@ class FormatCmd implements Command {
 		}
 		
 		if (index > 0) {
-		    sbuf = new StringBuffer(sbuf.toString().substring(0,
-                            sbuf.length()-index));
+		    sbuf.setLength(sbuf.length()-index);
 		}
 	    }
 	} else {    
@@ -811,8 +810,7 @@ class FormatCmd implements Command {
 		}
 		    
 		if (i > 0) {
-		    sbuf = new StringBuffer(sbuf.toString().substring(0,
-                            sbuf.length()-i));
+		    sbuf.setLength(sbuf.length()-i);
 		}
 	    }
 	    if ((exp != 0) || flag_exp) {
@@ -826,6 +824,8 @@ class FormatCmd implements Command {
 		if (exp>=100) {
 		    sbuf.append((exp/100));
 		    exp %= 100;
+		} else {
+		    sbuf.append('0');
 		}
 		sbuf.append(exp / 10);
 		sbuf.append(exp % 10);

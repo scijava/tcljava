@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr.test,v 1.11 2005/10/27 20:43:21 mdejong Exp $
+# RCS: @(#) $Id: expr.test,v 1.12 2005/11/16 20:39:30 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -556,9 +556,25 @@ test expr-14.2 {CompilePrimaryExpr: literal primary} {expr 123} 123
 test expr-14.3 {CompilePrimaryExpr: literal primary} {expr 0xff} 255
 test expr-14.4 {CompilePrimaryExpr: literal primary} {expr 00010} 8
 test expr-14.5 {CompilePrimaryExpr: literal primary} {expr 62.0} 62.0
-test expr-14.6 {CompilePrimaryExpr: literal primary} {
+test expr-14.6.0 {CompilePrimaryExpr: literal primary} {
     expr 3.1400000
 } 3.14
+test expr-14.6.1 {CompilePrimaryExpr: literal primary} {
+    list \
+        [expr {1e16}] \
+        [expr {1e+16}] \
+        [expr {1.000e16}] \
+        [expr {1.0e+016}]
+} {1e+016 1e+016 1e+016 1e+016}
+test expr-14.6.2 {CompilePrimaryExpr: literal primary} {
+    list \
+        [expr {7.91e16}] \
+        [expr {7.91e+16}] \
+        [expr {7.91e016}] \
+        [expr {7.91e+016}] \
+        [expr {7.91e+116}]
+} {7.91e+016 7.91e+016 7.91e+016 7.91e+016 7.91e+116}
+
 test expr-14.7 {CompilePrimaryExpr: literal primary} {expr {{abcde}<{abcdef}}} 1
 test expr-14.8 {CompilePrimaryExpr: literal primary} {expr {{abc\
 def} < {abcdef}}} 1

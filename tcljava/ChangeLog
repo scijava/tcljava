@@ -1,3 +1,13 @@
+2005-11-16  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/jacl/tcl/lang/FormatCmd.java (cvtDblToStr):
+        Set StringBuffer length instead of allocating
+        a new StringBuffer. Format a double that has an
+        exponent with a leading zero in the exponent
+        so that Jacl matches Tcl 8.4.
+        * tests/tcl/expr.test: Test for double formatting
+        with an exponent that has a leading zero.
+
 2005-11-07  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* src/jacl/tcl/lang/ForeachCmd.java (cmdProc):
