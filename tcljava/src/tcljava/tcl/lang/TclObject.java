@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclObject.java,v 1.11 2005/09/30 02:12:17 mdejong Exp $
+ * RCS: @(#) $Id: TclObject.java,v 1.12 2005/11/16 21:08:11 mdejong Exp $
  *
  */
 
@@ -27,7 +27,8 @@ import java.util.Enumeration;
  */
 
 public final class TclObject {
-    // Internal representation of the object.
+    // Internal representation of the object. A valid TclObject
+    // will always have a non-null internal rep.
 
     protected InternalRep internalRep;
 
@@ -313,8 +314,8 @@ public final class TclObject {
 	if (refCount <= 0) {
 	    internalRep.dispose();
 
-	    // Setting these to null will ensure that any attempt to use
-	    // this object will result in a Java NullPointerException.
+	    // Setting the internalRep to null means any further
+	    // use of the object will generate an error in disposedCheck().
 
 	    internalRep = null;
 	    stringRep = null;

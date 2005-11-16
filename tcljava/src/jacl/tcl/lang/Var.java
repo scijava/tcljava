@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Var.java,v 1.15 2005/10/07 06:50:09 mdejong Exp $
+ * RCS: @(#) $Id: Var.java,v 1.16 2005/11/16 21:08:11 mdejong Exp $
  *
  */
 package tcl.lang;
@@ -902,7 +902,7 @@ class Var {
 		    }
 		    TclList.append(interp, oldValue, newValue);
 		} else {		               // append string
-		    // We append newValuePtr's bytes but don't change its ref count.
+		    // We append newValue's bytes but don't change its ref count.
 
 		    bytes = newValue.toString();
 		    if (oldValue == null) {
@@ -915,7 +915,7 @@ class Var {
 			    oldValue = (TclObject) var.value;
 			    oldValue.preserve(); // since var is referenced
 			}
-			TclString.append(oldValue, newValue);
+			TclString.append(oldValue, bytes);
 		    }
 		}
 	    } else {

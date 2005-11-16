@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: EvalCmd.java,v 1.2 2005/10/17 09:33:20 mdejong Exp $
+ * RCS: @(#) $Id: EvalCmd.java,v 1.3 2005/11/16 21:08:11 mdejong Exp $
  *
  */
 
@@ -28,18 +28,20 @@ class EvalCmd implements Command {
      * @exception TclException if script causes error.
      */
 
-    public void cmdProc(Interp interp, TclObject argv[])
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
 	    throws TclException {
-	if (argv.length < 2) {
-	    throw new TclNumArgsException(interp, 1, argv, "arg ?arg ...?");
+	if (objv.length < 2) {
+	    throw new TclNumArgsException(interp, 1, objv, "arg ?arg ...?");
 	}
 
 	try {
-	    if (argv.length == 2) {
-		interp.eval(argv[1], 0);
+	    if (objv.length == 2) {
+		interp.eval(objv[1], 0);
 	    } else {
-		TclObject obj = Util.concat(1, argv.length-1, argv);
-		interp.eval(obj.toString(), 0);
+		TclObject obj = Util.concat(1, objv.length-1, objv);
+		interp.eval(obj, 0);
 	    }
 	} catch (TclException e) {
 	    if (e.getCompletionCode() == TCL.ERROR) {

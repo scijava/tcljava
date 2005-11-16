@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: BeanEvent.java,v 1.3 1999/08/03 03:24:08 mo Exp $
+ * RCS: @(#) $Id: BeanEvent.java,v 1.4 2005/11/16 21:08:11 mdejong Exp $
  *
  */
 
@@ -29,7 +29,7 @@ Interp interp;
 
 // The callback command to execute when the event is fired.
 
-TclObject command;
+String command;
 
 // Types of the event parameters.
 
@@ -64,7 +64,7 @@ BeanEvent(
     TclObject cmd)	// The callback command.
 {
     interp = i;
-    command = cmd;
+    command = cmd.toString();
     paramTypes = t;
     params = p;
 }

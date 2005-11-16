@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.57 2005/11/07 07:41:51 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.58 2005/11/16 21:08:11 mdejong Exp $
  *
  */
 
@@ -2219,26 +2219,28 @@ getResult()
 
 public final void 
 setResult(
-    TclObject r)	// A Tcl Object to be set as the result.
+    TclObject newResult) // A Tcl Object to be set as the result.
 {
-    if (r == null) {
+    if (newResult == null) {
 	throw new NullPointerException(
 		"Interp.setResult() called with null TclObject argument.");
     }
 
-    if (r == m_result) {
+    TclObject oldResult = m_result;
+
+    if (newResult == oldResult) {
         // Setting to current value (including m_nullResult) is a no-op.
         return;
     }
 
-    if (m_result != m_nullResult) {
-	m_result.release();
+    if (newResult != m_nullResult) {
+	newResult.preserve();
     }
 
-    m_result = r;
+    m_result = newResult;
 
-    if (m_result != m_nullResult) {
-	m_result.preserve();
+    if (oldResult != m_nullResult) {
+	oldResult.release();
     }
 }
 
@@ -2511,7 +2513,7 @@ throws
 /*
  *----------------------------------------------------------------------
  *
- * eval --
+ * Tcl_EvalObjEx -> eval
  *
  *	Execute a Tcl command in a TclObject.
  *
@@ -2535,7 +2537,21 @@ eval(
 throws 
     TclException 	// A standard Tcl exception.
 {
-    eval(tobj.toString(), flags);
+    tobj.preserve();
+
+    // FIXME: If the TclObject is already a pure Tcl list, we should have
+    // an optimized API that would allow invocation of the first element
+    // directly without having to reparse and convert back to TclObjects.
+    // Jacl seems to lack this currently and it can be a serious performance
+    // issue.
+
+    // Call Parser.evalObjv() here like Tcl_EvalObjEx does
+
+    try {
+        eval(tobj.toString(), flags);
+    } finally {
+        tobj.release();
+    }
 }
 
 /*
@@ -4300,7 +4316,12 @@ TclObject checkCommonInteger(int value)
             break;
         default:
             obj = TclInteger.newInstance( value );
-            break;
+            return obj;
+    }
+    if (!obj.isShared()) {
+        throw new TclRuntimeError("ref count error: " +
+            "integer constant should be shared but refCount was " +
+            obj.getRefCount());
     }
     return obj;
 }
@@ -4332,6 +4353,12 @@ TclObject checkCommonDouble(double value)
         obj = m_twoDoubleResult;
     } else {
         obj = TclDouble.newInstance( value );
+        return obj;
+    }
+    if (!obj.isShared()) {
+        throw new TclRuntimeError("ref count error: " +
+            "double constant should be shared but refCount was " +
+            obj.getRefCount());
     }
     return obj;
 }
@@ -4349,11 +4376,18 @@ TclObject checkCommonDouble(double value)
 final
 TclObject checkCommonBoolean(boolean value)
 {
+    TclObject obj;
     if ( value ) {
-        return m_trueBooleanResult;
+        obj = m_trueBooleanResult;
     } else {
-        return m_falseBooleanResult;
+        obj = m_falseBooleanResult;
     }
+    if (!obj.isShared()) {
+        throw new TclRuntimeError("ref count error: " +
+            "boolean constant should be shared but refCount was " +
+            obj.getRefCount());
+    }
+    return obj;
 }
 
 /**
@@ -4372,7 +4406,12 @@ TclObject checkCommonBoolean(boolean value)
 final
 TclObject checkCommonString(String value)
 {
-    if ( value == null || value.length() == 0 ) {
+    if ( value == null || value == "" || value.length() == 0 ) {
+        if (!m_nullResult.isShared()) {
+            throw new TclRuntimeError("ref count error: " +
+                "empty string constant should be shared but refCount was " +
+                m_nullResult.getRefCount());
+        }
         return m_nullResult;
     } else {
         return TclString.newInstance( value );

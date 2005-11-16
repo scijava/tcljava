@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: UplevelCmd.java,v 1.4 2005/10/17 09:33:20 mdejong Exp $
+ * RCS: @(#) $Id: UplevelCmd.java,v 1.5 2005/11/16 21:08:11 mdejong Exp $
  *
  */
 
@@ -74,21 +74,20 @@ throws
 		"?level? command ?arg ...?");
     }
     objv_index = (result+1);
-    
+
     // Modify the interpreter state to execute in the given frame.
-    
+
     savedVarFrame = interp.varFrame;
     interp.varFrame = frame;
-    
+
     // Execute the residual arguments as a command.
-    
+
     if (objc == 1) {
 	cmd = objv[objv_index];
     } else {
 	cmd = Util.concat(objv_index, objv.length-1, objv);
     }
-    cmd.preserve();
-    
+
     try {
 	interp.eval(cmd, 0);
     } catch (TclException e) {
@@ -99,7 +98,6 @@ throws
 	throw e;
     } finally {
 	interp.varFrame = savedVarFrame;
-	cmd.release();
     }
 }
 
