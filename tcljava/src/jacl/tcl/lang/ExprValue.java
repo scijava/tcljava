@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ExprValue.java,v 1.3 2005/09/30 02:12:17 mdejong Exp $
+ * RCS: @(#) $Id: ExprValue.java,v 1.4 2005/11/17 08:24:20 mdejong Exp $
  *
  */
 
@@ -113,7 +113,8 @@ public class ExprValue {
             }
         } else if (type == DOUBLE) {
             if (stringValue == null) {
-                stringValue = Double.toString(doubleValue);
+                // Generate Tcl string rep for the double.
+                stringValue = Util.printDouble(doubleValue);
             }
         }
         return stringValue;
@@ -209,7 +210,7 @@ public class ExprValue {
         } else if (type == DOUBLE) {
             sb.append("DOUBLE \"" + doubleValue + "\"");
             if (stringValue != null) {
-                String doubleString = Double.toString(doubleValue);
+                String doubleString = Util.printDouble(doubleValue);
                 if (doubleString.compareTo(stringValue) != 0) {
                     sb.append(" parsed from \"");
                     sb.append(stringValue);

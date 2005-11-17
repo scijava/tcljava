@@ -1,3 +1,11 @@
+2005-11-17  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/jacl/tcl/lang/ExprValue.java (getStringValue,
+        toString): Use Util.printDouble() to create
+        a string rep from a double.
+        * tests/tcl/expr.test: Check for string rep of
+        a double expr value.
+
 2005-11-16  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/jacl/tcl/lang/ForCmd.java (cmdProc):
