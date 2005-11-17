@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: parseExpr.test,v 1.2 2005/10/29 00:27:43 mdejong Exp $
+# RCS: @(#) $Id: parseExpr.test,v 1.3 2005/11/17 09:12:06 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -235,7 +235,7 @@ test parseExpr-9.6 {ParseRelationalExpr procedure, next lexeme is relational op}
 test parseExpr-9.7 {ParseRelationalExpr procedure, next lexeme is relational op} {
     testexprparser {1<<2 >= 3} -1
 } {- {} 0 subexpr {1<<2 >= 3} 9 operator >= 0 subexpr 1<<2 5 operator << 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
-test parseExpr-9.8 {ParseRelationalExpr procedure, bad lexeme after relational op} {nonPortable} {
+test parseExpr-9.8 {ParseRelationalExpr procedure, bad lexeme after relational op} {
     list [catch {testexprparser {1<<2 < 12345678901234567890} -1} msg] $msg
 } {1 {integer value too large to represent}}
 test parseExpr-9.9 {ParseRelationalExpr procedure, valid RHS subexpression} {
@@ -260,7 +260,7 @@ test parseExpr-10.4 {ParseShiftExpr procedure, next lexeme is "<<" or ">>} {
 test parseExpr-10.5 {ParseShiftExpr procedure, next lexeme is "<<" or ">>"} {
     testexprparser {1+2 >> 3} -1
 } {- {} 0 subexpr {1+2 >> 3} 9 operator >> 0 subexpr 1+2 5 operator + 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
-test parseExpr-10.6 {ParseShiftExpr procedure, bad lexeme after "<<" or ">>"} {nonPortable} {
+test parseExpr-10.6 {ParseShiftExpr procedure, bad lexeme after "<<" or ">>"} {
     list [catch {testexprparser {1+2 << 12345678901234567890} -1} msg] $msg
 } {1 {integer value too large to represent}}
 test parseExpr-10.7 {ParseShiftExpr procedure, valid RHS subexpression} {
@@ -323,7 +323,7 @@ test parseExpr-12.8 {ParseAddExpr procedure, error in RHS subexpression} {
 test parseExpr-13.1 {ParseMultiplyExpr procedure, valid LHS unary subexpr} {
     testexprparser {+2 * 3} -1
 } {- {} 0 subexpr {+2 * 3} 7 operator * 0 subexpr +2 3 operator + 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
-test parseExpr-13.2 {ParseMultiplyExpr procedure, error in LHS unary subexpr} {nonPortable} {
+test parseExpr-13.2 {ParseMultiplyExpr procedure, error in LHS unary subexpr} {
     list [catch {testexprparser {-12345678901234567890 * 3} -1} msg] $msg
 } {1 {integer value too large to represent}}
 test parseExpr-13.3 {ParseMultiplyExpr procedure, next lexeme isn't "*", "/", or "%"} {
@@ -381,7 +381,7 @@ test parseExpr-14.10 {ParseUnaryExpr procedure, first token is not unary op} {
 test parseExpr-14.11 {ParseUnaryExpr procedure, not unary expr, complex primary expr} {
     testexprparser {(1+2)} -1
 } {- {} 0 subexpr 1+2 5 operator + 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 {}}
-test parseExpr-14.12 {ParseUnaryExpr procedure, not unary expr, error in primary expr} {nonPortable} {
+test parseExpr-14.12 {ParseUnaryExpr procedure, not unary expr, error in primary expr} {
     list [catch {testexprparser {(12345678901234567890)} -1} msg] $msg
 } {1 {integer value too large to represent}}
 
@@ -452,7 +452,7 @@ test parseExpr-15.21 {ParsePrimaryExpr procedure, primary is braced string with 
 test parseExpr-15.22 {ParsePrimaryExpr procedure, primary is function call} {
     testexprparser {foo(123)} -1
 } {- {} 0 subexpr foo(123) 3 operator foo 0 subexpr 123 1 text 123 0 {}}
-test parseExpr-15.23 {ParsePrimaryExpr procedure, bad lexeme after function name} {nonPortable} {
+test parseExpr-15.23 {ParsePrimaryExpr procedure, bad lexeme after function name} {
     list [catch {testexprparser {foo 12345678901234567890 123)} -1} msg] $msg
 } {1 {integer value too large to represent}}
 test parseExpr-15.24 {ParsePrimaryExpr procedure, lexeme after function name isn't "("} {
@@ -510,7 +510,7 @@ test parseExpr-16.3 {GetLexeme procedure, no lexeme after whitespace} {
 test parseExpr-16.4 {GetLexeme procedure, integer lexeme} {
     testexprparser {000} -1
 } {- {} 0 subexpr 000 1 text 000 0 {}}
-test parseExpr-16.5 {GetLexeme procedure, integer lexeme too big} {nonPortable} {
+test parseExpr-16.5 {GetLexeme procedure, integer lexeme too big} {
     list [catch {testexprparser {12345678901234567890} -1} msg] $msg
 } {1 {integer value too large to represent}}
 # FIXME: This next test case currently generates a syntax error, but
@@ -525,10 +525,10 @@ test parseExpr-16.7 {GetLexeme procedure, double lexeme} {
 test parseExpr-16.8 {GetLexeme procedure, double lexeme} {
     testexprparser {.123} -1
 } {- {} 0 subexpr .123 1 text .123 0 {}}
-test parseExpr-16.9 {GetLexeme procedure, double lexeme} {nonPortable unixOnly} {
+test parseExpr-16.9 {GetLexeme procedure, double lexeme} {nonPortable} {
     testexprparser {nan} -1
 } {- {} 0 subexpr nan 1 text nan 0 {}}
-test parseExpr-16.10 {GetLexeme procedure, double lexeme} {nonPortable unixOnly} {
+test parseExpr-16.10 {GetLexeme procedure, double lexeme} {
     testexprparser {NaN} -1
 } {- {} 0 subexpr NaN 1 text NaN 0 {}}
 test parseExpr-16.11 {GetLexeme procedure, bad double lexeme too big} {
@@ -633,6 +633,27 @@ test parseExpr-16.43 {GetLexeme procedure, lexeme is func name} {
 test parseExpr-16.44 {GetLexeme procedure, unknown lexeme} {
     list [catch {testexprparser {@27} -1} msg] $msg
 } {1 {syntax error in expression "@27"}}
+test parseExpr-16.45 {GetLexeme procedure, boolean lexme} {
+    testexprparser {true} -1
+} {- {} 0 subexpr true 1 text true 0 {}}
+test parseExpr-16.46 {GetLexeme procedure, boolean lexme} {
+    testexprparser {tru} -1
+} {- {} 0 subexpr tru 1 text tru 0 {}}
+test parseExpr-16.47 {GetLexeme procedure, boolean lexme} {
+    testexprparser {tr} -1
+} {- {} 0 subexpr tr 1 text tr 0 {}}
+test parseExpr-16.48 {GetLexeme procedure, boolean lexme} {
+    testexprparser {t} -1
+} {- {} 0 subexpr t 1 text t 0 {}}
+test parseExpr-16.49 {GetLexeme procedure, boolean lexme} {
+    testexprparser {false} -1
+} {- {} 0 subexpr false 1 text false 0 {}}
+test parseExpr-16.50 {GetLexeme procedure, boolean lexme} {
+    testexprparser {f} -1
+} {- {} 0 subexpr f 1 text f 0 {}}
+test parseExpr-16.51 {GetLexeme procedure, boolean lexme} {
+    testexprparser {(!t) == false} -1
+} {- {} 0 subexpr {(!t) == false} 7 operator == 0 subexpr !t 3 operator ! 0 subexpr t 1 text t 0 subexpr false 1 text false 0 {}}
 
 test parseExpr-17.1 {PrependSubExprTokens procedure, expand token array} {
     testexprparser {[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]} -1

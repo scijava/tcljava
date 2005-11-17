@@ -1,5 +1,13 @@
 2005-11-17  Mo DeJong  <mdejong@users.sourceforge.net>
 
+        * src/jacl/tcl/lang/ParseExpr.java (ParseInfo,
+        ParsePrimaryExpr): Add support for parsing
+        boolean literal tokens.
+        * tests/tcl/parseExpr.test: Test boolean literal
+        parsing. Remove constraints for tests that pass.
+
+2005-11-17  Mo DeJong  <mdejong@users.sourceforge.net>
+
         * src/jacl/tcl/lang/ExprValue.java (getStringValue,
         toString): Use Util.printDouble() to create
         a string rep from a double.

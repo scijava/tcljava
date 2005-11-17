@@ -13,16 +13,11 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: ParseExpr.java,v 1.4 2005/11/04 21:02:14 mdejong Exp $
+ * RCS: @(#) $Id: ParseExpr.java,v 1.5 2005/11/17 09:12:06 mdejong Exp $
  */
 
 package tcl.lang;
 
-/*
- * The ParseInfo structure holds state while parsing an expression.
- * A pointer to an ParseInfo record is passed among the routines in
- * this module.
- */
 class ParseExpr {
 
 // Definitions of the different lexemes that appear in expressions. The
@@ -86,6 +81,10 @@ static String lexemeStrings[] = {
     "!", "~", "eq", "ne",
 };
 
+// The ParseInfo structure holds state while parsing an expression.
+// A pointer to an ParseInfo record is passed among the routines in
+// this module.
+
 static
 class ParseInfo 
 {
@@ -108,6 +107,7 @@ class ParseInfo
     int originalExprSize;	// Number of chars in original expr
     int lastChar;		// Index of last character of expr.
 
+    ParseInfo() {}
 
     ParseInfo(TclParse parseObj, char[] script_array, int script_index, int length)
     {
@@ -129,6 +129,23 @@ class ParseInfo
 
     String getOriginalExpr() {
         return new String(originalExpr, originalExprStart, originalExprSize);
+    }
+
+    // Return a copy of this ParseInfo object.
+
+    ParseInfo duplicate() {
+        ParseInfo dup = new ParseInfo();
+        dup.parseObj = this.parseObj;
+        dup.lexeme = this.lexeme;
+        dup.start = this.start;
+        dup.size = this.size;
+        dup.next = this.next;
+        dup.prevEnd = this.prevEnd;
+        dup.originalExpr = this.originalExpr;
+        dup.originalExprStart = this.originalExprStart;
+        dup.originalExprSize = this.originalExprSize;
+        dup.lastChar = this.lastChar;
+        return dup;
     }
 }
 
@@ -910,17 +927,18 @@ ParsePrimaryExpr(Interp interp, ParseInfo info) throws TclException
     switch (lexeme) {
     case LITERAL:
 	// Int or double number.
-	
+
+	//tokenizeLiteral:
 	if (parseObj.numTokens == parseObj.tokensAvailable) {
 	    parseObj.expandTokenArray(parseObj.numTokens);
 	}
-	//System.out.println("litteral "+parseObj.numTokens);
+	//System.out.println("literal " + parseObj.numTokens);
 	token = parseObj.getToken(parseObj.numTokens);
 	token.type = Parser.TCL_TOKEN_TEXT;
-        token.script_array = info.originalExpr;
+	token.script_array = info.originalExpr;
 	token.script_index = info.start;
 	token.size = info.size;
-        info.next = info.start+info.size;
+	info.next = info.start + info.size;
 	token.numComponents = 0;
 	parseObj.numTokens++;
 
@@ -1085,30 +1103,75 @@ ParsePrimaryExpr(Interp interp, ParseInfo info) throws TclException
     case FUNC_NAME:
 	// math_func '(' expr {',' expr} ')'
 
+	ParseInfo savedInfo = info.duplicate();
+
+	GetLexeme(interp, info); // skip over function name
+	if (info.lexeme != OPEN_PAREN) {
+	    //StringBuffer functionName;
+	    TclObject obj = TclString.newInstance(new String(
+	            savedInfo.originalExpr,
+	            savedInfo.start,
+	            savedInfo.size));
+
+	    // Check for boolean literals (true, false, yes, no, on, off)
+	    obj.preserve();
+	    try {
+	        TclBoolean.get(interp, obj);
+
+	        // If we get this far, then boolean conversion worked
+	        info = savedInfo;
+
+	        // goto tokenizeLiteral;
+	        if (parseObj.numTokens == parseObj.tokensAvailable) {
+	            parseObj.expandTokenArray(parseObj.numTokens);
+	        }
+	        //System.out.println("literal " + parseObj.numTokens);
+	        token = parseObj.getToken(parseObj.numTokens);
+	        token.type = Parser.TCL_TOKEN_TEXT;
+	        token.script_array = info.originalExpr;
+	        token.script_index = info.start;
+	        token.size = info.size;
+	        info.next = info.start + info.size;
+	        token.numComponents = 0;
+	        parseObj.numTokens++;
+
+	        exprToken.script_array = info.originalExpr;
+	        exprToken.size = info.size;
+	        exprToken.numComponents = 1;
+
+	        break; // out of switch
+	    } catch (TclException ex) {
+	        // Do nothing when boolean conversion fails,
+	        // continue on and raise a syntax error.
+	    } finally {
+	        obj.release();
+	    }
+
+	    // FIXME: Implement function name vs var lookup error msg
+	    LogSyntaxError(info, null);
+	}
+
 	if (parseObj.numTokens == parseObj.tokensAvailable) {
 	    parseObj.expandTokenArray(parseObj.numTokens);
 	}
 	token = parseObj.getToken(parseObj.numTokens);
 	token.type = Parser.TCL_TOKEN_OPERATOR;
-	token.script_array = info.originalExpr;
-	token.script_index = info.start;
-	token.size = info.size;
+	token.script_array = savedInfo.originalExpr;
+	token.script_index = savedInfo.start;
+	token.size = savedInfo.size;
 	token.numComponents = 0;
 	parseObj.numTokens++;
 
-	GetLexeme(interp,info); // skip over function name
-	if (info.lexeme != OPEN_PAREN) {
-	    LogSyntaxError(info, null);
-	}
-	GetLexeme(interp,info); // skip over '('
+	GetLexeme(interp, info); // skip over '('
 
 	while (info.lexeme != CLOSE_PAREN) {
 	    ParseCondExpr(interp, info);
 
 	    if (info.lexeme == COMMA) {
-		GetLexeme(interp,info); // skip over ,
+		GetLexeme(interp, info); // skip over ,
 	    } else if (info.lexeme != CLOSE_PAREN) {
-		LogSyntaxError(info, null);
+		LogSyntaxError(info,
+		    "missing close parenthesis at end of function call");
 	    }
 	}
 
