@@ -1,3 +1,14 @@
+2005-11-18  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/jacl/tcl/lang/Parser.java (parseCommand):
+        Update parseCommand to use ParseWhitespace
+        util method in command end logic. This fixes
+        a bug where backslash newline + newline was
+        not being seen as the end of a command.
+        Rename numBytes to numChars in all Parser methods.
+        * tests/tcl/parse.test: Add test case for
+        backslash newline + newline bug in Jacl.
+
 2005-11-17  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/jacl/tcl/lang/ParseExpr.java (ParseInfo,

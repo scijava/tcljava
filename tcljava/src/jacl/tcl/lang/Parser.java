@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Parser.java,v 1.22 2005/10/29 00:27:43 mdejong Exp $
+ * RCS: @(#) $Id: Parser.java,v 1.23 2005/11/18 22:33:29 mdejong Exp $
  */
 
 package tcl.lang;
@@ -53,8 +53,8 @@ parseCommand(
     int     script_index,       // index to the next character to parse.
 
 
-    int numBytes,		// Total number of bytes in string.  If < 0,
-				// the script consists of all bytes up to the
+    int numChars,		// Total number of characters in string.  If < 0,
+				// the script consists of all characters up to the
 				// first null character. 
     String fileName,		// Name of file from which script was
 				// loaded.  Null means there is no
@@ -102,10 +102,13 @@ parseCommand(
 
     int script_length = script_array.length - 1;
 
-    if (numBytes < 0) {
-	numBytes = script_length - script_index;
+    int scanned;
+    ParseWhitespaceResult pwsr;
+
+    if (numChars < 0) {
+	numChars = script_length - script_index;
     }
-    endIndex = script_index + numBytes;
+    endIndex = script_index + numChars;
     if (endIndex > script_length) {
 	endIndex = script_length;
     }
@@ -123,6 +126,8 @@ parseCommand(
 
     // Parse any leading space and comments before the first word of the
     // command.
+
+    // FIXME: Use TclParseWhiteSpace to scan whitespace here!
 
     try {
 
@@ -366,32 +371,29 @@ parseCommand(
 	    // end of a word (there might have been garbage left after a
 	    // quoted or braced word), and (b) check for the end of the
 	    // command.
-	    
 
-	    cur = script_array[script_index];
-	    type = ((cur > TYPE_MAX) ? TYPE_NORMAL : typeTable[cur]);
+	    numChars = endIndex - script_index;
+	    pwsr = ParseWhiteSpace(script_array, script_index, numChars, parse);
+	    scanned = pwsr.numScanned;
+	    type = pwsr.type;
 
-	    if (type == TYPE_SPACE) {
-		script_index++;
-		continue;
-	    } else {
-		// Backslash-newline (and any following white space) must be
-		// treated as if it were a space character.
-
-		if ((cur == '\\') && (script_array[script_index + 1] == '\n')) {
-		    if ((script_index + 2) == parse.endIndex) {
-			parse.incomplete = true;
-		    }
-		    bs = backslash(script_array,script_index);
-		    script_index = bs.nextIndex;
-		    continue;
-		}
+	    if (scanned > 0) {
+	        script_index += scanned;
+	        numChars -= scanned;
+	        continue;
 	    }
+
+//	    if (numChars == 0) {
+//	        parse.termIndex = script_index;
+//	        break;
+//	    }
+
 	    if ((type & terminators) != 0) {
-		parse.termIndex = script_index;
-		script_index++;
-		break;
+	        parse.termIndex = script_index;
+	        script_index++; 
+	        break;
 	    }
+
 	    if (script_index == parse.endIndex) {
 		if (nested && savedChar != ']') {
 		    //parse.termIndex = token.script_index;
@@ -401,6 +403,7 @@ parseCommand(
 		}
 		break;
 	    }
+
 	    parse.termIndex = script_index;
 	    if (script_array[script_index - 1] == '"') {
 		parse.errorType = Parser.TCL_PARSE_QUOTE_EXTRA;
@@ -412,7 +415,6 @@ parseCommand(
 			"extra characters after close-brace");
 	    }
 	}
-
     } catch (TclException e) {
 	script_array[endIndex] = savedChar;
 	if (parse.commandStart < 0) {
@@ -428,17 +430,6 @@ parseCommand(
     parse.result = TCL.OK;
     return parse;
 }
-
-
-
-
-
-
-
-
-
-
-
 
 /*
  *----------------------------------------------------------------------
@@ -1125,8 +1116,8 @@ eval2(
     char[] script_array,        // the array of charcters
     int    script_index,        // the starting index into this array
 
-    int numBytes,		// Number of bytes in script.  If < 0, the
-				// script consists of all bytes up to the
+    int numChars,		// Number of characters in script.  If < 0, the
+				// script consists of all characters up to the
 				// first end of script. 
     int flags)			// Collection of OR-ed bits that control
 				// the evaluation of the script.  Only
@@ -1138,7 +1129,7 @@ throws
     int i;
     int objUsed = 0;
     int nextIndex, tokenIndex;
-    int commandLength, bytesLeft;
+    int commandLength, charsLeft;
     boolean nested;
     TclObject[] objv;
     TclObject obj;
@@ -1174,8 +1165,8 @@ throws
 
 
 
-    if (numBytes < 0) {
-	numBytes = script_length - script_index;
+    if (numChars < 0) {
+	numChars = script_length - script_index;
     }
     interp.resetResult();
     savedVarFrame = interp.varFrame;
@@ -1186,7 +1177,7 @@ throws
     // Each iteration through the following loop parses the next
     // command from the script and then executes it.
 
-    bytesLeft = numBytes;
+    charsLeft = numChars;
 
     // Init objv with the most commonly used array size
     objv = grabObjv(interp,3);
@@ -1202,7 +1193,7 @@ throws
 
     do {
 	parse = parseCommand(interp, src_array, src_index,
-			     bytesLeft, null, 0, nested);
+			     charsLeft, null, 0, nested);
 
 	if (parse.result != TCL.OK) {
 	    throw new TclException(parse.result);
@@ -1244,7 +1235,7 @@ throws
 		
 		// Execute the command and free the objects for its words.
 		try {
-		    evalObjv(interp, objv, /*src,*/ bytesLeft, 0);
+		    evalObjv(interp, objv, /*src,*/ charsLeft, 0);
 		} catch (StackOverflowError e) {
 		    interp.setResult("too many nested calls" +
 			    " to eval (infinite loop?)");
@@ -1299,7 +1290,7 @@ throws
 	// Advance to the next command in the script.
 	
 	nextIndex = parse.commandStart + parse.commandSize;
-	bytesLeft -= (nextIndex - src_index);
+	charsLeft -= (nextIndex - src_index);
 	src_index = nextIndex;
 	if (nested && (src_index > 1) &&
 	    (src_array[src_index-1] == ']')) {
@@ -1312,7 +1303,7 @@ throws
 	    interp.varFrame = savedVarFrame;
 	    return;
 	}
-    } while (bytesLeft > 0);
+    } while (charsLeft > 0);
 
     } finally {
       if (parse != null) {
@@ -1655,21 +1646,21 @@ throws
 static boolean
 commandComplete(
     String string,			// Script to check.
-    int length)				// Number of bytes in script.
+    int charLength)				// Number of characters in script.
 {
     TclParse parse;
 
     CharPointer src = new CharPointer(string);
     
     do {
-	parse = parseCommand(null, src.array, src.index, length, 
+	parse = parseCommand(null, src.array, src.index, charLength, 
 		null, 0, false);
 
 	src.index = parse.commandStart + parse.commandSize;
 
 	parse.release(); // Release parser resources
 
-	if (src.index >= length) {
+	if (src.index >= charLength) {
 	    break;
 	}
     } while (parse.result == TCL.OK);
@@ -2197,6 +2188,7 @@ static class ParseWhitespaceResult {
     int type;
 }
 
+static
 ParseWhitespaceResult
 ParseWhiteSpace(
     char[] script_array,	// Array of characters to parse.
@@ -2205,7 +2197,6 @@ ParseWhiteSpace(
     TclParse parse)		// Updated if parsing indicates
 				// an incomplete command.
 {
-    ParseWhitespaceResult pwsr = new ParseWhitespaceResult();
     int type = TYPE_NORMAL;
     int p = script_index;
     char c;
@@ -2241,6 +2232,7 @@ ParseWhiteSpace(
 	}
 	break;
     }
+    ParseWhitespaceResult pwsr = new ParseWhitespaceResult();
     pwsr.type = type;
     pwsr.numScanned = (p - script_index);
     return pwsr;
