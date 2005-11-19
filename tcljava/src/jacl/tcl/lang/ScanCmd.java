@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ScanCmd.java,v 1.3 2005/09/30 02:12:17 mdejong Exp $
+ * RCS: @(#) $Id: ScanCmd.java,v 1.4 2005/11/19 01:09:06 mdejong Exp $
  *
  */
 
@@ -50,7 +50,7 @@ class ScanCmd implements Command {
 
 	StrtoulResult strul;      // Return value for parcing the scanArr when
 				  // extracting integers/longs
-	StrtodResult  strd;;      // Return value for parcing the scanArr when
+	StrtodResult  strd;       // Return value for parcing the scanArr when
 				  // extracting doubles
 	char[]  scanArr;          // Array containing parce info
 	char[]  frmtArr;          // Array containing info on how to 
@@ -63,7 +63,6 @@ class ScanCmd implements Command {
 	int     base;             // Base of the integer being converted
 	int     numUnMatched;	  // Number of fields actually set.
 	int     numMatched;	  // Number of fields actually matched.
-	int     negateScan;       // Mult by result, set to -1 if true
 	int     i;                // Generic variable
 	char    ch;               // Generic variable
 	boolean cont;             // Used in loops to indicate when to stop
@@ -95,7 +94,6 @@ class ScanCmd implements Command {
 
 	while (frmtIndex < frmtArr.length){
 	    discardFlag = widthFlag = false;
-	    negateScan  = 1;
 	    cont        = true;
 
 	    // Parce the format array and read in the correct value from the 
@@ -148,8 +146,8 @@ class ScanCmd implements Command {
 			        strul = interp.strtoulResult;
 			        Util.strtoul(new String(frmtArr), 
 			                frmtIndex, base, strul);
+			        width = (int) strul.value;
 			        frmtIndex = strul.index;
-			        width = (int)strul.value;
 			        widthFlag = true;
 			        cont = true;
 			        strul = null;
@@ -172,18 +170,6 @@ class ScanCmd implements Command {
 
 		if ((scanIndex < scanArr.length) && (ch != 'c') 
                         && (ch != '[')) {
-		    // Since strtoul dosent take signed numbers, make the
-		    // value positive and store the sign.
-
-		    if (scanArr[scanIndex] == '-') {
-		        negateScan = -1;
-			scanIndex++;
-			width--;
-		    } else if (scanArr[scanIndex] == '+') {
-		        scanIndex++;
-			width--;
-		    }
-
 		    // The width+scanIndex might be greater than
 		    // the scanArr so we need to re-adjust when this
 		    // happens.
@@ -240,7 +226,7 @@ class ScanCmd implements Command {
 			    scanIndex = strul.index;
 
 			    if (!discardFlag) {			    
-			        i = (int)strul.value * negateScan;
+				i = (int) strul.value;
 				testAndSetVar(interp, argv, argIndex++, 
 			                TclInteger.newInstance(i));
 			    }
@@ -316,7 +302,7 @@ class ScanCmd implements Command {
 			    scanIndex = strd.index;
 
 			    if (!discardFlag) {
-			        double d = strd.value * negateScan;
+			        double d = strd.value;
 				testAndSetVar(interp, argv, argIndex++, 
 			                  TclDouble.newInstance(d));
 			    }

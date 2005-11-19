@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: string.test,v 1.8 2005/10/21 21:32:06 mdejong Exp $
+# RCS: @(#) $Id: string.test,v 1.9 2005/11/19 01:09:06 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1214,6 +1214,46 @@ test string-23.2 {string is command with empty string} {
         [string is xdigit -strict $s] \
 
 } {0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}
+
+test string-24.1 {string is integer} {
+    list \
+        [string is integer 0] \
+        [string is integer -1] \
+        [string is integer 1] \
+        [string is integer 2]
+} {1 1 1 1}
+
+test string-24.2 {string is integer} {
+    list \
+        [string is integer "- 0"] \
+        [string is integer "- 1"] \
+        [string is integer "+ 2"] \
+        [string is integer "+ 0"]
+} {0 0 0 0}
+
+test string-24.3 {string is integer} {
+    list \
+        [string is integer "+-0"] \
+        [string is integer "+-1"] \
+        [string is integer "-+2"] \
+        [string is integer "-+0"]
+} {0 0 0 0}
+
+test string-24.4 {string is double} {
+    list \
+        [string is double "- 0.0"] \
+        [string is double "- 1.0"] \
+        [string is double "+ 2.0"] \
+        [string is double "+ 0.0"]
+} {0 0 0 0}
+
+test string-24.5 {string is double} {
+    list \
+        [string is double "-+ 0.0"] \
+        [string is double "-+ 1.0"] \
+        [string is double "+- 2.0"] \
+        [string is double "+- 0.0"]
+} {0 0 0 0}
 
 
 # cleanup

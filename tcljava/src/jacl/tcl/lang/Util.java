@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Util.java,v 1.17 2005/10/26 19:17:08 mdejong Exp $
+ * RCS: @(#) $Id: Util.java,v 1.18 2005/11/19 01:09:06 mdejong Exp $
  */
 
 package tcl.lang;
@@ -111,27 +111,27 @@ Util()
  *
  * strtoul --
  *
- *	Implements the same functionality as the strtoul() function
- * 	in the standard C library.
- *
- * 	Converts the leading digits of a string into a 32-bit (signed)
- * 	integer and report the index of the character immediately
- * 	following the digits.
+ *	Implements functionality of the strtoul() function used in the
+ *	C Tcl library. This method will parse digits from what
+ *	should be a 32-bit (signed) integer and report the index
+ *	of the character immediately following the digits.
  *
  *		E.g.:	"0x7fffffff"	->  2147483647
  *			"0x80000000"	-> -2147483648
  *			"0x100000000"	-> errno = TCL.INTEGER_RANGE
+ *			"-0xFF"		-> -255
  *
- * 	Note: although the name of this function is strtoul, it is
- * 	meant to have the same behavior as the strtoul() function in
- * 	NativeTcl, which returns a 32-bit word, which is used as a
- * 	signed integer by tclExpr.c.
+ * 	This method behaves like the strtoul() function in NativeTcl.
+ * 	This method will return a signed 64-bit Java long type in
+ * 	the strtoulResult argument. This value is used as a signed
+ * 	integer in the expr module. A leading signed character like
+ * 	'+' or '-' is supported. Leading spaces are skipped.
  *
  * Results:
- *	if the leading non-blank charactes(s) in the string are
- *      digits, returns the integer represented by these digits and the
- *      index of the character immediately following the digits. Otherwise
- *      returns null.
+ *	The strtoulResult argument will be populated with the parsed
+ *	value and the index of the character following the digits.
+ *	If an error is detected, then the strtoulResult errno value
+ *	will be set accordingly.
  *
  * Side effects:
  *	None.
@@ -154,6 +154,7 @@ strtoul(
     long result = 0;
     int digit;
     boolean anyDigits = false;
+    boolean negative = false;
     int len = s.length();
     int i = start;
     char c;
@@ -164,6 +165,21 @@ strtoul(
 	    Character.isWhitespace(c))) {
 	i++;
     }
+    if (i >= len) {
+        strtoulResult.update(0, 0, TCL.INVALID_INTEGER);
+        return;
+    }
+
+    c = s.charAt(i);
+    if (c == '-') {
+        negative = true;
+        i++;
+    } else {
+        if (c == '+') {
+            i++;
+        }
+    }
+
     if (i >= len) {
         strtoulResult.update(0, 0, TCL.INVALID_INTEGER);
         return;
@@ -234,7 +250,8 @@ strtoul(
     } else if (overflowed) {
         strtoulResult.update(0, i, TCL.INTEGER_RANGE);
     } else {
-        strtoulResult.update(result, i, 0);
+        strtoulResult.update((negative ? -result : result),
+                i, 0);
     }
 }
 
@@ -263,31 +280,8 @@ throws
     TclException	// If the string is not a valid Tcl integer.
 {
     int len = s.length();
-    boolean sign;
     int i = 0;
     char c;
-
-    // Skip any leading blanks.
-
-    while (i < len && (((c = s.charAt(i)) == ' ') ||
-            Character.isWhitespace(c))) {
-	i ++;
-    }
-    if (i >= len) {
-	throw new TclException(interp, "expected integer but got \"" +
-		s + "\"");
-    }
-
-    c = s.charAt(i);
-    if (c == '-') {
-	sign = true;
-	i +=1;
-    } else {
-	if (c == '+') {
-	    i +=1;
-	}
-	sign = false;
-    }
 
     StrtoulResult res;
     if (interp == null) {
@@ -295,7 +289,8 @@ throws
     } else {
         res = interp.strtoulResult;
     }
-    strtoul(s, i, 0, res);
+    Util.strtoul(s, i, 0, res);
+
     if (res.errno < 0) {
 	if (res.errno == TCL.INTEGER_RANGE) {
 	    if (interp != null) {
@@ -317,11 +312,7 @@ throws
 	}
     }
 
-    if (sign) {
-	return (int) (-res.value);
-    } else {
-	return (int) res.value;
-    }
+    return (int) res.value;
 }
 
 /*
@@ -471,15 +462,16 @@ strtod(
     String s, 	// String of ASCII digits, possibly preceded by
 	    	// white space.  For bases greater than 10, either lower- or
    		// upper-case digits may be used.
-    int start,	// The index to the char where the number starts.
+    int start,	// The index of the string to start on.
     StrtodResult strtodResult) // place to store results
 {
-    boolean sign = false;
+    boolean negative = false;
     char c;
     int mantSize;		// Number of digits in mantissa.
     int decPt;			// Number of mantissa digits BEFORE decimal
 				// point. 
     int len = s.length();
+    int si;
     int i = start;
 
     // Skip any leading blanks.
@@ -494,30 +486,33 @@ strtod(
     }
 
     // Return special value for the string "NaN"
-    if (s.substring(i).startsWith("NaN")) {
+    if (s.substring(i).toLowerCase().startsWith("nan")) {
 	strtodResult.update(Double.NaN, i + 3, 0);
         return;
     }
 
     c = s.charAt(i);
     if (c == '-') {
-	sign = true;
-	i +=1;
+	negative = true;
+	i++;
     } else {
 	if (c == '+') {
-	    i +=1;
+	    i++;
 	}
-	sign = false;
     }
 
     // Return special value for the strings "Inf" and "-Inf"
 
     if (s.substring(i).startsWith("Inf")) {
 	strtodResult.update(
-            (sign ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY),
+            (negative ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY),
             i + 3, 0);
         return;
     }
+
+    // Index of first digit now known
+
+    si = i;
 
     // Count the number of digits in the mantissa (including the decimal
     // point), and also locate the decimal point.
@@ -565,7 +560,7 @@ strtod(
         }
     }
 
-    s = s.substring(start, i);
+    s = s.substring(si, i);
     double result = 0;
 
     try {
@@ -587,7 +582,8 @@ strtod(
 	return;
     }
 
-    strtodResult.update(result, i, 0);
+    strtodResult.update((negative ? -result : result),
+            i, 0);
     return;
 }
 
@@ -647,31 +643,8 @@ throws
     TclException	// If the string is not a valid Tcl double.
 {
     int len = s.length();
-    boolean sign;
     int i = 0;
     char c;
-
-    // Skip any leading blanks.
-
-    while (i < len && (((c = s.charAt(i)) == ' ') ||
-            Character.isWhitespace(c))) {
-	i++;
-    }
-    if (i >= len) {
-	throw new TclException(interp, 
-		"expected floating-point number but got \"" + s + "\"");
-    }
-
-    c = s.charAt(i);
-    if (c == '-') {
-	sign = true;
-	i +=1;
-    } else {
-	if (c == '+') {
-	    i +=1;
-	}
-	sign = false;
-    }
 
     StrtodResult res;
     if (interp == null) {
@@ -679,7 +652,8 @@ throws
     } else {
         res = interp.strtodResult;
     }
-    strtod(s, i, res);
+    Util.strtod(s, i, res);
+
     if (res.errno != 0) {
 	if (res.errno == TCL.DOUBLE_RANGE) {
 	    if (interp != null) {
@@ -702,11 +676,7 @@ throws
 	}
     }
 
-    if (sign) {
-	return -res.value;
-    } else {
-	return res.value;
-    }
+    return res.value;
 }
 
 /*

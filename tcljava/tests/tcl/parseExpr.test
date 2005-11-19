@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: parseExpr.test,v 1.3 2005/11/17 09:12:06 mdejong Exp $
+# RCS: @(#) $Id: parseExpr.test,v 1.4 2005/11/19 01:09:06 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -525,7 +525,7 @@ test parseExpr-16.7 {GetLexeme procedure, double lexeme} {
 test parseExpr-16.8 {GetLexeme procedure, double lexeme} {
     testexprparser {.123} -1
 } {- {} 0 subexpr .123 1 text .123 0 {}}
-test parseExpr-16.9 {GetLexeme procedure, double lexeme} {nonPortable} {
+test parseExpr-16.9 {GetLexeme procedure, double lexeme} {
     testexprparser {nan} -1
 } {- {} 0 subexpr nan 1 text nan 0 {}}
 test parseExpr-16.10 {GetLexeme procedure, double lexeme} {

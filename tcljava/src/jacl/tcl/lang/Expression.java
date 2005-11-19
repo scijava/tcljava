@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Expression.java,v 1.16 2005/11/04 21:02:14 mdejong Exp $
+ * RCS: @(#) $Id: Expression.java,v 1.17 2005/11/19 01:09:06 mdejong Exp $
  *
  */
 
@@ -508,27 +508,11 @@ class Expression {
 	if (looksLikeInt(s, len, 0, false)) {
 	    //System.out.println("string looks like an int");
 
-	    // Note: use strtoul instead of strtol for integer conversions
-	    // to allow full-size unsigned numbers, but don't depend on
-	    // strtoul to handle sign characters;  it won't in some
-	    // implementations.
-
-	    for (i = 0; (((c = s.charAt(i)) == ' ') ||
-                    Character.isWhitespace(c)) ; i++) {
-		// Empty loop body.
-	    }
+	    // Note: the Util.strtoul() method handles 32 unsigned values
+	    // as well as leading sign characters.
 
 	    StrtoulResult res = interp.strtoulResult;
-	    if (s.charAt(i) == '-') {
-		i++;
-		Util.strtoul(s, i, 0, res);
-		res.value = - res.value;
-	    } else if (s.charAt(i) == '+') {
-		i++;
-		Util.strtoul(s, i, 0, res);
-	    } else {
-		Util.strtoul(s, i, 0, res);
-	    }
+	    Util.strtoul(s, 0, 0, res);
 	    //String token = s.substring(i, res.index);
 	    //System.out.println("token string from strtoul is \"" + token + "\"");
 	    //System.out.println("res.errno is " + res.errno);
@@ -1304,7 +1288,6 @@ class Expression {
 		}
 	    } else if (startsWithDigit || (c == '.')
 		    || (c == 'n') || (c == 'N')) {
-		//StrtodResult res = new StrtodResult();
 		StrtodResult res = interp.strtodResult;
 		Util.strtod(m_expr, m_ind, res);
 		if (res.errno == 0) {

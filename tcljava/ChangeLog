@@ -1,5 +1,29 @@
 2005-11-18  Mo DeJong  <mdejong@users.sourceforge.net>
 
+        * src/jacl/tcl/lang/AfterCmd.java (getAfterEvent):
+        Update strtoul() caller.
+        * src/jacl/tcl/lang/Expression.java (ExprParseString):
+        Update strtoul() and strtod() callers.
+        * src/jacl/tcl/lang/FormatCmd.java (strtoul):
+        Update callers of FormatCmd.strtoul() and fixup
+        a number of formatting and StringBuffer issues.
+        * src/jacl/tcl/lang/ScanCmd.java (cmdProc):
+        Update strtoul() and strtod() callers and fixup
+        formatting issues.
+        * src/jacl/tcl/lang/StringCmd.java (cmdProc):
+        Update strtoul() and strtod() callers.
+        * src/jacl/tcl/lang/StrtodResult.java: Fixup comment.
+        * src/jacl/tcl/lang/Util.java (strtoul, getInt,
+        strtod, getDouble): Update strtoul() and strtod()
+        to support parsing a sign indicator from the front
+        of the string. The previous implementation was buggy
+        as it saw strings like "- 100" as integers. Also
+        support a "nan" as a double string.
+        * tests/tcl/parseExpr.test: Enable test.
+        * tests/tcl/string.test: Add number parsing test.
+
+2005-11-18  Mo DeJong  <mdejong@users.sourceforge.net>
+
         * src/jacl/tcl/lang/Parser.java (parseCommand):
         Update parseCommand to use ParseWhitespace
         util method in command end logic. This fixes

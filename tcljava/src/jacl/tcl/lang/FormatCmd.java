@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FormatCmd.java,v 1.10 2005/11/16 20:39:30 mdejong Exp $
+ * RCS: @(#) $Id: FormatCmd.java,v 1.11 2005/11/19 01:09:06 mdejong Exp $
  *
  */
 
@@ -153,12 +153,11 @@ class FormatCmd implements Command {
 	    fmtIndex++;
 	    checkOverFlow(interp, format, fmtIndex);
 	    if (Character.isDigit(format[fmtIndex])) {
-		// Parce the format array looking for the end of
+		// Parse the format array looking for the end of
 		// the number. 
 
-		stoul = interp.strtoulResult;
-		strtoul(format, fmtIndex, stoul);
-	        intValue = (int)stoul.value;
+		stoul = FormatCmd.strtoul(interp, format, fmtIndex);
+		intValue = (int) stoul.value;
 		endIndex = stoul.index;
 		stoul = null;
 
@@ -257,9 +256,8 @@ class FormatCmd implements Command {
 
 	    checkOverFlow(interp, format, fmtIndex);
 	    if (Character.isDigit(format[fmtIndex])) {
-		stoul = interp.strtoulResult;
-		strtoul(format, fmtIndex, stoul);
-	        width = (int)stoul.value;
+		stoul = FormatCmd.strtoul(interp, format, fmtIndex);
+		width = (int) stoul.value;
 		fmtIndex = stoul.index;
 		stoul = null;
 	    } else if (format[fmtIndex] == '*') {
@@ -283,10 +281,8 @@ class FormatCmd implements Command {
 		checkOverFlow(interp, format, fmtIndex);
 		if (Character.isDigit(format[fmtIndex])) {
 		    precisionSet = true;
-
-		    stoul = interp.strtoulResult;
-		    strtoul(format, fmtIndex, stoul);
-		    precision = (int)stoul.value;
+		    stoul = FormatCmd.strtoul(interp, format, fmtIndex);
+		    precision = (int) stoul.value;
 		    fmtIndex = stoul.index;
 		    stoul = null;
 		} else if (format[fmtIndex] == '*') {
@@ -481,14 +477,14 @@ class FormatCmd implements Command {
             int precision, int flags, int base, char[] charSet, 
             String altPrefix) {
         StringBuffer sbuf   = new StringBuffer(100);
-        StringBuffer tmpBuf = new StringBuffer();
+        StringBuffer tmpBuf = new StringBuffer(100);
 
 	int  i;
 	int  length;
 	int  nspace;
 	int  prefixSize = 0;
 	char prefix     = 0;
-	
+
 	// For the format %#x, the value zero is printed "0" not "0x0".
 	// I think this is stupid.
 
@@ -496,13 +492,12 @@ class FormatCmd implements Command {
 	    flags = (flags | ALT_OUTPUT);
 	}
 
-       
 	if ((flags & SIGNED_VALUE) != 0) {
             if (lngValue < 0){
 	        if (altPrefix.length() > 0) {
 		    lngValue = (lngValue << 32);
 		    lngValue = (lngValue >>> 32);
-		} else {        
+		} else {
 		    lngValue = -lngValue;
 		    prefix = '-';
 		    prefixSize = 1;
@@ -520,13 +515,13 @@ class FormatCmd implements Command {
             precision = width-prefixSize;
 	}
 
-	// Convert to ascii 
+	// Convert to ascii
 
-	do{                                           
+	do{
 	    sbuf.insert(0, charSet[(int)(lngValue%base)]);
             lngValue = lngValue/base;
 	} while (lngValue > 0);
-       
+
         length = sbuf.length();
 	for (i = (precision-length); i > 0; i--) {
             sbuf.insert(0, '0');
@@ -545,29 +540,33 @@ class FormatCmd implements Command {
 	// "length" characters long.  The field width is "width".  Do
 	// the output.
 
-        nspace = width-sbuf.length();
+        nspace = width - sbuf.length();
 	if (nspace > 0) {
-	    tmpBuf = new StringBuffer(nspace);
+	    tmpBuf.ensureCapacity(nspace);
 	    for (i = 0; i < nspace; i++) {
-	        tmpBuf.append(" ");
+	        tmpBuf.append(' ');
 	    }
 	}
 
 	if ((LEFT_JUSTIFY & flags) != 0) {    
-	    // left justified 
+	    // left justified
 
-	    return sbuf.toString() + tmpBuf.toString();
+	    sbuf.append(tmpBuf);
+	    return sbuf.toString();
 	} else {
-	    // right justified 
+	    // right justified
 
-	    return tmpBuf.toString() + sbuf.toString() ;
+	    tmpBuf.append(sbuf);
+	    return tmpBuf.toString();
 	}
-   }
+    }
+
+    // Convert a double value to a Java String.
 
     static String toString(double dblValue, int precision, int base) {
-	return cvtDblToStr(dblValue, 0, precision, 0, base, 
+	return cvtDblToStr(dblValue, 0, precision, 0, base,
 		"e".toCharArray(),  null, GENERIC);
-    } 
+    }
 
     /**
      * This procedure is invoked in "phase 6" od the Format cmdProc.  It 
@@ -589,8 +588,8 @@ class FormatCmd implements Command {
      * @return String representation of the long.
      */
 
-    private static String cvtDblToStr(double dblValue, int width, 
-            int precision, int flags, int base, char[] charSet, 
+    private static String cvtDblToStr(double dblValue, int width,
+            int precision, int flags, int base, char[] charSet,
             String altPrefix, int xtype) {
         StringBuffer sbuf = new StringBuffer(100);
 	int     i;
@@ -618,7 +617,7 @@ class FormatCmd implements Command {
 	// If precision < 0 (eg -1) then the precision defaults
 
 	if (precision < 0) {
-	    precision = 6;         
+	    precision = 6;
 	}
 
 	if (dblValue < 0.0) {
@@ -640,7 +639,7 @@ class FormatCmd implements Command {
 	    // vice versa, the equal test has the value false, even
 	    // though +0.0==-0.0 has the value true. This allows
 	    // hashtables to operate properly.
-	    
+
 	    dblValue = -dblValue;
 	    prefix = '-';
 	    prefixSize = 1;
@@ -651,7 +650,7 @@ class FormatCmd implements Command {
 	    prefix = ' ';
 	    prefixSize = 1;
 	}
-	
+
 	// For GENERIC xtypes the precision includes the ones digit
 	// so just decrement to get the correct precision.
 
@@ -659,34 +658,34 @@ class FormatCmd implements Command {
 	    precision--;
 	}
 
-	// Rounding works like BSD when the constant 0.4999 is used.  Wierd! 
+	// Rounding works like BSD when the constant 0.4999 is used.  Wierd!
 
 	for (i = precision, rounder = 0.4999; i > 0; i--, rounder*=0.1);
 
-	if (xtype == FLOAT) { 
+	if (xtype == FLOAT) {
 	    dblValue += rounder;
 	}
 
-	// Normalize dblValue to within 10.0 > dblValue >= 1.0 
+	// Normalize dblValue to within 10.0 > dblValue >= 1.0
 
 	exp = 0;
 	if (dblValue>0.0) {
 	    int k = 0;
 	    while ((dblValue >= 1e8) && (k++ < 100)) {
-	        dblValue *= 1e-8; 
-		exp+=8; 
+	        dblValue *= 1e-8;
+		exp+=8;
 	    }
 	    while ((dblValue >= 10.0) && (k++ < 100)) {
-	        dblValue *= 0.1; 
-		exp++; 
+	        dblValue *= 0.1;
+		exp++;
 	    }
 	    while ((dblValue < 1e-8) && (k++ < 100)) {
-	        dblValue *= 1e8; 
-		exp-=8; 
+	        dblValue *= 1e8;
+		exp-=8;
 	    }
 	    while ((dblValue < 1.0) && (k++ < 100)) {
-	        dblValue *= 10.0; 
-		exp--; 
+	        dblValue *= 10.0;
+		exp--;
 	    }
 	    if (k >= 100){
 	        return "NaN";
@@ -700,15 +699,15 @@ class FormatCmd implements Command {
         if (xtype!=FLOAT) {
             dblValue += rounder;
 	    if (dblValue>=10.0) {
-	        dblValue *= 0.1; 
-		exp++; 
+	        dblValue *= 0.1;
+		exp++;
 	    }
         }
         if (xtype==GENERIC) {
             flag_rtz = !((flags & ALT_OUTPUT) !=0);
             if ((exp < -4) || (exp > precision)) {
                 xtype = EXP;
-	    }else{
+	    } else {
                 precision = (precision - exp);
 		xtype = FLOAT;
 	    }
@@ -723,14 +722,14 @@ class FormatCmd implements Command {
         if (xtype == FLOAT) {
             flag_dp = ((precision > 0) || ((flags & ALT_OUTPUT) != 0));
 	    if (prefixSize > 0) {
-		// Sign 
+		// Sign
 
-	        sbuf.append(prefix);         
+	        sbuf.append(prefix);
 	    }
 	    if (exp < 0) {
 		// Digits before "."
 
-	        sbuf.append('0');            
+	        sbuf.append('0');
 	    } 
 	    for (  ; exp>=0; exp--) {
 	        if (count++ >= 16) {
@@ -742,7 +741,7 @@ class FormatCmd implements Command {
 		}
 	    }
 	    if (flag_dp) {
-	        sbuf.append('.');            
+	        sbuf.append('.');
 	    }
 	    for (exp++; (exp < 0) && (precision > 0); precision--, exp++) {
 	        sbuf.append('0');
@@ -756,35 +755,35 @@ class FormatCmd implements Command {
 		    sbuf.append(digit);
 		}
 	    }
-	    
+
 	    if (flag_rtz && flag_dp) {
 		// Remove trailing zeros and "." 
 
-	        int len, index;
-		len = index = 0;
-		for (len = (sbuf.length() - 1), index = 0;
+	        int len, index = 0;
+		for (len = sbuf.length() - 1;
 		        (len >= 0) && (sbuf.charAt(len) == '0');
-		        len--, index++);
+		        len--, index++) {
+		}
 
 		if ((len >= 0) && (sbuf.charAt(len)=='.')) {
 		    index++;
 		}
-		
+
 		if (index > 0) {
 		    sbuf.setLength(sbuf.length()-index);
 		}
 	    }
 	} else {    
-	    // EXP or GENERIC 
+	    // EXP or GENERIC
 
             flag_dp = ((precision > 0) || ((flags & ALT_OUTPUT) != 0));
 
 	    if (prefixSize > 0) {
-	        sbuf.append(prefix);   
+	        sbuf.append(prefix);
 	    }
 	    digit = (int)dblValue;
 	    dblValue = (dblValue - digit)*10.0;
-	    sbuf.append(digit);        
+	    sbuf.append(digit);
 	    if (flag_dp) {
 	        sbuf.append('.');
 	    }
@@ -799,7 +798,7 @@ class FormatCmd implements Command {
 	    }
 
 	    if (flag_rtz && flag_dp) {
-		// Remove trailing zeros and "." 
+		// Remove trailing zeros and "."
 
 		for (i = 0, length = (sbuf.length() - 1);
 		        (length >= 0) && (sbuf.charAt(length) == '0');
@@ -808,7 +807,7 @@ class FormatCmd implements Command {
 		if ((length >= 0) && (sbuf.charAt(length)=='.')) {
 		    i++;
 		}
-		    
+
 		if (i > 0) {
 		    sbuf.setLength(sbuf.length()-i);
 		}
@@ -834,7 +833,7 @@ class FormatCmd implements Command {
 
 	// The converted number is in sbuf. Output it.
 	// Note that the number is in the usual order, not reversed as with
-	// integer conversions. 
+	// integer conversions.
 
 	length = sbuf.length();
 
@@ -850,27 +849,28 @@ class FormatCmd implements Command {
 	    length = width;
         }
 
-	// Count the number of spaces remaining and creat a StringBuffer
+	// Count the number of spaces remaining and create a StringBuffer
 	// (tmpBuf) with the correct number of spaces.
 
 	int nspace = width-length;
-	StringBuffer tmpBuf = new StringBuffer();
+	StringBuffer tmpBuf = new StringBuffer(100 + nspace);
 	if (nspace > 0) {
 	    for (i=0; i < nspace; i++) {
-	        tmpBuf.append(" ");
+	        tmpBuf.append(' ');
 	    }
 	}
 
 	if ((LEFT_JUSTIFY & flags) != 0) {
-	    // left justified 
+	    // left justified
 
-	    return sbuf.toString() + tmpBuf.toString();
+	    sbuf.append(tmpBuf);
+	    return sbuf.toString();
 	} else {
 	    // right justified
 
-	    return tmpBuf.toString() + sbuf.toString() ;
+	    tmpBuf.append(sbuf);
+	    return tmpBuf.toString();
 	}
-
     }
 
     /**
@@ -891,18 +891,19 @@ class FormatCmd implements Command {
             int precision, int flags) {
         String left  = "";
 	String right = "";
-	
+	StringBuffer sbuf = new StringBuffer(100);
+
 	if (precision < 0) {
 	    precision = 0;
 	}
-	
+
 	if ((precision != 0) && (precision < strValue.length())) {
 	    strValue = strValue.substring(0, precision);
 	}
-	
+
 	if (width > strValue.length()) {
-	    StringBuffer sbuf = new StringBuffer();
-	    int index = (width - strValue.length());
+	    sbuf.setLength(0);
+	    int index = width - strValue.length();
 	    for (int i = 0; i < index; i++) {
 	        if ((flags & PAD_W_ZERO) != 0) {
 	            sbuf.append('0');
@@ -916,26 +917,35 @@ class FormatCmd implements Command {
 	        left = sbuf.toString();
 	    }
 	}
-	
-	return(left + strValue + right);
-    }
 
+	sbuf.setLength(0);
+	sbuf.append(left);
+	sbuf.append(strValue);
+	sbuf.append(right);
+	return sbuf.toString();
+    }
 
     /**
      * Search through the array while the current char is a digit.  When end 
      * of array occurs or the char is not a digit, stop the loop, convert the
      * sub-array into a long.  At this point update a StrtoulResult object
      * that contains the new long value and the current pointer to the array.
+     * Returns a StrtoulResult tmp object to hold result data.
      *
+     * @param interp - the current interpreter (can't be null)
      * @param arr - the array that contains a string representation of an int.
      * @param endIndex - the arr index where the numeric value begins.
-     * @param strtoulResult - location where results will be stored.
      */
 
-    private void strtoul(char[] arr, int endIndex,
-            StrtoulResult strtoulResult)
+    private
+    static
+    StrtoulResult strtoul(
+        Interp interp,
+        char[] arr,
+        int endIndex)
     {
 	int orgIndex;
+	StrtoulResult strtoulResult = interp.strtoulResult;
 
 	orgIndex = endIndex;
 	for ( ; endIndex < arr.length; endIndex++) {
@@ -943,19 +953,19 @@ class FormatCmd implements Command {
 	        break;
 	    }
 	}
-        strtoulResult.update(
-            Long.parseLong(new String(arr, orgIndex, endIndex-orgIndex)),
-            endIndex, 0);
-        return;
+	long lval = Long.parseLong(new String(arr, orgIndex, endIndex-orgIndex));
+	strtoulResult.update(
+	    lval,
+	    endIndex,
+	    0);
+	return strtoulResult;
     }
-
 
     /*
      *
      *  Error routines:
      *
      */
-
 
     /**
      * Called whenever the fmtIndex in the cmdProc is changed.  It verifies
@@ -967,13 +977,12 @@ class FormatCmd implements Command {
      */
 
     private static void checkOverFlow(Interp interp, char[] arr, int index) 
-            throws TclException {      
+            throws TclException {
         if ((index >= arr.length) || (index < 0)) {
 	    throw new TclException(interp,
                     "\"%n$\" argument index out of range");
-	}    
+	}
     }
-
 
     /**
      * Called whenever Sequential format specifiers are interlaced with 
@@ -982,13 +991,12 @@ class FormatCmd implements Command {
      * @param interp  - The TclInterp which called the cmdProc method .
      */
 
-    private static void errorMixedXPG(Interp interp) 
-            throws TclException {      
+    private static void errorMixedXPG(Interp interp)
+            throws TclException {
         throw new TclException(interp,
 	        "cannot mix \"%\" and \"%n$\" conversion specifiers");
     }
 
-    
     /**
      * Called whenever the argIndex access outside the argv array.  If the
      * type is an XPG then the error message is different.
@@ -998,8 +1006,8 @@ class FormatCmd implements Command {
      *                      XPG type or Sequential
      */
 
-    private static void errorBadIndex(Interp interp, boolean gotXpg) 
-            throws TclException {      
+    private static void errorBadIndex(Interp interp, boolean gotXpg)
+            throws TclException {
         if (gotXpg) {
 	    throw new TclException(interp,
                     "\"%n$\" argument index out of range");
@@ -1009,7 +1017,6 @@ class FormatCmd implements Command {
 	}
     }
 
-
     /**
      * Called whenever the current char in the format array is erroneous
      *
@@ -1017,12 +1024,11 @@ class FormatCmd implements Command {
      * @param fieldSpecifier  - The erroneous character
      */
 
-    private static void errorBadField(Interp interp, char fieldSpecifier) 
-            throws TclException {      
+    private static void errorBadField(Interp interp, char fieldSpecifier)
+            throws TclException {
         throw new TclException(interp, "bad field specifier \""
 	        + fieldSpecifier + "\"");
     }
-
 
     /**
      * Called whenever the a '%' is found but then the format string ends.
@@ -1030,10 +1036,11 @@ class FormatCmd implements Command {
      * @param interp  - The TclInterp which called the cmdProc method .
      */
 
-    private static void errorEndMiddle(Interp interp) 
-            throws TclException {      
+    private static void errorEndMiddle(Interp interp)
+            throws TclException {
         throw new TclException(interp, 
                 "format string ended in middle of field specifier");
     }
 
 }
+

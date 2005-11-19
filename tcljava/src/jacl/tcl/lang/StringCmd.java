@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: StringCmd.java,v 1.9 2005/10/19 23:37:38 mdejong Exp $
+ * RCS: @(#) $Id: StringCmd.java,v 1.10 2005/11/19 01:09:06 mdejong Exp $
  *
  */
 
@@ -392,10 +392,8 @@ throws
 		    // received an acceptable int, or over/underflow
 
 		    if (Expression.looksLikeInt(string1, length1, 0, false)) {
-			char c = string1.charAt(0);
-			int signIx = (c == '-' || c == '+') ? 1 : 0;
 			StrtoulResult res = interp.strtoulResult;
-			Util.strtoul(string1, signIx, 0, res);
+			Util.strtoul(string1, 0, 0, res);
 			if (res.index == length1) {
 			    if (res.errno == TCL.INTEGER_RANGE) {
 				result = false;
@@ -405,10 +403,8 @@ throws
 			}
 		    }
 
-		    char c = string1.charAt(0);
-		    int signIx = (c == '-' || c == '+') ? 1 : 0;
 		    StrtodResult res = interp.strtodResult;
-		    Util.strtod(string1, signIx, res);
+		    Util.strtod(string1, 0, res);
 		    if (res.errno == TCL.DOUBLE_RANGE) {
 			// if (errno == ERANGE), then it was an over/underflow
 			// problem, but in this method, we only want to know
@@ -450,10 +446,8 @@ throws
 			break;
 		    }
 
-		    char c = string1.charAt(0);
-		    int signIx = (c == '-' || c == '+') ? 1 : 0;
 		    StrtoulResult res = interp.strtoulResult;
-		    Util.strtoul(string1, signIx, 0, res);
+		    Util.strtoul(string1, 0, 0, res);
 		    if (res.errno == TCL.INTEGER_RANGE) {
 			// if (errno == ERANGE), then it was an over/underflow
 			// problem, but in this method, we only want to know

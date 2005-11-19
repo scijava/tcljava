@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: StrtodResult.java,v 1.2 2005/09/30 02:12:17 mdejong Exp $
+ * RCS: @(#) $Id: StrtodResult.java,v 1.3 2005/11/19 01:09:06 mdejong Exp $
  *
  */
 
@@ -25,7 +25,7 @@ class StrtodResult {
 /*
  * If the conversion is successful, errno = 0;
  *
- * If the number cannot be converted to a valid unsigned 32-bit integer,
+ * If the number cannot be converted to a valid signed 64-bit double,
  * contains the error code (TCL.DOUBLE_RANGE or TCL.UNVALID_DOUBLE).
  */
 

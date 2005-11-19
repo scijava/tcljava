@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: AfterCmd.java,v 1.4 2005/10/17 09:33:20 mdejong Exp $
+ * RCS: @(#) $Id: AfterCmd.java,v 1.5 2005/11/19 01:09:06 mdejong Exp $
  *
  */
 
@@ -351,15 +351,16 @@ getAfterEvent(
     if (res.errno != 0) {
 	return null;
     }
+    int id = (int) res.value;
 
     for (int i = 0; i < assocData.handlers.size(); i++) {
 	Object obj = assocData.handlers.elementAt(i);
 	if (obj instanceof TimerInfo) {
-	    if (((TimerInfo)obj).id == res.value) {
+	    if (((TimerInfo)obj).id == id) {
 		return obj;
 	    }
 	} else {
-	    if (((IdleInfo)obj).id == res.value) {
+	    if (((IdleInfo)obj).id == id) {
 		return obj;
 	    }
 	}
