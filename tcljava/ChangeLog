@@ -3,9 +3,9 @@
         * src/jacl/tcl/lang/Interp.java (createCommand,
         deleteCommandFromToken, renameCommand, hideCommand):
         Increment WrappedCommand epoch when a command is
-        renamed or refdefined. Also invoke new
-        resetShadowedCmdRefs() to check for a rename that
-        shadows another command.
+        renamed or redefined. Also invoke new
+        resetShadowedCmdRefs() method to check for a rename
+        that shadows another command.
         * src/jacl/tcl/lang/Namespace.java
         (resetShadowedCmdRefs): Port of shadowed command ref
         logic from Tcl 8.4.
@@ -16,7 +16,7 @@
         to indicate that a held ref is no longer valid.
         * src/tests/jacl/tcl/lang/TestEpoch.java:
         * tests/jacl/refCount.test: Test WrappedCommand.cmdEpoch
-        field on command rename, delete.
+        field on command rename and delete.
 
 2005-11-20  Mo DeJong  <mdejong@users.sourceforge.net>
 
