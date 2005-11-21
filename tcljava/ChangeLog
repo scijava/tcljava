@@ -1,3 +1,8 @@
+2005-11-20  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/jacl/tcl/lang/Namespace.java: Reformat
+        CRLF to LF to avoid patching issues.
+
 2005-11-18  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/jacl/tcl/lang/AfterCmd.java (getAfterEvent):
