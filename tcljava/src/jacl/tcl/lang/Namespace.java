@@ -16,7 +16,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: Namespace.java,v 1.3 2005/11/21 01:14:17 mdejong Exp $
+ * RCS: @(#) $Id: Namespace.java,v 1.4 2005/11/21 02:02:41 mdejong Exp $
  */
 
 package tcl.lang;
@@ -150,10 +150,9 @@ public class Namespace {
 
     public static final int FIND_ONLY_NS    = 0x1000;
 
-    // Initial size of stack allocated space for tail list - used when resetting
-    // shadowed command references in the functin: TclResetShadowedCmdRefs.
+    // Initial size of array of namespace refs - used in resetShadowedCmdRefs()
 
-    //private static final int NUM_TRAIL_ELEMS = 5;
+    private static final int NUM_TRAIL_ELEMS = 5;
 
     // Count of the number of namespaces created. This value is used as a
     // unique id for each namespace.
@@ -2015,6 +2014,134 @@ public class Namespace {
 	    interp.setResult("unknown variable \"" + name + "\"");
 	}
 	return null;
+    }
+
+    /*
+     *----------------------------------------------------------------------
+     *
+     * TclResetShadowedCmdRefs -> resetShadowedCmdRefs
+     *
+     *	Called when a command is added to a namespace to check for existing
+     *	command references that the new command may invalidate. Consider the
+     *	following cases that could happen when you add a command "foo" to a
+     *	namespace "b":
+     *	   1. It could shadow a command named "foo" at the global scope.
+     *	      If it does, all command references in the namespace "b" are
+     *	      suspect.
+     *	   2. Suppose the namespace "b" resides in a namespace "a".
+     *	      Then to "a" the new command "b::foo" could shadow another
+     *	      command "b::foo" in the global namespace. If so, then all
+     *	      command references in "a" are suspect.
+     *	The same checks are applied to all parent namespaces, until we
+     *	reach the global :: namespace.
+     *
+     * Results:
+     *	None.
+     *
+     * Side effects:
+     *	If the new command shadows an existing command, then the
+     *	epoch for each command in each namespace that sees the
+     *	shadow is incremented. This invalidates any command caches
+     *  inside each command in the namespace. The next time the
+     *  command is used, cached refrences will be resolved from scratch.
+     *
+     *----------------------------------------------------------------------
+     */
+
+    static
+    void
+    resetShadowedCmdRefs(
+        Interp interp, // Interpreter containing the new command
+        WrappedCommand newCmd) // Command added to a namespace
+    {
+        String cmdName;
+        Namespace ns, tmpNs;
+        Namespace trailNs, shadowNs;
+        Namespace globalNs = getGlobalNamespace(interp);
+        int i;
+        boolean found;
+        WrappedCommand wcmd;
+
+        // Array used to hold the trail list.
+
+        Namespace[] trailArray = new Namespace[NUM_TRAIL_ELEMS];
+        int trailFront = -1;
+        int trailSize = NUM_TRAIL_ELEMS;
+
+        // Start at the namespace containing the new command, and work up
+        // through the list of parents. Stop just before the global namespace,
+        // since the global namespace can't "shadow" its own entries.
+        // 
+        // The namespace "trail" list we build consists of the names of each
+        // namespace that encloses the new command, in order from outermost to
+        // innermost: for example, "a" then "b". Each iteration of this loop
+        // eventually extends the trail upwards by one namespace, ns. We use
+        // this trail list to see if ns (e.g. "a" in 2. above) could have
+        // now-invalid cached command references. This will happen if ns
+        // (e.g. "a") contains a sequence of child namespaces (e.g. "b")
+        // such that there is a identically-named sequence of child namespaces
+        // starting from :: (e.g. "::b") whose tail namespace contains a command
+        // also named cmdName.
+
+        cmdName = newCmd.hashKey;
+        for (ns = newCmd.ns;
+                (ns != null) && (ns != globalNs);
+                ns = ns.parent) {
+            // Find the maximal sequence of child namespaces contained in ns
+            // such that there is a identically-named sequence of child
+            // namespaces starting from ::. shadowNs will be the tail of this
+            // sequence, or the deepest namespace under :: that might contain a
+            // command now shadowed by cmdName. We check below if shadowNs
+            // actually contains a command cmdName.
+
+            found = true;
+            shadowNs = globalNs;
+
+            for (i = trailFront;  i >= 0;  i--) {
+                trailNs = trailArray[i];
+                tmpNs = (Namespace) shadowNs.childTable.get(trailNs.name);
+                if (tmpNs != null) {
+                    shadowNs = tmpNs;
+                } else {
+                    found = false;
+                    break;
+                }
+            }
+
+            // If shadowNs contains a command named cmdName, we invalidate
+            // all of the command refs cached in ns. As a boundary case,
+            // shadowNs is initially :: and we check for case 1. above.
+
+            if (found) {
+                wcmd = (WrappedCommand) shadowNs.cmdTable.get(cmdName);
+                if (wcmd != null) {
+                    // Invalidate cached command ref in each command
+                    // defined in this namespace
+
+                    //nsPtr->cmdRefEpoch++;
+
+                    Enumeration search = ns.cmdTable.keys();
+                    while( search.hasMoreElements() ) {
+                        String key = (String) search.nextElement();
+                        wcmd = (WrappedCommand) ns.cmdTable.get(key);
+                        wcmd.incrEpoch();
+                    }
+                 }
+             }
+
+             // Insert ns at the front of the trail list: i.e., at the end
+             // of the trail array.
+
+             trailFront++;
+             if (trailFront == trailSize) {
+                 int size = trailSize * 2;
+                 Namespace[] tmp = new Namespace[size];
+                 System.arraycopy(trailArray, 0, tmp, 0, trailArray.length);
+                 trailArray = tmp;
+                 trailSize = size;
+             }
+             trailArray[trailFront] = ns;
+         }
     }
 
     /**

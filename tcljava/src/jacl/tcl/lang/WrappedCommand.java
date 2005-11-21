@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: WrappedCommand.java,v 1.4 2005/09/12 00:00:50 mdejong Exp $
+ * RCS: @(#) $Id: WrappedCommand.java,v 1.5 2005/11/21 02:02:41 mdejong Exp $
  */
 
 package tcl.lang;
@@ -58,6 +58,24 @@ class WrappedCommand {
 			  // those imported commands when deleting
 			  // this "real" command.
 
+    public
+    int cmdEpoch;         // Incremented to invalidate any references
+                          // that point to this command when it is
+                          // renamed, deleted, hidden, or exposed.
+                          // This field always have a value in the
+                          // range 1 to Integer.MAX_VALUE (inclusive).
+                          // User code should NEVER modify this value.
+
+    // Increment the cmdProch field. This method is used by the interpreter
+    // to indicate that a command was hidden, renamed, or deleted.
+
+    void incrEpoch() {
+        cmdEpoch++;
+        if (cmdEpoch == Integer.MIN_VALUE) {
+            // Integer overflow, really unlikely but possible.
+            cmdEpoch = 1;
+        }
+    }
 
     public String toString() {
 	StringBuffer sb = new StringBuffer();
@@ -75,6 +93,9 @@ class WrappedCommand {
 
 	sb.append(" -> ");
 	sb.append(cmd.getClass().getName());
+
+	sb.append(" cmdEpoch is ");
+	sb.append(cmdEpoch);
 
 	return sb.toString();
     }

@@ -1,5 +1,25 @@
 2005-11-20  Mo DeJong  <mdejong@users.sourceforge.net>
 
+        * src/jacl/tcl/lang/Interp.java (createCommand,
+        deleteCommandFromToken, renameCommand, hideCommand):
+        Increment WrappedCommand epoch when a command is
+        renamed or refdefined. Also invoke new
+        resetShadowedCmdRefs() to check for a rename that
+        shadows another command.
+        * src/jacl/tcl/lang/Namespace.java
+        (resetShadowedCmdRefs): Port of shadowed command ref
+        logic from Tcl 8.4.
+        * src/jacl/tcl/lang/WrappedCommand.java: Add a
+        cmdEpoch field that is used to see if a ref to
+        a WrappedCommand is still valid. When changes to
+        a command are made, the command epoch is updated
+        to indicate that a held ref is no longer valid.
+        * src/tests/jacl/tcl/lang/TestEpoch.java:
+        * tests/jacl/refCount.test: Test WrappedCommand.cmdEpoch
+        field on command rename, delete.
+
+2005-11-20  Mo DeJong  <mdejong@users.sourceforge.net>
+
         Update Namespace.getNamespaceForQualName() so that
         a result object stored on a per interp basis is
         populated with namespace info. Profiling indicates

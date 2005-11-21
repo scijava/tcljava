@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.59 2005/11/21 01:14:17 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.60 2005/11/21 02:02:41 mdejong Exp $
  *
  */
 
@@ -1702,6 +1702,7 @@ createCommand(
     cmd.cmd = cmdImpl;
     cmd.deleted = false;
     cmd.importRef = null;
+    cmd.cmdEpoch = 1;
 
     // Plug in any existing import references found above.  Be sure
     // to update all of these references to point to the new command.
@@ -1716,9 +1717,12 @@ createCommand(
 	}
     }
 
-    // There are no shadowed commands in Jacl because they are only
-    // used in the 8.0 compiler
+    // We just created a command, so in its namespace and all of its parent
+    // namespaces, it may shadow global commands with the same name. If any
+    // shadowed commands are found, invalidate all cached command references
+    // in the affected namespaces.
 
+    Namespace.resetShadowedCmdRefs(this, cmd);
     return;
 }
 
@@ -1728,7 +1732,7 @@ createCommand(
  * Tcl_GetCommandFullName -> getCommandFullName
  *
  *	Given a token returned by, e.g., Tcl_CreateCommand or
- *	Tcl_FindCommand, this procedure appends to an object the command's
+ *	Tcl_FindCommand, this procedure returns the command's
  *	full name, qualified by a sequence of parent namespace names. The
  *	command's fully-qualified name may have changed due to renaming.
  *
@@ -1892,6 +1896,11 @@ deleteCommandFromToken(
 	((CommandWithDispose) cmd.cmd).disposeCmd();
     }
 
+    // Bump the command epoch counter. This will invalidate all cached
+    // references that point to this command.
+
+    cmd.incrEpoch();
+
     // If this command was imported into other namespaces, then imported
     // commands were created that refer back to this command. Delete these
     // imported commands now.
@@ -2010,6 +2019,7 @@ protected void renameCommand(
     cmd.table   = newNs.cmdTable;
     cmd.hashKey = newTail;
     cmd.ns      = newNs;
+    Namespace.resetShadowedCmdRefs(this, cmd);
 
     // Now check for an alias loop. If we detect one, put everything back
     // the way it was and report the error.
@@ -2029,6 +2039,7 @@ protected void renameCommand(
     // the cmdEpoch to invalidate any cached references to the command.
 
     oldTable.remove(oldHashKey);
+    cmd.incrEpoch();
 
     return;
 }
@@ -3766,6 +3777,7 @@ throws
 
     if (cmd.table.containsKey(cmd.hashKey)) {
 	cmd.table.remove(cmd.hashKey);
+	cmd.incrEpoch();
     }
 
     // Now link the hash table entry with the command structure.
