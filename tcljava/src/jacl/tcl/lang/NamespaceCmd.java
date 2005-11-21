@@ -15,7 +15,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: NamespaceCmd.java,v 1.17 2005/11/16 21:08:11 mdejong Exp $
+ * RCS: @(#) $Id: NamespaceCmd.java,v 1.18 2005/11/21 01:14:17 mdejong Exp $
  */
 
 package tcl.lang;
@@ -1294,12 +1294,6 @@ public class NamespaceCmd implements InternalRep, Command {
 	Namespace ns;
 	Namespace.ResolvedNsName resName;
 
-	// Java does not support passing an address so we pass
-	// an array of size 1 and then assign arr[0] to the value
-	Namespace[] nsArr     = new Namespace[1];
-	Namespace[] dummy1Arr = new Namespace[1];
-	String[]    dummy2Arr  = new String[1];
-
 	// Get the string representation.
 	name = tobj.toString();
 
@@ -1308,12 +1302,10 @@ public class NamespaceCmd implements InternalRep, Command {
 	// If the namespace isn't found, we convert the object to an nsName
 	// object with a null ResolvedNsName internal rep.
 
+	Namespace.GetNamespaceForQualNameResult gnfqnr = interp.getnfqnResult;
 	Namespace.getNamespaceForQualName(interp, name, null,
-	      Namespace.FIND_ONLY_NS, nsArr, dummy1Arr, dummy1Arr, dummy2Arr);
-
-
-	// Get the values out of the arrays!
-	ns     = nsArr[0];
+	      Namespace.FIND_ONLY_NS, gnfqnr);
+	ns = gnfqnr.ns;
 
 	// If we found a namespace, then create a new ResolvedNsName structure
 	// that holds a reference to it.

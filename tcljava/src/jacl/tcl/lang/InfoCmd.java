@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: InfoCmd.java,v 1.11 2005/09/12 00:00:50 mdejong Exp $
+ * RCS: @(#) $Id: InfoCmd.java,v 1.12 2005/11/21 01:14:17 mdejong Exp $
  *
  */
 
@@ -318,19 +318,11 @@ class InfoCmd implements Command {
 
 	    pattern = objv[2].toString();
 
-	    // Java does not support passing an address so we pass
-	    // an array of size 1 and then assign arr[0] to the value
-	    Namespace[] nsArr     = new Namespace[1];
-	    Namespace[] dummy1Arr = new Namespace[1];
-	    Namespace[] dummy2Arr = new Namespace[1];
-	    String[]     simplePatternArr  = new String[1];
-
+	    Namespace.GetNamespaceForQualNameResult gnfqnr = interp.getnfqnResult;
 	    Namespace.getNamespaceForQualName(interp, pattern, null,
-	        0, nsArr, dummy1Arr, dummy2Arr, simplePatternArr);
-
-	    // Get the values out of the arrays!
-	    ns  = nsArr[0];
-	    simplePattern = simplePatternArr[0];
+	        0, gnfqnr);
+	    ns  = gnfqnr.ns;
+	    simplePattern = gnfqnr.simpleName;
 
 	    if (ns != null) {	// we successfully found the pattern's ns
 		specificNsInPattern = (simplePattern.compareTo(pattern) != 0);
@@ -1134,19 +1126,11 @@ class InfoCmd implements Command {
 
 	    pattern = objv[2].toString();
 
-	    // Java does not support passing an address so we pass
-	    // an array of size 1 and then assign arr[0] to the value
-	    Namespace[] nsArr     = new Namespace[1];
-	    Namespace[] dummy1Arr = new Namespace[1];
-	    Namespace[] dummy2Arr = new Namespace[1];
-	    String[]     simplePatternArr  = new String[1];
-
+	    Namespace.GetNamespaceForQualNameResult gnfqnr = interp.getnfqnResult;
 	    Namespace.getNamespaceForQualName(interp, pattern, null,
-	        0, nsArr, dummy1Arr, dummy2Arr, simplePatternArr);
-
-	    // Get the values out of the arrays!
-	    ns  = nsArr[0];
-	    simplePattern = simplePatternArr[0];
+	        0, gnfqnr);
+	    ns  = gnfqnr.ns;
+	    simplePattern = gnfqnr.simpleName;
 
 	    if (ns != null) {	// we successfully found the pattern's ns
 		specificNsInPattern = (simplePattern.compareTo(pattern) != 0);

@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.58 2005/11/16 21:08:11 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.59 2005/11/21 01:14:17 mdejong Exp $
  *
  */
 
@@ -297,6 +297,10 @@ StrtoulResult strtoulResult = new StrtoulResult();
 // Used by callers of Util.strtod(). Usage is same as above.
 
 StrtodResult strtodResult = new StrtodResult();
+
+// Used only with Namespace.getNamespaceForQualName()
+Namespace.GetNamespaceForQualNameResult getnfqnResult =
+    new Namespace.GetNamespaceForQualNameResult();
 
 // List of unsafe commands:
 
@@ -1652,18 +1656,11 @@ createCommand(
     // otherwise, we always put it in the global namespace.
 
     if (cmdName.indexOf("::") != -1) {
-	// Java does not support passing an address so we pass
-	// an array of size 1 and then assign arr[0] to the value
-	Namespace[] nsArr     = new Namespace[1];
-	Namespace[] dummyArr  = new Namespace[1];
-	String[]    tailArr   = new String[1];
-
+	Namespace.GetNamespaceForQualNameResult gnfqnr = this.getnfqnResult;
 	Namespace.getNamespaceForQualName(this, cmdName, null,
-		         Namespace.CREATE_NS_IF_UNKNOWN, nsArr,
-			 dummyArr, dummyArr, tailArr);
-
-	ns = nsArr[0];
-	tail = tailArr[0];
+		         Namespace.CREATE_NS_IF_UNKNOWN, gnfqnr);
+	ns   = gnfqnr.ns;
+	tail = gnfqnr.simpleName;
 
        if ((ns == null) || (tail == null)) {
 	    return;
@@ -1984,16 +1981,11 @@ protected void renameCommand(
     // automatically create the containing namespaces just like
     // Tcl_CreateCommand would.
 
-    Namespace[] newNsArr   = new Namespace[1];
-    Namespace[] dummyArr   = new Namespace[1];
-    String[]                 newTailArr = new String[1];
-
+    Namespace.GetNamespaceForQualNameResult gnfqnr = interp.getnfqnResult;
     Namespace.getNamespaceForQualName(interp, newName, null,
-        Namespace.CREATE_NS_IF_UNKNOWN, newNsArr,
-	dummyArr, dummyArr, newTailArr);
-
-    newNs   = newNsArr[0];
-    newTail = newTailArr[0];
+        Namespace.CREATE_NS_IF_UNKNOWN, gnfqnr);
+    newNs   = gnfqnr.ns;
+    newTail = gnfqnr.simpleName;
 
     if ((newNs == null) || (newTail == null)) {
 	throw new TclException(interp,

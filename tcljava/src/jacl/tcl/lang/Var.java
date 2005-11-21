@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Var.java,v 1.16 2005/11/16 21:08:11 mdejong Exp $
+ * RCS: @(#) $Id: Var.java,v 1.17 2005/11/21 01:14:17 mdejong Exp $
  *
  */
 package tcl.lang;
@@ -522,18 +522,11 @@ class Var {
 	    if (var == null) {
 		if (createPart1) {   // var wasn't found so create it
 
-		    // Java does not support passing an address so we pass
-		    // an array of size 1 and then assign arr[0] to the value
-		    Namespace[] varNsArr  = new Namespace[1];
-		    Namespace[] dummyArr = new Namespace[1];
-		    String[]    tailArr   = new String[1];
-
+		    Namespace.GetNamespaceForQualNameResult gnfqnr = interp.getnfqnResult;
 		    Namespace.getNamespaceForQualName(interp, part1, null,
-		       flags, varNsArr, dummyArr, dummyArr, tailArr);
-
-		    // Get the values out of the arrays!
-		    varNs  = varNsArr[0];
-		    tail   = tailArr[0];
+		       flags, gnfqnr);
+		    varNs  = gnfqnr.ns;
+		    tail   = gnfqnr.simpleName;
 
 		    if (varNs == null) {
 			if ((flags & TCL.LEAVE_ERR_MSG) != 0) {
@@ -1484,20 +1477,12 @@ class Var {
 	    || !varFrame.isProcCallFrame
 	    || (myName.indexOf("::") != -1)) {
 
-	    // Java does not support passing an address so we pass
-	    // an array of size 1 and then assign arr[0] to the value
-	    Namespace[] nsArr      = new Namespace[1];
-	    Namespace[] altNsArr   = new Namespace[1];
-	    Namespace[] dummyNsArr = new Namespace[1];
-	    String[]    tailArr                 = new String[1];
-
+	    Namespace.GetNamespaceForQualNameResult gnfqnr = interp.getnfqnResult;
 	    Namespace.getNamespaceForQualName(interp, myName, null,
-		       myFlags, nsArr, altNsArr, dummyNsArr, tailArr);
-
-	    // Get the values out of the arrays!
-	    ns      = nsArr[0];
-	    altNs   = altNsArr[0];
-	    tail    = tailArr[0];
+		       myFlags, gnfqnr);
+	    ns      = gnfqnr.ns;
+	    altNs   = gnfqnr.altNs;
+	    tail    = gnfqnr.simpleName;
 
 	    if (ns == null) {
 		ns = altNs;

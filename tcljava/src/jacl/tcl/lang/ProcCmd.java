@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ProcCmd.java,v 1.5 2005/11/04 21:02:14 mdejong Exp $
+ * RCS: @(#) $Id: ProcCmd.java,v 1.6 2005/11/21 01:14:17 mdejong Exp $
  *
  */
 
@@ -93,21 +93,14 @@ class ProcCmd implements Command {
 	Namespace ns, altNs, cxtNs;
 	StringBuffer ds;
 
-	// Java does not support passing an address so we pass
-	// an array of size 1 and then assign arr[0] to the value
-	Namespace[] nsArr    = new Namespace[1];
-	Namespace[] altNsArr = new Namespace[1];
-	Namespace[] cxtNsArr = new Namespace[1];
-	String[]     procNameArr          = new String[1];
-
+	Namespace.GetNamespaceForQualNameResult gnfqnr = interp.getnfqnResult;
 	Namespace.getNamespaceForQualName(interp, fullName, null,
-				   0, nsArr, altNsArr, cxtNsArr, procNameArr);
+				   0, gnfqnr);
 
-	// Get the values out of the arrays
-	ns       = nsArr[0];
-	altNs    = altNsArr[0];
-	cxtNs    = cxtNsArr[0]; 
-	procName = procNameArr[0];
+	ns       = gnfqnr.ns;
+	altNs    = gnfqnr.altNs;
+	cxtNs    = gnfqnr.actualCxt; 
+	procName = gnfqnr.simpleName;
 
 	if (ns == null) {
 	    throw new TclException(interp, "can't create procedure \"" + fullName +

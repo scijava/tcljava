@@ -16,7 +16,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: Namespace.java,v 1.2 2005/11/21 00:23:14 mdejong Exp $
+ * RCS: @(#) $Id: Namespace.java,v 1.3 2005/11/21 01:14:17 mdejong Exp $
  */
 
 package tcl.lang;
@@ -454,20 +454,12 @@ public class Namespace {
 	} else {
 	    // Find the parent for the new namespace.
 
-	    // Java does not support passing an address so we pass
-	    // an array of size 1 and then assign arr[0] to the value
-	    Namespace[] parentArr     = new Namespace[1];
-	    Namespace[] dummyArr = new Namespace[1];
-	    String[]    simpleArr  = new String[1];
-	    	    
+	    GetNamespaceForQualNameResult gnfqnr = interp.getnfqnResult;
 	    getNamespaceForQualName(interp, name, null,
 				    (CREATE_NS_IF_UNKNOWN | TCL.LEAVE_ERR_MSG),
-				    parentArr, dummyArr, dummyArr, simpleArr);
-
-	    // Get the values out of the arrays!
-	    parent = parentArr[0];
-	    simpleName = simpleArr[0];
-	    
+                                    gnfqnr);
+	    parent     = gnfqnr.ns;
+	    simpleName = gnfqnr.simpleName;
 
 	    // If the unqualified name at the end is empty, there were trailing
 	    // "::"s after the namespace's name which we ignore. The new
@@ -875,20 +867,11 @@ public class Namespace {
 
 	// Check that the pattern doesn't have namespace qualifiers.
 	
-	// Java does not support passing an address so we pass
-	// an array of size 1 and then assign arr[0] to the value
-	Namespace[] exportNsArr       = new Namespace[1];
-	Namespace[] dummyArr          = new Namespace[1];
-	String[]    simplePatternArr  = new String[1];
-
+	GetNamespaceForQualNameResult gnfqnr = interp.getnfqnResult;
 	getNamespaceForQualName(interp, pattern, ns,
-	    TCL.LEAVE_ERR_MSG, exportNsArr, dummyArr,
-	    dummyArr, simplePatternArr);
-
-	// get the values out of the arrays
-
-	exportNs      = exportNsArr[0];
-	simplePattern = simplePatternArr[0];
+	    TCL.LEAVE_ERR_MSG, gnfqnr);
+	exportNs      = gnfqnr.ns;
+	simplePattern = gnfqnr.simpleName;
 
 	if ((exportNs != ns) || (pattern.compareTo(simplePattern) != 0)) {
 	    throw new TclException(interp,
@@ -1070,18 +1053,11 @@ public class Namespace {
 	    throw new TclException(interp, "empty import pattern");
 	}
 
-	// Java does not support passing an address so we pass
-	// an array of size 1 and then assign arr[0] to the value
-	Namespace[] importNsArr       = new Namespace[1];
-	Namespace[] dummyArr          = new Namespace[1];
-	String[]    simplePatternArr  = new String[1];
-
+	GetNamespaceForQualNameResult gnfqnr = interp.getnfqnResult;
 	getNamespaceForQualName(interp, pattern, ns,
-	    TCL.LEAVE_ERR_MSG, importNsArr, dummyArr,
-	    dummyArr, simplePatternArr);
-
-	importNs      = importNsArr[0];
-	simplePattern = simplePatternArr[0];
+	    TCL.LEAVE_ERR_MSG, gnfqnr);
+	importNs      = gnfqnr.ns;
+	simplePattern = gnfqnr.simpleName;
 
 	if (importNs == null) {
 	    throw new TclException(interp,
@@ -1244,21 +1220,12 @@ public class Namespace {
 	// and get the simple pattern (no namespace qualifiers or ::'s) at
 	// the end.
 
-	// Java does not support passing an address so we pass
-	// an array of size 1 and then assign arr[0] to the value
-	Namespace[] importNsArr      = new Namespace[1];
-	Namespace[] dummyArr         = new Namespace[1];
-	Namespace[] actualCtxArr     = new Namespace[1];
-	String[]    simplePatternArr = new String[1];
-	
+	GetNamespaceForQualNameResult gnfqnr = interp.getnfqnResult;
 	getNamespaceForQualName(interp, pattern, ns,
-	    TCL.LEAVE_ERR_MSG, importNsArr, dummyArr,
-	    actualCtxArr, simplePatternArr);
-
-	// get the values out of the arrays
-	importNs      = importNsArr[0];
-	actualCtx     = actualCtxArr[0];
-	simplePattern = simplePatternArr[0];
+	    TCL.LEAVE_ERR_MSG, gnfqnr);
+	importNs      = gnfqnr.ns;
+	actualCtx     = gnfqnr.actualCxt;
+	simplePattern = gnfqnr.simpleName;
 
 	// FIXME : the above call passes TCL.LEAVE_ERR_MSG, but
 	// it seems like this will be a problem when exception is raised!
@@ -1287,7 +1254,6 @@ public class Namespace {
 	}
 	return;
     }
-
 
     /*
      *----------------------------------------------------------------------
@@ -1427,61 +1393,62 @@ public class Namespace {
      *	an arbitrary number of containing namespace separated by "::"s. If
      *	the qualified name starts with "::", it is interpreted absolutely
      *	from the global namespace. Otherwise, it is interpreted relative to
-     *	the namespace specified by cxtNsPtr if it is non-null. If cxtNsPtr
+     *	the namespace specified by cxtNs if it is non-null. If cxtNs
      *	is null, the name is interpreted relative to the current namespace.
      *
      *	A relative name like "foo::bar::x" can be found starting in either
      *	the current namespace or in the global namespace. So each search
      *	usually follows two tracks, and two possible namespaces are
-     *	returned. If the procedure sets either nsPtrPtr[0] or altNsPtrPtr[0] to
+     *	returned. If the procedure sets either gnfqnr.ns or gnfqnr.altNs to
      *	null, then that path failed.
      *
      *	If "flags" contains TCL.GLOBAL_ONLY, the relative qualified name is
      *	sought only in the global :: namespace. The alternate search
      *	(also) starting from the global namespace is ignored and
-     *	altNsPtrPtr[0] is set null. 
+     *	gnfqnr.altNs is set null. 
      *
      *	If "flags" contains TCL.NAMESPACE_ONLY, the relative qualified
-     *	name is sought only in the namespace specified by cxtNsPtr. The
+     *	name is sought only in the namespace specified by cxtNs. The
      *	alternate search starting from the global namespace is ignored and
-     *	altNsPtrPtr[0] is set null. If both TCL.GLOBAL_ONLY and
+     *	gnfqnr.altNs is set null. If both TCL.GLOBAL_ONLY and
      *	TCL.NAMESPACE_ONLY are specified, TCL.GLOBAL_ONLY is ignored and
-     *	the search starts from the namespace specified by cxtNsPtr.
+     *	the search starts from the namespace specified by cxtNs.
      *
      *	If "flags" contains CREATE_NS_IF_UNKNOWN, all namespace
      *	components of the qualified name that cannot be found are
      *	automatically created within their specified parent. This makes sure
      *	that functions like Tcl_CreateCommand always succeed. There is no
-     *	alternate search path, so altNsPtrPtr[0] is set null.
+     *	alternate search path, so gnfqnr.altNs is set null.
      *
      *	If "flags" contains FIND_ONLY_NS, the qualified name is treated as a
      *	reference to a namespace, and the entire qualified name is
      *	followed. If the name is relative, the namespace is looked up only
      *	in the current namespace. A pointer to the namespace is stored in
-     *	nsPtrPtr[0] and null is stored in simpleNamePtr[0]. Otherwise, if
+     *	gnfqnr.ns and null is stored in gnfqnr.simpleName. Otherwise, if
      *	FIND_ONLY_NS is not specified, only the leading components are
      *	treated as namespace names, and a pointer to the simple name of the
-     *	final component is stored in simpleNamePtr[0].
+     *	final component is stored in gnfqnr.simpleName.
      *
      * Results:
-     *	It sets nsPtrPtr[0] and altNsPtrPtr[0] to point to the two possible
+     *	It sets gnfqnr.ns and gnfqnr.altNs to point to the two possible
      *	namespaces which represent the last (containing) namespace in the
-     *	qualified name. If the procedure sets either nsPtrPtr[0] or altNsPtrPtr[0]
+     *	qualified name. If the procedure sets either gnfqnr.ns or gnfqnr.altNs
      *	to null, then the search along that path failed.  The procedure also
      *	stores a pointer to the simple name of the final component in
-     *	simpleNamePtr[0]. If the qualified name is "::" or was treated as a
+     *	gnfqnr.simpleName. If the qualified name is "::" or was treated as a
      *	namespace reference (FIND_ONLY_NS), the procedure stores a pointer
-     *	to the namespace in nsPtrPtr[0], null in altNsPtrPtr[0], and sets
-     *	simpleNamePtr[0] to an empty string.
+     *	to the namespace in gnfqnr.ns, null in gnfqnr.altNs, and sets
+     *	gnfqnr.simpleName to an empty string.
      *
      *	If there is an error, this procedure returns TCL_ERROR. If "flags"
      *	contains TCL_LEAVE_ERR_MSG, an error message is returned in the
      *	interpreter's result object. Otherwise, the interpreter's result
      *	object is left unchanged.
      *
-     *	actualCxtPtrPtr[0] is set to the actual context namespace. It is
-     *	set to the input context namespace pointer in cxtNsPtr. If cxtNsPtr
-     *	is null, it is set to the current namespace context.
+     *	gnfqnr.actualCxt is set to the actual context namespace. It is
+     *	set to the input context namespace pointer in cxtNs. If cxtNs
+     *	is null, it is set to the current namespace context. Note that
+     *	the GetNamespaceForQualNameResult result object is defined below.
      *
      * Side effects:
      *	If "flags" contains CREATE_NS_IF_UNKNOWN, new namespaces may be
@@ -1490,12 +1457,19 @@ public class Namespace {
      *----------------------------------------------------------------------
      */
 
+    static class GetNamespaceForQualNameResult {
+        Namespace ns;
+        Namespace altNs;
+        Namespace actualCxt;
+        String simpleName;
+    }
+
     static void getNamespaceForQualName(
         Interp interp,		     // Interpreter in which to find the
 				     // namespace containing qualName.
 	String qualName,	     // A namespace-qualified name of an
 				     // command, variable, or namespace.
-	Namespace cxtNsPtr,	     // The namespace in which to start the
+	Namespace cxtNs,	     // The namespace in which to start the
 				     // search for qualName's namespace. If null
 				     // start from the current namespace.
 				     // Ignored if TCL.GLOBAL_ONLY is set.
@@ -1504,14 +1478,16 @@ public class Namespace {
 				     // TCL.NAMESPACE_ONLY,
 				     // CREATE_NS_IF_UNKNOWN, and
 				     // FIND_ONLY_NS.
-	Namespace[] nsPtrPtr,	     // Address where procedure stores a pointer
+	GetNamespaceForQualNameResult gnfqnr)
+
+	// gnfqnr.ns                 // Where this procedure stores a pointer
 				     // to containing namespace if qualName is
-				     // found starting from cxtNsPtr or, if
+				     // found starting from cxtNs or, if
 				     // TCL_GLOBAL_ONLY is set, if qualName is
 				     // found in the global :: namespace. null
 				     // is stored otherwise. This is an array
 				     // of length 1, value is stored at index 0
-	Namespace[] altNsPtrPtr,     // Address where procedure stores a pointer
+	// gnfqnr.altNs              // Where this procedure stores a pointer
 				     // to containing namespace if qualName is
 				     // found starting from the global ::
 				     // namespace. null is stored if qualName
@@ -1520,43 +1496,25 @@ public class Namespace {
 				     // CREATE_NS_IF_UNKNOWN, FIND_ONLY_NS flag
 				     // is set. This is an array of length 1.
 				     // The value is stored at index 0
-	Namespace[] actualCxtPtrPtr, // Address where procedure stores a pointer
+	// gnfqnr.actualCxt          // Address where procedure stores a pointer
 				     // to the actual namespace from which the
-				     // search started. This is either cxtNsPtr,
+				     // search started. This is either cxtNs,
 				     // the :: namespace if TCL_GLOBAL_ONLY was
 				     // specified, or the current namespace if
-				     // cxtNsPtr was null. This is an array of
+				     // cxtNs was null. This is an array of
                                      // length 1. The value is stored at index 0.
-	String[] simpleNamePtr	     // Array where procedure stores the
+	// gnfqnr.simpleName	     // Where this procedure stores the
 				     // simple name at end of the qualName, or
 				     // null if qualName is "::" or the flag
 				     // FIND_ONLY_NS was specified. This is an
                                      // array of length 1, with value at index 0
-	)
     {
+        gnfqnr.ns = null;
+        gnfqnr.altNs = null;
+        gnfqnr.actualCxt = null;
+        gnfqnr.simpleName = null;
 
-
-	// FIXME : remove extra method call checks when we are sure this works!
-
-	if (true) { // check invariants
-	    if ((nsPtrPtr == null) || (nsPtrPtr.length != 1)) {
-		throw new RuntimeException("nsPtrPtr " + nsPtrPtr);
-	    }
-	    if ((altNsPtrPtr == null) || (altNsPtrPtr.length != 1)) {
-		throw new RuntimeException("altNsPtrPtr " + altNsPtrPtr);
-	    }
-	    if ((actualCxtPtrPtr == null) || (actualCxtPtrPtr.length != 1)) {
-		throw new RuntimeException("actualCxtPtrPtr " + actualCxtPtrPtr);
-	    }
-	    if ((simpleNamePtr == null) || (simpleNamePtr.length != 1)) {
-		throw new RuntimeException("simpleNamePtr " + simpleNamePtr);
-	    }
-	}
-
-
-
-
-	Namespace ns = cxtNsPtr;
+	Namespace ns = cxtNs;
 	Namespace altNs;
 	Namespace globalNs = getGlobalNamespace(interp);
 	Namespace entryNs;
@@ -1596,21 +1554,19 @@ public class Namespace {
 
 	    ns = globalNs;
 	    if (start_ind >= name_len) {  // qualName is just two or more ":"s
-		nsPtrPtr[0]        = globalNs;
-		altNsPtrPtr[0]     = null;
-		actualCxtPtrPtr[0] = globalNs;
-		simpleNamePtr[0]   = ""; // points to empty string
+		gnfqnr.ns           = globalNs;
+		gnfqnr.altNs        = null;
+		gnfqnr.actualCxt    = globalNs;
+		gnfqnr.simpleName   = "";
 		return;
 	    }
 	}
-	actualCxtPtrPtr[0] = ns;
-
+	gnfqnr.actualCxt = ns;
 
 	// Start an alternate search path starting with the global namespace.
 	// However, if the starting context is the global namespace, or if the
 	// flag is set to search only the namespace cxtNs, ignore the
 	// alternate search path.
-
 
 	altNs = globalNs;
 	if ((ns == globalNs)
@@ -1643,7 +1599,6 @@ public class Namespace {
 		len++;
 	    }
 
-
 	    if ((end_ind == name_len)
 		&& !((end_ind-start_ind >= 2) &&
 		     ((qualName.charAt(end_ind-1) == ':') && (qualName.charAt(end_ind-2) == ':')))) {
@@ -1656,9 +1611,9 @@ public class Namespace {
 		    // assign the string from start_ind to the end of the name string
 		    nsName = qualName.substring(start_ind);
 		} else {
-		    nsPtrPtr[0]      = ns;
-		    altNsPtrPtr[0]   = altNs;
-		    simpleNamePtr[0] = qualName.substring(start_ind);
+		    gnfqnr.ns         = ns;
+		    gnfqnr.altNs      = altNs;
+		    gnfqnr.simpleName = qualName.substring(start_ind);
 		    return;
 		}
 	    } else {
@@ -1667,8 +1622,6 @@ public class Namespace {
 		
 		nsName = qualName.substring(start_ind, start_ind+len);
 	    }
-
-
 
 	    // Look up the namespace qualifier nsName in the current namespace
 	    // context. If it isn't found but CREATE_NS_IF_UNKNOWN is set,
@@ -1694,7 +1647,6 @@ public class Namespace {
 		}
 	    }
 
-
 	    // Look up the namespace qualifier in the alternate search path too.
 
 	    if (altNs != null) {
@@ -1704,27 +1656,25 @@ public class Namespace {
 	    // If both search paths have failed, return null results.
 	    
 	    if ((ns == null) && (altNs == null)) {
-		nsPtrPtr[0]    = null;
-		altNsPtrPtr[0]   = null;
-		simpleNamePtr[0] = null;
+		gnfqnr.ns         = null;
+		gnfqnr.altNs      = null;
+		gnfqnr.simpleName = null;
 		return;
 	    }
 	    
 	    start_ind = end_ind;
 	}
 		
-
 	// We ignore trailing "::"s in a namespace name, but in a command or
 	// variable name, trailing "::"s refer to the cmd or var named {}.
 	
 	if (((flags & FIND_ONLY_NS) != 0)
 	    || ((end_ind > start_ind) && (qualName.charAt(end_ind-1) != ':'))) {
-	    simpleNamePtr[0] = null; // found namespace name
+	    gnfqnr.simpleName = null; // found namespace name
 	} else {
 	    // FIXME : make sure this does not throw exception when end_ind is at the end of the string 
-	    simpleNamePtr[0] = qualName.substring(end_ind); // found cmd/var: points to empty string
+	    gnfqnr.simpleName = qualName.substring(end_ind); // found cmd/var: points to empty string
 	}
-
 
 	// As a special case, if we are looking for a namespace and qualName
 	// is "" and the current active namespace (ns) is not the global
@@ -1736,11 +1686,10 @@ public class Namespace {
 	    ns = null;
 	}
 	
-	nsPtrPtr[0]    = ns;
-	altNsPtrPtr[0] = altNs;
+	gnfqnr.ns       = ns;
+	gnfqnr.altNs    = altNs;
 	return;
     }
-
 
     /*
      *----------------------------------------------------------------------
@@ -1780,22 +1729,14 @@ public class Namespace {
     {
 	Namespace ns;
 
-	// Java does not support passing an address so we pass
-	// an array of size 1 and then assign arr[0] to the value
-	Namespace[] nsArr     = new Namespace[1];
-	Namespace[] dummy1Arr = new Namespace[1];
-	String[]    dummy2Arr  = new String[1];
-
 	// Find the namespace(s) that contain the specified namespace name.
 	// Add the FIND_ONLY_NS flag to resolve the name all the way down
 	// to its last component, a namespace.
 
+	GetNamespaceForQualNameResult gnfqnr = interp.getnfqnResult;
 	getNamespaceForQualName(interp, name, contextNs,
-	      (flags | FIND_ONLY_NS), nsArr, dummy1Arr, dummy1Arr, dummy2Arr);
-
-
-	// Get the values out of the arrays!
-	ns = nsArr[0];
+	      (flags | FIND_ONLY_NS), gnfqnr);
+	ns = gnfqnr.ns;
 
 	if (ns != null) {
 	    return ns;
@@ -1812,8 +1753,6 @@ public class Namespace {
 	return null;
     }
     
-
-
     /*
      *----------------------------------------------------------------------
      *
@@ -1859,10 +1798,9 @@ public class Namespace {
     {
 	Interp.ResolverScheme res;
 	Namespace cxtNs;
-	Namespace[] ns = new Namespace[2];
+	Namespace ns0, ns1;
 	String simpleName;
 	int search;
-	//int result;
 	WrappedCommand cmd;
 
 	// If this namespace has a command resolver, then give it first
@@ -1907,26 +1845,15 @@ public class Namespace {
 	    }
 	}
 
-	// Java does not support passing an address so we pass
-	// an array of size 1 and then assign arr[0] to the value
-	Namespace[] ns0Arr         = new Namespace[1];
-	Namespace[] ns1Arr         = new Namespace[1];
-	Namespace[] cxtNsArr       = new Namespace[1];
-	String[]    simpleNameArr  = new String[1]; 
-
-
 	// Find the namespace(s) that contain the command.
 
+	GetNamespaceForQualNameResult gnfqnr = interp.getnfqnResult;
 	getNamespaceForQualName(interp, name, contextNs,
-				   flags, ns0Arr, ns1Arr, cxtNsArr, simpleNameArr);
-
-	// Get the values out of the arrays!
-	ns[0]       = ns0Arr[0];
-	ns[1]       = ns1Arr[0];
-	cxtNs       = cxtNsArr[0];
-	simpleName  = simpleNameArr[0];
-
-
+				   flags, gnfqnr);
+	ns0         = gnfqnr.ns;
+	ns1         = gnfqnr.altNs;
+	cxtNs       = gnfqnr.actualCxt;
+	simpleName  = gnfqnr.simpleName;
 
 	// Look for the command in the command table of its namespace.
 	// Be sure to check both possible search paths: from the specified
@@ -1934,8 +1861,16 @@ public class Namespace {
 	
 	cmd = null;
 	for (search = 0;  (search < 2) && (cmd == null);  search++) {
-	    if ((ns[search] != null) && (simpleName != null)) {
-		cmd = (WrappedCommand) ns[search].cmdTable.get(simpleName);
+	    Namespace ns;
+	    if (search == 0) {
+	        ns = ns0;
+	    } else if (search == 1) {
+	        ns = ns1;
+	    } else {
+	        throw new TclRuntimeError("bad search value" + search);
+	    }
+	    if ((ns != null) && (simpleName != null)) {
+		cmd = (WrappedCommand) ns.cmdTable.get(simpleName);
 	    }
 	}
 	if (cmd != null) {
@@ -1947,8 +1882,6 @@ public class Namespace {
 	return null;
     }
 
-
-    
     /*
      *----------------------------------------------------------------------
      *
@@ -1996,10 +1929,9 @@ public class Namespace {
     {
 	Interp.ResolverScheme res;
 	Namespace cxtNs;
-	Namespace[] ns = new Namespace[2];
+	Namespace ns0, ns1;
 	String simpleName;
 	int search;
-	//int result;
 	Var var;
 
 	// If this namespace has a variable resolver, then give it first
@@ -2043,25 +1975,15 @@ public class Namespace {
 	    }
 	}
 
-	// Java does not support passing an address so we pass
-	// an array of size 1 and then assign arr[0] to the value
-	Namespace[] ns0Arr         = new Namespace[1];
-	Namespace[] ns1Arr         = new Namespace[1];
-	Namespace[] cxtNsArr       = new Namespace[1];
-	String[]    simpleNameArr  = new String[1]; 
-
-
 	// Find the namespace(s) that contain the variable.
 	
+	GetNamespaceForQualNameResult gnfqnr = interp.getnfqnResult;
 	getNamespaceForQualName(interp, name, contextNs,
-				   flags, ns0Arr, ns1Arr, cxtNsArr, simpleNameArr);
-
-	// Get the values out of the arrays!
-	ns[0]       = ns0Arr[0];
-	ns[1]       = ns1Arr[0];
-	cxtNs       = cxtNsArr[0];
-	simpleName  = simpleNameArr[0];
-
+				   flags, gnfqnr);
+	ns0         = gnfqnr.ns;
+	ns1         = gnfqnr.altNs;
+	cxtNs       = gnfqnr.actualCxt;
+	simpleName  = gnfqnr.simpleName;
 
 	// Look for the variable in the variable table of its namespace.
 	// Be sure to check both possible search paths: from the specified
@@ -2069,8 +1991,16 @@ public class Namespace {
 
 	var = null;
 	for (search = 0;  (search < 2) && (var == null);  search++) {
-	    if ((ns[search] != null) && (simpleName != null)) {
-		var = (Var) ns[search].varTable.get(simpleName);
+	    Namespace ns;
+	    if (search == 0) {
+	        ns = ns0;
+	    } else if (search == 1) {
+	        ns = ns1;
+	    } else {
+	        throw new TclRuntimeError("bad search value" + search);
+	    }
+	    if ((ns != null) && (simpleName != null)) {
+		var = (Var) ns.varTable.get(simpleName);
 	    }
 	}
 	if (var != null) {

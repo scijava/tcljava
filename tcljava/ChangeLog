@@ -1,5 +1,20 @@
 2005-11-20  Mo DeJong  <mdejong@users.sourceforge.net>
 
+        Update Namespace.getNamespaceForQualName() so that
+        a result object stored on a per interp basis is
+        populated with namespace info. Profiling indicates
+        that this API generates lots of heap allocations
+        that could be avoided.
+
+        * src/jacl/tcl/lang/InfoCmd.java:
+        * src/jacl/tcl/lang/Interp.java:
+        * src/jacl/tcl/lang/Namespace.java:
+        * src/jacl/tcl/lang/NamespaceCmd.java:
+        * src/jacl/tcl/lang/ProcCmd.java:
+        * src/jacl/tcl/lang/Var.java:
+
+2005-11-20  Mo DeJong  <mdejong@users.sourceforge.net>
+
         * src/jacl/tcl/lang/Namespace.java: Reformat
         CRLF to LF to avoid patching issues.
 
