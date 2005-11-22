@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Var.java,v 1.17 2005/11/21 01:14:17 mdejong Exp $
+ * RCS: @(#) $Id: Var.java,v 1.18 2005/11/22 05:17:14 mdejong Exp $
  *
  */
 package tcl.lang;
@@ -410,7 +410,7 @@ class Var {
 				// variables are currently in use. Same as
 				// the current procedure's frame, if any,
 				// unless an "uplevel" is executing.
-	Hashtable table;        //  to the hashtable, if any, in which
+	Hashtable table;        // to the hashtable, if any, in which
 				// to look up the variable.
 	Var var;                // Used to search for global names.
 	String elName;          // Name of array element or null.
@@ -607,7 +607,7 @@ class Var {
 	// If we're not dealing with an array element, return var.
     
 	if (elName == null) {
-	    Var[] ret = new Var[2];
+	    Var[] ret = interp.lookupVarResult;
 	    ret[0] = var;
 	    ret[1] = null;
 	    return ret;
@@ -681,7 +681,7 @@ class Var {
 	    }
 	}
 
-	Var[] ret = new Var[2];
+	Var[] ret = interp.lookupVarResult;
 	ret[0] = var;      // The Var in the array
 	ret[1] = arrayVar; // The array (Hashtable) Var
 	return ret;

@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.61 2005/11/22 01:46:21 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.62 2005/11/22 05:17:14 mdejong Exp $
  *
  */
 
@@ -299,8 +299,16 @@ StrtoulResult strtoulResult = new StrtoulResult();
 StrtodResult strtodResult = new StrtodResult();
 
 // Used only with Namespace.getNamespaceForQualName()
+
 Namespace.GetNamespaceForQualNameResult getnfqnResult =
     new Namespace.GetNamespaceForQualNameResult();
+
+// Cached array object accessed only in Var.lookupVar().
+// This array is returned by Var.lookupVar(), so a ref
+// to it should not be held by the caller for longer than
+// is needed to query the return values.
+
+Var[] lookupVarResult = new Var[2];
 
 // List of unsafe commands:
 
