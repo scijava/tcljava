@@ -1,5 +1,21 @@
 2005-11-21  Mo DeJong  <mdejong@users.sourceforge.net>
 
+        * src/jacl/tcl/lang/StringCmd.java (Utf8Count):
+        Create Utf8Count method that accepts a single
+        char argument.
+        * src/jacl/tcl/lang/TclParser.java (cmdProc,
+        UTF8CharPointer): Define UTF8CharPointer as
+        an internal rep so that a parsed byte
+        representaiton can be cached. Optimize the
+        getByteInfo method so that no allocation of
+        byte mapping info is done unless needed.
+        Add optimized return values from helper
+        functions in the case of a 1 to 1 mapping.
+        These improvements significantly improve
+        performance of the parse command.
+
+2005-11-21  Mo DeJong  <mdejong@users.sourceforge.net>
+
         * src/jacl/tcl/lang/Parser.java (grabObjv,
         releaseObjv, infiniteLoopException): Fixup
         last patch which was only half applied. Make

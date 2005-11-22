@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: StringCmd.java,v 1.10 2005/11/19 01:09:06 mdejong Exp $
+ * RCS: @(#) $Id: StringCmd.java,v 1.11 2005/11/22 02:06:35 mdejong Exp $
  *
  */
 
@@ -1030,6 +1030,20 @@ Utf8Count(String s) {
     }
 
     return sum;
+}
+
+// return the number of Utf8 bytes for the character c
+
+final
+static int
+Utf8Count(char c) {
+    if ((c > 0) && (c < 0x80)) {
+        return 1;
+    } else if (c <= 0x7FF) {
+        return 2;
+    } else {
+        return 3;
+    }
 }
 
 } // end StringCmd

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: TclParser.java,v 1.3 2005/10/26 19:17:08 mdejong Exp $
+ * RCS: @(#) $Id: TclParser.java,v 1.4 2005/11/22 02:06:35 mdejong Exp $
  */
 
 package tcl.lang;
@@ -64,22 +64,33 @@ cmdProc(
 throws TclException
 {
     int option, index, length, scriptLength;
-    UTF8CharPointer script;
 
     if (objv.length < 3) {
 	throw new TclNumArgsException(interp, 1, objv, "option arg ?arg ...?");
     }
     option = TclIndex.get(interp, objv[1], options, "option", 0);
 
-    // Check the number arguments passed to the command and
-    // extract information (script, index, length) depending
-    // upon the option selected.
+    // If the script argument holds a cached UTF8CharPointer internal rep
+    // then grab it and use it. Otherwise, create a new UTF8CharPointer
+    // and set it as the internal rep.
 
-    script = new UTF8CharPointer( objv[2].toString() );
-    if (script.length() == -1) {
+    TclObject tobj = objv[2];
+    UTF8CharPointer script;
+    InternalRep irep = tobj.getInternalRep();
+    if (irep instanceof UTF8CharPointer) {
+        script = (UTF8CharPointer) irep;
+    } else {
+        script = new UTF8CharPointer( tobj.toString() );
+        tobj.setInternalRep(script);
+    }
+    if (script == null) {
         System.out.println( script ); // For debugging only
     }
     scriptLength = script.getByteLength();
+
+    // Check the number arguments passed to the command and
+    // extract information (script, index, length) depending
+    // upon the option selected.
 
     switch (option) {
 	case PARSE_GET_RANGE: {
@@ -842,12 +853,15 @@ ParseCountNewline(
     endStrIndex = subStrIndex + length;
     numNewline = 0;
 
-    // Count newlines in terms of byte range
-    while (subStrIndex < endStrIndex) {
-	if (script.bytes[subStrIndex] == (byte) '\n') {
-	    numNewline++;
-	}
-	subStrIndex++;
+    // Get byte range as a String and count the number of
+    // newlines found in that range.
+
+    String range = script.getByteRangeAsString(subStrIndex, length);
+    final int range_length = range.length();
+    for (int i = 0 ; i < range_length ; i++) {
+        if (range.charAt(i) == '\n') {
+            numNewline++;
+        }
     }
 
     interp.setResult(numNewline);
@@ -954,7 +968,6 @@ ParseGetIndexAndLength(
 // the Tcl API for the parser extension into character oriented
 // index used within Jacl.
 
-
 // String "Foo\u00c7bar"
 // Chars:  0123     456
 
@@ -969,25 +982,60 @@ ParseGetIndexAndLength(
 // [7] = 'r'    [6] = 7                 [7] = 6
 
 
-class UTF8CharPointer extends CharPointer {
+class UTF8CharPointer extends CharPointer
+    implements InternalRep
+{
     int[] charToByteIndex; // Map char index to byte index
     int[] byteToCharIndex; // Map byte index to char index
     byte[] bytes;
+    String orig;
 
     UTF8CharPointer(String s) {
         super(s);
+        orig = s;
         getByteInfo();
     }
 
     void getByteInfo() {
-        int charIndex, byteIndex, bytesThisChar = 0, bytesTotal;
+        int charIndex, byteIndex, bytesThisChar, bytesTotal;
 
         try {
-            // Convert to UTF-8 bytes
-            String chars = new String(array);
+            // First, loop over the characters to see if each of the characters
+            // can be represented as a single UTF8 byte. In this special
+            // case there is no need to worry about mapping bytes to charaters
+            // or vice versa.
+
+            char c;
+            boolean singleBytes = true;
+
+            for (int i=0; i < array.length; i++) {
+                c = array[i];
+                if (c == '\0') {
+                    // Ignore encoding issues related to null byte in Java vs UTF8
+                    bytesThisChar = 1;
+                } else {
+                    bytesThisChar = StringCmd.Utf8Count(c);
+                }
+                if (bytesThisChar != 1) {
+                    singleBytes = false;
+                    break;
+                }
+            }
+
+            // When each character maps to a single byte, bytes is null
+
+            if (singleBytes) {
+                bytes = null;
+                return;
+            }
+
+            // When multiple byte UTF8 characters are found, convert to
+            // a byte array and save mapping info.
+
+            String chars = new String(array); // Get string including trailing null
             bytes = chars.getBytes("UTF8");
 
-            if (chars.length() < 0) { // For debugging only
+            if (chars == null) { // For debugging only
                 System.out.println("chars is \"" + chars + "\" len = " + chars.length());
                 String bstr = new String(bytes, 0, bytes.length, "UTF8");
                 System.out.println("bytes is \"" + bstr + "\" len = " + bytes.length);
@@ -999,11 +1047,13 @@ class UTF8CharPointer extends CharPointer {
 
             for (charIndex=0, byteIndex=0; charIndex < charToByteIndex.length; charIndex++) {
                 charToByteIndex[charIndex] = byteIndex;
-                if (array[charIndex] == '\0') {
+
+                c = array[charIndex];
+                if (c == '\0') {
                     // Ignore encoding issues related to null byte in Java vs UTF8
                     bytesThisChar = 1;
                 } else {
-                    bytesThisChar = StringCmd.Utf8Count("" + array[charIndex]);
+                    bytesThisChar = StringCmd.Utf8Count(c);
                 }
                 byteIndex += bytesThisChar;
             }
@@ -1029,12 +1079,13 @@ class UTF8CharPointer extends CharPointer {
                 }
                 byteToCharIndex[byteIndex] = charIndex;
 
+                c = array[charIndex];
                 if (bytesThisChar == 0) {
-                    if (array[charIndex] == '\0') {
+                    if (c == '\0') {
                         // Ignore encoding issues related to null byte in Java vs UTF8
                         bytesThisChar = 1;
                     } else {
-                        bytesThisChar = StringCmd.Utf8Count("" + array[charIndex]);
+                        bytesThisChar = StringCmd.Utf8Count(c);
                     }
                 }
             }
@@ -1046,6 +1097,11 @@ class UTF8CharPointer extends CharPointer {
     // Return bytes in the given byte range as a String
 
     String getByteRangeAsString(int byteIndex, int byteLength) {
+        if (bytes == null) {
+            // One byte for each character
+            return orig.substring(byteIndex, byteIndex + byteLength);
+        }
+
         try {
             return new String(bytes, byteIndex, byteLength, "UTF8");
         } catch (java.io.UnsupportedEncodingException ex) {
@@ -1056,6 +1112,11 @@ class UTF8CharPointer extends CharPointer {
     // Convert char index into a byte index.
 
     int getByteIndex(int charIndex) {
+        if (bytes == null) {
+            // One byte for each character
+            return charIndex;
+        }
+
         return charToByteIndex[charIndex];
     }
 
@@ -1063,24 +1124,44 @@ class UTF8CharPointer extends CharPointer {
     // bytes in the range.
 
     int getByteRange(int charIndex, int charRange) {
+        if (bytes == null) {
+            // One byte for each character
+            return charRange;
+        }
+
         return charToByteIndex[charIndex + charRange] - charToByteIndex[charIndex];
     }
 
     // Get number of bytes for the given char index
 
     int getBytesAtIndex(int charIndex) {
+        if (bytes == null) {
+            // One byte for each character
+            return 1;
+        }
+
         return charToByteIndex[charIndex+1] - charToByteIndex[charIndex];
     }
 
     // Return length of script in bytes
 
     int getByteLength() {
+        if (bytes == null) {
+            // One byte for each character
+            return orig.length();
+        }
+
         return bytes.length - 1;
     }
 
     // Given a byte index, return the char index.
 
     int getCharIndex(int byteIndex) {
+        if (bytes == null) {
+            // One byte for each character
+            return byteIndex;
+        }
+
         return byteToCharIndex[byteIndex];
     }
 
@@ -1088,10 +1169,25 @@ class UTF8CharPointer extends CharPointer {
     // chars in the range.
 
     int getCharRange(int byteIndex, int byteRange) {
+        if (bytes == null) {
+            // One byte for each character
+            return byteRange;
+        }
+
         return byteToCharIndex[byteIndex + byteRange] - byteToCharIndex[byteIndex];
     }
 
+    // This API is used for debugging, it would never be invoked as part
+    // of the InternalRep interface since a TclObject would always have
+    // a string rep when the  UTF8CharPointer is created and it should
+    // never be invalidated.
+
     public String toString() {
+        if (bytes == null) {
+            // One byte for each character
+            return "1 byte for each character with length " + orig.length();
+        }
+
         StringBuffer sb = new StringBuffer();
 
         int max_char = array.length-1;
@@ -1130,6 +1226,18 @@ class UTF8CharPointer extends CharPointer {
         return sb.toString();
     }
 
-}
+    // InternalRep interfaces
 
+    // Called to free any storage for the type's internal rep.
+
+    public void dispose() {}
+
+    // duplicate
+
+    public InternalRep duplicate() {
+        // A UTF8CharPointer is read-only, so just dup the ref
+        return this;
+    }
+
+}
 
