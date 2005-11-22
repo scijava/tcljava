@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Util.java,v 1.18 2005/11/19 01:09:06 mdejong Exp $
+ * RCS: @(#) $Id: Util.java,v 1.19 2005/11/22 22:10:02 mdejong Exp $
  */
 
 package tcl.lang;
@@ -1054,12 +1054,14 @@ throws TclException
  *
  * findElement --
  *
- *	Given a pointer into a Tcl list, locate the first (or next)
+ *	Given a String that contains a Tcl list, locate the first (or next)
  *	element in the list.
  *
  * Results:
- *	The string value of the element and the index of the character
- *	immediately behind the element.
+ *	This method returns true and populates the FindElemResult if an
+ *	element was found. If no element was found, false will be returned.
+ *	The FindElemResult contains the index of the first and last characters
+ *	of the element and the string value of the element.
  *
  * Side effects:
  *	None.
@@ -1067,21 +1069,22 @@ throws TclException
  *----------------------------------------------------------------------
  */
 
-static final FindElemResult
+static final
+boolean
 findElement(
     Interp interp,		// Current interpreter. If non-null, is used
 				// to store error messages.
     String s,			// The string to locate an element.
     int i,			// The index inside s to start locating an
 				// element.
-    int len)			// The length of the string.
-throws
-    TclException
+    int len,			// The length of the string.
+    FindElemResult fer)		// The result object to populate.
+        throws TclException
 {
     int openBraces = 0;
     boolean inQuotes = false;
     char c;
-    int elemStart;
+    int elemStart, elemEnd;
     int size = 0;
 
     while (i<len && (((c = s.charAt(i)) == ' ') ||
@@ -1089,7 +1092,7 @@ throws
 	i++;
     }
     if (i >= len) {
-	return null;
+	return false;
     }
     c = s.charAt(i);
     if (c == '{') {
@@ -1099,12 +1102,23 @@ throws
 	inQuotes = true;
 	i++;
     }
-    StringBuffer sbuf = new StringBuffer();
+
+    // An element typically consist of a range of characters
+    // that are a substring of the string s, so s.substring()
+    // can be used in most cases. If an element requires
+    // backslashes then use a StringBuffer.
+
+    StringBuffer sbuf = null;
+    int simpleStart, simpleEnd = -1;
+    String elem;
+
     elemStart = i;
+    simpleStart = i;
 
     while (true) {
 	if (i >= len) {
-	    size = (i - elemStart);
+	    elemEnd = i;
+	    size = (elemEnd - elemStart);
 	    if (openBraces != 0) {
 		throw new TclException(interp,
 			"unmatched open brace in list");
@@ -1112,7 +1126,14 @@ throws
 		throw new TclException(interp, 
 			"unmatched open quote in list");
 	    }
-	    return new FindElemResult(elemStart, i, sbuf.toString(), size);
+	    if (sbuf == null) {
+	        elem = s.substring(elemStart, elemEnd);
+	    } else {
+	        sbuf.append( s.substring(simpleStart, elemEnd) );
+	        elem = sbuf.toString();
+	    }
+	    fer.update(elemStart, elemEnd, elem, size);
+	    return true;
 	}
 
 	c = s.charAt(i);
@@ -1124,7 +1145,6 @@ throws
 	    if (openBraces != 0) {
 		openBraces++;
 	    }
-	    sbuf.append(c);
 	    i++;
 	    break;
 
@@ -1133,9 +1153,17 @@ throws
 
 	case '}':
 	    if (openBraces == 1) {
-		size = (i - elemStart);
+		elemEnd = i;
+		size = (elemEnd - elemStart);
 		if (i == len-1 || Character.isWhitespace(s.charAt(i+1))) {
-		    return new FindElemResult(elemStart, i+1, sbuf.toString(), size);
+		    if (sbuf == null) {
+		        elem = s.substring(elemStart, elemEnd);
+		    } else {
+		        sbuf.append( s.substring(simpleStart, elemEnd) );
+		        elem = sbuf.toString();
+		    }
+		    fer.update(elemStart, elemEnd+1, elem, size);
+		    return true;
 		} else {
 		    int errEnd;
 		    for (errEnd = i+1; errEnd<len; errEnd++) {
@@ -1151,7 +1179,6 @@ throws
 	    } else if (openBraces != 0) {
 		openBraces--;
 	    }
-	    sbuf.append(c);
 	    i++;
 	    break;
 
@@ -1161,11 +1188,15 @@ throws
 	case '\\':
 	    BackSlashResult bs = Interp.backslash(s, i, len);
 	    if (openBraces > 0) {
-		// Quotes are ignored in brace-quoted stuff
+		// Backslashes are ignored in brace-quoted stuff
 
-		sbuf.append(s.substring(i, bs.nextIndex));
 	    } else {
+		if (sbuf == null) {
+		    sbuf = new StringBuffer();
+		}
+		sbuf.append( s.substring(simpleStart, i) );
 		sbuf.append(bs.c);
+		simpleStart = bs.nextIndex;
 	    }
 	    i = bs.nextIndex;
 
@@ -1180,10 +1211,17 @@ throws
 	case '\r':
 	case '\t':
 	    if ((openBraces == 0) && !inQuotes) {
-		size = (i - elemStart);
-		return new FindElemResult(elemStart, i+1, sbuf.toString(), size);
+		elemEnd = i;
+		size = (elemEnd - elemStart);
+		if (sbuf == null) {
+		    elem = s.substring(elemStart, elemEnd);
+		} else {
+		    sbuf.append( s.substring(simpleStart, elemEnd) );
+		    elem = sbuf.toString();
+		}
+		fer.update(elemStart, elemEnd, elem, size);
+		return true;
 	    } else {
-		sbuf.append(c);
 		i++;
 	    }
 	    break;
@@ -1192,9 +1230,17 @@ throws
 
 	case '"':
 	    if (inQuotes) {
-		size = (i - elemStart);
+		elemEnd = i;
+		size = (elemEnd - elemStart);
 		if (i == len-1 || Character.isWhitespace(s.charAt(i+1))) {
-		    return new FindElemResult(elemStart, i+1, sbuf.toString(), size);
+		    if (sbuf == null) {
+		        elem = s.substring(elemStart, elemEnd);
+		    } else {
+		        sbuf.append( s.substring(simpleStart, elemEnd) );
+		        elem = sbuf.toString();
+		    }
+		    fer.update(elemStart, elemEnd+1, elem, size);
+		    return true;
 		} else {
 		    int errEnd;
 		    for (errEnd = i+1; errEnd<len; errEnd++) {
@@ -1208,13 +1254,11 @@ throws
 			    "\" instead of space");
 		}
 	    } else {
-		sbuf.append(c);
 		i++;
 	    }
 	    break;
 
 	default:
-	    sbuf.append(c);
 	    i++;
 	}
     }

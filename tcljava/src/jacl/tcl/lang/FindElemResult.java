@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FindElemResult.java,v 1.3 2005/10/26 19:17:08 mdejong Exp $
+ * RCS: @(#) $Id: FindElemResult.java,v 1.4 2005/11/22 22:10:02 mdejong Exp $
  *
  */
 
@@ -39,32 +39,33 @@ int size;
 // The element itself.
 
 String elem;
-
 
 /*
  *----------------------------------------------------------------------
  *
- * FindElemResult --
+ * update --
  *
- *	Construct a new FindElemResult object.
+ *	Update a FindElemResult, this method is used only in
+ *	the Util.findElement() API.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	The member fields are initialized.
+ *	The member fields are updated.
  *
  *----------------------------------------------------------------------
  */
 
-FindElemResult(
+void
+update(
     int start,			// Initial value for elemStart.
     int end,			// Initial value for elemEnd.
     String elem,		// Initial value for elem.
     int size)			// Initial value for size.
 {
-    elemStart = start;
-    elemEnd = end;
+    this.elemStart = start;
+    this.elemEnd = end;
     this.elem = elem;
     this.size = size;
 }

@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclList.java,v 1.7 2005/11/22 01:46:21 mdejong Exp $
+ * RCS: @(#) $Id: TclList.java,v 1.8 2005/11/22 22:10:02 mdejong Exp $
  *
  */
 
@@ -183,10 +183,10 @@ public class TclList implements InternalRep {
 	    throws TclException {
 	int len = s.length();
 	int i = 0;
+	FindElemResult res = new FindElemResult();
 
 	while (i < len) {
-	    FindElemResult res = Util.findElement(interp, s, i, len);
-	    if (res == null) {
+	    if (!Util.findElement(interp, s, i, len, res)) {
 		break;
 	    } else {
 		TclObject tobj = TclString.newInstance(res.elem);

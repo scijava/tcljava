@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: parseCmd.test,v 1.3 2005/11/04 21:02:14 mdejong Exp $
+# RCS: @(#) $Id: parseCmd.test,v 1.4 2005/11/22 22:10:05 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -99,6 +99,123 @@ test parseCmd-7.0.2 {parse list elements} {
     set range {1 5}
     parse list $script $range
 } {{1 1} {3 1} {5 1}}
+
+test parseCmd-7.0.3 {parse list elements} {
+    set script {{A}}
+    set range {0 end}
+    parse list $script $range
+} {{0 3}}
+
+test parseCmd-7.0.4 {parse list elements} {
+    set script {{A}}
+    set range {1 1}
+    parse list $script $range
+} {{1 1}}
+
+test parseCmd-7.0.5 {parse list elements} {
+    set script {{A}}
+    set range {1 2}
+    parse list $script $range
+} {{1 2}}
+
+test parseCmd-7.0.6 {parse list elements} {
+    set script {{A B}}
+    set range {0 end}
+    parse list $script $range
+} {{0 5}}
+
+test parseCmd-7.0.7 {parse list elements} {
+    set script {{A B}}
+    set range {1 3}
+    parse list $script $range
+} {{1 1} {3 1}}
+
+test parseCmd-7.0.8 {parse list elements} {
+    set script {{A\tB}}
+    set range {0 end}
+    parse list $script $range
+} {{0 6}}
+
+test parseCmd-7.0.9 {parse list elements} {
+    set script {{A\tB}}
+    set range {1 4}
+    parse list $script $range
+} {{1 4}}
+
+test parseCmd-7.0.10 {parse list elements} {
+    set script "\{A\tB\}"
+    set range {1 4}
+    parse list $script $range
+} {{1 1} {3 2}}
+
+test parseCmd-7.0.11 {parse list elements} {
+    set script "\"A\tB\""
+    set range {1 4}
+    parse list $script $range
+} {{1 1} {3 2}}
+
+test parseCmd-7.0.12 {parse list elements} {
+    set script {A\u00FF B C}
+    set range {0 end}
+    parse list $script $range
+} {{0 7} {8 1} {10 1}}
+
+test parseCmd-7.0.13 {parse list elements} {
+    set script {A\u00FF }
+    set range {0 end}
+    parse list $script $range
+} {{0 7}}
+
+test parseCmd-7.0.14 {parse list elements} {
+    set script {A\u00FF }
+    lrange $script 0 end
+} "A\u00FF"
+
+test parseCmd-7.0.15 {parse list elements} {
+    set script {A\u00FF B}
+    lrange $script 0 end
+} "A\u00FF B"
+
+test parseCmd-7.0.16 {parse list elements} {
+    set script {A "B" {C} D}
+    set range {0 end}
+    parse list $script $range
+} {{0 1} {2 3} {6 3} {10 1}}
+
+test parseCmd-7.0.17 {parse list elements} {
+    set script {A "B C" D}
+    set range {0 end}
+    parse list $script $range
+} {{0 1} {2 5} {8 1}}
+
+test parseCmd-7.0.18 {parse list elements} {
+    set script {A B\tC {D E}}
+    set range {0 end}
+    parse list $script $range
+} {{0 1} {2 4} {7 5}}
+
+test parseCmd-7.0.19 {parse list elements} {
+    set script {A B\tC {D E}}
+    lrange $script 0 end
+} [list A "B\tC" {D E}]
+
+test parseCmd-7.0.20 {parse list elements} {
+    set script {A B\tC "D E"}
+    set range {0 end}
+    parse list $script $range
+} {{0 1} {2 4} {7 5}}
+
+test parseCmd-7.0.21 {parse list elements} {
+    set script {A B\tC D}
+    set range {0 end}
+    parse list $script $range
+} {{0 1} {2 4} {7 1}}
+
+test parseCmd-7.0.22 {parse list elements} {
+    set script {A B\tC {D}}
+    set range {0 end}
+    parse list $script $range
+} {{0 1} {2 4} {7 3}}
 
 
 

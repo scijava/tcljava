@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: TclParser.java,v 1.4 2005/11/22 02:06:35 mdejong Exp $
+ * RCS: @(#) $Id: TclParser.java,v 1.5 2005/11/22 22:10:02 mdejong Exp $
  */
 
 package tcl.lang;
@@ -330,8 +330,9 @@ ParseList(
     String list;
     int elementIndex;
     int listIndex, prevListIndex, lastListIndex;
-    FindElemResult fer;
+    FindElemResult fer = new FindElemResult();
     int charIndex, charLength, charListOffset;
+    boolean found;
 
     charIndex = script.getCharIndex(index);
     charListOffset = (charIndex - script.index);
@@ -347,8 +348,8 @@ ParseList(
 	prevListIndex = listIndex;
 
 	try {
-	    fer = Util.findElement(interp,
-	        list, listIndex, charLength);
+	    found = Util.findElement(interp,
+	        list, listIndex, charLength, fer);
         } catch (TclException te) {
 	    TclObject errorCode = TclList.newInstance();
 	    TclList.append(interp, errorCode,
@@ -364,7 +365,7 @@ ParseList(
 	    interp.setErrorCode(errorCode);
 	    throw te;
 	}
-	if (fer == null) {
+	if (!found) {
 	    break;
 	}
 	listIndex = fer.elemEnd;

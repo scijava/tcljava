@@ -1,3 +1,27 @@
+2005-11-22  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/jacl/tcl/lang/FindElemResult.java (update):
+        Create an update() method so that an existing
+        FindElemResult can be populated with new values
+        instead of allocating a new object each time.
+        * src/jacl/tcl/lang/TclList.java (splitList):
+        When splitting a String into a TclList, reuse
+        a FindElemResult object to avoid lots of
+        allocations.
+        * src/jacl/tcl/lang/TclParser.java (ParseList):
+        Update findElement() caller.
+        * src/jacl/tcl/lang/Util.java (findElement):
+        Update findElement API so that it accepts a
+        FindElemResult ref and populates it with the
+        results of the invocation. Also, rewrite the
+        element logic so that a tmp StringBuffer is
+        only created when backslash subst are needed.
+        Otherwise, invoke substr() on the original
+        String to get the element String. This is
+        faster and avoids object allocations.
+        * tests/tclparser/parseCmd.test: Add list
+        parse tests.
+
 2005-11-21  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/jacl/tcl/lang/Interp.java: Create a
