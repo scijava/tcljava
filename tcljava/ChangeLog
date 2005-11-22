@@ -1,5 +1,16 @@
 2005-11-22  Mo DeJong  <mdejong@users.sourceforge.net>
 
+        * src/jacl/tcl/lang/Interp.java: Space fixup.
+        * src/jacl/tcl/lang/NamespaceCmd.java (inscopeCmd):
+        Pass a TclObject to eval, preserve() and
+        release() argument objects.
+        * src/jacl/tcl/lang/Parser.java (evalObjv, eval2):
+        Use grabObjv() and releaseObjv() to get a TclObject[]
+        object in the "unknown" command case. Fixup space
+        issues in a number of places.
+
+2005-11-22  Mo DeJong  <mdejong@users.sourceforge.net>
+
         * src/jacl/tcl/lang/FindElemResult.java (update):
         Create an update() method so that an existing
         FindElemResult can be populated with new values

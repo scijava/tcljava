@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Parser.java,v 1.25 2005/11/22 01:59:08 mdejong Exp $
+ * RCS: @(#) $Id: Parser.java,v 1.26 2005/11/22 22:28:04 mdejong Exp $
  */
 
 package tcl.lang;
@@ -755,22 +755,21 @@ static void
 evalObjv(
     Interp interp,		// Interpreter in which to evaluate the
 				// command.  Also used for error
-				// reporting. 
+				// reporting.
     TclObject[] objv,        	// An array of pointers to objects that are
-				// the words that make up the command. 
-
-    int length,			// Number of bytes in command; if -1, all
-				// characters up to the first null byte are
-				// used. 
+				// the words that make up the command.
+    int length,			// Number of characters in command; if -1, all
+				// characters up to the first null character are
+				// used. Currently unused.
     int flags)			// Collection of OR-ed bits that control
-				// the evaluation of the script.  Only
+				// the evaluation of the script. Only
 				// TCL.EVAL_GLOBAL is currently
-				// supported. 
-throws 
+				// supported.
+throws
     TclException
 {
     Command cmd;
-    TclObject[] newObjv;
+    TclObject[] newObjv = null;
     int i;
     CallFrame savedVarFrame;	// Saves old copy of interp.varFrame
 				// in case TCL.EVAL_GLOBAL was set.
@@ -779,9 +778,9 @@ throws
     if (objv.length == 0) {
 	return;
     }
-    
+
     // If the interpreter was deleted, return an error.
-    
+
     if (interp.deleted){
 	interp.setResult("attempt to call eval in deleted interpreter");
 	interp.setErrorCode(TclString.newInstance(
@@ -804,10 +803,10 @@ throws
 	// word array with "unknown" as the first word and the original
 	// command words as arguments.  Then call ourselves recursively
 	// to execute it.
-    
+
 	cmd = interp.getCommand(objv[0].toString());
 	if (cmd == null) {
-	    newObjv = new TclObject[objv.length + 1];
+	    newObjv = Parser.grabObjv(interp, objv.length + 1);
 	    for (i = (objv.length - 1); i >= 0; i--) {
 		newObjv[i+1] = objv[i];
 	    }
@@ -821,6 +820,7 @@ throws
 		evalObjv(interp, newObjv, length, 0);
 	    }
 	    newObjv[0].release();
+	    Parser.releaseObjv(interp, newObjv);
 	    return;
 	}
 
@@ -839,7 +839,6 @@ throws
 	//if (AsyncReady()) {
 	//    code = AsyncInvoke(interp, code);
 	//}
-
     } finally {
 	interp.varFrame = savedVarFrame;
 	interp.nestLevel--;
@@ -1204,15 +1203,15 @@ throws
 
 	if (parse.numWords > 0 && interp.noEval == 0) {	    
 	    // Generate an array of objects for the words of the command.
-	    
+
 	    try {
 		tokenIndex = 0;
 		token = parse.getToken(tokenIndex);
-				
+
 		// Test to see if new space needs to be allocated.  If objv
 		// is the EXACT size of parse.numWords, then no allocation
 		// needs to be performed.
-		 
+
 		if (objv.length != parse.numWords) {
                   //System.out.println("need new size " + objv.length);
 		  releaseObjv(interp, objv); //let go of resource
@@ -1232,22 +1231,21 @@ throws
 		    tokenIndex += (token.numComponents + 1);
 		    token = parse.getToken(tokenIndex);
 		}
-		
+
 		// Execute the command and free the objects for its words.
 		try {
 		    evalObjv(interp, objv, /*src,*/ charsLeft, 0);
 		} catch (StackOverflowError e) {
 		    Parser.infiniteLoopException(interp);
 		}
-
 	    } catch (TclException e) {
 		// Generate various pieces of error information, such 
 		// as the line number where the error occurred and 
 		// information to add to the errorInfo variable.  Then 
 		// free resources that had been allocated
 		// to the command.
-		
-		if ( e.getCompletionCode()== TCL.ERROR &&
+
+		if ( e.getCompletionCode() == TCL.ERROR &&
 		     !(interp.errAlreadyLogged)) {
 		    commandLength = parse.commandSize;
 
@@ -2638,7 +2636,7 @@ static TclObject[] grabObjv(Interp interp, int size) {
 }
 
 
-static void releaseObjv(Interp interp, TclObject[] objv) { 
+static void releaseObjv(Interp interp, TclObject[] objv) {
   final int size = objv.length;
   
   if (size >= OBJV_CACHE_MAX) {

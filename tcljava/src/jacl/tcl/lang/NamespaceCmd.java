@@ -15,7 +15,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: NamespaceCmd.java,v 1.18 2005/11/21 01:14:17 mdejong Exp $
+ * RCS: @(#) $Id: NamespaceCmd.java,v 1.19 2005/11/22 22:28:04 mdejong Exp $
  */
 
 package tcl.lang;
@@ -830,7 +830,7 @@ public class NamespaceCmd implements InternalRep, Command {
 	    } else {
 		TclObject[] concatObjv = new TclObject[2];
 		TclObject list;
-		String cmd;
+		TclObject cmd;
 
 		list = TclList.newInstance();
 		for (i = 4;  i < objv.length;  i++) {
@@ -844,9 +844,13 @@ public class NamespaceCmd implements InternalRep, Command {
 
 		concatObjv[0] = objv[3];
 		concatObjv[1] = list;
-		cmd = Util.concat(0, 1, concatObjv).toString();
-		interp.eval(cmd); // do not pass TCL_EVAL_DIRECT, for compiler only
-		list.release();   // we're done with the list object
+		list.preserve();
+		cmd = Util.concat(0, 1, concatObjv);
+		try {
+		    interp.eval(cmd, 0); // do not pass TCL_EVAL_DIRECT, for compiler only
+		} finally {
+		    list.release();   // we're done with the list object
+		}
 	    }
 	} catch (TclException ex) {
 	    if (ex.getCompletionCode() == TCL.ERROR) {
