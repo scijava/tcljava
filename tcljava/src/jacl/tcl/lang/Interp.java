@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.60 2005/11/21 02:02:41 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.61 2005/11/22 01:46:21 mdejong Exp $
  *
  */
 
@@ -2446,6 +2446,15 @@ throws
 
 public void 
 eval(
+    String script)	// A script to evaluate.
+throws 
+    TclException 	// A standard Tcl exception.
+{
+    eval(script, 0);
+}
+
+public void 
+eval(
     String string,	// A script to evaluate.
     int flags)		// Flags, either 0 or TCL.EVAL_GLOBAL
 throws 
@@ -2487,35 +2496,6 @@ throws
 /*
  *----------------------------------------------------------------------
  *
- * eval --
- *
- *	Execute a Tcl command in a string.
- *
- * Results:
- *	The return value is void.  However, a standard Tcl Exception
- *	may be generated.  The interpreter's result object will contain
- *	the value of the evaluation but will persist only until the next 
- *	call to one of the eval functions.
- *
- * Side effects:
- *	The side effects will be determined by the exact Tcl code to be 
- *	evaluated.
- *
- *----------------------------------------------------------------------
- */
-
-public void 
-eval(
-    String script)	// A script to evaluate.
-throws 
-    TclException 	// A standard Tcl exception.
-{
-    eval(script, 0);
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * Tcl_EvalObjEx -> eval
  *
  *	Execute a Tcl command in a TclObject.
@@ -2540,19 +2520,113 @@ eval(
 throws 
     TclException 	// A standard Tcl exception.
 {
+    boolean isPureList = false;
+
+    if (tobj.hasNoStringRep() && (tobj.getInternalRep() instanceof TclList)) {
+        isPureList = true;
+    }
+
+    // Non-optimized eval(), used when tobj is not a pure list.
+
+    if (!isPureList) {
+        tobj.preserve();
+        try {
+            eval(tobj.toString(), flags);
+        } finally {
+            tobj.release();
+        }
+        return;
+    }
+
+    // In the pure list case, use an optimized implementation that
+    // skips the costly reparse operation. In the pure list case
+    // the TclObject arguments to the command can be used as is
+    // by invoking Parse.evalObjv();
+
+    int evalFlags = this.evalFlags;
+    this.evalFlags &= ~Parser.TCL_ALLOW_EXCEPTIONS;
+    TclObject[] objv = null;
+    boolean invokedEval = false;
+
     tobj.preserve();
-
-    // FIXME: If the TclObject is already a pure Tcl list, we should have
-    // an optimized API that would allow invocation of the first element
-    // directly without having to reparse and convert back to TclObjects.
-    // Jacl seems to lack this currently and it can be a serious performance
-    // issue.
-
-    // Call Parser.evalObjv() here like Tcl_EvalObjEx does
-
     try {
-        eval(tobj.toString(), flags);
+        // Grab a TclObject[] from the cache and populate
+        // it with the TclObject refs from the TclList.
+        // Increment the refs in case tobj loses the
+        // TclList internal rep during the evaluation.
+
+        final int llength = TclList.getLength(this, tobj);
+        objv = Parser.grabObjv(this, llength);
+        java.util.Arrays.fill(objv, null);
+        for (int i=0; i < llength; i++) {
+            objv[i] = TclList.index(this, tobj, i);
+            objv[i].preserve();
+        }
+
+        invokedEval = true;
+        Parser.evalObjv(this, objv, -1, flags);
+    } catch (StackOverflowError e) {
+        Parser.infiniteLoopException(this);
+    } catch (TclException e) {
+        int result = e.getCompletionCode();
+
+        // Generate various pieces of error information, such 
+        // as the line number where the error occurred and 
+        // information to add to the errorInfo variable.  Then 
+        // free resources that had been allocated
+        // to the command.
+
+        if ( invokedEval &&
+                result == TCL.ERROR &&
+                !(this.errAlreadyLogged)) {
+            StringBuffer cmd_strbuf = new StringBuffer(64);
+
+            for (int i=0; i < objv.length; i++) {
+                Util.appendElement(this, cmd_strbuf, objv[i].toString());
+            }
+
+            String cmd_str = cmd_strbuf.toString();
+            char[] script_array = cmd_str.toCharArray();
+            int script_index = 0;
+            int command_start = 0;
+            int command_length = cmd_str.length();
+            Parser.logCommandInfo(this, script_array, script_index,
+                command_start, command_length, e);
+        }
+
+        // Process results when the next level is zero
+
+        if (nestLevel != 0) {
+            throw e;
+        }
+
+        // Update the interpreter's evaluation level count. If we are again at
+        // the top level, process any unusual return code returned by the
+        // evaluated code. Note that we don't propagate an exception that
+        // has a TCL.RETURN error code when updateReturnInfo() returns TCL.OK.
+
+        if (result == TCL.RETURN) {
+            result = updateReturnInfo();
+        }
+        if (result != TCL.OK && result != TCL.ERROR
+            && (evalFlags & Parser.TCL_ALLOW_EXCEPTIONS) == 0) {
+            processUnexpectedResult(result);
+        }
+        if (result != TCL.OK) {
+            e.setCompletionCode(result);
+            throw e;
+        }
     } finally {
+        if (objv != null) {
+            for (int i=0; i < objv.length; i++) {
+                TclObject obj = objv[i];
+                if (obj != null) {
+                    obj.release();
+                    objv[i] = null;
+                }
+            }
+            Parser.releaseObjv(this, objv);
+        }
         tobj.release();
     }
 }
@@ -2599,11 +2673,9 @@ throws
 	TclList.append(this, cmd, TclString.newInstance("history"));
 	TclList.append(this, cmd, TclString.newInstance("add"));
 	TclList.append(this, cmd, script);
-	cmd.preserve();
 	eval(cmd, TCL.EVAL_GLOBAL);
     } catch (Exception e) {
-    } finally {
-	cmd.release();
+        // No-op
     }
 
     // Execute the command.
@@ -2650,15 +2722,13 @@ throws
     try {
 	pushDebugStack(s, 1);
 	eval(fileContent, 0);
-    }
-    catch( TclException e) {
+    } catch (TclException e) {
 	if( e.getCompletionCode() == TCL.ERROR ) {
 	    addErrorInfo("\n    (file \"" + s + "\" line " 
 			 + errorLine + ")");
 	}
 	throw e;
-    }
-    finally {
+    } finally {
 	scriptFile = oldScript;
 	popDebugStack();
     }

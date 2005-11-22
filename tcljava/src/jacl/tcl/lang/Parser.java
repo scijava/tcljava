@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Parser.java,v 1.23 2005/11/18 22:33:29 mdejong Exp $
+ * RCS: @(#) $Id: Parser.java,v 1.24 2005/11/22 01:46:21 mdejong Exp $
  */
 
 package tcl.lang;
@@ -772,8 +772,8 @@ throws
     Command cmd;
     TclObject[] newObjv;
     int i;
-    CallFrame savedVarFrame;	//Saves old copy of interp.varFrame
-                                // in case TCL.EVAL_GLOBAL was set.
+    CallFrame savedVarFrame;	// Saves old copy of interp.varFrame
+				// in case TCL.EVAL_GLOBAL was set.
 
     interp.resetResult();
     if (objv.length == 0) {
@@ -797,6 +797,7 @@ throws
 		"too many nested calls to eval (infinite loop?)");
     }
     interp.nestLevel++;
+    savedVarFrame = interp.varFrame;
 
     try {
 	// Find the procedure to execute this command. If there isn't one,
@@ -823,18 +824,17 @@ throws
 	    newObjv[0].release();
 	    return;
 	}
-    
+
 	// Finally, invoke the Command's cmdProc.
-	
+
 	interp.cmdCount++;
-	savedVarFrame = interp.varFrame;
+
 	if ((flags & TCL.EVAL_GLOBAL) != 0) {
 	    interp.varFrame = null;
 	}
-	
+
 	cmd.cmdProc(interp, objv);
-	interp.varFrame = savedVarFrame;
-	
+
 	// (TODO)
 	//
 	//if (AsyncReady()) {
@@ -842,6 +842,7 @@ throws
 	//}
 
     } finally {
+	interp.varFrame = savedVarFrame;
 	interp.nestLevel--;
     }
 }

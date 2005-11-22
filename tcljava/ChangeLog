@@ -1,3 +1,25 @@
+2005-11-21  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/jacl/tcl/lang/Interp.java (eval): When
+        passing a pure Tcl list to eval, skip the
+        parsing step and just invoke evalObjv()
+        directly. This provides a significant
+        performance improvement and works like the
+        C version of Tcl.
+        * src/jacl/tcl/lang/Namespace.java
+        (resetShadowedCmdRefs): Optimize the common
+        case of a command in the global namespace
+        by avoiding object allocation unless needed.
+        * src/jacl/tcl/lang/Parser.java (savedVarFrame):
+        Save var frame before try block and restore it
+        in a finally block so that restoring works
+        in the TclException case. This is needed for
+        the new Interp.eval() implementation.
+        * src/jacl/tcl/lang/TclList.java (index):
+        Optimize the TclList.index() method so that
+        it does not call setListFromAny() unless needed.
+        * tests/tcl/eval.test: Test new eval implementation.
+
 2005-11-20  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/jacl/tcl/lang/Interp.java (createCommand,

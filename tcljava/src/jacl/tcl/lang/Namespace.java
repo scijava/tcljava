@@ -16,7 +16,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: Namespace.java,v 1.4 2005/11/21 02:02:41 mdejong Exp $
+ * RCS: @(#) $Id: Namespace.java,v 1.5 2005/11/22 01:46:21 mdejong Exp $
  */
 
 package tcl.lang;
@@ -2064,7 +2064,7 @@ public class Namespace {
 
         // Array used to hold the trail list.
 
-        Namespace[] trailArray = new Namespace[NUM_TRAIL_ELEMS];
+        Namespace[] trailArray = null;
         int trailFront = -1;
         int trailSize = NUM_TRAIL_ELEMS;
 
@@ -2131,6 +2131,10 @@ public class Namespace {
 
              // Insert ns at the front of the trail list: i.e., at the end
              // of the trail array.
+
+             if (trailArray == null) {
+                 trailArray = new Namespace[NUM_TRAIL_ELEMS];
+             }
 
              trailFront++;
              if (trailFront == trailSize) {

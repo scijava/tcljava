@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclList.java,v 1.6 2005/09/21 21:22:56 mdejong Exp $
+ * RCS: @(#) $Id: TclList.java,v 1.7 2005/11/22 01:46:21 mdejong Exp $
  *
  */
 
@@ -66,7 +66,6 @@ public class TclList implements InternalRep {
 
     /**
      * Called to free any storage for the type's internal rep.
-     * @param obj the TclObject that contains this internalRep.
      */
     public void dispose() {
 	int size = vector.size();
@@ -283,9 +282,13 @@ public class TclList implements InternalRep {
      */
     public static final TclObject index(Interp interp, TclObject tobj,
 	    int index) throws TclException {
-	setListFromAny(interp, tobj);
+	InternalRep irep = tobj.getInternalRep();
+	if (! (irep instanceof TclList)) {
+	    setListFromAny(interp, tobj);
+	    irep = tobj.getInternalRep();
+	}
 
-	TclList tlist = (TclList) tobj.getInternalRep();
+	TclList tlist = (TclList) irep;
 	if (index < 0 || index >= tlist.vector.size()) {
 	    return null;
 	} else {
