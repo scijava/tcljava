@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Parser.java,v 1.24 2005/11/22 01:46:21 mdejong Exp $
+ * RCS: @(#) $Id: Parser.java,v 1.25 2005/11/22 01:59:08 mdejong Exp $
  */
 
 package tcl.lang;
@@ -793,8 +793,7 @@ throws
     // it's probably because of an infinite loop somewhere.
 
     if (interp.nestLevel >= interp.maxNestingDepth) {
-	throw new TclException(interp, 
-		"too many nested calls to eval (infinite loop?)");
+	Parser.infiniteLoopException(interp);
     }
     interp.nestLevel++;
     savedVarFrame = interp.varFrame;
@@ -1238,9 +1237,7 @@ throws
 		try {
 		    evalObjv(interp, objv, /*src,*/ charsLeft, 0);
 		} catch (StackOverflowError e) {
-		    interp.setResult("too many nested calls" +
-			    " to eval (infinite loop?)");
-		    throw new TclException(TCL.ERROR); 
+		    Parser.infiniteLoopException(interp);
 		}
 
 	    } catch (TclException e) {
@@ -2617,7 +2614,7 @@ static void init(Interp interp) {
 }
 
 
-private static TclObject[] grabObjv(Interp interp, int size) {
+static TclObject[] grabObjv(Interp interp, int size) {
 
   if (size >= OBJV_CACHE_MAX) {
     //System.out.println("allocate for big objv of size " + size);
@@ -2641,7 +2638,7 @@ private static TclObject[] grabObjv(Interp interp, int size) {
 }
 
 
-private static void releaseObjv(Interp interp, TclObject[] objv) { 
+static void releaseObjv(Interp interp, TclObject[] objv) { 
   final int size = objv.length;
   
   if (size >= OBJV_CACHE_MAX) {
@@ -2666,5 +2663,13 @@ private static void releaseObjv(Interp interp, TclObject[] objv) {
   return;
 }
 
+// Raise an infinite loop TclException
+
+static void infiniteLoopException(Interp interp)
+        throws TclException
+{
+    throw new TclException(interp, 
+        "too many nested calls to eval (infinite loop?)");
+}
 
 } // end class Parser

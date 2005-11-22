@@ -1,5 +1,15 @@
 2005-11-21  Mo DeJong  <mdejong@users.sourceforge.net>
 
+        * src/jacl/tcl/lang/Parser.java (grabObjv,
+        releaseObjv, infiniteLoopException): Fixup
+        last patch which was only half applied. Make
+        grabObjv and releaseObjv package scoped so
+        that they can be used in the Interp class.
+        Create infiniteLoopException helper method
+        to raise loop error with specific message.
+
+2005-11-21  Mo DeJong  <mdejong@users.sourceforge.net>
+
         * src/jacl/tcl/lang/Interp.java (eval): When
         passing a pure Tcl list to eval, skip the
         parsing step and just invoke evalObjv()
