@@ -1,3 +1,15 @@
+2005-11-23  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * configure:
+        * configure.in: Increase max heap from 22 to
+        32 megs to avoid out of memory errors.
+        * src/jacl/tcl/lang/Var.java (lookupVar):
+        Minor optimization in var lookup logic.
+        * src/tcljava/tcl/lang/TclString.java
+        (newInstance): Make the newInstance() method
+        that accepts a StringBuffer public. This API
+        provides a handy way to reuse a StringBuffer.
+
 2005-11-22  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/jacl/tcl/lang/Interp.java: Space fixup.

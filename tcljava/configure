@@ -5188,8 +5188,8 @@ fi
 JAVA_CLASSPATH=$ac_java_classpath
 
 
-# Start Java runtime with 5 Meg Min Heap and 22 Meg Max Heap
-JAVA_FLAGS="$JAVA_FLAGS -ms5m -mx22m"
+# Start Java runtime with 5 Meg Min Heap and 32 Meg Max Heap
+JAVA_FLAGS="$JAVA_FLAGS -ms5m -mx32m"
 
 
 

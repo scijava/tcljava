@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Var.java,v 1.18 2005/11/22 05:17:14 mdejong Exp $
+ * RCS: @(#) $Id: Var.java,v 1.19 2005/11/23 21:19:14 mdejong Exp $
  *
  */
 package tcl.lang;
@@ -426,39 +426,34 @@ class Var {
 	int i, result;
 
 	var = null;
-	openParen = -1;
 	varNs = null;		// set non-null if a nonlocal variable
 
 	// Parse part1 into array name and index.
 	// Always check if part1 is an array element name and allow it only if
-	// part2 is not given.   
+	// part2 is not given.
 	// (if one does not care about creating array elements that can't be used
 	// from tcl, and prefer slightly better performance, one can put
 	// the following in an   if (part2 == null) { ... } block and remove
 	// the part2's test and error reporting  or move that code in array set)
+
 	elName = part2;
-	int len = part1.length();
-	for (p = 0; p < len ; p++) {
-	    if (part1.charAt(p) == '(') {
-		openParen = p;
-		p = len - 1;
-		if (part1.charAt(p) == ')') {
-		    if (part2 != null) {
-			if ((flags & TCL.LEAVE_ERR_MSG) != 0) {
-			    throw new TclVarException(interp,
-			        part1, part2, msg, needArray);
-			}
-			return null;
-		    }
-		    elName = part1.substring(openParen+1, len - 1);
-		    part2 = elName; // same as elName, only used in error reporting
-		    part1  = part1.substring(0, openParen);
-		}
-		break;
+	openParen = part1.indexOf('(');
+	if (openParen != -1) {
+	    final int len = part1.length();
+	    p = len - 1;
+	    if (part1.charAt(p) == ')') {
+	        if (part2 != null) {
+	            if ((flags & TCL.LEAVE_ERR_MSG) != 0) {
+	                    throw new TclVarException(interp,
+	                        part1, part2, msg, needArray);
+	            }
+	            return null;
+	        }
+	        elName = part1.substring(openParen+1, len - 1);
+	        part2 = elName; // same as elName, only used in error reporting
+	        part1  = part1.substring(0, openParen);
 	    }
 	}
-
-
 
 	// If this namespace has a variable resolver, then give it first
 	// crack at the variable resolution.  It may return a Var
