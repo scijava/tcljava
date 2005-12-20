@@ -1,0 +1,430 @@
+package require tcltest
+
+tcltest::test jdk_config-1.0 {jdk_config_parse} {
+    catch {unset _jdk_config}
+    set result [jdk_config_parse ""]
+    list $result \
+        [array exists _jdk_config]
+} {0 0}
+
+tcltest::test jdk_config-1.1 {jdk_config_parse} {
+    catch {unset _jdk_config}
+    set result [jdk_config_parse "\n"]
+    list $result \
+        [array exists _jdk_config]
+} {0 0}
+
+tcltest::test jdk_config-1.2 {jdk_config_parse} {
+    catch {unset _jdk_config}
+    set result [jdk_config_parse "#comment"]
+    list $result \
+        [array exists _jdk_config]
+} {0 0}
+
+tcltest::test jdk_config-1.3 {jdk_config_parse} {
+    catch {unset _jdk_config}
+    set result [jdk_config_parse "\n#comment\n"]
+    list $result \
+        [array exists _jdk_config]
+} {0 0}
+
+
+tcltest::test jdk_config-2.0 {jdk_config_isvar} {
+    list \
+        [jdk_config_isvar JAVAC] \
+        [jdk_config_isvar JAR] \
+        [jdk_config_isvar CLASSPATH] \
+        [jdk_config_isvar OTHER]
+} {1 1 1 0}
+
+tcltest::test jdk_config-2.1 {jdk_config_parse} {
+    catch {unset _jdk_config}
+    set result [jdk_config_parse "JAVAC = C:/jdk1.2/bin/javac"]
+    list $result [info exists _jdk_config(JAVAC)] \
+        [jdk_config_var JAVAC]
+} {1 1 C:/jdk1.2/bin/javac}
+
+tcltest::test jdk_config-2.2 {jdk_config_parse} {
+    catch {unset _jdk_config}
+    set result [jdk_config_parse {
+JAVAC = C:/jdk1.2/bin/javac
+JAR=C:/jdk1.2/bin/jar
+# Comment line
+CLASSPATH = C:/jdk1.2/lib/classes.jar
+}]
+    list $result \
+        [jdk_config_var JAVAC] \
+        [jdk_config_var JAR] \
+        [jdk_config_var CLASSPATH] \
+} {3 C:/jdk1.2/bin/javac C:/jdk1.2/bin/jar C:/jdk1.2/lib/classes.jar}
+
+tcltest::test jdk_config-2.3 {jdk_config_parse} {
+    catch {unset _jdk_config}
+    set result [jdk_config_parse {
+JAVAC = C:/jdk1.2/bin/javac
+JAR = C:/jdk1.2/bin/jar
+# Note that next line includes a ; separator
+CLASSPATH = C:/jdk1.2/lib/classes.jar;C:/jacl.jar
+}]
+    list $result \
+        [jdk_config_var CLASSPATH] \
+} {3 {C:/jdk1.2/lib/classes.jar;C:/jacl.jar}}
+
+
+tcltest::test jdk_config-2.4 {jdk_config_parse} {
+    catch {unset _jdk_config}
+    set result [jdk_config_parse {
+# Note that next line has a quoted variable value
+JAVAC = "C:/jdk1.2/bin/javac"
+}]
+    list $result \
+        [jdk_config_var JAVAC] \
+} {1 C:/jdk1.2/bin/javac}
+
+tcltest::test jdk_config-2.5 {jdk_config_parse} {
+    catch {unset _jdk_config}
+    set result [jdk_config_parse {
+# Note that next line has a quoted variable value with a space in it
+JAVAC = "C:/jdk 1.2/bin/javac"
+}]
+    list $result \
+        [jdk_config_var JAVAC] \
+} {1 {C:/jdk 1.2/bin/javac}}
+
+tcltest::test jdk_config-2.6 {jdk_config_parse} {
+    catch {unset _jdk_config}
+    set result [jdk_config_parse {
+# Note that next line has an unquoted variable value with a space in it
+JAVAC = C:/jdk 1.2/bin/javac
+}]
+    list $result \
+        [jdk_config_var JAVAC] \
+} {1 {C:/jdk 1.2/bin/javac}}
+
+
+tcltest::test jdk_config-3.0 {jdk_config_parse_file} {
+    catch {unset _jdk_config}
+
+    set data {
+    }
+
+    set fd [open test.cfg w]
+    puts $fd $data
+    close $fd
+
+    set result [jdk_config_parse_file test.cfg]
+    file delete test.cfg
+    set result
+} {0 {JAVAC not found or is empty}}
+
+tcltest::test jdk_config-3.1 {jdk_config_parse_file} {
+    catch {unset _jdk_config}
+
+    set data {
+JAVAC = INVALID_PATH
+    }
+
+    set fd [open test.cfg w]
+    puts $fd $data
+    close $fd
+
+    set result [jdk_config_parse_file test.cfg]
+    file delete test.cfg
+    set result
+} {0 {JAVAC path is not valid}}
+
+tcltest::test jdk_config-3.2 {jdk_config_parse_file} {
+    catch {unset _jdk_config}
+
+    set cwd [pwd]
+    close [open "fake_javac.exe" w]
+
+    # JAVAC parses ok but JAR not found
+
+    set data "
+JAVAC = $cwd/fake_javac.exe
+    "
+
+    set fd [open test.cfg w]
+    puts $fd $data
+    close $fd
+
+    set result [jdk_config_parse_file test.cfg]
+    file delete test.cfg
+    file delete fake_javac.exe
+    set result
+} {0 {JAR not found or is empty}}
+
+tcltest::test jdk_config-3.3 {jdk_config_parse_file} {
+    catch {unset _jdk_config}
+
+    set cwd [pwd]
+    close [open "fake_javac.exe" w]
+    close [open "fake_jar.exe" w]
+
+    set data "
+JAVAC = $cwd/fake_javac.exe
+JAR = $cwd/fake_jar.exe
+    "
+
+    set fd [open test.cfg w]
+    puts $fd $data
+    close $fd
+
+    set result [jdk_config_parse_file test.cfg]
+    file delete test.cfg
+    file delete fake_javac.exe fake_jar.exe
+    set result
+} {0 {CLASSPATH not found or is not valid}}
+
+tcltest::test jdk_config-3.4 {jdk_config_parse_file} {
+    catch {unset _jdk_config}
+
+    set cwd [pwd]
+    close [open "fake_javac.exe" w]
+    close [open "fake_jar.exe" w]
+
+    set data "
+JAVAC = $cwd/fake_javac.exe
+JAR = $cwd/fake_jar.exe
+CLASSPATH =
+    "
+
+    set fd [open test.cfg w]
+    puts $fd $data
+    close $fd
+
+    set result [jdk_config_parse_file test.cfg]
+    file delete test.cfg
+    file delete fake_javac.exe fake_jar.exe
+    set result
+} {0 {CLASSPATH not found or is not valid}}
+
+tcltest::test jdk_config-3.5 {jdk_config_parse_file} {
+    catch {unset _jdk_config}
+
+    set cwd [pwd]
+    close [open "fake_javac.exe" w]
+    close [open "fake_jar.exe" w]
+
+    set data "
+JAVAC = $cwd/fake_javac.exe
+JAR = $cwd/fake_jar.exe
+CLASSMATH = foo.jar
+    "
+
+    set fd [open test.cfg w]
+    puts $fd $data
+    close $fd
+
+    set result [jdk_config_parse_file test.cfg]
+    file delete test.cfg
+    file delete fake_javac.exe fake_jar.exe
+    set result
+} {0 {Invalid config spec at line 4: CLASSMATH is not a valid variable name}}
+
+tcltest::test jdk_config-3.6 {jdk_config_parse_file} {
+    catch {unset _jdk_config}
+
+    set cwd [pwd]
+    close [open "fake_javac.exe" w]
+    close [open "fake_jar.exe" w]
+
+    set data "
+JAVAC = $cwd/fake_javac.exe
+JAR = $cwd/fake_jar.exe
+CLASSPATH = tcljava.jar;foo.jar
+    "
+
+    set fd [open test.cfg w]
+    puts $fd $data
+    close $fd
+
+    set result [jdk_config_parse_file test.cfg]
+    file delete test.cfg
+    file delete fake_javac.exe fake_jar.exe
+    set result
+} {0 {CLASSPATH is not valid: tcljava.jar, jacl.jar, and tjc.jar must appear}}
+
+tcltest::test jdk_config-3.7 {jdk_config_parse_file} {
+    catch {unset _jdk_config}
+
+    set cwd [pwd]
+    close [open "fake_javac.exe" w]
+    close [open "fake_jar.exe" w]
+
+    set data "
+JAVAC = $cwd/fake_javac.exe
+JAR = $cwd/fake_jar.exe
+CLASSPATH = tcljava.jar;jacl.jar;tjc.jar;C:/mart.zip
+    "
+
+    set fd [open test.cfg w]
+    puts $fd $data
+    close $fd
+
+    set result [jdk_config_parse_file test.cfg]
+    file delete test.cfg
+    file delete fake_javac.exe fake_jar.exe
+    set result
+} {1 {}}
+
+tcltest::test jdk_config-3.8 {jdk_config_parse_file} {
+    catch {unset _jdk_config}
+
+    set cwd [pwd]
+    close [open "fake_javac.exe" w]
+    close [open "fake_jar.exe" w]
+
+    # Path checks include .exe automatically
+
+    set data "
+JAVAC = $cwd/fake_javac
+JAR = $cwd/fake_jar
+CLASSPATH = tcljava.jar;jacl.jar;tjc.jar;C:/mart.zip
+    "
+
+    set fd [open test.cfg w]
+    puts $fd $data
+    close $fd
+
+    set result [jdk_config_parse_file test.cfg]
+    file delete test.cfg
+    file delete fake_javac.exe fake_jar.exe
+    set result
+} {1 {}}
+
+tcltest::test jdk_tool-1.0 {jdk tools} {
+    jdk_tool_javac_save Test {
+public class Test {}
+    }
+} [file join [pwd] [jdk_tjc_rootdir] source/default/Test.java]
+
+tcltest::test jdk_tool-1.1 {jdk tools} {
+    jdk_tool_javac_save com.ShortTest {
+public class ShortTest {}
+    }
+} [file join [pwd] [jdk_tjc_rootdir] source/com/ShortTest.java]
+
+tcltest::test jdk_tool-1.2 {jdk tools} {
+    jdk_tool_javac_save com.unknown.foo.FooTest {
+public class FooTest {}
+    }
+} [file join [pwd] [jdk_tjc_rootdir] source/com/unknown/foo/FooTest.java]
+
+tcltest::test jdk_tool-2.0 {jdk tools} {
+    set source_file [file join [pwd] [jdk_tjc_rootdir] source/default/Test.java]
+    jdk_tool_javac_classfile $source_file
+} [file join [pwd] [jdk_tjc_rootdir] build/Test.class]
+
+tcltest::test jdk_tool-2.1 {jdk tools} {
+    set source_file [file join [pwd] [jdk_tjc_rootdir] source/com/foo/bar/Test.java]
+    jdk_tool_javac_classfile $source_file
+} [file join [pwd] [jdk_tjc_rootdir] build/com/foo/bar/Test.class]
+
+tcltest::test jdk_tool-2.2 {jdk tools} {
+    set source_file [file join [pwd] [jdk_tjc_rootdir] source/com/Test.java]
+    jdk_tool_javac_classfile $source_file
+} [file join [pwd] [jdk_tjc_rootdir] build/com/Test.class]
+
+source [file join [tcltest::testsDirectory] jdkutils.tcl]
+test_jdk_load_config
+
+tcltest::test jdk_tool-3.0 {javac tool} {
+    jdk_tool_cleanup
+    set fname [jdk_tool_javac_save Test {
+public class Test {}
+    }]
+
+    list $fname [jdk_tool_javac [list $fname]]
+} [list \
+      [file join [pwd] [jdk_tjc_rootdir] source/default/Test.java] \
+      [file join [pwd] [jdk_tjc_rootdir] build/Test.class] \
+  ]
+
+tcltest::test jdk_tool-3.1 {javac tool} {
+    jdk_tool_cleanup
+    set fname [jdk_tool_javac_save com.foo.Test {
+package com.foo;
+public class Test {}
+    }]
+
+    list $fname [jdk_tool_javac [list $fname]]
+} [list \
+      [file join [pwd] [jdk_tjc_rootdir] source/com/foo/Test.java] \
+      [file join [pwd] [jdk_tjc_rootdir] build/com/foo/Test.class] \
+  ]
+
+tcltest::test jdk_tool-3.2 {javac tool} {
+    jdk_tool_cleanup
+    # Try to compile in directory name that
+    # contains a space character.
+    set dirname "SP Test"
+    set CWD [pwd]
+    file mkdir $dirname
+    cd $dirname
+    set fname1 [jdk_tool_javac_save T1 {
+public class T1 {}
+    }]
+    set fname2 [jdk_tool_javac_save T2 {
+public class T2 {}
+    }]
+    cd $CWD
+    set qfname1 [file join $dirname $fname1]
+    set qfname2 [file join $dirname $fname2]
+    set result [jdk_tool_javac [list $qfname1 $qfname2]]
+    file delete -force $dirname
+    set result
+} {OK}
+
+tcltest::test jdk_tool-3.3 {javac tool} {
+    jdk_tool_cleanup
+    set fname1 [jdk_tool_javac_save Test {
+public class Test {}
+    }]
+    set fname2 [jdk_tool_javac_save com.foo.Test {
+package com.foo;
+public class Test {}
+    }]
+    jdk_tool_javac [list $fname1 $fname2]
+} {OK}
+
+tcltest::test jdk_tool-4.0 {jar tool} {
+    # Create jar containing 2 class files compiled above
+    jdk_tool_jar two.jar
+} [file join [pwd] [jdk_tjc_rootdir] jar/two.jar]
+
+tcltest::test jdk_tool-4.1 {jar tool} {
+    # Create jar containing 2 source files compiled above
+    jdk_tool_jar two_src.jar SOURCE
+} [file join [pwd] [jdk_tjc_rootdir] jar/two_src.jar]
+
+
+tcltest::test jdk_package_library-1.0 {package library dir name} {
+    jdk_package_library default 1
+} {default/library}
+
+tcltest::test jdk_package_library-1.1 {package library dir name} {
+    jdk_package_library default 0
+} {library}
+
+tcltest::test jdk_package_library-1.2 {package library dir name} {
+    jdk_package_library foo 1
+} {foo/library}
+
+tcltest::test jdk_package_library-1.3 {package library dir name} {
+    jdk_package_library foo 0
+} {foo/library}
+
+tcltest::test jdk_package_library-1.4 {package library dir name} {
+    jdk_package_library foo.bar 1
+} {foo/bar/library}
+
+tcltest::test jdk_package_library-1.5 {package library dir name} {
+    jdk_package_library foo.bar 0
+} {foo/bar/library}
+
+# Cleanup
+jdk_tool_cleanup
+tcltest::cleanupTests
+

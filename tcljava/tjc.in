@@ -1,0 +1,4 @@
+#!/bin/sh
+export JACL_MAIN=tcl.lang.TJCShell
+exec jaclsh ${1+"$@"}
+

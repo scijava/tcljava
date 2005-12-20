@@ -1,0 +1,74 @@
+package require tcltest
+
+tcltest::test nameproc-1.0 {nameproc utils} {
+    nameproc_class_name one
+} {OneCmd}
+
+tcltest::test nameproc-1.1 {nameproc utils} {
+    # If proc "one" has been found once already,
+    # then we can't use OneCmd as the class name again.
+    nameproc_class_name one 2
+} {OneCmd2}
+
+tcltest::test nameproc-1.2 {nameproc utils} {
+    nameproc_class_name One 3
+} {OneCmd3}
+
+tcltest::test nameproc-1.3 {nameproc utils} {
+    nameproc_class_name one_two
+} {OneTwoCmd}
+
+tcltest::test nameproc-1.4 {nameproc utils} {
+    nameproc_class_name OneTwo 2
+} {OneTwoCmd2}
+
+tcltest::test nameproc-1.5 {nameproc utils} {
+    nameproc_class_name "goofy name"
+} {GoofyNameCmd}
+
+
+tcltest::test nameproc-2.0 {nameproc utils} {
+    nameproc_full_class_name one.two OneCmd
+} {one.two.OneCmd}
+
+tcltest::test nameproc-2.1 {nameproc utils} {
+    nameproc_full_class_name default OneCmd
+} {OneCmd}
+
+
+
+tcltest::test nameproc-generate-1.0 {generate class names for Tcl procs} {
+    nameproc_init foo.bar
+    nameproc_generate one
+} {foo.bar.OneCmd}
+
+tcltest::test nameproc-generate-1.1 {generate class names for Tcl procs} {
+    nameproc_init foo.bar
+    set results [list]
+    lappend results [nameproc_generate one]
+    lappend results [nameproc_generate one]
+    set results
+} {foo.bar.OneCmd foo.bar.OneCmd2}
+
+tcltest::test nameproc-generate-1.2 {generate class names for Tcl procs} {
+    nameproc_init default
+    set results [list]
+    lappend results [nameproc_generate "one two"]
+    lappend results [nameproc_generate one_two]
+    set results
+} {OneTwoCmd OneTwoCmd2}
+
+tcltest::test nameproc-generate-1.3 {generate class names for Tcl procs} {
+    nameproc_init foo.bar
+    set results [list]
+    lappend results [nameproc_generate one_2]
+    lappend results [nameproc_generate One_2]
+    lappend results [nameproc_generate one2]
+    set results
+} {foo.bar.One2Cmd foo.bar.One2Cmd2 foo.bar.One2Cmd3}
+
+
+
+# Cleanup
+tcltest::cleanupTests
+

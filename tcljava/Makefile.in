@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.44 2005/11/04 21:02:13 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.45 2005/12/20 23:00:10 mdejong Exp $
 
 SHELL = /bin/sh
 
@@ -93,6 +93,8 @@ TCLJAVA_SRC_DIR		= $(TOP_DIR)/src/tcljava
 TCLJAVA_BUILD_DIR	= $(BUILD_DIR)/tcljava
 ITCL_SRC_DIR		= $(TOP_DIR)/src/itcl
 ITCL_BUILD_DIR		= $(BUILD_DIR)/itcl
+TJC_SRC_DIR		= $(TOP_DIR)/src/tjc
+TJC_BUILD_DIR		= $(BUILD_DIR)/btjc
 NATIVE_SRC_DIR		= $(TOP_DIR)/src/native
 DEMOS_SRC_DIR		= $(TOP_DIR)/demos
 DEMOS_BUILD_DIR		= $(BUILD_DIR)/bdemos
@@ -101,7 +103,9 @@ TEST_SRC_DIR		= $(TOP_DIR)/src/tests
 TEST_TCLBLEND_SRC_DIR	= $(TEST_SRC_DIR)/tclblend
 TEST_JACL_SRC_DIR	= $(TEST_SRC_DIR)/jacl
 TEST_TCLJAVA_SRC_DIR	= $(TEST_SRC_DIR)/tcljava
+TEST_TJC_SRC_DIR	= $(TEST_SRC_DIR)/tjc
 TEST_BUILD_DIR		= $(BUILD_DIR)/btests
+TJCEXT_BUILD_DIR	= $(BUILD_DIR)/tjcext
 MISC_DIR		= $(TOP_DIR)/src
 MISC_DIR_NATIVE		= $(TOP_DIR_NATIVE)/src
 CC			= @CC@
@@ -193,9 +197,11 @@ TCLJAVA_CLASSPATH	= $(TCLJAVA_BUILD_DIR):$(MISC_DIR)/empty/empty.jar:$(JAVA_CLAS
 
 DEMOS_CLASSPATH		= $(BUILD_DIR)/$(TCLJAVA).jar:$(BUILD_DIR)/tcljava.jar:$(JAVA_CLASSPATH)$(AUX_CLASSPATH)
 
-TEST_CLASSPATH		= $(JAVA_CLASSPATH):$(TEST_BUILD_DIR):$(BUILD_DIR)/$(TCLJAVA).jar:$(BUILD_DIR)/tcljava.jar$(AUX_CLASSPATH):$(BUILD_DIR)/tl.jar:$(BUILD_DIR)/itcl.jar
+TEST_CLASSPATH		= $(JAVA_CLASSPATH):$(TEST_BUILD_DIR):$(BUILD_DIR)/$(TCLJAVA).jar:$(BUILD_DIR)/tcljava.jar$(AUX_CLASSPATH):$(BUILD_DIR)/tl.jar:$(BUILD_DIR)/itcl.jar:$(BUILD_DIR)/tjc.jar:$(BUILD_DIR)/tjcext.jar
 
 ITCL_CLASSPATH		= $(TEST_CLASSPATH)
+
+TJC_CLASSPATH		= $(TEST_CLASSPATH)
 
 JACL_DEBUG_CLASSPATH	=  $(TEST_CLASSPATH):$(BUILD_DIR)/tcljavasrc.jar:$(BUILD_DIR)/jaclsrc.jar:$(BUILD_DIR)/itclsrc.jar:$(TEST_TCLJAVA_SRC_DIR):$(TEST_JACL_SRC_DIR)
 TCLBLEND_DEBUG_CLASSPATH = $(TEST_CLASSPATH):$(BUILD_DIR)/tcljavasrc.jar:$(BUILD_DIR)/tclblendsrc.jar
@@ -258,11 +264,13 @@ TCLBLEND_JNI_HEADER_CLASS_NAMES = \
 all: tcljava $(TCLJAVA)
 	@if test "$(TCLJAVA)" = "jacl" ; then \
 		$(MAKE) TCLJAVA=$(TCLJAVA) itcl ; \
+		$(MAKE) TCLJAVA=$(TCLJAVA) tjc ; \
 	fi
 	@$(MAKE) TCLJAVA=$(TCLJAVA) tcljavasrc.jar
 	@if test "$(TCLJAVA)" = "jacl" ; then \
 		$(MAKE) TCLJAVA=$(TCLJAVA) jaclsrc.jar ; \
 		$(MAKE) TCLJAVA=$(TCLJAVA) itclsrc.jar ; \
+		$(MAKE) TCLJAVA=$(TCLJAVA) tjcsrc.jar ; \
 	else \
 		$(MAKE) TCLJAVA=$(TCLJAVA) tclblendsrc.jar ; \
 	fi
@@ -270,11 +278,13 @@ all: tcljava $(TCLJAVA)
 install: $(TCLJAVA).install.check tcljava.install $(TCLJAVA).install
 	@if test "$(TCLJAVA)" = "jacl" ; then \
 		$(MAKE) TCLJAVA=$(TCLJAVA) itcl.install ; \
+		$(MAKE) TCLJAVA=$(TCLJAVA) tjc.install ; \
 	fi
 
 uninstall: $(TCLJAVA).uninstall tcljava.uninstall
 	@if test "$(TCLJAVA)" = "jacl" ; then \
 		$(MAKE) TCLJAVA=$(TCLJAVA) itcl.uninstall ; \
+		$(MAKE) TCLJAVA=$(TCLJAVA) tjc.uninstall ; \
 	fi
 
 # This rule is used to query the build CLASSPATH from an external program
@@ -744,6 +754,101 @@ itcl.check:
 		$(MAKE) TCLJAVA=$(TCLJAVA) itcl ; \
 	fi
 
+#----------------------------------------------------------------
+# Build TJC for Jacl
+#----------------------------------------------------------------
+
+tjc: tjc.jar
+
+tjc.build: tjc.clean jacl.check
+	@echo "#"
+	@echo "# Making tjc.build"
+	@echo "#"
+	mkdir -p $(TJC_BUILD_DIR)
+	cd $(TJC_SRC_DIR) ;\
+	CLASSPATH=$(TJC_CLASSPATH) \
+	$(JAVAC) $(JAVAC_FLAGS) \
+		$(JAVAC_D_FLAG) $(TJC_BUILD_DIR) \
+		tcl/lang/*.java
+	@rm -f jdk.cfg
+	@i=`sh $(TOP_DIR)/mingw_path.sh "$(JAVAC)"` ;\
+	echo "JAVAC = $$i" >> jdk.cfg
+	@i=`sh $(TOP_DIR)/mingw_path.sh "$(JAR)"` ;\
+	echo "JAR = $$i" >> jdk.cfg
+	@i=`sh $(TOP_DIR)/mingw_paths.sh "$(TJC_CLASSPATH)"` ;\
+	echo "CLASSPATH = $$i" >> jdk.cfg
+
+# tjc.jar needs to depend on tjc.build so that the
+# classfiles get rebuilt each time the jar is built
+tjc.jar: tjc.build
+	@rm -rf $(TJC_BUILD_DIR)/tjc/library
+	@mkdir -p $(TJC_BUILD_DIR)/tjc
+	@mkdir -p $(TJC_BUILD_DIR)/tjc/library
+	cp -f $(TJC_SRC_DIR)/tjc/library/*.tcl \
+		$(TJC_BUILD_DIR)/tjc/library
+	cd $(TJC_BUILD_DIR) ;\
+	CLASSPATH=$(JAVA_CLASSPATH) \
+	$(JAR) $(JAR_NOCOMPRESS_FLAGS) $(BUILD_DIR)/tjc.jar \
+	    tcl \
+	    tjc
+
+#
+# This rule is run before installing, it is used to do any checks that
+# are needed before we actually install tjc. Currently, there are none.
+#
+
+tjc.install.check:
+
+
+#
+# Install tjc, if the user did not build tjc already
+# it would have been built by the tjc.check rule
+#
+tjc.install: tjc.check tjcsrc.jar
+	@echo "#"
+	@echo "# Installing tjc"
+	@echo "#"
+	@echo "Installing tjc.jar in $(XP_TCLJAVA_INSTALL_DIR)"
+	@$(INSTALL_DATA) $(BUILD_DIR)/tjc.jar $(XP_TCLJAVA_INSTALL_DIR)
+	@echo "Installing tjcsrc.jar in $(XP_TCLJAVA_INSTALL_DIR)"
+	@$(INSTALL_DATA) $(BUILD_DIR)/tjcsrc.jar $(XP_TCLJAVA_INSTALL_DIR)
+	@echo "Installing tjc in $(BIN_INSTALL_DIR)"
+	@$(INSTALL_DATA) $(BUILD_DIR)/tjc $(BIN_INSTALL_DIR)
+	@chmod 755 $(BIN_INSTALL_DIR)/tjc
+	@if test -f "$(BUILD_DIR)/tjc.bat" ; then \
+	    echo "Installing tjc.bat in $(BIN_INSTALL_DIR)" ;\
+	    $(INSTALL_PROGRAM) $(BUILD_DIR)/tjc.bat $(BIN_INSTALL_DIR) ;\
+	    chmod 755 $(BIN_INSTALL_DIR)/tjc.bat ;\
+	fi
+	@echo "Installing jdk.cfg in $(BIN_INSTALL_DIR)"
+	@$(INSTALL_DATA) $(BUILD_DIR)/jdk.cfg $(BIN_INSTALL_DIR)
+
+tjc.uninstall:
+	@echo "#"
+	@echo "# Uninstalling tjc"
+	@echo "#"
+	@echo "Uninstalling $(XP_TCLJAVA_INSTALL_DIR)/tjc.jar"
+	@rm -f $(XP_TCLJAVA_INSTALL_DIR)/tjc.jar
+	@echo "Uninstalling $(XP_TCLJAVA_INSTALL_DIR)/tjcsrc.jar"
+	@rm -f $(XP_TCLJAVA_INSTALL_DIR)/tjcsrc.jar
+	@echo "Uninstalling $(BIN_INSTALL_DIR)/tjc"
+	@rm -f $(BIN_INSTALL_DIR)/tjc
+	@if test -f "$(BIN_INSTALL_DIR)/tjc.bat" ; then \
+	    echo "Uninstalling $(BIN_INSTALL_DIR)/tjc.bat" ;\
+	    rm -f $(BIN_INSTALL_DIR)/tjc.bat ;\
+	fi
+	@echo "Uninstalling $(BIN_INSTALL_DIR)/jdk.cfg"
+	@rm -f $(BIN_INSTALL_DIR)/jdk.cfg
+
+
+#
+# Check to make sure tjc is built
+#
+
+tjc.check:
+	@if test ! -f tjc.jar ; then \
+		$(MAKE) TCLJAVA=$(TCLJAVA) tjc ; \
+	fi
 
 #----------------------------------------------------------------
 # Build the TclJava Package.
@@ -864,9 +969,9 @@ tcljava.check:
 
 check: test
 
-test: test_$(TCLJAVA).check itcl.check test_$(TCLJAVA).exec
+test: test_$(TCLJAVA).check itcl.check test_tjc.check test_$(TCLJAVA).exec
 
-test.build: test.clean test_tcljava.build test_$(TCLJAVA).build
+test.build: test.clean test_tcljava.build test_$(TCLJAVA).build test_tjc.check
 
 test_tcljava.check:
 	@if test ! -f $(TEST_BUILD_DIR)/.tcljava ; then \
@@ -876,6 +981,11 @@ test_tcljava.check:
 test_$(TCLJAVA).check:
 	@if test ! -f $(TEST_BUILD_DIR)/.$(TCLJAVA) ; then \
 		$(MAKE) TCLJAVA=$(TCLJAVA) test_$(TCLJAVA).build ; \
+	fi
+
+test_tjc.check:
+	@if test "$(TCLJAVA)" = "jacl" && test ! -f $(TEST_BUILD_DIR)/.tjc ; then \
+		$(MAKE) TCLJAVA=$(TCLJAVA) test_tjc.build ; \
 	fi
 
 test_jacl.build: jacl.check test_tcljava.check
@@ -950,6 +1060,30 @@ test_tcljava.build: $(TCLJAVA).check
 		$(BUILD_DIR)
 	@touch $(TEST_BUILD_DIR)/.tcljava
 
+test_tjc.build: tjc.check test_tcljava.check
+	@echo "#"
+	@echo "# Making test_tjc.build"
+	@echo "#"
+	@rm -f $(TEST_BUILD_DIR)/.tjc
+	cd $(TEST_TJC_SRC_DIR) ;\
+	CLASSPATH=$(TJC_CLASSPATH) \
+	$(JAVAC) $(JAVAC_FLAGS) \
+		$(JAVAC_D_FLAG) $(TEST_BUILD_DIR) *.java test/tjc/*.java tcl/lang/*.java
+	rm -rf $(TJCEXT_BUILD_DIR)
+	rm -f $(BUILD_DIR)/tjcext.jar
+	mkdir $(TJCEXT_BUILD_DIR)
+	cd $(TEST_TJC_SRC_DIR) ;\
+	CLASSPATH=$(TJC_CLASSPATH) \
+	$(JAVAC) $(JAVAC_FLAGS) \
+		$(JAVAC_D_FLAG) $(TJCEXT_BUILD_DIR) test/tjcext/*.java
+	mkdir -p $(TJCEXT_BUILD_DIR)/test/tjcext/library
+	cp $(TEST_TJC_SRC_DIR)/test/tjcext/library/*.tcl \
+	    $(TJCEXT_BUILD_DIR)/test/tjcext/library
+	cd $(TJCEXT_BUILD_DIR) ;\
+	CLASSPATH=$(TJC_CLASSPATH) \
+	$(JAR) $(JAR_COMPRESS_FLAGS) $(BUILD_DIR)/tjcext.jar test
+	rm -rf $(TJCEXT_BUILD_DIR)
+	@touch $(TEST_BUILD_DIR)/.tjc
 
 test_jacl.exec: test_jacl.check
 	@(  echo \
@@ -959,6 +1093,7 @@ test_jacl.exec: test_jacl.check
 	  source \"$(TOP_DIR_NATIVE)/tests/all.tcl\"\; \
 	  puts \"Tests done.\"\; \
           exit; ) | \
+	PATH="$(BUILD_DIR):$(PATH)" \
 	CLASSPATH=$(TEST_CLASSPATH) \
 	$(JAVA) $(JAVA_FLAGS) \
 		-DBUILD_DIR=$(BUILD_DIR) -DJAVA=$(JAVA) tcl.lang.Shell
@@ -995,6 +1130,7 @@ shell: shell_$(TCLJAVA)
 
 shell_jacl: jacl.check
 	@echo "To run test: cd $(TOP_DIR_NATIVE)/tests ; source all.tcl"
+	PATH="$(BUILD_DIR):$(PATH)" \
 	CLASSPATH=$(TEST_CLASSPATH) \
 	$(JAVA) $(JAVA_FLAGS) \
 		-DBUILD_DIR=$(BUILD_DIR) -DJAVA=$(JAVA) tcl.lang.Shell
@@ -1243,9 +1379,9 @@ configure: $(TOP_DIR)/configure.in
 
 clean: tclblend.clean jacl.clean tcljava.clean \
 	demos.clean test.clean tmp.clean \
-	jni_example.clean itcl.clean \
+	jni_example.clean itcl.clean tjc.clean \
 	tcljavasrc.clean tclblendsrc.clean \
-	jaclsrc.clean itclsrc.clean
+	jaclsrc.clean itclsrc.clean tjcsrc.clean
 
 tcljava.clean:
 	rm -rf $(TCLJAVA_BUILD_DIR)
@@ -1276,6 +1412,13 @@ itcl.clean:
 
 itclsrc.clean:
 	rm -f  itclsrc.jar
+
+tjc.clean:
+	rm -rf $(TJC_BUILD_DIR)
+	rm -f  tjc.jar tjcext.jar
+
+tjcsrc.clean:
+	rm -f  tjcsrc.jar
 
 demos.clean: 
 	rm -rf $(DEMOS_BUILD_DIR)
@@ -1558,6 +1701,7 @@ jaclDist: Makefile
 	$(MAKE) TCLJAVA=$(TCLJAVA) DISTDIR=$(JACL_DISTDIR) jaclDemoDist
 	$(MAKE) TCLJAVA=$(TCLJAVA) jaclDistSrc
 	$(MAKE) itclDistSrc
+	$(MAKE) tjcDistSrc
 
 	rm -f $(DISTDIR)/$(JACL_DISTNAME).tar.Z \
 		$(DISTDIR)/$(JACL_DISTNAME).tar.gz \
@@ -1751,6 +1895,16 @@ itclDistSrc:
 	cp -p $(TOP_DIR)/src/itcl/itcl/lang/library/*.tcl \
 		$(JACL_DISTDIR)/src/itcl/itcl/lang/library
 
+# tjcDistSrc: Copy TJC for Jacl source files into JACL_DISTDIR
+
+tjcDistSrc:
+	mkdir -p $(JACL_DISTDIR)/src
+	mkdir -p $(JACL_DISTDIR)/src/tjc
+	mkdir -p $(JACL_DISTDIR)/src/tjc/tcl
+	mkdir -p $(JACL_DISTDIR)/src/tjc/tcl/lang
+	cp -p $(TOP_DIR)/src/tjc/tcl/lang/*.java \
+		$(JACL_DISTDIR)/src/tjc/tcl/lang
+
 ############################################################################
 #
 # Purify is a commercial software package that finds leaks and memory
@@ -1911,7 +2065,7 @@ jsrestore:
 # enable a debug session, set the JACL_DEBUG env var
 # before invoking jaclsh.
 
-debug_src_jars: tcljavasrc.jar jaclsrc.jar tclblendsrc.jar itclsrc.jar
+debug_src_jars: tcljavasrc.jar jaclsrc.jar tclblendsrc.jar itclsrc.jar tjcsrc.jar
 
 tcljavasrc.jar:
 	cd $(TCLJAVA_SRC_DIR) ; \
@@ -1931,5 +2085,8 @@ itclsrc.jar:
 	cd $(ITCL_SRC_DIR) ; \
 	$(JAR) $(JAR_COMPRESS_FLAGS) $(BUILD_DIR)/itclsrc.jar itcl/lang/*.java
 
+tjcsrc.jar:
+	cd $(TJC_SRC_DIR) ; \
+	$(JAR) $(JAR_COMPRESS_FLAGS) $(BUILD_DIR)/tjcsrc.jar tcl/lang/*.java
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.

@@ -1,0 +1,926 @@
+package require tcltest
+
+tcltest::test emitter-1.0 {util methods} {
+    list \
+        [emitter_indent_level zero] \
+        [emitter_indent] \
+        [emitter_indent_level +1] \
+        [emitter_indent] \
+        [emitter_indent_level +1] \
+        [emitter_indent] \
+        [emitter_indent_level -1] \
+        [emitter_indent] \
+        [emitter_indent_level -1] \
+        [emitter_indent] \
+        [emitter_indent_level]
+} {0 {} 1 {    } 2 {        } 1 {    } 0 {} 0}
+
+tcltest::test emitter-class-comment-1.0 {class comment} {
+    emitter_indent_level zero
+    emitter_class_comment foo
+} {// TJC implementation of procedure foo
+}
+
+tcltest::test emitter-args-1.0 {emit num args check} {
+    emitter_indent_level zero
+    emitter_empty_args
+} {if (objv.length != 1) {
+    throw new TclNumArgsException(interp, 1, objv, "");
+}
+}
+
+tcltest::test emitter-args-1.1 {emit num args check} {
+    emitter_indent_level zero
+    emitter_num_args 1 "name"
+} {if (objv.length != 2) {
+    throw new TclNumArgsException(interp, 1, objv, "name");
+}
+}
+
+tcltest::test emitter-args-1.2 {emit num args check} {
+    emitter_indent_level zero
+    emitter_num_args 2 "name addr"
+} {if (objv.length != 3) {
+    throw new TclNumArgsException(interp, 1, objv, "name addr");
+}
+}
+
+tcltest::test emitter-args-1.3 {emit num args check} {
+    emitter_indent_level zero
+    emitter_num_args 3 "name addr zip"
+} {if (objv.length != 4) {
+    throw new TclNumArgsException(interp, 1, objv, "name addr zip");
+}
+}
+
+tcltest::test emitter-args-1.4 {emit num default args check} {
+    emitter_indent_level zero
+    emitter_num_default_args 1 "?name?"
+} {if (objv.length > 2) {
+    throw new TclNumArgsException(interp, 1, objv, "?name?");
+}
+}
+
+tcltest::test emitter-args-1.5 {emit num default args check} {
+    emitter_indent_level zero
+    emitter_num_default_args 2 "?name? ?addr?"
+} {if (objv.length > 3) {
+    throw new TclNumArgsException(interp, 1, objv, "?name? ?addr?");
+}
+}
+
+tcltest::test emitter-args-1.6 {emit num args args check} {
+    emitter_indent_level zero
+    # Pass number of non-default argument
+    emitter_num_min_args 1 "name args"
+} {if (objv.length < 2) {
+    throw new TclNumArgsException(interp, 1, objv, "name args");
+}
+}
+
+tcltest::test emitter-args-1.7 {emit num non-default and default args check} {
+    emitter_indent_level zero
+    # Min is number of non-default argument, Max includes the default ones
+    emitter_num_range_args 1 2 "name ?addr?"
+} {if (objv.length < 2 || objv.length > 3) {
+    throw new TclNumArgsException(interp, 1, objv, "name ?addr?");
+}
+}
+
+
+
+
+
+tcltest::test emitter-args-2.0 {emit proc arg assignment} {
+    emitter_indent_level zero
+    emitter_assign_arg "name" 1
+} {interp.setVar("name", null, objv[1], 0);
+}
+
+tcltest::test emitter-args-2.1 {emit proc arg assignment} {
+    emitter_indent_level zero
+    emitter_assign_arg "addr" 2
+} {interp.setVar("addr", null, objv[2], 0);
+}
+
+tcltest::test emitter-args-2.2 {emit proc arg assignment} {
+    emitter_indent_level zero
+    set result [emitter_assign_arg "name" 1][emitter_assign_arg "addr" 2]
+} {interp.setVar("name", null, objv[1], 0);
+interp.setVar("addr", null, objv[2], 0);
+}
+
+
+tcltest::test emitter-args-3.0 {emit proc default arg assignment} {
+    emitter_indent_level zero
+    emitter_assign_default_arg "name" 1 const0
+} {interp.setVar("name", null,
+    ((objv.length <= 1) ? const0 : objv[1]), 0);
+}
+
+tcltest::test emitter-args-3.1 {emit proc default arg assignment} {
+    emitter_indent_level zero
+    emitter_assign_default_arg "addr" 2 const0
+} {interp.setVar("addr", null,
+    ((objv.length <= 2) ? const0 : objv[2]), 0);
+}
+
+tcltest::test emitter-args-3.2 {emit proc default arg assignment} {
+    emitter_indent_level zero
+    set result [emitter_assign_default_arg "name" 1 const0][emitter_assign_default_arg "addr" 2 const1]
+} {interp.setVar("name", null,
+    ((objv.length <= 1) ? const0 : objv[1]), 0);
+interp.setVar("addr", null,
+    ((objv.length <= 2) ? const1 : objv[2]), 0);
+}
+
+tcltest::test emitter-args-4.0 {emit proc args arg assignment} {
+    emitter_indent_level zero
+    emitter_assign_args_arg 1
+} {if ( objv.length <= 1 ) {
+    interp.setVar("args", null, "", 0);
+} else {
+    TclObject argl = TclList.newInstance();
+    for (int i = 1; i < objv.length; i++) {
+        TclList.append(interp, argl, objv[i]);
+    }
+    interp.setVar("args", null, argl, 0);
+}
+}
+
+tcltest::test emitter-getvar-1.0 {emit var query} {
+    emitter_indent_level zero
+    emitter_get_var arr true k true 0
+} {interp.getVar("arr", "k", 0)}
+
+tcltest::test emitter-getvar-1.1 {emit var query} {
+    emitter_indent_level zero
+    emitter_get_var arr true null false 0
+} {interp.getVar("arr", null, 0)}
+
+tcltest::test emitter-getvar-1.2 {emit var query} {
+    emitter_indent_level zero
+    emitter_get_var arr true tmp1.toString() false 0
+} {interp.getVar("arr", tmp1.toString(), 0)}
+
+tcltest::test emitter-getvar-1.3 {emit var query} {
+    emitter_indent_level zero
+    emitter_get_var arr true "" true 0
+} {interp.getVar("arr", "", 0)}
+
+
+tcltest::test emitter-setvar-1.0 {emit var set} {
+    emitter_indent_level zero
+    emitter_set_var s true null false "" 0
+} {interp.setVar("s", null, "", 0)}
+
+tcltest::test emitter-setvar-1.1 {emit var set} {
+    emitter_indent_level zero
+    emitter_set_var a true k true tmp0 0
+} {interp.setVar("a", "k", tmp0, 0)}
+
+tcltest::test emitter-setvar-1.2 {emit var set} {
+    emitter_indent_level zero
+    emitter_set_var a true tmp0 false tmp1 0
+} {interp.setVar("a", tmp0, tmp1, 0)}
+
+tcltest::test emitter-setvar-1.3 {emit var set} {
+    emitter_indent_level zero
+    emitter_set_var tmp0 false tmp1 false tmp2 0
+} {interp.setVar(tmp0, tmp1, tmp2, 0)}
+
+
+
+tcltest::test emitter-package-1.1 {name of Java package} {
+    emitter_package_name foo.bar.baz
+} {package foo.bar.baz;
+}
+
+tcltest::test emitter-package-1.2 {name of Java package} {
+    emitter_package_name default
+} {}
+
+tcltest::test emitter-import-1.0 {import tcl.lang package} {
+    emitter_import_tcl
+} {import tcl.lang.*;
+}
+
+tcltest::test emitter-import-1.1 {import tcl.lang package} {
+    emitter_import_package java.util
+} {import java.util.*;
+}
+
+tcltest::test emitter-import-1.2 {import tcl.lang package} {
+    emitter_import_class java.util.Hashtable
+} {import java.util.Hashtable;
+}
+
+tcltest::test emitter-comment-1.0 {comment} {
+    emitter_indent_level zero
+    emitter_comment HI
+} {// HI
+}
+
+tcltest::test emitter-comment-1.1 {comment} {
+    emitter_indent_level zero
+    emitter_indent_level +1
+    emitter_comment BYE
+} {    // BYE
+}
+
+tcltest::test emitter-class-1.0 {class declaration} {
+    emitter_indent_level zero
+    emitter_class_start FooCmd
+} "public class FooCmd extends TJC.CompiledCommand \{\n"
+
+tcltest::test emitter-class-1.1 {class declaration} {
+    emitter_indent_level zero
+    emitter_class_end FooCmd
+} "\} // end class FooCmd\n"
+
+tcltest::test emitter-class-1.2 {class declaration} {
+    emitter_indent_level zero
+    set result \n[emitter_class_start FooCmd][emitter_class_end FooCmd]
+} "
+public class FooCmd extends TJC.CompiledCommand \{
+\} // end class FooCmd
+"
+
+tcltest::test emitter-cmdproc-1.0 {cmdProc signature} {
+    emitter_indent_level zero
+    emitter_cmd_proc_start
+} "   \
+    public void cmdProc(
+        Interp interp,
+        TclObject\[\] objv)
+            throws TclException
+    \{
+"
+
+tcltest::test emitter-cmdproc-1.1 {cmdProc signature} {
+    emitter_indent_level zero
+    emitter_indent_level +2
+    emitter_cmd_proc_end
+} "   \
+    \}
+"
+
+tcltest::test emitter-cmdproc-1.2 {cmdProc signature} {
+    emitter_indent_level zero
+    set result [emitter_cmd_proc_start][emitter_cmd_proc_end]
+} "   \
+    public void cmdProc(
+        Interp interp,
+        TclObject\[\] objv)
+            throws TclException
+    \{
+    \}
+"
+
+
+tcltest::test emitter-eval-proc-body-1.0 {nocompile invocation} {
+    emitter_indent_level zero
+    emitter_eval_proc_body {
+return 1
+}
+} {String body = "\nreturn 1\n";
+TJC.evalProcBody(interp, body);
+return;
+}
+
+tcltest::test emitter-eval-proc-body-1.1 {nocompile invocation} {
+    emitter_indent_level zero
+    emitter_eval_proc_body {
+set foo "bar"
+}
+} {String body = "\nset foo \"bar\"\n";
+TJC.evalProcBody(interp, body);
+return;
+}
+
+tcltest::test emitter-eval-proc-body-1.2 {nocompile invocation} {
+    emitter_indent_level zero
+    emitter_eval_proc_body {
+set foo "\"bar\""
+}
+} {String body = "\nset foo \"\\\"bar\\\"\"\n";
+TJC.evalProcBody(interp, body);
+return;
+}
+
+
+tcltest::test emitter-callframe-1.0 {push/pop call frame} {
+    emitter_indent_level zero
+    emitter_callframe_start null
+} "CallFrame callFrame = TJC.pushLocalCallFrame(interp, null);
+try \{
+"
+
+tcltest::test emitter-callframe-1.1 {push/pop call frame} {
+    emitter_indent_level zero
+    emitter_callframe_end foo
+} "\} catch (TclException te) \{
+    TJC.checkTclException(interp, te, \"foo\")\;
+\} finally \{
+    TJC.popLocalCallFrame(interp, callFrame)\;
+\}\n"
+
+tcltest::test emitter-callframe-1.2 {push/pop call frame} {
+    emitter_indent_level zero
+    set result [emitter_callframe_start null][emitter_callframe_end foo]
+} {CallFrame callFrame = TJC.pushLocalCallFrame(interp, null);
+try {
+} catch (TclException te) {
+    TJC.checkTclException(interp, te, "foo");
+} finally {
+    TJC.popLocalCallFrame(interp, callFrame);
+}
+}
+
+
+tcltest::test emitter-init-constants-1.0 {emit initConstants()} {
+    emitter_indent_level zero
+    set tlist [list]
+    lappend tlist [list const0 INTEGER 1]
+    emitter_init_constants $tlist
+} {    TclObject const0;
+
+    protected void initConstants(Interp interp) throws TclException {
+        const0 = TclInteger.newInstance(1);
+        const0.preserve(); const0.preserve();
+    }
+}
+
+tcltest::test emitter-init-constants-1.1 {emit initConstants()} {
+    emitter_indent_level zero
+    set tlist [list]
+    lappend tlist [list const0 INTEGER 1]
+    lappend tlist [list const1 BOOLEAN 0]
+    emitter_init_constants $tlist
+} {    TclObject const0;
+    TclObject const1;
+
+    protected void initConstants(Interp interp) throws TclException {
+        const0 = TclInteger.newInstance(1);
+        const0.preserve(); const0.preserve();
+        const1 = TclString.newInstance("false");
+        TclBoolean.get(interp, const1);
+        const1.preserve(); const1.preserve();
+    }
+}
+
+tcltest::test emitter-init-constants-1.2 {emit initConstants()} {
+    emitter_indent_level zero
+    set tlist [list]
+    lappend tlist [list const0 BOOLEAN 1]
+    lappend tlist [list const1 DOUBLE 1.0]
+    lappend tlist [list const2 INTEGER 11]
+    lappend tlist [list const3 STRING foo]
+    emitter_init_constants $tlist
+} {    TclObject const0;
+    TclObject const1;
+    TclObject const2;
+    TclObject const3;
+
+    protected void initConstants(Interp interp) throws TclException {
+        const0 = TclString.newInstance("true");
+        TclBoolean.get(interp, const0);
+        const0.preserve(); const0.preserve();
+        const1 = TclDouble.newInstance(1.0);
+        const1.preserve(); const1.preserve();
+        const2 = TclInteger.newInstance(11);
+        const2.preserve(); const2.preserve();
+        const3 = TclString.newInstance("foo");
+        const3.preserve(); const3.preserve();
+    }
+}
+
+tcltest::test emitter-init-constants-2.0 {initConstants check} {
+    emitter_init_cmd_check
+} {if (!initCmd) { initCmd(interp); }
+}
+
+
+tcltest::test emitter-invoke-start-end-1.0 {} {
+    emitter_indent_level zero
+    set buffer [emitter_invoke_start One][emitter_invoke_end One]
+} {{ // Invoke: One
+} // End Invoke: One
+}
+
+tcltest::test emitter-invoke-start-end-1.1 {} {
+    emitter_indent_level zero
+    set arraysym objv0
+    set size 1
+    set buffer ""
+    append buffer [emitter_invoke_start "one two"]
+    append buffer [emitter_invoke_command_start $arraysym $size]
+    append buffer [emitter_indent] "...\n"
+    append buffer [emitter_invoke_command_call $arraysym {} 0]
+    append buffer [emitter_invoke_command_finally]
+    append buffer [emitter_invoke_command_end $arraysym]
+    append buffer [emitter_invoke_end one]
+    set buffer
+} {{ // Invoke: one two
+    TclObject[] objv0 = TJC.grabObjv(interp, 1);
+    try {
+        ...
+        TJC.invoke(interp, null, objv0, 0);
+    } finally {
+        TJC.releaseObjv(interp, objv0);
+    }
+} // End Invoke: one
+}
+
+tcltest::test emitter-invoke-start-end-1.2 {} {
+    emitter_indent_level zero
+    set arraysym objv0
+    set tmpsym tmp1
+    set valsym const0
+    set size 1
+    set index 0
+    set cmdref ccache0
+    set buffer ""
+    append buffer [emitter_invoke_start "one two"]
+    append buffer [emitter_invoke_command_start $arraysym $size]
+    append buffer [emitter_indent] "TclObject $tmpsym\;\n"
+    append buffer [emitter_invoke_command_assign $arraysym $index \
+        $tmpsym $valsym]
+    append buffer [emitter_invoke_command_call $arraysym $cmdref 1]
+    append buffer [emitter_invoke_command_finally]
+    append buffer [emitter_invoke_command_end $arraysym]
+    append buffer [emitter_invoke_end one]
+    set buffer
+} {{ // Invoke: one two
+    TclObject[] objv0 = TJC.grabObjv(interp, 1);
+    try {
+        TclObject tmp1;
+        tmp1 = const0;
+        tmp1.preserve();
+        objv0[0] = tmp1;
+        TJC.invoke(interp, ccache0, objv0, TCL.EVAL_GLOBAL);
+    } finally {
+        TJC.releaseObjv(interp, objv0);
+    }
+} // End Invoke: one
+}
+
+tcltest::test emitter-invoke-start-end-1.3 {skip assignment of symbol to self} {
+    emitter_indent_level zero
+    set arraysym objv0
+    set tmpsym tmp1
+    set valsym const0
+    set size 1
+    set index 0
+    set buffer ""
+    append buffer [emitter_invoke_start "one two"]
+    append buffer [emitter_invoke_command_start $arraysym $size]
+    append buffer [emitter_indent] "TclObject $tmpsym\;\n"
+    append buffer [emitter_indent] "$tmpsym = TclString.newInstance(\"foo\")\;\n"
+    append buffer [emitter_invoke_command_assign $arraysym $index \
+        $tmpsym $tmpsym]
+    append buffer [emitter_invoke_command_call $arraysym {} 0]
+    append buffer [emitter_invoke_command_finally]
+    append buffer [emitter_invoke_command_end $arraysym]
+    append buffer [emitter_invoke_end one]
+    set buffer
+} {{ // Invoke: one two
+    TclObject[] objv0 = TJC.grabObjv(interp, 1);
+    try {
+        TclObject tmp1;
+        tmp1 = TclString.newInstance("foo");
+        tmp1.preserve();
+        objv0[0] = tmp1;
+        TJC.invoke(interp, null, objv0, 0);
+    } finally {
+        TJC.releaseObjv(interp, objv0);
+    }
+} // End Invoke: one
+}
+
+
+
+# Backslash Tcl string so that it can appear in a Java string
+
+tcltest::test emitter_backslash_tcl_string-1.0 {backslash subst} {
+    emitter_backslash_tcl_string "\ncmd"
+} {\ncmd}
+
+tcltest::test emitter_backslash_tcl_string-1.1 {backslash subst} {
+    emitter_backslash_tcl_string {
+cmd
+}
+} {\ncmd\n}
+
+tcltest::test emitter_backslash_tcl_string-1.2 {backslash subst} {
+    emitter_backslash_tcl_string {set foo "bar"}
+} {set foo \"bar\"}
+
+tcltest::test emitter_backslash_tcl_string-1.3 {backslash subst} {
+    list \
+        [emitter_backslash_tcl_string "\a"] \
+        [emitter_backslash_tcl_string "\b"] \
+        [emitter_backslash_tcl_string "\f"] \
+        [emitter_backslash_tcl_string "\n"] \
+        [emitter_backslash_tcl_string "\r"] \
+        [emitter_backslash_tcl_string "\t"] \
+        [emitter_backslash_tcl_string "\v"] \
+
+} {{\u0007} {\b} {\f} {\n} {\r} {\t} {\u000B}}
+
+tcltest::test emitter_backslash_tcl_string-1.3 {backslash subst} {
+    set script {set i "\{two\}"}
+    set script [subst -nocommands -novariables $script]
+    emitter_backslash_tcl_string $script
+} {set i \"{two}\"}
+
+tcltest::test emitter_backslash_tcl_string-2.0 {backslash subst} {
+    # Backslash escape that is a single character, leave
+    # as is if it is a valid Java escape.
+    list \
+        [emitter_backslash_tcl_string {\a}] \
+        [emitter_backslash_tcl_string {\b}] \
+        [emitter_backslash_tcl_string {\f}] \
+        [emitter_backslash_tcl_string {\n}] \
+        [emitter_backslash_tcl_string {\r}] \
+        [emitter_backslash_tcl_string {\t}] \
+        [emitter_backslash_tcl_string {\v}] \
+} [list \
+    {\u0007} \
+    {\b} \
+    {\f} \
+    {\n} \
+    {\r} \
+    {\t} \
+    {\u000B} \
+    ]
+
+tcltest::test emitter_backslash_tcl_string-2.1 {backslash subst} {
+    emitter_backslash_tcl_string {\n\a\n\vEND}
+} {\n\u0007\n\u000BEND}
+
+tcltest::test emitter_backslash_tcl_string-3.0 {backslash subst} {
+    emitter_backslash_tcl_string {\x0F\n}
+} {\u000F\n}
+
+tcltest::test emitter_backslash_tcl_string-3.1 {backslash subst} {
+    emitter_backslash_tcl_string {\n\xF0\n}
+} {\n\u00F0\n}
+
+tcltest::test emitter_backslash_tcl_string-4.0 {backslash subst} {
+    emitter_backslash_tcl_string {\777\n}
+} {\u00FF\n}
+
+tcltest::test emitter_backslash_tcl_string-4.1 {backslash subst} {
+    emitter_backslash_tcl_string {\000\n}
+} {\u0000\n}
+
+tcltest::test emitter_backslash_tcl_string-4.2 {backslash subst} {
+    emitter_backslash_tcl_string {\177\n}
+} {\u007F\n}
+
+tcltest::test emitter_backslash_tcl_string-5.0 {backslash subst} {
+    emitter_backslash_tcl_string {\u000D\n}
+} {\u000D\n}
+
+tcltest::test emitter_backslash_tcl_string-5.1 {backslash subst} {
+    emitter_backslash_tcl_string {\u000A\n}
+} {\u000A\n}
+
+# One character escape
+
+tcltest::test emitter_backslash_tcl_elem-1.0 {Tcl backslash subst} {
+    emitter_backslash_tcl_elem {\{}
+} "\{"
+
+tcltest::test emitter_backslash_tcl_elem-1.1 {Tcl backslash subst} {
+    emitter_backslash_tcl_elem {\\}
+} {\\}
+
+tcltest::test emitter_backslash_tcl_elem-1.2 {Tcl backslash subst} {
+    emitter_backslash_tcl_elem {\[}
+} {[}
+
+tcltest::test emitter_backslash_tcl_elem-1.3 {Tcl backslash subst} {
+    emitter_backslash_tcl_elem {\"}
+} "\""
+
+tcltest::test emitter_backslash_tcl_elem-1.4 {Tcl backslash subst} {
+    emitter_backslash_tcl_elem {\a}
+} {\a}
+
+tcltest::test emitter_backslash_tcl_elem-1.5 {Tcl backslash subst} {
+    emitter_backslash_tcl_elem {\b}
+} {\b}
+
+tcltest::test emitter_backslash_tcl_elem-1.6 {Tcl backslash subst} {
+    emitter_backslash_tcl_elem {\f}
+} {\f}
+
+tcltest::test emitter_backslash_tcl_elem-1.7 {Tcl backslash subst} {
+    emitter_backslash_tcl_elem {\n}
+} {\n}
+
+tcltest::test emitter_backslash_tcl_elem-1.8 {Tcl backslash subst} {
+    emitter_backslash_tcl_elem {\r}
+} {\r}
+
+tcltest::test emitter_backslash_tcl_elem-1.9 {Tcl backslash subst} {
+    emitter_backslash_tcl_elem {\t}
+} {\t}
+
+tcltest::test emitter_backslash_tcl_elem-1.10 {Tcl backslash subst} {
+    emitter_backslash_tcl_elem {\v}
+} {\v}
+
+# Hex escape
+
+tcltest::test emitter_backslash_tcl_elem-2.0 {Tcl backslash subst} {
+    emitter_backslash_tcl_elem {\x}
+} {x}
+
+tcltest::test emitter_backslash_tcl_elem-2.1 {Tcl backslash subst} {
+    string equal "\x" {x}
+} {1}
+
+tcltest::test emitter_backslash_tcl_elem-2.2 {Tcl backslash subst} {
+    emitter_backslash_tcl_elem {\x0}
+} {\x00}
+
+tcltest::test emitter_backslash_tcl_elem-2.3 {Tcl backslash subst} {
+    string equal "\x0" "\x00"
+} {1}
+
+tcltest::test emitter_backslash_tcl_elem-2.4 {Tcl backslash subst} {
+    emitter_backslash_tcl_elem {\x00}
+} {\x00}
+
+tcltest::test emitter_backslash_tcl_elem-2.5 {Tcl backslash subst} {
+    string equal "\x00" "\x00"
+} {1}
+
+tcltest::test emitter_backslash_tcl_elem-2.6 {Tcl backslash subst} {
+    emitter_backslash_tcl_elem {\x001}
+} {\x01}
+
+tcltest::test emitter_backslash_tcl_elem-2.7 {Tcl backslash subst} {
+    string equal "\x001" "\x01"
+} {1}
+
+tcltest::test emitter_backslash_tcl_elem-2.8 {Tcl backslash subst} {
+    emitter_backslash_tcl_elem {\x001A}
+} {\x1A}
+
+tcltest::test emitter_backslash_tcl_elem-2.9 {Tcl backslash subst} {
+    string equal "\x001A" "\x1A"
+} {1}
+
+# Octal escape
+
+tcltest::test emitter_backslash_tcl_elem-3.0 {Tcl backslash subst} {
+    emitter_backslash_tcl_elem {\0}
+} {\000}
+
+tcltest::test emitter_backslash_tcl_elem-3.1 {Tcl backslash subst} {
+    string equal "\0" "\000"
+} {1}
+
+tcltest::test emitter_backslash_tcl_elem-3.2 {Tcl backslash subst} {
+    emitter_backslash_tcl_elem {\00}
+} {\000}
+
+tcltest::test emitter_backslash_tcl_elem-3.3 {Tcl backslash subst} {
+    string equal "\00" "\000"
+} {1}
+
+tcltest::test emitter_backslash_tcl_elem-3.4 {Tcl backslash subst} {
+    emitter_backslash_tcl_elem {\000}
+} {\000}
+
+tcltest::test emitter_backslash_tcl_elem-3.5 {Tcl backslash subst} {
+    string equal "\000" "\000"
+} {1}
+
+tcltest::test emitter_backslash_tcl_elem-3.6 {Tcl backslash subst} {
+    emitter_backslash_tcl_elem {\7}
+} {\007}
+
+tcltest::test emitter_backslash_tcl_elem-3.7 {Tcl backslash subst} {
+    string equal "\7" "\007"
+} {1}
+
+tcltest::test emitter_backslash_tcl_elem-3.8 {Tcl backslash subst} {
+    emitter_backslash_tcl_elem {\17}
+} {\017}
+
+tcltest::test emitter_backslash_tcl_elem-3.9 {Tcl backslash subst} {
+    string equal "\17" "\017"
+} {1}
+
+# Unicode escape
+
+tcltest::test emitter_backslash_tcl_elem-4.0 {Tcl backslash subst} {
+    emitter_backslash_tcl_elem {\u000d}
+} {\u000D}
+
+tcltest::test emitter_backslash_tcl_elem-4.1 {Tcl backslash subst} {
+    emitter_backslash_tcl_elem {\ud}
+} {\u000D}
+
+tcltest::test emitter_backslash_tcl_elem-4.2 {Tcl backslash subst} {
+    string equal "\ud" "\u000D"
+} {1}
+
+tcltest::test emitter_backslash_tcl_elem-4.3 {Tcl backslash subst} {
+    emitter_backslash_tcl_elem {\u0d}
+} {\u000D}
+
+tcltest::test emitter_backslash_tcl_elem-4.4 {Tcl backslash subst} {
+    string equal "\u0d" "\u000D"
+} {1}
+
+tcltest::test emitter_backslash_tcl_elem-4.5 {Tcl backslash subst} {
+    emitter_backslash_tcl_elem {\u00d}
+} {\u000D}
+
+tcltest::test emitter_backslash_tcl_elem-4.6 {Tcl backslash subst} {
+    string equal "\u00d" "\u000D"
+} {1}
+
+tcltest::test emitter_backslash_tcl_elem-4.7 {Tcl backslash subst} {
+    emitter_backslash_tcl_elem {\uface}
+} {\uFACE}
+
+tcltest::test emitter_backslash_tcl_elem-4.8 {Tcl backslash subst} {
+    string equal "\uface" "\uFACE"
+} {1}
+
+tcltest::test emitter_backslash_tcl_elem-4.9 {Tcl backslash subst} {
+    emitter_backslash_tcl_elem {\uF5}
+} {\u00F5}
+
+tcltest::test emitter_backslash_tcl_elem-4.10 {Tcl backslash subst} {
+    string equal "\uF5" "\u00F5"
+} {1}
+
+tcltest::test emitter_backslash_tcl_elem-5.0 {Tcl backslash subst} {
+    emitter_backslash_tcl_elem "\\\n"
+} " "
+
+tcltest::test emitter_backslash_tcl_elem-5.1 {Tcl backslash subst} {
+    emitter_backslash_tcl_elem "\\\n "
+} " "
+
+tcltest::test emitter_backslash_tcl_elem-5.2 {Tcl backslash subst} {
+    emitter_backslash_tcl_elem "\\\n  "
+} " "
+
+tcltest::test emitter_backslash_tcl_elem-5.3 {Tcl backslash subst} {
+    emitter_backslash_tcl_elem "\\\n\t"
+} " "
+
+tcltest::test emitter_backslash_tcl_elem-5.4 {Tcl backslash subst} {
+    emitter_backslash_tcl_elem "\\\n\t "
+} " "
+
+
+tcltest::test emitter-container-for-1.0 {try/catch} {
+    emitter_indent_level zero
+    set result [emitter_container_for_try_start][emitter_container_for_try_end]
+} {try {
+} catch (TclException ex) {
+    int type = ex.getCompletionCode();
+    if (type == TCL.BREAK) {
+        break;
+    } else if (type == TCL.CONTINUE) {
+        continue;
+    } else {
+        throw ex;
+    }
+}
+}
+
+
+
+tcltest::test emitter-container-for-1.1 {try/catch} {
+    emitter_indent_level zero
+    set result [emitter_container_for_try_start][emitter_container_for_try_end 0]
+} {try {
+} catch (TclException ex) {
+    int type = ex.getCompletionCode();
+    if (type == TCL.BREAK) {
+        break;
+    } else {
+        throw ex;
+    }
+}
+}
+
+tcltest::test emitter-container-for-1.2 {skip loop local} {
+    emitter_indent_level zero
+    set result [emitter_container_for_skip_start skip0][emitter_container_for_skip_end]
+} {if ( skip0 ) {
+    skip0 = false;
+} else {
+}
+}
+
+tcltest::test emitter-container-for-1.3 {for loop} {
+    emitter_indent_level zero
+    set result [emitter_container_for_start "boolean tmp0 = false" true][emitter_container_for_end]
+} {for ( boolean tmp0 = false ; true ; ) {
+}
+interp.resetResult();
+}
+
+tcltest::test emitter-container-for-1.4 {for loop} {
+    emitter_indent_level zero
+    set result [emitter_container_for_start "" true][emitter_container_for_end]
+} {for ( ; true ; ) {
+}
+interp.resetResult();
+}
+
+tcltest::test emitter-container-for-1.5 {for expr test} {
+    emitter_indent_level zero
+    emitter_container_for_expr tmp0
+} {if ( ! tmp0 ) { break; }
+}
+
+tcltest::test emitter-container-catch-1.0 {catch test} {
+    # catch {...}
+    emitter_indent_level zero
+    set result [emitter_container_catch_try_start code0]
+    append result [emitter_container_catch_try_end code0]
+    append result [emitter_container_catch_handler code0 false]
+    set result
+} {int code0 = TCL.OK;
+try {
+} catch (TclException ex) {
+    code0 = ex.getCompletionCode();
+}
+interp.resetResult();
+interp.setResult(code0);
+}
+
+tcltest::test emitter-container-catch-1.1 {catch test} {
+    # catch {...} err
+    emitter_indent_level zero
+    set result [emitter_container_catch_try_start code0]
+    append result [emitter_container_catch_try_end code0]
+    append result [emitter_container_catch_handler code0 false err]
+    set result
+} {int code0 = TCL.OK;
+try {
+} catch (TclException ex) {
+    code0 = ex.getCompletionCode();
+}
+TclObject result = interp.getResult();
+try {
+    interp.setVar("err", null, result, 0);
+} catch (TclException ex) {
+    TJC.catchVarErr(interp);
+}
+interp.resetResult();
+interp.setResult(code0);
+}
+
+tcltest::test emitter-container-catch-1.2 {catch test} {
+    # catch {} err
+    emitter_indent_level zero
+    emitter_container_catch_handler {} true err
+} {try {
+    interp.setVar("err", null, "", 0);
+} catch (TclException ex) {
+    TJC.catchVarErr(interp);
+}
+interp.resetResult();
+interp.setResult(TCL.OK);
+}
+
+tcltest::test emitter-container-catch-1.3 {catch test} {
+    # catch {}
+    emitter_indent_level zero
+    emitter_container_catch_handler {} true
+} {interp.resetResult();
+interp.setResult(TCL.OK);
+}
+
+tcltest::test emitter-container-catch-1.4 {catch test} {
+    # catch {} a(k)
+    emitter_indent_level zero
+    emitter_container_catch_handler {} true a(k)
+} {try {
+    interp.setVar("a", "k", "", 0);
+} catch (TclException ex) {
+    TJC.catchVarErr(interp);
+}
+interp.resetResult();
+interp.setResult(TCL.OK);
+}
+
+
+# Cleanup
+tcltest::cleanupTests
+
+

@@ -1,0 +1,3770 @@
+package require tcltest
+
+tcltest::test parse-subrange-1.0 {is a subrange} {
+    list \
+        [parse_is_subrange {0 5} {0 5}] \
+        [parse_is_subrange {0 5} {1 4}] \
+        [parse_is_subrange {0 5} {0 4}] \
+        [parse_is_subrange {0 5} {1 3}] \
+        [parse_is_subrange {1 10} {0 2}] \
+        [parse_is_subrange {1 10} {9 3}] \
+
+} {1 1 1 1 0 0}
+
+tcltest::test parse-is_braced-1.0 {is text braced} {
+    set s1 {{one}}
+    set s2 {one}
+    set s3 {"one"}
+    set s4 "\{one"
+    list \
+        [parse_is_braced $s1 {0 end}] \
+        [parse_is_braced $s2 {0 end}] \
+        [parse_is_braced $s3 {0 end}] \
+        [parse_is_braced $s4 {0 end}]
+} {1 0 0 0}
+
+
+# parse command -> comment command rest tree
+
+tcltest::test parse-command-1.0 {parse Tcl command} {
+    set script {set cmd 1}
+    set range {0 end}
+    parse command $script $range
+} [list \
+    {0 0} \
+    {0 9} \
+    {9 0} \
+    [list \
+        {simple {0 3} {{text {0 3} {}}}} \
+        {simple {4 3} {{text {4 3} {}}}} \
+        {simple {8 1} {{text {8 1} {}}}} \
+    ] \
+  ]
+
+tcltest::test parse-simple-text-1.0 {query simple text} {
+    set script {set cmd 1}
+    set subtree {simple {0 3} {{text {0 3} {}}}}
+    parse_is_simple_text $subtree
+} {1}
+
+tcltest::test parse-simple-text-1.1 {query simple text} {
+    set script {set cmd 1}
+    set subtree {simple {0 3} {{text {0 3} {}}}}
+    parse_get_simple_text $script $subtree
+} {set}
+
+
+
+
+tcltest::test parse-command-1.1 {parse Tcl command} {
+    set script {set cmd "1"}
+    set range {0 end}
+    parse command $script $range
+} [list \
+    {0 0} \
+    {0 11} \
+    {11 0} \
+    [list \
+        {simple {0 3} {{text {0 3} {}}}} \
+        {simple {4 3} {{text {4 3} {}}}} \
+        {simple {8 3} {{text {9 1} {}}}} \
+    ] \
+  ]
+
+tcltest::test parse-simple-text-1.2 {query simple text} {
+    set script {set cmd "1"}
+    set subtree {simple {8 3} {{text {9 1} {}}}}
+    parse_is_simple_text $subtree
+} {1}
+
+tcltest::test parse-simple-text-1.3 {query simple text} {
+    set script {set cmd "1"}
+    set subtree {simple {8 3} {{text {9 1} {}}}}
+    parse_get_simple_text $script $subtree
+} {"1"}
+
+tcltest::test parse-simple-text-1.4 {query simple text} {
+    set script {set cmd "1"}
+    set subtree {simple {8 3} {{text {9 1} {}}}}
+    parse_get_simple_text $script $subtree "text"
+} {1}
+
+
+
+tcltest::test parse-command-1.2 {parse Tcl command} {
+    set script {set cmd {1}}
+    set range {0 end}
+    parse command $script $range
+} [list \
+    {0 0} \
+    {0 11} \
+    {11 0} \
+    [list \
+        {simple {0 3} {{text {0 3} {}}}} \
+        {simple {4 3} {{text {4 3} {}}}} \
+        {simple {8 3} {{text {9 1} {}}}} \
+    ] \
+  ]
+
+tcltest::test parse-simple-text-1.5 {query simple text} {
+    set script {set cmd {1}}
+    set subtree {simple {8 3} {{text {9 1} {}}}}
+    parse_is_simple_text $subtree
+} {1}
+
+tcltest::test parse-simple-text-1.6 {query simple text} {
+    set script {set cmd {1}}
+    set subtree {simple {8 3} {{text {9 1} {}}}}
+    parse_get_simple_text $script $subtree
+} {{1}}
+
+tcltest::test parse-simple-text-1.7 {query simple text} {
+    set script {set cmd {1}}
+    set subtree {simple {8 3} {{text {9 1} {}}}}
+    parse_get_simple_text $script $subtree "text"
+} {1}
+
+
+tcltest::test parse-command-1.3 {parse Tcl command} {
+    set script {set cmd "text string"}
+    set range {0 end}
+    parse command $script $range
+} [list \
+    {0 0} \
+    {0 21} \
+    {21 0} \
+    [list \
+        {simple {0 3} {{text {0 3} {}}}} \
+        {simple {4 3} {{text {4 3} {}}}} \
+        {simple {8 13} {{text {9 11} {}}}} \
+    ] \
+  ]
+
+tcltest::test parse-simple-text-1.8 {query simple text} {
+    set script {set cmd "text string"}
+    set subtree {simple {8 13} {{text {9 11} {}}}}
+    parse_is_simple_text $subtree
+} {1}
+
+tcltest::test parse-simple-text-1.9 {query simple text} {
+    set script {set cmd "text string"}
+    set subtree {simple {8 13} {{text {9 11} {}}}}
+    parse_get_simple_text $script $subtree
+} {"text string"}
+
+tcltest::test parse-simple-text-1.10 {query simple text} {
+    set script {set cmd "text string"}
+    set subtree {simple {8 13} {{text {9 11} {}}}}
+    parse_get_simple_text $script $subtree "text"
+} {text string}
+
+
+
+tcltest::test parse-command-1.4 {parse Tcl command, quoted list is simple/text} {
+    set script {set cmd {1 {2 3} {4 5}}}
+    set range {0 end}
+    parse command $script $range
+} [list \
+    {0 0} \
+    {0 23} \
+    {23 0} \
+    [list \
+        {simple {0 3} {{text {0 3} {}}}} \
+        {simple {4 3} {{text {4 3} {}}}} \
+        {simple {8 15} {{text {9 13} {}}}} \
+    ] \
+  ]
+
+tcltest::test parse-command-1.5 {parse Tcl command, proc body is simple/text} {
+    set script {proc foo {} {}}
+    set range {0 end}
+    parse command $script $range
+} [list \
+    {0 0} \
+    {0 14} \
+    {14 0} \
+    [list \
+        {simple {0 4} {{text {0 4} {}}}} \
+        {simple {5 3} {{text {5 3} {}}}} \
+        {simple {9 2} {{text {10 0} {}}}} \
+        {simple {12 2} {{text {13 0} {}}}} \
+    ] \
+  ]
+
+tcltest::test parse-simple-text-1.11 {query simple text} {
+    set script {proc foo {} {}}
+    set subtree {simple {9 2} {{text {10 0} {}}}}
+    parse_get_simple_text $script $subtree "simple"
+} {{}}
+
+tcltest::test parse-simple-text-1.12 {query simple text} {
+    set script {proc foo {} {}}
+    set subtree {simple {9 2} {{text {10 0} {}}}}
+    parse_get_simple_text $script $subtree "text"
+} {}
+
+tcltest::test parse-command-1.6 {parse Tcl command, quoted var is simple text} {
+    set script {set i {$var}}
+    set range {0 end}
+    parse command $script $range
+} [list \
+    {0 0} \
+    {0 12} \
+    {12 0} \
+    [list \
+        {simple {0 3} {{text {0 3} {}}}} \
+        {simple {4 1} {{text {4 1} {}}}} \
+        {simple {6 6} {{text {7 4} {}}}} \
+    ] \
+  ]
+
+tcltest::test parse-simple-text-1.13 {query simple text} {
+    set script {set i {$var}}
+    set subtree {simple {6 6} {{text {7 4} {}}}}
+    parse_get_simple_text $script $subtree "simple"
+} {{$var}}
+
+tcltest::test parse-simple-text-1.14 {query simple text} {
+    set script {set i {$var}}
+    set subtree {simple {6 6} {{text {7 4} {}}}}
+    parse_get_simple_text $script $subtree "text"
+} {$var}
+
+tcltest::test parse-command-1.7 {parse Tcl command, quoted cmd is simple text} {
+    set script {set i {[bar]}}
+    set range {0 end}
+    parse command $script $range
+} [list \
+    {0 0} \
+    {0 13} \
+    {13 0} \
+    [list \
+        {simple {0 3} {{text {0 3} {}}}} \
+        {simple {4 1} {{text {4 1} {}}}} \
+        {simple {6 7} {{text {7 5} {}}}} \
+    ] \
+  ]
+
+tcltest::test parse-simple-text-1.15 {query simple text} {
+    set script {set i {[bar]}}
+    set subtree {simple {6 7} {{text {7 5} {}}}}
+    parse_get_simple_text $script $subtree "simple"
+} {{[bar]}}
+
+tcltest::test parse-simple-text-1.16 {query simple text} {
+    set script {set i {[bar]}}
+    set subtree {simple {6 7} {{text {7 5} {}}}}
+    parse_get_simple_text $script $subtree "text"
+} {[bar]}
+
+# A variable tree can be parsed as a argument to a command,
+# as part of a word argument to a command, or inside an expr.
+
+tcltest::test parse-variable-1.0 {parse variable tree} {
+    set script {$v}
+    set range {0 end}
+    parse varname $script $range
+} {variable {0 2} {{text {1 1} {}}}}
+
+tcltest::test parse-variable-1.1 {parse variable tree} {
+    set script {${v}}
+    set range {0 end}
+    parse varname $script $range
+} {variable {0 4} {{text {2 1} {}}}}
+
+tcltest::test parse-variable-1.2 {parse variable tree} {
+    set script {$v(k)}
+    set range {0 end}
+    parse varname $script $range
+} {variable {0 5} {{text {1 1} {}} {text {3 1} {}}}}
+
+tcltest::test parse-variable-1.3 {parse variable tree} {
+    set script {$v($k)}
+    set range {0 end}
+    parse varname $script $range
+} {variable {0 6} {{text {1 1} {}} {variable {3 2} {{text {4 1} {}}}}}}
+
+tcltest::test parse-variable-1.4 {parse variable tree} {
+    set script {$v($k)}
+    set range {0 end}
+    parse varname $script $range
+} {variable {0 6} {{text {1 1} {}} {variable {3 2} {{text {4 1} {}}}}}}
+
+tcltest::test parse-variable-1.5 {parse variable tree} {
+    set script {$v($ka$kb)}
+    set range {0 end}
+    parse varname $script $range
+} {variable {0 10} {{text {1 1} {}} {variable {3 3} {{text {4 2} {}}}} {variable {6 3} {{text {7 2} {}}}}}}
+
+tcltest::test parse-variable-1.6 {parse variable tree} {
+    set script {$v(${ka}${kb})}
+    set range {0 end}
+    parse varname $script $range
+} {variable {0 14} {{text {1 1} {}} {variable {3 5} {{text {5 2} {}}}} {variable {8 5} {{text {10 2} {}}}}}}
+
+tcltest::test parse-variable-1.7 {parse variable tree} {
+    set script {$v(${ka}x${kb})}
+    set range {0 end}
+    parse varname $script $range
+} {variable {0 15} {{text {1 1} {}} {variable {3 5} {{text {5 2} {}}}} {text {8 1} {}} {variable {9 5} {{text {11 2} {}}}}}}
+
+tcltest::test parse-variable-1.8 {parse variable tree} {
+    set script {$v([cmd])}
+    set range {0 end}
+    parse varname $script $range
+} {variable {0 9} {{text {1 1} {}} {command {3 5} {}}}}
+
+tcltest::test parse-variable-1.9 {parse variable tree} {
+    set script {$v(${ka}[cmd]${kb})}
+    set range {0 end}
+    parse varname $script $range
+} {variable {0 19} {{text {1 1} {}} {variable {3 5} {{text {5 2} {}}}} {command {8 5} {}} {variable {13 5} {{text {15 2} {}}}}}}
+
+
+# Callback invoked as a result of parsing a variable.
+
+proc test_variable_iterator { script stree type values ranges } {
+    global results
+    set debug 0
+
+    if {$debug} {
+        puts "test_variable_iterator : \{$type\} \{$values\} \{$ranges\}"
+    }
+
+    # Use array type info from parse layer to decide how to
+    # handle the variable.
+
+    switch -exact -- $type {
+        {scalar} {
+            # Scalar variable: $v
+            lappend results [list $type $values $ranges]
+        }
+        {array text} {
+            # Array with a text string key: $a(k)
+            lappend results [list $type $values $ranges]
+        }
+        {array scalar} {
+            # Array with a scalar variable key: $a($k)
+            lappend results [list $type $values $ranges]
+        }
+        {array command} {
+            # Array with a command key: $a([cmd])
+            lappend results [list $type $values $ranges]
+        }
+        {array word} {
+            # complex array key case, either a word made
+            # up of text, command, and variable elements
+            # or an array key that is itself an array.
+            lappend results [list $type $values $ranges]
+        }
+        {word begin} {
+            # Begin processing word elements for complex
+            # word as array key
+            lappend results [list $type $values $ranges]
+        }
+        {word end} {
+            # End processing of word elements for complex
+            # word as array key
+            lappend results [list $type $values $ranges]
+        }
+        {word text} {
+            # word element that is a text string
+            lappend results [list $type $values $ranges]
+        }
+        {word scalar} {
+            # word element that is a scalar variable
+            lappend results [list $type $values $ranges]
+        }
+        {word command} {
+            # word element that is a command
+            lappend results [list $type $values $ranges]
+        }
+        {word array text} {
+            # word element that is an array variable with a text key
+            lappend results [list $type $values $ranges]
+        }
+        {word array scalar} {
+            # word element that is an array variable with a scalar key
+            lappend results [list $type $values $ranges]
+        }
+        {word array command} {
+            # word element that is an array variable with a command key
+            lappend results [list $type $values $ranges]
+        }
+        {word array word} {
+            # word element that is an array with a word key
+            lappend results [list $type $values $ranges]
+        }
+        default {
+            error "unknown type \{$type\}"
+        }
+    }
+}
+
+tcltest::test parse-variable-2.0 {iterate over variable contents} {
+    set script {$v}
+    set range {0 end}
+    set stree [parse varname $script $range]
+
+    set results [list]
+
+    parse_variable_iterate $script $stree test_variable_iterator
+
+    set results
+} {{scalar v {{1 1}}}}
+
+tcltest::test parse-variable-2.1 {iterate over variable contents} {
+    set script {${v}}
+    set range {0 end}
+    set stree [parse varname $script $range]
+
+    set results [list]
+
+    parse_variable_iterate $script $stree test_variable_iterator
+
+    set results
+} {{scalar v {{2 1}}}}
+
+tcltest::test parse-variable-2.2 {iterate over variable contents} {
+    set script {$a(k)}
+    set range {0 end}
+    set stree [parse varname $script $range]
+
+    set results [list]
+
+    parse_variable_iterate $script $stree test_variable_iterator
+
+    set results
+} {{{array text} {a k} {{1 1} {3 1}}}}
+
+tcltest::test parse-variable-2.3 {iterate over variable contents} {
+    set script {$a($k)}
+    set range {0 end}
+    set stree [parse varname $script $range]
+
+    set results [list]
+
+    parse_variable_iterate $script $stree test_variable_iterator
+
+    set results
+} {{{array scalar} {a k} {{1 1} {4 1}}}}
+
+tcltest::test parse-variable-2.4 {iterate over variable contents} {
+    set script {$a([cmd])}
+    set range {0 end}
+    set stree [parse varname $script $range]
+
+    set results [list]
+
+    parse_variable_iterate $script $stree test_variable_iterator
+
+    set results
+} {{{array command} {a cmd} {{1 1} {4 3}}}}
+
+# word key: a complex array key can be made up of simple
+# elements (text, command, or variable) or it could contain
+# another array variable as the key.
+
+tcltest::test parse-variable-3.0 {iterate over variable contents} {
+    set script {$a($ka$kb)}
+    set range {0 end}
+    set stree [parse varname $script $range]
+
+    set results [list]
+
+    parse_variable_iterate $script $stree test_variable_iterator
+
+    set results
+} [list \
+    {{word begin} {} {}} \
+    {{word scalar} ka {{4 2}}} \
+    {{word scalar} kb {{7 2}}} \
+    {{word end} {} {}} \
+    {{array word} {a {}} {{1 1} {3 6}}} \
+  ]
+
+tcltest::test parse-variable-3.1 {iterate over variable contents} {
+    set script {$a(${ka}${kb})}
+    set range {0 end}
+    set stree [parse varname $script $range]
+
+    set results [list]
+
+    parse_variable_iterate $script $stree test_variable_iterator
+
+    set results
+} [list \
+    {{word begin} {} {}} \
+    {{word scalar} ka {{5 2}}} \
+    {{word scalar} kb {{10 2}}} \
+    {{word end} {} {}} \
+    {{array word} {a {}} {{1 1} {3 10}}} \
+  ]
+
+tcltest::test parse-variable-3.2 {iterate over variable contents} {
+    set script {$a(x$k)}
+    set range {0 end}
+    set stree [parse varname $script $range]
+
+    set results [list]
+
+    parse_variable_iterate $script $stree test_variable_iterator
+
+    set results
+} [list \
+    {{word begin} {} {}} \
+    {{word text} x {{3 1}}} \
+    {{word scalar} k {{5 1}}} \
+    {{word end} {} {}} \
+    {{array word} {a {}} {{1 1} {3 3}}} \
+  ]
+
+tcltest::test parse-variable-3.3 {iterate over variable contents} {
+    set script {$a(x[cmd])}
+    set range {0 end}
+    set stree [parse varname $script $range]
+
+    set results [list]
+
+    parse_variable_iterate $script $stree test_variable_iterator
+
+    set results
+} [list \
+    {{word begin} {} {}} \
+    {{word text} x {{3 1}}} \
+    {{word command} cmd {{5 3}}} \
+    {{word end} {} {}} \
+    {{array word} {a {}} {{1 1} {3 6}}} \
+  ]
+
+tcltest::test parse-variable-3.4 {iterate over variable contents} {
+    set script {$a($b(k))}
+    set range {0 end}
+    set stree [parse varname $script $range]
+
+    set results [list]
+
+    parse_variable_iterate $script $stree test_variable_iterator
+
+    set results
+} [list \
+    {{word begin} {} {}} \
+    {{word array text} {b k} {{4 1} {6 1}}} \
+    {{word end} {} {}} \
+    {{array word} {a {}} {{1 1} {3 5}}} \
+  ]
+
+tcltest::test parse-variable-3.5 {iterate over variable contents} {
+    set script {$a($b($k))}
+    set range {0 end}
+    set stree [parse varname $script $range]
+
+    set results [list]
+
+    parse_variable_iterate $script $stree test_variable_iterator
+
+    set results
+} [list \
+    {{word begin} {} {}} \
+    {{word array scalar} {b k} {{4 1} {7 1}}} \
+    {{word end} {} {}} \
+    {{array word} {a {}} {{1 1} {3 6}}} \
+  ]
+
+tcltest::test parse-variable-3.6 {iterate over variable contents} {
+    set script {$a($b([cmd]))}
+    set range {0 end}
+    set stree [parse varname $script $range]
+
+    set results [list]
+
+    parse_variable_iterate $script $stree test_variable_iterator
+
+    set results
+} [list \
+    {{word begin} {} {}} \
+    {{word array command} {b cmd} {{4 1} {7 3}}} \
+    {{word end} {} {}} \
+    {{array word} {a {}} {{1 1} {3 9}}} \
+  ]
+
+tcltest::test parse-variable-3.7 {iterate over variable contents} {
+    set script {$a(${ka}x${kb})}
+    set range {0 end}
+    set stree [parse varname $script $range]
+
+    set results [list]
+
+    parse_variable_iterate $script $stree test_variable_iterator
+
+    set results
+} [list \
+    {{word begin} {} {}} \
+    {{word scalar} ka {{5 2}}} \
+    {{word text} x {{8 1}}} \
+    {{word scalar} kb {{11 2}}} \
+    {{word end} {} {}} \
+    {{array word} {a {}} {{1 1} {3 11}}} \
+  ]
+
+# nested word keys: a word key can contain another
+# array variable. The word keys are iterated over
+# starting from the inner most word and evaluated
+# until the outermost word is reached.
+
+tcltest::test parse-variable-4.0 {iterate over variable contents} {
+    set script {$a($b($c(k)))}
+    set range {0 end}
+    set stree [parse varname $script $range]
+
+    set results [list]
+
+    parse_variable_iterate $script $stree test_variable_iterator
+
+    set results
+} [list \
+    {{word begin} {} {}} \
+    {{word array text} {c k} {{7 1} {9 1}}} \
+    {{word end} {} {}} \
+    {{word begin} {} {}} \
+    {{word array word} {b {}} {{4 1} {6 5}}} \
+    {{word end} {} {}} \
+    {{array word} {a {}} {{1 1} {3 9}}} \
+  ]
+
+tcltest::test parse-variable-4.1 {iterate over variable contents} {
+    set script {$a(x$b($c(k)))}
+    set range {0 end}
+    set stree [parse varname $script $range]
+
+    set results [list]
+
+    parse_variable_iterate $script $stree test_variable_iterator
+
+    set results
+} [list \
+    {{word begin} {} {}} \
+    {{word array text} {c k} {{8 1} {10 1}}} \
+    {{word end} {} {}} \
+    {{word begin} {} {}} \
+    {{word text} x {{3 1}}} \
+    {{word array word} {b {}} {{5 1} {7 5}}} \
+    {{word end} {} {}} \
+    {{array word} {a {}} {{1 1} {3 10}}} \
+  ]
+
+tcltest::test parse-variable-4.2 {iterate over variable contents} {
+    set script {$a(x$b($c(k))y)}
+    set range {0 end}
+    set stree [parse varname $script $range]
+
+    set results [list]
+
+    parse_variable_iterate $script $stree test_variable_iterator
+
+    set results
+} [list \
+    {{word begin} {} {}} \
+    {{word array text} {c k} {{8 1} {10 1}}} \
+    {{word end} {} {}} \
+    {{word begin} {} {}} \
+    {{word text} x {{3 1}}} \
+    {{word array word} {b {}} {{5 1} {7 5}}} \
+    {{word text} y {{13 1}}} \
+    {{word end} {} {}} \
+    {{array word} {a {}} {{1 1} {3 11}}} \
+  ]
+
+tcltest::test parse-variable-4.3 {iterate over variable contents} {
+    set script {$a($b(x[cmd]))}
+    set range {0 end}
+    set stree [parse varname $script $range]
+
+    set results [list]
+
+    parse_variable_iterate $script $stree test_variable_iterator
+
+    set results
+} [list \
+    {{word begin} {} {}} \
+    {{word text} x {{6 1}}} \
+    {{word command} cmd {{8 3}}} \
+    {{word end} {} {}} \
+    {{word begin} {} {}} \
+    {{word array word} {b {}} {{4 1} {6 6}}} \
+    {{word end} {} {}} \
+    {{array word} {a {}} {{1 1} {3 10}}} \
+  ]
+
+
+
+# Callback invoked during recursive parse_variable_iterate below
+
+proc test_variable_recursive_iterator { script stree type values ranges } {
+    global results
+    set debug 0
+
+    if {$debug} {
+        puts "test_variable_recursive_iterator : \{$type\} \{$values\} \{$ranges\}"
+    }
+
+    # Use array type info from parse layer to decide how to
+    # handle the variable.
+
+    switch -exact -- $type {
+        {scalar} {
+            # Scalar variable: $v
+            lappend results [list $type $values $ranges]
+        }
+        {array text} {
+            # Array with a text string key: $a(k)
+            lappend results [list $type $values $ranges]
+        }
+        {array scalar} {
+            # Array with a scalar variable key: $a($k)
+            lappend results [list $type $values $ranges]
+        }
+        {array command} {
+            # Array with a command key: $a([cmd])
+            lappend results [list $type $values $ranges]
+        }
+        {array word} {
+            # complex array key case, either a word made
+            # up of text, command, and variable elements
+            # or an array key that is itself an array.
+            lappend results [list $type $values $ranges]
+        }
+        {word begin} {
+            # Begin processing word elements for complex
+            # word as array key
+            lappend results [list $type $values $ranges]
+        }
+        {word end} {
+            # End processing of word elements for complex
+            # word as array key
+            lappend results [list $type $values $ranges]
+        }
+        {word text} {
+            # word element that is a text string
+            lappend results [list $type $values $ranges]
+        }
+        {word scalar} {
+            # word element that is a scalar variable
+            lappend results [list $type $values $ranges]
+        }
+        {word command} {
+            # word element that is a command
+            lappend results [list $type $values $ranges]
+
+            # If command has 1 argument, just assume it is a
+            # array variable and iterate over its contents too.
+            set len [llength [lindex $values 0]]
+            if {$debug} {
+            puts "values is \{$values\}"
+            puts "len is $len"
+            }
+            if {$len == 2} {
+                set var_script [lindex $values 0]
+                set var_argument [lindex $values 0 1]
+                if {$debug} {
+                puts "var_argument is \"$var_argument\""
+                }
+                set range {0 end}
+                set var_stree [parse varname $var_argument $range]
+                
+                set results_before $results
+                set results [list]
+                parse_variable_iterate $var_argument $var_stree \
+                    test_variable_recursive_iterator
+                foreach elem $results_before {
+                    if {$debug} {
+                    puts "appending result element \"$elem\""
+                    }
+                    lappend results $elem
+                }
+            }
+        }
+        {word array text} {
+            # word element that is an array variable with a text key
+            lappend results [list $type $values $ranges]
+        }
+        {word array scalar} {
+            # word element that is an array variable with a scalar key
+            lappend results [list $type $values $ranges]
+        }
+        {word array command} {
+            # word element that is an array variable with a command key
+            lappend results [list $type $values $ranges]
+        }
+        {word array word} {
+            # word element that is an array with a word key
+            lappend results [list $type $values $ranges]
+        }
+        default {
+            error "unknown type \{$type\}"
+        }
+    }
+}
+
+tcltest::test parse-variable-5.0 {invoke parse_variable_iterate recursively} {
+    set script {$a(x1[cmd1 $b(x2[cmd2])])}
+    set range {0 end}
+    set stree [parse varname $script $range]
+
+    set results [list]
+
+    parse_variable_iterate $script $stree test_variable_recursive_iterator
+
+    # Note that results are the combined results from the inner
+    # and outer iteration. The code does not correctly deal
+    # with nesting the results on its own.
+    set results
+} [list \
+    {{word begin} {} {}} \
+    {{word text} x2 {{3 2}}} \
+    {{word command} cmd2 {{6 4}}} \
+    {{word end} {} {}} \
+    {{array word} {b {}} {{1 1} {3 8}}} \
+    {{word begin} {} {}} \
+    {{word text} x1 {{3 2}}} \
+    {{word command} {{cmd1 $b(x2[cmd2])}} {{6 17}}} \
+    {{word end} {} {}} \
+    {{array word} {a {}} {{1 1} {3 21}}} \
+  ]
+
+# Callback invoked during parse_variable_iterate below.
+# This implementation evaluates the contents of a complex
+# array key word made up of multiple elements.
+
+proc test_variable_word_evaluation_iterator { script stree type values ranges } {
+    global results
+    set debug 0
+
+    if {$debug} {
+        puts "test_variable_word_evaluation_iterator : \{$type\} \{$values\} \{$ranges\}"
+    }
+
+    # Use array type info from parse layer to decide how to
+    # handle the variable.
+
+    switch -exact -- $type {
+        {scalar} {
+            # Scalar variable: $v
+            lappend results [list $type $values $ranges]
+        }
+        {array text} {
+            # Array with a text string key: $a(k)
+            lappend results [list $type $values $ranges]
+        }
+        {array scalar} {
+            # Array with a scalar variable key: $a($k)
+            lappend results [list $type $values $ranges]
+        }
+        {array command} {
+            # Array with a command key: $a([cmd])
+            lappend results [list $type $values $ranges]
+        }
+        {array word} {
+            # complex array key case, either a word made
+            # up of text, command, and variable elements
+            # or an array key that is itself an array.
+            lappend results [list $type $values $ranges]
+        }
+        {word begin} {
+            # Begin processing word elements for complex
+            # word as array key
+            lappend results [list $type $values $ranges]
+        }
+        {word end} {
+            # End processing of word elements for complex
+            # word as array key
+            lappend results [list $type $values $ranges]
+        }
+        {word text} {
+            # word element that is a text string
+            lappend results [list $type $values $ranges]
+
+            if {1} {
+                set word [parse_variable_iterate_word_value]
+                append word [lindex $values 0]
+                parse_variable_iterate_word_value $word
+            }
+        }
+        {word scalar} {
+            # word element that is a scalar variable
+            lappend results [list $type $values $ranges]
+
+            if {$values == "y"} {
+                set word [parse_variable_iterate_word_value]
+                append word y
+                parse_variable_iterate_word_value $word
+            }
+        }
+        {word command} {
+            # word element that is a command
+            lappend results [list $type $values $ranges]
+        }
+        {word array text} {
+            # word element that is an array variable with a text key
+            lappend results [list $type $values $ranges]
+        }
+        {word array scalar} {
+            # word element that is an array variable with a scalar key
+            lappend results [list $type $values $ranges]
+        }
+        {word array command} {
+            # word element that is an array variable with a command key
+            lappend results [list $type $values $ranges]
+        }
+        {word array word} {
+            # word element that is an array with a word key
+            lappend results [list $type $values $ranges]
+
+            if {$values == {b xyz}} {
+                set word [parse_variable_iterate_word_value]
+                append word n
+                parse_variable_iterate_word_value $word
+            }
+        }
+        default {
+            error "unknown type \{$type\}"
+        }
+    }
+}
+
+tcltest::test parse-variable-5.1 {evaluate word value} {
+    set script {$a(x${y}z)}
+    set range {0 end}
+    set stree [parse varname $script $range]
+
+    set results [list]
+
+    parse_variable_iterate $script $stree \
+        test_variable_word_evaluation_iterator
+
+    set results
+} [list \
+    {{word begin} {} {}} \
+    {{word text} x {{3 1}}} \
+    {{word scalar} y {{6 1}}} \
+    {{word text} z {{8 1}}} \
+    {{word end} {} {}} \
+    {{array word} {a xyz} {{1 1} {3 6}}} \
+  ]
+
+tcltest::test parse-variable-5.2 {evaluate word value} {
+    set script {$a(m$b(x${y}z)o)}
+    set range {0 end}
+    set stree [parse varname $script $range]
+
+    set results [list]
+
+    parse_variable_iterate $script $stree \
+        test_variable_word_evaluation_iterator
+
+    set results
+} [list \
+    {{word begin} {} {}} \
+    {{word text} x {{7 1}}} \
+    {{word scalar} y {{10 1}}} \
+    {{word text} z {{12 1}}} \
+    {{word end} {} {}} \
+    {{word begin} {} {}} \
+    {{word text} m {{3 1}}} \
+    {{word array word} {b xyz} {{5 1} {7 6}}} \
+    {{word text} o {{14 1}}} \
+    {{word end} {} {}} \
+    {{array word} {a mno} {{1 1} {3 12}}} \
+  ]
+
+# FIXME: Add test for array with a complex
+# word that contains a command with another
+# array that has a complex word. The
+# parse_variable_iterate should save the
+# word value across a recursive call, but
+# this is not tested.
+#
+# $a(x$[puts $c(m${y}n)]y)
+#
+
+tcltest::test parse-variable-6.0 {is variable tree} {
+    set script {$v}
+    set range {0 end}
+    set stree [parse varname $script $range]
+    list \
+        [parse_is_variable $stree] \
+        [parse_is_scalar_variable $stree] \
+        [parse_get_scalar_variable $script $stree]
+} {1 1 v}
+
+tcltest::test parse-variable-6.1 {parse variable tree} {
+    set script {$v}
+    set range {0 end}
+    set stree [parse varname $script $range]
+    parse_get_variable_list $script $stree
+} {variable v}
+
+tcltest::test parse-variable-6.2 {parse variable tree} {
+    set script {${v}}
+    set range {0 end}
+    set stree [parse varname $script $range]
+    parse_get_variable_list $script $stree
+} {variable v}
+
+tcltest::test parse-variable-6.3 {parse variable tree} {
+    set script {$v(k)}
+    set range {0 end}
+    set stree [parse varname $script $range]
+    parse_get_variable_list $script $stree
+} {variable {v k}}
+
+tcltest::test parse-variable-6.4 {parse variable tree} {
+    set script {$v($k)}
+    set range {0 end}
+    set stree [parse varname $script $range]
+    parse_get_variable_list $script $stree
+} {variable {v {variable k}}}
+
+tcltest::test parse-variable-6.5 {parse variable tree} {
+    set script {$v(${k})}
+    set range {0 end}
+    set stree [parse varname $script $range]
+    parse_get_variable_list $script $stree
+} {variable {v {variable k}}}
+
+tcltest::test parse-variable-6.6 {parse variable tree} {
+    set script {$v($ka$kb)}
+    set range {0 end}
+    set stree [parse varname $script $range]
+    parse_get_variable_list $script $stree
+} {variable {v {variable ka} {variable kb}}}
+
+tcltest::test parse-variable-6.7 {parse variable tree} {
+    set script {$v(${ka}${kb})}
+    set range {0 end}
+    set stree [parse varname $script $range]
+    parse_get_variable_list $script $stree
+} {variable {v {variable ka} {variable kb}}}
+
+tcltest::test parse-variable-6.8 {parse variable tree} {
+    set script {$v(${ka}x${kb})}
+    set range {0 end}
+    set stree [parse varname $script $range]
+    parse_get_variable_list $script $stree
+} {variable {v {variable ka} {text x} {variable kb}}}
+
+tcltest::test parse-variable-6.9 {parse variable tree} {
+    set script {$v(${ka}[cmd]${kb})}
+    set range {0 end}
+    set stree [parse varname $script $range]
+    parse_get_variable_list $script $stree
+} {variable {v {variable ka} {command cmd} {variable kb}}}
+
+
+
+
+
+
+
+tcltest::test parse-command-2.0 {parse Tcl command with nested command} {
+    set script {set i [bar]}
+    set range {0 end}
+    parse command $script $range
+} [list \
+    {0 0} \
+    {0 11} \
+    {11 0} \
+    [list \
+        {simple {0 3} {{text {0 3} {}}}} \
+        {simple {4 1} {{text {4 1} {}}}} \
+        {word {6 5} {{command {6 5} {}}}} \
+    ] \
+  ]
+
+tcltest::test parse-word-1.0 {is a word type} {
+    set script {set i [bar]}
+    set subtree {word {6 5} {{command {6 5} {}}}}
+    parse_is_word $subtree
+} {1}
+
+tcltest::test parse-word-1.1 {is a word type} {
+    set script {set i [bar]}
+    set subtree {simple {0 3} {{text {0 3} {}}}}
+    parse_is_word $subtree
+} {0}
+
+tcltest::test parse-word-command-1.0 {is a word/command type} {
+    set script {set i [bar]}
+    set subtree {word {6 5} {{command {6 5} {}}}}
+    parse_is_word_command $subtree
+} {1}
+
+tcltest::test parse-word-command-1.1 {get word/command text} {
+    set script {set i [bar]}
+    set subtree {word {6 5} {{command {6 5} {}}}}
+    parse_get_word_command $script $subtree
+} {[bar]}
+
+tcltest::test parse-command-2.1 {parse Tcl command with double nested command} {
+    set script {set i [[bar]]}
+    set range {0 end}
+    parse command $script $range
+} [list \
+    {0 0} \
+    {0 13} \
+    {13 0} \
+    [list \
+        {simple {0 3} {{text {0 3} {}}}} \
+        {simple {4 1} {{text {4 1} {}}}} \
+        {word {6 7} {{command {6 7} {}}}} \
+    ] \
+  ]
+
+tcltest::test parse-word-command-1.2 {is a word/command type} {
+    set script {set i [[bar]]}
+    set subtree {word {6 7} {{command {6 7} {}}}}
+    parse_get_word_command $script $subtree
+} {[[bar]]}
+
+tcltest::test parse-command-2.2 {parse Tcl command with 2 nested commands} {
+    set script {set i [foo][bar]}
+    set range {0 end}
+    parse command $script $range
+} [list \
+    {0 0} \
+    {0 16} \
+    {16 0} \
+    [list \
+        {simple {0 3} {{text {0 3} {}}}} \
+        {simple {4 1} {{text {4 1} {}}}} \
+        {word {6 10} {{command {6 5} {}} {command {11 5} {}}}} \
+    ] \
+  ]
+
+tcltest::test parse-word-command-1.3 {not a word/command type} {
+    set script {set i [foo][bar]}
+    set subtree {word {6 10} {{command {6 5} {}} {command {11 5} {}}}}
+    parse_is_word_command $subtree
+} {0}
+
+tcltest::test parse-command-2.3 {parse Tcl command with 2 nested commands} {
+    set script {set i "[foo][bar]"}
+    set range {0 end}
+    parse command $script $range
+} [list \
+    {0 0} \
+    {0 18} \
+    {18 0} \
+    [list \
+        {simple {0 3} {{text {0 3} {}}}} \
+        {simple {4 1} {{text {4 1} {}}}} \
+        {word {6 12} {{command {7 5} {}} {command {12 5} {}}}} \
+    ] \
+  ]
+
+tcltest::test parse-command-2.4 {brace quoted commands just a simple string} {
+    set script {set i {[foo][bar]}}
+    set range {0 end}
+    parse command $script $range
+} [list \
+    {0 0} \
+    {0 18} \
+    {18 0} \
+    [list \
+        {simple {0 3} {{text {0 3} {}}}} \
+        {simple {4 1} {{text {4 1} {}}}} \
+        {simple {6 12} {{text {7 10} {}}}} \
+    ] \
+  ]
+
+tcltest::test parse-command-2.5 {variables are not commands} {
+    set script {set i $one$two$two}
+    set range {0 end}
+    parse command $script $range
+} [list \
+    {0 0} \
+    {0 18} \
+    {18 0} \
+    [list \
+        {simple {0 3} {{text {0 3} {}}}} \
+        {simple {4 1} {{text {4 1} {}}}} \
+        {word {6 12} {{variable {6 4} {{text {7 3} {}}}} {variable {10 4} {{text {11 3} {}}}} {variable {14 4} {{text {15 3} {}}}}}} \
+    ] \
+  ]
+
+tcltest::test parse-command-2.6 {parse Tcl command with 2 nested commands} {
+    set script {set i [foo]x[bar]}
+    set range {0 end}
+    parse command $script $range
+} [list \
+    {0 0} \
+    {0 17} \
+    {17 0} \
+    [list \
+        {simple {0 3} {{text {0 3} {}}}} \
+        {simple {4 1} {{text {4 1} {}}}} \
+        {word {6 11} {{command {6 5} {}} {text {11 1} {}} {command {12 5} {}}}} \
+    ] \
+  ]
+
+tcltest::test parse-command-3.0 {parse Tcl command with var argument} {
+    set script {set i $j}
+    set range {0 end}
+    parse command $script $range
+} [list \
+    {0 0} \
+    {0 8} \
+    {8 0} \
+    [list \
+        {simple {0 3} {{text {0 3} {}}}} \
+        {simple {4 1} {{text {4 1} {}}}} \
+        {word {6 2} {{variable {6 2} {{text {7 1} {}}}}}} \
+    ] \
+  ]
+
+tcltest::test parse-word-variable-1.0 {is a word/variable type} {
+    set script {set i $j}
+    set subtree {word {6 2} {{variable {6 2} {{text {7 1} {}}}}}}
+    parse_is_word_variable $subtree
+} {1}
+
+tcltest::test parse-word-variable-1.1 {get word/variable text} {
+    set script {set i $j}
+    set subtree {word {6 2} {{variable {6 2} {{text {7 1} {}}}}}}
+    parse_get_word_variable $script $subtree
+} {$j}
+
+tcltest::test parse-word-variable-1.2 {get word/variable text} {
+    set script {set i $j}
+    set subtree {word {6 2} {{variable {6 2} {{text {7 1} {}}}}}}
+    parse_get_word_variable $script $subtree "text"
+} {j}
+
+
+tcltest::test parse-command-3.1 {parse Tcl command with array var argument} {
+    set script {set i $arr(ind)}
+    set range {0 end}
+    parse command $script $range
+} [list \
+    {0 0} \
+    {0 15} \
+    {15 0} \
+    [list \
+        {simple {0 3} {{text {0 3} {}}}} \
+        {simple {4 1} {{text {4 1} {}}}} \
+        {word {6 9} {{variable {6 9} {{text {7 3} {}} {text {11 3} {}}}}}} \
+    ] \
+  ]  
+
+tcltest::test parse-word-variable-1.3 {is a word/variable type} {
+    set script {set i $arr(ind)}
+    set subtree {word {6 9} {{variable {6 9} {{text {7 3} {}} {text {11 3} {}}}}}}
+    parse_is_word_variable $subtree
+} {1}
+
+tcltest::test parse-word-variable-1.4 {get word/variable text} {
+    set script {set i $arr(ind)}
+    set subtree {word {6 9} {{variable {6 9} {{text {7 3} {}} {text {11 3} {}}}}}}
+    parse_get_word_variable $script $subtree "variable"
+} {$arr(ind)}
+
+tcltest::test parse-word-variable-1.5 {get word/variable text} {
+    set script {set i $arr(ind)}
+    set subtree {word {6 9} {{variable {6 9} {{text {7 3} {}} {text {11 3} {}}}}}}
+    parse_get_word_variable $script $subtree "text"
+} {arr(ind)}
+
+tcltest::test parse-word-variable-1.6 {get word/variable text} {
+    set script {set i $arr($ind)}
+    set subtree {word {6 10} {{variable {6 10} {{text {7 3} {}} {variable {11 4} {{text {12 3} {}}}}}}}}
+    list \
+        [parse_is_word_variable $subtree] \
+        [parse_get_word_variable $script $subtree "variable"] \
+        [parse_get_word_variable $script $subtree "text"]
+} [list 1 \$arr(\$ind) arr(\$ind)]
+
+tcltest::test parse-word-variable-1.7 {get word/variable text} {
+    set script {set i $a($ka$kb)}
+    set subtree {word {6 10} {{variable {6 10} {{text {7 1} {}} {variable {9 3} {{text {10 2} {}}}} {variable {12 3} {{text {13 2} {}}}}}}}}
+    list \
+        [parse_is_word_variable $subtree] \
+        [parse_get_word_variable $script $subtree "variable"] \
+        [parse_get_word_variable $script $subtree "text"]
+} [list 1 \$a(\$ka\$kb) a(\$ka\$kb)]
+
+
+tcltest::test parse-command-3.2 {parse Tcl command with array var argument} {
+    set script {set i $a([cmd1 $b([cmd2])])}
+    set range {0 end}
+    parse command $script $range
+} [list \
+    {0 0} \
+    {0 27} \
+    {27 0} \
+    [list \
+        {simple {0 3} {{text {0 3} {}}}} \
+        {simple {4 1} {{text {4 1} {}}}} \
+        {word {6 21} {{variable {6 21} {{text {7 1} {}} {command {9 17} {}}}}}} \
+    ] \
+  ]
+
+tcltest::test parse-command-3.3 {parse Tcl command inside array var argument} {
+    set script {set i $a([cmd1 $b([cmd2])])}
+    set range {10 15}
+    parse command $script $range
+} [list \
+    {0 0} \
+    {10 15} \
+    {25 0} \
+    [list \
+        {simple {10 4} {{text {10 4} {}}}} \
+        {word {15 10} {{variable {15 10} {{text {16 1} {}} {command {18 6} {}}}}}} \
+    ] \
+  ]
+
+# Iterate over word elements.
+
+proc test_parse_word_iterate { script stree type values ranges } {
+    set debug 0
+    global results
+
+    if {$debug} {
+        puts "text_parse_word_iterate : \"$script\" \{$stree\} $type \{$values\} \{$ranges\}"
+    }
+
+    switch -exact -- $type {
+        {backslash} {
+            lappend results [list $stree $type $values $ranges]
+        }
+        {command} {
+            lappend results [list $stree $type $values $ranges]
+        }
+        {text} {
+            lappend results [list $stree $type $values $ranges]
+        }
+        {variable} {
+            lappend results [list $stree $type $values $ranges]
+        }
+        {word begin} {
+            lappend results [list $stree $type $values $ranges]
+        }
+        {word end} {
+            lappend results [list $stree $type $values $ranges]
+        }
+        {word} {
+            lappend results [list $stree $type $values $ranges]
+        }
+        default {
+            error "unknown type \"$type\""
+        }
+    }
+}
+
+tcltest::test parse-word-iterate-1.0 {iterate over word elements} {
+    set script {set i "$s"}
+    set range {0 end}
+    set stree [parse command $script $range]
+    set word_stree [lindex $stree 3 2]
+    set results [list]
+    parse_word_iterate $script $word_stree test_parse_word_iterate
+    set results
+} [list \
+    {{word {6 4} {{variable {7 2} {{text {8 1} {}}}}}} {word begin} {} {}} \
+    {{variable {7 2} {{text {8 1} {}}}} variable {{$s}} {{7 2}}} \
+    {{word {6 4} {{variable {7 2} {{text {8 1} {}}}}}} {word end} {} {}} \
+    {{word {6 4} {{variable {7 2} {{text {8 1} {}}}}}} word {} {}} \
+  ]
+
+tcltest::test parse-word-iterate-1.1 {iterate over word elements} {
+    set script {set i "[cmd]"}
+    set range {0 end}
+    set stree [parse command $script $range]
+    set word_stree [lindex $stree 3 2]
+    set results [list]
+    parse_word_iterate $script $word_stree test_parse_word_iterate
+    set results
+} [list \
+    {{word {6 7} {{command {7 5} {}}}} {word begin} {} {}} \
+    {{command {7 5} {}} command cmd {{8 3}}} \
+    {{word {6 7} {{command {7 5} {}}}} {word end} {} {}} \
+    {{word {6 7} {{command {7 5} {}}}} word {} {}} \
+  ]
+
+tcltest::test parse-word-iterate-1.2 {iterate over word elements} {
+    set script {set i "x$s"}
+    set range {0 end}
+    set stree [parse command $script $range]
+    set word_stree [lindex $stree 3 2]
+    set results [list]
+    parse_word_iterate $script $word_stree test_parse_word_iterate
+    set results
+} [list \
+    {{word {6 5} {{text {7 1} {}} {variable {8 2} {{text {9 1} {}}}}}} {word begin} {} {}} \
+    {{text {7 1} {}} text x {{7 1}}} \
+    {{variable {8 2} {{text {9 1} {}}}} variable {{$s}} {{8 2}}} \
+    {{word {6 5} {{text {7 1} {}} {variable {8 2} {{text {9 1} {}}}}}} {word end} {} {}} \
+    {{word {6 5} {{text {7 1} {}} {variable {8 2} {{text {9 1} {}}}}}} word {} {}} \
+  ]
+
+tcltest::test parse-word-iterate-1.3 {iterate over word elements} {
+    set script {set i "x[cmd]"}
+    set range {0 end}
+    set stree [parse command $script $range]
+    set word_stree [lindex $stree 3 2]
+    set results [list]
+    parse_word_iterate $script $word_stree test_parse_word_iterate
+    set results
+} [list \
+    {{word {6 8} {{text {7 1} {}} {command {8 5} {}}}} {word begin} {} {}} \
+    {{text {7 1} {}} text x {{7 1}}} \
+    {{command {8 5} {}} command cmd {{9 3}}} \
+    {{word {6 8} {{text {7 1} {}} {command {8 5} {}}}} {word end} {} {}} \
+    {{word {6 8} {{text {7 1} {}} {command {8 5} {}}}} word {} {}} \
+  ]
+
+tcltest::test parse-word-iterate-1.4 {iterate over word elements} {
+    set script {set i "x${s}z"}
+    set range {0 end}
+    set stree [parse command $script $range]
+    set word_stree [lindex $stree 3 2]
+    set results [list]
+    parse_word_iterate $script $word_stree test_parse_word_iterate
+    set results
+} [list \
+    {{word {6 8} {{text {7 1} {}} {variable {8 4} {{text {10 1} {}}}} {text {12 1} {}}}} {word begin} {} {}} \
+    {{text {7 1} {}} text x {{7 1}}} \
+    {{variable {8 4} {{text {10 1} {}}}} variable {{${s}}} {{8 4}}} \
+    {{text {12 1} {}} text z {{12 1}}} \
+    {{word {6 8} {{text {7 1} {}} {variable {8 4} {{text {10 1} {}}}} {text {12 1} {}}}} {word end} {} {}} \
+    {{word {6 8} {{text {7 1} {}} {variable {8 4} {{text {10 1} {}}}} {text {12 1} {}}}} word {} {}} \
+  ]
+
+tcltest::test parse-word-iterate-1.5 {iterate over word elements} {
+    # Iterate over a word that consists of a single backslash
+    set script {set i "\n"}
+    set range {0 end}
+    set stree [parse command $script $range]
+    set word_stree [lindex $stree 3 2]
+    set results [list]
+    parse_word_iterate $script $word_stree test_parse_word_iterate
+    set results
+} [list \
+    {{word {6 4} {{backslash {7 2} {}}}} {word begin} {} {}} \
+    {{backslash {7 2} {}} backslash n {{8 1}}} \
+    {{word {6 4} {{backslash {7 2} {}}}} {word end} {} {}} \
+    {{word {6 4} {{backslash {7 2} {}}}} word {} {}} \
+]
+
+tcltest::test parse-command-3.4 {parse Tcl command} {
+    # String with a backslash subst is a word
+    set script {set i "x\n"}
+    set range {0 end}
+    parse command $script $range
+} [list \
+    {0 0} \
+    {0 11} \
+    {11 0} \
+    [list \
+        {simple {0 3} {{text {0 3} {}}}} \
+        {simple {4 1} {{text {4 1} {}}}} \
+        {word {6 5} {{text {7 1} {}} {backslash {8 2} {}}}} \
+    ] \
+  ]
+
+tcltest::test parse-word-iterate-1.5 {iterate over word elements} {
+    set script {set i "x\n"}
+    set range {0 end}
+    set stree [parse command $script $range]
+    set word_stree [lindex $stree 3 2]
+    set results [list]
+    parse_word_iterate $script $word_stree test_parse_word_iterate
+    set results
+} [list \
+    {{word {6 5} {{text {7 1} {}} {backslash {8 2} {}}}} {word begin} {} {}} \
+    {{text {7 1} {}} text x {{7 1}}} \
+    {{backslash {8 2} {}} backslash n {{9 1}}} \
+    {{word {6 5} {{text {7 1} {}} {backslash {8 2} {}}}} {word end} {} {}} \
+    {{word {6 5} {{text {7 1} {}} {backslash {8 2} {}}}} word {} {}} \
+  ]
+
+# Iterate over word elements and evaluate word value.
+
+proc test_parse_word_eval_iterate { script stree type values ranges } {
+    set debug 0
+    global results
+
+    if {$debug} {
+        puts "test_parse_word_eval_iterate : \"$script\" \{$stree\} $type \{$values\} \{$ranges\}"
+    }
+
+    switch -exact -- $type {
+        {backslash} {
+            # No-op
+        }
+        {command} {
+            # No-op
+        }
+        {text} {
+            if {1} {
+                set word [parse_word_iterate_word_value]
+                append word [lindex $values 0]
+                parse_word_iterate_word_value $word
+            }
+        }
+        {variable} {
+            set var [lindex $values 0]
+            if {$var == "\$s" || $var == "\$\{s\}"} {
+                set word [parse_word_iterate_word_value]
+                append word "t"
+                parse_word_iterate_word_value $word
+            }
+        }
+        {word begin} {
+            # No-op
+        }
+        {word end} {
+            # No-op
+        }
+        {word} {
+            # No-op
+        }
+        default {
+            error "unknown type \"$type\""
+        }
+    }
+}
+
+tcltest::test parse-word-iterate-2.0 {iterate over word elements and eval result} {
+    set script {set i "$s$s"}
+    set range {0 end}
+    set stree [parse command $script $range]
+    set word_stree [lindex $stree 3 2]
+    parse_word_iterate $script $word_stree test_parse_word_eval_iterate
+} {tt}
+
+tcltest::test parse-word-iterate-2.1 {iterate over word elements and eval result} {
+    set script {set i "x${s}z"}
+    set range {0 end}
+    set stree [parse command $script $range]
+    set word_stree [lindex $stree 3 2]
+    parse_word_iterate $script $word_stree test_parse_word_eval_iterate
+} {xtz}
+
+# Iterate over word elements and evaluate word value. Invoke the
+# parse_word_iterate function recursively to ensure that the word
+# value is being saved across a recursive call to parse_word_iterate.
+
+proc test_parse_word_recursive_eval_iterate { script stree type values ranges } {
+    set debug 0
+    global results
+
+    if {$debug} {
+        puts "test_parse_word_recursive_eval_iterate : \"$script\" \{$stree\} $type \{$values\} \{$ranges\}"
+    }
+
+    switch -exact -- $type {
+        {backslash} {
+            # No-op
+        }
+        {command} {
+            # No-op
+        }
+        {text} {
+            if {1} {
+                set word [parse_word_iterate_word_value]
+                append word [lindex $values 0]
+                parse_word_iterate_word_value $word
+            }
+        }
+        {variable} {
+            set var [lindex $values 0]
+            if {$var == "\$s" || $var == "\$\{s\}"} {
+                set word [parse_word_iterate_word_value]
+                append word "t"
+                parse_word_iterate_word_value $word
+            }
+            if {$var == {$b([cmd d${s}f])}} {
+                # Subcommand contains word to evaluate, don't
+                # eval the subcommand, just parse the word
+                # element and invoke parse_word_iterate
+                # recursively.
+                set r_range {12 10}
+                set r_stree [parse command $script $r_range]
+                set r_word_stree [lindex $r_stree 3 1]
+                if {$debug} {
+                    puts "r_string for inner word at range \{$r_range\} is\
+                        \"[parse getstring $script $r_range]\""
+                    puts "r_stree for inner word is \{$r_stree\}"
+                    puts "r_word_stree for inner word is \{$r_word_stree\}"
+                }
+                set r_word [parse_word_iterate $script $r_word_stree \
+                    test_parse_word_recursive_eval_iterate]
+
+                # Append word value created by iterating over d${s}f
+                set word [parse_word_iterate_word_value]
+                append word $r_word
+                parse_word_iterate_word_value $word
+            }
+        }
+        {word begin} {
+            # No-op
+        }
+        {word end} {
+            # No-op
+        }
+        {word} {
+            # No-op
+        }
+        default {
+            error "unknown type \"$type\""
+        }
+    }
+}
+
+tcltest::test parse-word-iterate-2.2 {iterate over word elements and eval result} {
+    set script {set i "a$b([cmd d${s}f])c"}
+    set range {0 end}
+    set stree [parse command $script $range]
+    set word_stree [lindex $stree 3 2]
+    parse_word_iterate $script $word_stree test_parse_word_recursive_eval_iterate
+} {adtfc}
+
+
+
+
+# Iterate over word elements and evaluate word value, report
+# the word value via the {word} type instead of depending on
+# the result of the parse_word_iterate invocation.
+
+proc test_parse_word_eval_iterate2 { script stree type values ranges } {
+    global results
+
+    set debug 0
+
+    if {$debug} {
+        puts "test_parse_word_eval_iterate2 : \"$script\" \{$stree\} $type \{$values\} \{$ranges\}"
+    }
+
+    switch -exact -- $type {
+        {backslash} {
+            # No-op
+        }
+        {command} {
+            # No-op
+        }
+        {text} {
+            if {1} {
+                set word [parse_word_iterate_word_value]
+                append word [lindex $values 0]
+                parse_word_iterate_word_value $word
+            }
+        }
+        {variable} {
+            set var [lindex $values 0]
+            if {$var == "\$s" || $var == "\$\{s\}"} {
+                set word [parse_word_iterate_word_value]
+                append word "t"
+                parse_word_iterate_word_value $word
+            }
+        }
+        {word begin} {
+            # No-op
+        }
+        {word end} {
+            # No-op
+        }
+        {word} {
+            lappend results [lindex $values 0] [parse_word_iterate_word_value]
+        }
+        default {
+            error "unknown type \"$type\""
+        }
+    }
+}
+
+tcltest::test parse-word-iterate-2.3 {iterate over word elements and eval result} {
+    set script {set i "$s$s"}
+    set range {0 end}
+    set stree [parse command $script $range]
+    set word_stree [lindex $stree 3 2]
+    set results [list]
+    parse_word_iterate $script $word_stree test_parse_word_eval_iterate2
+    set results
+} {tt tt}
+
+tcltest::test parse-word-iterate-2.4 {iterate over word elements and eval result} {
+    set script {set i "x${s}z"}
+    set range {0 end}
+    set stree [parse command $script $range]
+    set word_stree [lindex $stree 3 2]
+    set results [list]
+    parse_word_iterate $script $word_stree test_parse_word_eval_iterate2
+    set results
+} {xtz xtz}
+
+tcltest::test parse-command-3.5 {parse Tcl command} {
+    # command with a backslash newline continuation
+    # is parsed so that the backslash is ignored.
+    set script "set i \\\n0"
+    set range {0 end}
+    parse command $script $range
+} [list \
+    {0 0} \
+    {0 9} \
+    {9 0} \
+    [list \
+        {simple {0 3} {{text {0 3} {}}}} \
+        {simple {4 1} {{text {4 1} {}}}} \
+        {simple {8 1} {{text {8 1} {}}}}
+    ] \
+  ]
+
+tcltest::test parse-command-3.6 {parse Tcl command} {
+    # command with a braced argument is parsed with
+    # a backslash newline sequence.
+    set script "set i \{\\\n0\}"
+    set range {0 end}
+    parse command $script $range
+} [list \
+    {0 0} \
+    {0 11} \
+    {11 0} \
+    [list \
+        {simple {0 3} {{text {0 3} {}}}} \
+        {simple {4 1} {{text {4 1} {}}}} \
+        {word {6 5} {{backslash {7 2} {}} {text {9 1} {}}}} \
+    ] \
+  ]
+
+tcltest::test parse-command-3.7 {parse Tcl command} {
+    # command with a braced argument is parsed with
+    # a backslash newline sequence. Space characters
+    # following the newline are considered part of
+    # the backslash sequence.
+    set script "set i \{\\\n 0\}"
+    set range {0 end}
+    parse command $script $range
+} [list \
+    {0 0} \
+    {0 12} \
+    {12 0} \
+    [list \
+        {simple {0 3} {{text {0 3} {}}}} \
+        {simple {4 1} {{text {4 1} {}}}} \
+        {word {6 6} {{backslash {7 3} {}} {text {10 1} {}}}} \
+    ] \
+  ]
+
+tcltest::test parse-command-3.8 {parse Tcl command} {
+    # command with a braced argument is parsed with
+    # a backslash newline sequence. Tab characters
+    # following the newline are considered part of
+    # the backslash sequence.
+    set script "set i \{\\\n\t0\}"
+    set range {0 end}
+    parse command $script $range
+} [list \
+    {0 0} \
+    {0 12} \
+    {12 0} \
+    [list \
+        {simple {0 3} {{text {0 3} {}}}} \
+        {simple {4 1} {{text {4 1} {}}}} \
+        {word {6 6} {{backslash {7 3} {}} {text {10 1} {}}}} \
+    ] \
+  ]
+
+tcltest::test parse-command-3.9 {parse Tcl command} {
+    # command with a braced argument should see
+    # a backslash newline as an escape but it
+    # should not see \t as an escape character.
+    set script "set i \{\\t\\\n\t0\}"
+    set range {0 end}
+    parse command $script $range
+} [list \
+    {0 0} \
+    {0 14} \
+    {14 0} \
+    [list \
+        {simple {0 3} {{text {0 3} {}}}} \
+        {simple {4 1} {{text {4 1} {}}}} \
+        {word {6 8} {{text {7 2} {}} {backslash {9 3} {}} {text {12 1} {}}}} \
+    ] \
+  ]
+
+
+tcltest::test parse-command-4.0 {constant text element} {
+    # A constant word element can be an unquoted range
+    # of text, a quoted range of text, or a braced
+    # range of text.
+
+    set script "list A \"B\" \{C\} \"D E\" \{F G H\}"
+    set range {0 end}
+    set tree [parse command $script $range]
+    set stree [lindex $tree 3]
+    list \
+        [parse_is_simple_text [lindex $stree 0]] \
+        [parse_is_constant $script [lindex $stree 0]] \
+        [parse_is_simple_text [lindex $stree 1]] \
+        [parse_is_constant $script [lindex $stree 1]] \
+        [parse_is_simple_text [lindex $stree 2]] \
+        [parse_is_constant $script [lindex $stree 2]] \
+        [parse_is_simple_text [lindex $stree 3]] \
+        [parse_is_constant $script [lindex $stree 3]] \
+        [parse_is_simple_text [lindex $stree 4]] \
+        [parse_is_constant $script [lindex $stree 4]] \
+        [parse_is_simple_text [lindex $stree 5]] \
+        [parse_is_constant $script [lindex $stree 5]]
+} {1 1 1 1 1 1 1 1 1 1 1 1}
+
+tcltest::test parse-command-4.1 {constant text element} {
+    # A constant word element can't include variable
+    # refrences or nested commands.
+
+    set script "list \$var \[bar\] \"\$var\" \"\[bar\]\" \{\$var\} \{\[bar\]\}"
+    set range {0 end}
+    set tree [parse command $script $range]
+    set stree [lindex $tree 3]
+    list \
+        [parse_is_simple_text [lindex $stree 0]] \
+        [parse_is_constant $script [lindex $stree 0]] \
+        [parse_is_simple_text [lindex $stree 1]] \
+        [parse_is_constant $script [lindex $stree 1]] \
+        [parse_is_simple_text [lindex $stree 2]] \
+        [parse_is_constant $script [lindex $stree 2]] \
+        [parse_is_simple_text [lindex $stree 3]] \
+        [parse_is_constant $script [lindex $stree 3]] \
+        [parse_is_simple_text [lindex $stree 4]] \
+        [parse_is_constant $script [lindex $stree 4]] \
+        [parse_is_simple_text [lindex $stree 5]] \
+        [parse_is_constant $script [lindex $stree 5]] \
+        [parse_is_simple_text [lindex $stree 6]] \
+        [parse_is_constant $script [lindex $stree 6]]
+} {1 1 0 0 0 0 0 0 0 0 1 1 1 1}
+
+tcltest::test parse-command-4.2 {constant text element} {
+    # A constant word element can't include backslash
+    # elements except for the special case of a
+    # backslash newline which is treated as a space.
+
+    set script "list \"s\\t\" \"hi\\\nbye\" \{one\\\n  two\}"
+    set range {0 end}
+    set tree [parse command $script $range]
+    set stree [lindex $tree 3]
+    list \
+        [parse_is_simple_text [lindex $stree 0]] \
+        [parse_is_constant $script [lindex $stree 0]] \
+        [parse_is_simple_text [lindex $stree 1]] \
+        [parse_is_constant $script [lindex $stree 1]] \
+        [parse_is_simple_text [lindex $stree 2]] \
+        [parse_is_constant $script [lindex $stree 2]] \
+        [parse_is_simple_text [lindex $stree 3]] \
+        [parse_is_constant $script [lindex $stree 3]]
+} {1 1 0 0 0 1 0 1}
+
+tcltest::test parse-command-4.3 {constant text element} {
+    # Return info for constant text elements.
+
+    set script "list \"s\\t\" \"hi\\\nbye\" \{one\\\n  two\\\nthree\}"
+    set range {0 end}
+    set tree [parse command $script $range]
+    set stree [lindex $tree 3]
+    list \
+        [parse_get_constant_text $script [lindex $stree 0]] \
+        [list [catch {parse_get_constant_text $script [lindex $stree 1]} err] $err] \
+        [parse_get_constant_text $script [lindex $stree 2]] \
+        [parse_get_constant_text $script [lindex $stree 3]]
+} [list \
+{list {} list} \
+{1 {expected to iterate over a constant word}} \
+{{"hi bye"} {""} {hi bye}} {{{one two three}} {{}} {one two three}} \
+]
+
+
+tcltest::test parse-command-5.0 {parse Tcl command} {
+    # backslash newline followed by a newline should
+    # end a line continuation, so the following should
+    # be parsed as two commands.
+    set script "cmd1\\\n\ncmd2"
+
+    set r1 {0 end}
+    set r2 {7 4}
+    list \
+        [parse command $script $r1] \
+        [parse command $script $r2]
+} [list \
+  [list \
+    {0 0} \
+    {0 7} \
+    {7 4} \
+    [list \
+        {simple {0 4} {{text {0 4} {}}}} \
+    ] \
+  ] \
+  [list \
+    {0 0} \
+    {7 4} \
+    {11 0} \
+    [list \
+        {simple {7 4} {{text {7 4} {}}}} \
+    ] \
+  ] \
+]
+
+tcltest::test parse-command-5.1 {parse Tcl command} {
+    # backslash newline followed by a newline should
+    # end a line continuation, so the following should
+    # be parsed as two commands.
+    set script "list \\\nA B\\\n\nlist C D"
+
+    set r1 {0 end}
+    set r2 {13 8}
+    list \
+        [parse command $script $r1] \
+        [parse command $script $r2]
+} [list \
+  [list \
+    {0 0} \
+    {0 13} \
+    {13 8} \
+    [list \
+        {simple {0 4} {{text {0 4} {}}}} \
+        {simple {7 1} {{text {7 1} {}}}} \
+        {simple {9 1} {{text {9 1} {}}}} \
+    ] \
+  ] \
+  [list \
+    {0 0} \
+    {13 8} \
+    {21 0} \
+    [list \
+        {simple {13 4} {{text {13 4} {}}}} \
+        {simple {18 1} {{text {18 1} {}}}} \
+        {simple {20 1} {{text {20 1} {}}}}
+    ] \
+  ] \
+]
+
+tcltest::test parse-command-5.2 {parse Tcl command} {
+    # Check that the correct number of arguments
+    # to a switch command are parsed. This version
+    # of the switch command is before the switch
+    # has been reparsed.
+    set script "
+    set s \"err\"
+    switch -exact -- \"Foo\" {
+        \"Foo\" {
+            set s \"c0\"
+        }
+    }
+    return \$s
+"
+
+    set r1 {0 end}
+    set r2 {17 98}
+    set r3 {101 14}
+    list \
+        [parse command $script $r1] \
+        [parse command $script $r2] \
+        [parse command $script $r3]
+
+} [list \
+  [list \
+    {0 0} \
+    {5 12} \
+    {17 98} \
+    [list \
+        {simple {5 3} {{text {5 3} {}}}} \
+        {simple {9 1} {{text {9 1} {}}}} \
+        {simple {11 5} {{text {12 3} {}}}} \
+    ] \
+  ] \
+  [list \
+    {0 0} \
+    {21 80} \
+    {101 14} \
+    [list \
+        {simple {21 6} {{text {21 6} {}}}} \
+        {simple {28 6} {{text {28 6} {}}}} \
+        {simple {35 2} {{text {35 2} {}}}} \
+        {simple {38 5} {{text {39 3} {}}}} \
+        {simple {44 56} {{text {45 54} {}}}} \
+    ] \
+  ] \
+  [list \
+    {0 0} \
+    {105 10} \
+    {115 0} \
+    [list \
+        {simple {105 6} {{text {105 6} {}}}} \
+        {word {112 2} {{variable {112 2} {{text {113 1} {}}}}}} \
+    ] \
+  ] \
+  ]
+
+tcltest::test parse-command-5.3 {parse Tcl command} {
+    # Check that the correct number of arguments
+    # to a switch command are parsed. This version
+    # of the switch command is after the switch
+    # has been reparsed.
+    set script "
+    set s \"err\"
+    switch -exact -- \"Foo\" {Foo} {
+            set s \"c0\"
+        }\\
+\\
+
+    return \$s
+"
+
+    set r1 {0 end}
+    set r2 {17 86}
+    set r3 {89 14}
+    list \
+        [parse command $script $r1] \
+        [parse command $script $r2] \
+        [parse command $script $r3]
+
+} [list \
+  [list \
+    {0 0} \
+    {5 12} \
+    {17 86} \
+    [list \
+        {simple {5 3} {{text {5 3} {}}}} \
+        {simple {9 1} {{text {9 1} {}}}} \
+        {simple {11 5} {{text {12 3} {}}}} \
+    ] \
+  ] \
+  [list \
+    {0 0} \
+    {21 68} \
+    {89 14} \
+    [list \
+        {simple {21 6} {{text {21 6} {}}}} \
+        {simple {28 6} {{text {28 6} {}}}} \
+        {simple {35 2} {{text {35 2} {}}}} \
+        {simple {38 5} {{text {39 3} {}}}} \
+        {simple {44 5} {{text {45 3} {}}}} \
+        {simple {50 34} {{text {51 32} {}}}} \
+    ] \
+  ] \
+  [list \
+    {0 0} \
+    {93 10} \
+    {103 0} \
+    [list \
+        {simple {93 6} {{text {93 6} {}}}} \
+        {word {100 2} {{variable {100 2} {{text {101 1} {}}}}}} \
+    ] \
+  ] \
+  ]
+
+
+tcltest::test parse-list-1.0 {parse list elements} {
+    set script {0 1 2}
+    set range {0 end}
+    set range_str [parse getstring $script $range]
+    set results [parse list $script $range]
+    set strs [list]
+    foreach result $results {
+        lappend strs [parse getstring $script $result]
+    }
+    list $range_str $results $strs
+} {{0 1 2} {{0 1} {2 1} {4 1}} {0 1 2}}
+
+tcltest::test parse-list-1.1 {parse list elements} {
+    set script {{0 1 2}}
+    set range {1 5}
+    set range_str [parse getstring $script $range]
+    set results [parse list $script $range]
+    set strs [list]
+    foreach result $results {
+        lappend strs [parse getstring $script $result]
+    }
+    list $range_str $results $strs
+} {{0 1 2} {{1 1} {3 1} {5 1}} {0 1 2}}
+
+tcltest::test parse-list-1.2 {parse list elements} {
+    set script {set i {0 1 2}}
+    set range {7 5}
+    set range_str [parse getstring $script $range]
+    set results [parse list $script $range]
+    set strs [list]
+    foreach result $results {
+        lappend strs [parse getstring $script $result]
+    }
+    list $range_str $results $strs
+} {{0 1 2} {{7 1} {9 1} {11 1}} {0 1 2}}
+
+
+tcltest::test parse-expr-1.0 {parse expr command} {
+    set script {expr {1 + 1}}
+    set range {0 end}
+    parse command $script $range
+} [list \
+    {0 0} \
+    {0 12} \
+    {12 0} \
+    [list \
+        {simple {0 4} {{text {0 4} {}}}} \
+        {simple {5 7} {{text {6 5} {}}}} \
+    ] \
+  ]
+
+tcltest::test parse-expr-1.1 {parse expr argument} {
+    set script {1 + 1}
+    set range {0 end}
+    parse expr $script $range
+} [list \
+    subexpr {0 5} \
+    [list \
+        {operator {2 1} {}} \
+        {subexpr {0 1} {{text {0 1} {}}}} \
+        {subexpr {4 1} {{text {4 1} {}}}} \
+    ] \
+  ]
+
+tcltest::test parse-expr-1.2 {parse expr argument} {
+    set script {1 * 1}
+    set range {0 end}
+    parse expr $script $range
+} [list \
+    subexpr {0 5} \
+    [list \
+        {operator {2 1} {}} \
+        {subexpr {0 1} {{text {0 1} {}}}} \
+        {subexpr {4 1} {{text {4 1} {}}}} \
+    ] \
+  ]
+
+tcltest::test parse-expr-1.3 {parse expr argument} {
+    set script {1 * $var}
+    set range {0 end}
+    parse expr $script $range
+} [list \
+    subexpr {0 8} \
+    [list \
+        {operator {2 1} {}} \
+        {subexpr {0 1} {{text {0 1} {}}}} \
+        {subexpr {4 4} {{variable {4 4} {{text {5 3} {}}}}}} \
+    ] \
+  ]
+
+tcltest::test parse-expr-1.4 {parse expr argument} {
+    set script {1 * [cmd]}
+    set range {0 end}
+    parse expr $script $range
+} [list \
+    subexpr {0 9} \
+    [list \
+        {operator {2 1} {}} \
+        {subexpr {0 1} {{text {0 1} {}}}} \
+        {subexpr {4 5} {{command {4 5} {}}}} \
+    ] \
+  ]
+
+tcltest::test parse-expr-1.5 {parse expr argument} {
+    set script {1 * 2 * 3}
+    set range {0 end}
+    parse expr $script $range
+} [list \
+    subexpr {0 9} \
+    [list \
+        {operator {6 1} {}} \
+        [list subexpr {0 5} \
+            [list \
+                {operator {2 1} {}} \
+                {subexpr {0 1} {{text {0 1} {}}}} \
+                {subexpr {4 1} {{text {4 1} {}}}} \
+            ] \
+        ] \
+        [list subexpr {8 1} \
+           [list \
+                {text {8 1} {}} \
+            ] \
+        ] \
+    ] \
+  ]
+
+tcltest::test parse-expr-1.6 {parse expr argument} {
+    set script {2 * (2 * [cmd])}
+    set range {0 end}
+    parse expr $script $range
+} [list subexpr \
+        {0 15} \
+        [list \
+            [list operator \
+                  {2 1} \
+                  {} \
+            ] \
+            [list subexpr \
+                {0 1} \
+                [list \
+                    {text {0 1} {}} \
+                ] \
+            ] \
+            [list subexpr {5 9} \
+                [list \
+                    {operator {7 1} {}} \
+                    [list subexpr {5 1} \
+                        [list \
+                            {text {5 1} {}} \
+                        ] \
+                    ] \
+                    [list subexpr {9 5} \
+                        [list \
+                            {command {9 5} {}} \
+                        ] \
+                    ] \
+                ] \
+            ] \
+        ] \
+  ]
+
+tcltest::test parse-expr-1.7 {parse expr argument} {
+    set script {1 ? "a" : "b"}
+    set range {0 end}
+    parse expr $script $range
+} [list \
+    subexpr {0 13} \
+    [list \
+        {operator {2 1} {}} \
+        [list \
+            subexpr {0 1} \
+            [list \
+                {text {0 1} {}} \
+            ] \
+        ] \
+        [list \
+            subexpr {4 3} \
+            [list \
+                {text {5 1} {}} \
+            ] \
+        ] \
+        [list \
+            subexpr {10 3} \
+            [list \
+                {text {11 1} {}} \
+            ] \
+        ] \
+    ] \
+]
+
+tcltest::test parse-expr-1.8 {parse expr} {
+    set script {!1}
+    set range {0 end}
+    parse expr $script $range
+} [list \
+    subexpr {0 2} \
+    [list \
+        {operator {0 1} {}} \
+        [list \
+            subexpr {1 1} \
+            [list \
+                {text {1 1} {}} \
+            ] \
+        ] \
+    ] \
+]
+
+tcltest::test parse-expr-1.9 {parse expr} {
+    set script {1 == 0}
+    set range {0 end}
+    parse expr $script $range
+} [list \
+    subexpr {0 6} \
+    [list \
+        {operator {2 2} {}} \
+        {subexpr {0 1} {{text {0 1} {}}}} \
+        {subexpr {5 1} {{text {5 1} {}}}} \
+    ] \
+  ]
+
+tcltest::test parse-expr-1.10 {parse expr} {
+    set script {1 == ""}
+    set range {0 end}
+    parse expr $script $range
+} [list \
+    subexpr {0 7} \
+    [list \
+        {operator {2 2} {}} \
+        {subexpr {0 1} {{text {0 1} {}}}} \
+        {subexpr {5 2} {{text {6 0} {}}}} \
+    ] \
+  ]
+
+tcltest::test parse-expr-1.11 {parse expr} {
+    set script {1 != ""}
+    set range {0 end}
+    parse expr $script $range
+} [list \
+    subexpr {0 7} \
+    [list \
+        {operator {2 2} {}} \
+        {subexpr {0 1} {{text {0 1} {}}}} \
+        {subexpr {5 2} {{text {6 0} {}}}} \
+    ] \
+  ]
+
+tcltest::test parse-expr-1.12 {parse expr} {
+    set script {1 eq ""}
+    set range {0 end}
+    parse expr $script $range
+} [list \
+    subexpr {0 7} \
+    [list \
+        {operator {2 2} {}} \
+        {subexpr {0 1} {{text {0 1} {}}}} \
+        {subexpr {5 2} {{text {6 0} {}}}} \
+    ] \
+  ]
+
+tcltest::test parse-expr-1.13 {parse expr} {
+    set script {1 ne ""}
+    set range {0 end}
+    parse expr $script $range
+} [list \
+    subexpr {0 7} \
+    [list \
+        {operator {2 2} {}} \
+        {subexpr {0 1} {{text {0 1} {}}}} \
+        {subexpr {5 2} {{text {6 0} {}}}} \
+    ] \
+  ]
+
+tcltest::test parse-expr-1.14 {parse expr} {
+    set script {1 == {}}
+    set range {0 end}
+    parse expr $script $range
+} [list \
+    subexpr {0 7} \
+    [list \
+        {operator {2 2} {}} \
+        {subexpr {0 1} {{text {0 1} {}}}} \
+        {subexpr {5 2} {{text {6 0} {}}}} \
+    ] \
+  ]
+
+tcltest::test parse-expr-1.15 {parse expr} {
+    set script {1 eq {}}
+    set range {0 end}
+    parse expr $script $range
+} [list \
+    subexpr {0 7} \
+    [list \
+        {operator {2 2} {}} \
+        {subexpr {0 1} {{text {0 1} {}}}} \
+        {subexpr {5 2} {{text {6 0} {}}}} \
+    ] \
+  ]
+
+tcltest::test parse-expr-1.16 {parse expr} {
+    set script {[cmd] != {}}
+    set range {0 end}
+    parse expr $script $range
+} [list \
+    subexpr {0 11} \
+    [list \
+        {operator {6 2} {}} \
+        {subexpr {0 5} {{command {0 5} {}}}} \
+        {subexpr {9 2} {{text {10 0} {}}}} \
+    ] \
+  ]
+
+tcltest::test parse-expr-1.17 {parse expr} {
+    set script {[cmd] ne {}}
+    set range {0 end}
+    parse expr $script $range
+} [list \
+    subexpr {0 11} \
+    [list \
+        {operator {6 2} {}} \
+        {subexpr {0 5} {{command {0 5} {}}}} \
+        {subexpr {9 2} {{text {10 0} {}}}} \
+    ] \
+  ]
+
+tcltest::test parse-expr-1.18 {parse expr} {
+    set script {true == false}
+    set range {0 end}
+    parse expr $script $range
+} [list \
+    subexpr {0 13} \
+    [list \
+        {operator {5 2} {}} \
+        {subexpr {0 4} {{text {0 4} {}}}} \
+        {subexpr {8 5} {{text {8 5} {}}}} \
+    ] \
+  ]
+
+tcltest::test parse-expr-1.19 {parse expr} {
+    set script {t == f}
+    set range {0 end}
+    parse expr $script $range
+} [list \
+    subexpr {0 6} \
+    [list \
+        {operator {2 2} {}} \
+        {subexpr {0 1} {{text {0 1} {}}}} \
+        {subexpr {5 1} {{text {5 1} {}}}} \
+    ] \
+  ]
+  
+tcltest::test parse-expr-1.20 {parse expr} {
+    set script {!f}
+    set range {0 end}
+    parse expr $script $range
+} [list \
+    subexpr {0 2} \
+    [list \
+        {operator {0 1} {}} \
+        {subexpr {1 1} {{text {1 1} {}}}} \
+    ] \
+  ]
+
+tcltest::test parse-expr-1.21 {parse expr} {
+    set script {1.0e+001 == 1e1}
+    set range {0 end}
+    parse expr $script $range
+} [list \
+    subexpr {0 15} \
+    [list \
+        {operator {9 2} {}} \
+        {subexpr {0 8} {{text {0 8} {}}}} \
+        {subexpr {12 3} {{text {12 3} {}}}} \
+    ] \
+  ]
+
+
+# Note: a variable operand is not allowed in a braced expr
+#
+# set op * ; expr {1 $op 2}
+#
+# is not a valid expr, but
+#
+# set op * ; expr "1 $op 2"
+# set op * ; expr [list 1 $op 2]
+#
+# works
+
+
+# expr iterator
+
+# Test stack of subexpressions created while descending into an expression
+
+tcltest::test parse-expr-iterator-descend-1.0 {_parse_expr_iterate_descend: single value} {
+    set script {1}
+    set etree [parse expr $script {0 end}]
+
+    set _parse(parse_expr_iterate_result) [list]
+    set _parse(parse_expr_iterate_stack) [list]
+    _parse_expr_iterate_descend $script $etree callback
+
+    set _parse(parse_expr_iterate_result)
+} [list \
+    {value {callback 1 {text {0 1} {}} {literal operand} {{text 1}} {{0 1}}}} \
+  ]
+
+tcltest::test parse-expr-iterator-descend-1.1 {_parse_expr_iterate_descend: single value} {
+    set script {[cmd]}
+    set etree [parse expr $script {0 end}]
+
+    set _parse(parse_expr_iterate_result) [list]
+    set _parse(parse_expr_iterate_stack) [list]
+    _parse_expr_iterate_descend $script $etree callback
+
+    set _parse(parse_expr_iterate_result)
+} [list \
+    {value {callback {[cmd]} {command {0 5} {}} {command operand} cmd {{1 3}}}} \
+  ]
+
+tcltest::test parse-expr-iterator-descend-1.2 {_parse_expr_iterate_descend: single value} {
+    set script {$s}
+    set etree [parse expr $script {0 end}]
+
+    set _parse(parse_expr_iterate_result) [list]
+    set _parse(parse_expr_iterate_stack) [list]
+    _parse_expr_iterate_descend $script $etree callback
+
+    set _parse(parse_expr_iterate_result)
+} [list \
+    {value {callback {$s} {variable {0 2} {{text {1 1} {}}}} {variable operand} {{$s}} {{0 2}}}} \
+  ]
+
+tcltest::test parse-expr-iterator-descend-1.3 {_parse_expr_iterate_descend: single value} {
+    # Not a word, this is a static string. Pass the "string"
+    # type instead of plain "text" which loses the diff
+    # between 1 and "1".
+    set script {"xyz"}
+    set etree [parse expr $script {0 end}]
+
+    set _parse(parse_expr_iterate_result) [list]
+    set _parse(parse_expr_iterate_stack) [list]
+    _parse_expr_iterate_descend $script $etree callback
+
+    set _parse(parse_expr_iterate_result)
+} [list \
+    {value {callback {"xyz"} {text {1 3} {}} {literal operand} {{string xyz}} {{1 3}}}} \
+  ]
+
+tcltest::test parse-expr-iterator-descend-1.4 {_parse_expr_iterate_descend: single value} {
+    # Type is a static brace quoted string.
+    set script {{1 2 3}}
+    set etree [parse expr $script {0 end}]
+
+    set _parse(parse_expr_iterate_result) [list]
+    set _parse(parse_expr_iterate_stack) [list]
+    _parse_expr_iterate_descend $script $etree callback
+
+    set _parse(parse_expr_iterate_result)
+} [list \
+    {value {callback {{1 2 3}} {text {1 5} {}} {literal operand} {{{braced string} {1 2 3}}} {{1 5}}}} \
+  ]
+
+tcltest::test parse-expr-iterator-descend-1.5 {_parse_expr_iterate_descend: single value} {
+    # Type is word because of variable
+    set script {"xyz$s"}
+    set etree [parse expr $script {0 end}]
+
+    set _parse(parse_expr_iterate_result) [list]
+    set _parse(parse_expr_iterate_stack) [list]
+    _parse_expr_iterate_descend $script $etree callback
+
+    set _parse(parse_expr_iterate_result)
+} [list \
+    {value {callback {"xyz$s"} {word {0 7} {{text {1 3} {}} {variable {4 2} {{text {5 1} {}}}}}} {word operand} {{"xyz$s"}} {{0 7}}}} \
+  ]
+
+
+tcltest::test parse-expr-iterator-descend-2.0 {_parse_expr_iterate_descend: single expression} {
+    set script {1 * 2}
+    set etree [parse expr $script {0 end}]
+
+    set _parse(parse_expr_iterate_result) [list]
+    set _parse(parse_expr_iterate_stack) [list]
+    _parse_expr_iterate_descend $script $etree callback
+
+    set _parse(parse_expr_iterate_result)
+} [list \
+    {operator {1 * 2} {operator {2 1} {}} 2 * {{2 1}}} \
+    {value {callback {1 * 2} {text {0 1} {}} {literal operand} {{text 1}} {{0 1}}}} \
+    {value {callback {1 * 2} {text {4 1} {}} {literal operand} {{text 2}} {{4 1}}}} \
+  ]
+
+tcltest::test parse-expr-iterator-descend-2.1 {_parse_expr_iterate_descend: single expression} {
+    set script {1 ? 2 : 3}
+    set etree [parse expr $script {0 end}]
+
+    set _parse(parse_expr_iterate_result) [list]
+    set _parse(parse_expr_iterate_stack) [list]
+    _parse_expr_iterate_descend $script $etree callback
+
+    set _parse(parse_expr_iterate_result)
+} [list \
+    {operator {1 ? 2 : 3} {operator {2 1} {}} 3 ? {{2 1}}} \
+    {value {callback {1 ? 2 : 3} {text {0 1} {}} {literal operand} {{text 1}} {{0 1}}}} \
+    {value {callback {1 ? 2 : 3} {text {4 1} {}} {literal operand} {{text 2}} {{4 1}}}} \
+    {value {callback {1 ? 2 : 3} {text {8 1} {}} {literal operand} {{text 3}} {{8 1}}}} \
+  ]
+
+tcltest::test parse-expr-iterator-descend-2.2 {_parse_expr_iterate_descend: single expression} {
+    set script {!1}
+    set etree [parse expr $script {0 end}]
+
+    set _parse(parse_expr_iterate_result) [list]
+    set _parse(parse_expr_iterate_stack) [list]
+    _parse_expr_iterate_descend $script $etree callback
+
+    set _parse(parse_expr_iterate_result)
+} [list \
+    {operator !1 {operator {0 1} {}} 1 ! {{0 1}}} \
+    {value {callback !1 {text {1 1} {}} {literal operand} {{text 1}} {{1 1}}}} \
+  ]
+
+tcltest::test parse-expr-iterator-descend-3.0 {_parse_expr_iterate_descend: single expression} {
+    set script {rand()}
+    set etree [parse expr $script {0 end}]
+
+    set _parse(parse_expr_iterate_result) [list]
+    set _parse(parse_expr_iterate_stack) [list]
+    _parse_expr_iterate_descend $script $etree callback
+
+    set _parse(parse_expr_iterate_result)
+} [list \
+    {operator rand() {operator {0 4} {}} 0 rand {{0 4}}} \
+  ]
+
+tcltest::test parse-expr-iterator-descend-3.1 {_parse_expr_iterate_descend: single expression} {
+    set script {sin(0)}
+    set etree [parse expr $script {0 end}]
+
+    set _parse(parse_expr_iterate_result) [list]
+    set _parse(parse_expr_iterate_stack) [list]
+    _parse_expr_iterate_descend $script $etree callback
+
+    set _parse(parse_expr_iterate_result)
+} [list \
+    {operator sin(0) {operator {0 3} {}} 1 sin {{0 3}}} \
+    {value {callback sin(0) {text {4 1} {}} {literal operand} {{text 0}} {{4 1}}}} \
+  ]
+
+tcltest::test parse-expr-iterator-descend-3.1 {_parse_expr_iterate_descend: single expression} {
+    set script {pow(3,2)}
+    set etree [parse expr $script {0 end}]
+
+    set _parse(parse_expr_iterate_result) [list]
+    set _parse(parse_expr_iterate_stack) [list]
+    _parse_expr_iterate_descend $script $etree callback
+
+    set _parse(parse_expr_iterate_result)
+} [list \
+    {operator pow(3,2) {operator {0 3} {}} 2 pow {{0 3}}} \
+    {value {callback pow(3,2) {text {4 1} {}} {literal operand} {{text 3}} {{4 1}}}} \
+    {value {callback pow(3,2) {text {6 1} {}} {literal operand} {{text 2}} {{6 1}}}} \
+  ]
+
+
+
+tcltest::test parse-expr-iterator-descend-4.0 {_parse_expr_iterate_descend: subexpression(s)} {
+    set script {1 * 2 + 3}
+    set etree [parse expr $script {0 end}]
+
+    set _parse(parse_expr_iterate_result) [list]
+    set _parse(parse_expr_iterate_stack) [list]
+    _parse_expr_iterate_descend $script $etree callback
+
+    set _parse(parse_expr_iterate_result)
+} [list \
+    {operator {1 * 2 + 3} {operator {2 1} {}} 2 * {{2 1}}} \
+    {value {callback {1 * 2 + 3} {text {0 1} {}} {literal operand} {{text 1}} {{0 1}}}} \
+    {value {callback {1 * 2 + 3} {text {4 1} {}} {literal operand} {{text 2}} {{4 1}}}} \
+    {operator {1 * 2 + 3} {operator {6 1} {}} 2 + {{6 1}}} \
+    {subexpr {}} \
+    {value {callback {1 * 2 + 3} {text {8 1} {}} {literal operand} {{text 3}} {{8 1}}}} \
+  ]
+
+tcltest::test parse-expr-iterator-descend-4.1 {_parse_expr_iterate_descend: subexpression(s)} {
+    # Note that this parses into tree like case above
+    set script {(1 * 2) + 3}
+    set etree [parse expr $script {0 end}]
+
+    set _parse(parse_expr_iterate_result) [list]
+    set _parse(parse_expr_iterate_stack) [list]
+    _parse_expr_iterate_descend $script $etree callback
+
+    set _parse(parse_expr_iterate_result)
+} [list \
+    {operator {(1 * 2) + 3} {operator {3 1} {}} 2 * {{3 1}}} \
+    {value {callback {(1 * 2) + 3} {text {1 1} {}} {literal operand} {{text 1}} {{1 1}}}} \
+    {value {callback {(1 * 2) + 3} {text {5 1} {}} {literal operand} {{text 2}} {{5 1}}}} \
+    {operator {(1 * 2) + 3} {operator {8 1} {}} 2 + {{8 1}}} \
+    {subexpr {}} \
+    {value {callback {(1 * 2) + 3} {text {10 1} {}} {literal operand} {{text 3}} {{10 1}}}} \
+  ]
+
+tcltest::test parse-expr-iterator-descend-4.2 {_parse_expr_iterate_descend: subexpression(s)} {
+    set script {(1 * 2) + (3 * 4)}
+    set etree [parse expr $script {0 end}]
+
+    set _parse(parse_expr_iterate_result) [list]
+    set _parse(parse_expr_iterate_stack) [list]
+    _parse_expr_iterate_descend $script $etree callback
+
+    set _parse(parse_expr_iterate_result)
+} [list \
+    {operator {(1 * 2) + (3 * 4)} {operator {3 1} {}} 2 * {{3 1}}} \
+    {value {callback {(1 * 2) + (3 * 4)} {text {1 1} {}} {literal operand} {{text 1}} {{1 1}}}} \
+    {value {callback {(1 * 2) + (3 * 4)} {text {5 1} {}} {literal operand} {{text 2}} {{5 1}}}} \
+    {operator {(1 * 2) + (3 * 4)} {operator {13 1} {}} 2 * {{13 1}}} \
+    {value {callback {(1 * 2) + (3 * 4)} {text {11 1} {}} {literal operand} {{text 3}} {{11 1}}}} \
+    {value {callback {(1 * 2) + (3 * 4)} {text {15 1} {}} {literal operand} {{text 4}} {{15 1}}}} \
+    {operator {(1 * 2) + (3 * 4)} {operator {8 1} {}} 2 + {{8 1}}} \
+    {subexpr {}} \
+    {subexpr {}} \
+  ]
+
+
+# Invoked by parse_expr_iterate each time a element of a expression
+# is iterated over. The innermost subexpression is always evaluated
+# first and the outermost subexpression is always evaluated last.
+
+proc test_expr_iterator_arguments_callback { script etree type values ranges } {
+    set debug 0
+
+    global results
+
+    if {$debug} {
+        puts "test_expr_iterator_arguments_callback: \"$script\" \{$etree\} \{$type\} \{$values\} \{$ranges\}"
+    }
+
+    switch -exact -- $type {
+        {literal operand} {
+            # Literal operand need not be evaluated
+            lappend results [list $type $values $ranges]
+        }
+        {command operand} {
+            # Command operand should be evaluated
+            lappend results [list $type $values $ranges]
+        }
+        {variable operand} {
+            # Variable operand should be evaluated
+            lappend results [list $type $values $ranges]
+        }
+        {word operand} {
+            # Word operand should be evaluated
+            lappend results [list $type $values $ranges]
+        }
+        {unary operator} {
+            # Operator with a single operand : - + ~ !
+
+            #set op [lindex $values 0]
+            #set operand_type [lindex $values 1 0 0]
+            #set operand [lindex $values 1 0 1]
+            #set result [expr [list $op $operand]]
+
+            lappend results [list $type $values $ranges]
+        }
+        {binary operator} {
+            # Operator with two operands
+
+            #set op [lindex $values 0]
+            #set lexpr_type [lindex $values 1 0 0]
+            #set lexpr [lindex $values 1 0 1]
+            #set rexpr_type [lindex $values 1 1 0]
+            #set rexpr [lindex $values 1 1 1]
+            #set result [expr [list $lexpr $op $rexpr]]
+            #parse_expr_iterate_type_value "text" $result
+
+            lappend results [list $type $values $ranges]
+        }
+        {ternary operator} {
+            # Ternary operator: (1 ? 2 : 3)
+            lappend results [list $type $values $ranges]
+        }
+        {math function} {
+            # Math function like: int(1.0) or rand()
+            lappend results [list $type $values $ranges]
+        }
+        {subexpression} {
+            # Subexpression(s) not evaluated
+            lappend results [list $type $values $ranges]
+        }
+        {value} {
+            # Value of whole expression is available
+            lappend results [list $type $values $ranges]
+        }
+        default {
+            error "unknown type \"$type\""
+        }
+    }
+}
+
+
+
+tcltest::test parse-expr-iterator-arguments-1.0 {expr iterator arguments} {
+    set script {1}
+    set etree [parse expr $script {0 end}]
+    set results [list]
+    list \
+        [parse_expr_iterate $script $etree test_expr_iterator_arguments_callback] \
+        $results
+} [list {text 1} \
+    [list \
+        {{literal operand} {{text 1}} {{0 1}}} \
+        {value {{text 1}} {}} \
+    ] \
+  ]
+
+tcltest::test parse-expr-iterator-arguments-1.1 {expr iterator arguments} {
+    set script {!1}
+    set etree [parse expr $script {0 end}]
+    set results [list]
+    list \
+        [parse_expr_iterate $script $etree test_expr_iterator_arguments_callback] \
+        $results
+} [list {} \
+    [list \
+        {{literal operand} {{text 1}} {{1 1}}} \
+        {{unary operator} {! {{text 1}}} {{0 1}}} \
+        {value {{}} {}} \
+    ] \
+  ]
+
+tcltest::test parse-expr-iterator-arguments-1.2 {expr iterator arguments} {
+    set script {1 + 2}
+    set etree [parse expr $script {0 end}]
+    set results [list]
+    list \
+        [parse_expr_iterate $script $etree test_expr_iterator_arguments_callback] \
+        $results
+} [list {} \
+    [list \
+        {{literal operand} {{text 1}} {{0 1}}} \
+        {{literal operand} {{text 2}} {{4 1}}} \
+        {{binary operator} {+ {{text 1} {text 2}}} {{2 1}}} \
+        {value {{}} {}} \
+    ] \
+  ]
+
+tcltest::test parse-expr-iterator-arguments-1.3 {expr iterator arguments} {
+    set script {sin(0)}
+    set etree [parse expr $script {0 end}]
+    set results [list]
+    list \
+        [parse_expr_iterate $script $etree test_expr_iterator_arguments_callback] \
+        $results
+} [list {} \
+    [list \
+        {{literal operand} {{text 0}} {{4 1}}} \
+        {{math function} {sin {{text 0}}} {{0 3}}} \
+        {value {{}} {}} \
+    ] \
+  ]
+
+tcltest::test parse-expr-iterator-arguments-1.4 {expr iterator arguments} {
+    set script {pow(3,2)}
+    set etree [parse expr $script {0 end}]
+    set results [list]
+    list \
+        [parse_expr_iterate $script $etree test_expr_iterator_arguments_callback] \
+        $results
+} [list {} \
+    [list \
+        {{literal operand} {{text 3}} {{4 1}}} \
+        {{literal operand} {{text 2}} {{6 1}}} \
+        {{math function} {pow {{text 3} {text 2}}} {{0 3}}} \
+        {value {{}} {}} \
+    ] \
+  ]
+
+tcltest::test parse-expr-iterator-arguments-1.5 {expr iterator arguments} {
+    set script {rand()}
+    set etree [parse expr $script {0 end}]
+    set results [list]
+    list \
+        [parse_expr_iterate $script $etree test_expr_iterator_arguments_callback] \
+        $results
+} [list {} \
+    [list \
+        {{math function} {rand {}} {{0 4}}} \
+        {value {{}} {}} \
+    ] \
+  ]
+
+tcltest::test parse-expr-iterator-arguments-1.6 {expr iterator arguments} {
+    set script {1 ? 2 : 3}
+    set etree [parse expr $script {0 end}]
+    set results [list]
+    list \
+        [parse_expr_iterate $script $etree test_expr_iterator_arguments_callback] \
+        $results
+} [list {} \
+    [list \
+        {{literal operand} {{text 1}} {{0 1}}} \
+        {{literal operand} {{text 2}} {{4 1}}} \
+        {{literal operand} {{text 3}} {{8 1}}} \
+        {{ternary operator} {? {{text 1} {text 2} {text 3}}} {{2 1}}} \
+        {value {{}} {}} \
+    ]
+  ]
+
+tcltest::test parse-expr-iterator-arguments-2.0 {expr iterator arguments} {
+    set script {(1 * 2) + 3}
+    set etree [parse expr $script {0 end}]
+    set results [list]
+    list \
+        [parse_expr_iterate $script $etree test_expr_iterator_arguments_callback] \
+        $results
+} [list {} \
+    [list \
+        {{literal operand} {{text 1}} {{1 1}}} \
+        {{literal operand} {{text 2}} {{5 1}}} \
+        {{binary operator} {* {{text 1} {text 2}}} {{3 1}}} \
+        {subexpression {} {}} \
+        {{literal operand} {{text 3}} {{10 1}}} \
+        {{binary operator} {+ {{} {text 3}}} {{8 1}}} \
+        {value {{}} {}} \
+    ] \
+  ]
+
+tcltest::test parse-expr-iterator-arguments-2.1 {expr iterator arguments} {
+    set script {(1 * 2) + (3 * 4)}
+    set etree [parse expr $script {0 end}]
+    set results [list]
+    list \
+        [parse_expr_iterate $script $etree test_expr_iterator_arguments_callback] \
+        $results
+} [list {} \
+    [list \
+        {{literal operand} {{text 1}} {{1 1}}} \
+        {{literal operand} {{text 2}} {{5 1}}} \
+        {{binary operator} {* {{text 1} {text 2}}} {{3 1}}} \
+        {{literal operand} {{text 3}} {{11 1}}} \
+        {{literal operand} {{text 4}} {{15 1}}} \
+        {{binary operator} {* {{text 3} {text 4}}} {{13 1}}} \
+        {subexpression {} {}} \
+        {subexpression {} {}} \
+        {{binary operator} {+ {{} {}}} {{8 1}}} \
+        {value {{}} {}} \
+    ] \
+  ]
+
+tcltest::test parse-expr-iterator-arguments-3.0 {expr iterator arguments} {
+    set script {[cmd]}
+    set etree [parse expr $script {0 end}]
+    set results [list]
+    list \
+        [parse_expr_iterate $script $etree test_expr_iterator_arguments_callback] \
+        $results
+} [list {} \
+    [list \
+        {{command operand} cmd {{1 3}}} \
+        {value {{}} {}} \
+    ] \
+  ]
+
+tcltest::test parse-expr-iterator-arguments-3.1 {expr iterator arguments} {
+    set script {1 + [cmd]}
+    set etree [parse expr $script {0 end}]
+    set results [list]
+    list \
+        [parse_expr_iterate $script $etree test_expr_iterator_arguments_callback] \
+        $results
+} [list {} \
+    [list \
+        {{literal operand} {{text 1}} {{0 1}}} \
+        {{command operand} cmd {{5 3}}} \
+        {{binary operator} {+ {{text 1} {}}} {{2 1}}} \
+        {value {{}} {}} \
+    ] \
+  ]
+
+tcltest::test parse-expr-iterator-arguments-3.2 {expr iterator arguments} {
+    set script {1 + [cmd1 arg1]}
+    set etree [parse expr $script {0 end}]
+    set results [list]
+    list \
+        [parse_expr_iterate $script $etree test_expr_iterator_arguments_callback] \
+        $results
+} [list {} \
+    [list \
+        {{literal operand} {{text 1}} {{0 1}}} \
+        {{command operand} {{cmd1 arg1}} {{5 9}}} \
+        {{binary operator} {+ {{text 1} {}}} {{2 1}}} \
+        {value {{}} {}} \
+    ] \
+  ]
+
+tcltest::test parse-expr-iterator-arguments-3.3 {expr iterator arguments} {
+    set script {[cmd1 arg1] + [cmd2 arg1 arg2]}
+    set etree [parse expr $script {0 end}]
+    set results [list]
+    list \
+        [parse_expr_iterate $script $etree test_expr_iterator_arguments_callback] \
+        $results
+} [list {} \
+    [list \
+        {{command operand} {{cmd1 arg1}} {{1 9}}} \
+        {{command operand} {{cmd2 arg1 arg2}} {{15 14}}} \
+        {{binary operator} {+ {{} {}}} {{12 1}}} \
+        {value {{}} {}} \
+    ] \
+  ]
+
+
+tcltest::test parse-expr-iterator-arguments-4.0 {expr iterator arguments} {
+    set script {$s}
+    set etree [parse expr $script {0 end}]
+    set results [list]
+    list \
+        [parse_expr_iterate $script $etree test_expr_iterator_arguments_callback] \
+        $results
+} [list {} \
+    [list \
+        {{variable operand} {{$s}} {{0 2}}} \
+        {value {{}} {}} \
+    ] \
+  ]
+
+tcltest::test parse-expr-iterator-arguments-4.1 {expr iterator arguments} {
+    set script {$s1 + $s2}
+    set etree [parse expr $script {0 end}]
+    set results [list]
+    list \
+        [parse_expr_iterate $script $etree test_expr_iterator_arguments_callback] \
+        $results
+} [list {} \
+    [list \
+        {{variable operand} {{$s1}} {{0 3}}} \
+        {{variable operand} {{$s2}} {{6 3}}} \
+        {{binary operator} {+ {{} {}}} {{4 1}}} \
+        {value {{}} {}} \
+    ] \
+  ]
+
+tcltest::test parse-expr-iterator-arguments-4.2 {expr iterator arguments} {
+    set script {$s1 ? $s2 : $s3}
+    set etree [parse expr $script {0 end}]
+    set results [list]
+    list \
+        [parse_expr_iterate $script $etree test_expr_iterator_arguments_callback] \
+        $results
+} [list {} \
+    [list \
+        {{variable operand} {{$s1}} {{0 3}}} \
+        {{variable operand} {{$s2}} {{6 3}}} \
+        {{variable operand} {{$s3}} {{12 3}}} \
+        {{ternary operator} {? {{} {} {}}} {{4 1}}} \
+        {value {{}} {}} \
+    ] \
+  ]
+
+tcltest::test parse-expr-iterator-arguments-5.0 {expr iterator arguments} {
+    # Array variable as operand
+    set script {$a(k)}
+    set etree [parse expr $script {0 end}]
+    set results [list]
+    list \
+        [parse_expr_iterate $script $etree test_expr_iterator_arguments_callback] \
+        $results
+} [list {} \
+    [list \
+        {{variable operand} {{$a(k)}} {{0 5}}} \
+        {value {{}} {}} \
+    ] \
+  ]
+
+tcltest::test parse-expr-iterator-arguments-5.1 {expr iterator arguments} {
+    # Array variable with scalar key as operand, callback
+    # would need to descend into array variable further.
+    set script {$a($k)}
+    set etree [parse expr $script {0 end}]
+    set results [list]
+    list \
+        [parse_expr_iterate $script $etree test_expr_iterator_arguments_callback] \
+        $results
+} [list {} \
+    [list \
+        {{variable operand} {{$a($k)}} {{0 6}}} \
+        {value {{}} {}} \
+    ] \
+  ]
+
+tcltest::test parse-expr-iterator-arguments-5.2 {expr iterator arguments} {
+    # Array variable with command key as operand, callback
+    # would need to descend into array variable further.
+    set script {$a([cmd])}
+    set etree [parse expr $script {0 end}]
+    set results [list]
+    list \
+        [parse_expr_iterate $script $etree test_expr_iterator_arguments_callback] \
+        $results
+} [list {} \
+    [list \
+        {{variable operand} {{$a([cmd])}} {{0 9}}} \
+        {value {{}} {}} \
+    ] \
+  ]
+
+tcltest::test parse-expr-iterator-arguments-6.0 {expr iterator arguments} {
+    # Word value
+    set script {"a$s"}
+    set etree [parse expr $script {0 end}]
+    set results [list]
+    list \
+        [parse_expr_iterate $script $etree test_expr_iterator_arguments_callback] \
+        $results
+} [list {} \
+    [list \
+        {{word operand} {{"a$s"}} {{0 5}}} \
+        {value {{}} {}} \
+    ] \
+  ]
+
+tcltest::test parse-expr-iterator-arguments-6.1 {expr iterator arguments} {
+    # Word value
+    set script {"a$s" * 1}
+    set etree [parse expr $script {0 end}]
+    set results [list]
+    list \
+        [parse_expr_iterate $script $etree test_expr_iterator_arguments_callback] \
+        $results
+} [list {} \
+    [list \
+        {{word operand} {{"a$s"}} {{0 5}}} \
+        {{literal operand} {{text 1}} {{8 1}}} \
+        {{binary operator} {* {{} {text 1}}} {{6 1}}} \
+        {value {{}} {}} \
+    ] \
+  ]
+
+tcltest::test parse-expr-iterator-arguments-6.2 {expr iterator arguments} {
+    # Word value
+    set script {"a[cmd]"}
+    set etree [parse expr $script {0 end}]
+    set results [list]
+    list \
+        [parse_expr_iterate $script $etree test_expr_iterator_arguments_callback] \
+        $results
+} [list {} \
+    [list \
+        {{word operand} {{"a[cmd]"}} {{0 8}}} \
+        {value {{}} {}} \
+    ] \
+  ]
+
+tcltest::test parse-expr-iterator-arguments-6.3 {expr iterator arguments} {
+    # Word value
+    set script {"\n"}
+    set etree [parse expr $script {0 end}]
+    set results [list]
+    list \
+        [parse_expr_iterate $script $etree test_expr_iterator_arguments_callback] \
+        $results
+} [list {} \
+    [list \
+        {{word operand} {{"\n"}} {{0 4}}} \
+        {value {{}} {}} \
+    ] \
+  ]
+
+
+tcltest::test parse-expr-iterator-arguments-7.0 {expr iterator arguments} {
+    # Subexpression around value skipped by parser
+    set script {(1)}
+    set etree [parse expr $script {0 end}]
+    set results [list]
+    list \
+        [parse_expr_iterate $script $etree test_expr_iterator_arguments_callback] \
+        $results
+} [list {text 1} \
+    [list \
+        {{literal operand} {{text 1}} {{1 1}}} \
+        {value {{text 1}} {}} \
+    ] \
+  ]
+
+tcltest::test parse-expr-iterator-arguments-7.1 {expr iterator arguments} {
+    # Subexpression around value
+    set script {(1) + (2)}
+    set etree [parse expr $script {0 end}]
+    set results [list]
+    list \
+        [parse_expr_iterate $script $etree test_expr_iterator_arguments_callback] \
+        $results
+} [list {} \
+    [list \
+        {{literal operand} {{text 1}} {{1 1}}} \
+        {{literal operand} {{text 2}} {{7 1}}} \
+        {{binary operator} {+ {{text 1} {text 2}}} {{4 1}}} \
+        {value {{}} {}} \
+    ] \
+  ]
+
+# Invoked by parse_expr_iterate each time a element of a expression
+# is iterated over. The innermost subexpression is always evaluated
+# first and the outermost subexpression is always evaluated last.
+# This method will evaluate known variables, commands, operators,
+# and math functions.
+
+proc test_expr_iterator_evaluate_callback { script etree type values ranges } {
+    set debug 0
+
+    if {$debug} {
+        puts "test_expr_iterator_evaluate_callback: \"$script\" \{$etree\} \{$type\} \{$values\} \{$ranges\}"
+    }
+
+    switch -exact -- $type {
+        {literal operand} {
+            # Literal operand need not be evaluated
+            set literal [lindex $values 0 1]
+            if {$debug} {
+                puts "skipped literal eval \"$literal\""
+            }
+        }
+        {command operand} {
+            # Command operand should be evaluated
+            set cmd [lindex $values 0 0]
+            if {$debug} {
+                puts "now to evaluate command \[$cmd\]"
+            }
+
+            if {$cmd == "cmd"} {
+                parse_expr_iterate_type_value "text" 0
+            } elseif {$cmd == "cmd1"} {
+                parse_expr_iterate_type_value "text" 1
+            } elseif {$cmd == "cmd2"} {
+                parse_expr_iterate_type_value "text" 2
+            } elseif {$cmd == "expr"} {
+                # A recursive call to the expr command
+                set expr_arg [lindex $values 0 1]
+                set expr_script "expr \{$expr_arg\}"
+                if {$debug} {
+                    puts "recursive expr iteration for \[$expr_script\]"
+                }
+                set expr_etree [parse expr $expr_arg {0 end}]
+                # Invoke parse_expr_iterate recursively
+                set result [parse_expr_iterate $expr_arg $expr_etree \
+                    test_expr_iterator_evaluate_callback]
+                if {$debug} {
+                    puts "recursive expr result \{$result\}"
+                }
+
+                # Invoke parse_expr_iterate_type_value
+                # to set the value of the evaluated command
+                # to the value returned by the recursive call.
+                parse_expr_iterate_type_value \
+                    [lindex $result 0] [lindex $result 1]
+            }
+        }
+        {variable operand} {
+            # Variable operand should be evaluated
+            set varname [lindex $values 0]
+            if {$debug} {
+                puts "now to evaluate variable \{$varname\}"
+            }
+
+            if {$varname == {$s}} {
+                parse_expr_iterate_type_value "text" 10
+            } elseif {$varname == {$s1}} {
+                parse_expr_iterate_type_value "text" 11
+            } elseif {$varname == {$s2}} {
+                parse_expr_iterate_type_value "text" 12
+            } elseif {$varname == {$s3}} {
+                parse_expr_iterate_type_value "text" 13
+            } elseif {$varname == {$a(k)}} {
+                parse_expr_iterate_type_value "text" 100
+            } elseif {$varname == {$a($k)}} {
+                parse_expr_iterate_type_value "text" 200
+            } elseif {$varname == {$a([cmd])}} {
+                parse_expr_iterate_type_value "text" -1
+            }
+        }
+        {word operand} {
+            # Word operand should be evaluated
+            set word [lindex $values 0]
+
+            if {$debug} {
+                puts "now to evaluate word \"$word\""
+            }
+            
+            if {$word == {"a$s"}} {
+                parse_expr_iterate_type_value "text" "a10"
+            } elseif {$word == {"$s"}} {
+                parse_expr_iterate_type_value "text" 10
+            } elseif {$word == {"a[cmd]"}} {
+                parse_expr_iterate_type_value "text" -1
+            }
+        }
+        {unary operator} {
+            # Operator with a single operand : - + ~ !
+
+            set op [lindex $values 0]
+            set operand_type [lindex $values 1 0 0]
+            set operand [lindex $values 1 0 1]
+
+            if {$debug} {
+                puts "now to evaluate expr \{$op $operand\}"
+            }
+            set result [expr [list $op $operand]]
+
+            parse_expr_iterate_type_value "text" $result
+        }
+        {binary operator} {
+            # Operator with two operands
+
+            set op [lindex $values 0]
+            set lexpr_type [lindex $values 1 0 0]
+            set lexpr [lindex $values 1 0 1]
+            set rexpr_type [lindex $values 1 1 0]
+            set rexpr [lindex $values 1 1 1]
+
+            if {$debug} {
+                puts "now to evaluate expr \{$lexpr $op $rexpr\}"
+            }
+            set result [expr [list $lexpr $op $rexpr]]
+
+            parse_expr_iterate_type_value "text" $result
+        }
+        {ternary operator} {
+            # Ternary operator: (1 ? 2 : 3)
+
+            set op [lindex $values 0]
+            set test_expr_type [lindex $values 1 0 0]
+            set test_expr [lindex $values 1 0 1]
+            set true_expr_type [lindex $values 1 1 0]
+            set true_expr [lindex $values 1 1 1]
+            set false_expr_type [lindex $values 1 2 0]
+            set false_expr [lindex $values 1 2 1]
+
+            if {$debug} {
+                puts "checking ternary operator condition $test_expr"
+                if {$test_expr} {
+                    puts "returning true condition value $true_expr"
+                } else {
+                    puts "returning false condition value $false_expr"
+                }
+            }
+
+            if {$test_expr} {
+                parse_expr_iterate_type_value "text" $true_expr
+            } else {
+                parse_expr_iterate_type_value "text" $false_expr
+            }
+        }
+        {math function} {
+            # Math function like: int(1.0) or rand()
+            set op [lindex $values 0]
+            set args ""
+            foreach type_expr_pair [lindex $values 1] {
+                set type [lindex $type_expr_pair 0]
+                set expr [lindex $type_expr_pair 1]
+                
+                append args "${expr},"
+            }
+            # Remove trailing comma
+            set args [string range $args 0 end-1]
+            set expr_arg "$op\($args\)"
+            if {$debug} {
+                puts "now to evaluate math function expr \{$expr_arg\}"
+            }
+            if {$expr_arg == "rand()"} {
+                set result 0.5
+            } else {
+                set result [expr $expr_arg]
+            }
+            parse_expr_iterate_type_value "text" $result
+        }
+        {subexpression} {
+            # Subexpression(s) not evaluated
+        }
+        {value} {
+            # Value of whole expression is available
+        }
+        default {
+            error "unknown type \"$type\""
+        }
+    }
+}
+
+tcltest::test parse-expr-iterator-evaluate-1.0 {evaluate expr} {
+    set script {1}
+    set etree [parse expr $script {0 end}]
+    parse_expr_iterate $script $etree test_expr_iterator_evaluate_callback
+} {text 1}
+
+tcltest::test parse-expr-iterator-evaluate-1.1 {evaluate expr} {
+    set script {!1}
+    set etree [parse expr $script {0 end}]
+    parse_expr_iterate $script $etree test_expr_iterator_evaluate_callback
+} {text 0}
+
+tcltest::test parse-expr-iterator-evaluate-1.2 {evaluate expr} {
+    set script {1 + 2}
+    set etree [parse expr $script {0 end}]
+    parse_expr_iterate $script $etree test_expr_iterator_evaluate_callback
+} {text 3}
+
+tcltest::test parse-expr-iterator-evaluate-1.3 {evaluate expr} {
+    set script {sin(0)}
+    set etree [parse expr $script {0 end}]
+    parse_expr_iterate $script $etree test_expr_iterator_evaluate_callback
+} {text 0.0}
+
+tcltest::test parse-expr-iterator-evaluate-1.4 {evaluate expr} {
+    set script {pow(3,2)}
+    set etree [parse expr $script {0 end}]
+    parse_expr_iterate $script $etree test_expr_iterator_evaluate_callback
+} {text 9.0}
+
+tcltest::test parse-expr-iterator-evaluate-1.5 {evaluate expr} {
+    set script {rand()}
+    set etree [parse expr $script {0 end}]
+    parse_expr_iterate $script $etree test_expr_iterator_evaluate_callback
+} {text 0.5}
+
+tcltest::test parse-expr-iterator-evaluate-1.6 {evaluate expr} {
+    set script {1 ? 2 : 3}
+    set etree [parse expr $script {0 end}]
+    parse_expr_iterate $script $etree test_expr_iterator_evaluate_callback
+} {text 2}
+
+tcltest::test parse-expr-iterator-evaluate-2.0 {evaluate expr} {
+    set script {(1 * 2) + 3}
+    set etree [parse expr $script {0 end}]
+    parse_expr_iterate $script $etree test_expr_iterator_evaluate_callback
+} {text 5}
+
+tcltest::test parse-expr-iterator-evaluate-2.1 {evaluate expr} {
+    set script {2 * 2 + 4}
+    set etree [parse expr $script {0 end}]
+    parse_expr_iterate $script $etree test_expr_iterator_evaluate_callback
+} {text 8}
+
+tcltest::test parse-expr-iterator-evaluate-2.2 {evaluate expr} {
+    set script {(1 * 2) + (3 * 4)}
+    set etree [parse expr $script {0 end}]
+    parse_expr_iterate $script $etree test_expr_iterator_evaluate_callback
+} {text 14}
+
+tcltest::test parse-expr-iterator-evaluate-2.3 {evaluate expr} {
+    set script {(1 * 2) + (3 * 4) + (0 - 1)}
+    set etree [parse expr $script {0 end}]
+    parse_expr_iterate $script $etree test_expr_iterator_evaluate_callback
+} {text 13}
+
+tcltest::test parse-expr-iterator-evaluate-2.4 {evaluate expr} {
+    set script {1 + (2 * 3)}
+    set etree [parse expr $script {0 end}]
+    parse_expr_iterate $script $etree test_expr_iterator_evaluate_callback
+} {text 7}
+
+tcltest::test parse-expr-iterator-evaluate-3.0 {evaluate expr} {
+    set script {[cmd]}
+    set etree [parse expr $script {0 end}]
+    parse_expr_iterate $script $etree test_expr_iterator_evaluate_callback
+} {text 0}
+
+tcltest::test parse-expr-iterator-evaluate-3.1 {evaluate expr} {
+    set script {1 + [cmd]}
+    set etree [parse expr $script {0 end}]
+    parse_expr_iterate $script $etree test_expr_iterator_evaluate_callback
+} {text 1}
+
+tcltest::test parse-expr-iterator-evaluate-3.2 {evaluate expr} {
+    set script {1 + [cmd1 arg1]}
+    set etree [parse expr $script {0 end}]
+    parse_expr_iterate $script $etree test_expr_iterator_evaluate_callback
+} {text 2}
+
+tcltest::test parse-expr-iterator-evaluate-3.3 {evaluate expr} {
+    set script {[cmd1 arg1] + [cmd2 arg1 arg2]}
+    set etree [parse expr $script {0 end}]
+    parse_expr_iterate $script $etree test_expr_iterator_evaluate_callback
+} {text 3}
+
+tcltest::test parse-expr-iterator-evaluate-4.0 {evaluate expr} {
+    set script {$s}
+    set etree [parse expr $script {0 end}]
+    parse_expr_iterate $script $etree test_expr_iterator_evaluate_callback
+} {text 10}
+
+tcltest::test parse-expr-iterator-evaluate-4.1 {evaluate expr} {
+    set script {$s1 + $s2}
+    set etree [parse expr $script {0 end}]
+    parse_expr_iterate $script $etree test_expr_iterator_evaluate_callback
+} {text 23}
+
+tcltest::test parse-expr-iterator-evaluate-4.2 {evaluate expr} {
+    set script {$s1 ? $s2 : $s3}
+    set etree [parse expr $script {0 end}]
+    parse_expr_iterate $script $etree test_expr_iterator_evaluate_callback
+} {text 12}
+
+tcltest::test parse-expr-iterator-evaluate-5.0 {evaluate expr} {
+    # Array variable as operand
+    set script {$a(k)}
+    set etree [parse expr $script {0 end}]
+    parse_expr_iterate $script $etree test_expr_iterator_evaluate_callback
+} {text 100}
+
+tcltest::test parse-expr-iterator-evaluate-5.1 {evaluate expr} {
+    # Array variable with scalar key as operand, callback
+    # would need to descend into array variable further.
+    set script {$a($k)}
+    set etree [parse expr $script {0 end}]
+    parse_expr_iterate $script $etree test_expr_iterator_evaluate_callback
+} {text 200}
+
+tcltest::test parse-expr-iterator-evaluate-5.2 {evaluate expr} {
+    # Array variable with command key as operand, callback
+    # would need to descend into array variable further.
+    set script {$a([cmd])}
+    set etree [parse expr $script {0 end}]
+    parse_expr_iterate $script $etree test_expr_iterator_evaluate_callback
+} {text -1}
+
+tcltest::test parse-expr-iterator-evaluate-6.0 {evaluate expr} {
+    # Word value
+    set script {"a$s"}
+    set etree [parse expr $script {0 end}]
+    parse_expr_iterate $script $etree test_expr_iterator_evaluate_callback
+} {text a10}
+
+tcltest::test parse-expr-iterator-evaluate-6.1 {evaluate expr} {
+    # Word value
+    set script {"$s" * 2}
+    set etree [parse expr $script {0 end}]
+    parse_expr_iterate $script $etree test_expr_iterator_evaluate_callback
+} {text 20}
+
+tcltest::test parse-expr-iterator-evaluate-6.2 {evaluate expr} {
+    # Word value
+    set script {"a[cmd]"}
+    set etree [parse expr $script {0 end}]
+    parse_expr_iterate $script $etree test_expr_iterator_evaluate_callback
+} {text -1}
+
+tcltest::test parse-expr-iterator-evaluate-6.3 {evaluate expr} {
+    # Word value, but this is seen as a plain command not
+    # a word with a command element.
+    set script {"[cmd]"}
+    set etree [parse expr $script {0 end}]
+    parse_expr_iterate $script $etree test_expr_iterator_evaluate_callback
+} {text 0}
+
+tcltest::test parse-expr-iterator-evaluate-6.4 {evaluate expr} {
+    # Word value, not seen as plain variable like test above
+    set script {"$s"}
+    set etree [parse expr $script {0 end}]
+    parse_expr_iterate $script $etree test_expr_iterator_evaluate_callback
+} {text 10}
+
+tcltest::test parse-expr-iterator-evaluate-7.0 {evaluate expr} {
+    # Subexpression around value
+    set script {(1)}
+    set etree [parse expr $script {0 end}]
+    parse_expr_iterate $script $etree test_expr_iterator_evaluate_callback
+} {text 1}
+
+tcltest::test parse-expr-iterator-evaluate-7.1 {evaluate expr} {
+    # Subexpression around value
+    set script {(1) + (2)}
+    set etree [parse expr $script {0 end}]
+    parse_expr_iterate $script $etree test_expr_iterator_evaluate_callback
+} {text 3}
+
+tcltest::test parse-expr-iterator-evaluate-8.0 {evaluate expr subexpressions} {
+    # 3 subexpressions
+    set script {(1+0) ? (2+1) : (3+2)}
+    set etree [parse expr $script {0 end}]
+    parse_expr_iterate $script $etree test_expr_iterator_evaluate_callback
+} {text 3}
+
+tcltest::test parse-expr-iterator-evaluate-9.0 {recursive expr iteration} {
+    set script {[expr {1 + 2}] + 3}
+    set etree [parse expr $script {0 end}]
+    parse_expr_iterate $script $etree test_expr_iterator_evaluate_callback
+} {text 6}
+
+tcltest::test parse-expr-iterator-evaluate-9.1 {recursive expr iteration} {
+    set script {[expr {1 + 2}] + (3 * 2)}
+    set etree [parse expr $script {0 end}]
+    parse_expr_iterate $script $etree test_expr_iterator_evaluate_callback
+} {text 9}
+
+tcltest::test parse-expr-iterator-evaluate-10.0 {misc expressions} {
+    set script {0xF | 0xF0}
+    set etree [parse expr $script {0 end}]
+    parse_expr_iterate $script $etree test_expr_iterator_evaluate_callback
+} {text 255}
+
+tcltest::test parse-expr-iterator-evaluate-10.1 {misc expressions} {
+    set script {1 ? "a" : "b"}
+    set etree [parse expr $script {0 end}]
+    parse_expr_iterate $script $etree test_expr_iterator_evaluate_callback
+} {text a}
+
+tcltest::test parse-expr-iterator-evaluate-10.2 {misc expressions} {
+    set script {"str"}
+    set etree [parse expr $script {0 end}]
+    parse_expr_iterate $script $etree test_expr_iterator_evaluate_callback
+} {string str}
+
+tcltest::test parse-expr-iterator-evaluate-10.3 {misc expressions} {
+    set script {1.0}
+    set etree [parse expr $script {0 end}]
+    parse_expr_iterate $script $etree test_expr_iterator_evaluate_callback
+} {text 1.0}
+
+tcltest::test parse-expr-iterator-evaluate-10.4 {misc expressions} {
+    set script {{1 2 3}}
+    set etree [parse expr $script {0 end}]
+    parse_expr_iterate $script $etree test_expr_iterator_evaluate_callback
+} {{braced string} {1 2 3}}
+
+
+# Invoked by parse_expr_iterate to test subexpression evaluation
+# when setting and iterator type and value result.
+
+proc test_expr_iterator_results_callback { script etree type values ranges } {
+    set debug 0
+
+    if {$debug} {
+        puts "test_expr_iterator_result_callback: \"$script\" \{$etree\} \{$type\} \{$values\} \{$ranges\}"
+    }
+
+    switch -exact -- $type {
+        {literal operand} {
+            parse_expr_iterate_type_value {literal} [lindex $values 0 1]
+        }
+        {command operand} {
+            error "unexpected command"
+        }
+        {variable operand} {
+            error "unexpected variable"
+        }
+        {word operand} {
+            parse_expr_iterate_type_value {word} $values
+        }
+        {unary operator} {
+            parse_expr_iterate_type_value {unary operator} $values
+        }
+        {binary operator} {
+            parse_expr_iterate_type_value {binary operator} $values
+        }
+        {ternary operator} {
+            parse_expr_iterate_type_value {ternary operator} $values
+        }
+        {math function} {
+            parse_expr_iterate_type_value {math function} $values
+        }
+        {subexpression} {
+            # Subexpression(s) not evaluated
+            if {$debug} {
+            puts "subexpression reported"
+            }
+        }
+        {value} {
+            # Value of whole expression is available
+        }
+        default {
+            error "unknown type \"$type\""
+        }
+    }
+}
+
+tcltest::test parse-expr-iterator-results-1.0 {evaluate expr} {
+    set script {1}
+    set etree [parse expr $script {0 end}]
+    parse_expr_iterate $script $etree test_expr_iterator_results_callback
+} {literal 1}
+
+tcltest::test parse-expr-iterator-results-1.1 {evaluate expr} {
+    set script {1 + 2}
+    set etree [parse expr $script {0 end}]
+    parse_expr_iterate $script $etree test_expr_iterator_results_callback
+} {{binary operator} {+ {{literal 1} {literal 2}}}}
+
+tcltest::test parse-expr-iterator-results-1.2 {evaluate expr} {
+    set script {(1 * 2) + 3}
+    set etree [parse expr $script {0 end}]
+    parse_expr_iterate $script $etree test_expr_iterator_results_callback
+} {{binary operator} {+ {{{binary operator} {* {{literal 1} {literal 2}}}} {literal 3}}}}
+
+tcltest::test parse-expr-iterator-results-1.3 {evaluate expr} {
+    set script {1 + (2 * 3)}
+    set etree [parse expr $script {0 end}]
+    parse_expr_iterate $script $etree test_expr_iterator_results_callback
+} {{binary operator} {+ {{literal 1} {{binary operator} {* {{literal 2} {literal 3}}}}}}}
+
+tcltest::test parse-expr-iterator-results-1.4 {evaluate expr} {
+    set script {(1 * 2) + (3 * 4)}
+    set etree [parse expr $script {0 end}]
+    parse_expr_iterate $script $etree test_expr_iterator_results_callback
+} {{binary operator} {+ {{{binary operator} {* {{literal 1} {literal 2}}}} {{binary operator} {* {{literal 3} {literal 4}}}}}}}
+
+tcltest::test parse-expr-iterator-results-1.5 {evaluate expr} {
+    set script {(1 && 1) ? (3 * 4) : (5 * 6)}
+    set etree [parse expr $script {0 end}]
+    parse_expr_iterate $script $etree test_expr_iterator_results_callback
+} {{ternary operator} {? {{{binary operator} {&& {{literal 1} {literal 1}}}} {{binary operator} {* {{literal 3} {literal 4}}}} {{binary operator} {* {{literal 5} {literal 6}}}}}}}
+
+tcltest::test parse-expr-iterator-results-1.6 {evaluate expr} {
+    set script {"str$v"}
+    set etree [parse expr $script {0 end}]
+    parse_expr_iterate $script $etree test_expr_iterator_results_callback
+} {word {{"str$v"}}}
+
+tcltest::test parse-expr-iterator-results-1.7 {evaluate expr} {
+    set script {"\n"}
+    set etree [parse expr $script {0 end}]
+    parse_expr_iterate $script $etree test_expr_iterator_results_callback
+} {word {{"\n"}}}
+
+tcltest::test parse-expr-iterator-results-1.8 {evaluate expr} {
+    set script {\n}
+    list [catch {parse expr $script {0 end}} err] $err
+} {1 {syntax error in expression "\n"}}
+
+tcltest::test parse-expr-iterator-results-1.9 {evaluate expr} {
+    set script {"$v" == "\n"}
+    set etree [parse expr $script {0 end}]
+    parse_expr_iterate $script $etree test_expr_iterator_results_callback
+} {{binary operator} {== {{word {{"$v"}}} {word {{"\n"}}}}}}
+
+tcltest::test parse-expr-iterator-results-1.10 {evaluate expr} {
+    set script {int(1.0) + (1 ? 2 : 3)}
+    set etree [parse expr $script {0 end}]
+    parse_expr_iterate $script $etree test_expr_iterator_results_callback
+} {{binary operator} {+ {{{math function} {int {{literal 1.0}}}} {{ternary operator} {? {{literal 1} {literal 2} {literal 3}}}}}}}
+
+tcltest::test parse-expr-iterator-results-1.11 {evaluate expr} {
+    set script {int(1.0) + (1 ? 2 : !3)}
+    set etree [parse expr $script {0 end}]
+    parse_expr_iterate $script $etree test_expr_iterator_results_callback
+} {{binary operator} {+ {{{math function} {int {{literal 1.0}}}} {{ternary operator} {? {{literal 1} {literal 2} {{unary operator} {! {{literal 3}}}}}}}}}}
+
+tcltest::test parse-expr-iterator-results-1.12 {evaluate expr} {
+    set script {(1 + 2) * (3 + -4 * 10)}
+    set etree [parse expr $script {0 end}]
+    parse_expr_iterate $script $etree test_expr_iterator_results_callback
+} {{binary operator} {* {{{binary operator} {+ {{literal 1} {literal 2}}}} {{binary operator} {+ {{literal 3} {{binary operator} {* {{{unary operator} {- {{literal 4}}}} {literal 10}}}}}}}}}}
+
+
+
+# Error while parsing expr
+
+if 0 {
+
+tcltest::test parse-expr-errors-1.0 {wrong num args} {
+    set script {1 *}
+    list \
+        [catch {parse expr $script {0 end}} err] \
+        $err
+} {1 {syntax error in expression "1 *": premature end of expression}}
+
+tcltest::test parse-expr-errors-1.1 {wrong num args} {
+    set script {1 * 2 3}
+    list \
+        [catch {parse expr $script {0 end}} err] \
+        $err
+} {1 {syntax error in expression "1 * 2 3": extra tokens at end of expression}}
+
+tcltest::test parse-expr-errors-1.2 {wrong num args} {
+    set script {abs()}
+    list \
+        [catch {parse expr $script {0 end}} err] \
+        $err
+} {1 {}}
+
+tcltest::test parse-expr-errors-1.3 {wrong num args} {
+    set script {int()}
+    list \
+        [catch {parse expr $script {0 end}} err] \
+        $err
+} {1 {}}
+
+tcltest::test parse-expr-errors-1.4 {wrong num args} {
+    set script {int(1,2)}
+    list \
+        [catch {parse expr $script {0 end}} err] \
+        $err
+} {1 {}}
+
+tcltest::test parse-expr-errors-1.5 {wrong num args} {
+    set script {unknown()}
+    list \
+        [catch {parse expr $script {0 end}} err] \
+        $err
+} {1 {}}
+
+# FIXME: Need to validate number of arguments to Tcl
+# math functions when compiling them.
+
+}
+
+# Cleanup
+tcltest::cleanupTests
+

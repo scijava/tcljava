@@ -1,0 +1,10 @@
+package require tcltest
+
+tcltest::test cmdline-1.0 {process_cmdline} {
+    catch {unset _cmdline}
+    process_cmdline {-debug one.tjc two.tjc}
+    array get _cmdline
+} {options -debug files {one.tjc two.tjc}}
+
+# Cleanup
+tcltest::cleanupTests

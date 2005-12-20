@@ -405,9 +405,9 @@ fi
 AC_SUBST(TCLJAVA)
 
 if test $ORIG_TCLJAVA = "both"; then
-    OUTPUT_FILES="Makefile tcljavaConfig.sh jaclsh jtclsh"
+    OUTPUT_FILES="Makefile tcljavaConfig.sh jaclsh tjc jtclsh"
     if test "$ac_cv_tcl_win32" = "yes" ; then
-        OUTPUT_FILES="$OUTPUT_FILES jaclsh.bat jtclsh.bat"
+        OUTPUT_FILES="$OUTPUT_FILES jaclsh.bat tjc.bat jtclsh.bat"
     fi
 elif test $ORIG_TCLJAVA = "tclblend"; then
     OUTPUT_FILES="Makefile tcljavaConfig.sh jtclsh"
@@ -415,9 +415,9 @@ elif test $ORIG_TCLJAVA = "tclblend"; then
         OUTPUT_FILES="$OUTPUT_FILES jtclsh.bat"
     fi
 else
-    OUTPUT_FILES="Makefile tcljavaConfig.sh jaclsh"
+    OUTPUT_FILES="Makefile tcljavaConfig.sh jaclsh tjc"
     if test "$ac_cv_tcl_win32" = "yes" ; then
-        OUTPUT_FILES="$OUTPUT_FILES jaclsh.bat"
+        OUTPUT_FILES="$OUTPUT_FILES jaclsh.bat tjc.bat"
     fi
 fi
 

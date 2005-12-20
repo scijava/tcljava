@@ -1,0 +1,1023 @@
+package require tcltest
+
+tcltest::test parseproc-1.0 {no procs parsed} {
+    set script {}
+
+    nameproc_init default
+    parseproc_init
+    parseproc_start $script
+} {{} {}}
+
+tcltest::test parseproc-1.1 {no procs parsed} {
+    set script {set i 1}
+
+    nameproc_init default
+    parseproc_init
+    parseproc_start $script
+} {{set i 1} {}}
+
+
+tcltest::test parseproc-2.0 {parse 1 proc} {
+    set script {
+proc one {} {}
+}
+
+    nameproc_init default
+    parseproc_init
+    parseproc_start $script
+} [list {
+TJC::command one OneCmd
+} \
+    {{one OneCmd {proc one {} {}}}} \
+    ]
+
+tcltest::test parseproc-2.1 {parse 1 proc} {
+    set script {
+proc "one two" {} {};
+}
+
+    nameproc_init default
+    parseproc_init
+    parseproc_start $script
+} [list {
+TJC::command {one two} OneTwoCmd;
+} \
+    {{{one two} OneTwoCmd {proc {one two} {} {}}}} \
+    ]
+
+tcltest::test parseproc-2.2 {parse 1 proc} {
+    set script "
+proc one \\
+    {} {}
+"
+
+    nameproc_init default
+    parseproc_init
+    parseproc_start $script
+} [list {
+TJC::command one OneCmd
+#
+} \
+    {{one OneCmd {proc one {} {}}}} \
+    ]
+
+tcltest::test parseproc-2.3 {parse 1 proc} {
+    set script {
+proc one {} {
+    cmd1
+}
+}
+
+    nameproc_init default
+    parseproc_init
+    parseproc_start $script
+} [list {
+TJC::command one OneCmd
+#
+#
+} \
+    {{one OneCmd {proc one {} {
+    cmd1
+}}}} \
+    ]
+
+tcltest::test parseproc-2.4 {parse 1 proc} {
+    set script {
+proc one {} {
+    cmd1
+}
+set i 0
+}
+
+    nameproc_init default
+    parseproc_init
+    parseproc_start $script
+} [list {
+TJC::command one OneCmd
+#
+#
+set i 0
+} \
+    {{one OneCmd {proc one {} {
+    cmd1
+}}}} \
+    ]
+
+tcltest::test parseproc-2.5 {parse 1 proc} {
+    set script "
+proc one {a\\
+b} {}
+"
+
+    nameproc_init default
+    parseproc_init
+    parseproc_start $script
+} [list {
+TJC::command one OneCmd
+#
+} \
+    {{one OneCmd {proc one {a b} {}}}} \
+    ]
+
+tcltest::test parseproc-2.6 {parse 1 proc} {
+    set script "
+proc one {} {
+    list\\
+        A \\
+        B
+}
+"
+
+    nameproc_init default
+    parseproc_init
+    parseproc_start $script
+} [list {
+TJC::command one OneCmd
+#
+#
+#
+#
+} \
+    {{one OneCmd {proc one {} {
+    list A  B
+}}}} \
+    ]
+
+tcltest::test parseproc-2.7 {parse 1 proc} {
+    set script "
+proc one {} {
+    list \"string\\
+        1\" {string\\
+        2}
+}
+"
+
+    nameproc_init default
+    parseproc_init
+    parseproc_start $script
+} [list {
+TJC::command one OneCmd
+#
+#
+#
+#
+} \
+    {{one OneCmd {proc one {} {
+    list "string 1" {string 2}
+}}}} \
+    ]
+
+tcltest::test parseproc-2.8 {parse 1 proc} {
+    set script "
+proc p {} {
+    set s \"err\"
+    switch -exact -- \"Foo\" {
+        \"Foo\" {
+            set s \"c0\"
+        }
+    }
+    return \$s
+}
+"
+
+    nameproc_init default
+    parseproc_init
+    parseproc_start $script
+} [list {
+TJC::command p PCmd
+#
+#
+#
+#
+#
+#
+#
+#
+} \
+    {{p PCmd {proc p {} {
+    set s "err"
+    switch -exact -- "Foo" {
+        "Foo" {
+            set s "c0"
+        }
+    }
+    return $s
+}}}} \
+    ]
+
+
+tcltest::test parseproc-3.0 {parse 2 proc declarations} {
+    set script {
+proc one {} {}
+proc two {} {}
+}
+
+    nameproc_init default
+    parseproc_init
+    parseproc_start $script
+} [list {
+TJC::command one OneCmd
+TJC::command two TwoCmd
+} \
+    {{one OneCmd {proc one {} {}}} {two TwoCmd {proc two {} {}}}} \
+    ]
+
+tcltest::test parseproc-3.1 {parse 2 proc declarations} {
+    set script {
+proc one {} {
+    cmd1
+}
+proc two {} {}
+}
+
+    nameproc_init default
+    parseproc_init
+    parseproc_start $script
+} [list {
+TJC::command one OneCmd
+#
+#
+TJC::command two TwoCmd
+} \
+    {{one OneCmd {proc one {} {
+    cmd1
+}}} {two TwoCmd {proc two {} {}}}} \
+    ]
+
+
+tcltest::test parseproc-3.2 {parse 2 proc declarations} {
+    set script {
+set i 0
+proc one {} {
+    cmd1
+}
+proc two {} {
+    cmd2
+}
+set i 1
+}
+
+    nameproc_init default
+    parseproc_init
+    parseproc_start $script
+} [list {
+set i 0
+TJC::command one OneCmd
+#
+#
+TJC::command two TwoCmd
+#
+#
+set i 1
+} \
+    {{one OneCmd {proc one {} {
+    cmd1
+}}} {two TwoCmd {proc two {} {
+    cmd2
+}}}} \
+    ]
+
+tcltest::test parseproc-3.3 {parse 2 proc declarations} {
+    set script {
+set i 0
+proc one {} {
+    cmd1
+}
+set i 1
+proc two {} {
+    cmd2
+}
+set i 2
+}
+
+    nameproc_init default
+    parseproc_init
+    parseproc_start $script
+} [list {
+set i 0
+TJC::command one OneCmd
+#
+#
+set i 1
+TJC::command two TwoCmd
+#
+#
+set i 2
+} \
+    {{one OneCmd {proc one {} {
+    cmd1
+}}} {two TwoCmd {proc two {} {
+    cmd2
+}}}} \
+    ]
+
+
+
+tcltest::test parseproc-4.0 {parse non-standard but legal proc decl} {
+    set script {
+proc one args {}
+}
+
+    nameproc_init default
+    parseproc_init
+    parseproc_start $script
+} [list {
+TJC::command one OneCmd
+} \
+    {{one OneCmd {proc one args {}}}} \
+    ]
+
+tcltest::test parseproc-4.1 {parse but don't use proc without braced body} {
+    set script {
+proc one {} cmd1
+}
+
+    nameproc_init default
+    parseproc_init
+    parseproc_start $script
+} [list {
+proc one {} cmd1
+} \
+    {} \
+    ]
+
+tcltest::test parseproc-4.2 {parse but don't use proc without braced body} {
+    set script {
+proc one {} "cmd1"
+}
+
+    nameproc_init default
+    parseproc_init
+    parseproc_start $script
+} [list {
+proc one {} "cmd1"
+} \
+    {} \
+    ]
+
+tcltest::test parseproc-4.3 {runtime proc name not parsed, not a simple name} {
+    set script {proc $i {} {}}
+
+    nameproc_init default
+    parseproc_init
+    parseproc_start $script
+} {{proc $i {} {}} {}}
+
+tcltest::test parseproc-4.4 {wrong number of args to proc command} {
+    set script {
+proc one {} {} {}
+}
+
+    nameproc_init default
+    parseproc_init
+    parseproc_start $script
+} {{
+proc one {} {} {}
+} {}}
+
+tcltest::test parseproc-4.5 {wrong number of args to proc command} {
+    set script {
+proc one
+}
+
+    nameproc_init default
+    parseproc_init
+    parseproc_start $script
+} {{
+proc one
+} {}}
+
+tcltest::test parseproc-4.6 {parse but don't use proc with a variable in args} {
+    set script {
+set arg foo
+proc one $arg {
+    puts "foo is $foo"
+}
+}
+
+    nameproc_init default
+    parseproc_init
+    parseproc_start $script
+} [list {
+set arg foo
+proc one $arg {
+    puts "foo is $foo"
+}
+} \
+    {} \
+    ]
+
+tcltest::test parseproc-4.7 {parse but don't use proc with a variable in args} {
+    set script {
+set arg foo
+proc one {$arg} {
+    puts "foo is $foo"
+}
+}
+
+    nameproc_init default
+    parseproc_init
+    parseproc_start $script
+} [list {
+set arg foo
+proc one {$arg} {
+    puts "foo is $foo"
+}
+} \
+    {} \
+    ]
+
+tcltest::test parseproc-4.8 {parse but don't use proc with a command in args} {
+    set script {
+proc one [argnames] {}
+}
+
+    nameproc_init default
+    parseproc_init
+    parseproc_start $script
+} [list {
+proc one [argnames] {}
+} \
+    {} \
+    ]
+
+
+tcltest::test parseproc-5.0 {proc args string format} {
+    list \
+        [parseproc_args_ok "arg"] \
+        [parseproc_args_ok "\"arg\""] \
+        [parseproc_args_ok "\"arg1 arg2\""] \
+        [parseproc_args_ok "\{arg\}"] \
+        [parseproc_args_ok "\{arg1 arg2\}"] \
+        [parseproc_args_ok "\{\{arg defval\}\}"] \
+        [parseproc_args_ok "\{arg1 \{arg2 defval\}\}"] \
+        [parseproc_args_ok "\{args\}"] \
+        [parseproc_args_ok "\{arg1 args\}"] \
+        [parseproc_args_ok "\{arg1 \{arg2 default\} args\}"] \
+
+} {1 1 1 1 1 1 1 1 1 1}
+
+tcltest::test parseproc-5.1 {proc args string format} {
+    list \
+        [parseproc_args_ok "arg\}"] \
+        [parseproc_args_ok "\{arg"] \
+        [parseproc_args_ok "\"arg"] \
+        [parseproc_args_ok "arg\""] \
+        [parseproc_args_ok "arg1 arg2"] \
+        [parseproc_args_ok "\$arg"] \
+        [parseproc_args_ok "\{\{arg1 default\} arg2\}"] \
+        [parseproc_args_ok "\{args arg2\}"] \
+        [parseproc_args_ok "\"\$arg\""] \
+        [parseproc_args_ok "\{\$arg\}"] \
+        [parseproc_args_ok "\{arg1 \{arg2 default default\}\}"] \
+        [parseproc_args_ok "\{arg1 \{args default\}\}"] \
+        [parseproc_args_ok "\[cmd\]"] \
+        [parseproc_args_ok "\{\[cmd\]\}"] \
+        [parseproc_args_ok "\{arg1 \[cmd\]\}"] \
+        [parseproc_args_ok "\{arg1 \{arg2 \[cmd\]\}\}"] \
+
+} {0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}
+
+
+# FIXME: What if an argument that is actually a array name
+# is passed as a procedure argument? [proc p { arr(one) } {}]
+
+# FIXME: What if an argument with a global syntax spec
+# is passed as a proc argument: [proc p { ::one }]
+
+
+tcltest::test parseproc-6.0 {parse proc in nested command} {
+    set script {
+set i [proc p {} {}]
+}
+
+    nameproc_init default
+    parseproc_init
+    parseproc_start $script
+} [list {
+set i [TJC::command p PCmd]
+} \
+    {{p PCmd {proc p {} {}}}} \
+    ]
+
+tcltest::test parseproc-6.1 {parse proc in nested command} {
+    set script {
+set i [proc p {} {
+    cmd1}]
+}
+
+    nameproc_init default
+    parseproc_init
+    parseproc_start $script
+} [list "
+set i \[TJC::command p PCmd\\
+\]
+" \
+    {{p PCmd {proc p {} {
+    cmd1}}}} \
+    ]
+
+tcltest::test parseproc-6.2 {parse proc in nested command} {
+    set script {
+set i [proc p {} {
+    cmd1
+}]
+}
+
+    nameproc_init default
+    parseproc_init
+    parseproc_start $script
+} [list "
+set i \[TJC::command p PCmd\\
+\\
+\]
+" \
+    {{p PCmd {proc p {} {
+    cmd1
+}}}} \
+    ]
+
+tcltest::test parseproc-6.3 {parse 2 nested procs} {
+    set script {
+set i [proc p {} {};proc q {} {}]
+}
+
+    nameproc_init default
+    parseproc_init
+    parseproc_start $script
+} [list {
+set i [TJC::command p PCmd;TJC::command q QCmd]
+} \
+    {{p PCmd {proc p {} {}}} {q QCmd {proc q {} {}}}} \
+    ]
+
+tcltest::test parseproc-6.4 {parse 2 nested procs} {
+    set script {
+set i [proc p {} {} ; proc q {} {}]
+}
+
+    nameproc_init default
+    parseproc_init
+    parseproc_start $script
+} [list {
+set i [TJC::command p PCmd ; TJC::command q QCmd]
+} \
+    {{p PCmd {proc p {} {}}} {q QCmd {proc q {} {}}}} \
+    ]
+
+tcltest::test parseproc-6.5 {parse 2 nested procs} {
+    set script "
+set i \[proc p {} {} \\
+ \; proc q {} {}\]
+"
+
+    nameproc_init default
+    parseproc_init
+    parseproc_start $script
+} [list "
+set i \[TJC::command p PCmd \\
+ \; TJC::command q QCmd\]
+" \
+    {{p PCmd {proc p {} {}}} {q QCmd {proc q {} {}}}} \
+    ]
+
+tcltest::test parseproc-6.6 {parse 2 nested procs} {
+    set script "
+set i \[proc p {} {
+
+} \\
+ \; proc q {} {}\]
+"
+
+    nameproc_init default
+    parseproc_init
+    parseproc_start $script
+} [list "
+set i \[TJC::command p PCmd\\
+\\
+ \\
+ \; TJC::command q QCmd\]
+" \
+    {{p PCmd {proc p {} {
+
+}}} {q QCmd {proc q {} {}}}} \
+    ]
+
+
+tcltest::test parseproc-7.0 {parse proc in a commented if command} {
+    set script {
+#if {1} {
+    proc p {} {}
+#}
+}
+
+    nameproc_init default
+    parseproc_init
+    parseproc_start $script
+} [list {
+#if {1} {
+    TJC::command p PCmd
+#}
+} {{p PCmd {proc p {} {}}}}]
+
+tcltest::test parseproc-7.1 {parse proc in a if command} {
+    set script {
+if {1} {
+    proc p {} {}
+}
+}
+
+    nameproc_init default
+    parseproc_init
+    parseproc_start $script
+} [list {
+if {1} {
+    TJC::command p PCmd
+}
+} {{p PCmd {proc p {} {}}}}]
+
+tcltest::test parseproc-7.2 {parse duplicate proc in a if command} {
+    set script {
+if {1} {
+    proc p {} {}
+} else {
+    proc p {} {}
+}
+}
+
+    nameproc_init default
+    parseproc_init
+    parseproc_start $script
+} [list {
+if {1} {
+    TJC::command p PCmd
+} else {
+    TJC::command p PCmd2
+}
+} {{p PCmd {proc p {} {}}} {p PCmd2 {proc p {} {}}}}]
+
+
+
+
+tcltest::test parseproc-8.0 {parse proc in a switch command} {
+    set script {switch Foo Foo {proc p {} {}}}
+
+    nameproc_init default
+    parseproc_init
+    parseproc_start $script
+} [list {switch Foo Foo {TJC::command p PCmd}} {{p PCmd {proc p {} {}}}}]
+
+tcltest::test parseproc-8.1 {parse proc in a switch command} {
+    set script {switch Foo {Foo {proc p {} {}}}}
+
+    nameproc_init default
+    parseproc_init
+    parseproc_start $script
+} [list {switch Foo {Foo} {TJC::command p PCmd}} {{p PCmd {proc p {} {}}}}]
+
+tcltest::test parseproc-8.2 {parse proc in a switch command} {
+    set script {
+switch "Foo" "Foo" {proc p {} {}}
+}
+
+    nameproc_init default
+    parseproc_init
+    parseproc_start $script
+} [list {
+switch "Foo" "Foo" {TJC::command p PCmd}
+} {{p PCmd {proc p {} {}}}}]
+
+tcltest::test parseproc-8.3 {parse proc in a switch command} {
+    set script {
+switch "Foo" {"Foo" {proc p {} {}}}
+}
+
+    nameproc_init default
+    parseproc_init
+    parseproc_start $script
+} [list {
+switch "Foo" {Foo} {TJC::command p PCmd}
+} {{p PCmd {proc p {} {}}}}]
+
+tcltest::test parseproc-8.4 {parse proc in a switch command} {
+    set script {
+switch Foo {Foo {proc p {} {}}}
+}
+
+    nameproc_init default
+    parseproc_init
+    parseproc_start $script
+} [list {
+switch Foo {Foo} {TJC::command p PCmd}
+} {{p PCmd {proc p {} {}}}}]
+
+tcltest::test parseproc-8.5 {parse proc in a switch command} {
+    set script {
+set i 0
+switch $s {Foo {proc p {} {}}}
+set j 0
+}
+
+    nameproc_init default
+    parseproc_init
+    parseproc_start $script
+} [list {
+set i 0
+switch $s {Foo} {TJC::command p PCmd}
+set j 0
+} {{p PCmd {proc p {} {}}}}]
+
+tcltest::test parseproc-8.6 {parse proc in a switch command} {
+    set script {
+switch $var {
+    Foo {
+        proc p {} {}
+    }
+}
+}
+
+    nameproc_init default
+    parseproc_init
+    parseproc_start $script
+} [list "
+switch \$var \{Foo\} \{
+        TJC::command p PCmd
+    \}\\
+\\
+
+" {{p PCmd {proc p {} {}}}}]
+
+tcltest::test parseproc-8.7 {parse proc in a switch command} {
+    set script {
+set i [switch $var {
+    Foo {
+        proc p {} {}
+    }
+}]
+}
+
+    nameproc_init default
+    parseproc_init
+    parseproc_start $script
+} [list "
+set i \[switch \$var \{Foo\} \{
+        TJC::command p PCmd
+    \}\\
+\\
+\]
+" {{p PCmd {proc p {} {}}}}]
+
+tcltest::test parseproc-8.8 {parse proc in a switch command} {
+    set script {
+switch Foo {Foo {proc p1 {} {}}};proc p2 {} {}
+}
+
+    nameproc_init default
+    parseproc_init
+    parseproc_start $script
+} [list "
+switch Foo \{Foo\} \{TJC::command p1 P1Cmd\}\;TJC::command p2 P2Cmd
+" {{p1 P1Cmd {proc p1 {} {}}} {p2 P2Cmd {proc p2 {} {}}}}]
+        
+tcltest::test parseproc-8.9 {parse proc in a switch command} {
+    set script "
+set i \[\\
+switch Foo {Foo {proc p1 {} {}}}\\
+\;proc p2 {} {}\]
+"
+
+    nameproc_init default
+    parseproc_init
+    parseproc_start $script
+} [list "
+set i \[\\
+switch Foo \{Foo\} \{TJC::command p1 P1Cmd\}\\
+\;TJC::command p2 P2Cmd\]
+" {{p1 P1Cmd {proc p1 {} {}}} {p2 P2Cmd {proc p2 {} {}}}}]
+
+tcltest::test parseproc-8.10 {parse proc in a switch command} {
+    set script "
+set i \[\\
+switch Foo {Foo {proc p1 {} {} \; proc p2 {} {}}}\\
+\]
+"
+
+    nameproc_init default
+    parseproc_init
+    parseproc_start $script
+} [list "
+set i \[\\
+switch Foo \{Foo\} \{TJC::command p1 P1Cmd \; TJC::command p2 P2Cmd\}\\
+\]
+" {{p1 P1Cmd {proc p1 {} {}}} {p2 P2Cmd {proc p2 {} {}}}}]
+
+
+tcltest::test parseproc-9.0 {parse proc in a word} {
+    set script {
+set i "[proc p {} {}]"
+}
+
+    nameproc_init default
+    parseproc_init
+    parseproc_start $script
+} [list {
+set i "[TJC::command p PCmd]"
+} {{p PCmd {proc p {} {}}}}]
+
+tcltest::test parseproc-9.1 {parse proc in a word} {
+    set script {
+set i "x[proc p {} {}]"
+}
+
+    nameproc_init default
+    parseproc_init
+    parseproc_start $script
+} [list {
+set i "x[TJC::command p PCmd]"
+} {{p PCmd {proc p {} {}}}}]
+
+tcltest::test parseproc-9.2 {parse proc in an array word} {
+    set script {
+puts $a([proc p {} {}])
+}
+
+    nameproc_init default
+    parseproc_init
+    parseproc_start $script
+} [list {
+puts $a([TJC::command p PCmd])
+} {{p PCmd {proc p {} {}}}}]
+
+tcltest::test parseproc-9.3 {parse proc in an array word in a word} {
+    set script {
+puts "x$a([proc p {} {}])"
+}
+
+    nameproc_init default
+    parseproc_init
+    parseproc_start $script
+} [list {
+puts "x$a([TJC::command p PCmd])"
+} {{p PCmd {proc p {} {}}}}]
+
+tcltest::test parseproc-9.4 {parse proc in an expr expression} {
+    set script {
+expr {[proc p {} {}]}
+}
+
+    nameproc_init default
+    parseproc_init
+    parseproc_start $script
+} [list {
+expr {[TJC::command p PCmd]}
+} {{p PCmd {proc p {} {}}}}]
+
+tcltest::test parseproc-9.5 {parse proc in a if expression} {
+    set script {
+if {[proc p {} {}]} {}
+}
+
+    nameproc_init default
+    parseproc_init
+    parseproc_start $script
+} [list {
+if {[TJC::command p PCmd]} {}
+} {{p PCmd {proc p {} {}}}}]
+
+tcltest::test parseproc-9.6 {parse proc in a if expression} {
+    set script {
+if {[proc p {} {}] == {}} {}
+}
+
+    nameproc_init default
+    parseproc_init
+    parseproc_start $script
+} [list {
+if {[TJC::command p PCmd] == {}} {}
+} {{p PCmd {proc p {} {}}}}]
+
+tcltest::test parseproc-9.7 {parse proc in a variable in an if expression} {
+    set script {
+if {$a([proc p {} {}])} {}
+}
+
+    nameproc_init default
+    parseproc_init
+    parseproc_start $script
+} [list {
+if {$a([TJC::command p PCmd])} {}
+} {{p PCmd {proc p {} {}}}}]
+
+
+
+
+tcltest::test parseproc_append_outscript_to-1.0 {outscript processing} {
+    set script {
+set i 0
+set j 1
+}
+
+    parseproc_init
+    set _parseproc(inscript) $script
+    set cmd_range {9 8}
+    # Append up to but not including the start of the 2nd command
+    _parseproc_append_outscript_up_to $cmd_range
+    list \
+        $_parseproc(outscript) \
+        $_parseproc(inscript_range)
+} [list "\nset i 0\n" {0 9}]
+
+tcltest::test parseproc_append_outscript_to-1.1 {outscript processing} {
+    set script {
+set i 0
+set j 1
+set k 2
+}
+
+    set results [list]
+    parseproc_init
+    set _parseproc(inscript) $script
+    set cmd_range {9 8}
+    # Append up to but not including the start of the 2nd command
+    _parseproc_append_outscript_up_to $cmd_range
+
+    lappend results \
+        $_parseproc(outscript) \
+        $_parseproc(inscript_range)
+
+    # Append up to but not including the start of the 3nd command
+    set cmd_range {17 8}
+    _parseproc_append_outscript_up_to $cmd_range
+
+    lappend results \
+        $_parseproc(outscript) \
+        $_parseproc(inscript_range)
+
+    set results
+} [list "\nset i 0\n" {0 9} "\nset i 0\nset j 1\n" {0 17}]
+
+
+tcltest::test parseproc_append_outscript_including-1.0 {outscript processing} {
+    set script {
+set i 0
+set j 1
+}
+
+    parseproc_init
+    set cmd_range {9 8}
+    # Append up to and including the range of the second command
+    _parseproc_append_outscript_including $script $cmd_range
+    list \
+        $_parseproc(outscript) \
+        $_parseproc(inscript_range) \
+        [parse getrange $script]
+} [list "\nset i 0\nset j 1\n" {0 17} {0 17}]
+
+tcltest::test parseproc_append_outscript_including-1.1 {outscript processing} {
+    set script {
+set i 0
+set j 1
+set k 2
+}
+
+    set results [list]
+    parseproc_init
+    set cmd_range {9 8}
+    # Append up to but not including the start of the 2nd command
+    _parseproc_append_outscript_including $script $cmd_range
+
+    lappend results \
+        $_parseproc(outscript) \
+        $_parseproc(inscript_range)
+
+    # Append up to but not including the start of the 3nd command
+    set cmd_range {17 8}
+    _parseproc_append_outscript_including $script $cmd_range
+
+    lappend results \
+        $_parseproc(outscript) \
+        $_parseproc(inscript_range) \
+        [parse getrange $script]
+
+    set results
+} [list "\nset i 0\nset j 1\n" {0 17} "\nset i 0\nset j 1\nset k 2\n" {0 25} {0 25}]
+
+tcltest::test parseproc_append_outscript_including-1.2 {outscript processing} {
+    set script {
+switch "Foo" "Foo" {proc p {} {}}
+}
+
+    parseproc_init
+    set cmd_range {1 34}
+    # Append up to and including the range of the second command
+    _parseproc_append_outscript_including $script $cmd_range
+    list \
+        $_parseproc(outscript) \
+        $_parseproc(inscript_range) \
+        [parse getrange $script]
+} [list "\nswitch \"Foo\" \"Foo\" \{proc p \{\} \{\}\}\n" {0 35} {0 35}]
+
+
+# Cleanup
+tcltest::cleanupTests
+

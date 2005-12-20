@@ -1,0 +1,876 @@
+package require tcltest
+
+tcltest::test module-1.0 {module command} {
+    module_parse_command {PACKAGE com.chairsoft.recliner.controls} 1
+} {2}
+
+tcltest::test module-1.1 {module command} {
+    module_parse_command {OPTIONS +inline} 1
+} {2}
+
+tcltest::test module-1.2 {module command} {
+    module_parse_command {OPTIONS +inline +cmdcache} 1
+} {3}
+
+tcltest::test module-1.3 {module command} {
+    module_parse_command {SOURCE C:/tcl_source/modules/controls/*.tcl} 1
+} {2}
+
+tcltest::test module-1.4 {module command} {
+    module_parse_command {INCLUDE_SOURCE C:/tcl_source/modules/controls/zog.tcl} 1
+} {2}
+
+tcltest::test module-1.5 {module command} {
+    module_parse_command {PROC_OPTIONS {zog_setup} -cmdcache} 1
+} {3}
+
+tcltest::test module-1.6 {module command} {
+    module_parse_command {INIT_SOURCE bar.tcl} 1
+} {2}
+
+tcltest::test module-2.0 {module command error} {
+    list [catch {
+    module_parse_command {} 1
+    } err] $err
+} {1 {Module command not found in input "", at line 1}}
+
+tcltest::test module-2.1 {module command error} {
+    list [catch {
+    module_parse_command " UNK" 2
+    } err] $err
+} {1 {Module command not found in input " UNK", at line 2}}
+
+tcltest::test module-2.2 {module command error} {
+    list [catch {
+    module_parse_command "UNKNOWN" 1
+    } err] $err
+} {1 {Unknown module command UNKNOWN, at line 1}}
+
+
+tcltest::test module-package-1.0 {PACKAGE} {
+    list [catch {
+    module_parse_command {PACKAGE} 1
+    } err] $err
+} {1 {Module command PACKAGE requires 1 argument, at line 1}}
+
+tcltest::test module-package-1.1 {PACKAGE} {
+    list [catch {
+    module_parse_command {PACKAGE com.chairsoft.recliner.controls bar} 1
+    } err] $err
+} {1 {Module command PACKAGE requires 1 argument, at line 1}}
+
+tcltest::test module-package-1.2 {PACKAGE must not be quoted} {
+    list [catch {
+    module_parse_command {PACKAGE "com.one"} 1
+    } err] $err
+} {1 {Module command PACKAGE name contains an invalid character "\""}}
+
+tcltest::test module-package-1.3 {PACKAGE must not contain a $} {
+    list [catch {
+    module_parse_command {PACKAGE com.on$e} 1
+    } err] $err
+} {1 {Module command PACKAGE name contains an invalid character "$"}}
+
+tcltest::test module-package-1.4 {PACKAGE must not contain a $} {
+    list [catch {
+    module_parse_command "PACKAGE com.one\tbar" 1
+    } err] $err
+} {1 {Module command PACKAGE name contains an invalid character "\t"}}
+
+tcltest::test module-package-2.0 {PACKAGE} {
+    module_parse_command {PACKAGE com.chairsoft.recliner.controls} 1
+    set _module(package)
+} {com.chairsoft.recliner.controls}
+
+tcltest::test module-package-2.1 {PACKAGE} {
+    module_parse_command {PACKAGE com.one_two} 1
+    set _module(package)
+} {com.one_two}
+
+
+
+tcltest::test module-options-1.0 {OPTIONS} {
+    # Zero OPTIONS are allowed.
+    module_parse_command {OPTIONS} 1
+    set _module(options)
+} {}
+
+tcltest::test module-options-1.1 {OPTIONS} {
+    list [catch {
+    module_parse_command {OPTIONS unk} 1
+    } err] $err
+} {1 {Module command OPTIONS argument "unk" is invalid, at line 1}}
+
+tcltest::test module-options-2.1 {OPTIONS} {
+    module_parse_command {OPTIONS +one -two} 1
+    set _module(options)
+} {one 1 two 0}
+
+
+
+tcltest::test module-source-1.0 {SOURCE} {
+    list [catch {
+    module_parse_command {SOURCE} 1
+    } err] $err
+} {1 {Module command SOURCE requires 1 or more arguments, at line 1}}
+
+tcltest::test module-source-2.0 {SOURCE} {
+    module_parse_command {SOURCE C:/foo/*.tcl C:/foo/bar/*.tcl} 1
+    set _module(source)
+} {C:/foo/*.tcl C:/foo/bar/*.tcl}
+
+
+tcltest::test module-include-source-1.0 {SOURCE} {
+    list [catch {
+    module_parse_command {INCLUDE_SOURCE} 1
+    } err] $err
+} {1 {Module command INCLUDE_SOURCE requires 1 or more arguments, at line 1}}
+
+tcltest::test module-include-source-2.0 {SOURCE} {
+    module_parse_command {INCLUDE_SOURCE C:/foo/nog.tcl} 1
+    set _module(include_source)
+} {C:/foo/nog.tcl}
+
+tcltest::test module-include-source-2.1 {SOURCE} {
+    module_parse_command {INCLUDE_SOURCE C:/foo/nog.tcl C:/foo/zz*.tcl} 1
+    set _module(include_source)
+} {C:/foo/nog.tcl C:/foo/zz*.tcl}
+
+tcltest::test module-init-source-1.0 {SOURCE} {
+    list [catch {
+    module_parse_command {INIT_SOURCE} 1
+    } err] $err
+} {1 {Module command INIT_SOURCE requires 1 argument, at line 1}}
+
+tcltest::test module-init-source-2.0 {SOURCE} {
+    module_parse_command {INIT_SOURCE nog.tcl} 1
+    set _module(init_source)
+} {nog.tcl}
+
+
+tcltest::test module-proc-options-1.0 {PROC_OPTIONS} {
+    list [catch {
+    module_parse_command {PROC_OPTIONS} 1
+    } err] $err
+} {1 {Module command PROC_OPTIONS format not matched, at line 1}}
+
+tcltest::test module-proc-options-1.1 {PROC_OPTIONS} {
+    list [catch {
+    module_parse_command {PROC_OPTIONS zog_setup +one} 1
+    } err] $err
+} {1 {Module command PROC_OPTIONS format not matched, at line 1}}
+
+tcltest::test module-proc-options-1.2 {PROC_OPTIONS} {
+    list [catch {
+    module_parse_command {PROC_OPTIONS [zog_setup] +one} 1
+    } err] $err
+} {1 {Module command PROC_OPTIONS format not matched, at line 1}}
+
+tcltest::test module-proc-options-1.3 {PROC_OPTIONS} {
+    list [catch {
+    module_parse_command {PROC_OPTIONS "zog_setup" +one} 1
+    } err] $err
+} {1 {Module command PROC_OPTIONS format not matched, at line 1}}
+
+tcltest::test module-proc-options-1.4 {PROC_OPTIONS} {
+    list [catch {
+    module_parse_command {PROC_OPTIONS {} +one} 1
+    } err] $err
+} {1 {Module command PROC_OPTIONS requires 1 or more proc names, at line 1}}
+
+tcltest::test module-proc-options-1.5 {PROC_OPTIONS} {
+    list [catch {
+    module_parse_command {PROC_OPTIONS { } +one} 1
+    } err] $err
+} {1 {Module command PROC_OPTIONS requires 1 or more proc names, at line 1}}
+
+tcltest::test module-proc-options-1.6 {PROC_OPTIONS} {
+    list [catch {
+    module_parse_command {PROC_OPTIONS {foo} } 1
+    } err] $err
+} {1 {Module command PROC_OPTIONS requires 1 or more option arguments, at line 1}}
+
+tcltest::test module-proc-options-1.7 {PROC_OPTIONS} {
+    list [catch {
+    module_parse_command {PROC_OPTIONS {foo} unk} 1
+    } err] $err
+} {1 {Module command PROC_OPTIONS argument "unk" is invalid, at line 1}}
+
+tcltest::test module-proc-options-2.0 {PROC_OPTIONS} {
+    unset _module
+    module_parse_command {PROC_OPTIONS {foo bar} +one -two} 1
+    set _module(proc_options)
+} {{foo {one 1 two 0}} {bar {one 1 two 0}}}
+
+
+
+
+
+
+
+tcltest::test module-3.0 {parse module file data} {
+    set data {}
+    module_parse $data
+} 0
+
+tcltest::test module-3.1 {parse module file data} {
+    set data {PACKAGE com.chairsoft.recliner.controls}
+    module_parse $data
+} 1
+
+tcltest::test module-3.2 {parse module file data} {
+    set data {
+PACKAGE com.chairsoft.recliner.controls
+# Comment
+}
+    module_parse $data
+} 1
+
+tcltest::test module-3.3 {parse module file data} {
+    set data "
+PACKAGE com.chairsoft.recliner.controls
+# Comment is not continued \\
+OPTIONS +inline +cmdcache
+"
+    module_parse $data
+} 2
+
+tcltest::test module-3.4 {parse module file data} {
+    set data "
+PACKAGE com.chairsoft.recliner.controls
+OPTIONS +inline +cmdcache +someotherone \\
+        +somemore
+"
+    list [module_parse $data] $_module(options)
+} {2 {inline 1 cmdcache 1 someotherone 1 somemore 1}}
+
+tcltest::test module-3.5 {parse module file data} {
+    set data "
+PACKAGE com.chairsoft.recliner.controls
+OPTIONS +inline +cmdcache +someotherone \\
+# Ignore this comment line
+        +somemore
+"
+    list [module_parse $data] $_module(options)
+} {2 {inline 1 cmdcache 1 someotherone 1 somemore 1}}
+
+tcltest::test module-3.6 {parse module file data} {
+    # The empty line here terminates the OPTIONS command, so
+    # an error is generated for an unknown command +somemore
+    set data "
+PACKAGE com.chairsoft.recliner.controls
+OPTIONS +inline +cmdcache +someotherone \\
+
+        +somemore
+"
+    list [catch {module_parse $data} err] $err
+} {1 {Module command not found in input "+somemore", at line 5}}
+
+tcltest::test module-3.7 {parse module file data} {
+    set data {
+PACKAGE com.chairsoft.recliner.controls
+OPTIONS +inline +cmdcache
+
+SOURCE C:/tcl_source/modules/controls/*.tcl
+INIT_SOURCE dummy.tcl
+
+# Include zog.tcl in the jar but don't compile it
+INCLUDE_SOURCE C:/tcl_source/modules/controls/zog.tcl
+
+PROC_OPTIONS {zog_setup} -cmdcache
+    }
+
+    module_parse $data
+} 6
+
+tcltest::test module-3.8 {parse module file data} {
+    set data {
+PACKAGE com.chairsoft.recliner.controls
+OPTIONS +inline +cmdcache
+
+SOURCE C:/tcl_source/modules/controls/*.tcl
+INIT_SOURCE dummy.tcl
+
+# Include zog.tcl in the jar but don't compile it
+INCLUDE_SOURCE C:/tcl_source/modules/controls/zog.tcl
+
+# Run foo.tcl as init script for whole module
+INIT_SOURCE C:/tcl_source/modules/controls/foo.tcl
+
+PROC_OPTIONS {zog_setup} -cmdcache
+    }
+
+    module_parse $data
+} 7
+
+tcltest::test module-3.9 {parse multiple PROC_OPTIONS} {
+    set data {
+PACKAGE com.chairsoft.recliner.controls
+OPTIONS +inline +cmdcache
+
+SOURCE C:/tcl_source/modules/controls/*.tcl
+INIT_SOURCE dummy.tcl
+
+# Include zog.tcl in the jar but don't compile it
+INCLUDE_SOURCE C:/tcl_source/modules/controls/zog.tcl
+
+# Run foo.tcl as init script for whole module
+INIT_SOURCE C:/tcl_source/modules/controls/foo.tcl
+
+PROC_OPTIONS {foo} -cmdcache
+PROC_OPTIONS {bar} -cmdcache -dummy
+    }
+
+    module_parse $data
+} 8
+
+
+tcltest::test module-4.0 {parse module file} {
+    set data {
+PACKAGE com.chairsoft.recliner.controls
+OPTIONS +inline +cmdcache
+
+SOURCE C:/tcl_source/modules/controls/*.tcl
+INIT_SOURCE dummy.tcl
+
+# Include zog.tcl in the jar but don't compile it
+INCLUDE_SOURCE C:/tcl_source/modules/controls/zog.tcl
+
+PROC_OPTIONS {zog_setup} -cmdcache
+    }
+
+    set qname [tcltest::makeFile $data test.tjc]
+    module_parse_file $qname
+} 6
+
+tcltest::test module-4.1 {required SOURCE command} {
+    set data {PACKAGE com.chairsoft.recliner.controls}
+    module_parse $data
+    list [catch {module_parse_validate} err] $err
+} {1 {No SOURCE declaration found in module config}}
+
+tcltest::test module-4.2 {required INIT_SOURCE command} {
+    set data {
+PACKAGE com.chairsoft.recliner.controls
+SOURCE one.tcl
+}
+    module_parse $data
+    list [catch {module_parse_validate} err] $err
+} {1 {No INIT_SOURCE declaration found in module config}}
+
+tcltest::test module-4.3 {validate SOURCE} {
+    set data {
+PACKAGE com.chairsoft.recliner.controls
+SOURCE one.tcl
+INIT_SOURCE one.tcl
+}
+    module_parse $data
+    list [catch {module_parse_validate} err] $err
+} {1 {SOURCE declaration contains file named "one.tcl" that does not exist}}
+
+tcltest::test module-4.4 {validate SOURCE} {
+    tcltest::makeFile {} one.tcl
+
+    set data {
+PACKAGE com.chairsoft.recliner.controls
+SOURCE one.tcl one.tcl
+INIT_SOURCE one.tcl
+}
+    module_parse $data
+    set results [list [catch {module_parse_validate} err] $err]
+    file delete one.tcl
+    set results
+} {1 {SOURCE declaration contains more than 1 file named "one.tcl"}}
+
+tcltest::test module-4.5 {validate SOURCE} {
+    file delete -force t1 t2
+    file mkdir t1 t2
+    tcltest::makeFile {} t1/one.tcl
+    tcltest::makeFile {} t2/one.tcl
+
+    set data {
+PACKAGE com.chairsoft.recliner.controls
+SOURCE t1/one.tcl t2/one.tcl
+INIT_SOURCE one.tcl
+}
+    module_parse $data
+    set results [list [catch {module_parse_validate} err] $err]
+    file delete -force t1 t2
+    set results
+} {1 {SOURCE declaration contains more than 1 file named "one.tcl"}}
+
+tcltest::test module-4.6 {validate PACKAGE} {
+    file delete -force t1
+    file mkdir t1
+    tcltest::makeFile {} t1/one.tcl
+
+    set data {
+PACKAGE while
+SOURCE t1/one.tcl
+INIT_SOURCE one.tcl
+    }
+    module_parse $data
+    list [catch {module_parse_validate} err] $err
+} {1 {PACKAGE must not be a Java keyword}}
+
+tcltest::test module-4.7 {validate PACKAGE} {
+    file delete -force t1
+    file mkdir t1
+    tcltest::makeFile {} t1/one.tcl
+
+    set data {
+PACKAGE two.three.return
+SOURCE t1/one.tcl
+INIT_SOURCE one.tcl
+    }
+    module_parse $data
+    list [catch {module_parse_validate} err] $err
+} {1 {PACKAGE must not be a Java keyword}}
+
+
+
+tcltest::test module-5.0 {query module info} {
+    set data {
+PACKAGE com.chairsoft.recliner.controls
+SOURCE C:/foo.tcl
+INIT_SOURCE C:/foo.tcl
+    }
+    module_parse $data
+    #module_parse_validate
+    module_query PACKAGE
+} com.chairsoft.recliner.controls
+
+tcltest::test module-5.1 {query default value for OPTIONS} {
+    set data {
+PACKAGE com.chairsoft.recliner.controls
+SOURCE C:/foo.tcl
+INIT_SOURCE C:/foo.tcl
+    }
+    module_parse $data
+    #module_parse_validate
+    module_query OPTIONS
+} {}
+
+tcltest::test module-5.2 {query value for OPTIONS} {
+    set data {
+PACKAGE com.chairsoft.recliner.controls
+SOURCE C:/foo.tcl
+INIT_SOURCE C:/foo.tcl
+OPTIONS -compile
+    }
+    module_parse $data
+    #module_parse_validate
+    module_query OPTIONS
+} {compile 0}
+
+tcltest::test module-5.3 {query value for PROC_OPTIONS} {
+    set data {
+PACKAGE com.chairsoft.recliner.controls
+SOURCE C:/foo.tcl
+INIT_SOURCE C:/foo.tcl
+PROC_OPTIONS {foo} -compile
+    }
+    module_parse $data
+    #module_parse_validate
+    module_query PROC_OPTIONS
+} {{foo {compile 0}}}
+
+
+tcltest::test module-5.4 {query module info} {
+    tcltest::makeFile {} test_glob_2.tcl
+    tcltest::makeFile {} test_glob_1.tcl
+
+    set data "
+SOURCE [file join [pwd] *_glob_*.tcl]
+INIT_SOURCE test_glob_1.tcl
+    "
+
+    module_parse $data
+    module_parse_validate
+    module_expand SOURCE
+} [list [file join [pwd] test_glob_1.tcl] [file join [pwd] test_glob_2.tcl]]
+
+tcltest::test module-5.5 {query module info} {
+    tcltest::makeFile {} test_glob_2.tcl
+    tcltest::makeFile {} test_glob_1.tcl
+
+    set data "
+SOURCE [file join [pwd] *_glob_*.tcl]
+INIT_SOURCE test_glob_1.tcl
+    "
+
+    module_parse $data
+    # Unlike the above test, no validate before module_expand
+    #module_parse_validate
+    module_expand SOURCE
+} [list [file join [pwd] test_glob_1.tcl] [file join [pwd] test_glob_2.tcl]]
+
+
+tcltest::test module-6.0 {filter INCLUDE_SOURCE files} {
+    set source_files {one.tcl}
+    set include_source_files {}
+
+    module_filter_include_source $source_files $include_source_files
+} {one.tcl}
+
+tcltest::test module-6.1 {filter INCLUDE_SOURCE files} {
+    set source_files {one.tcl two.tcl three.tcl}
+    set include_source_files {two.tcl}
+
+    module_filter_include_source $source_files $include_source_files
+} {one.tcl three.tcl}
+
+tcltest::test module-6.2 {filter INCLUDE_SOURCE files} {
+    set source_files {foo/one.tcl foo/two.tcl foo/three.tcl}
+    set include_source_files {two.tcl}
+
+    module_filter_include_source $source_files $include_source_files
+} {foo/one.tcl foo/three.tcl}
+
+tcltest::test module-6.3 {filter INCLUDE_SOURCE files} {
+    set source_files {foo/one.tcl foo/two.tcl foo/three.tcl bar/four.tcl}
+    set include_source_files {one.tcl bar/four.tcl}
+
+    module_filter_include_source $source_files $include_source_files
+} {foo/two.tcl foo/three.tcl}
+
+
+
+tcltest::test module-options-validate-1.0 {validate options} {
+    list [catch {module_option_validate "compile" "0" 0 1 {compile 0}} err] $err
+} {0 {}}
+
+tcltest::test module-options-validate-1.1 {validate options} {
+    list [catch {module_option_validate "compile" "1" 0 1 {compile 1}} err] $err
+} {0 {}}
+
+tcltest::test module-options-validate-1.2 {validate options} {
+    list [catch {module_option_validate "compile" "0" 1 2 {compile 0}} err] $err
+} {1 {-compile option must appear with no other options}}
+
+tcltest::test module-options-validate-2.0 {validate options} {
+    set data {
+PACKAGE com.chairsoft.recliner.controls
+SOURCE C:/foo.tcl
+INIT_SOURCE C:/foo.tcl
+OPTIONS -compile
+PROC_OPTIONS {foo} -compile
+    }
+    module_parse $data
+    #module_parse_validate
+
+    list [catch {module_options_validate} err] $err
+} {0 {}}
+
+tcltest::test module-options-validate-2.1 {validate options} {
+    set data {
+PACKAGE com.chairsoft.recliner.controls
+SOURCE C:/foo.tcl
+INIT_SOURCE C:/foo.tcl
+OPTIONS -compile +compile
+    }
+    module_parse $data
+    #module_parse_validate
+
+    list [catch {module_options_validate} err] $err
+} {1 {-compile option must appear with no other options}}
+
+tcltest::test module-options-validate-2.2 {validate options} {
+    set data {
+PACKAGE com.chairsoft.recliner.controls
+SOURCE C:/foo.tcl
+INIT_SOURCE C:/foo.tcl
+PROC_OPTIONS {foo} -compile +compile
+    }
+    module_parse $data
+    #module_parse_validate
+
+    list [catch {module_options_validate} err] $err
+} {1 {-compile option must appear with no other options}}
+
+tcltest::test module-options-validate-2.3 {validate options} {
+    set data {
+PACKAGE com.chairsoft.recliner.controls
+SOURCE C:/foo.tcl
+INIT_SOURCE C:/foo.tcl
+OPTIONS +inline-controls
+    }
+    module_parse $data
+    #module_parse_validate
+
+    list [catch {module_options_validate} err] $err
+} {1 {+inline-controls option must appear after +inline-containers}}
+
+tcltest::test module-options-validate-2.4 {validate options} {
+    set data {
+PACKAGE com.chairsoft.recliner.controls
+SOURCE C:/foo.tcl
+INIT_SOURCE C:/foo.tcl
+OPTIONS +inline-controls
+PROC_OPTIONS {foo} +inline-controls -inline-containers
+    }
+    module_parse $data
+    #module_parse_validate
+
+    list [catch {module_options_validate} err] $err
+} {1 {+inline-controls option must appear after +inline-containers}}
+
+tcltest::test module-options-validate-2.5 {validate options} {
+    set data {
+PACKAGE com.chairsoft.recliner.controls
+SOURCE C:/foo.tcl
+INIT_SOURCE C:/foo.tcl
+OPTIONS +inline-containers
+PROC_OPTIONS {foo} +inline-controls
+    }
+    module_parse $data
+    #module_parse_validate
+
+    list [catch {module_options_validate} err] $err
+} {0 {}}
+
+tcltest::test module-options-validate-2.6 {validate options} {
+    set data {
+PACKAGE com.chairsoft.recliner.controls
+SOURCE C:/foo.tcl
+INIT_SOURCE C:/foo.tcl
+OPTIONS +cache-commands
+    }
+    module_parse $data
+    #module_parse_validate
+
+    list [catch {module_options_validate} err] $err
+} {0 {}}
+
+tcltest::test module-options-validate-2.7 {validate options} {
+    set data {
+PACKAGE com.chairsoft.recliner.controls
+SOURCE C:/foo.tcl
+INIT_SOURCE C:/foo.tcl
+OPTIONS +inline-containers +inline-controls +cache-commands
+    }
+    module_parse $data
+    #module_parse_validate
+
+    list [catch {module_options_validate} err] $err
+} {0 {}}
+
+tcltest::test module-options-validate-2.8 {validate options} {
+    set data {
+PACKAGE com.chairsoft.recliner.controls
+SOURCE C:/foo.tcl
+INIT_SOURCE C:/foo.tcl
+OPTIONS +inline-containers +inline-controls +cache-commands
+PROC_OPTIONS {foo3} -cache-commands
+    }
+    module_parse $data
+    #module_parse_validate
+
+    list [catch {module_options_validate} err] $err
+} {0 {}}
+
+tcltest::test module-options-validate-2.9 {validate options} {
+    set data {
+PACKAGE com.chairsoft.recliner.controls
+SOURCE C:/foo.tcl
+INIT_SOURCE C:/foo.tcl
+OPTIONS +inline-containers +inline-controls +cache-commands
+PROC_OPTIONS {ONE::two ONE::three} -cache-commands
+    }
+    module_parse $data
+    #module_parse_validate
+
+    list [catch {module_options_validate} err] $err
+} {0 {}}
+
+
+tcltest::test module-options-value-1.0 {query option} {
+    set data {
+PACKAGE com.chairsoft.recliner.controls
+SOURCE C:/foo.tcl
+INIT_SOURCE C:/foo.tcl
+OPTIONS -compile
+PROC_OPTIONS {foo} -compile
+    }
+    module_parse $data
+    #module_parse_validate
+
+    module_options_validate
+    module_option_value compile
+} 0
+
+tcltest::test module-options-value-1.1 {query option} {
+    set data {
+PACKAGE com.chairsoft.recliner.controls
+SOURCE C:/foo.tcl
+INIT_SOURCE C:/foo.tcl
+    }
+    module_parse $data
+    #module_parse_validate
+
+    module_options_validate
+    list [module_option_value compile] \
+         [module_option_value inline-containers] \
+
+} {1 0}
+
+tcltest::test module-options-value-1.2 {query option} {
+    set data {
+PACKAGE com.chairsoft.recliner.controls
+SOURCE C:/foo.tcl
+INIT_SOURCE C:/foo.tcl
+OPTIONS +inline-containers
+    }
+    module_parse $data
+    #module_parse_validate
+
+    module_options_validate
+    module_option_value inline-containers
+} 1
+
+tcltest::test module-options-value-1.3 {query option} {
+    set data {
+PACKAGE com.chairsoft.recliner.controls
+SOURCE C:/foo.tcl
+INIT_SOURCE C:/foo.tcl
+OPTIONS +inline-containers +inline-controls
+    }
+    module_parse $data
+    #module_parse_validate
+
+    module_options_validate
+    module_option_value inline-controls
+} 1
+
+tcltest::test module-options-value-1.4 {query option} {
+    set data {
+PACKAGE com.chairsoft.recliner.controls
+SOURCE C:/foo.tcl
+INIT_SOURCE C:/foo.tcl
+OPTIONS +cache-commands
+    }
+    module_parse $data
+    #module_parse_validate
+
+    module_options_validate
+    module_option_value cache-commands
+} 1
+
+
+tcltest::test module-options-default-1.0 {query default option value} {
+    module_option_default compile
+} 1
+
+tcltest::test module-options-default-1.1 {fake option for testing} {
+    module_option_default dummy
+} 0
+
+tcltest::test module-options-default-1.2 {query default option value} {
+    module_option_default inline-containers
+} 0
+
+tcltest::test module-options-default-1.3 {query default option value} {
+    module_option_default inline-controls
+} 0
+
+tcltest::test module-options-value-2.0 {query option for proc} {
+    set data {
+PACKAGE com.chairsoft.recliner.controls
+SOURCE C:/foo.tcl
+INIT_SOURCE C:/foo.tcl
+PROC_OPTIONS {foo} -compile
+    }
+    module_parse $data
+    #module_parse_validate
+
+    module_options_validate
+    module_option_value compile foo
+} 0
+
+tcltest::test module-options-value-2.1 {query option for proc} {
+    set data {
+PACKAGE com.chairsoft.recliner.controls
+SOURCE C:/foo.tcl
+INIT_SOURCE C:/foo.tcl
+OPTIONS -compile
+    }
+    module_parse $data
+    #module_parse_validate
+
+    module_options_validate
+    module_option_value compile foo
+} {}
+
+tcltest::test module-options-value-2.2 {query option for proc} {
+    set data {
+PACKAGE com.chairsoft.recliner.controls
+SOURCE C:/foo.tcl
+INIT_SOURCE C:/foo.tcl
+OPTIONS -compile
+PROC_OPTIONS {foo} +compile
+    }
+    module_parse $data
+    #module_parse_validate
+
+    module_options_validate
+    module_option_value compile foo
+} 1
+
+tcltest::test module-options-value-2.3 {query option for proc} {
+    set data {
+PACKAGE com.chairsoft.recliner.controls
+SOURCE C:/foo.tcl
+INIT_SOURCE C:/foo.tcl
+OPTIONS
+PROC_OPTIONS {foo} +inline-containers
+    }
+    module_parse $data
+    #module_parse_validate
+
+    module_options_validate
+    module_option_value inline-containers foo
+} 1
+
+tcltest::test module-options-value-2.4 {query option for proc} {
+    set data {
+PACKAGE com.chairsoft.recliner.controls
+SOURCE C:/foo.tcl
+INIT_SOURCE C:/foo.tcl
+OPTIONS +inline-containers
+PROC_OPTIONS {foo} +inline-controls
+    }
+    module_parse $data
+    #module_parse_validate
+
+    module_options_validate
+    module_option_value inline-controls foo
+} 1
+
+tcltest::test module-looks-like-glob-1.0 {is str a glob pattern} {
+    module_looks_like_glob foo.tcl
+} {0}
+
+tcltest::test module-looks-like-glob-1.1 {is str a glob pattern} {
+    module_looks_like_glob C:/foo.tcl
+} {0}
+
+tcltest::test module-looks-like-glob-1.2 {is str a glob pattern} {
+    module_looks_like_glob C:/bar/*.tcl
+} {1}
+
+tcltest::test module-looks-like-glob-1.3 {is str a glob pattern} {
+    module_looks_like_glob C:/bar/one?two.tcl
+} {1}
+
+tcltest::test module-looks-like-glob-1.4 {is str a glob pattern} {
+    module_looks_like_glob {C:/bar/[a-c]two.tcl}
+} {1}
+
+tcltest::test module-looks-like-glob-1.5 {is str a glob pattern} {
+    module_looks_like_glob {C:/bar/{a,b}two.tcl}
+} {1}
+
+
+# Cleanup
+tcltest::cleanupTests
+

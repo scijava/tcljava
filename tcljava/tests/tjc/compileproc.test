@@ -1,0 +1,6510 @@
+package require tcltest
+package require parser
+
+if {[info commands reload] == {}} {
+    # Load procs into Jacl
+    source $env(TJC_LIBRARY)/reload.tcl
+}
+
+tcltest::test compileproc_split_classname-1.0 {util} {
+    compileproc_split_classname FooCmd
+} {default FooCmd}
+
+tcltest::test compileproc_split_classname-1.1 {util} {
+    compileproc_split_classname foo.FooCmd
+} {foo FooCmd}
+
+tcltest::test compileproc_split_classname-1.2 {util} {
+    compileproc_split_classname foo.bar.FooCmd
+} {foo.bar FooCmd}
+
+tcltest::test compileproc_split_classname-1.3 {util} {
+    compileproc_split_classname foo.bar.baz.FooCmd
+} {foo.bar.baz FooCmd}
+
+
+# When processing proc args, we assume that the args
+# have already been validated by the parseproc module.
+
+tcltest::test compileproc-args-1.0 {process proc args} {
+    set script {
+proc p {} {}
+}
+    set plist [compileproc_script_to_proc_list $script]
+    compileproc_args_split [lindex $plist 1]
+} {{} {} false 0 0}
+
+tcltest::test compileproc-args-1.1 {process proc args} {
+    set script {
+proc p {name} {}
+}
+    set plist [compileproc_script_to_proc_list $script]
+    compileproc_args_split [lindex $plist 1]
+} {name {} false 1 1}
+
+tcltest::test compileproc-args-1.2 {process proc args} {
+    set script {
+proc p name {}
+}
+    set plist [compileproc_script_to_proc_list $script]
+    compileproc_args_split [lindex $plist 1]
+} {name {} false 1 1}
+
+tcltest::test compileproc-args-1.3 {process proc args} {
+    set script {
+proc p "name" {}
+}
+    set plist [compileproc_script_to_proc_list $script]
+    compileproc_args_split [lindex $plist 1]
+} {name {} false 1 1}
+
+tcltest::test compileproc-args-1.4 {process proc args} {
+    set script {
+proc p {{name {}}} {}
+}
+    set plist [compileproc_script_to_proc_list $script]
+    compileproc_args_split [lindex $plist 1]
+} {{} {{name {}}} false 0 1}
+
+tcltest::test compileproc-args-1.5 {process proc args} {
+    set script {
+proc p {args} {}
+}
+    set plist [compileproc_script_to_proc_list $script]
+    compileproc_args_split [lindex $plist 1]
+} {{} {} true 0 {}}
+
+tcltest::test compileproc-args-1.6 {process proc args} {
+    set script {
+proc p {arg1 {arg2 {}}} {}
+}
+    set plist [compileproc_script_to_proc_list $script]
+    compileproc_args_split [lindex $plist 1]
+} {arg1 {{arg2 {}}} false 1 2}
+
+tcltest::test compileproc-args-1.7 {process proc args} {
+    set script {
+proc p {arg1 {arg2 {}} args} {}
+}
+    set plist [compileproc_script_to_proc_list $script]
+    compileproc_args_split [lindex $plist 1]
+} {arg1 {{arg2 {}}} true 1 {}}
+
+tcltest::test compileproc-args-1.8 {process proc args} {
+    set script {
+proc p {{arg1 {}} {arg2 {}}} {}
+}
+    set plist [compileproc_script_to_proc_list $script]
+    compileproc_args_split [lindex $plist 1]
+} {{} {{arg1 {}} {arg2 {}}} false 0 2}
+
+
+
+tcltest::test compileproc-args-assign-1.0 {code for proc args assignment} {
+    set proc_args {}
+    compileproc_args_assign $proc_args
+} {if (objv.length != 1) {
+    throw new TclNumArgsException(interp, 1, objv, "");
+}
+}
+
+tcltest::test compileproc-args-assign-1.1 {code for proc args assignment} {
+    set proc_args {name}
+    compileproc_args_assign $proc_args
+} {if (objv.length != 2) {
+    throw new TclNumArgsException(interp, 1, objv, "name");
+}
+interp.setVar("name", null, objv[1], 0);
+}
+
+tcltest::test compileproc-args-assign-1.2 {code for proc args assignment} {
+    set proc_args {name addr}
+    compileproc_args_assign $proc_args
+} {if (objv.length != 3) {
+    throw new TclNumArgsException(interp, 1, objv, "name addr");
+}
+interp.setVar("name", null, objv[1], 0);
+interp.setVar("addr", null, objv[2], 0);
+}
+
+tcltest::test compileproc-args-assign-1.3 {code for proc args assignment} {
+    set proc_args {name addr zip}
+    compileproc_args_assign $proc_args
+} {if (objv.length != 4) {
+    throw new TclNumArgsException(interp, 1, objv, "name addr zip");
+}
+interp.setVar("name", null, objv[1], 0);
+interp.setVar("addr", null, objv[2], 0);
+interp.setVar("zip", null, objv[3], 0);
+}
+
+tcltest::test compileproc-args-assign-2.0 {code for proc default args assignment} {
+    compileproc_constant_cache_init
+    set proc_args {{name joe}}
+    compileproc_args_assign $proc_args
+} {if (objv.length > 2) {
+    throw new TclNumArgsException(interp, 1, objv, "?name?");
+}
+interp.setVar("name", null,
+    ((objv.length <= 1) ? const0 : objv[1]), 0);
+}
+
+tcltest::test compileproc-args-assign-2.1 {code for proc default args assignment} {
+    compileproc_constant_cache_init
+    set proc_args {{name joe} {addr 123}}
+    compileproc_args_assign $proc_args
+} {if (objv.length > 3) {
+    throw new TclNumArgsException(interp, 1, objv, "?name? ?addr?");
+}
+interp.setVar("name", null,
+    ((objv.length <= 1) ? const0 : objv[1]), 0);
+interp.setVar("addr", null,
+    ((objv.length <= 2) ? const1 : objv[2]), 0);
+}
+
+tcltest::test compileproc-args-assign-3.0 {code for proc args assignment} {
+    set proc_args {args}
+    compileproc_args_assign $proc_args
+} {if ( objv.length <= 1 ) {
+    interp.setVar("args", null, "", 0);
+} else {
+    TclObject argl = TclList.newInstance();
+    for (int i = 1; i < objv.length; i++) {
+        TclList.append(interp, argl, objv[i]);
+    }
+    interp.setVar("args", null, argl, 0);
+}
+}
+
+tcltest::test compileproc-args-assign-4.0 {code for proc arg and args assignment} {
+    set proc_args {name args}
+    compileproc_args_assign $proc_args
+} {if (objv.length < 2) {
+    throw new TclNumArgsException(interp, 1, objv, "name args");
+}
+interp.setVar("name", null, objv[1], 0);
+if ( objv.length <= 2 ) {
+    interp.setVar("args", null, "", 0);
+} else {
+    TclObject argl = TclList.newInstance();
+    for (int i = 2; i < objv.length; i++) {
+        TclList.append(interp, argl, objv[i]);
+    }
+    interp.setVar("args", null, argl, 0);
+}
+}
+
+tcltest::test compileproc-args-assign-4.1 {code for proc arg and args assignment} {
+    set proc_args {name addr args}
+    compileproc_args_assign $proc_args
+} {if (objv.length < 3) {
+    throw new TclNumArgsException(interp, 1, objv, "name addr args");
+}
+interp.setVar("name", null, objv[1], 0);
+interp.setVar("addr", null, objv[2], 0);
+if ( objv.length <= 3 ) {
+    interp.setVar("args", null, "", 0);
+} else {
+    TclObject argl = TclList.newInstance();
+    for (int i = 3; i < objv.length; i++) {
+        TclList.append(interp, argl, objv[i]);
+    }
+    interp.setVar("args", null, argl, 0);
+}
+}
+
+tcltest::test compileproc-args-assign-4.2 {code for proc arg and args assignment} {
+    set proc_args {name addr zip args}
+    compileproc_args_assign $proc_args
+} {if (objv.length < 4) {
+    throw new TclNumArgsException(interp, 1, objv, "name addr zip args");
+}
+interp.setVar("name", null, objv[1], 0);
+interp.setVar("addr", null, objv[2], 0);
+interp.setVar("zip", null, objv[3], 0);
+if ( objv.length <= 4 ) {
+    interp.setVar("args", null, "", 0);
+} else {
+    TclObject argl = TclList.newInstance();
+    for (int i = 4; i < objv.length; i++) {
+        TclList.append(interp, argl, objv[i]);
+    }
+    interp.setVar("args", null, argl, 0);
+}
+}
+
+
+
+tcltest::test compileproc-args-assign-5.0 {code for proc default arg and args assignment} {
+    compileproc_constant_cache_init
+    set proc_args {{name joe} args}
+    compileproc_args_assign $proc_args
+} {interp.setVar("name", null,
+    ((objv.length <= 1) ? const0 : objv[1]), 0);
+if ( objv.length <= 2 ) {
+    interp.setVar("args", null, "", 0);
+} else {
+    TclObject argl = TclList.newInstance();
+    for (int i = 2; i < objv.length; i++) {
+        TclList.append(interp, argl, objv[i]);
+    }
+    interp.setVar("args", null, argl, 0);
+}
+}
+
+tcltest::test compileproc-args-assign-5.1 {code for proc default arg and args assignment} {
+    compileproc_constant_cache_init
+    set proc_args {{name joe} {addr 123} args}
+    compileproc_args_assign $proc_args
+} {interp.setVar("name", null,
+    ((objv.length <= 1) ? const0 : objv[1]), 0);
+interp.setVar("addr", null,
+    ((objv.length <= 2) ? const1 : objv[2]), 0);
+if ( objv.length <= 3 ) {
+    interp.setVar("args", null, "", 0);
+} else {
+    TclObject argl = TclList.newInstance();
+    for (int i = 3; i < objv.length; i++) {
+        TclList.append(interp, argl, objv[i]);
+    }
+    interp.setVar("args", null, argl, 0);
+}
+}
+
+tcltest::test compileproc-args-assign-5.2 {code for proc default arg and args assignment} {
+    compileproc_constant_cache_init
+    set proc_args {{name joe} {addr 123} {zip 9} args}
+    compileproc_args_assign $proc_args
+} {interp.setVar("name", null,
+    ((objv.length <= 1) ? const0 : objv[1]), 0);
+interp.setVar("addr", null,
+    ((objv.length <= 2) ? const1 : objv[2]), 0);
+interp.setVar("zip", null,
+    ((objv.length <= 3) ? const2 : objv[3]), 0);
+if ( objv.length <= 4 ) {
+    interp.setVar("args", null, "", 0);
+} else {
+    TclObject argl = TclList.newInstance();
+    for (int i = 4; i < objv.length; i++) {
+        TclList.append(interp, argl, objv[i]);
+    }
+    interp.setVar("args", null, argl, 0);
+}
+}
+
+
+tcltest::test compileproc-args-assign-6.0 {code for proc arg and default arg assignment} {
+    compileproc_constant_cache_init
+    set proc_args {name {addr 123}}
+    compileproc_args_assign $proc_args
+} {if (objv.length < 2 || objv.length > 3) {
+    throw new TclNumArgsException(interp, 1, objv, "name ?addr?");
+}
+interp.setVar("name", null, objv[1], 0);
+interp.setVar("addr", null,
+    ((objv.length <= 2) ? const0 : objv[2]), 0);
+}
+
+tcltest::test compileproc-args-assign-6.1 {code for proc arg and default arg assignment} {
+    compileproc_constant_cache_init
+    set proc_args {name addr {zip 9}}
+    compileproc_args_assign $proc_args
+} {if (objv.length < 3 || objv.length > 4) {
+    throw new TclNumArgsException(interp, 1, objv, "name addr ?zip?");
+}
+interp.setVar("name", null, objv[1], 0);
+interp.setVar("addr", null, objv[2], 0);
+interp.setVar("zip", null,
+    ((objv.length <= 3) ? const0 : objv[3]), 0);
+}
+
+tcltest::test compileproc-args-assign-6.2 {code for proc arg and default arg assignment} {
+    compileproc_constant_cache_init
+    set proc_args {name addr {zip 9} {country US}}
+    compileproc_args_assign $proc_args
+} {if (objv.length < 3 || objv.length > 5) {
+    throw new TclNumArgsException(interp, 1, objv, "name addr ?zip? ?country?");
+}
+interp.setVar("name", null, objv[1], 0);
+interp.setVar("addr", null, objv[2], 0);
+interp.setVar("zip", null,
+    ((objv.length <= 3) ? const0 : objv[3]), 0);
+interp.setVar("country", null,
+    ((objv.length <= 4) ? const1 : objv[4]), 0);
+}
+
+
+tcltest::test compileproc-args-assign-7.0 {code for proc with all types of arg assignment} {
+    compileproc_constant_cache_init
+    set proc_args {name {addr 123} args}
+    compileproc_args_assign $proc_args
+} {if (objv.length < 2) {
+    throw new TclNumArgsException(interp, 1, objv, "name ?addr? args");
+}
+interp.setVar("name", null, objv[1], 0);
+interp.setVar("addr", null,
+    ((objv.length <= 2) ? const0 : objv[2]), 0);
+if ( objv.length <= 3 ) {
+    interp.setVar("args", null, "", 0);
+} else {
+    TclObject argl = TclList.newInstance();
+    for (int i = 3; i < objv.length; i++) {
+        TclList.append(interp, argl, objv[i]);
+    }
+    interp.setVar("args", null, argl, 0);
+}
+}
+
+
+
+
+tcltest::test compileproc-keys-1.0 {descend into script, report command tokens} {
+    set script {
+proc p {} {
+    return
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [compileproc_keys_info] \
+
+} {dkey0 dkey0 {{dkey0 return}}}
+
+tcltest::test compileproc-keys-1.1 {descend into script, report command tokens} {
+    set script {
+proc p {} {
+    return 1
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [compileproc_keys_info] \
+
+} {dkey0 dkey0 {{dkey0 return}}}
+
+tcltest::test compileproc-keys-1.2 {descend into script, report command tokens} {
+    set script {
+proc p {} {
+    return [q]
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init        
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [compileproc_keys_info] \
+        [descend_commands dkey0] \
+        [descend_commands dkey1] \
+
+} {{dkey0 dkey1} dkey0 {{dkey0 return} {dkey1 q}} {{} dkey1} {{}}}
+
+tcltest::test compileproc-keys-1.3 {descend into script, report command tokens} {
+    set script {
+proc p {} {
+    set i 0
+    return $i
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [compileproc_keys_info] \
+        [descend_commands dkey0] \
+        [descend_commands dkey1] \
+
+} {{dkey0 dkey1} {dkey0 dkey1} {{dkey0 set} {dkey1 return}} {{} {} {}} {{} {}}}
+
+tcltest::test compileproc-keys-1.4 {descend into script, report command tokens} {
+    set script {
+proc p {} {
+    if {1} {
+        return 1
+    } else {
+        return 0
+    }
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [compileproc_keys_info] \
+        [descend_commands dkey0] \
+
+} {{dkey0 dkey1 dkey2} dkey0 {{dkey0 if} {dkey1 return} {dkey2 return}} {{} {} {} {} {}}}
+
+tcltest::test compileproc-keys-1.5 {descend into script, report command tokens} {
+    set script {
+proc p {} {
+    if {1} {
+        return [set i 1]
+    } else {
+        return [set i 0]
+    }
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [compileproc_keys_info] \
+        [descend_commands dkey0] \
+
+} [list \
+    {dkey0 dkey1 dkey2 dkey3 dkey4} \
+    dkey0 \
+    {{dkey0 if} {dkey1 return} {dkey2 set} {dkey3 return} {dkey4 set}} \
+    {{} {} {} {} {}} \
+    ]
+
+
+tcltest::test compileproc-keys-1.6 {descend into script, report command tokens} {
+    set script {
+proc p {} {
+    return $arr([key])
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [compileproc_keys_info] \
+        [descend_commands dkey0] \
+
+} {{dkey0 dkey1} dkey0 {{dkey0 return} {dkey1 key}} {{} dkey1}}
+
+tcltest::test compileproc-keys-1.7 {descend into script, report command tokens} {
+    set script {
+proc p {} {
+    return $arr([key1][key2])
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [compileproc_keys_info] \
+        [descend_commands dkey0] \
+
+} {{dkey0 dkey1 dkey2} dkey0 {{dkey0 return} {dkey1 key1} {dkey2 key2}} {{} {dkey1 dkey2}}}
+
+tcltest::test compileproc-keys-1.8 {descend into script, report command tokens} {
+    set script {
+proc p {} {
+    return $arr([cmd1 [cmd2]])
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [compileproc_keys_info] \
+        [descend_commands dkey0] \
+        [descend_commands dkey1] \
+
+} {{dkey0 dkey1 dkey2} dkey0 {{dkey0 return} {dkey1 cmd1} {dkey2 cmd2}} {{} dkey1} {{} dkey2}}
+
+tcltest::test compileproc-keys-1.9 {descend into script, report command tokens} {
+    set script {
+proc p {} {
+    return $arr([])
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [compileproc_keys_info] \
+        [descend_commands dkey0] \
+
+} {dkey0 dkey0 {{dkey0 return}} {{} {{}}}}
+
+tcltest::test compileproc-keys-1.10 {descend into script, report command tokens} {
+    set script {
+proc p {} {
+    return $arr([key1;key2])
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [compileproc_keys_info] \
+        [descend_commands dkey0] \
+
+} {{dkey0 dkey1 dkey2} dkey0 {{dkey0 return} {dkey1 key1} {dkey2 key2}} {{} {{dkey1 dkey2}}}}
+
+
+tcltest::test compileproc-keys-1.11 {descend into script, report command tokens} {
+    set script {
+proc p {} {
+    return [list [cmd] [cmd]]
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [compileproc_keys_info] \
+        [descend_commands dkey0] \
+        [descend_commands dkey1] \
+
+} [list \
+    {dkey0 dkey1 dkey2 dkey3} \
+    dkey0 \
+    {{dkey0 return} {dkey1 list} {dkey2 cmd} {dkey3 cmd}} \
+    {{} dkey1} \
+    {{} dkey2 dkey3} \
+    ]
+
+tcltest::test compileproc-keys-2.0 {descend into script, report command tokens} {
+    # Empty command
+    set script {
+proc p {} {
+    return []
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [compileproc_keys_info] \
+        [descend_commands dkey0] \
+
+} {dkey0 dkey0 {{dkey0 return}} {{} {}}}
+
+tcltest::test compileproc-keys-2.1 {descend into script, report command tokens} {
+    set script {
+proc p {} {
+    return [] []
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [compileproc_keys_info] \
+        [descend_commands dkey0] \
+
+} {dkey0 dkey0 {{dkey0 return}} {{} {} {}}}
+
+tcltest::test compileproc-keys-2.2 {descend into script, report command tokens} {
+    set script {
+proc p {} {
+    return "[]"
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [compileproc_keys_info] \
+        [descend_commands dkey0] \
+
+} {dkey0 dkey0 {{dkey0 return}} {{} {{}}}}
+
+tcltest::test compileproc-keys-2.3 {descend into script, report command tokens} {
+    set script {
+proc p {} {
+    return "[][foo]"
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [compileproc_keys_info] \
+        [descend_commands dkey0] \
+
+} {{dkey0 dkey1} dkey0 {{dkey0 return} {dkey1 foo}} {{} {{} dkey1}}}
+
+tcltest::test compileproc-keys-2.4 {descend into script, report command tokens} {
+    set script {
+proc p {} {
+    return "[foo][]"
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [compileproc_keys_info] \
+        [descend_commands dkey0] \
+
+} {{dkey0 dkey1} dkey0 {{dkey0 return} {dkey1 foo}} {{} {dkey1 {}}}}
+
+tcltest::test compileproc-keys-2.5 {descend into script, report command tokens} {
+    set script {
+proc p {} {
+    list [set i 0 ; set i 1]
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [compileproc_keys_info] \
+        [descend_commands dkey0] \
+
+} {{dkey0 dkey1 dkey2} dkey0 {{dkey0 list} {dkey1 set} {dkey2 set}} {{} {dkey1 dkey2}}}
+
+tcltest::test compileproc-keys-2.6 {descend into script, report command tokens} {
+    set script {
+proc p {} {
+    list [set i 0 ; $a([cmd1])]
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [compileproc_keys_info] \
+        [descend_commands dkey0] \
+
+} [list \
+    {dkey0 dkey1 dkey2 dkey3} \
+    dkey0 \
+    {{dkey0 list} {dkey1 set} {dkey2 _UNKNOWN} {dkey3 cmd1}} \
+    {{} {dkey1 dkey2}} \
+    ]
+
+tcltest::test compileproc-keys-2.7 {descend into script, report command tokens} {
+    set script {
+proc p {} {
+    list [set i 0]$b([cmd])
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [compileproc_keys_info] \
+        [descend_commands dkey0] \
+
+} [list \
+    {dkey0 dkey1 dkey2} \
+    dkey0 \
+    {{dkey0 list} {dkey1 set} {dkey2 cmd}} \
+    {{} {dkey1 dkey2}} \
+    ]
+
+
+tcltest::test compileproc-can-inline-if-1.0 {check if container valid/static flags} {
+    set script {
+proc p {} {
+    if {1} {
+        return 1
+    } else {
+        return 0
+    }
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set _compileproc(options,inline_containers) {if}
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [descend_commands dkey0 container] \
+        [compileproc_is_container_command dkey0] \
+        [descend_container_is_valid dkey0] \
+        [descend_container_is_static dkey0] \
+        [compileproc_can_inline_container dkey0] \
+
+} {{dkey0 dkey1 dkey2} dkey0 {{} dkey1 dkey2} 1 1 1 1}
+
+tcltest::test compileproc-can-inline-if-1.1 {check if container valid/static flags} {
+    set script {
+proc p {} {
+    if {1} {
+        return 1
+    } else $str
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set _compileproc(options,inline_containers) {if}
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [descend_commands dkey0 container] \
+        [compileproc_is_container_command dkey0] \
+        [descend_container_is_valid dkey0] \
+        [descend_container_is_static dkey0] \
+        [compileproc_can_inline_container dkey0] \
+
+} {{dkey0 dkey1} dkey0 {{} dkey1 {}} 1 1 0 0}
+
+tcltest::test compileproc-can-inline-while-1.0 {check while container valid/static flags} {
+    set script {
+proc p {} {
+    while {1} {
+        set i 0
+        break
+    }
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set _compileproc(options,inline_containers) {while}
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [descend_commands dkey0 container] \
+        [compileproc_is_container_command dkey0] \
+        [descend_container_is_valid dkey0] \
+        [descend_container_is_static dkey0] \
+        [compileproc_can_inline_container dkey0] \
+
+} {{dkey0 dkey1 dkey2} dkey0 {{} {dkey1 dkey2}} 1 1 1 1}
+
+tcltest::test compileproc-can-inline-while-1.1 {check while container valid/static flags} {
+    set script {
+proc p {} {
+    while {1} "
+        set i 0
+        $cmd
+    "
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set _compileproc(options,inline_containers) {while}
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [descend_commands dkey0 container] \
+        [compileproc_is_container_command dkey0] \
+        [descend_container_is_valid dkey0] \
+        [descend_container_is_static dkey0] \
+        [compileproc_can_inline_container dkey0] \
+
+} {dkey0 dkey0 {{} {}} 1 1 0 0}
+
+tcltest::test compileproc-can-inline-for-1.0 {check for container valid/static flags} {
+    set script {
+proc p {} {
+    for {} {1} {} {
+        set i 0
+    }
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set _compileproc(options,inline_containers) {for}
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [descend_commands dkey0 container] \
+        [compileproc_is_container_command dkey0] \
+        [descend_container_is_valid dkey0] \
+        [descend_container_is_static dkey0] \
+        [compileproc_can_inline_container dkey0] \
+
+} {{dkey0 dkey1} dkey0 {{} {} {} dkey1} 1 1 1 1}
+
+tcltest::test compileproc-can-inline-for-1.1 {check for container valid/static flags} {
+    set script {
+proc p {} {
+    for {} {$i} {} {
+        set i 0
+    }
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set _compileproc(options,inline_containers) {for}
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [descend_commands dkey0 container] \
+        [compileproc_is_container_command dkey0] \
+        [descend_container_is_valid dkey0] \
+        [descend_container_is_static dkey0] \
+        [compileproc_can_inline_container dkey0] \
+
+} {{dkey0 dkey1} dkey0 {{} {} {} dkey1} 1 1 1 1}
+
+tcltest::test compileproc-can-inline-for-1.2 {check for container valid/static flags} {
+    # Can't inline for loop with non-static argument
+    set script {
+proc p {} {
+    for {} [test] {} {
+        set i 0
+    }
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set _compileproc(options,inline_containers) {for}
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [descend_commands dkey0 container] \
+        [compileproc_is_container_command dkey0] \
+        [descend_container_is_valid dkey0] \
+        [descend_container_is_static dkey0] \
+        [compileproc_can_inline_container dkey0] \
+
+} {{dkey0 dkey1} dkey0 {} 1 0 0 0}
+
+tcltest::test compileproc-can-inline-catch-1.0 {check catch container valid/static flags} {
+    set script {
+proc p {} {
+    catch {}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set _compileproc(options,inline_containers) {catch}
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [descend_commands dkey0 container] \
+        [compileproc_is_container_command dkey0] \
+        [descend_container_is_valid dkey0] \
+        [descend_container_is_static dkey0] \
+        [compileproc_can_inline_container dkey0] \
+
+} {dkey0 dkey0 {} 1 1 1 1}
+
+tcltest::test compileproc-can-inline-catch-1.1 {check catch container valid/static flags} {
+    set script {
+proc p {} {
+    catch {cmd} err
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set _compileproc(options,inline_containers) {catch}
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [descend_commands dkey0 container] \
+        [compileproc_is_container_command dkey0] \
+        [descend_container_is_valid dkey0] \
+        [descend_container_is_static dkey0] \
+        [compileproc_can_inline_container dkey0] \
+
+} {{dkey0 dkey1} dkey0 dkey1 1 1 1 1}
+
+tcltest::test compileproc-can-inline-catch-1.2 {check catch container valid/static flags} {
+    set script {
+proc p {} {
+    catch {cmd1;cmd2} err
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set _compileproc(options,inline_containers) {catch}
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [descend_commands dkey0 container] \
+        [compileproc_is_container_command dkey0] \
+        [descend_container_is_valid dkey0] \
+        [descend_container_is_static dkey0] \
+        [compileproc_can_inline_container dkey0] \
+
+} {{dkey0 dkey1 dkey2} dkey0 {dkey1 dkey2} 1 1 1 1}
+
+tcltest::test compileproc-can-inline-catch-1.3 {check catch container valid/static flags} {
+    set script {
+proc p {} {
+    catch {
+    cmd1
+    cmd2
+    } err
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set _compileproc(options,inline_containers) {catch}
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [descend_commands dkey0 container] \
+        [compileproc_is_container_command dkey0] \
+        [descend_container_is_valid dkey0] \
+        [descend_container_is_static dkey0] \
+        [compileproc_can_inline_container dkey0] \
+
+} {{dkey0 dkey1 dkey2} dkey0 {dkey1 dkey2} 1 1 1 1}
+
+tcltest::test compileproc-can-inline-foreach-1.0 {check foreach container valid/static flags} {
+    # One list and one variable
+    set script {
+proc p {} {
+    foreach elem $list {
+        cmd
+    }
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set _compileproc(options,inline_containers) {foreach}
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [descend_commands dkey0 container] \
+        [compileproc_is_container_command dkey0] \
+        [descend_container_is_valid dkey0] \
+        [descend_container_is_static dkey0] \
+        [compileproc_can_inline_container dkey0] \
+
+} {{dkey0 dkey1} dkey0 dkey1 1 1 1 1}
+
+tcltest::test compileproc-can-inline-foreach-1.1 {check foreach container valid/static flags} {
+    # One list and two variables
+    set script {
+proc p {} {
+    foreach {e1 e2} {1 2 3 4} {
+        cmd
+    }
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set _compileproc(options,inline_containers) {foreach}
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [descend_commands dkey0 container] \
+        [compileproc_is_container_command dkey0] \
+        [descend_container_is_valid dkey0] \
+        [descend_container_is_static dkey0] \
+        [compileproc_can_inline_container dkey0] \
+
+} {{dkey0 dkey1} dkey0 dkey1 1 1 1 1}
+
+tcltest::test compileproc-can-inline-foreach-1.2 {check foreach container valid/static flags} {
+    # For now, don't inline if more than 1 list.
+    set script {
+proc p {} {
+    foreach e1 $l1 e2 $l2 {
+        cmd
+    }
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set _compileproc(options,inline_containers) {foreach}
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [descend_commands dkey0 container] \
+        [compileproc_is_container_command dkey0] \
+        [descend_container_is_valid dkey0] \
+        [descend_container_is_static dkey0] \
+        [compileproc_can_inline_container dkey0] \
+
+} {{dkey0 dkey1} dkey0 dkey1 1 1 1 1}
+
+tcltest::test compileproc-can-inline-foreach-1.3 {check foreach container valid/static flags} {
+    # Non-static varlist
+    set script {
+proc p {} {
+    foreach $vars {1 2 3 4} {
+        cmd
+    }
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set _compileproc(options,inline_containers) {foreach}
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [descend_commands dkey0 container] \
+        [compileproc_is_container_command dkey0] \
+        [descend_container_is_valid dkey0] \
+        [descend_container_is_static dkey0] \
+        [compileproc_can_inline_container dkey0] \
+
+} {{dkey0 dkey1} dkey0 dkey1 1 1 0 0}
+
+tcltest::test compileproc-can-inline-switch-1.0 {check switch container valid/static flags} {
+    # switch is statically defined
+    set script {
+proc p {} {
+    switch -exact -- "Foo" {
+        "Foo" {cmd1}
+    }
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set _compileproc(options,inline_containers) {switch}
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [descend_commands dkey0 container] \
+        [compileproc_is_container_command dkey0] \
+        [descend_container_is_valid dkey0] \
+        [descend_container_is_static dkey0] \
+        [compileproc_can_inline_container dkey0] \
+
+} {{dkey0 dkey1} dkey0 dkey1 1 1 1 1}
+
+tcltest::test compileproc-can-inline-switch-1.1 {check switch container valid/static flags} {
+    # switch is NOT statically defined, patbody block is non-static
+    set script {
+proc p {} {
+    switch -exact -- "Foo" $patbody
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set _compileproc(options,inline_containers) {switch}
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [descend_commands dkey0 container] \
+        [compileproc_is_container_command dkey0] \
+        [descend_container_is_valid dkey0] \
+        [descend_container_is_static dkey0] \
+        [compileproc_can_inline_container dkey0] \
+
+} {dkey0 dkey0 {} 1 0 0 0}
+
+tcltest::test compileproc-can-inline-switch-1.2 {check switch container valid/static flags} {
+    # switch is statically defined. This body block looks like
+    # it is non-static but it is treated the same as {$body}.
+    set script {
+proc p {} {
+    switch -exact -- "Foo" {
+        "Foo" $body
+    }
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set _compileproc(options,inline_containers) {switch}
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [descend_commands dkey0 container] \
+        [compileproc_is_container_command dkey0] \
+        [descend_container_is_valid dkey0] \
+        [descend_container_is_static dkey0] \
+        [compileproc_can_inline_container dkey0] \
+
+} {{dkey0 dkey1} dkey0 dkey1 1 1 1 1}
+
+tcltest::test compileproc-can-inline-switch-1.3 {check switch container valid/static flags} {
+    # switch pattern that contains a word with backslash
+    # elements is statically defined.
+    set script {
+proc p {} {
+    switch {\$} {
+        \$ {}
+        "\$" {}
+        {\$} {}
+    }
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set _compileproc(options,inline_containers) {switch}
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [descend_commands dkey0 container] \
+        [compileproc_is_container_command dkey0] \
+        [descend_container_is_valid dkey0] \
+        [descend_container_is_static dkey0] \
+        [compileproc_can_inline_container dkey0] \
+
+} {dkey0 dkey0 {{} {} {}} 1 1 1 1}
+
+tcltest::test compileproc-can-inline-switch-1.4 {check switch container valid/static flags} {
+    # switch pattern that contains a word with backslash
+    # elements is statically defined. These patterns look
+    # like words with nested variables and nested commands,
+    # but they are actually constant strings.
+    set script {
+proc p {} {
+    switch {\t[cmd]$s} {
+        \t[cmd]$s {}
+        "\t[cmd]$s" {}
+        {\[cmd]$s} {}
+    }
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set _compileproc(options,inline_containers) {switch}
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [descend_commands dkey0 container] \
+        [compileproc_is_container_command dkey0] \
+        [descend_container_is_valid dkey0] \
+        [descend_container_is_static dkey0] \
+        [compileproc_can_inline_container dkey0] \
+
+} {dkey0 dkey0 {{} {} {}} 1 1 1 1}
+
+tcltest::test compileproc-can-inline-switch-1.5 {check switch container valid/static flags} {
+    # switch is statically defined
+    set script {
+proc p {} {
+    switch -exact -- "Foo" Foo {cmd1}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set _compileproc(options,inline_containers) {switch}
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [descend_commands dkey0 container] \
+        [compileproc_is_container_command dkey0] \
+        [descend_container_is_valid dkey0] \
+        [descend_container_is_static dkey0] \
+        [compileproc_can_inline_container dkey0] \
+
+} {{dkey0 dkey1} dkey0 dkey1 1 1 1 1}
+
+tcltest::test compileproc-can-inline-switch-1.6 {check switch container valid/static flags} {
+    # variable pattern is statically defined
+    set script {
+proc p {} {
+    switch -exact -- "Foo" $str {cmd1}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set _compileproc(options,inline_containers) {switch}
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [descend_commands dkey0 container] \
+        [compileproc_is_container_command dkey0] \
+        [descend_container_is_valid dkey0] \
+        [descend_container_is_static dkey0] \
+        [compileproc_can_inline_container dkey0] \
+
+} {{dkey0 dkey1} dkey0 dkey1 1 1 1 1}
+
+tcltest::test compileproc-can-inline-switch-1.7 {check switch container valid/static flags} {
+    # command body block is not statically defined.
+    set script {
+proc p {} {
+    switch -exact -- "Foo" Foo [cmd]
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set _compileproc(options,inline_containers) {switch}
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [descend_commands dkey0 container] \
+        [compileproc_is_container_command dkey0] \
+        [descend_container_is_valid dkey0] \
+        [descend_container_is_static dkey0] \
+        [compileproc_can_inline_container dkey0] \
+
+} {{dkey0 dkey1} dkey0 {{}} 1 1 0 0}
+
+tcltest::test compileproc-can-inline-switch-1.8 {check switch container valid/static flags} {
+    # switch with constant pattern/body arguments is statically defined
+    set script {
+proc p {} {
+    switch "Foo" Foo {}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set _compileproc(options,inline_containers) {switch}
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [descend_commands dkey0 container] \
+        [compileproc_is_container_command dkey0] \
+        [descend_container_is_valid dkey0] \
+        [descend_container_is_static dkey0] \
+        [compileproc_can_inline_container dkey0] \
+
+} {dkey0 dkey0 {{}} 1 1 1 1}
+
+tcltest::test compileproc-can-inline-switch-1.9 {check switch container valid/static flags} {
+    # switch with variable string is not statically defined
+    # because it could be an option with a patlist.
+    set script {
+proc p {} {
+    switch $s Foo {}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set _compileproc(options,inline_containers) {switch}
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [descend_commands dkey0 container] \
+        [compileproc_is_container_command dkey0] \
+        [descend_container_is_valid dkey0] \
+        [descend_container_is_static dkey0] \
+        [compileproc_can_inline_container dkey0] \
+
+} {dkey0 dkey0 {} 1 0 0 0}
+
+tcltest::test compileproc-can-inline-switch-1.10 {check switch container valid/static flags} {
+    # switch with variable option is not valid and not statically defined
+    set script {
+proc p {} {
+    switch $opt $s Foo {}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set _compileproc(options,inline_containers) {switch}
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [descend_commands dkey0 container] \
+        [compileproc_is_container_command dkey0] \
+        [descend_container_is_valid dkey0] \
+        [descend_container_is_static dkey0] \
+        [compileproc_can_inline_container dkey0] \
+
+} {dkey0 dkey0 {} 1 0 0 0}
+
+tcltest::test compileproc-can-inline-switch-1.11 {check switch container valid/static flags} {
+    # switch with variable option is not valid and not statically defined
+    set script {
+proc p {} {
+    switch $opt $s {Foo {}}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set _compileproc(options,inline_containers) {switch}
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [descend_commands dkey0 container] \
+        [compileproc_is_container_command dkey0] \
+        [descend_container_is_valid dkey0] \
+        [descend_container_is_static dkey0] \
+        [compileproc_can_inline_container dkey0] \
+
+} {dkey0 dkey0 {} 1 0 0 0}
+
+tcltest::test compileproc-can-inline-switch-1.12 {check switch container valid/static flags} {
+    # switch with variable option is not valid and not statically defined
+    set script {
+proc p {} {
+    switch $opt -- $s Foo {}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set _compileproc(options,inline_containers) {switch}
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [descend_commands dkey0 container] \
+        [compileproc_is_container_command dkey0] \
+        [descend_container_is_valid dkey0] \
+        [descend_container_is_static dkey0] \
+        [compileproc_can_inline_container dkey0] \
+
+} {dkey0 dkey0 {} 1 0 0 0}
+
+tcltest::test compileproc-can-inline-switch-1.13 {check switch container valid/static flags} {
+    # switch with variable option is not valid and not statically defined
+    set script {
+proc p {} {
+    switch $opt -- $s {Foo {}}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set _compileproc(options,inline_containers) {switch}
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [descend_commands dkey0 container] \
+        [compileproc_is_container_command dkey0] \
+        [descend_container_is_valid dkey0] \
+        [descend_container_is_static dkey0] \
+        [compileproc_can_inline_container dkey0] \
+
+} {dkey0 dkey0 {} 1 0 0 0}
+
+tcltest::test compileproc-can-inline-switch-1.14 {check switch container valid/static flags} {
+    # switch with variable options is not valid and not statically defined
+    set script {
+proc p {} {
+    switch $opt $term $s Foo {}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set _compileproc(options,inline_containers) {switch}
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [descend_commands dkey0 container] \
+        [compileproc_is_container_command dkey0] \
+        [descend_container_is_valid dkey0] \
+        [descend_container_is_static dkey0] \
+        [compileproc_can_inline_container dkey0] \
+
+} {dkey0 dkey0 {} 1 0 0 0}
+
+tcltest::test compileproc-can-inline-switch-1.15 {check switch container valid/static flags} {
+    # switch with variable options is not valid and not statically defined
+    set script {
+proc p {} {
+    switch $opt $term $s {Foo {}}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set _compileproc(options,inline_containers) {switch}
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [descend_commands dkey0 container] \
+        [compileproc_is_container_command dkey0] \
+        [descend_container_is_valid dkey0] \
+        [descend_container_is_static dkey0] \
+        [compileproc_can_inline_container dkey0] \
+
+} {dkey0 dkey0 {} 1 0 0 0}
+
+tcltest::test compileproc-can-inline-switch-1.16 {check switch container valid/static flags} {
+    # switch with variable options is not valid and not statically defined
+    set script {
+proc p {} {
+    switch -exact $term $s Foo {}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set _compileproc(options,inline_containers) {switch}
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [descend_commands dkey0 container] \
+        [compileproc_is_container_command dkey0] \
+        [descend_container_is_valid dkey0] \
+        [descend_container_is_static dkey0] \
+        [compileproc_can_inline_container dkey0] \
+
+} {dkey0 dkey0 {} 1 0 0 0}
+
+tcltest::test compileproc-can-inline-switch-1.17 {check switch container valid/static flags} {
+    # switch with variable options is not valid and not statically defined
+    set script {
+proc p {} {
+    switch -exact $term $s {Foo {}}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set _compileproc(options,inline_containers) {switch}
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [descend_commands dkey0 container] \
+        [compileproc_is_container_command dkey0] \
+        [descend_container_is_valid dkey0] \
+        [descend_container_is_static dkey0] \
+        [compileproc_can_inline_container dkey0] \
+
+} {dkey0 dkey0 {} 1 0 0 0}
+
+tcltest::test compileproc-can-inline-switch-1.18 {check switch container valid/static flags} {
+    # switch with variable option is not valid and not statically defined
+    set script {
+proc p {} {
+    switch $opt Foo {Foo {}}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set _compileproc(options,inline_containers) {switch}
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [descend_commands dkey0 container] \
+        [compileproc_is_container_command dkey0] \
+        [descend_container_is_valid dkey0] \
+        [descend_container_is_static dkey0] \
+        [compileproc_can_inline_container dkey0] \
+
+} {dkey0 dkey0 {} 1 0 0 0}
+
+tcltest::test compileproc-can-inline-switch-1.19 {check switch container valid/static flags} {
+    # switch with variable options is not valid and not statically defined
+    set script {
+proc p {} {
+    switch $opt $s Foo {} Bar {}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set _compileproc(options,inline_containers) {switch}
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [descend_commands dkey0 container] \
+        [compileproc_is_container_command dkey0] \
+        [descend_container_is_valid dkey0] \
+        [descend_container_is_static dkey0] \
+        [compileproc_can_inline_container dkey0] \
+
+} {dkey0 dkey0 {} 1 0 0 0}
+
+tcltest::test compileproc-can-inline-switch-1.20 {check switch container valid/static flags} {
+    # switch with variable options is not valid and not statically defined
+    set script {
+proc p {} {
+    switch $opt $term $s Foo {} Bar {}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set _compileproc(options,inline_containers) {switch}
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [descend_commands dkey0 container] \
+        [compileproc_is_container_command dkey0] \
+        [descend_container_is_valid dkey0] \
+        [descend_container_is_static dkey0] \
+        [compileproc_can_inline_container dkey0] \
+
+} {dkey0 dkey0 {} 1 0 0 0}
+
+tcltest::test compileproc-can-inline-switch-1.21 {check switch container valid/static flags} {
+    # switch is statically defined, check number of arguments to switch
+    set script {
+proc p {} {
+    set s "err"
+    switch -exact -- "Foo" {
+        "Foo" {
+            set s "c0"
+        }
+    }
+    return $s
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set _compileproc(options,inline_containers) {switch}
+    set key dkey1
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [descend_commands $key container] \
+        [compileproc_is_container_command $key] \
+        [descend_container_is_valid $key] \
+        [descend_container_is_static $key] \
+        [compileproc_can_inline_container $key] \
+        [llength [descend_get_data $key tree]]
+} [list \
+    {dkey0 dkey1 dkey2 dkey3} \
+    {dkey0 dkey1 dkey3} dkey2 \
+    1 1 1 1 \
+    6 \
+]
+
+
+tcltest::test compileproc-can-inline-expr-1.0 {check expr container valid/static flags} {
+    # Can't inline expr unless it has a single braced argument
+    set script {
+proc p {} {
+    expr 1 + 1
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set _compileproc(options,inline_containers) {expr}
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [descend_commands dkey0 container] \
+        [compileproc_is_container_command dkey0] \
+        [descend_container_is_valid dkey0] \
+        [descend_container_is_static dkey0] \
+        [compileproc_can_inline_container dkey0] \
+
+} {dkey0 dkey0 {} 1 0 0 0}
+
+tcltest::test compileproc-can-inline-expr-1.1 {check expr container valid/static flags} {
+    # Can inline braced expr.
+    set script {
+proc p {} {
+    expr {1 + 1}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set _compileproc(options,inline_containers) {expr}
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [descend_commands dkey0 container] \
+        [compileproc_is_container_command dkey0] \
+        [descend_container_is_valid dkey0] \
+        [descend_container_is_static dkey0] \
+        [compileproc_can_inline_container dkey0] \
+
+} {dkey0 dkey0 {} 1 1 1 1}
+
+tcltest::test compileproc-can-inline-expr-1.2 {check expr container valid/static flags} {
+    # Can inline braced expr.
+    set script {
+proc p {} {
+    expr {$var + [cmd] + (2 + 3)}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set _compileproc(options,inline_containers) {expr}
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [descend_commands dkey0 container] \
+        [compileproc_is_container_command dkey0] \
+        [descend_container_is_valid dkey0] \
+        [descend_container_is_static dkey0] \
+        [compileproc_can_inline_container dkey0] \
+
+} {{dkey0 dkey1} dkey0 dkey1 1 1 1 1}
+
+tcltest::test compileproc-can-inline-expr-1.3 {check expr container valid/static flags} {
+    # Can inline braced expr.
+    set script {
+proc p {} {
+    expr {1 ? "a" : "b"}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set _compileproc(options,inline_containers) {expr}
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [descend_commands dkey0 container] \
+        [compileproc_is_container_command dkey0] \
+        [descend_container_is_valid dkey0] \
+        [descend_container_is_static dkey0] \
+        [compileproc_can_inline_container dkey0] \
+
+} {dkey0 dkey0 {} 1 1 1 1}
+
+tcltest::test compileproc-can-inline-expr-1.4 {check expr container valid/static flags} {
+    # Can inline braced expr.
+    set script {
+proc p {} {
+    expr {[cmd1;cmd2] == [cmd3]}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set _compileproc(options,inline_containers) {expr}
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [descend_commands dkey0 container] \
+        [compileproc_is_container_command dkey0] \
+        [descend_container_is_valid dkey0] \
+        [descend_container_is_static dkey0] \
+        [compileproc_can_inline_container dkey0] \
+
+} {{dkey0 dkey1 dkey2 dkey3} dkey0 {{dkey1 dkey2} dkey3} 1 1 1 1}
+
+tcltest::test compileproc-can-inline-expr-1.5 {check expr container valid/static flags} {
+    set script {
+proc p {} {
+    expr {[cmd] eq ""}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set _compileproc(options,inline_containers) {expr}
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [descend_commands dkey0 container] \
+        [compileproc_is_container_command dkey0] \
+        [descend_container_is_valid dkey0] \
+        [descend_container_is_static dkey0] \
+        [compileproc_can_inline_container dkey0] \
+
+} {{dkey0 dkey1} dkey0 dkey1 1 1 1 1}
+
+tcltest::test compileproc-can-inline-expr-1.6 {check expr container valid/static flags} {
+    set script {
+proc p {} {
+    expr {[cmd] == ""}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set _compileproc(options,inline_containers) {expr}
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [descend_commands dkey0 container] \
+        [compileproc_is_container_command dkey0] \
+        [descend_container_is_valid dkey0] \
+        [descend_container_is_static dkey0] \
+        [compileproc_can_inline_container dkey0] \
+
+} {{dkey0 dkey1} dkey0 dkey1 1 1 1 1}
+
+tcltest::test compileproc-can-inline-expr-1.7 {check expr container valid/static flags} {
+    set script {
+proc p {} {
+    expr {[cmd] != {}}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set _compileproc(options,inline_containers) {expr}
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [descend_commands dkey0 container] \
+        [compileproc_is_container_command dkey0] \
+        [descend_container_is_valid dkey0] \
+        [descend_container_is_static dkey0] \
+        [compileproc_can_inline_container dkey0] \
+
+} {{dkey0 dkey1} dkey0 dkey1 1 1 1 1}
+
+tcltest::test compileproc-can-inline-expr-1.8 {check expr container valid/static flags} {
+    set script {
+proc p {} {
+    expr {[cmd] ne {}}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set _compileproc(options,inline_containers) {expr}
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [descend_commands dkey0 container] \
+        [compileproc_is_container_command dkey0] \
+        [descend_container_is_valid dkey0] \
+        [descend_container_is_static dkey0] \
+        [compileproc_can_inline_container dkey0] \
+
+} {{dkey0 dkey1} dkey0 dkey1 1 1 1 1}
+
+
+
+tcltest::test compileproc-cache-1.0 {create constants and generate init method} {
+    compileproc_constant_cache_init
+    compileproc_constant_cache_add "one"
+    compileproc_constant_cache_get "one"
+} {const0}
+
+tcltest::test compileproc-cache-1.1 {create constants and generate init method} {
+    compileproc_constant_cache_init
+    compileproc_constant_cache_add "one"
+    compileproc_constant_cache_add "two"
+    list \
+        [compileproc_constant_cache_get "one"] \
+        [compileproc_constant_cache_get "two"] \
+
+} {const0 const1}
+
+tcltest::test compileproc-cache-2.0 {create constants and generate init method} {
+    compileproc_constant_cache_init
+    compileproc_constant_cache_add "one"
+    compileproc_constant_cache_get "one"
+    compileproc_constant_cache_generate
+} {    TclObject const0;
+
+    protected void initConstants(Interp interp) throws TclException {
+        const0 = TclString.newInstance("one");
+        const0.preserve(); const0.preserve();
+    }
+}
+
+tcltest::test compileproc-cache-2.1 {create constants and generate init method} {
+    compileproc_constant_cache_init
+    compileproc_constant_cache_add ""
+    compileproc_constant_cache_add "two"
+    compileproc_constant_cache_add true
+    compileproc_constant_cache_get ""
+    compileproc_constant_cache_get "two"
+    compileproc_constant_cache_get true
+    compileproc_constant_cache_generate
+} {    TclObject const0;
+    TclObject const1;
+    TclObject const2;
+
+    protected void initConstants(Interp interp) throws TclException {
+        const0 = TclString.newInstance("");
+        const0.preserve(); const0.preserve();
+        const1 = TclString.newInstance("two");
+        const1.preserve(); const1.preserve();
+        const2 = TclString.newInstance("true");
+        TclBoolean.get(interp, const2);
+        const2.preserve(); const2.preserve();
+    }
+}
+
+# Integer/Double utils used in compileproc_constant_cache_type
+
+tcltest::test compileproc-is-java-integer-1.1 {} {
+    compileproc_string_is_java_integer 0
+} 1
+
+tcltest::test compileproc-is-java-integer-1.2 {} {
+    compileproc_string_is_java_integer 1
+} 1
+
+tcltest::test compileproc-is-java-integer-1.3 {} {
+    compileproc_string_is_java_integer -1
+} 1
+
+tcltest::test compileproc-is-java-integer-1.4 {} {
+    compileproc_string_is_java_integer 256
+} 1
+
+tcltest::test compileproc-is-java-integer-1.5 {} {
+    compileproc_string_is_java_integer -256
+} 1
+
+tcltest::test compileproc-is-java-integer-1.6 {} {
+    compileproc_string_is_java_integer -2147483648
+} 1
+
+tcltest::test compileproc-is-java-integer-1.7 {} {
+    compileproc_string_is_java_integer -2147483649
+} 0
+
+tcltest::test compileproc-is-java-integer-1.8 {} {
+    compileproc_string_is_java_integer 2147483647
+} 1
+
+tcltest::test compileproc-is-java-integer-1.9 {} {
+    compileproc_string_is_java_integer 2147483648
+} 0
+
+tcltest::test compileproc-is-java-integer-1.10 {} {
+    compileproc_string_is_java_integer 0xFF
+} 1
+
+tcltest::test compileproc-is-java-integer-1.11 {} {
+    compileproc_string_is_java_integer 0777
+} 1
+
+tcltest::test compileproc-is-java-integer-1.12 {} {
+    compileproc_string_is_java_integer -0x80000000
+} 1
+
+tcltest::test compileproc-is-java-integer-1.13 {} {
+    compileproc_string_is_java_integer 0x7FFFFFFF
+} 1
+
+tcltest::test compileproc-is-java-integer-1.14 {} {
+    compileproc_string_is_java_integer 0x80000000
+} 0
+
+tcltest::test compileproc-is-java-integer-1.15 {} {
+    compileproc_string_is_java_integer 0x88888888
+} 0
+
+tcltest::test compileproc-is-java-integer-1.16 {} {
+    compileproc_string_is_java_integer 0x100000000
+} 0
+
+tcltest::test compileproc-is-java-integer-1.17 {} {
+    compileproc_string_is_java_integer 0x0
+} 1
+
+tcltest::test compileproc-is-java-integer-1.18 {} {
+    compileproc_string_is_java_integer 0X0
+} 1
+
+tcltest::test compileproc-is-java-integer-1.19 {} {
+    compileproc_string_is_java_integer 0X00
+} 1
+
+tcltest::test compileproc-is-java-integer-1.20 {} {
+    compileproc_string_is_java_integer 00
+} 1
+
+tcltest::test compileproc-is-java-integer-1.21 {} {
+    compileproc_string_is_java_integer 000
+} 1
+
+tcltest::test compileproc-is-java-integer-1.22 {} {
+    compileproc_string_is_java_integer 0000
+} 1
+
+tcltest::test compileproc-is-java-integer-1.23 {} {
+    compileproc_string_is_java_integer -0
+} 1
+
+tcltest::test compileproc-is-java-integer-1.24 {} {
+    compileproc_string_is_java_integer -0x0
+} 1
+
+tcltest::test compileproc-is-java-integer-1.25 {} {
+    compileproc_string_is_java_integer +0x0
+} 1
+
+tcltest::test compileproc-is-java-integer-1.26 {} {
+    compileproc_string_is_java_integer +00
+} 1
+
+tcltest::test compileproc-is-java-integer-1.27 {} {
+    compileproc_string_is_java_integer +2147483647
+} 1
+
+tcltest::test compileproc-is-java-integer-1.28 {} {
+    compileproc_string_is_java_integer +2147483648
+} 0
+
+tcltest::test compileproc-is-java-integer-1.29 {} {
+    compileproc_string_is_java_integer {}
+} 0
+
+tcltest::test compileproc-is-java-integer-1.30 {} {
+    compileproc_string_is_java_integer "- 1"
+} 0
+
+tcltest::test compileproc-is-java-integer-1.31 {} {
+    compileproc_string_is_java_integer "+ 1"
+} 0
+
+
+tcltest::test compileproc-is-java-double-1.1 {} {
+    compileproc_string_is_java_double 0.0
+} 1
+
+tcltest::test compileproc-is-java-double-1.2 {} {
+    compileproc_string_is_java_double 1.0
+} 1
+
+tcltest::test compileproc-is-java-double-1.3 {} {
+    compileproc_string_is_java_double -1.0
+} 1
+
+tcltest::test compileproc-is-java-double-1.4 {} {
+    compileproc_string_is_java_double 2.0
+} 1
+
+tcltest::test compileproc-is-java-double-1.5 {} {
+    compileproc_string_is_java_double 1e6
+} 1
+
+tcltest::test compileproc-is-java-double-1.6 {} {
+    compileproc_string_is_java_double 900
+} 0
+
+tcltest::test compileproc-is-java-double-1.7 {} {
+    compileproc_string_is_java_double 9999999999999999
+} 0
+
+tcltest::test compileproc-is-java-double-1.8 {} {
+    compileproc_string_is_java_double 0.0e0
+} 1
+
+tcltest::test compileproc-is-java-double-1.9 {} {
+    compileproc_string_is_java_double "- 0.0"
+} 0
+
+tcltest::test compileproc-is-java-double-1.10 {} {
+    compileproc_string_is_java_double "- 1.0"
+} 0
+
+tcltest::test compileproc-is-java-double-1.11 {} {
+    compileproc_string_is_java_double "- 1"
+} 0
+
+tcltest::test compileproc-is-java-double-1.12 {} {
+    compileproc_string_is_java_double "+ 1.0"
+} 0
+
+tcltest::test compileproc-is-java-double-1.13 {} {
+    compileproc_string_is_java_double 1.0e+10
+} 1
+
+tcltest::test compileproc-is-java-double-1.14 {} {
+    compileproc_string_is_java_double 256.9e-010
+} 1
+
+
+
+tcltest::test compileproc-parse-value-1.1 {} {
+    compileproc_parse_value 0
+} {1 0 0}
+
+tcltest::test compileproc-parse-value-1.2 {} {
+    compileproc_parse_value 1
+} {1 1 1}
+
+tcltest::test compileproc-parse-value-1.3 {} {
+    compileproc_parse_value -1
+} {1 -1 -1}
+
+tcltest::test compileproc-parse-value-1.4 {} {
+    compileproc_parse_value 0.0
+} {1 0.0 0.0}
+
+tcltest::test compileproc-parse-value-1.5 {} {
+    compileproc_parse_value -0.0
+} {0 0.0 0.0}
+
+tcltest::test compileproc-parse-value-1.6 {} {
+    compileproc_parse_value -1.0
+} {1 -1.0 -1.0}
+
+tcltest::test compileproc-parse-value-1.7 {} {
+    compileproc_parse_value 0xFF
+} {0 255 255}
+
+tcltest::test compileproc-parse-value-1.8 {} {
+    compileproc_parse_value -0x80000000
+} {0 -2147483648 -2147483648}
+
+tcltest::test compileproc-parse-value-1.9 {} {
+    compileproc_parse_value  0x7FFFFFFF
+} {0 2147483647 2147483647}
+
+tcltest::test compileproc-parse-value-1.10 {} {
+    compileproc_parse_value 2147483647
+} {1 2147483647 2147483647}
+
+tcltest::test compileproc-parse-value-1.11 {} {
+    compileproc_parse_value -2147483648
+} {1 -2147483648 -2147483648}
+
+tcltest::test compileproc-parse-value-1.12 {} {
+    compileproc_parse_value 7.91e16
+} {0 7.91e+016 7.91e16}
+
+tcltest::test compileproc-parse-value-1.13 {} {
+    compileproc_parse_value 7.91e016
+} {0 7.91e+016 7.91e16}
+
+tcltest::test compileproc-parse-value-1.14 {} {
+    compileproc_parse_value 7.91e+16
+} {0 7.91e+016 7.91e16}
+
+tcltest::test compileproc-parse-value-1.15 {} {
+    compileproc_parse_value 7.91e+016
+} {1 7.91e+016 7.91e16}
+
+tcltest::test compileproc-parse-value-1.16 {} {
+    compileproc_parse_value 1.0e16
+} {0 1e+016 1e16}
+
+tcltest::test compileproc-parse-value-1.17 {} {
+    compileproc_parse_value 1.0e+06
+} {0 1000000.0 1e6}
+
+tcltest::test compileproc-parse-value-1.18 {} {
+    compileproc_parse_value 1e6
+} {0 1000000.0 1e6}
+
+tcltest::test compileproc-parse-value-1.19 {} {
+    compileproc_parse_value 1e0
+} {0 1.0 1.0}
+
+tcltest::test compileproc-parse-value-1.20 {} {
+    compileproc_parse_value 7.91e-001
+} {0 0.791 0.791}
+
+tcltest::test compileproc-parse-value-1.21 {} {
+    compileproc_parse_value 7.91e-000
+} {0 7.91 7.91}
+
+tcltest::test compileproc-parse-value-1.22 {} {
+    compileproc_parse_value 7.91e-004
+} {0 0.000791 0.000791}
+
+tcltest::test compileproc-parse-value-1.23 {} {
+    compileproc_parse_value 7.91e-005
+} {1 7.91e-005 7.91e-5}
+
+
+tcltest::test compileproc-cache-type-1.0 {string type} {
+    compileproc_constant_cache_type ""
+} {STRING}
+
+tcltest::test compileproc-cache-type-1.1 {string type} {
+    compileproc_constant_cache_type "1.0"
+} {DOUBLE}
+
+tcltest::test compileproc-cache-type-1.2 {string type} {
+    compileproc_constant_cache_type "1"
+} {INTEGER}
+
+tcltest::test compileproc-cache-type-1.3 {string type} {
+    compileproc_constant_cache_type "11"
+} {INTEGER}
+
+tcltest::test compileproc-cache-type-1.4 {string type} {
+    compileproc_constant_cache_type "0"
+} {INTEGER}
+
+tcltest::test compileproc-cache-type-1.5 {string type} {
+    compileproc_constant_cache_type "true"
+} {BOOLEAN}
+
+tcltest::test compileproc-cache-type-1.6 {string type} {
+    compileproc_constant_cache_type "foo"
+} {STRING}
+
+# Cached command refs for use with invoke()
+
+tcltest::test compileproc-cache-commands-1.0 {command cache, generate init method} {
+    set script {
+proc p {} {
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+    compileproc_scan_keys [compileproc_keys]
+
+    compileproc_command_cache_init_generate
+} {}
+
+tcltest::test compileproc-cache-commands-1.1 {cache commands} {
+    set script {
+proc p {} {
+    cmd
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+    compileproc_scan_keys [compileproc_keys]
+
+    list [compileproc_command_cache_lookup dkey0] \
+         [compileproc_command_cache_init_generate]
+} {cmdcache1 {    int wcmd_cmdEpoch = 0;
+    WrappedCommand cmdcache1;
+    int cmdcache1_cmdEpoch;
+
+    void updateCmdCache(Interp interp, int cacheId) throws TclException {
+        String cmdName;
+        switch ( cacheId ) {
+            case 0: {
+                cmdcache1 = TJC.INVALID_COMMAND_CACHE;
+                cmdcache1_cmdEpoch = 0;
+                wcmd_cmdEpoch = wcmd.cmdEpoch;
+                return;
+            }
+            case 1: {
+                cmdName = "cmd";
+                break;
+            }
+            default: {
+                throw new TclRuntimeError("default: cacheId " + cacheId);
+            }
+        }
+        WrappedCommand lwcmd = TJC.resolveCmd(interp, cmdName);
+        int cmdEpoch;
+        if ( lwcmd == null ) {
+            lwcmd = TJC.INVALID_COMMAND_CACHE;
+            cmdEpoch = 0;
+        } else {
+            cmdEpoch = lwcmd.cmdEpoch;
+        }
+        switch ( cacheId ) {
+            case 1: {
+                cmdcache1 = lwcmd;
+                cmdcache1_cmdEpoch = cmdEpoch;
+                break;
+            }
+        }
+    }
+}}
+
+tcltest::test compileproc-cache-commands-1.2 {cache commands} {
+    set script {
+proc p {} {
+    cmd1
+    cmd2
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+    compileproc_scan_keys [compileproc_keys]
+
+    set symbols [list]
+    foreach key [compileproc_keys] {
+        lappend symbols [compileproc_command_cache_lookup $key]
+    }
+    list $symbols \
+         [compileproc_command_cache_init_generate]
+} {{cmdcache1 cmdcache2} {    int wcmd_cmdEpoch = 0;
+    WrappedCommand cmdcache1;
+    int cmdcache1_cmdEpoch;
+    WrappedCommand cmdcache2;
+    int cmdcache2_cmdEpoch;
+
+    void updateCmdCache(Interp interp, int cacheId) throws TclException {
+        String cmdName;
+        switch ( cacheId ) {
+            case 0: {
+                cmdcache1 = TJC.INVALID_COMMAND_CACHE;
+                cmdcache1_cmdEpoch = 0;
+                cmdcache2 = TJC.INVALID_COMMAND_CACHE;
+                cmdcache2_cmdEpoch = 0;
+                wcmd_cmdEpoch = wcmd.cmdEpoch;
+                return;
+            }
+            case 1: {
+                cmdName = "cmd1";
+                break;
+            }
+            case 2: {
+                cmdName = "cmd2";
+                break;
+            }
+            default: {
+                throw new TclRuntimeError("default: cacheId " + cacheId);
+            }
+        }
+        WrappedCommand lwcmd = TJC.resolveCmd(interp, cmdName);
+        int cmdEpoch;
+        if ( lwcmd == null ) {
+            lwcmd = TJC.INVALID_COMMAND_CACHE;
+            cmdEpoch = 0;
+        } else {
+            cmdEpoch = lwcmd.cmdEpoch;
+        }
+        switch ( cacheId ) {
+            case 1: {
+                cmdcache1 = lwcmd;
+                cmdcache1_cmdEpoch = cmdEpoch;
+                break;
+            }
+            case 2: {
+                cmdcache2 = lwcmd;
+                cmdcache2_cmdEpoch = cmdEpoch;
+                break;
+            }
+        }
+    }
+}}
+
+tcltest::test compileproc-cache-commands-1.3 {cache commands} {
+    set script {
+proc p {} {
+    cmd1
+    cmd2
+    cmd1
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+    compileproc_scan_keys [compileproc_keys]
+
+    set symbols [list]
+    foreach key [compileproc_keys] {
+        lappend symbols [compileproc_command_cache_lookup $key]
+    }
+    list $symbols \
+         [compileproc_command_cache_init_generate]
+} {{cmdcache1 cmdcache2 cmdcache1} {    int wcmd_cmdEpoch = 0;
+    WrappedCommand cmdcache1;
+    int cmdcache1_cmdEpoch;
+    WrappedCommand cmdcache2;
+    int cmdcache2_cmdEpoch;
+
+    void updateCmdCache(Interp interp, int cacheId) throws TclException {
+        String cmdName;
+        switch ( cacheId ) {
+            case 0: {
+                cmdcache1 = TJC.INVALID_COMMAND_CACHE;
+                cmdcache1_cmdEpoch = 0;
+                cmdcache2 = TJC.INVALID_COMMAND_CACHE;
+                cmdcache2_cmdEpoch = 0;
+                wcmd_cmdEpoch = wcmd.cmdEpoch;
+                return;
+            }
+            case 1: {
+                cmdName = "cmd1";
+                break;
+            }
+            case 2: {
+                cmdName = "cmd2";
+                break;
+            }
+            default: {
+                throw new TclRuntimeError("default: cacheId " + cacheId);
+            }
+        }
+        WrappedCommand lwcmd = TJC.resolveCmd(interp, cmdName);
+        int cmdEpoch;
+        if ( lwcmd == null ) {
+            lwcmd = TJC.INVALID_COMMAND_CACHE;
+            cmdEpoch = 0;
+        } else {
+            cmdEpoch = lwcmd.cmdEpoch;
+        }
+        switch ( cacheId ) {
+            case 1: {
+                cmdcache1 = lwcmd;
+                cmdcache1_cmdEpoch = cmdEpoch;
+                break;
+            }
+            case 2: {
+                cmdcache2 = lwcmd;
+                cmdcache2_cmdEpoch = cmdEpoch;
+                break;
+            }
+        }
+    }
+}}
+
+tcltest::test compileproc-cache-commands-1.4 {cache commands} {
+    set script {
+proc p {} {
+    cmd1
+    cmd2
+    cmd1
+    cmd2
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+    compileproc_scan_keys [compileproc_keys]
+
+    set symbols [list]
+    foreach key [compileproc_keys] {
+        lappend symbols [compileproc_command_cache_lookup $key]
+    }
+    list $symbols \
+         [compileproc_command_cache_init_generate]
+} {{cmdcache1 cmdcache2 cmdcache1 cmdcache2} {    int wcmd_cmdEpoch = 0;
+    WrappedCommand cmdcache1;
+    int cmdcache1_cmdEpoch;
+    WrappedCommand cmdcache2;
+    int cmdcache2_cmdEpoch;
+
+    void updateCmdCache(Interp interp, int cacheId) throws TclException {
+        String cmdName;
+        switch ( cacheId ) {
+            case 0: {
+                cmdcache1 = TJC.INVALID_COMMAND_CACHE;
+                cmdcache1_cmdEpoch = 0;
+                cmdcache2 = TJC.INVALID_COMMAND_CACHE;
+                cmdcache2_cmdEpoch = 0;
+                wcmd_cmdEpoch = wcmd.cmdEpoch;
+                return;
+            }
+            case 1: {
+                cmdName = "cmd1";
+                break;
+            }
+            case 2: {
+                cmdName = "cmd2";
+                break;
+            }
+            default: {
+                throw new TclRuntimeError("default: cacheId " + cacheId);
+            }
+        }
+        WrappedCommand lwcmd = TJC.resolveCmd(interp, cmdName);
+        int cmdEpoch;
+        if ( lwcmd == null ) {
+            lwcmd = TJC.INVALID_COMMAND_CACHE;
+            cmdEpoch = 0;
+        } else {
+            cmdEpoch = lwcmd.cmdEpoch;
+        }
+        switch ( cacheId ) {
+            case 1: {
+                cmdcache1 = lwcmd;
+                cmdcache1_cmdEpoch = cmdEpoch;
+                break;
+            }
+            case 2: {
+                cmdcache2 = lwcmd;
+                cmdcache2_cmdEpoch = cmdEpoch;
+                break;
+            }
+        }
+    }
+}}
+
+
+tcltest::test compileproc-cache-commands-1.5 {cache commands} {
+    # There is no way to know at compile time if a command will
+    # resolve in the current namespace or in the global namespace,
+    # so the following ends up with two cache refs. The resolve
+    # step need to be done at first invocation since the command
+    # could be moved into a namespace before use.
+    set script {
+proc p {} {
+    cmd
+    ::cmd
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+    compileproc_scan_keys [compileproc_keys]
+
+    set symbols [list]
+    foreach key [compileproc_keys] {
+        lappend symbols [compileproc_command_cache_lookup $key]
+    }
+    list $symbols \
+         [compileproc_command_cache_init_generate]
+} {{cmdcache1 cmdcache2} {    int wcmd_cmdEpoch = 0;
+    WrappedCommand cmdcache1;
+    int cmdcache1_cmdEpoch;
+    WrappedCommand cmdcache2;
+    int cmdcache2_cmdEpoch;
+
+    void updateCmdCache(Interp interp, int cacheId) throws TclException {
+        String cmdName;
+        switch ( cacheId ) {
+            case 0: {
+                cmdcache1 = TJC.INVALID_COMMAND_CACHE;
+                cmdcache1_cmdEpoch = 0;
+                cmdcache2 = TJC.INVALID_COMMAND_CACHE;
+                cmdcache2_cmdEpoch = 0;
+                wcmd_cmdEpoch = wcmd.cmdEpoch;
+                return;
+            }
+            case 1: {
+                cmdName = "cmd";
+                break;
+            }
+            case 2: {
+                cmdName = "::cmd";
+                break;
+            }
+            default: {
+                throw new TclRuntimeError("default: cacheId " + cacheId);
+            }
+        }
+        WrappedCommand lwcmd = TJC.resolveCmd(interp, cmdName);
+        int cmdEpoch;
+        if ( lwcmd == null ) {
+            lwcmd = TJC.INVALID_COMMAND_CACHE;
+            cmdEpoch = 0;
+        } else {
+            cmdEpoch = lwcmd.cmdEpoch;
+        }
+        switch ( cacheId ) {
+            case 1: {
+                cmdcache1 = lwcmd;
+                cmdcache1_cmdEpoch = cmdEpoch;
+                break;
+            }
+            case 2: {
+                cmdcache2 = lwcmd;
+                cmdcache2_cmdEpoch = cmdEpoch;
+                break;
+            }
+        }
+    }
+}}
+
+tcltest::test compileproc-cache-commands-1.6 {cache commands} {
+    # There is no way to know at compile time if a command will
+    # resolve in the current namespace or in the global namespace.
+    # A command string must match exactly to make use of the same
+    # cache variable.
+    set script {
+proc p {} {
+    N1::cmd
+    ::N1::cmd
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+    compileproc_scan_keys [compileproc_keys]
+
+    set symbols [list]
+    foreach key [compileproc_keys] {
+        lappend symbols [compileproc_command_cache_lookup $key]
+    }
+    list $symbols \
+         [compileproc_command_cache_init_generate]
+} {{cmdcache1 cmdcache2} {    int wcmd_cmdEpoch = 0;
+    WrappedCommand cmdcache1;
+    int cmdcache1_cmdEpoch;
+    WrappedCommand cmdcache2;
+    int cmdcache2_cmdEpoch;
+
+    void updateCmdCache(Interp interp, int cacheId) throws TclException {
+        String cmdName;
+        switch ( cacheId ) {
+            case 0: {
+                cmdcache1 = TJC.INVALID_COMMAND_CACHE;
+                cmdcache1_cmdEpoch = 0;
+                cmdcache2 = TJC.INVALID_COMMAND_CACHE;
+                cmdcache2_cmdEpoch = 0;
+                wcmd_cmdEpoch = wcmd.cmdEpoch;
+                return;
+            }
+            case 1: {
+                cmdName = "N1::cmd";
+                break;
+            }
+            case 2: {
+                cmdName = "::N1::cmd";
+                break;
+            }
+            default: {
+                throw new TclRuntimeError("default: cacheId " + cacheId);
+            }
+        }
+        WrappedCommand lwcmd = TJC.resolveCmd(interp, cmdName);
+        int cmdEpoch;
+        if ( lwcmd == null ) {
+            lwcmd = TJC.INVALID_COMMAND_CACHE;
+            cmdEpoch = 0;
+        } else {
+            cmdEpoch = lwcmd.cmdEpoch;
+        }
+        switch ( cacheId ) {
+            case 1: {
+                cmdcache1 = lwcmd;
+                cmdcache1_cmdEpoch = cmdEpoch;
+                break;
+            }
+            case 2: {
+                cmdcache2 = lwcmd;
+                cmdcache2_cmdEpoch = cmdEpoch;
+                break;
+            }
+        }
+    }
+}}
+
+tcltest::test compileproc-cache-commands-1.7 {cache commands} {
+    # A command that does not have a constant name can't be cached
+    set script {
+proc p {} {
+    cmd
+    $::CMDNAME
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+    compileproc_scan_keys [compileproc_keys]
+
+    set symbols [list]
+    foreach key [compileproc_keys] {
+        lappend symbols [compileproc_command_cache_lookup $key]
+    }
+    list $symbols \
+         [compileproc_command_cache_init_generate]
+} {{cmdcache1 {}} {    int wcmd_cmdEpoch = 0;
+    WrappedCommand cmdcache1;
+    int cmdcache1_cmdEpoch;
+
+    void updateCmdCache(Interp interp, int cacheId) throws TclException {
+        String cmdName;
+        switch ( cacheId ) {
+            case 0: {
+                cmdcache1 = TJC.INVALID_COMMAND_CACHE;
+                cmdcache1_cmdEpoch = 0;
+                wcmd_cmdEpoch = wcmd.cmdEpoch;
+                return;
+            }
+            case 1: {
+                cmdName = "cmd";
+                break;
+            }
+            default: {
+                throw new TclRuntimeError("default: cacheId " + cacheId);
+            }
+        }
+        WrappedCommand lwcmd = TJC.resolveCmd(interp, cmdName);
+        int cmdEpoch;
+        if ( lwcmd == null ) {
+            lwcmd = TJC.INVALID_COMMAND_CACHE;
+            cmdEpoch = 0;
+        } else {
+            cmdEpoch = lwcmd.cmdEpoch;
+        }
+        switch ( cacheId ) {
+            case 1: {
+                cmdcache1 = lwcmd;
+                cmdcache1_cmdEpoch = cmdEpoch;
+                break;
+            }
+        }
+    }
+}}
+
+
+# Scan keys API
+
+tcltest::test compileproc_scan_keys-1.0 {scan command keys} {
+    set script {
+proc p {} {
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+    list \
+        [llength [compileproc_keys]] \
+        $_compileproc_key_info(constants_found) \
+        $_compileproc_key_info(cmd_needs_init) \
+
+} {0 0 0}
+
+tcltest::test compileproc_scan_keys-1.1 {scan command keys} {
+    set script {
+proc p {} {
+    return
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    list \
+        [llength [compileproc_keys]] \
+        $_compileproc_key_info($key,num_args) \
+        $_compileproc_key_info($key,types) \
+        $_compileproc_key_info($key,values) \
+        $_compileproc_key_info(constants_found) \
+        $_compileproc_key_info(cmd_needs_init) \
+
+} {1 1 constant return 1 1}
+
+tcltest::test compileproc_scan_keys-1.2 {scan command keys} {
+    set script {
+proc p {} {
+    return 1
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    list \
+        [llength [compileproc_keys]] \
+        $_compileproc_key_info($key,num_args) \
+        $_compileproc_key_info($key,types) \
+        $_compileproc_key_info($key,values) \
+        $_compileproc_key_info(constants_found) \
+        $_compileproc_key_info(cmd_needs_init) \
+
+} {1 2 {constant constant} {return 1} 1 1}
+
+tcltest::test compileproc_scan_keys-2.0 {scan command keys} {
+    set script {
+proc p {} {
+    return $s
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    list \
+        [llength [compileproc_keys]] \
+        $_compileproc_key_info($key,num_args) \
+        $_compileproc_key_info($key,types) \
+        $_compileproc_key_info($key,values) \
+        $_compileproc_key_info(constants_found) \
+        $_compileproc_key_info(cmd_needs_init) \
+
+} {1 2 {constant variable} {return {scalar s}} 1 1}
+
+tcltest::test compileproc_scan_keys-2.1 {scan command keys} {
+    set script {
+proc p {} {
+    return $a(k)
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    list \
+        [llength [compileproc_keys]] \
+        $_compileproc_key_info($key,num_args) \
+        $_compileproc_key_info($key,types) \
+        $_compileproc_key_info($key,values) \
+        $_compileproc_key_info(constants_found) \
+        $_compileproc_key_info(cmd_needs_init) \
+
+} {1 2 {constant variable} {return {{array text} {a k}}} 1 1}
+
+tcltest::test compileproc_scan_keys-2.2 {scan command keys} {
+    set script {
+proc p {} {
+    return $a($k)
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    list \
+        [llength [compileproc_keys]] \
+        $_compileproc_key_info($key,num_args) \
+        $_compileproc_key_info($key,types) \
+        $_compileproc_key_info($key,values) \
+        $_compileproc_key_info(constants_found) \
+        $_compileproc_key_info(cmd_needs_init) \
+
+} {1 2 {constant variable} {return {{array scalar} {a k}}} 1 1}
+
+tcltest::test compileproc_scan_keys-2.3 {scan command keys} {
+    set script {
+proc p {} {
+    return $a([cmd])
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set all_keys [compileproc_start $plist]
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key1 [lindex $all_keys 0]
+    set key2 [lindex $all_keys 1]
+    list \
+        [llength $all_keys] \
+        $_compileproc_key_info(constants_found) \
+        $_compileproc_key_info(cmd_needs_init) \
+        $_compileproc_key_info($key1,num_args) \
+        $_compileproc_key_info($key1,types) \
+        $_compileproc_key_info($key1,values) \
+        $_compileproc_key_info($key2,num_args) \
+        $_compileproc_key_info($key2,types) \
+        $_compileproc_key_info($key2,values) \
+
+} {2 1 1 2 {constant variable} {return {{array command} {a dkey1}}} 1 constant cmd}
+
+tcltest::test compileproc_scan_keys-2.4 {scan command keys} {
+    set script {
+proc p {} {
+    return $a([])
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set all_keys [compileproc_start $plist]
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key1 [lindex $all_keys 0]
+    list \
+        [llength $all_keys] \
+        $_compileproc_key_info(constants_found) \
+        $_compileproc_key_info(cmd_needs_init) \
+        $_compileproc_key_info($key1,num_args) \
+        $_compileproc_key_info($key1,types) \
+        $_compileproc_key_info($key1,values) \
+
+} {1 1 1 2 {constant variable} {return {{array command} {a {}}}}}
+
+tcltest::test compileproc_scan_keys-2.5 {scan command keys} {
+    set script {
+proc p {} {
+    return $a(A$s$t)
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    list \
+        [llength [compileproc_keys]] \
+        $_compileproc_key_info($key,num_args) \
+        $_compileproc_key_info($key,types) \
+        $_compileproc_key_info($key,values) \
+        $_compileproc_key_info(constants_found) \
+        $_compileproc_key_info(cmd_needs_init) \
+
+} {1 2 {constant variable} {return {{array word} {a {{text A} {scalar s} {scalar t}}}}} 1 1}
+
+tcltest::test compileproc_scan_keys-2.6 {scan command keys} {
+    set script {
+proc p {} {
+    return $a(A$s[cmd])
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    list \
+        [llength [compileproc_keys]] \
+        $_compileproc_key_info($key,num_args) \
+        $_compileproc_key_info($key,types) \
+        $_compileproc_key_info($key,values) \
+        $_compileproc_key_info(constants_found) \
+        $_compileproc_key_info(cmd_needs_init) \
+
+} {1 2 {constant variable} {return {{array word} {a {{text A} {scalar s} {{word command} dkey1}}}}} 1 1}
+
+tcltest::test compileproc_scan_keys-2.7 {scan command keys} {
+    set script {
+proc p {} {
+    return $a([cmd]A)
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    list \
+        [llength [compileproc_keys]] \
+        $_compileproc_key_info($key,num_args) \
+        $_compileproc_key_info($key,types) \
+        $_compileproc_key_info($key,values) \
+        $_compileproc_key_info(constants_found) \
+        $_compileproc_key_info(cmd_needs_init) \
+
+} [list 1 2 \
+    {constant variable} \
+    {return {{array word} {a {{{word command} dkey1} {text A}}}}} \
+    1 1 \
+  ]
+
+tcltest::test compileproc_scan_keys-2.8 {scan command keys} {
+    set script {
+proc p {} {
+    return $a($b(c))
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    list \
+        [llength [compileproc_keys]] \
+        $_compileproc_key_info($key,num_args) \
+        $_compileproc_key_info($key,types) \
+        $_compileproc_key_info($key,values) \
+        $_compileproc_key_info(constants_found) \
+        $_compileproc_key_info(cmd_needs_init) \
+
+} [list 1 2 \
+    {constant variable} \
+    {return {{array word} {a {{{array text} {b c}}}}}} \
+    1 1 \
+  ]
+
+tcltest::test compileproc_scan_keys-2.9 {scan command keys} {
+    set script {
+proc p {} {
+    return $a($b($c))
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    list \
+        [llength [compileproc_keys]] \
+        $_compileproc_key_info($key,num_args) \
+        $_compileproc_key_info($key,types) \
+        $_compileproc_key_info($key,values) \
+        $_compileproc_key_info(constants_found) \
+        $_compileproc_key_info(cmd_needs_init) \
+
+} [list 1 2 \
+    {constant variable} \
+    {return {{array word} {a {{{array scalar} {b c}}}}}} \
+    1 1 \
+    ]
+
+tcltest::test compileproc_scan_keys-2.10 {scan command keys} {
+    set script {
+proc p {} {
+    return $a($b([cmd]))
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    list \
+        [llength [compileproc_keys]] \
+        $_compileproc_key_info($key,num_args) \
+        $_compileproc_key_info($key,types) \
+        $_compileproc_key_info($key,values) \
+        $_compileproc_key_info(constants_found) \
+        $_compileproc_key_info(cmd_needs_init) \
+
+} [list \
+    1 2 \
+    {constant variable} \
+    {return {{array word} {a {{{array command} {b dkey1}}}}}} \
+    1 1 \
+  ]
+
+tcltest::test compileproc_scan_keys-2.11 {scan command keys} {
+    set script {
+proc p {} {
+    return $a($b($c$c))
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    list \
+        [llength [compileproc_keys]] \
+        $_compileproc_key_info($key,num_args) \
+        $_compileproc_key_info($key,types) \
+        $_compileproc_key_info($key,values) \
+        $_compileproc_key_info(constants_found) \
+        $_compileproc_key_info(cmd_needs_init) \
+
+} [list 1 2 \
+    {constant variable} \
+    {return {{array word} {a {{{array word} {b {{scalar c} {scalar c}}}}}}}} \
+    1 1 \
+  ]
+
+tcltest::test compileproc_scan_keys-2.12 {scan command keys} {
+    set script {
+proc p {} {
+    return $a([cmd1;cmd2])
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set all_keys [compileproc_start $plist]
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key1 [lindex $all_keys 0]
+    set key2 [lindex $all_keys 1]
+    set key3 [lindex $all_keys 2]
+    list \
+        [llength $all_keys] \
+        $_compileproc_key_info(constants_found) \
+        $_compileproc_key_info(cmd_needs_init) \
+        $_compileproc_key_info($key1,num_args) \
+        $_compileproc_key_info($key1,types) \
+        $_compileproc_key_info($key1,values) \
+        $_compileproc_key_info($key2,num_args) \
+        $_compileproc_key_info($key2,types) \
+        $_compileproc_key_info($key2,values) \
+        $_compileproc_key_info($key3,num_args) \
+        $_compileproc_key_info($key3,types) \
+        $_compileproc_key_info($key3,values) \
+
+} [list \
+    3 1 1 2 \
+    {constant variable} {return {{array command} {a {dkey1 dkey2}}}} \
+    1 constant cmd1 \
+    1 constant cmd2 \
+  ]
+
+tcltest::test compileproc_scan_keys-2.13 {scan command keys} {
+    # Array variable contains additional array variables.
+    # This checks that the key saved when a variable it
+    # iterated over is not hosed by another iteration.
+    set script {
+proc p {} {
+    cmd0 $a([cmd1 $b([cmd2])][cmd3 $c([cmd4][cmd5])])
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set all_keys [compileproc_start $plist]
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key0 [lindex $all_keys 0]
+    set key1 [lindex $all_keys 1]
+    set key2 [lindex $all_keys 2]
+    set key3 [lindex $all_keys 3]
+    set key4 [lindex $all_keys 4]
+    set key5 [lindex $all_keys 5]
+    list \
+        [llength $all_keys] \
+        $_compileproc_key_info(constants_found) \
+        $_compileproc_key_info(cmd_needs_init) \
+        $_compileproc_key_info($key0,num_args) \
+        $_compileproc_key_info($key0,types) \
+        $_compileproc_key_info($key0,values) \
+        $_compileproc_key_info($key1,num_args) \
+        $_compileproc_key_info($key1,types) \
+        $_compileproc_key_info($key1,values) \
+        $_compileproc_key_info($key2,num_args) \
+        $_compileproc_key_info($key2,types) \
+        $_compileproc_key_info($key2,values) \
+        $_compileproc_key_info($key3,num_args) \
+        $_compileproc_key_info($key3,types) \
+        $_compileproc_key_info($key3,values) \
+        $_compileproc_key_info($key4,num_args) \
+        $_compileproc_key_info($key4,types) \
+        $_compileproc_key_info($key4,values) \
+        $_compileproc_key_info($key5,num_args) \
+        $_compileproc_key_info($key5,types) \
+        $_compileproc_key_info($key5,values) \
+
+} [list 6 1 1 \
+    2 {constant variable} {cmd0 {{array word} {a {{{word command} dkey1} {{word command} dkey3}}}}} \
+    2 {constant variable} {cmd1 {{array command} {b dkey2}}}  \
+    1 constant cmd2 \
+    2 {constant variable} {cmd3 {{array word} {c {{{word command} dkey4} {{word command} dkey5}}}}}  \
+    1 constant cmd4 \
+    1 constant cmd5 \
+    ]
+
+tcltest::test compileproc_scan_keys-2.14 {scan command keys} {
+    # Word element that contains a comamnd that contains
+    # another word element. This check that the word
+    # key and results are not hosed by a recursive iteration.
+    set script {
+proc p {} {
+    cmd0 [cmd1 [cmd2][cmd3]][cmd4 [cmd5][cmd6][cmd7]]
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set all_keys [compileproc_start $plist]
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key0 [lindex $all_keys 0]
+    set key1 [lindex $all_keys 1]
+    set key4 [lindex $all_keys 4]
+    list \
+        [llength $all_keys] \
+        $_compileproc_key_info(constants_found) \
+        $_compileproc_key_info(cmd_needs_init) \
+        $_compileproc_key_info($key0,num_args) \
+        $_compileproc_key_info($key0,types) \
+        $_compileproc_key_info($key0,values) \
+        $_compileproc_key_info($key1,num_args) \
+        $_compileproc_key_info($key1,types) \
+        $_compileproc_key_info($key1,values) \
+        $_compileproc_key_info($key4,num_args) \
+        $_compileproc_key_info($key4,types) \
+        $_compileproc_key_info($key4,values) \
+
+} [list 8 1 1 \
+    2 {constant word} {cmd0 {{command dkey1} {command dkey4}}} \
+    2 {constant word} {cmd1 {{command dkey2} {command dkey3}}}  \
+    2 {constant word} {cmd4 {{command dkey5} {command dkey6} {command dkey7}}}  \
+    ]
+
+# FIXME: The parse should treat {} as an empty list while
+# "" should be seen as an empty string type.
+
+
+tcltest::test compileproc_scan_keys-3.0 {scan command keys} {
+    set script {
+proc p {} {
+    return [] [ ] [  \
+    ]
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    list \
+        [llength [compileproc_keys]] \
+        $_compileproc_key_info($key,num_args) \
+        $_compileproc_key_info($key,types) \
+        $_compileproc_key_info($key,values) \
+        $_compileproc_key_info(constants_found) \
+        $_compileproc_key_info(cmd_needs_init) \
+
+} {1 4 {constant constant constant constant} {return {} {} {}} 1 1}
+
+
+tcltest::test compileproc_scan_keys-3.1 {scan command keys} {
+    set script {
+proc p {} {
+    return [cmd]
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key1 [lindex [compileproc_keys] 0]
+    set key2 dkey1
+    list \
+        [llength [compileproc_keys]] \
+        $_compileproc_key_info($key1,num_args) \
+        $_compileproc_key_info($key1,types) \
+        $_compileproc_key_info($key1,values) \
+        $_compileproc_key_info(constants_found) \
+        $_compileproc_key_info(cmd_needs_init) \
+        "--" \
+        $_compileproc_key_info($key2,num_args) \
+        $_compileproc_key_info($key2,types) \
+        $_compileproc_key_info($key2,values) \
+
+} {1 2 {constant command} {return dkey1} 1 1 -- 1 constant cmd}
+
+tcltest::test compileproc_scan_keys-3.2 {scan command keys} {
+    set script {
+proc p {} {
+    return [list [cmd] [cmd]]
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key1 [lindex [compileproc_keys] 0]
+    set key2 dkey1
+    list \
+        [llength [compileproc_keys]] \
+        $_compileproc_key_info(constants_found) \
+        $_compileproc_key_info(cmd_needs_init) \
+        "--" \
+        $_compileproc_key_info($key1,num_args) \
+        $_compileproc_key_info($key1,types) \
+        $_compileproc_key_info($key1,values) \
+        "--" \
+        $_compileproc_key_info($key2,num_args) \
+        $_compileproc_key_info($key2,types) \
+        $_compileproc_key_info($key2,values) \
+
+} [list 1 1 1 \
+    -- 2 {constant command} {return dkey1} \
+    -- 3 {constant command command} {list dkey2 dkey3} \
+    ]
+
+tcltest::test compileproc_scan_keys-3.3 {scan command keys} {
+    set script {
+proc p {} {
+    return [cmd1;cmd2]
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key1 [lindex [compileproc_keys] 0]
+    set key2 dkey1
+    set key3 dkey2
+    list \
+        [llength [compileproc_keys]] \
+        $_compileproc_key_info($key1,num_args) \
+        $_compileproc_key_info($key1,types) \
+        $_compileproc_key_info($key1,values) \
+        $_compileproc_key_info(constants_found) \
+        $_compileproc_key_info(cmd_needs_init) \
+        "--" \
+        $_compileproc_key_info($key2,num_args) \
+        $_compileproc_key_info($key2,types) \
+        $_compileproc_key_info($key2,values) \
+        "--" \
+        $_compileproc_key_info($key3,num_args) \
+        $_compileproc_key_info($key3,types) \
+        $_compileproc_key_info($key3,values) \
+
+} {1 2 {constant command} {return {dkey1 dkey2}} 1 1 -- 1 constant cmd1 -- 1 constant cmd2}
+
+
+tcltest::test compileproc_scan_keys-4.0 {scan command keys} {
+    set script {
+proc p {} {
+    return "S$s"
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    list \
+        [llength [compileproc_keys]] \
+        $_compileproc_key_info($key,num_args) \
+        $_compileproc_key_info($key,types) \
+        $_compileproc_key_info($key,values) \
+        $_compileproc_key_info(constants_found) \
+        $_compileproc_key_info(cmd_needs_init) \
+
+} {1 2 {constant word} {return {{text S} {variable {scalar s}}}} 1 1}
+
+tcltest::test compileproc_scan_keys-4.1 {scan command keys} {
+    set script {
+proc p {} {
+    return "S T$s"
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    list \
+        [llength [compileproc_keys]] \
+        $_compileproc_key_info($key,num_args) \
+        $_compileproc_key_info($key,types) \
+        $_compileproc_key_info($key,values) \
+        $_compileproc_key_info(constants_found) \
+        $_compileproc_key_info(cmd_needs_init) \
+
+} {1 2 {constant word} {return {{text {S T}} {variable {scalar s}}}} 1 1}
+
+tcltest::test compileproc_scan_keys-4.2 {scan command keys} {
+    set script {
+proc p {} {
+    return "[cmd]S"
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    list \
+        [llength [compileproc_keys]] \
+        $_compileproc_key_info($key,num_args) \
+        $_compileproc_key_info($key,types) \
+        $_compileproc_key_info($key,values) \
+        $_compileproc_key_info(constants_found) \
+        $_compileproc_key_info(cmd_needs_init) \
+
+} {1 2 {constant word} {return {{command dkey1} {text S}}} 1 1}
+
+tcltest::test compileproc_scan_keys-4.3 {scan command keys} {
+    set script {
+proc p {} {
+    return "str[cmd]str$s"
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    list \
+        [llength [compileproc_keys]] \
+        $_compileproc_key_info($key,num_args) \
+        $_compileproc_key_info($key,types) \
+        $_compileproc_key_info($key,values) \
+        $_compileproc_key_info(constants_found) \
+        $_compileproc_key_info(cmd_needs_init) \
+
+} {1 2 {constant word} {return {{text str} {command dkey1} {text str} {variable {scalar s}}}} 1 1}
+
+tcltest::test compileproc_scan_keys-4.4 {scan command keys} {
+    # A word with a single variable element
+    set script {
+proc p {} {
+    return "$s"
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    list \
+        [llength [compileproc_keys]] \
+        $_compileproc_key_info($key,num_args) \
+        $_compileproc_key_info($key,types) \
+        $_compileproc_key_info($key,values) \
+        $_compileproc_key_info(constants_found) \
+        $_compileproc_key_info(cmd_needs_init) \
+
+} {1 2 {constant word} {return {{variable {scalar s}}}} 1 1}
+
+tcltest::test compileproc_scan_keys-4.5 {scan command keys} {
+    # A word with a single command element
+    set script {
+proc p {} {
+    return "[cmd]"
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    list \
+        [llength [compileproc_keys]] \
+        $_compileproc_key_info($key,num_args) \
+        $_compileproc_key_info($key,types) \
+        $_compileproc_key_info($key,values) \
+        $_compileproc_key_info(constants_found) \
+        $_compileproc_key_info(cmd_needs_init) \
+
+} {1 2 {constant word} {return {{command dkey1}}} 1 1}
+
+tcltest::test compileproc_scan_keys-4.6 {scan command keys} {
+    # Should be a constant string, not a word since it
+    # contains no variables or commands.
+    set script {
+proc p {} {
+    return "str"
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    list \
+        [llength [compileproc_keys]] \
+        $_compileproc_key_info($key,num_args) \
+        $_compileproc_key_info($key,types) \
+        $_compileproc_key_info($key,values) \
+        $_compileproc_key_info(constants_found) \
+        $_compileproc_key_info(cmd_needs_init) \
+
+} {1 2 {constant constant} {return str} 1 1}
+
+tcltest::test compileproc_scan_keys-4.7 {scan command keys} {
+    set script {
+proc p {} {
+    return S$s
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    list \
+        [llength [compileproc_keys]] \
+        $_compileproc_key_info($key,num_args) \
+        $_compileproc_key_info($key,types) \
+        $_compileproc_key_info($key,values) \
+        $_compileproc_key_info(constants_found) \
+        $_compileproc_key_info(cmd_needs_init) \
+
+} {1 2 {constant word} {return {{text S} {variable {scalar s}}}} 1 1}
+
+tcltest::test compileproc_scan_keys-4.8 {scan command keys} {
+    set script {
+proc p {} {
+    return [cmd]S
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    list \
+        [llength [compileproc_keys]] \
+        $_compileproc_key_info($key,num_args) \
+        $_compileproc_key_info($key,types) \
+        $_compileproc_key_info($key,values) \
+        $_compileproc_key_info(constants_found) \
+        $_compileproc_key_info(cmd_needs_init) \
+
+} {1 2 {constant word} {return {{command dkey1} {text S}}} 1 1}
+
+tcltest::test compileproc_scan_keys-4.9 {scan command keys} {
+    set script {
+proc p {} {
+    return "S[]T"
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    list \
+        [llength [compileproc_keys]] \
+        $_compileproc_key_info($key,num_args) \
+        $_compileproc_key_info($key,types) \
+        $_compileproc_key_info($key,values) \
+        $_compileproc_key_info(constants_found) \
+        $_compileproc_key_info(cmd_needs_init) \
+
+} {1 2 {constant word} {return {{text S} {command {}} {text T}}} 1 1}
+
+tcltest::test compileproc_scan_keys-4.10 {scan command keys} {
+    set script {
+proc p {} {
+    return "S[]T[]"
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    list \
+        [llength [compileproc_keys]] \
+        $_compileproc_key_info($key,num_args) \
+        $_compileproc_key_info($key,types) \
+        $_compileproc_key_info($key,values) \
+        $_compileproc_key_info(constants_found) \
+        $_compileproc_key_info(cmd_needs_init) \
+
+} {1 2 {constant word} {return {{text S} {command {}} {text T} {command {}}}} 1 1}
+
+tcltest::test compileproc_scan_keys-4.11 {scan command keys} {
+    set script {
+proc p {} {
+    return "S[]T[foo]"
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    list \
+        [llength [compileproc_keys]] \
+        $_compileproc_key_info($key,num_args) \
+        $_compileproc_key_info($key,types) \
+        $_compileproc_key_info($key,values) \
+        $_compileproc_key_info(constants_found) \
+        $_compileproc_key_info(cmd_needs_init) \
+
+} {1 2 {constant word} {return {{text S} {command {}} {text T} {command dkey1}}} 1 1}
+
+tcltest::test compileproc_scan_keys-4.12 {scan command keys} {
+    set script {
+proc p {} {
+    expr {[foo]}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    list \
+        [llength [compileproc_keys]] \
+        $_compileproc_key_info($key,num_args) \
+        $_compileproc_key_info($key,types) \
+        $_compileproc_key_info($key,values) \
+        $_compileproc_key_info(constants_found) \
+        $_compileproc_key_info(cmd_needs_init) \
+
+} {1 2 {constant constant} {expr {[foo]}} 1 1}
+
+tcltest::test compileproc_scan_keys-5.0 {scan command keys} {
+    # Check that the constant "list" is being reused
+    set script {
+proc p {} {
+    list 1
+    list 2
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key1 [lindex [compileproc_keys] 0]
+    set key2 [lindex [compileproc_keys] 1]
+    list \
+        [llength [compileproc_keys]] \
+        $_compileproc_key_info($key1,num_args) \
+        $_compileproc_key_info($key1,types) \
+        $_compileproc_key_info($key1,values) \
+        $_compileproc_key_info(constants_found) \
+        $_compileproc_key_info(cmd_needs_init) \
+        "--" \
+        $_compileproc_key_info($key2,num_args) \
+        $_compileproc_key_info($key2,types) \
+        $_compileproc_key_info($key2,values) \
+
+} {2 2 {constant constant} {list 1} 1 1 -- 2 {constant constant} {list 2}}
+
+tcltest::test compileproc_scan_keys-5.1 {scan command keys} {
+    # When not inlining containers, ignore the number
+    # of container children in the check of processed
+    # children at the end of compileproc_scan_keys.
+    set script {
+proc p {} {
+    if {1} {cmd1} else {cmd2}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set all_keys [compileproc_start $plist]
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    list \
+        [llength $all_keys] \
+        [llength [compileproc_keys]] \
+        $_compileproc_key_info(constants_found) \
+        $_compileproc_key_info(cmd_needs_init) \
+        "--" \
+        $_compileproc_key_info($key,num_args) \
+        $_compileproc_key_info($key,types) \
+        $_compileproc_key_info($key,values) \
+
+} {3 1 1 1 -- 5 {constant constant constant constant constant} {if 1 cmd1 else cmd2}}
+
+tcltest::test compileproc_scan_keys-5.2 {scan command keys} {
+    set script {
+proc p {} {
+    list [set i 0 ; set i 1]
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set all_keys [compileproc_start $plist]
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    list \
+        [llength $all_keys] \
+        [llength [compileproc_keys]] \
+        $_compileproc_key_info(constants_found) \
+        $_compileproc_key_info(cmd_needs_init) \
+        "--" \
+        $_compileproc_key_info($key,num_args) \
+        $_compileproc_key_info($key,types) \
+        $_compileproc_key_info($key,values) \
+
+} {3 1 1 1 -- 2 {constant command} {list {dkey1 dkey2}}}
+
+tcltest::test compileproc_scan_keys-5.3 {scan command keys} {
+    set script {
+proc p {} {
+    list "[set i 0 ; set i 1][set i 2]"
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set all_keys [compileproc_start $plist]
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    list \
+        [llength $all_keys] \
+        [llength [compileproc_keys]] \
+        $_compileproc_key_info(constants_found) \
+        $_compileproc_key_info(cmd_needs_init) \
+        "--" \
+        $_compileproc_key_info($key,num_args) \
+        $_compileproc_key_info($key,types) \
+        $_compileproc_key_info($key,values) \
+
+} {4 1 1 1 -- 2 {constant word} {list {{command {dkey1 dkey2}} {command dkey3}}}}
+
+tcltest::test compileproc_scan_keys-5.4 {scan command keys} {
+    set script {
+proc p {} {
+    list [] [cmd] [cmd;cmd]
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set all_keys [compileproc_start $plist]
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    list \
+        [llength $all_keys] \
+        [llength [compileproc_keys]] \
+        $_compileproc_key_info(constants_found) \
+        $_compileproc_key_info(cmd_needs_init) \
+        "--" \
+        $_compileproc_key_info($key,num_args) \
+        $_compileproc_key_info($key,types) \
+        $_compileproc_key_info($key,values) \
+
+} {4 1 1 1 -- 4 {constant constant command command} {list {} dkey1 {dkey2 dkey3}}}
+
+tcltest::test compileproc_scan_keys-5.5 {scan command keys} {
+    set script {
+proc p {} {
+    return "
+        set j $i
+    "
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    list \
+        [llength [compileproc_keys]] \
+        $_compileproc_key_info($key,num_args) \
+        $_compileproc_key_info($key,types) \
+        $_compileproc_key_info($key,values) \
+        $_compileproc_key_info(constants_found) \
+        $_compileproc_key_info(cmd_needs_init) \
+
+} {1 2 {constant word} {return {{text {
+        set j }} {variable {scalar i}} {text {
+    }}}} 1 1}
+
+tcltest::test compileproc_scan_keys-5.6 {scan command keys} {
+    # Backslash sequence in a normal word is replaced.
+    set script {
+proc p {} {
+    return "\n"
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    list \
+        [llength [compileproc_keys]] \
+        $_compileproc_key_info(constants_found) \
+        $_compileproc_key_info(cmd_needs_init) \
+        $_compileproc_key_info($key,num_args) \
+        $_compileproc_key_info($key,types) \
+        $_compileproc_key_info($key,values) \
+
+} {1 1 1 2 {constant constant} {return {\n}}}
+
+tcltest::test compileproc_scan_keys-5.7 {scan command keys} {
+    # Backslash sequence in brace quoted word is not replaced.
+    set script {
+proc p {} {
+    return {\n}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    list \
+        [llength [compileproc_keys]] \
+        $_compileproc_key_info(constants_found) \
+        $_compileproc_key_info(cmd_needs_init) \
+        $_compileproc_key_info($key,num_args) \
+        $_compileproc_key_info($key,types) \
+        $_compileproc_key_info($key,values) \
+
+} {1 1 1 2 {constant constant} {return {\\n}}}
+
+
+tcltest::test compileproc_scan_keys-5.8 {scan command keys} {
+    set script {
+proc p {} {
+    return "\b \f \n \r \t \'"
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    list \
+        [llength [compileproc_keys]] \
+        $_compileproc_key_info(constants_found) \
+        $_compileproc_key_info(cmd_needs_init) \
+        $_compileproc_key_info($key,num_args) \
+        $_compileproc_key_info($key,types) \
+        $_compileproc_key_info($key,values) \
+
+} {1 1 1 2 {constant constant} {return {\b \f \n \r \t '}}}
+
+tcltest::test compileproc_scan_keys-5.9 {scan command keys} {
+    set script {
+proc p {} {
+    return "\{\} \\ \""
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    list \
+        [llength [compileproc_keys]] \
+        $_compileproc_key_info(constants_found) \
+        $_compileproc_key_info(cmd_needs_init) \
+        $_compileproc_key_info($key,num_args) \
+        $_compileproc_key_info($key,types) \
+        $_compileproc_key_info($key,values) \
+
+} [list 1 1 1 2 \
+    {constant constant} \
+    "return \{\{\} \\\\ \"\}"
+    ]
+
+tcltest::test compileproc_scan_keys-5.10 {scan command keys} {
+    # Error due to mismatched num commands during scan
+    # of if container command.
+    set script {
+proc p {} {
+    if {$index == 3} break
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    # scan if container
+    set _compileproc(options,inline_containers) {if}
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    list \
+        [llength [compileproc_keys]] \
+        $_compileproc_key_info(constants_found) \
+        $_compileproc_key_info(cmd_needs_init) \
+        $_compileproc_key_info($key,num_args) \
+        $_compileproc_key_info($key,types) \
+        $_compileproc_key_info($key,values) \
+
+} {1 1 1 3 {constant constant constant} {if {$index == 3} break}}
+
+
+tcltest::test compileproc_scan_keys-6.0 {scan command keys} {
+    # Check constant strings, original strings, and
+    # character mappings generated while scanning keys.
+    set script {
+proc p {} {
+    return {\n}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    list \
+        [llength [compileproc_keys]] \
+        $_compileproc_key_info($key,num_args) \
+        $_compileproc_key_info($key,types) \
+        $_compileproc_key_info($key,values) \
+        $_compileproc_key_info($key,instrs) \
+        $_compileproc_key_info($key,cmaps) \
+
+} [list 1 2 \
+    {constant constant} \
+    {return {\\n}} \
+    {return {{\n}}} \
+    {{} {2 1}} \
+  ]
+
+tcltest::test compileproc_scan_keys-6.1 {scan command keys} {
+    # Check constant strings, original strings, and
+    # character mappings generated while scanning keys.
+    set script {
+proc p {} {
+    return "\n"
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    list \
+        [llength [compileproc_keys]] \
+        $_compileproc_key_info($key,num_args) \
+        $_compileproc_key_info($key,types) \
+        $_compileproc_key_info($key,values) \
+        $_compileproc_key_info($key,instrs) \
+        $_compileproc_key_info($key,cmaps) \
+
+} [list 1 2 \
+    {constant constant} \
+    {return {\n}} \
+    {return {"\n"}} \
+    {{} 2} \
+  ]
+
+tcltest::test compileproc_scan_keys-6.2 {scan command keys} {
+    # Check constant strings, original strings, and
+    # character mappings generated while scanning keys.
+    set script {
+proc p {} {
+    return "\u00\x00FF\uFFFF\7\t\\\$"
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    list \
+        [llength [compileproc_keys]] \
+        $_compileproc_key_info($key,num_args) \
+        $_compileproc_key_info($key,types) \
+        $_compileproc_key_info($key,values) \
+        $_compileproc_key_info($key,instrs) \
+        $_compileproc_key_info($key,cmaps) \
+
+} [list 1 2 \
+    {constant constant} \
+    {return {\u0000\xFF\uFFFF\007\t\\$}} \
+    {return {"\u00\x00FF\uFFFF\7\t\\\$"}} \
+    {{} {6 4 6 4 2 2 1}} \
+  ]
+
+tcltest::test compileproc_scan_keys-6.3 {scan command keys} {
+    # Check constant strings, original strings, and
+    # character mappings generated while scanning keys.
+    set script {
+proc p {} {
+    return "\$\[cmd\]"
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    list \
+        [llength [compileproc_keys]] \
+        $_compileproc_key_info($key,num_args) \
+        $_compileproc_key_info($key,types) \
+        $_compileproc_key_info($key,values) \
+        $_compileproc_key_info($key,instrs) \
+        $_compileproc_key_info($key,cmaps) \
+
+} [list 1 2 \
+    {constant constant} \
+    {return {$[cmd]}} \
+    {return {"\$\[cmd\]"}} \
+    {{} {}} \
+  ]
+
+tcltest::test compileproc_scan_keys-6.4 {scan command keys} {
+    # Check constant strings, original strings, and
+    # character mappings generated while scanning keys.
+    set script {
+proc p {} {
+    return "\$\[cmd\]\t"
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    list \
+        [llength [compileproc_keys]] \
+        $_compileproc_key_info($key,num_args) \
+        $_compileproc_key_info($key,types) \
+        $_compileproc_key_info($key,values) \
+        $_compileproc_key_info($key,instrs) \
+        $_compileproc_key_info($key,cmaps) \
+
+} [list 1 2 \
+    {constant constant} \
+    {return {$[cmd]\t}} \
+    {return {"\$\[cmd\]\t"}} \
+    {{} {1 1 1 1 1 1 2}} \
+  ]
+
+tcltest::test compileproc_scan_keys-6.5 {scan command keys} {
+    # Check constant strings, original strings, and
+    # character mappings generated while scanning keys.
+    set script {
+proc p {} {
+    return {1} "2" 3 $four "$five" $six([cmd]$seven) [eight]
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    list \
+        [llength [compileproc_keys]] \
+        $_compileproc_key_info($key,num_args) \
+        $_compileproc_key_info($key,types) \
+        $_compileproc_key_info($key,instrs) \
+        $_compileproc_key_info($key,cmaps) \
+
+} [list 1 8 \
+    {constant constant constant constant variable word variable command} \
+    {return {{1}} {"2"} 3 {$four} {"$five"} {$six([cmd]$seven)} {[eight]}} \
+    {{} {} {} {} {} {} {} {}} \
+  ]
+
+# Invoke Tcl command tests
+
+tcltest::test compileproc_emit_invoke-1.0 {emit code to invoke method} {
+    set script {
+proc p {} {
+    cmd
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+    compileproc_scan_keys [compileproc_keys]
+
+    emitter_indent_level zero
+    compileproc_emit_invoke [compileproc_keys]
+} {{ // Invoke: cmd
+    TclObject[] objv0 = TJC.grabObjv(interp, 1);
+    try {
+        TclObject tmp1;
+        // Arg 0 constant: cmd
+        tmp1 = const0;
+        tmp1.preserve();
+        objv0[0] = tmp1;
+        TJC.invoke(interp, null, objv0, 0);
+    } finally {
+        TJC.releaseObjv(interp, objv0);
+    }
+} // End Invoke: cmd
+}
+
+tcltest::test compileproc_emit_invoke-1.1 {emit code to invoke method} {
+    set script {
+proc p {} {
+    cmd1 [cmd2;cmd3]
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+    compileproc_scan_keys [compileproc_keys]
+
+    emitter_indent_level zero
+    compileproc_emit_invoke [compileproc_keys]
+} {{ // Invoke: cmd1 [...]
+    TclObject[] objv0 = TJC.grabObjv(interp, 2);
+    try {
+        TclObject tmp1;
+        // Arg 0 constant: cmd1
+        tmp1 = const0;
+        tmp1.preserve();
+        objv0[0] = tmp1;
+        // Arg 1 command: [...]
+        { // Invoke: cmd2
+            TclObject[] objv2 = TJC.grabObjv(interp, 1);
+            try {
+                TclObject tmp3;
+                // Arg 0 constant: cmd2
+                tmp3 = const1;
+                tmp3.preserve();
+                objv2[0] = tmp3;
+                TJC.invoke(interp, null, objv2, 0);
+            } finally {
+                TJC.releaseObjv(interp, objv2);
+            }
+        } // End Invoke: cmd2
+        { // Invoke: cmd3
+            TclObject[] objv4 = TJC.grabObjv(interp, 1);
+            try {
+                TclObject tmp5;
+                // Arg 0 constant: cmd3
+                tmp5 = const2;
+                tmp5.preserve();
+                objv4[0] = tmp5;
+                TJC.invoke(interp, null, objv4, 0);
+            } finally {
+                TJC.releaseObjv(interp, objv4);
+            }
+        } // End Invoke: cmd3
+        tmp1 = interp.getResult();
+        tmp1.preserve();
+        objv0[1] = tmp1;
+        TJC.invoke(interp, null, objv0, 0);
+    } finally {
+        TJC.releaseObjv(interp, objv0);
+    }
+} // End Invoke: cmd1
+}
+
+tcltest::test compileproc_emit_invoke-1.2 {emit code to invoke method} {
+    set script {
+proc p {} {
+    list [] [cmd] [cmd;cmd]
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+    compileproc_scan_keys [compileproc_keys]
+
+    emitter_indent_level zero
+    compileproc_emit_invoke [compileproc_keys]
+} {{ // Invoke: list [] [...] [...]
+    TclObject[] objv0 = TJC.grabObjv(interp, 4);
+    try {
+        TclObject tmp1;
+        // Arg 0 constant: list
+        tmp1 = const0;
+        tmp1.preserve();
+        objv0[0] = tmp1;
+        // Arg 1 constant: []
+        tmp1 = const1;
+        tmp1.preserve();
+        objv0[1] = tmp1;
+        // Arg 2 command: [...]
+        { // Invoke: cmd
+            TclObject[] objv2 = TJC.grabObjv(interp, 1);
+            try {
+                TclObject tmp3;
+                // Arg 0 constant: cmd
+                tmp3 = const2;
+                tmp3.preserve();
+                objv2[0] = tmp3;
+                TJC.invoke(interp, null, objv2, 0);
+            } finally {
+                TJC.releaseObjv(interp, objv2);
+            }
+        } // End Invoke: cmd
+        tmp1 = interp.getResult();
+        tmp1.preserve();
+        objv0[2] = tmp1;
+        // Arg 3 command: [...]
+        { // Invoke: cmd
+            TclObject[] objv4 = TJC.grabObjv(interp, 1);
+            try {
+                TclObject tmp5;
+                // Arg 0 constant: cmd
+                tmp5 = const2;
+                tmp5.preserve();
+                objv4[0] = tmp5;
+                TJC.invoke(interp, null, objv4, 0);
+            } finally {
+                TJC.releaseObjv(interp, objv4);
+            }
+        } // End Invoke: cmd
+        { // Invoke: cmd
+            TclObject[] objv6 = TJC.grabObjv(interp, 1);
+            try {
+                TclObject tmp7;
+                // Arg 0 constant: cmd
+                tmp7 = const2;
+                tmp7.preserve();
+                objv6[0] = tmp7;
+                TJC.invoke(interp, null, objv6, 0);
+            } finally {
+                TJC.releaseObjv(interp, objv6);
+            }
+        } // End Invoke: cmd
+        tmp1 = interp.getResult();
+        tmp1.preserve();
+        objv0[3] = tmp1;
+        TJC.invoke(interp, null, objv0, 0);
+    } finally {
+        TJC.releaseObjv(interp, objv0);
+    }
+} // End Invoke: list
+}
+
+
+
+tcltest::test compileproc_emit_if-1.0 {emit if container} {
+    set script {
+proc p {} {
+    if {1} {
+        cmd
+    }
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+
+    set _compileproc(options,inline_containers) {if}
+
+    compileproc_start $plist
+    compileproc_scan_keys [compileproc_keys]
+
+    emitter_indent_level zero
+    list [descend_commands dkey0 container] \
+        [compileproc_emit_invoke dkey0]
+} {{{} dkey1 {}} {{ // Invoke: if {1} ...
+    if ( true ) {
+        { // Invoke: cmd
+            TclObject[] objv0 = TJC.grabObjv(interp, 1);
+            try {
+                TclObject tmp1;
+                // Arg 0 constant: cmd
+                tmp1 = const0;
+                tmp1.preserve();
+                objv0[0] = tmp1;
+                TJC.invoke(interp, null, objv0, 0);
+            } finally {
+                TJC.releaseObjv(interp, objv0);
+            }
+        } // End Invoke: cmd
+    }
+} // End Invoke: if
+}}
+
+tcltest::test compileproc_emit_if-1.1 {emit if container} {
+    set script {
+proc p {} {
+    if {1} then {
+        cmd
+    }
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+
+    set _compileproc(options,inline_containers) {if}
+
+    compileproc_start $plist
+    compileproc_scan_keys [compileproc_keys]
+
+    emitter_indent_level zero
+    list [descend_commands dkey0 container] \
+        [compileproc_emit_invoke dkey0]
+} {{{} dkey1 {}} {{ // Invoke: if {1} then ...
+    if ( true ) {
+        { // Invoke: cmd
+            TclObject[] objv0 = TJC.grabObjv(interp, 1);
+            try {
+                TclObject tmp1;
+                // Arg 0 constant: cmd
+                tmp1 = const0;
+                tmp1.preserve();
+                objv0[0] = tmp1;
+                TJC.invoke(interp, null, objv0, 0);
+            } finally {
+                TJC.releaseObjv(interp, objv0);
+            }
+        } // End Invoke: cmd
+    }
+} // End Invoke: if
+}}
+
+tcltest::test compileproc_emit_if-1.2 {emit if container} {
+    set script {
+proc p {} {
+    if {1} {
+        cmd1
+    } else {
+        cmd2
+    }
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+
+    set _compileproc(options,inline_containers) {if}
+
+    compileproc_start $plist
+    compileproc_scan_keys [compileproc_keys]
+
+    emitter_indent_level zero
+    list [descend_commands dkey0 container] \
+        [compileproc_emit_invoke dkey0]
+} {{{} dkey1 dkey2} {{ // Invoke: if {1} ... else ...
+    if ( true ) {
+        { // Invoke: cmd1
+            TclObject[] objv0 = TJC.grabObjv(interp, 1);
+            try {
+                TclObject tmp1;
+                // Arg 0 constant: cmd1
+                tmp1 = const0;
+                tmp1.preserve();
+                objv0[0] = tmp1;
+                TJC.invoke(interp, null, objv0, 0);
+            } finally {
+                TJC.releaseObjv(interp, objv0);
+            }
+        } // End Invoke: cmd1
+    } else {
+        { // Invoke: cmd2
+            TclObject[] objv2 = TJC.grabObjv(interp, 1);
+            try {
+                TclObject tmp3;
+                // Arg 0 constant: cmd2
+                tmp3 = const1;
+                tmp3.preserve();
+                objv2[0] = tmp3;
+                TJC.invoke(interp, null, objv2, 0);
+            } finally {
+                TJC.releaseObjv(interp, objv2);
+            }
+        } // End Invoke: cmd2
+    }
+} // End Invoke: if
+}}
+
+tcltest::test compileproc_emit_if-1.3 {emit if container} {
+    set script {
+proc p {} {
+    if {1} {
+        cmd1
+    } elseif {0} {
+        cmd2
+    }
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+
+    set _compileproc(options,inline_containers) {if}
+
+    compileproc_start $plist
+    compileproc_scan_keys [compileproc_keys]
+
+    emitter_indent_level zero
+    list [descend_commands dkey0 container] \
+        [compileproc_emit_invoke dkey0]
+} {{{} dkey1 {} dkey2 {}} {{ // Invoke: if {1} ... elseif {0} ...
+    if ( true ) {
+        { // Invoke: cmd1
+            TclObject[] objv0 = TJC.grabObjv(interp, 1);
+            try {
+                TclObject tmp1;
+                // Arg 0 constant: cmd1
+                tmp1 = const0;
+                tmp1.preserve();
+                objv0[0] = tmp1;
+                TJC.invoke(interp, null, objv0, 0);
+            } finally {
+                TJC.releaseObjv(interp, objv0);
+            }
+        } // End Invoke: cmd1
+    } else if ( false ) {
+        { // Invoke: cmd2
+            TclObject[] objv2 = TJC.grabObjv(interp, 1);
+            try {
+                TclObject tmp3;
+                // Arg 0 constant: cmd2
+                tmp3 = const1;
+                tmp3.preserve();
+                objv2[0] = tmp3;
+                TJC.invoke(interp, null, objv2, 0);
+            } finally {
+                TJC.releaseObjv(interp, objv2);
+            }
+        } // End Invoke: cmd2
+    }
+} // End Invoke: if
+}}
+
+tcltest::test compileproc_emit_if-1.4 {emit if container} {
+    set script {
+proc p {} {
+    if {1} {
+        cmd1
+        cmd2
+    } elseif {0} {
+        cmd3
+        cmd4
+    } elseif true {
+        cmd5
+        cmd6
+    } else {
+        cmd7
+        cmd8
+    }
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+
+    set _compileproc(options,inline_containers) {if}
+
+    compileproc_start $plist
+    compileproc_scan_keys [compileproc_keys]
+
+    emitter_indent_level zero
+    list [descend_commands dkey0 container] \
+        [compileproc_emit_invoke dkey0]
+} {{{} {dkey1 dkey2} {} {dkey3 dkey4} {} {dkey5 dkey6} {dkey7 dkey8}} {{ // Invoke: if {1} ... elseif {0} ... elseif true ... else ...
+    if ( true ) {
+        { // Invoke: cmd1
+            TclObject[] objv0 = TJC.grabObjv(interp, 1);
+            try {
+                TclObject tmp1;
+                // Arg 0 constant: cmd1
+                tmp1 = const0;
+                tmp1.preserve();
+                objv0[0] = tmp1;
+                TJC.invoke(interp, null, objv0, 0);
+            } finally {
+                TJC.releaseObjv(interp, objv0);
+            }
+        } // End Invoke: cmd1
+        { // Invoke: cmd2
+            TclObject[] objv2 = TJC.grabObjv(interp, 1);
+            try {
+                TclObject tmp3;
+                // Arg 0 constant: cmd2
+                tmp3 = const1;
+                tmp3.preserve();
+                objv2[0] = tmp3;
+                TJC.invoke(interp, null, objv2, 0);
+            } finally {
+                TJC.releaseObjv(interp, objv2);
+            }
+        } // End Invoke: cmd2
+    } else if ( false ) {
+        { // Invoke: cmd3
+            TclObject[] objv4 = TJC.grabObjv(interp, 1);
+            try {
+                TclObject tmp5;
+                // Arg 0 constant: cmd3
+                tmp5 = const2;
+                tmp5.preserve();
+                objv4[0] = tmp5;
+                TJC.invoke(interp, null, objv4, 0);
+            } finally {
+                TJC.releaseObjv(interp, objv4);
+            }
+        } // End Invoke: cmd3
+        { // Invoke: cmd4
+            TclObject[] objv6 = TJC.grabObjv(interp, 1);
+            try {
+                TclObject tmp7;
+                // Arg 0 constant: cmd4
+                tmp7 = const3;
+                tmp7.preserve();
+                objv6[0] = tmp7;
+                TJC.invoke(interp, null, objv6, 0);
+            } finally {
+                TJC.releaseObjv(interp, objv6);
+            }
+        } // End Invoke: cmd4
+    } else if ( true ) {
+        { // Invoke: cmd5
+            TclObject[] objv8 = TJC.grabObjv(interp, 1);
+            try {
+                TclObject tmp9;
+                // Arg 0 constant: cmd5
+                tmp9 = const4;
+                tmp9.preserve();
+                objv8[0] = tmp9;
+                TJC.invoke(interp, null, objv8, 0);
+            } finally {
+                TJC.releaseObjv(interp, objv8);
+            }
+        } // End Invoke: cmd5
+        { // Invoke: cmd6
+            TclObject[] objv10 = TJC.grabObjv(interp, 1);
+            try {
+                TclObject tmp11;
+                // Arg 0 constant: cmd6
+                tmp11 = const5;
+                tmp11.preserve();
+                objv10[0] = tmp11;
+                TJC.invoke(interp, null, objv10, 0);
+            } finally {
+                TJC.releaseObjv(interp, objv10);
+            }
+        } // End Invoke: cmd6
+    } else {
+        { // Invoke: cmd7
+            TclObject[] objv12 = TJC.grabObjv(interp, 1);
+            try {
+                TclObject tmp13;
+                // Arg 0 constant: cmd7
+                tmp13 = const6;
+                tmp13.preserve();
+                objv12[0] = tmp13;
+                TJC.invoke(interp, null, objv12, 0);
+            } finally {
+                TJC.releaseObjv(interp, objv12);
+            }
+        } // End Invoke: cmd7
+        { // Invoke: cmd8
+            TclObject[] objv14 = TJC.grabObjv(interp, 1);
+            try {
+                TclObject tmp15;
+                // Arg 0 constant: cmd8
+                tmp15 = const7;
+                tmp15.preserve();
+                objv14[0] = tmp15;
+                TJC.invoke(interp, null, objv14, 0);
+            } finally {
+                TJC.releaseObjv(interp, objv14);
+            }
+        } // End Invoke: cmd8
+    }
+} // End Invoke: if
+}}
+
+
+tcltest::test compileproc_emit_if-2.0 {emit if container} {
+    # Non-constant expr. A scalar variable can be evaluated
+    # to a value, so it can be used in an expression.
+    set script {
+proc p {} {
+    if {$s} {
+        cmd
+    }
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+
+    set _compileproc(options,inline_containers) {if}
+
+    compileproc_start $plist
+    compileproc_scan_keys [compileproc_keys]
+
+    emitter_indent_level zero
+    list [descend_commands dkey0 container] \
+        [compileproc_emit_invoke dkey0]
+} {{{} dkey1 {}} {{ // Invoke: if {$s} ...
+    TclObject tmp0 = interp.getVar("s", null, 0);
+    boolean tmp1 = TJC.getBoolean(interp, tmp0);
+    if ( tmp1 ) {
+        { // Invoke: cmd
+            TclObject[] objv2 = TJC.grabObjv(interp, 1);
+            try {
+                TclObject tmp3;
+                // Arg 0 constant: cmd
+                tmp3 = const0;
+                tmp3.preserve();
+                objv2[0] = tmp3;
+                TJC.invoke(interp, null, objv2, 0);
+            } finally {
+                TJC.releaseObjv(interp, objv2);
+            }
+        } // End Invoke: cmd
+    }
+} // End Invoke: if
+}}
+
+tcltest::test compileproc_emit_if-2.1 {emit if container} {
+    # A Non-constant expression for an elseif needs to
+    # execute code before the elseeif expression can
+    # be evaluated.
+    set script {
+proc p {} {
+    if {$s} {
+        cmd1
+    } elseif {$t} {
+        cmd2
+    }
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+
+    set _compileproc(options,inline_containers) {if}
+
+    compileproc_start $plist
+    compileproc_scan_keys [compileproc_keys]
+
+    emitter_indent_level zero
+    list [descend_commands dkey0 container] \
+        [compileproc_emit_invoke dkey0]
+} {{{} dkey1 {} dkey2 {}} {{ // Invoke: if {$s} ... elseif {$t} ...
+    TclObject tmp0 = interp.getVar("s", null, 0);
+    boolean tmp1 = TJC.getBoolean(interp, tmp0);
+    if ( tmp1 ) {
+        { // Invoke: cmd1
+            TclObject[] objv2 = TJC.grabObjv(interp, 1);
+            try {
+                TclObject tmp3;
+                // Arg 0 constant: cmd1
+                tmp3 = const0;
+                tmp3.preserve();
+                objv2[0] = tmp3;
+                TJC.invoke(interp, null, objv2, 0);
+            } finally {
+                TJC.releaseObjv(interp, objv2);
+            }
+        } // End Invoke: cmd1
+    } else {
+        TclObject tmp4 = interp.getVar("t", null, 0);
+        boolean tmp5 = TJC.getBoolean(interp, tmp4);
+        if ( tmp5 ) {
+            { // Invoke: cmd2
+                TclObject[] objv6 = TJC.grabObjv(interp, 1);
+                try {
+                    TclObject tmp7;
+                    // Arg 0 constant: cmd2
+                    tmp7 = const1;
+                    tmp7.preserve();
+                    objv6[0] = tmp7;
+                    TJC.invoke(interp, null, objv6, 0);
+                } finally {
+                    TJC.releaseObjv(interp, objv6);
+                }
+            } // End Invoke: cmd2
+        }
+    }
+} // End Invoke: if
+}}
+
+tcltest::test compileproc_emit_if-2.2 {emit if container} {
+    # A Non-constant expression for an elseif needs to
+    # execute code before the elseif expression can
+    # be evaluated.
+    set script {
+proc p {} {
+    if {$s} {
+        cmd1
+    } elseif {$t} {
+        cmd2
+    } else {
+        cmd3
+    }
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+
+    set _compileproc(options,inline_containers) {if}
+
+    compileproc_start $plist
+    compileproc_scan_keys [compileproc_keys]
+
+    emitter_indent_level zero
+    list [descend_commands dkey0 container] \
+        [compileproc_emit_invoke dkey0]
+} {{{} dkey1 {} dkey2 dkey3} {{ // Invoke: if {$s} ... elseif {$t} ... else ...
+    TclObject tmp0 = interp.getVar("s", null, 0);
+    boolean tmp1 = TJC.getBoolean(interp, tmp0);
+    if ( tmp1 ) {
+        { // Invoke: cmd1
+            TclObject[] objv2 = TJC.grabObjv(interp, 1);
+            try {
+                TclObject tmp3;
+                // Arg 0 constant: cmd1
+                tmp3 = const0;
+                tmp3.preserve();
+                objv2[0] = tmp3;
+                TJC.invoke(interp, null, objv2, 0);
+            } finally {
+                TJC.releaseObjv(interp, objv2);
+            }
+        } // End Invoke: cmd1
+    } else {
+        TclObject tmp4 = interp.getVar("t", null, 0);
+        boolean tmp5 = TJC.getBoolean(interp, tmp4);
+        if ( tmp5 ) {
+            { // Invoke: cmd2
+                TclObject[] objv6 = TJC.grabObjv(interp, 1);
+                try {
+                    TclObject tmp7;
+                    // Arg 0 constant: cmd2
+                    tmp7 = const1;
+                    tmp7.preserve();
+                    objv6[0] = tmp7;
+                    TJC.invoke(interp, null, objv6, 0);
+                } finally {
+                    TJC.releaseObjv(interp, objv6);
+                }
+            } // End Invoke: cmd2
+        } else {
+            { // Invoke: cmd3
+                TclObject[] objv8 = TJC.grabObjv(interp, 1);
+                try {
+                    TclObject tmp9;
+                    // Arg 0 constant: cmd3
+                    tmp9 = const2;
+                    tmp9.preserve();
+                    objv8[0] = tmp9;
+                    TJC.invoke(interp, null, objv8, 0);
+                } finally {
+                    TJC.releaseObjv(interp, objv8);
+                }
+            } // End Invoke: cmd3
+        }
+    }
+} // End Invoke: if
+}}
+
+tcltest::test compileproc_emit_if-3.0 {emit if container} {
+    # Use expr command to evaluate an expression that
+    # is not supported yet.
+    set script {
+proc p {} {
+    if {$s|1} {
+        cmd
+    }
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+
+    set _compileproc(options,inline_containers) {if}
+
+    compileproc_start $plist
+    compileproc_scan_keys [compileproc_keys]
+
+    emitter_indent_level zero
+    list [descend_commands dkey0 container] \
+        [compileproc_emit_invoke dkey0]
+} {{{} dkey1 {}} {{ // Invoke: if {$s|1} ...
+    { // Invoke: expr {$s|1}
+        TclObject[] objv0 = TJC.grabObjv(interp, 2);
+        try {
+            TclObject tmp1;
+            // Arg 0 constant: expr
+            tmp1 = const0;
+            tmp1.preserve();
+            objv0[0] = tmp1;
+            // Arg 1 constant: {$s|1}
+            tmp1 = const1;
+            tmp1.preserve();
+            objv0[1] = tmp1;
+            TJC.invoke(interp, null, objv0, 0);
+        } finally {
+            TJC.releaseObjv(interp, objv0);
+        }
+    } // End Invoke: expr
+    TclObject tmp2 = interp.getResult();
+    boolean tmp3 = TJC.getBoolean(interp, tmp2);
+    if ( tmp3 ) {
+        { // Invoke: cmd
+            TclObject[] objv4 = TJC.grabObjv(interp, 1);
+            try {
+                TclObject tmp5;
+                // Arg 0 constant: cmd
+                tmp5 = const2;
+                tmp5.preserve();
+                objv4[0] = tmp5;
+                TJC.invoke(interp, null, objv4, 0);
+            } finally {
+                TJC.releaseObjv(interp, objv4);
+            }
+        } // End Invoke: cmd
+    }
+} // End Invoke: if
+}}
+
+tcltest::test compileproc_emit_if-3.1 {emit if container} {
+    # Non-constant expr argument means if is not inlined.
+    set script {
+proc p {} {
+    if 1<2 {
+        cmd
+    }
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+
+    set _compileproc(options,inline_containers) {if}
+
+    compileproc_start $plist
+    compileproc_scan_keys [compileproc_keys]
+
+    emitter_indent_level zero
+    list [descend_commands dkey0 container] \
+        [compileproc_emit_invoke dkey0]
+} {{} {{ // Invoke: if 1<2 ...
+    TclObject[] objv0 = TJC.grabObjv(interp, 3);
+    try {
+        TclObject tmp1;
+        // Arg 0 constant: if
+        tmp1 = const0;
+        tmp1.preserve();
+        objv0[0] = tmp1;
+        // Arg 1 constant: 1<2
+        tmp1 = const1;
+        tmp1.preserve();
+        objv0[1] = tmp1;
+        // Arg 2 constant: ...
+        tmp1 = const2;
+        tmp1.preserve();
+        objv0[2] = tmp1;
+        TJC.invoke(interp, null, objv0, 0);
+    } finally {
+        TJC.releaseObjv(interp, objv0);
+    }
+} // End Invoke: if
+}}
+
+
+tcltest::test compileproc_emit_while-1.0 {emit while container} {
+    # Constant expr value
+    set script {
+proc p {} {
+    while {1} {}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+
+    set _compileproc(options,inline_containers) {while}
+
+    compileproc_start $plist
+    compileproc_scan_keys [compileproc_keys]
+
+    emitter_indent_level zero
+    list [descend_commands dkey0 container] \
+        [compileproc_emit_invoke dkey0]
+} {{{} {}} {{ // Invoke: while {1} {}
+    for ( boolean tmp0 = true ; tmp0 ; ) {
+    }
+    interp.resetResult();
+} // End Invoke: while
+}}
+
+tcltest::test compileproc_emit_while-1.1 {emit while container} {
+    # Constant expr value
+    set script {
+proc p {} {
+    while {0} {}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+
+    set _compileproc(options,inline_containers) {while}
+
+    compileproc_start $plist
+    compileproc_scan_keys [compileproc_keys]
+
+    emitter_indent_level zero
+    list [descend_commands dkey0 container] \
+        [compileproc_emit_invoke dkey0]
+} {{{} {}} {{ // Invoke: while {0} {}
+    for ( boolean tmp0 = false ; tmp0 ; ) {
+    }
+    interp.resetResult();
+} // End Invoke: while
+}}
+
+tcltest::test compileproc_emit_while-2.0 {emit while container} {
+    # Non-constant expr value
+    set script {
+proc p {} {
+    while {$s} {}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+
+    set _compileproc(options,inline_containers) {while}
+
+    compileproc_start $plist
+    compileproc_scan_keys [compileproc_keys]
+
+    emitter_indent_level zero
+    list [descend_commands dkey0 container] \
+        [compileproc_emit_invoke dkey0]
+} {{{} {}} {{ // Invoke: while {$s} {}
+    for ( ; true ; ) {
+        TclObject tmp0 = interp.getVar("s", null, 0);
+        boolean tmp1 = TJC.getBoolean(interp, tmp0);
+        if ( ! tmp1 ) { break; }
+    }
+    interp.resetResult();
+} // End Invoke: while
+}}
+
+
+tcltest::test compileproc_emit_while-3.0 {emit while container} {
+    # body command(s)
+    set script {
+proc p {} {
+    while {$s} {
+       cmd
+    }
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+
+    set _compileproc(options,inline_containers) {while}
+
+    compileproc_start $plist
+    compileproc_scan_keys [compileproc_keys]
+
+    emitter_indent_level zero
+    list [descend_commands dkey0 container] \
+        [compileproc_emit_invoke dkey0]
+} {{{} dkey1} {{ // Invoke: while {$s} ...
+    for ( ; true ; ) {
+        TclObject tmp0 = interp.getVar("s", null, 0);
+        boolean tmp1 = TJC.getBoolean(interp, tmp0);
+        if ( ! tmp1 ) { break; }
+
+        try {
+        if ( false ) { throw (TclException) null; }
+        { // Invoke: cmd
+            TclObject[] objv2 = TJC.grabObjv(interp, 1);
+            try {
+                TclObject tmp3;
+                // Arg 0 constant: cmd
+                tmp3 = const0;
+                tmp3.preserve();
+                objv2[0] = tmp3;
+                TJC.invoke(interp, null, objv2, 0);
+            } finally {
+                TJC.releaseObjv(interp, objv2);
+            }
+        } // End Invoke: cmd
+        } catch (TclException ex) {
+            int type = ex.getCompletionCode();
+            if (type == TCL.BREAK) {
+                break;
+            } else if (type == TCL.CONTINUE) {
+                continue;
+            } else {
+                throw ex;
+            }
+        }
+    }
+    interp.resetResult();
+} // End Invoke: while
+}}
+
+tcltest::test compileproc_emit_while-3.1 {emit while container} {
+    # expr is constant
+    set script {
+proc p {} {
+    while {"true"} {
+       cmd
+    }
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+
+    set _compileproc(options,inline_containers) {while}
+
+    compileproc_start $plist
+    compileproc_scan_keys [compileproc_keys]
+
+    emitter_indent_level zero
+    list [descend_commands dkey0 container] \
+        [compileproc_emit_invoke dkey0]
+} {{{} dkey1} {{ // Invoke: while {"true"} ...
+    for ( ; true ; ) {
+        try {
+        if ( false ) { throw (TclException) null; }
+        { // Invoke: cmd
+            TclObject[] objv0 = TJC.grabObjv(interp, 1);
+            try {
+                TclObject tmp1;
+                // Arg 0 constant: cmd
+                tmp1 = const0;
+                tmp1.preserve();
+                objv0[0] = tmp1;
+                TJC.invoke(interp, null, objv0, 0);
+            } finally {
+                TJC.releaseObjv(interp, objv0);
+            }
+        } // End Invoke: cmd
+        } catch (TclException ex) {
+            int type = ex.getCompletionCode();
+            if (type == TCL.BREAK) {
+                break;
+            } else if (type == TCL.CONTINUE) {
+                continue;
+            } else {
+                throw ex;
+            }
+        }
+    }
+    interp.resetResult();
+} // End Invoke: while
+}}
+
+tcltest::test compileproc_emit_while-3.2 {emit while container} {
+    # expression passed to expr command
+    set script {
+proc p {} {
+    while {$s|1} {
+       cmd
+    }
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+
+    set _compileproc(options,inline_containers) {while}
+
+    compileproc_start $plist
+    compileproc_scan_keys [compileproc_keys]
+
+    emitter_indent_level zero
+    list [descend_commands dkey0 container] \
+        [compileproc_emit_invoke dkey0]
+} {{{} dkey1} {{ // Invoke: while {$s|1} ...
+    for ( ; true ; ) {
+        { // Invoke: expr {$s|1}
+            TclObject[] objv0 = TJC.grabObjv(interp, 2);
+            try {
+                TclObject tmp1;
+                // Arg 0 constant: expr
+                tmp1 = const0;
+                tmp1.preserve();
+                objv0[0] = tmp1;
+                // Arg 1 constant: {$s|1}
+                tmp1 = const1;
+                tmp1.preserve();
+                objv0[1] = tmp1;
+                TJC.invoke(interp, null, objv0, 0);
+            } finally {
+                TJC.releaseObjv(interp, objv0);
+            }
+        } // End Invoke: expr
+        TclObject tmp2 = interp.getResult();
+        boolean tmp3 = TJC.getBoolean(interp, tmp2);
+        if ( ! tmp3 ) { break; }
+
+        try {
+        if ( false ) { throw (TclException) null; }
+        { // Invoke: cmd
+            TclObject[] objv4 = TJC.grabObjv(interp, 1);
+            try {
+                TclObject tmp5;
+                // Arg 0 constant: cmd
+                tmp5 = const2;
+                tmp5.preserve();
+                objv4[0] = tmp5;
+                TJC.invoke(interp, null, objv4, 0);
+            } finally {
+                TJC.releaseObjv(interp, objv4);
+            }
+        } // End Invoke: cmd
+        } catch (TclException ex) {
+            int type = ex.getCompletionCode();
+            if (type == TCL.BREAK) {
+                break;
+            } else if (type == TCL.CONTINUE) {
+                continue;
+            } else {
+                throw ex;
+            }
+        }
+    }
+    interp.resetResult();
+} // End Invoke: while
+}}
+
+
+tcltest::test compileproc_emit_for-1.0 {emit for container} {
+    # Constant expr value
+    set script {
+proc p {} {
+    for {} {1} {} {}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+
+    set _compileproc(options,inline_containers) {for}
+
+    compileproc_start $plist
+    compileproc_scan_keys [compileproc_keys]
+
+    emitter_indent_level zero
+    list [descend_commands dkey0 container] \
+        [compileproc_emit_invoke dkey0]
+} {{{} {} {} {}} {{ // Invoke: for {} {1} {} {}
+    for ( boolean tmp0 = true ; tmp0 ; ) {
+    }
+    interp.resetResult();
+} // End Invoke: for
+}}
+
+tcltest::test compileproc_emit_for-1.1 {emit for container} {
+    # Constant expr value
+    set script {
+proc p {} {
+    for {} {0} {} {}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+
+    set _compileproc(options,inline_containers) {for}
+
+    compileproc_start $plist
+    compileproc_scan_keys [compileproc_keys]
+
+    emitter_indent_level zero
+    list [descend_commands dkey0 container] \
+        [compileproc_emit_invoke dkey0]
+} {{{} {} {} {}} {{ // Invoke: for {} {0} {} {}
+    for ( boolean tmp0 = false ; tmp0 ; ) {
+    }
+    interp.resetResult();
+} // End Invoke: for
+}}
+
+tcltest::test compileproc_emit_for-2.0 {emit for container} {
+    # Non-constant expr value
+    set script {
+proc p {} {
+    for {} {$s} {} {}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+
+    set _compileproc(options,inline_containers) {for}
+
+    compileproc_start $plist
+    compileproc_scan_keys [compileproc_keys]
+
+    emitter_indent_level zero
+    list [descend_commands dkey0 container] \
+        [compileproc_emit_invoke dkey0]
+} {{{} {} {} {}} {{ // Invoke: for {} {$s} {} {}
+    for ( ; true ; ) {
+        TclObject tmp0 = interp.getVar("s", null, 0);
+        boolean tmp1 = TJC.getBoolean(interp, tmp0);
+        if ( ! tmp1 ) { break; }
+    }
+    interp.resetResult();
+} // End Invoke: for
+}}
+
+tcltest::test compileproc_emit_for-2.1 {emit for container} {
+    # Non-constant expr value and start command
+    set script {
+proc p {} {
+    for {set s 0} {$s} {} {}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+
+    set _compileproc(options,inline_containers) {for}
+
+    compileproc_start $plist
+    compileproc_scan_keys [compileproc_keys]
+
+    emitter_indent_level zero
+    list [descend_commands dkey0 container] \
+        [compileproc_emit_invoke dkey0]
+} {{dkey1 {} {} {}} {{ // Invoke: for {set s 0} {$s} {} {}
+    { // Invoke: set s 0
+        TclObject[] objv0 = TJC.grabObjv(interp, 3);
+        try {
+            TclObject tmp1;
+            // Arg 0 constant: set
+            tmp1 = const0;
+            tmp1.preserve();
+            objv0[0] = tmp1;
+            // Arg 1 constant: s
+            tmp1 = const1;
+            tmp1.preserve();
+            objv0[1] = tmp1;
+            // Arg 2 constant: 0
+            tmp1 = const2;
+            tmp1.preserve();
+            objv0[2] = tmp1;
+            TJC.invoke(interp, null, objv0, 0);
+        } finally {
+            TJC.releaseObjv(interp, objv0);
+        }
+    } // End Invoke: set
+    for ( ; true ; ) {
+        TclObject tmp2 = interp.getVar("s", null, 0);
+        boolean tmp3 = TJC.getBoolean(interp, tmp2);
+        if ( ! tmp3 ) { break; }
+    }
+    interp.resetResult();
+} // End Invoke: for
+}}
+
+tcltest::test compileproc_emit_for-2.2 {emit for container} {
+    # Non-constant expr value and body command
+    set script {
+proc p {} {
+    for {} {$s} {} {
+        set s 0
+    }
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+
+    set _compileproc(options,inline_containers) {for}
+
+    compileproc_start $plist
+    compileproc_scan_keys [compileproc_keys]
+
+    emitter_indent_level zero
+    list [descend_commands dkey0 container] \
+        [compileproc_emit_invoke dkey0]
+} {{{} {} {} dkey1} {{ // Invoke: for {} {$s} {} ...
+    for ( ; true ; ) {
+        TclObject tmp0 = interp.getVar("s", null, 0);
+        boolean tmp1 = TJC.getBoolean(interp, tmp0);
+        if ( ! tmp1 ) { break; }
+
+        try {
+        if ( false ) { throw (TclException) null; }
+        { // Invoke: set s 0
+            TclObject[] objv2 = TJC.grabObjv(interp, 3);
+            try {
+                TclObject tmp3;
+                // Arg 0 constant: set
+                tmp3 = const0;
+                tmp3.preserve();
+                objv2[0] = tmp3;
+                // Arg 1 constant: s
+                tmp3 = const1;
+                tmp3.preserve();
+                objv2[1] = tmp3;
+                // Arg 2 constant: 0
+                tmp3 = const2;
+                tmp3.preserve();
+                objv2[2] = tmp3;
+                TJC.invoke(interp, null, objv2, 0);
+            } finally {
+                TJC.releaseObjv(interp, objv2);
+            }
+        } // End Invoke: set
+        } catch (TclException ex) {
+            int type = ex.getCompletionCode();
+            if (type == TCL.BREAK) {
+                break;
+            } else if (type == TCL.CONTINUE) {
+                continue;
+            } else {
+                throw ex;
+            }
+        }
+    }
+    interp.resetResult();
+} // End Invoke: for
+}}
+
+tcltest::test compileproc_emit_for-2.3 {emit for container} {
+    # Non-constant expr value and a next command
+    set script {
+proc p {} {
+    for {} {$s} {incr s} {}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+
+    set _compileproc(options,inline_containers) {for}
+
+    compileproc_start $plist
+    compileproc_scan_keys [compileproc_keys]
+
+    emitter_indent_level zero
+    list [descend_commands dkey0 container] \
+        [compileproc_emit_invoke dkey0]
+} {{{} {} dkey1 {}} {{ // Invoke: for {} {$s} {incr s} {}
+    for ( boolean skip2 = true ; true ; ) {
+        if ( skip2 ) {
+            skip2 = false;
+        } else {
+            try {
+            if ( false ) { throw (TclException) null; }
+            { // Invoke: incr s
+                TclObject[] objv3 = TJC.grabObjv(interp, 2);
+                try {
+                    TclObject tmp4;
+                    // Arg 0 constant: incr
+                    tmp4 = const0;
+                    tmp4.preserve();
+                    objv3[0] = tmp4;
+                    // Arg 1 constant: s
+                    tmp4 = const1;
+                    tmp4.preserve();
+                    objv3[1] = tmp4;
+                    TJC.invoke(interp, null, objv3, 0);
+                } finally {
+                    TJC.releaseObjv(interp, objv3);
+                }
+            } // End Invoke: incr
+            } catch (TclException ex) {
+                int type = ex.getCompletionCode();
+                if (type == TCL.BREAK) {
+                    break;
+                } else {
+                    throw ex;
+                }
+            }
+        }
+
+        TclObject tmp0 = interp.getVar("s", null, 0);
+        boolean tmp1 = TJC.getBoolean(interp, tmp0);
+        if ( ! tmp1 ) { break; }
+    }
+    interp.resetResult();
+} // End Invoke: for
+}}
+
+
+tcltest::test compileproc_emit_catch-1.0 {emit catch container} {
+    # Constant expr value
+    set script {
+proc p {} {
+    catch {cmd} err
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+
+    set _compileproc(options,inline_containers) {catch}
+
+    compileproc_start $plist
+    compileproc_scan_keys [compileproc_keys]
+
+    emitter_indent_level zero
+    list [descend_commands dkey0 container] \
+        [compileproc_emit_invoke dkey0]
+} {dkey1 {{ // Invoke: catch {cmd} err
+    int code0 = TCL.OK;
+    try {
+    if ( false ) { throw (TclException) null; }
+    { // Invoke: cmd
+        TclObject[] objv1 = TJC.grabObjv(interp, 1);
+        try {
+            TclObject tmp2;
+            // Arg 0 constant: cmd
+            tmp2 = const0;
+            tmp2.preserve();
+            objv1[0] = tmp2;
+            TJC.invoke(interp, null, objv1, 0);
+        } finally {
+            TJC.releaseObjv(interp, objv1);
+        }
+    } // End Invoke: cmd
+    } catch (TclException ex) {
+        code0 = ex.getCompletionCode();
+    }
+    TclObject result = interp.getResult();
+    try {
+        interp.setVar("err", null, result, 0);
+    } catch (TclException ex) {
+        TJC.catchVarErr(interp);
+    }
+    interp.resetResult();
+    interp.setResult(code0);
+} // End Invoke: catch
+}}
+
+tcltest::test compileproc_emit_foreach-1.0 {emit foreach container} {
+    # Constant list and single element in varlist
+    set script {
+proc p {} {
+    foreach elem {1 2 3} {}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+
+    set _compileproc(options,inline_containers) {foreach}
+
+    compileproc_start $plist
+    compileproc_scan_keys [compileproc_keys]
+
+    emitter_indent_level zero
+    list [descend_commands dkey0 container] \
+        [compileproc_emit_invoke dkey0]
+} {{} {{ // Invoke: foreach elem {1 2 3} {}
+    TclObject tmp0 = null;
+    try {
+        tmp0 = const0;
+        tmp0.preserve();
+        final int tmp0_length = TclList.getLength(interp, tmp0);
+
+        for ( int index1 = 0 ; index1 < tmp0_length ; index1++ ) {
+            TclObject tmp2 = TclList.index(interp, tmp0, index1);
+            try {
+                interp.setVar("elem", null, tmp2, 0);
+            } catch (TclException ex) {
+                TJC.foreachVarErr(interp, "elem");
+            }
+        }
+        interp.resetResult();
+    } finally {
+        if ( tmp0 != null ) {
+            tmp0.release();
+        }
+    }
+} // End Invoke: foreach
+}}
+
+tcltest::test compileproc_emit_foreach-1.1 {emit foreach container} {
+    # Variable list and single list element
+    set script {
+proc p {} {
+    foreach elem $l {}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+
+    set _compileproc(options,inline_containers) {foreach}
+
+    compileproc_start $plist
+    compileproc_scan_keys [compileproc_keys]
+
+    emitter_indent_level zero
+    list [descend_commands dkey0 container] \
+        [compileproc_emit_invoke dkey0]
+} {{} {{ // Invoke: foreach elem $l {}
+    TclObject tmp0 = null;
+    try {
+        tmp0 = interp.getVar("l", null, 0);
+        tmp0.preserve();
+        final int tmp0_length = TclList.getLength(interp, tmp0);
+
+        for ( int index1 = 0 ; index1 < tmp0_length ; index1++ ) {
+            TclObject tmp2 = TclList.index(interp, tmp0, index1);
+            try {
+                interp.setVar("elem", null, tmp2, 0);
+            } catch (TclException ex) {
+                TJC.foreachVarErr(interp, "elem");
+            }
+        }
+        interp.resetResult();
+    } finally {
+        if ( tmp0 != null ) {
+            tmp0.release();
+        }
+    }
+} // End Invoke: foreach
+}}
+
+tcltest::test compileproc_emit_switch-1.0 {emit switch container} {
+    # mode, last, and patlist
+    set script {
+proc p {} {
+    switch -exact -- $str {
+        Foo {}
+        Bar {}
+    }
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+
+    # Don't emit special constant string pattern switch here.
+    set _compileproc(options,inline_containers) \
+        {switch switch_no_constant_strings}
+
+    compileproc_start $plist
+    compileproc_scan_keys [compileproc_keys]
+
+    emitter_indent_level zero
+    list [descend_commands dkey0 container] \
+        [compileproc_emit_invoke dkey0]
+} {{{} {}} {{ // Invoke: switch -exact -- $str {Foo} {} {Bar} {}
+    TclObject tmp0 = interp.getVar("str", null, 0);
+    String tmp1 = tmp0.toString();
+    int tmp2;
+    TclObject[] objv3 = TJC.grabObjv(interp, 4);
+    try {
+        TclObject tmp4;
+        // Pattern {Foo}
+        tmp4 = const0;
+        tmp4.preserve();
+        objv3[0] = tmp4;
+        // Pattern {Bar}
+        tmp4 = const1;
+        tmp4.preserve();
+        objv3[2] = tmp4;
+        tmp2 = TJC.invokeSwitch(interp, objv3, 0,
+            tmp1, TJC.SWITCH_MODE_EXACT);
+    } finally {
+        TJC.releaseObjv(interp, objv3);
+    }
+    interp.resetResult();
+    if ( tmp2 == -1 ) {
+        // No match
+    } else if ( tmp2 == 1 ) {
+        // Pattern {Foo}
+    } else if ( tmp2 == 3 ) {
+        // Pattern {Bar}
+    } else {
+        throw new TclRuntimeError("bad switch body offset " +
+            String.valueOf(tmp2));
+    }
+} // End Invoke: switch
+}}
+
+tcltest::test compileproc_emit_switch-1.1 {emit switch container} {
+    # mode, last, and patlist, fully inlined
+    set script {
+proc p {} {
+    switch -exact -- $str {
+        Foo {}
+        Bar {}
+        "" {}
+    }
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+
+    set _compileproc(options,inline_containers) {switch}
+
+    compileproc_start $plist
+    compileproc_scan_keys [compileproc_keys]
+
+    emitter_indent_level zero
+    list [descend_commands dkey0 container] \
+        [compileproc_emit_invoke dkey0]
+} {{{} {} {}} {{ // Invoke: switch -exact -- $str {Foo} {} {Bar} {} {} {}
+    TclObject tmp0 = interp.getVar("str", null, 0);
+    String tmp1 = tmp0.toString();
+    int tmp1_length = tmp1.length();
+    char tmp1_first = '\n';
+    if ( tmp1_length > 0 ) {
+        tmp1_first = tmp1.charAt(0);
+    }
+    interp.resetResult();
+    if ( tmp1_length == 3 && tmp1_first == 'F'
+            && tmp1.compareTo("Foo") == 0 ) {
+        // Pattern {Foo}
+    } else if ( tmp1_length == 3 && tmp1_first == 'B'
+            && tmp1.compareTo("Bar") == 0 ) {
+        // Pattern {Bar}
+    } else if ( tmp1_length == 0 ) {
+        // Pattern {}
+    }
+} // End Invoke: switch
+}}
+
+tcltest::test compileproc_emit_variable-1.0 {emit code to read variable value} {
+    # Read Scalar : $s
+    set vinfo {scalar s}
+    emitter_indent_level zero
+    compileproc_emit_variable tmp0 $vinfo
+} {TclObject tmp0 = interp.getVar("s", null, 0);
+}
+
+tcltest::test compileproc_emit_variable-1.1 {emit code to read variable value} {
+    # Read array variable: $a(k)
+    emitter_indent_level zero
+    set vinfo {{array text} {a k}}
+    compileproc_emit_variable tmp0 $vinfo
+} {TclObject tmp0 = interp.getVar("a", "k", 0);
+}
+
+tcltest::test compileproc_emit_variable-1.2 {emit code to read variable value} {
+    # Read array variable: $a($k)
+    emitter_indent_level zero
+    set vinfo {{array scalar} {a k}}
+    compileproc_emit_variable tmp0 $vinfo
+} {TclObject tmp0 = interp.getVar("k", null, 0);
+tmp0 = interp.getVar("a", tmp0.toString(), 0);
+}
+
+tcltest::test compileproc_emit_variable-1.3 {emit code to read variable value} {
+    # Read array variable: $a(A$k)
+    emitter_indent_level zero
+    set vinfo {{array word} {a {{text A} {scalar k}}}}
+    compileproc_tmpvar_reset
+    set tmp [compileproc_tmpvar_next]
+    compileproc_emit_variable $tmp $vinfo
+} {TclObject tmp0;
+StringBuffer sbtmp1 = new StringBuffer(64);
+sbtmp1.append("A");
+tmp0 = interp.getVar("k", null, 0);
+sbtmp1.append(tmp0.toString());
+tmp0 = interp.getVar("a", sbtmp1.toString(), 0);
+}
+
+tcltest::test compileproc_emit_variable-1.4 {emit code to read variable value} {
+    # Read array variable: $a($k${j})
+    emitter_indent_level zero
+    set vinfo {{array word} {a {{scalar k} {scalar j}}}}
+    compileproc_tmpvar_reset
+    set tmp [compileproc_tmpvar_next]
+    compileproc_emit_variable $tmp $vinfo
+} {TclObject tmp0;
+StringBuffer sbtmp1 = new StringBuffer(64);
+tmp0 = interp.getVar("k", null, 0);
+sbtmp1.append(tmp0.toString());
+tmp0 = interp.getVar("j", null, 0);
+sbtmp1.append(tmp0.toString());
+tmp0 = interp.getVar("a", sbtmp1.toString(), 0);
+}
+
+tcltest::test compileproc_emit_variable-1.5 {emit code to read variable value} {
+    # Read array variable: $a($b(c))
+    emitter_indent_level zero
+    set vinfo {{array word} {a {{{array text} {b c}}}}}
+    compileproc_emit_variable tmp0 $vinfo
+} {TclObject tmp0;
+tmp0 = interp.getVar("b", "c", 0);
+tmp0 = interp.getVar("a", tmp0.toString(), 0);
+}
+
+tcltest::test compileproc_emit_variable-1.6 {emit code to read variable value} {
+    # Read array variable: $a($b($c))
+    emitter_indent_level zero
+    set vinfo {{array word} {a {{{array scalar} {b c}}}}}
+    compileproc_emit_variable tmp0 $vinfo
+} {TclObject tmp0;
+tmp0 = interp.getVar("c", null, 0);
+tmp0 = interp.getVar("b", tmp0.toString(), 0);
+tmp0 = interp.getVar("a", tmp0.toString(), 0);
+}
+
+tcltest::test compileproc_emit_variable-1.7 {emit code to read variable value} {
+    # Read array variable: $a($b($c$c))
+    emitter_indent_level zero
+    set vinfo {{array word} {a {{{array word} {b {{scalar c} {scalar c}}}}}}}
+    compileproc_tmpvar_reset
+    set tmp [compileproc_tmpvar_next]
+    compileproc_emit_variable $tmp $vinfo
+} {TclObject tmp0;
+StringBuffer sbtmp1 = new StringBuffer(64);
+tmp0 = interp.getVar("c", null, 0);
+sbtmp1.append(tmp0.toString());
+tmp0 = interp.getVar("c", null, 0);
+sbtmp1.append(tmp0.toString());
+tmp0 = interp.getVar("b", sbtmp1.toString(), 0);
+tmp0 = interp.getVar("a", tmp0.toString(), 0);
+}
+
+
+
+tcltest::test compileproc_emit_variable-2.0 {emit code to read variable value} {
+    # Read array variable: $a([cmd])
+
+    # Generate dkey for cmd invocation with no arguments.
+    # This is used when compileproc_emit_invoke is invoked
+    # to evaluate the command indicated by dkey0.
+    set script {
+proc p {} {
+    cmd
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+    compileproc_scan_keys [compileproc_keys]
+
+    emitter_indent_level zero
+    set vinfo {{array command} {a dkey0}}
+    compileproc_emit_variable tmp2 $vinfo 0
+} {{ // Invoke: cmd
+    TclObject[] objv0 = TJC.grabObjv(interp, 1);
+    try {
+        TclObject tmp1;
+        // Arg 0 constant: cmd
+        tmp1 = const0;
+        tmp1.preserve();
+        objv0[0] = tmp1;
+        TJC.invoke(interp, null, objv0, 0);
+    } finally {
+        TJC.releaseObjv(interp, objv0);
+    }
+} // End Invoke: cmd
+tmp2 = interp.getResult();
+tmp2 = interp.getVar("a", tmp2.toString(), 0);
+}
+
+tcltest::test compileproc_emit_variable-2.1 {emit code to read variable value} {
+    # Read array variable: $a([])
+    emitter_indent_level zero
+    set vinfo {{array command} {a {}}}
+    compileproc_emit_variable tmp0 $vinfo 1
+} {TclObject tmp0 = interp.getVar("a", "", 0);
+}
+
+tcltest::test compileproc_emit_variable-2.2 {emit code to read variable value} {
+    # Read array variable: $a($b([cmd]))
+
+    # Generate dkey for cmd invocation with no arguments.
+    # This is used when compileproc_emit_invoke is invoked
+    # to evaluate the command indicated by dkey0.
+    set script {
+proc p {} {
+    cmd
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+    compileproc_scan_keys [compileproc_keys]
+
+    emitter_indent_level zero
+    set vinfo {{array word} {a {{{array command} {b dkey0}}}}}
+    compileproc_emit_variable [compileproc_tmpvar_next] $vinfo 1
+} {TclObject tmp0;
+{ // Invoke: cmd
+    TclObject[] objv1 = TJC.grabObjv(interp, 1);
+    try {
+        TclObject tmp2;
+        // Arg 0 constant: cmd
+        tmp2 = const0;
+        tmp2.preserve();
+        objv1[0] = tmp2;
+        TJC.invoke(interp, null, objv1, 0);
+    } finally {
+        TJC.releaseObjv(interp, objv1);
+    }
+} // End Invoke: cmd
+tmp0 = interp.getResult();
+tmp0 = interp.getVar("b", tmp0.toString(), 0);
+tmp0 = interp.getVar("a", tmp0.toString(), 0);
+}
+
+tcltest::test compileproc_emit_variable-2.3 {emit code to read variable value} {
+    # Read array variable: $a([cmd1;cmd2])
+
+    # Generate dkey for nested invocations in array key
+    set script {
+proc p {} {
+    cmd1;cmd2
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+    compileproc_scan_keys [compileproc_keys]
+
+    emitter_indent_level zero
+    set vinfo {{array command} {a {dkey0 dkey1}}}
+    compileproc_emit_variable [compileproc_tmpvar_next] $vinfo 0
+} {{ // Invoke: cmd1
+    TclObject[] objv1 = TJC.grabObjv(interp, 1);
+    try {
+        TclObject tmp2;
+        // Arg 0 constant: cmd1
+        tmp2 = const0;
+        tmp2.preserve();
+        objv1[0] = tmp2;
+        TJC.invoke(interp, null, objv1, 0);
+    } finally {
+        TJC.releaseObjv(interp, objv1);
+    }
+} // End Invoke: cmd1
+{ // Invoke: cmd2
+    TclObject[] objv3 = TJC.grabObjv(interp, 1);
+    try {
+        TclObject tmp4;
+        // Arg 0 constant: cmd2
+        tmp4 = const1;
+        tmp4.preserve();
+        objv3[0] = tmp4;
+        TJC.invoke(interp, null, objv3, 0);
+    } finally {
+        TJC.releaseObjv(interp, objv3);
+    }
+} // End Invoke: cmd2
+tmp0 = interp.getResult();
+tmp0 = interp.getVar("a", tmp0.toString(), 0);
+}
+
+# Check code to evaluate a word element into a TclObject.
+
+tcltest::test compileproc_emit_word-1.0 {emit code to concat word elements} {
+    # Word: scalar: "$s"
+    set winfo {{variable {scalar s}}}
+    compileproc_tmpvar_reset
+    set tmp [compileproc_tmpvar_next]
+    emitter_indent_level zero
+    compileproc_emit_word $tmp $winfo 0
+} {tmp0 = interp.getVar("s", null, 0);
+}
+
+tcltest::test compileproc_emit_word-1.1 {emit code to concat word elements} {
+    # Word: string + scalar : "S$s"
+    set winfo {{text S} {variable {scalar s}}}
+    compileproc_tmpvar_reset
+    set tmp [compileproc_tmpvar_next]
+    emitter_indent_level zero
+    compileproc_emit_word $tmp $winfo 0
+} {StringBuffer sbtmp1 = new StringBuffer(64);
+sbtmp1.append("S");
+tmp0 = interp.getVar("s", null, 0);
+sbtmp1.append(tmp0.toString());
+tmp0 = TclString.newInstance(sbtmp1);
+}
+
+tcltest::test compileproc_emit_word-1.2 {emit code to concat word elements} {
+    # Word: string + scalar : "${s}S"
+    set winfo {{variable {scalar s}} {text S}}
+    compileproc_tmpvar_reset
+    set tmp [compileproc_tmpvar_next]
+    emitter_indent_level zero
+    compileproc_emit_word $tmp $winfo 1
+} {TclObject tmp0;
+StringBuffer sbtmp1 = new StringBuffer(64);
+tmp0 = interp.getVar("s", null, 0);
+sbtmp1.append(tmp0.toString());
+sbtmp1.append("S");
+tmp0 = TclString.newInstance(sbtmp1);
+}
+
+tcltest::test compileproc_emit_word-1.3 {emit code to concat word elements} {
+    # Word: scalar + string : "${s}S T"
+    set winfo {{variable {scalar s}} {text {S T}}}
+    compileproc_tmpvar_reset
+    set tmp [compileproc_tmpvar_next]
+    emitter_indent_level zero
+    compileproc_emit_word $tmp $winfo 0
+} {StringBuffer sbtmp1 = new StringBuffer(64);
+tmp0 = interp.getVar("s", null, 0);
+sbtmp1.append(tmp0.toString());
+sbtmp1.append("S T");
+tmp0 = TclString.newInstance(sbtmp1);
+}
+
+
+tcltest::test compileproc_emit_word-2.0 {emit code to concat word elements} {
+    # Word: command: "[]"
+    set winfo {{command {}}}
+    compileproc_init
+    compileproc_constant_cache_add {}
+    compileproc_tmpvar_reset
+    set tmp [compileproc_tmpvar_next]
+    emitter_indent_level zero
+    compileproc_emit_word $tmp $winfo
+} {TclObject tmp0 = const0;
+}
+
+tcltest::test compileproc_emit_word-2.1 {emit code to concat word elements} {
+    # Word: command: "[cmd]"
+
+    # Generate dkey for cmd invocation with no arguments.
+    # This is used when compileproc_emit_invoke is invoked
+    # to evaluate the command indicated by dkey0.
+    set script {
+proc p {} {
+    cmd
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+    compileproc_scan_keys [compileproc_keys]
+
+    emitter_indent_level zero
+    compileproc_tmpvar_reset
+    set tmp [compileproc_tmpvar_next]
+    set winfo {{command dkey0}}
+    compileproc_emit_word $tmp $winfo 0
+} {{ // Invoke: cmd
+    TclObject[] objv1 = TJC.grabObjv(interp, 1);
+    try {
+        TclObject tmp2;
+        // Arg 0 constant: cmd
+        tmp2 = const0;
+        tmp2.preserve();
+        objv1[0] = tmp2;
+        TJC.invoke(interp, null, objv1, 0);
+    } finally {
+        TJC.releaseObjv(interp, objv1);
+    }
+} // End Invoke: cmd
+tmp0 = interp.getResult();
+}
+
+tcltest::test compileproc_emit_word-2.2 {emit code to concat word elements} {
+    # Word: command: "[cmd1;cmd2]"
+
+    # Generate dkey for cmd invocation with no arguments.
+    # This is used when compileproc_emit_invoke is invoked
+    # to evaluate the commands indicated by dkey0 and dkey1.
+    set script {
+proc p {} {
+    cmd1;cmd2
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+    compileproc_scan_keys [compileproc_keys]
+
+    emitter_indent_level zero
+    compileproc_tmpvar_reset
+    set tmp [compileproc_tmpvar_next]
+    set winfo {{command {dkey0 dkey1}}}
+    compileproc_emit_word $tmp $winfo 1
+} {{ // Invoke: cmd1
+    TclObject[] objv1 = TJC.grabObjv(interp, 1);
+    try {
+        TclObject tmp2;
+        // Arg 0 constant: cmd1
+        tmp2 = const0;
+        tmp2.preserve();
+        objv1[0] = tmp2;
+        TJC.invoke(interp, null, objv1, 0);
+    } finally {
+        TJC.releaseObjv(interp, objv1);
+    }
+} // End Invoke: cmd1
+{ // Invoke: cmd2
+    TclObject[] objv3 = TJC.grabObjv(interp, 1);
+    try {
+        TclObject tmp4;
+        // Arg 0 constant: cmd2
+        tmp4 = const1;
+        tmp4.preserve();
+        objv3[0] = tmp4;
+        TJC.invoke(interp, null, objv3, 0);
+    } finally {
+        TJC.releaseObjv(interp, objv3);
+    }
+} // End Invoke: cmd2
+TclObject tmp0 = interp.getResult();
+}
+
+tcltest::test compileproc_emit_word-2.3 {emit code to concat word elements} {
+    # Word: command: "Str [cmd]"
+
+    # Generate dkey for cmd invocation with no arguments.
+    # This is used when compileproc_emit_invoke is invoked
+    # to evaluate the command indicated by dkey0.
+    set script {
+proc p {} {
+    cmd
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+    compileproc_scan_keys [compileproc_keys]
+
+    emitter_indent_level zero
+    compileproc_tmpvar_reset
+    set tmp [compileproc_tmpvar_next]
+    set winfo {{text {Str }} {command dkey0}}
+    compileproc_emit_word $tmp $winfo 0
+} {StringBuffer sbtmp1 = new StringBuffer(64);
+sbtmp1.append("Str ");
+{ // Invoke: cmd
+    TclObject[] objv2 = TJC.grabObjv(interp, 1);
+    try {
+        TclObject tmp3;
+        // Arg 0 constant: cmd
+        tmp3 = const0;
+        tmp3.preserve();
+        objv2[0] = tmp3;
+        TJC.invoke(interp, null, objv2, 0);
+    } finally {
+        TJC.releaseObjv(interp, objv2);
+    }
+} // End Invoke: cmd
+tmp0 = interp.getResult();
+sbtmp1.append(tmp0.toString());
+tmp0 = TclString.newInstance(sbtmp1);
+}
+
+tcltest::test compileproc_emit_word-2.4 {emit code to concat word elements} {
+    # Word: command: "Str [cmd1;cmd2]"
+
+    # Generate dkey for cmd invocation with no arguments.
+    # This is used when compileproc_emit_invoke is invoked
+    # to evaluate the commands indicated by dkey0 and dkey1.
+    set script {
+proc p {} {
+    cmd1;cmd2
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+    compileproc_scan_keys [compileproc_keys]
+
+    emitter_indent_level zero
+    compileproc_tmpvar_reset
+    set tmp [compileproc_tmpvar_next]
+    set winfo {{text {Str }} {command {dkey0 dkey1}}}
+    compileproc_emit_word $tmp $winfo 0
+} {StringBuffer sbtmp1 = new StringBuffer(64);
+sbtmp1.append("Str ");
+{ // Invoke: cmd1
+    TclObject[] objv2 = TJC.grabObjv(interp, 1);
+    try {
+        TclObject tmp3;
+        // Arg 0 constant: cmd1
+        tmp3 = const0;
+        tmp3.preserve();
+        objv2[0] = tmp3;
+        TJC.invoke(interp, null, objv2, 0);
+    } finally {
+        TJC.releaseObjv(interp, objv2);
+    }
+} // End Invoke: cmd1
+{ // Invoke: cmd2
+    TclObject[] objv4 = TJC.grabObjv(interp, 1);
+    try {
+        TclObject tmp5;
+        // Arg 0 constant: cmd2
+        tmp5 = const1;
+        tmp5.preserve();
+        objv4[0] = tmp5;
+        TJC.invoke(interp, null, objv4, 0);
+    } finally {
+        TJC.releaseObjv(interp, objv4);
+    }
+} // End Invoke: cmd2
+tmp0 = interp.getResult();
+sbtmp1.append(tmp0.toString());
+tmp0 = TclString.newInstance(sbtmp1);
+}
+
+
+tcltest::test compileproc_emit_argument-1.0 {emit code to evaulate a command argument} {
+    set script {
+proc p {} {
+    cmd
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+    compileproc_scan_keys [compileproc_keys]
+
+    emitter_indent_level zero
+
+    set key [lindex [compileproc_keys] 0]
+    compileproc_emit_argument $key 0
+} {constant const0 {}}
+
+tcltest::test compileproc_emit_argument-1.1 {emit code to evaulate a command argument} {
+    set script {
+proc p {} {
+    cmd $s
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+    compileproc_scan_keys [compileproc_keys]
+
+    emitter_indent_level zero
+
+    set key [lindex [compileproc_keys] 0]
+    compileproc_emit_argument $key 1
+} {variable tmp0 {TclObject tmp0 = interp.getVar("s", null, 0);
+}}
+
+tcltest::test compileproc_emit_argument-1.2 {emit code to evaulate a command argument} {
+    set script {
+proc p {} {
+    cmd $a(k)
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+    compileproc_scan_keys [compileproc_keys]
+
+    emitter_indent_level zero
+
+    set key [lindex [compileproc_keys] 0]
+    compileproc_emit_argument $key 1
+} {variable tmp0 {TclObject tmp0 = interp.getVar("a", "k", 0);
+}}
+
+tcltest::test compileproc_emit_argument-1.3 {emit code to evaulate a command argument} {
+    set script {
+proc p {} {
+    cmd1 [cmd2]
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+    compileproc_scan_keys [compileproc_keys]
+
+    emitter_indent_level zero
+
+    set key [lindex [compileproc_keys] 0]
+    compileproc_emit_argument $key 1 0
+} {command tmp0 {{ // Invoke: cmd2
+    TclObject[] objv1 = TJC.grabObjv(interp, 1);
+    try {
+        TclObject tmp2;
+        // Arg 0 constant: cmd2
+        tmp2 = const0;
+        tmp2.preserve();
+        objv1[0] = tmp2;
+        TJC.invoke(interp, null, objv1, 0);
+    } finally {
+        TJC.releaseObjv(interp, objv1);
+    }
+} // End Invoke: cmd2
+tmp0 = interp.getResult();
+}}
+
+tcltest::test compileproc_emit_argument-1.4 {emit code to evaulate a command argument} {
+    set script {
+proc p {} {
+    cmd1 "[cmd2]$s"
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+    compileproc_scan_keys [compileproc_keys]
+
+    emitter_indent_level zero
+
+    set key [lindex [compileproc_keys] 0]
+    compileproc_emit_argument $key 1 0
+} {word tmp0 {StringBuffer sbtmp1 = new StringBuffer(64);
+{ // Invoke: cmd2
+    TclObject[] objv2 = TJC.grabObjv(interp, 1);
+    try {
+        TclObject tmp3;
+        // Arg 0 constant: cmd2
+        tmp3 = const0;
+        tmp3.preserve();
+        objv2[0] = tmp3;
+        TJC.invoke(interp, null, objv2, 0);
+    } finally {
+        TJC.releaseObjv(interp, objv2);
+    }
+} // End Invoke: cmd2
+tmp0 = interp.getResult();
+sbtmp1.append(tmp0.toString());
+tmp0 = interp.getVar("s", null, 0);
+sbtmp1.append(tmp0.toString());
+tmp0 = TclString.newInstance(sbtmp1);
+}}
+
+
+tcltest::test compileproc_emit_variable_set-1.0 {emit code to set variable value} {
+    set script {
+proc p {} {
+    set s 0
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+    compileproc_init
+    compileproc_start $plist
+    compileproc_scan_keys [compileproc_keys]
+
+    emitter_indent_level zero
+
+    # Emit variable set for dkey0, argument 2
+    compileproc_set_variable "s" true "" true
+    #set key [lindex [compileproc_keys] 0]
+    #compileproc_emit_argument $key 1
+} {interp.setVar("s", null, "", 0)}
+
+tcltest::test compileproc_emit_variable_set-1.1 {emit code to set variable value} {
+    set script {
+proc p {} {
+    set $s 0
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+    compileproc_init
+    compileproc_start $plist
+    compileproc_scan_keys [compileproc_keys]
+
+    emitter_indent_level zero
+
+    # Emit variable set for dkey0, argument 1
+
+    # FIXME: This need to be part of a generic
+    # type of call that will evaluate an argument
+    # to a command.
+    compileproc_set_variable tmp0 false tmp1 false
+} {interp.setVar(tmp0, null, tmp1, 0)}
+
+
+tcltest::test compileproc_entry_point-1.0 {process files that contain procs} {
+    set data {
+PACKAGE default
+SOURCE C:/foo.tcl
+INIT_SOURCE C:/foo.tcl
+OPTIONS -compile
+    }
+    module_parse $data
+    module_options_validate
+
+    set file_and_procs [list]
+    set proc_list {{one OneCmd {proc one {} {}}} {two TwoCmd {proc two {} {}}}}
+    lappend file_and_procs [list foo.tcl $proc_list]
+
+    set results [compileproc_entry_point $file_and_procs]
+    list \
+        [lrange [lindex $results 0] 0 end-1] \
+        [lrange [lindex $results 1] 0 end-1]
+} {{foo.tcl one OneCmd} {foo.tcl two TwoCmd}}
+
+tcltest::test compileproc_entry_point-1.1 {process files that contain procs} {
+    set data {
+PACKAGE foo.bar
+SOURCE C:/foo.tcl
+INIT_SOURCE C:/foo.tcl
+OPTIONS -compile
+    }
+    module_parse $data
+    module_options_validate
+
+    set file_and_procs [list]
+    set proc_list {{one foo.bar.OneCmd {proc one {} {}}}}
+    lappend file_and_procs [list foo.tcl $proc_list]
+
+    set results [compileproc_entry_point $file_and_procs]
+    list \
+        [lrange [lindex $results 0] 0 end-1]
+} {{foo.tcl one foo.bar.OneCmd}}
+
+
+tcltest::test compileproc_tjcextension-1.0 {TJCExtension class} {
+    set package test.tjcext
+    set tcl_files {f1.tcl f2.tcl f3.tcl}
+    set init_file f1.tcl
+    compileproc_tjcextension $package $tcl_files $init_file
+} [list test.tjcext.TJCExtension \
+{package test.tjcext;
+import tcl.lang.*;
+
+public class TJCExtension extends Extension {
+    public void init(Interp interp)
+            throws TclException
+    {
+        String init_file = "f1.tcl";
+        String[] files = {
+            "f1.tcl",
+            "f2.tcl",
+            "f3.tcl"
+        };
+        String prefix = "/test/tjcext/library/";
+
+        TJC.sourceInitFile(interp, init_file, files, prefix);
+    }
+}
+} \
+  ]
+
+# There is no way to test the Java command implementations
+# currently. We would need a Jacl shell around to do that.
+
+# Load jdk test data in case this has not already been done.
+source [file join [tcltest::testsDirectory] jdkutils.tcl]
+test_jdk_load_config
+
+tcltest::test compileproc_tjcextension-1.1 {use javac to compile generated code} {
+    set package test.tjcext
+    set tcl_files {f1.tcl f2.tcl f3.tcl}
+    set init_file f1.tcl
+    set pair [compileproc_tjcextension $package $tcl_files $init_file]
+    set classname [lindex $pair 0]
+    set buffer [lindex $pair 1]
+    test_jdk_compile_buffer $classname $buffer
+} {OK}
+
+
+# Helper method to test Java string emit functionality.
+# Correctly emitting a Java string that contains Tcl
+# code is tricky because of escape processing.
+
+proc test_compileproc_emit_string { tstr } {
+    global _compileproc_key_info
+
+    set debug 0
+
+    set script "
+proc p {} {
+    $tstr
+}
+"
+
+    if {$debug} {
+        puts "proc def is:\n$script"
+    }
+
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key dkey0
+    set type [lindex $_compileproc_key_info($key,types) 0]
+    set value [lindex $_compileproc_key_info($key,values) 0]
+
+    if {$type != "constant"} {
+        error "expected constant type, got \"$type\""
+    }
+    if {$debug} {
+        puts "now to Java backslash Tcl string \"$value\""
+    }
+    set jstr [emitter_backslash_tcl_string $value]
+    if {$debug} {
+        puts "got Java backslash str \"$jstr\""
+    }
+
+    set classname testpkg.Test1
+    set buffer "
+// Test string escape code
+package testpkg\;
+class Test1 {
+    String value = \"$jstr\"\;
+}
+"
+
+    if {$debug} {
+        puts "now to compile Java code:\n$buffer"
+    }
+
+    set result [test_jdk_compile_buffer $classname $buffer]
+    # Quote Java string so it looks just like it would
+    # in the Java code.
+    set qjstr "\"$jstr\""
+    return [list $result $value $qjstr]
+}
+
+
+tcltest::test compileproc_escape-1.0 {use javac to compile generated code} {
+    test_compileproc_emit_string {cmd}
+} {OK cmd {"cmd"}}
+
+tcltest::test compileproc_escape-1.1 {use javac to compile generated code} {
+    test_compileproc_emit_string {"cmd"}
+} {OK cmd {"cmd"}}
+
+tcltest::test compileproc_escape-1.2 {use javac to compile generated code} {
+    test_compileproc_emit_string {{cmd}}
+} {OK cmd {"cmd"}}
+
+tcltest::test compileproc_escape-2.0 {use javac to compile generated code} {
+    test_compileproc_emit_string "\"one\ntwo\""
+} {OK {one
+two} {"one\ntwo"}}
+
+tcltest::test compileproc_escape-2.1 {use javac to compile generated code} {
+    test_compileproc_emit_string {{one\ntwo}}
+} {OK {one\\ntwo} {"one\\ntwo"}}
+
+tcltest::test compileproc_escape-2.2 {use javac to compile generated code} {
+    test_compileproc_emit_string {{one\ttwo}}
+} {OK {one\\ttwo} {"one\\ttwo"}}
+
+tcltest::test compileproc_escape-2.3 {use javac to compile generated code} {
+    test_compileproc_emit_string {{one\xtwo}}
+} {OK {one\\xtwo} {"one\\xtwo"}}
+
+tcltest::test compileproc_escape-2.4 {use javac to compile generated code} {
+    test_compileproc_emit_string {"one\a"}
+} {OK {one\a} {"one\u0007"}}
+
+tcltest::test compileproc_escape-2.5 {use javac to compile generated code} {
+    test_compileproc_emit_string {"\"1\" != \"2\""}
+} {OK {"1" != "2"} {"\"1\" != \"2\""}}
+
+tcltest::test compileproc_escape-2.6 {use javac to compile generated code} {
+    test_compileproc_emit_string {{\"1\" != \"2\"}}
+} {OK {\\"1\\" != \\"2\\"} {"\\\"1\\\" != \\\"2\\\""}}
+
+tcltest::test compileproc_escape-2.7 {use javac to compile generated code} {
+    test_compileproc_emit_string {{one\n}}
+} {OK {one\\n} {"one\\n"}}
+
+tcltest::test compileproc_escape-2.8 {use javac to compile generated code} {
+    test_compileproc_emit_string {"one\n"}
+} {OK {one\n} {"one\n"}}
+
+tcltest::test compileproc_escape-2.9 {use javac to compile generated code} {
+    test_compileproc_emit_string {"one\\n"}
+} {OK {one\\n} {"one\\n"}}
+
+tcltest::test compileproc_escape-3.0 {use javac to compile generated code} {
+    test_compileproc_emit_string {"\u0000\0\x000000"}
+} {OK {\u0000\000\x00} {"\u0000\u0000\u0000"}}
+
+tcltest::test compileproc_escape-3.1 {use javac to compile generated code} {
+    test_compileproc_emit_string {"\u00FF\777\x00FF"}
+} {OK {\u00FF\777\xFF} {"\u00FF\u00FF\u00FF"}}
+
+
+# Cleanup
+jdk_tool_cleanup
+tcltest::cleanupTests
+
+

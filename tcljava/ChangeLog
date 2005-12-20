@@ -1,3 +1,72 @@
+2005-12-20  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        Import TJC Tcl to Java compiler. TJC will convert
+        Tcl source code to Java source code and then
+        compile it into class files.
+
+        * Makefile.in: Build tjc.jar along with test files.
+        * configure: Regen.
+        * configure.in: Create tjc and tjc.bat scripts
+        at configure time.
+        * jaclsh.bat.in:
+        * jaclsh.in: Add tjc.jar to CLASSPATH.
+        * license.amd: AMD license text.
+        * tjc.bat.in:
+        * tjc.in: Launcher scripts for TJC.
+        * src/jacl/tcl/lang/Interp.java: Support
+        "package require TJC" in Jacl.
+        * src/tests/tjc/TestTJC.java:
+        * src/tests/tjc/TestTJCCompiledCommand.java:
+        * src/tests/tjc/tcl/lang/TestTcl.java:
+        * src/tests/tjc/test/tjc/TJCExtension.java:
+        * src/tests/tjc/test/tjcext/TJCExtension.java:
+        * src/tests/tjc/test/tjcext/library/f1.tcl:
+        * src/tests/tjc/test/tjcext/library/f2.tcl:
+        * src/tests/tjc/test/tjcext/library/f3.tcl:
+        Source code for TJC tests.
+        * src/tjc/tcl/lang/JaclLoadTJCCmd.java:
+        Package loading command for TJC.
+        * src/tjc/tcl/lang/TJC.java: TJC runtime
+        support for compiled commands.
+        * src/tjc/tcl/lang/TJCCommandCmd.java:
+        Implement TJC::command Tcl command.
+        * src/tjc/tcl/lang/TJCPackageCmd.java:
+        Implement TJC::package Tcl command.
+        * src/tjc/tcl/lang/TJCShell.java:
+        Implement TJC main().
+        * src/tjc/tjc/library/compileproc.tcl:
+        * src/tjc/tjc/library/descend.tcl:
+        * src/tjc/tjc/library/emitter.tcl:
+        * src/tjc/tjc/library/jdk.tcl:
+        * src/tjc/tjc/library/main.tcl:
+        * src/tjc/tjc/library/module.tcl:
+        * src/tjc/tjc/library/nameproc.tcl:
+        * src/tjc/tjc/library/parse.tcl:
+        * src/tjc/tjc/library/parseproc.tcl:
+        * src/tjc/tjc/library/reload.tcl:
+        * src/tjc/tjc/library/tjc.tcl:
+        * src/tjc/tjc/library/util.tcl:
+        Tcl source code that implements TJC compiler.
+        * tests/all.tcl:
+        * tests/tjc/compileproc.test:
+        * tests/tjc/compileproc_0.test:
+        * tests/tjc/compileproc_1.test:
+        * tests/tjc/compileproc_2.test:
+        * tests/tjc/compileproc_3.test:
+        * tests/tjc/compileproc_4.test:
+        * tests/tjc/descend.test:
+        * tests/tjc/emitter.test:
+        * tests/tjc/jdk.test:
+        * tests/tjc/jdkutils.tcl:
+        * tests/tjc/main.test:
+        * tests/tjc/module.test:
+        * tests/tjc/nameproc.test:
+        * tests/tjc/parse.test:
+        * tests/tjc/parseproc.test:
+        * tests/tjc/testtjc.test:
+        * tests/tjc/tjc.test:
+        Regression test cases for TJC implementation.
+
 2005-11-23  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * configure:

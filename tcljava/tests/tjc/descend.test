@@ -1,0 +1,4836 @@
+package require tcltest
+
+proc test_report_command_name { key } {
+    set debug 0
+    if {$debug} {
+    puts "test_report_command_name : $key"
+    }
+
+    set result [descend_get_command_name $key]
+
+    if {[lindex $result 0]} {
+        set cmdname [lindex $result 1]
+        lappend ::report [list $key $cmdname]
+    }
+}
+
+proc test_report_command_list { key } {
+    set debug 0
+    if {$debug} {
+        puts "test_report_command_list : $key"
+    }
+
+    lappend ::report [descend_get_command $key]
+}
+
+proc test_report_command_container { key } {
+    set debug 0
+    if {$debug} {
+    puts "test_report_command_container : $key"
+    }
+
+    lappend ::report [descend_get_command $key] [descend_get_container_stack]
+
+    if {$debug >= 2} {
+        puts "appended \"[lindex $::report end-1]\" and \{[lindex $::report end]\}"
+    }
+}
+
+proc test_report_command_keys { key } {
+    set debug 0
+    if {$debug} {
+    puts "test_report_command_keys : $key"
+    }
+    lappend ::report $key
+}
+
+tcltest::test descend-report-1.0 {report parsed command} {
+    set report [list]
+    set script {set i 0}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_name
+
+    descend_start $script
+
+    set report
+} {{dkey0 set}}
+
+tcltest::test descend-report-1.1 {report parsed command} {
+    set report [list]
+    set script {set i 0 ; set j 0}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_name
+
+    descend_start $script
+
+    set report
+} {{dkey0 set} {dkey1 set}}
+
+tcltest::test descend-report-1.2 {report parsed command} {
+    set report [list]
+    set script {set i 0 ; set j 2}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_list
+
+    descend_start $script
+
+    set report
+} {{set i 0} {set j 2}}
+
+
+tcltest::test descend-report-1.3 {report parsed command} {
+    set report [list]
+    # Parse nested command here
+    set script {set j [set i 0]}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_list
+
+    descend_start $script
+
+    set report
+} {{set j {[set i 0]}} {set i 0}}
+
+tcltest::test descend-report-1.4 {report parsed command} {
+    set report [list]
+    # Parse two nested commands that make up one word argument
+    set script {set i [set j 0][set k 0]}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_list
+
+    descend_start $script
+
+    set report
+} {{set i {[set j 0][set k 0]}} {set j 0} {set k 0}}
+
+tcltest::test descend-report-1.5 {report parsed command} {
+    set report [list]
+    # Parse nested command inside a double quoted string
+    set script {set j "arg[set i 0]"}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_list
+
+    descend_start $script
+
+    set report
+} {{set j {"arg[set i 0]"}} {set i 0}}
+
+tcltest::test descend-report-1.6 {report parsed command} {
+    set report [list]
+    # Report command even thought it is not a simple/text name
+    set script {$var 1 2}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_list
+
+    descend_start $script
+
+    set report
+} {{{$var} 1 2}}
+
+tcltest::test descend-report-1.7 {report parsed command} {
+    set report [list]
+    # Parse one command, ignore empty command lines
+    set script {
+    set j 0
+    }
+
+    descend_init
+
+    descend_report_command_callback test_report_command_list
+
+    descend_start $script
+
+    set report
+} {{set j 0}}
+
+tcltest::test descend-report-1.8 {report parsed command} {
+    set report [list]
+    # Parse one command, ignore empty command lines
+    set script {
+    set j 0
+    ;
+    }
+
+    descend_init
+
+    descend_report_command_callback test_report_command_list
+
+    descend_start $script
+
+    set report
+} {{set j 0}}
+
+tcltest::test descend-report-1.9 {report parsed command} {
+    set report [list]
+    # Parse one command, ignore empty command lines
+    set script {
+    ;
+    set j 0
+    }
+
+    descend_init
+
+    descend_report_command_callback test_report_command_list
+
+    descend_start $script
+
+    set report
+} {{set j 0}}
+
+tcltest::test descend-report-1.10 {report parsed command} {
+    set report [list]
+    # Parse one command, ignore empty command lines
+    set script {
+    ; # comment 1
+    # comment 2
+    set j 0
+    }
+
+    descend_init
+
+    descend_report_command_callback test_report_command_list
+
+    descend_start $script
+
+    set report
+} {{set j 0}}
+
+tcltest::test descend-report-1.11 {report parsed command via descend_start} {
+    set script {set i [set j 1]}
+
+    descend_init
+
+    descend_start $script
+} {dkey0 dkey1}
+
+tcltest::test descend-report-1.12 {report parsed command via descend_start: nested} {
+    set script {list [cmd1] [cmd2]}
+
+    descend_init
+
+    descend_start $script
+} {dkey0 dkey1 dkey2}
+
+tcltest::test descend-report-1.13 {report parsed command via descend_start: nested} {
+    set script {list [list [cmd1] [cmd2]]}
+
+    descend_init
+
+    descend_start $script
+} {dkey0 dkey1 dkey2 dkey3}
+
+tcltest::test descend-report-2.0 {report parsed command in array via descend_start} {
+    set report [list]
+    # A variable without a leading $ is treated as a regular word.
+    set script {
+    set a([cmd1]) 1
+    set a([cmd2 arg1]) 1
+    set a(x[cmd3]y) 1
+    }
+
+    descend_init
+
+    descend_report_command_callback test_report_command_list
+
+    descend_start $script
+
+    set report
+} {{set {a([cmd1])} 1} cmd1 {set {a([cmd2 arg1])} 1} {cmd2 arg1} {set {a(x[cmd3]y)} 1} cmd3}
+
+tcltest::test descend-report-2.1 {report parsed command in array via descend_start} {
+    set report [list]
+    # Parse command in array key
+    set script {
+    puts $a([cmd])
+    }
+
+    descend_init
+
+    descend_report_command_callback test_report_command_list
+
+    descend_start $script
+
+    set report
+} {{puts {$a([cmd])}} cmd}
+
+tcltest::test descend-report-2.2 {report parsed command in array via descend_start} {
+    set report [list]
+    # Parse command in array key
+    set script {
+    puts $a([cmd1 arg1 arg2])
+    }
+
+    descend_init
+
+    descend_report_command_callback test_report_command_list
+
+    descend_start $script
+
+    set report
+} {{puts {$a([cmd1 arg1 arg2])}} {cmd1 arg1 arg2}}
+
+tcltest::test descend-report-2.3 {report parsed command in array via descend_start} {
+    set report [list]
+    # Parse command in array key
+    set script {
+    puts $a(x[cmd]y)
+    }
+
+    descend_init
+
+    descend_report_command_callback test_report_command_list
+
+    descend_start $script
+
+    set report
+} {{puts {$a(x[cmd]y)}} cmd}
+
+tcltest::test descend-report-2.4 {report parsed command in array via descend_start} {
+    set report [list]
+    # Parse command in array command key
+    set script {
+    puts $a(x$b([cmd])y)
+    }
+
+    descend_init
+
+    descend_report_command_callback test_report_command_list
+
+    descend_start $script
+
+    set report
+} {{puts {$a(x$b([cmd])y)}} cmd}
+
+tcltest::test descend-report-2.5 {report parsed command in array via descend_start} {
+    set report [list]
+    # Parse command in array key, it contains a nested command argument
+    set script {
+    puts $a([cmd1 [cmd2]])
+    }
+
+    descend_init
+
+    descend_report_command_callback test_report_command_list
+
+    descend_start $script
+
+    set report
+} {{puts {$a([cmd1 [cmd2]])}} {cmd1 {[cmd2]}} cmd2}
+
+tcltest::test descend-report-2.6 {report parsed command in array via descend_start} {
+    set report [list]
+    # Parse array that contains a command that has an array argument with a command.
+    set script {
+    puts $a([cmd1 $b([cmd2])])
+    }
+
+    descend_init
+
+    descend_report_command_callback test_report_command_list
+
+    descend_start $script
+
+    set report
+} {{puts {$a([cmd1 $b([cmd2])])}} {cmd1 {$b([cmd2])}} cmd2}
+
+tcltest::test descend-report-2.7 {report parsed command in array via descend_start} {
+    set report [list]
+    # Parse array that contains a command that has an array argument that contains a command
+    set script {
+    puts $a(x[cmd1 $b(a[cmd2]c)]z)
+    }
+
+    descend_init
+
+    descend_report_command_callback test_report_command_list
+
+    descend_start $script
+
+    set report
+} {{puts {$a(x[cmd1 $b(a[cmd2]c)]z)}} {cmd1 {$b(a[cmd2]c)}} cmd2}
+
+tcltest::test descend-report-3.0 {report parsed command in word with array element} {
+    set report [list]
+    set script {
+    puts "x$a([cmd])"
+    }
+
+    descend_init
+
+    descend_report_command_callback test_report_command_list
+
+    descend_start $script
+
+    set report
+} {{puts {"x$a([cmd])"}} cmd}
+
+tcltest::test descend-report-3.1 {report parsed command in word with array element} {
+    set report [list]
+    set script {
+    puts "x$a([cmd1][cmd2])"
+    }
+
+    descend_init
+
+    descend_report_command_callback test_report_command_list
+
+    descend_start $script
+
+    set report
+} {{puts {"x$a([cmd1][cmd2])"}} cmd1 cmd2}
+
+tcltest::test descend-report-3.2 {report parsed command in word with array element} {
+    set report [list]
+    set script {
+    puts "x$a([cmd1][cmd2 arg2])[cmd3]"
+    }
+
+    descend_init
+
+    descend_report_command_callback test_report_command_list
+
+    descend_start $script
+
+    set report
+} {{puts {"x$a([cmd1][cmd2 arg2])[cmd3]"}} cmd1 {cmd2 arg2} cmd3}
+
+tcltest::test descend-report-3.3 {report parsed command in word with array element} {
+    set report [list]
+    set script {
+    puts "x$a([cmd1 $b(m[cmd2 $c([cmd3 $d(k)])]o)])z"
+    }
+
+    descend_init
+
+    descend_report_command_callback test_report_command_list
+
+    descend_start $script
+
+    set report
+} [list \
+    {puts {"x$a([cmd1 $b(m[cmd2 $c([cmd3 $d(k)])]o)])z"}} \
+    {cmd1 {$b(m[cmd2 $c([cmd3 $d(k)])]o)}} \
+    {cmd2 {$c([cmd3 $d(k)])}} \
+    {cmd3 {$d(k)}} \
+  ]
+
+
+
+tcltest::test descend-tree-get-1.0 {supported tree types} {
+    set report [list]
+    set script {set i $j}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_list
+
+    descend_start $script
+
+    set report
+} {{set i {$j}}}
+
+tcltest::test descend-tree-get-1.1 {supported tree types} {
+    set report [list]
+    # Double quoted string as second argument
+    set script {set i "string"}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_list
+
+    descend_start $script
+
+    set report
+} {{set i {"string"}}}
+
+tcltest::test descend-tree-get-1.2 {supported tree types} {
+    set report [list]
+    # Double quoted string with an embedded variable
+    set script {set i "string$var"}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_list
+
+    descend_start $script
+
+    set report
+} {{set i {"string$var"}}}
+
+
+tcltest::test descend-into-if-1.0 {descend into body of if command} {
+    set report [list]
+    set script {if {1} {
+    cmd1
+    }}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_list
+
+    descend_start $script
+
+    set report
+} {{if {{1}} {{
+    cmd1
+    }}} cmd1}
+
+
+tcltest::test descend-into-if-1.1 {descend into if, check container stack} {
+    set report [list]
+    set script {if {1} {
+    cmd1
+    }}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    descend_start $script
+
+    set report
+} {{if {{1}} {{
+    cmd1
+    }}} {} cmd1 if}
+
+tcltest::test descend-into-if-1.2 {descend into ifs, check container stack} {
+    set report [list]
+    set script {if {1} {
+    if {1} {
+    cmd1
+    }
+    }}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    descend_start $script
+
+    set report
+} {{if {{1}} {{
+    if {1} {
+    cmd1
+    }
+    }}} {} {if {{1}} {{
+    cmd1
+    }}} if cmd1 {if if}}
+
+
+tcltest::test descend-into-if-1.3 {descend into if, check validated indexes} {
+    set report [list]
+    set script {
+if {1} {
+    cmd1
+}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    # Descend and find 2 commands, the first is the "if" command.
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] validated] \
+        [descend_container_is_static [lindex $report 0]]
+} {2 {{1 2} {} {}} 1}
+
+tcltest::test descend-into-if-1.4 {descend into if, check validated indexes} {
+    set report [list]
+    set script {
+if {1} {
+    cmd1
+} elseif {1} {
+    cmd2
+}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] validated] \
+        [descend_container_is_static [lindex $report 0]]
+} {3 {{1 2} {4 5} {}} 1}
+
+tcltest::test descend-into-if-1.5 {descend into if, check validated indexes} {
+    set report [list]
+    set script {
+if {1} {
+    cmd1
+} elseif {1} {
+    cmd2
+} elseif {1} {
+    cmd3
+}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] validated] \
+        [descend_container_is_static [lindex $report 0]]
+} {4 {{1 2} {4 5 7 8} {}} 1}
+
+tcltest::test descend-into-if-1.6 {descend into if, check validated indexes} {
+    set report [list]
+    set script {
+if {1} {
+    cmd1
+} elseif {1} {
+    cmd2
+} else {
+    cmd3
+}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] validated] \
+        [descend_container_is_static [lindex $report 0]]
+} {4 {{1 2} {4 5} 7} 1}
+
+tcltest::test descend-into-if-1.7 {descend into if, check validated indexes} {
+    set report [list]
+    # The final else block is not marked with an else keyword, but is legal
+    set script {
+if {1} {
+    cmd1
+} elseif {1} {
+    cmd2
+} {
+    cmd3
+}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] validated] \
+        [descend_container_is_static [lindex $report 0]]
+} {4 {{1 2} {4 5} 6} 1}
+
+
+tcltest::test descend-into-if-1.8 {descend into if, check validated indexes} {
+    set report [list]
+    # if with then keyword argument
+    set script {
+if {1} then {
+    cmd1
+}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] validated] \
+        [descend_container_is_static [lindex $report 0]]
+} {2 {{1 3} {} {}} 1}
+
+tcltest::test descend-into-if-1.9 {descend into if, check validated indexes} {
+    set report [list]
+    # elseif with then keyword argument
+    set script {
+if {1} {
+    cmd1
+} elseif {1} then {
+    cmd2
+}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] validated] \
+        [descend_container_is_static [lindex $report 0]]
+} {3 {{1 2} {4 6} {}} 1}
+
+tcltest::test descend-into-if-1.10 {descend into if, check validated indexes} {
+    set report [list]
+    # empty body block should not generate a command key
+    set script {
+if {1} {}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    # Descend and find 1 command
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] validated] \
+        [descend_container_is_static [lindex $report 0]]
+} {1 {{1 2} {} {}} 1}
+
+tcltest::test descend-into-if-1.11 {descend into if, check validated indexes} {
+    set report [list]
+    # empty body block should not generate a command key
+    set script {
+if {1} {
+
+}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    # Descend and find 1 command
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] validated] \
+        [descend_container_is_static [lindex $report 0]]
+} {1 {{1 2} {} {}} 1}
+
+tcltest::test descend-into-if-1.12 {descend into if, check validated indexes} {
+    set report [list]
+    # empty body block should not generate a command key
+    set script {
+if {1} {
+; #comment
+}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    # Descend and find 1 command
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] validated] \
+        [descend_container_is_static [lindex $report 0]]
+} {1 {{1 2} {} {}} 1}
+
+
+
+# Test series 2 for if should check the expr argument to see
+# if any code is executed in it.
+
+tcltest::test descend-into-if-3.0 {invalid if arguments, ignore if command} {
+    set report [list]
+    set script {
+if {1}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] validated] \
+        [descend_container_is_static [lindex $report 0]]
+} {1 {} 0}
+
+
+tcltest::test descend-into-if-4.0 {descend into if, tricky unbraced argument case} {
+    set report [list]
+    # A non-static script argument can't be descended into since we
+    # don't know what the arguments to the contained commands would be.
+    set script {
+if {1} "
+    set name [cmd]
+"
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    descend_start $script
+
+    list $report \
+        [descend_container_is_static dkey0]
+} {{{if {{1}} {"
+    set name [cmd]
+"}} {} cmd {}} 0}
+
+tcltest::test descend-into-if-4.1 {descend into if, braced argument case} {
+    set report [list]
+    # The following if script has an braced argument that contains a
+    # nested command. The nested command should only be reported once.
+    set script {
+if {1} {
+    set name [cmd]
+}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    descend_start $script
+
+    set report
+} {{if {{1}} {{
+    set name [cmd]
+}}} {} {set name {[cmd]}} if cmd if}
+
+
+
+tcltest::test descend-into-if-5.0 {check for non-static arguments} {
+    set report [list]
+    # non-static if argument should not be descended into
+    set script {
+if {1} $script
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] validated] \
+        [descend_container_is_static [lindex $report 0]]
+} {1 {{1 2} {} {}} 0}
+
+tcltest::test descend-into-if-5.1 {check for non-static arguments} {
+    set report [list]
+    # non-static if argument should not be descended into
+    set script {
+if {1} [cmd]
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] validated] \
+        [descend_container_is_static [lindex $report 0]]
+} {2 {{1 2} {} {}} 0}
+
+tcltest::test descend-into-if-5.2 {check for non-static arguments} {
+    set report [list]
+    # non-static if argument should not be descended into
+    set script {
+if {1} "$script"
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] validated] \
+        [descend_container_is_static [lindex $report 0]]
+} {1 {{1 2} {} {}} 0}
+
+tcltest::test descend-into-if-5.3 {check for non-static arguments} {
+    set report [list]
+    # non-static if argument should not be descended into
+    set script {
+if {1} {cmd1} elseif {1} {cmd2} elseif {1} $script else $script
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] validated] \
+        [descend_container_is_static [lindex $report 0]]
+} {3 {{1 2} {4 5 7 8} 10} 0}
+
+
+tcltest::test descend-into-if-6.0 {descend into if expr, check container stack} {
+    set report [list]
+    set script {if {[cmd1]} {
+    cmd2
+    }}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    descend_start $script
+
+    set report
+} {{if {{[cmd1]}} {{
+    cmd2
+    }}} {} cmd1 if cmd2 if}
+
+tcltest::test descend-into-if-6.1 {descend into if expr, check container stack} {
+    set report [list]
+    set script {if {[cmd1]} {
+    cmd2
+    } elseif {[cmd3]} {
+    cmd4
+    }}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    descend_start $script
+
+    set report
+} {{if {{[cmd1]}} {{
+    cmd2
+    }} elseif {{[cmd3]}} {{
+    cmd4
+    }}} {} cmd1 if cmd2 if cmd3 if cmd4 if}
+
+tcltest::test descend-into-if-6.2 {descend into if, check validated indexes} {
+    set report [list]
+    set script {
+::if {1} {
+    cmd1
+}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    # Descend and find 2 commands, the first is the "if" command.
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] validated] \
+        [descend_container_is_static [lindex $report 0]]
+} {2 {{1 2} {} {}} 1}
+
+
+tcltest::test descend-into-catch-1.1 {descend into catch, check container stack} {
+    set report [list]
+    set script {catch {foo} err}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    descend_start $script
+
+    set report
+} {{catch {{foo}} err} {} foo catch}
+
+tcltest::test descend-into-catch-1.2 {descend into catch, check container stack} {
+    set report [list]
+    set script {catch {bar 1}}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    descend_start $script
+
+    set report
+} {{catch {{bar 1}}} {} {bar 1} catch}
+
+tcltest::test descend-into-catch-1.3 {descend into catch, check container stack} {
+    set report [list]
+    # Try to descend into a variable script argument, this
+    # does nothing since the commands in the script can't
+    # be determined at runtime.
+    set script {catch $script}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    descend_start $script
+
+    set report
+} {{catch {$script}} {}}
+
+tcltest::test descend-into-catch-1.4 {descend into catch, check container stack} {
+    set report [list]
+    # Try to descend into a nested command, this
+    # does nothing since the script argument to catch
+    # can't be determined statically.
+    set script {catch [cmd]}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    descend_start $script
+
+    set report
+} {{catch {[cmd]}} {} cmd {}}
+
+tcltest::test descend-into-catch-1.5 {descend into catch, check container stack} {
+    set report [list]
+    # Try to descend into a brace quoted nested command
+    set script {catch {[cmd]}}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    descend_start $script
+
+    set report
+} {{catch {{[cmd]}}} {} {{[cmd]}} catch cmd catch}
+
+tcltest::test descend-into-catch-1.6 {descend into if and catch, check container stack} {
+    set report [list]
+    set script {
+if {1} {
+    catch {foo 1}
+}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    descend_start $script
+
+    set report
+} {{if {{1}} {{
+    catch {foo 1}
+}}} {} {catch {{foo 1}}} if {foo 1} {catch if}}
+
+
+
+
+tcltest::test descend-into-catch-2.0 {wrong num args to catch} {
+    set report [list]
+    # Wrong num args to catch
+    set script {catch {bar 1} var1 var2}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    set keys [descend_start $script]
+
+    list \
+        [set report] \
+        [descend_get_data [lindex $keys 0] usage] \
+        [descend_container_is_static [lindex $keys 0]]
+} {{{catch {{bar 1}} var1 var2} {}} 1 0}
+
+tcltest::test descend-into-catch-2.1 {wrong num args to catch} {
+    set report [list]
+    # Wrong num args to catch
+    set script {catch}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    set keys [descend_start $script]
+
+    list \
+        [set report] \
+        [descend_get_data [lindex $keys 0] usage] \
+        [descend_container_is_static [lindex $keys 0]]
+} {{catch {}} 1 0}
+
+tcltest::test descend-into-catch-3.0 {check catch command} {
+    set report [list]
+    set script {catch {cmd} err}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    set keys [descend_start $script]
+
+    list \
+        [set report] \
+        [descend_get_data [lindex $keys 0] usage] \
+        [descend_container_is_static [lindex $keys 0]]
+} {{{catch {{cmd}} err} {} cmd catch} 0 1}
+
+tcltest::test descend-into-catch-3.1 {check catch command} {
+    set report [list]
+    set script {catch cmd err}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    set keys [descend_start $script]
+
+    list \
+        [set report] \
+        [descend_get_data [lindex $keys 0] usage] \
+        [descend_container_is_static [lindex $keys 0]]
+} {{{catch cmd err} {} cmd catch} 0 1}
+
+tcltest::test descend-into-catch-3.2 {check catch command} {
+    set report [list]
+    set script {catch [cmd] err}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    set keys [descend_start $script]
+
+    list \
+        [set report] \
+        [descend_get_data [lindex $keys 0] usage] \
+        [descend_container_is_static [lindex $keys 0]]
+} {{{catch {[cmd]} err} {} cmd {}} 0 0}
+
+tcltest::test descend-into-catch-3.3 {check catch command} {
+    set report [list]
+    set script {catch $script err}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    set keys [descend_start $script]
+
+    list \
+        [set report] \
+        [descend_get_data [lindex $keys 0] usage] \
+        [descend_container_is_static [lindex $keys 0]]
+} {{{catch {$script} err} {}} 0 0}
+
+tcltest::test descend-into-catch-3.4 {check catch command} {
+    set report [list]
+    set script {catch {$cmd} err}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    set keys [descend_start $script]
+
+    list \
+        [set report] \
+        [descend_get_data [lindex $keys 0] usage] \
+        [descend_container_is_static [lindex $keys 0]]
+} {{{catch {{$cmd}} err} {} {{$cmd}} catch} 0 1}
+
+tcltest::test descend-into-catch-3.5 {check catch command} {
+    set report [list]
+    set script {catch "$cmd" err}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    set keys [descend_start $script]
+
+    list \
+        [set report] \
+        [descend_get_data [lindex $keys 0] usage] \
+        [descend_container_is_static [lindex $keys 0]]
+} {{{catch {"$cmd"} err} {}} 0 0}
+
+tcltest::test descend-into-catch-3.6 {check catch command} {
+    set report [list]
+    set script {catch {cmd1 arg1} err}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    set keys [descend_start $script]
+
+    list \
+        [set report] \
+        [descend_get_data [lindex $keys 0] usage] \
+        [descend_container_is_static [lindex $keys 0]]
+} {{{catch {{cmd1 arg1}} err} {} {cmd1 arg1} catch} 0 1}
+
+tcltest::test descend-into-catch-3.7 {check catch command} {
+    set report [list]
+    set script {catch {
+        cmd1 arg1
+        cmd2
+    } err}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    set keys [descend_start $script]
+
+    list \
+        [set report] \
+        [descend_get_data [lindex $keys 0] usage] \
+        [descend_container_is_static [lindex $keys 0]]
+} {{{catch {{
+        cmd1 arg1
+        cmd2
+    }} err} {} {cmd1 arg1} catch cmd2 catch} 0 1}
+
+
+tcltest::test descend-into-catch-3.8 {check catch command} {
+    set report [list]
+    set script {catch {cmd} $var}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    set keys [descend_start $script]
+
+    list \
+        [set report] \
+        [descend_get_data [lindex $keys 0] usage] \
+        [descend_container_is_static [lindex $keys 0]]
+} {{{catch {{cmd}} {$var}} {} cmd catch} 0 0}
+
+tcltest::test descend-into-catch-3.9 {check catch command} {
+    set report [list]
+    set script {catch {cmd} err}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    set keys [descend_start $script]
+
+    list \
+        [set report] \
+        [descend_get_data [lindex $keys 0] usage] \
+        [descend_container_is_static [lindex $keys 0]] \
+        [descend_container_catch_has_variable [lindex $keys 0]] \
+        [descend_container_catch_variable [lindex $keys 0]]
+} {{{catch {{cmd}} err} {} cmd catch} 0 1 1 err}
+
+tcltest::test descend-into-catch-3.10 {check catch command} {
+    set report [list]
+    set script {catch {cmd} arr(err)}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    set keys [descend_start $script]
+
+    list \
+        [set report] \
+        [descend_get_data [lindex $keys 0] usage] \
+        [descend_container_is_static [lindex $keys 0]] \
+        [descend_container_catch_has_variable [lindex $keys 0]] \
+        [descend_container_catch_variable [lindex $keys 0]]
+} {{{catch {{cmd}} arr(err)} {} cmd catch} 0 1 1 arr(err)}
+
+
+
+tcltest::test descend-into-while-1.0 {descend into while, check container stack} {
+    set report [list]
+    set script {
+while {1} {
+    cmd
+}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    descend_start $script
+
+    set report
+} {{while {{1}} {{
+    cmd
+}}} {} cmd while}
+
+tcltest::test descend-into-while-1.1 {descend into while, check container stack} {
+    set report [list]
+    set script {
+while {1} {
+    cmd1
+    cmd2
+}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    descend_start $script
+
+    set report
+} {{while {{1}} {{
+    cmd1
+    cmd2
+}}} {} cmd1 while cmd2 while}
+
+tcltest::test descend-into-while-1.2 {descend into while, check container stack} {
+    set report [list]
+    # Don't descend into body argument that is not static
+    set script {
+while {1} $script
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    descend_start $script
+
+    set report
+} {{while {{1}} {$script}} {}}
+
+
+tcltest::test descend-into-while-2.0 {wrong num args to while} {
+    set report [list]
+    set script {while {1}}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    descend_start $script
+
+    set report
+} {{while {{1}}} {}}
+
+tcltest::test descend-into-while-2.1 {wrong num args to while} {
+    set report [list]
+    set script {while {1} {body1} {body2}}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    descend_start $script
+
+    set report
+} {{while {{1}} {{body1}} {{body2}}} {}}
+
+tcltest::test descend-into-while-3.0 {descend into while expr, check container stack} {
+    set report [list]
+    set script {
+while {[cmd1]} {
+    cmd2
+}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    descend_start $script
+
+    set report
+} {{while {{[cmd1]}} {{
+    cmd2
+}}} {} cmd1 while cmd2 while}
+
+
+tcltest::test descend-into-for-1.0 {descend into for, check container stack} {
+    set report [list]
+    set script {
+for {} {1} {} {
+    cmd
+}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    descend_start $script
+
+    set report
+} {{for {{}} {{1}} {{}} {{
+    cmd
+}}} {} cmd for}
+
+tcltest::test descend-into-for-1.1 {descend into for, check container stack} {
+    set report [list]
+    set script {
+for {set i 0} {1} {incr i} {
+    cmd $i
+}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    descend_start $script
+
+    set report
+} {{for {{set i 0}} {{1}} {{incr i}} {{
+    cmd $i
+}}} {} {set i 0} for {incr i} for {cmd {$i}} for}
+
+tcltest::test descend-into-for-1.2 {descend into for, check container stack} {
+    set report [list]
+    set script {
+for {set i 0 ; set j 1} {1} {incr i} {
+    cmd
+}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    descend_start $script
+
+    set report
+} {{for {{set i 0 ; set j 1}} {{1}} {{incr i}} {{
+    cmd
+}}} {} {set i 0} for {set j 1} for {incr i} for cmd for}
+
+
+tcltest::test descend-into-for-1.3 {descend into for, check container stack} {
+    set report [list]
+    # Don't descend into script argument that is not static
+    set script {
+for {cmd1} {1} $script {
+    cmd3
+}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    descend_start $script
+
+    set report
+} {{for {{cmd1}} {{1}} {$script} {{
+    cmd3
+}}} {} cmd1 for cmd3 for}
+
+
+
+tcltest::test descend-into-for-2.0 {wrong num args to for} {
+    set report [list]
+    set script {for {} {} {}}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    descend_start $script
+
+    set report
+} {{for {{}} {{}} {{}}} {}}
+
+tcltest::test descend-into-for-2.1 {wrong num args to for} {
+    set report [list]
+    set script {for {} {} {} {} {}}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    descend_start $script
+
+    set report
+} {{for {{}} {{}} {{}} {{}} {{}}} {}}
+
+
+tcltest::test descend-into-for-3.0 {descend into for expr, check container stack} {
+    set report [list]
+    set script {
+for {} {[cmd1] < 100} {} {
+    cmd2
+}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    descend_start $script
+
+    set report
+} {{for {{}} {{[cmd1] < 100}} {{}} {{
+    cmd2
+}}} {} cmd1 for cmd2 for}
+
+
+
+
+tcltest::test descend-into-foreach-1.0 {descend into foreach, check container stack} {
+    set report [list]
+    set script {
+foreach v {1 2} {
+    cmd
+}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    descend_start $script
+
+    set report
+} {{foreach v {{1 2}} {{
+    cmd
+}}} {} cmd foreach}
+
+tcltest::test descend-into-foreach-1.1 {descend into foreach, check container stack} {
+    set report [list]
+    set script {
+foreach v $list {
+    cmd
+}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    descend_start $script
+
+    set report
+} {{foreach v {$list} {{
+    cmd
+}}} {} cmd foreach}
+
+tcltest::test descend-into-foreach-1.2 {descend into foreach, check container stack} {
+    set report [list]
+    # Don't descend into non-static script argument
+    set script {
+foreach v $list $script
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    descend_start $script
+
+    set report
+} {{foreach v {$list} {$script}} {}}
+
+
+
+tcltest::test descend-into-foreach-2.0 {descend into foreach, check validated indexes} {
+    set report [list]
+    # one variable and one list
+    set script {
+foreach v {1 2} {
+    cmd
+}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] validated] \
+        [descend_container_is_static [lindex $report 0]]
+} {2 {single {1 2} 3} 1}
+
+tcltest::test descend-into-foreach-2.1 {descend into foreach, check validated indexes} {
+    set report [list]
+    # variable list and one list
+    set script {
+foreach {v1 v2} {1 2} {
+    cmd
+}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] validated] \
+        [descend_container_is_static [lindex $report 0]]
+} {2 {list {1 2} 3} 1}
+
+tcltest::test descend-into-foreach-2.2 {descend into foreach, check validated indexes} {
+    set report [list]
+    # Multiple variable and list arguments to foreach
+    set script {
+foreach {v1 v2} {1 2} {v3 v4} {3 4} {
+    cmd
+}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] validated] \
+        [descend_container_is_static [lindex $report 0]]
+} {2 {multi {1 2 3 4} 5} 1}
+
+tcltest::test descend-into-foreach-2.3 {descend into foreach, check validated indexes} {
+    set report [list]
+    set script {
+foreach {v1 v2} {1 2} {v3 v4} {3 4} v5 {5 6} {
+    cmd
+}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] validated] \
+        [descend_container_foreach_varlist [lindex $report 0] 1] \
+        [descend_container_foreach_varlist [lindex $report 0] 3] \
+        [descend_container_foreach_varlist [lindex $report 0] 5] \
+        [descend_container_is_static [lindex $report 0]] \
+
+} {2 {multi {1 2 3 4 5 6} 7} {v1 v2} {v3 v4} v5 1}
+
+tcltest::test descend-into-foreach-2.4 {descend into foreach, check validated indexes} {
+    set report [list]
+    # empty argument list
+    set script {
+foreach {} {1 2} {
+    cmd
+}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] validated] \
+        [descend_container_is_static [lindex $report 0]] \
+        [descend_get_data [lindex $report 0] usage] \
+
+} {1 {} 0 1}
+
+tcltest::test descend-into-foreach-2.5 {descend into foreach, check validated indexes} {
+    set report [list]
+    # empty argument list
+    set script {
+foreach a {1 2} {} {3 4} {
+    cmd
+}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] validated] \
+        [descend_container_is_static [lindex $report 0]] \
+        [descend_get_data [lindex $report 0] usage] \
+
+} {1 {} 0 1}
+
+tcltest::test descend-into-foreach-2.6 {descend into foreach, check validated indexes} {
+    set report [list]
+    # argument values can be a varaible
+    set script {
+foreach e $varlist {
+    cmd
+}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] validated] \
+        [descend_container_is_static [lindex $report 0]] \
+        [descend_get_data [lindex $report 0] usage] \
+
+} {2 {single {1 2} 3} 1 0}
+
+tcltest::test descend-into-foreach-2.7 {descend into foreach, check validated indexes} {
+    set report [list]
+    # command not static if argument list is a variable
+    set script {
+foreach $varnames {1 2 3} {
+    cmd
+}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] validated] \
+        [descend_container_is_static [lindex $report 0]] \
+        [descend_get_data [lindex $report 0] usage] \
+
+} {2 {unknown {1 2} 3} 0 0}
+
+tcltest::test descend-into-foreach-2.8 {descend into foreach, check validated indexes} {
+    set report [list]
+    # command not static if argument list is a variable
+    set script {
+foreach a {1 2 3} $bvars {4 5 6} {
+    cmd
+}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] validated] \
+        [descend_container_is_static [lindex $report 0]] \
+        [descend_get_data [lindex $report 0] usage] \
+
+} {2 {multi {1 2 3 4} 5} 0 0}
+
+tcltest::test descend-into-foreach-2.9 {descend into foreach, check validated indexes} {
+    set report [list]
+    # global namespace qualifier in foreach command
+    set script {
+::foreach v {1 2} {
+    cmd
+}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] validated] \
+        [descend_container_is_static [lindex $report 0]]
+} {2 {single {1 2} 3} 1}
+
+tcltest::test descend-into-foreach-3.0 {invalid args to foreach} {
+    set report [list]
+    set script {
+foreach v
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    descend_start $script
+
+    set report
+} {{foreach v} {}}
+
+tcltest::test descend-into-foreach-3.1 {invalid args to foreach} {
+    set report [list]
+    set script {
+foreach v1 {} v2 {}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    descend_start $script
+
+    set report
+} {{foreach v1 {{}} v2 {{}}} {}}
+
+
+
+tcltest::test descend-into-switch-1.0 {descend into switch, check container stack} {
+    set report [list]
+    set script {
+switch Foo {
+    "Foo" {cmd1}
+}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    descend_start $script
+
+    set report
+} {{switch Foo {{
+    "Foo" {cmd1}
+}}} {} cmd1 switch}
+
+
+tcltest::test descend-into-switch-2.0 {descend into switch, check validated indexes} {
+    set report [list]
+    set script {
+switch Foo Foo {cmd1}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] validated]
+} {2 {default {} 1 {2 3}}}
+
+tcltest::test descend-into-switch-2.1 {descend into switch, check validated indexes} {
+    set report [list]
+    set script {
+switch Foo Foo {cmd1} default {}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] validated]
+} {2 {default {} 1 {2 3 4 5}}}
+
+tcltest::test descend-into-switch-2.2 {descend into switch, check validated indexes} {
+    set report [list]
+    set script {
+switch Foo Foo {cmd1} Unknown {cmd2} default {}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] validated]
+} {3 {default {} 1 {2 3 4 5 6 7}}}
+
+tcltest::test descend-into-switch-2.3 {descend into switch, check validated indexes} {
+    set report [list]
+    set script {
+switch -- Foo Foo {cmd1}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] validated]
+} {2 {default 1 2 {3 4}}}
+
+
+tcltest::test descend-into-switch-2.4 {descend into switch, check validated indexes} {
+    set report [list]
+    set script {
+switch -exact Foo Foo {cmd1}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] validated]
+} {2 {exact {} 2 {3 4}}}
+
+tcltest::test descend-into-switch-2.5 {descend into switch, check validated indexes} {
+    set report [list]
+    set script {
+switch -glob Foo Foo {cmd1}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] validated]
+} {2 {glob {} 2 {3 4}}}
+
+tcltest::test descend-into-switch-2.6 {descend into switch, check validated indexes} {
+    set report [list]
+    set script {
+switch -regexp Foo Foo {cmd1}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] validated]
+} {2 {regexp {} 2 {3 4}}}
+
+tcltest::test descend-into-switch-2.7 {descend into switch, check validated indexes} {
+    set report [list]
+    set script {
+switch -exact -- Foo Foo {cmd1}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] validated]
+} {2 {exact 2 3 {4 5}}}
+
+tcltest::test descend-into-switch-2.8 {descend into switch, check validated indexes} {
+    set report [list]
+    set script {
+switch -glob -- Foo Foo {cmd1}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] validated]
+} {2 {glob 2 3 {4 5}}}
+
+tcltest::test descend-into-switch-2.9 {descend into switch, check validated indexes} {
+    set report [list]
+    set script {
+switch -regexp -- Foo Foo {cmd1}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] validated]
+} {2 {regexp 2 3 {4 5}}}
+
+tcltest::test descend-into-switch-2.10 {descend into switch, check validated indexes} {
+    set report [list]
+    set script {
+switch -exact -- Foo Foo {cmd1} default {}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] validated]
+} {2 {exact 2 3 {4 5 6 7}}}
+
+tcltest::test descend-into-switch-2.11 {descend into switch, check validated indexes} {
+    set report [list]
+    # switch on variable
+    set script {
+switch $var Foo {} default {}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] validated]
+} {1 {default {} 1 {2 3 4 5}}}
+
+tcltest::test descend-into-switch-2.12 {descend into switch, check validated indexes} {
+    set report [list]
+    # A variable patlist is not statically defined.
+    set script {
+switch $str $patlist
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] validated]
+} {1 {}}
+
+tcltest::test descend-into-switch-2.13 {descend into switch, check validated indexes} {
+    set report [list]
+    # A variable string with a static patlist is a statically defined switch.
+    set script {
+switch $str {ONE {}}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] validated]
+} {1 {default {} 1 {2 3}}}
+
+tcltest::test descend-into-switch-2.14 {descend into switch, check validated indexes} {
+    set report [list]
+    # -exact and string arguments as variables, can't
+    # statically determine what the arguments are.
+    set script {
+switch $v1 $v2 {PAT {}}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] validated]
+} {1 {}}
+
+tcltest::test descend-into-switch-2.15 {descend into switch, check validated indexes} {
+    set report [list]
+    # -exact, --, and string arguments as variables, can't
+    # statically determine what the arguments are.
+    set script {
+switch $v1 $v2 $v3 {PAT {}}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] validated]
+} {1 {}}
+
+tcltest::test descend-into-switch-2.16 {descend into switch, check validated indexes} {
+    set report [list]
+    # A pair of mode options is not valid usage.
+    set script {
+switch -exact -exact $str {PAT {}}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] validated]
+} {1 {}}
+
+tcltest::test descend-into-switch-2.17 {descend into switch, check validated indexes} {
+    set report [list]
+    # A pair of mode options is not valid usage.
+    set script {
+switch -exact -glob $str {PAT {}}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] validated]
+} {1 {}}
+
+tcltest::test descend-into-switch-2.18 {descend into switch, check validated indexes} {
+    set report [list]
+    # A mode option after -- is a valid string.
+    set script {
+switch -- -exact Foo {}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] validated]
+} {1 {default 1 2 {3 4}}}
+
+tcltest::test descend-into-switch-2.19 {descend into switch, check validated indexes} {
+    set report [list]
+    # empty pattern/body list is not valid
+    set script {
+switch x {}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] validated]
+} {1 {}}
+
+tcltest::test descend-into-switch-2.20 {descend into switch, check validated indexes} {
+    set report [list]
+    # uneven pattern/body list is not valid
+    set script {
+switch x {P1 {} P2}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] validated]
+} {1 {}}
+
+tcltest::test descend-into-switch-2.21 {descend into switch, check validated indexes} {
+    set report [list]
+    # Comment inside pattern/body list
+    set script {
+switch x {
+    P1 {}
+    P2 #Comment
+}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] validated]
+} {1 {}}
+
+tcltest::test descend-into-switch-2.22 {descend into switch, check validated indexes} {
+    set report [list]
+    # Comment inside pattern/body list
+    set script {
+switch x {
+    P1 {}
+    #Comment {}
+}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] validated]
+} {1 {}}
+
+tcltest::test descend-into-switch-2.22 {descend into switch, check validated indexes} {
+    set report [list]
+    # last body can't be a continuation
+    set script {
+switch x {
+    P1 {}
+    P2 -
+}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] validated]
+} {1 {}}
+
+tcltest::test descend-into-switch-2.23 {descend into switch, check validated indexes} {
+    set report [list]
+    # last body can't be a continuation
+    set script {
+switch x P1 {} P2 -
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] validated]
+} {1 {}}
+
+tcltest::test descend-into-switch-3.0 {check validated indexes before reparse} {
+    set report [list]
+    # 3 args in switch command
+    set script {
+switch Foo {
+    "Foo" {cmd1}
+}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    descend_get_data [lindex $report 0] pre_validated
+} {default {} 1 2}
+
+tcltest::test descend-into-switch-3.1 {check validated indexes before reparse} {
+    set report [list]
+    # 3 args in switch command
+    set script {
+switch Foo {
+    "Foo" {cmd1}
+    default {}
+}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    descend_get_data [lindex $report 0] pre_validated
+} {default {} 1 2}
+
+tcltest::test descend-into-switch-3.2 {check validated indexes before reparse} {
+    set report [list]
+    # 4 args in switch command
+    set script {
+switch -exact Foo {
+    "Foo" {}
+}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    descend_get_data [lindex $report 0] pre_validated
+} {exact {} 2 3}
+
+tcltest::test descend-into-switch-3.3 {check validated indexes before reparse} {
+    set report [list]
+    # 4 args in switch command
+    set script {
+switch -glob Foo {
+    "Foo" {}
+}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    descend_get_data [lindex $report 0] pre_validated
+} {glob {} 2 3}
+
+tcltest::test descend-into-switch-3.4 {check validated indexes before reparse} {
+    set report [list]
+    # 4 args in switch command
+    set script {
+switch -regexp Foo {
+    "Foo" {}
+}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    descend_get_data [lindex $report 0] pre_validated
+} {regexp {} 2 3}
+
+tcltest::test descend-into-switch-3.5 {check validated indexes before reparse} {
+    set report [list]
+    # 4 args in switch command
+    set script {
+switch -- Foo {
+    "Foo" {}
+}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    descend_get_data [lindex $report 0] pre_validated
+} {default 1 2 3}
+
+tcltest::test descend-into-switch-3.6 {check validated indexes before reparse} {
+    set report [list]
+    # 5 args in switch command
+    set script {
+switch -exact -- Foo {
+    "Foo" {}
+}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    descend_get_data [lindex $report 0] pre_validated
+} {exact 2 3 4}
+
+tcltest::test descend-into-switch-3.7 {check validated indexes before reparse} {
+    set report [list]
+    # 5 args in switch command
+    set script {
+switch -glob -- Foo {
+    "Foo" {}
+}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    descend_get_data [lindex $report 0] pre_validated
+} {glob 2 3 4}
+
+tcltest::test descend-into-switch-3.8 {check validated indexes before reparse} {
+    set report [list]
+    # 5 args in switch command
+    set script {
+switch -regexp -- Foo {
+    "Foo" {}
+}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    descend_get_data [lindex $report 0] pre_validated
+} {regexp 2 3 4}
+
+
+
+tcltest::test descend-into-switch-4.0 {recreate switch script} {
+    set script {switch Foo {"Foo" {cmd1}}}
+    set range {12 12}
+
+    descend_container_switch_script_recreate $script $range
+} "switch Foo \{Foo\} \{cmd1\}"
+
+tcltest::test descend-into-switch-4.1 {recreate switch script} {
+    set script {switch Foo {
+"Foo" {cmd1}}}
+    set range {12 13}
+
+    descend_container_switch_script_recreate $script $range
+} "switch Foo \{Foo\} \{cmd1\}\\\n"
+
+tcltest::test descend-into-switch-4.2 {recreate switch script} {
+    set script {switch Foo {
+"Foo" {cmd1}
+}}
+    set range {12 14}
+
+    descend_container_switch_script_recreate $script $range
+} "switch Foo \{Foo\} \{cmd1\}\\\n\\\n"
+
+tcltest::test descend-into-switch-4.3 {recreate switch script} {
+    set script {
+switch Foo {
+    "Foo" {cmd1}
+}
+}
+    set range {13 18}
+
+    descend_container_switch_script_recreate $script $range
+} "\nswitch Foo \{Foo\} \{cmd1\}\\\n\\\n\n"
+
+tcltest::test descend-into-switch-4.4 {recreate switch script} {
+    set script {
+switch Foo {
+    "Foo" {
+cmd1
+}
+}
+}
+    set range {13 20}
+
+    descend_container_switch_script_recreate $script $range
+} "\nswitch Foo \{Foo\} \{\ncmd1\n\}\\\n\\\n\n"
+
+tcltest::test descend-into-switch-4.5 {recreate switch script} {
+    set script {
+switch Foo {
+    {Foo} {
+cmd1
+cmd2
+}
+}
+}
+    set range {13 25}
+
+    descend_container_switch_script_recreate $script $range
+} "\nswitch Foo \{Foo\} \{\ncmd1\ncmd2\n\}\\\n\\\n\n"
+
+tcltest::test descend-into-switch-4.6 {recreate switch script with backslashes} {
+    set script "switch ONE \{
+ONE \\
+\{puts ONE\}
+TWO \\
+\{puts TWO\}
+\}"
+    set range {12 35}
+
+    descend_container_switch_script_recreate $script $range
+} "switch ONE \{ONE\} \{puts ONE\} \{TWO\} \{puts TWO\}\\\n\\\n\\\n\\\n\\\n"
+
+tcltest::test descend-into-switch-4.7 {recreate switch script} {
+    set script {switch {\$} {\$ {} {\$} {}}}
+    set range {13 13}
+
+    descend_container_switch_script_recreate $script $range
+} {switch {\$} "\$" {} {\$} {}}
+
+tcltest::test descend-into-switch-4.8 {recreate switch script} {
+    set script {switch {\\$} {\\$ {} {\\$} {}}}
+    set range {14 15}
+
+    descend_container_switch_script_recreate $script $range
+} {switch {\\$} "\\\$" {} {\\$} {}}
+
+tcltest::test descend-into-switch-4.9 {recreate switch script} {
+    set script {switch {\t} {\t {} {\t} {}}}
+    set range {13 13}
+
+    descend_container_switch_script_recreate $script $range
+} {switch {\t} "\t" {} {\t} {}}
+
+tcltest::test descend-into-switch-4.10 {recreate switch script} {
+    set script {switch {\t} {"\t" {} {\t} {}}}
+    set range {13 15}
+
+    descend_container_switch_script_recreate $script $range
+} {switch {\t} "\t" {} {\t} {}}
+
+tcltest::test descend-into-switch-4.11 {recreate switch script} {
+    set script {switch {\"} {\" {} {\"} {}}}
+    set range {13 13}
+
+    descend_container_switch_script_recreate $script $range
+} {switch {\"} "\"" {} {\"} {}}
+
+tcltest::test descend-into-switch-4.12 {recreate switch script} {
+    set script {switch {\t\$[cmd]$s} {\t\$[cmd]$s {cmd1} {\t\$[cmd]$s} {cmd2}}}
+    set range {22 39}
+
+    descend_container_switch_script_recreate $script $range
+} {switch {\t\$[cmd]$s} "\t\$\[cmd\]\$s" {cmd1} {\t\$[cmd]$s} {cmd2}}
+
+tcltest::test descend-into-switch-4.13 {recreate switch script} {
+    set script {switch {\a\$\.\[} {\a\$\.\[ {} {\a\\$\.\\[} {}}}
+    set range {19 27}
+
+    descend_container_switch_script_recreate $script $range
+} {switch {\a\$\.\[} "\a\$\.\[" {} {\a\\$\.\\[} {}}
+
+tcltest::test descend-into-switch-4.14 {recreate switch script} {
+    set script {switch {\a\$\.\[} {\a\\$\.\\[ {} {\a\\$\.\\[} {}}}
+    set range {19 29}
+
+    descend_container_switch_script_recreate $script $range
+} {switch {\a\$\.\[} "\a\\\$\.\\\[" {} {\a\\$\.\\[} {}}
+
+
+tcltest::test descend-into-switch-5.0 {recreate switch script with multiple statements} {
+    set script {set one 1; switch Foo {"Foo" {cmd1}} ; set two 2}
+    set range {23 12}
+
+    descend_container_switch_script_recreate $script $range
+} "set one 1; switch Foo \{Foo\} \{cmd1\} ; set two 2"
+
+tcltest::test descend-into-switch-5.1 {recreate switch script with multiple statements} {
+    set script {set one 1
+switch Foo {"Foo" {cmd1}}
+set two 2}
+    set range {22 12}
+
+    descend_container_switch_script_recreate $script $range
+} "set one 1
+switch Foo \{Foo\} \{cmd1\}
+set two 2"
+
+tcltest::test descend-into-switch-5.2 {recreate switch script with multiple statements} {
+    set script {set one 1
+switch Foo {"Foo" {
+    cmd1
+}}
+set two 2}
+    set range {22 18}
+
+    descend_container_switch_script_recreate $script $range
+} "set one 1
+switch Foo \{Foo\} \{
+    cmd1
+\}
+set two 2"
+
+tcltest::test descend-into-switch-5.3 {recreate switch script with multiple statements} {
+    set script {set one 1
+switch Foo {"Foo" {
+    cmd1
+    cmd2
+}}
+set two 2}
+    set range {22 27}
+
+    descend_container_switch_script_recreate $script $range
+} "set one 1
+switch Foo \{Foo\} \{
+    cmd1
+    cmd2
+\}
+set two 2"
+
+tcltest::test descend-into-switch-5.4 {recreate switch script with multiple statements} {
+    set script {set one 1
+switch Foo {"Foo" {
+    cmd1
+    cmd2
+}}
+set two 2}
+    set range {22 27}
+
+    descend_container_switch_script_recreate $script $range
+} "set one 1
+switch Foo \{Foo\} \{
+    cmd1
+    cmd2
+\}
+set two 2"
+
+tcltest::test descend-into-switch-5.5 {recreate switch script with multiple statements} {
+    set script {set v 1
+switch Foo {
+    Foo {
+        set v 2
+    }
+}
+set v 3
+}
+    set range {20 33}
+
+    descend_container_switch_script_recreate $script $range
+} "set v 1
+switch Foo \{Foo\} \{
+        set v 2
+    \}\\
+\\
+
+set v 3
+"
+
+
+
+tcltest::test descend-into-switch-6.0 {recreate nested switch script} {
+    set script {set result [switch Foo {"Foo" {cmd1}}]}
+    set range {24 12}
+
+    descend_container_switch_script_recreate $script $range
+} "set result \[switch Foo \{Foo\} \{cmd1\}\]"
+
+tcltest::test descend-into-switch-6.1 {recreate nested switch script with multiple statements} {
+    set script {set result [switch Foo {"Foo" {cmd1}} ; set i 0]}
+    set range {24 12}
+
+    descend_container_switch_script_recreate $script $range
+} "set result \[switch Foo \{Foo\} \{cmd1\} \; set i 0\]"
+
+tcltest::test descend-into-switch-6.2 {recreate nested switch script with multiple statements} {
+    set script {set result [set i 0 ; switch Foo {"Foo" {cmd1}} ; set i 1]}
+    set range {34 12}
+
+    descend_container_switch_script_recreate $script $range
+} "set result \[set i 0 ; switch Foo \{Foo\} \{cmd1\} \; set i 1\]"
+
+tcltest::test descend-into-switch-6.3 {recreate nested switch script with multiple statements} {
+    set script {set result [switch Foo {"Foo" {
+cmd1
+}}]}
+    set range {24 14}
+
+    descend_container_switch_script_recreate $script $range
+} "set result \[switch Foo \{Foo\} \{\ncmd1\n\}\]"
+
+tcltest::test descend-into-switch-6.4 {recreate nested switch script with multiple statements} {
+    set script {set result [switch Foo {"Foo" {
+cmd1
+cmd2
+}} ; set i 0]}
+    set range {24 19}
+
+    descend_container_switch_script_recreate $script $range
+} "set result \[switch Foo \{Foo\} \{\ncmd1\ncmd2\n\} ; set i 0\]"
+
+tcltest::test descend-into-switch-6.5 {recreate nested switch script with multiple statements} {
+    set script "set result \[switch ONE \{
+ONE \\
+\{puts ONE\}
+TWO \\
+\{puts TWO\}
+\} ; set i 0\]"
+    set range {24 35}
+
+    descend_container_switch_script_recreate $script $range
+} "set result \[switch ONE \{ONE\} \{puts ONE\} \{TWO\} \{puts TWO\}\\\n\\\n\\\n\\\n\\\n ; set i 0\]"
+
+tcltest::test descend-into-switch-6.6 {recreate nested switch script} {
+    set script {
+set i [switch Foo {
+    Foo {
+        proc p {} {}
+    }
+}]
+}
+    set range {20 38}
+
+    descend_container_switch_script_recreate $script $range
+} "
+set i \[switch Foo \{Foo\} \{
+        proc p \{\} \{\}
+    \}\\
+\\
+\]
+"
+
+
+tcltest::test descend-into-switch-7.0 {reparse switch body} {
+    set report [list]
+    # 3 args in switch command becomes 4 args after reparse
+    set script {
+switch Foo {
+    Foo {}
+}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list $report \
+        [descend_get_data [lindex $report 0] pre_validated] \
+        [descend_get_data [lindex $report 0] validated] \
+        [descend_get_data [lindex $report 0] script]
+} [list dkey0 {default {} 1 2} {default {} 1 {2 3}} "
+switch Foo \{Foo\} \{\}\\
+\\
+
+"]
+
+tcltest::test descend-into-switch-7.1 {reparse switch body} {
+    set report [list]
+    # 3 args in switch command becomes 4 args after reparse
+    set script {
+switch Foo {
+    "Foo" {cmd1}
+}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list $report \
+        [descend_get_data [lindex $report 0] pre_validated] \
+        [descend_get_data [lindex $report 0] validated] \
+        [descend_get_data [lindex $report 0] script]
+} [list {dkey0 dkey1} {default {} 1 2} {default {} 1 {2 3}} "
+switch Foo \{Foo\} \{cmd1\}\\
+\\
+
+"]
+
+tcltest::test descend-into-switch-7.2 {reparse switch body} {
+    set report [list]
+    # 3 args in switch command becomes 6 args after reparse
+    set script {
+switch Foo {
+    "Foo" {cmd1}
+    default {cmd2}
+}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list $report \
+        [descend_get_data [lindex $report 0] pre_validated] \
+        [descend_get_data [lindex $report 0] validated] \
+        [descend_get_data [lindex $report 0] script]
+} [list {dkey0 dkey1 dkey2} {default {} 1 2} {default {} 1 {2 3 4 5}} "
+switch Foo \{Foo\} \{cmd1\} default \{cmd2\}\\
+\\
+\\
+
+"]
+
+tcltest::test descend-into-switch-7.3 {reparse switch body} {
+    set report [list]
+    # 3 args in switch command becomes 8 args after reparse
+    set script {
+switch Foo {
+    "Foo" -
+    {Bar} {cmd1}
+    default {cmd2}
+}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list $report \
+        [descend_get_data [lindex $report 0] pre_validated] \
+        [descend_get_data [lindex $report 0] validated] \
+        [descend_get_data [lindex $report 0] script]
+} [list {dkey0 dkey1 dkey2} {default {} 1 2} {default {} 1 {2 3 4 5 6 7}} "
+switch Foo \{Foo\} - \{Bar\} \{cmd1\} default \{cmd2\}\\
+\\
+\\
+\\
+
+"]
+
+tcltest::test descend-into-switch-7.4 {reparse switch body} {
+    set report [list]
+    # 3 args in switch command becomes 8 args after reparse
+    # Skip body scripts that are not static.
+    set script {
+switch Foo {
+    "Foo" -
+    {Bar} {cmd1}
+    default $script
+}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list $report \
+        [descend_get_data [lindex $report 0] pre_validated] \
+        [descend_get_data [lindex $report 0] validated] \
+        [descend_get_data [lindex $report 0] script]
+} [list {dkey0 dkey1 dkey2} {default {} 1 2} {default {} 1 {2 3 4 5 6 7}} "
+switch Foo \{Foo\} - \{Bar\} \{cmd1\} default \{\$script\}\\
+\\
+\\
+\\
+
+"]
+
+
+
+tcltest::test descend-into-switch-8.0 {switch util methods} {
+    set report [list]
+    set script {
+switch Foo Foo {}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_container_switch_mode [lindex $report 0]]
+} {1 default}
+
+tcltest::test descend-into-switch-8.1 {switch util methods} {
+    set report [list]
+    set script {
+switch Foo Foo {}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_container_switch_has_last [lindex $report 0]]
+} {1 0}
+
+tcltest::test descend-into-switch-8.2 {switch util methods} {
+    set report [list]
+    set script {
+switch -- Foo Foo {}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_container_switch_has_last [lindex $report 0]]
+} {1 1}
+
+tcltest::test descend-into-switch-8.3 {switch util methods} {
+    set report [list]
+    set script {
+switch Foo Foo {}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_container_switch_string [lindex $report 0]]
+} {1 1}
+
+tcltest::test descend-into-switch-8.4 {switch util methods} {
+    set report [list]
+    set script {
+switch Foo Foo {} Bar {}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_container_switch_patbody_indexes [lindex $report 0]]
+} {1 {2 3 4 5}}
+
+tcltest::test descend-into-switch-8.3 {switch util methods} {
+    set report [list]
+    set script {
+switch Foo Foo - Bar {}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_container_switch_patbody_indexes [lindex $report 0]] \
+        [descend_container_switch_is_fallthrough [lindex $report 0] 3] \
+        [descend_container_switch_is_fallthrough [lindex $report 0] 5]
+} {1 {2 3 4 5} 1 0}
+
+tcltest::test descend-into-switch-8.4 {switch util methods} {
+    set report [list]
+    set script {
+switch Foo Foo {}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_container_switch_has_patbody_list [lindex $report 0]]
+} {1 0}
+
+tcltest::test descend-into-switch-8.5 {switch util methods} {
+    set report [list]
+    set script {
+switch Foo {Foo {}}
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_container_switch_has_patbody_list [lindex $report 0]]
+} {1 1}
+
+tcltest::test descend-into-switch-9.0 {switch usage errors} {
+    set report [list]
+    set script {
+switch -- --
+}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] [descend_get_data [lindex $report 0] usage]
+} {1 1}
+
+
+tcltest::test descend-into-switch-10.0 {reparsed command range} {
+    # Not reparsed
+    set script {switch Foo Foo cmd1}
+    set range {0 end}
+
+    set report [list]
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    set keys [descend_start $script]
+
+    list \
+        [descend_get_data [lindex $keys 0] command] \
+        [descend_get_data [lindex $keys 0] original_command] \
+} {{0 19} {0 19}}
+
+tcltest::test descend-into-switch-10.1 {reparsed command range} {
+    # Reparsed, command ranges do not match, but same num lines
+    set script {switch Foo {Foo cmd1 Bar cmd2}}
+    set range {0 end}
+
+    set report [list]
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    set keys [descend_start $script]
+
+    list \
+        [descend_get_data [lindex $keys 0] command] \
+        [descend_get_data [lindex $keys 0] original_command] \
+        [descend_get_data [lindex $keys 0] script]
+} {{0 36} {0 30} {switch Foo {Foo} {cmd1} {Bar} {cmd2}}}
+
+tcltest::test descend-into-switch-10.2 {reparsed command range} {
+    # Reparsed, command ranges do not match, but same num lines
+    set script {switch Foo {
+Foo cmd1}}
+    set range {0 end}
+
+    set report [list]
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    set keys [descend_start $script]
+
+    list \
+        [descend_get_data [lindex $keys 0] command] \
+        [descend_get_data [lindex $keys 0] original_command] \
+        [descend_get_data [lindex $keys 0] script]
+} [list {0 25} {0 22} "switch Foo \{Foo\} \{cmd1\}\\
+"]
+
+tcltest::test descend-into-switch-10.3 {reparsed command range} {
+    # Reparsed command ranges match
+    set script {switch Foo {
+Foo cmd1
+}
+}
+    set range {0 end}
+
+    set report [list]
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    set keys [descend_start $script]
+
+    list \
+        [descend_get_data [lindex $keys 0] command] \
+        [descend_get_data [lindex $keys 0] original_command] \
+        [descend_get_data [lindex $keys 0] script]
+} [list {0 28} {0 24} "switch Foo \{Foo\} \{cmd1\}\\
+\\
+
+"]
+
+tcltest::test descend-into-switch-10.4 {reparsed command range} {
+    # Reparsed command ranges match
+    set script {switch Foo {
+Foo {
+    cmd1
+}
+}
+}
+    set range {0 end}
+
+    set report [list]
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    set keys [descend_start $script]
+
+    list \
+        [descend_get_data [lindex $keys 0] command] \
+        [descend_get_data [lindex $keys 0] original_command] \
+        [descend_get_data [lindex $keys 0] script]
+} [list {0 34} {0 32} "switch Foo \{Foo\} \{
+    cmd1
+\}\\
+\\
+
+"]
+
+
+tcltest::test descend-into-switch-10.5 {reparsed command range} {
+    # Reparsed, command ranges do not match, but same num lines
+    set script {
+switch Foo {
+    Foo {
+        proc p {} {}
+    }
+}
+}
+    set range {0 end}
+
+    set report [list]
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    set keys [descend_start $script]
+
+    list \
+        [descend_get_data [lindex $keys 0] original_command] \
+        [descend_get_data [lindex $keys 0] script] \
+        [descend_get_data [lindex $keys 0] command]
+} [list {1 52} "
+switch Foo \{Foo\} \{
+        proc p \{\} \{\}
+    \}\\
+\\
+
+" {1 50}]
+
+
+tcltest::test descend-into-switch-10.6 {reparsed command range} {
+    # Reparsed, command ranges do not match, but same num lines
+    set script {
+set i [switch Foo {
+    Foo {
+        proc p {} {}
+    }
+}]
+}
+    set range {0 end}
+
+    set report [list]
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    set keys [descend_start $script]
+
+    list \
+        [descend_get_data [lindex $keys 1] original_command] \
+        [descend_get_data [lindex $keys 1] script] \
+        [descend_get_data [lindex $keys 1] command] \
+        [parse getstring \
+            [descend_get_data [lindex $keys 1] script] \
+            [descend_get_data [lindex $keys 1] command] \
+        ]
+} [list {8 51} "
+set i \[switch Foo \{Foo\} \{
+        proc p \{\} \{\}
+    \}\\
+\\
+\]
+" \
+{8 49} \
+"switch Foo \{Foo\} \{
+        proc p \{\} \{\}
+    \}\\
+\\
+"]
+
+
+tcltest::test descend-into-switch-11.0 {reparsed switch script, check rest range} {
+    # switch and cmd use reparsed switch script, set command
+    # uses original script.
+    set script {switch Foo {Foo cmd};set i 1}
+    set range {0 end}
+
+    set report [list]
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    set keys [descend_start $script]
+
+    list \
+        [llength $keys] \
+        [descend_get_data [lindex $keys 0] script] \
+        [descend_get_data [lindex $keys 1] script] \
+        [descend_get_data [lindex $keys 2] script]
+} {3 {switch Foo {Foo} {cmd};set i 1} {switch Foo {Foo} {cmd};set i 1} {switch Foo {Foo cmd};set i 1}}
+
+
+
+
+# Switch Tests:
+# switch $str PATLIST
+# switch -exact $str PATLIST
+# switch -glob $str PATLIST
+# switch -regexp $str PATLIST
+# switch -regexp -- $str PATLIST
+
+
+# Error cases, or can't statically determine usage
+# set option -exact
+# switch $option -- $var {}
+
+# switch $opt1 $optsep $var "pat1" $body1 "pat2" $body2
+# switch -exact -glob ...
+
+# switch -- -glob ...
+# switch $var -- -- $str {}
+
+# switch -- --
+
+# Test wrong number of pat/body args for 1 -> 6 and more than 6 !!!
+
+
+
+
+tcltest::test descend-into-after-1.0 {descend into after} {
+    set report [list]
+    set script {after 50 cmd}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    # check usage, if it is statically defined, and validated indexes
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] usage] \
+        [descend_container_is_static [lindex $report 0]] \
+        [descend_get_data [lindex $report 0] validated] \
+} {2 0 1 {ms 50 2}}
+
+tcltest::test descend-into-after-1.1 {descend into after, check container stack} {
+    set report [list]
+    set script {after 50 cmd}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    descend_start $script
+
+    set report
+} {{after 50 cmd} {} cmd after}
+
+tcltest::test descend-into-after-1.2 {descend into after} {
+    set report [list]
+    # Script passed to after is broken into arguments
+    set script {after 50 "cmd arg1 arg2"}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    # check usage, if it is statically defined, and validated indexes
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] usage] \
+        [descend_container_is_static [lindex $report 0]] \
+        [descend_get_data [lindex $report 0] validated] \
+} {2 0 1 {ms 50 2}}
+
+tcltest::test descend-into-after-1.3 {descend into after, check container stack} {
+    set report [list]
+    # Script passed to after is broken into arguments
+    set script {after 50 "cmd arg1 arg2"}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    descend_start $script
+
+    set report
+} {{after 50 {"cmd arg1 arg2"}} {} {cmd arg1 arg2} after}
+
+tcltest::test descend-into-after-1.4 {descend into after} {
+    set report [list]
+    # Script passed to after is broken into arguments,
+    # this script is not statically defined since it
+    # contains a variable that could be expanded into
+    # multiple arguments. In this case, just parse the
+    # command name with undetermined arguments.
+    set script {after 50 "cmd arg1 $var"}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    # check usage, if it is statically defined, and validated indexes
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] usage] \
+        [descend_get_data [lindex $report 1] undetermined] \
+        [descend_container_is_static [lindex $report 0]] \
+        [descend_get_data [lindex $report 0] validated] \
+} {2 0 1 0 {ms 50 2}}
+
+tcltest::test descend-into-after-1.5 {descend into after, check container stack} {
+    set report [list]
+    # Script passed to after is broken into arguments,
+    # this script is not statically defined since it
+    # contains a variable that could be expanded into
+    # multiple arguments. In this case, just parse the
+    # command name with undetermined arguments.
+    set script {after 50 "cmd arg1 $var"}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    descend_start $script
+
+    set report
+} {{after 50 {"cmd arg1 $var"}} {} cmd after}
+
+tcltest::test descend-into-after-1.6 {descend into after} {
+    set report [list]
+    set script {after 50 cmd1 arg1}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    # check usage, if it is statically defined, and validated indexes
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] usage] \
+        [descend_container_is_static [lindex $report 0]] \
+        [descend_get_data [lindex $report 0] validated] \
+} {2 0 1 {ms 50 {2 3}}}
+
+tcltest::test descend-into-after-1.7 {descend into after, check container stack} {
+    set report [list]
+    set script {after 50 cmd arg}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    descend_start $script
+
+    set report
+} {{after 50 cmd arg} {} {cmd arg} after}
+
+tcltest::test descend-into-after-1.8 {descend into after} {
+    set report [list]
+    set script {after 50 cmd1 arg1 arg2}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    # check usage, if it is statically defined, and validated indexes
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] usage] \
+        [descend_container_is_static [lindex $report 0]] \
+        [descend_get_data [lindex $report 0] validated] \
+} {2 0 1 {ms 50 {2 3 4}}}
+
+tcltest::test descend-into-after-1.9 {descend into after, check container stack} {
+    set report [list]
+    set script {after 50 cmd1 arg1 arg2}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    descend_start $script
+
+    set report
+} {{after 50 cmd1 arg1 arg2} {} {cmd1 arg1 arg2} after}
+
+tcltest::test descend-into-after-1.10 {descend into after} {
+    set report [list]
+    set script {after 50 cmd1 {arg1 arg2} "arg 3"}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    # check usage, if it is statically defined, and validated indexes
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] usage] \
+        [descend_container_is_static [lindex $report 0]] \
+        [descend_get_data [lindex $report 0] validated] \
+} {2 0 1 {ms 50 {2 3 4}}}
+
+tcltest::test descend-into-after-1.11 {descend into after, check container stack} {
+    set report [list]
+    set script {after 50 cmd1 {arg1 arg2} "arg 3"}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    descend_start $script
+
+    set report
+} {{after 50 cmd1 {{arg1 arg2}} {"arg 3"}} {} {cmd1 arg1 arg2 arg 3} after}
+
+tcltest::test descend-into-after-1.12 {descend into after} {
+    set report [list]
+    # Nested command in argument should only be evaluated once
+    # when the after arguments are scanned. The after command
+    # does not know how many list argument this command might
+    # evaluate to, so this command is not statically defined.
+    # Report command with undetermined arguments.
+    set script {after 50 cmd [cmdresult]}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    # check usage, if it is statically defined, and validated indexes
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] usage] \
+        [descend_get_data [lindex $report 2] undetermined] \
+        [descend_container_is_static [lindex $report 0]] \
+        [descend_get_data [lindex $report 0] validated] \
+} {3 0 1 0 {ms 50 {2 3}}}
+
+tcltest::test descend-into-after-1.13 {descend into after, check container stack} {
+    set report [list]
+    # after arguments not statically defined.
+    set script {after 50 cmd [cmdresult]}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    descend_start $script
+
+    set report
+} {{after 50 cmd {[cmdresult]}} {} cmdresult {} cmd after}
+
+tcltest::test descend-into-after-1.14 {descend into after} {
+    set report [list]
+    set script {after idle cmd arg1}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    # check usage, if it is statically defined, and validated indexes
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] usage] \
+        [descend_container_is_static [lindex $report 0]] \
+        [descend_get_data [lindex $report 0] validated] \
+} {2 0 1 {idle {} {2 3}}}
+
+tcltest::test descend-into-after-1.15 {descend into after, check container stack} {
+    set report [list]
+    set script {after idle cmd arg1}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    descend_start $script
+
+    set report
+} {{after idle cmd arg1} {} {cmd arg1} after}
+
+tcltest::test descend-into-after-1.16 {descend into after} {
+    set report [list]
+    set script {after idle cmd {1 2}}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    # check usage, if it is statically defined, and validated indexes
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] usage] \
+        [descend_container_is_static [lindex $report 0]] \
+        [descend_get_data [lindex $report 0] validated] \
+} {2 0 1 {idle {} {2 3}}}
+
+tcltest::test descend-into-after-1.17 {descend into after, check container stack} {
+    set report [list]
+    set script {after idle cmd {1 2}}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    descend_start $script
+
+    set report
+} {{after idle cmd {{1 2}}} {} {cmd 1 2} after}
+
+tcltest::test descend-into-after-1.18 {descend into after} {
+    set report [list]
+    # after command is statically defined here since
+    # we know there will always be 2 arguments passed
+    # to cmd.
+    set script {after 50 {cmd arg1 $var}}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    # check usage, if it is statically defined, and validated indexes
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] usage] \
+        [descend_container_is_static [lindex $report 0]] \
+        [descend_get_data [lindex $report 0] validated] \
+} {2 0 1 {ms 50 2}}
+
+tcltest::test descend-into-after-1.19 {descend into after, check container stack} {
+    set report [list]
+    set script {after idle {cmd arg1 $var}}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    descend_start $script
+
+    set report
+} {{after idle {{cmd arg1 $var}}} {} {cmd arg1 {$var}} after}
+
+
+
+
+
+tcltest::test descend-into-after-2.0 {don't descend into after} {
+    set report [list]
+    set script {after 50}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] usage] \
+        [descend_get_data [lindex $report 0] validated]
+} {1 0 {ms_sleep 50 {}}}
+
+tcltest::test descend-into-after-2.1 {don't descend into after} {
+    set report [list]
+    set script {after cancel after#0}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] usage] \
+        [descend_get_data [lindex $report 0] validated]
+} {1 0 {cancel {} {}}}
+
+tcltest::test descend-into-after-2.2 {don't descend into after} {
+    set report [list]
+    set script {after cancel $script}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] usage] \
+        [descend_get_data [lindex $report 0] validated]
+} {1 0 {cancel {} {}}}
+
+tcltest::test descend-into-after-2.3 {don't descend into after usage error} {
+    set report [list]
+    set script {after cancel}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] usage]
+} {1 1}
+
+tcltest::test descend-into-after-2.4 {don't descend into after} {
+    set report [list]
+    set script {after info}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] usage] \
+        [descend_get_data [lindex $report 0] validated]
+} {1 0 {info {} {}}}
+
+tcltest::test descend-into-after-2.4 {don't descend into after} {
+    set report [list]
+    set script {after info after#0}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] usage] \
+        [descend_get_data [lindex $report 0] validated]
+} {1 0 {info {} {}}}
+
+tcltest::test descend-into-after-2.5 {don't descend into after usage error} {
+    set report [list]
+    set script {after idle}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] usage]
+} {1 1}
+
+tcltest::test descend-into-after-2.6 {don't descend into after usage error} {
+    set report [list]
+    set script {after info after#0 after#1}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] usage]
+} {1 1}
+
+
+
+
+
+# after test cases:
+#
+# after idle [list cmd1 arg1 arg2]
+#
+# The above use of the list command is the same as {cmd1 arg1 arg2},
+# so it might be handy to check for this case.
+
+
+# Common usage:
+
+# after 1000 "cmd 1 2 3"
+# after 1000 cmd
+# after 1000 "cmd"
+
+# So, it is not clear how critical the multiple argument
+# concat case really is for most code.
+
+
+
+tcltest::test descend-into-lsort-1.0 {descend into lsort} {
+    set report [list]
+    set script {lsort -command cmd $list}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    # check usage, if it is statically defined, and validated indexes
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] usage] \
+        [descend_get_data [lindex $report 0] undetermined] \
+        [descend_get_data [lindex $report 1] undetermined] \
+        [descend_container_is_static [lindex $report 0]] \
+        [descend_get_data [lindex $report 0] validated] \
+} {2 0 0 1 1 2}
+
+tcltest::test descend-into-lsort-1.1 {don't descend into lsort} {
+    set report [list]
+    set script {lsort -descending $list}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_keys
+
+    descend_start $script
+
+    # check usage, if it is statically defined, and validated indexes
+    list [llength $report] \
+        [descend_get_data [lindex $report 0] usage] \
+        [descend_get_data [lindex $report 0] undetermined] \
+        [descend_container_is_static [lindex $report 0]] \
+        [descend_get_data [lindex $report 0] validated] \
+} {1 0 0 0 {{}}}
+
+tcltest::test descend-into-lsort-1.2 {descend into lsort -command, check container stack} {
+    set report [list]
+    set script {lsort -command cmd $list}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    descend_start $script
+
+    set report
+} {{lsort -command cmd {$list}} {} cmd lsort}
+
+tcltest::test descend-into-lsort-1.3 {descend into lsort -command, check container stack} {
+    set report [list]
+    # Arguments to cmd are not reported when they can't be determined.
+    set script {lsort -command {cmd arg1} $list}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    descend_start $script
+
+    set report
+} {{lsort -command {{cmd arg1}} {$list}} {} cmd lsort}
+
+
+
+tcltest::test descend-into-expr-1.0 {descend into expr, check container stack} {
+    set report [list]
+    set script {expr {1 * 2}}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    descend_start $script
+
+    set report
+} {{expr {{1 * 2}}} {}}
+
+tcltest::test descend-into-expr-1.1 {descend into expr, check validated indexes} {
+    set report [list]
+    # Unbraced literal 1 is allowed
+    set script {expr 1}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    set keys [descend_start $script]
+
+    list \
+        [set report] \
+        [descend_get_data [lindex $keys 0] usage]
+} {{{expr 1} {}} 0}
+
+tcltest::test descend-into-expr-1.2 {descend into expr, check validated indexes} {
+    set report [list]
+    # Unbraced literal true is allowed
+    set script {expr true}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    set keys [descend_start $script]
+
+    list \
+        [set report] \
+        [descend_get_data [lindex $keys 0] usage]
+} {{{expr true} {}} 0}
+
+tcltest::test descend-into-expr-1.3 {descend into expr, check validated indexes} {
+    set report [list]
+    # Unbraced literal 0 is allowed
+    set script {expr 0}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    set keys [descend_start $script]
+
+    list \
+        [set report] \
+        [descend_get_data [lindex $keys 0] usage]
+} {{{expr 0} {}} 0}
+
+tcltest::test descend-into-expr-1.4 {descend into expr, check validated indexes} {
+    set report [list]
+    # Unbraced literal false is allowed
+    set script {expr false}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    set keys [descend_start $script]
+
+    list \
+        [set report] \
+        [descend_get_data [lindex $keys 0] usage]
+} {{{expr false} {}} 0}
+
+
+tcltest::test descend-into-expr-1.4 {descend into expr, check validated indexes} {
+    set report [list]
+    # Unbraced anything not allowed
+    set script {expr $var}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    set keys [descend_start $script]
+
+    list \
+        [set report] \
+        [descend_get_data [lindex $keys 0] usage]
+} {{{expr {$var}} {}} 1}
+
+tcltest::test descend-into-expr-1.5 {descend into expr, check validated indexes} {
+    set report [list]
+    # Multiple arguments not allowed
+    set script {expr 1 + 2}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    set keys [descend_start $script]
+
+    list \
+        [set report] \
+        [descend_get_data [lindex $keys 0] usage]
+} {{{expr 1 + 2} {}} 1}
+
+tcltest::test descend-into-expr-1.6 {descend into expr, check validated indexes} {
+    set report [list]
+    # Not enought arguments to expr
+    set script {expr}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    set keys [descend_start $script]
+
+    list \
+        [set report] \
+        [descend_get_data [lindex $keys 0] usage]
+} {{expr {}} 1}
+
+
+tcltest::test descend-into-expr-2.0 {descend into expr, check container stack} {
+    set report [list]
+    set script {expr {[cmd]}}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    descend_start $script
+
+    set report
+} {{expr {{[cmd]}}} {} cmd expr}
+
+
+tcltest::test descend-into-expr-2.1 {descend into expr, check container stack} {
+    set report [list]
+    set script {expr {[cmd1] + [cmd2]}}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    descend_start $script
+
+    set report
+} {{expr {{[cmd1] + [cmd2]}}} {} cmd1 expr cmd2 expr}
+
+
+tcltest::test descend-into-expr-2.2 {descend into expr, check container stack} {
+    set report [list]
+    set script {expr {[cmd1 1 2] + [cmd2 3 4]}}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    descend_start $script
+
+    set report
+} {{expr {{[cmd1 1 2] + [cmd2 3 4]}}} {} {cmd1 1 2} expr {cmd2 3 4} expr}
+
+tcltest::test descend-into-expr-2.3 {descend into expr, check container stack} {
+    set report [list]
+    set script {expr {"[cmd]"}}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    descend_start $script
+
+    set report
+} {{expr {{"[cmd]"}}} {} cmd expr}
+
+tcltest::test descend-into-expr-2.4 {descend into expr, check container stack} {
+    set report [list]
+    set script {expr {"x[cmd]y"}}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    descend_start $script
+
+    set report
+} {{expr {{"x[cmd]y"}}} {} cmd expr}
+
+tcltest::test descend-into-expr-2.5 {descend into expr, check container stack} {
+    set report [list]
+    set script {expr {$a([cmd])}}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    descend_start $script
+
+    set report
+} {{expr {{$a([cmd])}}} {} cmd expr}
+
+tcltest::test descend-into-expr-2.6 {descend into expr, check container stack} {
+    set report [list]
+    set script {expr {"x$a([cmd])z"}}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    descend_start $script
+
+    set report
+} {{expr {{"x$a([cmd])z"}}} {} cmd expr}
+
+tcltest::test descend-into-expr-2.7 {descend into expr, check container stack} {
+    set report [list]
+    set script {expr {"x$a([set a [cmd]])z"}}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    descend_start $script
+
+    set report
+} {{expr {{"x$a([set a [cmd]])z"}}} {} {set a {[cmd]}} expr cmd expr}
+
+tcltest::test descend-into-expr-2.8 {descend into expr, check container stack} {
+    set report [list]
+    set script {expr {"x[expr {1 + [cmd]}]y"}}
+
+    descend_init
+
+    descend_report_command_callback test_report_command_container
+
+    descend_start $script
+
+    set report
+} {{expr {{"x[expr {1 + [cmd]}]y"}}} {} {expr {{1 + [cmd]}}} expr cmd {expr expr}}
+
+
+tcltest::test descend-same-script-1.0 {command scripts must match} {
+    set report [list]
+    # Parse nested command inside a word, script must match
+    # so that ranges between scripts are the same.
+    set script {
+set a [set b 0]
+set c "[set d 0]"
+set e "x[set f 0]"
+set g "$a([set h 0])"
+set i "x$a([set j 0])"
+set k $a([set l 0])
+set m $a(x[set n 0])
+set o $a($b([set p 0]))
+set q $a(x$b([set r 0]))
+expr {[set s "t"]}
+expr {$a([set u "v"])}
+expr {"[set w x]"}
+expr {"x[set y z]"}
+}
+    descend_init
+
+    descend_report_command_callback test_report_command_list
+
+    set keys [descend_start $script]
+    set prev_script ""
+    set prev_key ""
+    set result OK
+
+    foreach key $keys {
+        if {$prev_script == ""} {
+            set prev_key $key
+            set prev_script [descend_get_data $key script]
+        } else {
+            set script [descend_get_data $key script]
+            if {$script != $prev_script} {
+                set result "ERROR script for $prev_key and $key don't match"
+            }
+        }
+    }
+
+    list [llength $keys] $result
+} {26 OK}
+
+
+
+# New API that reports information about sets of commands
+
+tcltest::test descend-commands-1.0 {record commands in parsed body} {
+    # Script contains 0 commands
+    set script {
+    }
+
+    descend_init
+    set keys [descend_start $script]
+    list $keys [descend_commands]
+} {{} {}}
+
+tcltest::test descend-commands-1.1 {record commands in parsed body} {
+    # Script contains 0 commands
+    set script {
+        # Comment
+    }
+
+    descend_init
+    set keys [descend_start $script]
+    list $keys [descend_commands]
+} {{} {}}
+
+tcltest::test descend-commands-1.2 {record commands in parsed body} {
+    # Script contains 0 commands
+    set script {
+        ;
+    }
+
+    descend_init
+    set keys [descend_start $script]
+    list $keys [descend_commands]
+} {{} {}}
+
+tcltest::test descend-commands-2.0 {record commands in parsed body} {
+    # Script contains 1 command
+    set script {
+        foo
+    }
+
+    descend_init
+    set keys [descend_start $script]
+    list $keys [descend_commands]
+} {dkey0 dkey0}
+
+tcltest::test descend-commands-2.1 {record commands in parsed body} {
+    # Script contains 2 commands
+    set script {
+        foo
+        bar
+    }
+
+    descend_init
+    set keys [descend_start $script]
+    list $keys [descend_commands]
+} {{dkey0 dkey1} {dkey0 dkey1}}
+
+tcltest::test descend-commands-2.2 {record commands in parsed body} {
+    # Script contains 2 commands
+    set script {
+        foo ; bar
+    }
+
+    descend_init
+    set keys [descend_start $script]
+    list $keys [descend_commands]
+} {{dkey0 dkey1} {dkey0 dkey1}}
+
+tcltest::test descend-commands-3.0 {record commands in parsed body} {
+    # Script contains 2 commands, only the first one is
+    # at the outermost level.
+    set script {
+        foo [bar]
+    }
+
+    descend_init
+    set keys [descend_start $script]
+    list $keys [descend_commands]
+} {{dkey0 dkey1} dkey0}
+
+tcltest::test descend-commands-3.1 {record commands in parsed body} {
+    # Script contains 3 commands, only the first one is
+    # at the outermost level.
+    set script {
+        foo [bar] [baz]
+    }
+
+    descend_init
+    set keys [descend_start $script]
+    list $keys [descend_commands]
+} {{dkey0 dkey1 dkey2} dkey0}
+
+tcltest::test descend-commands-3.2 {record commands in parsed body} {
+    # Script contains 1 command
+    set script {
+        foo
+    }
+
+    descend_init
+    set keys [descend_start $script]
+    list $keys [descend_commands] [descend_commands dkey0]
+} {dkey0 dkey0 {{}}}
+
+tcltest::test descend-commands-3.3 {record commands in parsed body} {
+    # Script contains 2 commands, only the first one is
+    # at the outermost level. Query both the outermost
+    # level and the level of the first key.
+    set script {
+        foo [bar]
+    }
+
+    descend_init
+    set keys [descend_start $script]
+    list $keys [descend_commands] [descend_commands dkey0]
+} {{dkey0 dkey1} dkey0 {{} dkey1}}
+
+tcltest::test descend-commands-3.4 {record commands in parsed body} {
+    # Script contains 3 commands, only the first one is
+    # at the outermost level. Query both the outermost
+    # level and the level of the first key.
+    set script {
+        foo [bar;baz]
+    }
+
+    descend_init
+    set keys [descend_start $script]
+    list $keys [descend_commands] [descend_commands dkey0]
+} {{dkey0 dkey1 dkey2} dkey0 {{} {dkey1 dkey2}}}
+
+tcltest::test descend-commands-3.5 {record commands in parsed body} {
+    # Script contains 3 commands, only the first one is
+    # at the outermost level. Query both the outermost
+    # level and the level of the first key.
+    set script {
+        foo [bar;baz] [bar ; baz]
+    }
+
+    descend_init
+    set keys [descend_start $script]
+    list $keys [descend_commands] [descend_commands dkey0]
+} {{dkey0 dkey1 dkey2 dkey3 dkey4} dkey0 {{} {dkey1 dkey2} {dkey3 dkey4}}}
+
+
+tcltest::test descend-commands-3.6 {record commands in parsed body} {
+    # Script contains 3 commands, only the first one is
+    # at the outermost level. Query both the outermost
+    # level and the level of the first key.
+    set script {
+        foo [bar] [baz]
+    }
+
+    descend_init
+    set keys [descend_start $script]
+    list $keys [descend_commands] [descend_commands dkey0]
+} {{dkey0 dkey1 dkey2} dkey0 {{} dkey1 dkey2}}
+
+
+
+tcltest::test descend-commands-4.0 {record commands in parsed body} {
+    # Script contains 3 commands, 2 of them are nested
+    set script {
+        foo [bar [baz]]
+    }
+
+    descend_init
+    set keys [descend_start $script]
+    list $keys [descend_commands] \
+        [descend_commands dkey0] \
+        [descend_commands dkey1] \
+        [descend_commands dkey2]
+} {{dkey0 dkey1 dkey2} dkey0 {{} dkey1} {{} dkey2} {{}}}
+
+tcltest::test descend-commands-4.1 {record commands in parsed body} {
+    # Script contains 3 nested commands
+    set script {
+        [foo [bar [baz]]]
+    }
+
+    descend_init
+    set keys [descend_start $script]
+    list $keys [descend_commands] \
+        [descend_commands dkey0] \
+        [descend_commands dkey1] \
+        [descend_commands dkey2] \
+        [descend_commands dkey3]
+} {{dkey0 dkey1 dkey2 dkey3} dkey0 dkey1 {{} dkey2} {{} dkey3} {{}}}
+
+
+
+tcltest::test descend-commands-5.0 {record commands in parsed body} {
+    # Script contains 2 commands, one is inside an array key
+    set script {
+        foo $arr([cmd])
+    }
+
+    descend_init
+    set keys [descend_start $script]
+    list $keys [descend_commands] \
+        [descend_commands dkey0] \
+        [descend_commands dkey1]
+} {{dkey0 dkey1} dkey0 {{} dkey1} {{}}}
+
+tcltest::test descend-commands-5.1 {record commands in parsed body} {
+    # Script contains 2 commands, one is inside a word
+    set script {
+        foo "[cmd]"
+    }
+
+    descend_init
+    set keys [descend_start $script]
+    list $keys [descend_commands] \
+        [descend_commands dkey0] \
+        [descend_commands dkey1]
+} {{dkey0 dkey1} dkey0 {{} dkey1} {{}}}
+
+tcltest::test descend-commands-5.2 {record commands in parsed body} {
+    # Script contains 3 commands, two in an array key
+    set script {
+        foo $arr([cmd1][cmd2])
+    }
+
+    descend_init
+    set keys [descend_start $script]
+    list $keys [descend_commands] \
+        [descend_commands dkey0] \
+        [descend_commands dkey1] \
+        [descend_commands dkey2]
+} {{dkey0 dkey1 dkey2} dkey0 {{} {dkey1 dkey2}} {{}} {{}}}
+
+tcltest::test descend-commands-5.3 {record commands in parsed body} {
+    # Script contains 3 commands, two in an word
+    set script {
+        foo "[cmd1][cmd2]"
+    }
+
+    descend_init
+    set keys [descend_start $script]
+    list $keys [descend_commands] \
+        [descend_commands dkey0] \
+        [descend_commands dkey1] \
+        [descend_commands dkey2]
+} {{dkey0 dkey1 dkey2} dkey0 {{} {dkey1 dkey2}} {{}} {{}}}
+
+tcltest::test descend-commands-5.4 {record commands in parsed body} {
+    # Script contains 5 commands, currently there is a problem
+    # because there is no way to know how many of these commands
+    # map to each command element in the word.
+    set script {
+        foo "[cmd1][cmd2]$arr([cmd3;cmd4])"
+    }
+
+    descend_init
+    set keys [descend_start $script]
+    list $keys [descend_commands] \
+        [descend_commands dkey0] \
+        [descend_commands dkey1] \
+        [descend_commands dkey2]
+} {{dkey0 dkey1 dkey2 dkey3 dkey4} dkey0 {{} {dkey1 dkey2 {dkey3 dkey4}}} {{}} {{}}}
+
+
+
+
+tcltest::test descend-commands-6.0 {record commands in parsed body} {
+    # 1 command and 1 after container command
+    set script {
+        after 100 cmd
+    }
+
+    descend_init
+    set keys [descend_start $script]
+    list $keys [descend_commands] \
+        [descend_commands dkey0] \
+        [descend_commands dkey0 container]
+} {{dkey0 dkey1} dkey0 {{} {} {}} dkey1}
+
+tcltest::test descend-commands-6.1 {record commands in parsed body} {
+    # 1 command and 1 catch container command
+    set script {
+        catch {cmd}
+    }
+
+    descend_init
+    set keys [descend_start $script]
+    list $keys [descend_commands] \
+        [descend_commands dkey0] \
+        [descend_commands dkey0 container]
+} {{dkey0 dkey1} dkey0 {{} {}} dkey1}
+
+tcltest::test descend-commands-6.2 {record commands in parsed body} {
+    # 1 command and 1 expr container command
+    set script {
+        expr {[cmd1] != [cmd2]}
+    }
+
+    descend_init
+    set keys [descend_start $script]
+    list $keys [descend_commands] \
+        [descend_commands dkey0] \
+        [descend_commands dkey0 container]
+} {{dkey0 dkey1 dkey2} dkey0 {{} {}} {dkey1 dkey2}}
+
+tcltest::test descend-commands-6.3 {record commands in parsed body} {
+    # 1 command and 1 for container command
+    set script {
+        for {set i 0} {$i < 100} {incr i} {
+            puts hi
+        }
+    }
+
+    descend_init
+    set keys [descend_start $script]
+    list $keys [descend_commands] \
+        [descend_commands dkey0] \
+        [descend_commands dkey0 container]
+} {{dkey0 dkey1 dkey2 dkey3} dkey0 {{} {} {} {} {}} {dkey1 {} dkey2 dkey3}}
+
+tcltest::test descend-commands-6.4 {record commands in parsed body} {
+    # 1 command and 1 foreach container command
+    set script {
+        foreach foo {1 2 3 4} {
+            puts hi
+            puts bye
+        }
+    }
+
+    descend_init
+    set keys [descend_start $script]
+    list $keys [descend_commands] \
+        [descend_commands dkey0] \
+        [descend_commands dkey0 container]
+} {{dkey0 dkey1 dkey2} dkey0 {{} {} {} {}} {dkey1 dkey2}}
+
+tcltest::test descend-commands-6.5 {record commands in parsed body} {
+    # 1 command and 3 if container commands
+    set script {
+        if {[cmd1]} {
+            cmd2
+        } else {
+            cmd3
+        }
+    }
+
+    descend_init
+    set keys [descend_start $script]
+    list $keys [descend_commands] \
+        [descend_commands dkey0] \
+        [descend_commands dkey0 container]
+} {{dkey0 dkey1 dkey2 dkey3} dkey0 {{} {} {} {} {}} {dkey1 dkey2 dkey3}}
+
+tcltest::test descend-commands-6.6 {record commands in parsed body} {
+    # 1 command and 3 lsort container commands
+    set script {
+        lsort -command cmd {3 2 1}
+    }
+
+    descend_init
+    set keys [descend_start $script]
+    list $keys [descend_commands] \
+        [descend_commands dkey0] \
+        [descend_commands dkey0 container]
+} {{dkey0 dkey1} dkey0 {{} {} {} {}} dkey1}
+
+tcltest::test descend-commands-6.7 {record commands in parsed body} {
+    # 1 command, 1 switch container command
+    set script {
+        switch -exact -- $str {
+            ONE {}
+            TWO {cmd}
+        }
+    }
+
+    descend_init
+    set keys [descend_start $script]
+    list $keys [descend_commands] \
+        [descend_commands dkey0] \
+        [descend_commands dkey0 container]
+} [list \
+    {dkey0 dkey1} \
+    dkey0 \
+    {{} {} {} {} {} {} {} {}} \
+    {{} dkey1} \
+    ]
+
+tcltest::test descend-commands-6.8 {record commands in parsed body} {
+    # 1 command, 3 while container commands.
+    set script {
+        while {[cmd1]} {
+            cmd2 ; cmd3
+        }
+    }
+
+    descend_init
+    set keys [descend_start $script]
+    list $keys [descend_commands] \
+        [descend_commands dkey0] \
+        [descend_commands dkey0 container]
+} {{dkey0 dkey1 dkey2 dkey3} dkey0 {{} {} {}} {dkey1 {dkey2 dkey3}}}
+
+
+tcltest::test descend-commands-6.9 {record commands in parsed body} {
+    # 1 switch command, 3 container commands. What looks like
+    # a nested command as the switch pattern is actually
+    # a literal string.
+    set script {
+        switch -exact -- $var {
+            ONE {}
+            TWO {
+                cmd1
+            }
+            THREE -
+            [s2] {
+                cmd2
+                cmd3
+            }
+        }
+    }
+
+    descend_init
+    set keys [descend_start $script]
+    list $keys [descend_commands] \
+        [descend_commands dkey0] \
+        [descend_commands dkey0 container] \
+        [descend_container_switch_patbody_indexes dkey0] \
+
+} [list \
+    {dkey0 dkey1 dkey2 dkey3} \
+    dkey0 \
+    {{} {} {} {} {} {} {} {} {} {} {} {}} \
+    {{} dkey1 {} {dkey2 dkey3}} \
+    {4 5 6 7 8 9 10 11} \
+    ]
+
+tcltest::test descend-commands-6.10 {record commands in parsed body} {
+    # 1 switch command, 0 container commands, and 1 nested commands.
+    # The nested command is an argument to the switch command.
+    set script {
+        switch -exact -- [s1] {
+            ONE {}
+        }
+    }
+
+    descend_init
+    set keys [descend_start $script]
+    list $keys [descend_commands] \
+        [descend_commands dkey0] \
+        [descend_commands dkey0 container] \
+        [descend_container_switch_patbody_indexes dkey0] \
+
+} [list \
+    {dkey0 dkey1} \
+    dkey0 \
+    {{} {} {} dkey1 {} {}} \
+    {{}} \
+    {4 5} \
+    ]
+
+tcltest::test descend-commands-6.11 {record commands in parsed body} {
+    # 1 switch command, 1 container command, and two
+    # nested command in argument 3. What looks
+    # like a nested command invocation in the switch
+    # pattern is really a static string.
+    set script {
+        switch -exact -- [cmd1;cmd2] {
+            [cmd3;cmd4] { cmd5 }
+        }
+    }
+
+    descend_init
+    set keys [descend_start $script]
+    list $keys [descend_commands] \
+        [descend_commands dkey0] \
+        [descend_commands dkey0 container] \
+        [descend_container_switch_patbody_indexes dkey0] \
+
+} [list \
+    {dkey0 dkey1 dkey2 dkey3} \
+    dkey0 \
+    {{} {} {} {dkey1 dkey2} {} {}} \
+    dkey3 \
+    {4 5} \
+    ]
+
+# FIXME: Test for switch code body that is a reparsed nested command.
+
+tcltest::test descend-commands-7.0 {record commands in parsed body} {
+    # Empty nested command
+    set script {list []}
+    descend_init
+    list [descend_start $script] \
+        [descend_commands] \
+        [descend_commands dkey0] \
+        [descend_commands dkey0 container]
+} {dkey0 dkey0 {{} {}} {}}
+
+tcltest::test descend-commands-7.1 {record commands in parsed body} {
+    # Nested command
+    set script {list [foo]}
+    descend_init
+    list [descend_start $script] \
+        [descend_commands] \
+        [descend_commands dkey0] \
+        [descend_commands dkey0 container]
+} {{dkey0 dkey1} dkey0 {{} dkey1} {}}
+
+tcltest::test descend-commands-7.2 {record commands in parsed body} {
+    # Nested command
+    set script {list [foo1;foo2]}
+    descend_init
+    list [descend_start $script] \
+        [descend_commands] \
+        [descend_commands dkey0] \
+        [descend_commands dkey0 container]
+} {{dkey0 dkey1 dkey2} dkey0 {{} {dkey1 dkey2}} {}}
+
+tcltest::test descend-commands-7.3 {record commands in parsed body} {
+    # Nested command and some empty nested commands.
+    set script {list [] [foo] [;]}
+    descend_init
+    list [descend_start $script] \
+        [descend_commands] \
+        [descend_commands dkey0] \
+        [descend_commands dkey0 container]
+} {{dkey0 dkey1} dkey0 {{} {} dkey1 {}} {}}
+
+tcltest::test descend-commands-7.4 {record commands in parsed body} {
+    # Nested command and some empty nested commands.
+    set script {list [] [foo] [foo1;foo2]}
+    descend_init
+    list [descend_start $script] \
+        [descend_commands] \
+        [descend_commands dkey0] \
+        [descend_commands dkey0 container]
+} {{dkey0 dkey1 dkey2 dkey3} dkey0 {{} {} dkey1 {dkey2 dkey3}} {}}
+
+tcltest::test descend-commands-7.5 {record commands in parsed body} {
+    # Nested command
+    set script {list [foo [bar [baz]]]}
+    descend_init
+    list [descend_start $script] \
+        [descend_commands] \
+        [descend_commands dkey0] \
+        [descend_commands dkey0 container] \
+        [descend_commands dkey1] \
+        [descend_commands dkey1 container] \
+        [descend_commands dkey2] \
+        [descend_commands dkey2 container] \
+        [descend_commands dkey3] \
+        [descend_commands dkey3 container] \
+
+} [list {dkey0 dkey1 dkey2 dkey3} \
+    dkey0 \
+    {{} dkey1} {} \
+    {{} dkey2} {} \
+    {{} dkey3} {} \
+    {{}} {} \
+    ]
+
+
+tcltest::test descend-commands-8.0 {record commands in parsed body} {
+    # Empty nested command in a word
+    set script {set s "[]"}
+    descend_init
+    list [descend_start $script] \
+        [descend_commands] \
+        [descend_commands dkey0] \
+        [descend_commands dkey0 container]
+} {dkey0 dkey0 {{} {} {{}}} {}}
+
+tcltest::test descend-commands-8.1 {record commands in parsed body} {
+    # Empty nested command in a word
+    set script {set s "[foo]"}
+    descend_init
+    list [descend_start $script] \
+        [descend_commands] \
+        [descend_commands dkey0] \
+        [descend_commands dkey0 container]
+} {{dkey0 dkey1} dkey0 {{} {} dkey1} {}}
+
+tcltest::test descend-commands-8.2 {record commands in parsed body} {
+    # Nested command and empty nested command in a word
+    set script {set s "[foo][]"}
+    descend_init
+    list [descend_start $script] \
+        [descend_commands] \
+        [descend_commands dkey0] \
+        [descend_commands dkey0 container]
+} {{dkey0 dkey1} dkey0 {{} {} {dkey1 {}}} {}}
+
+tcltest::test descend-commands-8.3 {record commands in parsed body} {
+    # Nested command and empty nested command in a word
+    set script {set s "[][foo]"}
+    descend_init
+    list [descend_start $script] \
+        [descend_commands] \
+        [descend_commands dkey0] \
+        [descend_commands dkey0 container]
+} {{dkey0 dkey1} dkey0 {{} {} {{} dkey1}} {}}
+
+tcltest::test descend-commands-8.4 {record commands in parsed body} {
+    # Nested commands and empty nested commands in a word
+    set script {set s "[][foo1][][foo2]"}
+    descend_init
+    list [descend_start $script] \
+        [descend_commands] \
+        [descend_commands dkey0] \
+        [descend_commands dkey0 container]
+} {{dkey0 dkey1 dkey2} dkey0 {{} {} {{} dkey1 {} dkey2}} {}}
+
+
+
+tcltest::test descend-commands-9.0 {record commands in parsed body} {
+    # Empty nested command in an array key
+    set script {list $arr([])}
+    descend_init
+    list [descend_start $script] \
+        [descend_commands] \
+        [descend_commands dkey0] \
+        [descend_commands dkey0 container]
+} {dkey0 dkey0 {{} {{}}} {}}
+
+tcltest::test descend-commands-9.1 {record commands in parsed body} {
+    # Empty nested commands
+    set script {list $arr([][])}
+    descend_init
+    list [descend_start $script] \
+        [descend_commands] \
+        [descend_commands dkey0] \
+        [descend_commands dkey0 container]
+} {dkey0 dkey0 {{} {{} {}}} {}}
+
+tcltest::test descend-commands-9.2 {record commands in parsed body} {
+    # Empty nested commands
+    set script {list $arr([;][])}
+    descend_init
+    list [descend_start $script] \
+        [descend_commands] \
+        [descend_commands dkey0] \
+        [descend_commands dkey0 container]
+} {dkey0 dkey0 {{} {{} {}}} {}}
+
+tcltest::test descend-commands-9.3 {record commands in parsed body} {
+    # Empty nested commands
+    set script {list $arr([][;])}
+    descend_init
+    list [descend_start $script] \
+        [descend_commands] \
+        [descend_commands dkey0] \
+        [descend_commands dkey0 container]
+} {dkey0 dkey0 {{} {{} {}}} {}}
+
+tcltest::test descend-commands-9.4 {record commands in parsed body} {
+    # Empty nested command in an array key
+    set script {list $arr([foo])}
+    descend_init
+    list [descend_start $script] \
+        [descend_commands] \
+        [descend_commands dkey0] \
+        [descend_commands dkey0 container]
+} {{dkey0 dkey1} dkey0 {{} dkey1} {}}
+
+tcltest::test descend-commands-9.5 {record commands in parsed body} {
+    # Nested commands in an array key
+    set script {list $arr([foo][])}
+    descend_init
+    list [descend_start $script] \
+        [descend_commands] \
+        [descend_commands dkey0] \
+        [descend_commands dkey0 container]
+} {{dkey0 dkey1} dkey0 {{} {dkey1 {}}} {}}
+
+tcltest::test descend-commands-9.6 {record commands in parsed body} {
+    # Nested commands in an array key
+    set script {list $arr([foo;][])}
+    descend_init
+    list [descend_start $script] \
+        [descend_commands] \
+        [descend_commands dkey0] \
+        [descend_commands dkey0 container]
+} {{dkey0 dkey1} dkey0 {{} {dkey1 {}}} {}}
+
+tcltest::test descend-commands-9.7 {record commands in parsed body} {
+    # Nested commands in an array key
+    set script {list $arr([foo;bar][])}
+    descend_init
+    list [descend_start $script] \
+        [descend_commands] \
+        [descend_commands dkey0] \
+        [descend_commands dkey0 container]
+} {{dkey0 dkey1 dkey2} dkey0 {{} {{dkey1 dkey2} {}}} {}}
+
+tcltest::test descend-commands-9.8 {record commands in parsed body} {
+    # Nested commands in an array key
+    set script {list $arr([foo;bar][baz])}
+    descend_init
+    list [descend_start $script] \
+        [descend_commands] \
+        [descend_commands dkey0] \
+        [descend_commands dkey0 container]
+} {{dkey0 dkey1 dkey2 dkey3} dkey0 {{} {{dkey1 dkey2} dkey3}} {}}
+
+tcltest::test descend-commands-9.9 {record commands in parsed body} {
+    # Nested commands in an array key
+    set script {list $arr([foo][bar])}
+    descend_init
+    list [descend_start $script] \
+        [descend_commands] \
+        [descend_commands dkey0] \
+        [descend_commands dkey0 container]
+} {{dkey0 dkey1 dkey2} dkey0 {{} {dkey1 dkey2}} {}}
+
+tcltest::test descend-commands-9.10 {record commands in parsed body} {
+    # Nested command contains an array key argument
+    set script {list [cmd $arr([cmd])]}
+    descend_init
+    list [descend_start $script] \
+        [descend_commands] \
+        [descend_commands dkey0] \
+        [descend_commands dkey0 container] \
+        [descend_commands dkey1] \
+        [descend_commands dkey1 container]
+} {{dkey0 dkey1 dkey2} dkey0 {{} dkey1} {} {{} dkey2} {}}
+
+
+# FIXME: Add check for expr arguments that contain syntax errors
+# the code should just ignore such and invalid command and let
+# the runtime raise the error.
+
+
+# FIXME: Add test that prints a nested command subtype.
+# Should this nested subcommand be printed as a list
+# element (a string) or should it also be converted
+# into a list. It is not clear how we would deal with this.
+
+
+
+tcltest::test descend-simple-variable-1.0 {split static varname into parts} {
+    descend_simple_variable {}
+} {scalar {}}
+
+tcltest::test descend-simple-variable-1.1 {split static varname into parts} {
+    descend_simple_variable {s}
+} {scalar s}
+
+tcltest::test descend-simple-variable-1.2 {split static varname into parts} {
+    descend_simple_variable {s.t}
+} {scalar s.t}
+
+tcltest::test descend-simple-variable-1.3 {split static varname into parts} {
+    descend_simple_variable {\$s}
+} {scalar {\$s}}
+
+tcltest::test descend-simple-variable-1.4 {split static varname into parts} {
+    descend_simple_variable {$s}
+} {scalar {$s}}
+
+tcltest::test descend-simple-variable-1.5 {split static varname into parts} {
+    descend_simple_variable {[cmd]}
+} {scalar {[cmd]}}
+
+tcltest::test descend-simple-variable-1.6 {not defined for quoted strings} {
+    descend_simple_variable {"one"}
+} {scalar {"one"}}
+
+tcltest::test descend-simple-variable-1.7 {not defined for quoted strings} {
+    descend_simple_variable {{one}}
+} {scalar {{one}}}
+
+tcltest::test descend-simple-variable-1.8 {not defined for quoted strings} {
+    descend_simple_variable {s[cmd]}
+} {scalar {s[cmd]}}
+
+tcltest::test descend-simple-variable-2.0 {split static varname into parts} {
+    descend_simple_variable "a(b)"
+} {array a b}
+
+tcltest::test descend-simple-variable-2.1 {split static varname into parts} {
+    descend_simple_variable "a()"
+} {array a {}}
+
+tcltest::test descend-simple-variable-2.2 {split static varname into parts} {
+    descend_simple_variable {a($k)}
+} {array a {$k}}
+
+tcltest::test descend-simple-variable-2.3 {split static varname into parts} {
+    descend_simple_variable {a(\$k)}
+} {array a {\$k}}
+
+tcltest::test descend-simple-variable-2.4 {split static varname into parts} {
+    descend_simple_variable {a([cmd])}
+} {array a {[cmd]}}
+
+tcltest::test descend-simple-variable-2.5 {split static varname into parts} {
+    descend_simple_variable {a(b(c))}
+} {array a b(c)}
+
+# Cleanup
+tcltest::cleanupTests
+

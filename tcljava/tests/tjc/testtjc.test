@@ -1,0 +1,286 @@
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest 2.1
+    namespace import -force ::tcltest::*
+}
+
+setupJavaPackage
+
+tcltest::test testtjc-1.0 {call TestTJC methds} {
+    java::call TestTJC testEvalProcBody [java::getinterp]
+} -1
+
+tcltest::test testtjc-1.1 {call TestTJC methds} {
+    java::call TestTJC testEvalProcBody2 [java::getinterp]
+} 2
+
+tcltest::test testtjc-1.2 {call TestTJC methds} {
+    java::call TestTJC testInvoke1 [java::getinterp]
+} 1
+
+tcltest::test testtjc-1.3 {call TestTJC methds} {
+    java::call TestTJC testInvoke2 [java::getinterp]
+} 1
+
+tcltest::test testtjc-1.4 {call TestTJC methds} {
+    set unknown_args [list]
+    if {[info commands unknown] == "unknown"} {
+        set unknown_defined 1
+        rename unknown old.unknown
+    }
+    proc unknown { args } {
+        set ::unknown_args $args
+    }
+    java::call TestTJC testInvoke3 [java::getinterp]
+    rename unknown {}
+    if {$unknown_defined} {
+        rename old.unknown unknown
+    }
+    set unknown_args
+} {foobar 1 2}
+
+tcltest::test testtjc-1.5 {call TestTJC methds} {
+    proc ziggy { num } {
+        set ::ziggy $num
+    }
+    java::call TestTJC testInvoke4 [java::getinterp]
+    rename ziggy {}
+    set ::ziggy
+} {11}
+
+tcltest::test testtjc-1.6 {call TestTJC methds} {
+    proc raise_error { num } {
+        error "error$num"
+    }
+    set result [java::call TestTJC testInvoke5 [java::getinterp]]
+    rename raise_error {}
+    list $result $err $errorInfo
+} {1 error2 {error2
+    while executing
+"error "error$num""
+    (procedure "raise_error" line 2)
+    invoked from within
+"raise_error 2"}}
+
+tcltest::test testtjc-1.7 {call TestTcl methds} {
+    java::call tcl.lang.TestTcl testBoolQuery1 [java::getinterp]
+} {2 refCount 1 TclInteger 1 TclBoolean true 1 TclInteger 1}
+
+tcltest::test testtjc-1.8 {call TestTcl methds} {
+    java::call tcl.lang.TestTcl testBoolQuery2 [java::getinterp]
+} {2 refCount 2 TclInteger 2 TclBoolean true 2 TclInteger 2}
+
+tcltest::test testtjc-1.9 {call TestTcl methds} {
+    java::call tcl.lang.TestTcl testBoolQuery3 [java::getinterp]
+} {2 1 TclInteger 1 TclInteger 2 2 true}
+
+tcltest::test testtjc-2.0 {call TestTJC methds} {
+    java::call TestTJC testSwitchInvoke1 [java::getinterp]
+} {pass}
+
+tcltest::test testtjc-2.1 {call TestTJC methds} {
+    java::call TestTJC testSwitchInvoke2 [java::getinterp]
+} {pass}
+
+tcltest::test testtjc-3.1 {call TestTJC methds} {
+    java::call TestTJC testExprOp1 [java::getinterp]
+} {-1}
+
+tcltest::test testtjc-3.2 {call TestTJC methds} {
+    java::call TestTJC testExprOp2 [java::getinterp]
+} {-1234}
+
+tcltest::test testtjc-3.3 {call TestTJC methds} {
+    java::call TestTJC testExprOp3 [java::getinterp]
+} {1000}
+
+tcltest::test testtjc-3.4 {call TestTJC methds} {
+    java::call TestTJC testExprOp4 [java::getinterp]
+} {101.0}
+
+tcltest::test testtjc-3.5 {call TestTJC methds} {
+    java::call TestTJC testExprOp5 [java::getinterp]
+} {0}
+
+tcltest::test testtjc-3.6 {call TestTJC methds} {
+    java::call TestTJC testExprOp6 [java::getinterp]
+} {1}
+
+tcltest::test testtjc-3.7 {call TestTJC methds} {
+    java::call TestTJC testExprOp7 [java::getinterp]
+} {1}
+
+tcltest::test testtjc-3.8 {call TestTJC methds} {
+    java::call TestTJC testExprOp8 [java::getinterp]
+} {0}
+
+tcltest::test testtjc-3.9 {call TestTJC methds} {
+    java::call TestTJC testExprOp9 [java::getinterp]
+} {4.0}
+
+tcltest::test testtjc-3.10 {call TestTJC methds} {
+    java::call TestTJC testExprOp10 [java::getinterp]
+} {1}
+
+tcltest::test testtjc-3.11 {call TestTJC methds} {
+    java::call TestTJC testExprOp11 [java::getinterp]
+} {0}
+
+tcltest::test testtjc-3.12 {call TestTJC methds} {
+    java::call TestTJC testExprOp12 [java::getinterp]
+} {1}
+
+tcltest::test testtjc-3.13 {call TestTJC methds} {
+    java::call TestTJC testExprOp13 [java::getinterp]
+} {1.0}
+
+
+tcltest::test testtjc-args-1.0 {assign proc args} {
+    java::call TestTJC testArg1 [java::getinterp]
+} 1
+
+tcltest::test testtjc-args-1.1 {assign proc args, should not assign to global vars} {
+    set results [list]
+    catch {unset id}
+    catch {unset age}
+    lappend results [info exists id]
+    lappend results [info exists age]
+    java::call TestTJC testArg1 [java::getinterp]
+    lappend results [info exists id]
+    lappend results [info exists age]
+    set results
+} {0 0 0 0}
+
+tcltest::test testtjc-args-1.2 {assign proc args} {
+    java::call TestTJC testArg2 [java::getinterp]
+} 1
+
+tcltest::test testtjc-args-1.3 {assign proc args} {
+    java::call TestTJC testArg3 [java::getinterp]
+} 1
+
+tcltest::test testtjc-args-1.4 {assign proc args} {
+    java::call TestTJC testArg4 [java::getinterp]
+} 1
+
+tcltest::test testtjc-args-1.5 {assign proc args} {
+    java::call TestTJC testArg5 [java::getinterp]
+} 1
+
+tcltest::test testtjc-cmd-1.0 {create compiled command} {
+    java::call TestTJC testCreateCompiledCommand1 [java::getinterp]
+} 1
+
+tcltest::test testtjc-cmd-1.1 {create compiled command} {
+    java::call TestTJC testCreateCompiledCommand2 [java::getinterp]
+} 1
+
+tcltest::test testtjc-cmd-1.2 {create compiled command} {
+    java::call TestTJC testCreateCompiledCommand3 [java::getinterp]
+} 1
+
+tcltest::test testtjc-refcount-1.0 {TclObject ref count} {
+    java::call TestTJC testRefCount1 [java::getinterp]
+} {TclObject has been deallocated}
+
+tcltest::test testtjc-refcount-1.1 {TclObject ref count} {
+    java::call TestTJC testRefCount2 [java::getinterp]
+} {TclObject has been deallocated}
+
+tcltest::test testtjc-refcount-1.2 {TclObject ref count} {
+    java::call TestTJC testRefCount3 [java::getinterp]
+} {TclObject has been deallocated}
+
+tcltest::test testtjc-refcount-1.3 {TclObject ref count} {
+    java::call TestTJC testRefCount4 [java::getinterp]
+} {TclObject has been deallocated}
+
+tcltest::test testtjc-refcount-1.4 {TclObject ref count} {
+    java::call TestTJC testRefCount5 [java::getinterp]
+} {TclObject has been deallocated}
+
+tcltest::test testtjc-refcount-1.5 {TclObject ref count} {
+    java::call TestTJC testRefCount6 [java::getinterp]
+} {TclObject has been deallocated}
+
+tcltest::test testtjc-refcount-1.6 {TclObject ref count} {
+    java::call TestTJC testRefCount7 [java::getinterp]
+} {TclObject has been deallocated}
+
+tcltest::test testtjc-refcount-1.7 {TclObject ref count} {
+    java::call TestTJC testRefCount8 [java::getinterp]
+} {TclObject has been deallocated}
+
+tcltest::test testtjc-refcount-1.8 {TclObject ref count} {
+    java::call TestTJC testRefCount9 [java::getinterp]
+} {TclObject has been deallocated}
+
+tcltest::test testtjc-refcount-1.9 {TclObject ref count} {
+    java::call TestTJC testRefCount10 [java::getinterp]
+} {TclObject has been deallocated}
+
+
+tcltest::test testtjc-package-1.0 {load TJC package} {
+    package require TJC
+    lsort [info commands TJC::*]
+} {::TJC::command ::TJC::package}
+
+tcltest::test testtjc-command-1.0 {TJC::command} {
+    package require TJC
+    catch {TJC::command foo one.two.three.four.FooCmd} err
+    set err
+} {class one.two.three.four.FooCmd not found}
+
+tcltest::test testtjc-command-1.1 {TJC::command} {
+    package require TJC
+    TJC::command test_tjc_compiled_command TestTJCCompiledCommand
+    set result [test_tjc_compiled_command]
+    rename test_tjc_compiled_command {}
+    set result
+} {OK from ::}
+
+tcltest::test testtjc-command-1.2 {TJC::command} {
+    package require TJC
+    TJC::command ::TJC::test_tjc_compiled_command TestTJCCompiledCommand
+    set result [TJC::test_tjc_compiled_command]
+    rename ::TJC::test_tjc_compiled_command {}
+    set result
+} {OK from ::TJC}
+
+tcltest::test testtjc-package-1.0 {TJC::package} {
+    package require TJC
+    catch {TJC::package one.two.three.four} err
+    set err
+} {class one.two.three.four.TJCExtension not found}
+
+tcltest::test testtjc-package-1.1 {TJC::package} {
+    package require TJC
+    catch {TJC::package default} err
+    set err
+} {class TJCExtension not found}
+
+tcltest::test testtjc-package-1.2 {TJC::package} {
+    package require TJC
+    set val {}
+    TJC::package test.tjc
+    set val
+} {OK}
+
+tcltest::test testtjc-package-1.3 {TJC::package} {
+    package require TJC
+    # Loading test.tjcext package will source
+    # f1.tcl, f2.tcl, and f3.tcl from
+    # the tjcext.jar file.
+    foreach cmd [info commands fp*] {
+        rename $cmd {}
+    }
+    TJC::package test.tjcext
+    set results [lsort [info commands fp*]]
+    foreach cmd $results {
+        rename $cmd {}
+    }
+    set results
+} {fp1 fp2 fp3}
+
+::tcltest::cleanupTests
+return
+

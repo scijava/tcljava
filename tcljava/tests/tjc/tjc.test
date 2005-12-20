@@ -1,0 +1,266 @@
+package require tcltest
+
+# Make TCL_LIBRARY an absolute path if is set to a relative one.
+# This makes it possible to exec the tjc executable from a
+# dir other than the build dir. Do the same for TJC_LIBRARY too.
+
+proc tjc_env {} {
+    global env
+
+    if {[info exists env(TCL_LIBRARY)]} {
+        set lib $env(TCL_LIBRARY)
+        if {[file pathtype $lib] != "absolute"} {
+            set env(TCL_LIBRARY) [file normalize $lib]
+        }
+    }
+
+    if {[info exists env(TJC_LIBRARY)]} {
+        set lib $env(TJC_LIBRARY)
+        if {[file pathtype $lib] != "absolute"} {
+            set env(TJC_LIBRARY) [file normalize $lib]
+        }
+    }
+}
+
+# Load JDK config settings from build or install location
+source [file join [tcltest::testsDirectory] jdkutils.tcl]
+test_jdk_load_config
+tjc_env
+
+# Run tjc executable from the build directory or from the
+# install directory. The argl argument is a list of
+# options and filenames to be passed to tjc. This
+# method assumes that the tjc executable is on the PATH.
+
+
+proc tjc_exec { argl } {
+    global env tcl_platform
+
+    set debug 0
+
+    # Jacl under Windows needs to exec tjc.bat instead of tjc
+    # since tjc script is a Mingw bash script and not a valid
+    # Win32 native executable type. Also note that tjc.bat
+    # needs to exec jaclsh.bat so both of these
+    # programs need to appear on the PATH.
+
+    if {$tcl_platform(platform) == "java" \
+            && $tcl_platform(host_platform) == "windows"} {
+        set cmd {exec tjc.bat}
+    } else {
+        set cmd {exec tjc}
+    }
+
+    if {$debug} {
+        if {[info exists env(TCL_LIBRARY)]} {
+            puts "pre tjc_exec: TCL_LIBRARY is \"$env(TCL_LIBRARY)\""
+        }
+        puts "tjc cmd is: ->$cmd $argl<-"
+        puts "will exec from cwd : [pwd]"
+    }
+
+    if {[catch {eval $cmd $argl} err]} {
+        return "EXEC ERROR $err"
+    } else {
+        return OK
+    }
+}
+
+proc test_write { filename data } {
+    set fd [open $filename w]
+    puts $fd $data
+    close $fd
+    return $data
+}
+
+# List contents of generated JAR file.
+
+proc test_jar_list { jarname } {
+    set jar [jdk_config_var JAR]
+
+    if {![file exists $jarname]} {
+        return "ERROR $jarname does not exists"
+    }
+
+    if {[catch {exec $jar -tf $jarname} err]} {
+        return "ERROR $err"
+    }
+    set listing $err
+    return $listing
+}
+
+
+# Define test name before test
+set testname tjctest1
+set testcmdname Tjctest1Cmd
+
+tcltest::test tjc-1.1 {tjc program test : named Java package} {
+    set CWD [pwd]
+    file mkdir $testname
+    cd $testname
+    test_write $testname.tjc "
+PACKAGE $testname
+SOURCE $CWD/$testname/$testname.tcl
+INIT_SOURCE $CWD/$testname/$testname.tcl
+OPTIONS -compile
+"
+    test_write $testname.tcl "
+proc $testname \{\} \{\}
+"
+
+    set results [list]
+    set exec_results [tjc_exec $testname.tjc]
+    if {$exec_results == "OK"} {
+        set passed 1
+    } else {
+        set passed 0
+        puts $exec_results
+    }
+    lappend results $passed
+    lappend results [test_jar_list ${testname}.jar]
+    lappend results [test_jar_list ${testname}src.jar]
+
+    cd $CWD
+    if {$passed} {
+        file delete ${testname}.jar ${testname}src.jar
+        file delete -force ${testname}
+    }
+    set results
+} [list \
+    1 \
+    "META-INF/
+META-INF/MANIFEST.MF
+${testname}/
+${testname}/library/
+${testname}/library/${testname}.tcl
+${testname}/TJCExtension.class
+${testname}/${testcmdname}.class" \
+    "META-INF/
+META-INF/MANIFEST.MF
+${testname}/
+${testname}/library/
+${testname}/library/${testname}.tcl
+${testname}/TJCExtension.java
+${testname}/${testcmdname}.java" \
+  ]
+
+
+
+# Define test name before test
+set testname tjctest2
+set testcmdname Tjctest2Cmd
+
+tcltest::test tjc-1.2 {tjc program test : default Java package} {
+    set CWD [pwd]
+    file mkdir $testname
+    cd $testname
+    test_write $testname.tjc "
+PACKAGE default
+SOURCE $CWD/$testname/$testname.tcl
+INIT_SOURCE $CWD/$testname/$testname.tcl
+OPTIONS -compile
+"
+    test_write $testname.tcl "
+proc $testname \{\} \{\}
+"
+
+    set results [list]
+    set exec_results [tjc_exec $testname.tjc]
+    if {$exec_results == "OK"} {
+        set passed 1
+    } else {
+        set passed 0
+        puts $exec_results
+    }
+    lappend results $passed
+    lappend results [test_jar_list ${testname}.jar]
+    lappend results [test_jar_list ${testname}src.jar]
+
+    cd $CWD
+    if {$passed} {
+        file delete ${testname}.jar ${testname}src.jar
+        file delete -force ${testname}
+    }
+    set results
+} [list \
+    1 \
+    "META-INF/
+META-INF/MANIFEST.MF
+library/
+library/${testname}.tcl
+TJCExtension.class
+${testcmdname}.class" \
+    "META-INF/
+META-INF/MANIFEST.MF
+default/
+default/library/
+default/library/${testname}.tcl
+default/TJCExtension.java
+default/${testcmdname}.java" \
+  ]
+
+
+# Define test name before test
+set testname tjctest3
+set testcmdname Tjctest3Cmd
+
+tcltest::test tjc-1.3 {tjc program test : filename in INIT_SOURCE, add INCLUDE_SOURCE} {
+    set CWD [pwd]
+    file mkdir $testname
+    cd $testname
+    test_write $testname.tjc "
+PACKAGE $testname
+SOURCE $CWD/$testname/$testname.tcl $CWD/$testname/include.tcl
+INIT_SOURCE $testname.tcl
+INCLUDE_SOURCE include.tcl
+OPTIONS
+"
+    test_write $testname.tcl "
+proc $testname \{\} \{\}
+"
+    test_write include.tcl "
+proc includeme \{\} \{\}
+"
+
+    set results [list]
+    set exec_results [tjc_exec $testname.tjc]
+    if {$exec_results == "OK"} {
+        set passed 1
+    } else {
+        set passed 0
+        puts $exec_results
+    }
+    lappend results $passed
+    lappend results [test_jar_list ${testname}.jar]
+    lappend results [test_jar_list ${testname}src.jar]
+
+    cd $CWD
+    if {$passed} {
+        file delete ${testname}.jar ${testname}src.jar
+        file delete -force ${testname} include.tcl
+    }
+    set results
+} [list \
+    1 \
+    "META-INF/
+META-INF/MANIFEST.MF
+${testname}/
+${testname}/library/
+${testname}/library/include.tcl
+${testname}/library/${testname}.tcl
+${testname}/TJCExtension.class
+${testname}/${testcmdname}.class" \
+    "META-INF/
+META-INF/MANIFEST.MF
+${testname}/
+${testname}/library/
+${testname}/library/include.tcl
+${testname}/library/${testname}.tcl
+${testname}/TJCExtension.java
+${testname}/${testcmdname}.java" \
+  ]
+
+
+tcltest::cleanupTests
+
+

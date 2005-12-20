@@ -7,7 +7,7 @@
 # Copyright (c) 1998-2000 Ajuba Solutions.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: all.tcl,v 1.7 2005/11/04 21:02:14 mdejong Exp $
+# RCS: @(#) $Id: all.tcl,v 1.8 2005/12/20 23:00:11 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -58,6 +58,19 @@ if {0} {
     }
 }
 
+# Setup TJC specific variables needed to get tests running
+# out of the build directory.
+
+set env(TJC_LIBRARY) [file join [tcltest::testsDirectory] ../src/tjc/tjc/library]
+set env(TJC_BUILD_DIR) $env(BUILD_DIR)
+
+puts "env(TJC_LIBRARY) (exists [info exists env(TJC_LIBRARY)]) $env(TJC_LIBRARY)"
+puts "env(TJC_BUILD_DIR) (exists [info exists env(TJC_BUILD_DIR)]) $env(TJC_BUILD_DIR)"
+
+# Reset TclTest env vars to account for TJC entries
+set ::tcltest::originalEnv(TJC_LIBRARY) $env(TJC_LIBRARY)
+set ::tcltest::originalEnv(TJC_BUILD_DIR) $env(TJC_BUILD_DIR)
+
 
 puts stdout "Tcl $tcl_patchLevel tests running in interp:  [info nameofexecutable]"
 puts stdout "Tests running in working dir:  $::tcltest::testsDirectory"
@@ -103,6 +116,9 @@ if {$tcl_platform(platform) == "java"} {
     foreach test [lsort -dictionary [glob -nocomplain tclparser/*.test]] {
         lappend tests $test
     }
+    foreach test [lsort -dictionary [glob -nocomplain tjc/*.test]] {
+        lappend tests $test
+    }
 } elseif {[info exists env(TCLBLEND_RUN_ALL_TESTS)]} {
     # run the Tcl Blend tests
 
@@ -128,6 +144,9 @@ if {0} {
 
     set tests [list]
     foreach test [lsort -dictionary [glob -nocomplain tclparser/*.test]] {
+        lappend tests $test
+    }
+    foreach test [lsort -dictionary [glob -nocomplain tjc/*.test]] {
         lappend tests $test
     }
 }

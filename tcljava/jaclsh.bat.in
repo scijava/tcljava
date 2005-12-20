@@ -10,11 +10,13 @@ set XP_TCLJAVA_INSTALL_DIR=%PREFIX%/lib/tcljava@TCLJAVA_VERSION@
 set CLASSPATH=%CLASSPATH%;%XP_TCLJAVA_INSTALL_DIR%/tcljava.jar
 set CLASSPATH=%CLASSPATH%;%XP_TCLJAVA_INSTALL_DIR%/jacl.jar
 set CLASSPATH=%CLASSPATH%;%XP_TCLJAVA_INSTALL_DIR%/itcl.jar
+set CLASSPATH=%CLASSPATH%;%XP_TCLJAVA_INSTALL_DIR%/tjc.jar
 
 rem Debug CLASSPATH used when atteching a debugger to Jacl.
 set JACL_DEBUG_CLASSPATH=%CLASSPATH%;%XP_TCLJAVA_INSTALL_DIR%/tcljavasrc.jar
 set JACL_DEBUG_CLASSPATH=%JACL_DEBUG_CLASSPATH%;%XP_TCLJAVA_INSTALL_DIR%/jaclsrc.jar
 set JACL_DEBUG_CLASSPATH=%JACL_DEBUG_CLASSPATH%;%XP_TCLJAVA_INSTALL_DIR%/itclsrc.jar
+set JACL_DEBUG_CLASSPATH=%JACL_DEBUG_CLASSPATH%;%XP_TCLJAVA_INSTALL_DIR%/tjcsrc.jar
 
 rem If JACL_DEBUG is set to 1, start the java executable with
 rem  debug flags so that a Java debugger can attach to the Jacl process.

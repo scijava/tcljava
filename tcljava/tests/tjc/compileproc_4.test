@@ -1,0 +1,834 @@
+package require tcltest
+package require parser
+
+if {[info commands reload] == {}} {
+    # Load procs into Jacl
+    source $env(TJC_LIBRARY)/reload.tcl
+}
+
+# Test generation of code with options:
+# "OPTIONS +inline-containers +cache-commands"
+
+# Load jdk test data in case this has not already been done.
+source [file join [tcltest::testsDirectory] jdkutils.tcl]
+test_jdk_load_config
+
+# Invoked after compileproc_init is invoked inside compileproc_compile.
+
+proc test_compileproc_4_set_flags { proc_name } {
+    global _compileproc
+
+    set _compileproc(options,inline_containers) {all}
+    set _compileproc(options,cache_commands) 1
+}
+
+tcltest::test compileproc4-1.0 {compile proc into Java source} {
+    # "cmd" resolved on first invocation.
+    set script {
+proc p {} {
+    cmd
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_4_set_flags]
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) { initCmd(interp); }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: cmd
+            TclObject[] objv0 = TJC.grabObjv(interp, 1);
+            try {
+                TclObject tmp1;
+                // Arg 0 constant: cmd
+                tmp1 = const0;
+                tmp1.preserve();
+                objv0[0] = tmp1;
+                if ( wcmd_cmdEpoch != wcmd.cmdEpoch ) {
+                    updateCmdCache(interp, 0);
+                }
+                TJC.invoke(interp, ((cmdcache1_cmdEpoch == cmdcache1.cmdEpoch)
+                    ? cmdcache1.cmd : null), objv0, 0);
+                if ( cmdcache1_cmdEpoch != cmdcache1.cmdEpoch ) {
+                    updateCmdCache(interp, 1);
+                }
+            } finally {
+                TJC.releaseObjv(interp, objv0);
+            }
+        } // End Invoke: cmd
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+
+    TclObject const0;
+
+    protected void initConstants(Interp interp) throws TclException {
+        const0 = TclString.newInstance("cmd");
+        const0.preserve(); const0.preserve();
+    }
+
+    int wcmd_cmdEpoch = 0;
+    WrappedCommand cmdcache1;
+    int cmdcache1_cmdEpoch;
+
+    void updateCmdCache(Interp interp, int cacheId) throws TclException {
+        String cmdName;
+        switch ( cacheId ) {
+            case 0: {
+                cmdcache1 = TJC.INVALID_COMMAND_CACHE;
+                cmdcache1_cmdEpoch = 0;
+                wcmd_cmdEpoch = wcmd.cmdEpoch;
+                return;
+            }
+            case 1: {
+                cmdName = "cmd";
+                break;
+            }
+            default: {
+                throw new TclRuntimeError("default: cacheId " + cacheId);
+            }
+        }
+        WrappedCommand lwcmd = TJC.resolveCmd(interp, cmdName);
+        int cmdEpoch;
+        if ( lwcmd == null ) {
+            lwcmd = TJC.INVALID_COMMAND_CACHE;
+            cmdEpoch = 0;
+        } else {
+            cmdEpoch = lwcmd.cmdEpoch;
+        }
+        switch ( cacheId ) {
+            case 1: {
+                cmdcache1 = lwcmd;
+                cmdcache1_cmdEpoch = cmdEpoch;
+                break;
+            }
+        }
+    }
+} // end class Test1
+}}
+
+tcltest::test compileproc4-1.1 {compile proc into Java source} {
+    # "cmd" resolved to command ref on first invocation
+    set script {
+proc p {} {
+    cmd
+    cmd
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_4_set_flags]
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) { initCmd(interp); }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: cmd
+            TclObject[] objv0 = TJC.grabObjv(interp, 1);
+            try {
+                TclObject tmp1;
+                // Arg 0 constant: cmd
+                tmp1 = const0;
+                tmp1.preserve();
+                objv0[0] = tmp1;
+                if ( wcmd_cmdEpoch != wcmd.cmdEpoch ) {
+                    updateCmdCache(interp, 0);
+                }
+                TJC.invoke(interp, ((cmdcache1_cmdEpoch == cmdcache1.cmdEpoch)
+                    ? cmdcache1.cmd : null), objv0, 0);
+                if ( cmdcache1_cmdEpoch != cmdcache1.cmdEpoch ) {
+                    updateCmdCache(interp, 1);
+                }
+            } finally {
+                TJC.releaseObjv(interp, objv0);
+            }
+        } // End Invoke: cmd
+        { // Invoke: cmd
+            TclObject[] objv2 = TJC.grabObjv(interp, 1);
+            try {
+                TclObject tmp3;
+                // Arg 0 constant: cmd
+                tmp3 = const0;
+                tmp3.preserve();
+                objv2[0] = tmp3;
+                if ( wcmd_cmdEpoch != wcmd.cmdEpoch ) {
+                    updateCmdCache(interp, 0);
+                }
+                TJC.invoke(interp, ((cmdcache1_cmdEpoch == cmdcache1.cmdEpoch)
+                    ? cmdcache1.cmd : null), objv2, 0);
+                if ( cmdcache1_cmdEpoch != cmdcache1.cmdEpoch ) {
+                    updateCmdCache(interp, 1);
+                }
+            } finally {
+                TJC.releaseObjv(interp, objv2);
+            }
+        } // End Invoke: cmd
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+
+    TclObject const0;
+
+    protected void initConstants(Interp interp) throws TclException {
+        const0 = TclString.newInstance("cmd");
+        const0.preserve(); const0.preserve();
+    }
+
+    int wcmd_cmdEpoch = 0;
+    WrappedCommand cmdcache1;
+    int cmdcache1_cmdEpoch;
+
+    void updateCmdCache(Interp interp, int cacheId) throws TclException {
+        String cmdName;
+        switch ( cacheId ) {
+            case 0: {
+                cmdcache1 = TJC.INVALID_COMMAND_CACHE;
+                cmdcache1_cmdEpoch = 0;
+                wcmd_cmdEpoch = wcmd.cmdEpoch;
+                return;
+            }
+            case 1: {
+                cmdName = "cmd";
+                break;
+            }
+            default: {
+                throw new TclRuntimeError("default: cacheId " + cacheId);
+            }
+        }
+        WrappedCommand lwcmd = TJC.resolveCmd(interp, cmdName);
+        int cmdEpoch;
+        if ( lwcmd == null ) {
+            lwcmd = TJC.INVALID_COMMAND_CACHE;
+            cmdEpoch = 0;
+        } else {
+            cmdEpoch = lwcmd.cmdEpoch;
+        }
+        switch ( cacheId ) {
+            case 1: {
+                cmdcache1 = lwcmd;
+                cmdcache1_cmdEpoch = cmdEpoch;
+                break;
+            }
+        }
+    }
+} // end class Test1
+}}
+
+tcltest::test compileproc4-1.2 {compile proc into Java source} {
+    # "cmd" and "::cmd" resolved to command ref on first invocation
+    set script {
+proc p {} {
+    cmd
+    ::cmd
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_4_set_flags]
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) { initCmd(interp); }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: cmd
+            TclObject[] objv0 = TJC.grabObjv(interp, 1);
+            try {
+                TclObject tmp1;
+                // Arg 0 constant: cmd
+                tmp1 = const0;
+                tmp1.preserve();
+                objv0[0] = tmp1;
+                if ( wcmd_cmdEpoch != wcmd.cmdEpoch ) {
+                    updateCmdCache(interp, 0);
+                }
+                TJC.invoke(interp, ((cmdcache1_cmdEpoch == cmdcache1.cmdEpoch)
+                    ? cmdcache1.cmd : null), objv0, 0);
+                if ( cmdcache1_cmdEpoch != cmdcache1.cmdEpoch ) {
+                    updateCmdCache(interp, 1);
+                }
+            } finally {
+                TJC.releaseObjv(interp, objv0);
+            }
+        } // End Invoke: cmd
+        { // Invoke: ::cmd
+            TclObject[] objv2 = TJC.grabObjv(interp, 1);
+            try {
+                TclObject tmp3;
+                // Arg 0 constant: ::cmd
+                tmp3 = const1;
+                tmp3.preserve();
+                objv2[0] = tmp3;
+                if ( wcmd_cmdEpoch != wcmd.cmdEpoch ) {
+                    updateCmdCache(interp, 0);
+                }
+                TJC.invoke(interp, ((cmdcache2_cmdEpoch == cmdcache2.cmdEpoch)
+                    ? cmdcache2.cmd : null), objv2, 0);
+                if ( cmdcache2_cmdEpoch != cmdcache2.cmdEpoch ) {
+                    updateCmdCache(interp, 2);
+                }
+            } finally {
+                TJC.releaseObjv(interp, objv2);
+            }
+        } // End Invoke: ::cmd
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+
+    TclObject const0;
+    TclObject const1;
+
+    protected void initConstants(Interp interp) throws TclException {
+        const0 = TclString.newInstance("cmd");
+        const0.preserve(); const0.preserve();
+        const1 = TclString.newInstance("::cmd");
+        const1.preserve(); const1.preserve();
+    }
+
+    int wcmd_cmdEpoch = 0;
+    WrappedCommand cmdcache1;
+    int cmdcache1_cmdEpoch;
+    WrappedCommand cmdcache2;
+    int cmdcache2_cmdEpoch;
+
+    void updateCmdCache(Interp interp, int cacheId) throws TclException {
+        String cmdName;
+        switch ( cacheId ) {
+            case 0: {
+                cmdcache1 = TJC.INVALID_COMMAND_CACHE;
+                cmdcache1_cmdEpoch = 0;
+                cmdcache2 = TJC.INVALID_COMMAND_CACHE;
+                cmdcache2_cmdEpoch = 0;
+                wcmd_cmdEpoch = wcmd.cmdEpoch;
+                return;
+            }
+            case 1: {
+                cmdName = "cmd";
+                break;
+            }
+            case 2: {
+                cmdName = "::cmd";
+                break;
+            }
+            default: {
+                throw new TclRuntimeError("default: cacheId " + cacheId);
+            }
+        }
+        WrappedCommand lwcmd = TJC.resolveCmd(interp, cmdName);
+        int cmdEpoch;
+        if ( lwcmd == null ) {
+            lwcmd = TJC.INVALID_COMMAND_CACHE;
+            cmdEpoch = 0;
+        } else {
+            cmdEpoch = lwcmd.cmdEpoch;
+        }
+        switch ( cacheId ) {
+            case 1: {
+                cmdcache1 = lwcmd;
+                cmdcache1_cmdEpoch = cmdEpoch;
+                break;
+            }
+            case 2: {
+                cmdcache2 = lwcmd;
+                cmdcache2_cmdEpoch = cmdEpoch;
+                break;
+            }
+        }
+    }
+} // end class Test1
+}}
+
+tcltest::test compileproc4-1.3 {compile proc into Java source} {
+    # Can't cache non-constant command name
+    set script {
+proc p {} {
+    $::VAR
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_4_set_flags]
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: $::VAR
+            TclObject[] objv0 = TJC.grabObjv(interp, 1);
+            try {
+                TclObject tmp1;
+                // Arg 0 variable: $::VAR
+                tmp1 = interp.getVar("::VAR", null, 0);
+                tmp1.preserve();
+                objv0[0] = tmp1;
+                TJC.invoke(interp, null, objv0, 0);
+            } finally {
+                TJC.releaseObjv(interp, objv0);
+            }
+        } // End Invoke: ...
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+} // end class Test1
+}}
+
+tcltest::test compileproc4-1.4 {compile proc into Java source} {
+    # "::ONE::cmd" resolved to command ref on first invocation
+    set script {
+proc ONE::p {} {
+    ::ONE::cmd
+    ::ONE::cmd
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_4_set_flags]
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure ONE::p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) { initCmd(interp); }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: ::ONE::cmd
+            TclObject[] objv0 = TJC.grabObjv(interp, 1);
+            try {
+                TclObject tmp1;
+                // Arg 0 constant: ::ONE::cmd
+                tmp1 = const0;
+                tmp1.preserve();
+                objv0[0] = tmp1;
+                if ( wcmd_cmdEpoch != wcmd.cmdEpoch ) {
+                    updateCmdCache(interp, 0);
+                }
+                TJC.invoke(interp, ((cmdcache1_cmdEpoch == cmdcache1.cmdEpoch)
+                    ? cmdcache1.cmd : null), objv0, 0);
+                if ( cmdcache1_cmdEpoch != cmdcache1.cmdEpoch ) {
+                    updateCmdCache(interp, 1);
+                }
+            } finally {
+                TJC.releaseObjv(interp, objv0);
+            }
+        } // End Invoke: ::ONE::cmd
+        { // Invoke: ::ONE::cmd
+            TclObject[] objv2 = TJC.grabObjv(interp, 1);
+            try {
+                TclObject tmp3;
+                // Arg 0 constant: ::ONE::cmd
+                tmp3 = const0;
+                tmp3.preserve();
+                objv2[0] = tmp3;
+                if ( wcmd_cmdEpoch != wcmd.cmdEpoch ) {
+                    updateCmdCache(interp, 0);
+                }
+                TJC.invoke(interp, ((cmdcache1_cmdEpoch == cmdcache1.cmdEpoch)
+                    ? cmdcache1.cmd : null), objv2, 0);
+                if ( cmdcache1_cmdEpoch != cmdcache1.cmdEpoch ) {
+                    updateCmdCache(interp, 1);
+                }
+            } finally {
+                TJC.releaseObjv(interp, objv2);
+            }
+        } // End Invoke: ::ONE::cmd
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "ONE::p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+
+    TclObject const0;
+
+    protected void initConstants(Interp interp) throws TclException {
+        const0 = TclString.newInstance("::ONE::cmd");
+        const0.preserve(); const0.preserve();
+    }
+
+    int wcmd_cmdEpoch = 0;
+    WrappedCommand cmdcache1;
+    int cmdcache1_cmdEpoch;
+
+    void updateCmdCache(Interp interp, int cacheId) throws TclException {
+        String cmdName;
+        switch ( cacheId ) {
+            case 0: {
+                cmdcache1 = TJC.INVALID_COMMAND_CACHE;
+                cmdcache1_cmdEpoch = 0;
+                wcmd_cmdEpoch = wcmd.cmdEpoch;
+                return;
+            }
+            case 1: {
+                cmdName = "::ONE::cmd";
+                break;
+            }
+            default: {
+                throw new TclRuntimeError("default: cacheId " + cacheId);
+            }
+        }
+        WrappedCommand lwcmd = TJC.resolveCmd(interp, cmdName);
+        int cmdEpoch;
+        if ( lwcmd == null ) {
+            lwcmd = TJC.INVALID_COMMAND_CACHE;
+            cmdEpoch = 0;
+        } else {
+            cmdEpoch = lwcmd.cmdEpoch;
+        }
+        switch ( cacheId ) {
+            case 1: {
+                cmdcache1 = lwcmd;
+                cmdcache1_cmdEpoch = cmdEpoch;
+                break;
+            }
+        }
+    }
+} // end class Test1
+}}
+
+tcltest::test compileproc4-1.5 {compile proc into Java source} {
+    # Two refs needed since we can't tell what namespace cmd
+    # will resolve to at compile time.
+    set script {
+proc ONE::p {} {
+    ::ONE::cmd
+    ONE::cmd
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_4_set_flags]
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure ONE::p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) { initCmd(interp); }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: ::ONE::cmd
+            TclObject[] objv0 = TJC.grabObjv(interp, 1);
+            try {
+                TclObject tmp1;
+                // Arg 0 constant: ::ONE::cmd
+                tmp1 = const0;
+                tmp1.preserve();
+                objv0[0] = tmp1;
+                if ( wcmd_cmdEpoch != wcmd.cmdEpoch ) {
+                    updateCmdCache(interp, 0);
+                }
+                TJC.invoke(interp, ((cmdcache1_cmdEpoch == cmdcache1.cmdEpoch)
+                    ? cmdcache1.cmd : null), objv0, 0);
+                if ( cmdcache1_cmdEpoch != cmdcache1.cmdEpoch ) {
+                    updateCmdCache(interp, 1);
+                }
+            } finally {
+                TJC.releaseObjv(interp, objv0);
+            }
+        } // End Invoke: ::ONE::cmd
+        { // Invoke: ONE::cmd
+            TclObject[] objv2 = TJC.grabObjv(interp, 1);
+            try {
+                TclObject tmp3;
+                // Arg 0 constant: ONE::cmd
+                tmp3 = const1;
+                tmp3.preserve();
+                objv2[0] = tmp3;
+                if ( wcmd_cmdEpoch != wcmd.cmdEpoch ) {
+                    updateCmdCache(interp, 0);
+                }
+                TJC.invoke(interp, ((cmdcache2_cmdEpoch == cmdcache2.cmdEpoch)
+                    ? cmdcache2.cmd : null), objv2, 0);
+                if ( cmdcache2_cmdEpoch != cmdcache2.cmdEpoch ) {
+                    updateCmdCache(interp, 2);
+                }
+            } finally {
+                TJC.releaseObjv(interp, objv2);
+            }
+        } // End Invoke: ONE::cmd
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "ONE::p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+
+    TclObject const0;
+    TclObject const1;
+
+    protected void initConstants(Interp interp) throws TclException {
+        const0 = TclString.newInstance("::ONE::cmd");
+        const0.preserve(); const0.preserve();
+        const1 = TclString.newInstance("ONE::cmd");
+        const1.preserve(); const1.preserve();
+    }
+
+    int wcmd_cmdEpoch = 0;
+    WrappedCommand cmdcache1;
+    int cmdcache1_cmdEpoch;
+    WrappedCommand cmdcache2;
+    int cmdcache2_cmdEpoch;
+
+    void updateCmdCache(Interp interp, int cacheId) throws TclException {
+        String cmdName;
+        switch ( cacheId ) {
+            case 0: {
+                cmdcache1 = TJC.INVALID_COMMAND_CACHE;
+                cmdcache1_cmdEpoch = 0;
+                cmdcache2 = TJC.INVALID_COMMAND_CACHE;
+                cmdcache2_cmdEpoch = 0;
+                wcmd_cmdEpoch = wcmd.cmdEpoch;
+                return;
+            }
+            case 1: {
+                cmdName = "::ONE::cmd";
+                break;
+            }
+            case 2: {
+                cmdName = "ONE::cmd";
+                break;
+            }
+            default: {
+                throw new TclRuntimeError("default: cacheId " + cacheId);
+            }
+        }
+        WrappedCommand lwcmd = TJC.resolveCmd(interp, cmdName);
+        int cmdEpoch;
+        if ( lwcmd == null ) {
+            lwcmd = TJC.INVALID_COMMAND_CACHE;
+            cmdEpoch = 0;
+        } else {
+            cmdEpoch = lwcmd.cmdEpoch;
+        }
+        switch ( cacheId ) {
+            case 1: {
+                cmdcache1 = lwcmd;
+                cmdcache1_cmdEpoch = cmdEpoch;
+                break;
+            }
+            case 2: {
+                cmdcache2 = lwcmd;
+                cmdcache2_cmdEpoch = cmdEpoch;
+                break;
+            }
+        }
+    }
+} // end class Test1
+}}
+
+tcltest::test compileproc4-1.6 {compile proc into Java source} {
+    set script {
+proc ONE::p {} {
+    ONE8::dns_delete1_util
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_4_set_flags]
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure ONE::p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) { initCmd(interp); }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: ...
+            TclObject[] objv0 = TJC.grabObjv(interp, 1);
+            try {
+                TclObject tmp1;
+                // Arg 0 constant: ...
+                tmp1 = const0;
+                tmp1.preserve();
+                objv0[0] = tmp1;
+                if ( wcmd_cmdEpoch != wcmd.cmdEpoch ) {
+                    updateCmdCache(interp, 0);
+                }
+                TJC.invoke(interp, ((cmdcache1_cmdEpoch == cmdcache1.cmdEpoch)
+                    ? cmdcache1.cmd : null), objv0, 0);
+                if ( cmdcache1_cmdEpoch != cmdcache1.cmdEpoch ) {
+                    updateCmdCache(interp, 1);
+                }
+            } finally {
+                TJC.releaseObjv(interp, objv0);
+            }
+        } // End Invoke: ...
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "ONE::p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+
+    TclObject const0;
+
+    protected void initConstants(Interp interp) throws TclException {
+        const0 = TclString.newInstance("ONE8::dns_delete1_util");
+        const0.preserve(); const0.preserve();
+    }
+
+    int wcmd_cmdEpoch = 0;
+    WrappedCommand cmdcache1;
+    int cmdcache1_cmdEpoch;
+
+    void updateCmdCache(Interp interp, int cacheId) throws TclException {
+        String cmdName;
+        switch ( cacheId ) {
+            case 0: {
+                cmdcache1 = TJC.INVALID_COMMAND_CACHE;
+                cmdcache1_cmdEpoch = 0;
+                wcmd_cmdEpoch = wcmd.cmdEpoch;
+                return;
+            }
+            case 1: {
+                cmdName = "ONE8::dns_delete1_util";
+                break;
+            }
+            default: {
+                throw new TclRuntimeError("default: cacheId " + cacheId);
+            }
+        }
+        WrappedCommand lwcmd = TJC.resolveCmd(interp, cmdName);
+        int cmdEpoch;
+        if ( lwcmd == null ) {
+            lwcmd = TJC.INVALID_COMMAND_CACHE;
+            cmdEpoch = 0;
+        } else {
+            cmdEpoch = lwcmd.cmdEpoch;
+        }
+        switch ( cacheId ) {
+            case 1: {
+                cmdcache1 = lwcmd;
+                cmdcache1_cmdEpoch = cmdEpoch;
+                break;
+            }
+        }
+    }
+} // end class Test1
+}}
+
+
+# Cleanup
+jdk_tool_cleanup
+tcltest::cleanupTests
+

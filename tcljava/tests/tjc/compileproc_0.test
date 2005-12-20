@@ -1,0 +1,133 @@
+package require tcltest
+
+# Test generation of code with -compile OPTION.
+# There could be quite a few optimization levels,
+# so they are kept seperated.
+
+# Load jdk test data in case this has not already been done.
+source [file join [tcltest::testsDirectory] jdkutils.tcl]
+test_jdk_load_config
+
+
+tcltest::test compileproc-nocompile-1.0 {-compile option} {
+    set script {
+proc p {} {
+    return 1
+}
+}
+
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_nocompile $plist PCmd]
+} {// TJC implementation of procedure p
+import tcl.lang.*;
+
+public class PCmd extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) { initCmd(interp); }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        String body = "\n    return 1\n";
+        TJC.evalProcBody(interp, body);
+        return;
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+} // end class PCmd
+}
+
+tcltest::test compileproc-nocompile-1.1 {-compile option} {
+    set script {
+proc p { arg1 {arg2 "DEFAULT"} args } {
+    return 1
+}
+}
+
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_nocompile $plist PCmd]
+} {// TJC implementation of procedure p
+import tcl.lang.*;
+
+public class PCmd extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) { initCmd(interp); }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length < 2) {
+            throw new TclNumArgsException(interp, 1, objv, "arg1 ?arg2? args");
+        }
+        interp.setVar("arg1", null, objv[1], 0);
+        interp.setVar("arg2", null,
+            ((objv.length <= 2) ? const0 : objv[2]), 0);
+        if ( objv.length <= 3 ) {
+            interp.setVar("args", null, "", 0);
+        } else {
+            TclObject argl = TclList.newInstance();
+            for (int i = 3; i < objv.length; i++) {
+                TclList.append(interp, argl, objv[i]);
+            }
+            interp.setVar("args", null, argl, 0);
+        }
+        String body = "\n    return 1\n";
+        TJC.evalProcBody(interp, body);
+        return;
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+
+    TclObject const0;
+
+    protected void initConstants(Interp interp) throws TclException {
+        const0 = TclString.newInstance("DEFAULT");
+        const0.preserve(); const0.preserve();
+    }
+} // end class PCmd
+}
+
+
+
+tcltest::test compileproc-nocompile-2.0 {use javac to compile generated code} {
+    set script {
+proc p {} {
+    return 1
+}
+}
+
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_nocompile $plist PCmd]
+    test_jdk_compile_buffer PCmd $buffer
+} {OK}
+
+tcltest::test compileproc-nocompile-2.1 {use javac to compile generated code} {
+    set script {
+proc p { arg1 {arg2 {}} args } {
+    return 1
+}
+}
+
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_nocompile $plist PCmd]
+    test_jdk_compile_buffer PCmd $buffer
+} {OK}
+
+
+# Cleanup
+jdk_tool_cleanup
+tcltest::cleanupTests
+
