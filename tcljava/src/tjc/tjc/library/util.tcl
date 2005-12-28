@@ -3,9 +3,9 @@
 #
 #  See the file "license.amd" for information on usage and
 #  redistribution of this file, and for a DISCLAIMER OF ALL
-#   WARRANTIES.
+#  WARRANTIES.
 #
-#  RCS: @(#) $Id: util.tcl,v 1.1 2005/12/20 23:00:11 mdejong Exp $
+#  RCS: @(#) $Id: util.tcl,v 1.2 2005/12/28 02:36:38 mdejong Exp $
 #
 #
 

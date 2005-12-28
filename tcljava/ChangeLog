@@ -1,3 +1,9 @@
+2005-12-27  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * license.amd:
+        * src/tjc/tjc/library/util.tcl:
+        Change CRLF to LF.
+
 2005-12-20  Mo DeJong  <mdejong@users.sourceforge.net>
 
         Import TJC Tcl to Java compiler. TJC will convert
