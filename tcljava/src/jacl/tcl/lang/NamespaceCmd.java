@@ -15,7 +15,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: NamespaceCmd.java,v 1.19 2005/11/22 22:28:04 mdejong Exp $
+ * RCS: @(#) $Id: NamespaceCmd.java,v 1.20 2005/12/29 21:32:25 mdejong Exp $
  */
 
 package tcl.lang;
@@ -1031,7 +1031,7 @@ public class NamespaceCmd implements InternalRep, Command {
 	// When no result is set the empty string is the result
 	return;
     }
-    
+
 
     /*
      *----------------------------------------------------------------------
@@ -1058,36 +1058,43 @@ public class NamespaceCmd implements InternalRep, Command {
      *
      *----------------------------------------------------------------------
      */
-    
-    
+
     private static void tailCmd(Interp interp, TclObject[] objv)
 	    throws TclException {
-	String name;
-	int p;
-	    
+	String name, tail;
+
 	if (objv.length != 3) {
 	    throw new TclNumArgsException(interp, 2, objv, "string");
 	}
 
-	// Find the end of the string, then work backward and find the
-	// last "::" qualifier.
-
 	name = objv[2].toString();
-	p = name.length();
-
-	while (--p > 0) {
-	    if ((name.charAt(p) == ':') && (name.charAt(p-1) == ':')) {
-		p++;            // just after the last "::"
-		break;
-	    }
-	}
-    
-	if (p >= 0) {
-	    interp.setResult(name.substring(p));
-	}
+	tail = NamespaceCmd.tail(name);
+	interp.setResult(tail);
 	return;
     }
 
+    // Given a possibly qualified name, return the namespace tail
+    // substring that appears after the last pair of colons "::".
+
+    static String tail(String qname) {
+
+	// Find the last location of "::" in the string.
+
+	int i = qname.lastIndexOf("::");
+	String tail;
+
+	if (i == -1) {
+	    tail = qname;
+	} else {
+	    i += 2; // just after last "::"
+	    if (i >= qname.length()) {
+	        tail = "";
+	    } else {
+	        tail = qname.substring(i);
+	    }
+	}
+	return tail;
+    }
 
     /*
      *----------------------------------------------------------------------

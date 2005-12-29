@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: GlobalCmd.java,v 1.2 1999/08/03 02:55:41 mo Exp $
+ * RCS: @(#) $Id: GlobalCmd.java,v 1.3 2005/12/29 21:32:25 mdejong Exp $
  *
  */
 
@@ -45,29 +45,19 @@ class GlobalCmd implements Command {
 
 	    TclObject obj = objv[i];
 	    String varName = obj.toString();
+	    String varTail;
 
 	    // The variable name might have a scope qualifier, but the name for
 	    // the local "link" variable must be the simple name at the tail.
 
-	    int tail = varName.length();
-	    
-	    tail -= 1; // tail should start on the last index of the string
-
-	    while ((tail > 0) && ((varName.charAt(tail) != ':') ||
-				  (varName.charAt(tail-1) != ':'))) {
-		tail--;
-	    }
-	    if (varName.charAt(tail) == ':') {
-		tail++;
-	    }
+	    varTail = NamespaceCmd.tail(varName);
 
 	    // Link to the variable "varName" in the global :: namespace.
 
 	    Var.makeUpvar(interp, null,
 		varName, null, TCL.GLOBAL_ONLY,
-	        varName.substring(tail), 0);
+	        varTail, 0);
 	}
     }
-
 }
 

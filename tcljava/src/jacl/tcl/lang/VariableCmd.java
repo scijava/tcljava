@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: VariableCmd.java,v 1.4 2005/10/07 06:50:09 mdejong Exp $
+ * RCS: @(#) $Id: VariableCmd.java,v 1.5 2005/12/29 21:32:25 mdejong Exp $
  */
 
 package tcl.lang;
@@ -57,14 +57,6 @@ class VariableCmd implements Command {
  */
 
     public void cmdProc(Interp interp, TclObject[] objv) throws TclException {
-
-	/*
-	// FIXME : unimplemented.	 
-
-	throw new TclException(interp, "variable command is not yet implemented");
-
-	*/
-
 	String varName;
 	int tail, cp;
 	Var var, array;
@@ -74,7 +66,7 @@ class VariableCmd implements Command {
 	for (i = 1;  i < objv.length;  i = i+2) {
 	    // Look up each variable in the current namespace context, creating
 	    // it if necessary.
-	
+
 	    varName = objv[i].toString();
 	    Var[] result = Var.lookupVar(interp, varName, null,
 		  (TCL.NAMESPACE_ONLY | TCL.LEAVE_ERR_MSG), "define",
@@ -112,8 +104,6 @@ class VariableCmd implements Command {
 		}
 	    }
 
-
-
 	    // If we are executing inside a Tcl procedure, create a local
 	    // variable linked to the new namespace variable "varName".
 
@@ -122,27 +112,17 @@ class VariableCmd implements Command {
 
 		// varName might have a scope qualifier, but the name for the
 		// local "link" variable must be the simple name at the tail.
-		//
-		// Locate tail in one pass: drop any prefix after two *or more*
-		// consecutive ":" characters).
 
-		int len = varName.length();
+		String varTail = NamespaceCmd.tail(varName);
 
-		for (tail = cp = 0; cp < len ; ) {
-		    if (varName.charAt(cp++) == ':') {
-			while ((cp < len) && (varName.charAt(cp++) == ':')) {
-			    tail = cp;
-			}
-		    }
-		}
-	    
 		// Create a local link "tail" to the variable "varName" in the
 		// current namespace.
-	    
+
 		Var.makeUpvar(interp, null,
 			  varName, null, TCL.NAMESPACE_ONLY,
-			  varName.substring(tail), 0);
+			  varTail, 0);
 	    }
 	}
     }
 }
+

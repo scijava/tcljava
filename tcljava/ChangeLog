@@ -1,3 +1,13 @@
+2005-12-29  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/jacl/tcl/lang/GlobalCmd.java: Invoke
+        NamespaceCmd.tail() instead of using inlined logic.
+        * src/jacl/tcl/lang/NamespaceCmd.java (tailCmd, tail):
+        Add NamespaceCmd.tail() that will return the tail
+        portion of a namespace String.
+        * src/jacl/tcl/lang/VariableCmd.java: Invoke
+        NamespaceCmd.tail() instead of using inlined logic.
+
 2005-12-28  Mo DeJong  <mdejong@users.sourceforge.net>
 
         Add -constant-increment OPTIONS flag that will
