@@ -683,6 +683,21 @@ PROC_OPTIONS {ONE::two ONE::three} -cache-commands
     list [catch {module_options_validate} err] $err
 } {0 {}}
 
+# Validate additional OPTIONS in addition to the basic ones.
+
+tcltest::test module-options-validate-3.0 {validate options} {
+    set data {
+PACKAGE com.chairsoft.recliner.controls
+SOURCE C:/foo.tcl
+INIT_SOURCE C:/foo.tcl
+OPTIONS -constant-increment
+    }
+    module_parse $data
+    #module_parse_validate
+
+    list [catch {module_options_validate} err] $err
+} {0 {}}
+
 
 tcltest::test module-options-value-1.0 {query option} {
     set data {

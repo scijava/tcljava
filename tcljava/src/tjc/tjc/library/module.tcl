@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: module.tcl,v 1.1 2005/12/20 23:00:11 mdejong Exp $
+#  RCS: @(#) $Id: module.tcl,v 1.2 2005/12/29 03:35:34 mdejong Exp $
 #
 #
 
@@ -483,6 +483,12 @@ proc module_option_validate { op val index num_options options } {
                 error "-compile option must appear with no other options"
             }
         }
+        "constant-increment" {
+            # -constant-increment can appear anywhere
+            if {$val == 1} {
+                error "+constant-increment not supported"
+            }
+        }
         "dummy" {
             # No-op, this option is just for testing
         }
@@ -552,6 +558,7 @@ proc module_option_default { option } {
     switch -exact -- $option {
         "cache-commands" {return 0}
         "compile" {return 1}
+        "constant-increment" {return 1}
         "dummy" {return 0}
         "inline-containers" {return 0}
         "inline-controls" {return 0}

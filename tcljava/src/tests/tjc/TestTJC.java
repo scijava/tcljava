@@ -301,7 +301,7 @@ public class TestTJC {
         objv[1].preserve();
         objv[2].preserve();
         TJC.invoke(interp, null, objv, 0);
-        TJC.releaseObjv(interp, objv);
+        TJC.releaseObjv(interp, objv, objv.length);
 
         if (interp.getResult().toString().equals("-1")) {
             passed = true;
@@ -323,7 +323,7 @@ public class TestTJC {
         objv[1].preserve();
         objv[2].preserve();
         TJC.invoke(interp, null, objv, TCL.EVAL_GLOBAL);
-        TJC.releaseObjv(interp, objv);
+        TJC.releaseObjv(interp, objv, objv.length);
 
         if (interp.getResult().toString().equals("-1")) {
             passed = true;
@@ -344,7 +344,7 @@ public class TestTJC {
         objv[1].preserve();
         objv[2].preserve();
         TJC.invoke(interp, null, objv, TCL.EVAL_GLOBAL);
-        TJC.releaseObjv(interp, objv);
+        TJC.releaseObjv(interp, objv, objv.length);
         return;
     }
 
@@ -358,7 +358,7 @@ public class TestTJC {
         objv[1].preserve();
         Command cmd = interp.getCommand("ziggy");
         TJC.invoke(interp, cmd, objv, TCL.EVAL_GLOBAL);
-        TJC.releaseObjv(interp, objv);
+        TJC.releaseObjv(interp, objv, objv.length);
         return;
     }
 
@@ -377,7 +377,7 @@ public class TestTJC {
             interp.setVar("err", interp.getResult(), 0);
             return 1;
         } finally {
-            TJC.releaseObjv(interp, objv);
+            TJC.releaseObjv(interp, objv, objv.length);
         }
         return 0;
     }
@@ -392,7 +392,7 @@ public class TestTJC {
         objv[1].preserve();
         objv[2].preserve();
         int bOff = TJC.invokeSwitch(interp, objv, 2, "Foo", TJC.SWITCH_MODE_EXACT);
-        TJC.releaseObjv(interp, objv);
+        TJC.releaseObjv(interp, objv, objv.length);
         if ( bOff == 1 ) {
             return "pass";
         } else {
@@ -409,7 +409,7 @@ public class TestTJC {
         objv[0].preserve();
         objv[2].preserve();
         int bOff = TJC.invokeSwitch(interp, objv, 0, "Foo", TJC.SWITCH_MODE_EXACT);
-        TJC.releaseObjv(interp, objv);
+        TJC.releaseObjv(interp, objv, objv.length);
         if ( bOff == 3 ) {
             return "pass";
         } else {

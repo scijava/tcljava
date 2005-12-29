@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: compileproc.tcl,v 1.1 2005/12/20 23:00:11 mdejong Exp $
+#  RCS: @(#) $Id: compileproc.tcl,v 1.2 2005/12/29 03:35:34 mdejong Exp $
 #
 #
 
@@ -595,6 +595,10 @@ proc compileproc_init {} {
     # references and cached the first time
     # the containing command is invoked.
     set _compileproc(options,cache_commands) 0
+
+    # Is set to 1 when preserve() and release()
+    # should be skipped for constant value arguments.
+    set _compileproc(options,skip_constant_increment) 0
 }
 
 proc compileproc_start { proc_list } {
@@ -2176,12 +2180,37 @@ proc compileproc_emit_invoke_call { key } {
     set buffer ""
     set arraysym [compileproc_tmpvar_next objv]
     append buffer [emitter_invoke_command_start $arraysym $num_args]
-    set tmpsymbol [compileproc_tmpvar_next]
-    append buffer [emitter_indent] \
-        "TclObject $tmpsymbol\;\n"
+
+    # If all the arguments are constant values and
+    # the emitted code should skip constant increments,
+    # then there is no need to declare a tmp local.
+
+    if {$_compileproc(options,skip_constant_increment)} {
+        set use_tmp_local 0
+
+        for {set i 0} {$i < $num_args} {incr i} {
+            set tuple [compileproc_get_argument_tuple $key $i]
+            set type [lindex $tuple 0]
+            if {$type != "constant"} {
+                set use_tmp_local 1
+            }
+        }
+    } else {
+        set use_tmp_local 1
+    }
+
+    if {$use_tmp_local} {
+        set tmpsymbol [compileproc_tmpvar_next]
+        append buffer [emitter_statement "TclObject $tmpsymbol"]
+    } else {
+        # constant arguments will not use this tmpsymbol
+        set tmpsymbol {}
+    }
 
     # Evaluate each argument to the command, increment the
     # ref count, and save into the array.
+
+    set const_unincremented_indexes {}
 
     for {set i 0} {$i < $num_args} {incr i} {
         set tuple [compileproc_emit_argument $key $i 0 $tmpsymbol]
@@ -2200,19 +2229,19 @@ proc compileproc_emit_invoke_call { key } {
         append buffer \
             [emitter_comment "Arg $i $print_type: $print_str"]
 
-        # emitter_invoke_command_assign will notice when the
-        # tmpsymbol is being assigned to itself and skip it.
+        if {$_compileproc(options,skip_constant_increment) \
+                && $type == "constant"} {
+            append buffer [emitter_array_assign $arraysym $i $symbol]
 
-        append buffer $symbol_buffer
-        append buffer [emitter_invoke_command_assign $arraysym \
-            $i $tmpsymbol $symbol]
-            
-        # FIXME: Look into a +condense-code switch that
-        # would skip the emit step for code that was
-        # not clearly needed. For example, a constant
-        # should not need to have its ref count bumped.
-        # Dead code in if (false) blocks could also be
-        # left out with this switch.
+            lappend const_unincremented_indexes $i
+        } else {
+            # emitter_invoke_command_assign will notice when the
+            # tmpsymbol is being assigned to itself and skip it.
+
+            append buffer $symbol_buffer
+            append buffer [emitter_invoke_command_assign $arraysym \
+                $i $tmpsymbol $symbol]
+        }
     }
     if {$debug} {
         puts "buffer is:\n$buffer"
@@ -2242,16 +2271,42 @@ proc compileproc_emit_invoke_call { key } {
         if {$cmdsym != {}} {
             append buffer [compileproc_command_cache_update $cmdsym]
         }
-
-        # finish up invoke block
-        append buffer [emitter_invoke_command_finally]
-        append buffer [emitter_invoke_command_end $arraysym]
     } else {
-        # Emit invoke() and finish up invoke block
+        # Emit invoke()
         append buffer [emitter_invoke_command_call $arraysym {} 0]
-        append buffer [emitter_invoke_command_finally]
-        append buffer [emitter_invoke_command_end $arraysym]
     }
+    if {$debug} {
+        puts "buffer is:\n$buffer"
+    }
+
+    # Close try block and emit finally block
+
+    append buffer [emitter_invoke_command_finally]
+
+    # When constant increment is skipped, set refs
+    # that are constant values in the objv array to
+    # null before invoking releaseObjv() so that
+    # TclObject.release() is not invoked for the
+    # constant TclObject refs.
+
+    set end_size $num_args
+
+    if {[llength $const_unincremented_indexes] > 0} {
+        if {[llength $const_unincremented_indexes] == $num_args} {
+            # Special case, all the arguments are constants.
+            # Pass zero as the size argument to releaseObjv()
+            # so that all array elements are set to null
+            # inside releaseObjv(), instead of here.
+
+            set end_size 0
+        } else {
+            foreach i $const_unincremented_indexes {
+                append buffer [emitter_array_assign $arraysym $i null]
+            }
+        }
+    }
+
+    append buffer [emitter_invoke_command_end $arraysym $end_size]
 
     return $buffer
 }
@@ -3533,7 +3588,7 @@ proc compileproc_expr_evaluate_callback { script etree type values ranges } {
 }
 
 # Invoked to query module file flags and set flags in the compileproc module
-# that depend on the these flag. This method is invoked dynamically inside
+# that depend on these flags. This method is invoked dynamically inside
 # compileproc_compile after compileproc_init has been invoked so that
 # the compileproc module can be tested without depending on other modules.
 
@@ -3581,11 +3636,22 @@ proc compileproc_query_module_flags { proc_name } {
         set _compileproc(options,cache_commands) 1
     }
 
+    set constant_increment_option \
+        [module_option_value constant-increment $proc_name]
+    if {$constant_increment_option == {}} {
+        set constant_increment_option \
+            [module_option_value constant-increment]
+    }
+    if {$constant_increment_option == 0} {
+        set _compileproc(options,skip_constant_increment) 1
+    }
+
     if {$debug} {
         puts "compileproc module options set to:"
         puts "inline_containers = $_compileproc(options,inline_containers)"
         puts "inline_controls = $_compileproc(options,inline_controls)"
         puts "cache_commands = $_compileproc(options,cache_commands)"
+        puts "skip_constant_increment = $_compileproc(options,skip_constant_increment)"
     }
 }
 
@@ -4077,6 +4143,13 @@ proc compileproc_emit_container_foreach { key } {
             append buffer [emitter_indent] \
                 "$tmpsymbol = $list_symbol\;\n"
         }
+
+        # Invoke TclObject.preserve() to hold a ref. Don't worry
+        # about the skip constant incr flag for this module since
+        # a foreach is almost always use with a non-constant list
+        # and the complexity of not emitting the enclosing try
+        # block is not worth it.
+
         append buffer [emitter_container_foreach_list_preserve $tmpsymbol]
     }
 
@@ -4201,6 +4274,11 @@ proc compileproc_emit_container_switch { key } {
         return $buffer
     }
 
+    # Not the optimized version for constant strings, invoke
+    # the runtime implementation for the switch command that
+    # will locate the switch block to execute. Don't worry
+    # about the skip constant incrment switch here.
+
     # Declare match offset variable
     set offset_tmpsymbol [compileproc_tmpvar_next]
     append buffer [emitter_statement "int $offset_tmpsymbol"]
@@ -4261,7 +4339,7 @@ proc compileproc_emit_container_switch { key } {
 
     append buffer [emitter_container_switch_invoke \
         $offset_tmpsymbol \
-        $array_tmpsymbol 0 \
+        $array_tmpsymbol 0 $size \
         $string_tmpsymbol \
         $switch_mode \
         ]

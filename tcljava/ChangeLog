@@ -1,3 +1,34 @@
+2005-12-28  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        Add -constant-increment OPTIONS flag that will
+        skip calling preserve() and release() for const
+        object arguments when a Tcl command is being
+        invoked. This is safe since a constant will
+        always have a ref count of at least 2. Make it
+        easier for the Java runtime compiler to optimize
+        calls to TJC.releaseObjv() by passing the array
+        size as a compile time argument. Also, add a special
+        case used when all the arguments to a command
+        are constant values.
+
+        * src/tests/tjc/TestTJC.java:
+        * src/tjc/tcl/lang/TJC.java (grabObjv, releaseObjv):
+        * src/tjc/tjc/library/compileproc.tcl:
+        * src/tjc/tjc/library/emitter.tcl:
+        * src/tjc/tjc/library/module.tcl:
+        * tests/tjc/compileproc.test: Add skip constant
+        increment flag and check it when emitting code
+        that passes constant values to a Tcl command.
+        * tests/tjc/compileproc_1.test:
+        * tests/tjc/compileproc_2.test:
+        * tests/tjc/compileproc_3.test:
+        * tests/tjc/compileproc_4.test: Update test cases
+        to account for new size argument to TJC.releaseObjv().
+        * tests/tjc/compileproc_5.test: Add test cases for
+        new -constant-increment OPTIONS flag.
+        * tests/tjc/emitter.test:
+        * tests/tjc/module.test: Add -constant-increment OPTIONS flag.
+
 2005-12-27  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * license.amd:

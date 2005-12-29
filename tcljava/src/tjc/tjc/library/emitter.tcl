@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: emitter.tcl,v 1.1 2005/12/20 23:00:11 mdejong Exp $
+#  RCS: @(#) $Id: emitter.tcl,v 1.2 2005/12/29 03:35:34 mdejong Exp $
 #
 #
 
@@ -328,14 +328,11 @@ proc emitter_import_class { identifier } {
     return "import ${identifier};\n"
 }
 
-# Emit a statement followed by a semicolon and newline
-# at the current indent level.
+# Emit a single statement followed by a semicolon
+# and newline at the current indent level.
 
 proc emitter_statement { code } {
-    set buffer ""
-    append buffer [emitter_indent] \
-        "$code\;\n"
-    return $buffer
+    return "[emitter_indent]${code}\;\n"
 }
 
 # Emit a comment containing the given text
@@ -360,6 +357,12 @@ proc emitter_tclobject_release { tobj } {
     append buffer [emitter_indent] \
         "$tobj.release()\;\n"
     return $buffer
+}
+
+# Assign value in valsym to the given index in arraysym
+
+proc emitter_array_assign { arraysym index valsym } {
+    return [emitter_statement "$arraysym\[$index\] = $valsym"]
 }
 
 # Start a class declaration.
@@ -955,20 +958,12 @@ proc emitter_invoke_end { end_cmd_str } {
 }
 
 # Setup a TclObject[] array and invoke a Tcl command
-# with the array of arguments. A list of symbols that
-# will be assigned to each array index should be
-# passed to this method. Each symbol should be of type
-# TclObject. The cmdref argument is a symbol name for
-# an already resolved Command. If the global flag is
-# true and the cmdref is null, then the command will
-# be resolved only at the global scope.
-#
-# Note that we expect symbols to already be
-# resolved once this method is invoked, since an
-# exception after the lobjv allocation could fail
-# to return the allocated array to the cache.
+# with the array of arguments.
 
 proc emitter_invoke_command_start { arraysym size } {
+    if {$size == "" || ![string is integer $size] || $size <= 0} {
+        error "size \"$size\" must be a positive integer"
+    }
     set buffer ""
     append buffer [emitter_indent] \
         "TclObject\[\] $arraysym = TJC.grabObjv(interp, $size)\;\n"
@@ -987,12 +982,16 @@ proc emitter_invoke_command_assign { arraysym index tmpsym valsym } {
             "$tmpsym = $valsym\;\n"
     }
     append buffer [emitter_tclobject_preserve $tmpsym]
-    append buffer [emitter_indent] \
-        "${arraysym}\[$index\] = $tmpsym\;\n"
+    append buffer [emitter_array_assign $arraysym $index $tmpsym]
     return $buffer
 }
 
-# Emit invoke()
+# Emit TJC.invoke()
+#
+# The cmdref argument is a symbol name for
+# an already resolved Command ref. If the isglobal
+# flag is true and the cmdref is null, then the
+# command will be resolved only at the global scope.
 
 proc emitter_invoke_command_call { arraysym cmdref isglobal } {
     set buffer ""
@@ -1017,9 +1016,9 @@ proc emitter_invoke_command_finally {} {
 
 # invoke releaseObjv() and close finally block
 
-proc emitter_invoke_command_end { arraysym } {
+proc emitter_invoke_command_end { arraysym size } {
     set buffer ""
-    append buffer [emitter_statement "TJC.releaseObjv(interp, $arraysym)"]
+    append buffer [emitter_statement "TJC.releaseObjv(interp, $arraysym, $size)"]
     append buffer [emitter_container_try_end]
     return $buffer
 }
@@ -1037,7 +1036,7 @@ proc emitter_container_switch_assign { arraysym index tmpsym valsym } {
 # command at runtime to match a string to a pattern.
 # The integer return value is assigned to tmpsymbol.
 
-proc emitter_container_switch_invoke { tmpsymbol objv pbIndex stringsymbol mode } {
+proc emitter_container_switch_invoke { tmpsymbol objv pbIndex size stringsymbol mode } {
     set buffer ""
 
     switch -exact -- $mode {
@@ -1060,40 +1059,8 @@ proc emitter_container_switch_invoke { tmpsymbol objv pbIndex stringsymbol mode 
     emitter_indent_level -1
     append buffer [emitter_container_try_finally]
     append buffer [emitter_indent] \
-        "TJC.releaseObjv(interp, $objv)\;\n"
+        "TJC.releaseObjv(interp, $objv, $size)\;\n"
     append buffer [emitter_container_try_end]
-    return $buffer
-}
-
-
-# Allocate a lobjv array of TclObjects and assign
-# symbols to the indexes.
-
-# FIXME: Need to reimplement based on changes in invoke() above!
-# FIXME: Can this be removed?
-
-proc emitter_arrayobjv_assign { symbols symbols_comments arraysym } {
-    set len [llength $symbols]
-    if {$len == 0} {error "must pass non empty symbols list"}
-
-    set buffer ""
-    append buffer [emitter_indent] \
-        "TclObject\[\] $arraysym = TJC.grabObjv(interp, $len)\;\n"
-    for {set i 0} {$i < $len} {incr i} {
-        set symbol [lindex $symbols $i]
-        append buffer [emitter_indent] \
-            "$arraysym\[$i\] = $symbol\;"
-
-        if {[llength $symbols_comments] > 0} {
-            set comment [lindex $symbols_comments $i]
-            if {$comment != ""} {
-                append buffer \
-                    " // $comment"
-            }
-        }
-
-        append buffer "\n"
-    }
     return $buffer
 }
 

@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TJC.java,v 1.1 2005/12/20 23:00:11 mdejong Exp $
+ * RCS: @(#) $Id: TJC.java,v 1.2 2005/12/29 03:35:34 mdejong Exp $
  *
  */
 
@@ -365,27 +365,36 @@ public class TJC {
 
     public static TclObject[] grabObjv(
         Interp interp,
-        int size)
+        final int size)
     {
         TclObject[] objv = Parser.grabObjv(interp, size);
         Arrays.fill(objv, null);
         return objv;
     }
 
-    // Release each object in the array and return the array
-    // to a cache of common values. The array must have been
-    // allocated with grabObjv().
+    // For each non-null TclObject ref in the array, invoke
+    // TclObject.release() and return the array to the
+    // cache of common array values. The array must have
+    // been allocated with grabObjv(). If zero is passed
+    // as the size argument, this method will not invoke
+    // TclObject.release() for any array values and
+    // will instead set them all to null before
+    // the array is released.
 
     public static void releaseObjv(
         Interp interp,
-        TclObject[] objv)
+        TclObject[] objv,
+        final int size)
     {
-        final int len = objv.length;
-        for (int i=0; i < len; i++) {
-            TclObject tobj = objv[i];
-            if (tobj != null) {
-                tobj.release();
-                objv[i] = null;
+        if (size == 0) {
+            Arrays.fill(objv, null);
+        } else {
+            for (int i=0; i < size; i++) {
+                TclObject tobj = objv[i];
+                if (tobj != null) {
+                    tobj.release();
+                    objv[i] = null;
+                }
             }
         }
         Parser.releaseObjv(interp, objv);

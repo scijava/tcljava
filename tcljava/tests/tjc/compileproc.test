@@ -4111,7 +4111,7 @@ proc p {} {
         objv0[0] = tmp1;
         TJC.invoke(interp, null, objv0, 0);
     } finally {
-        TJC.releaseObjv(interp, objv0);
+        TJC.releaseObjv(interp, objv0, 1);
     }
 } // End Invoke: cmd
 }
@@ -4149,7 +4149,7 @@ proc p {} {
                 objv2[0] = tmp3;
                 TJC.invoke(interp, null, objv2, 0);
             } finally {
-                TJC.releaseObjv(interp, objv2);
+                TJC.releaseObjv(interp, objv2, 1);
             }
         } // End Invoke: cmd2
         { // Invoke: cmd3
@@ -4162,7 +4162,7 @@ proc p {} {
                 objv4[0] = tmp5;
                 TJC.invoke(interp, null, objv4, 0);
             } finally {
-                TJC.releaseObjv(interp, objv4);
+                TJC.releaseObjv(interp, objv4, 1);
             }
         } // End Invoke: cmd3
         tmp1 = interp.getResult();
@@ -4170,7 +4170,7 @@ proc p {} {
         objv0[1] = tmp1;
         TJC.invoke(interp, null, objv0, 0);
     } finally {
-        TJC.releaseObjv(interp, objv0);
+        TJC.releaseObjv(interp, objv0, 2);
     }
 } // End Invoke: cmd1
 }
@@ -4212,7 +4212,7 @@ proc p {} {
                 objv2[0] = tmp3;
                 TJC.invoke(interp, null, objv2, 0);
             } finally {
-                TJC.releaseObjv(interp, objv2);
+                TJC.releaseObjv(interp, objv2, 1);
             }
         } // End Invoke: cmd
         tmp1 = interp.getResult();
@@ -4229,7 +4229,7 @@ proc p {} {
                 objv4[0] = tmp5;
                 TJC.invoke(interp, null, objv4, 0);
             } finally {
-                TJC.releaseObjv(interp, objv4);
+                TJC.releaseObjv(interp, objv4, 1);
             }
         } // End Invoke: cmd
         { // Invoke: cmd
@@ -4242,7 +4242,7 @@ proc p {} {
                 objv6[0] = tmp7;
                 TJC.invoke(interp, null, objv6, 0);
             } finally {
-                TJC.releaseObjv(interp, objv6);
+                TJC.releaseObjv(interp, objv6, 1);
             }
         } // End Invoke: cmd
         tmp1 = interp.getResult();
@@ -4250,7 +4250,7 @@ proc p {} {
         objv0[3] = tmp1;
         TJC.invoke(interp, null, objv0, 0);
     } finally {
-        TJC.releaseObjv(interp, objv0);
+        TJC.releaseObjv(interp, objv0, 4);
     }
 } // End Invoke: list
 }
@@ -4289,7 +4289,7 @@ proc p {} {
                 objv0[0] = tmp1;
                 TJC.invoke(interp, null, objv0, 0);
             } finally {
-                TJC.releaseObjv(interp, objv0);
+                TJC.releaseObjv(interp, objv0, 1);
             }
         } // End Invoke: cmd
     }
@@ -4328,7 +4328,7 @@ proc p {} {
                 objv0[0] = tmp1;
                 TJC.invoke(interp, null, objv0, 0);
             } finally {
-                TJC.releaseObjv(interp, objv0);
+                TJC.releaseObjv(interp, objv0, 1);
             }
         } // End Invoke: cmd
     }
@@ -4369,7 +4369,7 @@ proc p {} {
                 objv0[0] = tmp1;
                 TJC.invoke(interp, null, objv0, 0);
             } finally {
-                TJC.releaseObjv(interp, objv0);
+                TJC.releaseObjv(interp, objv0, 1);
             }
         } // End Invoke: cmd1
     } else {
@@ -4383,7 +4383,7 @@ proc p {} {
                 objv2[0] = tmp3;
                 TJC.invoke(interp, null, objv2, 0);
             } finally {
-                TJC.releaseObjv(interp, objv2);
+                TJC.releaseObjv(interp, objv2, 1);
             }
         } // End Invoke: cmd2
     }
@@ -4424,7 +4424,7 @@ proc p {} {
                 objv0[0] = tmp1;
                 TJC.invoke(interp, null, objv0, 0);
             } finally {
-                TJC.releaseObjv(interp, objv0);
+                TJC.releaseObjv(interp, objv0, 1);
             }
         } // End Invoke: cmd1
     } else if ( false ) {
@@ -4438,7 +4438,7 @@ proc p {} {
                 objv2[0] = tmp3;
                 TJC.invoke(interp, null, objv2, 0);
             } finally {
-                TJC.releaseObjv(interp, objv2);
+                TJC.releaseObjv(interp, objv2, 1);
             }
         } // End Invoke: cmd2
     }
@@ -4487,7 +4487,7 @@ proc p {} {
                 objv0[0] = tmp1;
                 TJC.invoke(interp, null, objv0, 0);
             } finally {
-                TJC.releaseObjv(interp, objv0);
+                TJC.releaseObjv(interp, objv0, 1);
             }
         } // End Invoke: cmd1
         { // Invoke: cmd2
@@ -4500,7 +4500,7 @@ proc p {} {
                 objv2[0] = tmp3;
                 TJC.invoke(interp, null, objv2, 0);
             } finally {
-                TJC.releaseObjv(interp, objv2);
+                TJC.releaseObjv(interp, objv2, 1);
             }
         } // End Invoke: cmd2
     } else if ( false ) {
@@ -4514,7 +4514,7 @@ proc p {} {
                 objv4[0] = tmp5;
                 TJC.invoke(interp, null, objv4, 0);
             } finally {
-                TJC.releaseObjv(interp, objv4);
+                TJC.releaseObjv(interp, objv4, 1);
             }
         } // End Invoke: cmd3
         { // Invoke: cmd4
@@ -4527,7 +4527,7 @@ proc p {} {
                 objv6[0] = tmp7;
                 TJC.invoke(interp, null, objv6, 0);
             } finally {
-                TJC.releaseObjv(interp, objv6);
+                TJC.releaseObjv(interp, objv6, 1);
             }
         } // End Invoke: cmd4
     } else if ( true ) {
@@ -4541,7 +4541,7 @@ proc p {} {
                 objv8[0] = tmp9;
                 TJC.invoke(interp, null, objv8, 0);
             } finally {
-                TJC.releaseObjv(interp, objv8);
+                TJC.releaseObjv(interp, objv8, 1);
             }
         } // End Invoke: cmd5
         { // Invoke: cmd6
@@ -4554,7 +4554,7 @@ proc p {} {
                 objv10[0] = tmp11;
                 TJC.invoke(interp, null, objv10, 0);
             } finally {
-                TJC.releaseObjv(interp, objv10);
+                TJC.releaseObjv(interp, objv10, 1);
             }
         } // End Invoke: cmd6
     } else {
@@ -4568,7 +4568,7 @@ proc p {} {
                 objv12[0] = tmp13;
                 TJC.invoke(interp, null, objv12, 0);
             } finally {
-                TJC.releaseObjv(interp, objv12);
+                TJC.releaseObjv(interp, objv12, 1);
             }
         } // End Invoke: cmd7
         { // Invoke: cmd8
@@ -4581,7 +4581,7 @@ proc p {} {
                 objv14[0] = tmp15;
                 TJC.invoke(interp, null, objv14, 0);
             } finally {
-                TJC.releaseObjv(interp, objv14);
+                TJC.releaseObjv(interp, objv14, 1);
             }
         } // End Invoke: cmd8
     }
@@ -4625,7 +4625,7 @@ proc p {} {
                 objv2[0] = tmp3;
                 TJC.invoke(interp, null, objv2, 0);
             } finally {
-                TJC.releaseObjv(interp, objv2);
+                TJC.releaseObjv(interp, objv2, 1);
             }
         } // End Invoke: cmd
     }
@@ -4671,7 +4671,7 @@ proc p {} {
                 objv2[0] = tmp3;
                 TJC.invoke(interp, null, objv2, 0);
             } finally {
-                TJC.releaseObjv(interp, objv2);
+                TJC.releaseObjv(interp, objv2, 1);
             }
         } // End Invoke: cmd1
     } else {
@@ -4688,7 +4688,7 @@ proc p {} {
                     objv6[0] = tmp7;
                     TJC.invoke(interp, null, objv6, 0);
                 } finally {
-                    TJC.releaseObjv(interp, objv6);
+                    TJC.releaseObjv(interp, objv6, 1);
                 }
             } // End Invoke: cmd2
         }
@@ -4737,7 +4737,7 @@ proc p {} {
                 objv2[0] = tmp3;
                 TJC.invoke(interp, null, objv2, 0);
             } finally {
-                TJC.releaseObjv(interp, objv2);
+                TJC.releaseObjv(interp, objv2, 1);
             }
         } // End Invoke: cmd1
     } else {
@@ -4754,7 +4754,7 @@ proc p {} {
                     objv6[0] = tmp7;
                     TJC.invoke(interp, null, objv6, 0);
                 } finally {
-                    TJC.releaseObjv(interp, objv6);
+                    TJC.releaseObjv(interp, objv6, 1);
                 }
             } // End Invoke: cmd2
         } else {
@@ -4768,7 +4768,7 @@ proc p {} {
                     objv8[0] = tmp9;
                     TJC.invoke(interp, null, objv8, 0);
                 } finally {
-                    TJC.releaseObjv(interp, objv8);
+                    TJC.releaseObjv(interp, objv8, 1);
                 }
             } // End Invoke: cmd3
         }
@@ -4813,7 +4813,7 @@ proc p {} {
             objv0[1] = tmp1;
             TJC.invoke(interp, null, objv0, 0);
         } finally {
-            TJC.releaseObjv(interp, objv0);
+            TJC.releaseObjv(interp, objv0, 2);
         }
     } // End Invoke: expr
     TclObject tmp2 = interp.getResult();
@@ -4829,7 +4829,7 @@ proc p {} {
                 objv4[0] = tmp5;
                 TJC.invoke(interp, null, objv4, 0);
             } finally {
-                TJC.releaseObjv(interp, objv4);
+                TJC.releaseObjv(interp, objv4, 1);
             }
         } // End Invoke: cmd
     }
@@ -4875,7 +4875,7 @@ proc p {} {
         objv0[2] = tmp1;
         TJC.invoke(interp, null, objv0, 0);
     } finally {
-        TJC.releaseObjv(interp, objv0);
+        TJC.releaseObjv(interp, objv0, 3);
     }
 } // End Invoke: if
 }}
@@ -5002,7 +5002,7 @@ proc p {} {
                 objv2[0] = tmp3;
                 TJC.invoke(interp, null, objv2, 0);
             } finally {
-                TJC.releaseObjv(interp, objv2);
+                TJC.releaseObjv(interp, objv2, 1);
             }
         } // End Invoke: cmd
         } catch (TclException ex) {
@@ -5055,7 +5055,7 @@ proc p {} {
                 objv0[0] = tmp1;
                 TJC.invoke(interp, null, objv0, 0);
             } finally {
-                TJC.releaseObjv(interp, objv0);
+                TJC.releaseObjv(interp, objv0, 1);
             }
         } // End Invoke: cmd
         } catch (TclException ex) {
@@ -5110,7 +5110,7 @@ proc p {} {
                 objv0[1] = tmp1;
                 TJC.invoke(interp, null, objv0, 0);
             } finally {
-                TJC.releaseObjv(interp, objv0);
+                TJC.releaseObjv(interp, objv0, 2);
             }
         } // End Invoke: expr
         TclObject tmp2 = interp.getResult();
@@ -5129,7 +5129,7 @@ proc p {} {
                 objv4[0] = tmp5;
                 TJC.invoke(interp, null, objv4, 0);
             } finally {
-                TJC.releaseObjv(interp, objv4);
+                TJC.releaseObjv(interp, objv4, 1);
             }
         } // End Invoke: cmd
         } catch (TclException ex) {
@@ -5267,7 +5267,7 @@ proc p {} {
             objv0[2] = tmp1;
             TJC.invoke(interp, null, objv0, 0);
         } finally {
-            TJC.releaseObjv(interp, objv0);
+            TJC.releaseObjv(interp, objv0, 3);
         }
     } // End Invoke: set
     for ( ; true ; ) {
@@ -5326,7 +5326,7 @@ proc p {} {
                 objv2[2] = tmp3;
                 TJC.invoke(interp, null, objv2, 0);
             } finally {
-                TJC.releaseObjv(interp, objv2);
+                TJC.releaseObjv(interp, objv2, 3);
             }
         } // End Invoke: set
         } catch (TclException ex) {
@@ -5384,7 +5384,7 @@ proc p {} {
                     objv3[1] = tmp4;
                     TJC.invoke(interp, null, objv3, 0);
                 } finally {
-                    TJC.releaseObjv(interp, objv3);
+                    TJC.releaseObjv(interp, objv3, 2);
                 }
             } // End Invoke: incr
             } catch (TclException ex) {
@@ -5439,7 +5439,7 @@ proc p {} {
             objv1[0] = tmp2;
             TJC.invoke(interp, null, objv1, 0);
         } finally {
-            TJC.releaseObjv(interp, objv1);
+            TJC.releaseObjv(interp, objv1, 1);
         }
     } // End Invoke: cmd
     } catch (TclException ex) {
@@ -5584,7 +5584,7 @@ proc p {} {
         tmp2 = TJC.invokeSwitch(interp, objv3, 0,
             tmp1, TJC.SWITCH_MODE_EXACT);
     } finally {
-        TJC.releaseObjv(interp, objv3);
+        TJC.releaseObjv(interp, objv3, 4);
     }
     interp.resetResult();
     if ( tmp2 == -1 ) {
@@ -5770,7 +5770,7 @@ proc p {} {
         objv0[0] = tmp1;
         TJC.invoke(interp, null, objv0, 0);
     } finally {
-        TJC.releaseObjv(interp, objv0);
+        TJC.releaseObjv(interp, objv0, 1);
     }
 } // End Invoke: cmd
 tmp2 = interp.getResult();
@@ -5816,7 +5816,7 @@ proc p {} {
         objv1[0] = tmp2;
         TJC.invoke(interp, null, objv1, 0);
     } finally {
-        TJC.releaseObjv(interp, objv1);
+        TJC.releaseObjv(interp, objv1, 1);
     }
 } // End Invoke: cmd
 tmp0 = interp.getResult();
@@ -5852,7 +5852,7 @@ proc p {} {
         objv1[0] = tmp2;
         TJC.invoke(interp, null, objv1, 0);
     } finally {
-        TJC.releaseObjv(interp, objv1);
+        TJC.releaseObjv(interp, objv1, 1);
     }
 } // End Invoke: cmd1
 { // Invoke: cmd2
@@ -5865,7 +5865,7 @@ proc p {} {
         objv3[0] = tmp4;
         TJC.invoke(interp, null, objv3, 0);
     } finally {
-        TJC.releaseObjv(interp, objv3);
+        TJC.releaseObjv(interp, objv3, 1);
     }
 } // End Invoke: cmd2
 tmp0 = interp.getResult();
@@ -5972,7 +5972,7 @@ proc p {} {
         objv1[0] = tmp2;
         TJC.invoke(interp, null, objv1, 0);
     } finally {
-        TJC.releaseObjv(interp, objv1);
+        TJC.releaseObjv(interp, objv1, 1);
     }
 } // End Invoke: cmd
 tmp0 = interp.getResult();
@@ -6010,7 +6010,7 @@ proc p {} {
         objv1[0] = tmp2;
         TJC.invoke(interp, null, objv1, 0);
     } finally {
-        TJC.releaseObjv(interp, objv1);
+        TJC.releaseObjv(interp, objv1, 1);
     }
 } // End Invoke: cmd1
 { // Invoke: cmd2
@@ -6023,7 +6023,7 @@ proc p {} {
         objv3[0] = tmp4;
         TJC.invoke(interp, null, objv3, 0);
     } finally {
-        TJC.releaseObjv(interp, objv3);
+        TJC.releaseObjv(interp, objv3, 1);
     }
 } // End Invoke: cmd2
 TclObject tmp0 = interp.getResult();
@@ -6063,7 +6063,7 @@ sbtmp1.append("Str ");
         objv2[0] = tmp3;
         TJC.invoke(interp, null, objv2, 0);
     } finally {
-        TJC.releaseObjv(interp, objv2);
+        TJC.releaseObjv(interp, objv2, 1);
     }
 } // End Invoke: cmd
 tmp0 = interp.getResult();
@@ -6105,7 +6105,7 @@ sbtmp1.append("Str ");
         objv2[0] = tmp3;
         TJC.invoke(interp, null, objv2, 0);
     } finally {
-        TJC.releaseObjv(interp, objv2);
+        TJC.releaseObjv(interp, objv2, 1);
     }
 } // End Invoke: cmd1
 { // Invoke: cmd2
@@ -6118,7 +6118,7 @@ sbtmp1.append("Str ");
         objv4[0] = tmp5;
         TJC.invoke(interp, null, objv4, 0);
     } finally {
-        TJC.releaseObjv(interp, objv4);
+        TJC.releaseObjv(interp, objv4, 1);
     }
 } // End Invoke: cmd2
 tmp0 = interp.getResult();
@@ -6209,7 +6209,7 @@ proc p {} {
         objv1[0] = tmp2;
         TJC.invoke(interp, null, objv1, 0);
     } finally {
-        TJC.releaseObjv(interp, objv1);
+        TJC.releaseObjv(interp, objv1, 1);
     }
 } // End Invoke: cmd2
 tmp0 = interp.getResult();
@@ -6242,7 +6242,7 @@ proc p {} {
         objv2[0] = tmp3;
         TJC.invoke(interp, null, objv2, 0);
     } finally {
-        TJC.releaseObjv(interp, objv2);
+        TJC.releaseObjv(interp, objv2, 1);
     }
 } // End Invoke: cmd2
 tmp0 = interp.getResult();
