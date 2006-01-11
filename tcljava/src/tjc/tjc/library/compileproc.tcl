@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: compileproc.tcl,v 1.2 2005/12/29 03:35:34 mdejong Exp $
+#  RCS: @(#) $Id: compileproc.tcl,v 1.3 2006/01/11 21:24:50 mdejong Exp $
 #
 #
 
@@ -78,6 +78,20 @@ proc compileproc_args_split { proc_args } {
 # named in the proc argument to the values in the passed in objv.
 
 proc compileproc_args_assign { proc_args } {
+    global _compileproc_key_info
+
+    if {[info exists _compileproc_key_info(cmd_needs_init)]} {
+        set cmd_needs_init $_compileproc_key_info(cmd_needs_init)
+    } else {
+        set cmd_needs_init 0
+    }
+
+    if {[info exists _compileproc_key_info(constants_found)]} {
+        set constants_found $_compileproc_key_info(constants_found)
+    } else {
+        set constants_found 0
+    }
+
     if {[llength $proc_args] == 0} {
         # No arguments to proc
         return [emitter_empty_args]
@@ -103,7 +117,7 @@ proc compileproc_args_assign { proc_args } {
 
         set index 1
         foreach arg $non_default_args {
-            append buffer [emitter_assign_arg $arg $index]
+            append buffer [compileproc_assign_arg $arg $index]
             incr index
         }
     } elseif {!$has_args && [llength $non_default_args] == 0} {
@@ -126,16 +140,17 @@ proc compileproc_args_assign { proc_args } {
             set name [lindex $arg 0]
             set default [lindex $arg 1]
             compileproc_constant_cache_add $default
+            set constants_found 1
             set default_sym [compileproc_constant_cache_get $default]
 
-            append buffer [emitter_assign_default_arg $name $index $default_sym]
+            append buffer [compileproc_assign_default_arg $name $index $default_sym]
             incr index
         }
     } elseif {$has_args && \
             [llength $non_default_args] == 0 && \
             [llength $default_args] == 0} {
         # args argument only
-        append buffer [emitter_assign_args_arg 1]
+        append buffer [compileproc_assign_args_arg 1]
     } elseif {$has_args && \
             [llength $non_default_args] > 0 && \
             [llength $default_args] == 0} {
@@ -151,11 +166,11 @@ proc compileproc_args_assign { proc_args } {
 
         set index 1
         foreach arg $non_default_args {
-            append buffer [emitter_assign_arg $arg $index]
+            append buffer [compileproc_assign_arg $arg $index]
             incr index
         }
 
-        append buffer [emitter_assign_args_arg $index]
+        append buffer [compileproc_assign_args_arg $index]
     } elseif {$has_args && \
             [llength $non_default_args] == 0 && \
             [llength $default_args] > 0} {
@@ -182,13 +197,14 @@ proc compileproc_args_assign { proc_args } {
             set name [lindex $arg 0]
             set default [lindex $arg 1]
             compileproc_constant_cache_add $default
+            set constants_found 1
             set default_sym [compileproc_constant_cache_get $default]
 
-            append buffer [emitter_assign_default_arg $name $index $default_sym]
+            append buffer [compileproc_assign_default_arg $name $index $default_sym]
             incr index
         }
 
-        append buffer [emitter_assign_args_arg $index]
+        append buffer [compileproc_assign_args_arg $index]
     } elseif {!$has_args && \
             [llength $non_default_args] > 0 && \
             [llength $default_args] > 0} {
@@ -208,7 +224,7 @@ proc compileproc_args_assign { proc_args } {
         foreach arg $non_default_args {
             set name [lindex $arg 0]
 
-            append buffer [emitter_assign_arg $name $index]
+            append buffer [compileproc_assign_arg $name $index]
             incr index
         }
 
@@ -216,9 +232,10 @@ proc compileproc_args_assign { proc_args } {
             set name [lindex $arg 0]
             set default [lindex $arg 1]
             compileproc_constant_cache_add $default
+            set constants_found 1
             set default_sym [compileproc_constant_cache_get $default]
 
-            append buffer [emitter_assign_default_arg $name $index $default_sym]
+            append buffer [compileproc_assign_default_arg $name $index $default_sym]
             incr index
         }
     } elseif {$has_args && \
@@ -241,7 +258,7 @@ proc compileproc_args_assign { proc_args } {
         foreach arg $non_default_args {
             set name [lindex $arg 0]
 
-            append buffer [emitter_assign_arg $name $index]
+            append buffer [compileproc_assign_arg $name $index]
             incr index
         }
 
@@ -249,25 +266,118 @@ proc compileproc_args_assign { proc_args } {
             set name [lindex $arg 0]
             set default [lindex $arg 1]
             compileproc_constant_cache_add $default
+            set constants_found 1
             set default_sym [compileproc_constant_cache_get $default]
 
-            append buffer [emitter_assign_default_arg $name $index $default_sym]
+            append buffer [compileproc_assign_default_arg $name $index $default_sym]
             incr index
         }
 
-        append buffer [emitter_assign_args_arg $index]
+        append buffer [compileproc_assign_args_arg $index]
     } else {
         error "unhandled args case: non_default_args \{$non_default_args\}, default_args \{$default_args\}, has_args $has_args"
     }
 
+    # Set constant flags if needed
+
+    if {$constants_found} {
+        set cmd_needs_init 1
+    }
+
+    set _compileproc_key_info(cmd_needs_init) $cmd_needs_init
+    set _compileproc_key_info(constants_found) $constants_found
+
     return $buffer
 }
 
+# Emit code to assign a procedure argument to the local variable
+# table. Name is the name of the argument to the procedure.
+# Index is the integer index from the passed in objv array where
+# the value of the argument will be found.
 
+proc compileproc_assign_arg { name index } {
+    if {![string is integer $index]} {
+        error "index $index is not an integer"
+    }
+    if {$index < 1} {
+        error "index $index must be greater than 0"
+    }
+    set value "objv\[$index\]"
+    return [emitter_statement \
+        [compileproc_set_variable $name true $value false]]
+}
 
+# Emit code to assign a procedure argument with a default value
+# to the local variable table. Name is the name of the argument
+# to the procedure.
+# Index is the integer index from the passed in objv array where
+# the value of the argument will be found.
 
+proc compileproc_assign_default_arg { name index default_symbol } {
+    if {![string is integer $index]} {
+        error "index $index is not an integer"
+    }
+    if {$index < 1} {
+        error "index $index must be greater than 0"
+    }
 
+    set buffer ""
 
+    append buffer [emitter_indent]
+    emitter_indent_level +1
+    set sp "\n[emitter_indent]"
+    emitter_indent_level -1
+
+    set value "${sp}((objv.length <= $index) ? $default_symbol : objv\[$index\])"
+    append buffer [compileproc_set_variable $name true $value false] \
+        "\;\n"
+
+    return $buffer
+}
+
+# Emit code to assign procedure arguments to a local named "args"
+# starting from the given index.
+
+proc compileproc_assign_args_arg { index } {
+    if {![string is integer $index]} {
+        error "index $index is not an integer"
+    }
+    if {$index < 1} {
+        error "index $index must be greater than 0"
+    }
+
+    set buffer ""
+    append buffer [emitter_indent] \
+    "if ( objv.length <= $index ) \{\n"
+    emitter_indent_level +1
+    set value ""
+    append buffer [emitter_statement \
+        [compileproc_set_variable "args" true $value true]]
+    emitter_indent_level -1
+    append buffer [emitter_indent] \
+    "\} else \{\n"
+    emitter_indent_level +1
+    append buffer [emitter_indent] \
+    "TclObject argl = TclList.newInstance()\;\n"
+    append buffer [emitter_indent] \
+    "for (int i = $index; i < objv.length\; i++) \{\n"
+    emitter_indent_level +1
+    append buffer [emitter_indent] \
+    "TclList.append(interp, argl, objv\[i\])\;\n"
+    emitter_indent_level -1
+    append buffer [emitter_indent] \
+    "\}\n"
+
+    set value argl
+    append buffer [emitter_statement \
+        [compileproc_set_variable "args" true $value false]]
+
+    emitter_indent_level -1
+    append buffer [emitter_indent] \
+    "\}\n"
+
+    return $buffer
+}
 
 # Process proc that has the -compile option set. This method will
 # generate a Java class that will just eval the proc body string much
@@ -334,8 +444,10 @@ proc compileproc_nocompile { proc_list class_name } {
     set cdata [compileproc_constant_cache_generate]
     if {$cdata != {}} {
         append buffer "\n"
-        append buffer [compileproc_constant_cache_generate]
+        append buffer $cdata
     }
+
+    # Variable cache not supported in -compile mode
 
     # end class declaration
     append buffer [emitter_class_end $_compileproc(classname)]
@@ -542,7 +654,7 @@ public class TJCExtension extends Extension \{
 
 proc compileproc_init {} {
     global _compileproc _compileproc_ckeys _compileproc_key_info
-    global _compileproc_command_cache
+    global _compileproc_command_cache _compileproc_variable_cache
 
     if {[info exists _compileproc]} {
         unset _compileproc
@@ -555,6 +667,9 @@ proc compileproc_init {} {
     }
     if {[info exists _compileproc_command_cache]} {
         unset _compileproc_command_cache
+    }
+    if {[info exists _compileproc_variable_cache]} {
+        unset _compileproc_variable_cache
     }
 
     # Counter for local variable names inside cmdProc scope
@@ -599,6 +714,10 @@ proc compileproc_init {} {
     # Is set to 1 when preserve() and release()
     # should be skipped for constant value arguments.
     set _compileproc(options,skip_constant_increment) 0
+
+    # Is set to 1 if variable access inside a proc
+    # makes use of cached Var refrences.
+    set _compileproc(options,cache_variables) 0
 }
 
 proc compileproc_start { proc_list } {
@@ -742,6 +861,14 @@ proc compileproc_compile { proc_list class_name {config_init {}} } {
     compileproc_start $proc_list
     compileproc_scan_keys [compileproc_keys]
 
+    # Process proc args, this needs to be done before
+    # emitting the command body so that an argument
+    # that makes use of a constant will be handled.
+
+    emitter_indent_level +2
+    set args_buffer [compileproc_args_assign $args]
+    emitter_indent_level -2
+
     # Generate Java source.
 
     set pair [compileproc_split_classname $class_name]
@@ -775,7 +902,7 @@ proc compileproc_compile { proc_list class_name {config_init {}} } {
     append buffer [emitter_callframe_start wcmd.ns]
 
     # Process proc args
-    append buffer [compileproc_args_assign $args]
+    append buffer $args_buffer
 
     # Walk over commands at the toplevel and emit invocations
     # for each toplevel command.
@@ -785,7 +912,9 @@ proc compileproc_compile { proc_list class_name {config_init {}} } {
     }
 
     # end callframe block
-    append buffer [emitter_callframe_end $name]
+    set clear_varcache [compileproc_variable_cache_is_used]
+    append buffer [emitter_callframe_end $name $clear_varcache]
+
     # end cmdProc declaration
     append buffer [emitter_cmd_proc_end]
 
@@ -798,11 +927,11 @@ proc compileproc_compile { proc_list class_name {config_init {}} } {
         set cdata [compileproc_constant_cache_generate]
         if {$cdata != {}} {
             append buffer "\n"
-            append buffer [compileproc_constant_cache_generate]
+            append buffer $cdata
         }
     }
 
-    # Emit code needed for caches command refrences.
+    # Emit code needed to cache command refrences.
 
     if {$_compileproc(options,cache_commands)} {
         set cdata [compileproc_command_cache_init_generate]
@@ -810,6 +939,14 @@ proc compileproc_compile { proc_list class_name {config_init {}} } {
             append buffer "\n"
             append buffer $cdata
         }
+    }
+
+    # Emit variable cache methods
+
+    if {$_compileproc(options,cache_variables) && \
+            [compileproc_variable_cache_is_used]} {
+        append buffer "\n"
+        append buffer [compileproc_variable_cache_generate]
     }
 
     # end class declaration
@@ -825,27 +962,27 @@ proc compileproc_compile { proc_list class_name {config_init {}} } {
 # Reset the compiled in constant cache for a given proc.
 
 proc compileproc_constant_cache_init {} {
-    global _compileproc_ccache
+    global _compileproc_constant_cache
 
-    if {[info exists _compileproc_ccache]} {
-        unset _compileproc_ccache
+    if {[info exists _compileproc_constant_cache]} {
+        unset _compileproc_constant_cache
     }
 
-    set _compileproc_ccache(ordered_keys) {}
+    set _compileproc_constant_cache(ordered_keys) {}
 }
 
 # Add a constant Tcl string value to the constant cache.
 
 proc compileproc_constant_cache_add { tstr } {
-    global _compileproc_ccache
+    global _compileproc_constant_cache
 
     set key const,$tstr
 
-    if {![info exists _compileproc_ccache($key)]} {
+    if {![info exists _compileproc_constant_cache($key)]} {
         set ident {}
         set type [compileproc_constant_cache_type $tstr]
         set tuple [list $ident $type $tstr]
-        set _compileproc_ccache($key) $tuple
+        set _compileproc_constant_cache($key) $tuple
     }
     return
 }
@@ -898,16 +1035,16 @@ proc compileproc_constant_cache_type { tstr } {
 # constant strings in the cache.
 
 proc compileproc_constant_cache_get { tstr } {
-    global _compileproc_ccache
+    global _compileproc_constant_cache
 
     set key const,$tstr
 
-    if {![info exists _compileproc_ccache($key)]} {
+    if {![info exists _compileproc_constant_cache($key)]} {
         error "constant cache variable not found for\
             \"$tstr\", should have been setup via compileproc_constant_cache_add"
     }
 
-    set tuple $_compileproc_ccache($key)
+    set tuple $_compileproc_constant_cache($key)
     set ident [lindex $tuple 0]
     if {$ident == {}} {
         # Generate name for instance variable and
@@ -917,15 +1054,15 @@ proc compileproc_constant_cache_get { tstr } {
         set type [lindex $tuple 1]
         set tstr [lindex $tuple 2]
 
-        if {![info exists _compileproc_ccache(const_id)]} {
-            set _compileproc_ccache(const_id) 0
+        if {![info exists _compileproc_constant_cache(const_id)]} {
+            set _compileproc_constant_cache(const_id) 0
         } else {
-            incr _compileproc_ccache(const_id)
+            incr _compileproc_constant_cache(const_id)
         }
-        set ident "const$_compileproc_ccache(const_id)"
+        set ident "const$_compileproc_constant_cache(const_id)"
         set tuple [list $ident $type $tstr]
-        set _compileproc_ccache($key) $tuple
-        lappend _compileproc_ccache(ordered_keys) $key
+        set _compileproc_constant_cache($key) $tuple
+        lappend _compileproc_constant_cache(ordered_keys) $key
     }
     return $ident
 }
@@ -935,14 +1072,14 @@ proc compileproc_constant_cache_get { tstr } {
 # value in a Tcl proc is used over and over again.
 
 proc compileproc_constant_cache_generate {} {
-    global _compileproc_ccache
+    global _compileproc_constant_cache
 
     set debug 0
 
     set tlist [list]
 
-    foreach key $_compileproc_ccache(ordered_keys) {
-        set tuple $_compileproc_ccache($key)
+    foreach key $_compileproc_constant_cache(ordered_keys) {
+        set tuple $_compileproc_constant_cache($key)
 
         if {$debug} {
             puts "processing key $key, tuple is \{$tuple\}"
@@ -965,10 +1102,11 @@ proc compileproc_constant_cache_generate {} {
     return [emitter_init_constants $tlist]
 }
 
-# Pass the list of all the commands that could be invoked
-# during a method. These command names will be resolved
-# into command references that are cached on a per-instance
-# basis.
+# The list of all commands that could be invoked during
+# this method is iterated here to create a large switch
+# method to update the command cache. Command names
+# are resolved into command refrences that are checked
+# on a per-instance basis.
 
 proc compileproc_command_cache_init_generate {} {
     global _compileproc
@@ -999,11 +1137,8 @@ proc compileproc_command_cache_init_generate {} {
             key $_compileproc_command_cache(ordered_keys) {
         set symbol $_compileproc_command_cache($key)
 
-        # Extract id integer from symbol name
-        if {![regexp {^cmdcache([0-9]+$)} $symbol whole cacheId]} {
-            error "could not match cmdcache id \"$symbol\",\
-                expected \{cmdcache(\[0-9\]+)\}"
-        }
+        set cacheId [compileproc_get_cache_id_from_symbol $symbol]
+
         lappend symbol_ids $cacheId
 
         append buffer [emitter_indent] \
@@ -1221,10 +1356,7 @@ proc compileproc_command_cache_update { symbol } {
 
     append buffer [emitter_container_if_start $if_cond]
 
-    # Get cache id number from symbol
-    if {![regexp {^cmdcache([0-9]+$)} $symbol whole cacheId]} {
-        error "could not match cmdcache id \"$symbol\", expected \{cmdcache(\[0-9\]+)\}"
-    }
+    set cacheId [compileproc_get_cache_id_from_symbol $symbol]
 
     append buffer [emitter_indent] \
         "updateCmdCache(interp, $cacheId)\;\n"
@@ -1232,6 +1364,16 @@ proc compileproc_command_cache_update { symbol } {
     append buffer [emitter_container_if_end]
 
     return $buffer
+}
+
+# Given "cmdcache1" return integer cache id "1".
+
+proc compileproc_get_cache_id_from_symbol { symbol } {
+    # Get cache id number from symbol
+    if {![regexp {^[a-z]+cache([0-9]+)$} $symbol whole cacheId]} {
+        error "could not match cache id in \"$symbol\""
+    }
+    return $cacheId
 }
 
 # Emit code to check the command epoch
@@ -1312,6 +1454,201 @@ proc compileproc_command_cache_lookup { dkey } {
     }
 
     return $symbol
+}
+
+# Lookup a cached scalar variable by name. This
+# method is used to get a token for a scalar
+# variable read or write operation. This method
+# assumes that the passed in vname is a constant str.
+
+proc compileproc_variable_cache_lookup { vname } {
+    global _compileproc_variable_cache
+
+    if {![info exists _compileproc_variable_cache(counter)]} {
+        set _compileproc_variable_cache(counter) 1
+    }
+
+    set key "symbol,$vname"
+
+    if {![info exists _compileproc_variable_cache($key)]} {
+        # Create cache symbol for new scalar variable
+        set symbol "varcache$_compileproc_variable_cache(counter)"
+        incr _compileproc_variable_cache(counter)
+        set _compileproc_variable_cache($key) $symbol
+        lappend _compileproc_variable_cache(ordered_keys) $key
+        lappend _compileproc_variable_cache(ordered_vars) $vname
+    } else {
+        # Return existing symbol for this variable name
+        set symbol $_compileproc_variable_cache($key)
+    }
+
+    return $symbol
+}
+
+# Return 1 if there are cached variables, this method is used
+# to detect when cached variable support should be enabled
+# in the generated code.
+
+proc compileproc_variable_cache_is_used {} {
+    global _compileproc_variable_cache
+
+    if {![info exists _compileproc_variable_cache(ordered_keys)]} {
+        return 0
+    }
+
+    return 1
+}
+
+# Generate code to setup variable cache refrences as well
+# as update and validate cached variable values.
+
+proc compileproc_variable_cache_generate {} {
+    global _compileproc_variable_cache
+
+    if {![compileproc_variable_cache_is_used]} {
+        return ""
+    }
+    return [compileproc_variable_cache_update_generate]
+}
+
+# Return code that implements "updateVarCache" method
+# for the current variable cache info.
+
+proc compileproc_variable_cache_update_generate {} {
+    global _compileproc
+    global _compileproc_variable_cache
+
+    set debug 1
+
+    set buffer ""
+
+    set cacheIds [list]
+
+    # declare class scoped cache vars
+
+    emitter_indent_level +1
+
+    foreach key $_compileproc_variable_cache(ordered_keys) {
+        set symbol $_compileproc_variable_cache($key)
+        append buffer [emitter_statement "Var $symbol = null"]
+
+        set cacheId [compileproc_get_cache_id_from_symbol $symbol]
+        lappend cacheIds $cacheId
+    }
+
+    set decl \
+"    protected
+    Var updateVarCache(
+        Interp interp,
+        int cacheId)
+            throws TclException
+    \{
+        String part1;
+        String part2 = null;
+        int flags = 0;
+        Var lvar;
+"
+
+    set decl_end "    \}\n"
+
+    append buffer "\n"
+    append buffer $decl
+    append buffer "\n"
+
+    emitter_indent_level +1
+
+    # first switch on cacheId
+
+    append buffer [emitter_indent] "switch ( cacheId ) \{\n"
+    emitter_indent_level +1
+
+    append buffer [emitter_indent] "case 0: \{\n"
+    emitter_indent_level +1
+
+    # init all cache symbols to null
+
+    foreach key $_compileproc_variable_cache(ordered_keys) {
+        set symbol $_compileproc_variable_cache($key)
+        append buffer [emitter_statement "$symbol = null"]
+    }
+    append buffer [emitter_statement "return null"]
+    emitter_indent_level -1
+    append buffer [emitter_indent] "\}\n"
+
+    # case block for each id
+
+    foreach vname $_compileproc_variable_cache(ordered_vars) \
+            key $_compileproc_variable_cache(ordered_keys) \
+            cacheId $cacheIds {
+        set symbol $_compileproc_variable_cache($key)
+
+        append buffer [emitter_indent] "case $cacheId: \{\n"
+        emitter_indent_level +1
+
+        append buffer [emitter_statement "$symbol = null"]
+        set jstr [emitter_backslash_tcl_string $vname]
+        append buffer [emitter_statement "part1 = \"$jstr\""]
+        append buffer [emitter_statement "break"]
+
+        emitter_indent_level -1
+        append buffer [emitter_indent] "\}\n"
+    }
+
+    append buffer [emitter_indent] "default: \{\n"
+    emitter_indent_level +1
+    append buffer [emitter_statement "throw new TclRuntimeError(\"default: cacheId \" + cacheId)"]
+    emitter_indent_level -1
+    append buffer [emitter_indent] "\}\n"
+
+    # end second switch
+
+    emitter_indent_level -1
+    append buffer [emitter_indent] "\}\n"
+
+    # resolve var
+
+    append buffer "\n"
+    append buffer [emitter_statement "lvar = TJC.resolveVarScalar(interp, part1, flags)"]
+    append buffer "\n"
+
+    # second switch on cacheId
+
+    append buffer [emitter_indent] "switch ( cacheId ) \{\n"
+    emitter_indent_level +1
+
+    # case block for each id
+
+    foreach vname $_compileproc_variable_cache(ordered_vars) \
+            key $_compileproc_variable_cache(ordered_keys) \
+            cacheId $cacheIds {
+        set symbol $_compileproc_variable_cache($key)
+
+        append buffer [emitter_indent] "case $cacheId: \{\n"
+        emitter_indent_level +1
+
+        append buffer [emitter_statement "$symbol = lvar"]
+        append buffer [emitter_statement "break"]
+
+        emitter_indent_level -1
+        append buffer [emitter_indent] "\}\n"
+    }
+
+    # end second switch
+
+    emitter_indent_level -1
+    append buffer [emitter_indent] "\}\n"
+
+    append buffer [emitter_statement "return lvar"]
+
+    emitter_indent_level -1
+
+    # end method decl
+
+    append buffer [emitter_indent] "\}\n"
+
+    emitter_indent_level -1
+
+    return $buffer
 }
 
 # Loop over parsed command keys and determine information
@@ -2208,7 +2545,8 @@ proc compileproc_emit_invoke_call { key } {
     }
 
     # Evaluate each argument to the command, increment the
-    # ref count, and save into the array.
+    # ref count if needed, and save the TclObject into
+    # the argument array.
 
     set const_unincremented_indexes {}
 
@@ -2454,10 +2792,13 @@ proc compileproc_get_argument_tuple { key i } {
     }
 }
 
-# Determine a variable value at runtime and emit code
-# to assign the value of this variable to a tmp local.
+# Generate code to determine a variable value at runtime
+# and assign the value the the given tmpsymbol. This
+# method is the primary entry point for variable evaluation.
 
 proc compileproc_emit_variable { tmpsymbol vinfo {declare_flag 1} } {
+    global _compileproc
+
     set debug 0
 
     set buffer ""
@@ -2471,8 +2812,9 @@ proc compileproc_emit_variable { tmpsymbol vinfo {declare_flag 1} } {
     switch -exact -- $vtype {
         {scalar} {
             set vname [lindex $vinfo 1]
-            append buffer [emitter_indent] \
-                "${declare}${tmpsymbol} = [emitter_get_var $vname true null false 0]\;\n"
+            append buffer \
+                [emitter_statement \
+                    "${declare}${tmpsymbol} = [compileproc_emit_scalar_variable_get $vname]"]
         }
         {array text} {
             set avname [lindex $vinfo 1 0]
@@ -2487,10 +2829,12 @@ proc compileproc_emit_variable { tmpsymbol vinfo {declare_flag 1} } {
             if {$avname == ""} {error "empty array name in \{$vinfo\}"}
             set kvname [lindex $vinfo 1 1]
             if {$kvname == ""} {error "empty array key variable name in \{$vinfo\}"}
-            append buffer [emitter_indent] \
-                "${declare}${tmpsymbol} = [emitter_get_var $kvname true null false 0]\;\n"
-            append buffer [emitter_indent] \
-                "$tmpsymbol = [emitter_get_var $avname true $tmpsymbol.toString() false 0]\;\n"
+            append buffer \
+                [emitter_statement \
+                    "${declare}${tmpsymbol} = [compileproc_emit_scalar_variable_get $kvname]"]
+            append buffer \
+                [emitter_statement \
+                    "$tmpsymbol = [emitter_get_var $avname true $tmpsymbol.toString() false 0]"]
         }
         {array command} {
             set avname [lindex $vinfo 1 0]
@@ -2540,12 +2884,13 @@ proc compileproc_emit_variable { tmpsymbol vinfo {declare_flag 1} } {
             if {[llength $values] > 1} {
                 # Multiple values to concatenate into a single word
                 set sbtmp [compileproc_tmpvar_next sbtmp]
-                append buffer [emitter_indent] \
-                    "StringBuffer $sbtmp = new StringBuffer(64)\;\n"
+                append buffer \
+                    [emitter_statement \
+                    "StringBuffer $sbtmp = new StringBuffer(64)"]
                 foreach value $values {
                     set type [lindex $value 0]
                     if {$type == "text"} {
-                        set str [lindex $value 1]
+                        set str [emitter_backslash_tcl_string [lindex $value 1]]
                         # A constant string, just append it to the StringBuffer
                         append buffer [emitter_indent] \
                             "$sbtmp.append(\"$str\")\;\n"
@@ -2575,6 +2920,58 @@ proc compileproc_emit_variable { tmpsymbol vinfo {declare_flag 1} } {
         default {
             error "unhandled non-scalar type \"$vtype\" in vinfo \{$vinfo\}"
         }
+    }
+
+    return $buffer
+}
+
+# Emit code to get the value of a scalar variable. This method
+# generates an assignable value of type TclObject. This method
+# is used by compileproc_emit_variable for scalars.
+
+proc compileproc_emit_scalar_variable_get { vname } {
+    global _compileproc
+
+    set debug 0
+
+    if {$debug} {
+        puts "compileproc_emit_scalar_variable_get $vname"
+    }
+
+    if {[info exists _compileproc(options,cache_variables)] && \
+            $_compileproc(options,cache_variables)} {
+        set symbol [compileproc_variable_cache_lookup $vname]
+        set cacheId [compileproc_get_cache_id_from_symbol $symbol]
+
+        set buffer [emitter_get_cache_scalar_var $vname true 0 $symbol $cacheId]
+    } else {
+        set buffer [emitter_get_var $vname true null false 0]
+    }
+    return $buffer
+}
+
+# Emit code to set the value of a scalar variable. This method
+# assigns a new value to a scalar variable and returns an
+# assignable value of type TclObject. This method is used
+# throughout this module to set a scalar variable value.
+
+proc compileproc_emit_scalar_variable_set { vname value } {
+    global _compileproc
+
+    set debug 0
+
+    if {$debug} {
+        puts "compileproc_emit_scalar_variable_set $vname $value"
+    }
+
+    if {[info exists _compileproc(options,cache_variables)] && \
+            $_compileproc(options,cache_variables)} {
+
+        set symbol [compileproc_variable_cache_lookup $vname]
+        set cacheId [compileproc_get_cache_id_from_symbol $symbol]
+        set buffer [emitter_set_cache_scalar_var $vname true $value 0 $symbol $cacheId]
+    } else {
+        set buffer [emitter_set_var $vname true null false $value 0]
     }
 
     return $buffer
@@ -3646,12 +4043,23 @@ proc compileproc_query_module_flags { proc_name } {
         set _compileproc(options,skip_constant_increment) 1
     }
 
+    set cache_variables_option \
+        [module_option_value cache-variables $proc_name]
+    if {$cache_variables_option == {}} {
+        set cache_variables_option \
+            [module_option_value cache-variables]
+    }
+    if {$cache_variables_option} {
+        set _compileproc(options,cache_variables) 1
+    }
+
     if {$debug} {
         puts "compileproc module options set to:"
         puts "inline_containers = $_compileproc(options,inline_containers)"
         puts "inline_controls = $_compileproc(options,inline_controls)"
         puts "cache_commands = $_compileproc(options,cache_commands)"
         puts "skip_constant_increment = $_compileproc(options,skip_constant_increment)"
+        puts "cache_variables = $_compileproc(options,cache_variables)"
     }
 }
 
@@ -4025,9 +4433,9 @@ proc compileproc_emit_container_catch { key } {
         # catch has three arguments.
         if {[descend_container_catch_has_variable $key]} {
             set varname [descend_container_catch_variable $key]
-            append buffer [emitter_container_catch_handler {} true $varname]
+            append buffer [compileproc_container_catch_handler {} true $varname]
         } else {
-            append buffer [emitter_container_catch_handler {} true]
+            append buffer [compileproc_container_catch_handler {} true]
         }
     } else {
         set tmpsymbol [compileproc_tmpvar_next code]
@@ -4052,11 +4460,66 @@ proc compileproc_emit_container_catch { key } {
 
         if {[descend_container_catch_has_variable $key]} {
             set varname [descend_container_catch_variable $key]
-            append buffer [emitter_container_catch_handler $tmpsymbol false $varname]
+            append buffer [compileproc_container_catch_handler $tmpsymbol false $varname]
         } else {
-            append buffer [emitter_container_catch_handler $tmpsymbol false]
+            append buffer [compileproc_container_catch_handler $tmpsymbol false]
         }
     }
+    return $buffer
+}
+
+# Emit catch block handler that typically appears
+# after the try block. Pass the name of a variable
+# that will be set or null if no variable. If
+# no exception is possible then pass null as
+# the exsymbol value.
+
+proc compileproc_container_catch_handler { tmpsymbol empty_body {varname "__TJC_NO_VARIABLE"} } {
+    set buffer ""
+    if {$varname == "__TJC_NO_VARIABLE"} {
+        set emitvar 0
+    } else {
+        set emitvar 1
+    }
+    if {$emitvar} {
+        if {!$empty_body} {
+            append buffer [emitter_indent] \
+                "TclObject result = interp.getResult()\;\n"
+            set value result
+        } else {
+            set value ""
+        }
+        append buffer [emitter_indent] \
+            "try \{\n"
+        emitter_indent_level +1
+
+        # Emit variable assignment
+
+        append buffer [emitter_indent] \
+            [compileproc_set_variable $varname true \
+                $value [expr {($value == "") ? true : false}]] \
+            "\;\n"
+
+        emitter_indent_level -1
+        append buffer [emitter_indent] \
+            "\} catch (TclException ex) \{\n"
+        emitter_indent_level +1
+        append buffer [emitter_indent] \
+            "TJC.catchVarErr(interp)\;\n"
+        emitter_indent_level -1
+        append buffer [emitter_indent] \
+            "\}\n"
+    }
+
+    append buffer [emitter_reset_result]
+    if {$empty_body} {
+        append buffer [emitter_indent] \
+            "interp.setResult(TCL.OK)\;\n"
+    } else {
+        append buffer [emitter_indent] \
+            "interp.setResult($tmpsymbol)\;\n"
+    }
+
     return $buffer
 }
 
@@ -4153,7 +4616,7 @@ proc compileproc_emit_container_foreach { key } {
         append buffer [emitter_container_foreach_list_preserve $tmpsymbol]
     }
 
-    append buffer [emitter_container_foreach_loop_start $varnamelists $list_symbols]
+    append buffer [compileproc_container_foreach_loop_start $varnamelists $list_symbols]
 
     # Emit body commands
     if {$body_keys != {}} {
@@ -4180,7 +4643,237 @@ proc compileproc_emit_container_foreach { key } {
         append buffer [emitter_container_for_try_end]
     }
 
-    append buffer [emitter_container_foreach_loop_end $list_symbols]
+    append buffer [compileproc_container_foreach_loop_end $list_symbols]
+
+    return $buffer
+}
+
+# Start foreach loop. Pass a list of the varlist arguments
+# to the foreach command and a list of the evaluated symbols
+# that contain list values.
+
+proc compileproc_container_foreach_loop_start { varlists list_symbols } {
+    set buffer ""
+    set debug 0
+    if {$debug} {
+        puts "compileproc_container_foreach_loop_start: varlists \{$varlists\} : list_symbols \{$list_symbols\}"
+    }
+
+    if {[llength $varlists] == 0} {
+        error "varlists can't be {}"
+    }
+    if {[llength $list_symbols] == 0} {
+        error "list_symbols can't be {}"
+    }
+
+    set multilists [expr {[llength $list_symbols] > 1}]
+    if {$multilists} {
+        set multivars 1
+    } else {
+        set varlist [lindex $varlists 0]
+        set multivars [expr {[llength $varlist] > 1}]
+    }
+
+    set tmpsymbols [list]
+    set list_symbol_lengths [list]
+
+    foreach list_symbol $list_symbols {
+        append buffer [emitter_container_foreach_list_length $list_symbol]
+        lappend list_symbol_lengths "${list_symbol}_length"
+    }
+    if {$multilists} {
+        set num_loops_tmpsymbol [compileproc_tmpvar_next num_loops]
+        set max_loops_tmpsymbol [compileproc_tmpvar_next max_loops]
+        append buffer [emitter_indent] \
+            "int $num_loops_tmpsymbol, $max_loops_tmpsymbol = 0\;\n"
+        foreach varlist $varlists list_symbol $list_symbols {
+            set num_variables [llength $varlist]
+            if {$num_variables > 1} {
+                append buffer [emitter_indent] \
+                    "$num_loops_tmpsymbol =\
+                        (${list_symbol}_length + $num_variables - 1) / $num_variables\;\n"
+            } else {
+                append buffer [emitter_indent] \
+                    "$num_loops_tmpsymbol = ${list_symbol}_length\;\n"
+            }
+            append buffer [emitter_indent] \
+                "if ( $num_loops_tmpsymbol > $max_loops_tmpsymbol ) \{\n"
+            emitter_indent_level +1
+            append buffer [emitter_indent] \
+                "$max_loops_tmpsymbol = $num_loops_tmpsymbol\;\n"
+            emitter_indent_level -1
+            append buffer [emitter_indent] \
+                "\}\n"
+        }
+    }
+
+    # Newline before for loop
+    append buffer "\n"
+
+    # Create for loop
+    set tmpi [compileproc_tmpvar_next index]
+    set init_buffer "int $tmpi = 0"
+
+    if {!$multilists} {
+        # Iterating over a single list
+        #set list_symbol [lindex $list_symbols 0]
+        set list_symbol_length [lindex $list_symbol_lengths 0]
+        set test_buffer "$tmpi < $list_symbol_length"
+    } else {
+        # Iterating over multiple lists
+        set test_buffer "$tmpi < $max_loops_tmpsymbol"
+    }
+
+    if {$multilists || !$multivars} {
+        set incr_buffer "${tmpi}++"
+    } else {
+        set varlist [lindex $varlists 0]
+        set incr_buffer "$tmpi += [llength $varlist]"
+    }
+    append buffer \
+        [emitter_container_for_start $init_buffer $test_buffer $incr_buffer]
+
+    # Map tmpsymbol to tuple {varname list_symbol list_symbol_length mult offset index}
+
+    if {!$multilists} {
+        set list_symbol [lindex $list_symbols 0]
+        set list_symbol_length [lindex $list_symbol_lengths 0]
+        set varlist [lindex $varlists 0]
+        for {set i 0} {$i < [llength $varlist]} {incr i} {
+            set varname [lindex $varlist $i]
+            set tmpsymbol [compileproc_tmpvar_next]
+            lappend tmpsymbols $tmpsymbol
+            set tuple [list $varname $list_symbol $list_symbol_length 1 $i $tmpi]
+            set tmpsymbols_map($tmpsymbol) $tuple
+        }
+    } else {
+        foreach varlist $varlists \
+                list_symbol $list_symbols \
+                list_symbol_length $list_symbol_lengths {
+            set mult [llength $varlist]
+            for {set i 0} {$i < [llength $varlist]} {incr i} {
+                set varname [lindex $varlist $i]
+                set tmpsymbol [compileproc_tmpvar_next]
+                lappend tmpsymbols $tmpsymbol
+                if {$mult > 1} {
+                    set isym "${list_symbol}_index"
+                } else {
+                    set isym $tmpi
+                }
+                set tuple [list $varname $list_symbol $list_symbol_length \
+                    $mult $i $isym]
+                set tmpsymbols_map($tmpsymbol) $tuple
+            }
+        }
+    }
+
+    if {$debug} {
+        parray tmpsymbols_map
+    }
+
+    # Determine indexes for each list if needed
+
+    if {$multilists} {
+        foreach tmpsymbol $tmpsymbols {
+            set tuple $tmpsymbols_map($tmpsymbol)
+            foreach {varname list_symbol list_symbol_length mult offset ivar} \
+                $tuple break
+
+            if {$mult > 1} {
+                if {[info exists declared_ivar($ivar)]} {
+                    continue
+                }
+                append buffer [emitter_indent] \
+                    "int $ivar = $tmpi * $mult\;\n"
+                set declared_ivar($ivar) 1
+            }
+        }
+    }
+
+    # Query TclObject value at list index.
+
+    foreach tmpsymbol $tmpsymbols {
+        set tuple $tmpsymbols_map($tmpsymbol)
+        foreach {varname list_symbol list_symbol_length mult offset ivar} \
+            $tuple break
+
+        if {!$multivars && !$multilists} {
+            set index $tmpi
+        } elseif {$multivars || $multilists} {
+            if {$offset == 0} {
+                set index "$ivar"
+            } else {
+                set index "$ivar + $offset"
+            }
+        }
+
+        if {!$multivars && !$multilists} {
+            append buffer [emitter_indent] \
+                "TclObject $tmpsymbol = TclList.index(interp, $list_symbol, $index)\;\n"
+        } elseif {$multilists || $multivars} {
+            append buffer [emitter_indent] \
+                "TclObject $tmpsymbol = null;\n"
+            append buffer [emitter_indent] \
+                "if ( $index < $list_symbol_length ) \{\n"
+            emitter_indent_level +1
+            append buffer [emitter_indent] \
+                "$tmpsymbol = TclList.index(interp, $list_symbol, $index)\;\n"
+            emitter_indent_level -1
+            append buffer [emitter_indent] \
+                "\}\n"
+        }
+    }
+
+    # Set variables
+
+    foreach tmpsymbol $tmpsymbols {
+        set tuple $tmpsymbols_map($tmpsymbol)
+        foreach {varname list_symbol list_symbol_length mult offset ivar} \
+            $tuple break
+
+        append buffer [emitter_container_foreach_var_try_start]
+        if {!$multivars && !$multilists} {
+            append buffer [emitter_indent] \
+                [compileproc_set_variable $varname true $tmpsymbol false] "\;\n"
+        } elseif {$multilists || $multivars} {
+            append buffer [emitter_indent] \
+                "if ( $tmpsymbol == null ) \{\n"
+            emitter_indent_level +1
+            append buffer [emitter_indent] \
+                [compileproc_set_variable $varname true "" true] "\;\n"
+            emitter_indent_level -1
+            append buffer [emitter_indent] \
+                "\} else \{\n"
+            emitter_indent_level +1
+            append buffer [emitter_indent] \
+                [compileproc_set_variable $varname true $tmpsymbol false] "\;\n"
+            emitter_indent_level -1
+            append buffer [emitter_indent] \
+                "\}\n"
+        }
+        append buffer [emitter_container_foreach_var_try_end $varname]
+    }
+
+    return $buffer
+}
+
+# End foreach loop
+
+proc compileproc_container_foreach_loop_end { list_symbols } {
+    set buffer ""
+
+    # End for loop and reset interp result
+    append buffer [emitter_container_for_end]
+
+    # Add finally block to decrement ref count for lists
+    append buffer [emitter_container_foreach_try_finally]
+
+    foreach list_symbol $list_symbols {
+        append buffer [emitter_container_foreach_list_release $list_symbol]
+    }
+
+    # Close try/finally block around loop
+    append buffer [emitter_container_foreach_try_finally_end]
 
     return $buffer
 }
@@ -4542,33 +5235,30 @@ proc compileproc_emit_container_switch_constant { key string_tmpsymbol } {
 # assumes that a variable name is statically defined.
 
 proc compileproc_set_variable { varname varname_is_string value value_is_string } {
-    set buffer ""
-
-    # FIXME: Need to implement a switch later on that will allow a
-    # static scalar to be set directly in the local call frame.
-
     if {$value_is_string} {
-        set value "\"$value\""
+        # FIXME: Would be better to do this in the emitter layer, would
+        # require adding is_value_string argument to emitter_set_var + scalar func.
+        set jstr [emitter_backslash_tcl_string $value]
+        set value "\"$jstr\""
     }
 
     if {$varname_is_string} {
+        # static variable name, emit either array or scalar assignment
         set vinfo [descend_simple_variable $varname]
         if {[lindex $vinfo 0] == "array"} {
             set p1 [lindex $vinfo 1]
             set p2 [lindex $vinfo 2]
-            append buffer [emitter_indent] \
-                [emitter_set_var $p1 true $p2 true $value 0]
+            return [emitter_set_var $p1 true $p2 true $value 0]
         } elseif {[lindex $vinfo 0] == "scalar"} {
-            append buffer [emitter_indent] \
-                [emitter_set_var $varname true null false $value 0]
+            return [compileproc_emit_scalar_variable_set $varname $value]
         } else {
             error "unexpected result \{$vinfo\} from descend_simple_variable"
         }
     } else {
-        append buffer [emitter_indent] \
-            [emitter_set_var $varname false null false $value 0]
+        # Non-static variable name, can't use cache so handle with
+        # interp.setVar()
+        return [emitter_set_var $varname false null false $value 0]
     }
-    return $buffer
 }
 
 # Push a controls context. The default controls context is the whole

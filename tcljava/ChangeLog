@@ -1,3 +1,41 @@
+2006-01-11  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * Makefile.in: add tjcsrc and tjc test build dir to
+        test CLASSPATH to fixup debugger support.
+        * src/jacl/tcl/lang/IncrCmd.java (cmdProc):
+        Update call to Var.incrVar() since it accepts Strings.
+        * src/jacl/tcl/lang/Var.java (isVarCacheInvalid,
+        setVarNoCache, getVar, incrVar, makeUpvar): Whitespace fixup.
+        Add NO_CACHE flag to signal when a variable can't be cached.
+        Set NO_CACHE flag on link to variable when a link from variable
+        is redirected from one variable to another via upvar.
+        * src/tests/tjc/TestTJC.java: Add variable lookup tests.
+        * src/tjc/tcl/lang/TJC.java (CompiledComamnd.updateVarCache,
+        CompiledComamnd.getVarScalar, CompiledComamnd.setVarScalar,
+        resolveVarScalar, isVarScalarValid, getVarScalar, setVarScalar):
+        Implement runtime support for cached scalar variables.
+        * src/tjc/tjc/library/compileproc.tcl: Add code to check for
+        constant use while declaring args. Move args processing
+        methods into compileproc since they need to invoke compileproc
+        methods for variable access. Add variable cache logic and
+        methods to emit variable cache code. Read +cache-variable
+        flag from module to enable variable cache. Enable scalar
+        variable set in catch and foreach commands.
+        * src/tjc/tjc/library/emitter.tcl: Move args processing
+        methods that emit a variable into compileproc module.
+        * src/tjc/tjc/library/module.tcl: Add support for
+        +cache-variables OPTIONS flag.
+        * tests/all.tcl: Run compileproc after all other tests.
+        * tests/tjc/compileproc.test: Test scalar set and get.
+        * tests/tjc/compileproc_6.test: Test var cache output.
+        * tests/tjc/descend.test: Load TJC commands since this
+        is the first file loaded.
+        * tests/tjc/emitter.test: Invoke compileproc_init to
+        clear out any var state since this test file invokes
+        some compileproc functions.
+        * tests/tjc/module.test: Test +cache-variables.
+        * tests/tjc/testtjc.test: Test cache variable impl.
+
 2005-12-29  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/jacl/tcl/lang/GlobalCmd.java: Invoke

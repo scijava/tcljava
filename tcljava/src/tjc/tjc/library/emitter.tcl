@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: emitter.tcl,v 1.2 2005/12/29 03:35:34 mdejong Exp $
+#  RCS: @(#) $Id: emitter.tcl,v 1.3 2006/01/11 21:24:50 mdejong Exp $
 #
 #
 
@@ -66,27 +66,6 @@ proc emitter_num_args { num arg_str } {
     return $buffer
 }
 
-# Emit code to assign a procedure argument to the local variable
-# table. Name is the name of the argument to the procedure.
-# Index is the integer index from the passed in objv array where
-# the value of the argument will be found.
-
-proc emitter_assign_arg { name index } {
-    if {![string is integer $index]} {
-        error "index $index is not an integer"
-    }
-    if {$index < 1} {
-        error "index $index must be greater than 0"
-    }
-
-    set buffer ""
-    append buffer [emitter_indent] \
-        [emitter_set_var $name true null false objv\[$index\] 0]
-    append buffer \
-        "\;\n"
-
-    return $buffer
-}
 
 # Emit code to check for a number of arguments that
 # have default values.
@@ -116,79 +95,6 @@ proc emitter_num_default_args { num arg_str } {
     append buffer [emitter_indent]
     append buffer \
     "\}\n"
-    return $buffer
-}
-
-# Emit code to assign a procedure argument with a default value
-# to the local variable table. Name is the name of the argument
-# to the procedure.
-# Index is the integer index from the passed in objv array where
-# the value of the argument will be found.
-
-proc emitter_assign_default_arg { name index default_symbol } {
-    if {![string is integer $index]} {
-        error "index $index is not an integer"
-    }
-    if {$index < 1} {
-        error "index $index must be greater than 0"
-    }
-
-    set buffer ""
-
-    append buffer [emitter_indent]
-    emitter_indent_level +1
-    set sp "\n[emitter_indent]"
-    emitter_indent_level -1
-
-    append buffer \
-        [emitter_set_var $name true null false \
-            "${sp}((objv.length <= $index) ? $default_symbol : objv\[$index\])" \
-            0]
-
-    append buffer "\;\n"
-    return $buffer
-}
-
-
-# Emit code to assign procedure arguments to a local named "args"
-# starting from the given index.
-
-proc emitter_assign_args_arg { index } {
-    if {![string is integer $index]} {
-        error "index $index is not an integer"
-    }
-    if {$index < 1} {
-        error "index $index must be greater than 0"
-    }
-
-    set buffer ""
-    append buffer [emitter_indent] \
-    "if ( objv.length <= $index ) \{\n"
-    emitter_indent_level +1
-    append buffer [emitter_indent] \
-        [emitter_set_var "args" true null false "" 0]
-    append buffer "\;\n"
-    emitter_indent_level -1
-    append buffer [emitter_indent] \
-    "\} else \{\n"
-    emitter_indent_level +1
-    append buffer [emitter_indent] \
-    "TclObject argl = TclList.newInstance()\;\n"
-    append buffer [emitter_indent] \
-    "for (int i = $index; i < objv.length\; i++) \{\n"
-    emitter_indent_level +1
-    append buffer [emitter_indent] \
-    "TclList.append(interp, argl, objv\[i\])\;\n"
-    emitter_indent_level -1
-    append buffer [emitter_indent] \
-    "\}\n"    
-    append buffer [emitter_indent] \
-        [emitter_set_var "args" true null false argl 0]
-    append buffer "\;\n"
-    emitter_indent_level -1
-    append buffer [emitter_indent] \
-    "\}\n"
-
     return $buffer
 }
 
@@ -760,7 +666,7 @@ proc emitter_callframe_start { ns } {
 # cmdProc declaration to close the try block opened in
 # emitter_callframe_start.
 
-proc emitter_callframe_end { proc_name } {
+proc emitter_callframe_end { proc_name {clear_varcache 0} } {
     set buffer ""
 
     append buffer [emitter_indent]
@@ -779,6 +685,9 @@ proc emitter_callframe_end { proc_name } {
     append buffer [emitter_indent]
     append buffer "TJC.popLocalCallFrame(interp, callFrame)\;"
     append buffer "\n"
+    if {$clear_varcache} {
+        append buffer [emitter_statement "updateVarCache(interp, 0)"]
+    }
     emitter_indent_level -1
     append buffer [emitter_indent]
     append buffer "\}"
@@ -1350,66 +1259,6 @@ proc emitter_container_catch_try_end { tmpsymbol } {
     return $buffer
 }
 
-# Emit catch block handler that typically appears
-# after the try block. Pass the name of a variable
-# that will be set or null if no variable. If
-# no exception is possible then pass null as
-# the exsymbol value.
-
-proc emitter_container_catch_handler { tmpsymbol empty_body {varname "__TJC_NO_VARIABLE"} } {
-    set buffer ""
-    if {$varname == "__TJC_NO_VARIABLE"} {
-        set emitvar 0
-    } else {
-        set emitvar 1
-    }
-    if {$emitvar} {
-        if {!$empty_body} {
-            append buffer [emitter_indent] \
-                "TclObject result = interp.getResult()\;\n"
-            set value result
-        } else {
-            set value ""
-        }
-        append buffer [emitter_indent] \
-            "try \{\n"
-        emitter_indent_level +1
-        set vinfo [descend_simple_variable $varname]
-        if {[lindex $vinfo 0] == "array"} {
-            set p1 [lindex $vinfo 1]
-            set p2 [lindex $vinfo 2]
-            append buffer [emitter_indent] \
-                [emitter_set_var $p1 true $p2 true $value 0]
-        } elseif {[lindex $vinfo 0] == "scalar"} {
-            append buffer [emitter_indent] \
-                [emitter_set_var $varname true null false $value 0]
-        } else {
-            error "unexpected result \{$vinfo\} from descend_simple_variable"
-        }
-        append buffer "\;\n"
-        emitter_indent_level -1
-        append buffer [emitter_indent] \
-            "\} catch (TclException ex) \{\n"
-        emitter_indent_level +1
-        append buffer [emitter_indent] \
-            "TJC.catchVarErr(interp)\;\n"
-        emitter_indent_level -1
-        append buffer [emitter_indent] \
-            "\}\n"
-    }
-
-    append buffer [emitter_reset_result]
-    if {$empty_body} {
-        append buffer [emitter_indent] \
-            "interp.setResult(TCL.OK)\;\n"
-    } else {
-        append buffer [emitter_indent] \
-            "interp.setResult($tmpsymbol)\;\n"
-    }
-
-    return $buffer
-}
-
 # Query a variable value.
 
 proc emitter_get_var { p1 is_p1_string p2 is_p2_string iflags } {
@@ -1433,6 +1282,20 @@ proc emitter_get_var { p1 is_p1_string p2 is_p2_string iflags } {
     return "interp.getVar($p1sym, $p2sym, $iflags)"
 }
 
+# Query a cache scalar value
+
+proc emitter_get_cache_scalar_var { p1 is_p1_string iflags cache_symbol cache_id } {
+    if {$p1 == "" && !$is_p1_string} {
+        error "empty string can't be a symbol"
+    }
+    if {$is_p1_string} {
+        set p1sym "\"[emitter_backslash_tcl_string $p1]\""
+    } else {
+        set p1sym $p1
+    }
+    return "getVarScalar(interp, $p1sym, $iflags, $cache_symbol, $cache_id)"
+}
+
 # Set a variable value.
 
 proc emitter_set_var { p1 is_p1_string p2 is_p2_string value iflags } {
@@ -1451,6 +1314,20 @@ proc emitter_set_var { p1 is_p1_string p2 is_p2_string value iflags } {
         set value " $value"
     }
     return "interp.setVar($p1, $p2,$value, $iflags)"
+}
+
+# Set a cache scalar value
+
+proc emitter_set_cache_scalar_var { p1 is_p1_string valsym iflags cache_symbol cache_id } {
+    if {$p1 == "" && !$is_p1_string} {
+        error "empty string can't be a symbol"
+    }
+    if {$is_p1_string} {
+        set p1sym "\"[emitter_backslash_tcl_string $p1]\""
+    } else {
+        set p1sym $p1
+    }
+    return "setVarScalar(interp, $p1sym, $valsym, $iflags, $cache_symbol, $cache_id)"
 }
 
 # Emit interp.resetResult() void statement.
@@ -1521,247 +1398,17 @@ proc emitter_container_foreach_var_try_start {} {
 }
 
 proc emitter_container_foreach_var_try_end { varname } {
-    # FIXME: May need to run varname through the backslash func.
     set buffer ""
     emitter_indent_level -1
     append buffer [emitter_indent] \
         "\} catch (TclException ex) \{\n"
     emitter_indent_level +1
+    set jstr [emitter_backslash_tcl_string $varname]
     append buffer [emitter_indent] \
-        "TJC.foreachVarErr(interp, \"$varname\")\;\n"
+        "TJC.foreachVarErr(interp, \"$jstr\")\;\n"
     emitter_indent_level -1
     append buffer [emitter_indent] \
         "\}\n"
-
-    return $buffer
-}
-
-# Start foreach loop. Pass a list of the varlist arguments
-# to the foreach command and a list of the evaluated symbols
-# that contain list values.
-
-proc emitter_container_foreach_loop_start { varlists list_symbols } {
-    set buffer ""
-    set debug 0
-    if {$debug} {
-        puts "emitter_container_foreach_loop_start: varlists \{$varlists\} : list_symbols \{$list_symbols\}"
-    }
-
-    if {[llength $varlists] == 0} {
-        error "varlists can't be {}"
-    }
-    if {[llength $list_symbols] == 0} {
-        error "list_symbols can't be {}"
-    }
-
-    set multilists [expr {[llength $list_symbols] > 1}]
-    if {$multilists} {
-        set multivars 1
-    } else {
-        set varlist [lindex $varlists 0]
-        set multivars [expr {[llength $varlist] > 1}]
-    }
-
-    set tmpsymbols [list]
-    set list_symbol_lengths [list]
-
-    foreach list_symbol $list_symbols {
-        append buffer [emitter_container_foreach_list_length $list_symbol]
-        lappend list_symbol_lengths "${list_symbol}_length"
-    }
-    if {$multilists} {
-        set num_loops_tmpsymbol [compileproc_tmpvar_next num_loops]
-        set max_loops_tmpsymbol [compileproc_tmpvar_next max_loops]
-        append buffer [emitter_indent] \
-            "int $num_loops_tmpsymbol, $max_loops_tmpsymbol = 0\;\n"
-        foreach varlist $varlists list_symbol $list_symbols {
-            set num_variables [llength $varlist]
-            if {$num_variables > 1} {
-                append buffer [emitter_indent] \
-                    "$num_loops_tmpsymbol =\
-                        (${list_symbol}_length + $num_variables - 1) / $num_variables\;\n"
-            } else {
-                append buffer [emitter_indent] \
-                    "$num_loops_tmpsymbol = ${list_symbol}_length\;\n"
-            }
-            append buffer [emitter_indent] \
-                "if ( $num_loops_tmpsymbol > $max_loops_tmpsymbol ) \{\n"
-            emitter_indent_level +1
-            append buffer [emitter_indent] \
-                "$max_loops_tmpsymbol = $num_loops_tmpsymbol\;\n"
-            emitter_indent_level -1
-            append buffer [emitter_indent] \
-                "\}\n"
-        }
-    }
-
-    # Newline before for loop
-    append buffer "\n"
-
-    # Create for loop
-    set tmpi [compileproc_tmpvar_next index]
-    set init_buffer "int $tmpi = 0"
-
-    if {!$multilists} {
-        # Iterating over a single list
-        #set list_symbol [lindex $list_symbols 0]
-        set list_symbol_length [lindex $list_symbol_lengths 0]
-        set test_buffer "$tmpi < $list_symbol_length"
-    } else {
-        # Iterating over multiple lists
-        set test_buffer "$tmpi < $max_loops_tmpsymbol"
-    }
-
-    if {$multilists || !$multivars} {
-        set incr_buffer "${tmpi}++"
-    } else {
-        set varlist [lindex $varlists 0]
-        set incr_buffer "$tmpi += [llength $varlist]"
-    }
-    append buffer \
-        [emitter_container_for_start $init_buffer $test_buffer $incr_buffer]
-
-    # Map tmpsymbol to tuple {varname list_symbol list_symbol_length mult offset index}
-
-    if {!$multilists} {
-        set list_symbol [lindex $list_symbols 0]
-        set list_symbol_length [lindex $list_symbol_lengths 0]
-        set varlist [lindex $varlists 0]
-        for {set i 0} {$i < [llength $varlist]} {incr i} {
-            set varname [lindex $varlist $i]
-            set tmpsymbol [compileproc_tmpvar_next]
-            lappend tmpsymbols $tmpsymbol
-            set tuple [list $varname $list_symbol $list_symbol_length 1 $i $tmpi]
-            set tmpsymbols_map($tmpsymbol) $tuple
-        }
-    } else {
-        foreach varlist $varlists \
-                list_symbol $list_symbols \
-                list_symbol_length $list_symbol_lengths {
-            set mult [llength $varlist]
-            for {set i 0} {$i < [llength $varlist]} {incr i} {
-                set varname [lindex $varlist $i]
-                set tmpsymbol [compileproc_tmpvar_next]
-                lappend tmpsymbols $tmpsymbol
-                if {$mult > 1} {
-                    set isym "${list_symbol}_index"
-                } else {
-                    set isym $tmpi
-                }
-                set tuple [list $varname $list_symbol $list_symbol_length \
-                    $mult $i $isym]
-                set tmpsymbols_map($tmpsymbol) $tuple
-            }
-        }
-    }
-
-    if {$debug} {
-        parray tmpsymbols_map
-    }
-
-    # Determine indexes for each list if needed
-
-    if {$multilists} {
-        foreach tmpsymbol $tmpsymbols {
-            set tuple $tmpsymbols_map($tmpsymbol)
-            foreach {varname list_symbol list_symbol_length mult offset ivar} \
-                $tuple break
-
-            if {$mult > 1} {
-                if {[info exists declared_ivar($ivar)]} {
-                    continue
-                }
-                append buffer [emitter_indent] \
-                    "int $ivar = $tmpi * $mult\;\n"
-                set declared_ivar($ivar) 1
-            }
-        }
-    }
-
-    # Query TclObject value at list index.
-
-    foreach tmpsymbol $tmpsymbols {
-        set tuple $tmpsymbols_map($tmpsymbol)
-        foreach {varname list_symbol list_symbol_length mult offset ivar} \
-            $tuple break
-
-        if {!$multivars && !$multilists} {
-            set index $tmpi
-        } elseif {$multivars || $multilists} {
-            if {$offset == 0} {
-                set index "$ivar"
-            } else {
-                set index "$ivar + $offset"
-            }
-        }
-
-        if {!$multivars && !$multilists} {
-            append buffer [emitter_indent] \
-                "TclObject $tmpsymbol = TclList.index(interp, $list_symbol, $index)\;\n"
-        } elseif {$multilists || $multivars} {
-            append buffer [emitter_indent] \
-                "TclObject $tmpsymbol = null;\n"
-            append buffer [emitter_indent] \
-                "if ( $index < $list_symbol_length ) \{\n"
-            emitter_indent_level +1
-            append buffer [emitter_indent] \
-                "$tmpsymbol = TclList.index(interp, $list_symbol, $index)\;\n"
-            emitter_indent_level -1
-            append buffer [emitter_indent] \
-                "\}\n"
-        }
-    }
-
-    # Set variables
-
-    foreach tmpsymbol $tmpsymbols {
-        set tuple $tmpsymbols_map($tmpsymbol)
-        foreach {varname list_symbol list_symbol_length mult offset ivar} \
-            $tuple break
-
-        append buffer [emitter_container_foreach_var_try_start]
-        if {!$multivars && !$multilists} {
-            append buffer \
-                [compileproc_set_variable $varname 1 $tmpsymbol 0] "\;\n"
-        } elseif {$multilists || $multivars} {
-            append buffer [emitter_indent] \
-                "if ( $tmpsymbol == null ) \{\n"
-            emitter_indent_level +1
-            append buffer \
-                [compileproc_set_variable $varname 1 "" 1] "\;\n"
-            emitter_indent_level -1
-            append buffer [emitter_indent] \
-                "\} else \{\n"
-            emitter_indent_level +1
-            append buffer \
-                [compileproc_set_variable $varname 1 $tmpsymbol 0] "\;\n"
-            emitter_indent_level -1
-            append buffer [emitter_indent] \
-                "\}\n"
-        }
-        append buffer [emitter_container_foreach_var_try_end $varname]
-    }
-
-    return $buffer
-}
-
-# End foreach loop
-
-proc emitter_container_foreach_loop_end { list_symbols } {
-    set buffer ""
-
-    # End for loop and reset interp result
-    append buffer [emitter_container_for_end]
-
-    # Add finally block to decrement ref count for lists
-    append buffer [emitter_container_foreach_try_finally]
-
-    foreach list_symbol $list_symbols {
-        append buffer [emitter_container_foreach_list_release $list_symbol]
-    }
-
-    # Close try/finally block around loop
-    append buffer [emitter_container_foreach_try_finally_end]
 
     return $buffer
 }

@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.45 2005/12/20 23:00:10 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.46 2006/01/11 21:24:49 mdejong Exp $
 
 SHELL = /bin/sh
 
@@ -203,7 +203,7 @@ ITCL_CLASSPATH		= $(TEST_CLASSPATH)
 
 TJC_CLASSPATH		= $(TEST_CLASSPATH)
 
-JACL_DEBUG_CLASSPATH	=  $(TEST_CLASSPATH):$(BUILD_DIR)/tcljavasrc.jar:$(BUILD_DIR)/jaclsrc.jar:$(BUILD_DIR)/itclsrc.jar:$(TEST_TCLJAVA_SRC_DIR):$(TEST_JACL_SRC_DIR)
+JACL_DEBUG_CLASSPATH	=  $(TEST_CLASSPATH):$(BUILD_DIR)/tcljavasrc.jar:$(BUILD_DIR)/jaclsrc.jar:$(BUILD_DIR)/itclsrc.jar:$(BUILD_DIR)/tjcsrc.jar:$(TEST_TCLJAVA_SRC_DIR):$(TEST_JACL_SRC_DIR):$(TEST_TJC_SRC_DIR)
 TCLBLEND_DEBUG_CLASSPATH = $(TEST_CLASSPATH):$(BUILD_DIR)/tcljavasrc.jar:$(BUILD_DIR)/tclblendsrc.jar
 
 # Libraries to use when linking: (used by SHLIB_LD_LIBS)

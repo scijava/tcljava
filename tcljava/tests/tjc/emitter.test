@@ -1,5 +1,13 @@
 package require tcltest
 
+# args assignment functions defined in the compileproc module
+# are tested here. Clear out any state left over from earlier
+# test runs.
+
+if {[info commands compileproc_init] == "compileproc_init"} {
+    compileproc_init
+}
+
 tcltest::test emitter-1.0 {util methods} {
     list \
         [emitter_indent_level zero] \
@@ -93,19 +101,19 @@ tcltest::test emitter-args-1.7 {emit num non-default and default args check} {
 
 tcltest::test emitter-args-2.0 {emit proc arg assignment} {
     emitter_indent_level zero
-    emitter_assign_arg "name" 1
+    compileproc_assign_arg "name" 1
 } {interp.setVar("name", null, objv[1], 0);
 }
 
 tcltest::test emitter-args-2.1 {emit proc arg assignment} {
     emitter_indent_level zero
-    emitter_assign_arg "addr" 2
+    compileproc_assign_arg "addr" 2
 } {interp.setVar("addr", null, objv[2], 0);
 }
 
 tcltest::test emitter-args-2.2 {emit proc arg assignment} {
     emitter_indent_level zero
-    set result [emitter_assign_arg "name" 1][emitter_assign_arg "addr" 2]
+    set result [compileproc_assign_arg "name" 1][compileproc_assign_arg "addr" 2]
 } {interp.setVar("name", null, objv[1], 0);
 interp.setVar("addr", null, objv[2], 0);
 }
@@ -113,21 +121,21 @@ interp.setVar("addr", null, objv[2], 0);
 
 tcltest::test emitter-args-3.0 {emit proc default arg assignment} {
     emitter_indent_level zero
-    emitter_assign_default_arg "name" 1 const0
+    compileproc_assign_default_arg "name" 1 const0
 } {interp.setVar("name", null,
     ((objv.length <= 1) ? const0 : objv[1]), 0);
 }
 
 tcltest::test emitter-args-3.1 {emit proc default arg assignment} {
     emitter_indent_level zero
-    emitter_assign_default_arg "addr" 2 const0
+    compileproc_assign_default_arg "addr" 2 const0
 } {interp.setVar("addr", null,
     ((objv.length <= 2) ? const0 : objv[2]), 0);
 }
 
 tcltest::test emitter-args-3.2 {emit proc default arg assignment} {
     emitter_indent_level zero
-    set result [emitter_assign_default_arg "name" 1 const0][emitter_assign_default_arg "addr" 2 const1]
+    set result [compileproc_assign_default_arg "name" 1 const0][compileproc_assign_default_arg "addr" 2 const1]
 } {interp.setVar("name", null,
     ((objv.length <= 1) ? const0 : objv[1]), 0);
 interp.setVar("addr", null,
@@ -136,7 +144,7 @@ interp.setVar("addr", null,
 
 tcltest::test emitter-args-4.0 {emit proc args arg assignment} {
     emitter_indent_level zero
-    emitter_assign_args_arg 1
+    compileproc_assign_args_arg 1
 } {if ( objv.length <= 1 ) {
     interp.setVar("args", null, "", 0);
 } else {
@@ -852,7 +860,7 @@ tcltest::test emitter-container-catch-1.0 {catch test} {
     emitter_indent_level zero
     set result [emitter_container_catch_try_start code0]
     append result [emitter_container_catch_try_end code0]
-    append result [emitter_container_catch_handler code0 false]
+    append result [compileproc_container_catch_handler code0 false]
     set result
 } {int code0 = TCL.OK;
 try {
@@ -868,7 +876,7 @@ tcltest::test emitter-container-catch-1.1 {catch test} {
     emitter_indent_level zero
     set result [emitter_container_catch_try_start code0]
     append result [emitter_container_catch_try_end code0]
-    append result [emitter_container_catch_handler code0 false err]
+    append result [compileproc_container_catch_handler code0 false err]
     set result
 } {int code0 = TCL.OK;
 try {
@@ -888,7 +896,7 @@ interp.setResult(code0);
 tcltest::test emitter-container-catch-1.2 {catch test} {
     # catch {} err
     emitter_indent_level zero
-    emitter_container_catch_handler {} true err
+    compileproc_container_catch_handler {} true err
 } {try {
     interp.setVar("err", null, "", 0);
 } catch (TclException ex) {
@@ -901,7 +909,7 @@ interp.setResult(TCL.OK);
 tcltest::test emitter-container-catch-1.3 {catch test} {
     # catch {}
     emitter_indent_level zero
-    emitter_container_catch_handler {} true
+    compileproc_container_catch_handler {} true
 } {interp.resetResult();
 interp.setResult(TCL.OK);
 }
@@ -909,7 +917,7 @@ interp.setResult(TCL.OK);
 tcltest::test emitter-container-catch-1.4 {catch test} {
     # catch {} a(k)
     emitter_indent_level zero
-    emitter_container_catch_handler {} true a(k)
+    compileproc_container_catch_handler {} true a(k)
 } {try {
     interp.setVar("a", "k", "", 0);
 } catch (TclException ex) {

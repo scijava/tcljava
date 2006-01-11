@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: module.tcl,v 1.2 2005/12/29 03:35:34 mdejong Exp $
+#  RCS: @(#) $Id: module.tcl,v 1.3 2006/01/11 21:24:50 mdejong Exp $
 #
 #
 
@@ -478,6 +478,9 @@ proc module_option_validate { op val index num_options options } {
         "cache-commands" {
             # No-op
         }
+        "cache-variables" {
+            # No-op
+        }
         "compile" {
             if {$val == 0 && $num_options != 1} {
                 error "-compile option must appear with no other options"
@@ -557,6 +560,7 @@ proc module_option_value { option {proc {}} } {
 proc module_option_default { option } {
     switch -exact -- $option {
         "cache-commands" {return 0}
+        "cache-variables" {return 0}
         "compile" {return 1}
         "constant-increment" {return 1}
         "dummy" {return 0}

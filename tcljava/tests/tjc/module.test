@@ -698,6 +698,19 @@ OPTIONS -constant-increment
     list [catch {module_options_validate} err] $err
 } {0 {}}
 
+tcltest::test module-options-validate-3.1 {validate options} {
+    set data {
+PACKAGE com.chairsoft.recliner.controls
+SOURCE C:/foo.tcl
+INIT_SOURCE C:/foo.tcl
+OPTIONS +cache-variables -cache-variables
+    }
+    module_parse $data
+    #module_parse_validate
+
+    list [catch {module_options_validate} err] $err
+} {0 {}}
+
 
 tcltest::test module-options-value-1.0 {query option} {
     set data {
@@ -787,6 +800,15 @@ tcltest::test module-options-default-1.2 {query default option value} {
 tcltest::test module-options-default-1.3 {query default option value} {
     module_option_default inline-controls
 } 0
+
+tcltest::test module-options-default-1.4 {query default option value} {
+    module_option_default cache-commands
+} 0
+
+tcltest::test module-options-default-1.5 {query default option value} {
+    module_option_default cache-variables
+} 0
+
 
 tcltest::test module-options-value-2.0 {query option for proc} {
     set data {

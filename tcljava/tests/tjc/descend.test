@@ -1,4 +1,10 @@
 package require tcltest
+package require parser
+
+if {[info commands reload] == {}} {
+    # Load procs into Jacl
+    source $env(TJC_LIBRARY)/reload.tcl
+}
 
 proc test_report_command_name { key } {
     set debug 0

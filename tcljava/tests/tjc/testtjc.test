@@ -281,6 +281,261 @@ tcltest::test testtjc-package-1.3 {TJC::package} {
     set results
 } {fp1 fp2 fp3}
 
+
+# Test variable cache implementation, the test command
+# is invoked from inside a Tcl proc body so that a
+# local var frame is available.
+
+proc testtjc_varlookup_1_0 {} {
+    # "var" does not exist in the local var frame
+
+    java::call TestTJC testVarLookup1 [java::getinterp]
+}
+
+tcltest::test testtjc-varlookup-1.0 {variable cache} {
+    testtjc_varlookup_1_0
+} {VAR_NO_CACHE}
+
+proc testtjc_varlookup_1_1 {} {
+    # "var" does exist in the local var frame
+    set var VALUE
+
+    java::call TestTJC testVarLookup1 [java::getinterp]
+}
+
+tcltest::test testtjc-varlookup-1.1 {variable cache} {
+    testtjc_varlookup_1_1
+} {OK_CACHE}
+
+proc traceDummy { args } {
+    puts "traceDummy $args"
+}
+
+proc testtjc_varlookup_1_2 {} {
+    # "var" does exist in the local var frame but
+    # it can't be cached because it has traces set.
+    set var VALUE
+    trace variable var r traceDummy
+
+    java::call TestTJC testVarLookup1 [java::getinterp]
+}
+
+tcltest::test testtjc-varlookup-1.2 {variable cache} {
+    testtjc_varlookup_1_2
+} {VAR_NO_CACHE}
+
+proc testtjc_varlookup_1_3 {} {
+    # "var" does exist in the local var frame but
+    # it can't be cached because it has traces set.
+    set var VALUE
+    trace variable var w traceDummy
+
+    java::call TestTJC testVarLookup1 [java::getinterp]
+}
+
+tcltest::test testtjc-varlookup-1.3 {variable cache} {
+    testtjc_varlookup_1_3
+} {VAR_NO_CACHE}
+
+proc testtjc_varlookup_1_4 {} {
+    # "var" does exist in the local var frame
+    set var VALUE
+
+    java::call TestTJC testVarLookup2 [java::getinterp]
+}
+
+tcltest::test testtjc-varlookup-1.4 {variable cache} {
+    testtjc_varlookup_1_4
+} {VALUE}
+
+
+proc testtjc_varlookup_1_5 {} {
+    # "var" does exist in the local var frame, but
+    # it will get unset before the cached value
+    # is accessed.
+    set var VALUE
+
+    java::call TestTJC testVarLookup3 [java::getinterp]
+}
+
+tcltest::test testtjc-varlookup-1.5 {variable cache} {
+    testtjc_varlookup_1_5
+} {NOT_VALID2}
+
+proc testtjc_varlookup_1_6 {} {
+    # "var" exists in local frame, it is a link
+    # to a global scalar variable.
+    global var
+
+    java::call TestTJC testVarLookup2 [java::getinterp]
+}
+
+tcltest::test testtjc-varlookup-1.6 {variable cache} {
+    set var VALUE
+    testtjc_varlookup_1_6
+} {VALUE}
+
+proc testtjc_varlookup_1_7 {} {
+    # lookup "var" in the global scope.
+    java::call TestTJC testVarLookup4 [java::getinterp]
+}
+
+tcltest::test testtjc-varlookup-1.7 {variable cache} {
+    set var VALUE7
+    testtjc_varlookup_1_7
+} {VALUE7}
+
+
+proc testtjc_varlookup_1_8_0 {} {
+    # "v1" exists in local frame, other vars
+    # are links to "v1".
+    set v1 VALUE8_0
+    upvar 0 v1 v2
+    upvar 0 v2 v3
+    upvar 0 v3 var
+
+    java::call TestTJC testVarLookup2 [java::getinterp]
+}
+
+tcltest::test testtjc-varlookup-1.8.0 {variable cache} {
+    testtjc_varlookup_1_8_0
+} {VALUE8_0}
+
+proc testtjc_varlookup_1_8_1 {} {
+    # upvar links to an array element so it can't
+    # be cached.
+    set arr(one) 1
+    upvar 0 arr(one) var
+
+    java::call TestTJC testVarLookup1 [java::getinterp]
+}
+
+tcltest::test testtjc-varlookup-1.8.1 {variable cache} {
+    testtjc_varlookup_1_8_1
+} {VAR_NO_CACHE}
+
+proc testtjc_varlookup_1_8_2 {} {
+    # upvar link to a local scalar that does not
+    # yet exit is valid.
+    upvar 0 notyet var
+    set var VALUE8_2
+
+    java::call TestTJC testVarLookup2 [java::getinterp]
+}
+
+tcltest::test testtjc-varlookup-1.8.2 {variable cache} {
+    testtjc_varlookup_1_8_2
+} {VALUE8_2}
+
+proc testtjc_varlookup_1_8_3 {} {
+    # upvar link to a local scalar that does not
+    # yet exit is valid.
+    upvar 0 var notyet
+    set notyet VALUE8_3
+
+    java::call TestTJC testVarLookup2 [java::getinterp]
+}
+
+tcltest::test testtjc-varlookup-1.8.3 {variable cache} {
+    testtjc_varlookup_1_8_3
+} {VALUE8_3}
+
+proc testtjc_varlookup_1_8_4 {} {
+    set arr(one) 1
+    # upvar link to array variable is valid, but it
+    # will not be cached as a linked scalar because
+    # the variable is an array.
+    upvar 0 arr var
+
+    java::call TestTJC testVarLookup1 [java::getinterp]
+}
+
+tcltest::test testtjc-varlookup-1.8.4 {variable cache} {
+    testtjc_varlookup_1_8_4
+} {VAR_NO_CACHE}
+
+
+proc testtjc_varlookup_1_8_5 {} {
+    # create upvar link to global
+    upvar #0 test_varlookup185 var
+    
+    # create upvar link to global, this
+    # is the link that will be broken next.
+    upvar #0 test_varlookup185 local_ref
+
+    # redirect upvar to a local, this marks
+    # the global as not valid for cache purposes.
+    upvar 0 dummy_local local_ref
+
+    # lookup var, the global should now be marked
+    # as not cached because of the link redirect
+    java::call TestTJC testVarLookup1 [java::getinterp]
+}
+
+tcltest::test testtjc-varlookup-1.8.5 {variable cache} {
+    set test_varlookup185 VALUE185
+    testtjc_varlookup_1_8_5
+} {VAR_NO_CACHE}
+
+
+proc testtjc_varlookup_1_9 {} {
+    # lookup "var" in the local scope.
+    set var VALUE9
+    java::call TestTJC testVarLookup5 [java::getinterp]
+}
+
+tcltest::test testtjc-varlookup-1.9 {variable cache} {
+    testtjc_varlookup_1_9
+} {VALUE9}
+
+proc testtjc_varlookup_1_10 {} {
+    # set and query cached var value
+    java::call TestTJC testVarLookup6 [java::getinterp]
+}
+
+tcltest::test testtjc-varlookup-1.10 {variable cache} {
+    testtjc_varlookup_1_10
+} {VALUE10}
+
+proc testtjc_varlookup_1_11 {} {
+    # set and query cached var value
+    java::call TestTJC testVarLookup7 [java::getinterp]
+}
+
+tcltest::test testtjc-varlookup-1.11 {variable cache} {
+    testtjc_varlookup_1_11
+} {A A B B C C C}
+
+
+proc testtjc_varlookup1_12_trace { args } {
+    # Define a global variable when
+    # a read trace is executed.
+    global varlookup1_12_var
+    set varlookup1_12_var VALUE12
+}
+
+proc testtjc_varlookup_1_12 {} {
+    # "var" is linked to a global that is
+    # currently undefined. A variable get
+    # should run the read trace and set
+    # the variable, the var should not
+    # be cached.
+
+    upvar #0 varlookup1_12_var var
+
+    trace variable var r testtjc_varlookup1_12_trace
+
+    java::call TestTJC testVarLookup1 [java::getinterp]
+}
+
+tcltest::test testtjc-varlookup-1.12 {variable cache} {
+    if {[info exists varlookup1_12_var]} {
+        unset varlookup1_12_var
+    }
+    testtjc_varlookup_1_12
+} {VAR_NO_CACHE}
+
+
 ::tcltest::cleanupTests
 return
 

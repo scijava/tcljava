@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Var.java,v 1.19 2005/11/23 21:19:14 mdejong Exp $
+ * RCS: @(#) $Id: Var.java,v 1.20 2006/01/11 21:24:50 mdejong Exp $
  *
  */
 package tcl.lang;
@@ -68,7 +68,13 @@ class Var {
      *				initialized and is marked undefined.
      *				The variable's refCount is incremented to
      *				reflect the "reference" from its namespace.
-     *
+     * NO_CACHE -		1 means that code should not be able to hold
+     *				a cached reference to this variable. This flag
+     *				only set for a linked to variable when
+     *				an upvar changes the linked from variable.
+     *				It is not possible to clear this flag.
+     *				This flag is only set in a tricky upvar
+     *				edge case so performance is not a concern.
      */
     
     static final int SCALAR	   = 0x1;
@@ -79,6 +85,7 @@ class Var {
     static final int TRACE_ACTIVE  = 0x20;
     static final int ARRAY_ELEMENT = 0x40;
     static final int NAMESPACE_VAR = 0x80;
+    static final int NO_CACHE = 0x100;
 
     // Methods to read various flag bits of variables.
 
@@ -108,6 +115,14 @@ class Var {
 
     final boolean isVarInHashtable() {
 	return ((flags & IN_HASHTABLE) != 0);
+    }
+
+    // Return true when a ref to this variable
+    // would not be allowed or is no longer valid
+    // because the variable was unset.
+
+    final boolean isVarCacheInvalid() {
+        return ((flags & (UNDEFINED|NO_CACHE)) != 0);
     }
 
     // Methods to ensure that various flag bits are set properly for variables.
@@ -146,6 +161,10 @@ class Var {
 
     final void clearVarInHashtable() {
         flags &= ~IN_HASHTABLE;
+    }
+
+    final void setVarNoCache() {
+	flags |= NO_CACHE;
     }
 
     /**
@@ -594,13 +613,13 @@ class Var {
 	// If var is a link variable, we have a reference to some variable
 	// that was created through an "upvar" or "global" command. Traverse
 	// through any links until we find the referenced variable.
-	
+
 	while (var.isVarLink()) {
 	    var = (Var) var.value;
 	}
 
 	// If we're not dealing with an array element, return var.
-    
+
 	if (elName == null) {
 	    Var[] ret = interp.lookupVarResult;
 	    ret[0] = var;
@@ -610,7 +629,7 @@ class Var {
 
 	// We're dealing with an array element. Make sure the variable is an
 	// array and look up the element (create the element if desired).
-	
+
 	if (var.isVarUndefined() && !var.isVarArrayElement()) {
 	    if (!createPart1) {
 		if ((flags & TCL.LEAVE_ERR_MSG) != 0) {
@@ -641,7 +660,7 @@ class Var {
 	    }
 	    return null;
 	}
-	
+
 	Var arrayVar = var;
 	Hashtable arrayTable = (Hashtable) var.value;
 	if (createPart2) {
@@ -708,7 +727,7 @@ class Var {
     {
 	Var[] result = lookupVar(interp, part1, part2, flags, "read",
 				 false, true);
-	
+
 	if (result == null) {
 	    // lookupVar() returns null only if TCL.LEAVE_ERR_MSG is
 	    // not part of the flags argument, return null in this case.
@@ -1006,14 +1025,14 @@ class Var {
     static TclObject incrVar(
         Interp interp,		// Command interpreter in which variable is
 				// to be found.
-	TclObject part1,	// Reference to an object holding the name of
+	String part1,		// Reference to a string holding the name of
 				// an array (if part2 is non-null) or the
 				// name of a variable.
-	TclObject part2,	// If non-null, points to an object holding
+	String part2,		// If non-null, reference to a string holding
 				// the name of an element in the array
 				// part1.
-	int incrAmount,	        // Amount to be added to variable.
-	int flags              // Various flags that tell how to incr value:
+	int incrAmount,		// Amount to be added to variable.
+	int flags		// Various flags that tell how to incr value:
 				// any of TCL.GLOBAL_ONLY,
 				// TCL.NAMESPACE_ONLY, TCL.APPEND_VALUE,
 				// TCL.LIST_ELEMENT, TCL.LEAVE_ERR_MSG.
@@ -1026,16 +1045,12 @@ class Var {
 				// on write).
 	int i;
 	boolean err;
-	String part1Str = part1.toString(), part2Str = null;
-	if (part2 != null) {
-	    part2Str = part2.toString();
-	}
 
 	// There are two possible error conditions that depend on the setting of
 	// TCL.LEAVE_ERR_MSG. an exception could be raised or null could be returned
 	err = false;
 	try {
-	    varValue = getVar(interp, part1Str, part2Str, flags);
+	    varValue = getVar(interp, part1, part2, flags);
 	} catch (TclException e) {
 	    err = true;
 	    throw e;
@@ -1066,12 +1081,12 @@ class Var {
 	    }
 	    throw e;
 	}
-	
+
 	TclInteger.set(varValue, (i + incrAmount));
 
 	// Store the variable's new value and run any write traces.
 
-	return setVar(interp, part1Str, part2Str, varValue, flags);
+	return setVar(interp, part1, part2, varValue, flags);
     }
 
     /**
@@ -1405,6 +1420,9 @@ class Var {
      * @exception TclException if the upvar cannot be created. 
      */
 
+     // FIXME: Tcl 8.4 implements resolver logic specific to upvar with the flag
+     // LOOKUP_FOR_UPVAR. Port this logic and test cases to Jacl.
+
     protected static void makeUpvar(
 	Interp interp,		// Interpreter containing variables. Used
 				// for error messages, too.
@@ -1550,11 +1568,16 @@ class Var {
 	    if (var.isVarLink()) {
 		Var link = (Var) var.value;
 		if (link == other) {
+		    // Already linked to the variable, no-op
 		    return;
 		}
 		link.refCount--;
 		if (link.isVarUndefined()) {
 		    cleanupVar(link, null);
+		} else {
+                    // Set flag variable so that cached refs
+                    // to this variable are dropped.
+                    link.setVarNoCache();
 		}
 	    } else if (! var.isVarUndefined()) {
 		throw new TclException(interp, "variable \"" +

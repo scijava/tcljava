@@ -790,5 +790,276 @@ public class TestTJC {
         return err;
     }
 
+    // Test Variable lookup
+
+    public static String testVarLookup1(Interp interp) throws TclException {
+        // Lookup scalar local variable named "var"
+        String name = "var";
+        int flags = 0;
+        Var lvar;
+
+        try {
+            lvar = TJC.resolveVarScalar(interp, name, flags);
+        } catch (TclException ex) {
+            // Return TclException as string when var is not found
+            return interp.getResult().toString();
+        }
+        if (lvar == TJC.VAR_NO_CACHE) {
+            // Var was resolved, but it could not be cached
+            return "VAR_NO_CACHE";
+        }
+        // Var was resolved and it can be cached
+        return "OK_CACHE";
+    }
+
+    public static String testVarLookup2(Interp interp) throws TclException {
+        // Lookup scalar local variable named "var"
+        String name = "var";
+        int flags = 0;
+        Var lvar;
+
+        try {
+            lvar = TJC.resolveVarScalar(interp, name, flags);
+        } catch (TclException ex) {
+            // Return TclException as string when var is not found
+            return interp.getResult().toString();
+        }
+
+        if (lvar == TJC.VAR_NO_CACHE) {
+            // Var was resolved, but it could not be cached
+            return "VAR_NO_CACHE";
+        }
+        // Var was resolved and it can be cached
+        if (!TJC.isVarScalarValid(lvar)) {
+            return "NOT_VALID";
+        }
+        TclObject oval = TJC.getVarScalar(lvar);
+        return oval.toString();
+    }
+
+    public static String testVarLookup3(Interp interp) throws TclException {
+        // Lookup scalar local variable named "var"
+        String name = "var";
+        int flags = 0;
+        Var lvar;
+
+        try {
+            lvar = TJC.resolveVarScalar(interp, name, flags);
+        } catch (TclException ex) {
+            // Return TclException as string when var is not found
+            return interp.getResult().toString();
+        }
+
+        if (lvar == TJC.VAR_NO_CACHE) {
+            // Var was resolved, but it could not be cached
+            return "VAR_NO_CACHE";
+        }
+        // Var was resolved and it can be cached
+        if (!TJC.isVarScalarValid(lvar)) {
+            return "NOT_VALID1";
+        }
+        // Now unset the var in the local frame and check
+        // that the variable is marked as invalid.
+        interp.eval("unset var");
+        if (!TJC.isVarScalarValid(lvar)) {
+            return "NOT_VALID2";
+        }
+        return "UNEXPECTED_RETURN";
+    }
+
+    public static String testVarLookup4(Interp interp) throws TclException {
+        // Lookup scalar global variable named "var"
+        String name = "var";
+        int flags = TCL.GLOBAL_ONLY;
+        Var lvar;
+
+        try {
+            lvar = TJC.resolveVarScalar(interp, name, flags);
+        } catch (TclException ex) {
+            // Return TclException as string when var is not found
+            return interp.getResult().toString();
+        }
+
+        if (lvar == TJC.VAR_NO_CACHE) {
+            // Var was resolved, but it could not be cached
+            return "VAR_NO_CACHE";
+        }
+        // Var was resolved and it can be cached
+        if (!TJC.isVarScalarValid(lvar)) {
+            return "NOT_VALID";
+        }
+        TclObject oval = TJC.getVarScalar(lvar);
+        return oval.toString();
+    }
+
+    public static String testVarLookup5(Interp interp) throws TclException {
+        // Use updateVarCache5() and getVarScalar5() methods to
+        // test variable cache logic.
+        updateVarCache5(interp, 0);
+
+        TclObject tobj = getVarScalar5(interp, "var", 0, varcache5_1, 1);
+        return tobj.toString();
+    }
+
+    static
+    Var varcache5_1 = null;
+    static
+    Var varcache5_2 = null;
+
+    static
+    Var updateVarCache5(
+        Interp interp,
+        int cacheId)
+            throws TclException
+    {
+        String part1;
+        String part2 = null;
+        int flags = 0;
+        Var lvar;
+
+        switch ( cacheId ) {
+            case 0: {
+                varcache5_1 = null;
+                varcache5_2 = null;
+                return null;
+            }
+            case 1: {
+                varcache5_1 = null;
+                part1 = "var";
+                break;
+            }
+            case 2: {
+                varcache5_2 = null;
+                part1 = "x";
+                break;
+            }
+            default: {
+                throw new TclRuntimeError("default: cacheId " + cacheId);
+            }
+        }
+
+        lvar = TJC.resolveVarScalar(interp, part1, flags);
+
+        switch ( cacheId ) {
+            case 1: {
+                varcache5_1 = lvar;
+                break;
+            }
+            case 2: {
+                varcache5_2 = lvar;
+                break;
+            }
+        }
+        return lvar;
+    }
+
+    static
+    private final
+    TclObject getVarScalar5(
+        Interp interp,
+        String name,
+        int flags,
+        Var var,
+        int cacheId)
+            throws TclException
+    {
+        if (var == null ||
+                ((var != TJC.VAR_NO_CACHE) &&
+                !TJC.isVarScalarValid(var))) {
+            var = updateVarCache5(interp, cacheId);
+        }
+
+        if (var == TJC.VAR_NO_CACHE) {
+            return interp.getVar(name, null, flags);
+        } else {
+            return TJC.getVarScalar(var);
+        }
+    }
+
+    static
+    private final
+    TclObject setVarScalar5(
+        Interp interp,
+        String name,
+        TclObject value,
+        int flags,
+        Var var,
+        int cacheId)
+            throws TclException
+    {
+        TclObject retValue;
+        boolean update = false;
+
+        if (var == null ||
+                ((var != TJC.VAR_NO_CACHE) &&
+                !TJC.isVarScalarValid(var))) {
+            update = true;
+        }
+
+        if (update || (var == TJC.VAR_NO_CACHE)) {
+            retValue = interp.setVar(name, null, value, flags);
+        } else {
+            retValue = TJC.setVarScalar(var, value);
+        }
+
+        if (update) {
+            updateVarCache5(interp, cacheId);
+        }
+
+        return retValue;
+    }
+
+    public static String testVarLookup6(Interp interp) throws TclException {
+        // Set a cached variable value and then look it up
+        updateVarCache5(interp, 0);
+
+        TclObject tvalue = TclString.newInstance("VALUE10");
+        setVarScalar5(interp, "var", tvalue, 0, varcache5_1, 1);
+
+        TclObject tobj = getVarScalar5(interp, "var", 0, varcache5_1, 1);
+        return tobj.toString();
+    }
+
+    public static String testVarLookup7(Interp interp) throws TclException {
+        // Set a cached variable value and then look it up
+        updateVarCache5(interp, 0);
+
+        StringBuffer results = new StringBuffer();
+        TclObject tobj;
+        TclObject tvalue;
+
+        tvalue = TclString.newInstance("A");
+        tobj = setVarScalar5(interp, "var", tvalue, 0, varcache5_1, 1);
+        results.append(tobj.toString());
+        results.append(" ");
+
+        tobj = getVarScalar5(interp, "var", 0, varcache5_1, 1);
+        results.append(tobj.toString());
+        results.append(" ");
+
+        tvalue = TclString.newInstance("B");
+        tobj = setVarScalar5(interp, "var", tvalue, 0, varcache5_1, 1);
+        results.append(tobj.toString());
+        results.append(" ");
+
+        tobj = getVarScalar5(interp, "var", 0, varcache5_1, 1);
+        results.append(tobj.toString());
+        results.append(" ");
+
+        tvalue = TclString.newInstance("C");
+        tobj = setVarScalar5(interp, "var", tvalue, 0, varcache5_1, 1);
+        results.append(tobj.toString());
+        results.append(" ");
+
+        tobj = getVarScalar5(interp, "var", 0, varcache5_1, 1);
+        results.append(tobj.toString());
+        results.append(" ");
+
+        updateVarCache5(interp, 0);
+        results.append(interp.getVar("var", null, 0));
+
+        return results.toString();
+    }
+
 }
 

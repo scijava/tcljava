@@ -7,7 +7,7 @@
 # Copyright (c) 1998-2000 Ajuba Solutions.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: all.tcl,v 1.8 2005/12/20 23:00:11 mdejong Exp $
+# RCS: @(#) $Id: all.tcl,v 1.9 2006/01/11 21:24:50 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -116,7 +116,15 @@ if {$tcl_platform(platform) == "java"} {
     foreach test [lsort -dictionary [glob -nocomplain tclparser/*.test]] {
         lappend tests $test
     }
+    set compile_tests [list]
     foreach test [lsort -dictionary [glob -nocomplain tjc/*.test]] {
+        if {[string match "*compileproc*.test" $test]} {
+            lappend compile_tests $test
+        } else {
+            lappend tests $test
+        }
+    }
+    foreach test $compile_tests {
         lappend tests $test
     }
 } elseif {[info exists env(TCLBLEND_RUN_ALL_TESTS)]} {

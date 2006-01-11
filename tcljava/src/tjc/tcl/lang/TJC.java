@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TJC.java,v 1.2 2005/12/29 03:35:34 mdejong Exp $
+ * RCS: @(#) $Id: TJC.java,v 1.3 2006/01/11 21:24:50 mdejong Exp $
  *
  */
 
@@ -49,15 +49,27 @@ public class TJC {
     public static final int EXPR_OP_UNARY_BIT_NOT = Expression.BIT_NOT;
 
     public static final WrappedCommand INVALID_COMMAND_CACHE;
+    public static final Var VAR_NO_CACHE;
 
     static {
         // Setup a fake command wrapper. The only
         // point of this is to have a wrapper with
         // and invalid cmdEpoch that will never be
         // equal to a valid cmdEpoch for a command.
+
         INVALID_COMMAND_CACHE = new WrappedCommand();
         INVALID_COMMAND_CACHE.deleted = true;
         INVALID_COMMAND_CACHE.cmdEpoch = -1;
+
+        // Create a fake Var reference that will be used
+        // when a variable is resolved but can't be cached.
+        // When a cached variable is set to this value,
+        // no further attempts to cache the variable will
+        // be made.
+
+        VAR_NO_CACHE = new Var();
+        VAR_NO_CACHE.setVarUndefined();
+        VAR_NO_CACHE.setVarNoCache();
     }
 
     // Invoked to create and push a new CallFrame for local
@@ -186,7 +198,7 @@ public class TJC {
         // in a namespace that contains commands with the same
         // name Tcl commands that could have been inlined.
         // Since this check is only done whan the command is
-        // first invoked, it should not a performance concern.
+        // first invoked, it should not be a performance concern.
 
         protected void builtinCommandsCheck(Interp interp)
             throws TclException
@@ -221,7 +233,86 @@ public class TJC {
                 }
             }
         }
-    }
+
+        // The following methods are used in compiled commands
+        // that make use of cached variable access.
+
+        protected Var updateVarCache(
+            Interp interp,
+            int cacheId)
+                throws TclException
+        {
+            throw new TclRuntimeError("updateVarCache() should be overloaded");
+        }
+
+        protected final
+        TclObject getVarScalar(
+            Interp interp,
+            String name,
+            int flags,
+            Var var,
+            int cacheId)
+                throws TclException
+        {
+            if (var == null ||
+                    ((var != TJC.VAR_NO_CACHE) &&
+                    !TJC.isVarScalarValid(var))) {
+                var = updateVarCache(interp, cacheId);
+            }
+
+            if (var == TJC.VAR_NO_CACHE) {
+                return interp.getVar(name, null, flags);
+            } else {
+                return TJC.getVarScalar(var);
+            }
+        }
+
+        protected final
+        TclObject setVarScalar(
+            Interp interp,
+            String name,
+            TclObject value,
+            int flags,
+            Var var,
+            int cacheId)
+                throws TclException
+        {
+            TclObject retValue;
+            boolean update = false;
+
+            if (var == null ||
+                    ((var != TJC.VAR_NO_CACHE) &&
+                    !TJC.isVarScalarValid(var))) {
+                update = true;
+            }
+
+            if (update || (var == TJC.VAR_NO_CACHE)) {
+                retValue = interp.setVar(name, null, value, flags);
+            } else {
+                retValue = TJC.setVarScalar(var, value);
+            }
+
+            if (update) {
+                updateVarCache(interp, cacheId);
+            }
+
+            return retValue;
+        }
+
+        protected final
+        TclObject setVarScalar(
+            Interp interp,
+            String name,
+            String value,
+            int flags,
+            Var var,
+            int cacheId)
+                throws TclException
+        {
+            TclObject tobj = interp.checkCommonString(value);
+            return setVarScalar(interp, name, tobj, flags, var, cacheId);
+        }
+    } // end class CompiledCommand
 
     // Used to create a TJC compiled command. This method will
     // use the fully qualified command name passed in to
@@ -356,6 +447,180 @@ public class TJC {
 	    throws TclException
     {
         return Namespace.findCommand(interp, cmdName, null, 0);
+    }
+
+    // Resolve a scalar variable name into a Var reference that
+    // can be cached. Interpreted code would normally invoke
+    // interp.getVar() or interp.setVar() to query or set a
+    // scalar variable. This method is used to lookup a
+    // variable by name and then cache the lookup result so
+    // that the lookup step need not be done on each variable
+    // access inside the command. If the variable is undefined,
+    // has traces, or can't be cached for some reason then
+    // this method will return the special ref TJC.VAR_NO_CACHE.
+    // This method will never return null.
+    //
+    // This command is always invoked after a new CallFrame
+    // has been pushed, so it is safe to assume that the
+    // current namespace is the namespace the command is
+    // defined in and that a local variable call frame exists.
+
+    public static
+    Var resolveVarScalar(
+        Interp interp,
+        String name,
+        int flags)    // 0, TCL.GLOBAL_ONLY, or TCL.NAMESPACE_ONLY
+	    throws TclException
+    {
+        boolean nocache = false;
+
+        // Double check that this method is being invoked
+        // from inside a Tcl procedure implementation with
+        // a local call frame.
+
+        CallFrame frame = interp.frame;
+
+        if (frame == null) {
+            throw new TclRuntimeError("unexpected null CallFrame");
+        } else if (frame.isProcCallFrame == false) {
+            throw new TclRuntimeError("expected isProcCallFrame to be true");
+        }
+
+        // Double check that scalar name is not actually an array
+        // name like "arr(foo)".
+
+        if (name.indexOf('(') != -1) {
+            if (name.charAt(name.length() - 1) == ')') {
+                throw new TclRuntimeError("unexpected array variable name \"" +
+                    name + "\"");
+            }
+        }
+
+        // Note that TCL.LEAVE_ERR_MSG is not passed here
+        // since a failed lookup will return TJC.VAR_NO_CACHE
+        // instead of raising a TclExeption. This is needed
+        // so that the proper error message is raised by
+        // a later call to either getVar() or setVar().
+
+	Var[] result = Var.lookupVar(interp, name, null,
+				 flags,
+				 "", false, false);
+
+        if (result == null) {
+            // Variable lookup failed so no var cache is possible
+            return TJC.VAR_NO_CACHE;
+        }
+
+	Var var = result[0];
+	Var array = result[1];
+
+        if (var == null) {
+            throw new TclRuntimeError("unexpected null var result from lookupVar()");
+        }
+
+        // Don't cache the variable if read or write traces exist.
+
+        if (var.traces != null) {
+            nocache = true;
+        }
+
+        // Variable should be a scalar and it should be defined.
+
+        else if (array != null ||
+                var.isVarUndefined() ||
+                !var.isVarScalar()) {
+            nocache = true;
+        }
+
+        // isVarInHashtable() is true for all variables. The
+        // C implementation also supports "compiled locals"
+        // that are not stored in a hashtable.
+
+        else if (var.isVarArray()) {
+            throw new TclRuntimeError("unexpected array var");
+        }
+        else if (var.isVarLink()) {
+            throw new TclRuntimeError("unexpected link var");
+        }
+
+        // If the variable is an array element then we can't cache it.
+        // This would only happen when an upvar linked a local scalar
+        // to an array element.
+
+        // If the variable was marked as invalid for cache purposes
+        // because of a redirected upvar, then don't cache it.
+
+        // FIXME: The C Tcl impl marks variables resolved by a namespace
+        // or interp resolver as invalid for cache purposes.
+
+        else if (var.isVarArrayElement() ||
+                var.isVarCacheInvalid()) {
+            nocache = true;
+        }
+
+        if (nocache) {
+            return TJC.VAR_NO_CACHE;
+        }
+
+        // Return the Var reference for a scalar local variable.
+
+        return var;
+    }
+
+    // This method is used to determine if a cached scalar Var
+    // reference is valid. The resolveVarScalar() method will
+    // return a Var reference that can be cached, but the variable
+    // could be unset or have traces set after the cache has
+    // been initialized. This method checks for those conditions
+    // before the value of a cached variable is accessed via
+    // the getVarScalar() method.
+
+    public static final
+    boolean isVarScalarValid(
+        Var var)
+	    throws TclException
+    {
+        return (!var.isVarCacheInvalid() && var.traces == null);
+    }
+
+    // This method is used to get the TclObject value
+    // contained inside a cached scalar Var reference.
+    // This method works like interp.getVar(), it should
+    // be used when a valid cached var reference is
+    // held.
+
+    public static final
+    TclObject getVarScalar(
+        Var var)
+	    throws TclException
+    {
+        return (TclObject) var.value;
+    }
+
+    // This method is used to set the TclObject value
+    // contained inside a cached scalar Var reference.
+    // This method works like interp.setVar(), it should
+    // be used when a valid cached var reference is
+    // held. This method only supports setting a new
+    // TclObject value.
+
+    public static final
+    TclObject setVarScalar(
+        Var var,
+        TclObject newValue)    // New value to set varible to, can be null
+	    throws TclException
+    {
+        TclObject oldValue = (TclObject) var.value;
+        if (oldValue != newValue) {
+            var.value = newValue;
+            newValue.preserve();
+            if (oldValue != null) {
+                oldValue.release();
+            }
+        }
+        var.setVarScalar();
+        var.clearVarUndefined();
+        return newValue;
     }
 
     // Get a TclObject[] of the given size. This array will
