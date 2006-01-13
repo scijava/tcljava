@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclList.java,v 1.8 2005/11/22 22:10:02 mdejong Exp $
+ * RCS: @(#) $Id: TclList.java,v 1.9 2006/01/13 03:40:11 mdejong Exp $
  *
  */
 
@@ -214,10 +214,14 @@ public class TclList implements InternalRep {
 	if (tobj.isShared()) {
 	    throw new TclRuntimeError("TclList.append() called with shared object");
 	}
-	setListFromAny(interp, tobj);
+	InternalRep irep = tobj.getInternalRep();
+	if (! (irep instanceof TclList)) {
+	    setListFromAny(interp, tobj);
+	    irep = tobj.getInternalRep();
+	}
 	tobj.invalidateStringRep();
 
-	TclList tlist = (TclList) tobj.getInternalRep();
+	TclList tlist = (TclList) irep;
 
 	elemObj.preserve();
 	tlist.vector.addElement(elemObj);
@@ -234,9 +238,13 @@ public class TclList implements InternalRep {
      */
     public static final int getLength(Interp interp, TclObject tobj)
 	    throws TclException {
-	setListFromAny(interp, tobj);
+	InternalRep irep = tobj.getInternalRep();
+	if (! (irep instanceof TclList)) {
+	    setListFromAny(interp, tobj);
+	    irep = tobj.getInternalRep();
+	}
 
-	TclList tlist = (TclList) tobj.getInternalRep();
+	TclList tlist = (TclList) irep;
 	return tlist.vector.size();
     }
 

@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: emitter.tcl,v 1.3 2006/01/11 21:24:50 mdejong Exp $
+#  RCS: @(#) $Id: emitter.tcl,v 1.4 2006/01/13 03:40:11 mdejong Exp $
 #
 #
 
@@ -836,12 +836,26 @@ proc emitter_init_constants { tlist } {
 }
 
 # Emit code to check that the TclObject constants have been initialized.
-# If not, then invoke initConstants().
+# If not, then invoke initConstants() and do other checks via initCmd()
 
-proc emitter_init_cmd_check {} {
+proc emitter_init_cmd_check { {cflags {}} } {
     set buffer ""
-    append buffer [emitter_indent]
-    append buffer "if (!initCmd) \{ initCmd(interp)\; \}"
+    if {$cflags == {}} {
+        append buffer [emitter_indent] \
+            "if (!initCmd) \{ initCmd(interp)\; \}"
+    } else {
+        set buffer ""
+        append buffer [emitter_indent] \
+            "if (!initCmd) \{\n"
+        emitter_indent_level +1
+        foreach cflag $cflags {
+            append buffer [emitter_statement "$cflags = true"]
+        }
+        append buffer [emitter_statement "initCmd(interp)"]
+        emitter_indent_level -1
+        append buffer \
+            [emitter_indent] "\}"
+    }
     append buffer "\n"
     return $buffer    
 }
@@ -1333,9 +1347,19 @@ proc emitter_set_cache_scalar_var { p1 is_p1_string valsym iflags cache_symbol c
 # Emit interp.resetResult() void statement.
 
 proc emitter_reset_result {} {
+    return [emitter_statement "interp.resetResult()"]
+}
+
+# Emit interp.setResult(...) void statement.
+
+proc emitter_set_result { value value_is_string } {
+    if {$value_is_string} {
+        set jstr [emitter_backslash_tcl_string $value]
+        set value "\"$jstr\""
+    }
     set buffer ""
     append buffer [emitter_indent] \
-        "interp.resetResult()\;\n"
+        "interp.setResult($value)\;\n"
     return $buffer
 }
 
@@ -1456,5 +1480,20 @@ proc emitter_control_return_argument { symbol } {
         "interp.setResult( $symbol )\;\n"
     append buffer [emitter_control_return]
     return $buffer
+}
+
+# Emit TJC.makeGlobalLinkVar() statement.
+# Pass a fully qualified variable name that
+# would be passed as an argument to the
+# global command.
+
+proc emitter_make_global_link_var { varname } {
+    set tail [namespace tail $varname]
+
+    set jstr1 "\"[emitter_backslash_tcl_string $varname]\""
+    set jstr2 "\"[emitter_backslash_tcl_string $tail]\""
+
+    return [emitter_statement \
+        "TJC.makeGlobalLinkVar(interp, $jstr1, $jstr2)"]
 }
 

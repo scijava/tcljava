@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: compileproc.tcl,v 1.3 2006/01/11 21:24:50 mdejong Exp $
+#  RCS: @(#) $Id: compileproc.tcl,v 1.4 2006/01/13 03:40:11 mdejong Exp $
 #
 #
 
@@ -718,6 +718,10 @@ proc compileproc_init {} {
     # Is set to 1 if variable access inside a proc
     # makes use of cached Var refrences.
     set _compileproc(options,cache_variables) 0
+
+    # Is set to 1 if built-in Tcl command can
+    # be replaced by inline code.
+    set _compileproc(options,inline_commands) 0
 }
 
 proc compileproc_start { proc_list } {
@@ -894,7 +898,12 @@ proc compileproc_compile { proc_list class_name {config_init {}} } {
     # be cases where we emit this check but the command
     # does not actually init any constants or commands.
     if {$_compileproc_key_info(cmd_needs_init)} {
-        append buffer [emitter_init_cmd_check]
+        if {$_compileproc(options,inline_commands)} {
+            lappend flags {inlineCmds}
+        } else {
+            set flags {}
+        }
+        append buffer [emitter_init_cmd_check $flags]
     }
 
     # Setup local variable table. The wcmd identifier here
@@ -1518,7 +1527,7 @@ proc compileproc_variable_cache_update_generate {} {
     global _compileproc
     global _compileproc_variable_cache
 
-    set debug 1
+    set debug 0
 
     set buffer ""
 
@@ -1585,6 +1594,8 @@ proc compileproc_variable_cache_update_generate {} {
         append buffer [emitter_indent] "case $cacheId: \{\n"
         emitter_indent_level +1
 
+# FIXME: no point in cache null init since resolve() will return VAR_NO_CACHE.
+# Also, why list a TclException as possible in this method?
         append buffer [emitter_statement "$symbol = null"]
         set jstr [emitter_backslash_tcl_string $vname]
         append buffer [emitter_statement "part1 = \"$jstr\""]
@@ -2485,6 +2496,8 @@ proc compileproc_emit_invoke { key } {
         append buffer [compileproc_emit_container $key]
     } elseif {[compileproc_can_inline_control $key]} {
         append buffer [compileproc_emit_control $key]
+    } elseif {[compileproc_can_inline_command $key]} {
+        append buffer [compileproc_emit_inline_command $key]
     } else {
         append buffer [compileproc_emit_invoke_call $key]
     }
@@ -3179,11 +3192,6 @@ proc compileproc_can_inline_container { key } {
         puts "compileproc_can_inline_container $key"
     }
 
-    # FIXME: Could remove this check later on.
-    if {![compileproc_is_container_command $key]} {
-        error "command key $key is not a container command"
-    }
-
     if {$_compileproc(options,inline_containers) == {}} {
         if {$debug} {
             puts "inline_containers is {}, returning 0"
@@ -3401,6 +3409,104 @@ proc compileproc_can_inline_control { key } {
         puts "can't inline break/continue/return command, not valid in context [lindex $tuple 0]"
     }
     return 0
+}
+
+# Return true if the key corresponds to a built-in Tcl command
+# that can be inlined. Container commands are handled elsewhere,
+# inlined commands are single commands like "set" that can
+# be replaced with optimized code.
+
+proc compileproc_can_inline_command { key } {
+    global _compileproc
+    global _compileproc_ckeys
+
+    set debug 0
+
+    if {$debug} {
+        puts "compileproc_can_inline_command $key"
+    }
+
+    if {!$_compileproc(options,inline_commands)} {
+        return 0
+    }
+
+    if {![info exists _compileproc_ckeys($key,info_key)]} {
+        return 0
+    }
+    set cmdname [lindex $_compileproc_ckeys($key,info_key) 1]
+    if {$cmdname == "_UNKNOWN"} {
+        return 0
+    }
+
+    # See if commands is one of the built-in Tcl
+    # commands that we know how to inline. Note
+    # that we will not support an inline of the
+    # following commands:
+    #
+    # variable, upvar, uplevel
+
+    switch -exact -- $cmdname {
+        "::global" -
+        "global" {
+            return [compileproc_can_inline_command_global $key]
+        }
+        "::incr" -
+        "incr" {
+            return [compileproc_can_inline_command_incr $key]
+        }
+        "::list" -
+        "list" {
+            return [compileproc_can_inline_command_list $key]
+        }
+        "::llength" -
+        "llength" {
+            return [compileproc_can_inline_command_llength $key]
+        }
+        "::set" -
+        "set" {
+            return [compileproc_can_inline_command_set $key]
+        }
+        default {
+            return 0
+        }
+    }
+}
+
+# Return code to inline a specific built-in Tcl command.
+
+proc compileproc_emit_inline_command { key } {
+    global _compileproc
+    global _compileproc_ckeys
+
+    if {!$_compileproc(options,inline_commands)} {
+        error "compileproc_emit_inline_command invoked when inline_commands option is false"
+    }
+    set cmdname [lindex $_compileproc_ckeys($key,info_key) 1]
+    # convert input like "::set" to "set" to simplify switch
+    set cmdname [namespace tail $cmdname]
+
+    # invoke specific method to emit command code
+
+    switch -exact -- $cmdname {
+        "global" {
+            return [compileproc_emit_inline_command_global $key]
+        }
+        "incr" {
+            return [compileproc_emit_inline_command_incr $key]
+        }
+        "list" {
+            return [compileproc_emit_inline_command_list $key]
+        }
+        "llength" {
+            return [compileproc_emit_inline_command_llength $key]
+        }
+        "set" {
+            return [compileproc_emit_inline_command_set $key]
+        }
+        default {
+            error "unsupported inlined command \"$cmdname\""
+        }
+    }
 }
 
 # Invoke to emit code for a specific type of container
@@ -4053,6 +4159,16 @@ proc compileproc_query_module_flags { proc_name } {
         set _compileproc(options,cache_variables) 1
     }
 
+    set inline_commands_option \
+        [module_option_value inline-commands $proc_name]
+    if {$inline_commands_option == {}} {
+        set inline_commands_option \
+            [module_option_value inline-commands]
+    }
+    if {$inline_commands_option} {
+        set _compileproc(options,inline_commands) 1
+    }
+
     if {$debug} {
         puts "compileproc module options set to:"
         puts "inline_containers = $_compileproc(options,inline_containers)"
@@ -4060,6 +4176,7 @@ proc compileproc_query_module_flags { proc_name } {
         puts "cache_commands = $_compileproc(options,cache_commands)"
         puts "skip_constant_increment = $_compileproc(options,skip_constant_increment)"
         puts "cache_variables = $_compileproc(options,cache_variables)"
+        puts "inline_commands = $_compileproc(options,inline_commands)"
     }
 }
 
@@ -5233,6 +5350,8 @@ proc compileproc_emit_container_switch_constant { key string_tmpsymbol } {
 
 # Generate code to set a variable to a value. This method
 # assumes that a variable name is statically defined.
+# This method will emit different code for scalar vs
+# array variables.
 
 proc compileproc_set_variable { varname varname_is_string value value_is_string } {
     if {$value_is_string} {
@@ -5258,6 +5377,31 @@ proc compileproc_set_variable { varname varname_is_string value value_is_string 
         # Non-static variable name, can't use cache so handle with
         # interp.setVar()
         return [emitter_set_var $varname false null false $value 0]
+    }
+}
+
+# Generate code to get a variable to a value. This method
+# assumes that a variable name is statically defined.
+# This method will emit different code for scalar vs
+# array variables.
+
+proc compileproc_get_variable { varname varname_is_string } {
+    if {$varname_is_string} {
+        # static variable name, emit either array or scalar assignment
+        set vinfo [descend_simple_variable $varname]
+        if {[lindex $vinfo 0] == "array"} {
+            set p1 [lindex $vinfo 1]
+            set p2 [lindex $vinfo 2]
+            return [emitter_get_var $p1 true $p2 true 0]
+        } elseif {[lindex $vinfo 0] == "scalar"} {
+            return [compileproc_emit_scalar_variable_get $varname]
+        } else {
+            error "unexpected result \{$vinfo\} from descend_simple_variable"
+        }
+    } else {
+        # Non-static variable name, can't use cache so handle with
+        # interp.getVar()
+        return [emitter_get_var $varname false null false 0]
     }
 }
 
@@ -6578,5 +6722,497 @@ proc compileproc_parse_value { value } {
     }
 
     return [list $matching_strrep $parsed $printed]
+}
+
+# Return 1 if global command can be inlined.
+
+proc compileproc_can_inline_command_global { key } {
+    global _compileproc
+
+    set debug 0
+
+    if {$debug} {
+        puts "compileproc_can_inline_command_global $key"
+    }
+
+    # The global command accepts 1 to N args, If no arguments
+    # are given just pass to runtime global command impl to
+    # raise error message.
+
+    set tree [descend_get_data $key tree]
+    set num_args [llength $tree]
+
+    if {$num_args < 2} {
+        if {$debug} {
+            puts "returning false since there are $num_args args"
+        }
+        return 0
+    }
+
+    # Each argument variable name must be a constant string
+    # otherwise pass the arguments to the runtime global command.
+
+    for {set i 1} {$i < $num_args} {incr i} {
+        set tuple [compileproc_get_argument_tuple $key $i]
+        set type [lindex $tuple 0]
+
+        if {$type != "constant"} {
+            if {$debug} {
+                puts "returning false since argument $i is non-constant type $type"
+            }
+            return 0
+        }
+    }
+
+    return 1
+}
+
+# Emit code to implement inlined global command invocation.
+
+proc compileproc_emit_inline_command_global { key } {
+    global _compileproc
+
+    set buffer ""
+
+    # Reset interp result in case result of command is checked.
+
+    append buffer [emitter_reset_result]
+
+    # Emit global function invocation for each argument
+
+    set tree [descend_get_data $key tree]
+    set num_args [llength $tree]
+
+    for {set i 1} {$i < $num_args} {incr i} {
+        set tuple [compileproc_get_argument_tuple $key $i]
+        set varname [lindex $tuple 1]
+
+        append buffer [emitter_make_global_link_var $varname]
+    }
+
+    return $buffer
+}
+
+# Return 1 if incr command can be inlined.
+
+proc compileproc_can_inline_command_incr { key } {
+    global _compileproc
+
+    set debug 0
+
+    if {$debug} {
+        puts "compileproc_can_inline_command_incr $key"
+    }
+
+    # FIXME: This inlined command is not yet implemented.
+    return 0
+
+    # The incr command accepts 2 or 3 arguments. If wrong number
+    # of args given just pass to runtime incr command impl to
+    # raise error message.
+
+    set tree [descend_get_data $key tree]
+    set num_args [llength $tree]
+
+    if {$num_args != 2 && $num_args != 3} {
+        if {$debug} {
+            puts "returning false since there are $num_args args"
+        }
+        return 0
+    }
+
+    # 2nd argument to inlined incr must be a constant scalar or
+    # array variable name, otherwise pass to runtime incr command.
+
+    set tuple [compileproc_get_argument_tuple $key 1]
+    set type [lindex $tuple 0]
+
+    if {$type != "constant"} {
+        if {$debug} {
+            puts "returning false since argument 1 is non-constant type $type"
+        }
+
+        return 0
+    }
+
+    # 3rd argument can be a constant or a runtime evaluation result
+
+    return 1
+}
+
+# Emit code to implement inlined incr command invocation. The
+# inlined incr command would have already been validated
+# to have a constant variable name and 2 or 3 arguments
+# when this method is invoked.
+
+proc compileproc_emit_inline_command_incr { key } {
+    global _compileproc
+
+    set buffer ""
+
+    # Determine constant variable name as a String.
+
+    set tuple [compileproc_get_argument_tuple $key 1]
+    set type [lindex $tuple 0]
+    if {$type != "constant"} {
+        error "expected constant variable name"
+    }
+    set varname [lindex $tuple 1]
+
+    # Determine if this is a get or set operation
+
+    set tree [descend_get_data $key tree]
+    set num_args [llength $tree]
+
+    set tmpsymbol [compileproc_tmpvar_next]
+
+    if {$num_args == 2} {
+        # get variable value
+        set result [compileproc_get_variable $varname true]
+        append buffer [emitter_statement \
+            "TclObject $tmpsymbol = $result"]
+    } elseif {$num_args == 3} {
+        append buffer [emitter_statement \
+            "TclObject $tmpsymbol"]
+
+        # Evaluate value argument
+        set tuple [compileproc_emit_argument $key 2 false $tmpsymbol]
+        set value_type [lindex $tuple 0]
+        set value_symbol [lindex $tuple 1]
+        set value_buffer [lindex $tuple 2]
+
+        # check for constant symbol special case, no
+        # need to eval anything for a constant. Note
+        # that we don't bother to preserve() and
+        # release() the TclObject since we are only
+        # dealing with one TclObject and we are passing
+        # it to setVar() which will take care of
+        # preserving the value.
+
+        if {$value_type == "constant"} {
+            set value $value_symbol
+        } else {
+            append buffer $value_buffer
+            set value $tmpsymbol
+        }
+
+        # set variable value, save result in tmp
+        set result [compileproc_set_variable $varname true $value 0]
+        append buffer [emitter_statement "$tmpsymbol = $result"]
+    } else {
+        error "expected 2 or 3 arguments to set"
+    }
+
+    # Set interp result to the returned value.
+    # This code always calls setResult(), so there
+    # is no need to worry about calling resetResult()
+    # before the inlined set impl begins.
+
+    append buffer [emitter_set_result $tmpsymbol false]
+
+    return $buffer
+}
+
+# Return 1 if list command can be inlined.
+# The list command accepts 0 to N arguments
+# of any type, so it can always be inlined.
+
+proc compileproc_can_inline_command_list { key } {
+    return 1
+}
+
+# Emit code to implement inlined list command invocation.
+# This code generates a "pure" Tcl list, that is a list
+# without a string rep.
+
+proc compileproc_emit_inline_command_list { key } {
+    global _compileproc
+
+    set buffer ""
+
+    set tree [descend_get_data $key tree]
+    set num_args [llength $tree]
+
+    #puts "compileproc_emit_inline_command_list $key, num_args is $num_args"
+
+    set tmpsymbol [compileproc_tmpvar_next]
+
+    append buffer [emitter_statement \
+        "TclObject $tmpsymbol = TclList.newInstance()"]
+
+    # Set a special flag if all arguments are constant
+    # strings.
+
+    set constant_args 1
+    for {set i 1} {$i < $num_args} {incr i} {
+        set tuple [compileproc_get_argument_tuple $key $i]
+        set type [lindex $tuple 0]
+
+        if {$type != "constant"} {
+            set constant_args 0
+        }
+    }
+
+    # Declare a second symbol to hold evaluated list values
+    # in the case where 1 or more arguments are non-constant.
+
+    if {$constant_args} {
+        set value_tmpsymbol {}
+    } else {
+        set value_tmpsymbol [compileproc_tmpvar_next]
+        append buffer [emitter_statement "TclObject $value_tmpsymbol"]
+    }
+
+    if {$num_args == 1} {
+        # No-op
+    } elseif {$num_args == 2} {
+        # Special case of list of length 1 shows up quite
+        # a bit so create a special case without the
+        # try block. Since only one element is added to
+        # the list, there is no need to worry about
+        # the preserve() and release() logic.
+
+        append buffer \
+            [compileproc_emit_inline_command_list_argument $key 1 \
+                $tmpsymbol $value_tmpsymbol]
+    } else {
+        # Setup try block to release list object in case of an exception
+        append buffer [emitter_indent] "try \{\n"
+        emitter_indent_level +1
+
+        for {set i 1} {$i < $num_args} {incr i} {
+            append buffer \
+                [compileproc_emit_inline_command_list_argument $key $i \
+                    $tmpsymbol $value_tmpsymbol]
+        }
+
+        emitter_indent_level -1
+        append buffer [emitter_indent] "\} catch (TclException ex) \{\n"
+        emitter_indent_level +1
+        append buffer [emitter_tclobject_release $tmpsymbol]
+        append buffer [emitter_statement "throw ex"]
+        emitter_indent_level -1
+        append buffer [emitter_indent] "\}\n"
+    }
+
+    # Set interp result to the returned value.
+    # This code always calls setResult(), so there
+    # is no need to worry about calling resetResult()
+    # before the inlined set impl begins.
+
+    append buffer [emitter_set_result $tmpsymbol false]
+
+    return $buffer
+}
+
+# Evaluate argument append statement and return buffer 
+
+proc compileproc_emit_inline_command_list_argument { key i listsymbol valuesymbol } {
+    set buffer ""
+
+    # Evaluate value argument
+    set tuple [compileproc_emit_argument $key $i false $valuesymbol]
+    set value_type [lindex $tuple 0]
+    set value_symbol [lindex $tuple 1]
+    set value_buffer [lindex $tuple 2]
+
+    # check for constant symbol special case, no
+    # need to eval anything for a constant. Note
+    # that we don't bother to preserve() and
+    # release() the TclObject since
+    # TclList.append() calls preserve().
+
+    if {$value_type == "constant"} {
+        set value $value_symbol
+    } else {
+        append buffer $value_buffer
+        set value $value_symbol
+    }
+
+    # FIXME: This generated code invokes append()
+    # over and over, an optimized approach that
+    # invoked a TJC method optmized to know that
+    # the TclObject is already of type list
+    # could be even more efficient. A list append
+    # is done often, so speed is important here.
+
+    append buffer [emitter_statement \
+        "TclList.append(interp, $listsymbol, $value)"]
+
+    return $buffer
+}
+
+# Return 1 if llength command can be inlined.
+
+proc compileproc_can_inline_command_llength { key } {
+    global _compileproc
+
+    set debug 0
+
+    if {$debug} {
+        puts "compileproc_can_inline_command_llength $key"
+    }
+
+    # The global command accepts 1 argument. Pass to runtime
+    # global command impl to raise error message otherwise.
+
+    set tree [descend_get_data $key tree]
+    set num_args [llength $tree]
+
+    if {$num_args != 2} {
+        if {$debug} {
+            puts "returning false since there are $num_args args"
+        }
+        return 0
+    }
+
+    return 1
+}
+
+# Emit code to implement inlined llength command invocation.
+
+proc compileproc_emit_inline_command_llength { key } {
+    global _compileproc
+
+    set buffer ""
+
+    # Evaluate value argument
+    set tuple [compileproc_emit_argument $key 1 true {}]
+    set value_type [lindex $tuple 0]
+    set value_symbol [lindex $tuple 1]
+    set value_buffer [lindex $tuple 2]
+
+    append buffer $value_buffer
+
+    # Get list length and set interp result. We don't
+    # need to worry about the ref count here since
+    # there is only one value and we are finished
+    # with it by the time setResult() is invoked.
+
+    set tmpsymbol [compileproc_tmpvar_next]
+
+    append buffer [emitter_statement \
+        "int $tmpsymbol = TclList.getLength(interp, $value_symbol)"]
+
+    append buffer [emitter_set_result $tmpsymbol false]
+
+    return $buffer
+}
+
+# Return 1 if set command can be inlined.
+
+proc compileproc_can_inline_command_set { key } {
+    global _compileproc
+
+    set debug 0
+
+    if {$debug} {
+        puts "compileproc_can_inline_command_set $key"
+    }
+
+    # The set command accepts 2 or 3 arguments. If wrong number
+    # of args given just pass to runtime set command impl to
+    # raise error message.
+
+    set tree [descend_get_data $key tree]
+    set num_args [llength $tree]
+
+    if {$num_args != 2 && $num_args != 3} {
+        if {$debug} {
+            puts "returning false since there are $num_args args"
+        }
+        return 0
+    }
+
+    # 2nd argument to inlined set must be a constant scalar or
+    # array variable name, otherwise pass to runtime set command.
+
+    set tuple [compileproc_get_argument_tuple $key 1]
+    set type [lindex $tuple 0]
+
+    if {$type != "constant"} {
+        if {$debug} {
+            puts "returning false since argument 1 is non-constant type $type"
+        }
+
+        return 0
+    }
+
+    # 3rd argument can be a constant or a runtime evaluation result
+
+    return 1
+}
+
+# Emit code to implement inlined set command invocation. The
+# inlined set command would have already been validated
+# to have a constant variable name and 2 or 3 arguments
+# when this method is invoked.
+
+proc compileproc_emit_inline_command_set { key } {
+    global _compileproc
+
+    set buffer ""
+
+    # Determine constant variable name as a String.
+
+    set tuple [compileproc_get_argument_tuple $key 1]
+    set type [lindex $tuple 0]
+    if {$type != "constant"} {
+        error "expected constant variable name"
+    }
+    set varname [lindex $tuple 1]
+
+    # Determine if this is a get or set operation
+
+    set tree [descend_get_data $key tree]
+    set num_args [llength $tree]
+
+    set tmpsymbol [compileproc_tmpvar_next]
+
+    if {$num_args == 2} {
+        # get variable value
+        set result [compileproc_get_variable $varname true]
+        append buffer [emitter_statement \
+            "TclObject $tmpsymbol = $result"]
+    } elseif {$num_args == 3} {
+        append buffer [emitter_statement \
+            "TclObject $tmpsymbol"]
+
+        # Evaluate value argument
+        set tuple [compileproc_emit_argument $key 2 false $tmpsymbol]
+        set value_type [lindex $tuple 0]
+        set value_symbol [lindex $tuple 1]
+        set value_buffer [lindex $tuple 2]
+
+        # check for constant symbol special case, no
+        # need to eval anything for a constant. Note
+        # that we don't bother to preserve() and
+        # release() the TclObject since we are only
+        # dealing with one TclObject and we are passing
+        # it to setVar() which will take care of
+        # preserving the value.
+
+        if {$value_type == "constant"} {
+            set value $value_symbol
+        } else {
+            append buffer $value_buffer
+            set value $tmpsymbol
+        }
+
+        # set variable value, save result in tmp
+        set result [compileproc_set_variable $varname true $value 0]
+        append buffer [emitter_statement "$tmpsymbol = $result"]
+    } else {
+        error "expected 2 or 3 arguments to set"
+    }
+
+    # Set interp result to the returned value.
+    # This code always calls setResult(), so there
+    # is no need to worry about calling resetResult()
+    # before the inlined set impl begins.
+
+    append buffer [emitter_set_result $tmpsymbol false]
+
+    return $buffer
 }
 

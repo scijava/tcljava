@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TJC.java,v 1.3 2006/01/11 21:24:50 mdejong Exp $
+ * RCS: @(#) $Id: TJC.java,v 1.4 2006/01/13 03:40:11 mdejong Exp $
  *
  */
 
@@ -173,6 +173,11 @@ public class TJC {
 
         // A CompiledCommand implementation must define cmdProc
 
+        // This flag is used to indicate that the command was
+        // compiled with inlined Tcl commands.
+
+        protected boolean inlineCmds = false;
+
         // A CompiledCommand implementation may want to init
         // instance data members when first invoked. This
         // flag and method are used to implement this init
@@ -197,7 +202,7 @@ public class TJC {
         // Verify that this compiled command is not being used
         // in a namespace that contains commands with the same
         // name Tcl commands that could have been inlined.
-        // Since this check is only done whan the command is
+        // Since this check is only done when the command is
         // first invoked, it should not be a performance concern.
 
         protected void builtinCommandsCheck(Interp interp)
@@ -206,7 +211,7 @@ public class TJC {
             if (wcmd.ns.fullName.compareTo("::") == 0) {
                 return; // loaded into global namespace
             }
-            String[] builtin = {
+            String[] containers = {
                 "break",
                 "catch",
                 "continue",
@@ -218,6 +223,24 @@ public class TJC {
                 "switch",
                 "while"
             };
+            String[] containers_and_inlines = {
+                "break",
+                "catch",
+                "continue",
+                "expr",
+                "for",
+                "foreach",
+                "global",
+                "if",
+                "list",
+                "llength",
+                "return",
+                "set",
+                "switch",
+                "while"
+            };
+            String[] builtin =
+                (inlineCmds ? containers_and_inlines : containers);
             WrappedCommand cmd;
             String cmdName;
             for (int i=0; i < builtin.length; i++) {
@@ -695,7 +718,6 @@ public class TJC {
             throw new TclRuntimeError("zero length objv array");
         }
 
-        String cmdName = objv[0].toString();
         // Save copy of interp.varFrame in case TCL.EVAL_GLOBAL is set.
         CallFrame savedVarFrame = interp.varFrame;
 
@@ -711,6 +733,7 @@ public class TJC {
             // then see if there is a command "unknown".  If so, create a new
             // word array with "unknown" as the first word and the original
             // command words as arguments.
+            String cmdName = objv[0].toString();
             wcmd = Namespace.findCommand(interp, cmdName, null, fflags);
             if (wcmd != null) {
                 cmd = wcmd.cmd;
@@ -1104,5 +1127,22 @@ public class TJC {
         }
     }
 
+    // Implements inlined global command, this method
+    // will create a local var linked to a global var.
+
+    public static final
+    void makeGlobalLinkVar(
+        Interp interp,
+        String varName,    // Fully qualified name of global variable.
+        String varTail)    // Variable name without namespace qualifiers.
+            throws TclException
+    {
+	// Link to the variable "varName" in the global :: namespace.
+        // A local link var name varTail is defined.
+
+	Var.makeUpvar(interp, null,
+		varName, null, TCL.GLOBAL_ONLY,
+	        varTail, 0);
+    }
 }
 

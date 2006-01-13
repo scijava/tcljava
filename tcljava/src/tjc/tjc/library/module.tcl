@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: module.tcl,v 1.3 2006/01/11 21:24:50 mdejong Exp $
+#  RCS: @(#) $Id: module.tcl,v 1.4 2006/01/13 03:40:11 mdejong Exp $
 #
 #
 
@@ -495,6 +495,9 @@ proc module_option_validate { op val index num_options options } {
         "dummy" {
             # No-op, this option is just for testing
         }
+        "inline-commands" {
+            # No-op
+        }
         "inline-containers" {
             # No-op
             # FIXME: If +inline is already given, then invalid ?
@@ -564,6 +567,7 @@ proc module_option_default { option } {
         "compile" {return 1}
         "constant-increment" {return 1}
         "dummy" {return 0}
+        "inline-commands" {return 0}
         "inline-containers" {return 0}
         "inline-controls" {return 0}
         default {
