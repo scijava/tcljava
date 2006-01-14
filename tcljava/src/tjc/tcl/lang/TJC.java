@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TJC.java,v 1.4 2006/01/13 03:40:11 mdejong Exp $
+ * RCS: @(#) $Id: TJC.java,v 1.5 2006/01/14 01:29:26 mdejong Exp $
  *
  */
 
@@ -260,13 +260,24 @@ public class TJC {
         // The following methods are used in compiled commands
         // that make use of cached variable access.
 
+        // updateVarCache() will refresh a cached variable
+        // refrence if needed before a cached variable value
+        // is retrieved or after a cached variable value is set.
+        // A class that extends CompiledCommand will implement
+        // updateVarCache() if it supports cached variables.
+
         protected Var updateVarCache(
             Interp interp,
             int cacheId)
-                throws TclException
         {
             throw new TclRuntimeError("updateVarCache() should be overloaded");
         }
+
+        // getVarScalar() will get a variable value, if a
+        // cached variable is available then it will be used,
+        // otherwise interp.getVar() will be invoked to get
+        // the value. This method will raise a TclException
+        // on error, it will never return null.
 
         protected final
         TclObject getVarScalar(
@@ -286,9 +297,16 @@ public class TJC {
             if (var == TJC.VAR_NO_CACHE) {
                 return interp.getVar(name, null, flags);
             } else {
-                return TJC.getVarScalar(var);
+                //return TJC.getVarScalar(var);
+                return (TclObject) var.value;
             }
         }
+
+        // setVarScalar() will set a variable value, if a
+        // cached variable is available then it will be used,
+        // otherwise interp.setVar() will be invoked to set
+        // the value. This method will raise a TclException
+        // on error, it will never return null.
 
         protected final
         TclObject setVarScalar(
@@ -334,6 +352,53 @@ public class TJC {
         {
             TclObject tobj = interp.checkCommonString(value);
             return setVarScalar(interp, name, tobj, flags, var, cacheId);
+        }
+
+        protected final
+        TclObject incrVarScalar(
+            Interp interp,
+            String name,
+            int incrAmount,
+            int flags,
+            Var var,
+            int cacheId)
+                throws TclException
+        {
+            if (var == null ||
+                    ((var != TJC.VAR_NO_CACHE) &&
+                    !TJC.isVarScalarValid(var))) {
+                var = updateVarCache(interp, cacheId);
+            }
+
+            if (var == TJC.VAR_NO_CACHE) {
+                return TJC.incrVar(interp, name, incrAmount);
+            } else {
+                //TclObject varValue = TJC.getVarScalar(var);
+                TclObject varValue = (TclObject) var.value;
+
+                boolean createdNewObj = false;
+                if (varValue.isShared()) {
+                    varValue = varValue.duplicate();
+                    createdNewObj = true;
+                }
+                try {
+                    TclInteger.incr(interp, varValue, incrAmount);
+                } catch (TclException ex) {
+                    if (createdNewObj) {
+                        varValue.release(); // free unneeded copy
+                    }
+                    throw ex;
+                }
+
+                // If we create a new TclObject, then save it
+                // as the variable value.
+
+                if (createdNewObj) {
+                    return TJC.setVarScalar(var, varValue);
+                } else {
+                    return varValue;
+                }
+            }
         }
     } // end class CompiledCommand
 
@@ -493,7 +558,6 @@ public class TJC {
         Interp interp,
         String name,
         int flags)    // 0, TCL.GLOBAL_ONLY, or TCL.NAMESPACE_ONLY
-	    throws TclException
     {
         boolean nocache = false;
 
@@ -525,9 +589,16 @@ public class TJC {
         // so that the proper error message is raised by
         // a later call to either getVar() or setVar().
 
-	Var[] result = Var.lookupVar(interp, name, null,
-				 flags,
-				 "", false, false);
+        Var[] result;
+        try {
+            result = Var.lookupVar(interp, name, null,
+        			 flags,
+        			 "", false, false);
+        } catch (TclException te) {
+            // Variable lookup should never raise a TclException
+            // since  we don't pass TCL.LEAVE_ERR_MSG.
+            result = null;
+        }
 
         if (result == null) {
             // Variable lookup failed so no var cache is possible
@@ -601,7 +672,6 @@ public class TJC {
     public static final
     boolean isVarScalarValid(
         Var var)
-	    throws TclException
     {
         return (!var.isVarCacheInvalid() && var.traces == null);
     }
@@ -610,12 +680,11 @@ public class TJC {
     // contained inside a cached scalar Var reference.
     // This method works like interp.getVar(), it should
     // be used when a valid cached var reference is
-    // held.
+    // held. This method logic in inlined in CompiledCommand.
 
     public static final
     TclObject getVarScalar(
         Var var)
-	    throws TclException
     {
         return (TclObject) var.value;
     }
@@ -630,20 +699,39 @@ public class TJC {
     public static final
     TclObject setVarScalar(
         Var var,
-        TclObject newValue)    // New value to set varible to, can be null
+        TclObject newValue)    // New value to set varible to, can't be null
 	    throws TclException
     {
-        TclObject oldValue = (TclObject) var.value;
-        if (oldValue != newValue) {
+        if (var.value != newValue) {
+            TclObject oldValue = (TclObject) var.value;
             var.value = newValue;
             newValue.preserve();
             if (oldValue != null) {
                 oldValue.release();
             }
         }
-        var.setVarScalar();
-        var.clearVarUndefined();
+        // Unlike Var.setVar(), this method does not invoke
+        // setVarScalar() or clearVarUndefined() since a
+        // cached array variable will never be passed to
+        // this method and an undefined variable will never
+        // be cached.
         return newValue;
+    }
+
+    // This method is invoked when a compiled incr command
+    // is inlined. This methods works for both scalar
+    // variables and array scalars. This method is not
+    // used for cached variables.
+
+    public static final
+    TclObject incrVar(
+        Interp interp,
+        String name,
+        int incrAmount)
+	    throws TclException
+    {
+        return Var.incrVar(interp, name, null,
+            incrAmount, TCL.LEAVE_ERR_MSG);
     }
 
     // Get a TclObject[] of the given size. This array will

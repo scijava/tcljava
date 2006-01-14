@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Var.java,v 1.20 2006/01/11 21:24:50 mdejong Exp $
+ * RCS: @(#) $Id: Var.java,v 1.21 2006/01/14 01:29:26 mdejong Exp $
  *
  */
 package tcl.lang;
@@ -1064,8 +1064,8 @@ class Var {
 
 	// Increment the variable's value. If the object is unshared we can
 	// modify it directly, otherwise we must create a new copy to modify:
-	// this is "copy on write". Then free the variable's old string
-	// representation, if any, since it will no longer be valid.
+	// this is "copy on write". The incr() method will free the old
+        // string rep since it is no longer valid.
 
 	createdNewObj = false;
 	if (varValue.isShared()) {
@@ -1074,15 +1074,13 @@ class Var {
 	}
 
 	try {
-	    i = TclInteger.get(interp, varValue);
+	    TclInteger.incr(interp, varValue, incrAmount);
 	} catch (TclException e) {
 	    if (createdNewObj) {
 		varValue.release();  // free unneeded copy
 	    }
 	    throw e;
 	}
-
-	TclInteger.set(varValue, (i + incrAmount));
 
 	// Store the variable's new value and run any write traces.
 

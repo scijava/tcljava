@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: emitter.tcl,v 1.4 2006/01/13 03:40:11 mdejong Exp $
+#  RCS: @(#) $Id: emitter.tcl,v 1.5 2006/01/14 01:29:26 mdejong Exp $
 #
 #
 
@@ -1495,5 +1495,13 @@ proc emitter_make_global_link_var { varname } {
 
     return [emitter_statement \
         "TJC.makeGlobalLinkVar(interp, $jstr1, $jstr2)"]
+}
+
+# Quote a Tcl string so that it appears as a valid Java
+# string. This means it is backslashed and surrounded
+# by double quotes.
+
+proc emitter_double_quote_tcl_string { tstr } {
+    return "\"[emitter_backslash_tcl_string $tstr]\""
 }
 

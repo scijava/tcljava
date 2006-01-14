@@ -165,7 +165,6 @@ public class Test1 extends TJC.CompiledCommand {
     Var updateVarCache(
         Interp interp,
         int cacheId)
-            throws TclException
     {
         String part1;
         String part2 = null;
@@ -178,7 +177,6 @@ public class Test1 extends TJC.CompiledCommand {
                 return null;
             }
             case 1: {
-                varcache1 = null;
                 part1 = "x";
                 break;
             }
@@ -287,7 +285,6 @@ public class Test1 extends TJC.CompiledCommand {
     Var updateVarCache(
         Interp interp,
         int cacheId)
-            throws TclException
     {
         String part1;
         String part2 = null;
@@ -300,7 +297,6 @@ public class Test1 extends TJC.CompiledCommand {
                 return null;
             }
             case 1: {
-                varcache1 = null;
                 part1 = "x";
                 break;
             }
@@ -389,7 +385,6 @@ public class Test1 extends TJC.CompiledCommand {
     Var updateVarCache(
         Interp interp,
         int cacheId)
-            throws TclException
     {
         String part1;
         String part2 = null;
@@ -404,17 +399,14 @@ public class Test1 extends TJC.CompiledCommand {
                 return null;
             }
             case 1: {
-                varcache1 = null;
                 part1 = "x";
                 break;
             }
             case 2: {
-                varcache2 = null;
                 part1 = "y";
                 break;
             }
             case 3: {
-                varcache3 = null;
                 part1 = "args";
                 break;
             }
@@ -520,7 +512,6 @@ public class Test1 extends TJC.CompiledCommand {
     Var updateVarCache(
         Interp interp,
         int cacheId)
-            throws TclException
     {
         String part1;
         String part2 = null;
@@ -533,7 +524,6 @@ public class Test1 extends TJC.CompiledCommand {
                 return null;
             }
             case 1: {
-                varcache1 = null;
                 part1 = "x";
                 break;
             }
@@ -645,7 +635,6 @@ public class Test1 extends TJC.CompiledCommand {
     Var updateVarCache(
         Interp interp,
         int cacheId)
-            throws TclException
     {
         String part1;
         String part2 = null;
@@ -658,7 +647,6 @@ public class Test1 extends TJC.CompiledCommand {
                 return null;
             }
             case 1: {
-                varcache1 = null;
                 part1 = "x";
                 break;
             }
@@ -680,6 +668,13 @@ public class Test1 extends TJC.CompiledCommand {
 } // end class Test1
 }}
 
+# Should we even bother to cache a variable
+# if it is only accessed once during the method?
+# Would need to know when an access was a flat
+# read/write or from inside a loop. Also,
+# global accesses like "::namespace::other::var"
+# might not need a cache if they are only
+# read or written once.
 
 # Cleanup
 jdk_tool_cleanup

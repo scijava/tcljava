@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: compileproc.tcl,v 1.4 2006/01/13 03:40:11 mdejong Exp $
+#  RCS: @(#) $Id: compileproc.tcl,v 1.5 2006/01/14 01:29:26 mdejong Exp $
 #
 #
 
@@ -1550,7 +1550,6 @@ proc compileproc_variable_cache_update_generate {} {
     Var updateVarCache(
         Interp interp,
         int cacheId)
-            throws TclException
     \{
         String part1;
         String part2 = null;
@@ -1594,9 +1593,6 @@ proc compileproc_variable_cache_update_generate {} {
         append buffer [emitter_indent] "case $cacheId: \{\n"
         emitter_indent_level +1
 
-# FIXME: no point in cache null init since resolve() will return VAR_NO_CACHE.
-# Also, why list a TclException as possible in this method?
-        append buffer [emitter_statement "$symbol = null"]
         set jstr [emitter_backslash_tcl_string $vname]
         append buffer [emitter_statement "part1 = \"$jstr\""]
         append buffer [emitter_statement "break"]
@@ -5367,6 +5363,9 @@ proc compileproc_set_variable { varname varname_is_string value value_is_string 
         if {[lindex $vinfo 0] == "array"} {
             set p1 [lindex $vinfo 1]
             set p2 [lindex $vinfo 2]
+            # FIXME: We pass a flags argument here, but not to updateCache(),
+            # should flags be passed there or should we just always inline
+            # 0 as the flags value?
             return [emitter_set_var $p1 true $p2 true $value 0]
         } elseif {[lindex $vinfo 0] == "scalar"} {
             return [compileproc_emit_scalar_variable_set $varname $value]
@@ -6804,9 +6803,6 @@ proc compileproc_can_inline_command_incr { key } {
         puts "compileproc_can_inline_command_incr $key"
     }
 
-    # FIXME: This inlined command is not yet implemented.
-    return 0
-
     # The incr command accepts 2 or 3 arguments. If wrong number
     # of args given just pass to runtime incr command impl to
     # raise error message.
@@ -6843,10 +6839,19 @@ proc compileproc_can_inline_command_incr { key } {
 # Emit code to implement inlined incr command invocation. The
 # inlined incr command would have already been validated
 # to have a constant variable name and 2 or 3 arguments
-# when this method is invoked.
+# when this method is invoked. The inlined incr command
+# is a bit more tricky that then other commands because
+# it must emit special code when cache variables is
+# enabled.
 
 proc compileproc_emit_inline_command_incr { key } {
     global _compileproc
+
+    if {$_compileproc(options,cache_variables)} {
+        set cache_variables 1
+    } else {
+        set cache_variables 0
+    }
 
     set buffer ""
 
@@ -6859,48 +6864,88 @@ proc compileproc_emit_inline_command_incr { key } {
     }
     set varname [lindex $tuple 1]
 
-    # Determine if this is a get or set operation
+    # Determine the incr amount, if there are 2
+    # arguments then the incr amount is 1,
+    # otherwise it could be a constant value
+    # or a value to be evaluated at runtime.
 
     set tree [descend_get_data $key tree]
     set num_args [llength $tree]
 
-    set tmpsymbol [compileproc_tmpvar_next]
-
     if {$num_args == 2} {
-        # get variable value
-        set result [compileproc_get_variable $varname true]
-        append buffer [emitter_statement \
-            "TclObject $tmpsymbol = $result"]
+        # incr by one
+        set incr_symbol 1
     } elseif {$num_args == 3} {
-        append buffer [emitter_statement \
-            "TclObject $tmpsymbol"]
+        # determine incr amount
 
-        # Evaluate value argument
-        set tuple [compileproc_emit_argument $key 2 false $tmpsymbol]
-        set value_type [lindex $tuple 0]
-        set value_symbol [lindex $tuple 1]
-        set value_buffer [lindex $tuple 2]
+        set constant_integer_increment 0
 
-        # check for constant symbol special case, no
-        # need to eval anything for a constant. Note
-        # that we don't bother to preserve() and
-        # release() the TclObject since we are only
-        # dealing with one TclObject and we are passing
-        # it to setVar() which will take care of
-        # preserving the value.
+        set tuple [compileproc_get_argument_tuple $key 2]
+        set type [lindex $tuple 0]
+        set value [lindex $tuple 1]
 
-        if {$value_type == "constant"} {
-            set value $value_symbol
-        } else {
-            append buffer $value_buffer
-            set value $tmpsymbol
+        if {$type == "constant"} {
+            set is_integer [compileproc_string_is_java_integer $value]
+            if {$is_integer} {
+                set tuple [compileproc_parse_value $value]
+                set stringrep_matches [lindex $tuple 0]
+                set parsed_number [lindex $tuple 1]
+
+                if {$stringrep_matches} {
+                    set constant_integer_increment 1
+                    set incr_symbol $parsed_number
+                }
+            }
         }
 
-        # set variable value, save result in tmp
-        set result [compileproc_set_variable $varname true $value 0]
-        append buffer [emitter_statement "$tmpsymbol = $result"]
+        if {!$constant_integer_increment} {
+            # Evaluate value argument
+            set tuple [compileproc_emit_argument $key 2 true {}]
+            set value_type [lindex $tuple 0]
+            set value_symbol [lindex $tuple 1]
+            set value_buffer [lindex $tuple 2]
+            append buffer $value_buffer
+
+            set tmpsymbol [compileproc_tmpvar_next]
+            append buffer [emitter_statement \
+                "int $tmpsymbol = TclInteger.get(interp, $value_symbol)"]
+
+            set incr_symbol $tmpsymbol
+        }
     } else {
-        error "expected 2 or 3 arguments to set"
+        error "expected 2 or 3 arguments to incr"
+    }
+
+    # Emit incr statement, incr_symbol is an int value
+    # to add to the current value.
+
+    set result_tmpsymbol [compileproc_tmpvar_next]
+    set qvarname [emitter_double_quote_tcl_string $varname]
+
+    append buffer [emitter_indent] \
+        "TclObject $result_tmpsymbol = "
+
+    if {!$cache_variables} {
+        append buffer \
+            "TJC.incrVar(interp, $qvarname, $incr_symbol)\;\n"
+    } else {
+        # In cache variable mode, inline special code for scalar var
+
+        set vinfo [descend_simple_variable $varname]
+        if {[lindex $vinfo 0] == "array"} {
+            set p1 [lindex $vinfo 1]
+            set p2 [lindex $vinfo 2]
+            append buffer \
+                "TJC.incrVar(interp, $qvarname, $incr_symbol)\;\n"
+        } elseif {[lindex $vinfo 0] == "scalar"} {
+            set cache_symbol [compileproc_variable_cache_lookup $varname]
+            set cacheId [compileproc_get_cache_id_from_symbol $cache_symbol]
+
+            append buffer \
+                "incrVarScalar(interp, $qvarname, $incr_symbol, 0, $cache_symbol, $cacheId)\;\n"
+        } else {
+            error "unexpected result \{$vinfo\} from descend_simple_variable"
+        }
     }
 
     # Set interp result to the returned value.
@@ -6908,7 +6953,7 @@ proc compileproc_emit_inline_command_incr { key } {
     # is no need to worry about calling resetResult()
     # before the inlined set impl begins.
 
-    append buffer [emitter_set_result $tmpsymbol false]
+    append buffer [emitter_set_result $result_tmpsymbol false]
 
     return $buffer
 }

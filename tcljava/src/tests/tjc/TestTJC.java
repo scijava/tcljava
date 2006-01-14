@@ -798,12 +798,7 @@ public class TestTJC {
         int flags = 0;
         Var lvar;
 
-        try {
-            lvar = TJC.resolveVarScalar(interp, name, flags);
-        } catch (TclException ex) {
-            // Return TclException as string when var is not found
-            return interp.getResult().toString();
-        }
+        lvar = TJC.resolveVarScalar(interp, name, flags);
         if (lvar == TJC.VAR_NO_CACHE) {
             // Var was resolved, but it could not be cached
             return "VAR_NO_CACHE";
@@ -818,13 +813,7 @@ public class TestTJC {
         int flags = 0;
         Var lvar;
 
-        try {
-            lvar = TJC.resolveVarScalar(interp, name, flags);
-        } catch (TclException ex) {
-            // Return TclException as string when var is not found
-            return interp.getResult().toString();
-        }
-
+        lvar = TJC.resolveVarScalar(interp, name, flags);
         if (lvar == TJC.VAR_NO_CACHE) {
             // Var was resolved, but it could not be cached
             return "VAR_NO_CACHE";
@@ -843,13 +832,7 @@ public class TestTJC {
         int flags = 0;
         Var lvar;
 
-        try {
-            lvar = TJC.resolveVarScalar(interp, name, flags);
-        } catch (TclException ex) {
-            // Return TclException as string when var is not found
-            return interp.getResult().toString();
-        }
-
+        lvar = TJC.resolveVarScalar(interp, name, flags);
         if (lvar == TJC.VAR_NO_CACHE) {
             // Var was resolved, but it could not be cached
             return "VAR_NO_CACHE";
@@ -873,13 +856,7 @@ public class TestTJC {
         int flags = TCL.GLOBAL_ONLY;
         Var lvar;
 
-        try {
-            lvar = TJC.resolveVarScalar(interp, name, flags);
-        } catch (TclException ex) {
-            // Return TclException as string when var is not found
-            return interp.getResult().toString();
-        }
-
+        lvar = TJC.resolveVarScalar(interp, name, flags);
         if (lvar == TJC.VAR_NO_CACHE) {
             // Var was resolved, but it could not be cached
             return "VAR_NO_CACHE";
@@ -893,11 +870,11 @@ public class TestTJC {
     }
 
     public static String testVarLookup5(Interp interp) throws TclException {
-        // Use updateVarCache5() and getVarScalar5() methods to
+        // Use updateVarCache() and getVarScalar() methods to
         // test variable cache logic.
-        updateVarCache5(interp, 0);
+        updateVarCache(interp, 0);
 
-        TclObject tobj = getVarScalar5(interp, "var", 0, varcache5_1, 1);
+        TclObject tobj = getVarScalar(interp, "var", 0, varcache5_1, 1);
         return tobj.toString();
     }
 
@@ -907,10 +884,9 @@ public class TestTJC {
     Var varcache5_2 = null;
 
     static
-    Var updateVarCache5(
+    Var updateVarCache(
         Interp interp,
         int cacheId)
-            throws TclException
     {
         String part1;
         String part2 = null;
@@ -924,12 +900,10 @@ public class TestTJC {
                 return null;
             }
             case 1: {
-                varcache5_1 = null;
                 part1 = "var";
                 break;
             }
             case 2: {
-                varcache5_2 = null;
                 part1 = "x";
                 break;
             }
@@ -955,7 +929,7 @@ public class TestTJC {
 
     static
     private final
-    TclObject getVarScalar5(
+    TclObject getVarScalar(
         Interp interp,
         String name,
         int flags,
@@ -966,7 +940,7 @@ public class TestTJC {
         if (var == null ||
                 ((var != TJC.VAR_NO_CACHE) &&
                 !TJC.isVarScalarValid(var))) {
-            var = updateVarCache5(interp, cacheId);
+            var = updateVarCache(interp, cacheId);
         }
 
         if (var == TJC.VAR_NO_CACHE) {
@@ -978,7 +952,7 @@ public class TestTJC {
 
     static
     private final
-    TclObject setVarScalar5(
+    TclObject setVarScalar(
         Interp interp,
         String name,
         TclObject value,
@@ -1003,7 +977,7 @@ public class TestTJC {
         }
 
         if (update) {
-            updateVarCache5(interp, cacheId);
+            updateVarCache(interp, cacheId);
         }
 
         return retValue;
@@ -1011,51 +985,51 @@ public class TestTJC {
 
     public static String testVarLookup6(Interp interp) throws TclException {
         // Set a cached variable value and then look it up
-        updateVarCache5(interp, 0);
+        updateVarCache(interp, 0);
 
         TclObject tvalue = TclString.newInstance("VALUE10");
-        setVarScalar5(interp, "var", tvalue, 0, varcache5_1, 1);
+        setVarScalar(interp, "var", tvalue, 0, varcache5_1, 1);
 
-        TclObject tobj = getVarScalar5(interp, "var", 0, varcache5_1, 1);
+        TclObject tobj = getVarScalar(interp, "var", 0, varcache5_1, 1);
         return tobj.toString();
     }
 
     public static String testVarLookup7(Interp interp) throws TclException {
         // Set a cached variable value and then look it up
-        updateVarCache5(interp, 0);
+        updateVarCache(interp, 0);
 
         StringBuffer results = new StringBuffer();
         TclObject tobj;
         TclObject tvalue;
 
         tvalue = TclString.newInstance("A");
-        tobj = setVarScalar5(interp, "var", tvalue, 0, varcache5_1, 1);
+        tobj = setVarScalar(interp, "var", tvalue, 0, varcache5_1, 1);
         results.append(tobj.toString());
         results.append(" ");
 
-        tobj = getVarScalar5(interp, "var", 0, varcache5_1, 1);
+        tobj = getVarScalar(interp, "var", 0, varcache5_1, 1);
         results.append(tobj.toString());
         results.append(" ");
 
         tvalue = TclString.newInstance("B");
-        tobj = setVarScalar5(interp, "var", tvalue, 0, varcache5_1, 1);
+        tobj = setVarScalar(interp, "var", tvalue, 0, varcache5_1, 1);
         results.append(tobj.toString());
         results.append(" ");
 
-        tobj = getVarScalar5(interp, "var", 0, varcache5_1, 1);
+        tobj = getVarScalar(interp, "var", 0, varcache5_1, 1);
         results.append(tobj.toString());
         results.append(" ");
 
         tvalue = TclString.newInstance("C");
-        tobj = setVarScalar5(interp, "var", tvalue, 0, varcache5_1, 1);
+        tobj = setVarScalar(interp, "var", tvalue, 0, varcache5_1, 1);
         results.append(tobj.toString());
         results.append(" ");
 
-        tobj = getVarScalar5(interp, "var", 0, varcache5_1, 1);
+        tobj = getVarScalar(interp, "var", 0, varcache5_1, 1);
         results.append(tobj.toString());
         results.append(" ");
 
-        updateVarCache5(interp, 0);
+        updateVarCache(interp, 0);
         results.append(interp.getVar("var", null, 0));
 
         return results.toString();

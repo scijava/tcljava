@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclInteger.java,v 1.8 2005/09/30 02:12:17 mdejong Exp $
+ * RCS: @(#) $Id: TclInteger.java,v 1.9 2006/01/14 01:29:26 mdejong Exp $
  *
  */
 
@@ -217,7 +217,7 @@ public class TclInteger implements InternalRep {
      *
      * @param interp current interpreter.
      * @param tobj the object to operate on.
-     * @paran i the new integer value.
+     * @param i the new integer value.
      */
     public static void set(TclObject tobj, int i) {
 	tobj.invalidateStringRep();
@@ -230,6 +230,34 @@ public class TclInteger implements InternalRep {
 	} else {
 	    tobj.setInternalRep(new TclInteger(i));
 	}
+    }
+
+    /**
+     * Increments the integer value of the object by the given
+     * amount. One could implement this same operation by
+     * calling get() and then set(), this method provides an
+     * optimized implementation. This method is not public
+     * since it will only be invoked by the incr command.
+     *
+     * @param interp current interpreter.
+     * @param tobj the object to operate on.
+     * @param incrAmount amount to increment
+     */
+    static void incr(
+        Interp interp,
+        TclObject tobj,
+        int incrAmount)
+            throws TclException
+    {
+	InternalRep rep = tobj.getInternalRep();
+
+	if (!(rep instanceof TclInteger)) {
+	    setIntegerFromAny(interp, tobj);
+	    rep = tobj.getInternalRep();
+	}
+	tobj.invalidateStringRep();
+	TclInteger tint = (TclInteger) rep;
+	tint.value += incrAmount;
     }
 }
 

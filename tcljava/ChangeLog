@@ -1,3 +1,37 @@
+2006-01-13  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/jacl/tcl/lang/Var.java (incrVar):
+        Reimplement incrVar() so that it makes
+        use of TclInteger.incr() instead of
+        getting and then setting the value.
+        * src/tcljava/tcl/lang/TclInteger.java (incr):
+        Add optimized incr() method for use by
+        the incr command. This executes more quickly
+        than getting then setting the value.
+        * src/tests/tjc/TestTJC.java: Update
+        calls to resolveVarScalar() since it
+        can no longer raise a TclException.
+        * src/tjc/tcl/lang/TJC.java (updateVarCache,
+        getVarScalar, setVarScalar, incrVarScalar,
+        incrVar, resolveVarScalar): Inline simple
+        var logic instead of calling TJC.getVarScalar().
+        Update updateVarCache signature since it
+        no longer throws a TclException.
+        Add inlined incr command methods. Don't set
+        flags in TJC.setVarScalar() since the code
+        is never needed.
+        * src/tjc/tjc/library/compileproc.tcl: Don't
+        declare updateVarCache() with throws of TclException.
+        Don't null out a varcache before resolve step
+        since resolve will always return VAR_NO_CACHE on fail.
+        Implement inlined incr command logic, each use
+        case is optimized.
+        * src/tjc/tjc/library/emitter.tcl: Add helper
+        method to double quote and backslash Tcl string.
+        * tests/tjc/compileproc_6.test: Fixup updateVarCache().
+        * tests/tjc/compileproc_7.test: Fixup updateVarCache().
+        Add output tests for inlined incr command.
+
 2006-01-12  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/jacl/tcl/lang/GlobalCmd.java: Cleanup.
