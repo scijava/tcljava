@@ -1,3 +1,30 @@
+2006-01-16  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * docs/TJC/example1.html: Add documentation and
+        examples of TJC compiler use.
+        * docs/TJC/example2.html:
+        * docs/TJC/future.html:
+        * docs/TJC/index.html:
+        * docs/TJC/jdkcfg.html:
+        * docs/TJC/module.html:
+        * docs/TJC/optcode.html:
+        * docs/TJC/tjcpkg.html:
+        * src/jacl/tcl/lang/LindexCmd.java (TclLindexList,
+        TclLindexFlat): Make methods static so they can
+        be used in TJC method.
+        * src/tjc/tcl/lang/TJC.java (lindexNonconst):
+        Implement inlined lindex method implementation
+        optimized for common uses.
+        * src/tjc/tjc/library/compileproc.tcl: Add
+        inlined lindex support.
+        * src/tjc/tjc/library/module.tcl
+        (module_options_parse): Create helper method to
+        parse OPTIONS and PROC_OPTIONS. Add support for
+        +O psudo option that enables all optimizations.
+        * tests/tjc/compileproc_7.test:
+        Add inlined lindex output tests.
+        * tests/tjc/module.test: Test +O option.
+
 2006-01-13  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/jacl/tcl/lang/Var.java (incrVar):

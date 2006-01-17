@@ -1471,6 +1471,338 @@ public class Test1 extends TJC.CompiledCommand {
 }}
 
 
+tcltest::test compileproc7-6.0 {inline lindex command} {
+    set script {
+proc p {} {
+    lindex {A B C} 0
+}
+}
+
+    set test_compileproc_7_inline_commands 1
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_7_set_flags]
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) {
+            inlineCmds = true;
+            initCmd(interp);
+        }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: lindex {A B C} 0
+            TclObject tmp0 = TclList.index(interp, const0, 0);
+            if ( tmp0 == null ) {
+                interp.resetResult();
+            } else {
+                interp.setResult(tmp0);
+            }
+        } // End Invoke: lindex
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+
+    TclObject const0;
+
+    protected void initConstants(Interp interp) throws TclException {
+        const0 = TclString.newInstance("A B C");
+        const0.preserve(); const0.preserve();
+    }
+} // end class Test1
+}}
+
+tcltest::test compileproc7-6.1 {inline lindex command} {
+    set script {
+proc p {} {
+    lindex $l 0
+}
+}
+
+    set test_compileproc_7_inline_commands 1
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_7_set_flags]
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) {
+            inlineCmds = true;
+            initCmd(interp);
+        }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: lindex $l 0
+            TclObject tmp0 = interp.getVar("l", null, 0);
+            tmp0 = TclList.index(interp, tmp0, 0);
+            if ( tmp0 == null ) {
+                interp.resetResult();
+            } else {
+                interp.setResult(tmp0);
+            }
+        } // End Invoke: lindex
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+} // end class Test1
+}}
+
+tcltest::test compileproc7-6.2 {inline lindex command} {
+    set script {
+proc p {} {
+    lindex $list $index
+}
+}
+
+    set test_compileproc_7_inline_commands 1
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_7_set_flags]
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) {
+            inlineCmds = true;
+            initCmd(interp);
+        }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: lindex $list $index
+            TclObject tmp0 = null;
+            TclObject tmp1;
+            try {
+                tmp0 = interp.getVar("list", null, 0);
+                tmp0.preserve();
+                tmp1 = interp.getVar("index", null, 0);
+                TJC.lindexNonconst(interp, tmp0, tmp1);
+            } finally {
+                if ( tmp0 != null ) {
+                    tmp0.release();
+                }
+            }
+        } // End Invoke: lindex
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+} // end class Test1
+}}
+
+tcltest::test compileproc7-6.3 {inline lindex command} {
+    # Currently, no optimizations are done for "end" or "end-1"
+    set script {
+proc p {} {
+    lindex {A B C} end-1
+}
+}
+
+    set test_compileproc_7_inline_commands 1
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_7_set_flags]
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) {
+            inlineCmds = true;
+            initCmd(interp);
+        }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: lindex {A B C} end-1
+            TclObject tmp0 = null;
+            TclObject tmp1;
+            try {
+                tmp0 = const0;
+                tmp0.preserve();
+                tmp1 = const1;
+                TJC.lindexNonconst(interp, tmp0, tmp1);
+            } finally {
+                if ( tmp0 != null ) {
+                    tmp0.release();
+                }
+            }
+        } // End Invoke: lindex
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+
+    TclObject const0;
+    TclObject const1;
+
+    protected void initConstants(Interp interp) throws TclException {
+        const0 = TclString.newInstance("A B C");
+        const0.preserve(); const0.preserve();
+        const1 = TclString.newInstance("end-1");
+        const1.preserve(); const1.preserve();
+    }
+} // end class Test1
+}}
+
+tcltest::test compileproc7-6.4 {no inline for lindex command} {
+    # No support for compiled multiple arguments to lindex.
+    # This could be optimized by adding a constant list to
+    # the constant pool and passing to the runtime proc.
+    set script {
+proc p {} {
+    lindex {A B C} 0 0
+}
+}
+
+    set test_compileproc_7_inline_commands 1
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_7_set_flags]
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) {
+            inlineCmds = true;
+            initCmd(interp);
+        }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: lindex {A B C} 0 0
+            TclObject[] objv0 = TJC.grabObjv(interp, 4);
+            try {
+                TclObject tmp1;
+                // Arg 0 constant: lindex
+                tmp1 = const0;
+                tmp1.preserve();
+                objv0[0] = tmp1;
+                // Arg 1 constant: {A B C}
+                tmp1 = const1;
+                tmp1.preserve();
+                objv0[1] = tmp1;
+                // Arg 2 constant: 0
+                tmp1 = const2;
+                tmp1.preserve();
+                objv0[2] = tmp1;
+                // Arg 3 constant: 0
+                tmp1 = const2;
+                tmp1.preserve();
+                objv0[3] = tmp1;
+                TJC.invoke(interp, null, objv0, 0);
+            } finally {
+                TJC.releaseObjv(interp, objv0, 4);
+            }
+        } // End Invoke: lindex
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+
+    TclObject const0;
+    TclObject const1;
+    TclObject const2;
+
+    protected void initConstants(Interp interp) throws TclException {
+        const0 = TclString.newInstance("lindex");
+        const0.preserve(); const0.preserve();
+        const1 = TclString.newInstance("A B C");
+        const1.preserve(); const1.preserve();
+        const2 = TclInteger.newInstance(0);
+        const2.preserve(); const2.preserve();
+    }
+} // end class Test1
+}}
+
+
+
+
 # FIXME: In the examples above, it would improve performance if
 # the interp result did not need to be set to the result of
 # a nested invocation. Perhaps the invocation function could
@@ -1499,20 +1831,20 @@ public class Test1 extends TJC.CompiledCommand {
 #
 # append (next)
 # array ??
-# concat
+# concat (not performance concern)
 # global (done)
 # incr (done)
 # info ??
 # join ? (unsure if performance critical)
 # lappend (next)
-# lindex (next)
-# linsert
+# lindex (done)
+# linsert ?
 # list (done)
 # llength (done)
-# lrange
-# lreplace
-# lsearch
-# lset
+# lrange ?
+# lreplace ?
+# lsearch ?
+# lset ?
 # regexp
 # regsub
 # set (done)

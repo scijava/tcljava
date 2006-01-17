@@ -1,0 +1,85 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+</head>
+<body>
+<div style="text-align: center;"><big><big><span
+ style="font-weight: bold;">TJC Package Manual<br>
+</span></big></big><br>
+<div style="text-align: left;">Usage:<br>
+<div style="margin-left: 40px;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;">package require TJC<br>
+<br>
+TJC::package package</span><br>
+</span><span style="font-family: monospace;">TJC::command procname
+classname<br>
+<br>
+</span></div>
+The TJC implementation contains a version of Jacl that includes runtime
+support for TJC compiled procedures. The TJC package is loaded into
+Jacl via the following Tcl command:<br>
+<br>
+<span style="font-family: monospace;">% package require TJC</span><br
+ style="font-family: monospace;">
+<span style="font-family: monospace;">1.0</span><br
+ style="font-family: monospace;">
+<br>
+The <span style="font-family: monospace;">TJC</span> package defines
+the <span style="font-family: monospace;">TJC</span> namespace and
+adds two Tcl commands to the<span style="font-family: monospace;"> TJC</span>
+namespace. The <span style="font-family: monospace;">TJC::package</span>
+command is used to load a TJC compiled package into the Jacl
+interpreter. Loading a TJC compiled package will source each of the Tcl
+scripts included in the package and define each of the compiled Tcl
+commands included in the package. In the following example, a TJC
+compiled package named <span style="font-family: monospace;">foo.bar.baz</span>
+is loaded.<br>
+<br>
+<span style="font-family: monospace;">% TJC::package foo.bar.baz</span><span
+ style="font-family: monospace;"></span><br>
+<br>
+A TJC package is initialized by loading a class named <span
+ style="font-family: monospace;">TJCExtension</span> from the named
+package. This class implements the standard Extension API for Jacl
+extensions, so one could also load a TJC package via the <span
+ style="font-family: monospace;">java::load</span> command as follows:<br>
+<br>
+<span style="font-family: monospace;">% java::load
+foo.bar.baz.TJCExtension<br>
+<br>
+</span>The benefit of the <span style="font-family: monospace;">TJC::package</span>
+command is that it is simpler and it can be used even when the <span
+ style="font-family: monospace;">java</span> package has not been
+loaded into Jacl.<br>
+<br>
+The <span style="font-family: monospace;">TJC::command</span> Tcl
+command is normally used only by the internal implementation of TJC.
+End users will not need to invoke the this command. The command is used
+to associate a Tcl command name with a compiled Java class file. When a
+Tcl script is parsed, it is scanned for proc declaration that can be
+compiled. The code for compiled proc declarations is then replaced with
+a call to <span style="font-family: monospace;">TJC::command</span>.<br>
+<br>
+Original Tcl Script:<br>
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp; set i 0</span><br
+ style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp; proc hello {}
+{ return "Hello World" }</span><br style="font-family: monospace;">
+<br>
+Modified Tcl Script:<br>
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp; set i 0</span><br
+ style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp; TJC::command
+hello foo.bar.baz.HelloCmd</span><br style="font-family: monospace;">
+<br>
+At runtime, a <span style="font-family: monospace;">[TJC::package
+foo.bar.baz]</span> command would cause the modified Tcl script to be
+evaluated. The modified Tcl script would define the <span
+ style="font-family: monospace;">hello</span> command using the
+compiled implementation in the Java class named <span
+ style="font-family: monospace;">HelloCmd</span>.<br>
+<big><big><br>
+</big></big></div>
+</div>
+</body>
+</html>

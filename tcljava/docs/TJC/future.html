@@ -1,0 +1,121 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+</head>
+<body>
+<div style="text-align: center;"><big><big><span
+ style="font-weight: bold;">Future Improvements to TJC<br>
+</span></big></big><br>
+<div style="text-align: left;">The TJC compiler could benefit from
+additional work in the following areas:<br>
+<h4>Inline Additional Commands<br>
+</h4>
+Quite a few Tcl commands that are suitable for inlining have not had
+inline support added to TJC. Commands that should be inlined include
+the following:<br>
+<ul>
+  <li>append</li>
+  <li>concat</li>
+  <li>global&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+(done)</li>
+  <li>incr&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+(done)<br>
+  </li>
+  <li>info exists</li>
+  <li>lappend</li>
+  <li>lindex&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+(done)<br>
+  </li>
+  <li>linsert</li>
+  <li>list&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+(done)<br>
+  </li>
+  <li>llength&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+(done)<br>
+  </li>
+  <li>lrange</li>
+  <li>lreplace</li>
+  <li>lset</li>
+  <li>regexp</li>
+  <li>regsub</li>
+  <li>set&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+(done)<br>
+  </li>
+  <li>string index</li>
+  <li>string compare</li>
+  <li>string equal</li>
+  <li>string length</li>
+  <li>string range</li>
+  <li>unset</li>
+</ul>
+<h4>Integer Expr Operations<br>
+</h4>
+It is very common for a math expression to deal only with integer
+values. Tcl's expr command is written in such a way that either double
+or integer values can be used in an expression at any time. The actual
+type used for calculations changes depending on the type of the
+operands. The compiled expr implementation in TJC could be improved so
+that it would be possible to determine what types were being used at
+each stage of a calculation and emit inline code for the case of an
+integer operation. Additional testing is needed to determine how much
+this could speed up math operations and if the performance gain would
+be worth the effort required.<br>
+<h4>Type Determination<br>
+</h4>
+A number of optimizations could be applied if the compiler were able to
+tell that a given variable was used only as a single type throughout a
+command. For example, a variable that was accessed only as an integer
+could be saved in a local variable of type int. Another example would
+be a variable that was accessed only as a list. Currently, there is
+currently no type determination support in TJC.<br>
+<h4>Compile Time Usage Warnings<br>
+</h4>
+Users of the <span style="font-family: monospace;">tjc</span>
+executable could find it useful to be able to display warnings and
+possible usage errors at compile time. Currently, TJC does not attempt
+to report syntax errors or usage issues at compile time. For example,
+TJC will not compile math expressions unless they are brace quoted, but
+there is no way to have the compiler print a warning when it finds an
+expression that is not brace quoted.<br>
+<h4>Shared Constant Table<br>
+</h4>
+Currently, each command maintains its own constant table. For example,
+the string "foo" is saved in a TclObject of type TclString. This
+implementation makes access to the constant string "foo" very
+efficient. Trouble is, there is no way to share constants across
+multiple commands. If a command c1 defines a constant string "foo" and
+another command c2 also defines a constant string "foo", then two
+instances of a constant TclObject are created for the same string. It
+is likely that memory usage could be significantly reduced if commands
+were able to share a common constant pool.<br>
+<h4>Compile Itcl methods<br>
+</h4>
+Jacl supports the Itcl object system, but the TJC compiler does not
+compile the bodies of Itcl methods. The <span
+ style="font-family: monospace;">itcl::body</span> command as well as
+method or proc declarations inside a class declaration should be
+supported as container commands.<br>
+<h4>Tcl Source Include<br>
+</h4>
+Users might find it useful to have a module file OPTIONS flag that
+would include the original Tcl source for a proc declaration at the top
+of the generated Java source. This feature would make it easier to
+compare the original Tcl to the generated source code.<br>
+<h4>Javac Flags Option<br>
+</h4>
+Users might want to compile generated Java source files with special <span
+ style="font-family: monospace;">javac</span> command line options.
+Currently, all source code is compiled with the <span
+ style="font-family: monospace;">-g</span> option to support debugging
+the generated source. For example, passing the <span
+ style="font-family: monospace;">-O</span> option to some versions of <span
+ style="font-family: monospace;">javac</span> will enable compile time
+inlining of certain methods. Some options that users might want to pass
+include <span style="font-family: monospace;">-encoding</span>, <span
+ style="font-family: monospace;">-source</span>, <span
+ style="font-family: monospace;">-target</span>, and others.<br>
+<br>
+<big><big><span style="font-weight: bold;"></span></big></big></div>
+</div>
+</body>
+</html>

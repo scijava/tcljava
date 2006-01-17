@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: compileproc.tcl,v 1.5 2006/01/14 01:29:26 mdejong Exp $
+#  RCS: @(#) $Id: compileproc.tcl,v 1.6 2006/01/17 05:13:37 mdejong Exp $
 #
 #
 
@@ -3450,6 +3450,10 @@ proc compileproc_can_inline_command { key } {
         "incr" {
             return [compileproc_can_inline_command_incr $key]
         }
+        "::lindex" -
+        "lindex" {
+            return [compileproc_can_inline_command_lindex $key]
+        }
         "::list" -
         "list" {
             return [compileproc_can_inline_command_list $key]
@@ -3489,6 +3493,9 @@ proc compileproc_emit_inline_command { key } {
         }
         "incr" {
             return [compileproc_emit_inline_command_incr $key]
+        }
+        "lindex" {
+            return [compileproc_emit_inline_command_lindex $key]
         }
         "list" {
             return [compileproc_emit_inline_command_list $key]
@@ -6958,6 +6965,169 @@ proc compileproc_emit_inline_command_incr { key } {
     return $buffer
 }
 
+# Return 1 if lindex command can be inlined.
+
+proc compileproc_can_inline_command_lindex { key } {
+    global _compileproc
+
+    set debug 0
+
+    if {$debug} {
+        puts "compileproc_can_inline_command_lindex $key"
+    }
+
+    # lindex accepts 2 to N argument, but we only
+    # compile a lindex command that has 3 arguments.
+    # Pass to runtime impl for other num args.
+
+    set tree [descend_get_data $key tree]
+    set num_args [llength $tree]
+
+    if {$num_args != 3} {
+        if {$debug} {
+            puts "returning false since there are $num_args args"
+        }
+        return 0
+    }
+
+    return 1
+}
+
+# Emit code to implement inlined lindex command invocation
+# that has 3 arguments.
+
+proc compileproc_emit_inline_command_lindex { key } {
+    global _compileproc
+
+    set buffer ""
+
+    set tree [descend_get_data $key tree]
+    set num_args [llength $tree]
+
+    # Other that 3 argument is an error.
+
+    if {$num_args != 3} {
+        error "expected 3 arguments"
+    }
+
+    # Check for a constant integer literal as the
+    # index argument. For example: [lindex $list 0]
+
+    set constant_integer_index 0
+
+    set tuple [compileproc_get_argument_tuple $key 2]
+    set type [lindex $tuple 0]
+    set value [lindex $tuple 1]
+
+    if {$type == "constant"} {
+        set is_integer [compileproc_string_is_java_integer $value]
+        if {$is_integer} {
+            set tuple [compileproc_parse_value $value]
+            set stringrep_matches [lindex $tuple 0]
+            set parsed_number [lindex $tuple 1]
+
+            if {$stringrep_matches} {
+                set constant_integer_index 1
+                set index_symbol $parsed_number
+            }
+        }
+    }
+
+    if {$constant_integer_index} {
+        # Emit optimized code when a constant integer
+        # argument is passed to lindex. There is no
+        # need to preserve and release the list
+        # since the index is not evaluated.
+
+        # Evaluate value argument
+        set tuple [compileproc_emit_argument $key 1 true {}]
+        set value_type [lindex $tuple 0]
+        set value_symbol [lindex $tuple 1]
+        set value_buffer [lindex $tuple 2]
+
+        if {$value_type == "constant"} {
+            set result_symbol [compileproc_tmpvar_next]
+            set declare_result_symbol 1
+        } else {
+            append buffer $value_buffer
+            set result_symbol $value_symbol
+            set declare_result_symbol 0
+        }
+
+        if {$declare_result_symbol} {
+            append buffer [emitter_indent] \
+                "TclObject $result_symbol = "
+        } else {
+            append buffer [emitter_indent] \
+                "$result_symbol = "
+        }
+        append buffer "TclList.index(interp, $value_symbol, $index_symbol)\;\n"
+        append buffer [emitter_container_if_start "$result_symbol == null"]
+        append buffer [emitter_reset_result]
+        append buffer [emitter_container_if_else]
+        append buffer [emitter_set_result $result_symbol false]
+        append buffer [emitter_container_if_end]
+        return $buffer
+    }
+
+    # Not a constant integer index argument.
+    # Evaluate the list and index arguments
+    # and invoke TJC.lindexNonconst().
+
+    set list_tmpsymbol [compileproc_tmpvar_next]
+    set index_tmpsymbol [compileproc_tmpvar_next]
+
+    append buffer [emitter_statement "TclObject $list_tmpsymbol = null"]
+    append buffer [emitter_statement "TclObject $index_tmpsymbol"]
+
+    # open try block
+
+    append buffer [emitter_container_try_start]
+
+    # Evaluate list argument
+    set i 1
+    set tuple [compileproc_emit_argument $key $i false $list_tmpsymbol]
+    set value_type [lindex $tuple 0]
+    set value_symbol [lindex $tuple 1]
+    set value_buffer [lindex $tuple 2]
+    if {$value_type == "constant"} {
+        append buffer [emitter_statement \
+            "$list_tmpsymbol = $value_symbol"]
+    } else {
+        append buffer $value_buffer
+    }
+    append buffer [emitter_tclobject_preserve $list_tmpsymbol]
+
+    # Evaluate index argument
+    set i 2
+    set tuple [compileproc_emit_argument $key $i false $index_tmpsymbol]
+    set value_type [lindex $tuple 0]
+    set value_symbol [lindex $tuple 1]
+    set value_buffer [lindex $tuple 2]
+    if {$value_type == "constant"} {
+        append buffer [emitter_statement \
+            "$index_tmpsymbol = $value_symbol"]
+    } else {
+        append buffer $value_buffer
+    }
+
+    # Call TJC.lindexNonconst()
+    append buffer [emitter_statement \
+        "TJC.lindexNonconst(interp, $list_tmpsymbol, $index_tmpsymbol)"]
+
+    # finally block
+
+    append buffer [emitter_container_try_finally]
+
+    append buffer [emitter_container_if_start "$list_tmpsymbol != null"]
+    append buffer [emitter_tclobject_release $list_tmpsymbol]
+    append buffer [emitter_container_if_end]
+
+    append buffer [emitter_container_try_end]
+
+    return $buffer
+}
+
 # Return 1 if list command can be inlined.
 # The list command accepts 0 to N arguments
 # of any type, so it can always be inlined.
@@ -7098,8 +7268,8 @@ proc compileproc_can_inline_command_llength { key } {
         puts "compileproc_can_inline_command_llength $key"
     }
 
-    # The global command accepts 1 argument. Pass to runtime
-    # global command impl to raise error message otherwise.
+    # The llength command accepts 1 argument. Pass to runtime
+    # llength command impl to raise error message otherwise.
 
     set tree [descend_get_data $key tree]
     set num_args [llength $tree]

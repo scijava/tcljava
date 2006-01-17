@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TJC.java,v 1.5 2006/01/14 01:29:26 mdejong Exp $
+ * RCS: @(#) $Id: TJC.java,v 1.6 2006/01/17 05:13:37 mdejong Exp $
  *
  */
 
@@ -1231,6 +1231,68 @@ public class TJC {
 	Var.makeUpvar(interp, null,
 		varName, null, TCL.GLOBAL_ONLY,
 	        varTail, 0);
+    }
+
+    // Implements inlined lindex command for non-constant integer
+    // index values. This implementation is used only with lindex
+    // commands that have 3 arguments. If the index argument
+    // is already a TclInteger type then an optimized lindex
+    // impl is used. The interp result is always set by this
+    // method.
+
+    public static final
+    void lindexNonconst(
+        Interp interp,
+        TclObject listObj,     // List value
+        TclObject indexValue)  // List index to be resolved.
+            throws TclException
+    {
+        // Optimized check for integer indexValue argument.
+        // This is the most common use case:
+        // set obj [lindex $list $i]
+
+        boolean intIndex = false;
+        int index = -1;
+
+        try {
+            if (indexValue.getInternalRep() instanceof TclInteger) {
+                index = TclInteger.get(interp, indexValue);
+                intIndex = true;
+            }
+        } catch (TclException te) {
+            throw new TclRuntimeError(
+                "unexpected TclException getting index value");
+        }
+
+        if (intIndex) {
+            TclObject result = TclList.index(interp, listObj, index);
+            if (result == null) {
+                interp.resetResult();
+            } else{
+                interp.setResult(result);
+            }
+            return;
+        } else {
+            // Invoke the static lindex command impl.
+
+            TclObject[] objv = TJC.grabObjv(interp, 3);
+            try {
+                //objv[0] = null;
+
+                objv[1] = listObj;
+
+                objv[2] = indexValue;
+                indexValue.preserve();
+
+                TclObject elem = LindexCmd.TclLindexList(interp, listObj, objv, 2);
+                interp.setResult(elem);
+                elem.release();
+            } finally {
+                objv[1] = null; // Caller should preserve() list
+                TJC.releaseObjv(interp, objv, 3);
+            }
+            return;
+        }
     }
 }
 

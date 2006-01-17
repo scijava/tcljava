@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: module.tcl,v 1.4 2006/01/13 03:40:11 mdejong Exp $
+#  RCS: @(#) $Id: module.tcl,v 1.5 2006/01/17 05:13:37 mdejong Exp $
 #
 #
 
@@ -122,18 +122,7 @@ proc module_parse_command { cmdstr linenum } {
             if {[llength $clist] == 0} {error "no elements in OPTIONS string"}
             set nparsed [llength $clist]
             set cargs [lrange $clist 1 end]
-            set options [list]
-
-            foreach arg $cargs {
-                # Each option arg must be +word or -word
-                set pat {^(\+|\-)([a-z|_|\-]+)$}
-                if {![regexp $pat $arg whole sub1 sub2]} {
-                    error "Module command OPTIONS argument \"$arg\" is invalid, at line $linenum"
-                }
-                lappend options $sub2 [expr {($sub1 == "+") ? 1 : 0}]
-            }
-
-            set _module(options) $options
+            set _module(options) [module_options_parse $cargs OPTIONS $linenum]
         }
         "SOURCE" {
             set clist [module_space_split $cmdstr]
@@ -174,16 +163,7 @@ proc module_parse_command { cmdstr linenum } {
             set nparsed [expr {2 + [llength $alist]}]
             # Validate proc options
 
-            set options [list]
-
-            foreach arg $alist {
-                # Each option arg must be +word or -word
-                set pat {^(\+|\-)([a-z|_|\-]+)$}
-                if {![regexp $pat $arg whole sub1 sub2]} {
-                    error "Module command PROC_OPTIONS argument \"$arg\" is invalid, at line $linenum"
-                }
-                lappend options $sub2 [expr {($sub1 == "+") ? 1 : 0}]
-            }
+            set options [module_options_parse $alist PROC_OPTIONS $linenum]
 
             foreach pname $plist {
                 lappend _module(proc_options) [list $pname $options]
@@ -515,6 +495,11 @@ proc module_option_validate { op val index num_options options } {
                 }
             }
         }
+        "O" {
+            # +O is a psudo option, it should be replaced with the
+            # options that it activates in the validate stage.
+            error "O option should not be validated"
+        }
         default {
             error "unknown option \"$op\""
         }
@@ -570,12 +555,79 @@ proc module_option_default { option } {
         "inline-commands" {return 0}
         "inline-containers" {return 0}
         "inline-controls" {return 0}
+        "O" {return 0}
         default {
             error "unknown option \"$option\""
         }
     }
 }
 
+# Parse OPTIONS or PROC_OPTION command in a module config file
+# and return the list of parsed option names and values.
+
+proc module_options_parse { cargs oname linenum } {
+    set options [list]
+
+    foreach arg $cargs {
+        # Each option arg must be +word or -word
+        set pat {^(\+|\-)([a-z|O|_|\-]+)$}
+        if {![regexp $pat $arg whole sub1 sub2]} {
+            error "Module command $oname argument\
+                \"$arg\" is invalid, at line $linenum"
+        }
+        set option $sub2
+        set enabled [expr {($sub1 == "+") ? 1 : 0}]
+        if {[module_option_is_psudo_option $option]} {
+            foreach elem [module_option_replace_psudo_option \
+                    $option $enabled] {
+                lappend options $elem
+            }
+        } else {
+            lappend options $option $enabled
+        }
+    }
+    return $options
+}
+
+# Return true if the option is actualyl a psudo option
+# meaning it enables other options.
+
+proc module_option_is_psudo_option { option } {
+    if {$option == "O"} {
+        return 1
+    } else {
+        return 0
+    }
+}
+
+# A psudo option is relaced by specific option flag
+# settings, return them here.
+
+proc module_option_replace_psudo_option { option enabled } {
+    if {$option == "O"} {
+        if {$enabled} {
+            return [list \
+                inline-containers 1 \
+                inline-controls 1 \
+                cache-commands 1 \
+                constant-increment 0 \
+                cache-variables 1  \
+                inline-commands 1 \
+                ]
+        } else {
+            return [list \
+                inline-containers 0 \
+                inline-controls 0 \
+                cache-commands 0 \
+                constant-increment 1 \
+                cache-variables 0 \
+                inline-commands 0 \
+                ]
+        }
+    } else {
+        error "unknown psudo option \"$option\""
+    }
+}
 
 # Validate a module file data after all of the entries have
 # been parsed.
