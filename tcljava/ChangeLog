@@ -1,3 +1,29 @@
+2006-01-19  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * docs/TJC/future.html:
+        * docs/TJC/module.html:
+        * docs/TJC/optcode.html: Document compiled lappend
+        and append commands.
+        * src/jacl/tcl/lang/LappendCmd.java (lappendVar):
+        Move lappend logic into static method so that it
+        can be invoked via TJC.lappendVar().
+        * src/jacl/tcl/lang/Var.java (isArrayVarname):
+        Add helper method to examine static variable name.
+        * src/tjc/tcl/lang/TJC.java (lappendVarScalar,
+        appendVarScalar, lappendVar, appendVar): Add
+        runtime implementations for append and lappend
+        as well as optimized versions that work with
+        cached variables.
+        * src/tjc/tjc/library/compileproc.tcl:
+        Refactor object argument array assignment into
+        compileproc_emit_objv_assignment, this is now
+        used for regular method invocations as well as
+        append and lappend methods. Add inlined append
+        and lappend generators. Also add interp.resetResult()
+        call to incr code.
+        * tests/tjc/compileproc_7.test: Test incr, lappend,
+        and append output.
+
 2006-01-18  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * Makefile.in: Subst WIN32_HOST and use it to

@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: compileproc.tcl,v 1.7 2006/01/19 03:11:04 mdejong Exp $
+#  RCS: @(#) $Id: compileproc.tcl,v 1.8 2006/01/19 21:05:32 mdejong Exp $
 #
 #
 
@@ -2516,10 +2516,27 @@ proc compileproc_emit_invoke { key } {
 # Pass the descend key for the command to invoke.
 
 proc compileproc_emit_invoke_call { key } {
+    return [compileproc_emit_objv_assignment \
+        $key \
+        0 end \
+        0 \
+        compileproc_emit_invoke_call_impl \
+        {} \
+        ]
+}
+
+# Emit code to allocate an array of TclObjects and
+# assign command arguments to the array. This
+# command will invoke a specific callback to
+# emit code that appears after the array has
+# been allocated and populated.
+
+proc compileproc_emit_objv_assignment { key starti endi decl_tmpsymbol callback userdata } {
     global _compileproc
     global _compileproc_key_info
 
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
 
     if {$debug} {
         puts "compileproc_emit_invoke_call $key"
@@ -2527,12 +2544,17 @@ proc compileproc_emit_invoke_call { key } {
 
     set num_args $_compileproc_key_info($key,num_args)
 
+    if {$endi == "end"} {
+        set endi $num_args
+    }
+
     # Init buffer with array symbol declaration
     # and a tmp symbol inside the try block.
 
     set buffer ""
     set arraysym [compileproc_tmpvar_next objv]
-    append buffer [emitter_invoke_command_start $arraysym $num_args]
+    set objv_size [expr {$num_args - $starti}]
+    append buffer [emitter_invoke_command_start $arraysym $objv_size]
 
     # If all the arguments are constant values and
     # the emitted code should skip constant increments,
@@ -2541,7 +2563,7 @@ proc compileproc_emit_invoke_call { key } {
     if {$_compileproc(options,skip_constant_increment)} {
         set use_tmp_local 0
 
-        for {set i 0} {$i < $num_args} {incr i} {
+        for {set i $starti} {$i < $endi} {incr i} {
             set tuple [compileproc_get_argument_tuple $key $i]
             set type [lindex $tuple 0]
             if {$type != "constant"} {
@@ -2549,6 +2571,10 @@ proc compileproc_emit_invoke_call { key } {
             }
         }
     } else {
+        set use_tmp_local 1
+    }
+
+    if {!$use_tmp_local && $decl_tmpsymbol} {
         set use_tmp_local 1
     }
 
@@ -2566,7 +2592,7 @@ proc compileproc_emit_invoke_call { key } {
 
     set const_unincremented_indexes {}
 
-    for {set i 0} {$i < $num_args} {incr i} {
+    for {set i $starti} {$i < $endi} {incr i} {
         set tuple [compileproc_emit_argument $key $i 0 $tmpsymbol]
         set type [lindex $tuple 0]
         set symbol [lindex $tuple 1]
@@ -2583,23 +2609,70 @@ proc compileproc_emit_invoke_call { key } {
         append buffer \
             [emitter_comment "Arg $i $print_type: $print_str"]
 
+        set array_i [expr {$i - $starti}]
+
         if {$_compileproc(options,skip_constant_increment) \
                 && $type == "constant"} {
-            append buffer [emitter_array_assign $arraysym $i $symbol]
+            append buffer [emitter_array_assign $arraysym $array_i $symbol]
 
-            lappend const_unincremented_indexes $i
+            lappend const_unincremented_indexes $array_i
         } else {
             # emitter_invoke_command_assign will notice when the
             # tmpsymbol is being assigned to itself and skip it.
 
             append buffer $symbol_buffer
             append buffer [emitter_invoke_command_assign $arraysym \
-                $i $tmpsymbol $symbol]
+                $array_i $tmpsymbol $symbol]
         }
     }
-    if {$debug} {
-        puts "buffer is:\n$buffer"
+
+    # Invoke user supplied callback to emit code that appears
+    # after the array has been populated.
+
+    append buffer [$callback $key $arraysym $tmpsymbol $userdata]
+
+    # Close try block and emit finally block
+
+    append buffer [emitter_invoke_command_finally]
+
+    # When constant increment is skipped, set refs
+    # that are constant values in the objv array to
+    # null before invoking releaseObjv() so that
+    # TclObject.release() is not invoked for the
+    # constant TclObject refs.
+
+    set end_size $objv_size
+
+    if {[llength $const_unincremented_indexes] > 0} {
+        if {[llength $const_unincremented_indexes] == $objv_size} {
+            # Special case, all the arguments are constants.
+            # Pass zero as the size argument to releaseObjv()
+            # so that all array elements are set to null
+            # inside releaseObjv(), instead of here.
+
+            set end_size 0
+        } else {
+            foreach i $const_unincremented_indexes {
+                append buffer [emitter_array_assign $arraysym $i null]
+            }
+        }
     }
+
+    append buffer [emitter_invoke_command_end $arraysym $end_size]
+
+    return $buffer
+}
+
+# Emit TJC.invoke() for either the runtime lookup case or the
+# cached command case. The arraysym is the symbol declared
+# as a TclObject[]. The tmpsymbol is a symbol declared as
+# as TclObject used to store a tmp result inside the try block,
+# it will be {} if no tmpsymbol was declared.
+
+proc compileproc_emit_invoke_call_impl { key arraysym tmpsymbol userdata } {
+    global _compileproc
+
+    set buffer ""
 
     # Check to see if cached command pointer should be passed.
 
@@ -2629,38 +2702,6 @@ proc compileproc_emit_invoke_call { key } {
         # Emit invoke()
         append buffer [emitter_invoke_command_call $arraysym {} 0]
     }
-    if {$debug} {
-        puts "buffer is:\n$buffer"
-    }
-
-    # Close try block and emit finally block
-
-    append buffer [emitter_invoke_command_finally]
-
-    # When constant increment is skipped, set refs
-    # that are constant values in the objv array to
-    # null before invoking releaseObjv() so that
-    # TclObject.release() is not invoked for the
-    # constant TclObject refs.
-
-    set end_size $num_args
-
-    if {[llength $const_unincremented_indexes] > 0} {
-        if {[llength $const_unincremented_indexes] == $num_args} {
-            # Special case, all the arguments are constants.
-            # Pass zero as the size argument to releaseObjv()
-            # so that all array elements are set to null
-            # inside releaseObjv(), instead of here.
-
-            set end_size 0
-        } else {
-            foreach i $const_unincremented_indexes {
-                append buffer [emitter_array_assign $arraysym $i null]
-            }
-        }
-    }
-
-    append buffer [emitter_invoke_command_end $arraysym $end_size]
 
     return $buffer
 }
@@ -3460,6 +3501,10 @@ proc compileproc_can_inline_command { key } {
     # variable, upvar, uplevel
 
     switch -exact -- $cmdname {
+        "::append" -
+        "append" {
+            return [compileproc_can_inline_command_append $key]
+        }
         "::global" -
         "global" {
             return [compileproc_can_inline_command_global $key]
@@ -3467,6 +3512,10 @@ proc compileproc_can_inline_command { key } {
         "::incr" -
         "incr" {
             return [compileproc_can_inline_command_incr $key]
+        }
+        "::lappend" -
+        "lappend" {
+            return [compileproc_can_inline_command_lappend $key]
         }
         "::lindex" -
         "lindex" {
@@ -3506,11 +3555,17 @@ proc compileproc_emit_inline_command { key } {
     # invoke specific method to emit command code
 
     switch -exact -- $cmdname {
+        "append" {
+            return [compileproc_emit_inline_command_append $key]
+        }
         "global" {
             return [compileproc_emit_inline_command_global $key]
         }
         "incr" {
             return [compileproc_emit_inline_command_incr $key]
+        }
+        "lappend" {
+            return [compileproc_emit_inline_command_lappend $key]
         }
         "lindex" {
             return [compileproc_emit_inline_command_lindex $key]
@@ -6795,6 +6850,143 @@ proc compileproc_parse_value { value } {
     return [list $matching_strrep $parsed $printed]
 }
 
+# Return 1 if append command can be inlined.
+
+proc compileproc_can_inline_command_append { key } {
+    global _compileproc
+
+    set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
+
+    if {$debug} {
+        puts "compileproc_can_inline_command_append $key"
+    }
+
+    # The append command accepts 2, 3, or more than 3 arguments.
+    # Pass to runtime impl if there are less than 3 arguments.
+
+    set tree [descend_get_data $key tree]
+    set num_args [llength $tree]
+
+    if {$num_args < 3} {
+        if {$debug} {
+            puts "returning false since there are $num_args args"
+        }
+        return 0
+    }
+
+    # 2nd argument to inlined append must be a constant scalar or
+    # array variable name, otherwise pass to runtime append command.
+
+    set tuple [compileproc_get_argument_tuple $key 1]
+    set type [lindex $tuple 0]
+
+    if {$type != "constant"} {
+        if {$debug} {
+            puts "returning false since argument 1 is non-constant type $type"
+        }
+
+        return 0
+    }
+
+    return 1
+}
+
+# Emit code to implement inlined append command. The
+# inlined append command would have already been validated
+# to have a constant variable name and 3 or more arguments
+# when this method is invoked. The inlined append command
+# is a bit more tricky that then other commands because
+# it must emit special code when cache variables is
+# enabled.
+
+proc compileproc_emit_inline_command_append { key } {
+    set buffer ""
+
+    set tree [descend_get_data $key tree]
+    set num_args [llength $tree]
+
+    # Determine constant variable name as a String.
+
+    set tuple [compileproc_get_argument_tuple $key 1]
+    set type [lindex $tuple 0]
+    if {$type != "constant"} {
+        error "expected constant variable name"
+    }
+    set varname [lindex $tuple 1]
+
+    # Emit code to allocate an array of TclObject and
+    # assign command argument values to the array
+    # before including append specific inline code.
+
+    append buffer [compileproc_emit_objv_assignment \
+        $key \
+        2 end \
+        1 \
+        compileproc_emit_append_call_impl \
+        $varname \
+        ]
+
+    return $buffer
+}
+
+# Invoked to emit code for inlined TJC.appendVar() call
+# inside try block.
+
+proc compileproc_emit_append_call_impl { key arraysym tmpsymbol userdata } {
+    global _compileproc
+
+    if {$_compileproc(options,cache_variables)} {
+        set cache_variables 1
+    } else {
+        set cache_variables 0
+    }
+
+    set buffer ""
+
+    # Reset interp result before the append
+    # method is invoked. If the variable
+    # contains the same TclObject saved
+    # in the interp result then it would
+    # be considered shared and we want
+    # to avoid a pointless duplication of
+    # the TclObject.
+
+    append buffer [emitter_reset_result]
+
+    set varname $userdata
+    set varname_symbol [emitter_double_quote_tcl_string $userdata]
+
+    if {!$cache_variables} {
+        append buffer \
+            [emitter_statement \
+                "$tmpsymbol = TJC.appendVar(interp, $varname_symbol, $arraysym)"]
+    } else {
+        # In cache variable mode, inline special code for scalar var
+
+        set vinfo [descend_simple_variable $varname]
+        if {[lindex $vinfo 0] == "array"} {
+            append buffer \
+                [emitter_statement \
+                    "$tmpsymbol = TJC.appendVar(interp, $varname_symbol, $arraysym)"]
+        } elseif {[lindex $vinfo 0] == "scalar"} {
+            set cache_symbol [compileproc_variable_cache_lookup $varname]
+            set cacheId [compileproc_get_cache_id_from_symbol $cache_symbol]
+
+            append buffer \
+                [emitter_statement \
+                    "$tmpsymbol = appendVarScalar(interp, $varname_symbol,\
+                        $arraysym, $cache_symbol, $cacheId)"]
+        } else {
+            error "unexpected result \{$vinfo\} from descend_simple_variable"
+        }
+    }
+
+    append buffer [emitter_set_result $tmpsymbol false]
+
+    return $buffer
+}
+
 # Return 1 if global command can be inlined.
 
 proc compileproc_can_inline_command_global { key } {
@@ -6990,6 +7182,11 @@ proc compileproc_emit_inline_command_incr { key } {
         error "expected 2 or 3 arguments to incr"
     }
 
+    # Reset the interp result in case it holds a ref
+    # to the TclObject inside the variable.
+
+    append buffer [emitter_reset_result]
+
     # Emit incr statement, incr_symbol is an int value
     # to add to the current value.
 
@@ -7032,12 +7229,150 @@ proc compileproc_emit_inline_command_incr { key } {
     return $buffer
 }
 
+# Return 1 if lappend command can be inlined.
+
+proc compileproc_can_inline_command_lappend { key } {
+    global _compileproc
+
+    set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
+
+    if {$debug} {
+        puts "compileproc_can_inline_command_lappend $key"
+    }
+
+    # The lappend command accepts 2, 3, or more than 3 arguments.
+    # Pass to runtime impl if there are less than 3 arguments.
+
+    set tree [descend_get_data $key tree]
+    set num_args [llength $tree]
+
+    if {$num_args < 3} {
+        if {$debug} {
+            puts "returning false since there are $num_args args"
+        }
+        return 0
+    }
+
+    # 2nd argument to inlined lappend must be a constant scalar or
+    # array variable name, otherwise pass to runtime lappend command.
+
+    set tuple [compileproc_get_argument_tuple $key 1]
+    set type [lindex $tuple 0]
+
+    if {$type != "constant"} {
+        if {$debug} {
+            puts "returning false since argument 1 is non-constant type $type"
+        }
+
+        return 0
+    }
+
+    return 1
+}
+
+# Emit code to implement inlined lappend command. The
+# inlined lappend command would have already been validated
+# to have a constant variable name and 3 or more arguments
+# when this method is invoked. The inlined lappend command
+# is a bit more tricky that then other commands because
+# it must emit special code when cache variables is
+# enabled.
+
+proc compileproc_emit_inline_command_lappend { key } {
+    set buffer ""
+
+    set tree [descend_get_data $key tree]
+    set num_args [llength $tree]
+
+    # Determine constant variable name as a String.
+
+    set tuple [compileproc_get_argument_tuple $key 1]
+    set type [lindex $tuple 0]
+    if {$type != "constant"} {
+        error "expected constant variable name"
+    }
+    set varname [lindex $tuple 1]
+
+    # Emit code to allocate an array of TclObject and
+    # assign command argument values to the array
+    # before including lappend specific inline code.
+
+    append buffer [compileproc_emit_objv_assignment \
+        $key \
+        2 end \
+        1 \
+        compileproc_emit_lappend_call_impl \
+        $varname \
+        ]
+
+    return $buffer
+}
+
+# Invoked to emit code for inlined TJC.lappendVar() call
+# inside try block.
+
+proc compileproc_emit_lappend_call_impl { key arraysym tmpsymbol userdata } {
+    global _compileproc
+
+    if {$_compileproc(options,cache_variables)} {
+        set cache_variables 1
+    } else {
+        set cache_variables 0
+    }
+
+    set buffer ""
+
+    # Reset interp result before the lappend
+    # method is invoked. If the variable
+    # contains the same TclObject saved
+    # in the interp result then it would
+    # be considered shared and we want
+    # to avoid a pointless duplication of
+    # the TclObject.
+
+    append buffer [emitter_reset_result]
+
+    set varname $userdata
+    set varname_symbol [emitter_double_quote_tcl_string $userdata]
+
+    if {!$cache_variables} {
+        append buffer \
+            [emitter_statement \
+                "$tmpsymbol = TJC.lappendVar(interp, $varname_symbol, $arraysym)"]
+    } else {
+        # In cache variable mode, inline special code for scalar var
+
+        set vinfo [descend_simple_variable $varname]
+        if {[lindex $vinfo 0] == "array"} {
+            append buffer \
+                [emitter_statement \
+                    "$tmpsymbol = TJC.lappendVar(interp, $varname_symbol, $arraysym)"]
+        } elseif {[lindex $vinfo 0] == "scalar"} {
+            set cache_symbol [compileproc_variable_cache_lookup $varname]
+            set cacheId [compileproc_get_cache_id_from_symbol $cache_symbol]
+
+            append buffer \
+                [emitter_statement \
+                    "$tmpsymbol = lappendVarScalar(interp, $varname_symbol,\
+                        $arraysym, $cache_symbol, $cacheId)"]
+        } else {
+            error "unexpected result \{$vinfo\} from descend_simple_variable"
+        }
+    }
+
+    append buffer [emitter_set_result $tmpsymbol false]
+
+    return $buffer
+}
+
 # Return 1 if lindex command can be inlined.
 
 proc compileproc_can_inline_command_lindex { key } {
     global _compileproc
 
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
 
     if {$debug} {
         puts "compileproc_can_inline_command_lindex $key"

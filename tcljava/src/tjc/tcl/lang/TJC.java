@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TJC.java,v 1.6 2006/01/17 05:13:37 mdejong Exp $
+ * RCS: @(#) $Id: TJC.java,v 1.7 2006/01/19 21:05:32 mdejong Exp $
  *
  */
 
@@ -400,6 +400,102 @@ public class TJC {
                 }
             }
         }
+
+        protected final
+        TclObject lappendVarScalar(
+            Interp interp,
+            String varName,
+            TclObject[] values,
+            Var var,
+            int cacheId)
+                throws TclException
+        {
+            // Use runtime impl of lappend if cached var
+            // is not valid or not set. The lappend command
+            // accepts an undefined variable name, but we
+            // don't optimize that case.
+
+            if ((var == null) ||
+                    (var == TJC.VAR_NO_CACHE) ||
+                    !TJC.isVarScalarValid(var)) {
+                return TJC.lappendVar(interp, varName, values);
+            }
+
+            // The cache var is valid, but it might indicate
+            // a shared value. If the value is shared then
+            // we need to duplicate it and invoke setVar()
+            // to implement "copy on write".
+
+            //TclObject varValue = TJC.getVarScalar(var);
+            TclObject varValue = (TclObject) var.value;
+            boolean createdNewObj = false;
+
+            if (varValue.isShared()) {
+                varValue = varValue.duplicate();
+                createdNewObj = true;
+            }
+
+            // Insert the new elements at the end of the list.
+
+            final int len = values.length;
+            for (int i = 0; i < len ; i++) {
+                TclList.append(interp, varValue, values[i]);
+            }
+
+            if (createdNewObj) {
+                TJC.setVarScalar(var, varValue);
+            }
+
+            return varValue;
+        }
+
+        protected final
+        TclObject appendVarScalar(
+            Interp interp,
+            String varName,
+            TclObject[] values,
+            Var var,
+            int cacheId)
+                throws TclException
+        {
+            // Use runtime impl of append if cached var
+            // is not valid or not set. The append command
+            // accepts an undefined variable name, but we
+            // don't optimize that case.
+
+            if ((var == null) ||
+                    (var == TJC.VAR_NO_CACHE) ||
+                    !TJC.isVarScalarValid(var)) {
+                return TJC.appendVar(interp, varName, values);
+            }
+
+            // The cache var is valid, but it might indicate
+            // a shared value. If the value is shared then
+            // we need to create a new TclString object
+            // and drop refs to the previous TclObject value.
+
+            //TclObject varValue = TJC.getVarScalar(var);
+            TclObject varValue = (TclObject) var.value;
+            boolean createdNewObj = false;
+
+            if (varValue.isShared()) {
+                varValue = TclString.newInstance(varValue.toString());
+                createdNewObj = true;
+            }
+
+            // Insert the new elements at the end of the string.
+
+            final int len = values.length;
+            for (int i = 0; i < len ; i++) {
+                TclString.append(varValue, values[i].toString());
+            }
+
+            if (createdNewObj) {
+                TJC.setVarScalar(var, varValue);
+            }
+
+            return varValue;
+        }
     } // end class CompiledCommand
 
     // Used to create a TJC compiled command. This method will
@@ -700,7 +796,6 @@ public class TJC {
     TclObject setVarScalar(
         Var var,
         TclObject newValue)    // New value to set varible to, can't be null
-	    throws TclException
     {
         if (var.value != newValue) {
             TclObject oldValue = (TclObject) var.value;
@@ -1293,6 +1388,48 @@ public class TJC {
             }
             return;
         }
+    }
+
+    // Implements inlined lappend command that appends 1 or more
+    // TclObject values to a variable. This implementation
+    // makes use of runtime support found in the LappendCmd class.
+    // The new variable value after the lappend operation is returned.
+
+    public static final
+    TclObject lappendVar(
+        Interp interp,
+        String varName,        // Name of variable
+        TclObject[] values)    // Array of TclObject values to append
+            throws TclException
+    {
+        return LappendCmd.lappendVar(interp, varName, values, 0);
+    }
+
+    // Implements inlined append command that appends 1 or more
+    // TclObject values to a variable. This implementation
+    // duplicates the logic found in AppendCmd. The new
+    // variable value after the lappend operation is returned.
+
+    public static final
+    TclObject appendVar(
+        Interp interp,
+        String varName,        // Name of variable
+        TclObject[] values)    // Array of TclObject values to append
+            throws TclException
+    {
+        TclObject varValue = null;
+        final int len = values.length;
+
+	for (int i = 0; i < len; i++) {
+	    varValue = interp.setVar(varName, values[i], TCL.APPEND_VALUE);
+	}
+
+        if (varValue == null) {
+            // Return empty result object if null
+            varValue = interp.checkCommonString(null);
+        }
+
+        return varValue;
     }
 }
 

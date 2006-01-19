@@ -140,7 +140,7 @@ for {set i 0} {$i &lt; 10} $script {<br>
 <br>
 </span>The type is usage is valid Tcl code, but it is not common usage
 and cannot be compiled.<br>
-<h4>Foreach Command<br>
+<h4>The foreach Command<br>
 </h4>
 Use of the <span style="font-family: monospace;">foreach</span>
 command is significantly optimized by the TJC compiler. The most common
@@ -246,7 +246,7 @@ $len} {incr i} {<br>
 &nbsp;&nbsp;&nbsp; puts "value is [lindex $l $i]"<br>
 }</span></span><span style="font-family: monospace;"><br>
 </span>
-<h4>Switch Command<br>
+<h4>The switch Command<br>
 </h4>
 The <span style="font-family: monospace;">switch</span> command
 supports two usages that are legal in Tcl code.<br>
@@ -337,8 +337,323 @@ command.<br>
  style="font-family: monospace;"><span style="font-family: monospace;">puts
 "matched Baz or Zaz"</span></span></span></span><br>
 </span><span style="font-family: monospace;">}<br>
+</span>
+<h4>The lappend Command<br>
+</h4>
+The <span style="font-family: monospace;">lappend</span>
+command is significantly optimized by the TJC compiler, but some usage
+is better than others. For example, the following code is significantly
+optimized.<br>
 <br>
-</span><span style="font-family: monospace;"></span> <span
+<span style="font-family: monospace;">catch {unset </span><span
+ style="font-family: monospace;"><span style="font-family: monospace;">mylist</span></span><span
+ style="font-family: monospace;">}</span><br>
+<span style="font-family: monospace;">set mylist [list]<br>
+lappend </span><span style="font-family: monospace;"><span
+ style="font-family: monospace;">mylist </span></span><span
+ style="font-family: monospace;"> A B C<br>
+</span><span style="font-family: monospace;"><br>
+</span>The<span style="font-family: monospace;"> <span
+ style="font-family: monospace;">lappend</span>
+</span>command supports appending to a variable that is not yet set,
+but this usage is not optimized. For example, the following lappend
+usage would not execute as quickly as the example above.<span
+ style="font-family: monospace;"><br>
+<br>
+catch {unset </span><span style="font-family: monospace;"><span
+ style="font-family: monospace;">mylist</span></span><span
+ style="font-family: monospace;">}</span><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><br>
+lappend </span></span><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"></span><span
+ style="font-family: monospace;"><span style="font-family: monospace;">mylist</span></span><span
+ style="font-family: monospace;"></span></span></span><span
+ style="font-family: monospace;"><span style="font-family: monospace;">
+A B C</span><span style="font-family: monospace;"><br>
+</span><br>
+</span>The<span style="font-family: monospace;"><span
+ style="font-family: monospace;"> <span style="font-family: monospace;">lappend</span>
+</span></span>command also supports initializing a variable value to an
+empty list, but this usage is not optimized. The following code would
+also execute less quickly that the first example given above.<span
+ style="font-family: monospace;"><br>
+<span style="font-family: monospace;"><br>
+catch {unset </span><span style="font-family: monospace;"><span
+ style="font-family: monospace;">mylist</span></span><span
+ style="font-family: monospace;">}</span><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><br>
+lappend </span></span><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"></span><span
+ style="font-family: monospace;"><span style="font-family: monospace;">mylist</span></span><span
+ style="font-family: monospace;"></span></span></span><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><br>
+</span></span></span><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;">lappend </span></span><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"></span><span
+ style="font-family: monospace;"><span style="font-family: monospace;">mylist
+</span></span></span></span></span></span></span></span><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;">A B C</span><span
+ style="font-family: monospace;"><br>
+</span></span></span><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><br>
+</span></span>The <span style="font-family: monospace;">lappend</span>
+command supports passing multiple values to be appended. It is more
+efficient to pass multiple items to be appended to a single <span
+ style="font-family: monospace;">lappend</span> command as opposed to
+using multiple <span style="font-family: monospace;">lappend</span>
+commands. For example, the following code:<br>
+<br>
+<span style="font-family: monospace;"><span
+ style="font-family: monospace;">catch {unset </span><span
+ style="font-family: monospace;"><span style="font-family: monospace;">mylist</span></span><span
+ style="font-family: monospace;">}<br>
+set mylist [list]<br>
+lappend mylist A B \<br>
+&nbsp;&nbsp;&nbsp; REAL_LONG_ELEMENT<br>
+<br>
+</span><span style="font-family: monospace;"><span
+ style="font-family: monospace;"></span></span></span>Will produce more
+efficient code than the following:<span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><br>
+</span></span><br>
+</span></span><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;">catch {unset </span><span
+ style="font-family: monospace;"><span style="font-family: monospace;">mylist</span></span><span
+ style="font-family: monospace;">}<br>
+set mylist [list]<br>
+lappend mylist A<br>
+</span></span></span></span><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;">lappend mylist B<br>
+</span></span></span></span></span></span></span></span><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;">lappend
+mylist </span></span></span></span></span></span></span></span></span></span></span></span><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;">REAL_LONG_ELEMENT</span><span
+ style="font-family: monospace;"><span style="font-family: monospace;"></span></span></span><span
+ style="font-family: monospace;"><span style="font-family: monospace;"></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"></span></span></span><br>
+</span></span></span></span></span></span></span></span><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"></span><span
+ style="font-family: monospace;"><span style="font-family: monospace;"></span></span></span><span
+ style="font-family: monospace;"><span style="font-family: monospace;"></span></span></span></span><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><br>
+</span></span>
+<h4>The append Command<br>
+</h4>
+The <span style="font-family: monospace;">append</span>
+command is significantly optimized by the TJC compiler, but some usage
+is better than others. For example, the following code is significantly
+optimized.<br>
+<br>
+<span style="font-family: monospace;">catch {unset </span><span
+ style="font-family: monospace;"><span style="font-family: monospace;">myvar</span></span><span
+ style="font-family: monospace;">}</span><br>
+<span style="font-family: monospace;">set myvar ""<br>
+append </span><span style="font-family: monospace;"><span
+ style="font-family: monospace;">myvar </span></span><span
+ style="font-family: monospace;">STR1 STR2 STR3<br>
+</span><span style="font-family: monospace;"><br>
+</span>The <span style="font-family: monospace;">append</span>
+command supports appending to a variable that is not yet set,
+but this usage is not optimized. For example, the following <span
+ style="font-family: monospace;">append</span>
+usage would not execute as quickly as the example above.<br>
+<span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><br>
+catch {unset </span></span></span><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;">myvar}</span></span></span></span></span><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"></span><span
+ style="font-family: monospace;"></span><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><br>
+append </span></span><span style="font-family: monospace;"><span
+ style="font-family: monospace;"></span></span></span></span><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;">myvar</span></span></span></span></span></span><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"></span></span><span
+ style="font-family: monospace;"><span style="font-family: monospace;">
+</span></span></span></span><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;">STR1
+STR2 STR3</span></span></span></span></span><br>
+<br>
+<span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"></span></span></span></span>The <span
+ style="font-family: monospace;">append</span>
+command supports passing multiple values to be appended. It is more
+efficient to pass multiple items to be appended to a single <span
+ style="font-family: monospace;">append</span> command as opposed to
+using multiple <span style="font-family: monospace;">append</span>
+commands. For example, the following code:<span
+ style="font-family: monospace;"><span style="font-family: monospace;"><br>
+<br>
+<span style="font-family: monospace;"><span
+ style="font-family: monospace;">catch {unset </span></span></span></span><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"></span></span></span><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;">myvar}</span></span></span></span></span></span></span></span></span><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"></span><span
+ style="font-family: monospace;"><br>
+set </span></span></span></span><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"></span></span></span><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;">myvar </span></span></span></span></span></span></span></span></span><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;">""<br>
+</span></span></span></span><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;">append </span></span><span
+ style="font-family: monospace;"><span style="font-family: monospace;"></span></span></span></span><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;">myvar</span></span></span></span></span></span><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"></span></span><span
+ style="font-family: monospace;"><span style="font-family: monospace;">
+</span></span></span></span><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;">STR1
+STR2 \<br>
+&nbsp;&nbsp;&nbsp; REAL_LONG_STRING</span></span></span></span></span><br>
+</span></span></span></span><br>
+Will produce more efficient code than the following:<span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><br>
+</span></span><br>
+</span></span><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;">catch {unset </span><span
+ style="font-family: monospace;"><span style="font-family: monospace;">myvar</span></span><span
+ style="font-family: monospace;">}<br>
+set myvar ""<br>
+append myvar STR1<br>
+</span></span></span></span><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;">append myvar STR2<br>
+</span></span></span></span></span></span></span></span><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;">append
+myvar </span></span></span></span></span></span></span></span></span></span></span></span></span></span><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;">REAL_LONG_STRING</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"></span></span></span></span><br>
+</span></span></span></span></span></span></span></span><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"></span><span
+ style="font-family: monospace;"><span style="font-family: monospace;"></span></span></span><span
+ style="font-family: monospace;"><span style="font-family: monospace;"></span></span></span></span><span
+ style="font-family: monospace;"><span style="font-family: monospace;"></span></span><br>
+</span></span>
+<h4>The list Command<br>
+</h4>
+The <span style="font-family: monospace;">list</span>
+command is optimized for use with many common list operation. The
+following example shows the optimal way to initialize a variable for
+use with <span style="font-family: monospace;">lappend</span> or
+any other list operation.<br>
+<br>
+<span style="font-family: monospace;">catch {unset </span><span
+ style="font-family: monospace;"><span style="font-family: monospace;">mylist</span></span><span
+ style="font-family: monospace;">}</span><br>
+<span style="font-family: monospace;">set mylist [list]<br>
+lappend </span><span style="font-family: monospace;"><span
+ style="font-family: monospace;">mylist </span></span><span
+ style="font-family: monospace;"> A B C<br>
+</span><br>
+The example code above is more efficient than the following two
+examples. Both of the examples below will initialize the variable to an
+empty string instead of an empty list.<br>
+<span style="font-family: monospace;"><span
+ style="font-family: monospace;"><br>
+</span></span><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;">catch
+{unset </span><span style="font-family: monospace;"><span
+ style="font-family: monospace;">mylist</span></span><span
+ style="font-family: monospace;">}</span><br>
+<span style="font-family: monospace;">set mylist ""<br>
+lappend </span><span style="font-family: monospace;"><span
+ style="font-family: monospace;">mylist </span></span><span
+ style="font-family: monospace;"> A B C<br>
+<br>
+</span></span></span><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;">catch {unset </span><span
+ style="font-family: monospace;"><span style="font-family: monospace;">mylist</span></span><span
+ style="font-family: monospace;">}</span><br>
+<span style="font-family: monospace;">set mylist {}<br>
+lappend </span><span style="font-family: monospace;"><span
+ style="font-family: monospace;">mylist </span></span><span
+ style="font-family: monospace;"> A B C<br>
+</span><br>
+</span></span></span>All three of the examples above will produce the
+exact same results, but the first example that makes explicit use of
+the <span style="font-family: monospace;">list</span> command to
+initialize the variable will execute more quickly.<br>
+<span style="font-family: monospace;"><span
+ style="font-family: monospace;"><br>
+</span></span><span style="font-family: monospace;"></span> <span
  style="font-family: monospace;"></span>
 </body>
 </html>

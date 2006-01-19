@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Var.java,v 1.21 2006/01/14 01:29:26 mdejong Exp $
+ * RCS: @(#) $Id: Var.java,v 1.22 2006/01/19 21:05:32 mdejong Exp $
  *
  */
 package tcl.lang;
@@ -364,7 +364,25 @@ class Var {
     static final String badNamespace =	"parent namespace doesn't exist";
     static final String missingName =	"missing variable name";
 
+    // Return true if a variable name stored in a String
+    // indicates an array element. For example, this
+    // method would return true for "foo(bar) and false
+    // for "foo".
 
+    public static final
+    boolean
+    isArrayVarname(
+        String varName)
+    {
+        int index = varName.indexOf('(');
+        if (index != -1) {
+            char c = varName.charAt(varName.length() - 1);
+            if (c == ')') {
+                return true;
+            }
+        }
+        return false;
+    }
 
     /**
      * TclLookupVar -> lookupVar
