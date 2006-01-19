@@ -5,11 +5,13 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: compileproc.tcl,v 1.6 2006/01/17 05:13:37 mdejong Exp $
+#  RCS: @(#) $Id: compileproc.tcl,v 1.7 2006/01/19 03:11:04 mdejong Exp $
 #
 #
 
 # The compileproc module will parse and compile the contents of a proc.
+
+set _compileproc(debug) 0
 
 # Convert a proc declaration to a list of proc arguments.
 # This method assumes that the script string is already
@@ -38,6 +40,7 @@ proc compileproc_script_to_proc_list { script } {
 
 proc compileproc_args_split { proc_args } {
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
 
     if {$debug} {
         puts "compileproc_args_split : \{$proc_args\}"
@@ -387,6 +390,7 @@ proc compileproc_nocompile { proc_list class_name } {
     global _compileproc
 
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
 
     if {$debug} {
         puts "compileproc_nocompile [lindex $proc_list 0] : \{$proc_list\} $class_name"
@@ -468,17 +472,22 @@ proc compileproc_split_classname { class_name } {
     }
 }
 
-# Invoked by main module to compile a set of procedures
-# into Java source code. The file_and_procs list is
-# made up of pairs of a file name and the procs parsed
-# from it. This method should catch errors raised during
-# compilation and print a diagnostic "interal error" type
-# of message to indicate where something went wrong.
+# Invoked by main module to compile a proc into
+# Java source code. This method should catch
+# errors raised during compilation and print a
+# diagnostic "interal error" type of message to
+# indicate where something went wrong.
 
-proc compileproc_entry_point { file_and_procs } {
+proc compileproc_entry_point { filename proc_tuple } {
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
 
-    set results [list]
+    set proc_name [lindex $proc_tuple 0]
+
+    if {$debug} {
+        puts "compileproc_entry_point $filename $proc_name"
+        puts "proc_tuple is \{$proc_tuple\}"
+    }
 
     set package [module_query PACKAGE]
     set compile_option [module_option_value compile]
@@ -487,96 +496,71 @@ proc compileproc_entry_point { file_and_procs } {
         puts "compile options is $compile_option"
     }
 
-    foreach pair $file_and_procs {
-        if {$debug} {
-            puts "pair is \"$pair\""
-        }
-        set filename [lindex $pair 0]
-        set proc_tuples [lindex $pair 1]
+    set class_name [lindex $proc_tuple 1]
 
-        set proc_names [list]
-        foreach tuple $proc_tuples {
-            set proc_name [lindex $tuple 0]
-            lappend proc_names $proc_name
-        }
+    set proc [lindex $proc_tuple 2]
+    set proc_list [lrange $proc 1 end]
 
-        if {$debug} {
-            puts "filename \"$filename\": proc_names \{$proc_names\}"
-        }
-
-        # Loop over each parsed proc tuple and generate code for each proc
-
-        foreach tuple $proc_tuples {
-            set proc_name [lindex $tuple 0]
-            set class_name [lindex $tuple 1]
-
-            set proc [lindex $tuple 2]
-            set proc_list [lrange $proc 1 end]
-
-            # If -compile or +compile is not set for specific proc, use module setting
-            set proc_compile_option [module_option_value compile $proc_name]
-            if {$proc_compile_option == {}} {
-                set proc_compile_option $compile_option
-            }
-
-            if {$proc_compile_option} {
-                if {[catch {
-                set class_data [compileproc_compile $proc_list $class_name \
-                    compileproc_query_module_flags]
-                } err]} {
-                    global _tjc
-
-                    if {$_tjc(parse_error) == ""} {
-                        # Not a handled parse error. Print lots of info.
-
-                        puts stderr "Interal error while compiling proc \"[lindex $proc_list 0]\" in file $filename"
-                        #puts stderr "$err"
-                        # Print stack trace until the call to compileproc_compile is found.
-                        set lines [split $::errorInfo "\n"]
-                        foreach line $lines {
-                            puts stderr $line
-                            if {[string first {compileproc_compile} $line] != -1} {
-                                break
-                            }
-                        }
-                    } else {
-                        # A parse error that was caught at the source. Print a
-                        # error that a user might find helpful.
-                        puts stderr "Parse error while compiling proc \"[lindex $proc_list 0]\" in file $filename"
-                        puts stderr $_tjc(parse_error)
-                        puts stderr "While parsing script text:"
-                        puts stderr $_tjc(parse_script)
-                    }
-
-                    return "ERROR"
-                }
-
-                if {$debug} {
-                    puts "generated $class_name data from proc \"$proc_name\""
-                    puts "class data is:\n$class_data"
-                }
-
-                lappend results [list $filename $proc_name $class_name $class_data]
-            } else {
-                if {[catch {
-                set class_data [compileproc_nocompile $proc_list $class_name]
-                } err]} {
-                    puts stderr "Interal error while generating proc [lindex $proc_list 0]"
-                    puts stderr "$err"
-                    return "ERROR"
-                }
-
-                if {$debug} {
-                    puts "generated $class_name data from proc \"$proc_name\""
-                    puts "class data is:\n$class_data"
-                }
-
-                lappend results [list $filename $proc_name $class_name $class_data]
-            }
-        }
+    # If -compile or +compile is not set for specific proc, use module setting
+    set proc_compile_option [module_option_value compile $proc_name]
+    if {$proc_compile_option == {}} {
+        set proc_compile_option $compile_option
     }
 
-    return $results
+    if {$proc_compile_option} {
+        if {[catch {
+            set class_data [compileproc_compile $proc_list $class_name \
+                compileproc_query_module_flags]
+        } err]} {
+            global _tjc
+
+            if {$_tjc(parse_error) == ""} {
+                # Not a handled parse error. Print lots of info.
+
+                puts stderr "Interal error while compiling proc \"$proc_name\" in file $filename"
+                #puts stderr "$err"
+                # Print stack trace until the call to compileproc_compile is found.
+                set lines [split $::errorInfo "\n"]
+                foreach line $lines {
+                    puts stderr $line
+                    if {[string first {compileproc_compile} $line] != -1} {
+                        break
+                    }
+                }
+            } else {
+                # A parse error that was caught at the source. Print a
+                # error that a user might find helpful.
+                puts stderr "Parse error while compiling proc \"$proc_name\" in file $filename"
+                puts stderr $_tjc(parse_error)
+                puts stderr "While parsing script text:"
+                puts stderr $_tjc(parse_script)
+            }
+
+            return "ERROR"
+        }
+
+        if {$debug} {
+            puts "generated $class_name data from proc \"$proc_name\""
+            puts "class data is:\n$class_data"
+        }
+
+        return [list $filename $proc_name $class_name $class_data]
+    } else {
+        if {[catch {
+            set class_data [compileproc_nocompile $proc_list $class_name]
+        } err]} {
+            puts stderr "Interal error while generating proc \"$proc_name\" in file $filename"
+            puts stderr "$err"
+            return "ERROR"
+        }
+
+        if {$debug} {
+            puts "generated $class_name data from proc \"$proc_name\""
+            puts "class data is:\n$class_data"
+        }
+
+        return [list $filename $proc_name $class_name $class_data]
+    }
 }
 
 
@@ -679,6 +663,9 @@ proc compileproc_init {} {
     compileproc_constant_cache_init
     emitter_indent_level zero
 
+    # Set to 1 to enabled debug output for each method invocation
+    set _compileproc(debug) 0
+
     # Init variables needed for recursive var and word iteration
     set _compileproc(var_scan_key) {}
     set _compileproc(var_scan_results) {}
@@ -728,6 +715,7 @@ proc compileproc_start { proc_list } {
     global _compileproc
 
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
 
     if {[llength $proc_list] != 3} {
         error "expected \{PROC_NAME PROC_ARGS PROC_BODY\} : passed [llength $proc_list] args"
@@ -789,6 +777,7 @@ proc compileproc_command_start_callback { key } {
     global _compileproc _compileproc_ckeys
 
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
 
     if {$debug} {
         puts "compileproc_command_start_callback $key"
@@ -826,6 +815,7 @@ proc compileproc_command_finish_callback { key } {
     global _compileproc
 
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
 
     if {$debug} {
         puts "compileproc_command_finish_callback $key"
@@ -841,6 +831,7 @@ proc compileproc_compile { proc_list class_name {config_init {}} } {
     global _compileproc_key_info
 
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
 
     if {$debug} {
         puts "compileproc_compile [lindex $proc_list 0] : \{$proc_list\} $class_name"
@@ -1003,6 +994,8 @@ proc compileproc_constant_cache_add { tstr } {
 
 proc compileproc_constant_cache_type { tstr } {
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
+
     if {$debug} {
         puts "compileproc_constant_cache_type \"$tstr\""
     }
@@ -1084,6 +1077,7 @@ proc compileproc_constant_cache_generate {} {
     global _compileproc_constant_cache
 
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
 
     set tlist [list]
 
@@ -1122,6 +1116,7 @@ proc compileproc_command_cache_init_generate {} {
     global _compileproc_command_cache
 
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
 
     if {$debug} {
         puts "compileproc_command_cache_init_generate"
@@ -1401,6 +1396,7 @@ proc compileproc_command_cache_this_check {} {
     global _compileproc_command_cache
 
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
 
     if {$debug} {
         puts "compileproc_command_cache_this_check"
@@ -1528,6 +1524,7 @@ proc compileproc_variable_cache_update_generate {} {
     global _compileproc_variable_cache
 
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
 
     set buffer ""
 
@@ -1671,6 +1668,7 @@ proc compileproc_scan_keys { keys } {
     global _compileproc _compileproc_key_info
 
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
 
     if {$debug} {
         puts "compileproc_scan_keys: $keys"
@@ -1965,6 +1963,8 @@ proc compileproc_scan_keys { keys } {
 
 proc compileproc_is_empty_command { keys } {
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
+
     if {$debug} {
         puts "compileproc_is_empty_command \{$keys\}"
     }
@@ -2026,6 +2026,7 @@ proc compileproc_childkey_validate { key } {
 proc compileproc_scan_variable { key script vstree } {
     global _compileproc
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
 
     if {[parse_is_scalar_variable $vstree]} {
         set vname [parse_get_scalar_variable $script $vstree]
@@ -2066,6 +2067,7 @@ proc _compileproc_scan_variable_iterator { script stree type values ranges } {
     upvar #0 _compileproc(var_scan_results) results
 
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
 
     if {$debug} {
         puts "_compileproc_scan_variable_iterator : \{$type\} \{$values\} \{$ranges\}"
@@ -2221,6 +2223,8 @@ proc compileproc_scan_word { key script wstree } {
     global _compileproc
 
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
+
     if {$debug} {
         puts "compileproc_scan_word $key \{$script\} \{$wstree\}"
     }
@@ -2294,6 +2298,7 @@ proc _compileproc_scan_word_iterate { script stree type values ranges } {
     global _compileproc
 
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
 
     upvar #0 _compileproc(word_scan_results) results
     set key $_compileproc(word_scan_key)
@@ -2381,6 +2386,7 @@ proc compileproc_argument_printable { key i } {
     global _compileproc_key_info
 
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
 
     if {$debug} {
         puts "compileproc_argument_printable $key"
@@ -2455,6 +2461,7 @@ proc compileproc_emit_invoke { key } {
     global _compileproc_key_info
 
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
 
     if {$debug} {
         puts "compileproc_emit_invoke $key"
@@ -2670,6 +2677,7 @@ proc compileproc_emit_argument { key i {declare_flag 1} {symbol_name {}} } {
     global _compileproc_key_info
 
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
 
     if {$debug} {
         puts "compileproc_emit_argument $key $i $declare_flag \{$symbol_name\}"
@@ -2768,6 +2776,7 @@ proc compileproc_get_argument_tuple { key i } {
     global _compileproc_key_info
 
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
 
     if {$debug} {
         puts "compileproc_get_argument_type $key $i"
@@ -2809,6 +2818,7 @@ proc compileproc_emit_variable { tmpsymbol vinfo {declare_flag 1} } {
     global _compileproc
 
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
 
     set buffer ""
     if {$declare_flag} {
@@ -2942,6 +2952,7 @@ proc compileproc_emit_scalar_variable_get { vname } {
     global _compileproc
 
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
 
     if {$debug} {
         puts "compileproc_emit_scalar_variable_get $vname"
@@ -2968,6 +2979,7 @@ proc compileproc_emit_scalar_variable_set { vname value } {
     global _compileproc
 
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
 
     if {$debug} {
         puts "compileproc_emit_scalar_variable_set $vname $value"
@@ -2991,6 +3003,7 @@ proc compileproc_emit_scalar_variable_set { vname value } {
 
 proc compileproc_emit_word { tmpsymbol winfo {declare_flag 1}} {
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
 
     if {$debug} {
         puts "compileproc_emit_word $tmpsymbol $winfo $declare_flag"
@@ -3045,6 +3058,8 @@ proc compileproc_emit_word { tmpsymbol winfo {declare_flag 1}} {
 
 proc compileproc_emit_word_element { winfo_element tmpsymbol append sbtmp {declare_flag 1} } {
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
+
     if {$debug} {
         puts "compileproc_emit_word_element \{$winfo_element\} $tmpsymbol $append $sbtmp $declare_flag"
     }
@@ -3183,6 +3198,7 @@ proc compileproc_is_container_command { key } {
 proc compileproc_can_inline_container { key } {
     global _compileproc _compileproc_ckeys
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
 
     if {$debug} {
         puts "compileproc_can_inline_container $key"
@@ -3289,6 +3305,7 @@ proc compileproc_can_inline_control { key } {
     global _compileproc_ckeys
 
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
 
     if {$debug} {
         puts "compileproc_can_inline_control $key"
@@ -3417,6 +3434,7 @@ proc compileproc_can_inline_command { key } {
     global _compileproc_ckeys
 
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
 
     if {$debug} {
         puts "compileproc_can_inline_command $key"
@@ -3562,6 +3580,7 @@ proc compileproc_emit_container { key } {
 
 proc compileproc_emit_container_if { key } {
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
 
     set buffer ""
 
@@ -3661,6 +3680,7 @@ proc compileproc_expr_evaluate_boolean_emit { key expr_index } {
     global _compileproc
 
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
 
     set buffer ""
 
@@ -3789,6 +3809,8 @@ proc compileproc_expr_evaluate { key expr_index } {
     global _compileproc _compileproc_key_info
 
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
+
     if {$debug} {
         puts "compileproc_expr_evaluate $key $expr_index"
     }
@@ -3920,6 +3942,8 @@ proc compileproc_expr_container_index { key in_expr_index } {
     global _compileproc_ckeys
 
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
+
     if {$debug} {
     puts "compileproc_expr_container_index $key $in_expr_index"
     }
@@ -3971,6 +3995,7 @@ proc compileproc_expr_evaluate_callback { script etree type values ranges } {
     global _compileproc
 
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
 
     # Init
     #set _compileproc(expr_eval_key) $key
@@ -4102,6 +4127,16 @@ proc compileproc_query_module_flags { proc_name } {
     global _compileproc
 
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
+
+    # Query global debug flag and set debug flag for this
+    # module if global flag is set. This is typically
+    # set via the -debug command line flag.
+    if {0 && $::_tjc(debug)} {
+        set _compileproc(debug) 1
+        set debug 1
+    }
+
     if {$debug} {
         puts "compileproc_query_module_flags $proc_name"
     }
@@ -4233,6 +4268,7 @@ proc compileproc_emit_container_while { key } {
     global _compileproc
 
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
 
     set buffer ""
 
@@ -4347,6 +4383,7 @@ proc compileproc_emit_container_for { key } {
     global _compileproc
 
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
 
     set buffer ""
 
@@ -4525,6 +4562,7 @@ proc compileproc_emit_container_catch { key } {
     global _compileproc
 
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
 
     if {$debug} {
         puts "compileproc_emit_container_catch $key"
@@ -4649,6 +4687,7 @@ proc compileproc_emit_container_foreach { key } {
     global _compileproc
 
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
 
     if {$debug} {
         puts "compileproc_emit_container_foreach $key"
@@ -4775,6 +4814,8 @@ proc compileproc_emit_container_foreach { key } {
 proc compileproc_container_foreach_loop_start { varlists list_symbols } {
     set buffer ""
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
+
     if {$debug} {
         puts "compileproc_container_foreach_loop_start: varlists \{$varlists\} : list_symbols \{$list_symbols\}"
     }
@@ -5006,6 +5047,7 @@ proc compileproc_container_foreach_loop_end { list_symbols } {
 
 proc compileproc_emit_container_switch { key } {
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
 
     set buffer ""
 
@@ -5207,7 +5249,8 @@ proc compileproc_emit_container_switch { key } {
 
 proc compileproc_emit_container_switch_constant { key string_tmpsymbol } {
     set debug 0
-    
+    if {$::_compileproc(debug)} {set debug 1}
+
     if {$debug} {
         puts "compileproc_emit_container_switch_constant $key $string_tmpsymbol"
     }
@@ -5422,6 +5465,7 @@ proc compileproc_push_controls_context { type can_break can_continue {can_return
     global _compileproc
 
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
 
     if {$debug} {
         puts "compileproc_push_controls_context $type $can_break\
@@ -5461,6 +5505,7 @@ proc compileproc_pop_controls_context { type } {
     global _compileproc
 
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
 
     if {$debug} {
         puts "compileproc_pop_controls_context $type"
@@ -5503,6 +5548,7 @@ proc compileproc_emit_control { key } {
     global _compileproc_ckeys
 
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
 
     if {$debug} {
         puts "compileproc_emit_control $key"
@@ -5599,6 +5645,8 @@ proc compileproc_emit_control_return { key } {
 
 proc compileproc_emit_container_expr { key } {
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
+
     if {$debug} {
         puts "compileproc_emit_container_expr $key"
     }
@@ -5624,6 +5672,7 @@ proc compileproc_expr_evaluate_result_emit { key } {
     global _compileproc_key_info
 
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
 
     if {$debug} {
         puts "compileproc_expr_evaluate_result_emit $key"
@@ -5655,6 +5704,8 @@ proc compileproc_expr_evaluate_result_emit { key } {
 
 proc compileproc_expr_evaluate_emit_unary_operator { op_tuple } {
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
+
     if {$debug} {
         puts "compileproc_expr_evaluate_emit_unary_operator \{$op_tuple\}"
     }
@@ -5808,6 +5859,8 @@ proc compileproc_expr_evaluate_emit_binary_operator { op_tuple } {
     global _compileproc
 
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
+    
     if {$debug} {
         puts "compileproc_expr_evaluate_emit_binary_operator \{$op_tuple\}"
     }
@@ -6107,6 +6160,8 @@ proc compileproc_expr_evaluate_emit_binary_operator { op_tuple } {
 
 proc compileproc_expr_evaluate_emit_ternary_operator { op_tuple } {
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
+
     if {$debug} {
         puts "compileproc_expr_evaluate_emit_ternary_operator \{$op_tuple\}"
     }
@@ -6171,6 +6226,8 @@ proc compileproc_expr_evaluate_emit_ternary_operator { op_tuple } {
 
 proc compileproc_expr_evaluate_emit_math_function { op_tuple } {
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
+
     if {$debug} {
         puts "compileproc_expr_evaluate_emit_math_function \{$op_tuple\}"
     }
@@ -6262,6 +6319,8 @@ proc compileproc_expr_evaluate_emit_math_function { op_tuple } {
 
 proc compileproc_expr_evaluate_emit_exprvalue { tuple {no_exprvalue_for_tclobject 0} } {
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
+
     if {$debug} {
         puts "compileproc_expr_evaluate_emit_exprvalue \{$tuple\} $no_exprvalue_for_tclobject"
     }
@@ -6482,6 +6541,8 @@ proc compileproc_expr_evaluate_emit_exprvalue { tuple {no_exprvalue_for_tclobjec
 
 proc compileproc_string_is_java_integer { tstr } {
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
+
     if {$debug} {
         puts "compileproc_string_is_java_integer \"$tstr\""
     }
@@ -6578,6 +6639,8 @@ proc compileproc_string_is_java_integer { tstr } {
 
 proc compileproc_string_is_java_double { tstr } {
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
+
     if {$debug} {
         puts "compileproc_string_is_java_double \"$tstr\""
     }
@@ -6648,6 +6711,8 @@ proc compileproc_string_is_java_double { tstr } {
 
 proc compileproc_parse_value { value } {
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
+
     if {$debug} {
         puts "compileproc_parse_value \"$value\""
     }
@@ -6736,6 +6801,7 @@ proc compileproc_can_inline_command_global { key } {
     global _compileproc
 
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
 
     if {$debug} {
         puts "compileproc_can_inline_command_global $key"
@@ -6805,6 +6871,7 @@ proc compileproc_can_inline_command_incr { key } {
     global _compileproc
 
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
 
     if {$debug} {
         puts "compileproc_can_inline_command_incr $key"
@@ -7263,6 +7330,7 @@ proc compileproc_can_inline_command_llength { key } {
     global _compileproc
 
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
 
     if {$debug} {
         puts "compileproc_can_inline_command_llength $key"
@@ -7320,6 +7388,7 @@ proc compileproc_can_inline_command_set { key } {
     global _compileproc
 
     set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
 
     if {$debug} {
         puts "compileproc_can_inline_command_set $key"

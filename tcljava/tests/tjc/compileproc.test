@@ -6354,11 +6354,13 @@ OPTIONS -compile
     module_parse $data
     module_options_validate
 
-    set file_and_procs [list]
     set proc_list {{one OneCmd {proc one {} {}}} {two TwoCmd {proc two {} {}}}}
-    lappend file_and_procs [list foo.tcl $proc_list]
+    set filename foo.tcl
 
-    set results [compileproc_entry_point $file_and_procs]
+    set results [list]
+    lappend results [compileproc_entry_point $filename [lindex $proc_list 0]]
+    lappend results [compileproc_entry_point $filename [lindex $proc_list 1]]
+    set results
     list \
         [lrange [lindex $results 0] 0 end-1] \
         [lrange [lindex $results 1] 0 end-1]
@@ -6374,11 +6376,12 @@ OPTIONS -compile
     module_parse $data
     module_options_validate
 
-    set file_and_procs [list]
     set proc_list {{one foo.bar.OneCmd {proc one {} {}}}}
-    lappend file_and_procs [list foo.tcl $proc_list]
+    set filename foo.tcl
 
-    set results [compileproc_entry_point $file_and_procs]
+    set results [list]
+    lappend results [compileproc_entry_point $filename [lindex $proc_list 0]]
+    set results
     list \
         [lrange [lindex $results 0] 0 end-1]
 } {{foo.tcl one foo.bar.OneCmd}}

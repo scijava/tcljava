@@ -30,6 +30,13 @@ TCLJAVA_ENABLE_JACL_OR_TCLBLEND
 
 TCLJAVA_WITH_TCL
 
+if test "$ac_cv_tcl_win32" = ""; then
+    # Make sure ac_cv_tcl_win32 is set for Jacl under msys
+    if (uname -s | grep MINGW > /dev/null) ; then
+        ac_cv_tcl_win32=yes
+    fi
+fi
+
 # Process the --with-thread command line option
 
 TCLJAVA_WITH_THREAD
@@ -345,6 +352,15 @@ else
 fi
 AC_SUBST(THREAD_BIN_DIR_NATIVE)
 
+dnl Used in the Makefile to detect when Win32 specific code needs
+dnl to be run.
+
+if test "$ac_cv_tcl_win32" = "yes"; then
+    WIN32_HOST=1
+else
+    WIN32_HOST=0
+fi
+AC_SUBST(WIN32_HOST)
 
 AC_SUBST(JAVA)
 AC_SUBST(JAVA_G)

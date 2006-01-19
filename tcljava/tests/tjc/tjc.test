@@ -42,7 +42,11 @@ proc tjc_exec { argl } {
     # since tjc script is a Mingw bash script and not a valid
     # Win32 native executable type. Also note that tjc.bat
     # needs to exec jaclsh.bat so both of these
-    # programs need to appear on the PATH.
+    # programs need to appear on the PATH. Also note that
+    # it is not possible to pass environment variables
+    # from Jacl since Java provides no way to set an env var.
+    # This means that running these tests only works after
+    # "make install" has been run.
 
     if {$tcl_platform(platform) == "java" \
             && $tcl_platform(host_platform) == "windows"} {
@@ -93,6 +97,9 @@ proc test_jar_list { jarname } {
 # Define test name before test
 set testname tjctest1
 set testcmdname Tjctest1Cmd
+
+#puts "tjc.test running from CWD [pwd]"
+#puts "jdk.cfg exists is [file exists jdk.cfg]"
 
 tcltest::test tjc-1.1 {tjc program test : named Java package} {
     set CWD [pwd]

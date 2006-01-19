@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: main.tcl,v 1.1 2005/12/20 23:00:11 mdejong Exp $
+#  RCS: @(#) $Id: main.tcl,v 1.2 2006/01/19 03:11:04 mdejong Exp $
 #
 #
 
@@ -38,6 +38,13 @@ proc validate_options {} {
     global _tjc
     global _cmdline
 
+    if {![info exists _tjc(debug)]} {
+        set _tjc(debug) 0
+    }
+    if {![info exists _tjc(progress)]} {
+        set _tjc(progress) 0
+    }
+
     foreach option $_cmdline(options) {
         # If option string does not start with a - character
         # then it is not a valid option.
@@ -47,11 +54,16 @@ proc validate_options {} {
             # Valid option
             switch -- $option {
                 "-debug" {
-                    # Print extra debug info
+                    # Print debug info for each method
+                    set _tjc(debug) 1
                 }
                 "-nocompile" {
                     # Don't invoke javac, just emit code and exit
                     set _tjc(nocompile) 1
+                }
+                "-progress" {
+                    # Don't invoke javac, just emit code and exit
+                    set _tjc(progress) 1
                 }
             }
         } else {
@@ -66,12 +78,21 @@ proc validate_options {} {
 proc process_jdk_config {} {
     global _tjc env
 
+    set debug 0
+    if {$_tjc(debug)} {
+        set debug 1
+    }
+
     # Support for running tjc executable from build dir
     if {[info exists env(TJC_LIBRARY)] && \
             [info exists env(TJC_BUILD_DIR)]} {
         set jdk_cfg $env(TJC_BUILD_DIR)/jdk.cfg
     } else {
         set jdk_cfg [file join $_tjc(root) bin jdk.cfg]
+    }
+
+    if {$debug || $_tjc(progress)} {
+        puts "loading $jdk_cfg"
     }
 
     set res [jdk_config_parse_file $jdk_cfg]
@@ -87,6 +108,15 @@ proc process_jdk_config {} {
 # Test out each jdk tool to make sure it actually works.
 
 proc check_jdk_config {} {
+    set debug 0
+    if {$::_tjc(debug)} {
+        set debug 1
+    }
+
+    if {$debug} {
+        puts "testing jdk tools"
+    }
+
     set fname [jdk_tool_javac_save Test {
 public class Test {}
     }]
@@ -102,6 +132,10 @@ public class Test {}
         return -1
     }
 
+    if {$debug} {
+        puts "jdk tools working"
+    }
+
     return 0
 }
 
@@ -109,9 +143,12 @@ proc process_module_file { filename } {
     global _tjc
 
     set debug 0
+    if {$_tjc(debug)} {
+        set debug 1
+    }
 
-    if {$debug} {
-    puts "process_module_file $filename"
+    if {$debug || $_tjc(progress)} {
+        puts "processing module file $filename"
     }
 
     # Read in module file configuration
@@ -166,13 +203,14 @@ proc process_module_file { filename } {
     # Init Tcl proc name to Java class name module
     nameproc_init $pkg
 
-    # List of {FILENAME PARSED_PROCS} for each parse file
+    # file_and_procs is a list of {FILENAME PARSED_PROCS} for each parsed file
     set file_and_procs [list]
+
     set num_procs_parsed 0
 
     foreach source_file $source_files {
-        if {$debug} {
-        puts "processing procs in source \"$source_file\""
+        if {$debug || $_tjc(progress)} {
+            puts "scanning Tcl procs in $source_file"
         }
 
         set script [tjc_util_file_read $source_file]
@@ -186,7 +224,7 @@ proc process_module_file { filename } {
         if {[catch {
         set results [parseproc_start $script $source_file]
         } err]} {
-            puts stderr "[module_get_filename]: Interal error while parsing Tcl file $source_file:"
+            puts stderr "[module_get_filename]: Internal error while parsing Tcl file $source_file:"
             puts stderr "$err"
             return -1
         }
@@ -195,7 +233,7 @@ proc process_module_file { filename } {
         set proc_tuples [lindex $results 1]
         incr num_procs_parsed [llength $proc_tuples]
 
-        if {$debug} {
+        if {0 && $debug} {
         puts "got mod_script \"$mod_script\""
         puts "got proc_tuples \{$proc_tuples\}"
         }
@@ -212,6 +250,8 @@ proc process_module_file { filename } {
         puts "wrote proc parsed script \"$script_out\""
         }
     }
+    # release memory in case these vars are really large
+    unset script mod_script
 
     # If no procs were parsed out of the Tcl files, generate
     # an error. It is unlikely that the user intended to
@@ -222,33 +262,69 @@ proc process_module_file { filename } {
         return -1
     }
 
-    # Generate Java code for each proc found in the given file.
-    # This method return a list of tuples of the following format:
-    # {TCL_FILENAME PROC_NAME JAVA_CLASSNAME JAVA_SOURCE}
+    # Generate Java code for each proc discovered while scanning
+    # Tcl files identified in the module file. Invoke the
+    # compileproc_entry_point method to generate Java source.
+    # The following tuple is returned by compileproc_entry_point.
+    #
+    # {TCL_FILENAME PROC_NAME JAVA_CLASSNAME JAVA_SOURCE}.
+    #
+    # Previously, all the procs generated from a file would be
+    # passed to compileproc_entry_point, but that caused serious
+    # problems with memory usage because a large amount of code
+    # could be generated for all the procs in a file. Now, each
+    # proc's code is generated and written to disk.
 
     set java_files [list]
 
-    set tuples [compileproc_entry_point $file_and_procs]
-    if {$tuples == "ERROR"} {
-        # Error caught in compileproc_entry_point, diagnostic
-        # message already printed so stop compilation now.
-        return -1
+    if {$debug} {
+        puts "there are [llength $file_and_procs] file_and_procs pairs"
+        puts "parsed a total of $num_procs_parsed Tcl procs"
     }
-    #if {[catch {
-    #} err]} {
-    #    puts stderr "compileproc error: $err"
-    #    return -1
-    #}
 
-    foreach tuple $tuples {
-        set tcl_filename [lindex $tuple 0]
-        set proc_name [lindex $tuple 1]
-        set java_class [lindex $tuple 2]
-        set java_source [lindex $tuple 3]
+    foreach pair $file_and_procs {
+        set proc_filename [lindex $pair 0]
+        set proc_tuples [lindex $pair 1]
 
-        set java_filename [jdk_tool_javac_save $java_class $java_source]
-        lappend java_files $java_filename
+        if {$debug} {
+            puts "processing proc_tuples for file $proc_filename"
+            puts "there are [llength $proc_tuples] proc_tuples"
+            puts "proc_tuples is [string length $proc_tuples] bytes long"
+        }
+        if {$_tjc(progress)} {
+            puts "found [llength $proc_tuples] Tcl procs in $proc_filename"
+        }
+
+        foreach proc_tuple $proc_tuples {
+            set tuple [compileproc_entry_point $proc_filename $proc_tuple]
+
+            if {$tuple == "ERROR"} {
+                # Error caught in compileproc_entry_point, diagnostic
+                # message already printed so stop compilation now.
+                return -1
+            }
+
+            # Write generated code for proc to Java file
+
+            set tcl_filename [lindex $tuple 0]
+            set proc_name [lindex $tuple 1]
+            set java_class [lindex $tuple 2]
+            set java_source [lindex $tuple 3]
+
+            set java_filename [jdk_tool_javac_save $java_class $java_source]
+
+            if {$debug || $_tjc(progress)} {
+                puts "Tcl proc \"$proc_name defined\" in\
+                    [file tail $tcl_filename] generated\
+                    [string length $java_source] bytes of Java source"
+            }
+
+            lappend java_files $java_filename
+        }
     }
+    # release memory just in case the variable holds a lot of memory
+    unset java_source
+    unset file_and_procs
 
     # Generate Java code for TJCExtension class for the package.
     # This code assumes that we have already checked that no two
@@ -277,6 +353,10 @@ proc process_module_file { filename } {
         # Don't compile or create JAR file, just exit
         puts "Skipped JAVAC compile step since -nocompile flags was passed"
         return 0
+    }
+
+    if {$debug || $_tjc(progress)} {
+        puts "Compiling [llength $java_files] file with javac"
     }
 
     set result [jdk_tool_javac $java_files]
@@ -322,6 +402,11 @@ proc process_module_file { filename } {
         file delete $src_jar_filename
     }
     file rename $src_jar_location $src_jar_filename
+
+    if {$debug || $_tjc(progress)} {
+        puts "Created [file tail $jar_filename]"
+        puts "Created [file tail $src_jar_filename]"
+    }
 
     # Nuke TJC subdirectory
     jdk_tool_cleanup

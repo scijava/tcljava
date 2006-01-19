@@ -271,7 +271,7 @@ PACKAGE_STRING=
 PACKAGE_BUGREPORT=
 
 ac_unique_file="ChangeLog"
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS THREAD_BIN_DIR JIKES JAVAC JAVA JAVA_G JAVAH JAR JDB DDD GDB CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT SHLIB_CFLAGS SHLIB_LD SHLIB_LD_LIBS SHLIB_PREFIX SHLIB_SUFFIX SHLIB_VERSION TCL_BUILD_LIB_SPEC TCL_CFLAGS TCL_DEFS TCL_LIBS TCL_VERSION TCL_SRC_DIR TCL_BIN_DIR TCL_LD_SEARCH_FLAGS TCL_DBGX TCLJAVA_DBGX JAVA_INCLUDE_FLAGS JAVA_LIB_FLAGS JAVA_LIB_RUNTIME_PATH TCLBLEND_LD_PRELOAD TCLBLEND_LD_BIND_NOW WISH TCLSH TCL_BIN_TCLSH TCL_INSTALL_LIB_DIR BUILD_DIR TOP_DIR TOP_DIR_NATIVE BUILD_DIR_NATIVE THREAD_BIN_DIR_NATIVE JAVA_CLASSPATH JAVA_FLAGS JAVAC_FLAGS JAVAC_D_FLAG JAVA_G_FLAGS JDB_ATTACH_FLAGS JAR_EXTRACT_FLAGS JAR_COMPRESS_FLAGS JAR_NOCOMPRESS_FLAGS TCLJAVA_VERSION TCLJAVA_NODOT_VERSION JAVA_NATIVE PREFIX_NATIVE EXEC_PREFIX_NATIVE TCLSH_NATIVE JAVA_CLASSPATH_NATIVE JAVA_LIB_RUNTIME_PATH_NATIVE TCLJAVA LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS THREAD_BIN_DIR JIKES JAVAC JAVA JAVA_G JAVAH JAR JDB DDD GDB CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT SHLIB_CFLAGS SHLIB_LD SHLIB_LD_LIBS SHLIB_PREFIX SHLIB_SUFFIX SHLIB_VERSION TCL_BUILD_LIB_SPEC TCL_CFLAGS TCL_DEFS TCL_LIBS TCL_VERSION TCL_SRC_DIR TCL_BIN_DIR TCL_LD_SEARCH_FLAGS TCL_DBGX TCLJAVA_DBGX JAVA_INCLUDE_FLAGS JAVA_LIB_FLAGS JAVA_LIB_RUNTIME_PATH TCLBLEND_LD_PRELOAD TCLBLEND_LD_BIND_NOW WISH TCLSH TCL_BIN_TCLSH TCL_INSTALL_LIB_DIR BUILD_DIR TOP_DIR TOP_DIR_NATIVE BUILD_DIR_NATIVE THREAD_BIN_DIR_NATIVE WIN32_HOST JAVA_CLASSPATH JAVA_FLAGS JAVAC_FLAGS JAVAC_D_FLAG JAVA_G_FLAGS JDB_ATTACH_FLAGS JAR_EXTRACT_FLAGS JAR_COMPRESS_FLAGS JAR_NOCOMPRESS_FLAGS TCLJAVA_VERSION TCLJAVA_NODOT_VERSION JAVA_NATIVE PREFIX_NATIVE EXEC_PREFIX_NATIVE TCLSH_NATIVE JAVA_CLASSPATH_NATIVE JAVA_LIB_RUNTIME_PATH_NATIVE TCLJAVA LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -1879,6 +1879,13 @@ Make sure Tcl was configured with --enable-shared." >&2;}
 fi
 
 
+if test "$ac_cv_tcl_win32" = ""; then
+    # Make sure ac_cv_tcl_win32 is set for Jacl under msys
+    if (uname -s | grep MINGW > /dev/null) ; then
+        ac_cv_tcl_win32=yes
+    fi
+fi
+
 # Process the --with-thread command line option
 
 
@@ -2382,7 +2389,7 @@ echo "${ECHO_T}$ac_java_classpath" >&6
 echo $ECHO_N "checking to see if the java compiler works... $ECHO_C" >&6
 
     cat << \EOF > conftest.java
-// #line 2385 "configure"
+// #line 2392 "configure"
 
 
 public class conftest {
@@ -2453,7 +2460,7 @@ echo $ECHO_N "checking type of jvm... $ECHO_C" >&6
     if test "x$ac_java_jvm_name" = "x" ; then
 
     cat << \EOF > conftest.java
-// #line 2456 "configure"
+// #line 2463 "configure"
 import kaffe.lang.Application;
 
 public class conftest {
@@ -2480,7 +2487,7 @@ EOF
     if test "x$ac_java_jvm_name" = "x" ; then
 
     cat << \EOF > conftest.java
-// #line 2483 "configure"
+// #line 2490 "configure"
 import gnu.java.io.EncodingManager;
 
 public class conftest {
@@ -2529,7 +2536,7 @@ echo $ECHO_N "checking java API version... $ECHO_C" >&6
 
 
     cat << \EOF > conftest.java
-// #line 2532 "configure"
+// #line 2539 "configure"
 import java.lang.StrictMath;
 
 public class conftest {
@@ -2557,7 +2564,7 @@ EOF
     if test "x$ac_java_jvm_version" = "x" ; then
 
     cat << \EOF > conftest.java
-// #line 2560 "configure"
+// #line 2567 "configure"
 import java.lang.Package;
 
 public class conftest {
@@ -2586,7 +2593,7 @@ EOF
     if test "x$ac_java_jvm_version" = "x" ; then
 
     cat << \EOF > conftest.java
-// #line 2589 "configure"
+// #line 2596 "configure"
 import java.lang.reflect.Method;
 
 public class conftest {
@@ -5176,6 +5183,13 @@ fi
 
 
 
+if test "$ac_cv_tcl_win32" = "yes"; then
+    WIN32_HOST=1
+else
+    WIN32_HOST=0
+fi
+
+
 
 
 
@@ -5932,6 +5946,7 @@ s,@TOP_DIR@,$TOP_DIR,;t t
 s,@TOP_DIR_NATIVE@,$TOP_DIR_NATIVE,;t t
 s,@BUILD_DIR_NATIVE@,$BUILD_DIR_NATIVE,;t t
 s,@THREAD_BIN_DIR_NATIVE@,$THREAD_BIN_DIR_NATIVE,;t t
+s,@WIN32_HOST@,$WIN32_HOST,;t t
 s,@JAVA_CLASSPATH@,$JAVA_CLASSPATH,;t t
 s,@JAVA_FLAGS@,$JAVA_FLAGS,;t t
 s,@JAVAC_FLAGS@,$JAVAC_FLAGS,;t t

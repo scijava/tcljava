@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.46 2006/01/11 21:24:49 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.47 2006/01/19 03:11:04 mdejong Exp $
 
 SHELL = /bin/sh
 
@@ -79,7 +79,7 @@ TCL_LIB_FLAGS		= @TCL_BUILD_LIB_SPEC@ @TCL_LIBS@
 # A colon seperated list of directories to pass to rld
 JAVA_LIB_RUNTIME_PATH	= @JAVA_LIB_RUNTIME_PATH@
 
-
+WIN32_HOST = @WIN32_HOST@
 
 BUILD_DIR		= @BUILD_DIR@
 BUILD_DIR_NATIVE	= @BUILD_DIR_NATIVE@
@@ -771,12 +771,24 @@ tjc.build: tjc.clean jacl.check
 		$(JAVAC_D_FLAG) $(TJC_BUILD_DIR) \
 		tcl/lang/*.java
 	@rm -f jdk.cfg
-	@i=`sh $(TOP_DIR)/mingw_path.sh "$(JAVAC)"` ;\
-	echo "JAVAC = $$i" >> jdk.cfg
-	@i=`sh $(TOP_DIR)/mingw_path.sh "$(JAR)"` ;\
-	echo "JAR = $$i" >> jdk.cfg
-	@i=`sh $(TOP_DIR)/mingw_paths.sh "$(TJC_CLASSPATH)"` ;\
-	echo "CLASSPATH = $$i" >> jdk.cfg
+	@if test "$(WIN32_HOST)" = "1" ; then \
+	    i=`sh $(TOP_DIR)/mingw_path.sh "$(JAVAC)"` ;\
+	    echo "JAVAC = $$i" >> jdk.cfg ;\
+	else \
+	    echo "JAVAC = $(JAVAC)" >> jdk.cfg ;\
+	fi
+	@if test "$(WIN32_HOST)" = "1" ; then \
+	    i=`sh $(TOP_DIR)/mingw_path.sh "$(JAR)"` ;\
+	    echo "JAR = $$i" >> jdk.cfg ;\
+	else \
+	    echo "JAR = $(JAR)" >> jdk.cfg ;\
+	fi
+	@if test "$(WIN32_HOST)" = "1" ; then \
+	    i=`sh $(TOP_DIR)/mingw_paths.sh "$(TJC_CLASSPATH)"` ;\
+	    echo "CLASSPATH = $$i" >> jdk.cfg ;\
+	else \
+	    echo "CLASSPATH = $(CLASSPATH)" >> jdk.cfg ;\
+	fi
 
 # tjc.jar needs to depend on tjc.build so that the
 # classfiles get rebuilt each time the jar is built
@@ -820,8 +832,29 @@ tjc.install: tjc.check tjcsrc.jar
 	    $(INSTALL_PROGRAM) $(BUILD_DIR)/tjc.bat $(BIN_INSTALL_DIR) ;\
 	    chmod 755 $(BIN_INSTALL_DIR)/tjc.bat ;\
 	fi
-	@echo "Installing jdk.cfg in $(BIN_INSTALL_DIR)"
-	@$(INSTALL_DATA) $(BUILD_DIR)/jdk.cfg $(BIN_INSTALL_DIR)
+	@echo "Creating jdk.cfg in $(BIN_INSTALL_DIR)"
+	@rm -f $(BIN_INSTALL_DIR)/jdk.cfg
+	@if test "$(WIN32_HOST)" = "1" ; then \
+	    i=`sh $(TOP_DIR)/mingw_path.sh "$(JAVAC)"` ;\
+	    echo "JAVAC = $$i" >> $(BIN_INSTALL_DIR)/jdk.cfg ;\
+	else \
+	    echo "JAVAC = $(JAVAC)" >> $(BIN_INSTALL_DIR)/jdk.cfg ;\
+	fi
+	@if test "$(WIN32_HOST)" = "1" ; then \
+	    i=`sh $(TOP_DIR)/mingw_path.sh "$(JAR)"` ;\
+	    echo "JAR = $$i" >> $(BIN_INSTALL_DIR)/jdk.cfg ;\
+	else \
+	    echo "JAR = $(JAR)" >> $(BIN_INSTALL_DIR)/jdk.cfg ;\
+	fi
+	@i="$(XP_TCLJAVA_INSTALL_DIR)/jacl.jar" ;\
+	i="$$i:$(XP_TCLJAVA_INSTALL_DIR)/tcljava.jar" ;\
+	i="$$i:$(XP_TCLJAVA_INSTALL_DIR)/tjc.jar" ;\
+	if test "$(WIN32_HOST)" = "1" ; then \
+	    i=`sh $(TOP_DIR)/mingw_paths.sh "$$i"` ;\
+	    echo "CLASSPATH = $$i" >> $(BIN_INSTALL_DIR)/jdk.cfg ;\
+	else \
+	    echo "CLASSPATH = $$i" >> $(BIN_INSTALL_DIR)/jdk.cfg ;\
+	fi
 
 tjc.uninstall:
 	@echo "#"
@@ -1262,7 +1295,7 @@ ddd_tclblend : tclblend.check
 gdb_tclblend : tclblend.check test_$(TCLJAVA).check
 	@echo "To run test: cd $(TOP_DIR_NATIVE)/tests ; source all.tcl"
 	@rm -f gdb.run
-	@if test "$(SHLIB_SUFFIX)" = ".dll" ; then \
+	@if test "$(WIN32_HOST)" = "1" ; then \
 	    i=`sh $(TOP_DIR)/mingw_paths.sh "${BUILD_DIR}:${TCL_BIN_DIR}:${THREAD_BIN_DIR}:${JAVA_LIB_RUNTIME_PATH}:${PATH}"` ;\
 	    echo "set env PATH=$$i" >> gdb.run ;\
 	else \
@@ -1272,7 +1305,7 @@ gdb_tclblend : tclblend.check test_$(TCLJAVA).check
 	    echo "set env SHLIB_PATH=${BUILD_DIR}:${TCL_BIN_DIR}:${THREAD_BIN_DIR}:${JAVA_LIB_RUNTIME_PATH}:${SHLIB_PATH}" >> gdb.run ;\
 	    echo "set env KAFFELIBRARYPATH=${BUILD_DIR}:${TCL_BIN_DIR}:${THREAD_BIN_DIR}:${JAVA_LIB_RUNTIME_PATH}" >> gdb.run ;\
 	fi
-	@if test "$(SHLIB_SUFFIX)" = ".dll" ; then \
+	@if test "$(WIN32_HOST)" = "1" ; then \
 	    i=`sh $(TOP_DIR)/mingw_path.sh "${TCL_LIBRARY_DIR}"` ;\
 	    echo "set env TCL_LIBRARY=$$i" >> gdb.run ;\
 	    echo "set env TCLLIBPATH=${TCLLIBPATH}" >> gdb.run ;\
