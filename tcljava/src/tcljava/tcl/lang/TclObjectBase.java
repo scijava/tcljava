@@ -1,5 +1,5 @@
 /*
- * TclObject.java
+ * TclObjectBase.java
  *
  * Copyright (c) 1997 Sun Microsystems, Inc.
  *
@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclObject.java,v 1.12 2005/11/16 21:08:11 mdejong Exp $
+ * RCS: @(#) $Id: TclObjectBase.java,v 1.1 2006/01/20 00:32:38 mdejong Exp $
  *
  */
 
@@ -23,10 +23,11 @@ import java.util.Enumeration;
  * reprsentation of this object in another form. The type of the internal
  * rep of Tcl objects can mutate. This class provides the storage of the
  * string rep and the internal rep, as well as the facilities for mutating
- * the internal rep.
+ * the internal rep. The Jacl or TclBlend specific implementation of
+ * TclObject will extend this abstract base class.
  */
 
-public final class TclObject {
+abstract class TclObjectBase {
     // Internal representation of the object. A valid TclObject
     // will always have a non-null internal rep.
 
@@ -53,7 +54,7 @@ public final class TclObject {
      *
      * @param rep the initial InternalRep for this object.
      */
-    public TclObject(InternalRep rep) {
+    public TclObjectBase(InternalRep rep) {
 	if (rep == null) {
 	    throw new TclRuntimeError("null InternalRep");
 	}
@@ -61,7 +62,7 @@ public final class TclObject {
 	stringRep = null;
 	refCount = 0;
 
-	if (TclObject.saveObjRecords) {
+	if (TclObjectBase.saveObjRecords) {
 	    String key = "TclObject";
 	    Integer num = (Integer) TclObject.objRecordMap.get(key);
 	    if (num == null) {
@@ -81,7 +82,7 @@ public final class TclObject {
      * @param rep the initial InternalRep for this object.
      * @param s the initial string rep for this object.
      */
-    protected TclObject(TclString rep, String s) {
+    protected TclObjectBase(TclString rep, String s) {
 	if (rep == null) {
 	    throw new TclRuntimeError("null InternalRep");
 	}
@@ -89,7 +90,7 @@ public final class TclObject {
 	stringRep = s;
 	refCount = 0;
 
-	if (TclObject.saveObjRecords) {
+	if (TclObjectBase.saveObjRecords) {
 	    String key = "TclObject";
 	    Integer num = (Integer) TclObject.objRecordMap.get(key);
 	    if (num == null) {
@@ -119,34 +120,13 @@ public final class TclObject {
      *
      * @param rep the new internal rep.
      */
-    public final void setInternalRep(InternalRep rep) {
+    public void setInternalRep(InternalRep rep) {
 	disposedCheck();
 	if (rep == null) {
 	    throw new TclRuntimeError("null InternalRep");
 	}
 	if (rep == internalRep) {
 	    return;
-	}
-
-	// In the special case where the internal representation is a CObject,
-	// we want to call the special interface to convert the underlying
-	// native object into a reference to the Java TclObject.  Note that
-	// this test will always fail if we are not using the native
-	// implementation. Also note that the makeReference method
-	// will do nothing in the case where the Tcl_Obj inside the
-	// CObject was originally allocated in Java. When converting
-	// to a CObject we need to break the link made earlier.
-
-	if ((internalRep instanceof CObject) && !(rep instanceof CObject)) {
-	    // We must ensure that the string rep is copied into Java
-	    // before we lose the reference to the underlying CObject.
-	    // Otherwise we will lose the original string information
-	    // when the backpointer is lost.
-
-	    if (stringRep == null) {
-		stringRep = internalRep.toString();
-	    }
-	    ((CObject) internalRep).makeReference(this);
 	}
 
         //System.out.println("TclObject setInternalRep for \"" + stringRep + "\"");
@@ -189,10 +169,12 @@ public final class TclObject {
 
     /**
      * Returns true if the TclObject is shared, false otherwise.
-     * @return true if the TclObject is shared, false otherwise.
+     *
      */
     public final boolean isShared() {
-	disposedCheck();
+        // No disposedCheck() needed since calling could
+        // would either modify the object or duplicate it,
+        // and both of those operations do the disposed check.
 	return (refCount > 1);
     }
 
@@ -239,7 +221,7 @@ public final class TclObject {
     public final TclObject takeExclusive() throws TclRuntimeError {
 	disposedCheck();
 	if (refCount == 1) {
-	    return this;
+	    return (TclObject) this;
 	} else if (refCount > 1) {
 	    if (internalRep instanceof TclString) {
 		if (stringRep == null) {
@@ -258,71 +240,6 @@ public final class TclObject {
     }
 
     /**
-     * Tcl_IncrRefCount -> preserve
-     *
-     * Increments the refCount to indicate the caller's intent to
-     * preserve the value of this object. Each preserve() call must be matched
-     * by a corresponding release() call.
-     *
-     * @exception TclRuntimeError if the object has already been deallocated.
-     */
-    public final void preserve() throws TclRuntimeError {
-	disposedCheck();
-	if (internalRep instanceof CObject) {
-	    ((CObject) internalRep).incrRefCount();
-	}
-        _preserve();
-    }
-
-    /**
-     * _preserve
-     *
-     * Private implementation of preserve() method.
-     * This method will be invoked from Native code
-     * to change the TclObject's ref count without
-     * effecting the ref count of a CObject.
-     */
-    private final void _preserve() throws TclRuntimeError {
-	refCount++;
-    }
-
-    /**
-     * Tcl_DecrRefCount -> release
-     *
-     * Decrements the refCount to indicate that the caller is no longer
-     * interested in the value of this object. If the refCount reaches 0,
-     * the obejct will be deallocated.
-     */
-    public final void release() {
-	disposedCheck();
-	if (internalRep instanceof CObject) {
-	    ((CObject) internalRep).decrRefCount();
-	}
-	_release();
-    }
-
-    /**
-     * _release
-     *
-     * Private implementation of preserve() method.
-     * This method will be invoked from Native code
-     * to change the TclObject's ref count without
-     * effecting the ref count of a CObject.
-     */
-    private final void _release() {
-	refCount--;
-	if (refCount <= 0) {
-	    internalRep.dispose();
-
-	    // Setting the internalRep to null means any further
-	    // use of the object will generate an error in disposedCheck().
-
-	    internalRep = null;
-	    stringRep = null;
-	}
-    }
-
-    /**
      * Returns the refCount of this object.
      *
      * @return refCount.
@@ -332,36 +249,17 @@ public final class TclObject {
     }
 
     /**
-     * Returns the Tcl_Obj* objPtr member for a CObject or TclList.
-     * This method is only called from Tcl Blend.
+     * Dispose of the TclObject when the refCount reaches 0.
+     *
      */
+    protected final void disposeObject() {
+	internalRep.dispose();
 
-    final long getCObjectPtr() {
-	if (internalRep instanceof CObject) {
-	    return ((CObject) internalRep).getCObjectPtr();
-	} else {
-	    return 0;
-	}
-    }
+	// Setting the internalRep to null means any further
+	// use of the object will generate an error in disposedCheck().
 
-    /**
-     * Returns 2 if the internal rep is a TclList.
-     * Returns 1 if the internal rep is a CObject.
-     * Otherwise returns 0.
-     * This method provides an optimization over
-     * invoking getInternalRep() and two instanceof
-     * checks via JNI. It is only used by Tcl Blend.
-     */
-
-    final int getCObjectInst() {
-	if (internalRep instanceof CObject) {
-	    if (internalRep instanceof TclList)
-	        return 2;
-	    else
-	        return 1;
-	} else {
-	    return 0;
-	}
+	internalRep = null;
+	stringRep = null;
     }
 
     /**
@@ -369,10 +267,14 @@ public final class TclObject {
      * disposed of because the last ref was released.
      */
 
-    private final void disposedCheck() {
+    protected final void disposedCheck() {
 	if (internalRep == null) {
-	    throw new TclRuntimeError("TclObject has been deallocated");
+	    disposedError();
 	}
+    }
+
+    protected final void disposedError() {
+	throw new TclRuntimeError("TclObject has been deallocated");
     }
 
     /**
@@ -383,8 +285,8 @@ public final class TclObject {
      * this method to return a useful value.
      */
 
-    public static String getObjRecords() {
-        if (TclObject.saveObjRecords) {
+    static String getObjRecords() {
+        if (TclObjectBase.saveObjRecords) {
             StringBuffer sb = new StringBuffer(64);
             for ( Enumeration keys = TclObject.objRecordMap.keys() ;
                     keys.hasMoreElements() ; ) {

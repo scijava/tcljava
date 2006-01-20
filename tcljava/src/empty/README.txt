@@ -7,11 +7,12 @@ When building, the classes below
  tcl/lang/Interp.class
  tcl/lang/Notifier.class
  tcl/lang/TclList.class
+ tcl/lang/TclObject.class
  tcl/lang/Util.class
 
 get incorrectly included in tcljava.jar.  These .class files belong
-in tclblend.jar.  If these .class files are in tcljava.jar, then we
-cannot share the same tcljava.jar file between Jacl and Tcl Blend.
+in tclblend.jar or jacl.jar.  If these .class files are in tcljava.jar,
+then we cannot share the same tcljava.jar file between Jacl and Tcl Blend.
 
 Configuring with --srcdir= and compiling in a separate directory
 is the main cause of this bug, compiling so that the .class files
@@ -37,6 +38,7 @@ javac -d tmp1 tcl/lang/*.java
 cp tmp1/tcl/lang/Interp.class \
    tmp1/tcl/lang/TclList.class \
    tmp1/tcl/lang/CObject.class \
+   tmp1/tcl/lang/TclObject.class \
    tmp1/tcl/lang/Notifier.class \
    tmp1/tcl/lang/Util.class \
    tmp2/tcl/lang

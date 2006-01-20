@@ -1,5 +1,25 @@
 2006-01-19  Mo DeJong  <mdejong@users.sourceforge.net>
 
+        Refactor TclObject class so that Jacl and TclBlend
+        specific code appears in different classes. A
+        common base class named TclObjectBase now exists,
+        it contains common TclObject code. TclBlend depends
+        on a specific preserve() and release() implementation
+        and make use of the CObject class. The Jacl
+        implementation of TclObject avoids this logic
+        in preserve() and release(), so these methods
+        will execute more quickly and be easier to inline.
+
+        * src/empty/README.txt: Updated.
+        * src/empty/empty.jar: Regen.
+        * src/empty/tcl/lang/TclObject.java: Added.
+        * src/jacl/tcl/lang/TclObject.java: Added.
+        * src/tclblend/tcl/lang/TclObject.java: Added.
+        * src/tcljava/tcl/lang/TclObject.java: Removed.
+        * src/tcljava/tcl/lang/TclObjectBase.java: Added.
+
+2006-01-19  Mo DeJong  <mdejong@users.sourceforge.net>
+
         * docs/TJC/future.html:
         * docs/TJC/module.html:
         * docs/TJC/optcode.html: Document compiled lappend
