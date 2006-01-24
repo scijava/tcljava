@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: TJCShell.java,v 1.1 2005/12/20 23:00:11 mdejong Exp $
+ * RCS: @(#) $Id: TJCShell.java,v 1.2 2006/01/24 07:55:45 mdejong Exp $
  *
  */
 
@@ -82,12 +82,14 @@ main(
     }
 
     // If a script file was specified then just source that file
-    // and quit.
+    // and quit. Load the TJC runtime support package in case
+    // the tjc.tcl to be sourced was itself compiled with TJC.
+    // We could load via TJC::package but this works just fine.
 
     if (fileName != null) {
 	int exitCode = 0;
 	try {
-	    //interp.evalFile(fileName);
+	    interp.eval("package require TJC");
 	    interp.eval("source " + fileName);
 	} catch (TclException e) {
 	    int code = e.getCompletionCode();

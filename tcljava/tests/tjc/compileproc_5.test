@@ -1,4 +1,4 @@
-package require tcltest
+test_tjc_init
 
 # Test series 5 tests misc compilation options
 # that modify emitted code but don't change the

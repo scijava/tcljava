@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.47 2006/01/19 03:11:04 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.48 2006/01/24 07:55:44 mdejong Exp $
 
 SHELL = /bin/sh
 
@@ -882,6 +882,85 @@ tjc.check:
 	@if test ! -f tjc.jar ; then \
 		$(MAKE) TCLJAVA=$(TCLJAVA) tjc ; \
 	fi
+
+#
+# Recompile tjc.jar using installed tjc executable.
+# This is a "stage 2" compile where the compiler
+# that was just built is used to recompile itself.
+#
+
+tjc2: tjc2/doesnotexist
+	@if test ! -f "$(BIN_INSTALL_DIR)/tjc" ; then \
+	    echo "tjc has not been installed" ;\
+	fi
+	@if test ! -d tjc2 ; then \
+	    mkdir tjc2 ;\
+	fi
+	@if test ! -d tjc2/originals ; then \
+	    mkdir tjc2/originals ;\
+	    cp tjc.jar tjcsrc.jar tjc2/originals ;\
+	fi
+	@$(MAKE) tjc2/tjc.jar
+	@rm -rf tjc2/tjcjar tjc2/tjcsrcjar
+	@mkdir tjc2/tjcjar tjc2/tjcsrcjar
+	@echo "create TJC compiled tjc.jar"
+	@cd tjc2/tjcjar ;\
+	echo "cd tjc2/tjcjar" ;\
+	echo "jar $(JAR_EXTRACT_FLAGS) tjc.jar" ;\
+	$(JAR) $(JAR_EXTRACT_FLAGS) ../tjc.jar
+	@cp -R btjc/tcl tjc2/tjcjar
+	@cd tjc2/tjcjar ;\
+	echo "cd tjc2/tjcjar" ;\
+	echo "jar $(JAR_COMPRESS_FLAGS) tjc.jar tcl tjc" ;\
+	$(JAR) $(JAR_COMPRESS_FLAGS) tjc.jar tcl tjc
+	@echo "create TJC compiled tjcsrc.jar"
+	@cd tjc2/tjcsrcjar ;\
+	echo "cd tjc2/tjcsrcjar" ;\
+	echo "jar $(JAR_EXTRACT_FLAGS) ../originals/tjcsrc.jar" ;\
+	$(JAR) $(JAR_EXTRACT_FLAGS) ../originals/tjcsrc.jar ;\
+	echo "jar $(JAR_EXTRACT_FLAGS) ../tjcsrc.jar" ;\
+	$(JAR) $(JAR_EXTRACT_FLAGS) ../tjcsrc.jar ;\
+	echo "jar $(JAR_COMPRESS_FLAGS) tjcsrc.jar tcl tjc" ;\
+	$(JAR) $(JAR_COMPRESS_FLAGS) tjcsrc.jar tcl tjc
+
+# Build tjc.jar if it does not already exist
+# in the tjc2 directory. The tjc.jar build
+# can take a very long time, so this rule
+# will not attempt a rebuild unless the
+# tjc.jar does not exists.
+
+tjc2/tjc.jar:
+	@echo "compile TJC Tcl source files"
+	@rm -rf tjc2/tjc
+	@cp -R btjc/tjc tjc2
+	@rm -rf tjc2/tjc.jar tjc2/tjcsrc.jar
+	@cd tjc2 ;\
+	rm -f tjc.tjc ;\
+	echo "PACKAGE tjc" >> tjc.tjc ;\
+	echo "SOURCE tjc/library/*.tcl" >> tjc.tjc ;\
+	echo "INIT_SOURCE tjc.tcl" >> tjc.tjc ;\
+	echo "OPTIONS +O" >> tjc.tjc
+	@cd tjc2 ;\
+	export PATH="${PATH}:$(BIN_INSTALL_DIR)" ;\
+	echo "tjc tjc.tjc" ;\
+	time tjc tjc.tjc
+
+tjc2.replace:
+	@echo "Replacing tjc.jar with TJC compiled tjc.jar"
+	@cp tjc2/tjcjar/tjc.jar tjc.jar
+	@echo "Replacing tjcsrc.jar with TJC compiled tjcsrc.jar"
+	@cp tjc2/tjcsrcjar/tjcsrc.jar tjcsrc.jar
+
+tjc2.clean:
+	@rm -rf tjc2/tjc.jar tjc2/tjcsrc.jar
+	@rm -rf tjc2/tjcjar tjc2/tjcsrcjar
+	@rm -rf tjc2/originals
+	@rm -rf tjc2/tjc
+
+# This build rule exists so that the tjc2 build
+# rule above will always execute.
+
+tjc2/doesnotexist:
 
 #----------------------------------------------------------------
 # Build the TclJava Package.

@@ -7,16 +7,22 @@ package require tcltest
 proc tjc_env {} {
     global env
 
+    # Jacl does not support "file normalize"
+    set normalizable 0
+
     if {[info exists env(TCL_LIBRARY)]} {
         set lib $env(TCL_LIBRARY)
-        if {[file pathtype $lib] != "absolute"} {
+        if {$normalizable && [file pathtype $lib] != "absolute"} {
             set env(TCL_LIBRARY) [file normalize $lib]
         }
     }
 
+    # When TJC_LIBRARY starts with "resource:" it should be
+    # considered an absolute path.
+
     if {[info exists env(TJC_LIBRARY)]} {
         set lib $env(TJC_LIBRARY)
-        if {[file pathtype $lib] != "absolute"} {
+        if {$normalizable && [file pathtype $lib] != "absolute"} {
             set env(TJC_LIBRARY) [file normalize $lib]
         }
     }
@@ -58,6 +64,9 @@ proc tjc_exec { argl } {
     if {$debug} {
         if {[info exists env(TCL_LIBRARY)]} {
             puts "pre tjc_exec: TCL_LIBRARY is \"$env(TCL_LIBRARY)\""
+        }
+        if {[info exists env(TJC_LIBRARY)]} {
+            puts "pre tjc_exec: TJC_LIBRARY is \"$env(TJC_LIBRARY)\""
         }
         puts "tjc cmd is: ->$cmd $argl<-"
         puts "will exec from cwd : [pwd]"

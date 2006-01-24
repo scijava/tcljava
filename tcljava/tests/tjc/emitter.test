@@ -1,4 +1,4 @@
-package require tcltest
+test_tjc_init
 
 # args assignment functions defined in the compileproc module
 # are tested here. Clear out any state left over from earlier

@@ -7,7 +7,7 @@
 # Copyright (c) 1998-2000 Ajuba Solutions.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: all.tcl,v 1.9 2006/01/11 21:24:50 mdejong Exp $
+# RCS: @(#) $Id: all.tcl,v 1.10 2006/01/24 07:55:45 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -61,16 +61,33 @@ if {0} {
 # Setup TJC specific variables needed to get tests running
 # out of the build directory.
 
-set env(TJC_LIBRARY) [file join [tcltest::testsDirectory] ../src/tjc/tjc/library]
+#set env(TJC_LIBRARY) [file join [tcltest::testsDirectory] ../src/tjc/tjc/library]
+set env(TJC_LIBRARY) "resource:/tjc/library"
 set env(TJC_BUILD_DIR) $env(BUILD_DIR)
 
-puts "env(TJC_LIBRARY) (exists [info exists env(TJC_LIBRARY)]) $env(TJC_LIBRARY)"
-puts "env(TJC_BUILD_DIR) (exists [info exists env(TJC_BUILD_DIR)]) $env(TJC_BUILD_DIR)"
+puts "env(TJC_LIBRARY) $env(TJC_LIBRARY)"
+puts "env(TJC_BUILD_DIR) $env(TJC_BUILD_DIR)"
 
 # Reset TclTest env vars to account for TJC entries
 set ::tcltest::originalEnv(TJC_LIBRARY) $env(TJC_LIBRARY)
 set ::tcltest::originalEnv(TJC_BUILD_DIR) $env(TJC_BUILD_DIR)
 
+# Define helper proc that will load TJC commands into the interp,
+# this method should be invoked at the start of a test file that
+# makes use of tjc commands.
+
+proc test_tjc_init {} {
+    package require tcltest
+    package require parser
+    # init TJC runtime package in case the tjc.jar file
+    # contains TJC compiled commands.
+    package require TJC
+
+    if {[info commands reload] == {}} {
+        # Load TJC procs into Jacl
+        namespace eval :: {source $env(TJC_LIBRARY)/reload.tcl}
+    }
+}
 
 puts stdout "Tcl $tcl_patchLevel tests running in interp:  [info nameofexecutable]"
 puts stdout "Tests running in working dir:  $::tcltest::testsDirectory"

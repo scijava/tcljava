@@ -1,3 +1,30 @@
+2006-01-24  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * Makefile.in: Add "tjc2" make target that
+        will recompile the Tcl code in tjc.jar into
+        Java code.
+        * src/tjc/tcl/lang/TJCShell.java: Require
+        TJC package so that a compiled tjc.jar
+        will work like an uncompiled one.
+        * tests/all.tcl: Set TJC_LIBRARY to
+        a resource path inside tjc.jar.
+        Define test_tjc_init command that should
+        be invoked at the top of a TJC test script.
+        * tests/tjc/compileproc.test:
+        * tests/tjc/compileproc_1.test:
+        * tests/tjc/compileproc_2.test:
+        * tests/tjc/compileproc_3.test:
+        * tests/tjc/compileproc_4.test:
+        * tests/tjc/compileproc_5.test:
+        * tests/tjc/compileproc_6.test:
+        * tests/tjc/compileproc_7.test:
+        * tests/tjc/descend.test:
+        * tests/tjc/emitter.test: Invoke
+        test_tjc_init at the start of the test script.
+        * tests/tjc/tjc.test: Don't try to
+        run "file normalize" in Jacl since it is
+        not implemented.
+
 2006-01-23  Mo DeJong  <mdejong@users.sourceforge.net>
 
         Reimplement variable cache so that the cache
