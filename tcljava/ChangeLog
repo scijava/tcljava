@@ -1,3 +1,32 @@
+2006-01-23  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        Reimplement variable cache so that the cache
+        is flushed on method entry and exit. This is
+        needed so that recursive methods don't write
+        over each other's cache variables.
+
+        * src/tjc/tjc/library/compileproc.tcl:
+        Invoke emitter_callframe_push and
+        emitter_callframe_try instead of the
+        now renamed emitter_callframe_start.
+        Invoke emitter_callframe_pop instead
+        of renamed emitter_callframe_end. This
+        change was needed so that the whole command
+        body could be processed before checking to
+        see if the varcache needed to be flushed
+        on command entry.
+        * src/tjc/tjc/library/emitter.tcl:
+        Rename emitter_callframe_start to
+        emitter_callframe_push and move try
+        block into emitter_callframe_try.
+        Rename emitter_callframe_end to
+        emitter_callframe_pop and move
+        cache flush up in decl.
+        * tests/tjc/compileproc_6.test:
+        * tests/tjc/compileproc_7.test:
+        * tests/tjc/emitter.test:
+        Check cache var flush calls.
+
 2006-01-19  Mo DeJong  <mdejong@users.sourceforge.net>
 
         Refactor TclObject class so that Jacl and TclBlend

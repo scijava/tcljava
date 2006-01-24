@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: emitter.tcl,v 1.5 2006/01/14 01:29:26 mdejong Exp $
+#  RCS: @(#) $Id: emitter.tcl,v 1.6 2006/01/24 03:48:22 mdejong Exp $
 #
 #
 
@@ -649,24 +649,27 @@ proc emitter_backslash_tcl_elem { elem } {
 # This method is invoked at the start of a compiled
 # command implementation.
 
-proc emitter_callframe_start { ns } {
-    set buffer ""
-    append buffer [emitter_indent]
-    append buffer "CallFrame callFrame = TJC.pushLocalCallFrame(interp, $ns)\;"
-    append buffer "\n"
-    append buffer [emitter_indent]
-    append buffer "try \{\n"
+proc emitter_callframe_push { ns } {
+    return [emitter_statement \
+        "CallFrame callFrame = TJC.pushLocalCallFrame(interp, $ns)"]
+}
 
+# Emit try statement at start of method impl block
+
+proc emitter_callframe_try {} {
+    set buffer ""
+    append buffer [emitter_indent] \
+        "try \{\n"
     return $buffer
 }
 
 # Close the command implementation, check for TclExceptions
 # cases that need to be handled, and finally pop the local
 # variable call frame. This code appears at the end of a
-# cmdProc declaration to close the try block opened in
-# emitter_callframe_start.
+# cmdProc declaration to close the try block opened by
+# emitter_callframe_try.
 
-proc emitter_callframe_end { proc_name {clear_varcache 0} } {
+proc emitter_callframe_pop { proc_name {clear_varcache 0} } {
     set buffer ""
 
     append buffer [emitter_indent]
@@ -682,12 +685,11 @@ proc emitter_callframe_end { proc_name {clear_varcache 0} } {
     append buffer "\} finally \{"
     append buffer "\n"
     emitter_indent_level +1
-    append buffer [emitter_indent]
-    append buffer "TJC.popLocalCallFrame(interp, callFrame)\;"
-    append buffer "\n"
     if {$clear_varcache} {
         append buffer [emitter_statement "updateVarCache(interp, 0)"]
     }
+    append buffer [emitter_statement \
+        "TJC.popLocalCallFrame(interp, callFrame)"]
     emitter_indent_level -1
     append buffer [emitter_indent]
     append buffer "\}"

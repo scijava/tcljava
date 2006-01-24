@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: compileproc.tcl,v 1.8 2006/01/19 21:05:32 mdejong Exp $
+#  RCS: @(#) $Id: compileproc.tcl,v 1.9 2006/01/24 03:48:22 mdejong Exp $
 #
 #
 
@@ -430,7 +430,8 @@ proc compileproc_nocompile { proc_list class_name } {
 
     # Setup local variable table. The wcmd identifier here
     # is inherited from TJC.CompiledCommand.
-    append buffer [emitter_callframe_start wcmd.ns]
+    append buffer [emitter_callframe_push wcmd.ns]
+    append buffer [emitter_callframe_try]
 
     # Process proc args
     append buffer [compileproc_args_assign $args]
@@ -439,7 +440,7 @@ proc compileproc_nocompile { proc_list class_name } {
     append buffer [emitter_eval_proc_body $body]
 
     # end callframe block
-    append buffer [emitter_callframe_end $name]
+    append buffer [emitter_callframe_pop $name]
 
     # end cmdProc declaration
     append buffer [emitter_cmd_proc_end]
@@ -899,21 +900,34 @@ proc compileproc_compile { proc_list class_name {config_init {}} } {
 
     # Setup local variable table. The wcmd identifier here
     # is inherited from TJC.CompiledCommand.
-    append buffer [emitter_callframe_start wcmd.ns]
+    append buffer [emitter_callframe_push wcmd.ns]
+
+    set body_bufer ""
+
+    # Start try block
+    append body_buffer [emitter_callframe_try]
 
     # Process proc args
-    append buffer $args_buffer
+    append body_buffer $args_buffer
 
     # Walk over commands at the toplevel and emit invocations
     # for each toplevel command.
 
     foreach key [compileproc_keys] {
-        append buffer [compileproc_emit_invoke $key]
+        append body_buffer [compileproc_emit_invoke $key]
     }
+
+    # If cached variables were used, then clear the cached
+    # variable table just after pushing the new call frame.
+
+    if {[compileproc_variable_cache_is_used]} {
+        append buffer [emitter_statement "updateVarCache(interp, 0)"]
+    }
+    append buffer $body_buffer
 
     # end callframe block
     set clear_varcache [compileproc_variable_cache_is_used]
-    append buffer [emitter_callframe_end $name $clear_varcache]
+    append buffer [emitter_callframe_pop $name $clear_varcache]
 
     # end cmdProc declaration
     append buffer [emitter_cmd_proc_end]

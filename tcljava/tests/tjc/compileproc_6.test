@@ -123,6 +123,7 @@ public class Test1 extends TJC.CompiledCommand {
     {
         if (!initCmd) { initCmd(interp); }
         CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        updateVarCache(interp, 0);
         try {
         if (objv.length != 1) {
             throw new TclNumArgsException(interp, 1, objv, "");
@@ -147,8 +148,8 @@ public class Test1 extends TJC.CompiledCommand {
         } catch (TclException te) {
             TJC.checkTclException(interp, te, "p");
         } finally {
-            TJC.popLocalCallFrame(interp, callFrame);
             updateVarCache(interp, 0);
+            TJC.popLocalCallFrame(interp, callFrame);
         }
     }
 
@@ -266,6 +267,7 @@ public class Test1 extends TJC.CompiledCommand {
             throws TclException
     {
         CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        updateVarCache(interp, 0);
         try {
         if (objv.length != 2) {
             throw new TclNumArgsException(interp, 1, objv, "x");
@@ -274,8 +276,8 @@ public class Test1 extends TJC.CompiledCommand {
         } catch (TclException te) {
             TJC.checkTclException(interp, te, "p");
         } finally {
-            TJC.popLocalCallFrame(interp, callFrame);
             updateVarCache(interp, 0);
+            TJC.popLocalCallFrame(interp, callFrame);
         }
     }
 
@@ -346,6 +348,7 @@ public class Test1 extends TJC.CompiledCommand {
     {
         if (!initCmd) { initCmd(interp); }
         CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        updateVarCache(interp, 0);
         try {
         if (objv.length < 2) {
             throw new TclNumArgsException(interp, 1, objv, "x ?y? args");
@@ -365,8 +368,8 @@ public class Test1 extends TJC.CompiledCommand {
         } catch (TclException te) {
             TJC.checkTclException(interp, te, "p");
         } finally {
-            TJC.popLocalCallFrame(interp, callFrame);
             updateVarCache(interp, 0);
+            TJC.popLocalCallFrame(interp, callFrame);
         }
     }
 
@@ -465,6 +468,7 @@ public class Test1 extends TJC.CompiledCommand {
     {
         if (!initCmd) { initCmd(interp); }
         CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        updateVarCache(interp, 0);
         try {
         if (objv.length != 1) {
             throw new TclNumArgsException(interp, 1, objv, "");
@@ -494,8 +498,8 @@ public class Test1 extends TJC.CompiledCommand {
         } catch (TclException te) {
             TJC.checkTclException(interp, te, "p");
         } finally {
-            TJC.popLocalCallFrame(interp, callFrame);
             updateVarCache(interp, 0);
+            TJC.popLocalCallFrame(interp, callFrame);
         }
     }
 
@@ -574,6 +578,7 @@ public class Test1 extends TJC.CompiledCommand {
     {
         if (!initCmd) { initCmd(interp); }
         CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        updateVarCache(interp, 0);
         try {
         if (objv.length != 1) {
             throw new TclNumArgsException(interp, 1, objv, "");
@@ -614,8 +619,8 @@ public class Test1 extends TJC.CompiledCommand {
         } catch (TclException te) {
             TJC.checkTclException(interp, te, "p");
         } finally {
-            TJC.popLocalCallFrame(interp, callFrame);
             updateVarCache(interp, 0);
+            TJC.popLocalCallFrame(interp, callFrame);
         }
     }
 

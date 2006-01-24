@@ -319,14 +319,13 @@ return;
 
 tcltest::test emitter-callframe-1.0 {push/pop call frame} {
     emitter_indent_level zero
-    emitter_callframe_start null
+    emitter_callframe_push null
 } "CallFrame callFrame = TJC.pushLocalCallFrame(interp, null);
-try \{
 "
 
 tcltest::test emitter-callframe-1.1 {push/pop call frame} {
     emitter_indent_level zero
-    emitter_callframe_end foo
+    emitter_callframe_pop foo
 } "\} catch (TclException te) \{
     TJC.checkTclException(interp, te, \"foo\")\;
 \} finally \{
@@ -335,7 +334,10 @@ tcltest::test emitter-callframe-1.1 {push/pop call frame} {
 
 tcltest::test emitter-callframe-1.2 {push/pop call frame} {
     emitter_indent_level zero
-    set result [emitter_callframe_start null][emitter_callframe_end foo]
+    set result ""
+    append result [emitter_callframe_push null]
+    append result [emitter_callframe_try]
+    append result [emitter_callframe_pop foo]
 } {CallFrame callFrame = TJC.pushLocalCallFrame(interp, null);
 try {
 } catch (TclException te) {
