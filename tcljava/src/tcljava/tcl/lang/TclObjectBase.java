@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclObjectBase.java,v 1.1 2006/01/20 00:32:38 mdejong Exp $
+ * RCS: @(#) $Id: TclObjectBase.java,v 1.2 2006/01/25 03:07:43 mdejong Exp $
  *
  */
 
@@ -47,6 +47,11 @@ abstract class TclObjectBase {
 
     static final boolean saveObjRecords = false;
     static Hashtable objRecordMap = ( saveObjRecords ? new Hashtable() : null );
+
+    // Only set this to true if running test code and
+    // the user wants to run extra ref count checks.
+    // Setting this to true will make key methods larger.
+    static final boolean extraRefCountChecks = false;
 
     /**
      * Creates a TclObject with the given InternalRep. This method should be
@@ -109,7 +114,12 @@ abstract class TclObjectBase {
      * @return the handle to the current internal rep.
      */
     public final InternalRep getInternalRep() {
-	disposedCheck();
+	if (extraRefCountChecks) {
+	    if (internalRep == null) {
+	        disposedError();
+	    }
+        }
+
 	return internalRep;
     }
 
@@ -121,7 +131,9 @@ abstract class TclObjectBase {
      * @param rep the new internal rep.
      */
     public void setInternalRep(InternalRep rep) {
-	disposedCheck();
+	if (internalRep == null) {
+	    disposedError();
+	}
 	if (rep == null) {
 	    throw new TclRuntimeError("null InternalRep");
 	}
@@ -142,7 +154,15 @@ abstract class TclObjectBase {
      * @return the string representation of the object.
      */
     public final String toString() {
-	disposedCheck();
+	if (extraRefCountChecks) {
+	    if (internalRep == null) {
+	        disposedError();
+	    }
+        }
+
+	if (internalRep == null) {
+	    disposedError();
+	}
 	if (stringRep == null) {
 	    stringRep = internalRep.toString();
 	}
@@ -158,7 +178,9 @@ abstract class TclObjectBase {
      * @exception TclRuntimeError if object is not exclusively owned.
      */
     public final void invalidateStringRep() throws TclRuntimeError {
-	disposedCheck();
+	if (internalRep == null) {
+	    disposedError();
+	}
 	if (refCount > 1) {
 	    throw new TclRuntimeError("string representation of object \"" +
 		    toString() + "\" cannot be invalidated: refCount = " +
@@ -172,9 +194,12 @@ abstract class TclObjectBase {
      *
      */
     public final boolean isShared() {
-        // No disposedCheck() needed since calling could
-        // would either modify the object or duplicate it,
-        // and both of those operations do the disposed check.
+	if (extraRefCountChecks) {
+	    if (internalRep == null) {
+	        disposedError();
+	    }
+        }
+
 	return (refCount > 1);
     }
 
@@ -197,7 +222,9 @@ abstract class TclObjectBase {
      */
 
     public final TclObject duplicate() {
-	disposedCheck();
+	if (internalRep == null) {
+	    disposedError();
+	}
 	if (internalRep instanceof TclString) {
 	    if (stringRep == null) {
 	        stringRep = internalRep.toString();
@@ -219,7 +246,9 @@ abstract class TclObjectBase {
      */
 
     public final TclObject takeExclusive() throws TclRuntimeError {
-	disposedCheck();
+	if (internalRep == null) {
+	    disposedError();
+	}
 	if (refCount == 1) {
 	    return (TclObject) this;
 	} else if (refCount > 1) {
@@ -256,22 +285,17 @@ abstract class TclObjectBase {
 	internalRep.dispose();
 
 	// Setting the internalRep to null means any further
-	// use of the object will generate an error in disposedCheck().
+	// use of the object will generate an error.
 
 	internalRep = null;
 	stringRep = null;
     }
 
     /**
-     * Raise a TclRuntimeError if this TclObject has been
-     * disposed of because the last ref was released.
+     * Raise a TclRuntimeError in the case where a
+     * TclObject was disposed of because the last
+     * ref was released.
      */
-
-    protected final void disposedCheck() {
-	if (internalRep == null) {
-	    disposedError();
-	}
-    }
 
     protected final void disposedError() {
 	throw new TclRuntimeError("TclObject has been deallocated");

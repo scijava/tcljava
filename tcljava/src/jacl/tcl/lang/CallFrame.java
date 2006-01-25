@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: CallFrame.java,v 1.12 2005/09/12 00:00:50 mdejong Exp $
+ * RCS: @(#) $Id: CallFrame.java,v 1.13 2006/01/25 03:07:43 mdejong Exp $
  *
  */
 
@@ -358,7 +358,6 @@ class CallFrame {
 
 	if (varTable != null) {
 	    Var.deleteVars(interp, varTable);
-	    varTable.clear();
 	    varTable = null;
 	}
     }

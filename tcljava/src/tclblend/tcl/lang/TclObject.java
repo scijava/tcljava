@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclObject.java,v 1.1 2006/01/20 00:32:38 mdejong Exp $
+ * RCS: @(#) $Id: TclObject.java,v 1.2 2006/01/25 03:07:43 mdejong Exp $
  *
  */
 
@@ -57,7 +57,9 @@ public final class TclObject extends TclObjectBase {
      * @param rep the new internal rep.
      */
     public void setInternalRep(InternalRep rep) {
-	disposedCheck();
+	if (internalRep == null) {
+	    disposedError();
+	}
 	if (rep == null) {
 	    throw new TclRuntimeError("null InternalRep");
 	}
@@ -103,11 +105,13 @@ public final class TclObject extends TclObjectBase {
      * @exception TclRuntimeError if the object has already been deallocated.
      */
     public final void preserve() {
-	disposedCheck();
+	if (internalRep == null) {
+	    disposedError();
+	}
 	if (internalRep instanceof CObject) {
 	    ((CObject) internalRep).incrRefCount();
 	}
-        _preserve();
+	_preserve();
     }
 
     /**
@@ -130,7 +134,9 @@ public final class TclObject extends TclObjectBase {
      * the obejct will be deallocated.
      */
     public final void release() {
-	disposedCheck();
+	if (internalRep == null) {
+	    disposedError();
+	}
 	if (internalRep instanceof CObject) {
 	    ((CObject) internalRep).decrRefCount();
 	}
@@ -146,9 +152,9 @@ public final class TclObject extends TclObjectBase {
      * effecting the ref count of a CObject.
      */
     private final void _release() {
-        if (--refCount <= 0) {
-            disposeObject();
-        }
+	if (--refCount <= 0) {
+	    disposeObject();
+	}
     }
 
     /**

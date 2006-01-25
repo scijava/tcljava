@@ -1,5 +1,25 @@
 2006-01-24  Mo DeJong  <mdejong@users.sourceforge.net>
 
+        * src/itcl/itcl/lang/Class.java:
+        * src/jacl/tcl/lang/CallFrame.java: Don't invoke
+        Hashtable.dispose() since Var.deleteVars()
+        does that already.
+        * src/jacl/tcl/lang/TclObject.java: Fixup
+        whitespace issues.
+        * src/tclblend/tcl/lang/TclObject.java:
+        Replace disposedCheck with inlined impl.
+        Fixup whitespace issues.
+        * src/tcljava/tcl/lang/TclObjectBase.java:
+        Remove disposedCheck() calls, replace with
+        inlined versions in methods. Remove
+        the check from getInternalRep(), toString(),
+        and isShared() unless a special flag is set
+        so that commands can be easily inlined.
+        * src/tcljava/tcl/lang/TclString.java: Remove
+        FIXME and fixup whitespace.
+
+2006-01-24  Mo DeJong  <mdejong@users.sourceforge.net>
+
         * Makefile.in: Add "tjc2" make target that
         will recompile the Tcl code in tjc.jar into
         Java code.

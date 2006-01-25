@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclObject.java,v 1.1 2006/01/20 00:32:38 mdejong Exp $
+ * RCS: @(#) $Id: TclObject.java,v 1.2 2006/01/25 03:07:43 mdejong Exp $
  *
  */
 
@@ -73,10 +73,10 @@ public final class TclObject extends TclObjectBase {
      * an is intended to be easily inlined in calling code.
      */
     public final void release() {
-	if (internalRep == null) {
+        if (internalRep == null) {
             disposedError();
         }
-	if (--refCount <= 0) {
+        if (--refCount <= 0) {
             disposeObject();
         }
     }
