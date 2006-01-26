@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Var.java,v 1.22 2006/01/19 21:05:32 mdejong Exp $
+ * RCS: @(#) $Id: Var.java,v 1.23 2006/01/26 19:49:18 mdejong Exp $
  *
  */
 package tcl.lang;
@@ -76,7 +76,7 @@ class Var {
      *				This flag is only set in a tricky upvar
      *				edge case so performance is not a concern.
      */
-    
+
     static final int SCALAR	   = 0x1;
     static final int ARRAY	   = 0x2;
     static final int LINK	   = 0x4;
@@ -181,13 +181,13 @@ class Var {
     Object value;
 
     /**
-     * Vector that holds the traces that were placed in this Var
+     * List that holds the traces that were placed in this Var
      */
 
-    Vector traces;
+    ArrayList traces;
 
 
-    Vector sidVec;
+    ArrayList sidVec;
 
     /**
      * Miscellaneous bits of information about variable.
@@ -217,7 +217,7 @@ class Var {
      * longer needed.
      */
 
-    Hashtable table;
+    HashMap table;
 
     /**
      * The key under which this variable is stored in the hash table.
@@ -286,36 +286,37 @@ class Var {
 
     /**
      * Used by ArrayCmd to create a unique searchId string.  If the 
-     * sidVec Vector is empty then simply return 1.  Else return 1 
+     * sidVec List is empty then simply return 1.  Else return 1 
      * plus the SearchId.index value of the last Object in the vector.
      * 
      * @param None
      * @return The int value for unique SearchId string.
      */
 
-    protected synchronized int getNextIndex() {
-        if (sidVec.size() == 0) {
+    protected int getNextIndex() {
+        int size = sidVec.size();
+        if (size == 0) {
 	    return 1;
 	}
-	SearchId sid = (SearchId) sidVec.lastElement();
-	return (sid.getIndex()+1);
+	SearchId sid = (SearchId) sidVec.get(size - 1);
+	return (sid.getIndex() + 1);
     }
 
     /**
-     * Find the SearchId that in the sidVec Vector that is equal the 
-     * unique String s and returns the enumeration associated with
+     * Find the SearchId that in the sidVec List that is equal the 
+     * unique String s and returns the iterator associated with
      * that SearchId.
      *
      * @param s String that ia a unique identifier for a SearchId object
-     * @return Enumeration if a match is found else null.
+     * @return Iterator if a match is found else null.
      */
 
-    protected Enumeration getSearch(String s) {
+    protected Iterator getSearch(String s) {
         SearchId sid;
         for(int i=0; i < sidVec.size(); i++) {
-	    sid = (SearchId) sidVec.elementAt(i);
+	    sid = (SearchId) sidVec.get(i);
 	    if (sid.equals(s)){
-	        return sid.getEnum();
+	        return sid.getIterator();
 	    }
 	}
 	return null;
@@ -323,7 +324,7 @@ class Var {
         
 
     /**
-     * Find the SearchId object in the sidVec Vector and remove it.
+     * Find the SearchId object in the sidVec list and remove it.
      *
      * @param sid String that ia a unique identifier for a SearchId object.
      */
@@ -332,9 +333,9 @@ class Var {
         SearchId curSid;
 
         for(int i=0; i < sidVec.size(); i++) {
-	    curSid = (SearchId) sidVec.elementAt(i);
+	    curSid = (SearchId) sidVec.get(i);
 	    if (curSid.equals(sid)){
-	        sidVec.removeElementAt(i);
+	        sidVec.remove(i);
 		return true;
 	    }
 	} 
@@ -447,7 +448,7 @@ class Var {
 				// variables are currently in use. Same as
 				// the current procedure's frame, if any,
 				// unless an "uplevel" is executing.
-	Hashtable table;        // to the hashtable, if any, in which
+	HashMap table;          // to the hashtable, if any, in which
 				// to look up the variable.
 	Var var;                // Used to search for global names.
 	String elName;          // Name of array element or null.
@@ -513,9 +514,9 @@ class Var {
 		}
 
 		if (var == null && interp.resolvers != null) {
-		    Enumeration e = interp.resolvers.elements();
-		    while (var == null && e.hasMoreElements()) {
-			res = (Interp.ResolverScheme) e.nextElement();
+		    for (ListIterator iter = interp.resolvers.listIterator();
+		            var == null && iter.hasNext(); ) {
+		        res = (Interp.ResolverScheme) iter.next();
 			var = res.resolver.resolveVar(interp,
 				  part1, cxtNs, flags);
 		    }
@@ -598,7 +599,7 @@ class Var {
 		table = varFrame.varTable;
 		if (createPart1) {
 		    if (table == null) {
-			table = new Hashtable();
+			table = new HashMap();
 			varFrame.varTable = table;
 		    }
 		    var = (Var) table.get(part1);
@@ -670,7 +671,7 @@ class Var {
 
 	    var.setVarArray();
 	    var.clearVarUndefined();
-	    var.value = new Hashtable();
+	    var.value = new HashMap();
 	} else if (!var.isVarArray()) {
 	    if ((flags & TCL.LEAVE_ERR_MSG) != 0) {
 		throw new TclVarException(interp,
@@ -680,7 +681,7 @@ class Var {
 	}
 
 	Var arrayVar = var;
-	Hashtable arrayTable = (Hashtable) var.value;
+	HashMap arrayTable = (HashMap) var.value;
 	if (createPart2) {
 	    Var searchvar = (Var) arrayTable.get(elName);
 
@@ -715,7 +716,7 @@ class Var {
 
 	Var[] ret = interp.lookupVarResult;
 	ret[0] = var;      // The Var in the array
-	ret[1] = arrayVar; // The array (Hashtable) Var
+	ret[1] = arrayVar; // The array Var
 	return ret;
     }
 
@@ -1198,7 +1199,7 @@ class Var {
 	    callTraces(interp, array, dummyVar, part1, part2,
 	        (flags & (TCL.GLOBAL_ONLY|TCL.NAMESPACE_ONLY)) | TCL.TRACE_UNSETS);
 
-	    dummyVar.traces = null;	    
+	    dummyVar.traces = null;
 
 	    // Active trace stuff is not part of Jacl's interp
 
@@ -1287,7 +1288,7 @@ class Var {
 	// Set up trace information.
 
 	if (var.traces == null) {
-	    var.traces = new Vector();
+	    var.traces = new ArrayList();
 	}
 
 	TraceRecord rec = new TraceRecord();
@@ -1296,7 +1297,7 @@ class Var {
 	    flags & (TCL.TRACE_READS | TCL.TRACE_WRITES | TCL.TRACE_UNSETS | 
 		     TCL.TRACE_ARRAY);
 
-	var.traces.insertElementAt(rec, 0);
+	var.traces.add(0, rec);
 
 
 	// FIXME: is this needed ?? It was in Jacl but not 8.1
@@ -1364,9 +1365,9 @@ class Var {
 	if (var.traces != null) {
 	    int len = var.traces.size();
 	    for (int i=0; i < len; i++) {
-		TraceRecord rec = (TraceRecord) var.traces.elementAt(i);
+		TraceRecord rec = (TraceRecord) var.traces.get(i);
 		if (rec.trace == proc) {
-		    var.traces.removeElementAt(i);
+		    var.traces.remove(i);
 		    break;
 		}
 	    }
@@ -1391,7 +1392,7 @@ class Var {
      * @param flags misc flags that control the actions of this method.
      */
 
-    static protected Vector getTraces(
+    static protected ArrayList getTraces(
 	Interp interp, // Interpreter containing variable.
 	String part1,  // Name of variable or array.
 	String part2,  // Name of element within array; null means
@@ -1459,7 +1460,7 @@ class Var {
 	Var[] result;
 	CallFrame varFrame;
 	CallFrame savedFrame = null;
-	Hashtable table;
+	HashMap table;
 	Namespace ns, altNs;
 	String tail;
 	boolean newvar = false;
@@ -1552,7 +1553,7 @@ class Var {
 	    if (var == null) {	// look in frame's local var hashtable
 		table = varFrame.varTable;
 		if (table == null) {
-		    table = new Hashtable();
+		    table = new HashMap();
 		    varFrame.varTable = table;
 		}
 
@@ -1743,7 +1744,7 @@ class Var {
 	    if ((array != null) && (array.traces != null)) {
 		for (i=0; (array.traces != null) && (i < array.traces.size());
 			i++) {
-		    TraceRecord rec = (TraceRecord) array.traces.elementAt(i);
+		    TraceRecord rec = (TraceRecord) array.traces.get(i);
 		    if ((rec.flags & flags) != 0) {
 			try {
 			    rec.trace.traceProc(interp, part1, part2, flags);
@@ -1763,7 +1764,7 @@ class Var {
 	    }
 
 	    for (i=0; (var.traces != null) && (i < var.traces.size()); i++) {
-		TraceRecord rec = (TraceRecord) var.traces.elementAt(i);
+		TraceRecord rec = (TraceRecord) var.traces.get(i);
 		if ((rec.flags & flags) != 0) {
 		    try {
 			rec.trace.traceProc(interp, part1, part2, flags);
@@ -1814,13 +1815,11 @@ class Var {
      *	(e.g. from trace procedures).
      *
      * @param interp Interpreter containing array.
-     * @param table Hashtbale that holds the Vars to delete
+     * @param table HashMap that holds the Vars to delete
      */
 
-    static protected void deleteVars(Interp interp, Hashtable table)
+    static protected void deleteVars(Interp interp, HashMap table)
     {
-	Enumeration search;
-	String hashKey;
 	Var var;
 	Var link;
 	int flags;
@@ -1837,10 +1836,11 @@ class Var {
 	    flags |= TCL.NAMESPACE_ONLY;
 	}
 
-	
-	for (search = table.elements(); search.hasMoreElements(); ) {
-	    var = (Var) search.nextElement();
-	    
+	for (Iterator iter = table.entrySet().iterator(); iter.hasNext() ;) {
+	    Map.Entry entry = (Map.Entry) iter.next();
+	    //String key = (String) entry.getKey();
+	    var = (Var) entry.getValue();
+
 	    // For global/upvar variables referenced in procedures, decrement
 	    // the reference count on the variable referred to, and free
 	    // the referenced variable if it's no longer needed. Don't delete
@@ -1947,17 +1947,16 @@ class Var {
 	                   // TCL.GLOBAL_ONLY.
 	)
     {
-	Enumeration search;
 	Var el;
 	TclObject obj;
 
 	deleteSearches(var);
-	Hashtable table = (Hashtable) var.value;
+	HashMap table = (HashMap) var.value;
 
-	Var dummyVar = null;
-	for (search = table.elements();
-		search.hasMoreElements(); ) {
-	    el = (Var) search.nextElement();
+	for (Iterator iter = table.entrySet().iterator(); iter.hasNext() ;) {
+	    Map.Entry entry = (Map.Entry) iter.next();
+	    //String key = (String) entry.getKey();
+	    el = (Var) entry.getValue();
 
 	    if (el.isVarScalar() && (el.value != null)) {
 		obj = (TclObject) el.value;
@@ -1985,7 +1984,7 @@ class Var {
 		// element Vars are IN_HASHTABLE
 	    }
 	}
-	((Hashtable) var.value).clear();
+	table.clear();
 	var.value = null;
     }
 

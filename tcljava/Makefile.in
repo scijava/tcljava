@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.48 2006/01/24 07:55:44 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.49 2006/01/26 19:49:17 mdejong Exp $
 
 SHELL = /bin/sh
 
@@ -2195,7 +2195,8 @@ tclblendsrc.jar:
 
 itclsrc.jar:
 	cd $(ITCL_SRC_DIR) ; \
-	$(JAR) $(JAR_COMPRESS_FLAGS) $(BUILD_DIR)/itclsrc.jar itcl/lang/*.java
+	$(JAR) $(JAR_COMPRESS_FLAGS) $(BUILD_DIR)/itclsrc.jar itcl/lang/*.java \
+	    tcl/lang/ItclAccess.java
 
 tjcsrc.jar:
 	cd $(TJC_SRC_DIR) ; \

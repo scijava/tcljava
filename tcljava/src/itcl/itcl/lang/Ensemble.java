@@ -23,7 +23,7 @@
  *           mmclennan@lucent.com
  *           http://www.tcltk.com/itcl
  *
- *     RCS:  $Id: Ensemble.java,v 1.2 2005/09/12 00:00:50 mdejong Exp $
+ *     RCS:  $Id: Ensemble.java,v 1.3 2006/01/26 19:49:18 mdejong Exp $
  * ========================================================================
  *           Copyright (c) 1993-1998  Lucent Technologies, Inc.
  * ------------------------------------------------------------------------
@@ -34,8 +34,6 @@
 package itcl.lang;
 
 import tcl.lang.*;
-
-import java.util.Enumeration;
 
 //  Data used to represent an ensemble:
 
@@ -1644,15 +1642,11 @@ GetEnsembleParser(
 
     ns = Namespace.getGlobalNamespace(ensInfo.parser);
 
-    for (Enumeration e = ns.childTable.keys() ; e.hasMoreElements() ;) {
-        String key = (String) e.nextElement();
-        childNs = (Namespace) ns.childTable.get(key);
+    while ((childNs = (Namespace) ItclAccess.FirstHashEntry(ns.childTable)) != null) {
         Namespace.deleteNamespace(childNs);
     }
 
-    for (Enumeration e = ns.cmdTable.keys() ; e.hasMoreElements() ;) {
-        String key = (String) e.nextElement();
-        wcmd = (WrappedCommand) ns.childTable.get(key);
+    while ((wcmd = (WrappedCommand) ItclAccess.FirstHashEntry(ns.cmdTable)) != null) {
         ensInfo.parser.deleteCommandFromToken(wcmd);
     }
 

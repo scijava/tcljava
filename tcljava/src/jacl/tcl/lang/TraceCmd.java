@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TraceCmd.java,v 1.7 2005/10/07 06:50:09 mdejong Exp $
+ * RCS: @(#) $Id: TraceCmd.java,v 1.8 2006/01/26 19:49:18 mdejong Exp $
  *
  */
 
@@ -159,12 +159,12 @@ throws
 	    // Search through all of our traces on this variable to
 	    // see if there's one with the given command.  If so, then
 	    // delete the first one that matches.
-		
-	    Vector traces = Var.getTraces(interp, objv[2].toString(), null, 0);
+
+	    ArrayList traces = Var.getTraces(interp, objv[2].toString(), null, 0);
 	    if (traces != null) {
 		len = traces.size();
 		for (int i = 0; i < len; i++) {
-		    TraceRecord rec = (TraceRecord) traces.elementAt(i);
+		    TraceRecord rec = (TraceRecord) traces.get(i);
 
 		    if (rec.trace instanceof CmdTraceProc) {
 			CmdTraceProc proc = (CmdTraceProc) rec.trace;
@@ -185,7 +185,7 @@ throws
 	    throw new TclNumArgsException(interp, 2, objv, 
 		    "name");
 	}
-	Vector traces = Var.getTraces(interp, objv[2].toString(), null, 0);
+	ArrayList traces = Var.getTraces(interp, objv[2].toString(), null, 0);
 	if (traces != null) {
 	    len = traces.size();
 	    TclObject list = TclList.newInstance();
@@ -194,7 +194,7 @@ throws
 
 	    try {
 		for (int i = 0; i < len; i++) {
-		    TraceRecord rec = (TraceRecord) traces.elementAt(i);
+		    TraceRecord rec = (TraceRecord) traces.get(i);
 
 		    if (rec.trace instanceof CmdTraceProc) {
 			CmdTraceProc proc = (CmdTraceProc) rec.trace;

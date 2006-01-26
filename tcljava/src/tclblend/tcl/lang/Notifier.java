@@ -9,14 +9,13 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Notifier.java,v 1.7 2003/03/11 02:21:15 mdejong Exp $
+ * RCS: @(#) $Id: Notifier.java,v 1.8 2006/01/26 19:49:19 mdejong Exp $
  *
  */
 
 package tcl.lang;
 
-import java.util.Hashtable;
-import java.util.Vector;
+import java.util.HashMap;
 
 // Implements the Tcl Blend version of the Notifier class. The Notifier is
 // the lowest-level part of the event system. It is used by
@@ -70,7 +69,7 @@ int refCount;
 
 // Stores the Notifier for each thread.
 
-private static Hashtable notifierTable = new Hashtable();
+private static HashMap notifierTable = new HashMap();
 
 // tcl ThreadId
 

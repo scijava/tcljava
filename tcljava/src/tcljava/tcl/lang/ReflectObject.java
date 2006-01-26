@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: ReflectObject.java,v 1.17 2002/12/31 05:22:16 mdejong Exp $
+ * RCS: @(#) $Id: ReflectObject.java,v 1.18 2006/01/26 19:49:19 mdejong Exp $
  *
  */
 
@@ -160,7 +160,7 @@ private static void addToReflectTable(ReflectObject roRep)
 
     String hash = getHashString(cl, obj);
     ReflectObject found = (ReflectObject) interp.reflectObjTable.get(hash);
-    
+
     if (found == null) {
 	// There was no mapping for this hash value, add one now.
 	
@@ -182,10 +182,10 @@ private static void addToReflectTable(ReflectObject roRep)
 			       " with hash \"" + hash + "\"");
 	}
 
-	Vector conflicts = (Vector) interp.reflectConflictTable.get(hash);
+	ArrayList conflicts = (ArrayList) interp.reflectConflictTable.get(hash);
 
 	if (conflicts == null) {
-	    conflicts = new Vector();
+	    conflicts = new ArrayList();
 	    interp.reflectConflictTable.put(hash, conflicts);
 	}
 
@@ -195,7 +195,7 @@ private static void addToReflectTable(ReflectObject roRep)
 	    }
 	}
 
-	conflicts.addElement(roRep);
+	conflicts.add(roRep);
     }
 }
 
@@ -232,11 +232,10 @@ private static void removeFromReflectTable(ReflectObject roRep)
 	      System.out.println("removing reflect table entry " + hash);
 	  }
 
-	  Vector conflicts = (Vector) interp.reflectConflictTable.get(hash);
+	  ArrayList conflicts = (ArrayList) interp.reflectConflictTable.get(hash);
 
 	  if (conflicts != null) {
-	      Object first = conflicts.elementAt(0);
-	      conflicts.removeElementAt(0);
+	      Object first = conflicts.remove(0);
 
 	      if (conflicts.isEmpty()) {
 		  interp.reflectConflictTable.remove(hash);
@@ -255,7 +254,7 @@ private static void removeFromReflectTable(ReflectObject roRep)
 	  // conflict table so remove it from there. Be sure to remove the
 	  // conflict table mapping if we are removing the last conflict!
 
-	  Vector conflicts = (Vector) interp.reflectConflictTable.get(hash);
+	  ArrayList conflicts = (ArrayList) interp.reflectConflictTable.get(hash);
 
 	  // This should never happen!
 
@@ -271,11 +270,13 @@ private static void removeFromReflectTable(ReflectObject roRep)
 
 	  // FIXME: double check that this uses == compare
 	  // This remove should never fail!
-
-	  if (! conflicts.removeElement(roRep)){
+          
+          int index = conflicts.indexOf(roRep);
+	  if (index == -1) {
 	      throw new TclRuntimeError("no entry in conflict table for " + id +
-				" with hash \"" + hash + "\"");
+				" with hash \"" + hash + "\"");          
 	  }
+	  conflicts.remove(index);
 
 	  if (conflicts.isEmpty()) {
 	      interp.reflectConflictTable.remove(hash);
@@ -293,14 +294,14 @@ private static void removeFromReflectTable(ReflectObject roRep)
     
 private static ReflectObject findInConflictTable(Interp interp, Object obj, String hash)
 {
-    Vector conflicts = (Vector) interp.reflectConflictTable.get(hash);
+    ArrayList conflicts = (ArrayList) interp.reflectConflictTable.get(hash);
 
     if (conflicts == null) {
 	return null;
     }
 
-    for (Enumeration e = conflicts.elements(); e.hasMoreElements() ; ) {
-	ReflectObject found = (ReflectObject) e.nextElement();
+    for ( ListIterator iter = conflicts.listIterator(); iter.hasNext() ; ) {
+	ReflectObject found = (ReflectObject) iter.next();
 	if (found.javaObj == obj) {
 	    if (debug) {
 		System.out.println("found conflict table entry for hash " +
@@ -372,10 +373,12 @@ public static void dump(Interp interp) {
 
     // Loop over the entries in the reflectObjTable and dump them out.
 
-    for (Enumeration keys = interp.reflectObjTable.keys() ; keys.hasMoreElements() ;) {
+    for ( Iterator iter = interp.reflectObjTable.entrySet().iterator(); iter.hasNext() ; ) {
+        Map.Entry entry = (Map.Entry) iter.next();
+
         System.out.println();
-        String hash = (String) keys.nextElement();
-        ReflectObject roRep = (ReflectObject) interp.reflectObjTable.get(hash);
+        String hash = (String) entry.getKey();
+        ReflectObject roRep = (ReflectObject) entry.getValue();
 
         if (roRep == null) {
 	    throw new RuntimeException("Reflect table entry \"" + hash + "\" hashed to null");
@@ -404,13 +407,13 @@ public static void dump(Interp interp) {
 			   " javaClass = \"" + JavaInfoCmd.getNameFromClass(roRep.javaClass) + "\"" +
 			   " System.identityHashCode(javaObj) = \"" + System.identityHashCode(roRep.javaObj) + "\"");
 
-	Vector conflicts = (Vector) interp.reflectConflictTable.get(hash);
+	ArrayList conflicts = (ArrayList) interp.reflectConflictTable.get(hash);
 
 	if (conflicts != null) {
 	    System.out.println("Found conflict table for hash " + hash);
 
-	    for (Enumeration e = conflicts.elements(); e.hasMoreElements() ; ) {
-		ReflectObject found = (ReflectObject) e.nextElement();
+	    for ( ListIterator iter2 = conflicts.listIterator(); iter.hasNext() ; ) {
+		ReflectObject found = (ReflectObject) iter2.next();
 
 		System.out.println("hash conflict for \"" + hash + "\" corresponds to ReflectObject with " +
 			   "refID \"" + found.refID + "\"");

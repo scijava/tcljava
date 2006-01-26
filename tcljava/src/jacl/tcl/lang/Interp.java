@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.64 2005/12/20 23:00:11 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.65 2006/01/26 19:49:18 mdejong Exp $
  *
  */
 
@@ -36,7 +36,7 @@ public class Interp extends EventuallyFreed {
 // one ReflectObject internalRep for the same Object -- this
 // way Object identity can be done by string comparison.
 
-Hashtable reflectObjTable = new Hashtable();
+HashMap reflectObjTable = new HashMap();
 
 // Number of reflect objects created so far inside this Interp
 // (including those that have be freed)
@@ -46,7 +46,7 @@ long reflectObjCount = 0;
 // Table used to store reflect hash index conflicts, see
 // ReflectObject implementation for more details
 
-Hashtable reflectConflictTable = new Hashtable();
+HashMap reflectConflictTable = new HashMap();
 
 // The number of chars to copy from an offending command into error
 // message.
@@ -65,13 +65,9 @@ static final String TCL_PATCH_LEVEL = "8.0";
 
 protected int cmdCount;
 
-// FIXME : remove later
-// Table of commands for this interpreter.
-//Hashtable cmdTable;
-
 // Table of channels currently registered in this interp.
 
-Hashtable interpChanTable;
+HashMap interpChanTable;
 
 // The Notifier associated with this Interp.
 
@@ -80,7 +76,7 @@ private Notifier notifier;
 // Hash table for associating data with this interpreter. Cleaned up
 // when this interpreter is deleted.
 
-Hashtable assocData;
+HashMap assocData;
 
 // Current working directory.
 
@@ -104,7 +100,7 @@ Namespace globalNs;
 
 // Hash table used to keep track of hidden commands on a per-interp basis.
 
-Hashtable hiddenCmdTable;
+HashMap hiddenCmdTable;
 
 // Information used by InterpCmd.java to keep
 // track of master/slave interps on a per-interp basis.
@@ -114,14 +110,14 @@ Hashtable hiddenCmdTable;
 // slave interpreters. This hashtable is used to store information
 // about slave interpreters of this interpreter, to map over all slaves, etc.
 
-Hashtable slaveTable;
+HashMap slaveTable;
 
 // Hash table for Target Records. Contains all Target records which denote
 // aliases from slaves or sibling interpreters that direct to commands in
 // this interpreter. This table is used to remove dangling pointers
 // from the slave (or sibling) interpreters when this interpreter is deleted.
 
-Hashtable targetTable;
+HashMap targetTable;
 
 // Information necessary for this interp to function as a slave.
 InterpSlaveCmd slave;
@@ -129,7 +125,7 @@ InterpSlaveCmd slave;
 // Table which maps from names of commands in slave interpreter to
 // InterpAliasCmd objects.
 
-Hashtable aliasTable;
+HashMap aliasTable;
 
 // FIXME : does globalFrame need to be replaced by globalNs?
 // Points to the global variable frame.
@@ -171,7 +167,7 @@ int termOffset;
 // Schemes are added/removed by calling addInterpResolver and
 // removeInterpResolver.
 
-Vector resolvers;
+ArrayList resolvers;
 
 // The expression parser for this interp.
 
@@ -271,7 +267,7 @@ private Thread cThread;
 
 // Used ONLY by PackageCmd.
 
-Hashtable packageTable;
+HashMap packageTable;
 String packageUnknown;
 
 
@@ -285,7 +281,7 @@ int             parserTokensUsed;
 
 
 // Used ONLY by JavaImportCmd
-Hashtable[] importTable = {new Hashtable(), new Hashtable()};
+HashMap[] importTable = {new HashMap(), new HashMap()};
 
 // Used by callers of Util.strtoul(), also used in FormatCmd.strtoul().
 // There is typically only one instance of a StrtoulResult around
@@ -408,7 +404,7 @@ Interp()
     errorInfo        = null;
     errorCode        = null;
 
-    packageTable     = new Hashtable();
+    packageTable     = new HashMap();
     packageUnknown   = null;
     cmdCount         = 0;
     termOffset       = 0;
@@ -445,9 +441,9 @@ Interp()
     
     dbg              = initDebugInfo();
 
-    slaveTable = new Hashtable();
-    targetTable = new Hashtable();
-    aliasTable = new Hashtable();
+    slaveTable = new HashMap();
+    targetTable = new HashMap();
+    aliasTable = new HashMap();
 
     // init parser variables
     Parser.init(this);
@@ -644,28 +640,30 @@ eventuallyDispose()
     // callbacks, so we iterate.
 
     while (assocData != null) {
-	Hashtable table = assocData;
+	HashMap table = assocData;
 	assocData = null;
 
-	for (Enumeration e = table.keys(); e.hasMoreElements();) {
-	    Object key = e.nextElement();
-	    AssocData data = (AssocData) table.get(key);
+	for (Iterator iter = table.entrySet().iterator(); iter.hasNext() ;) {
+	    Map.Entry entry = (Map.Entry) iter.next();
+	    AssocData data = (AssocData) entry.getValue();
 	    data.disposeAssocData(this);
-	    table.remove(key);
+	    iter.remove();
 	}
     }
 
     // Close any remaining channels
 
-    for (Enumeration e = interpChanTable.keys(); e.hasMoreElements();) {
-	Object key = e.nextElement();
-	Channel chan = (Channel) interpChanTable.get(key);
+    for (Iterator iter = interpChanTable.entrySet().iterator(); iter.hasNext() ;) {
+	Map.Entry entry = (Map.Entry) iter.next();
+	Channel chan = (Channel) entry.getValue();
 	try {
 	    chan.close();
 	} catch (IOException ex) {
 	    // Ignore any IO errors
 	}
     }
+    interpChanTable.clear();
+    interpChanTable = null;
 
     // Finish deleting the global namespace.
 
@@ -898,7 +896,7 @@ setAssocData(
     AssocData data)		// Object associated with the name.
 {
     if (assocData == null) {
-	assocData = new Hashtable();
+	assocData = new HashMap();
     }
     assocData.put(name, data);
 }
@@ -1982,7 +1980,7 @@ protected void renameCommand(
     String newTail;
     Namespace cmdNs, newNs;
     WrappedCommand cmd;
-    Hashtable table,   oldTable;
+    HashMap   table,   oldTable;
     String    hashKey, oldHashKey;
 
     // Find the existing command. An error is returned if cmdName can't
@@ -3843,7 +3841,7 @@ throws
     // Initialize the hidden command table if necessary.
 
     if (hiddenCmdTable == null) {
-        hiddenCmdTable = new Hashtable();
+        hiddenCmdTable = new HashMap();
     }
 
     // It is an error to move an exposed command to a hidden command with
@@ -3871,7 +3869,7 @@ throws
 
     // Now link the hash table entry with the command structure.
     // We ensured above that the nsPtr was right.
-    
+
     cmd.table = hiddenCmdTable;
     cmd.hashKey = hiddenCmdToken;
     hiddenCmdTable.put(hiddenCmdToken, cmd);
@@ -4257,15 +4255,14 @@ addInterpResolver(
     String name,		// Name of this resolution scheme.
     Resolver resolver)		// Object to resolve commands/variables.
 {
-    Enumeration e;
     ResolverScheme res;
 
     //  Look for an existing scheme with the given name.
     //  If found, then replace its rules.
 
     if (resolvers != null) {
-	for (e = resolvers.elements(); e.hasMoreElements();) {
-	    res = (ResolverScheme) e.nextElement();
+	for (ListIterator iter = resolvers.listIterator(); iter.hasNext(); ) {
+	    res = (ResolverScheme) iter.next();
 	    if (name.equals(res.name)) {
 		res.resolver = resolver;
 		return;
@@ -4274,7 +4271,7 @@ addInterpResolver(
     }
 
     if (resolvers == null) {
-	resolvers = new Vector();
+	resolvers = new ArrayList();
     }
 
     //  Otherwise, this is a new scheme.  Add it to the FRONT
@@ -4282,7 +4279,7 @@ addInterpResolver(
 
     res = new ResolverScheme(name, resolver);
 
-    resolvers.insertElementAt(res, 0);
+    resolvers.add(0, res);
 }
 
 /**
@@ -4316,8 +4313,8 @@ getInterpResolver(
     //  then return pointers to its procedures.
 
     if (resolvers != null) {
-	for (e = resolvers.elements(); e.hasMoreElements();) {
-	    res = (ResolverScheme) e.nextElement();
+	for (ListIterator iter = resolvers.listIterator(); iter.hasNext(); ) {
+	    res = (ResolverScheme) iter.next();
 	    if (name.equals(res.name)) {
 		return res.resolver;
 	    }
@@ -4353,25 +4350,28 @@ removeInterpResolver(
     String name)		// Name of the scheme to be removed.
 {
     ResolverScheme res;
-    Enumeration e;
     boolean found = false;
 
     //  Look for an existing scheme with the given name.
 
     if (resolvers != null) {
-	e = resolvers.elements();
-	while (!found && e.hasMoreElements()) {
-	    res = (ResolverScheme) e.nextElement();
+	for (ListIterator iter = resolvers.listIterator(); iter.hasNext(); ) {
+	    res = (ResolverScheme) iter.next();
 	    if (name.equals(res.name)) {
 		found = true;
+		break;
 	    }
-        }
+	}
     }
 
     //  If we found the scheme, delete it.
 
     if (found) {
-	resolvers.removeElement(name);
+	int index = resolvers.indexOf(name);
+	if (index == -1) {
+	    throw new TclRuntimeError("name " + name + " not found in resolvers");
+	}
+	resolvers.remove(index);
     }
 
     return found;

@@ -7,13 +7,13 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclList.java,v 1.9 2006/01/13 03:40:11 mdejong Exp $
+ * RCS: @(#) $Id: TclList.java,v 1.10 2006/01/26 19:49:18 mdejong Exp $
  *
  */
 
 package tcl.lang;
 
-import java.util.*;
+import java.util.ArrayList;
 
 /**
  * This class implements the list object type in Tcl.
@@ -23,13 +23,13 @@ public class TclList implements InternalRep {
     /**
      * Internal representation of a list value.
      */
-    private Vector vector;
+    private ArrayList alist;
 
     /**
      * Create a new empty Tcl List.
      */
     private TclList() {
-	vector = new Vector();
+	alist = new ArrayList();
 
 	if (TclObject.saveObjRecords) {
 	    String key = "TclList";
@@ -44,13 +44,13 @@ public class TclList implements InternalRep {
     }
 
     /**
-     * Create a new empty Tcl List, with the vector pre-allocated to
+     * Create a new empty Tcl List, with the list pre-allocated to
      * the given size.
      *
-     * @param size the number of slots pre-allocated in the vector.
+     * @param size the number of slots pre-allocated in the alist.
      */
     private TclList(int size) {
-	vector = new Vector(size);
+	alist = new ArrayList(size);
 
 	if (TclObject.saveObjRecords) {
 	    String key = "TclList";
@@ -68,10 +68,11 @@ public class TclList implements InternalRep {
      * Called to free any storage for the type's internal rep.
      */
     public void dispose() {
-	int size = vector.size();
+	final int size = alist.size();
 	for (int i=0; i<size; i++) {
-	    ((TclObject) vector.elementAt(i)).release();
+	    ((TclObject) alist.get(i)).release();
 	}
+	alist.clear();
     }
 
     /**
@@ -81,13 +82,13 @@ public class TclList implements InternalRep {
      *
      */
     public InternalRep duplicate() {
-	int size = vector.size();
+	int size = alist.size();
 	TclList newList = new TclList(size);
 
 	for (int i=0; i<size; i++) {
-	    TclObject tobj = (TclObject) vector.elementAt(i);
+	    TclObject tobj = (TclObject) alist.get(i);
 	    tobj.preserve();
-	    newList.vector.addElement(tobj);
+	    newList.alist.add(tobj);
 	}
 
 	if (TclObject.saveObjRecords) {
@@ -112,12 +113,12 @@ public class TclList implements InternalRep {
      * @return the string representation of the Tcl object.
      */
     public String toString() {
-	StringBuffer sbuf = new StringBuffer();
-	int size = vector.size();
+	StringBuffer sbuf = new StringBuffer(32);
+	final int size = alist.size();
 
 	try {
 	    for (int i=0; i<size; i++) {
-		Object elm = vector.elementAt(i);
+		Object elm = alist.get(i);
 		if (elm != null) {
 		    Util.appendElement(null, sbuf, elm.toString());
 		} else {
@@ -155,7 +156,7 @@ public class TclList implements InternalRep {
 
 	if (!(rep instanceof TclList)) {
 	    TclList tlist = new TclList();
-	    splitList(interp, tlist.vector, tobj.toString());
+	    splitList(interp, tlist.alist, tobj.toString());
 	    tobj.setInternalRep(tlist);
 
 	    if (TclObject.saveObjRecords) {
@@ -175,11 +176,11 @@ public class TclList implements InternalRep {
      * Splits a list (in string rep) up into its constituent fields.
      *
      * @param interp current interpreter.
-     * @param v store the list elements in this vector.
+     * @param alist store the list elements in this ArraryList.
      * @param s the string to convert into a list.
      * @exception TclException if the object doesn't contain a valid list.
      */
-    private static final void splitList(Interp interp, Vector v, String s)
+    private static final void splitList(Interp interp, ArrayList alist, String s)
 	    throws TclException {
 	int len = s.length();
 	int i = 0;
@@ -191,7 +192,7 @@ public class TclList implements InternalRep {
 	    } else {
 		TclObject tobj = TclString.newInstance(res.elem);
 		tobj.preserve();
-		v.addElement(tobj);
+		alist.add(tobj);
 	    }
 	    i = res.elemEnd;
 	}
@@ -224,7 +225,7 @@ public class TclList implements InternalRep {
 	TclList tlist = (TclList) irep;
 
 	elemObj.preserve();
-	tlist.vector.addElement(elemObj);
+	tlist.alist.add(elemObj);
     }
 
     /**
@@ -245,7 +246,7 @@ public class TclList implements InternalRep {
 	}
 
 	TclList tlist = (TclList) irep;
-	return tlist.vector.size();
+	return tlist.alist.size();
     }
 
     /**
@@ -267,10 +268,10 @@ public class TclList implements InternalRep {
 	setListFromAny(interp, tobj);
 	TclList tlist = (TclList) tobj.getInternalRep();
 
-	int size = tlist.vector.size();
+	int size = tlist.alist.size();
 	TclObject objArray[] = new TclObject[size];
 	for (int i=0; i<size; i++) {
-	    objArray[i] = (TclObject) tlist.vector.elementAt(i);
+	    objArray[i] = (TclObject) tlist.alist.get(i);
 	}
 	return objArray;
     }
@@ -297,10 +298,10 @@ public class TclList implements InternalRep {
 	}
 
 	TclList tlist = (TclList) irep;
-	if (index < 0 || index >= tlist.vector.size()) {
+	if (index < 0 || index >= tlist.alist.size()) {
 	    return null;
 	} else {
-	    return (TclObject) tlist.vector.elementAt(index);
+	    return (TclObject) tlist.alist.get(index);
 	}
     }
 
@@ -357,7 +358,7 @@ public class TclList implements InternalRep {
 	tobj.invalidateStringRep();
 	TclList tlist = (TclList) tobj.getInternalRep();
 
-	int size = tlist.vector.size();
+	int size = tlist.alist.size();
 	int i;
 
 	if (index >= size) {
@@ -372,14 +373,14 @@ public class TclList implements InternalRep {
 		count = size - index;
 	    }
 	    for (i=0; i<count; i++) {
-		TclObject obj = (TclObject) tlist.vector.elementAt(index);
+		TclObject obj = (TclObject) tlist.alist.get(index);
 		obj.release();
-		tlist.vector.removeElementAt(index);
+		tlist.alist.remove(index);
 	    }
 	}
 	for (i=from; i<=to; i++) {
 	    elements[i].preserve();
-	    tlist.vector.insertElementAt(elements[i], index++);
+	    tlist.alist.add(index++, elements[i]);
 	}
     }
 
@@ -403,7 +404,7 @@ public class TclList implements InternalRep {
 	tobj.invalidateStringRep();
 	TclList tlist = (TclList) tobj.getInternalRep();
 
-	int size = tlist.vector.size();
+	int size = tlist.alist.size();
 
 	if (size <= 1) {
 	    return;
@@ -411,14 +412,14 @@ public class TclList implements InternalRep {
 
 	TclObject objArray[] = new TclObject[size];
 	for (int i=0; i<size; i++) {
-	    objArray[i] = (TclObject) tlist.vector.elementAt(i);
+	    objArray[i] = (TclObject) tlist.alist.get(i);
 	}
 
 	QSort s = new QSort();
 	s.sort(interp, objArray, sortMode, sortIndex, sortIncreasing, command);
 
 	for (int i=0; i<size; i++) {
-	    tlist.vector.setElementAt(objArray[i], i);
+	    tlist.alist.set(i, objArray[i]);
 	    objArray[i] = null;
 	}
     }

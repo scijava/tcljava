@@ -23,7 +23,7 @@
  *           mmclennan@lucent.com
  *           http://www.tcltk.com/itcl
  *
- *     RCS:  $Id: Methods.java,v 1.2 2005/09/12 00:00:50 mdejong Exp $
+ *     RCS:  $Id: Methods.java,v 1.3 2006/01/26 19:49:18 mdejong Exp $
  * ========================================================================
  *           Copyright (c) 1993-1998  Lucent Technologies, Inc.
  * ------------------------------------------------------------------------
@@ -1452,7 +1452,7 @@ PushContext(
     Namespace.pushCallFrame(interp, frame, contextClass.namesp, true);
 
     context.classDefn = contextClass;
-    context.compiledLocals = new Var[20];
+    //context.compiledLocals = new Var[20];
 
     //  If this is an object context, register it in a hash table
     //  of all known contexts.  We'll need this later if we
@@ -1541,7 +1541,7 @@ PopContext(
 
     // Release compiledLocals
 
-    context.compiledLocals = null;
+    //context.compiledLocals = null;
 }
 
 

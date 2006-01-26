@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: InfoCmd.java,v 1.12 2005/11/21 01:14:17 mdejong Exp $
+ * RCS: @(#) $Id: InfoCmd.java,v 1.13 2006/01/26 19:49:18 mdejong Exp $
  *
  */
 
@@ -294,7 +294,6 @@ class InfoCmd implements Command {
     private static void InfoCommandsCmd(Interp interp, TclObject[] objv)
 	    throws TclException {
 	String cmdName, pattern, simplePattern;
-	Enumeration search;
 	Namespace ns;
 	Namespace globalNs = Namespace.getGlobalNamespace(interp);
 	Namespace currNs   = Namespace.getCurrentNamespace(interp);
@@ -339,13 +338,14 @@ class InfoCmd implements Command {
 	list = TclList.newInstance();
 
 	if (ns != null) {
-	    search = ns.cmdTable.keys();
-	    while ( search.hasMoreElements() ) {
-		cmdName = (String) search.nextElement();
+	    for (Iterator iter = ns.cmdTable.entrySet().iterator(); iter.hasNext() ;) {
+		Map.Entry entry = (Map.Entry) iter.next();
+		cmdName = (String) entry.getKey();
+
 		if ((simplePattern == null)
 		    || Util.stringMatch(cmdName, simplePattern)) {
 		    if (specificNsInPattern) {
-			cmd = (WrappedCommand) ns.cmdTable.get(cmdName);
+			cmd = (WrappedCommand) entry.getValue();
 			elemObj = TclString.newInstance(
 				      interp.getCommandFullName(cmd) );
 		    } else {
@@ -362,9 +362,9 @@ class InfoCmd implements Command {
 	    // the effective namespace.
 	
 	    if ((ns != globalNs) && !specificNsInPattern) {
-		search = globalNs.cmdTable.keys();
-		while ( search.hasMoreElements() ) {
-		    cmdName = (String) search.nextElement();
+	    	for (Iterator iter = globalNs.cmdTable.entrySet().iterator(); iter.hasNext() ;) {
+		    Map.Entry entry = (Map.Entry) iter.next();
+		    cmdName = (String) entry.getKey();
 		    if ((simplePattern == null)
 			|| Util.stringMatch(cmdName, simplePattern)) {
 			if (ns.cmdTable.get(cmdName) == null) {
@@ -541,7 +541,6 @@ class InfoCmd implements Command {
 	    throws TclException {
 	String varName, pattern;
 	Namespace globalNs = Namespace.getGlobalNamespace(interp);
-	Enumeration search;
 	Var var;
 	TclObject list;
 
@@ -558,10 +557,10 @@ class InfoCmd implements Command {
 
 	list = TclList.newInstance();
 
-	for (search = globalNs.varTable.keys();
-	     search.hasMoreElements();) {
-	    varName = (String) search.nextElement();
-	    var = (Var) globalNs.varTable.get(varName);
+	for (Iterator iter = globalNs.varTable.entrySet().iterator(); iter.hasNext() ;) {
+	    Map.Entry entry = (Map.Entry) iter.next();
+	    varName = (String) entry.getKey();
+	    var = (Var) entry.getValue();
 	    if (var.isVarUndefined()) {
 		continue;
 	    }
@@ -822,18 +821,17 @@ class InfoCmd implements Command {
     {
 	Var var;
 	String varName;
-	Hashtable localVarTable;
-	Enumeration search;
+	HashMap localVarTable;
 
 	localVarTable = interp.varFrame.varTable;
 
 	// Compiled locals do not exist in Jacl
 
 	if (localVarTable != null) {
-	    for (search = localVarTable.keys();
-		 search.hasMoreElements() ; ) {
-		varName = (String) search.nextElement();
-		var = (Var) localVarTable.get(varName);
+	    for (Iterator iter = localVarTable.entrySet().iterator(); iter.hasNext() ;) {
+		Map.Entry entry = (Map.Entry) iter.next();
+		varName = (String) entry.getKey();
+		var = (Var) entry.getValue();
 		if (!var.isVarUndefined()
 		    && (includeLinks || !var.isVarLink())) {
 		    if ((pattern == null)
@@ -946,7 +944,6 @@ class InfoCmd implements Command {
 	    throws TclException {
 	String cmdName, pattern;
 	Namespace currNs = Namespace.getCurrentNamespace(interp);
-	Enumeration search;
 	WrappedCommand cmd, realCmd;
 	TclObject list;
 
@@ -962,11 +959,11 @@ class InfoCmd implements Command {
 	// of all procs that match the pattern.
 
 	list = TclList.newInstance();
-	for (search = currNs.cmdTable.keys();
-	     search.hasMoreElements() ; ) {
-	    cmdName = (String) search.nextElement();
-	    cmd = (WrappedCommand) currNs.cmdTable.get(cmdName);
-	    
+	for (Iterator iter = currNs.cmdTable.entrySet().iterator(); iter.hasNext() ;) {
+	    Map.Entry entry = (Map.Entry) iter.next();
+	    cmdName = (String) entry.getKey();
+	    cmd = (WrappedCommand) entry.getValue();
+
 	    // If the command isn't itself a proc, it still might be an
 	    // imported command that points to a "real" proc in a different
 	    // namespace.
@@ -1101,7 +1098,6 @@ class InfoCmd implements Command {
     private static void InfoVarsCmd(Interp interp, TclObject[] objv)
 	    throws TclException {
 	String varName, pattern, simplePattern;
-	Enumeration search;
 	Var var;
 	Namespace ns;
 	Namespace globalNs = Namespace.getGlobalNamespace(interp);
@@ -1155,10 +1151,11 @@ class InfoCmd implements Command {
 	    // but a specific namespace was specified. Create a list containing
 	    // only the variables in the effective namespace's variable table.
 
-	    search = ns.varTable.keys();
-	    while (  search.hasMoreElements() ) {
-		varName = (String) search.nextElement();
-		var = (Var) ns.varTable.get(varName);
+	    for (Iterator iter = ns.varTable.entrySet().iterator(); iter.hasNext() ;) {
+		Map.Entry entry = (Map.Entry) iter.next();
+		varName = (String) entry.getKey();
+		var = (Var) entry.getValue();
+
 		if (!var.isVarUndefined()
 		    || ((var.flags & Var.NAMESPACE_VAR) != 0)) {
 		    if ((simplePattern == null)
@@ -1182,10 +1179,11 @@ class InfoCmd implements Command {
 	    // namespace.
 
 	    if ((ns != globalNs) && !specificNsInPattern) {
-		search = globalNs.varTable.keys();
-		while (  search.hasMoreElements() ) {
-		    varName = (String) search.nextElement();
-		    var = (Var) globalNs.varTable.get(varName);
+	        for (Iterator iter = globalNs.varTable.entrySet().iterator(); iter.hasNext() ;) {
+		    Map.Entry entry = (Map.Entry) iter.next();
+		    varName = (String) entry.getKey();
+		    var = (Var) entry.getValue();
+
 		    if (!var.isVarUndefined()
 			|| ((var.flags & Var.NAMESPACE_VAR) != 0)) {
 			if ((simplePattern == null)

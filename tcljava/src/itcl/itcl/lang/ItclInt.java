@@ -18,7 +18,7 @@
  *           mmclennan@lucent.com
  *           http://www.tcltk.com/itcl
  *
- *     RCS:  $Id: ItclInt.java,v 1.2 2005/09/12 00:00:50 mdejong Exp $
+ *     RCS:  $Id: ItclInt.java,v 1.3 2006/01/26 19:49:18 mdejong Exp $
  * ========================================================================
  *           Copyright (c) 1993-1998  Lucent Technologies, Inc.
  * ------------------------------------------------------------------------
@@ -30,7 +30,7 @@ package itcl.lang;
 
 import tcl.lang.*;
 
-import java.util.Hashtable;
+import java.util.HashMap;
 
 class ItclObjectInfo
         implements AssocData,
@@ -39,7 +39,7 @@ class ItclObjectInfo
 
     Interp interp;             // interpreter that manages this info
 
-    Hashtable objects;         // Maps Command to ItclObject
+    HashMap objects;         // Maps Command to ItclObject
                                // for all known objects
 
     Itcl_Stack transparentFrames; // stack of call frames that should be
@@ -48,7 +48,7 @@ class ItclObjectInfo
                                // one of these contexts, it does an
                                // "uplevel" to get past the transparent
                                // frame and back to the calling context.
-    Hashtable contextFrames;   // object contexts for active call frames
+    HashMap contextFrames;   // object contexts for active call frames
 
     int protection;            // protection level currently in effect
 
@@ -86,22 +86,22 @@ class ItclClass
     ItclObjectInfo info;          // info about all known objects
     Itcl_List bases;              // list of base classes
     Itcl_List derived;            // list of all derived classes
-    Hashtable heritage;           // table of all base classes that provides
+    HashMap heritage;           // table of all base classes that provides
                                   // provides fast lookup for inheritance tests.
                                   // Maps ItclClass to the empty string.
     TclObject initCode;           // initialization code for new objs
-    Hashtable variables;          // definitions for all data members
+    HashMap variables;          // definitions for all data members
                                   // in this class.  Look up simple string
                                   // names and get back ItclVarDefn refs
-    Hashtable functions;          // definitions for all member functions
+    HashMap functions;          // definitions for all member functions
                                   // in this class.  Look up simple string
                                   // names and get back ItclMemberFunc refs
     int numInstanceVars;          // number of instance vars in variables
                                   // table
-    Hashtable resolveVars;        // all possible names for variables in
+    HashMap resolveVars;        // all possible names for variables in
                                   // this class (e.g., x, foo::x, etc.)
                                   // Maps String to ItclVarLookup.
-    Hashtable resolveCmds;        // all possible names for functions in
+    HashMap resolveCmds;        // all possible names for functions in
                                   // this class (e.g., x, foo::x, etc.)
                                   // Maps String to ItclMemberFunc.
     int unique;                   // unique number for #auto generation
@@ -132,9 +132,9 @@ class ItclObject
 
     int dataSize;                // number of elements in data array
     Var[] data;                  // all object-specific data members
-    Hashtable constructed;       // temp storage used during construction
+    HashMap constructed;       // temp storage used during construction
                                  // Maps class name String to the empty string.
-    Hashtable destructed;        // temp storage used during destruction
+    HashMap destructed;        // temp storage used during destruction
                                  // Maps class name String to the empty string.
 
     // Invoke via ItclEventuallyFreed interface when
@@ -266,7 +266,7 @@ class ItclVarLookup {
 class ItclContext {
     ItclClass classDefn;      // class definition
     CallFrame frame;          // call frame for object context
-    Var[] compiledLocals;     // array that holds references to compiled locals
+    //Var[] compiledLocals;     // array that holds references to compiled locals
 
     ItclContext(Interp interp) {
         frame = ItclAccess.newCallFrame(interp);

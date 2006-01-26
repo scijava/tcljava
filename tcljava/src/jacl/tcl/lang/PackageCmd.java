@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: PackageCmd.java,v 1.6 2005/10/20 21:35:55 mdejong Exp $
+ * RCS: @(#) $Id: PackageCmd.java,v 1.7 2006/01/26 19:49:18 mdejong Exp $
  */
 
 package tcl.lang;
@@ -465,12 +465,12 @@ throws
 
 	try {
 	    sbuf = new StringBuffer();
-	    e = interp.packageTable.keys();
 	    once = false;
-	    while (e.hasMoreElements()) {
+	    for (Iterator iter = interp.packageTable.entrySet().iterator(); iter.hasNext() ; ) {
+		Map.Entry entry = (Map.Entry) iter.next();
+		key = (String) entry.getKey();
+		pkg = (Package) entry.getValue(); 
 		once = true;
-		key = (String) e.nextElement();
-		pkg = (Package) interp.packageTable.get(key); 
 		if ((pkg.version != null) || (pkg.avail != null)) {
 		    Util.appendElement(interp, sbuf, key);
 		}
@@ -855,9 +855,8 @@ static String[]
 split(
     String in, 
     char splitchar) 
-{  
-    Vector words;
-    String[] ret;
+{
+    ArrayList words;
     int i;
     int len;
     char[] str;
@@ -870,7 +869,7 @@ split(
     str = new char[len + 1];
     in.getChars(0,len,str,0);
     str[len++] = splitchar;
-    words = new Vector(5);
+    words = new ArrayList(5);
     
     for (i=0; i < len; i++) {
 			
@@ -880,7 +879,7 @@ split(
     
 	if (str[i] == splitchar) {
 	    if (wordstart <= (i - 1)) {
-		words.addElement( new String(str, wordstart, i - wordstart) );
+		words.add( new String(str, wordstart, i - wordstart) );
 	    }
 	    wordstart = (i + 1);
 	}
@@ -889,8 +888,8 @@ split(
     // Create an array that is as big as the number
     // of elements in the vector, copy over and return.
 
-    ret = new String[words.size()];
-    words.copyInto(ret);
+    String[] ret = { (String) null };
+    ret = (String []) words.toArray(ret);
     return ret;
 }
 

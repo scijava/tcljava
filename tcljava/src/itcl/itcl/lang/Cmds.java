@@ -21,7 +21,7 @@
  *           mmclennan@lucent.com
  *           http://www.tcltk.com/itcl
  *
- *     RCS:  $Id: Cmds.java,v 1.3 2005/11/07 07:41:51 mdejong Exp $
+ *     RCS:  $Id: Cmds.java,v 1.4 2006/01/26 19:49:18 mdejong Exp $
  * ========================================================================
  *           Copyright (c) 1993-1998  Lucent Technologies, Inc.
  * ------------------------------------------------------------------------
@@ -33,8 +33,9 @@ package itcl.lang;
 
 import tcl.lang.*;
 
-import java.util.Hashtable;
-import java.util.Enumeration;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Iterator;
 
 class Cmds {
 
@@ -108,10 +109,10 @@ Initialize(
 
     info = new ItclObjectInfo();
     info.interp = interp;
-    info.objects = new Hashtable();
+    info.objects = new HashMap();
     info.transparentFrames = new Itcl_Stack();
     Util.InitStack(info.transparentFrames);
-    info.contextFrames = new Hashtable();
+    info.contextFrames = new HashMap();
     info.protection = Itcl.DEFAULT_PROTECT;
     info.cdefnStack = new Itcl_Stack();
     Util.InitStack(info.cdefnStack);
@@ -315,19 +316,10 @@ DelObjectInfo(
     ItclObject contextObj;
 
     //  Destroy all known objects by deleting their access
-    //  commands.
+    //  commands. Use FirstHashEntry to always reset the
+    //  search after deleteCommandFromToken() (Fix 227804).
 
-    for (Enumeration e = info.objects.keys(); e.hasMoreElements() ; ) {
-        Command key = (Command) e.nextElement();
-        contextObj = (ItclObject) info.objects.get(key);
-
-        // If a previous object delete already removed the
-        // current object then continue with the next one.
-
-        if (contextObj == null) {
-            continue;
-        }
-
+    while ((contextObj = (ItclObject) ItclAccess.FirstHashEntry(info.objects)) != null) {
         info.interp.deleteCommandFromToken(contextObj.w_accessCmd);
     }
     info.objects.clear();
@@ -335,9 +327,9 @@ DelObjectInfo(
 
     //  Discard all known object contexts.
 
-    for (Enumeration e = info.contextFrames.keys(); e.hasMoreElements() ; ) {
-        CallFrame key = (CallFrame) e.nextElement();
-        contextObj = (ItclObject) info.contextFrames.get(key);
+    for ( Iterator iter = info.contextFrames.entrySet().iterator(); iter.hasNext() ; ) {
+        Map.Entry entry = (Map.Entry) iter.next();
+        contextObj = (ItclObject) entry.getValue();
         Util.ReleaseData(contextObj);
     }
     info.contextFrames.clear();
@@ -392,7 +384,7 @@ throws
     String cmdName;
     boolean newEntry, handledActiveNs;
     // Maps WrappedCommand to the empty string
-    Hashtable unique;
+    HashMap unique;
     Itcl_Stack search;
     WrappedCommand cmd, originalCmd;
     Namespace ns;
@@ -419,7 +411,7 @@ throws
     Util.PushStack(globalNs, search);
     Util.PushStack(activeNs, search);  // last in, first out!
 
-    unique = new Hashtable();
+    unique = new HashMap();
     result = TclList.newInstance();
 
     handledActiveNs = false;
@@ -429,9 +421,10 @@ throws
             continue;
         }
 
-        for (Enumeration e = ns.cmdTable.keys(); e.hasMoreElements() ; ) {
-            String key = (String) e.nextElement();
-            cmd = (WrappedCommand) ns.cmdTable.get(key);
+        for ( Iterator iter = ns.cmdTable.entrySet().iterator(); iter.hasNext() ; ) {
+            Map.Entry entry = (Map.Entry) iter.next();
+            String key = (String) entry.getKey();
+            cmd = (WrappedCommand) entry.getValue();
 
             if (Class.IsClass(cmd)) {
                 originalCmd = Namespace.getOriginalCommand(cmd);
@@ -473,10 +466,10 @@ throws
         //  Push any child namespaces onto the stack and continue
         //  the search in those namespaces.
 
-        for (Enumeration e = ns.childTable.keys(); e.hasMoreElements() ; ) {
-            String key = (String) e.nextElement();
-            Namespace child =
-                (Namespace) ns.childTable.get(key);
+        for ( Iterator iter = ns.childTable.entrySet().iterator(); iter.hasNext() ; ) {
+            Map.Entry entry = (Map.Entry) iter.next();
+            String key = (String) entry.getKey();
+            Namespace child = (Namespace) entry.getValue();
             Util.PushStack(child, search);
         }
     }
@@ -535,13 +528,12 @@ throws
     boolean newEntry, match, handledActiveNs;
     int pos;
     ItclObject contextObj;
-    Hashtable unique;
+    HashMap unique;
     Itcl_Stack search;
     WrappedCommand wcmd, originalCmd;
     Namespace ns;
     TclObject obj;
     TclObject result = TclList.newInstance();
-    Enumeration e;
 
     //  Parse arguments:
     //  objects ?-class <className>? ?-isa <className>? ?<pattern>?
@@ -602,7 +594,7 @@ throws
     Util.PushStack(globalNs, search);
     Util.PushStack(activeNs, search);  // last in, first out!
 
-    unique = new Hashtable();
+    unique = new HashMap();
 
     handledActiveNs = false;
     while (Util.GetStackSize(search) > 0) {
@@ -611,10 +603,11 @@ throws
             continue;
         }
 
-        e = ns.cmdTable.keys();
-        while (e.hasMoreElements()) {
-            String key = (String) e.nextElement();
-            wcmd = (WrappedCommand) ns.cmdTable.get(key);
+        for ( Iterator iter = ns.cmdTable.entrySet().iterator(); iter.hasNext() ; ) {
+            Map.Entry entry = (Map.Entry) iter.next();
+            String key = (String) entry.getKey();
+            wcmd = (WrappedCommand) entry.getValue();
+
             if (Objects.IsObject(wcmd)) {
                 originalCmd = Namespace.getOriginalCommand(wcmd);
                 if (originalCmd != null) {
@@ -670,11 +663,10 @@ throws
         //  Push any child namespaces onto the stack and continue
         //  the search in those namespaces.
 
-        e = ns.childTable.keys();
-        while (e.hasMoreElements()) {
-            String key = (String) e.nextElement();
-            Namespace child =
-                (Namespace) ns.childTable.get(key);
+        for ( Iterator iter = ns.childTable.entrySet().iterator(); iter.hasNext() ; ) {
+            Map.Entry entry = (Map.Entry) iter.next();
+            //String key = (String) entry.getKey();
+            Namespace child = (Namespace) entry.getValue();
 
             Util.PushStack(child, search);
         }

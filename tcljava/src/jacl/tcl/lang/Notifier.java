@@ -9,14 +9,14 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Notifier.java,v 1.8 2003/03/11 02:21:14 mdejong Exp $
+ * RCS: @(#) $Id: Notifier.java,v 1.9 2006/01/26 19:49:18 mdejong Exp $
  *
  */
 
 package tcl.lang;
 
-import java.util.Hashtable;
-import java.util.Vector;
+import java.util.HashMap;
+import java.util.ArrayList;
 
 // Implements the Jacl version of the Notifier class. The Notifier is
 // the lowest-level part of the event system. It is used by
@@ -63,11 +63,11 @@ Thread primaryThread;
 
 // Stores the Notifier for each thread.
 
-private static Hashtable notifierTable = new Hashtable();
+private static HashMap notifierTable = new HashMap();
 
 // List of registered timer handlers.
 
-Vector timerList;
+ArrayList timerList;
 
 // Used to distinguish older timer handlers from recently-created ones.
 
@@ -80,7 +80,7 @@ boolean timerPending;
 
 // List of registered idle handlers.
 
-Vector idleList;
+ArrayList idleList;
 
 // Used to distinguish older idle handlers from recently-created ones.
 
@@ -114,9 +114,9 @@ Notifier(
     lastEvent         = null;
     markerEvent       = null;
 
-    timerList 	      = new Vector();
+    timerList 	      = new ArrayList();
     timerGeneration   = 0;
-    idleList	      = new Vector();
+    idleList	      = new ArrayList();
     idleGeneration    = 0;
     timerPending      = false;
     refCount	      = 0;
@@ -570,7 +570,7 @@ doOneEvent(
 	// because there may already be other events on the queue.
 
 	if (!timerPending && (timerList.size() > 0)) {
-	    TimerHandler h = (TimerHandler)timerList.elementAt(0);
+	    TimerHandler h = (TimerHandler) timerList.get(0);
 		
 	    if (h.atTime <= sysTime) {
 		TimerEvent event = new TimerEvent();
@@ -624,7 +624,7 @@ doOneEvent(
 
             synchronized (this) {
 	    if (timerList.size() > 0) {
-		TimerHandler h = (TimerHandler)timerList.elementAt(0);
+		TimerHandler h = (TimerHandler) timerList.get(0);
 		long waitTime = h.atTime - sysTime;
 		if (waitTime > 0) {
 		    wait(waitTime);
@@ -681,11 +681,11 @@ serviceIdle()
     //    infinite loop could result.
 
     while (idleList.size() > 0) {
-	IdleHandler h = (IdleHandler)idleList.elementAt(0);
+	IdleHandler h = (IdleHandler) idleList.get(0);
 	if (h.generation > gen) {
 	    break;
 	}
-	idleList.removeElementAt(0);
+	idleList.remove(0);
 	if (h.invoke() != 0) {
 	    result = 1;
 	}
@@ -764,14 +764,14 @@ processEvent(
     //	  appearing before later ones.
 
     while (notifier.timerList.size() > 0) {
-	TimerHandler h = (TimerHandler)notifier.timerList.elementAt(0);
+	TimerHandler h = (TimerHandler)notifier.timerList.get(0);
 	if (h.generation > gen) {
 	    break;
 	}
 	if (h.atTime > sysTime) {
 	    break;
 	}
-	notifier.timerList.removeElementAt(0);
+	notifier.timerList.remove(0);
 	h.invoke();
     }    
 

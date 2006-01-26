@@ -23,7 +23,7 @@
  *           mmclennan@lucent.com
  *           http://www.tcltk.com/itcl
  *
- *     RCS:  $Id: Class.java,v 1.3 2006/01/25 03:07:43 mdejong Exp $
+ *     RCS:  $Id: Class.java,v 1.4 2006/01/26 19:49:18 mdejong Exp $
  * ========================================================================
  *           Copyright (c) 1993-1998  Lucent Technologies, Inc.
  * ------------------------------------------------------------------------
@@ -35,8 +35,9 @@ package itcl.lang;
 
 import tcl.lang.*;
 
-import java.util.Hashtable;
-import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.HashMap;
 
 // Note: ItclResolvedVarInfo structure not ported since it seems
 // to be used only in the bytecode compiler implementation.
@@ -136,12 +137,12 @@ CreateClass(
     cd.accessCmd = null;
     cd.w_accessCmd = null;
 
-    cd.variables = new Hashtable();
-    cd.functions = new Hashtable();
+    cd.variables = new HashMap();
+    cd.functions = new HashMap();
 
     cd.numInstanceVars = 0;
-    cd.resolveVars = new Hashtable();
-    cd.resolveCmds = new Hashtable();
+    cd.resolveVars = new HashMap();
+    cd.resolveCmds = new HashMap();
 
     cd.bases = new Itcl_List();
     Util.InitList(cd.bases);
@@ -156,7 +157,7 @@ CreateClass(
     //  own class definition in the heritage.  Base classes are
     //  added to the heritage from the "inherit" statement.
 
-    cd.heritage = new Hashtable();
+    cd.heritage = new HashMap();
     cd.heritage.put(cd, "");
 
     //  Create a namespace to represent the class.  Add the class
@@ -278,12 +279,11 @@ DeleteClass(
     //  destroyed above, when derived classes were destroyed.
     //  Destroy objects and report any errors.
 
-    Enumeration e = cdefn.info.objects.keys();
-    while (e.hasMoreElements()) {
-        Command key = (Command) e.nextElement();
-        contextObj = (ItclObject) cdefn.info.objects.get(key);
+    for (Iterator iter = cdefn.info.objects.entrySet().iterator(); iter.hasNext() ;) {
+        Map.Entry entry = (Map.Entry) iter.next();
+        contextObj = (ItclObject) entry.getValue();
 
-        if (contextObj != null && contextObj.classDefn == cdefn) {
+        if (contextObj.classDefn == cdefn) {
             try {
                 Objects.DeleteObject(interp, contextObj);
             } catch (TclException ex) {
@@ -291,17 +291,12 @@ DeleteClass(
                 DeleteClassFailed(interp, cd.namesp.fullName, ex);
             }
 
-            // Note that the code to reset the objects Enumeration
-            // was skipped since deleting from the objects table
-            // will not change the Enumeration. Check for a
-            // null contextObj above in case one object delete
-            // command deleted some other object in the table.
-            
-            // FIXME: Is it possible that a class delete could
-            // introduce new objects into the hashtable? If so,
-            // then the search would need to be started over.
-            // Also, check other places in this file and rest
-            // of code where this might be an issue.
+            // Fix 227804: Whenever an object to delete was found we
+            // have to reset the search to the beginning as the
+            // current entry in the search was deleted and accessing it
+            // is therefore not allowed anymore.
+
+            iter = cdefn.info.objects.entrySet().iterator();
         }
     }
 
@@ -407,22 +402,20 @@ DestroyClassNamesp(ItclClass cdefn)
     //  Scan through and find all objects that belong to this class.
     //  Destroy them quietly by deleting their access command.
 
-    Enumeration e = cdefn.info.objects.keys();
-    while (e.hasMoreElements()) {
-        Command key = (Command) e.nextElement();
-        contextObj = (ItclObject) cdefn.info.objects.get(key);
+    for (Iterator iter = cdefn.info.objects.entrySet().iterator(); iter.hasNext() ;) {
+        Map.Entry entry = (Map.Entry) iter.next();
+        contextObj = (ItclObject) entry.getValue();
 
-        if (contextObj != null && contextObj.classDefn == cdefn) {
+        if (contextObj.classDefn == cdefn) {
             cdefn.interp.deleteCommandFromToken(
                 contextObj.w_accessCmd);
 
-	    // Fix 227804: Whenever an object to delete was found we
-	    // have to reset the search to the beginning as the
-	    // current entry in the search was deleted and accessing it
-	    // is therefore not allowed anymore.
+            // Fix 227804: Whenever an object to delete was found we
+            // have to reset the search to the beginning as the
+            // current entry in the search was deleted and accessing it
+            // is therefore not allowed anymore.
 
-	    //entry = Tcl_FirstHashEntry(&cdefnPtr->info->objects, &place);
-	    //continue;
+            iter = cdefn.info.objects.entrySet().iterator();
         }
     }
 
@@ -502,8 +495,7 @@ FreeClass(
     ItclVarDefn vdefn;
     ItclVarLookup vlookup;
     Var var;
-    Hashtable varTable;
-    Enumeration e;
+    HashMap varTable;
 
     //  Tear down the list of derived classes.  This list should
     //  really be empty if everything is working properly, but
@@ -521,12 +513,12 @@ FreeClass(
     //  appear multiple times in the table (for x, foo::x, etc.)
     //  so each one has a reference count.
 
-    varTable = new Hashtable();
+    varTable = new HashMap();
 
-    e = cdefn.resolveVars.keys();
-    while (e.hasMoreElements()) {
-        String key = (String) e.nextElement();
-        vlookup = (ItclVarLookup) cdefn.resolveVars.get(key);
+    for (Iterator iter = cdefn.resolveVars.entrySet().iterator(); iter.hasNext() ;) {
+        Map.Entry entry = (Map.Entry) iter.next();
+        vlookup = (ItclVarLookup) entry.getValue();
+
         if (--vlookup.usage == 0) {
             //  If this is a common variable owned by this class,
             //  then release the class's hold on it.  If it's no
@@ -554,10 +546,9 @@ FreeClass(
 
     //  Delete all variable definitions.
 
-    e = cdefn.variables.keys();
-    while (e.hasMoreElements()) {
-        String key = (String) e.nextElement();
-        vdefn = (ItclVarDefn) cdefn.variables.get(key);
+    for (Iterator iter = cdefn.variables.entrySet().iterator(); iter.hasNext() ;) {
+        Map.Entry entry = (Map.Entry) iter.next();
+        vdefn = (ItclVarDefn) entry.getValue();
         DeleteVarDefn(vdefn);
     }
     cdefn.variables.clear();
@@ -565,10 +556,9 @@ FreeClass(
 
     //  Delete all function definitions.
 
-    e = cdefn.functions.keys();
-    while (e.hasMoreElements()) {
-        String key = (String) e.nextElement();
-        ItclMemberFunc mfunc = (ItclMemberFunc) cdefn.functions.get(key);
+    for (Iterator iter = cdefn.functions.entrySet().iterator(); iter.hasNext() ;) {
+        Map.Entry entry = (Map.Entry) iter.next();
+        ItclMemberFunc mfunc = (ItclMemberFunc) entry.getValue();
         Util.ReleaseData(mfunc);
     }
     cdefn.functions.clear();
@@ -1093,7 +1083,7 @@ ClassVarResolver(
     CallFrame frame;
     Var var;
     ItclVarLookup vlookup;
-    Hashtable vtable;
+    HashMap vtable;
 
     Util.Assert(IsClassNamespace(context),
                "IsClassNamespace(context)");
@@ -1244,7 +1234,6 @@ BuildVirtualTables(
     Namespace ns;
     StringBuffer buffer, buffer2;
     boolean newEntry;
-    Enumeration e;
     String key;
 
     buffer = new StringBuffer(64);
@@ -1252,16 +1241,16 @@ BuildVirtualTables(
 
     //  Clear the variable resolution table.
 
-    e = cdefn.resolveVars.keys();
-    while (e.hasMoreElements()) {
-        key = (String) e.nextElement();
-        vlookup = (ItclVarLookup) cdefn.resolveVars.get(key);
+    for (Iterator iter = cdefn.resolveVars.entrySet().iterator(); iter.hasNext() ;) {
+        Map.Entry entry = (Map.Entry) iter.next();
+        vlookup = (ItclVarLookup) entry.getValue();
         if (--vlookup.usage == 0) {
             // ckfree(vlookup);
         }
     }
+
     cdefn.resolveVars.clear();
-    cdefn.resolveVars = new Hashtable();
+    cdefn.resolveVars = new HashMap();
     cdefn.numInstanceVars = 0;
 
     //  Set aside the first object-specific slot for the built-in
@@ -1278,10 +1267,10 @@ BuildVirtualTables(
     Class.InitHierIter(hier, cdefn);
     cd = Class.AdvanceHierIter(hier);
     while (cd != null) {
-        e = cd.variables.keys();
-        while (e.hasMoreElements()) {
-            key = (String) e.nextElement();
-            vdefn = (ItclVarDefn) cd.variables.get(key);
+        for (Iterator iter = cd.variables.entrySet().iterator(); iter.hasNext() ;) {
+            Map.Entry entry = (Map.Entry) iter.next();
+            key = (String) entry.getKey();
+            vdefn = (ItclVarDefn) entry.getValue();
 
             vlookup = new ItclVarLookup();
             vlookup.vdefn = vdefn;
@@ -1369,7 +1358,7 @@ BuildVirtualTables(
     //  Clear the command resolution table.
 
     cdefn.resolveCmds.clear();
-    cdefn.resolveCmds = new Hashtable();
+    cdefn.resolveCmds = new HashMap();
 
     //  Scan through all classes in the hierarchy, from most to
     //  least specific.  Look for the first (most-specific) definition
@@ -1378,10 +1367,10 @@ BuildVirtualTables(
     Class.InitHierIter(hier, cdefn);
     cd = Class.AdvanceHierIter(hier);
     while (cd != null) {
-        e = cd.functions.keys();
-        while (e.hasMoreElements()) {
-            key = (String) e.nextElement();
-            mfunc = (ItclMemberFunc) cd.functions.get(key);
+        for (Iterator iter = cd.functions.entrySet().iterator(); iter.hasNext() ;) {
+            Map.Entry entry = (Map.Entry) iter.next();
+            key = (String) entry.getKey();
+            mfunc = (ItclMemberFunc) entry.getValue();
 
             //  Create all possible names for this function and enter
             //  them into the command resolution table:

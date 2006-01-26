@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: FuncSig.java,v 1.12 2003/03/11 10:26:40 mdejong Exp $
+ * RCS: @(#) $Id: FuncSig.java,v 1.13 2006/01/26 19:49:19 mdejong Exp $
  *
  */
 
@@ -73,6 +73,10 @@ PkgInvoker pkgInvoker;
 Object func;
 
 // Stores all accessible instance methods for a Java class
+// Note that we use a Hashtable instead of a HashMap here
+// since these fields could be accessed from multiple
+// threads and the Hashtable class is synchronized.
+
 static Hashtable instanceMethodTable = new Hashtable();
 static Hashtable staticMethodTable = new Hashtable();
 
@@ -377,7 +381,7 @@ matchSignature(
 {
   Object[] funcs;
   boolean foundSameName = false;
-  Vector match_vector = new Vector();
+  ArrayList match_list = new ArrayList();
   int i,j;
 
   final boolean debug = false;  
@@ -406,19 +410,19 @@ matchSignature(
     }
      
     if (paramTypes.length == argv_count) {
-      match_vector.addElement(funcs[i]);
+      match_list.add(funcs[i]);
     }
   }  
 
 
   // If there is only a single remaining match then we can return it now
 
-  if (match_vector.size() == 1) {
+  if (match_list.size() == 1) {
      // debug print the single match
-     //System.out.println("single match : " + match_vector.elementAt(0));
+     //System.out.println("single match : " + match_list.get(0));
 
-    return match_vector.elementAt(0);
-  } else if (match_vector.size() > 1) {
+    return match_list.get(0);
+  } else if (match_list.size() > 1) {
     
     Class[] argv_classes = new Class[argv_count];
     Class[] match_classes;
@@ -464,12 +468,12 @@ matchSignature(
 
     // debug print possible match types
 
-    for (i=0; i < match_vector.size(); i++) {
+    for (i=0; i < match_list.size(); i++) {
 
       if (isConstructor) {
-	match_classes = ((Constructor) match_vector.elementAt(i)).getParameterTypes();
+	match_classes = ((Constructor) match_list.get(i)).getParameterTypes();
       } else {
-	match_classes = ((Method) match_vector.elementAt(i)).getParameterTypes();
+	match_classes = ((Method) match_list.get(i)).getParameterTypes();
       }
 
       System.out.print("match " + i + " is ");
@@ -489,12 +493,12 @@ matchSignature(
     // try to match the argument types and the
     // match types exactly by comparing Class objects
     
-    for (i=0; i < match_vector.size(); i++) {
+    for (i=0; i < match_list.size(); i++) {
 
       if (isConstructor) {
-	match_classes = ((Constructor) match_vector.elementAt(i)).getParameterTypes();
+	match_classes = ((Constructor) match_list.get(i)).getParameterTypes();
       } else {
-	match_classes = ((Method) match_vector.elementAt(i)).getParameterTypes();
+	match_classes = ((Method) match_list.get(i)).getParameterTypes();
       }
 
       boolean exact = true;
@@ -509,14 +513,14 @@ matchSignature(
         if (debug) {
 	System.out.println("exact match at " + i);
         } // end if (debug)
-	return match_vector.elementAt(i);
+	return match_list.get(i);
       }
     }
 
 
 
 
-    // loop from the end of the Vector to the begining and
+    // loop from the end of the list to the begining and
     // remove those signatures that are not assignable
     // take special care not to remove signatures that
     // have an object decended from java.lang.Object
@@ -524,16 +528,16 @@ matchSignature(
     // This means a null argument will not match a built in type.
     
 
-    for (i = match_vector.size()-1; i >= 0 ; i--) {
+    for (i = match_list.size()-1; i >= 0 ; i--) {
       
       if (isConstructor) {
-	match_classes = ((Constructor) match_vector.elementAt(i)).getParameterTypes();
+	match_classes = ((Constructor) match_list.get(i)).getParameterTypes();
       } else {
-	match_classes = ((Method) match_vector.elementAt(i)).getParameterTypes();
+	match_classes = ((Method) match_list.get(i)).getParameterTypes();
       }
 
       // If any of the arguments are not assignable to the method arguments,
-      // then remove this method from the vector of matches.
+      // then remove this method from the list of matches.
 
       for (j=0; j < argv_count; j++) {
 	if (!JavaInvoke.isAssignable(match_classes[j], argv_classes[j])) {
@@ -542,7 +546,7 @@ matchSignature(
           System.out.println("removing non assignable match " + i);
           } // end if (debug)
 
-	  match_vector.removeElementAt(i);
+	  match_list.remove(i);
 	  break; // go on to next Method
 	}
       }
@@ -552,18 +556,18 @@ matchSignature(
 
 
     if (debug) {
-    // debug print match_vector after isAssignabelFrom test
+    // debug print match_list after isAssignabelFrom test
 
-    if (match_vector.size() > 0) {
+    if (match_list.size() > 0) {
       System.out.println("isAssignableFrom() matches");
     }
 
-    for (i=0; i < match_vector.size(); i++) {
+    for (i=0; i < match_list.size(); i++) {
 
       if (isConstructor) {
-	match_classes = ((Constructor) match_vector.elementAt(i)).getParameterTypes();
+	match_classes = ((Constructor) match_list.get(i)).getParameterTypes();
       } else {
-	match_classes = ((Method) match_vector.elementAt(i)).getParameterTypes();
+	match_classes = ((Method) match_list.get(i)).getParameterTypes();
       }
 
       System.out.print("match " + i + " is ");
@@ -581,21 +585,21 @@ matchSignature(
 
     // If there is only a single remaining match then we can return it now
 
-    if (match_vector.size() == 1) {
-      return match_vector.elementAt(0);
+    if (match_list.size() == 1) {
+      return match_list.get(0);
     }
 
   
 
 
-    // at this point match_vector should have only those signatures
+    // at this point match_list should have only those signatures
     // that can take the argument types from argv with widining conversion
     
     // to figure out which method we should call we need to determine
     // which signatures are "better" then others where "better" is defined
     // as the shortest number of steps up the inheritance or interface tree
     
-    if (match_vector.size() > 1) {
+    if (match_list.size() > 1) {
     
       // the first thing we need to do is get the inheritance info
       // of the arguments to the method. From this we will create
@@ -622,7 +626,7 @@ matchSignature(
       // we use a vector to store up all of the Class objects
       // that make up the inheritance tree for a particular class
 
-      Vector class_vector = new Vector();
+      ArrayList class_list = new ArrayList();
 
 
       // for each argument to the method we loop up the inheritance tree
@@ -656,25 +660,26 @@ matchSignature(
 
 	while (c != null) {
 	  // add a null to the front of the vector
-	  class_vector.addElement(null);
+	  class_list.add(null);
 
 	  // add this Class and its Interfaces to the vector
-	  addInterfaces(c,class_vector);
+	  addInterfaces(c, class_list);
 
 	  c = c.getSuperclass();
 	}
 
 
 	// now remove the first element of the vector (it is null)
-	class_vector.removeElementAt(0);
+	class_list.remove(0);
 
-	Class[] classes = new Class[class_vector.size()];
-	
-	class_vector.copyInto(classes);
+	Class[] classes = new Class[class_list.size()];
+	for (j=0; j < classes.length; j++) {
+            classes[j] = (Class) class_list.get(j);
+        }
 
 	argv_classes_lookup[i] = classes;
 
-	class_vector.removeAllElements();
+	class_list.clear();
       }
       
       
@@ -716,9 +721,9 @@ matchSignature(
 
 
 
-      int[] super_steps = new int[match_vector.size()];
-      int[] total_steps = new int[match_vector.size()];
-      boolean[] trim_matches = new boolean[match_vector.size()];
+      int[] super_steps = new int[match_list.size()];
+      int[] total_steps = new int[match_list.size()];
+      boolean[] trim_matches = new boolean[match_list.size()];
       int min_super_step;
       int min_total_step;
       Class min_class;
@@ -745,12 +750,12 @@ matchSignature(
 	// iterate over the matched methods to find the
 	// minimum steps for this argument
 	
-	for (i=0; i < match_vector.size(); i++) {
+	for (i=0; i < match_list.size(); i++) {
 
 	  if (isConstructor) {
-	    match_classes = ((Constructor) match_vector.elementAt(i)).getParameterTypes();
+	    match_classes = ((Constructor) match_list.get(i)).getParameterTypes();
 	  } else {
-	    match_classes = ((Method) match_vector.elementAt(i)).getParameterTypes();
+	    match_classes = ((Method) match_list.get(i)).getParameterTypes();
 	  }
 
 	  Class match_to = match_classes[j];
@@ -829,7 +834,7 @@ matchSignature(
 	
 	System.out.println("step arrays for argument " + j);
 
-	for (int loop=0; loop < match_vector.size(); loop++) {
+	for (int loop=0; loop < match_list.size(); loop++) {
 	  System.out.println("(" + super_steps[loop] + "," + total_steps[loop] + ")");
 	}
 
@@ -842,7 +847,7 @@ matchSignature(
 	// from the step info we know the minumum so we can
 	// remove those values that are "worse" then the min
 
-	for (i=match_vector.size()-1; i >= 0; i--) {
+	for (i=match_list.size()-1; i >= 0; i--) {
 
 	  if (super_steps[i] > min_super_step ||
 	      (super_steps[i] == min_super_step &&
@@ -873,9 +878,9 @@ matchSignature(
 
       // remove the methods that were marked for deletion
       
-      for (i=match_vector.size()-1; i >= 0; i--) {
+      for (i=match_list.size()-1; i >= 0; i--) {
 	if (trim_matches[i]) {
-	  match_vector.removeElementAt(i);
+	  match_list.remove(i);
 	}
       }
 
@@ -888,12 +893,12 @@ matchSignature(
       
       System.out.println("after super steps trim");
       
-      for (i=0; i < match_vector.size(); i++) {
+      for (i=0; i < match_list.size(); i++) {
 	
 	if (isConstructor) {
-	  match_classes = ((Constructor) match_vector.elementAt(i)).getParameterTypes();
+	  match_classes = ((Constructor) match_list.get(i)).getParameterTypes();
 	} else {
-	  match_classes = ((Method) match_vector.elementAt(i)).getParameterTypes();
+	  match_classes = ((Method) match_list.get(i)).getParameterTypes();
 	}
 	
 	System.out.print("match " + i + " is ");
@@ -909,20 +914,20 @@ matchSignature(
       } // end if (debug)
      
       
-    } // end if (match_vector.size() > 1)
+    } // end if (match_list.size() > 1)
  
     
     
-    // if there is only one item left in the match_vector return it
+    // if there is only one item left in the match_list return it
     
-    if (match_vector.size() == 1) {
-      return match_vector.elementAt(0);
+    if (match_list.size() == 1) {
+      return match_list.get(0);
     } else {
       // if we have 0 or >1 remaining matches then
       // we were unable to find the "best" match so raise an error
       // if possible, tell user what matches made the sig ambiguous.
 
-      //System.out.println("match_vector.size() is " + match_vector.size());
+      //System.out.println("match_list.size() is " + match_list.size());
 
 
       StringBuffer sb = new StringBuffer(100);
@@ -935,7 +940,7 @@ matchSignature(
       sb.append(" signature");
 
 
-      if (match_vector.size() == 0) {
+      if (match_list.size() == 0) {
 
 	  // FIXME : better error message for no signature matches case
 	  // We really should tell the user which methods we could have
@@ -972,7 +977,7 @@ matchSignature(
             }
      
             if (paramTypes.length == argv_count) {
-              match_vector.addElement(funcs[i]);
+              match_list.add(funcs[i]);
             }
           }  
 
@@ -990,12 +995,12 @@ matchSignature(
       TclObject siglist = TclList.newInstance();
       siglist.preserve();
 
-      for (i=0; i < match_vector.size(); i++) {
+      for (i=0; i < match_list.size(); i++) {
           TclObject cur_siglist = TclList.newInstance();
           cur_siglist.preserve();
 
           if (isConstructor) {
-            Constructor con = ((Constructor) match_vector.elementAt(i));
+            Constructor con = ((Constructor) match_list.get(i));
             TclList.append(interp,cur_siglist,
                 TclString.newInstance(con.getName()) );
 
@@ -1003,7 +1008,7 @@ matchSignature(
 
 	    match_classes = con.getParameterTypes();
 	  } else {
-            Method meth = ((Method) match_vector.elementAt(i));
+            Method meth = ((Method) match_list.get(i));
             TclList.append(interp,cur_siglist,
                 TclString.newInstance(meth.getName()) );
 
@@ -1030,7 +1035,7 @@ matchSignature(
       throw new TclException(interp, sb.toString());
     }
     
-  } // end else if (match_vector.size() > 1)
+  } // end else if (match_list.size() > 1)
   
 
 
@@ -1064,14 +1069,14 @@ matchSignature(
 
 // Helper method to recursively add interfaces of a class to the vector
 
-private static void addInterfaces(Class cls, Vector v)
+private static void addInterfaces(Class cls, ArrayList alist)
 {
-  v.addElement(cls);
+  alist.add(cls);
 
   Class[] interfaces = cls.getInterfaces();
-  
+
   for (int i=0; i < interfaces.length ; i++) {
-    addInterfaces(interfaces[i],v);
+    addInterfaces(interfaces[i], alist);
   }
 }
 
@@ -1103,21 +1108,26 @@ getAccessibleConstructors(
 	return cls.getConstructors();
     } else {
 	Constructor[] constructors = cls.getDeclaredConstructors();
-	Vector vec = new Vector();
+	ArrayList alist = null;
 	boolean skipped_any = false;
 
 	for (int i=0; i < constructors.length; i++) {
 	    Constructor c = constructors[i];
 	    if (PkgInvoker.isAccessible(c)) {
-	        vec.addElement(c);
+	        if (alist == null) {
+	            alist = new ArrayList(constructors.length);
+	        }
+	        alist.add(c);
 	    } else {
 	        skipped_any = true;
 	    }
 	}
 
 	if (skipped_any) {
-	    constructors = new Constructor[vec.size()];
-	    vec.copyInto(constructors);
+	    constructors = new Constructor[alist.size()];
+	    for (int i=0; i < constructors.length; i++) {
+                constructors[i] = (Constructor) alist.get(i);
+            }
 	}
 	return constructors;
     }
@@ -1195,15 +1205,15 @@ getAccessibleInstanceMethods(
     // static members and it does not account for interfaces
     // which need to include methods from the Object class.
 
-    Vector vec = new Vector();
+    ArrayList alist = new ArrayList();
 
     for (Class c = cls; c != null; ) {
 	methods = c.getDeclaredMethods();
-	mergeInstanceMethods(c, methods, vec);
+	mergeInstanceMethods(c, methods, alist);
 
 	Class interfaces[] = c.getInterfaces();
 	for (int i = 0; i < interfaces.length; i++) {
-	    mergeInstanceMethods(interfaces[i], interfaces[i].getMethods(), vec);
+	    mergeInstanceMethods(interfaces[i], interfaces[i].getMethods(), alist);
 	}
 
 	if (c.isInterface()) {
@@ -1213,9 +1223,11 @@ getAccessibleInstanceMethods(
 	}
     }
 
-    sortMethods(vec);
-    methods = new Method[vec.size()];
-    vec.copyInto(methods);
+    sortMethods(alist);
+    methods = new Method[alist.size()];
+    for (int i=0; i < methods.length; i++) {
+        methods[i] = (Method) alist.get(i);
+    }
     instanceMethodTable.put(cls, methods);
 
     return methods;
@@ -1258,18 +1270,20 @@ getAccessibleStaticMethods(
     // for the class and its superclasses.
 
     methods = cls.getDeclaredMethods();
-    Vector vec = new Vector();
+    ArrayList alist = new ArrayList();
 
     for (int i=0; i < methods.length; i++) {
 	Method m = methods[i];
 	if (Modifier.isStatic(m.getModifiers()) && PkgInvoker.isAccessible(m)) {
-	    vec.addElement(m);
+	    alist.add(m);
 	}
     }
 
-    sortMethods(vec);
-    methods = new Method[vec.size()];
-    vec.copyInto(methods);
+    sortMethods(alist);
+    methods = new Method[alist.size()];
+    for (int i=0; i < methods.length; i++) {
+        methods[i] = (Method) alist.get(i);
+    }
     staticMethodTable.put(cls, methods);
 
     return methods;
@@ -1298,7 +1312,7 @@ private static void
 mergeInstanceMethods(
     Class c,
     Method methods[],
-    Vector vec)
+    ArrayList alist)
 {
     for (int i=0; i < methods.length; i++) {
 	boolean sameSigExists = false;
@@ -1313,8 +1327,8 @@ mergeInstanceMethods(
 	    continue;
 	}
 
-	for (int j=0; j < vec.size(); j++) {
-	    Method oldMeth = (Method)vec.elementAt(j);
+	for (int j=0; j < alist.size(); j++) {
+	    Method oldMeth = (Method) alist.get(j);
 
 	    if (methodSigEqual(oldMeth, newMeth)) {
 		sameSigExists = true;
@@ -1324,21 +1338,21 @@ mergeInstanceMethods(
 		int oldRank = getMethodRank(oldCls, oldMeth);
 
 		if (newRank > oldRank) {
-		    vec.setElementAt(newMeth, j);
+		    alist.set(j, newMeth);
 		}
 		break;
 	    }
 	}
 	    
 	if (!sameSigExists) {
-	    // We copy a method into the vector only if no method
-	    // with the same signature is already in the
-	    // vector. Otherwise the matching routine in the get()
+	    // We copy a method into the list only if no method
+	    // with the same signature is already in the list.
+	    // Otherwise the matching routine in the get()
 	    // procedure may run into "ambiguous method signature"
 	    // errors when it sees instances of overloaded
 	    // methods.
 
-	    vec.addElement(newMeth);
+	    alist.add(newMeth);
 	}
     }
 }
@@ -1390,7 +1404,7 @@ methodSigEqual(
  *
  * sortMethods --
  *
- *	This method will sort a vector of Method objects. We need to sort
+ *	This method will sort a list of Method objects. We need to sort
  *      the methods so that the order of the methods does not depend on
  *      the order the methods as returned by the JVM.
  *
@@ -1398,35 +1412,35 @@ methodSigEqual(
  *	None.
  *
  * Side effects:
- *      The order of the elements in the Vector is changed.
+ *      The order of the elements in the List is changed.
  *
  *----------------------------------------------------------------------
  */
 
 private static void 
 sortMethods(
-    Vector vec)
+    ArrayList alist)
 {
     final boolean debug = false; // set to true for debug output
-    int insize = vec.size();
+    int insize = alist.size();
 
     if (debug) {
 	System.out.println("Pre sort dump");
-	for (int i=0; i < vec.size(); i++) {
-	    Method m = (Method) vec.elementAt(i);
+	for (int i=0; i < alist.size(); i++) {
+	    Method m = (Method) alist.get(i);
 	    System.out.println("Method " + i + " is \t\"" + getMethodDescription(m) + "\"");
 	}
     }
 
-    for (int i=1; i < vec.size(); i++) {
+    for (int i=1; i < alist.size(); i++) {
 	int c = i;
-	Method cm = (Method) vec.elementAt(c);
+	Method cm = (Method) alist.get(c);
 	String cms = getMethodDescription(cm);
 
 	// loop down array swapping elements into sorted order
 
 	for (int j = c - 1; j >= 0 ; j--) {
-	    Method jm = (Method) vec.elementAt(j);
+	    Method jm = (Method) alist.get(j);
 	    String jms = getMethodDescription(jm);
 
 	    if (debug) {
@@ -1441,8 +1455,8 @@ sortMethods(
 		}
 		
 		// Swap the Methods at c and j
-		vec.setElementAt(jm,c);
-	    	vec.setElementAt(cm,j);
+		alist.set(c, jm);
+	    	alist.set(j, cm);
 
 		// Current becomes the value of j for next loop
 		c = j;
@@ -1460,13 +1474,13 @@ sortMethods(
 
     if (debug) {
 	System.out.println("Post sort dump");
-	for (int i=0; i < vec.size(); i++) {
-	    Method m = (Method) vec.elementAt(i);
+	for (int i=0; i < alist.size(); i++) {
+	    Method m = (Method) alist.get(i);
 	    System.out.println("Method " + i + " is \t\"" +  getMethodDescription(m)+ "\"");
 	}
     }
 
-    if (insize != vec.size()) {
+    if (insize != alist.size()) {
 	throw new RuntimeException("lost elements");
     }
     return;

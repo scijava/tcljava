@@ -9,14 +9,11 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: IdleHandler.java,v 1.1 1998/10/14 21:09:21 cvsadmin Exp $
+ * RCS: @(#) $Id: IdleHandler.java,v 1.2 2006/01/26 19:49:18 mdejong Exp $
  *
  */
 
 package tcl.lang;
-
-import java.util.Hashtable;
-import java.util.Vector;
 
 /*
  * This abstract class is used to define idle handlers.
@@ -70,7 +67,7 @@ IdleHandler(
     isCancelled = false;
 
     synchronized(notifier) {
-	notifier.idleList.addElement(this);
+	notifier.idleList.add(this);
 	generation = notifier.idleGeneration;
 	if (Thread.currentThread() != notifier.primaryThread) {
 	    notifier.notifyAll();
@@ -107,8 +104,8 @@ cancel()
 
     synchronized(notifier) {
 	for (int i = 0; i < notifier.idleList.size(); i++) {
-	    if (notifier.idleList.elementAt(i) == this) {
-		notifier.idleList.removeElementAt(i);
+	    if (notifier.idleList.get(i) == this) {
+		notifier.idleList.remove(i);
 
 		/*
 		 * We can return now because the same idle handler can

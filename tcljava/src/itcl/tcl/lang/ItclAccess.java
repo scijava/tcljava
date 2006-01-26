@@ -14,7 +14,7 @@
  *           mmclennan@lucent.com
  *           http://www.tcltk.com/itcl
  *
- *     RCS:  $Id: ItclAccess.java,v 1.2 2005/09/12 00:00:50 mdejong Exp $
+ *     RCS:  $Id: ItclAccess.java,v 1.3 2006/01/26 19:49:18 mdejong Exp $
  * ========================================================================
  *           Copyright (c) 1993-1998  Lucent Technologies, Inc.
  * ------------------------------------------------------------------------
@@ -24,7 +24,7 @@
 
 package tcl.lang;
 
-import java.util.Hashtable;
+import java.util.HashMap;
 
 public class ItclAccess
 {
@@ -90,14 +90,14 @@ public class ItclAccess
     }
 
     public static
-    Hashtable
+    HashMap
     getVarTable(CallFrame frame) {
         return frame.varTable;
     }
 
     public static
     void
-    setVarTable(CallFrame frame, Hashtable table) {
+    setVarTable(CallFrame frame, HashMap table) {
         frame.varTable = table;
     }
 
@@ -109,7 +109,7 @@ public class ItclAccess
 
     public static
     void
-    deleteVars(Interp interp, Hashtable varTable) {
+    deleteVars(Interp interp, HashMap varTable) {
         Var.deleteVars(interp, varTable);
     }
 
@@ -161,7 +161,7 @@ public class ItclAccess
             throws TclException
     {
         if (frame.varTable == null) {
-            frame.varTable = new Hashtable();
+            frame.varTable = new HashMap();
         }
         Var var = new Var();
         var.clearVarInHashtable(); // Needed to avoid "dangling namespace var" error
@@ -175,7 +175,7 @@ public class ItclAccess
         Var var,
         String key,
         Namespace ns,
-        Hashtable table)
+        HashMap table)
     {
         var.hashKey = key;
         var.ns = ns;
@@ -199,7 +199,7 @@ public class ItclAccess
         Var var,
         String key,
         Namespace ns,
-        Hashtable table)
+        HashMap table)
     {
         var.table = table;
         var.hashKey = key;
@@ -208,6 +208,13 @@ public class ItclAccess
         var.setVarNamespace();
         var.refCount++;    // one use by namespace
         var.refCount++;    // another use by class
+    }
+
+    public static
+    Object FirstHashEntry(
+        HashMap table)
+    {
+        return Namespace.FirstHashEntry(table);
     }
 
 }

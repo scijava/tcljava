@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclIO.java,v 1.9 2003/03/06 22:53:07 mdejong Exp $
+ * RCS: @(#) $Id: TclIO.java,v 1.10 2006/01/26 19:49:18 mdejong Exp $
  *
  */
 
@@ -72,7 +72,7 @@ class TclIO {
     static void registerChannel(Interp interp, Channel chan) {
 
         if (interp != null) {
-            Hashtable chanTable = getInterpChanTable(interp);
+            HashMap chanTable = getInterpChanTable(interp);
 	    chanTable.put(chan.getChanName(), chan);
 	    chan.refCount++;
 	}
@@ -80,8 +80,7 @@ class TclIO {
 
 
     static void unregisterChannel(Interp interp, Channel chan) {
-        
-	Hashtable chanTable = getInterpChanTable(interp);
+	HashMap chanTable = getInterpChanTable(interp);
 	chanTable.remove(chan.getChanName());
 
 	if (--chan.refCount <= 0) {
@@ -97,12 +96,12 @@ class TclIO {
     }
 
 
-    static Hashtable getInterpChanTable(Interp interp) { 
+    static HashMap getInterpChanTable(Interp interp) { 
          Channel chan;
 
         if (interp.interpChanTable == null) {
 	    
-	    interp.interpChanTable = new Hashtable();
+	    interp.interpChanTable = new HashMap();
 
 	    chan = getStdChannel(StdChannel.STDIN);
 	    registerChannel(interp, chan);
@@ -151,7 +150,7 @@ class TclIO {
      * Really ugly function that attempts to get the next available
      * channelId name.  In C the FD returned in the native open call
      * returns this value, but we don't have that so we need to do
-     * this funky iteration over the Hashtable.
+     * this funky iteration over the HashMap.
      *
      * @param interp currrent interpreter.
      * @return the next integer to use in the channelId name.
@@ -159,7 +158,7 @@ class TclIO {
 
     static String getNextDescriptor(Interp interp, String prefix) {
         int i;
-	Hashtable htbl = getInterpChanTable(interp);
+	HashMap htbl = getInterpChanTable(interp);
 
         // The first available file identifier in Tcl is "file3"
         if (prefix.equals("file"))

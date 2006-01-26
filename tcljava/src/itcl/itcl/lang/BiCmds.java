@@ -22,7 +22,7 @@
  *           mmclennan@lucent.com
  *           http://www.tcltk.com/itcl
  *
- *     RCS:  $Id: BiCmds.java,v 1.2 2005/09/12 00:00:50 mdejong Exp $
+ *     RCS:  $Id: BiCmds.java,v 1.3 2006/01/26 19:49:18 mdejong Exp $
  * ========================================================================
  *           Copyright (c) 1993-1998  Lucent Technologies, Inc.
  * ------------------------------------------------------------------------
@@ -34,7 +34,7 @@ package itcl.lang;
 
 import tcl.lang.*;
 
-import java.util.Enumeration;
+import java.util.*;
 
 //
 //  Standard list of built-in methods for all objects.
@@ -352,10 +352,10 @@ throws
         hier = new ItclHierIter();
         Class.InitHierIter(hier, contextClass);
         while ((cd = Class.AdvanceHierIter(hier)) != null) {
-            Enumeration e = cd.variables.keys();
-            while (e.hasMoreElements()) {
-                String key = (String) e.nextElement();
-                vdefn = (ItclVarDefn) cd.variables.get(key);
+            for (Iterator iter = cd.variables.entrySet().iterator(); iter.hasNext() ;) {
+                Map.Entry entry = (Map.Entry) iter.next();
+                String key = (String) entry.getKey();
+                vdefn = (ItclVarDefn) entry.getValue();
 
                 if (vdefn.member.protection == Itcl.PUBLIC) {
                     obj = ReportPublicOpt(interp, vdefn, contextObj);
@@ -1176,10 +1176,10 @@ throws
         hier = new ItclHierIter();
         Class.InitHierIter(hier, contextClass);
         while ((cdefn = Class.AdvanceHierIter(hier)) != null) {
-            Enumeration e = cdefn.functions.keys();
-            while (e.hasMoreElements()) {
-                String key = (String) e.nextElement();
-                mfunc = (ItclMemberFunc) cdefn.functions.get(key);
+            for ( Iterator iter = cdefn.functions.entrySet().iterator(); iter.hasNext() ; ) {
+                Map.Entry entry = (Map.Entry) iter.next();
+                String key = (String) entry.getKey();
+                mfunc = (ItclMemberFunc) entry.getValue();
                 obj = TclString.newInstance(mfunc.member.fullname);
                 TclList.append(interp, result, obj);
             }
@@ -1431,10 +1431,10 @@ throws
         hier = new ItclHierIter();
         Class.InitHierIter(hier, contextClass);
         while ((cdefn = Class.AdvanceHierIter(hier)) != null) {
-            Enumeration e = cdefn.variables.keys();
-            while (e.hasMoreElements()) {
-                String key = (String) e.nextElement();
-                vdefn = (ItclVarDefn) cdefn.variables.get(key);
+            for ( Iterator iter = cdefn.variables.entrySet().iterator(); iter.hasNext() ; ) {
+                Map.Entry entry = (Map.Entry) iter.next();
+                String key = (String) entry.getKey();
+                vdefn = (ItclVarDefn) entry.getValue();
 
                 if ((vdefn.member.flags & ItclInt.THIS_VAR) != 0) {
                     if (cdefn == contextClass) {

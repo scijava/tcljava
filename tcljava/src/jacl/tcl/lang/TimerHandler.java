@@ -10,14 +10,11 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TimerHandler.java,v 1.1 1998/10/14 21:09:21 cvsadmin Exp $
+ * RCS: @(#) $Id: TimerHandler.java,v 1.2 2006/01/26 19:49:18 mdejong Exp $
  *
  */
 
 package tcl.lang;
-
-import java.util.Hashtable;
-import java.util.Vector;
 
 /*
  * This abstract class is used to define timer handlers.
@@ -95,12 +92,12 @@ TimerHandler(
 	generation = notifier.timerGeneration;
 
 	for (i = 0; i < notifier.timerList.size(); i++) {
-	    TimerHandler q = (TimerHandler)notifier.timerList.elementAt(i);
+	    TimerHandler q = (TimerHandler) notifier.timerList.get(i);
 	    if (atTime < q.atTime) {
 		break;
 	    }
 	}
-	notifier.timerList.insertElementAt(this, i);
+	notifier.timerList.add(i, this);
 
 	if (Thread.currentThread() != notifier.primaryThread) {
 	    notifier.notifyAll();
@@ -138,8 +135,8 @@ cancel()
 
     synchronized(notifier) {
 	for (int i = 0; i < notifier.timerList.size(); i++) {
-	    if (notifier.timerList.elementAt(i) == this) {
-		notifier.timerList.removeElementAt(i);
+	    if (notifier.timerList.get(i) == this) {
+		notifier.timerList.remove(i);
 
 		/*
 		 * We can return now because the same timer can be

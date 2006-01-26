@@ -15,13 +15,12 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: NamespaceCmd.java,v 1.20 2005/12/29 21:32:25 mdejong Exp $
+ * RCS: @(#) $Id: NamespaceCmd.java,v 1.21 2006/01/26 19:49:18 mdejong Exp $
  */
 
 package tcl.lang;
 
-import java.util.Hashtable;
-import java.util.Enumeration;
+import java.util.*;
 
 /**
  * This class implements the built-in "namespace" command in Tcl.
@@ -245,9 +244,9 @@ public class NamespaceCmd implements InternalRep, Command {
 	// whose names match the specified pattern, if any.
 
 	list = TclList.newInstance();
-	search = ns.childTable.elements();
-	while ( search.hasMoreElements() ) {
-	    childNs = (Namespace) search.nextElement();
+	for (Iterator iter = ns.childTable.entrySet().iterator(); iter.hasNext() ;) {
+	    Map.Entry entry = (Map.Entry) iter.next();
+	    childNs = (Namespace) entry.getValue();
 	    if ((pattern == null)
 		|| Util.stringMatch(childNs.fullName, pattern)) {
 		elem = TclString.newInstance(childNs.fullName);

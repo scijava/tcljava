@@ -9,12 +9,12 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: CObject.java,v 1.6 2005/09/21 21:22:56 mdejong Exp $
+ * RCS: @(#) $Id: CObject.java,v 1.7 2006/01/26 19:49:19 mdejong Exp $
  */
 
 package tcl.lang;
 
-import java.util.Vector;
+import java.util.ArrayList;
 
 // The CObject class encapsulates a reference to a Tcl_Obj implemented in
 // native code.  When an object is passed to Java from C, a new CObject is
@@ -455,7 +455,7 @@ static void cleanupAdd(Interp interp, CObject cobj) {
         throw new TclRuntimeError("CObject already in cleanup queue");
     if (cobj.disposed == true)
         throw new TclRuntimeError("CObject already disposed");
-    interp.cobjCleanup.addElement(cobj);
+    interp.cobjCleanup.add(cobj);
     cobj.onCleanupQueue = true;
     //System.out.println("added \"" + cobj.toString() + "\" " + Long.toHexString(cobj.objPtr) + " to cleanup queue");
     //System.out.println("cleanupAdd");
@@ -483,7 +483,7 @@ static void cleanupAdd(Interp interp, CObject cobj) {
  */
 
 static void cleanupPush(Interp interp) {
-    interp.cobjCleanup.addElement(null);
+    interp.cobjCleanup.add(null);
     //System.out.println("cleanupPush");
     //dump(interp.cobjCleanup);
 }
@@ -510,10 +510,10 @@ static void cleanupPush(Interp interp) {
 static void cleanupPop(Interp interp) {
     //System.out.println("cleanupPop (before)");
     //dump(interp.cobjCleanup);
-    Vector cleanup = interp.cobjCleanup;
+    ArrayList cleanup = interp.cobjCleanup;
     int last = cleanup.size() - 1;
-    CObject cobj = (CObject) cleanup.elementAt(last);
-    cleanup.removeElementAt(last);
+    CObject cobj = (CObject) cleanup.get(last);
+    cleanup.remove(last);
 
     while (cobj != null) {
         if (cobj.onCleanupQueue == false)
@@ -533,16 +533,16 @@ static void cleanupPop(Interp interp) {
         cobj.onCleanupQueue = false;
 
         last -= 1;
-        cobj = (CObject) cleanup.elementAt(last);
-        cleanup.removeElementAt(last);
+        cobj = (CObject) cleanup.get(last);
+        cleanup.remove(last);
     }
 }
 
-private static void dump(Vector v) {
-    java.util.Enumeration e = v.elements();
+private static void dump(ArrayList alist) {
+    java.util.ListIterator iter = alist.listIterator();
     CObject cobj;
-    while (e.hasMoreElements()) {
-        cobj = (CObject) e.nextElement();
+    while (iter.hasNext()) {
+        cobj = (CObject) iter.next();
         if (cobj == null) {
             System.out.println("XXX FRAME PUSHED XXX");
         } else {

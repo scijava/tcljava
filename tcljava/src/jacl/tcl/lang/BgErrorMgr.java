@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: BgErrorMgr.java,v 1.6 2002/01/21 06:34:26 mdejong Exp $
+ * RCS: @(#) $Id: BgErrorMgr.java,v 1.7 2006/01/26 19:49:18 mdejong Exp $
  *
  */
 
@@ -44,7 +44,7 @@ TclObject bgerrorCmdObj;
  * A list of the pending background error handlers.
  */
 
-Vector errors = new Vector();
+ArrayList errors;
 
 
 /*
@@ -67,7 +67,7 @@ BgErrorMgr(
     bgerrorCmdObj = TclString.newInstance("bgerror");
     bgerrorCmdObj.preserve();
 
-    errors = new Vector();
+    errors = new ArrayList();
 }
 
 /*
@@ -128,7 +128,7 @@ addBgError()
     bgErr.errorInfo.preserve();
     bgErr.errorCode.preserve();
 
-    errors.addElement(bgErr);
+    errors.add(bgErr);
 }
 
 /*
@@ -155,8 +155,8 @@ disposeAssocData(
 				// instance is registered in.
 {
     for (int i = errors.size() - 1; i >= 0; i--) {
-	BgError bgErr = (BgError)errors.elementAt(i);
-	errors.removeElementAt(i);
+	BgError bgErr = (BgError)errors.get(i);
+	errors.remove(i);
 	bgErr.cancel();
 
 	bgErr.errorMsg.release();
@@ -234,7 +234,8 @@ processIdleEvent()
     // BgError instance from the list first so that this instance won't
     // be deleted twice.
 
-    errors.removeElement(this);
+    int index = errors.indexOf(this);
+    errors.remove(index);
 
     // Restore important state variables to what they were at
     // the time the error occurred.
@@ -308,8 +309,8 @@ processIdleEvent()
 	    // interpreter.
 
 	    for (int i = errors.size() - 1; i >=0; i--) {
-		BgError bgErr = (BgError)errors.elementAt(i);
-		errors.removeElementAt(i);
+		BgError bgErr = (BgError)errors.get(i);
+		errors.remove(i);
 		bgErr.cancel();
 
 		bgErr.errorMsg.release();

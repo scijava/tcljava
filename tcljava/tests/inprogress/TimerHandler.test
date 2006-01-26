@@ -81,7 +81,7 @@ test TimerHandler-1.5 {cancel() and invoke(), jacl only!} {
     set handle [after 10 set x called]
     set timerList [java::field $notifier timerList]
 
-    set timer [$timerList elementAt 0]
+    set timer [$timerList get 0]
     set timer [java::cast [[$timer getClass] getName] $timer]
     after cancel $handle
     set msg [$timer invoke]
@@ -102,7 +102,7 @@ test TimerHandler-1.6 {cancel() and invoke(), jacl only} {
     set handle [after 10 set x called]
     set timerList [java::field $notifier timerList]
 
-    set timer [$timerList elementAt 0]
+    set timer [$timerList get 0]
     set timer [java::cast [[$timer getClass] getName] $timer]
     after cancel $handle
     $timer cancel

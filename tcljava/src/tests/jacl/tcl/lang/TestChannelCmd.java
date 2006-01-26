@@ -7,14 +7,15 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TestChannelCmd.java,v 1.3 2005/01/13 06:21:14 mdejong Exp $
+ * RCS: @(#) $Id: TestChannelCmd.java,v 1.4 2006/01/26 19:49:19 mdejong Exp $
  *
  */
 
 package tcl.lang;
 
-import java.util.Hashtable;
-import java.util.Enumeration;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.io.IOException;
 
 /**
@@ -72,12 +73,12 @@ class TestChannelCmd implements Command
 
         if (argv.length == 2) {
             // return list of all name/value pairs for this channelId
-            Hashtable chanTable = TclIO.getInterpChanTable(interp);
-            Enumeration e = chanTable.elements();
-
+            HashMap chanTable = TclIO.getInterpChanTable(interp);
             TclObject list = TclList.newInstance();
-            while (e.hasMoreElements()) {
-                chan = (Channel) e.nextElement();
+
+            for (Iterator iter = chanTable.entrySet().iterator(); iter.hasNext() ; ) {
+                Map.Entry entry = (Map.Entry) iter.next();
+                chan = (Channel) entry.getValue();
                 TclList.append(interp, list,
                     TclString.newInstance(chan.getChanName()));
             }

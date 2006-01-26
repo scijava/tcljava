@@ -10,13 +10,13 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: AfterCmd.java,v 1.5 2005/11/19 01:09:06 mdejong Exp $
+ * RCS: @(#) $Id: AfterCmd.java,v 1.6 2006/01/26 19:49:18 mdejong Exp $
  *
  */
 
 package tcl.lang;
 
-import java.util.Vector;
+import java.util.ArrayList;
 
 /*
  * This class implements the built-in "after" command in Tcl.
@@ -148,7 +148,7 @@ throws
 	timerInfo.command = cmd;
 	timerInfo.id = assocData.lastAfterId;
 
-	assocData.handlers.addElement(timerInfo);
+	assocData.handlers.add(timerInfo);
 
 	interp.setResult("after#" + timerInfo.id);
 
@@ -183,7 +183,7 @@ throws
 
 	info = null;
 	for (i = 0; i < assocData.handlers.size(); i++) {
-	    Object obj = assocData.handlers.elementAt(i);
+	    Object obj = assocData.handlers.get(i);
 	    if (obj instanceof TimerInfo) {
 		TclObject cmd = ((TimerInfo)obj).command;
 
@@ -211,14 +211,22 @@ throws
 
 	if (info != null) {
 	    if (info instanceof TimerInfo) {
-		((TimerInfo)info).cancel();
-		((TimerInfo)info).command.release();
+		TimerInfo ti = (TimerInfo) info;
+		ti.cancel();
+		ti.command.release();
 	    } else {
-		((IdleInfo)info).cancel();
-		((IdleInfo)info).command.release();
+		IdleInfo ii = (IdleInfo) info;
+		ii.cancel();
+		ii.command.release();
 	    }
 
-	    assocData.handlers.removeElement(info);
+	    int hindex = assocData.handlers.indexOf(info);
+	    if (hindex == -1) {
+                throw new TclRuntimeError("info " + info + " has no handler");
+            }
+	    if (assocData.handlers.remove(hindex) == null) {
+                throw new TclRuntimeError("cound not remove handler " + hindex);
+            }
 	}
 	break;
 
@@ -236,7 +244,7 @@ throws
 	idleInfo.command = cmd;
 	idleInfo.id = assocData.lastAfterId;
 
-	assocData.handlers.addElement(idleInfo);
+	assocData.handlers.add(idleInfo);
 
 	interp.setResult("after#" + idleInfo.id);
 	break;
@@ -250,7 +258,7 @@ throws
 	    TclObject list = TclList.newInstance();
 	    for (i = 0; i < assocData.handlers.size(); i++) {
 		int id;
-		Object obj = assocData.handlers.elementAt(i);
+		Object obj = assocData.handlers.get(i);
 		if (obj instanceof TimerInfo) {
 		    id = ((TimerInfo)obj).id;
 		} else {
@@ -354,7 +362,7 @@ getAfterEvent(
     int id = (int) res.value;
 
     for (int i = 0; i < assocData.handlers.size(); i++) {
-	Object obj = assocData.handlers.elementAt(i);
+	Object obj = assocData.handlers.get(i);
 	if (obj instanceof TimerInfo) {
 	    if (((TimerInfo)obj).id == id) {
 		return obj;
@@ -381,7 +389,7 @@ class AfterAssocData implements AssocData {
  * The set of handlers created but not yet fired.
  */
 
-Vector handlers = new Vector();
+ArrayList handlers = new ArrayList();
 
 /*
  * Timer identifier of most recently created timer.	
@@ -415,14 +423,18 @@ disposeAssocData(
 				// instance is registered in.
 {
     for (int i = assocData.handlers.size() - 1; i >= 0; i--) {
-	Object info = assocData.handlers.elementAt(i);
-	assocData.handlers.removeElementAt(i);
+	Object info = assocData.handlers.get(i);
+	if (assocData.handlers.remove(i) == null) {
+            throw new TclRuntimeError("cound not remove handler " + i);
+        }
 	if (info instanceof TimerInfo) {
-	    ((TimerInfo)info).cancel();
-	    ((TimerInfo)info).command.release();
+	    TimerInfo ti = (TimerInfo) info;
+	    ti.cancel();
+	    ti.command.release();
 	} else {
-	    ((IdleInfo)info).cancel();
-	    ((IdleInfo)info).command.release();
+	    IdleInfo ii = (IdleInfo) info;
+	    ii.cancel();
+	    ii.command.release();
 	}
     }
     assocData = null;
@@ -500,7 +512,13 @@ public void
 processTimerEvent()
 {
     try {
-	assocData.handlers.removeElement(this);
+	int index = assocData.handlers.indexOf(this);
+	if (index == -1) {
+            throw new TclRuntimeError("this " + this + " has no handler");
+        }
+	if (assocData.handlers.remove(index) == null) {
+            throw new TclRuntimeError("cound not remove handler " + index);
+        }
 	interp.eval(command, TCL.EVAL_GLOBAL);
     } catch (TclException e) {
 	interp.addErrorInfo("\n    (\"after\" script)");
@@ -582,7 +600,13 @@ public void
 processIdleEvent()
 {
     try {
-	assocData.handlers.removeElement(this);
+	int index = assocData.handlers.indexOf(this);
+	if (index == -1) {
+            throw new TclRuntimeError("this " + this + " has no handler");
+        }
+	if (assocData.handlers.remove(index) == null) {
+            throw new TclRuntimeError("cound not remove handler " + index);
+        }
 	interp.eval(command, TCL.EVAL_GLOBAL);
     } catch (TclException e) {
 	interp.addErrorInfo("\n    (\"after\" script)");

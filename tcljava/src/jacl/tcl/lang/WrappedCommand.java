@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: WrappedCommand.java,v 1.5 2005/11/21 02:02:41 mdejong Exp $
+ * RCS: @(#) $Id: WrappedCommand.java,v 1.6 2006/01/26 19:49:18 mdejong Exp $
  */
 
 package tcl.lang;
@@ -29,7 +29,7 @@ import java.util.*;
 public
 class WrappedCommand {
     public
-    Hashtable table;  // Reference to the table that this command is
+    HashMap table;    // Reference to the table that this command is
                       // defined inside. The hashKey member can be
                       // used to lookup this WrappedCommand instance
                       // in the table of WrappedCommands. The table

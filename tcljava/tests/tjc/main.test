@@ -3,8 +3,13 @@ package require tcltest
 tcltest::test cmdline-1.0 {process_cmdline} {
     catch {unset _cmdline}
     process_cmdline {-debug one.tjc two.tjc}
-    array get _cmdline
-} {options -debug files {one.tjc two.tjc}}
+    set results [list]
+    set keys [lsort [array names _cmdline]]
+    foreach key [lsort [array names _cmdline]] {
+        lappend results $key $_cmdline($key)
+    }
+    set results
+} {files {one.tjc two.tjc} options -debug}
 
 # Cleanup
 tcltest::cleanupTests

@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ArrayCmd.java,v 1.5 2005/10/07 06:50:09 mdejong Exp $
+ * RCS: @(#) $Id: ArrayCmd.java,v 1.6 2006/01/26 19:49:18 mdejong Exp $
  *
  */
 
@@ -109,13 +109,13 @@ class ArrayCmd implements Command {
                             objv[3].toString());
 	        }
 
-	        Enumeration e = var.getSearch(objv[3].toString());
-	        if (e == null) {
+	        Iterator iter = var.getSearch(objv[3].toString());
+	        if (iter == null) {
 	            errorIllegalSearchId(interp, objv[2].toString(),
                             objv[3].toString());
 	        }
 
-	        if (e.hasMoreElements()) {
+	        if (iter.hasNext()) {
 	            interp.setResult(true);
 	        } else {
 	            interp.setResult(false);
@@ -170,7 +170,7 @@ class ArrayCmd implements Command {
 	            pattern = objv[3].toString();
 	        }
 	    
-		Hashtable table = (Hashtable) var.value;
+		HashMap table = (HashMap) var.value;
 	        TclObject tobj = TclList.newInstance();
 	        String arrayName = objv[2].toString();
 	        String key, strValue;
@@ -182,11 +182,10 @@ class ArrayCmd implements Command {
 
 		// FIXME : do we need to port over the 8.1 code for this loop?
 
-		for (Enumeration e = table.keys();
-			e.hasMoreElements(); ) {
-
- 	            key = (String) e.nextElement();
-		    var2 = (Var) table.get(key);
+		for (Iterator iter = table.entrySet().iterator(); iter.hasNext() ;) {
+ 	            Map.Entry entry = (Map.Entry) iter.next();
+ 	            key = (String) entry.getKey();
+ 	            var2 = (Var) entry.getValue();
 		    if (var2.isVarUndefined()) {
 			continue;
 		    }
@@ -220,7 +219,7 @@ class ArrayCmd implements Command {
 	            pattern = objv[3].toString();
 	        }
 
-		Hashtable table = (Hashtable)var.value;
+		HashMap table = (HashMap) var.value;
 	        TclObject tobj = TclList.newInstance();
 	        String key;
 
@@ -228,9 +227,10 @@ class ArrayCmd implements Command {
 		// pattern, test for a match. Each valid key and its value 
 		// is written into sbuf, which is returned.
 
-		for (Enumeration e = table.keys(); e.hasMoreElements(); ) {
- 	            key = (String) e.nextElement();
-		    Var elem = (Var) table.get(key);
+		for (Iterator iter = table.entrySet().iterator(); iter.hasNext() ;) {
+		    Map.Entry entry = (Map.Entry) iter.next();
+ 	            key = (String) entry.getKey();
+ 	            Var elem = (Var) entry.getValue();
 		    if (! elem.isVarUndefined()) {
 			if (pattern != null) {
 			    if (!Util.stringMatch(key, pattern)) {
@@ -259,17 +259,17 @@ class ArrayCmd implements Command {
                             objv[3].toString());
 	        }
 
-	        Enumeration e = var.getSearch(objv[3].toString());
-	        if (e == null) {
+	        Iterator iter = var.getSearch(objv[3].toString());
+	        if (iter == null) {
 	            errorIllegalSearchId(interp, objv[2].toString(),
                             objv[3].toString());
 	        }
-	        if (e.hasMoreElements()) {
-		    Hashtable table = (Hashtable)var.value;
- 	            String key = (String)e.nextElement();
-		    Var elem = (Var)table.get(key);
+	        if (iter.hasNext()) {
+		    Map.Entry entry = (Map.Entry) iter.next();
+ 	            String key = (String) entry.getKey();
+		    Var elem = (Var) entry.getValue();
 
-		    if ((elem.flags & Var.UNDEFINED) == 0) {
+		    if (!elem.isVarUndefined()) {
 		        interp.setResult(key);
 		    } else {
 		        interp.setResult("");
@@ -312,14 +312,18 @@ class ArrayCmd implements Command {
 	        if (notArray) {
 		    interp.setResult(0);
 	        } else {
-		    Hashtable table = (Hashtable)var.value;
+		    HashMap table = (HashMap) var.value;
 		    int size = 0;
-		    for (Enumeration e = table.keys(); e.hasMoreElements(); ) {
-			Var elem = (Var)table.get((String)e.nextElement());
-			if ((elem.flags & Var.UNDEFINED) == 0) {
+
+		    for (Iterator iter = table.entrySet().iterator();
+                            iter.hasNext() ;) {
+		        Map.Entry entry = (Map.Entry) iter.next();
+		        String key = (String) entry.getKey();
+		        Var elem = (Var) entry.getValue();
+			if (!elem.isVarUndefined()) {
 			    size++;
 			}
-		    }
+                    }
 	            interp.setResult(size);
 	        }
 		break;
@@ -335,13 +339,13 @@ class ArrayCmd implements Command {
 	        }
 	    
 		if (var.sidVec == null) {
-	            var.sidVec = new Vector();
+	            var.sidVec = new ArrayList();
 		}
 
 		// Create a SearchId Object:
 		// To create a new SearchId object, a unique string
 		// identifier needs to be composed and we need to
-		// create an Enumeration of the array keys.  The
+		// create an Iterator of the array keys.  The
 		// unique string identifier is created from three
 		// strings:
 		//
@@ -352,13 +356,14 @@ class ArrayCmd implements Command {
 		//
 		// Once the SearchId string is created we construct a
 		// new SearchId object using the string and the
-		// Enumeration.  From now on the string is used to
+		// Iterator.  From now on the string is used to
 		// uniquely identify the SearchId object.
 
 		int i = var.getNextIndex();
 		String s = "s-" + i  + "-" + objv[2].toString();
-		Enumeration e = ((Hashtable)var.value).keys();
-		var.sidVec.addElement(new SearchId(e,s,i));
+		HashMap table = (HashMap) var.value;
+		Iterator iter = table.entrySet().iterator();
+		var.sidVec.add(new SearchId(iter,s,i));
 		interp.setResult(s);
 		break;
 	    }
@@ -379,18 +384,23 @@ class ArrayCmd implements Command {
 	            interp.unsetVar(objv[2], 0);
 	        } else {
 	            pattern = objv[3].toString();
-	            Hashtable table = (Hashtable) var.value;
-	            for (Enumeration e = table.keys();
-	                    e.hasMoreElements(); ) {
-	                name = (String) e.nextElement();
-			Var elem = (Var)table.get(name);
-			if (var.isVarUndefined()) {
+	            HashMap table = (HashMap) var.value;
+
+	            for (Iterator iter = table.entrySet().iterator();
+	                    iter.hasNext() ;) {
+	                Map.Entry entry = (Map.Entry) iter.next();
+	                name = (String) entry.getKey();
+	                Var elem = (Var) entry.getValue();
+			if (elem.isVarUndefined()) {
 			    continue;
 			}
 			if (Util.stringMatch(name, pattern)) {
 			    interp.unsetVar(varName, name, 0);
+			    // Reset iterator in case unset
+			    // modified the table.
+			    iter = table.entrySet().iterator();
 			}
-		    }
+	            }
 	        }
 		break;
 	    }

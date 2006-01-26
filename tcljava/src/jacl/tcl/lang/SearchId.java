@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: SearchId.java,v 1.2 2005/01/13 06:21:14 mdejong Exp $
+ * RCS: @(#) $Id: SearchId.java,v 1.3 2006/01/26 19:49:18 mdejong Exp $
  *
  */
 
@@ -28,8 +28,8 @@ class SearchId {
     * An Enumeration that stores the list of keys for
     * the ArrayVar.
     */
-    private Enumeration e;
-  
+    private Iterator iter;
+
    /**
     * The unique searchId string
     */
@@ -50,8 +50,8 @@ class SearchId {
     * @param s String as the unique identifier for the searchId
     * @param e index value for this object
     */
-    SearchId(Enumeration e, String s, int i) {
-        this.e = e;      
+    SearchId(Iterator iter, String s, int i) {
+        this.iter = iter;
 	str   = s;
 	index = i;
     }
@@ -64,15 +64,15 @@ class SearchId {
     }
 
    /**
-    * Return the Enumeration for the SearchId object.  This is 
+    * Return the Iterator for the SearchId object.  This is 
     * used in the ArrayCmd class for the anymore, donesearch, 
     * and nextelement functions.
     *
     * @param none
-    * @return The Enumeration for the SearchId object
+    * @return The Iterator for the SearchId object
     */
-    Enumeration getEnum() {
- 	return e;
+    Iterator getIterator() {
+ 	return iter;
     }
 
    /**

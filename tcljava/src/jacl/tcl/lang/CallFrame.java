@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: CallFrame.java,v 1.13 2006/01/25 03:07:43 mdejong Exp $
+ * RCS: @(#) $Id: CallFrame.java,v 1.14 2006/01/26 19:49:18 mdejong Exp $
  *
  */
 
@@ -80,7 +80,7 @@ class CallFrame {
      * Stores the variables of this CallFrame.
      */
 
-    Hashtable varTable;
+    HashMap varTable;
 
 
     /**
@@ -91,7 +91,7 @@ class CallFrame {
     CallFrame(Interp i) {
 	interp	        = i;
 	ns              = i.globalNs;
-	varTable        = new Hashtable();
+	varTable        = new HashMap();
 	caller          = null;
 	callerVar       = null;
 	objv            = null;
@@ -228,49 +228,51 @@ class CallFrame {
     }
 
     /**
-     * @return an Vector the names of the (defined) variables
+     * @return a List of the names of the (defined) variables
      *     in this CallFrame.
      */
 
     // FIXME : need to port Tcl 8.1 implementation here
 
-    Vector getVarNames() {
-	Vector vector = new Vector();
+    ArrayList getVarNames() {
+	ArrayList alist = new ArrayList();
 
 	if (varTable == null) {
-	    return vector;
+	    return alist;
 	}
 
-	for (Enumeration e1 = varTable.elements();
-		e1.hasMoreElements(); ) {
-	    Var v = (Var) e1.nextElement();
+	for (Iterator iter = varTable.entrySet().iterator();
+                iter.hasNext() ;) {
+	    Map.Entry entry = (Map.Entry) iter.next();
+	    Var v = (Var) entry.getValue();
 	    if (! v.isVarUndefined()) {
-		vector.addElement(v.hashKey);
+		alist.add(v.hashKey);
 	    }
-	}
-	return vector;
+        }
+	return alist;
     }
 
     /**
-     * @return an Vector the names of the (defined) local variables
+     * @return a List of the names of the (defined) local variables
      *     in this CallFrame (excluding upvar's)
      */
 
-    Vector getLocalVarNames() {
-	Vector vector = new Vector();
+    ArrayList getLocalVarNames() {
+	ArrayList alist = new ArrayList();
 
 	if (varTable == null) {
-	    return vector;
+	    return alist;
 	}
 
-	for (Enumeration e1 = varTable.elements();
-		e1.hasMoreElements(); ) {
-	    Var v = (Var) e1.nextElement();
+	for (Iterator iter = varTable.entrySet().iterator();
+                iter.hasNext() ;) {
+	    Map.Entry entry = (Map.Entry) iter.next();
+	    Var v = (Var) entry.getValue();
 	    if (!v.isVarUndefined() && !v.isVarLink()) {
-		vector.addElement(v.hashKey);
+		alist.add(v.hashKey);
 	    }
-	}
-	return vector;
+        }
+	return alist;
     }
 
     /**

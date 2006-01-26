@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TJC.java,v 1.7 2006/01/19 21:05:32 mdejong Exp $
+ * RCS: @(#) $Id: TJC.java,v 1.8 2006/01/26 19:49:19 mdejong Exp $
  *
  */
 
@@ -13,7 +13,7 @@
 
 package tcl.lang;
 
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.Arrays;
 
 public class TJC {
@@ -563,7 +563,7 @@ public class TJC {
         String init_file;
         String[] files;
         String prefix;
-        Hashtable filesTable;
+        HashMap filesTable;
 
         InitSourceCmd(String init_file, String[] files, String prefix)
         {
@@ -571,7 +571,7 @@ public class TJC {
             this.files = files;
             this.prefix = prefix;
 
-            filesTable = new Hashtable();
+            filesTable = new HashMap();
             for (int i=0; i < files.length; i++) {
                 filesTable.put(files[i], "");
             }

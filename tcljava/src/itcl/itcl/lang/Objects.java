@@ -22,7 +22,7 @@
  *           mmclennan@lucent.com
  *           http://www.tcltk.com/itcl
  *
- *     RCS:  $Id: Objects.java,v 1.2 2005/09/12 00:00:50 mdejong Exp $
+ *     RCS:  $Id: Objects.java,v 1.3 2006/01/26 19:49:18 mdejong Exp $
  * ========================================================================
  *           Copyright (c) 1993-1998  Lucent Technologies, Inc.
  * ------------------------------------------------------------------------
@@ -34,11 +34,12 @@ package itcl.lang;
 
 import tcl.lang.*;
 
-import java.util.Hashtable;
-import java.util.Enumeration;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Iterator;
 
 class Objects {
-    static Hashtable dangleTable = new Hashtable();
+    static HashMap dangleTable = new HashMap();
 
 
 /*
@@ -135,7 +136,7 @@ CreateObject(
     newObj.dataSize = cdefn.numInstanceVars;
     newObj.data = new Var[newObj.dataSize];
 
-    newObj.constructed = new Hashtable();
+    newObj.constructed = new HashMap();
     newObj.destructed = null;
 
     //  Add a command to the current namespace with the object name.
@@ -164,10 +165,9 @@ CreateObject(
 
     cd = Class.AdvanceHierIter(hier);
     while (cd != null) {
-        Enumeration e = cd.variables.keys();
-        while (e.hasMoreElements()) {
-            String key = (String) e.nextElement();
-            vdefn = (ItclVarDefn) cd.variables.get(key);
+        for ( Iterator iter = cd.variables.entrySet().iterator(); iter.hasNext() ; ) {
+            Map.Entry entry = (Map.Entry) iter.next();
+            vdefn = (ItclVarDefn) entry.getValue();
 
             if ((vdefn.member.flags & ItclInt.THIS_VAR) != 0) {
                 if (cd == cdefn) {
@@ -370,7 +370,7 @@ DestructObject(
     //  sure that all base class destructors have been called,
     //  explicitly or implicitly.
 
-    contextObj.destructed = new Hashtable();
+    contextObj.destructed = new HashMap();
 
     //  Destruct the object starting from the most-specific class.
     //  If all goes well, return the null string as the result.
@@ -784,11 +784,10 @@ ReportObjectUsage(
     cmdList = new Itcl_List();
     Util.InitList(cmdList);
 
-    Enumeration e = cdefn.resolveCmds.keys();
-
-    while (e.hasMoreElements()) {
-        name = (String) e.nextElement();
-        mfunc = (ItclMemberFunc) cdefn.resolveCmds.get(name);
+    for ( Iterator iter = cdefn.resolveCmds.entrySet().iterator(); iter.hasNext() ; ) {
+        Map.Entry entry = (Map.Entry) iter.next();
+        name = (String) entry.getKey();
+        mfunc = (ItclMemberFunc) entry.getValue();
 
         if ((name.indexOf("::") != -1) || (mfunc.member.flags & ignore) != 0) {
             mfunc = null;
@@ -999,10 +998,11 @@ FreeObject(
         } catch (TclException ex) { pushErr = true; }
 
         if (!pushErr) {
-            Enumeration e = cd.variables.keys();
-            while (e.hasMoreElements()) {
-                String key = (String) e.nextElement();
-                vdefn = (ItclVarDefn) cd.variables.get(key);
+            for ( Iterator iter = cd.variables.entrySet().iterator(); iter.hasNext() ; ) {
+                Map.Entry entry = (Map.Entry) iter.next();
+                String key = (String) entry.getKey();
+                vdefn = (ItclVarDefn) entry.getValue();
+
                 if ((vdefn.member.flags & ItclInt.THIS_VAR) != 0) {
                     if (cd == contextObj.classDefn) {
                         try {

@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.31 2005/10/07 06:50:09 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.32 2006/01/26 19:49:19 mdejong Exp $
  *
  */
 
@@ -69,7 +69,7 @@ long interpPtr;
 // one ReflectObject internalRep for the same Object -- this
 // way Object identity can be done by string comparison.
 
-Hashtable reflectObjTable = new Hashtable();
+HashMap reflectObjTable = new HashMap();
 
 // Number of reflect objects created so far inside this Interp
 // (including those that have be freed)
@@ -79,7 +79,7 @@ long reflectObjCount = 0;
 // Table used to store reflect hash index conflicts, see
 // ReflectObject implementation for more details
 
-Hashtable reflectConflictTable = new Hashtable();
+HashMap reflectConflictTable = new HashMap();
 
 // The Notifier associated with this Interp.
 
@@ -88,13 +88,13 @@ private Notifier notifier;
 // Hash table for associating data with this interpreter. Cleaned up
 // when this interpreter is deleted.
 
-Hashtable assocDataTab;
+HashMap assocDataTab;
 
 // Used ONLY by JavaImportCmd
-Hashtable[] importTable = {new Hashtable(), new Hashtable()};
+HashMap[] importTable = {new HashMap(), new HashMap()};
 
 // Used ONLY by CObject
-Vector cobjCleanup = new Vector();
+ArrayList cobjCleanup = new ArrayList();
 
 // True when callCommand should propagate exceptions
 boolean propagateException = false;
@@ -225,11 +225,11 @@ dispose()
     // Remove all the assoc data tied to this interp.
 	
     if (assocDataTab != null) {
-	for (Enumeration e = assocDataTab.keys(); e.hasMoreElements();) {
-	    Object key = e.nextElement();
-	    AssocData data = (AssocData) assocDataTab.get(key);
+	for (Iterator iter = assocDataTab.entrySet().iterator(); iter.hasNext() ;) {
+	    Map.Entry entry = (Map.Entry) iter.next();
+	    AssocData data = (AssocData) entry.getValue();
 	    data.disposeAssocData(this);
-	    assocDataTab.remove(key);
+	    iter.remove();
 	}
 	assocDataTab = null;
     }
@@ -1380,7 +1380,7 @@ setAssocData(
     AssocData data)		// Object associated with the name.
 {
     if (assocDataTab == null) {
-	assocDataTab = new Hashtable();
+	assocDataTab = new HashMap();
     }
     assocDataTab.put(name, data);
 }

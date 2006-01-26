@@ -12,12 +12,12 @@ public class Interp {
 public Interp() { throw new RuntimeException("empty Interp used"); }
 
 // Used ONLY by ReflectObject
-Hashtable reflectObjTable = null;
+HashMap reflectObjTable = null;
 long reflectObjCount = 0;
-Hashtable reflectConflictTable = null;
+HashMap reflectConflictTable = null;
 
 // Used ONLY by JavaImportCmd
-Hashtable[] importTable = null;
+HashMap[] importTable = null;
 
 
 public void dispose() {}

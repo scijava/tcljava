@@ -16,13 +16,12 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: Namespace.java,v 1.5 2005/11/22 01:46:21 mdejong Exp $
+ * RCS: @(#) $Id: Namespace.java,v 1.6 2006/01/26 19:49:18 mdejong Exp $
  */
 
 package tcl.lang;
 
-import java.util.Hashtable;
-import java.util.Enumeration;
+import java.util.*;
 
 // This structure contains a cached pointer to a namespace that is the
 // result of resolving the namespace's name in some other namespace. It is
@@ -46,7 +45,7 @@ public class Namespace {
     Namespace parent;        // reference to the namespace that contains
                              // this one. null is this is the global namespace.
     public
-    Hashtable childTable;    // Contains any child namespaces. Indexed
+    HashMap childTable;      // Contains any child namespaces. Indexed
                              // by strings; values are references to
                              // Namespace objects
     public
@@ -71,7 +70,7 @@ public class Namespace {
                              // until refCount becomes zero.
 
     public
-    Hashtable cmdTable;	     // Contains all the commands currently
+    HashMap cmdTable;	     // Contains all the commands currently
                              // registered in the namespace. Indexed by
                              // strings; values have type (WrappedCommand).
                              // Commands imported by Tcl_Import have
@@ -80,7 +79,7 @@ public class Namespace {
                              // Command structure in the source
                              // namespace's command table.
     public
-    Hashtable varTable;	     // Contains all the (global) variables
+    HashMap varTable;	     // Contains all the (global) variables
                              // currently in this namespace. Indexed
                              // by strings; values have type (Var).
 
@@ -496,7 +495,7 @@ public class Namespace {
 	//ns.clientData       = clientData;
 	ns.deleteProc         = deleteProc;
 	ns.parent             = parent;
-	ns.childTable         = new Hashtable();
+	ns.childTable         = new HashMap();
 	synchronized (nsMutex) {
 	    numNsCreated++;
 	    ns.nsId           = numNsCreated;
@@ -510,8 +509,8 @@ public class Namespace {
 	// We can do ignore the refCount because GC will reclaim mem.
 	//ns.refCount           = 0;
 	ns.refCount           = 1;
-	ns.cmdTable           = new Hashtable();
-	ns.varTable           = new Hashtable();
+	ns.cmdTable           = new HashMap();
+	ns.varTable           = new HashMap();
 	ns.exportArray        = null;
 	ns.numExportPatterns  = 0;
 	ns.maxExportPatterns  = 0;
@@ -657,7 +656,6 @@ public class Namespace {
     static void teardownNamespace(Namespace ns)
     {
 	Interp interp = ns.interp;
-	Enumeration search;
 	Namespace childNs;
 	WrappedCommand cmd;
 	Namespace globalNs = getGlobalNamespace(interp);
@@ -722,29 +720,17 @@ public class Namespace {
 	//    properly if its elements are being deleted. We use only
 	//    the Tcl_FirstHashEntry function to be safe.
 
-	search = ns.childTable.keys();
-	while (search.hasMoreElements()) {
-	    String key = (String) search.nextElement();
-	    childNs = (Namespace) ns.childTable.get(key);
-	    if (childNs != null) {
-	        deleteNamespace(childNs);
-	    }
+	while ((childNs = (Namespace) FirstHashEntry(ns.childTable)) != null) {
+	    deleteNamespace(childNs);
 	}
 
 	// Delete all commands in this namespace. Be careful when traversing the
 	// hash table: when each command is deleted, it removes itself from the
 	// command table.
 
-	search = ns.cmdTable.keys();
-	while( search.hasMoreElements() ) {
-	    String key = (String) search.nextElement();
-	    cmd = (WrappedCommand) ns.cmdTable.get(key);
-	    if (cmd != null) {
-	        interp.deleteCommandFromToken(cmd);
-	    }
+	while ((cmd = (WrappedCommand) FirstHashEntry(ns.cmdTable)) != null) {
+	    interp.deleteCommandFromToken(cmd);
 	}
-	
-	ns.cmdTable.clear();
 
 	// Free the namespace's export pattern array.
 
@@ -999,7 +985,6 @@ public class Namespace {
 	Namespace ns, importNs;
 	Namespace currNs = getCurrentNamespace(interp);
 	String simplePattern, cmdName;
-	Enumeration search;
 	WrappedCommand cmd, realCmd;
 	ImportRef ref;
 	WrappedCommand autoCmd, importedCmd;
@@ -1079,9 +1064,10 @@ public class Namespace {
 	// command" in the current namespace for each imported command; these
 	// commands redirect their invocations to the "real" command.
 
-	for (search = importNs.cmdTable.keys();
-	     search.hasMoreElements() ; ) {
-	    cmdName = (String) search.nextElement();
+	for (Iterator iter = importNs.cmdTable.entrySet().iterator(); iter.hasNext() ;) {
+	    Map.Entry entry = (Map.Entry) iter.next();
+	    cmdName = (String) entry.getKey();
+
 	    if (Util.stringMatch(cmdName, simplePattern)) {
 		// The command cmdName in the source namespace matches the
 		// pattern. Check whether it was exported. If it wasn't,
@@ -1204,7 +1190,6 @@ public class Namespace {
     {
 	Namespace ns, importNs, actualCtx;
 	String simplePattern, cmdName;
-	Enumeration search;
 	WrappedCommand cmd;
 
 	// If the specified namespace is null, use the current namespace.
@@ -1237,11 +1222,13 @@ public class Namespace {
 	// Scan through the command table in the source namespace and look for
 	// exported commands that match the string pattern. If the current
 	// namespace has an imported command that refers to one of those real
-	// commands, delete it.
+	// commands, delete it. The importNs.cmdTable should not change during
+	// this iteration.
 
-	for (search = importNs.cmdTable.keys();
-	     search.hasMoreElements(); ) {
-	    cmdName = (String) search.nextElement();
+	for (Iterator iter = importNs.cmdTable.entrySet().iterator(); iter.hasNext() ;) {
+	    Map.Entry entry = (Map.Entry) iter.next();
+	    cmdName = (String) entry.getKey();
+
 	    if (Util.stringMatch(cmdName, simplePattern)) {
 		cmd = (WrappedCommand) ns.cmdTable.get(cmdName);
 		if (cmd != null) { // cmd of same name in current namespace
@@ -1828,9 +1815,9 @@ public class Namespace {
 		}
 
 		if (cmd == null && interp.resolvers != null) {
-		    Enumeration e = interp.resolvers.elements();
-		    while (cmd == null && e.hasMoreElements()) {
-			res = (Interp.ResolverScheme) e.nextElement();
+		    for (ListIterator iter = interp.resolvers.listIterator();
+		            cmd == null && iter.hasNext(); ) {
+		        res = (Interp.ResolverScheme) iter.next();
 			cmd = res.resolver.resolveCmd(interp,
 				  name, cxtNs, flags);
 		    }
@@ -1958,9 +1945,9 @@ public class Namespace {
 		}
 
 		if (var == null && interp.resolvers != null) {
-		    Enumeration e = interp.resolvers.elements();
-		    while (var == null && e.hasMoreElements()) {
-			res = (Interp.ResolverScheme) e.nextElement();
+		    for (ListIterator iter = interp.resolvers.listIterator();
+		            var == null && iter.hasNext(); ) {
+		        res = (Interp.ResolverScheme) iter.next();
 			var = res.resolver.resolveVar(interp,
 				  name, cxtNs, flags);
 		    }
@@ -2116,14 +2103,14 @@ public class Namespace {
                 wcmd = (WrappedCommand) shadowNs.cmdTable.get(cmdName);
                 if (wcmd != null) {
                     // Invalidate cached command ref in each command
-                    // defined in this namespace
+                    // defined in this namespace.
 
                     //nsPtr->cmdRefEpoch++;
 
-                    Enumeration search = ns.cmdTable.keys();
-                    while( search.hasMoreElements() ) {
-                        String key = (String) search.nextElement();
-                        wcmd = (WrappedCommand) ns.cmdTable.get(key);
+                    for (Iterator iter = ns.cmdTable.entrySet().iterator();
+                            iter.hasNext() ; ) {
+                        Map.Entry entry = (Map.Entry) iter.next();
+                        wcmd = (WrappedCommand) entry.getValue();
                         wcmd.incrEpoch();
                     }
                  }
@@ -2232,6 +2219,46 @@ public class Namespace {
 				// are being queried.
     {
 	return namespace.resolver;
+    }
+
+    /**
+     *----------------------------------------------------------------------
+     *
+     * Tcl_FirstHashEntry -> FirstHashEntry
+     *
+     *	Return the first Object value contained in the given table.
+     *	This method is used only when taking apart a table where
+     *	entries in the table could be removed elsewhere. An Iterator
+     *	is no longer valid once entries have been removed so it
+     *	is not possible to take a table apart safely with a single
+     *	iterator. This method returns null when there are no more
+     *	elements in the table, so it should not be used with a
+     *	table that contains null values. This method is not efficient,
+     *	but it is required when dealing with a Java Iterator when
+     *	the table being iterated could have elements added or deleted.
+     *
+     *----------------------------------------------------------------------
+     */
+
+    static Object
+    FirstHashEntry(
+	HashMap table)
+    {
+        Object retVal;
+        Set eset = table.entrySet();
+        if (eset.size() == 0) {
+            return null;
+        }
+        Iterator iter = eset.iterator();
+        if (!iter.hasNext()) {
+            throw new TclRuntimeError("no next() object but set size was " + eset.size());
+        }
+        Map.Entry entry = (Map.Entry) iter.next();
+        retVal = entry.getValue();
+        if (retVal == null) {
+            throw new TclRuntimeError("entry value should not be null");
+        }
+        return retVal;
     }
 
 } // end class Namespace

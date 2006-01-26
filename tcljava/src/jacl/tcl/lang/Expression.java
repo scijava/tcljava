@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Expression.java,v 1.17 2005/11/19 01:09:06 mdejong Exp $
+ * RCS: @(#) $Id: Expression.java,v 1.18 2006/01/26 19:49:18 mdejong Exp $
  *
  */
 
@@ -94,7 +94,7 @@ class Expression {
 	"-", "+", "!", "~"
     };
 
-    Hashtable mathFuncTable;
+    HashMap mathFuncTable;
 
     /**
      * The entire expression, as originally passed to eval et al.
@@ -187,7 +187,7 @@ class Expression {
      * Constructor.
      */
     Expression() {
-	mathFuncTable = new Hashtable();
+	mathFuncTable = new HashMap();
 
 	// rand  -- needs testing
 	// srand -- needs testing
@@ -1968,7 +1968,6 @@ class Expression {
         }
         }
     }
-
 }
 
 abstract class MathFunction {

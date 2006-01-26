@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: InterpSlaveCmd.java,v 1.4 2005/10/20 21:35:55 mdejong Exp $
+ * RCS: @(#) $Id: InterpSlaveCmd.java,v 1.5 2006/01/26 19:49:18 mdejong Exp $
  *
  */
 
@@ -249,18 +249,21 @@ disposeAssocData(
     // delete those aliases.  If the other interp was already dead, it
     // would have removed the target record already. 
 
-    Enumeration targets = interp.targetTable.keys();
-    while (targets.hasMoreElements()) {
-	WrappedCommand slaveCmd = (WrappedCommand) targets.nextElement();
-	Interp slaveInterp = (Interp) interp.targetTable.get(slaveCmd);
+    for (Iterator iter = interp.targetTable.entrySet().iterator(); iter.hasNext() ; ) {
+	Map.Entry entry = (Map.Entry) iter.next();
+	WrappedCommand slaveCmd = (WrappedCommand) entry.getKey();
+	Interp slaveInterp = (Interp) entry.getValue();
 	slaveInterp.deleteCommandFromToken(slaveCmd);
     }
+
     interp.targetTable = null;
 
     if (interp.interpChanTable != null) {
-	Enumeration channels = interp.interpChanTable.elements();
-	while (channels.hasMoreElements()) {
-	    Channel channel = (Channel) channels.nextElement();
+	// Tear down channel table, be careful to pull the first element from
+	// the front of the table until empty since the table is modified
+	// by unregisterChannel().
+	Channel channel;
+	while ((channel = (Channel) Namespace.FirstHashEntry(interp.interpChanTable)) != null) {
 	    TclIO.unregisterChannel(interp, channel);
 	}
     }
@@ -535,9 +538,9 @@ throws
     }
 
     TclObject result = TclList.newInstance();
-    Enumeration hiddenCmds = slaveInterp.hiddenCmdTable.keys();
-    while (hiddenCmds.hasMoreElements()) {
-	String cmdName = (String) hiddenCmds.nextElement();
+    for (Iterator iter = slaveInterp.hiddenCmdTable.entrySet().iterator(); iter.hasNext() ; ) {
+	Map.Entry entry = (Map.Entry) iter.next();
+	String cmdName = (String) entry.getKey();
 	TclList.append(interp, result, TclString.newInstance(cmdName));
     }
     interp.setResult(result);

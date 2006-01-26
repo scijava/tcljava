@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: FieldSig.java,v 1.7 2003/03/11 10:26:40 mdejong Exp $
+ * RCS: @(#) $Id: FieldSig.java,v 1.8 2006/01/26 19:49:19 mdejong Exp $
  *
  */
 
@@ -208,21 +208,26 @@ getAccessibleFields(
 	return cls.getFields();
     } else {
 	Field[] fields = cls.getDeclaredFields();
-	Vector vec = new Vector();
+	ArrayList alist = null;
 	boolean skipped_any = false;
 
 	for (int i=0; i < fields.length; i++) {
 	    Field f = fields[i];
 	    if (PkgInvoker.isAccessible(f)) {
-	        vec.addElement(f);
+	        if (alist == null) {
+	            alist = new ArrayList(fields.length);
+	        }
+	        alist.add(f);
 	    } else {
 	        skipped_any = true;
 	    }
 	}
 
 	if (skipped_any) {
-	    fields = new Field[vec.size()];
-	    vec.copyInto(fields);
+	    fields = new Field[alist.size()];
+	    for (int i=0; i < fields.length; i++) {
+                fields[i] = (Field) alist.get(i);
+            }
 	}
 	return fields;
     }

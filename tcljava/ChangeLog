@@ -1,3 +1,62 @@
+2006-01-26  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        Replace use of synchronized Vector and Hashtable
+        classes with unsynchronized ArrayList and
+        HashMap classes delivered with JDK 1.2.X.
+        Use of Enumeration replaced with Iterator.
+        Fix a couple of destroy time iteration bugs
+        in Itcl to make it match the C impl.
+
+        * Makefile.in: Add missing ItclAccess.java
+        file to itclsrc.jar.
+        * src/empty/empty.jar: Regen.
+        * src/empty/tcl/lang/Interp.java:
+        * src/itcl/itcl/lang/BiCmds.java:
+        * src/itcl/itcl/lang/Class.java:
+        * src/itcl/itcl/lang/Cmds.java:
+        * src/itcl/itcl/lang/Ensemble.java:
+        * src/itcl/itcl/lang/ItclInt.java:
+        * src/itcl/itcl/lang/Methods.java:
+        * src/itcl/itcl/lang/Objects.java:
+        * src/itcl/tcl/lang/ItclAccess.java:
+        * src/jacl/tcl/lang/AfterCmd.java:
+        * src/jacl/tcl/lang/ArrayCmd.java:
+        * src/jacl/tcl/lang/BgErrorMgr.java:
+        * src/jacl/tcl/lang/CallFrame.java:
+        * src/jacl/tcl/lang/ClockCmd.java:
+        * src/jacl/tcl/lang/Expression.java:
+        * src/jacl/tcl/lang/IdleHandler.java:
+        * src/jacl/tcl/lang/InfoCmd.java:
+        * src/jacl/tcl/lang/Interp.java:
+        * src/jacl/tcl/lang/InterpAliasCmd.java:
+        * src/jacl/tcl/lang/InterpCmd.java:
+        * src/jacl/tcl/lang/InterpSlaveCmd.java:
+        * src/jacl/tcl/lang/Namespace.java:
+        * src/jacl/tcl/lang/NamespaceCmd.java:
+        * src/jacl/tcl/lang/Notifier.java:
+        * src/jacl/tcl/lang/PackageCmd.java:
+        * src/jacl/tcl/lang/ParseResultVector.java: Removed unused file.
+        * src/jacl/tcl/lang/SearchId.java:
+        * src/jacl/tcl/lang/TclIO.java:
+        * src/jacl/tcl/lang/TclList.java:
+        * src/jacl/tcl/lang/TimerHandler.java:
+        * src/jacl/tcl/lang/TraceCmd.java:
+        * src/jacl/tcl/lang/Var.java:
+        * src/jacl/tcl/lang/WrappedCommand.java:
+        * src/tclblend/tcl/lang/CObject.java:
+        * src/tclblend/tcl/lang/Interp.java:
+        * src/tclblend/tcl/lang/Notifier.java:
+        * src/tcljava/tcl/lang/FieldSig.java:
+        * src/tcljava/tcl/lang/FuncSig.java:
+        * src/tcljava/tcl/lang/JavaImportCmd.java:
+        * src/tcljava/tcl/lang/ReflectObject.java:
+        * src/tests/jacl/tcl/lang/TestChannelCmd.java:
+        * src/tjc/tcl/lang/TJC.java:
+        * tests/inprogress/TimerHandler.test:
+        * tests/jacl/IdleHandler.test:
+        * tests/tjc/main.test: Rework test that depends
+        on hash order.
+
 2006-01-24  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/itcl/itcl/lang/Class.java:
