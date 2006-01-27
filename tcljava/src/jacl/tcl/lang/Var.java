@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Var.java,v 1.23 2006/01/26 19:49:18 mdejong Exp $
+ * RCS: @(#) $Id: Var.java,v 1.24 2006/01/27 23:39:02 mdejong Exp $
  *
  */
 package tcl.lang;
@@ -70,11 +70,11 @@ class Var {
      *				reflect the "reference" from its namespace.
      * NO_CACHE -		1 means that code should not be able to hold
      *				a cached reference to this variable. This flag
-     *				only set for a linked to variable when
-     *				an upvar changes the linked from variable.
-     *				It is not possible to clear this flag.
-     *				This flag is only set in a tricky upvar
-     *				edge case so performance is not a concern.
+     *				is set for a variable when traces are created
+     *				or when a linked variable is redirected via
+     *				upvar. It is not possible to clear this flag,
+     *				so the variable can't be cached as long as it
+     *				exists.
      */
 
     static final int SCALAR	   = 0x1;
@@ -118,8 +118,12 @@ class Var {
     }
 
     // Return true when a ref to this variable
-    // would not be allowed or is no longer valid
-    // because the variable was unset.
+    // would not be allowed or is no longer valid.
+    // This could be true if the variable was
+    // unset or if the variable could no longer
+    // be cached because of an upvar redirect.
+    // This method also returns true if traces
+    // were set on a variable.
 
     final boolean isVarCacheInvalid() {
         return ((flags & (UNDEFINED|NO_CACHE)) != 0);
@@ -253,6 +257,11 @@ class Var {
      */
 
     Var() {
+        init();
+    }
+
+    private final
+    void init() {
 	value    = null;
 	//name     = null; // Like hashKey in Jacl
 	ns       = null;
@@ -575,7 +584,7 @@ class Var {
 			}
 			return null;
 		    }
-		    var = new Var();
+		    var = grabVar(interp);
 		    varNs.varTable.put(tail, var);
 
 		    // There is no hPtr member in Jacl, The hPtr combines the table
@@ -604,7 +613,7 @@ class Var {
 		    }
 		    var = (Var) table.get(part1);
 		    if (var == null) { // we are adding a new entry
-			var = new Var();
+			var = grabVar(interp);
 			table.put(part1, var);
 
 		        // There is no hPtr member in Jacl, The hPtr combines
@@ -690,7 +699,7 @@ class Var {
 		    deleteSearches(var);
 		}
 
-		var = new Var();
+		var = grabVar(interp);
 		arrayTable.put(elName, var);
 
 		// There is no hPtr member in Jacl, The hPtr combines the table
@@ -794,7 +803,7 @@ class Var {
 	    // then free up the relevant structures and hash table entries.
 
 	    if (var.isVarUndefined()) {
-		cleanupVar(var, array);
+		cleanupVar(interp, var, array);
 	    }
 	}
 
@@ -1007,7 +1016,7 @@ class Var {
 	    // then free up the relevant structures and hash table entries.
 
 	    if (var.isVarUndefined()) {
-		cleanupVar(var, array);
+		cleanupVar(interp, var, array);
 	    }
 	}
     }
@@ -1232,8 +1241,8 @@ class Var {
 	// Finally, if the variable is truly not in use then free up its Var
 	// structure and remove it from its hash table, if any. The ref count of
 	// its value object, if any, was decremented above.
-	
-	cleanupVar(var, array);
+
+	cleanupVar(interp, var, array);
 
 	// It's an error to unset an undefined variable.
 	
@@ -1285,9 +1294,11 @@ class Var {
 	var = result[0];
 	array = result[1];
 
-	// Set up trace information.
+	// Set up trace information and mark variable so that it will
+	// not be cached.
 
 	if (var.traces == null) {
+	    var.setVarNoCache();
 	    var.traces = new ArrayList();
 	}
 
@@ -1377,7 +1388,7 @@ class Var {
 	// unset and unused, then free up the variable.
 
 	if (var.isVarUndefined()) {
-	    cleanupVar(var, null);
+	    cleanupVar(interp, var, null);
 	}
     }
 
@@ -1537,7 +1548,7 @@ class Var {
 	    var = (Var) ns.varTable.get(tail);
 	    if (var == null) { // we are adding a new entry
 		newvar = true;
-		var = new Var();
+		var = grabVar(interp);
 		ns.varTable.put(tail, var);
 
 		// There is no hPtr member in Jacl, The hPtr combines the table
@@ -1560,7 +1571,7 @@ class Var {
 		var = (Var) table.get(myName);
 		if (var == null) { // we are adding a new entry
 		    newvar = true;
-		    var = new Var();
+		    var = grabVar(interp);
 		    table.put(myName, var);
 		    
 		    // There is no hPtr member in Jacl, The hPtr combines the table
@@ -1590,7 +1601,7 @@ class Var {
 		}
 		link.refCount--;
 		if (link.isVarUndefined()) {
-		    cleanupVar(link, null);
+		    cleanupVar(interp, link, null);
 		} else {
                     // Set flag variable so that cached refs
                     // to this variable are dropped.
@@ -1916,6 +1927,7 @@ class Var {
 
 	    if (var.refCount == 0) {
 		// When we drop the last reference it will be freeded
+		releaseVar(interp, var);
 	    }
 	}
 	table.clear();
@@ -1997,12 +2009,13 @@ class Var {
      * those of its containing parent.  It's called, for example,
      * when a trace on a variable deletes the variable.
      *
+     * @param interp Interp object non-null
      * @param var variable that may be a candidate for being expunged.
-     * @param array Array that contains the variable, or NULL if this
+     * @param array Array that contains the variable, or null if this
      *   variable isn't an array element.
      */
 
-    static protected void cleanupVar(Var var, Var array) {
+    static protected void cleanupVar(Interp interp, Var var, Var array) {
 	if (var.isVarUndefined() && (var.refCount == 0)
 	    && (var.traces == null)
 	    && ((var.flags & IN_HASHTABLE) != 0)) {
@@ -2011,6 +2024,7 @@ class Var {
 		var.table = null;
 		var.hashKey = null;
 	    }
+	    releaseVar(interp, var);
 	}
 	if (array != null) {
 	    if (array.isVarUndefined() && (array.refCount == 0)
@@ -2021,9 +2035,59 @@ class Var {
 		    array.table = null;
 		    array.hashKey = null;
 		}
+	        releaseVar(interp, array);
 	    }
 	}
     }
 
+    // Cached Var object implementation. This provides a
+    // quick pool of Var objects without always having
+    // to invoke new Var(). The pool is on a per-interp
+    // basis.
+
+    static
+    void varPoolInit(Interp interp) {
+        interp.varPool = new Var[Interp.varPoolLength];
+        for (int i=0; i < Interp.varPoolLength; i++) {
+            interp.varPool[i] = new Var();
+        }
+    }
+
+    private static
+    Var grabVar(final Interp interp) {
+        if (interp.varPoolIndex == Interp.varPoolLength) {
+            // Allocate new Var if cache is empty
+            return new Var();
+        } else {
+            return interp.varPool[interp.varPoolIndex++];
+        }
+    }
+
+    private static
+    void releaseVar(final Interp interp, final Var var) {
+        if (interp.varPoolIndex > 0) {
+            // Cache is not full, return var to cache
+            var.init();
+            interp.varPool[--interp.varPoolIndex] = var;
+        }
+
+        // Debug check for duplicate values in range > varPoolIndex
+        if (false) {
+        if (interp.varPoolIndex < 0) {
+            throw new TclRuntimeError("varPoolIndex is " + interp.varPoolIndex);
+        }
+        for (int i=interp.varPoolIndex; i < Interp.varPoolLength ; i++) {
+            for (int j=interp.varPoolIndex; j < Interp.varPoolLength ; j++) {
+                if ((j == i) || (interp.varPool[i] == null)) {
+                    continue;
+                }
+                if (interp.varPool[i] == interp.varPool[j]) {
+                    throw new TclRuntimeError(
+                        "same object at " + i + " and " + j);
+                }
+            }
+        }
+        }
+    }
 
 } // End of Var class

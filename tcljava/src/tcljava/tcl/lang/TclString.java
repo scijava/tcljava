@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclString.java,v 1.9 2006/01/25 03:07:43 mdejong Exp $
+ * RCS: @(#) $Id: TclString.java,v 1.10 2006/01/27 23:39:02 mdejong Exp $
  *
  */
 
@@ -216,6 +216,47 @@ public class TclString implements InternalRep {
      */
     static final void append(TclObject tobj, TclObject tobj2) {
 	append(tobj, tobj2.toString());
+    }
+
+    /**
+     * Appends the String values of multiple TclObject's to a
+     * TclObject. This is an optimized implementation that
+     * will measure the length of each string and expand the
+     * capacity as needed to limit reallocations.
+     *
+     * @param tobj the TclObject to append elements to.
+     * @param objv array containing elements to append.
+     * @param startIdx index to start appending values from
+     * @param endIdx index to stop appending values at
+     */
+
+    static final void append(TclObject tobj,
+	    TclObject[] objv,
+            final int startIdx, final int endIdx) {
+	setStringFromAny(tobj);
+
+	TclString tstr = (TclString) tobj.getInternalRep();
+	if (tstr.sbuf == null) {
+	    tstr.sbuf = new StringBuffer(tobj.toString());
+	}
+	StringBuffer sb = tstr.sbuf;
+	int currentLen = tstr.sbuf.length();
+
+	tobj.invalidateStringRep();
+
+	for (int i=0; i < endIdx; i++) {
+	    currentLen += objv[i].toString().length();
+	}
+	// Large enough to holds all bytes, plus a little extra
+	if (currentLen > (1024 * 10)) {
+	    currentLen += (currentLen / 10);
+	} else {
+	    currentLen += (currentLen / 4);
+	}
+	sb.ensureCapacity(currentLen);
+	for (int i=0; i < endIdx; i++) {
+	    sb.append(objv[i].toString());
+	}
     }
 
     /**

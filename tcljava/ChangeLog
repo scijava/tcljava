@@ -1,3 +1,39 @@
+2006-01-27  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/jacl/tcl/lang/Expression.java (grabExprValue,
+        releaseExprValue): Reimplement expr value cache
+        so that only a single array access is needed to
+        get or release a cached value.
+        * src/jacl/tcl/lang/Interp.java: Init var pool.
+        * src/jacl/tcl/lang/LappendCmd.java: Use
+        optimized TclList.append().
+        * src/jacl/tcl/lang/TclList.java (append):
+        Add optimized TclList.append() method that
+        accepts multiple TclObjects in an array.
+        This will speed up lappend operations that
+        have multiple arguments since the type
+        checks are only done once.
+        * src/jacl/tcl/lang/Var.java: Set the NO_CACHE
+        flag when a trace is added to a variable. This
+        makes the cache valid check faster since only
+        the isVarCacheInvalid needs to be invoked.
+        Add Var object cache with 50 entries.
+        * src/tcljava/tcl/lang/TclString.java (append): Add
+        optimized TclString.append() that accepts multiple
+        TclObject arguments in an array. This is used with
+        the TJC compiled lappend for scalar variables.
+        * src/tests/tjc/TestTJC.java:
+        * src/tests/tjc/tcl/lang/TestTcl.java: Move test
+        code into TestTcl since the old TJC access
+        methods are no gone.
+        * src/tjc/tcl/lang/TJC.java: Use var.isVarCacheInvalid()
+        instead of TJC.isVarScalarValid(var). Use optimized
+        TclList.append() and TclString.append() operations
+        with compiled scalar commands. Remove unused
+        TJC.isVarScalarValid() and TJC.getVarScalar() methods.
+        * tests/tjc/testtjc.test: Update tests since class
+        they are defined in has changed.
+
 2006-01-26  Mo DeJong  <mdejong@users.sourceforge.net>
 
         Replace use of synchronized Vector and Hashtable

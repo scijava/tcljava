@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: LappendCmd.java,v 1.4 2006/01/19 21:05:32 mdejong Exp $
+ * RCS: @(#) $Id: LappendCmd.java,v 1.5 2006/01/27 23:39:02 mdejong Exp $
  *
  */
 
@@ -116,8 +116,10 @@ class LappendCmd implements Command {
 	// Insert the new elements at the end of the list.
 
 	final int len = values.length;
-	for (i = valuesInd; i < len ; i++) {
-	    TclList.append(interp, varValue, values[i]);
+	if ((len - valuesInd) == 1) {
+	    TclList.append(interp, varValue, values[valuesInd]);
+	} else {
+	    TclList.append(interp, varValue, values, valuesInd, len);
 	}
 
 	// No need to call varValue.invalidateStringRep() since it

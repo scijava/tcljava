@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclList.java,v 1.10 2006/01/26 19:49:18 mdejong Exp $
+ * RCS: @(#) $Id: TclList.java,v 1.11 2006/01/27 23:39:02 mdejong Exp $
  *
  */
 
@@ -222,10 +222,43 @@ public class TclList implements InternalRep {
 	}
 	tobj.invalidateStringRep();
 
-	TclList tlist = (TclList) irep;
-
 	elemObj.preserve();
-	tlist.alist.add(elemObj);
+	((TclList) irep).alist.add(elemObj);
+    }
+
+    /**
+     * TclList.append()
+     *
+     * Appends multiple TclObject elements to a list object.
+     *
+     * @param interp current interpreter.
+     * @param tobj the TclObject to append elements to.
+     * @param objv array containing elements to append.
+     * @param startIdx index to start appending values from
+     * @param endIdx index to stop appending values at
+     * @exception TclException if tobj cannot be converted into a list.
+     */
+    static final void append(Interp interp, TclObject tobj,
+	    TclObject[] objv,
+            final int startIdx, final int endIdx)
+            throws TclException {
+	if (tobj.isShared()) {
+	    throw new TclRuntimeError("TclList.append() called with shared object");
+	}
+	InternalRep irep = tobj.getInternalRep();
+	if (! (irep instanceof TclList)) {
+	    setListFromAny(interp, tobj);
+	    irep = tobj.getInternalRep();
+	}
+	tobj.invalidateStringRep();
+
+	ArrayList alist = ((TclList) irep).alist;
+
+	for (int i = startIdx ; i < endIdx ; i++) {
+	    TclObject elemObj = objv[i];
+	    elemObj.preserve();
+	    alist.add(elemObj);
+	}
     }
 
     /**

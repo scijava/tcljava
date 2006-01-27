@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Expression.java,v 1.18 2006/01/26 19:49:18 mdejong Exp $
+ * RCS: @(#) $Id: Expression.java,v 1.19 2006/01/27 23:39:02 mdejong Exp $
  *
  */
 
@@ -124,6 +124,8 @@ class Expression {
      */
 
     private ExprValue[] cachedExprValue;
+    private int cachedExprIndex = 0;
+    private static final int cachedExprLength = 20;
 
     /**
      * Evaluate a Tcl expression and set the interp result to the value.
@@ -228,8 +230,8 @@ class Expression {
 	m_len = 0;
 	m_token = UNKNOWN;
 
-	cachedExprValue = new ExprValue[20];
-	for (int i=0; i < cachedExprValue.length; i++) {
+	cachedExprValue = new ExprValue[cachedExprLength];
+	for (int i=0; i < cachedExprLength; i++) {
 	    cachedExprValue[i] = new ExprValue(0, null);
 	}
     }
@@ -1931,32 +1933,28 @@ class Expression {
     // bother with release on syntax or other errors
     // since the exprValueCache will refill itself.
 
-    ExprValue grabExprValue() {
-        final int length = cachedExprValue.length;
-        for (int i=0; i < length; i++) {
-            if (cachedExprValue[i] != null) {
-                ExprValue val = cachedExprValue[i];
-                cachedExprValue[i] = null;
-                return val;
-            }
+    final ExprValue grabExprValue() {
+        if (cachedExprIndex == cachedExprLength) {
+            // Allocate new ExprValue if cache is empty
+            return new ExprValue(0, null);
+        } else {
+            return cachedExprValue[cachedExprIndex++];
         }
-        return new ExprValue(0, null);
     }
 
-    void releaseExprValue(ExprValue val) {
-        final int length = cachedExprValue.length;
-        for (int i=0; i < length; i++) {
-            if (cachedExprValue[i] == null) {
-                cachedExprValue[i] = val;
-                return;
-            }
+    final void releaseExprValue(ExprValue val) {
+        if (cachedExprIndex > 0) {
+            // Cache is not full, return value to cache
+            cachedExprValue[--cachedExprIndex] = val;
         }
-        // The cache is already full, GC the value
 
-        // Check for duplicate objects
+        // Debug check for duplicate values in range > cachedExprIndex
         if (false) {
-        for (int i=0; i < cachedExprValue.length ; i++) {
-            for (int j=0; j < cachedExprValue.length ; j++) {
+        if (cachedExprIndex < 0) {
+            throw new TclRuntimeError("cachedExprIndex is " + cachedExprIndex);
+        }
+        for (int i=cachedExprIndex; i < cachedExprLength ; i++) {
+            for (int j=cachedExprIndex; j < cachedExprLength ; j++) {
                 if ((j == i) || (cachedExprValue[i] == null)) {
                     continue;
                 }

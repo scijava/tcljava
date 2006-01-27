@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TJC.java,v 1.8 2006/01/26 19:49:19 mdejong Exp $
+ * RCS: @(#) $Id: TJC.java,v 1.9 2006/01/27 23:39:02 mdejong Exp $
  *
  */
 
@@ -290,14 +290,13 @@ public class TJC {
         {
             if (var == null ||
                     ((var != TJC.VAR_NO_CACHE) &&
-                    !TJC.isVarScalarValid(var))) {
+                    var.isVarCacheInvalid())) {
                 var = updateVarCache(interp, cacheId);
             }
 
             if (var == TJC.VAR_NO_CACHE) {
                 return interp.getVar(name, null, flags);
             } else {
-                //return TJC.getVarScalar(var);
                 return (TclObject) var.value;
             }
         }
@@ -323,7 +322,7 @@ public class TJC {
 
             if (var == null ||
                     ((var != TJC.VAR_NO_CACHE) &&
-                    !TJC.isVarScalarValid(var))) {
+                    var.isVarCacheInvalid())) {
                 update = true;
             }
 
@@ -366,14 +365,13 @@ public class TJC {
         {
             if (var == null ||
                     ((var != TJC.VAR_NO_CACHE) &&
-                    !TJC.isVarScalarValid(var))) {
+                    var.isVarCacheInvalid())) {
                 var = updateVarCache(interp, cacheId);
             }
 
             if (var == TJC.VAR_NO_CACHE) {
                 return TJC.incrVar(interp, name, incrAmount);
             } else {
-                //TclObject varValue = TJC.getVarScalar(var);
                 TclObject varValue = (TclObject) var.value;
 
                 boolean createdNewObj = false;
@@ -417,7 +415,7 @@ public class TJC {
 
             if ((var == null) ||
                     (var == TJC.VAR_NO_CACHE) ||
-                    !TJC.isVarScalarValid(var)) {
+                    var.isVarCacheInvalid()) {
                 return TJC.lappendVar(interp, varName, values);
             }
 
@@ -426,7 +424,6 @@ public class TJC {
             // we need to duplicate it and invoke setVar()
             // to implement "copy on write".
 
-            //TclObject varValue = TJC.getVarScalar(var);
             TclObject varValue = (TclObject) var.value;
             boolean createdNewObj = false;
 
@@ -438,8 +435,10 @@ public class TJC {
             // Insert the new elements at the end of the list.
 
             final int len = values.length;
-            for (int i = 0; i < len ; i++) {
-                TclList.append(interp, varValue, values[i]);
+            if (len == 1) {
+                TclList.append(interp, varValue, values[0]);
+            } else {
+                TclList.append(interp, varValue, values, 0, len);
             }
 
             if (createdNewObj) {
@@ -465,7 +464,7 @@ public class TJC {
 
             if ((var == null) ||
                     (var == TJC.VAR_NO_CACHE) ||
-                    !TJC.isVarScalarValid(var)) {
+                    var.isVarCacheInvalid()) {
                 return TJC.appendVar(interp, varName, values);
             }
 
@@ -474,7 +473,6 @@ public class TJC {
             // we need to create a new TclString object
             // and drop refs to the previous TclObject value.
 
-            //TclObject varValue = TJC.getVarScalar(var);
             TclObject varValue = (TclObject) var.value;
             boolean createdNewObj = false;
 
@@ -486,8 +484,10 @@ public class TJC {
             // Insert the new elements at the end of the string.
 
             final int len = values.length;
-            for (int i = 0; i < len ; i++) {
-                TclString.append(varValue, values[i].toString());
+            if (len == 1) {
+                TclString.append(varValue, values[0].toString());
+            } else {
+                TclString.append(varValue, values, 0, len);
             }
 
             if (createdNewObj) {
@@ -757,40 +757,11 @@ public class TJC {
         return var;
     }
 
-    // This method is used to determine if a cached scalar Var
-    // reference is valid. The resolveVarScalar() method will
-    // return a Var reference that can be cached, but the variable
-    // could be unset or have traces set after the cache has
-    // been initialized. This method checks for those conditions
-    // before the value of a cached variable is accessed via
-    // the getVarScalar() method.
-
-    public static final
-    boolean isVarScalarValid(
-        Var var)
-    {
-        return (!var.isVarCacheInvalid() && var.traces == null);
-    }
-
-    // This method is used to get the TclObject value
-    // contained inside a cached scalar Var reference.
-    // This method works like interp.getVar(), it should
-    // be used when a valid cached var reference is
-    // held. This method logic in inlined in CompiledCommand.
-
-    public static final
-    TclObject getVarScalar(
-        Var var)
-    {
-        return (TclObject) var.value;
-    }
-
     // This method is used to set the TclObject value
     // contained inside a cached scalar Var reference.
     // This method works like interp.setVar(), it should
     // be used when a valid cached var reference is
-    // held. This method only supports setting a new
-    // TclObject value.
+    // held.
 
     public static final
     TclObject setVarScalar(
