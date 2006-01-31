@@ -25,7 +25,9 @@ Usage:
 The <B>java::defineclass</B> command is used to convert a string of bytes 
 into a Java Class object. The <I>classData</I> argument is a string of
 bytes that compose a class. For example, the <I>classData</I> 
-string could be from reading a Java class file. <I>ClassData</I>
+string could be from reading a Java class file. The <I>classData</I>
+argument could also be a reflected instance of a byte[] Java object.
+The <I>ClassData</I> argument
 is passed to the TclClassLoader, where the TclClassLoader attempts to
 construct a Java Class object from the bytes.  If <I>classData</I> 
 does not represent a valid class, <B>java::defineclass</B> returns a
@@ -58,11 +60,10 @@ and then defined using the <b>java::defineclass</b> command.
 
 <code>
 <pre>
-set file [open Foo.class r]
-
-# Tcl Blend users must call 'fconfigure $file -translation binary'
-set data [read $file]
-close $file
+set fd [open Foo.class r]
+fconfigure $file -translation binary
+set data [read $fd]
+close $fd
 
 # This returns a java.lang.Class object.
 set class [java::defineclass $data]

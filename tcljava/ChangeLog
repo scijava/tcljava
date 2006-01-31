@@ -1,3 +1,14 @@
+2006-01-30  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * docs/TclJava/JavaDefineClassCmd.html:
+        * src/tcljava/tcl/lang/JavaDefineClassCmd.java:
+        * src/tcljava/tcl/lang/TclClassLoader.java:
+        * src/tests/tcljava/javaload/Test3Cmd.java:
+        * src/tests/tcljava/javaload/Test4Cmd.java:
+        * tests/tcljava/JavaDefineClassCmd.test:
+        Add ability to directly pass byte[] object
+        to the java::defineclass command.
+
 2006-01-27  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/jacl/tcl/lang/Expression.java (grabExprValue,

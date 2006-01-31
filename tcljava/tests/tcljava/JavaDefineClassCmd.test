@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: JavaDefineClassCmd.test,v 1.6 2003/03/18 00:07:29 mdejong Exp $
+# RCS: @(#) $Id: JavaDefineClassCmd.test,v 1.7 2006/01/31 00:49:21 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -80,6 +80,43 @@ test java::defineclass-2.2 {instantiating a loaded class} {
     set obj   [java::new Test2Cmd]
     java::isnull $obj
 } {0}
+
+test java::defineclass-3.0 {java::defineclass with byte[] argument} {
+    set file [open [file join $javaload_full_path Test3Cmd.class]]
+    fconfigure $file -translation binary
+    set bytes [read $file]
+    close $file
+
+    # Convert to a byte[] reflected object, Jacl only.
+
+    if {[catch {
+        # Make a copy of the TclByteArray with the correct array
+        # length before reflecting as a byte[]. The TclByteArray
+        # class can allocate extra space at the end of the array.
+
+        set len [java::call tcl.lang.TclByteArray getLength \
+            [java::getinterp] \
+            $bytes]
+        set extra_jbytes [java::call -noconvert tcl.lang.TclByteArray getBytes \
+                [java::getinterp] $bytes]
+        set dup [java::call tcl.lang.TclByteArray newInstance \
+            $extra_jbytes 0 $len]
+        set jbytes [java::call -noconvert tcl.lang.TclByteArray getBytes \
+            [java::getinterp] $dup]
+        set bytes $jbytes
+        if {[java::instanceof $bytes {byte[]}]} {
+            #puts "converted to Java byte\[\] in Jacl"
+        }
+    } err]} {
+        #puts "err is $err"
+    }
+
+    # Pass byte[] to java::defineclass, Jacl only.
+
+    set class [java::defineclass $bytes]
+    java::isnull $class
+} {0}
+
 
 # cleanup
 ::tcltest::cleanupTests
