@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: compileproc.tcl,v 1.9 2006/01/24 03:48:22 mdejong Exp $
+#  RCS: @(#) $Id: compileproc.tcl,v 1.10 2006/02/07 01:17:17 mdejong Exp $
 #
 #
 
@@ -3547,6 +3547,10 @@ proc compileproc_can_inline_command { key } {
         "set" {
             return [compileproc_can_inline_command_set $key]
         }
+        "::string" -
+        "string" {
+            return [compileproc_can_inline_command_string $key]
+        }
         default {
             return 0
         }
@@ -3592,6 +3596,9 @@ proc compileproc_emit_inline_command { key } {
         }
         "set" {
             return [compileproc_emit_inline_command_set $key]
+        }
+        "string" {
+            return [compileproc_emit_inline_command_string $key]
         }
         default {
             error "unsupported inlined command \"$cmdname\""
@@ -7845,6 +7852,492 @@ proc compileproc_emit_inline_command_set { key } {
     # before the inlined set impl begins.
 
     append buffer [emitter_set_result $tmpsymbol false]
+
+    return $buffer
+}
+
+# Return 1 if string command can be inlined.
+
+proc compileproc_can_inline_command_string { key } {
+    global _compileproc
+
+    set debug 0
+    if {$::_compileproc(debug)} {set debug 1}
+
+    if {$debug} {
+        puts "compileproc_can_inline_command_string $key"
+    }
+
+    # Some subcommands of the string command can be inlined
+    # while others must be processed at runtime. The string
+    # command accepts 3 or more arguments.
+
+    set tree [descend_get_data $key tree]
+    set num_args [llength $tree]
+
+    if {$num_args < 3} {
+        if {$debug} {
+            puts "returning false since there are $num_args args"
+        }
+        return 0
+    }
+
+    # 2nd argument to inlined string must be a constant string
+    # that indicates the subcommand name.
+
+    set tuple [compileproc_get_argument_tuple $key 1]
+    set type [lindex $tuple 0]
+    set subcmdname [lindex $tuple 1]
+
+    if {$type != "constant"} {
+        if {$debug} {
+            puts "returning false since argument 1 is non-constant type $type"
+        }
+
+        return 0
+    }
+
+    # Check for supported string subcommand names. This code
+    # will validate the expected number of args for each
+    # string subcommand.
+
+    switch -exact -- $subcmdname {
+        "compare" -
+        "equal" {
+            # usage: string compare string1 string2
+            # usage: string equal string1 string2
+
+            # FIXME: could add -nocase support
+
+            if {$num_args != 4} {
+                if {$debug} {
+                    puts "returning false since string $subcmdname\
+                        requires 4 arguments, there were $num_args args"
+                }
+                return 0
+            }
+        }
+        "first" -
+        "last" {
+            # usage: string first subString string ?startIndex?
+            # usage: string last subString string ?lastIndex?
+
+            if {$num_args != 4 && $num_args != 5} {
+                if {$debug} {
+                    puts "returning false since string $subcmdname\
+                        requires 4 or 5 arguments, there were $num_args args"
+                }
+                return 0
+            }
+        }
+        "index" {
+            # usage: string index string charIndex
+
+            if {$num_args != 4} {
+                if {$debug} {
+                    puts "returning false since string length\
+                        requires 4 arguments, there were $num_args args"
+                }
+                return 0
+            }
+        }
+        "length" {
+            # usage: string length string
+
+            if {$num_args != 3} {
+                if {$debug} {
+                    puts "returning false since string length\
+                        requires 3 arguments, there were $num_args args"
+                }
+                return 0
+            }
+        }
+        "range" {
+            # usage: string range string first last
+
+            if {$num_args != 5} {
+                if {$debug} {
+                    puts "returning false since string range\
+                        requires 5 arguments, there were $num_args args"
+                }
+                return 0
+            }
+        }
+        default {
+            if {$debug} {
+                puts "returning false since argument 1 is\
+                    unsupported subcommand $subcmdname"
+            }
+            return 0
+        }
+    }
+
+    return 1
+}
+
+# Emit code to implement inlined string command invocation.
+# The inlined string command would have already been validated
+# at this point.
+
+proc compileproc_emit_inline_command_string { key } {
+    set buffer ""
+
+    # Emit code for specific inlined subcommand
+
+    set tree [descend_get_data $key tree]
+    set num_args [llength $tree]
+
+    set tuple [compileproc_get_argument_tuple $key 1]
+    set subcmdname [lindex $tuple 1]
+
+    switch -exact -- $subcmdname {
+        "compare" -
+        "equal" {
+            # usage: string compare string1 string2
+            # usage: string equal string1 string2
+
+            # Evaluate string1 argument, save in String tmp local
+            set tuple [compileproc_emit_argument $key 2 true {}]
+            set value_type [lindex $tuple 0]
+            set value_symbol [lindex $tuple 1]
+            set value_buffer [lindex $tuple 2]
+
+            set string1_tmpsymbol [compileproc_tmpvar_next]
+
+            append buffer \
+                $value_buffer \
+                [emitter_statement "String $string1_tmpsymbol = $value_symbol.toString()"]
+
+            # Evaluate string2 argument, save in String tmp local
+            set tuple [compileproc_emit_argument $key 3 true {}]
+            set value_type [lindex $tuple 0]
+            set value_symbol [lindex $tuple 1]
+            set value_buffer [lindex $tuple 2]
+
+            set string2_tmpsymbol [compileproc_tmpvar_next]
+
+            append buffer \
+                $value_buffer \
+                [emitter_statement "String $string2_tmpsymbol = $value_symbol.toString()"]
+
+            set result_tmpsymbol [compileproc_tmpvar_next]
+
+            # Emit either "compare" or "equal" operation
+            if {$subcmdname == "compare"} {
+                append buffer \
+                    [emitter_statement \
+                        "int $result_tmpsymbol =\
+                        $string1_tmpsymbol.compareTo($string2_tmpsymbol)"] \
+                    [emitter_statement \
+                        "$result_tmpsymbol = (($result_tmpsymbol > 0) ? 1 :\
+                        ($result_tmpsymbol < 0) ? -1 : 0)"] \
+                    [emitter_set_result $result_tmpsymbol false]
+            } elseif {$subcmdname == "equal"} {
+                append buffer \
+                    [emitter_statement \
+                        "boolean $result_tmpsymbol =\
+                        $string1_tmpsymbol.equals($string2_tmpsymbol)"] \
+                    [emitter_set_result $result_tmpsymbol false]
+            } else {
+                error "unknown subcommand \"$subcmdname\""
+            }
+        }
+        "first" {
+            # usage: string first subString string ?startIndex?
+
+            # The string first command is often used to search for
+            # a single character in a string, like so:
+            #
+            # [string first "\n" $str]
+            #
+            # Optimize this case by inlining a call to Java's
+            # String.indexOf() method when the subString
+            # is a single character or a String.
+
+            # Evaluate subString argument
+            set tuple [compileproc_get_argument_tuple $key 2]
+            set value_type [lindex $tuple 0]
+
+            if {$value_type == "constant"} {
+                # Inline constant subString instead of adding
+                # it to the constant table.
+
+                set substr_is_constant 1
+                set substr_constant_string [lindex $tuple 1]
+                set cmap [lindex $tuple 3]
+
+                if {$cmap == {}} {
+                    # Grab the first character out of a pattern
+                    # that contains no backslash elements.
+
+                    set substr_first [string index $substr_constant_string 0]
+                    set substr_len [string length $substr_constant_string]
+                } else {
+                    # The constant string substr contains backslashes.
+                    # Extract from 1 to N characters from the substr_constant_string
+                    # that correspond to 1 character from the original
+
+                    set first_num_characters [lindex $cmap 0]
+                    set first_end_index [expr {$first_num_characters - 1}]
+                    set substr_first [string range $substr_constant_string 0 $first_end_index]
+
+                    # The subString length is length of Tcl string, not the
+                    # length of the escaped string.
+                    set substr_len [llength $cmap]
+                }
+
+                # Emit either a constant String or a constant char decl.
+                # When a start index is passed, just declare a String.
+
+                set substr_tmpsymbol [compileproc_tmpvar_next]
+
+                if {$substr_len == 1 && ($num_args == 4)} {
+                    set jstr [emitter_backslash_tcl_string \
+                        $substr_constant_string]
+                    append buffer \
+                        [emitter_statement "char $substr_tmpsymbol = '$jstr'"]
+                } else {
+                    # Invoke TJC method for empty string.
+                    if {$substr_len == 0} {
+                        set substr_is_constant 0
+                    }
+
+                    set jstr [emitter_backslash_tcl_string \
+                        $substr_constant_string]
+                    append buffer \
+                        [emitter_statement "String $substr_tmpsymbol = \"$jstr\""]
+                }
+            } else {
+                # Emit non-constant argument
+
+                set substr_is_constant 0
+
+                set tuple [compileproc_emit_argument $key 2 true {}]
+                set value_type [lindex $tuple 0]
+                set value_symbol [lindex $tuple 1]
+                set value_buffer [lindex $tuple 2]
+
+                set substr_tmpsymbol [compileproc_tmpvar_next]
+
+                append buffer \
+                    $value_buffer \
+                    [emitter_statement "String $substr_tmpsymbol = $value_symbol.toString()"]
+            }
+
+            # Evaluate string argument, save in String tmp local
+            set tuple [compileproc_emit_argument $key 3 true {}]
+            set value_type [lindex $tuple 0]
+            set value_symbol [lindex $tuple 1]
+            set value_buffer [lindex $tuple 2]
+
+            set string_tmpsymbol [compileproc_tmpvar_next]
+
+            append buffer \
+                $value_buffer \
+                [emitter_statement "String $string_tmpsymbol = $value_symbol.toString()"]
+
+            # See if optional startIndex is given, pass TclObject if it was found
+
+            if {$num_args == 5} {
+                set tuple [compileproc_emit_argument $key 4 true {}]
+                set value_type [lindex $tuple 0]
+                set value_symbol [lindex $tuple 1]
+                set value_buffer [lindex $tuple 2]
+
+                append buffer \
+                    $value_buffer
+                set start_symbol $value_symbol
+            } else {
+                set start_symbol null
+            }
+
+            # Inline direct call to String.indexOf(char)
+            # or String.indexOf(String) when the substr
+            # is a compile time constant and no startIndex
+            # is passed.
+
+            set result_tmpsymbol [compileproc_tmpvar_next]
+
+            if {$substr_is_constant && ($num_args == 4)} {
+                append buffer \
+                    [emitter_statement "int $result_tmpsymbol =\
+                        $string_tmpsymbol.indexOf($substr_tmpsymbol)"]
+            } else {
+                append buffer \
+                    [emitter_statement "TclObject $result_tmpsymbol =\
+                        TJC.stringFirst(interp, $substr_tmpsymbol,\
+                        $string_tmpsymbol, $start_symbol)"]
+            }
+            append buffer [emitter_set_result $result_tmpsymbol false]
+        }
+        "index" {
+            # usage: string index string charIndex
+
+            # Evaluate string argument, save in String tmp local
+            set tuple [compileproc_emit_argument $key 2 true {}]
+            set value_type [lindex $tuple 0]
+            set value_symbol [lindex $tuple 1]
+            set value_buffer [lindex $tuple 2]
+
+            set string_tmpsymbol [compileproc_tmpvar_next]
+
+            append buffer \
+                $value_buffer \
+                [emitter_statement "String $string_tmpsymbol = $value_symbol.toString()"]
+
+            # Evaluate charIndex argument
+            set tuple [compileproc_emit_argument $key 3 true {}]
+            set value_type [lindex $tuple 0]
+            set value_symbol [lindex $tuple 1]
+            set value_buffer [lindex $tuple 2]
+
+            set result_tmpsymbol [compileproc_tmpvar_next]
+
+            append buffer \
+                $value_buffer \
+                [emitter_statement \
+                    "TclObject $result_tmpsymbol =\
+                    TJC.stringIndex(interp, $string_tmpsymbol, $value_symbol)"] \
+                [emitter_set_result $result_tmpsymbol false]
+        }
+        "last" {
+            # usage: string last subString string ?lastIndex?
+
+            # string last is basically the same as string first, but
+            # this implementation does not try to declare the subString
+            # as a Java literal or invoke String.lastIndexOf(). Use
+            # of string last is less common than string first.
+
+            # Evaluate subString argument, save in String tmp local
+            set tuple [compileproc_get_argument_tuple $key 2]
+            set tuple [compileproc_emit_argument $key 2 true {}]
+            set value_type [lindex $tuple 0]
+            set value_symbol [lindex $tuple 1]
+            set value_buffer [lindex $tuple 2]
+
+            set substr_tmpsymbol [compileproc_tmpvar_next]
+
+            append buffer \
+                $value_buffer \
+                [emitter_statement "String $substr_tmpsymbol = $value_symbol.toString()"]
+
+            # Evaluate string argument, save in String tmp local
+            set tuple [compileproc_emit_argument $key 3 true {}]
+            set value_type [lindex $tuple 0]
+            set value_symbol [lindex $tuple 1]
+            set value_buffer [lindex $tuple 2]
+
+            set string_tmpsymbol [compileproc_tmpvar_next]
+
+            append buffer \
+                $value_buffer \
+                [emitter_statement "String $string_tmpsymbol = $value_symbol.toString()"]
+
+            # See if optional lastIndex is given, pass TclObject if it was found
+
+            if {$num_args == 5} {
+                set tuple [compileproc_emit_argument $key 4 true {}]
+                set value_type [lindex $tuple 0]
+                set value_symbol [lindex $tuple 1]
+                set value_buffer [lindex $tuple 2]
+
+                append buffer \
+                    $value_buffer
+                set last_symbol $value_symbol
+            } else {
+                set last_symbol null
+            }
+
+            # Invoke runtime method and set interp result
+
+            set result_tmpsymbol [compileproc_tmpvar_next]
+
+            append buffer \
+                [emitter_statement "TclObject $result_tmpsymbol =\
+                    TJC.stringLast(interp, $substr_tmpsymbol,\
+                    $string_tmpsymbol, $last_symbol)"] \
+                [emitter_set_result $result_tmpsymbol false]
+        }
+        "length" {
+            # usage: string length string
+
+            # Evaluate string argument
+            set tuple [compileproc_emit_argument $key 2 true {}]
+            set value_type [lindex $tuple 0]
+            set value_symbol [lindex $tuple 1]
+            set value_buffer [lindex $tuple 2]
+
+            set int_tmpsymbol [compileproc_tmpvar_next]
+
+            append buffer \
+                $value_buffer \
+                [emitter_statement "int $int_tmpsymbol = $value_symbol.toString().length()"] \
+                [emitter_set_result $int_tmpsymbol false]
+        }
+        "range" {
+            # usage: string range string first last
+
+            # Evaluate string argument, save in String tmp local
+            set tuple [compileproc_emit_argument $key 2 true {}]
+            set value_type [lindex $tuple 0]
+            set value_symbol [lindex $tuple 1]
+            set value_buffer [lindex $tuple 2]
+
+            set string_tmpsymbol [compileproc_tmpvar_next]
+
+            append buffer \
+                $value_buffer \
+                [emitter_statement "String $string_tmpsymbol = $value_symbol.toString()"]
+
+            # Evaluate first argument
+            set tuple [compileproc_emit_argument $key 3 true {}]
+            set value_type [lindex $tuple 0]
+            set value_symbol [lindex $tuple 1]
+            set value_buffer [lindex $tuple 2]
+
+            if {$value_type == "constant"} {
+                set first_tmpsymbol [compileproc_tmpvar_next]
+                append buffer \
+                    [emitter_statement \
+                        "TclObject $first_tmpsymbol = $value_symbol"]
+            } else {
+                set first_tmpsymbol $value_symbol
+                append buffer $value_buffer
+            }
+
+            append buffer \
+                [emitter_tclobject_preserve $first_tmpsymbol]
+
+            # Evaluate last argument
+            set tuple [compileproc_emit_argument $key 4 true {}]
+            set value_type [lindex $tuple 0]
+            set value_symbol [lindex $tuple 1]
+            set value_buffer [lindex $tuple 2]
+
+            if {$value_type == "constant"} {
+                set last_tmpsymbol [compileproc_tmpvar_next]
+                append buffer \
+                    [emitter_statement \
+                        "TclObject $last_tmpsymbol = $value_symbol"]
+            } else {
+                set last_tmpsymbol $value_symbol
+                append buffer $value_buffer
+            }
+
+            # Invoke method and set interp result
+            set result_tmpsymbol [compileproc_tmpvar_next]
+            append buffer \
+                [emitter_statement \
+                    "TclObject $result_tmpsymbol =\
+                        TJC.stringRange(interp, $string_tmpsymbol,\
+                            $first_tmpsymbol, $last_tmpsymbol)"] \
+                [emitter_set_result $result_tmpsymbol false]
+        }
+        default {
+            # subcommand name should have already been validated
+            error "unsupported subcommand $subcmdname"
+        }
+    }
 
     return $buffer
 }

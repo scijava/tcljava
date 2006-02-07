@@ -1,3 +1,25 @@
+2006-02-06  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/jacl/tcl/lang/StringCmd.java:
+        Optimize "string first" and "string last"
+        subcommands for case where the string is
+        a single character.
+        * src/tjc/tcl/lang/TJC.java (stringIndex,
+        stringRange, stringFirst, stringLast):
+        Add inlined string command code.
+        * src/tjc/tjc/library/compileproc.tcl:
+        Add inlined string command. The following
+        subcommands are inlined.
+            string compare
+            string equal
+            string first
+            string last
+            string index
+            string length
+            string range
+        * tests/tjc/compileproc_7.test: Add compiler
+        output tests for inlined string commands.
+
 2006-01-30  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * docs/TclJava/JavaDefineClassCmd.html:

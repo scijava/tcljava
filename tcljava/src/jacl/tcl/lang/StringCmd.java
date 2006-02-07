@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: StringCmd.java,v 1.11 2005/11/22 02:06:35 mdejong Exp $
+ * RCS: @(#) $Id: StringCmd.java,v 1.12 2006/02/07 01:17:16 mdejong Exp $
  *
  */
 
@@ -270,6 +270,7 @@ throws
 	    }
 	    String string1 = objv[2].toString();
 	    String string2 = objv[3].toString();
+	    int length1 = string1.length();
 	    int length2 = string2.length();
 
 	    int start = 0;
@@ -282,14 +283,19 @@ throws
 		start = Util.getIntForIndex(interp, objv[4], length2-1);
 		if (start >= length2) {
 		    interp.setResult(-1);
-		    return;
+		    break;
 		}
 	    }
 
-	    if (string1.length() == 0) {
+	    if (length1 == 0) {
 		interp.setResult(-1);
+	    } else if (length1 == 1) {
+		char c = string1.charAt(0);
+		int result = string2.indexOf(c, start);
+		interp.setResult(result);
 	    } else {
-		interp.setResult(string2.indexOf(string1, start));
+		int result = string2.indexOf(string1, start);
+		interp.setResult(result);
 	    }
 	    break;
 	}
@@ -553,31 +559,36 @@ throws
 	case STR_LAST: {
 	    if (objv.length < 4 || objv.length > 5) {
 		throw new TclNumArgsException(interp, 2, objv, 
-			      "subString string ?startIndex?");
+			      "subString string ?lastIndex?");
 	    }
 	    String string1 = objv[2].toString();
 	    String string2 = objv[3].toString();
+	    int length1 = string1.length();
 	    int length2 = string2.length();
 
-	    int start = 0;
+	    int last = 0;
 	    if (objv.length == 5) {
-		// If a startIndex is specified, we will need to fast
-		// forward to that point in the string before we think
-		// about a match.
+		// If a lastIndex is specified, we will need to restrict the
+		// string range to that char index in the string.
 
-		start = Util.getIntForIndex(interp, objv[4], length2-1);
-		if (start < 0) {
+		last = Util.getIntForIndex(interp, objv[4], length2-1);
+		if (last < 0) {
 		    interp.setResult(-1);
 		    break;
-		} else if (start < length2) {
-		    string2 = string2.substring(0, start+1);
+		} else if (last < length2) {
+		    string2 = string2.substring(0, last+1);
 		}
 	    }
 
-	    if (string1.length() == 0) {
+	    if (length1 == 0) {
 		interp.setResult(-1);
+	    } else if (length1 == 1) {
+		char c = string1.charAt(0);
+		int result = string2.lastIndexOf(c);
+		interp.setResult(result);
 	    } else {
-		interp.setResult(string2.lastIndexOf(string1));
+		int result = string2.lastIndexOf(string1);
+		interp.setResult(result);
 	    }
 	    break;
 	}

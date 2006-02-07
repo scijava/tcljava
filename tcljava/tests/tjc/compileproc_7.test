@@ -433,6 +433,109 @@ public class Test1 extends TJC.CompiledCommand {
 } // end class Test1
 }}
 
+tcltest::test compileproc7-1.6 {inline set command, enable varcache} {
+    set script {
+proc p {} {
+    set x 1
+    set a(one) 1
+}
+}
+
+    set test_compileproc_7_cache_variables 1
+    set test_compileproc_7_inline_commands 1
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_7_set_flags]
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) {
+            inlineCmds = true;
+            initCmd(interp);
+        }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        updateVarCache(interp, 0);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: set x 1
+            TclObject tmp0;
+            tmp0 = setVarScalar(interp, "x", const0, 0, varcache1, 1);
+            interp.setResult(tmp0);
+        } // End Invoke: set
+        { // Invoke: set a(one) 1
+            TclObject tmp1;
+            tmp1 = interp.setVar("a", "one", const0, 0);
+            interp.setResult(tmp1);
+        } // End Invoke: set
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            updateVarCache(interp, 0);
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+
+    TclObject const0;
+
+    protected void initConstants(Interp interp) throws TclException {
+        const0 = TclInteger.newInstance(1);
+        const0.preserve(); const0.preserve();
+    }
+
+    Var varcache1 = null;
+
+    protected
+    Var updateVarCache(
+        Interp interp,
+        int cacheId)
+    {
+        String part1;
+        String part2 = null;
+        int flags = 0;
+        Var lvar;
+
+        switch ( cacheId ) {
+            case 0: {
+                varcache1 = null;
+                return null;
+            }
+            case 1: {
+                part1 = "x";
+                break;
+            }
+            default: {
+                throw new TclRuntimeError("default: cacheId " + cacheId);
+            }
+        }
+
+        lvar = TJC.resolveVarScalar(interp, part1, flags);
+
+        switch ( cacheId ) {
+            case 1: {
+                varcache1 = lvar;
+                break;
+            }
+        }
+        return lvar;
+    }
+} // end class Test1
+}}
+
 
 tcltest::test compileproc7-2.0 {inline global command} {
     set script {
@@ -2561,6 +2664,1427 @@ public class Test1 extends TJC.CompiledCommand {
     }
 } // end class Test1
 }}
+
+
+tcltest::test compileproc7-9.0 {inline string command} {
+    # string length command
+    set script {
+proc p {} {
+    string length ""
+}
+}
+
+    set test_compileproc_7_inline_commands 1
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_7_set_flags]
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) {
+            inlineCmds = true;
+            initCmd(interp);
+        }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: string length ""
+            int tmp0 = const0.toString().length();
+            interp.setResult(tmp0);
+        } // End Invoke: string
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+
+    TclObject const0;
+
+    protected void initConstants(Interp interp) throws TclException {
+        const0 = TclString.newInstance("");
+        const0.preserve(); const0.preserve();
+    }
+} // end class Test1
+}}
+
+tcltest::test compileproc7-9.1 {inline string command} {
+    # string length command
+    set script {
+proc p {} {
+    string length $var
+}
+}
+
+    set test_compileproc_7_inline_commands 1
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_7_set_flags]
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) {
+            inlineCmds = true;
+            initCmd(interp);
+        }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: string length $var
+            TclObject tmp0 = interp.getVar("var", null, 0);
+            int tmp1 = tmp0.toString().length();
+            interp.setResult(tmp1);
+        } // End Invoke: string
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+} // end class Test1
+}}
+
+tcltest::test compileproc7-9.2 {inline string command} {
+    # string length command : too many args
+    set script {
+proc p {} {
+    string length "" ""
+}
+}
+
+    set test_compileproc_7_inline_commands 1
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_7_set_flags]
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) {
+            inlineCmds = true;
+            initCmd(interp);
+        }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: string length "" ""
+            TclObject[] objv0 = TJC.grabObjv(interp, 4);
+            try {
+                TclObject tmp1;
+                // Arg 0 constant: string
+                tmp1 = const0;
+                tmp1.preserve();
+                objv0[0] = tmp1;
+                // Arg 1 constant: length
+                tmp1 = const1;
+                tmp1.preserve();
+                objv0[1] = tmp1;
+                // Arg 2 constant: ""
+                tmp1 = const2;
+                tmp1.preserve();
+                objv0[2] = tmp1;
+                // Arg 3 constant: ""
+                tmp1 = const2;
+                tmp1.preserve();
+                objv0[3] = tmp1;
+                TJC.invoke(interp, null, objv0, 0);
+            } finally {
+                TJC.releaseObjv(interp, objv0, 4);
+            }
+        } // End Invoke: string
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+
+    TclObject const0;
+    TclObject const1;
+    TclObject const2;
+
+    protected void initConstants(Interp interp) throws TclException {
+        const0 = TclString.newInstance("string");
+        const0.preserve(); const0.preserve();
+        const1 = TclString.newInstance("length");
+        const1.preserve(); const1.preserve();
+        const2 = TclString.newInstance("");
+        const2.preserve(); const2.preserve();
+    }
+} // end class Test1
+}}
+
+tcltest::test compileproc7-9.3 {inline string command} {
+    # string index command
+    set script {
+proc p {} {
+    string index "" 0
+}
+}
+
+    set test_compileproc_7_inline_commands 1
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_7_set_flags]
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) {
+            inlineCmds = true;
+            initCmd(interp);
+        }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: string index "" 0
+            String tmp0 = const0.toString();
+            TclObject tmp1 = TJC.stringIndex(interp, tmp0, const1);
+            interp.setResult(tmp1);
+        } // End Invoke: string
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+
+    TclObject const0;
+    TclObject const1;
+
+    protected void initConstants(Interp interp) throws TclException {
+        const0 = TclString.newInstance("");
+        const0.preserve(); const0.preserve();
+        const1 = TclInteger.newInstance(0);
+        const1.preserve(); const1.preserve();
+    }
+} // end class Test1
+}}
+
+tcltest::test compileproc7-9.4 {inline string command} {
+    # string index command
+    set script {
+proc p {} {
+    string index $str $ind
+}
+}
+
+    set test_compileproc_7_inline_commands 1
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_7_set_flags]
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) {
+            inlineCmds = true;
+            initCmd(interp);
+        }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: string index $str $ind
+            TclObject tmp0 = interp.getVar("str", null, 0);
+            String tmp1 = tmp0.toString();
+            TclObject tmp2 = interp.getVar("ind", null, 0);
+            TclObject tmp3 = TJC.stringIndex(interp, tmp1, tmp2);
+            interp.setResult(tmp3);
+        } // End Invoke: string
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+} // end class Test1
+}}
+
+tcltest::test compileproc7-9.5 {inline string command} {
+    # string compare command
+    set script {
+proc p {} {
+    string compare "" ""
+}
+}
+
+    set test_compileproc_7_inline_commands 1
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_7_set_flags]
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) {
+            inlineCmds = true;
+            initCmd(interp);
+        }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: string compare "" ""
+            String tmp0 = const0.toString();
+            String tmp1 = const0.toString();
+            int tmp2 = tmp0.compareTo(tmp1);
+            tmp2 = ((tmp2 > 0) ? 1 : (tmp2 < 0) ? -1 : 0);
+            interp.setResult(tmp2);
+        } // End Invoke: string
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+
+    TclObject const0;
+
+    protected void initConstants(Interp interp) throws TclException {
+        const0 = TclString.newInstance("");
+        const0.preserve(); const0.preserve();
+    }
+} // end class Test1
+}}
+
+tcltest::test compileproc7-9.6 {inline string command} {
+    # string compare command
+    set script {
+proc p {} {
+    string compare $s1 [cmd]
+}
+}
+
+    set test_compileproc_7_inline_commands 1
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_7_set_flags]
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) {
+            inlineCmds = true;
+            initCmd(interp);
+        }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: string compare $s1 [...]
+            TclObject tmp0 = interp.getVar("s1", null, 0);
+            String tmp1 = tmp0.toString();
+            { // Invoke: cmd
+                TclObject[] objv3 = TJC.grabObjv(interp, 1);
+                try {
+                    TclObject tmp4;
+                    // Arg 0 constant: cmd
+                    tmp4 = const0;
+                    tmp4.preserve();
+                    objv3[0] = tmp4;
+                    TJC.invoke(interp, null, objv3, 0);
+                } finally {
+                    TJC.releaseObjv(interp, objv3, 1);
+                }
+            } // End Invoke: cmd
+            TclObject tmp2 = interp.getResult();
+            String tmp5 = tmp2.toString();
+            int tmp6 = tmp1.compareTo(tmp5);
+            tmp6 = ((tmp6 > 0) ? 1 : (tmp6 < 0) ? -1 : 0);
+            interp.setResult(tmp6);
+        } // End Invoke: string
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+
+    TclObject const0;
+
+    protected void initConstants(Interp interp) throws TclException {
+        const0 = TclString.newInstance("cmd");
+        const0.preserve(); const0.preserve();
+    }
+} // end class Test1
+}}
+
+tcltest::test compileproc7-9.7 {inline string command} {
+    # string compare command
+    set script {
+proc p {} {
+    string compare -nocase $s1 $s2
+}
+}
+
+    set test_compileproc_7_inline_commands 1
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_7_set_flags]
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) {
+            inlineCmds = true;
+            initCmd(interp);
+        }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: string compare -nocase $s1 $s2
+            TclObject[] objv0 = TJC.grabObjv(interp, 5);
+            try {
+                TclObject tmp1;
+                // Arg 0 constant: string
+                tmp1 = const0;
+                tmp1.preserve();
+                objv0[0] = tmp1;
+                // Arg 1 constant: compare
+                tmp1 = const1;
+                tmp1.preserve();
+                objv0[1] = tmp1;
+                // Arg 2 constant: -nocase
+                tmp1 = const2;
+                tmp1.preserve();
+                objv0[2] = tmp1;
+                // Arg 3 variable: $s1
+                tmp1 = interp.getVar("s1", null, 0);
+                tmp1.preserve();
+                objv0[3] = tmp1;
+                // Arg 4 variable: $s2
+                tmp1 = interp.getVar("s2", null, 0);
+                tmp1.preserve();
+                objv0[4] = tmp1;
+                TJC.invoke(interp, null, objv0, 0);
+            } finally {
+                TJC.releaseObjv(interp, objv0, 5);
+            }
+        } // End Invoke: string
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+
+    TclObject const0;
+    TclObject const1;
+    TclObject const2;
+
+    protected void initConstants(Interp interp) throws TclException {
+        const0 = TclString.newInstance("string");
+        const0.preserve(); const0.preserve();
+        const1 = TclString.newInstance("compare");
+        const1.preserve(); const1.preserve();
+        const2 = TclString.newInstance("-nocase");
+        const2.preserve(); const2.preserve();
+    }
+} // end class Test1
+}}
+
+tcltest::test compileproc7-9.8 {inline string command} {
+    # string equal command
+    set script {
+proc p {} {
+    string equal "" ""
+}
+}
+
+    set test_compileproc_7_inline_commands 1
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_7_set_flags]
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) {
+            inlineCmds = true;
+            initCmd(interp);
+        }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: string equal "" ""
+            String tmp0 = const0.toString();
+            String tmp1 = const0.toString();
+            boolean tmp2 = tmp0.equals(tmp1);
+            interp.setResult(tmp2);
+        } // End Invoke: string
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+
+    TclObject const0;
+
+    protected void initConstants(Interp interp) throws TclException {
+        const0 = TclString.newInstance("");
+        const0.preserve(); const0.preserve();
+    }
+} // end class Test1
+}}
+
+tcltest::test compileproc7-9.9 {inline string command} {
+    # string equal command
+    set script {
+proc p {} {
+    string equal $s1 $s2
+}
+}
+
+    set test_compileproc_7_inline_commands 1
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_7_set_flags]
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) {
+            inlineCmds = true;
+            initCmd(interp);
+        }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: string equal $s1 $s2
+            TclObject tmp0 = interp.getVar("s1", null, 0);
+            String tmp1 = tmp0.toString();
+            TclObject tmp2 = interp.getVar("s2", null, 0);
+            String tmp3 = tmp2.toString();
+            boolean tmp4 = tmp1.equals(tmp3);
+            interp.setResult(tmp4);
+        } // End Invoke: string
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+} // end class Test1
+}}
+
+tcltest::test compileproc7-9.10 {inline string command} {
+    # string range command
+    set script {
+proc p {} {
+    string range "" 0 0
+}
+}
+
+    set test_compileproc_7_inline_commands 1
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_7_set_flags]
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) {
+            inlineCmds = true;
+            initCmd(interp);
+        }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: string range "" 0 0
+            String tmp0 = const0.toString();
+            TclObject tmp1 = const1;
+            tmp1.preserve();
+            TclObject tmp2 = const1;
+            TclObject tmp3 = TJC.stringRange(interp, tmp0, tmp1, tmp2);
+            interp.setResult(tmp3);
+        } // End Invoke: string
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+
+    TclObject const0;
+    TclObject const1;
+
+    protected void initConstants(Interp interp) throws TclException {
+        const0 = TclString.newInstance("");
+        const0.preserve(); const0.preserve();
+        const1 = TclInteger.newInstance(0);
+        const1.preserve(); const1.preserve();
+    }
+} // end class Test1
+}}
+
+tcltest::test compileproc7-9.11 {inline string command} {
+    # string range command
+    set script {
+proc p {} {
+    string range $str $i1 $i2
+}
+}
+
+    set test_compileproc_7_inline_commands 1
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_7_set_flags]
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) {
+            inlineCmds = true;
+            initCmd(interp);
+        }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: string range $str $i1 $i2
+            TclObject tmp0 = interp.getVar("str", null, 0);
+            String tmp1 = tmp0.toString();
+            TclObject tmp2 = interp.getVar("i1", null, 0);
+            tmp2.preserve();
+            TclObject tmp3 = interp.getVar("i2", null, 0);
+            TclObject tmp4 = TJC.stringRange(interp, tmp1, tmp2, tmp3);
+            interp.setResult(tmp4);
+        } // End Invoke: string
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+} // end class Test1
+}}
+
+tcltest::test compileproc7-9.12 {inline string command} {
+    # string first command
+    set script {
+proc p {} {
+    string first "BB" "AABBCC"
+}
+}
+
+    set test_compileproc_7_inline_commands 1
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_7_set_flags]
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) {
+            inlineCmds = true;
+            initCmd(interp);
+        }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: string first "BB" "AABBCC"
+            String tmp0 = "BB";
+            String tmp1 = const0.toString();
+            int tmp2 = tmp1.indexOf(tmp0);
+            interp.setResult(tmp2);
+        } // End Invoke: string
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+
+    TclObject const0;
+
+    protected void initConstants(Interp interp) throws TclException {
+        const0 = TclString.newInstance("AABBCC");
+        const0.preserve(); const0.preserve();
+    }
+} // end class Test1
+}}
+
+tcltest::test compileproc7-9.13 {inline string command} {
+    # string first command
+    set script {
+proc p {} {
+    string first "B" "AABBCC"
+}
+}
+
+    set test_compileproc_7_inline_commands 1
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_7_set_flags]
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) {
+            inlineCmds = true;
+            initCmd(interp);
+        }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: string first "B" "AABBCC"
+            char tmp0 = 'B';
+            String tmp1 = const0.toString();
+            int tmp2 = tmp1.indexOf(tmp0);
+            interp.setResult(tmp2);
+        } // End Invoke: string
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+
+    TclObject const0;
+
+    protected void initConstants(Interp interp) throws TclException {
+        const0 = TclString.newInstance("AABBCC");
+        const0.preserve(); const0.preserve();
+    }
+} // end class Test1
+}}
+
+tcltest::test compileproc7-9.14 {inline string command} {
+    # string first command
+    set script {
+proc p {} {
+    string first "B" "AABBCC" 2
+}
+}
+
+    set test_compileproc_7_inline_commands 1
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_7_set_flags]
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) {
+            inlineCmds = true;
+            initCmd(interp);
+        }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: string first "B" "AABBCC" 2
+            String tmp0 = "B";
+            String tmp1 = const0.toString();
+            TclObject tmp2 = TJC.stringFirst(interp, tmp0, tmp1, const1);
+            interp.setResult(tmp2);
+        } // End Invoke: string
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+
+    TclObject const0;
+    TclObject const1;
+
+    protected void initConstants(Interp interp) throws TclException {
+        const0 = TclString.newInstance("AABBCC");
+        const0.preserve(); const0.preserve();
+        const1 = TclInteger.newInstance(2);
+        const1.preserve(); const1.preserve();
+    }
+} // end class Test1
+}}
+
+tcltest::test compileproc7-9.15 {inline string command} {
+    # string first command
+    set script {
+proc p {} {
+    string first "\n" "AABBCC"
+}
+}
+
+    set test_compileproc_7_inline_commands 1
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_7_set_flags]
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) {
+            inlineCmds = true;
+            initCmd(interp);
+        }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: string first ... "AABBCC"
+            char tmp0 = '\n';
+            String tmp1 = const0.toString();
+            int tmp2 = tmp1.indexOf(tmp0);
+            interp.setResult(tmp2);
+        } // End Invoke: string
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+
+    TclObject const0;
+
+    protected void initConstants(Interp interp) throws TclException {
+        const0 = TclString.newInstance("AABBCC");
+        const0.preserve(); const0.preserve();
+    }
+} // end class Test1
+}}
+
+tcltest::test compileproc7-9.16 {inline string command} {
+    # string first command
+    set script {
+proc p {} {
+    string first "" "AABBCC"
+}
+}
+
+    set test_compileproc_7_inline_commands 1
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_7_set_flags]
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) {
+            inlineCmds = true;
+            initCmd(interp);
+        }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: string first "" "AABBCC"
+            String tmp0 = "";
+            String tmp1 = const0.toString();
+            TclObject tmp2 = TJC.stringFirst(interp, tmp0, tmp1, null);
+            interp.setResult(tmp2);
+        } // End Invoke: string
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+
+    TclObject const0;
+
+    protected void initConstants(Interp interp) throws TclException {
+        const0 = TclString.newInstance("AABBCC");
+        const0.preserve(); const0.preserve();
+    }
+} // end class Test1
+}}
+
+tcltest::test compileproc7-9.17 {inline string command} {
+    # string first command
+    set script {
+proc p {} {
+    string first $sub "AABBCC"
+}
+}
+
+    set test_compileproc_7_inline_commands 1
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_7_set_flags]
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) {
+            inlineCmds = true;
+            initCmd(interp);
+        }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: string first $sub "AABBCC"
+            TclObject tmp0 = interp.getVar("sub", null, 0);
+            String tmp1 = tmp0.toString();
+            String tmp2 = const0.toString();
+            TclObject tmp3 = TJC.stringFirst(interp, tmp1, tmp2, null);
+            interp.setResult(tmp3);
+        } // End Invoke: string
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+
+    TclObject const0;
+
+    protected void initConstants(Interp interp) throws TclException {
+        const0 = TclString.newInstance("AABBCC");
+        const0.preserve(); const0.preserve();
+    }
+} // end class Test1
+}}
+
+tcltest::test compileproc7-9.18 {inline string command} {
+    # string first command
+    set script {
+proc p {} {
+    string first $sub $str
+}
+}
+
+    set test_compileproc_7_inline_commands 1
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_7_set_flags]
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) {
+            inlineCmds = true;
+            initCmd(interp);
+        }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: string first $sub $str
+            TclObject tmp0 = interp.getVar("sub", null, 0);
+            String tmp1 = tmp0.toString();
+            TclObject tmp2 = interp.getVar("str", null, 0);
+            String tmp3 = tmp2.toString();
+            TclObject tmp4 = TJC.stringFirst(interp, tmp1, tmp3, null);
+            interp.setResult(tmp4);
+        } // End Invoke: string
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+} // end class Test1
+}}
+
+tcltest::test compileproc7-9.19 {inline string command} {
+    # string first command
+    set script {
+proc p {} {
+    string first $sub $str 2
+}
+}
+
+    set test_compileproc_7_inline_commands 1
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_7_set_flags]
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) {
+            inlineCmds = true;
+            initCmd(interp);
+        }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: string first $sub $str 2
+            TclObject tmp0 = interp.getVar("sub", null, 0);
+            String tmp1 = tmp0.toString();
+            TclObject tmp2 = interp.getVar("str", null, 0);
+            String tmp3 = tmp2.toString();
+            TclObject tmp4 = TJC.stringFirst(interp, tmp1, tmp3, const0);
+            interp.setResult(tmp4);
+        } // End Invoke: string
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+
+    TclObject const0;
+
+    protected void initConstants(Interp interp) throws TclException {
+        const0 = TclInteger.newInstance(2);
+        const0.preserve(); const0.preserve();
+    }
+} // end class Test1
+}}
+
+tcltest::test compileproc7-9.20 {inline string command} {
+    # string last command
+    set script {
+proc p {} {
+    string last "A" $str
+}
+}
+
+    set test_compileproc_7_inline_commands 1
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_7_set_flags]
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) {
+            inlineCmds = true;
+            initCmd(interp);
+        }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: string last "A" $str
+            String tmp0 = const0.toString();
+            TclObject tmp1 = interp.getVar("str", null, 0);
+            String tmp2 = tmp1.toString();
+            TclObject tmp3 = TJC.stringLast(interp, tmp0, tmp2, null);
+            interp.setResult(tmp3);
+        } // End Invoke: string
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+
+    TclObject const0;
+
+    protected void initConstants(Interp interp) throws TclException {
+        const0 = TclString.newInstance("A");
+        const0.preserve(); const0.preserve();
+    }
+} // end class Test1
+}}
+
+tcltest::test compileproc7-9.21 {inline string command} {
+    # string last command
+    set script {
+proc p {} {
+    string last "A" $str 2
+}
+}
+
+    set test_compileproc_7_inline_commands 1
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_7_set_flags]
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) {
+            inlineCmds = true;
+            initCmd(interp);
+        }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: string last "A" $str 2
+            String tmp0 = const0.toString();
+            TclObject tmp1 = interp.getVar("str", null, 0);
+            String tmp2 = tmp1.toString();
+            TclObject tmp3 = TJC.stringLast(interp, tmp0, tmp2, const1);
+            interp.setResult(tmp3);
+        } // End Invoke: string
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+
+    TclObject const0;
+    TclObject const1;
+
+    protected void initConstants(Interp interp) throws TclException {
+        const0 = TclString.newInstance("A");
+        const0.preserve(); const0.preserve();
+        const1 = TclInteger.newInstance(2);
+        const1.preserve(); const1.preserve();
+    }
+} // end class Test1
+}}
+
+tcltest::test compileproc7-9.22 {inline string command} {
+    # string last command
+    set script {
+proc p {} {
+    string last "A" $str $lastInd
+}
+}
+
+    set test_compileproc_7_inline_commands 1
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_7_set_flags]
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) {
+            inlineCmds = true;
+            initCmd(interp);
+        }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: string last "A" $str $lastInd
+            String tmp0 = const0.toString();
+            TclObject tmp1 = interp.getVar("str", null, 0);
+            String tmp2 = tmp1.toString();
+            TclObject tmp3 = interp.getVar("lastInd", null, 0);
+            TclObject tmp4 = TJC.stringLast(interp, tmp0, tmp2, tmp3);
+            interp.setResult(tmp4);
+        } // End Invoke: string
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+
+    TclObject const0;
+
+    protected void initConstants(Interp interp) throws TclException {
+        const0 = TclString.newInstance("A");
+        const0.preserve(); const0.preserve();
+    }
+} // end class Test1
+}}
+
+
 
 
 # FIXME: In the examples above, it would improve performance if

@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TJC.java,v 1.9 2006/01/27 23:39:02 mdejong Exp $
+ * RCS: @(#) $Id: TJC.java,v 1.10 2006/02/07 01:17:16 mdejong Exp $
  *
  */
 
@@ -1402,5 +1402,172 @@ public class TJC {
 
         return varValue;
     }
+
+    // Implements inlined string index command. This
+    // implementation duplicates the logic found
+    // in StringCmd.java. The new value is returned.
+    // If the index is out of range the null result
+    // will be returned.
+
+    public static final
+    TclObject stringIndex(
+        Interp interp,
+        String str,          // string
+        TclObject indObj)    // index into string
+            throws TclException
+    {
+        int len = str.length();
+        int i;
+
+        if (indObj.getInternalRep() instanceof TclInteger) {
+	    i = TclInteger.get(interp, indObj);
+        } else {
+            i = Util.getIntForIndex(interp, indObj, len - 1);
+        }
+
+        if ((i >= 0) && (i < len)) {
+            String substr = str.substring(i, i+1);
+            return TclString.newInstance(substr);
+        } else {
+            return interp.checkCommonString(null);
+        }
+    }
+
+    // Implements inlined string range command. This
+    // implementation duplicates the logic found
+    // in StringCmd.java. The new value is returned.
+    // This method assumes that the firstObj TclObject
+    // was preserved() before this method is invoked.
+    // This method will always release() the firstObj.
+
+    public static final
+    TclObject stringRange(
+        Interp interp,
+        String str,          // string
+        TclObject firstObj,  // first index (ref count incremented)
+        TclObject lastObj)   // last index
+            throws TclException
+    {
+        int len = str.length();
+        int first, last;
+
+        try {
+            if (firstObj.getInternalRep() instanceof TclInteger) {
+	        first = TclInteger.get(interp, firstObj);
+            } else {
+                first = Util.getIntForIndex(interp, firstObj, len - 1);
+            }
+            if (first < 0) {
+                first = 0;
+            }
+
+            if (lastObj.getInternalRep() instanceof TclInteger) {
+	        last = TclInteger.get(interp, lastObj);
+            } else {
+                last = Util.getIntForIndex(interp, lastObj, len - 1);
+            }
+            if (last >= len) {
+                last = len - 1;
+            }
+        } finally {
+            // Release firstObj after lastObj has been queried.
+            // There could only be a ref count problem if firstObj
+            // was released before lastObj and lastObj was a list
+            // element of firstObj and lastObj had a ref count of 1.
+
+            firstObj.release();
+        }
+
+        if (first > last) {
+            return interp.checkCommonString(null);
+        } else {
+            String substr = str.substring(first, last+1);
+            return TclString.newInstance(substr);
+        }
+    }
+
+    // Implements inlined "string first" command, this
+    // duplicates the logic found in StringCmd.java.
+    // A TclObject that holds the new value is
+    // returned.
+
+    public static final
+    TclObject stringFirst(
+        Interp interp,
+        String substr,       // substring to search for
+        String str,          // string to search in
+        TclObject startObj)  // start index (null if start is 0)
+            throws TclException
+    {
+        int substrLen = substr.length();
+        int strLen = str.length();
+        int index;
+
+        int start;
+
+        if (startObj == null) {
+            start = 0;
+        } else {
+            // If a startIndex is specified, we will need to fast
+            // forward to that point in the string before we think
+            // about a match.
+
+            start = Util.getIntForIndex(interp, startObj, strLen-1);
+            if (start >= strLen) {
+                return interp.checkCommonInteger(-1);
+            }
+        }
+
+        if (substrLen == 0) {
+            index = -1;
+        } else if (substrLen == 1) {
+            char c = substr.charAt(0);
+            index = str.indexOf(c, start);
+        } else {
+            index = str.indexOf(substr, start);
+        }
+        return interp.checkCommonInteger(index);
+    }
+
+    // Implements inlined "string last" command, this
+    // duplicates the logic found in StringCmd.java.
+    // A TclObject that holds the new value is
+    // returned.
+
+    public static final
+    TclObject stringLast(
+        Interp interp,
+        String substr,       // substring to search for
+        String str,          // string to search in
+        TclObject lastObj)   // last index (null if last is 0)
+            throws TclException
+    {
+        int substrLen = substr.length();
+        int strLen = str.length();
+        int index;
+        int last;
+
+        if (lastObj == null) {
+            last = 0;
+        } else {
+            last = Util.getIntForIndex(interp, lastObj, strLen-1);
+            if (last < 0) {
+                return interp.checkCommonInteger(-1);
+            } else if (last < strLen) {
+                str = str.substring(0, last+1);
+            }
+        }
+
+        if (substrLen == 0) {
+            index = -1;
+        } else if (substrLen == 1) {
+            char c = substr.charAt(0);
+            index = str.lastIndexOf(c);
+        } else {
+            index = str.lastIndexOf(substr);
+        }
+        return interp.checkCommonInteger(index);
+    }
+
 }
 
