@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: compileproc.tcl,v 1.10 2006/02/07 01:17:17 mdejong Exp $
+#  RCS: @(#) $Id: compileproc.tcl,v 1.11 2006/02/07 09:41:01 mdejong Exp $
 #
 #
 
@@ -420,8 +420,7 @@ proc compileproc_nocompile { proc_list class_name } {
     # import statement
     append buffer [emitter_import_tcl]
     # class declaration
-    append buffer "\n"
-    append buffer [emitter_class_start $_compileproc(classname)]
+    append buffer "\n" [emitter_class_start $_compileproc(classname)]
     # cmdProc declaration
     append buffer [emitter_cmd_proc_start]
 
@@ -448,8 +447,7 @@ proc compileproc_nocompile { proc_list class_name } {
     # Emit class constants
     set cdata [compileproc_constant_cache_generate]
     if {$cdata != {}} {
-        append buffer "\n"
-        append buffer $cdata
+        append buffer "\n" $cdata
     }
 
     # Variable cache not supported in -compile mode
@@ -589,8 +587,7 @@ proc compileproc_tjcextension { package tcl_files init_file } {
     } else {
         set prefix "/"
         foreach elem [split $package .] {
-            append prefix $elem
-            append prefix "/"
+            append prefix $elem "/"
         }
         append prefix "library/"
     }
@@ -606,8 +603,9 @@ public class TJCExtension extends Extension \{
 
     for {set len [llength $tcl_files] ; set i 0} {$i < $len} {incr i} {
         set fname [lindex $tcl_files $i]
-        append buffer "            "
-        append buffer "\"$fname\""
+        append buffer \
+            "            " \
+            "\"$fname\""
         if {$i == ($len - 1)} {
             # No-op
         } else {
@@ -785,10 +783,9 @@ proc compileproc_command_start_callback { key } {
     }
 
     set result [descend_get_command_name $key]
-    set undetermined [descend_arguments_undetermined $key]
-    set container_stack [descend_get_container_stack]
+    #set container_stack [descend_get_container_stack]
 
-    if {$undetermined} {
+    if {[descend_arguments_undetermined $key]} {
         # Command known to be invoked but arguments not
         # known at compile time. Just ignore.
         return
@@ -803,8 +800,7 @@ proc compileproc_command_start_callback { key } {
     }
 
     set info_token [list]
-    lappend info_token $key
-    lappend info_token $cmdname
+    lappend info_token $key $cmdname
 
     lappend _compileproc_ckeys(info_keys) $info_token
     set _compileproc_ckeys($key,info_key) $info_token
@@ -879,8 +875,7 @@ proc compileproc_compile { proc_list class_name {config_init {}} } {
     # import statement
     append buffer [emitter_import_tcl]
     # class declaration
-    append buffer "\n"
-    append buffer [emitter_class_start $_compileproc(classname)]
+    append buffer "\n" [emitter_class_start $_compileproc(classname)]
 
     # cmdProc declaration
     append buffer [emitter_cmd_proc_start]
@@ -940,8 +935,7 @@ proc compileproc_compile { proc_list class_name {config_init {}} } {
     if {$_compileproc_key_info(constants_found)} {
         set cdata [compileproc_constant_cache_generate]
         if {$cdata != {}} {
-            append buffer "\n"
-            append buffer $cdata
+            append buffer "\n" $cdata
         }
     }
 
@@ -950,8 +944,7 @@ proc compileproc_compile { proc_list class_name {config_init {}} } {
     if {$_compileproc(options,cache_commands)} {
         set cdata [compileproc_command_cache_init_generate]
         if {$cdata != ""} {
-            append buffer "\n"
-            append buffer $cdata
+            append buffer "\n" $cdata
         }
     }
 
@@ -959,8 +952,7 @@ proc compileproc_compile { proc_list class_name {config_init {}} } {
 
     if {$_compileproc(options,cache_variables) && \
             [compileproc_variable_cache_is_used]} {
-        append buffer "\n"
-        append buffer [compileproc_variable_cache_generate]
+        append buffer "\n" [compileproc_variable_cache_generate]
     }
 
     # end class declaration
@@ -1140,13 +1132,17 @@ proc compileproc_command_cache_init_generate {} {
         return ""
     }
 
+    if {[emitter_indent_level] != 0} {
+        error "expected enter indent level of 0, got [emitter_indent_level]"
+    }
+
     set buffer ""
 
     emitter_indent_level +1
 
     # Emit cmdEpoch for this command
-    append buffer [emitter_indent] \
-        "int wcmd_cmdEpoch = 0\;\n"
+    append buffer \
+        [emitter_statement "int wcmd_cmdEpoch = 0"]
 
     # Emit instance scoped variables that hold a Command reference.
     set symbol_ids [list]
@@ -1159,21 +1155,20 @@ proc compileproc_command_cache_init_generate {} {
 
         lappend symbol_ids $cacheId
 
-        append buffer [emitter_indent] \
-            "WrappedCommand $symbol\;\n"
-        append buffer [emitter_indent] \
-            "int ${symbol}_cmdEpoch\;\n"
+        append buffer \
+            [emitter_statement "WrappedCommand $symbol"] \
+            [emitter_statement "int ${symbol}_cmdEpoch"]
     }
 
-    append buffer "\n"
-
-    append buffer [emitter_indent] \
+    append buffer \
+        "\n" \
+        [emitter_indent] \
         "void updateCmdCache(Interp interp, int cacheId) throws TclException \{\n"
 
     emitter_indent_level +1
 
-    append buffer [emitter_indent] \
-        "String cmdName\;\n"
+    append buffer \
+        [emitter_statement "String cmdName"]
 
     # Emit switch on cacheId to determine command name
 
@@ -1196,17 +1191,14 @@ proc compileproc_command_cache_init_generate {} {
             cacheId $symbol_ids {
         set symbol $_compileproc_command_cache($key)
 
-        append buffer [emitter_indent] \
-            "$symbol = TJC.INVALID_COMMAND_CACHE\;\n"
-        append buffer [emitter_indent] \
-            "${symbol}_cmdEpoch = 0\;\n"
+        append buffer \
+            [emitter_statement "$symbol = TJC.INVALID_COMMAND_CACHE"] \
+            [emitter_statement "${symbol}_cmdEpoch = 0"]
     }
 
-    append buffer [emitter_indent] \
-        "wcmd_cmdEpoch = wcmd.cmdEpoch\;\n"
-
-    append buffer [emitter_indent] \
-        "return\;\n"
+    append buffer \
+        [emitter_statement "wcmd_cmdEpoch = wcmd.cmdEpoch"] \
+        [emitter_statement "return"]
 
     emitter_indent_level -1
 
@@ -1220,18 +1212,17 @@ proc compileproc_command_cache_init_generate {} {
             key $_compileproc_command_cache(ordered_keys) \
             cacheId $symbol_ids {
         set symbol $_compileproc_command_cache($key)
-        set jstr [emitter_backslash_tcl_string $cmdname]
 
         append buffer [emitter_indent] \
             "case $cacheId: \{\n"
 
         emitter_indent_level +1
 
-        append buffer [emitter_indent] \
-            "cmdName = \"$jstr\"\;\n"
+        set jsym [emitter_double_quote_tcl_string $cmdname]
 
-        append buffer [emitter_indent] \
-            "break\;\n"
+        append buffer \
+            [emitter_statement "cmdName = $jsym"] \
+            [emitter_statement "break"]
 
         emitter_indent_level -1
 
@@ -1247,8 +1238,9 @@ proc compileproc_command_cache_init_generate {} {
 
     emitter_indent_level +1
 
-    append buffer [emitter_indent] \
-        "throw new TclRuntimeError(\"default: cacheId \" + cacheId)\;\n"
+    append buffer \
+        [emitter_statement \
+        "throw new TclRuntimeError(\"default: cacheId \" + cacheId)"]
 
     emitter_indent_level -1
 
@@ -1265,26 +1257,16 @@ proc compileproc_command_cache_init_generate {} {
 
     # Allocate locals to hold command ref and epoch
 
-    append buffer [emitter_indent] \
-        "WrappedCommand lwcmd = TJC.resolveCmd(interp, cmdName)\;\n"
-
-    append buffer [emitter_indent] \
-        "int cmdEpoch\;\n"
-
-    append buffer [emitter_container_if_start "lwcmd == null"]
-
-    append buffer [emitter_indent] \
-        "lwcmd = TJC.INVALID_COMMAND_CACHE\;\n"
-
-    append buffer [emitter_indent] \
-        "cmdEpoch = 0\;\n"
-
-    append buffer [emitter_container_if_else]
-
-    append buffer [emitter_indent] \
-        "cmdEpoch = lwcmd.cmdEpoch\;\n"
-
-    append buffer [emitter_container_if_end]
+    append buffer \
+        [emitter_statement \
+            "WrappedCommand lwcmd = TJC.resolveCmd(interp, cmdName)"] \
+        [emitter_statement "int cmdEpoch"] \
+        [emitter_container_if_start "lwcmd == null"] \
+        [emitter_statement "lwcmd = TJC.INVALID_COMMAND_CACHE"] \
+        [emitter_statement "cmdEpoch = 0"] \
+        [emitter_container_if_else] \
+        [emitter_statement "cmdEpoch = lwcmd.cmdEpoch"] \
+        [emitter_container_if_end]
 
     # Emit switch on cacheId to assign cache variable
 
@@ -1303,14 +1285,10 @@ proc compileproc_command_cache_init_generate {} {
 
         emitter_indent_level +1
 
-        append buffer [emitter_indent] \
-            "$symbol = lwcmd\;\n"
-
-        append buffer [emitter_indent] \
-            "${symbol}_cmdEpoch = cmdEpoch\;\n"
-
-        append buffer [emitter_indent] \
-            "break\;\n"
+        append buffer \
+            [emitter_statement "$symbol = lwcmd"] \
+            [emitter_statement "${symbol}_cmdEpoch = cmdEpoch"] \
+            [emitter_statement "break"]
 
         emitter_indent_level -1
 
@@ -1376,10 +1354,9 @@ proc compileproc_command_cache_update { symbol } {
 
     set cacheId [compileproc_get_cache_id_from_symbol $symbol]
 
-    append buffer [emitter_indent] \
-        "updateCmdCache(interp, $cacheId)\;\n"
-
-    append buffer [emitter_container_if_end]
+    append buffer \
+        [emitter_statement "updateCmdCache(interp, $cacheId)"] \
+        [emitter_container_if_end]
 
     return $buffer
 }
@@ -1406,23 +1383,14 @@ proc compileproc_get_cache_id_from_symbol { symbol } {
 # epoch is checked.
 
 proc compileproc_command_cache_this_check {} {
-    global _compileproc
-    global _compileproc_command_cache
-
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
-
-    if {$debug} {
-        puts "compileproc_command_cache_this_check"
-    }
+    set cond {wcmd_cmdEpoch != wcmd.cmdEpoch}
 
     set buffer ""
 
-    set cond {wcmd_cmdEpoch != wcmd.cmdEpoch}
-    append buffer [emitter_container_if_start $cond]
-    append buffer [emitter_indent] \
-        "updateCmdCache(interp, 0)\;\n"
-    append buffer [emitter_container_if_end]
+    append buffer \
+        [emitter_container_if_start $cond] \
+        [emitter_statement "updateCmdCache(interp, 0)"] \
+        [emitter_container_if_end]
 
     return $buffer
 }
@@ -1570,9 +1538,10 @@ proc compileproc_variable_cache_update_generate {} {
 
     set decl_end "    \}\n"
 
-    append buffer "\n"
-    append buffer $decl
-    append buffer "\n"
+    append buffer \
+        "\n" \
+        $decl \
+        "\n"
 
     emitter_indent_level +1
 
@@ -1605,8 +1574,9 @@ proc compileproc_variable_cache_update_generate {} {
         emitter_indent_level +1
 
         set jstr [emitter_backslash_tcl_string $vname]
-        append buffer [emitter_statement "part1 = \"$jstr\""]
-        append buffer [emitter_statement "break"]
+        append buffer \
+            [emitter_statement "part1 = \"$jstr\""] \
+            [emitter_statement "break"]
 
         emitter_indent_level -1
         append buffer [emitter_indent] "\}\n"
@@ -1625,9 +1595,10 @@ proc compileproc_variable_cache_update_generate {} {
 
     # resolve var
 
-    append buffer "\n"
-    append buffer [emitter_statement "lvar = TJC.resolveVarScalar(interp, part1, flags)"]
-    append buffer "\n"
+    append buffer \
+        "\n" \
+        [emitter_statement "lvar = TJC.resolveVarScalar(interp, part1, flags)"] \
+        "\n"
 
     # second switch on cacheId
 
@@ -1644,8 +1615,9 @@ proc compileproc_variable_cache_update_generate {} {
         append buffer [emitter_indent] "case $cacheId: \{\n"
         emitter_indent_level +1
 
-        append buffer [emitter_statement "$symbol = lvar"]
-        append buffer [emitter_statement "break"]
+        append buffer \
+            [emitter_statement "$symbol = lvar"] \
+            [emitter_statement "break"]
 
         emitter_indent_level -1
         append buffer [emitter_indent] "\}\n"
@@ -1681,12 +1653,12 @@ proc compileproc_variable_cache_update_generate {} {
 proc compileproc_scan_keys { keys } {
     global _compileproc _compileproc_key_info
 
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
-
-    if {$debug} {
-        puts "compileproc_scan_keys: $keys"
-    }
+#    set debug 0
+#    if {$::_compileproc(debug)} {set debug 1}
+#
+#    if {$debug} {
+#        puts "compileproc_scan_keys: $keys"
+#    }
 
     if {[info exists _compileproc_key_info(cmd_needs_init)]} {
         set cmd_needs_init $_compileproc_key_info(cmd_needs_init)
@@ -1708,7 +1680,6 @@ proc compileproc_scan_keys { keys } {
     foreach key $keys {
         # If the command name is a simple string, then get
         # the command name String.
-        set undetermined [descend_arguments_undetermined $key]
         if {[descend_arguments_undetermined $key]} {
             error "unexpected undetermined arguments command key \"$key\""
         }
@@ -1717,11 +1688,11 @@ proc compileproc_scan_keys { keys } {
         set num_args [llength $tree]
         if {$num_args < 1} {error "num args ($num_args) must be positive"}
 
-        if {$debug} {
-            puts "key is $key"
-            puts "script is ->$script<-"
-            puts "tree is \{$tree\}"
-        }
+#        if {$debug} {
+#            puts "key is $key"
+#            puts "script is ->$script<-"
+#            puts "tree is \{$tree\}"
+#        }
 
         set types [list] ; # type of value for argument
         set values [list] ; # value depends on type
@@ -1735,7 +1706,9 @@ proc compileproc_scan_keys { keys } {
             # A command can't have zero arguments, so {} should not be returned by
             # descend_commands here. The descend module inits the commands flag
             # to a list of empty lists based on the number of arguments to the command.
-            error "mismatched num_args ($num_args) and num argument_commands [llength $argument_commands] for key $key, argument_commands is \{$argument_commands\}"
+            error "mismatched num_args ($num_args) and num argument_commands\
+                [llength $argument_commands] for key $key, argument_commands
+                is \{$argument_commands\}"
         }
 
         # Walk over each argument to the command looking for constant
@@ -1752,18 +1725,18 @@ proc compileproc_scan_keys { keys } {
                 } else {
                     set brace_quoted 0
                 }
-                if {$debug} {
-                    puts "found simple/text ->$qtext<- at argument index $i"
-                    if {$brace_quoted} {
-                        puts "argument is a brace quoted"
-                    } else {
-                        puts "argument is not a brace quoted"
-                    }
-                }
+#                if {$debug} {
+#                    puts "found simple/text ->$qtext<- at argument index $i"
+#                    if {$brace_quoted} {
+#                        puts "argument is a brace quoted"
+#                    } else {
+#                        puts "argument is not a brace quoted"
+#                    }
+#                }
                 set uqtext [parse_get_simple_text $script $telem "text"]
-                if {$debug} {
-                    puts "found unquoted simple/text ->$uqtext<- at argument index $i"
-                }
+#                if {$debug} {
+#                    puts "found unquoted simple/text ->$uqtext<- at argument index $i"
+#                }
 
                 # A brace quoted argument like {foo\nbar} must be written
                 # as the Java String "foo\\nbar". Find all backslash
@@ -1786,12 +1759,12 @@ proc compileproc_scan_keys { keys } {
                         }
                     }
 
-                    if {$debug} {
-                        puts "doubled up escapes in brace quoted string"
-                        puts "uqtext    ->$uqtext<-"
-                        puts "bs_uqtext ->$bs_uqtext<-"
-                        puts "cmap is \{$cmap\}"
-                    }
+#                    if {$debug} {
+#                        puts "doubled up escapes in brace quoted string"
+#                        puts "uqtext    ->$uqtext<-"
+#                        puts "bs_uqtext ->$bs_uqtext<-"
+#                        puts "cmap is \{$cmap\}"
+#                    }
 
                     set uqtext $bs_uqtext
                 } else {
@@ -1810,9 +1783,9 @@ proc compileproc_scan_keys { keys } {
                 # a scalar. More complex types like arrays
                 # will require a full evaluation.
 
-                if {$debug} {
-                    puts "found word/variable type at argument index $i"
-                }
+#                if {$debug} {
+#                    puts "found word/variable type at argument index $i"
+#                }
 
                 set commands [lindex $argument_commands $i]
                 if {$commands != {}} {
@@ -1835,9 +1808,9 @@ proc compileproc_scan_keys { keys } {
                 # commands. Loop over each of the keys for
                 # each nested command.
 
-                if {$debug} {
-                    puts "found word/command type: [parse_get_word_command $script $telem] at argument index $i"
-                }
+#                if {$debug} {
+#                    puts "found word/command type: [parse_get_word_command $script $telem] at argument index $i"
+#                }
                 set commands [lindex $argument_commands $i]
                 if {[compileproc_is_empty_command $commands]} {
                     # An empty command has no key. The result of an empty
@@ -1850,32 +1823,32 @@ proc compileproc_scan_keys { keys } {
                     lappend instrs {[]}
                     lappend cmaps {}
                     compileproc_constant_cache_add $uqtext
-                    if {$debug} {
-                        puts "found empty word/command, subst {} at argument index $i"
-                    }
+#                    if {$debug} {
+#                        puts "found empty word/command, subst {} at argument index $i"
+#                    }
                 } else {
-                    if {$debug} {
-                        puts "found word/command keys: $commands at argument index $i"
-                    }
+#                    if {$debug} {
+#                        puts "found word/command keys: $commands at argument index $i"
+#                    }
 
                     lappend types command
                     lappend values $commands
                     lappend instrs [parse_get_word_command $script $telem]
                     lappend cmaps {}
-                    if {$debug} {
-                    puts "scanning commands \{$commands\} (child of $key)"
-                    }
+#                    if {$debug} {
+#                    puts "scanning commands \{$commands\} (child of $key)"
+#                    }
                     compileproc_scan_keys $commands
-                    if {$debug} {
-                    puts "done scanning commands \{$commands\} (child of $key)"
-                    }
+#                    if {$debug} {
+#                    puts "done scanning commands \{$commands\} (child of $key)"
+#                    }
                 }
             } elseif {[parse_is_word $telem]} {
                 # A word element made up of text, variables, and or commands
 
-                if {$debug} {
-                    puts "found word element type at index $i"
-                }
+#                if {$debug} {
+#                    puts "found word element type at index $i"
+#                }
 
                 set wrange [lindex $telem 1]
                 set qtext [parse getstring $script $wrange]
@@ -1929,13 +1902,13 @@ proc compileproc_scan_keys { keys } {
 
         if {[compileproc_is_container_command $key] &&
                 [compileproc_can_inline_container $key]} {
-            if {$debug} {
-            puts "descend into container keys for command $key"
-            }
+#            if {$debug} {
+#            puts "descend into container keys for command $key"
+#            }
             set ccmds [descend_commands $key container]
-            if {$debug} {
-            puts "container keys for command $key are \{$ccmds\}"
-            }
+#            if {$debug} {
+#            puts "container keys for command $key are \{$ccmds\}"
+#            }
             set klist [list]
             foreach list [descend_commands $key container] {
                 if {[llength $list] == 1} {
@@ -1949,23 +1922,23 @@ proc compileproc_scan_keys { keys } {
                 }
             }
             if {$klist != {}} {
-                if {$debug} {
-                puts "scanning container commands \{$klist\} (child of $key)"
-                }
+#                if {$debug} {
+#                puts "scanning container commands \{$klist\} (child of $key)"
+#                }
                 compileproc_scan_keys $klist
-                if {$debug} {
-                puts "done scanning container commands \{$klist\} (child of $key)"
-                }
+#                if {$debug} {
+#                puts "done scanning container commands \{$klist\} (child of $key)"
+#                }
             }
         }
     } ; # end foreach key $keys loop
 
     if {$constants_found} {
         set cmd_needs_init 1
-        if {$debug} {
-            puts "compileproc_scan_keys: key_info printout"
-            parray _compileproc_key_info
-        }
+#        if {$debug} {
+#            puts "compileproc_scan_keys: key_info printout"
+#            parray _compileproc_key_info
+#        }
     }
 
     set _compileproc_key_info(cmd_needs_init) $cmd_needs_init
@@ -1976,15 +1949,7 @@ proc compileproc_scan_keys { keys } {
 # it has no child keys.
 
 proc compileproc_is_empty_command { keys } {
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
-
-    if {$debug} {
-        puts "compileproc_is_empty_command \{$keys\}"
-    }
-
     #if {$keys == {} || $keys == {{}}}
-
     if {$keys == {}} {
         return 1
     } else {
@@ -2496,9 +2461,10 @@ proc compileproc_emit_invoke { key } {
             set cmdname $str
         }
 
-        append cmdstr $str
         if {$i < ($num_args - 1)} {
-            append cmdstr " "
+            append cmdstr $str " "
+        } else {
+            append cmdstr $str
         }
     }
 
@@ -2634,9 +2600,9 @@ proc compileproc_emit_objv_assignment { key starti endi decl_tmpsymbol callback 
             # emitter_invoke_command_assign will notice when the
             # tmpsymbol is being assigned to itself and skip it.
 
-            append buffer $symbol_buffer
-            append buffer [emitter_invoke_command_assign $arraysym \
-                $array_i $tmpsymbol $symbol]
+            append buffer $symbol_buffer \
+                [emitter_invoke_command_assign $arraysym \
+                    $array_i $tmpsymbol $symbol]
         }
     }
 
@@ -2905,8 +2871,7 @@ proc compileproc_emit_variable { tmpsymbol vinfo {declare_flag 1} } {
             if {$kvname == ""} {error "empty array key variable name in \{$vinfo\}"}
             append buffer \
                 [emitter_statement \
-                    "${declare}${tmpsymbol} = [compileproc_emit_scalar_variable_get $kvname]"]
-            append buffer \
+                    "${declare}${tmpsymbol} = [compileproc_emit_scalar_variable_get $kvname]"] \
                 [emitter_statement \
                     "$tmpsymbol = [emitter_get_var $avname true $tmpsymbol.toString() false 0]"]
         }
@@ -2923,10 +2888,11 @@ proc compileproc_emit_variable { tmpsymbol vinfo {declare_flag 1} } {
                 foreach ckey $ckeys {
                     append buffer [compileproc_emit_invoke $ckey]
                 }
-                append buffer [emitter_indent] \
-                    "${declare}${tmpsymbol} = interp.getResult()\;\n"
-                append buffer [emitter_indent] \
-                    "$tmpsymbol = [emitter_get_var $avname true $tmpsymbol.toString() false 0]\;\n"
+                append buffer \
+                    [emitter_statement \
+                        "${declare}${tmpsymbol} = interp.getResult()"] \
+                    [emitter_statement \
+                        "$tmpsymbol = [emitter_get_var $avname true $tmpsymbol.toString() false 0]"]
             }
         }
         {word command} {
@@ -2941,8 +2907,9 @@ proc compileproc_emit_variable { tmpsymbol vinfo {declare_flag 1} } {
                 foreach ckey $ckeys {
                     append buffer [compileproc_emit_invoke $ckey]
                 }
-                append buffer [emitter_indent] \
-                    "${declare}${tmpsymbol} = interp.getResult()\;\n"
+                append buffer \
+                    [emitter_statement \
+                        "${declare}${tmpsymbol} = interp.getResult()"]
             }
         }
         {array word} {
@@ -2970,9 +2937,9 @@ proc compileproc_emit_variable { tmpsymbol vinfo {declare_flag 1} } {
                             "$sbtmp.append(\"$str\")\;\n"
                     } else {
                         # A variable or command that must be evaluated then appended
-                        append buffer [compileproc_emit_variable $tmpsymbol $value 0]
-                        append buffer [emitter_indent] \
-                            "$sbtmp.append($tmpsymbol.toString())\;\n"
+                        append buffer \
+                            [compileproc_emit_variable $tmpsymbol $value 0] \
+                            [emitter_statement "$sbtmp.append($tmpsymbol.toString())"]
                     }
                 }
                 set result $sbtmp.toString()
@@ -3172,13 +3139,12 @@ proc compileproc_emit_word_element { winfo_element tmpsymbol append sbtmp {decla
                 append buffer [compileproc_emit_invoke $ckey]
             }
             if {$append} {
-                append buffer [emitter_indent] \
-                    "$tmpsymbol = interp.getResult()\;\n"
-                append buffer [emitter_indent] \
-                    "$sbtmp.append($tmpsymbol.toString())\;\n"
+                append buffer \
+                    [emitter_statement "$tmpsymbol = interp.getResult()"] \
+                    [emitter_statement "$sbtmp.append($tmpsymbol.toString())"]
             } else {
-                append buffer [emitter_indent] \
-                    "${declare}$tmpsymbol = interp.getResult()\;\n"
+                append buffer \
+                    [emitter_statement "${declare}$tmpsymbol = interp.getResult()"]
             }
         }
     } else {
@@ -3709,16 +3675,18 @@ proc compileproc_emit_container_if { key } {
             if {$is_constant} {
                 # A constant has no evaluation code, so it can be
                 # placed directly in an if/elseif expression.
-                append buffer [lindex $tuple 1]
-                append buffer [emitter_container_if_else_if $tmpsymbol]
+                append buffer \
+                    [lindex $tuple 1] \
+                    [emitter_container_if_else_if $tmpsymbol]
             } else {
                 # The expression needs to be evaluated with multiple
                 # statements. Use multiple if/else blocks to simulate
                 # the if/elseif/else Tcl command.
 
-                append buffer [emitter_container_if_else]
-                append buffer [lindex $tuple 1]
-                append buffer [emitter_container_if_start $tmpsymbol]
+                append buffer \
+                    [emitter_container_if_else] \
+                    [lindex $tuple 1] \
+                    [emitter_container_if_start $tmpsymbol]
                 incr elseif_depth
             }
 
@@ -3867,10 +3835,9 @@ proc compileproc_expr_evaluate_boolean_emit { key expr_index } {
         append buffer [lindex $eval_tuple 2]
 
         set tmpsymbol [compileproc_tmpvar_next]
-        append buffer [emitter_indent] \
-            "boolean $tmpsymbol = $ev.getBooleanValue(interp)\;\n"
-        append buffer [emitter_indent] \
-            "TJC.exprReleaseValue(interp, $ev)\;\n"
+        append buffer \
+            [emitter_statement "boolean $tmpsymbol = $ev.getBooleanValue(interp)"] \
+            [emitter_statement "TJC.exprReleaseValue(interp, $ev)"]
 
         return [list $tmpsymbol $buffer 0]
     }
@@ -4035,14 +4002,12 @@ proc compileproc_expr_container_index { key in_expr_index } {
         # if expr body block
         set tuple [descend_container_if_expr_body $key]
         set expr_index [lindex $tuple 0]
-        lappend expr_indexes $expr_index
-        lappend expr_indexes {}
+        lappend expr_indexes $expr_index {}
         # else/if blocks
         if {[descend_container_if_has_elseif_body $key]} {
             foreach {expr_index body_index} \
                     [descend_container_if_iterate_elseif_body $key] {
-                lappend expr_indexes $expr_index
-                lappend expr_indexes {}
+                lappend expr_indexes $expr_index {}
             }
         }
         # else block -> No-op
@@ -4409,8 +4374,9 @@ proc compileproc_emit_container_while { key } {
         append buffer [emitter_container_for_start {} true]
         if {!$is_constant} {
             # evaluate expr, break out of loop if false
-            append buffer $tmpbuffer
-            append buffer [emitter_container_for_expr $tmpsymbol]
+            append buffer \
+                $tmpbuffer \
+                [emitter_container_for_expr $tmpsymbol]
         }
     } else {
         set bval $tmpsymbol
@@ -4426,8 +4392,9 @@ proc compileproc_emit_container_while { key } {
         }
 
         # Setup try/catch for break/continue/return
-        append buffer [emitter_container_for_try_start]
-        append buffer [emitter_container_fake_tclexception]
+        append buffer \
+            [emitter_container_for_try_start] \
+            [emitter_container_fake_tclexception]
 
         # Push loop break/continue/return context
         if {$_compileproc(options,inline_controls)} {
@@ -4568,8 +4535,9 @@ proc compileproc_emit_container_for { key } {
         append buffer [emitter_container_for_skip_start $skip_tmpsymbol]
 
         # Setup try/catch for break exception
-        append buffer [emitter_container_for_try_start]
-        append buffer [emitter_container_fake_tclexception]
+        append buffer \
+            [emitter_container_for_try_start] \
+            [emitter_container_fake_tclexception]
 
         # Push loop break context
         if {$_compileproc(options,inline_controls)} {
@@ -4586,15 +4554,17 @@ proc compileproc_emit_container_for { key } {
         }
 
         # Finish try/catch for break
-        append buffer [emitter_container_for_try_end 0]
-        append buffer [emitter_container_for_skip_end]
-        append buffer "\n"
+        append buffer \
+            [emitter_container_for_try_end 0] \
+            [emitter_container_for_skip_end] \
+            "\n"
     }
 
     if {!$is_constant} {
         # evaluate expr, break out of loop if false
-        append buffer $tmpbuffer
-        append buffer [emitter_container_for_expr $tmpsymbol]    
+        append buffer \
+            $tmpbuffer \
+            [emitter_container_for_expr $tmpsymbol]
     }
 
     # body block
@@ -4604,8 +4574,9 @@ proc compileproc_emit_container_for { key } {
         }
 
         # Setup try/catch for break and continue exceptions
-        append buffer [emitter_container_for_try_start]
-        append buffer [emitter_container_fake_tclexception]
+        append buffer \
+            [emitter_container_for_try_start] \
+            [emitter_container_fake_tclexception]
 
         # Push loop break/continue/return context
         if {$_compileproc(options,inline_controls)} {
@@ -4673,8 +4644,9 @@ proc compileproc_emit_container_catch { key } {
         }
     } else {
         set tmpsymbol [compileproc_tmpvar_next code]
-        append buffer [emitter_container_catch_try_start $tmpsymbol]
-        append buffer [emitter_container_fake_tclexception]
+        append buffer \
+            [emitter_container_catch_try_start $tmpsymbol] \
+            [emitter_container_fake_tclexception]
 
         # Push loop break/continue context
         if {$_compileproc(options,inline_controls)} {
@@ -4819,8 +4791,7 @@ proc compileproc_emit_container_foreach { key } {
     set num_locals [llength $valuelist_indexes]
     for {set i 0} {$i < $num_locals} {incr i} {
         set tmpsymbol [compileproc_tmpvar_next]
-        append buffer [emitter_indent] \
-            "TclObject $tmpsymbol = null\;\n"
+        append buffer [emitter_statement "TclObject $tmpsymbol = null"]
         lappend list_symbols $tmpsymbol
     }
 
@@ -4858,8 +4829,9 @@ proc compileproc_emit_container_foreach { key } {
         append buffer "\n"
 
         # Setup try/catch for break/continue/return
-        append buffer [emitter_container_for_try_start]
-        append buffer [emitter_container_fake_tclexception]
+        append buffer \
+            [emitter_container_for_try_start] \
+            [emitter_container_fake_tclexception]
 
         # Push loop break/continue context
         if {$_compileproc(options,inline_controls)} {
@@ -5048,9 +5020,9 @@ proc compileproc_container_foreach_loop_start { varlists list_symbols } {
             append buffer [emitter_indent] \
                 "TclObject $tmpsymbol = TclList.index(interp, $list_symbol, $index)\;\n"
         } elseif {$multilists || $multivars} {
-            append buffer [emitter_indent] \
-                "TclObject $tmpsymbol = null;\n"
-            append buffer [emitter_indent] \
+            append buffer \
+                [emitter_statement "TclObject $tmpsymbol = null"] \
+                [emitter_indent] \
                 "if ( $index < $list_symbol_length ) \{\n"
             emitter_indent_level +1
             append buffer [emitter_indent] \
@@ -5201,7 +5173,8 @@ proc compileproc_emit_container_switch { key } {
     }
 
     if {$inline_constant_strings} {
-        append buffer [compileproc_emit_container_switch_constant $key $string_tmpsymbol]
+        append buffer \
+            [compileproc_emit_container_switch_constant $key $string_tmpsymbol]
         return $buffer
     }
 
@@ -5239,8 +5212,9 @@ proc compileproc_emit_container_switch { key } {
         set pat_type [lindex $tuple 0]
         set pat_symbol [lindex $tuple 1]
         set pat_buffer [lindex $tuple 2]
-        append buffer $pat_buffer
-        append buffer [emitter_container_switch_assign $array_tmpsymbol $i \
+        append buffer \
+            $pat_buffer \
+            [emitter_container_switch_assign $array_tmpsymbol $i \
             $tmpsymbol $pat_symbol]
         incr i 1
 
@@ -5259,9 +5233,10 @@ proc compileproc_emit_container_switch { key } {
             }
             set body_symbol [lindex $tuple 1]
             set body_buffer [lindex $tuple 2]
-            append buffer $body_buffer
-            append buffer [emitter_container_switch_assign $array_tmpsymbol $i \
-                $tmpsymbol $body_symbol]
+            append buffer \
+                $body_buffer \
+                [emitter_container_switch_assign $array_tmpsymbol $i \
+                    $tmpsymbol $body_symbol]
         }
         incr i 1
     }
@@ -5286,9 +5261,10 @@ proc compileproc_emit_container_switch { key } {
         }
     }
     if {[llength $offsets] == 0} {error "empty offsets list"}
-    append buffer [emitter_reset_result]
-    append buffer [emitter_container_if_start "$offset_tmpsymbol == -1"]
-    append buffer [emitter_indent] \
+    append buffer \
+        [emitter_reset_result] \
+        [emitter_container_if_start "$offset_tmpsymbol == -1"] \
+        [emitter_indent] \
         "// No match\n"
     for {set i 0} {$i < [llength $offsets]} {incr i} {
         set offset [lindex $offsets $i]
@@ -5307,12 +5283,12 @@ proc compileproc_emit_container_switch { key } {
             append buffer [compileproc_emit_invoke $body_key]
         }
     }
-    append buffer [emitter_container_if_else]
-    append buffer [emitter_indent] \
+    append buffer \
+        [emitter_container_if_else] \
+        [emitter_indent] \
         "throw new TclRuntimeError(\"bad switch body offset \" +\n"
     emitter_indent_level +1
-    append buffer [emitter_indent] \
-        "String.valueOf($offset_tmpsymbol))\;\n"
+    append buffer [emitter_statement "String.valueOf($offset_tmpsymbol))"]
     emitter_indent_level -1
     append buffer [emitter_container_if_end]
 
@@ -5340,14 +5316,14 @@ proc compileproc_emit_container_switch_constant { key string_tmpsymbol } {
     set first "${string_tmpsymbol}_first"
 
     append buffer [emitter_indent] \
-        "int $length = ${string_tmpsymbol}.length()\;\n"
-    append buffer [emitter_indent] \
-        "char $first = '\\n'\;\n"
-    append buffer [emitter_container_if_start "$length > 0"]
-    append buffer [emitter_indent] \
-        "$first = ${string_tmpsymbol}.charAt(0)\;\n"
-    append buffer [emitter_container_if_end]
-    append buffer [emitter_reset_result]
+        "int $length = ${string_tmpsymbol}.length()\;\n" \
+        [emitter_indent] \
+        "char $first = '\\n'\;\n" \
+        [emitter_container_if_start "$length > 0"] \
+        [emitter_indent] \
+        "$first = ${string_tmpsymbol}.charAt(0)\;\n" \
+        [emitter_container_if_end] \
+        [emitter_reset_result]
 
     emitter_indent_level +2
     set spacer2 [emitter_indent]
@@ -5428,8 +5404,9 @@ proc compileproc_emit_container_switch_constant { key string_tmpsymbol } {
             continue
         }
         if {$fallthrough_expression != ""} {
-            append fallthrough_expression $spacer1
-            append fallthrough_expression "( $expression )"
+            append fallthrough_expression \
+                $spacer1 \
+                "( $expression )"
             set expression $fallthrough_expression
             set fallthrough_expression ""
         }
@@ -5671,8 +5648,9 @@ proc compileproc_emit_control_return { key } {
     set buffer ""
 
     if {$num_args == 1} {
-        append buffer [emitter_reset_result]
-        append buffer [emitter_control_return]
+        append buffer \
+            [emitter_reset_result] \
+            [emitter_control_return]
         return $buffer
     } elseif {$num_args == 2} {
         # No-op
@@ -5700,8 +5678,9 @@ proc compileproc_emit_control_return { key } {
         set obj_type [lindex $tuple 0]
         set obj_symbol [lindex $tuple 1]
         set obj_buffer [lindex $tuple 2]
-        append buffer $obj_buffer
-        append buffer [emitter_control_return_argument $obj_symbol]
+        append buffer \
+            $obj_buffer \
+            [emitter_control_return_argument $obj_symbol]
     }
 
     # FIXME: It is not really clear that a resetResult() invocation
@@ -6139,19 +6118,22 @@ proc compileproc_expr_evaluate_emit_binary_operator { op_tuple } {
             error "unmatched logic_op \"$op\""
         }
 
-        append buffer [emitter_indent] \
-            "if ($not$ev1.getBooleanValue(interp)) \{\n"
-        append buffer [lindex $right_eval_tuple 2]
-        append buffer [emitter_indent] \
-            "$ev1.setIntValue($ev2.getBooleanValue(interp))\;\n"
-        append buffer [emitter_indent] \
-            "TJC.exprReleaseValue(interp, $ev2)\;\n"
-        append buffer [emitter_indent] \
+        append buffer \
+            [emitter_indent] \
+            "if ($not$ev1.getBooleanValue(interp)) \{\n" \
+            [lindex $right_eval_tuple 2] \
+            [emitter_indent] \
+            "$ev1.setIntValue($ev2.getBooleanValue(interp))\;\n" \
+            [emitter_indent] \
+            "TJC.exprReleaseValue(interp, $ev2)\;\n" \
+            [emitter_indent] \
             "\} else \{\n"
+
         set else_value [expr {($not == "") ? 0 : 1}]
-        append buffer [emitter_indent] \
-            "$ev1.setIntValue($else_value)\;\n"
-        append buffer [emitter_indent] \
+        append buffer \
+            [emitter_indent] \
+            "$ev1.setIntValue($else_value)\;\n" \
+            [emitter_indent] \
             "\} // End if: $not$left_infostr\n"
     } elseif {$opt_tclobject_empty_string_compare} {
         # Special case for: expr {$obj == ""}. Note that
@@ -6215,8 +6197,9 @@ proc compileproc_expr_evaluate_emit_binary_operator { op_tuple } {
         set ev1 $tmpsymbol
     } else {
         # Append code to evaluate left and right values
-        append buffer [lindex $left_eval_tuple 2]
-        append buffer [lindex $right_eval_tuple 2]
+        append buffer \
+            [lindex $left_eval_tuple 2] \
+            [lindex $right_eval_tuple 2]
 
         # Emit TJC binary operator invocation
         append buffer [emitter_indent] \
@@ -6235,12 +6218,7 @@ proc compileproc_expr_evaluate_emit_binary_operator { op_tuple } {
 # evaluate the expr value.
 
 proc compileproc_expr_evaluate_emit_ternary_operator { op_tuple } {
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
-
-    if {$debug} {
-        puts "compileproc_expr_evaluate_emit_ternary_operator \{$op_tuple\}"
-    }
+    #puts "compileproc_expr_evaluate_emit_ternary_operator \{$op_tuple\}"
 
     set vtuple [lindex $op_tuple 1]
     set op [lindex $vtuple 0]
@@ -6269,27 +6247,27 @@ proc compileproc_expr_evaluate_emit_ternary_operator { op_tuple } {
     set ev2 [lindex $true_eval_tuple 1]
     set ev3 [lindex $false_eval_tuple 1]
 
-    append buffer [emitter_indent] \
-        "// Ternary operator: $cond_infostr ? $true_infostr : $false_infostr\n"
-    append buffer [lindex $cond_eval_tuple 2]
-
-    append buffer [emitter_indent] \
-        "if ($ev1.getBooleanValue(interp)) \{\n"
-    append buffer [lindex $true_eval_tuple 2]
-    append buffer [emitter_indent] \
-        "TJC.exprReleaseValue(interp, $ev1)\;\n"
-    append buffer [emitter_indent] \
-        "$ev1 = $ev2\;\n"
-    append buffer [emitter_indent] \
-        "\} else \{\n"
-    append buffer [lindex $false_eval_tuple 2]
-    append buffer [emitter_indent] \
-        "TJC.exprReleaseValue(interp, $ev1)\;\n"
-    append buffer [emitter_indent] \
-        "$ev1 = $ev3\;\n"
-    append buffer [emitter_indent] \
-        "\}\n"
-    append buffer [emitter_indent] \
+    append buffer \
+        [emitter_indent] \
+        "// Ternary operator: $cond_infostr ? $true_infostr : $false_infostr\n" \
+        [lindex $cond_eval_tuple 2] \
+        [emitter_indent] \
+        "if ($ev1.getBooleanValue(interp)) \{\n" \
+        [lindex $true_eval_tuple 2] \
+        [emitter_indent] \
+        "TJC.exprReleaseValue(interp, $ev1)\;\n" \
+        [emitter_indent] \
+        "$ev1 = $ev2\;\n" \
+        [emitter_indent] \
+        "\} else \{\n" \
+        [lindex $false_eval_tuple 2] \
+        [emitter_indent] \
+        "TJC.exprReleaseValue(interp, $ev1)\;\n" \
+        [emitter_indent] \
+        "$ev1 = $ev3\;\n" \
+        [emitter_indent] \
+        "\}\n" \
+        [emitter_indent] \
         "// End Ternary operator: ?\n"
 
     return [list $ev1 $buffer]
@@ -7484,12 +7462,15 @@ proc compileproc_emit_inline_command_lindex { key } {
             append buffer [emitter_indent] \
                 "$result_symbol = "
         }
-        append buffer "TclList.index(interp, $value_symbol, $index_symbol)\;\n"
-        append buffer [emitter_container_if_start "$result_symbol == null"]
-        append buffer [emitter_reset_result]
-        append buffer [emitter_container_if_else]
-        append buffer [emitter_set_result $result_symbol false]
-        append buffer [emitter_container_if_end]
+
+        append buffer \
+            "TclList.index(interp, $value_symbol, $index_symbol)\;\n" \
+            [emitter_container_if_start "$result_symbol == null"] \
+            [emitter_reset_result] \
+            [emitter_container_if_else] \
+            [emitter_set_result $result_symbol false] \
+            [emitter_container_if_end]
+
         return $buffer
     }
 
@@ -7500,8 +7481,9 @@ proc compileproc_emit_inline_command_lindex { key } {
     set list_tmpsymbol [compileproc_tmpvar_next]
     set index_tmpsymbol [compileproc_tmpvar_next]
 
-    append buffer [emitter_statement "TclObject $list_tmpsymbol = null"]
-    append buffer [emitter_statement "TclObject $index_tmpsymbol"]
+    append buffer \
+        [emitter_statement "TclObject $list_tmpsymbol = null"] \
+        [emitter_statement "TclObject $index_tmpsymbol"]
 
     # open try block
 
@@ -7540,13 +7522,12 @@ proc compileproc_emit_inline_command_lindex { key } {
 
     # finally block
 
-    append buffer [emitter_container_try_finally]
-
-    append buffer [emitter_container_if_start "$list_tmpsymbol != null"]
-    append buffer [emitter_tclobject_release $list_tmpsymbol]
-    append buffer [emitter_container_if_end]
-
-    append buffer [emitter_container_try_end]
+    append buffer \
+        [emitter_container_try_finally] \
+        [emitter_container_if_start "$list_tmpsymbol != null"] \
+        [emitter_tclobject_release $list_tmpsymbol] \
+        [emitter_container_if_end] \
+        [emitter_container_try_end]
 
     return $buffer
 }
@@ -7627,8 +7608,9 @@ proc compileproc_emit_inline_command_list { key } {
         emitter_indent_level -1
         append buffer [emitter_indent] "\} catch (TclException ex) \{\n"
         emitter_indent_level +1
-        append buffer [emitter_tclobject_release $tmpsymbol]
-        append buffer [emitter_statement "throw ex"]
+        append buffer \
+            [emitter_tclobject_release $tmpsymbol] \
+            [emitter_statement "throw ex"]
         emitter_indent_level -1
         append buffer [emitter_indent] "\}\n"
     }
@@ -7730,10 +7712,10 @@ proc compileproc_emit_inline_command_llength { key } {
 
     set tmpsymbol [compileproc_tmpvar_next]
 
-    append buffer [emitter_statement \
-        "int $tmpsymbol = TclList.getLength(interp, $value_symbol)"]
-
-    append buffer [emitter_set_result $tmpsymbol false]
+    append buffer \
+        [emitter_statement \
+            "int $tmpsymbol = TclList.getLength(interp, $value_symbol)"] \
+        [emitter_set_result $tmpsymbol false]
 
     return $buffer
 }

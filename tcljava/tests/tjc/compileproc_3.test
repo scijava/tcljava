@@ -1933,7 +1933,7 @@ public class Test1 extends TJC.CompiledCommand {
                 if ( false ) { throw (TclException) null; }
                 { // Invoke: return 1
                     interp.resetResult();
-                    interp.setResult( const0 );
+                    interp.setResult(const0);
                     if ( true ) { return; }
                 } // End Invoke: return
                 } catch (TclException ex) {
@@ -2041,7 +2041,7 @@ public class Test1 extends TJC.CompiledCommand {
                     { // Invoke: return $str
                         TclObject tmp5 = interp.getVar("str", null, 0);
                         interp.resetResult();
-                        interp.setResult( tmp5 );
+                        interp.setResult(tmp5);
                         if ( true ) { return; }
                     } // End Invoke: return
                     } catch (TclException ex) {
@@ -2203,7 +2203,7 @@ public class Test1 extends TJC.CompiledCommand {
         }
         { // Invoke: return []
             interp.resetResult();
-            interp.setResult( const0 );
+            interp.setResult(const0);
             if ( true ) { return; }
         } // End Invoke: return
         } catch (TclException te) {

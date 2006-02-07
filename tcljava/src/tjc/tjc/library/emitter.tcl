@@ -5,14 +5,13 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: emitter.tcl,v 1.6 2006/01/24 03:48:22 mdejong Exp $
+#  RCS: @(#) $Id: emitter.tcl,v 1.7 2006/02/07 09:41:01 mdejong Exp $
 #
 #
 
 # This module will write Java source code given
 # parse info from Tcl source.
 
-set _emitter(indent) "    "
 set _emitter(indent_level) 0
 
 
@@ -22,17 +21,18 @@ set _emitter(indent_level) 0
 proc emitter_empty_args {} {
     global _emitter
     set buffer ""
-    append buffer [emitter_indent]
     append buffer \
-    "if (objv.length != 1) \{\n"
+        [emitter_indent] \
+        "if (objv.length != 1) \{\n"
+
     emitter_indent_level +1
-    append buffer [emitter_indent]
     append buffer \
-    "throw new TclNumArgsException(interp, 1, objv, \"\")\;\n"
+        [emitter_indent] \
+        "throw new TclNumArgsException(interp, 1, objv, \"\")\;\n"
     emitter_indent_level -1
-    append buffer [emitter_indent]
     append buffer \
-    "\}\n"
+        [emitter_indent] \
+        "\}\n"
     return $buffer
 }
 
@@ -46,23 +46,20 @@ proc emitter_num_args { num arg_str } {
     if {$num == 0} {
         error "should use emitter_empty_args for zero args"
     }
-    set bs_arg_str [emitter_backslash_tcl_string $arg_str]
-    if {![string equal $bs_arg_str $arg_str]} {
-        error "arg_str \"$arg_str\" contains backslash subst chars"
-    }
+    set arg_str_symbol [emitter_double_quote_tcl_string $arg_str]
 
     set buffer ""
-    append buffer [emitter_indent]
     append buffer \
-    "if (objv.length != [expr {$num + 1}]) \{\n"
+        [emitter_indent] \
+        "if (objv.length != [expr {$num + 1}]) \{\n"
     emitter_indent_level +1
-    append buffer [emitter_indent]
     append buffer \
-    "throw new TclNumArgsException(interp, 1, objv, \"$arg_str\")\;\n"
+        [emitter_indent] \
+        "throw new TclNumArgsException(interp, 1, objv, $arg_str_symbol)\;\n"
     emitter_indent_level -1
-    append buffer [emitter_indent]
     append buffer \
-    "\}\n"
+        [emitter_indent] \
+        "\}\n"
     return $buffer
 }
 
@@ -78,23 +75,20 @@ proc emitter_num_default_args { num arg_str } {
     if {$num == 0} {
         error "should use emitter_empty_args for zero args"
     }
-    set bs_arg_str [emitter_backslash_tcl_string $arg_str]
-    if {![string equal $bs_arg_str $arg_str]} {
-        error "arg_str \"$arg_str\" contains backslash subst chars"
-    }
+    set arg_str_symbol [emitter_double_quote_tcl_string $arg_str]
 
     set buffer ""
-    append buffer [emitter_indent]
     append buffer \
-    "if (objv.length > [expr {$num + 1}]) \{\n"
+        [emitter_indent] \
+        "if (objv.length > [expr {$num + 1}]) \{\n"
     emitter_indent_level +1
-    append buffer [emitter_indent]
     append buffer \
-    "throw new TclNumArgsException(interp, 1, objv, \"$arg_str\")\;\n"
+        [emitter_indent] \
+        "throw new TclNumArgsException(interp, 1, objv, $arg_str_symbol)\;\n"
     emitter_indent_level -1
-    append buffer [emitter_indent]
     append buffer \
-    "\}\n"
+        [emitter_indent] \
+        "\}\n"
     return $buffer
 }
 
@@ -112,23 +106,20 @@ proc emitter_num_min_args { num arg_str } {
     if {$num == 0} {
         error "should use emitter_empty_args for zero args"
     }
-    set bs_arg_str [emitter_backslash_tcl_string $arg_str]
-    if {![string equal $bs_arg_str $arg_str]} {
-        error "arg_str \"$arg_str\" contains backslash subst chars"
-    }
+    set arg_str_symbol [emitter_double_quote_tcl_string $arg_str]
 
     set buffer ""
-    append buffer [emitter_indent]
     append buffer \
-    "if (objv.length < [expr {$num + 1}]) \{\n"
+        [emitter_indent] \
+        "if (objv.length < [expr {$num + 1}]) \{\n"
     emitter_indent_level +1
-    append buffer [emitter_indent]
     append buffer \
-    "throw new TclNumArgsException(interp, 1, objv, \"$arg_str\")\;\n"
+        [emitter_indent] \
+        "throw new TclNumArgsException(interp, 1, objv, $arg_str_symbol)\;\n"
     emitter_indent_level -1
-    append buffer [emitter_indent]
     append buffer \
-    "\}\n"
+        [emitter_indent] \
+        "\}\n"
     return $buffer
 }
 
@@ -147,23 +138,20 @@ proc emitter_num_range_args { min max arg_str } {
     if {![string is integer $max]} {
         error "expected integer but got \"$max\""
     }
-    set bs_arg_str [emitter_backslash_tcl_string $arg_str]
-    if {![string equal $bs_arg_str $arg_str]} {
-        error "arg_str \"$arg_str\" contains backslash subst chars"
-    }
+    set arg_str_symbol [emitter_double_quote_tcl_string $arg_str]
 
     set buffer ""
-    append buffer [emitter_indent]
     append buffer \
-    "if (objv.length < [expr {$min + 1}] || objv.length > [expr {$max + 1}]) \{\n"
+        [emitter_indent] \
+        "if (objv.length < [expr {$min + 1}] || objv.length > [expr {$max + 1}]) \{\n"
     emitter_indent_level +1
-    append buffer [emitter_indent]
     append buffer \
-    "throw new TclNumArgsException(interp, 1, objv, \"$arg_str\")\;\n"
+        [emitter_indent] \
+        "throw new TclNumArgsException(interp, 1, objv, $arg_str_symbol)\;\n"
     emitter_indent_level -1
-    append buffer [emitter_indent]
     append buffer \
-    "\}\n"
+        [emitter_indent] \
+        "\}\n"
     return $buffer
 }
 
@@ -179,21 +167,61 @@ proc emitter_indent_level { {change current} } {
     } elseif {$change == "zero"} {
         set _emitter(indent_level) 0
     } else {
-        set newlevel [expr {$_emitter(indent_level) + $change}]
-        if {$newlevel < 0} {
-            error "error new indent level ($newlevel) would be negative"
+        set level $_emitter(indent_level)
+        incr level $change
+        if {$level < 0} {
+            error "error new indent level ($level) would be negative"
         }
-        set _emitter(indent_level) $newlevel
+        set _emitter(indent_level) $level
+        return $level
     }
     return $_emitter(indent_level)
 }
 
 # Return the number of spaces that corresponds to the
-# current indent level.
+# current indent level. This method is invoked
+# frequently so it is optimized.
 
 proc emitter_indent {} {
-    global _emitter
-    return [string repeat $_emitter(indent) $_emitter(indent_level)]
+    set indent_level $::_emitter(indent_level)
+    switch -exact -- $indent_level {
+        0 {
+            return ""
+        }
+        1 {
+            return "    "
+        }
+        2 {
+            return "        "
+        }
+        3 {
+            return "            "
+        }
+        4 {
+            return "                "
+        }
+        5 {
+            return "                    "
+        }
+        6 {
+            return "                        "
+        }
+        7 {
+            return "                            "
+        }
+        8 {
+            return "                                "
+        }
+        9 {
+            return "                                    "
+        }
+        10 {
+            return "                                        "
+        }
+        default {
+            return [string repeat "    " $indent_level]
+        }
+    }
 }
 
 # Comment at start of Java file
@@ -245,24 +273,15 @@ proc emitter_statement { code } {
 # at the current indent level.
 
 proc emitter_comment { text } {
-    set buffer ""
-    append buffer [emitter_indent] \
-        "// $text\n"
-    return $buffer
+    return "[emitter_indent]// $text\n"
 }
 
 proc emitter_tclobject_preserve { tobj } {
-    set buffer ""
-    append buffer [emitter_indent] \
-        "$tobj.preserve()\;\n"
-    return $buffer
+    return [emitter_statement "$tobj.preserve()"]
 }
 
 proc emitter_tclobject_release { tobj } {
-    set buffer ""
-    append buffer [emitter_indent] \
-        "$tobj.release()\;\n"
-    return $buffer
+    return [emitter_statement "$tobj.release()"]
 }
 
 # Assign value in valsym to the given index in arraysym
@@ -277,10 +296,7 @@ proc emitter_class_start { class_name } {
     if {[emitter_indent_level] != 0} {
         error "expected indent level of zero, got [emitter_indent_level]"
     }
-    set buffer ""
-    append buffer \
-    "public class $class_name extends TJC.CompiledCommand \{\n"
-    return $buffer
+    return "public class $class_name extends TJC.CompiledCommand \{\n"
 }
 
 # End a class declaration
@@ -289,10 +305,7 @@ proc emitter_class_end { class_name } {
     if {[emitter_indent_level] != 0} {
         error "expected indent level of zero, got [emitter_indent_level]"
     }
-    set buffer ""
-    append buffer \
-    "\} // end class $class_name\n"
-    return $buffer
+    return "\} // end class $class_name\n"
 }
 
 # Start a cmdProc method declaration.
@@ -303,25 +316,23 @@ proc emitter_cmd_proc_start {} {
     }
     emitter_indent_level +1
     set buffer ""
-    append buffer [emitter_indent]
     append buffer \
-    "public void cmdProc(\n"
+        [emitter_indent] \
+        "public void cmdProc(\n"
     emitter_indent_level +1
-    append buffer [emitter_indent]
     append buffer \
-    "Interp interp,\n"
-    append buffer [emitter_indent]
-    append buffer \
-    "TclObject\[\] objv)\n"
+        [emitter_indent] \
+        "Interp interp,\n" \
+        [emitter_indent] \
+        "TclObject\[\] objv)\n"
     emitter_indent_level +1
-    append buffer [emitter_indent]
     append buffer \
-    "throws TclException\n"
-    emitter_indent_level -1
-    emitter_indent_level -1
-    append buffer [emitter_indent]
+        [emitter_indent] \
+        "throws TclException\n"
+    emitter_indent_level -2
     append buffer \
-    "\{\n"
+        [emitter_indent] \
+        "\{\n"
     emitter_indent_level +1
     # Indent level left at 2 at start of method
     if {[emitter_indent_level] != 2} {
@@ -338,9 +349,9 @@ proc emitter_cmd_proc_end {} {
     }
     emitter_indent_level -1
     set buffer ""
-    append buffer [emitter_indent]
     append buffer \
-    "\}\n"
+        [emitter_indent] \
+        "\}\n"
     emitter_indent_level -1
     return $buffer
 }
@@ -348,18 +359,13 @@ proc emitter_cmd_proc_end {} {
 proc emitter_eval_proc_body { body } {
     # Double up any escapes in the body
     regsub -all {\\} $body {\\\\} body
-    set bsbody [emitter_backslash_tcl_string $body]
+    set body_symbol [emitter_double_quote_tcl_string $body]
 
     set buffer ""
-    append buffer [emitter_indent]
-    append buffer "String body = \"$bsbody\"\;"
-    append buffer "\n"
-    append buffer [emitter_indent]
-    append buffer {TJC.evalProcBody(interp, body);}
-    append buffer "\n"
-    append buffer [emitter_indent]
-    append buffer {return;}
-    append buffer "\n"
+    append buffer \
+        [emitter_statement "String body = $body_symbol"] \
+        [emitter_statement "TJC.evalProcBody(interp, body)"] \
+        [emitter_statement "return"]
 
     return $buffer
 }
@@ -382,18 +388,18 @@ proc emitter_eval_proc_body { body } {
 # Both \n ( \u000a ) and \r ( \u000d ) are invalid in a string.
 
 proc emitter_backslash_tcl_string { tstr } {
-    set debug 0
-    if {$debug} {
-        puts "emitter_backslash_tcl_string \"$tstr\""
-    }
+#    set debug 0
+#    if {$debug} {
+#        puts "emitter_backslash_tcl_string \"$tstr\""
+#    }
 
     set buffer ""
     set tlen [string length $tstr]
     for {set i 0} {$i < $tlen} {incr i} {
         set c [string index $tstr $i]
-        if {$debug} {
-            puts "index $i : char is \'$c\'"
-        }
+#        if {$debug} {
+#            puts "index $i : char is \'$c\'"
+#        }
         switch -exact -- $c {
             "\a" {
                 append buffer "\\u0007"
@@ -430,9 +436,9 @@ proc emitter_backslash_tcl_string { tstr } {
                 # have been double backslashed so that they
                 # would not be considered here.
 
-                if {$debug} {
-                    puts "backslash element at index $i"
-                }
+#                if {$debug} {
+#                    puts "backslash element at index $i"
+#                }
 
                 if {[string index $tstr [expr {$i + 1}]] == "\\"} {
                     # Double backslash, ignore this escape sequence
@@ -443,9 +449,9 @@ proc emitter_backslash_tcl_string { tstr } {
 
                 set rest [string range $tstr $i end]
 
-                if {$debug} {
-                    puts "backslash element rest is \"$rest\""
-                }
+#                if {$debug} {
+#                    puts "backslash element rest is \"$rest\""
+#                }
 
                 switch -regexp -- $rest {
                     {^\\a} {
@@ -477,17 +483,17 @@ proc emitter_backslash_tcl_string { tstr } {
                         set supported 0
                         set len 4
                         set esc [string range $rest 0 3]
-                        if {$debug} {
-                            puts "scanning octal escape sequence \"$esc\""
-                        }
+#                        if {$debug} {
+#                            puts "scanning octal escape sequence \"$esc\""
+#                        }
                         # Convert octal escape to string of length 1
                         set esc [subst -nocommands -novariables $esc]
                         if {[scan $esc %c decimal] == 0} {
                             error "scan for escape character failed, esc was \"$esc\""
                         }
-                        if {$debug} {
-                            puts "scanned octal escape sequence \"$esc\", got integer $decimal"
-                        }
+#                        if {$debug} {
+#                            puts "scanned octal escape sequence \"$esc\", got integer $decimal"
+#                        }
                         set subst [format "\\u%04X" $decimal]
                     }
                     {^\\u[0-9|A-F][0-9|A-F][0-9|A-F][0-9|A-F]} {
@@ -503,15 +509,15 @@ proc emitter_backslash_tcl_string { tstr } {
                 }
                 if {$supported} {
                     set bs [string range $tstr $i [expr {$i + $len - 1}]]
-                    if {$debug} {
-                        puts "appending supported backslash sequance \"$bs\""
-                    }
+#                    if {$debug} {
+#                        puts "appending supported backslash sequance \"$bs\""
+#                    }
                     append buffer $bs
                     incr i [expr {[string length $bs] - 1}]
                 } else {
-                    if {$debug} {
-                        puts "appending subst sequance \"$subst\""
-                    }
+#                    if {$debug} {
+#                        puts "appending subst sequance \"$subst\""
+#                    }
                     append buffer $subst
                     incr i [expr {$len - 1}]
                 }
@@ -519,10 +525,6 @@ proc emitter_backslash_tcl_string { tstr } {
             default {
                 append buffer $c
             }
-        }
-
-        if {$debug} {
-            puts "for loop end: i is $i : tlen is $tlen"
         }
     }
     return $buffer
@@ -539,7 +541,10 @@ proc emitter_backslash_tcl_string { tstr } {
 # so it appears in this module.
 
 proc emitter_backslash_tcl_elem { elem } {
-    set debug 0
+#    set debug 0
+#    if {$debug} {
+#        puts "emitter_backslash_tcl_elem"
+#    }
 
     set elen [string length $elem]
     if {$elen == 0 || $elen == 1} {
@@ -549,9 +554,9 @@ proc emitter_backslash_tcl_elem { elem } {
         error "elem \"$elem\" is invalid"
     }
     incr elen -1
-    if {$debug} {
-        puts "elem ->$elem<- has $elen chars after the backslash"
-    }
+#    if {$debug} {
+#        puts "elem ->$elem<- has $elen chars after the backslash"
+#    }
 
     # Don't process octal escape as one character escape
     if {$elen == 1 && [regexp {^\\[0-7]$} $elem]} {
@@ -584,10 +589,10 @@ proc emitter_backslash_tcl_elem { elem } {
     } else {
         set first [string index $elem 1]
         set rest [string range $elem 1 end]
-        if {$debug} {
-            puts "first is \'$first\'"
-            puts "rest is \"$rest\""
-        }
+#        if {$debug} {
+#            puts "first is \'$first\'"
+#            puts "rest is \"$rest\""
+#        }
         switch -exact -- $first {
             "u" {
                 # \uXXXX : 1 to 4 hex digits
@@ -657,10 +662,7 @@ proc emitter_callframe_push { ns } {
 # Emit try statement at start of method impl block
 
 proc emitter_callframe_try {} {
-    set buffer ""
-    append buffer [emitter_indent] \
-        "try \{\n"
-    return $buffer
+    return "[emitter_indent]try \{\n"
 }
 
 # Close the command implementation, check for TclExceptions
@@ -672,18 +674,18 @@ proc emitter_callframe_try {} {
 proc emitter_callframe_pop { proc_name {clear_varcache 0} } {
     set buffer ""
 
-    append buffer [emitter_indent]
-    append buffer "\} catch (TclException te) \{"
-    append buffer "\n"
+    append buffer \
+        [emitter_indent] \
+        "\} catch (TclException te) \{\n"
+
     emitter_indent_level +1
-    append buffer [emitter_indent]
-    set jstr [emitter_backslash_tcl_string $proc_name]
-    append buffer "TJC.checkTclException(interp, te, \"$jstr\")\;"
-    append buffer "\n"
+    set proc_name_symbol [emitter_double_quote_tcl_string $proc_name]
+    append buffer \
+        [emitter_statement "TJC.checkTclException(interp, te, $proc_name_symbol)"]
     emitter_indent_level -1
-    append buffer [emitter_indent]
-    append buffer "\} finally \{"
-    append buffer "\n"
+    append buffer \
+        [emitter_indent] \
+        "\} finally \{\n"
     emitter_indent_level +1
     if {$clear_varcache} {
         append buffer [emitter_statement "updateVarCache(interp, 0)"]
@@ -691,9 +693,9 @@ proc emitter_callframe_pop { proc_name {clear_varcache 0} } {
     append buffer [emitter_statement \
         "TJC.popLocalCallFrame(interp, callFrame)"]
     emitter_indent_level -1
-    append buffer [emitter_indent]
-    append buffer "\}"
-    append buffer "\n"
+    append buffer \
+        [emitter_indent] \
+        "\}\n"
 
     return $buffer    
 }
@@ -729,18 +731,15 @@ proc emitter_init_constants { tlist } {
 
     foreach tuple $tlist {
         set name  [lindex $tuple 0]
-        append buffer [emitter_indent]
         # Note: constants can't be made "final" since they are
         # note assigned until cmdProc is first invoked.
-        append buffer "TclObject $name\;"
-        append buffer "\n"
+        append buffer [emitter_statement "TclObject $name"]
     }
 
-    append buffer "\n"
-
-    append buffer [emitter_indent]
-    append buffer "protected void initConstants(Interp interp) throws TclException \{"
-    append buffer "\n"
+    append buffer \
+        "\n" \
+        [emitter_indent] \
+        "protected void initConstants(Interp interp) throws TclException \{\n"
     emitter_indent_level +1
 
     foreach tuple $tlist {
@@ -748,8 +747,9 @@ proc emitter_init_constants { tlist } {
         set type  [lindex $tuple 1]
         set value [lindex $tuple 2]
 
-        append buffer [emitter_indent]
-        append buffer "$name = "
+        append buffer \
+            [emitter_indent] \
+            "$name = "
 
         switch -exact -- $type {
             "BOOLEAN" {
@@ -761,12 +761,14 @@ proc emitter_init_constants { tlist } {
                 # Create a TclString instance then convert the
                 # internal rep to a boolean type so that original
                 # string representation is retained.
-                append buffer "TclString.newInstance(\"$jval\")\;"
-                append buffer "\n"
-                append buffer [emitter_indent]
+                append buffer \
+                    "TclString.newInstance(\"$jval\")\;\n"
+
                 # Convert the internal rep of the constant
                 # to a boolean type.
-                append buffer "TclBoolean.get(interp, $name)\;"
+                append buffer \
+                    [emitter_indent] \
+                    "TclBoolean.get(interp, $name)\;"
             }
             "DOUBLE" {
                 # Double values like "1.0" can be created with
@@ -780,10 +782,10 @@ proc emitter_init_constants { tlist } {
                     append buffer "TclDouble.newInstance($value)\;"
                 } else {
                     set jstr [emitter_backslash_tcl_string $value]
-                    append buffer "TclString.newInstance(\"$jstr\")\;"
-                    append buffer "\n"
-                    append buffer [emitter_indent]
-                    append buffer "TclDouble.get(interp, $name)\;"
+                    append buffer \
+                        "TclString.newInstance(\"$jstr\")\;\n" \
+                        [emitter_indent] \
+                        "TclDouble.get(interp, $name)\;"
                 }
             }
             "INTEGER" {
@@ -798,10 +800,10 @@ proc emitter_init_constants { tlist } {
                     append buffer "TclInteger.newInstance($value)\;"
                 } else {
                     set jstr [emitter_backslash_tcl_string $value]
-                    append buffer "TclString.newInstance(\"$jstr\")\;"
-                    append buffer "\n"
-                    append buffer [emitter_indent]
-                    append buffer "TclInteger.get(interp, $name)\;"
+                    append buffer \
+                        "TclString.newInstance(\"$jstr\")\;\n" \
+                        [emitter_indent] \
+                        "TclInteger.get(interp, $name)\;"
                 }
             }
             "STRING" {
@@ -812,22 +814,23 @@ proc emitter_init_constants { tlist } {
                 error "unmatched type \"$type\""
             }
         }
-        append buffer "\n"
-        append buffer [emitter_indent]
+        append buffer \
+            "\n" \
+            [emitter_indent]
         # We used to call toString() here since it would generate
         # a string rep and that worked around a bug in the code
         # for converting a boolean to an integer internal rep.
         # This is no longer needed and should not be done since
         # we want boolean, integer, and double constant to be
         # "pure" numbers for use with expr.
-        append buffer "$name.preserve()\; $name.preserve()\;"
-        append buffer "\n"
+        append buffer \
+            "$name.preserve()\; $name.preserve()\;\n"
     }
 
     emitter_indent_level -1
-    append buffer [emitter_indent]
-    append buffer "\}"
-    append buffer "\n"
+    append buffer \
+        [emitter_indent] \
+        "\}\n"
     emitter_indent_level -1
 
     if {[emitter_indent_level] != 0} {
@@ -875,11 +878,8 @@ proc emitter_invoke_start { start_cmd_str } {
 }
 
 proc emitter_invoke_end { end_cmd_str } {
-    set buffer ""
     emitter_indent_level -1
-    append buffer [emitter_indent] \
-        "\} // End Invoke: ${end_cmd_str}\n"
-    return $buffer
+    return "[emitter_indent]\} // End Invoke: ${end_cmd_str}\n"
 }
 
 # Setup a TclObject[] array and invoke a Tcl command
@@ -890,9 +890,10 @@ proc emitter_invoke_command_start { arraysym size } {
         error "size \"$size\" must be a positive integer"
     }
     set buffer ""
-    append buffer [emitter_indent] \
-        "TclObject\[\] $arraysym = TJC.grabObjv(interp, $size)\;\n"
-    append buffer [emitter_container_try_start]
+    append buffer \
+        [emitter_statement \
+            "TclObject\[\] $arraysym = TJC.grabObjv(interp, $size)"] \
+        [emitter_container_try_start]
     return $buffer
 }
 
@@ -906,8 +907,9 @@ proc emitter_invoke_command_assign { arraysym index tmpsym valsym } {
         append buffer [emitter_indent] \
             "$tmpsym = $valsym\;\n"
     }
-    append buffer [emitter_tclobject_preserve $tmpsym]
-    append buffer [emitter_array_assign $arraysym $index $tmpsym]
+    append buffer \
+        [emitter_tclobject_preserve $tmpsym] \
+        [emitter_array_assign $arraysym $index $tmpsym]
     return $buffer
 }
 
@@ -919,7 +921,6 @@ proc emitter_invoke_command_assign { arraysym index tmpsym valsym } {
 # command will be resolved only at the global scope.
 
 proc emitter_invoke_command_call { arraysym cmdref isglobal } {
-    set buffer ""
     if {$cmdref == {}} {
         set cmdref null
     }
@@ -928,9 +929,8 @@ proc emitter_invoke_command_call { arraysym cmdref isglobal } {
     } else {
         set gflag 0
     }
-    append buffer [emitter_statement \
+    return [emitter_statement \
         "TJC.invoke(interp, $cmdref, $arraysym, $gflag)"]
-    return $buffer
 }
 
 # Close invoke try block and open finally block
@@ -943,8 +943,9 @@ proc emitter_invoke_command_finally {} {
 
 proc emitter_invoke_command_end { arraysym size } {
     set buffer ""
-    append buffer [emitter_statement "TJC.releaseObjv(interp, $arraysym, $size)"]
-    append buffer [emitter_container_try_end]
+    append buffer \
+        [emitter_statement "TJC.releaseObjv(interp, $arraysym, $size)"] \
+        [emitter_container_try_end]
     return $buffer
 }
 
@@ -982,10 +983,10 @@ proc emitter_container_switch_invoke { tmpsymbol objv pbIndex size stringsymbol 
     append buffer [emitter_indent] \
         "$stringsymbol, $modestr)\;\n"
     emitter_indent_level -1
-    append buffer [emitter_container_try_finally]
-    append buffer [emitter_indent] \
-        "TJC.releaseObjv(interp, $objv, $size)\;\n"
-    append buffer [emitter_container_try_end]
+    append buffer \
+        [emitter_container_try_finally] \
+        [emitter_statement "TJC.releaseObjv(interp, $objv, $size)"] \
+        [emitter_container_try_end]
     return $buffer
 }
 
@@ -1160,40 +1161,37 @@ proc emitter_container_for_start { init_buffer expr_symbol {incr_buffer ""} } {
 proc emitter_container_for_end {} {
     set buffer ""    
     emitter_indent_level -1
-    append buffer [emitter_indent] \
-        "\}\n"
-    append buffer [emitter_reset_result]
+    append buffer \
+        [emitter_indent] \
+        "\}\n" \
+        [emitter_reset_result]
     return $buffer
 }
 
 # Emit expr test at start of for loop.
 
 proc emitter_container_for_expr { tmpsymbol } {
-    set buffer ""
-    append buffer [emitter_indent] \
-        "if ( ! $tmpsymbol ) { break\; }\n"
-    return $buffer
+    return "[emitter_indent]if ( ! $tmpsymbol ) { break\; }\n"
 }
 
 # Emit a try block that appears around the
 # body commands of a loop.
 
 proc emitter_container_for_try_start {} {
-    set buffer ""
-    append buffer [emitter_indent] \
-        "try \{\n"
-    return $buffer
+    return "[emitter_indent]try \{\n"
 }
 
 proc emitter_container_for_try_end { {do_continue 1} } {
     set buffer ""
 
-    append buffer [emitter_indent] \
+    append buffer \
+        [emitter_indent] \
         "\} catch (TclException ex) \{\n"
     emitter_indent_level +1
-    append buffer [emitter_indent] \
-        "int type = ex.getCompletionCode()\;\n"
-    append buffer [emitter_indent] \
+    append buffer \
+        [emitter_indent] \
+        "int type = ex.getCompletionCode()\;\n" \
+        [emitter_indent] \
         "if (type == TCL.BREAK) \{\n"
     emitter_indent_level +1
     append buffer [emitter_indent] \
@@ -1240,22 +1238,18 @@ proc emitter_container_for_skip_start { tmpsymbol } {
 }
 
 proc emitter_container_for_skip_end {} {
-    set buffer ""
-
     emitter_indent_level -1
-    append buffer [emitter_indent] \
-        "\}\n"
-
-    return $buffer
+    return "[emitter_indent]\}\n"
 }
 
 # Emit a catch try block open statement.
 
 proc emitter_container_catch_try_start { tmpsymbol } {
     set buffer ""
-    append buffer [emitter_indent] \
-        "int $tmpsymbol = TCL.OK\;\n"
-    append buffer [emitter_indent] \
+    append buffer \
+        [emitter_indent] \
+        "int $tmpsymbol = TCL.OK\;\n" \
+        [emitter_indent] \
         "try \{\n"
     return $buffer
 }
@@ -1359,21 +1353,16 @@ proc emitter_set_result { value value_is_string } {
         set jstr [emitter_backslash_tcl_string $value]
         set value "\"$jstr\""
     }
-    set buffer ""
-    append buffer [emitter_indent] \
-        "interp.setResult($value)\;\n"
-    return $buffer
+    return [emitter_statement "interp.setResult($value)"]
 }
 
 # Emit code that will declare a variable that contains
 # the length of the list identified by list_symbol.
 
 proc emitter_container_foreach_list_length { list_symbol } {
-    set buffer ""
-    append buffer [emitter_indent] \
+    return [emitter_statement \
         "final int ${list_symbol}_length =\
-            TclList.getLength(interp, $list_symbol)\;\n"
-    return $buffer
+            TclList.getLength(interp, $list_symbol)"]
 }
 
 proc emitter_container_foreach_list_preserve { list_symbol } {
@@ -1383,9 +1372,10 @@ proc emitter_container_foreach_list_preserve { list_symbol } {
 proc emitter_container_foreach_list_release { list_symbol } {
     set buffer ""
 
-    append buffer [emitter_container_if_start "$list_symbol != null"]
-    append buffer [emitter_tclobject_release $list_symbol]
-    append buffer [emitter_container_if_end]
+    append buffer \
+        [emitter_container_if_start "$list_symbol != null"] \
+        [emitter_tclobject_release $list_symbol] \
+        [emitter_container_if_end]
 
     return $buffer
 }
@@ -1446,10 +1436,7 @@ proc emitter_container_foreach_var_try_end { varname } {
 # no actual code in the class file.
 
 proc emitter_container_fake_tclexception {} {
-    set buffer ""
-    append buffer [emitter_indent] \
-        "if ( false ) \{ throw (TclException) null\; \}\n"
-    return $buffer
+    return "[emitter_indent]if ( false ) \{ throw (TclException) null\; \}\n"
 }
 
 # Emit a break or continue statement inside a loop.
@@ -1458,29 +1445,23 @@ proc emitter_container_fake_tclexception {} {
 # appears after a break or continue in a loop.
 
 proc emitter_container_loop_break_continue { statement } {
-    set buffer ""
-    append buffer [emitter_indent] \
-        "if ( true ) \{ $statement\; \}\n"
-    return $buffer
+    return "[emitter_indent]if ( true ) \{ $statement\; \}\n"
 }
 
 # Emit code for a return command with no arguments.
 
 proc emitter_control_return {} {
-    set buffer ""
-    append buffer [emitter_indent] \
-        "if ( true ) \{ return\; \}\n"
-    return $buffer
+    return "[emitter_indent]if ( true ) \{ return\; \}\n"
 }
 
 # Emit code for a return command with a string argument.
 
 proc emitter_control_return_argument { symbol } {
     set buffer ""
-    append buffer [emitter_reset_result]
-    append buffer [emitter_indent] \
-        "interp.setResult( $symbol )\;\n"
-    append buffer [emitter_control_return]
+    append buffer \
+        [emitter_reset_result] \
+        [emitter_set_result $symbol false] \
+        [emitter_control_return]
     return $buffer
 }
 
@@ -1492,8 +1473,8 @@ proc emitter_control_return_argument { symbol } {
 proc emitter_make_global_link_var { varname } {
     set tail [namespace tail $varname]
 
-    set jstr1 "\"[emitter_backslash_tcl_string $varname]\""
-    set jstr2 "\"[emitter_backslash_tcl_string $tail]\""
+    set jstr1 [emitter_double_quote_tcl_string $varname]
+    set jstr2 [emitter_double_quote_tcl_string $tail]
 
     return [emitter_statement \
         "TJC.makeGlobalLinkVar(interp, $jstr1, $jstr2)"]

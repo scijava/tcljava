@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: parse.tcl,v 1.1 2005/12/20 23:00:11 mdejong Exp $
+#  RCS: @(#) $Id: parse.tcl,v 1.2 2006/02/07 09:41:01 mdejong Exp $
 #
 #
 
@@ -13,39 +13,31 @@
 # of a parse result. Most of the time, this will involve
 # decoding a parse subtree to see what it contains.
 
-
 # Return true if the subtree is a simple/text type.
+# This method is called frequently by all the
+# modules, so it is optimized so as to make it
+# execute as quickly as possible.
 
 proc parse_is_simple_text { stree } {
-    set debug 0
-
-    set simple [lindex $stree 0]
-    if {![string equal "simple" $simple]} {
-        if {$debug} {
-            puts "parse_is_simple_text: type was \"$simple\", expected \"simple\""
-        }
+    if {[lindex $stree 0] ne "simple"} {
         return 0
     }
 
-    set simple_range [lindex $stree 1]
+    # save simple range
 
-    set subtree [lindex $stree 2]
-    if {[llength $subtree] != 1} {
-        if {$debug} {
-            puts "parse_is_simple_text: subtree length was [llength $subtree], expected 1"
-        }
+    set range [lindex $stree 1]
+
+    set stree [lindex $stree 2]
+
+    if {[llength $stree] != 1} {
         return 0
     }
 
-    set text_tuple [lindex $subtree 0]
-    set text [lindex $text_tuple 0]
-    set text_range [lindex $text_tuple 1]
-    set text_subtree [lindex $text_tuple 2]
+    # examine text subtree
 
-    if {![string equal "text" $text]} {
-        if {$debug} {
-            puts "parse_is_simple_text: text was \"$text\", expected \"text\""
-        }
+    set stree [lindex $stree 0]
+
+    if {[lindex $stree 0] ne "text"} {
         return 0
     }
 
@@ -54,19 +46,13 @@ proc parse_is_simple_text { stree } {
     # text_rage is a subrange of the simple_range
     # which can happen with quoted strings.
 
-    if {$simple_range != $text_range} {
-        if {![parse_is_subrange $simple_range $text_range]} {
-            if {$debug} {
-                puts "parse_is_simple_text: text_range \{$text_range\} not in simple_range \{$simple_range\}"
-            }
+    if {$range ne [lindex $stree 1]} {
+        if {![parse_is_subrange $range [lindex $stree 1]]} {
             return 0
         }
     }
 
-    if {[llength $text_subtree] != 0} {
-        if {$debug} {
-            puts "parse_is_simple_text: text_subtree was \{$text_subtree\}, expected \{\}"
-        }
+    if {[lindex $stree 2] ne {}} {
         return 0
     }
 
@@ -84,11 +70,11 @@ proc parse_is_simple_text { stree } {
 # of the simple range in the case of a quoted string.
 
 proc parse_get_simple_text { script stree {rtype simple} } {
-    set debug 0
+#    set debug 0
 
-    if {![parse_is_simple_text $stree]} {
-        error "not a simple text type : \{$stree\}"
-    }
+#    if {![parse_is_simple_text $stree]} {
+#        error "not a simple text type : \{$stree\}"
+#    }
 
     if {$rtype == "simple"} {
         set range [lindex $stree 1]
@@ -98,9 +84,9 @@ proc parse_get_simple_text { script stree {rtype simple} } {
         error "unknown rtype \"$rtype\""
     }
 
-    if {$debug} {
-        puts "range is \{$range\}"
-    }
+#    if {$debug} {
+#        puts "range is \{$range\}"
+#    }
 
     return [parse getstring $script $range]
 }
@@ -108,11 +94,9 @@ proc parse_get_simple_text { script stree {rtype simple} } {
 # Like above, but return the range
 
 proc parse_get_simple_text_range { stree {rtype simple} } {
-    set debug 0
-
-    if {![parse_is_simple_text $stree]} {
-        error "not a simple text type : \{$stree\}"
-    }
+#    if {![parse_is_simple_text $stree]} {
+#        error "not a simple text type : \{$stree\}"
+#    }
 
     if {$rtype == "simple"} {
         set range [lindex $stree 1]
@@ -155,13 +139,9 @@ proc parse_is_subrange { outer inner } {
 # nested commands and variables.
 
 proc parse_is_word { stree } {
-    set debug 0
-
-    set word [lindex $stree 0]
-    if {![string equal "word" $word]} {
-        if {$debug} {
-            puts "parse_is_word: type was \"$word\", expected \"word\""
-        }
+    if {![string equal "word" [lindex $stree 0]]} {
+#        set word [lindex $stree 0]
+#        puts "parse_is_word: type was \"$word\", expected \"word\""
         return 0
     }
     return 1
@@ -171,13 +151,13 @@ proc parse_is_word { stree } {
 # for a nested command as a command argument.
 
 proc parse_is_word_command { stree } {
-    set debug 0
+#    set debug 0
 
     set word [lindex $stree 0]
     if {![string equal "word" $word]} {
-        if {$debug} {
-            puts "parse_is_word_command: type was \"$word\", expected \"word\""
-        }
+#        if {$debug} {
+#            puts "parse_is_word_command: type was \"$word\", expected \"word\""
+#        }
         return 0
     }
 
@@ -185,9 +165,9 @@ proc parse_is_word_command { stree } {
 
     set subtree [lindex $stree 2]
     if {[llength $subtree] != 1} {
-        if {$debug} {
-            puts "parse_is_word_command: subtree length was [llength $subtree], expected 1"
-        }
+#        if {$debug} {
+#            puts "parse_is_word_command: subtree length was [llength $subtree], expected 1"
+#        }
         return 0
     }
 
@@ -197,25 +177,25 @@ proc parse_is_word_command { stree } {
     set command_subtree [lindex $command_tuple 2]
 
     if {![string equal "command" $command]} {
-        if {$debug} {
-            puts "parse_is_word_command: command was \"$command\", expected \"command\""
-        }
+#        if {$debug} {
+#            puts "parse_is_word_command: command was \"$command\", expected \"command\""
+#        }
         return 0
     }
 
     # Assume that the word_range is the same as the command_range
 
     if {$word_range != $command_range} {
-        if {$debug} {
-            puts "parse_is_word_command: word_range \{$word_range\} not equal to command_range \{$command_range\}"
-        }
+#        if {$debug} {
+#            puts "parse_is_word_command: word_range \{$word_range\} not equal to command_range \{$command_range\}"
+#        }
         return 0
     }
 
     if {[llength $command_subtree] != 0} {
-        if {$debug} {
-            puts "parse_is_word_command: command_subtree was \{$command_subtree\}, expected \{\}"
-        }
+#        if {$debug} {
+#            puts "parse_is_word_command: command_subtree was \{$command_subtree\}, expected \{\}"
+#        }
         return 0
     }
 
@@ -228,11 +208,9 @@ proc parse_is_word_command { stree } {
 # has already been invoked and returned true for this subtree.
 
 proc parse_get_word_command { script stree } {
-    set debug 0
-
-    if {![parse_is_word_command $stree]} {
-        error "not a word command type : \{$stree\}"
-    }
+#    if {![parse_is_word_command $stree]} {
+#        error "not a word command type : \{$stree\}"
+#    }
 
     set range [lindex $stree 1]
     return [parse getstring $script $range]
@@ -242,13 +220,13 @@ proc parse_get_word_command { script stree } {
 # for a command argument that is a variable.
 
 proc parse_is_word_variable { stree } {
-    set debug 0
+#    set debug 0
 
     set word [lindex $stree 0]
     if {![string equal "word" $word]} {
-        if {$debug} {
-            puts "parse_is_word_variable: type was \"$word\", expected \"word\""
-        }
+#        if {$debug} {
+#            puts "parse_is_word_variable: type was \"$word\", expected \"word\""
+#        }
         return 0
     }
 
@@ -256,9 +234,9 @@ proc parse_is_word_variable { stree } {
 
     set subtree [lindex $stree 2]
     if {[llength $subtree] != 1} {
-        if {$debug} {
-            puts "parse_is_word_variable: subtree length was [llength $subtree], expected 1"
-        }
+#        if {$debug} {
+#            puts "parse_is_word_variable: subtree length was [llength $subtree], expected 1"
+#        }
         return 0
     }
 
@@ -268,10 +246,10 @@ proc parse_is_word_variable { stree } {
     # the subtree elements.
     set is_variable [parse_is_variable $variable_tuple]
     if {!$is_variable} {
-        if {$debug} {
-            set variable [lindex $variable_tuple 0]
-            puts "parse_is_word_variable: variable was \"$variable\", expected \"variable\""
-        }
+#        if {$debug} {
+#            set variable [lindex $variable_tuple 0]
+#            puts "parse_is_word_variable: variable was \"$variable\", expected \"variable\""
+#        }
         return 0
     }
 
@@ -280,9 +258,9 @@ proc parse_is_word_variable { stree } {
     # Assume that the word_range is the same as the variable_range
 
     if {$word_range != $variable_range} {
-        if {$debug} {
-            puts "parse_is_word_variable: word_range \{$word_range\} not equal to variable_range \{$variable_range\}"
-        }
+#        if {$debug} {
+#            puts "parse_is_word_variable: word_range \{$word_range\} not equal to variable_range \{$variable_range\}"
+#        }
         return 0
     }
 
@@ -299,9 +277,9 @@ proc parse_is_word_variable { stree } {
 # the variable name after the dollar sign is returned.
 
 proc parse_get_word_variable { script stree {rtype variable} } {
-    if {![parse_is_word_variable $stree]} {
-        error "not a word variable type : \{$stree\}"
-    }
+#    if {![parse_is_word_variable $stree]} {
+#        error "not a word variable type : \{$stree\}"
+#    }
 
     set variable_subtree [lindex $stree 2 0]
     return [parse_get_variable $script $variable_subtree $rtype]
@@ -317,23 +295,23 @@ proc parse_get_word_variable { script stree {rtype variable} } {
 # the variable name after the dollar sign is returned.
 
 proc parse_get_variable { script stree {rtype variable} } {
-    set debug 0
+#    set debug 0
 
-    if {![parse_is_variable $stree]} {
-        error "not a variable type : \{$stree\}"
-    }
+#    if {![parse_is_variable $stree]} {
+#        error "not a variable type : \{$stree\}"
+#    }
 
-    if {$debug} {
-        puts "parse_get_variable: \"$script\" \{$stree\} and rtype $rtype"
-    }
+#    if {$debug} {
+#        puts "parse_get_variable: \"$script\" \{$stree\} and rtype $rtype"
+#    }
 
     if {$rtype == "variable"} {
         set range [lindex $stree 1]
     } elseif  {$rtype == "text"} {
         set variable_subtree [lindex $stree 2]
-        if {$debug} {
-            puts "variable_subtree is \{$variable_subtree\}"
-        }
+#        if {$debug} {
+#            puts "variable_subtree is \{$variable_subtree\}"
+#        }
         if {[llength $variable_subtree] == 1} {
             # Scalar variable
             set range [lindex $variable_subtree 0 1]
@@ -351,9 +329,9 @@ proc parse_get_variable { script stree {rtype variable} } {
         error "unknown rtype \"$rtype\""
     }
 
-    if {$debug} {
-        puts "range is \{$range\}"
-    }
+#    if {$debug} {
+#        puts "range is \{$range\}"
+#    }
 
     return [parse getstring $script $range]
 }
@@ -451,45 +429,45 @@ proc parse_range_without_braces { script range } {
 # not be considered constant here.
 
 proc parse_is_constant { script stree } {
-    set debug 0
+#    set debug 0
 
-    if {$debug} {
-        puts "parse_is_constant \{$stree\}"
-    }
+#    if {$debug} {
+#        puts "parse_is_constant \{$stree\}"
+#    }
 
     if {[parse_is_simple_text $stree]} {
-        if {$debug} {
-            puts "parse_is_constant returning 1 since type is simple/text"
-        }
+#        if {$debug} {
+#            puts "parse_is_constant returning 1 since type is simple/text"
+#        }
         return 1
     }
     if {![parse_is_word $stree]} {
-        if {$debug} {
-            puts "parse_is_constant returning 0 since type is not a word"
-        }
+#        if {$debug} {
+#            puts "parse_is_constant returning 0 since type is not a word"
+#        }
         return 0
     }
     #set word_stree [lindex $stree 2]
-    if {$debug} {
-        puts "parse_is_constant will iterate over word"
-    }
+#    if {$debug} {
+#        puts "parse_is_constant will iterate over word"
+#    }
     set result [parse_word_iterate \
         $script $stree _parse_is_constant_word_iterate]
-    if {$debug} {
-        puts "parse_is_constant done with word iteration"
-    }
+#    if {$debug} {
+#        puts "parse_is_constant done with word iteration"
+#    }
 
     if {$result == "NONCONSTANT"} {
         # Not a constant word
-        if {$debug} {
-            puts "parse_word_iterate indicates failing \"$result\" result"
-        }
+#        if {$debug} {
+#            puts "parse_word_iterate indicates failing \"$result\" result"
+#        }
         return 0
     } else {
         # Returned a constant word
-        if {$debug} {
-            puts "parse_word_iterate indicates successful \"$result\" result"
-        }
+#        if {$debug} {
+#            puts "parse_word_iterate indicates successful \"$result\" result"
+#        }
         return 1
     }
 }
@@ -500,11 +478,11 @@ proc parse_is_constant { script stree } {
 # or the special backslash newline element.
 
 proc _parse_is_constant_word_iterate { script stree type values ranges } {
-    set debug 0
+#    set debug 0
 
-    if {$debug} {
-        puts "_parse_is_constant_word_iterate : $type \{$values\} \{$ranges\}"
-    }
+#    if {$debug} {
+#        puts "_parse_is_constant_word_iterate : $type \{$values\} \{$ranges\}"
+#    }
 
     # Ignore rest of elements if iteration indicated a non-constant element.
     set word [parse_word_iterate_word_value]
@@ -517,14 +495,14 @@ proc _parse_is_constant_word_iterate { script stree type values ranges } {
             # A backslash is only constant if it is a backslash newline
             set elem [lindex $values 0]
             if {[regexp "^\n\[ |\t\]*\$" $elem whole]} {
-                if {$debug} {
-                    puts "found backslash newline pattern match \"$whole\""
-                }
+#                if {$debug} {
+#                    puts "found backslash newline pattern match \"$whole\""
+#                }
                 set elem " "
                 set word [parse_word_iterate_word_value]
-                if {$debug} {
-                    puts "appending text \"$elem\" to existing word \"$word\""
-                }
+#                if {$debug} {
+#                    puts "appending text \"$elem\" to existing word \"$word\""
+#                }
                 append word $elem
                 parse_word_iterate_word_value $word
             } else {
@@ -539,9 +517,9 @@ proc _parse_is_constant_word_iterate { script stree type values ranges } {
         {text} {
             set elem [lindex $values 0]
             set word [parse_word_iterate_word_value]
-            if {$debug} {
-                puts "appending text \"$elem\" to existing word \"$word\""
-            }
+#            if {$debug} {
+#                puts "appending text \"$elem\" to existing word \"$word\""
+#            }
             append word $elem
             parse_word_iterate_word_value $word
         }
@@ -563,9 +541,9 @@ proc _parse_is_constant_word_iterate { script stree type values ranges } {
         }
     }
 
-    if {$debug} {
-        puts "_parse_is_constant_word_iterate returning"
-    }
+#    if {$debug} {
+#        puts "_parse_is_constant_word_iterate returning"
+#    }
 }
 
 # This method assumes that parse_is_constant has already
@@ -576,16 +554,16 @@ proc _parse_is_constant_word_iterate { script stree type values ranges } {
 # the surrounding quote characters.
 
 proc parse_get_constant_text { script stree } {
-    set debug 0
+#    set debug 0
 
-    if {$debug} {
-        puts "parse_get_constant_text"
-    }
+#    if {$debug} {
+#        puts "parse_get_constant_text"
+#    }
 
     if {[parse_is_simple_text $stree]} {
-        if {$debug} {
-            puts "returning simple/text type info"
-        }
+#        if {$debug} {
+#            puts "returning simple/text type info"
+#        }
         set quoted [parse_get_simple_text $script $stree]
 
         set first [string index $quoted 0]
@@ -609,9 +587,9 @@ proc parse_get_constant_text { script stree } {
         }
 
         # Returned a constant word
-        if {$debug} {
-            puts "parse_word_iterate indicates successful \"$result\" result"
-        }
+#        if {$debug} {
+#            puts "parse_word_iterate indicates successful \"$result\" result"
+#        }
 
         # Recover quote element from word range.
         set unquoted $result
@@ -635,9 +613,9 @@ proc parse_get_constant_text { script stree } {
         error "not a word or simple/text type \{$stree\}"
     }
 
-    if {$debug} {
-        puts "parse_get_constant_text returning \{$quoted $qchars $unquoted\}"
-    }
+#    if {$debug} {
+#        puts "parse_get_constant_text returning \{$quoted $qchars $unquoted\}"
+#    }
 
     return [list $quoted $qchars $unquoted]
 }
@@ -664,24 +642,17 @@ proc parse_range_of_tree { stree {first 0} {last end} } {
 # Return true if the subtree is a variable type
 
 proc parse_is_variable { stree } {
-    set debug 0
+#    puts "parse_is_variable : \{$stree\}"
 
-    if {$debug} {
-        puts "parse_is_variable : \{$stree\}"
-    }
-
-    set type [lindex $stree 0]
-    set range [lindex $stree 1]
-    set inner_tree [lindex $stree 2]
-
-    if {$type != "variable"} {
+    if {[lindex $stree 0] ne "variable"} {
         return 0
     }
 
+    set range [lindex $stree 1]
     if {[llength $range] != 2} {
         error "unexpected range \{$range\} for variable subtree \{$stree\}"
     }    
-    if {[llength $inner_tree] == 0} {
+    if {[lindex $stree 2] == {}} {
         error "unexpected empty inner_tree for variable subtree \{$stree\}"
     }
 
@@ -712,9 +683,9 @@ proc parse_is_scalar_variable { stree } {
 # scan for a simple scalar variable.
 
 proc parse_get_scalar_variable { script stree } {
-    if {![parse_is_scalar_variable $stree]} {
-        error "not a scalar variable"
-    }
+#    if {![parse_is_scalar_variable $stree]} {
+#        error "not a scalar variable"
+#    }
     set variable_tree [lindex $stree 2]
     set range [lindex $variable_tree 0 1]
     return [parse getstring $script $range]
@@ -841,7 +812,7 @@ proc _parse_get_variable_list_callback { script stree type values ranges } {
 # the inner tree.
 
 proc _parse_variable_subtree_types { stree } {
-    set debug 0
+#    set debug 0
 
     set inner_type_list [list]
 
@@ -866,9 +837,9 @@ proc _parse_variable_subtree_types { stree } {
         }
     }
 
-    if {$debug} {
-        puts "returning inner types list \{$inner_type_list\} for \{$stree\}"
-    }
+#    if {$debug} {
+#        puts "returning inner types list \{$inner_type_list\} for \{$stree\}"
+#    }
 
     return $inner_type_list
 }
@@ -907,11 +878,11 @@ proc parse_get_command { script stree } {
 proc parse_variable_iterate { script stree cmd } {
     global _parse
 
-    set debug 0
+#    set debug 0
 
-    if {$debug} {
-        puts "parse_variable_iterate:"
-    }
+#    if {$debug} {
+#        puts "parse_variable_iterate:"
+#    }
 
     # Save current word value and reset it when returning
     # in case parse_variable_iterate is invoked recursively
@@ -934,25 +905,23 @@ proc parse_variable_iterate { script stree cmd } {
     set cmdstack [list]
     foreach key $_parse(parse_variable_iterate_stack) {
         set cmdlist $_parse($key)
-        if {$debug} {
-            puts "parse_variable_iterate: key $key cmdlist is \{$cmdlist\}"
-        }
+#        if {$debug} {
+#            puts "parse_variable_iterate: key $key cmdlist is \{$cmdlist\}"
+#        }
         lappend cmdstack $cmdlist
     }
 
     # Make sure old results don't get reused somehow
 
-    if {!$debug} {
     foreach key [array names _parse key*] {
         unset _parse($key)
     }
     set _parse(parse_variable_iterate_stack) [list]
     set _parse(parse_variable_iterate_key) 0
-    }
 
-    if {$debug} {
-        puts "parse_variable_iterate: cmdstack length is [llength $cmdstack]"
-    }
+#    if {$debug} {
+#        puts "parse_variable_iterate: cmdstack length is [llength $cmdstack]"
+#    }
 
     # eval each callback in the cmdstack list, it is important
     # that this command callback iteration be done after all
@@ -961,16 +930,16 @@ proc parse_variable_iterate { script stree cmd } {
     # work correctly.
 
     foreach cmdlist $cmdstack {
-        if {$debug} {
-            puts "new cmdlist level --- num commands is [llength $cmdlist]"
-        }
+#        if {$debug} {
+#            puts "new cmdlist level --- num commands is [llength $cmdlist]"
+#        }
         foreach cmd $cmdlist {
             # Command lists contain the following elements:
             # CMD SCRIPT STREE TYPE VALUES RANGES
 
-            if {$debug} {
-                puts "parse_variable_iterate: cmd is \{$cmd\}"
-            }
+#            if {$debug} {
+#                puts "parse_variable_iterate: cmd is \{$cmd\}"
+#            }
 
             # Verify that the command has the correct number of
             # arguments. We get a really confusing error message
@@ -1011,10 +980,10 @@ proc parse_variable_iterate { script stree cmd } {
                 lappend new_cmd $new_avalues
                 lappend new_cmd [lindex $cmd 5]
                 set cmd $new_cmd
-                if {$debug} {
-                    puts "parse_variable_iterate: replaced __WORD_VALUE__ with \"$word_value\""
-                    puts "parse_variable_iterate: word replaced cmd is \{$cmd\}"
-                }
+#                if {$debug} {
+#                    puts "parse_variable_iterate: replaced __WORD_VALUE__ with \"$word_value\""
+#                    puts "parse_variable_iterate: word replaced cmd is \{$cmd\}"
+#                }
             }
 
             # Evaluate specific command and take extra care to ensure
@@ -1038,35 +1007,35 @@ proc parse_variable_iterate { script stree cmd } {
 proc _parse_variable_iterate { script stree cmd private } {
     global _parse
 
-    set debug 0
+#    set debug 0
 
     set iterating_word [lindex $private 0]
     set key [lindex $private 1]
 
-    if {$debug} {
-        puts "_parse_variable_iterate:"
-        puts "script \"$script\""
-        puts "stree \{$stree\}"
-        puts "cmd \{$cmd\}"
-        puts "iterating_word is $iterating_word"
-        puts "key is $key"
-    }
+#    if {$debug} {
+#        puts "_parse_variable_iterate:"
+#        puts "script \"$script\""
+#        puts "stree \{$stree\}"
+#        puts "cmd \{$cmd\}"
+#        puts "iterating_word is $iterating_word"
+#        puts "key is $key"
+#    }
 
     set cmdlist $_parse($key)
     set cmdindex 0
 
-    if {$debug} {
-        puts "_parse_variable_iterate: cmdlist is"
-        if {[llength $cmdlist] == 0} {
-            puts "{}"
-        } else {
-            set i 0
-            foreach elem $cmdlist {
-                puts "cmd ($i) is \{$elem\}"
-                incr i
-            }
-        }
-    }
+#    if {$debug} {
+#        puts "_parse_variable_iterate: cmdlist is"
+#        if {[llength $cmdlist] == 0} {
+#            puts "{}"
+#        } else {
+#            set i 0
+#            foreach elem $cmdlist {
+#                puts "cmd ($i) is \{$elem\}"
+#                incr i
+#            }
+#        }
+#    }
 
     set type [lindex $stree 0]
     if {$type != "variable"} {
@@ -1077,18 +1046,18 @@ proc _parse_variable_iterate { script stree cmd private } {
     if {[llength $range] != 2} {
         error "expected range of length 2, got \{$range\}"
     }
-    if {$debug} {
-        puts "variable range is \{$range\}"
-        puts "variable range text inside script is \"[parse getstring $script $range]\""
-    }
+#    if {$debug} {
+#        puts "variable range is \{$range\}"
+#        puts "variable range text inside script is \"[parse getstring $script $range]\""
+#    }
 
     set inner_tree [lindex $stree 2]
     set inner_tree_types [_parse_variable_subtree_types $inner_tree]
 
-    if {$debug} {
-        puts "inner_tree is \{inner_tree\}"
-        puts "inner_tree_types is \{inner_tree_types\}"
-    }
+#    if {$debug} {
+#        puts "inner_tree is \{inner_tree\}"
+#        puts "inner_tree_types is \{inner_tree_types\}"
+#    }
 
     if {$inner_tree_types == {}} {
         error "empty inner tree types for stree \{$stree\}"
@@ -1190,10 +1159,10 @@ proc _parse_variable_iterate { script stree cmd private } {
         for {set i 1} {$i < [llength $inner_tree]} {incr i} {
             set itl_type [lindex $inner_tree_types $i 0]
             set inner_stree [lindex $inner_tree $i]
-            if {$debug} {
-                puts "word key loop on index $i: type is $itl_type"
-                puts "inner_stree \{$inner_stree\}"
-            }
+#            if {$debug} {
+#                puts "word key loop on index $i: type is $itl_type"
+#                puts "inner_stree \{$inner_stree\}"
+#            }
 
             switch -exact -- $itl_type {
                 "command" {
@@ -1236,10 +1205,10 @@ proc _parse_variable_iterate { script stree cmd private } {
                     set prev_inner_cmdlist $inner_cmdlist
                     set inner_cmdlist $_parse($inner_key)
 
-                    if {$debug} {
-                        puts "inner_cmdlist changed from/to\n\{$prev_inner_cmdlist\}\n\
-                            \{$inner_cmdlist\}\nin call to _parse_variable_iterate"
-                    }
+#                    if {$debug} {
+#                        puts "inner_cmdlist changed from/to\n\{$prev_inner_cmdlist\}\n\
+#                            \{$inner_cmdlist\}\nin call to _parse_variable_iterate"
+#                    }
                     unset prev_inner_cmdlist
                 }
                 default {
@@ -1285,9 +1254,9 @@ proc _parse_variable_iterate { script stree cmd private } {
         error "unmatched inner_tree_types \{$inner_tree_types\}"
     }
 
-    if {$debug} {
-         puts "saving cmdlist \{$cmdlist\} back into key $key"
-    }
+#    if {$debug} {
+#         puts "saving cmdlist \{$cmdlist\} back into key $key"
+#    }
 
     # Save modified cmdlist back into key variable
     set _parse($key) $cmdlist
@@ -1318,11 +1287,11 @@ proc parse_variable_iterate_word_value { {value pviwv_QUERY} } {
 # from along with the name of a callback command to invoke.
 
 proc parse_word_iterate { script stree cmd } {
-    set debug 0
+#    set debug 0
 
-    if {$debug} {
-        puts "parse_word_iterate : \"$script\" \{$stree\} $cmd"
-    }
+#    if {$debug} {
+#        puts "parse_word_iterate : \"$script\" \{$stree\} $cmd"
+#    }
 
     set saved_word_value [parse_word_iterate_word_value]
 
@@ -1334,9 +1303,9 @@ proc parse_word_iterate { script stree cmd } {
 
     set elements_stree [lindex $stree 2]
 
-    if {$debug} {
-        puts "elements_stree is \{$elements_stree\}"
-    }
+#    if {$debug} {
+#        puts "elements_stree is \{$elements_stree\}"
+#    }
 
     set atype {word begin}
     set avalues {}
@@ -1344,9 +1313,9 @@ proc parse_word_iterate { script stree cmd } {
     lappend cmdlist [list $cmd $script $stree $atype $avalues $aranges]
 
     foreach elements_tuple $elements_stree {
-        if {$debug} {
-            puts "elements_tuple \{$elements_tuple\}"
-        }
+#        if {$debug} {
+#            puts "elements_tuple \{$elements_tuple\}"
+#        }
 
         set type [lindex $elements_tuple 0]
 
@@ -1406,9 +1375,9 @@ proc parse_word_iterate { script stree cmd } {
             }
         }
 
-        if {$debug} {
-            puts "type $atype: appended cmd \{[lindex $cmdlist end]\}"
-        }
+#        if {$debug} {
+#            puts "type $atype: appended cmd \{[lindex $cmdlist end]\}"
+#        }
     }
 
     if {[llength $cmdlist] == 0} {
@@ -1425,9 +1394,9 @@ proc parse_word_iterate { script stree cmd } {
     set aranges {}
     lappend cmdlist [list $cmd $script $stree $atype $avalues $aranges]
 
-    if {$debug} {
-        puts "parse_word_iterate: will iterate over cmdlist"
-    }
+#    if {$debug} {
+#        puts "parse_word_iterate: will iterate over cmdlist"
+#    }
 
     # Loop over each command in cmdlist and invoke callback
     # for each word element.
@@ -1436,9 +1405,9 @@ proc parse_word_iterate { script stree cmd } {
         # Command lists contain the following elements:
         # CMD SCRIPT STREE TYPE VALUES RANGES
 
-        if {$debug} {
-            puts "parse_word_iterate: cmd is \{$cmd\}"
-        }
+#        if {$debug} {
+#            puts "parse_word_iterate: cmd is \{$cmd\}"
+#        }
 
         # Verify that the command has the correct number of
         # arguments. We get a really confusing error message
@@ -1476,10 +1445,10 @@ proc parse_word_iterate { script stree cmd } {
             lappend new_cmd [lindex $cmd 5]
             set cmd $new_cmd
 
-            if {$debug} {
-                puts "parse_word_iterate: replaced __WORD_VALUE__ with \"$word_value\""
-                puts "parse_word_iterate: word replaced cmd is \{$cmd\}"
-            }
+#            if {$debug} {
+#                puts "parse_word_iterate: replaced __WORD_VALUE__ with \"$word_value\""
+#                puts "parse_word_iterate: word replaced cmd is \{$cmd\}"
+#            }
         }
 
         # Evaluate specific command and take extra care to ensure
@@ -1537,7 +1506,7 @@ proc parse_word_iterate_word_value { {value pwiwv_QUERY} } {
 proc parse_expr_iterate { in_script in_etree in_cmd } {
     global _parse
 
-    set debug 0
+#    set debug 0
 
     set _parse(parse_expr_iterate_result) [list]
     set _parse(parse_expr_iterate_stack) [list]
@@ -1546,20 +1515,18 @@ proc parse_expr_iterate { in_script in_etree in_cmd } {
 
     set cmdlist $_parse(parse_expr_iterate_result)
 
-    if {!$debug} {
-        set _parse(parse_expr_iterate_result) [list]
-        set _parse(parse_expr_iterate_stack) [list]
-    }
+    set _parse(parse_expr_iterate_result) [list]
+    set _parse(parse_expr_iterate_stack) [list]
 
-    if {$debug} {
-        # FIXME: Print cmdstack as stack elements
-        puts "\n\n-----------------"
-        puts "parse_expr_iterate: will iterate over cmdlist:"
-        foreach elem $cmdlist {
-            puts $elem
-        }
-        puts "-----------------"
-    }
+#    if {$debug} {
+#        # FIXME: Print cmdstack as stack elements
+#        puts "\n\n-----------------"
+#        puts "parse_expr_iterate: will iterate over cmdlist:"
+#        foreach elem $cmdlist {
+#            puts $elem
+#        }
+#        puts "-----------------"
+#    }
 
     # Loop over each command in cmdlist and invoke in_cmd
     # for each expr element.
@@ -1568,40 +1535,40 @@ proc parse_expr_iterate { in_script in_etree in_cmd } {
         error "empty cmdlist"
     }
 
-    if {$debug} {
-        set max 1000
-    }
+#    if {$debug} {
+#        set max 1000
+#    }
 
     set subexpr_stack [list]
 
     for {set i 0 ; set len [llength $cmdlist]} {$i < $len} {} {
-        if {$debug} {
-            incr max -1
-            if {$max < 0} {error "max exceeded, infinite loop ?"}
-        }
+#        if {$debug} {
+#            incr max -1
+#            if {$max < 0} {error "max exceeded, infinite loop ?"}
+#        }
 
         set cmdlist_elem [lindex $cmdlist $i]
         set elem_type [lindex $cmdlist_elem 0]
 
-        if {$debug} {
-            puts "parse_expr_iterate ($i): elem_type is \"$elem_type\""
-            if {$elem_type == "operator"} {
-                puts "operator is [lindex $cmdlist_elem 4]"
-                puts "subexpr_stack: depth [llength $subexpr_stack]"
-                foreach elem $subexpr_stack {
-                    if {$elem == {}} {
-                        puts "\{\}"
-                    } else {
-                        puts $elem
-                    }
-                }
-            }
-            #set index 0
-            #foreach elem $cmdlist_elem {
-            #    puts "\[lindex \$cmdlist_elem $index\] is $elem"
-            #    incr index
-            #}
-        }
+#        if {$debug} {
+#            puts "parse_expr_iterate ($i): elem_type is \"$elem_type\""
+#            if {$elem_type == "operator"} {
+#                puts "operator is [lindex $cmdlist_elem 4]"
+#                puts "subexpr_stack: depth [llength $subexpr_stack]"
+#                foreach elem $subexpr_stack {
+#                    if {$elem == {}} {
+#                        puts "\{\}"
+#                    } else {
+#                        puts $elem
+#                    }
+#                }
+#            }
+#            #set index 0
+#            #foreach elem $cmdlist_elem {
+#            #    puts "\[lindex \$cmdlist_elem $index\] is $elem"
+#            #    incr index
+#            #}
+#        }
 
         switch -exact -- $elem_type {
             "operator" {
@@ -1632,9 +1599,9 @@ proc parse_expr_iterate { in_script in_etree in_cmd } {
                         }
                     }
                 }
-                if {$debug} {
-                    puts "found $subexpr_found subexpr {} elements"
-                }
+#                if {$debug} {
+#                    puts "found $subexpr_found subexpr {} elements"
+#                }
                 set stack_size [llength $subexpr_stack]
                 if {$subexpr_found > $stack_size} {
                     error "attempt to pop $subexpr_found expressions off\
@@ -1686,9 +1653,9 @@ proc parse_expr_iterate { in_script in_etree in_cmd } {
                 namespace eval :: $cmd
 
                 set type_val $_parse(parse_expr_iterate_type_value)
-                if {$debug} {
-                    puts "operator evaluated to \{$type_val\}"
-                }
+#                if {$debug} {
+#                    puts "operator evaluated to \{$type_val\}"
+#                }
 
                 # Push result of operator evaluation onto stack
                 set subexpr_stack [linsert $subexpr_stack 0 $type_val]
@@ -1715,9 +1682,9 @@ proc parse_expr_iterate { in_script in_etree in_cmd } {
     namespace eval :: $cmd
 
     # Return {type value} for whole expression
-    if {$debug} {
-        puts "returning {type value} \{$_parse(parse_expr_iterate_type_value)\}"
-    }
+#    if {$debug} {
+#        puts "returning {type value} \{$_parse(parse_expr_iterate_type_value)\}"
+#    }
     return $_parse(parse_expr_iterate_type_value)
 }
 
@@ -1727,13 +1694,13 @@ proc parse_expr_iterate { in_script in_etree in_cmd } {
 proc _parse_expr_iterate_evaluate_value { cmd_elem } {
     global _parse
 
-    set debug 0
+#    set debug 0
 
     set type [lindex $cmd_elem 0]
 
-    if {$type != "value"} {
-        error "expected \"value\" operand but got \"$type\" from \{$cmd_elem\}"
-    }
+#    if {$type != "value"} {
+#        error "expected \"value\" operand but got \"$type\" from \{$cmd_elem\}"
+#    }
 
     set _parse(parse_expr_iterate_type_value) {}
     set cmd [lindex $cmd_elem 1]
@@ -1746,9 +1713,9 @@ proc _parse_expr_iterate_evaluate_value { cmd_elem } {
         set _parse(parse_expr_iterate_type_value) [lindex $cmd 4 0]
     }
     set type_val $_parse(parse_expr_iterate_type_value)
-    if {$debug} {
-        puts "value evaluated to \{$type_val\}"
-    }
+#    if {$debug} {
+#        puts "value evaluated to \{$type_val\}"
+#    }
     return $type_val
 }
 
@@ -1756,8 +1723,6 @@ proc _parse_expr_iterate_evaluate_value { cmd_elem } {
 
 proc _parse_expr_iterate_subexpr { cmd_elem in_cmd } {
     global _parse
-    
-    set debug 0
 
     set type [lindex $cmd_elem 0]
 
@@ -1823,11 +1788,11 @@ proc _parse_expr_iterate_is_math_function { operator } {
 proc _parse_expr_iterate_descend { script etree cmd {private {}} } {
     global _parse
 
-    set debug 0
+#    set debug 0
 
-    if {$debug} {
-        puts "_parse_expr_iterate_descend: \"$script\" \{$etree\} $cmd"
-    }
+#    if {$debug} {
+#        puts "_parse_expr_iterate_descend: \"$script\" \{$etree\} $cmd"
+#    }
 
     set type [lindex $etree 0]
     set range [lindex $etree 1]
@@ -1849,14 +1814,14 @@ proc _parse_expr_iterate_descend { script etree cmd {private {}} } {
                 lappend operands [lindex $setree $i]
             }
 
-            if {$debug} {
-                puts "found operator subexpression"
-                puts "op is \{$op\}"
-                puts "num_operands is $num_operands"
-                foreach operand $operands {
-                    puts "operand is \{$operand\}"
-                }
-            }
+#            if {$debug} {
+#                puts "found operator subexpression"
+#                puts "op is \{$op\}"
+#                puts "num_operands is $num_operands"
+#                foreach operand $operands {
+#                    puts "operand is \{$operand\}"
+#                }
+#            }
 
             # Push new subexpression onto the expression stack
             set expr_list [lindex $_parse(parse_expr_iterate_stack) 0]
@@ -1876,26 +1841,26 @@ proc _parse_expr_iterate_descend { script etree cmd {private {}} } {
             set expr_list [lindex $_parse(parse_expr_iterate_stack) 0]
             set _parse(parse_expr_iterate_stack) [lreplace $_parse(parse_expr_iterate_stack) 0 0]
 
-            if {$debug} {
-                puts "inserting \{$expr_list\} at front of expression result"
-            }
+#            if {$debug} {
+#                puts "inserting \{$expr_list\} at front of expression result"
+#            }
 
             foreach elem $expr_list {
                 lappend _parse(parse_expr_iterate_result) $elem
             }
 
-            if {$debug} {
-                puts "new expression result is \{$_parse(parse_expr_iterate_result)\}"
-                puts "new expression stack is \{$_parse(parse_expr_iterate_stack)\}"
-            }
+#            if {$debug} {
+#                puts "new expression result is \{$_parse(parse_expr_iterate_result)\}"
+#                puts "new expression stack is \{$_parse(parse_expr_iterate_stack)\}"
+#            }
         } else {
             # A subexpression with a single value
             set value [lindex $setree 0]
 
-            if {$debug} {
-                puts "found value subexpression"
-                puts "value is \{$value\}"
-            }
+#            if {$debug} {
+#                puts "found value subexpression"
+#                puts "value is \{$value\}"
+#            }
 
             # Pass num_operands 0 in case this is a rand() operator
             _parse_expr_iterate_descend $script $value $cmd 0
@@ -1922,9 +1887,9 @@ proc _parse_expr_iterate_descend { script etree cmd {private {}} } {
            # string like "\n" as a word element that contains
            # a backslash. Fixup the info so that this is
            # seen as a word that contains a backslash character.
-           if {$debug} {
-               puts "backslash (before): $etree"
-           }
+#           if {$debug} {
+#               puts "backslash (before): $etree"
+#           }
            # Range should include the enclosing double quotes.
            set range_before [expr {[lindex $range 0] - 1}]
            set before [parse getstring $script [list $range_before 1]]
@@ -1945,22 +1910,22 @@ proc _parse_expr_iterate_descend { script etree cmd {private {}} } {
 
            set range $range_with_quotes
            set etree [list $type $range_with_quotes $setree]
-           if {$debug} {
-               puts "backslash (after): $etree"
-           }
+#           if {$debug} {
+#               puts "backslash (after): $etree"
+#           }
         }
         default {
             # Unknown type
-            puts stderr "Unknown expr type \"$type\""
+            error "Unknown expr type \"$type\""
             return
         }
     }
 
     set type_str [parse getstring $script $range]
 
-    if {$debug} {
-        puts "got $type \"$type_str\" from range $range"
-    }
+#    if {$debug} {
+#        puts "got $type \"$type_str\" from range $range"
+#    }
 
     # Get current command list for expr at top of stack.
     set expr_list [lindex $_parse(parse_expr_iterate_stack) 0]
@@ -2013,17 +1978,17 @@ proc _parse_expr_iterate_descend { script etree cmd {private {}} } {
 
             set char_after_range_index [expr {$range_start + $range_length}]
             if {$char_after_range_index > $max_index} {
-                if {$debug} {
-                    puts "char_after_range_index $char_after_range_index >= $max_index"
-                }
+#                if {$debug} {
+#                    puts "char_after_range_index $char_after_range_index >= $max_index"
+#                }
                 set char_after ""
             } else {
                 set char_after [parse getstring $script [list $char_after_range_index 1]]
             }
-            if {$debug} {
-                puts "found char before \'$char_before\' and char after \'$char_after\'"
-                puts "quoted text is $char_before$type_str$char_after"
-            }
+#            if {$debug} {
+#                puts "found char before \'$char_before\' and char after \'$char_after\'"
+#                puts "quoted text is $char_before$type_str$char_after"
+#            }
 
             if {$char_before == "\"" && $char_after == "\""} {
                 set avalues [list [list "string" $type_str]]
@@ -2068,8 +2033,7 @@ proc _parse_expr_iterate_descend { script etree cmd {private {}} } {
 # be passed for the value.
 
 proc parse_expr_iterate_type_value { type value } {
-    global _parse
-    set _parse(parse_expr_iterate_type_value) [list $type $value]
+    set ::_parse(parse_expr_iterate_type_value) [list $type $value]
     return
 }
 

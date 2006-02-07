@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: descend.tcl,v 1.1 2005/12/20 23:00:11 mdejong Exp $
+#  RCS: @(#) $Id: descend.tcl,v 1.2 2006/02/07 09:41:01 mdejong Exp $
 #
 #
 
@@ -154,30 +154,30 @@ proc descend_start { script {range {0 end}} {nested 0} {chknested 1} {undetermin
 proc descend_next_command { script range nested undetermined } {
     global _descend
 
-    set debug 0
+#    set debug 0
 
-    if {0 || $debug} {
-        set rest [parse getstring $script $range]
-        if {[string length $rest] > 2000} {
-            set rest [string range $rest 0 2000]
-        }
-        puts "descend_next_command: from range \{$range\} : rest of script is\
-            \n->$rest<-"
-    }
+#    if {0 || $debug} {
+#        set rest [parse getstring $script $range]
+#        if {[string length $rest] > 2000} {
+#            set rest [string range $rest 0 2000]
+#        }
+#        puts "descend_next_command: from range \{$range\} : rest of script is\
+#            \n->$rest<-"
+#    }
 
     set charlength [parse charlength $script $range]
 
     if {$charlength == 0} {
         # No more chars to parse from script
-        if {$debug} {
-            puts "descend_next_command: no more chars to parse"
-        }
+#        if {$debug} {
+#            puts "descend_next_command: no more chars to parse"
+#        }
         return ""
     }
 
-    if {$debug} {
-        puts "descend_next_command: $charlength chars left in script"
-    }
+#    if {$debug} {
+#        puts "descend_next_command: $charlength chars left in script"
+#    }
 
     # Clear parse error before parse operation
     global _tjc
@@ -213,9 +213,9 @@ proc descend_next_command { script range nested undetermined } {
 
     if {[lindex $command 1] == 0 || \
             [string trim [parse getstring $script $command]] == "\;"} {
-        if {$debug} {
-            puts "descend_next_command: empty command parsed, returning continue $rest"
-        }
+#        if {$debug} {
+#            puts "descend_next_command: empty command parsed, returning continue $rest"
+#        }
         return [list continue $rest]
     }
 
@@ -226,17 +226,17 @@ proc descend_next_command { script range nested undetermined } {
     # If range has the word "end" in the second position, save the actual length
     if {[lindex $range 1] == "end"} {
         set whole_range [parse getrange $script]
-        if {$debug} {
-            puts "whole_range is \{$whole_range\}"
-            puts "range is \{$range\}"
-        }
+#        if {$debug} {
+#            puts "whole_range is \{$whole_range\}"
+#            puts "range is \{$range\}"
+#        }
         set whole_range_len [lindex $whole_range 1]
         set range_start [lindex $range 0]
         set range_len [lindex $range 1]
         set range [list $range_start [expr {$whole_range_len - $range_start}]]
-        if {$debug} {
-            puts "updated range from \{$range_start $range_len\} to \{$range\}"
-        }
+#        if {$debug} {
+#            puts "updated range from \{$range_start $range_len\} to \{$range\}"
+#        }
     }
     set _descend($key,range) $range
     set _descend($key,comment) $comment
@@ -249,7 +249,8 @@ proc descend_next_command { script range nested undetermined } {
 
     # Init commands with an empty list for each argument by default
     set commands [list]
-    for {set i 0} {$i < [llength $tree]} {incr i} {
+    set len [llength $tree]
+    for {set i 0} {$i < $len} {incr i} {
         lappend commands {}
     }
     set _descend($key,commands) $commands
@@ -258,14 +259,14 @@ proc descend_next_command { script range nested undetermined } {
     set _descend($key,validated) {}
     set _descend($key,static_container) 0
 
-    if {$debug} {
-        puts "comment text ->[parse getstring $script $comment]<-"
-        puts "command text ->[parse getstring $script $command]<-"
-        puts "rest text ->[parse getstring $script $rest]<-"
-        puts "tree is \{$tree\}"
-        puts "nested is $nested"
-        puts "undetermined is $undetermined"
-    }
+#    if {$debug} {
+#        puts "comment text ->[parse getstring $script $comment]<-"
+#        puts "command text ->[parse getstring $script $command]<-"
+#        puts "rest text ->[parse getstring $script $rest]<-"
+#        puts "tree is \{$tree\}"
+#        puts "nested is $nested"
+#        puts "undetermined is $undetermined"
+#    }
 
     return $key
 }
@@ -418,19 +419,25 @@ proc descend_report_usage_callback { cmd } {
     set _descend_callbacks(report_usage) $cmd
 }
 
-# Get data element for the named key
+# Get data element for the named key. This command
+# is invoked frequently, so it is as optimized.
 
 proc descend_get_data { key dname } {
-    global _descend
+    if {[catch {
+        set result $::_descend($key,$dname)
+    } err]} {
+        # If the key way not found, generate an
+        # error to indicate why.
 
-    # Assume that script must have been set for the key
-    if {![info exists _descend($key,script)]} {
-        error "key \"$key\" does not exists"
+        if {![info exists ::_descend($key,script)]} {
+            error "key \"$key\" does not exists"
+        }
+        if {![info exists ::_descend($key,$dname)]} {
+            error "data \"$dname\" does not exists for key \"$key\""
+        }
+        error $err
     }
-    if {![info exists _descend($key,$dname)]} {
-        error "data \"$dname\" does not exists for key \"$key\""
-    }
-    return $_descend($key,$dname)
+    return $result
 }
 
 # Return true if a script argument to a container command
@@ -464,11 +471,11 @@ proc descend_arguments_undetermined { key } {
 # be returned. Otherwise, {1 cmdname} will be returned.
 
 proc descend_get_command_name { key } {
-    set debug 0
+#    set debug 0
 
-    if {$debug} {
-        puts "descend_get_command_name : $key"
-    }
+#    if {$debug} {
+#        puts "descend_get_command_name : $key"
+#    }
 
     # Query parse tree and see if the command
     # name is a simple name that can be returned
@@ -479,8 +486,8 @@ proc descend_get_command_name { key } {
     set result [list]
 
     if {[parse_is_simple_text [lindex $tree 0]]} {
-        lappend result 1
-        lappend result [parse_get_simple_text $script [lindex $tree 0]]
+        lappend result 1 \
+            [parse_get_simple_text $script [lindex $tree 0]]
     } else {
         lappend result 0 {}
     }
@@ -2657,7 +2664,8 @@ proc descend_container_switch_script_recreate { script range } {
                 # so that no command and variable subst are found when reparsing.
                 set bs_subst_only ""
                 set last_bs 0
-                for {set ind 0} {$ind < [string length $unquoted_str]} {incr ind} {
+                set unquoted_str_len [string length $unquoted_str]
+                for {set ind 0} {$ind < $unquoted_str_len} {incr ind} {
                     set c [string index $unquoted_str $ind]
                     switch -exact -- $c {
                         {$} -

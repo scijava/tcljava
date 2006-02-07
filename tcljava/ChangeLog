@@ -1,3 +1,21 @@
+2006-02-07  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        Condense multiple append and lappend
+        commands into one invocation with multiple
+        arguments. This takes advantage of inlined
+        command optimizations when compiled with TJC.
+        Comment out debug code in methods that take
+        up a lot of time or are invoked often.
+        Optimize methods that are invoked often
+        as seen with a method profiler.
+
+        * src/tjc/tjc/library/compileproc.tcl:
+        * src/tjc/tjc/library/descend.tcl:
+        * src/tjc/tjc/library/emitter.tcl:
+        * src/tjc/tjc/library/parse.tcl:
+        * tests/tjc/compileproc.test:
+        * tests/tjc/compileproc_3.test:
+
 2006-02-06  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/jacl/tcl/lang/StringCmd.java:

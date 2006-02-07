@@ -1,5 +1,8 @@
 test_tjc_init
 
+# Clear any previous compileproc module settings
+compileproc_init
+
 tcltest::test compileproc_split_classname-1.0 {util} {
     compileproc_split_classname FooCmd
 } {default FooCmd}
