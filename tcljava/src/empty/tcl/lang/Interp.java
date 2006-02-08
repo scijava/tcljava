@@ -153,5 +153,11 @@ public final String pkgRequire(String pkgname, String version, boolean exact)
   return null;
 }
 
+public ClassLoader
+getClassLoader()
+{
+  return null;
+}
+
 } // end Interp
 

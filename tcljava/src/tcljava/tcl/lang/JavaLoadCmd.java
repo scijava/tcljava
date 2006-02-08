@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: JavaLoadCmd.java,v 1.3 2004/11/18 06:40:17 mdejong Exp $
+ * RCS: @(#) $Id: JavaLoadCmd.java,v 1.4 2006/02/08 23:53:47 mdejong Exp $
  */
 
 package tcl.lang;
@@ -81,18 +81,24 @@ throws
 	packageName = packageName.substring(0,
 		packageName.lastIndexOf(".class"));
     }
-	
-    // Create a new TclClassLoader.  The classpath and env(TCL_CLASSPATH) 
-    // arrays are stored inside the Loader for recursive references
-    // to other Classes inside the main Extension class being loaded.
 
-    tclClassLoader = new TclClassLoader(interp, classpath);
+    // When no -classpath argument is given, just use the interp
+    // TclClassLoader which reads values from TCL_CLASSPATH. If
+    // a -classpath argument was given, then defined a TclClassLoader
+    // that will delagate to the interp class loader.
+
+    if (classpath == null) {
+        tclClassLoader = (TclClassLoader) interp.getClassLoader();
+    } else {
+        tclClassLoader = (TclClassLoader) interp.getClassLoader();
+        tclClassLoader = new TclClassLoader(interp, classpath, tclClassLoader);
+    }
 
     // Dynamically load the class
 
     try {
 	validLoad = false;
-	pkgClass = tclClassLoader.loadClass(packageName, true);
+	pkgClass = tclClassLoader.loadClass(packageName);
 	validLoad = true;
     } catch (ClassNotFoundException e) {
 	throw new TclException(interp, "package \"" + packageName +

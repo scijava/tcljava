@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.66 2006/01/27 23:39:02 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.67 2006/02/08 23:53:47 mdejong Exp $
  *
  */
 
@@ -326,6 +326,10 @@ static final String[] unsafeCmds = {
 static final int INVOKE_HIDDEN       = 1;
 static final int INVOKE_NO_UNKNOWN   = 2;
 static final int INVOKE_NO_TRACEBACK = 4;
+
+// The ClassLoader for this interp
+
+TclClassLoader classLoader = null;
 
 
 /*
@@ -716,8 +720,8 @@ finalize()
  * createCommands --
  *
  *	Create the build-in commands. These commands are loaded on
- *	demand -- the .class file of a Command class are loaded into
- *	the JVM the first time when the given command is executed.
+ *	demand -- the class file of a Command class are loaded into
+ *	the JVM the first time the given command is executed.
  *
  * Results:
  *	None.
@@ -2253,9 +2257,7 @@ setResult(
 		"Interp.setResult() called with null TclObject argument.");
     }
 
-    TclObject oldResult = m_result;
-
-    if (newResult == oldResult) {
+    if (newResult == m_result) {
         // Setting to current value (including m_nullResult) is a no-op.
         return;
     }
@@ -2264,6 +2266,7 @@ setResult(
 	newResult.preserve();
     }
 
+    TclObject oldResult = m_result;
     m_result = newResult;
 
     if (oldResult != m_nullResult) {
@@ -2885,8 +2888,9 @@ readScriptFromURL(
     }
     catch (UnknownServiceException e) {
 	Class jar_class;
-	
+
 	try {
+	    // Load JarURLConnection via the system class loader
 	    jar_class = Class.forName("java.net.JarURLConnection");
 	} catch (Exception e2) {
 	    return null;
@@ -3096,21 +3100,7 @@ evalResource(
 throws 
     TclException
 {
-    InputStream stream = null;
-
-    try {
-	stream = Interp.class.getResourceAsStream(resName);
-    } catch (SecurityException e2) {
-	// This catch is necessary if Jacl is to work in an applet
-        // at all. Note that java::new will not work from within Jacl
-        // in an applet.
-
-        System.err.println("evalResource: Ignoring SecurityException, " +
-                "it is likely we are running in an applet: " +
-                "cannot read resource \"" + resName + "\"" + e2);
-
-	return;
-    }
+    InputStream stream = getResourceAsStream(resName);
 
     if (stream == null) {
 	throw new TclException(this, "cannot read resource \"" + resName
@@ -4544,4 +4534,84 @@ getErrorLine()
     return errorLine;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * getClassLoader --
+ *
+ *	Get the TclClassLoader used for the interp. This
+ *	class loader delagates to the context class loader
+ *	which delagates to the system class loader.
+ *	The TclClassLoader will read classes and resources
+ *	from the env(TCL_CLASSPATH).
+ *
+ * Results:
+ *	This method will return the classloader in use,
+ *	it will never return null.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+public
+ClassLoader
+getClassLoader()
+{
+    // Allocate a TclClassLoader that will delagate to the
+    // context class loader and then search on the
+    // env(TCL_CLASSPATH) for classes.
+
+    if (classLoader == null) {
+        classLoader = new TclClassLoader(this, null,
+            Thread.currentThread().getContextClassLoader()
+            //Interp.class.getClassLoader()
+            );
+    }
+    return classLoader;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * getResourceAsStream --
+ *
+ *	Resolve a resource name into an InputStream. This method
+ *	will search for a resource using the TclClassLoader.
+ *	This method will return null if a resource can't be found.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+InputStream
+getResourceAsStream(String resName)
+{
+    if (classLoader == null) {
+        getClassLoader();
+    }
+
+    try {
+        // Search for resource using TclClassLoader. This
+        // will search on the CLASSPATH, then with the
+        // context loader (if there is one), and then on
+        // the env(TCL_CLASSPATH).
+
+	return classLoader.getResourceAsStream(resName);
+    } catch (SecurityException e2) {
+        // Resource loading does not work in an applet, and Jacl
+        // has never really worked as an applet anyway.
+
+        return null;
+    }
+}
+
 } // end Interp
+

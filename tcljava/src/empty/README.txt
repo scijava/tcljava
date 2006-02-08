@@ -2,6 +2,9 @@ empty.jar is used to work around a problem that occurs when compiling
 Jacl or Tcl Blend that results in extra classes being included in the
 tcljava.jar file.
 
+This process can be run with the empty.sh script, it is described in
+detail below.
+
 When building, the classes below
  tcl/lang/CObject.class
  tcl/lang/Interp.class

@@ -12,7 +12,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaImportCmd.java,v 1.5 2006/01/26 19:49:19 mdejong Exp $
+ * RCS: @(#) $Id: JavaImportCmd.java,v 1.6 2006/02/08 23:53:47 mdejong Exp $
  *
  */
 
@@ -248,8 +248,8 @@ public class JavaImportCmd implements Command {
 	    operation = "forget";
 	}
 
-	TclClassLoader tclClassLoader = new TclClassLoader(interp, null);
-
+	// Use TclClassLoader defined on a per-interp basis
+	TclClassLoader tclClassLoader = (TclClassLoader) interp.getClassLoader();
 
 	// Start processing class arguments begining at startIdx.
 
@@ -333,10 +333,11 @@ public class JavaImportCmd implements Command {
 		    tclClassLoader.loadClass(class_name);
 		} catch (ClassNotFoundException e) {
 		    inGlobal = false;
-		    tclClassLoader.removeCache(class_name);
 		}
 
 		if (inGlobal) {
+		    tclClassLoader.removeCache(class_name);
+
 		    throw new TclException(interp,
 		        "cannot import \"" + fullyqualified +
 		        "\" it conflicts with a class with the same name" +

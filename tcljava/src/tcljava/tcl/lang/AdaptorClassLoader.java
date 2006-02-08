@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: AdaptorClassLoader.java,v 1.2 2000/01/25 03:42:26 mo Exp $
+ * RCS: @(#) $Id: AdaptorClassLoader.java,v 1.3 2006/02/08 23:53:47 mdejong Exp $
  */
 
 package tcl.lang;
@@ -93,8 +93,8 @@ loadEventAdaptor(
  *
  * loadClass --
  *
- *	Loads the given class in the JVM. We simply calls Class.forName()
- *	to load the class using the default class loader.
+ *	Loads the given class in the JVM. This implementation uses
+ *	the class loader that loaded this class.
  *
  * Results:
  *	The Class object of the requested class.

@@ -369,12 +369,27 @@ What's new in Tcl/Java 1.4?
 The Itcl object extension for Tcl has been ported to Jacl.
 Run "package require Itcl" to load Itcl into Jacl.
 
+(TJC COMPILER FOR JACL)
+
+A new Tcl to Java compiler named TJC is now included in Jacl.
+This compiler can be used to compile Tcl code into Java class
+files. Compiling Tcl code into Java code can significantly
+improve performance of Tcl commands running in Jacl. The TJC
+compiler is accessed from the command line via the tjc script.
+See the documentation in docs/TJC/index.html for more information. 
+
+(PARSER PACKAGE FOR JACL)
+
+TclPro's parser package has been implemented in Jacl since it
+is required by the TJC compiler. The parser package provides
+commands to parse and inspect Tcl commands. It can be loaded
+via "package require parser".
+
 (JACL EXPR COMMAND)
 
 Jacl's expr implementation now supports the 'eq' and 'ne'
 string equality operators. The expr implementation has
 also been optimized to improve performance.
-
 
 (JACL DEBUG SUPPORT)
 
@@ -385,5 +400,17 @@ code used to implement Jacl. Simply set the JACL_DEBUG env
 variable to "1" before running jaclsh or jaclsh.bat to
 start Jacl in this special debug mode.
 
+(IMPROVED CLASSLOADER IMPLEMENTATION)
+
+The TclClassLoader used in Jacl and Tcl Blend to load Java
+classes and resources has been updated to make use of the
+class loader delagation model introduced in JDK 1.2. Loading
+of classes and resources is now be delagated to the thread
+context class loader. This change fixes class and resource
+loading problems found in Java app server environments like
+WebSphere, Tomcat, and others. A number of bugs related to
+loading classes from the env(TCL_CLASSPATH) path have been fixed
+and support for loading resources from the env(TCL_CLASSPATH)
+path has been added.
 
 </PRE></BODY></HTML>

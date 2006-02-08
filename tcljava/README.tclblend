@@ -1,6 +1,6 @@
 Tcl Blend
 
-RCS: @(#) $Id: README.tclblend,v 1.16 2005/07/27 21:04:53 mdejong Exp $
+RCS: @(#) $Id: README.tclblend,v 1.17 2006/02/08 23:53:46 mdejong Exp $
 
 1. Introduction
 ---------------
@@ -35,22 +35,24 @@ added in each release.
 3. Requirements
 ---------------
 
-The Java Development Kit 1.1 or greater are required to use Tcl Blend.
+The Java Development Kit 1.2 or greater are required to use Tcl Blend.
 
 To build Tcl Blend on Solaris the Native Threads Pack, and 
 several patches, must be installed on top of the JDK.  The 
 package, necessary patches, and installation instructions can 
 be found at http://java.sun.com/j2se/1.4/index.html.
 
-Tcl Blend will build and run under JDK1.2 and newer, see
-known_issues.txt for a list of problems and bugs.
+Tcl Blend has been tested on newer JDK releases up to
+and including JDK 1.5. See known_issues.txt for a list of
+known problems and bugs.
 
 Tcl 8.4.11 is the most recent Tcl release tested with Tcl Blend.
 Unix users can build with Tcl 8.3 (8.3.2 or greater) or
 Tcl 8.4 (8.4.4 or greater). Windows users will need to
 build with Tcl 8.4.4 or greater. The Thread extension
-version 2.6.2 or greater is also required. Each of these
-downloads can be found at the following URL.
+version 2.6.2 or greater is also required.
+
+The extensions mentioned above can be download here:
 
 http://sourceforge.net/project/showfiles.php?group_id=10894
 
@@ -64,8 +66,13 @@ the Tcl and Thread packages. Unix users should just need
 to run the configure scripts. Windows users will need
 to download the msys_mingw package before building. The
 msys_mingw download provides a minimal set of tools needed
-to build native Win32 applications. See the README.TXT file
-for info about starting the msys shell.
+to build native Win32 applications.
+
+See the following Tcl wiki page for Tcl Blend build instructions:
+
+http://wiki.tcl.tk/9993
+
+See the README.TXT file for info about starting the msys shell.
 
 http://sourceforge.net/project/showfiles.php?group_id=10894
 

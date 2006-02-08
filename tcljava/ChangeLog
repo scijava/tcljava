@@ -1,3 +1,70 @@
+2006-02-08  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        Reimplement TclClassLoader using the class loader
+        delagation model from JDK 1.2. The interp
+        class now supports a public method called
+        getClassLoader() that returns the ClassLoader
+        instance used by the interp. The interp class loader
+        will now delagate to the thread context loader,
+        this should fix class loading problems when Jacl
+        is used in environments that depend on the context
+        class loader for classes and resources.
+
+        * Makefile.in: Add new test build rules.
+        * README.jacl:
+        * README.tclblend: JDK 1.2 now minimium version,
+        add link to build instructions on wiki.
+        * diffs.txt: Add built-in Tcl commands that
+        were not mentioned.
+        * new_features.txt: Mention new compiler and
+        classloader features.
+        * src/empty/README.txt: Mention empty.sh.
+        * src/empty/empty.jar: Regen.
+        * src/empty/empty.sh: New empty.jar regen script.
+        * src/empty/tcl/lang/Interp.java (getClassLoader):
+        Add public method.
+        * src/jacl/tcl/lang/GlobCmd.java:
+        * src/jacl/tcl/lang/Interp.java:
+        * src/tclblend/tcl/lang/Interp.java:
+        * src/tcljava/tcl/lang/AdaptorClassLoader.java:
+        * src/tcljava/tcl/lang/Extension.java: Use
+        TclClassLoader so that classes can be loaded
+        from env(TCL_CLASSPATH).
+        * src/tcljava/tcl/lang/JavaDefineClassCmd.java:
+        * src/tcljava/tcl/lang/JavaImportCmd.java:
+        Use TclClassLoader so that importing multiple
+        classes from the env(TCL_CLASSPATH) does not
+        cause errors.
+        * src/tcljava/tcl/lang/JavaInvoke.java:
+        * src/tcljava/tcl/lang/JavaLoadCmd.java:
+        Use interp class loader or create a new
+        one that delagates to the interp class loader.
+        * src/tcljava/tcl/lang/TclClassLoader.java:
+        Reimplement TclClassLoader, there is now on
+        class loader instance per interp. The same
+        calss loader is used for all loading, so the
+        strange loading problems caused by multiple
+        loader instances should be a thing of the
+        past. Add ability to load resources from the
+        env(TCL_CLASSPATH).
+        * src/tcljava/tcl/lang/reflect/PkgInvoker.java:
+        * src/tests/tcljava/javaload/Test5Cmd.java:
+        * src/tests/tcljava/testext/Cmd.java:
+        * src/tests/tcljava/testext/Dummy.java:
+        * src/tests/tcljava/testext/cmd.tcl:
+        * src/tests/tcljava/tests/TestInterpThreadClassLoader.java:
+        * src/tests/tcljava/tests/TestInterpThreadContextClassCmd.java:
+        * src/tjc/tcl/lang/TJCCommandCmd.java:
+        * src/tjc/tcl/lang/TJCPackageCmd.java:
+        Use TclClassLoader when loading classes.
+        * tests/jacl/Interp.test: Removed.
+        * tests/tclblend/javaInterp.test: Deleted some tests.
+        * tests/tcljava/JavaDefineClassCmd.test:
+        Add multiple class loading tests.
+        * tests/tcljava/tcljavaInterp.test:
+        Define interp tests that work in both Jacl
+        and Tcl Blend.
+
 2006-02-07  Mo DeJong  <mdejong@users.sourceforge.net>
 
         Condense multiple append and lappend

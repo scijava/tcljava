@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.32 2006/01/26 19:49:19 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.33 2006/02/08 23:53:47 mdejong Exp $
  *
  */
 
@@ -105,6 +105,10 @@ boolean propagateException = false;
 // methods from another thread.
 
 private Thread cThread;
+
+// The ClassLoader for this interp
+
+TclClassLoader classLoader = null;
 
 
 /*
@@ -1130,12 +1134,29 @@ evalResource(
 throws 
     TclException
 {
-    InputStream stream = Interp.class.getResourceAsStream(resName);
+    InputStream stream = getResourceAsStream(resName);
 
     if (stream == null) {
 	throw new TclException(this, "cannot read resource \"" + resName
 		+ "\"");
     }
+
+// FIXME: Impl in TclBlend
+
+    // Define script name as resource so that [info script] can be used
+    // to construct names of other resources in the same resource directory.
+
+/*
+    String oldScript = scriptFile;
+    scriptFile = "resource:" + resName;
+
+    try {
+        String script = readScriptFromInputStream(stream);
+        eval(script, 0);
+    } finally {
+        scriptFile = oldScript;
+    }
+*/
 
     String script = readScriptFromInputStream(stream);
 
@@ -1543,6 +1564,77 @@ pkgRequire(
 
 native void
 createBTestCommand();
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * getClassLoader --
+ *
+ *	Get the TclClassLoader used for the interp. This
+ *	class loader delagates to the context class loader
+ *	which delagates to the system class loader.
+ *	The TclClassLoader will read classes and resources
+ *	from the env(TCL_CLASSPATH).
+ *
+ * Results:
+ *	This method will return the classloader in use,
+ *	it will never return null.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+public
+ClassLoader
+getClassLoader()
+{
+    // Allocate a TclClassLoader that will delagate to the
+    // context class loader and then search on the
+    // env(TCL_CLASSPATH) for classes.
+
+    if (classLoader == null) {
+        classLoader = new TclClassLoader(this, null,
+            Thread.currentThread().getContextClassLoader()
+            //Interp.class.getClassLoader()
+            );
+    }
+    return classLoader;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * getResourceAsStream --
+ *
+ *	Resolve a resource name into an InputStream. This method
+ *	will search for a resource using the TclClassLoader.
+ *	This method will return null if a resource can't be found.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+InputStream
+getResourceAsStream(String resName)
+{
+    if (classLoader == null) {
+        getClassLoader();
+    }
+
+    try {
+        return classLoader.getResourceAsStream(resName);
+    } catch (SecurityException e2) {
+        return null;
+    }
+}
 
 } // end Interp
 

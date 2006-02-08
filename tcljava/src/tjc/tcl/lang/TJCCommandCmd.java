@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TJCCommandCmd.java,v 1.1 2005/12/20 23:00:11 mdejong Exp $
+ * RCS: @(#) $Id: TJCCommandCmd.java,v 1.2 2006/02/08 23:53:47 mdejong Exp $
  *
  */
 
@@ -29,16 +29,12 @@ public void
         String cmdname   = objv[1].toString();
         String classname = objv[2].toString();
 
-        // FIXME: Currently, we don't make use of a Tcl
-        // class loader here. The class needs to be on
-        // the CLASSPATH right now anyway, so it does
-        // not seem critical.
-
         // Create instance of named command
 
         Class c = null;
         try {
-            c = Class.forName(classname);
+            ClassLoader tclClassLoader = interp.getClassLoader();
+            c = tclClassLoader.loadClass(classname);
         } catch (ClassNotFoundException cnfe) {
             throw new TclException(interp,
                 "class " + classname + " not found");

@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.49 2006/01/26 19:49:17 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.50 2006/02/08 23:53:46 mdejong Exp $
 
 SHELL = /bin/sh
 
@@ -1170,6 +1170,20 @@ test_tcljava.build: $(TCLJAVA).check
 	rm -rf hello
 	cp -f $(TEST_TCL_DIR)/tl.jar \
 		$(BUILD_DIR)
+	@# Test loading from testext.jar from TCL_CLASSPATH
+	rm -rf btmp
+	mkdir -p btmp
+	cd $(TEST_TCLJAVA_SRC_DIR) ;\
+	CLASSPATH=$(TEST_CLASSPATH) \
+	$(JAVAC) $(JAVAC_FLAGS) \
+		$(JAVAC_D_FLAG) $(BUILD_DIR)/btmp testext/*.java
+	cp $(TEST_TCLJAVA_SRC_DIR)/testext/cmd.tcl \
+		btmp/testext
+	cd btmp; \
+	CLASSPATH=$(JAVA_CLASSPATH) \
+	$(JAR) $(JAR_NOCOMPRESS_FLAGS) testext.jar testext ;\
+	mv testext.jar ..
+	rm -rf btmp
 	@touch $(TEST_BUILD_DIR)/.tcljava
 
 test_tjc.build: tjc.check test_tcljava.check
@@ -1241,7 +1255,7 @@ test_tclblend.exec: test_tclblend.check
 shell: shell_$(TCLJAVA)
 
 shell_jacl: jacl.check
-	@echo "To run test: cd $(TOP_DIR_NATIVE)/tests ; source all.tcl"
+	@echo "To run test: source $(TOP_DIR_NATIVE)/tests/all.tcl"
 	PATH="$(BUILD_DIR):$(PATH)" \
 	CLASSPATH=$(TEST_CLASSPATH) \
 	$(JAVA) $(JAVA_FLAGS) \
@@ -1249,7 +1263,7 @@ shell_jacl: jacl.check
 
 
 shell_tclblend: tclblend.check
-	@echo "To run test: cd $(TOP_DIR_NATIVE)/tests ; source all.tcl"
+	@echo "To run test: source $(TOP_DIR_NATIVE)/tests/all.tcl"
 	LD_PRELOAD=$(TCLBLEND_LD_PRELOAD) \
 	LD_BIND_NOW=$(TCLBLEND_LD_BIND_NOW) \
 	PATH="$(BUILD_DIR):$(TCL_BIN_DIR):$(THREAD_BIN_DIR):$(JAVA_LIB_RUNTIME_PATH):$(PATH)" \

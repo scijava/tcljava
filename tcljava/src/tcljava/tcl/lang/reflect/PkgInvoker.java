@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: PkgInvoker.java,v 1.6 2003/03/11 10:26:41 mdejong Exp $
+ * RCS: @(#) $Id: PkgInvoker.java,v 1.7 2006/02/08 23:53:47 mdejong Exp $
  *
  */
 
@@ -57,6 +57,9 @@ public class PkgInvoker {
 // PkgInvokers of the packages that we have already visited are stored
 // in this hashtable. They key is the String name of a package.
 
+// FIXME: There is a problem here when mutliple interps could be making
+// use of the same cachedInvokers table. If a name conflict were
+// encountered, incorrect result would be the result.
 static Hashtable cachedInvokers = new Hashtable();
 
 // This is the default invoker to use if a package doesn't include a
@@ -221,7 +224,12 @@ getPkgInvoker(
     PkgInvoker invoker = (PkgInvoker) cachedInvokers.get(pkg);
     if (invoker == null) {
 	try {
-	    Class invCls = Class.forName(pkg + ".TclPkgInvoker");
+	    // Use the class loader that loaded the class
+	    // in question.
+
+	    //ClassLoader cloader = this.class.getClassLoader();
+	    ClassLoader cloader = cls.getClassLoader();
+	    Class invCls = cloader.loadClass(pkg + ".TclPkgInvoker");
 	    invoker = (PkgInvoker) invCls.newInstance();
 	} catch (Exception e) {
 	    // The package doesn't include a PkgInvoker class. We use

@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaInvoke.java,v 1.19 2003/01/01 01:51:00 mdejong Exp $
+ * RCS: @(#) $Id: JavaInvoke.java,v 1.20 2006/02/08 23:53:47 mdejong Exp $
  *
  */
 
@@ -622,7 +622,9 @@ throws
         clsName = clsName_buf.toString(); // Use shortened form of name
 
         // Search for the char '.' in the name. If '.' is in
-        // the name then we know it is not a builtin type
+        // the name then we know it is not a builtin type.
+        // Search for builtin types uses system class loader
+        // since tcljava.jar is loaded from the CLASSPATH.
 
 	if (clsName.indexOf('.') == -1) {
 	    if (dimension > 0) {
@@ -673,8 +675,9 @@ throws
 		    return Character.TYPE;
 		}
 	    }
-	   
-	    TclClassLoader tclClassLoader = new TclClassLoader(interp, null);
+
+	    // Use TclClassLoader defined on a per-interp basis.
+	    TclClassLoader tclClassLoader = (TclClassLoader) interp.getClassLoader();
 
 	    try {
 		result = tclClassLoader.loadClass(prefix_buf + clsName + suffix_buf);
@@ -704,8 +707,8 @@ throws
 		}
 	    }
 	} else {
-	    TclClassLoader tclClassLoader = new TclClassLoader(interp, null);
-	
+	    TclClassLoader tclClassLoader = (TclClassLoader) interp.getClassLoader();
+
 	    if (dimension > 0) {
 		clsName = prefix_buf + "L" + clsName + ";";
 	    }

@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: Interp.test,v 1.11 2005/11/07 07:41:51 mdejong Exp $
+# RCS: @(#) $Id: Interp.test,v 1.12 2006/02/08 23:53:47 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -213,60 +213,7 @@ test Interp-6.1 {wrong # args to proc} {
         [catch {pd 1 2 3} err] $err
 } {1 {wrong # args: should be "p arg"} 1 {wrong # args: should be "p arg"} 1 {wrong # args: should be "pd arg1 ?arg2?"}}
 
-proc test_lengths { args } {
-   global test_lengths
-   if {[llength $args] == 0} {return $test_lengths}
-   foreach arg $args {
-       lappend test_lengths [string length $arg]
-   }
-}
-
-set fd [open tl.tcl w]
-fconfigure $fd -translation binary -encoding binary
-puts $fd "test_lengths a b \\\r\nc d"
-close $fd
-
-test Interp-7.0 {Tcl IO layer filters CRLF to LF on read} {
-    catch {unset test_lengths}
-    source tl.tcl
-    test_lengths
-} {1 1 1 1}
-
-test Interp-7.1 {Tcl IO layer filters CRLF to LF on read} {
-    catch {unset test_lengths}
-    if {[testgetplatform] == "windows"} {
-        set url "file:/[file join [pwd] tl.tcl]"
-    } else {
-        set url "file://[file join [pwd] tl.tcl]"
-    }
-    source -url $url
-    test_lengths
-} {1 1 1 1}
-
-test Interp-7.2 {convert CRLF to LF in convertStringCRLF} {
-    catch {unset test_lengths}
-    set res [[java::getinterp] convertStringCRLF "test_lengths a b \\\r\nc d"]
-    eval $res
-    test_lengths
-} {1 1 1 1}
-
-test Interp-7.3 {source tl.tcl as resource from tl.jar} {
-    catch {unset test_lengths}
-    # FIXME: It seems tl.jar needs to be on the CLASSPATH at startup
-    # for loading via a resource to work.
-    #if {![file exists tl.jar]} {error "file tl.jar does not exists in [pwd]"}
-    #set env(TCL_CLASSPATH) [file join [pwd] tl.jar]
-    source resource:/tl/tl.tcl
-    #unset env(TCL_CLASSPATH)
-    test_lengths
-} {1 1 1 1}
-
 # cleanup
-
-rename test_lengths {}
-catch {unset test_lengths}
-catch {unset url}
-file delete -force tl.tcl
 
 ::tcltest::cleanupTests
 return

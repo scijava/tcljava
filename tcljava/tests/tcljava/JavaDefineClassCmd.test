@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: JavaDefineClassCmd.test,v 1.7 2006/01/31 00:49:21 mdejong Exp $
+# RCS: @(#) $Id: JavaDefineClassCmd.test,v 1.8 2006/02/08 23:53:47 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -116,6 +116,56 @@ test java::defineclass-3.0 {java::defineclass with byte[] argument} {
     set class [java::defineclass $bytes]
     java::isnull $class
 } {0}
+
+test java::defineclass-3.1 {duplicate loading of a class} {
+    set file [open [file join $javaload_full_path Test4Cmd.class]]
+    fconfigure $file -translation binary
+    set bytes [read $file]
+    close $file
+    set results [list]
+    # Attempting to load the same class twice should
+    # not raise a LinkageError. The redefinition
+    # will fail and return null.
+    set class [java::defineclass $bytes]
+    lappend results [java::isnull $class]
+    set class [java::defineclass $bytes]
+    lappend results [java::isnull $class]
+    set results
+} {0 1}
+
+test java::defineclass-3.2 {load same class in two different interps} {
+    set file [open [file join $javaload_full_path Test5Cmd.class]]
+    fconfigure $file -translation binary
+    set bytes [read $file]
+    close $file
+    
+    # Loading the same class twice in two different interps should
+    # not generate an error since each interp has a different
+    # TclClassLoader.
+
+    set results [list]
+
+    set i1 [interp create]
+    $i1 eval {package require java}
+    $i1 eval [list set bytes $bytes]
+
+    lappend results [$i1 eval {
+        java::isnull [java::defineclass $bytes]
+    }]
+
+    set i2 [interp create]
+    $i2 eval {package require java}
+    $i2 eval [list set bytes $bytes]
+
+    lappend results [$i2 eval {
+        java::isnull [java::defineclass $bytes]
+    }]
+
+    interp delete $i1
+    interp delete $i2
+
+    set results
+} {0 0}
 
 
 # cleanup
