@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.67 2006/02/08 23:53:47 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.68 2006/02/09 19:38:04 mdejong Exp $
  *
  */
 
@@ -306,12 +306,6 @@ Namespace.GetNamespaceForQualNameResult getnfqnResult =
 
 Var[] lookupVarResult = new Var[2];
 
-// Pool of Var objects
-
-static final int varPoolLength = 50;
-int varPoolIndex = 0;
-Var[] varPool = null;
-
 // List of unsafe commands:
 
 static final String[] unsafeCmds = {
@@ -425,7 +419,6 @@ Interp()
     isSafe           = false;
     assocData        = null;
 
-    Var.varPoolInit(this);
 
     globalNs         = null; // force creation of global ns below
     globalNs         = Namespace.createNamespace(this, null, null);

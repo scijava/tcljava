@@ -1,3 +1,13 @@
+2006-02-09  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        Revert var pool changes, this change actually
+        caused regressions in TJC compiled code because
+        the variables in the pool were still being used
+        in compiled code.
+
+        * src/jacl/tcl/lang/Interp.java:
+        * src/jacl/tcl/lang/Var.java:
+
 2006-02-08  Mo DeJong  <mdejong@users.sourceforge.net>
 
         Reimplement TclClassLoader using the class loader
