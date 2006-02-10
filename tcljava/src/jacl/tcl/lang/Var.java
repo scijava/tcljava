@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Var.java,v 1.25 2006/02/09 19:38:04 mdejong Exp $
+ * RCS: @(#) $Id: Var.java,v 1.26 2006/02/10 02:20:12 mdejong Exp $
  *
  */
 package tcl.lang;
@@ -379,10 +379,9 @@ class Var {
     isArrayVarname(
         String varName)
     {
-        int index = varName.indexOf('(');
-        if (index != -1) {
-            char c = varName.charAt(varName.length() - 1);
-            if (c == ')') {
+        int lastInd = varName.length() - 1;
+        if (varName.charAt(lastInd) == ')') {
+            if (varName.indexOf('(') != -1) {
                 return true;
             }
         }
@@ -479,22 +478,22 @@ class Var {
 	// the part2's test and error reporting  or move that code in array set)
 
 	elName = part2;
-	openParen = part1.indexOf('(');
+	openParen = -1;
+	int lastInd = part1.length() - 1;
+	if ((lastInd > 0) && (part1.charAt(lastInd) == ')')) {
+	    openParen = part1.indexOf('(');
+	}
 	if (openParen != -1) {
-	    final int len = part1.length();
-	    p = len - 1;
-	    if (part1.charAt(p) == ')') {
-	        if (part2 != null) {
-	            if ((flags & TCL.LEAVE_ERR_MSG) != 0) {
-	                    throw new TclVarException(interp,
-	                        part1, part2, msg, needArray);
-	            }
-	            return null;
+	    if (part2 != null) {
+	        if ((flags & TCL.LEAVE_ERR_MSG) != 0) {
+	            throw new TclVarException(interp,
+	                part1, part2, msg, needArray);
 	        }
-	        elName = part1.substring(openParen+1, len - 1);
-	        part2 = elName; // same as elName, only used in error reporting
-	        part1  = part1.substring(0, openParen);
+	        return null;
 	    }
+	    elName = part1.substring(openParen+1, lastInd);
+	    part2 = elName; // same as elName, only used in error reporting
+	    part1  = part1.substring(0, openParen);
 	}
 
 	// If this namespace has a variable resolver, then give it first

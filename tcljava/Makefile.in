@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.50 2006/02/08 23:53:46 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.51 2006/02/10 02:20:08 mdejong Exp $
 
 SHELL = /bin/sh
 
@@ -896,10 +896,9 @@ tjc2: tjc2/doesnotexist
 	@if test ! -d tjc2 ; then \
 	    mkdir tjc2 ;\
 	fi
-	@if test ! -d tjc2/originals ; then \
-	    mkdir tjc2/originals ;\
-	    cp tjc.jar tjcsrc.jar tjc2/originals ;\
-	fi
+	@rm -rf tjc2/originals
+	@mkdir tjc2/originals
+	@cp tjc.jar tjcsrc.jar tjc2/originals
 	@$(MAKE) tjc2/tjc.jar
 	@rm -rf tjc2/tjcjar tjc2/tjcsrcjar
 	@mkdir tjc2/tjcjar tjc2/tjcsrcjar

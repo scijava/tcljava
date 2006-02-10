@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Expression.java,v 1.19 2006/01/27 23:39:02 mdejong Exp $
+ * RCS: @(#) $Id: Expression.java,v 1.20 2006/02/10 02:20:12 mdejong Exp $
  *
  */
 
@@ -779,17 +779,9 @@ class Expression {
 		break;
 	    case NOT:
 		if (value.isIntType()) {
-		    if (value.getIntValue() != 0) {
-		        value.setIntValue(0);
-		    } else {
-		        value.setIntValue(1);
-		    }
+		    value.setIntValue( (value.getIntValue() == 0) ? 1 : 0 );
 		} else if (value.isDoubleType()) {
-		    if (value.getDoubleValue() == 0.0) {
-		        value.setIntValue(1);
-		    } else {
-		        value.setIntValue(0);
-		    }
+		    value.setIntValue( (value.getDoubleValue() == 0.0) ? 1 : 0 );
 		} else if (value.isStringType()) {
 		    String s = value.getStringValue();
 		    int s_len = s.length();
@@ -888,7 +880,9 @@ class Expression {
 
 	    case LESS: case GREATER: case LEQ: case GEQ:
 	    case EQUAL: case NEQ:
-		if (value.isStringType()) {
+		if (value.getType() == value2.getType()) {
+		    // No-op, both operators are already the same type
+		} else if (value.isStringType()) {
 		    if (!value2.isStringType()) {
 			ExprMakeString(interp, value2);
 		    }

@@ -5,12 +5,12 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: parseproc.tcl,v 1.1 2005/12/20 23:00:11 mdejong Exp $
+#  RCS: @(#) $Id: parseproc.tcl,v 1.2 2006/02/10 02:20:12 mdejong Exp $
 #
 #
 
 # The parseproc module will parse proc definitions out
-# of a a Tcl file. Each proc body will be replaced by
+# of a Tcl file. Each proc body will be replaced by
 # a command to load the compiled version of the proc.
 
 # depends on descend module

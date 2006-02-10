@@ -1,5 +1,24 @@
 2006-02-09  Mo DeJong  <mdejong@users.sourceforge.net>
 
+        * Makefile.in: Remove previously created
+        originals dir so that rebuild is done
+        with the correct source code.
+        * src/jacl/tcl/lang/ExprValue.java:
+        Make class and all methods final so
+        that methods can be more easily inlined.
+        * src/jacl/tcl/lang/Expression.java:
+        Simplify a couple of if statements so that
+        only one method invocation is used.
+        Simplify operator check so that lots of
+        compares are skipped in the common case.
+        * src/jacl/tcl/lang/Var.java: Check the
+        last character in a variable name string
+        that might be an array var before searching
+        from the front.
+        * src/tjc/tjc/library/parseproc.tcl: Typo.
+
+2006-02-09  Mo DeJong  <mdejong@users.sourceforge.net>
+
         Revert var pool changes, this change actually
         caused regressions in TJC compiled code because
         the variables in the pool were still being used
