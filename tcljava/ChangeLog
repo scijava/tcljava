@@ -1,3 +1,16 @@
+2006-02-11  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * docs/TJC/future.html: Note string inline
+        functions that have been implemented.
+        * src/jacl/tcl/lang/Interp.java
+        (checkCommonCharacter): Implement common
+        cache of TclString objects that represent
+        a single ASCII character.
+        * src/jacl/tcl/lang/StringCmd.java (cmdProc):
+        * src/tjc/tcl/lang/TJC.java (stringIndex):
+        Use common char cache for results of
+        string index.
+
 2006-02-09  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * Makefile.in: Remove previously created

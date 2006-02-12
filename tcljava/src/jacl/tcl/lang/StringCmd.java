@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: StringCmd.java,v 1.12 2006/02/07 01:17:16 mdejong Exp $
+ * RCS: @(#) $Id: StringCmd.java,v 1.13 2006/02/12 21:22:49 mdejong Exp $
  *
  */
 
@@ -302,17 +302,27 @@ throws
 
 	case STR_INDEX: {
 	    if (objv.length != 4) {
-		throw new TclNumArgsException(interp, 2, objv, 
+		throw new TclNumArgsException(interp, 2, objv,
 			      "string charIndex");
 	    }
 
 	    String string1 = objv[2].toString();
 	    int length1 = string1.length();
-    
+
 	    int i = Util.getIntForIndex(interp, objv[3], length1 - 1);
 
 	    if ((i >= 0) && (i < length1)) {
-		interp.setResult(string1.substring(i, i+1));
+		// Get char at the given index. Check for a
+		// common TclObject that represents this
+		// single character, and allocate a new
+		// TclString if not found.
+
+		TclObject obj = interp.checkCommonCharacter(string1.charAt(i));
+		if (obj == null) {
+		    obj = TclString.newInstance(
+		        string1.substring(i, i+1));
+		}
+		interp.setResult(obj);
 	    }
 	    break;
 	}

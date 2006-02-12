@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.68 2006/02/09 19:38:04 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.69 2006/02/12 21:22:49 mdejong Exp $
  *
  */
 
@@ -258,6 +258,11 @@ private final TclObject m_onehalfDoubleResult;   // 0.5
 private final TclObject m_oneDoubleResult;       // 1.0
 private final TclObject m_twoDoubleResult;       // 2.0
 
+// Common char values wrapped in a TclObject
+
+private TclObject[] m_charCommon;
+private final int m_charCommonMax = 128;
+
 // Java thread this interp was created in. This is used
 // to check for user coding errors where the user tries
 // to create an interp in one thread and then invoke
@@ -396,6 +401,34 @@ Interp()
     m_twoDoubleResult = TclDouble.newInstance(2.0);
     m_twoDoubleResult.preserve();  // Increment refCount to 1
     m_twoDoubleResult.preserve();  // Increment refCount to 2 (shared)
+
+    // Create common char values wrapped in a TclObject
+
+    m_charCommon = new TclObject[m_charCommonMax];
+    for (int i=0; i < m_charCommonMax; i++) {
+        TclObject obj = null;
+        if (((i < ((int) ' ')) &&
+                (i == ((int) '\t') ||
+                 i == ((int) '\r') ||
+                 i == ((int) '\n'))) ||
+                (i >= ((int) ' ')) && (i <= ((int) '~'))) {
+            // Create cached value for '\t' '\r' '\n'
+            // and all ASCII characters in the range
+            // 32 -> ' ' to 126 -> '~'
+
+            obj = TclString.newInstance(
+                Character.toString((char) i));
+
+            //System.out.println("m_charCommon[" + i + "] is \"" + obj + "\"");
+        }
+
+        m_charCommon[i] = obj;
+
+        if (obj != null) {
+            obj.preserve();
+            obj.preserve();
+        }
+    }
 
     expr             = new Expression();
     nestLevel        = 0;
@@ -4500,7 +4533,31 @@ TclObject checkCommonString(String value)
         return TclString.newInstance( value );
     }
 }
+
+/**
+ *----------------------------------------------------------------------
+ *
+ * checkCommonCharacter()
+ *
+ *	It is very common to create a TclObject that contains
+ *	a single character. It can be costly to allocate a
+ *	TclObject, a TclString internal rep, and a String
+ *	to represent a character. This method avoids that
+ *	overhead for the most common characters. This method
+ *	will return null if a character does not have a
+ *	cached value.
+ *
+ *----------------------------------------------------------------------
+ */
 
+final
+TclObject checkCommonCharacter(int c)
+{
+    if ((c <= 0) || (c >= m_charCommonMax)) {
+        return null;
+    }
+    return m_charCommon[c];
+}
 
 /*
  *----------------------------------------------------------------------

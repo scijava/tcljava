@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TJC.java,v 1.10 2006/02/07 01:17:16 mdejong Exp $
+ * RCS: @(#) $Id: TJC.java,v 1.11 2006/02/12 21:22:50 mdejong Exp $
  *
  */
 
@@ -1426,8 +1426,12 @@ public class TJC {
         }
 
         if ((i >= 0) && (i < len)) {
-            String substr = str.substring(i, i+1);
-            return TclString.newInstance(substr);
+            TclObject obj = interp.checkCommonCharacter(str.charAt(i));
+            if (obj == null) {
+                obj = TclString.newInstance(
+                    str.substring(i, i+1));
+            }
+            return obj;
         } else {
             return interp.checkCommonString(null);
         }
