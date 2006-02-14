@@ -24,7 +24,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: TclClassLoader.java,v 1.11 2006/02/08 23:53:47 mdejong Exp $
+ * RCS: @(#) $Id: TclClassLoader.java,v 1.12 2006/02/14 04:13:27 mdejong Exp $
  */
 
 
@@ -490,7 +490,7 @@ protected URL
 findResource(
     String resName)       // The name of the desired resource.
 {
-    final boolean debug = true;
+    final boolean debug = false;
     URL result = null;
 
     if (debug) {

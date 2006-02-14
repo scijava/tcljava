@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: compileproc.tcl,v 1.11 2006/02/07 09:41:01 mdejong Exp $
+#  RCS: @(#) $Id: compileproc.tcl,v 1.12 2006/02/14 04:13:27 mdejong Exp $
 #
 #
 
@@ -476,6 +476,20 @@ proc compileproc_split_classname { class_name } {
 # errors raised during compilation and print a
 # diagnostic "interal error" type of message to
 # indicate where something went wrong.
+#
+# The filename argument is the name of the Tcl
+# file that the proc was defined in. It is used
+# in error reporting and is returned in the
+# result tuple. Can be "".
+#
+# The proc_tuple argument is a tuple of:
+# {PROC_NAME PROC_JAVA_CLASS_NAME PROC_LIST}
+#
+# PROC_NAME is the plain name of the Tcl proc
+# PROC_JAVA_CLASS_NAME is the short name
+#     of the Java class.
+# PROC_LIST is a list containing the proc declaration.
+#     The list length is 4: like {proc p {} {}}
 
 proc compileproc_entry_point { filename proc_tuple } {
     set debug 0
@@ -513,7 +527,7 @@ proc compileproc_entry_point { filename proc_tuple } {
         } err]} {
             global _tjc
 
-            if {$_tjc(parse_error) == ""} {
+            if {![info exists _tjc(parse_error)] || $_tjc(parse_error) == ""} {
                 # Not a handled parse error. Print lots of info.
 
                 puts stderr "Interal error while compiling proc \"$proc_name\" in file $filename"

@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclObject.java,v 1.2 2006/01/25 03:07:43 mdejong Exp $
+ * RCS: @(#) $Id: TclObject.java,v 1.3 2006/02/14 03:59:52 mdejong Exp $
  *
  */
 
@@ -91,6 +91,14 @@ public final class TclObject extends TclObjectBase {
 
     public static String getObjRecords() {
         return TclObjectBase.getObjRecords();
+    }
+
+    // FIXME: declared here only to work around a bug
+    // in pizza and janino. This declaration
+    // should not actually be needed.
+
+    public String toString() {
+        return super.toString();
     }
 }
 

@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: main.tcl,v 1.2 2006/01/19 03:11:04 mdejong Exp $
+#  RCS: @(#) $Id: main.tcl,v 1.3 2006/02/14 04:13:27 mdejong Exp $
 #
 #
 
@@ -44,6 +44,9 @@ proc validate_options {} {
     if {![info exists _tjc(progress)]} {
         set _tjc(progress) 0
     }
+    if {![info exists _tjc(compiler)]} {
+        set _tjc(compiler) "javac"
+    }
 
     foreach option $_cmdline(options) {
         # If option string does not start with a - character
@@ -64,6 +67,15 @@ proc validate_options {} {
                 "-progress" {
                     # Don't invoke javac, just emit code and exit
                     set _tjc(progress) 1
+                }
+                "-javac" {
+                    set _tjc(compiler) javac
+                }
+                "-pizza" {
+                    set _tjc(compiler) pizza
+                }
+                "-janino" {
+                    set _tjc(compiler) janino
                 }
             }
         } else {
@@ -108,8 +120,10 @@ proc process_jdk_config {} {
 # Test out each jdk tool to make sure it actually works.
 
 proc check_jdk_config {} {
+    global _tjc
+
     set debug 0
-    if {$::_tjc(debug)} {
+    if {$_tjc(debug)} {
         set debug 1
     }
 
@@ -129,6 +143,19 @@ public class Test {}
     set jarname [jdk_tool_jar test.jar]
     if {[lindex $result 0] == "ERROR"} {
         puts stderr "jdk tool check failed: JAR not working"
+        return -1
+    }
+
+    # Compile test that imports tcl.lang.Interp to make
+    # sure loading from CLASSPATH is working as expected.
+
+    set fname [jdk_tool_javac_save TestInterp {
+import tcl.lang.Interp;
+public class TestInterp { Interp i; }
+    }]
+    set result [jdk_tool_javac [list $fname]]
+    if {[lindex $result 0] == "ERROR"} {
+        puts stderr "jdk tool check failed: Failed to find Interp on CLASSPATH"
         return -1
     }
 
@@ -314,7 +341,7 @@ proc process_module_file { filename } {
             set java_filename [jdk_tool_javac_save $java_class $java_source]
 
             if {$debug || $_tjc(progress)} {
-                puts "Tcl proc \"$proc_name defined\" in\
+                puts "Tcl proc \"$proc_name\" defined in\
                     [file tail $tcl_filename] generated\
                     [string length $java_source] bytes of Java source"
             }
@@ -356,7 +383,7 @@ proc process_module_file { filename } {
     }
 
     if {$debug || $_tjc(progress)} {
-        puts "Compiling [llength $java_files] file with javac"
+        puts "Compiling [llength $java_files] files with javac"
     }
 
     set result [jdk_tool_javac $java_files]

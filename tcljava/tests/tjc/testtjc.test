@@ -222,7 +222,7 @@ tcltest::test testtjc-refcount-1.9 {TclObject ref count} {
 tcltest::test testtjc-package-1.0 {load TJC package} {
     package require TJC
     lsort [info commands TJC::*]
-} {::TJC::command ::TJC::package}
+} {::TJC::command ::TJC::compile ::TJC::package}
 
 tcltest::test testtjc-command-1.0 {TJC::command} {
     package require TJC
@@ -280,6 +280,34 @@ tcltest::test testtjc-package-1.3 {TJC::package} {
     }
     set results
 } {fp1 fp2 fp3}
+
+
+# Test TJC::compile command usage errors.
+
+tcltest::test testtjc-compile-1.0 {TJC::compile usage errors} {
+    list [catch {TJC::compile} err] $err
+} {1 {wrong # args: should be "TJC::compile ?cmd? ?options?"}}
+
+tcltest::test testtjc-compile-1.1 {TJC::compile usage errors} {
+    list [catch {TJC::compile -java} err] $err
+} {1 {wrong # args: should be "TJC::compile ?cmd? ?options?"}}
+
+tcltest::test testtjc-compile-1.2 {TJC::compile usage errors} {
+    list [catch {TJC::compile -java {}} err] $err
+} {1 {wrong # args: should be "TJC::compile ?cmd? ?options?"}}
+
+tcltest::test testtjc-compile-1.3 {TJC::compile usage errors} {
+    list [catch {TJC::compile -java {} -readycmd} err] $err
+} {1 {wrong # args: should be "TJC::compile ?cmd? ?options?"}}
+
+tcltest::test testtjc-compile-1.4 {TJC::compile usage errors} {
+    list [catch {TJC::compile -java {} -readycmd {mycmd} -readyvar} err] $err
+} {1 {wrong # args: should be "TJC::compile ?cmd? ?options?"}}
+
+tcltest::test testtjc-compile-1.5 {TJC::compile usage errors} {
+    list [catch {TJC::compile cmd -unknown {mycmd}} err] $err
+} {1 {wrong # args: should be "TJC::compile ?cmd? ?options?"}}
+
 
 
 # Test variable cache implementation, the test command

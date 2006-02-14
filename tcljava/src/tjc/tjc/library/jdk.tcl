@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: jdk.tcl,v 1.1 2005/12/20 23:00:11 mdejong Exp $
+#  RCS: @(#) $Id: jdk.tcl,v 1.2 2006/02/14 04:13:27 mdejong Exp $
 #
 #
 
@@ -146,27 +146,62 @@ proc jdk_config_parse_file { filename } {
     }
 
     if {$valid} {
-        # Check that tcljava.jar, jacl.jar, and tjc.jar appear on CLASSPATH.
+        # Check that tcljava.jar, jacl.jar, and tjc.jar appear on CLASSPATH
+        # and that they all live in the same directory.
         set found_tcljava 0
         set found_jacl 0
         set found_tjc 0
+        set libdir ""
+        set reason ""
 
         foreach path [split $classpath \;] {
             if {$path == {}} {
                 continue
             }
             if {[file tail $path] == "tcljava.jar"} {
-                set found_tcljava 1
+                set dir [file dirname $path]
+                if {$libdir == ""} {
+                    set libdir $dir
+                } else {
+                    if {$libdir != $dir} {
+                        set reason "Jars tcljava.jar, jacl.jar, and tjc.jar must exist in same dir"
+                    }
+                }
+                if {$reason == ""} {
+                    set found_tcljava 1
+                }
             }
             if {[file tail $path] == "jacl.jar"} {
-                set found_jacl 1
+                set dir [file dirname $path]
+                if {$libdir == ""} {
+                    set libdir $dir
+                } else {
+                    if {$libdir != $dir} {
+                        set reason "Jars tcljava.jar, jacl.jar, and tjc.jar must exist in same dir"
+                    }
+                }
+                if {$reason == ""} {
+                    set found_jacl 1
+                }
             }
             if {[file tail $path] == "tjc.jar"} {
-                set found_tjc 1
+                set dir [file dirname $path]
+                if {$libdir == ""} {
+                    set libdir $dir
+                } else {
+                    if {$libdir != $dir} {
+                        set reason "Jars tcljava.jar, jacl.jar, and tjc.jar must exist in same dir"
+                    }
+                }
+                if {$reason == ""} {
+                    set found_tjc 1
+                }
             }
         }
         if {!$found_tcljava || !$found_jacl || !$found_tjc} {
-            set reason "CLASSPATH is not valid: tcljava.jar, jacl.jar, and tjc.jar must appear"
+            if {$reason == ""} {
+                set reason "CLASSPATH is not valid: tcljava.jar, jacl.jar, and tjc.jar must appear"
+            }
             set valid 0
         }
     }
@@ -183,7 +218,12 @@ proc jdk_config_parse_file { filename } {
 # or file name patterns that would be expanded by javac.
 
 proc jdk_tool_javac { filenames } {
+    global _tjc
+
     set debug 0
+    if {[info exists _tjc(debug)] && $_tjc(debug)} {
+        set debug 1
+    }
 
     set TJC [file join [pwd] [jdk_tjc_rootdir]]
 
@@ -197,6 +237,42 @@ proc jdk_tool_javac { filenames } {
     set javac [jdk_config_var JAVAC]
     if {$javac == ""} {
         error "JAVAC not defined"
+    }
+    # Optional compiler configuration
+    if {[info exists _tjc(compiler)] && $_tjc(compiler) != "javac"} {
+        set compiler $_tjc(compiler)
+        # UGH! Really should add a JAVA
+        # config element here.
+        #set java [jdk_config_var JAVA]
+        set jar [jdk_config_var JAR]
+        set dir [file dir $jar]
+        set java [file join $dir java]
+
+        set classpath $::env(CLASSPATH)
+        if {$::tcl_platform(host_platform) == "windows"} {
+            set sep \;
+        } else {
+            set sep :
+        }
+
+        if {$compiler == "pizza"} {
+            append classpath $sep $_tjc(jardir)/pizza-1.1.jar
+
+            set javac [list $java \
+                -classpath $classpath \
+                net.sf.pizzacompiler.compiler.Main \
+                ]
+        } elseif {$compiler == "janino"} {
+            append classpath $sep $_tjc(jardir)/janino.jar
+
+            set javac [list $java \
+                -classpath $classpath \
+                org.codehaus.janino.Compiler \
+                -classpath $classpath \
+                ]
+        } else {
+            error "unsupported compiler \"$compiler\""
+        }
     }
 
     if {![file exists $TJC_build]} {
@@ -239,7 +315,7 @@ proc jdk_tool_javac { filenames } {
         puts "JAVAC exec: $javac $javac_flags -d $TJC_build $javac_filenames"
     }
 
-    if {[catch {eval {exec $javac $javac_flags -d $TJC_build} $javac_filenames} err]} {
+    if {[catch {eval exec $javac {$javac_flags -d $TJC_build} $javac_filenames} err]} {
         puts stderr $err
         set caught 1
     }

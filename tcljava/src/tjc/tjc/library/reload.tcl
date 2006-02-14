@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: reload.tcl,v 1.1 2005/12/20 23:00:11 mdejong Exp $
+#  RCS: @(#) $Id: reload.tcl,v 1.2 2006/02/14 04:13:27 mdejong Exp $
 #
 #
 
@@ -29,7 +29,7 @@ proc reload {} {
         }
     }
 
-    foreach file [list \
+    set regular_files [list \
         compileproc.tcl \
         descend.tcl \
         emitter.tcl \
@@ -40,7 +40,34 @@ proc reload {} {
         parse.tcl \
         parseproc.tcl \
         util.tcl \
-        ] {
+        ]
+
+    # The embedded version of TJC is run in a seperate
+    # interp. It generates and compiles Java source
+    # code directly, without writing to disk. For
+    # that reason, the folllowing files are not needed.
+    #
+    # jdk.tcl
+    # main.tcl
+    # nameproc.tcl
+    # parseproc.tcl
+    # util.tcl
+
+    set embedded_files [list \
+        compileproc.tcl \
+        descend.tcl \
+        emitter.tcl \
+        module.tcl \
+        parse.tcl \
+        ]
+
+    if {[info exists _tjc(embedded)] && $_tjc(embedded)} {
+        set files $embedded_files
+    } else {
+        set files $regular_files
+    }
+
+    foreach file $files {
         if {$debug} {
             puts "source $dir/$file"
         }

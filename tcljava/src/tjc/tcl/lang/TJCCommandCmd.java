@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TJCCommandCmd.java,v 1.2 2006/02/08 23:53:47 mdejong Exp $
+ * RCS: @(#) $Id: TJCCommandCmd.java,v 1.3 2006/02/14 04:13:27 mdejong Exp $
  *
  */
 
@@ -44,10 +44,10 @@ public void
             o = c.newInstance();
         } catch  (InstantiationException ie) {
             throw new TclException(interp,
-                "class " + classname + " could not be created");        
+                "instance of class " + classname + " could not be created");
         } catch  (IllegalAccessException iae) {
             throw new TclException(interp,
-                "class " + classname + " could not be created");        
+                "instance of class " + classname + " could not be created");
         }
         if (!(o instanceof TJC.CompiledCommand)) {
             throw new TclException(interp,

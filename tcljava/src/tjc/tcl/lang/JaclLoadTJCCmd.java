@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: JaclLoadTJCCmd.java,v 1.1 2005/12/20 23:00:11 mdejong Exp $
+ * RCS: @(#) $Id: JaclLoadTJCCmd.java,v 1.2 2006/02/14 04:13:27 mdejong Exp $
  *
  */
 
@@ -30,9 +30,13 @@ throws TclException
 	throw new TclNumArgsException(interp, 1, objv, "");
     }
 
+    // Init the namespace so commands can be created.
     interp.eval("namespace eval TJC {}");
-    interp.createCommand("::TJC::command", new TJCCommandCmd());
-    interp.createCommand("::TJC::package", new TJCPackageCmd());
+
+    // Load TJC class files as needed.
+    Extension.loadOnDemand(interp, "::TJC::command", "tcl.lang.TJCCommandCmd");
+    Extension.loadOnDemand(interp, "::TJC::compile", "tcl.lang.TJCCompileCmd");
+    Extension.loadOnDemand(interp, "::TJC::package", "tcl.lang.TJCPackageCmd");
 
     // Now that we have loaded the TJC package we can delete this command
     // from the interp.
