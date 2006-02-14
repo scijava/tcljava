@@ -1,3 +1,131 @@
+2006-02-13  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        Add TJC::compile command to support runtime
+        compilation of Tcl procs. Compilation is
+        implemented using the TJC compiler and an
+        embedded Java compiler called Janino.
+
+        * Makefile.in: Add build support for Janino compiler.
+        The compiler is BSD licensed and is included directly
+        in the Jacl source tree so that it is installed
+        along with Jacl.
+        * docs/TJC/tjcpkg.html: Add TJC::compile documentation.
+        * src/jacl/tcl/lang/TclObject.java (toString): Work
+        around a pizza and janino compiler bug having to do
+        with a superclass that can't be accessed outside the package.
+        * src/janino/README.TXT: Add text file that describes
+        the Janino compiler source.
+        * src/janino/org/codehaus/janino/Access.java:
+        * src/janino/org/codehaus/janino/AstCompilationUnitGenerator.java:
+        * src/janino/org/codehaus/janino/AstGeneratorVisitor.java:
+        * src/janino/org/codehaus/janino/ByteArrayClassLoader.java:
+        * src/janino/org/codehaus/janino/CachingJavaSourceClassLoader.java:
+        * src/janino/org/codehaus/janino/ClassBodyEvaluator.java:
+        * src/janino/org/codehaus/janino/ClassFileIClass.java:
+        * src/janino/org/codehaus/janino/ClassLoaderIClassLoader.java:
+        * src/janino/org/codehaus/janino/CodeContext.java:
+        * src/janino/org/codehaus/janino/CompileException.java:
+        * src/janino/org/codehaus/janino/Compiler.java:
+        * src/janino/org/codehaus/janino/DebuggingInformation.java:
+        * src/janino/org/codehaus/janino/Descriptor.java:
+        * src/janino/org/codehaus/janino/EvaluatorBase.java:
+        * src/janino/org/codehaus/janino/ExpressionEvaluator.java:
+        * src/janino/org/codehaus/janino/FilterWarningHandler.java:
+        * src/janino/org/codehaus/janino/IClass.java:
+        * src/janino/org/codehaus/janino/IClassLoader.java:
+        * src/janino/org/codehaus/janino/Java.java:
+        * src/janino/org/codehaus/janino/JavaSourceClassLoader.java:
+        * src/janino/org/codehaus/janino/JavaSourceIClassLoader.java:
+        * src/janino/org/codehaus/janino/Location.java:
+        * src/janino/org/codehaus/janino/MethodDescriptor.java:
+        * src/janino/org/codehaus/janino/Mod.java:
+        * src/janino/org/codehaus/janino/Opcode.java:
+        * src/janino/org/codehaus/janino/Parser.java:
+        * src/janino/org/codehaus/janino/ReflectionIClass.java:
+        * src/janino/org/codehaus/janino/ResourceFinderIClassLoader.java:
+        * src/janino/org/codehaus/janino/Scanner.java:
+        * src/janino/org/codehaus/janino/ScriptEvaluator.java:
+        * src/janino/org/codehaus/janino/SimpleCompiler.java:
+        * src/janino/org/codehaus/janino/UnicodeUnescapeException.java:
+        * src/janino/org/codehaus/janino/UnicodeUnescapeReader.java:
+        * src/janino/org/codehaus/janino/UnitCompiler.java:
+        * src/janino/org/codehaus/janino/UnparseVisitor.java:
+        * src/janino/org/codehaus/janino/Visitor.java:
+        * src/janino/org/codehaus/janino/WarningHandler.java:
+        * src/janino/org/codehaus/janino/doc-files/new_bsd_license.txt:
+        * src/janino/org/codehaus/janino/samples/ClassBodyDemo.java:
+        * src/janino/org/codehaus/janino/samples/DeclarationCounter.java:
+        * src/janino/org/codehaus/janino/samples/DemoBase.java:
+        * src/janino/org/codehaus/janino/samples/ExpressionDemo.java:
+        * src/janino/org/codehaus/janino/samples/ScriptDemo.java:
+        * src/janino/org/codehaus/janino/samples/ShippingCost.java:
+        * src/janino/org/codehaus/janino/tools/Disassembler.java:
+        * src/janino/org/codehaus/janino/tools/HprofScrubber.java:
+        * src/janino/org/codehaus/janino/util/AutoIndentWriter.java:
+        * src/janino/org/codehaus/janino/util/Benchmark.java:
+        * src/janino/org/codehaus/janino/util/ClassFile.java:
+        * src/janino/org/codehaus/janino/util/MultiIterator.java:
+        * src/janino/org/codehaus/janino/util/PrimitiveWrapper.java:
+        * src/janino/org/codehaus/janino/util/ResourceFinderClassLoader.java:
+        * src/janino/org/codehaus/janino/util/StringPattern.java:
+        * src/janino/org/codehaus/janino/util/TeeReader.java:
+        * src/janino/org/codehaus/janino/util/Traverser.java:
+        * src/janino/org/codehaus/janino/util/TunnelException.java:
+        * src/janino/org/codehaus/janino/util/enumerator/Enumerator.java:
+        * src/janino/org/codehaus/janino/util/enumerator/EnumeratorFormatException.java:
+        * src/janino/org/codehaus/janino/util/enumerator/EnumeratorSet.java:
+        * src/janino/org/codehaus/janino/util/enumerator/EnumeratorSetTypeException.java:
+        * src/janino/org/codehaus/janino/util/iterator/EnumerationIterator.java:
+        * src/janino/org/codehaus/janino/util/iterator/FilterIterator.java:
+        * src/janino/org/codehaus/janino/util/iterator/FilterListIterator.java:
+        * src/janino/org/codehaus/janino/util/iterator/IteratorCollection.java:
+        * src/janino/org/codehaus/janino/util/iterator/MultiDimensionalIterator.java:
+        * src/janino/org/codehaus/janino/util/iterator/ReverseListIterator.java:
+        * src/janino/org/codehaus/janino/util/iterator/TransformingIterator.java:
+        * src/janino/org/codehaus/janino/util/iterator/TraversingIterator.java:
+        * src/janino/org/codehaus/janino/util/iterator/UniterableElementException.java:
+        * src/janino/org/codehaus/janino/util/resource/DirectoryResourceCreator.java:
+        * src/janino/org/codehaus/janino/util/resource/DirectoryResourceFinder.java:
+        * src/janino/org/codehaus/janino/util/resource/FileResource.java:
+        * src/janino/org/codehaus/janino/util/resource/FileResourceCreator.java:
+        * src/janino/org/codehaus/janino/util/resource/FileResourceFinder.java:
+        * src/janino/org/codehaus/janino/util/resource/JarDirectoriesResourceFinder.java:
+        * src/janino/org/codehaus/janino/util/resource/LazyMultiResourceFinder.java:
+        * src/janino/org/codehaus/janino/util/resource/MultiResourceFinder.java:
+        * src/janino/org/codehaus/janino/util/resource/PathResourceFinder.java:
+        * src/janino/org/codehaus/janino/util/resource/Resource.java:
+        * src/janino/org/codehaus/janino/util/resource/ResourceCreator.java:
+        * src/janino/org/codehaus/janino/util/resource/ResourceFinder.java:
+        * src/janino/org/codehaus/janino/util/resource/ZipFileResourceFinder.java:
+        * src/tcljava/tcl/lang/TclClassLoader.java: Remove debug statements.
+        * src/tcljava/tcl/lang/TclObjectBase.java: Work around toString() bug.
+        * src/tjc/tcl/lang/JaclLoadTJCCmd.java: Load TJC::compile command
+        when TJC package is loaded. Load each command at runtime when
+        first used.
+        * src/tjc/tcl/lang/TJCCommandCmd.java: Fixup error message.
+        * src/tjc/tcl/lang/TJCCompileCmd.java: Add TJC::compile implementation.
+        * src/tjc/tcl/lang/TJCReadyVar.java: Add test class.
+        * src/tjc/tcl/lang/TJCThread.java: Add implementation of second
+        compiler thread that converts Tcl procs to Java class files.
+        * src/tjc/tjc/library/compileproc.tcl: Docs fixup.
+        * src/tjc/tjc/library/jdk.tcl: Check that all jars are in the
+        same directory. Add support for running tjc with pizza and
+        janino compilers.
+        * src/tjc/tjc/library/main.tcl: Add -pizza and -janino command
+        line options for tjc.
+        * src/tjc/tjc/library/reload.tcl: Add support for running TJC
+        in an "embedded" mode that loads only the minimum set of
+        commands needed to compile Tcl commands with TJC.
+        * src/tjc/tjc/library/tjc.tcl: Define _tjc(jardir).
+        * src/tjc/tjc/library/tjcthread.tcl: Add Tcl source code used
+        in second compiler thread. This code will use the Janino compiler
+        to convert Tcl commands to Java class data. Currently, both
+        the Janino and Pizza compilers are supported but the Janino
+        compiler is the default.
+        * tests/tjc/testtjc.test: Test TJC::compile command.
+        * tests/tjc/tjcthread.test: Regression test TJCThread, the
+        second compiler thread that is used to compile Tcl procs.
+
 2006-02-11  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * docs/TJC/future.html: Note string inline

@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.51 2006/02/10 02:20:08 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.52 2006/02/14 03:00:19 mdejong Exp $
 
 SHELL = /bin/sh
 
@@ -95,6 +95,8 @@ ITCL_SRC_DIR		= $(TOP_DIR)/src/itcl
 ITCL_BUILD_DIR		= $(BUILD_DIR)/itcl
 TJC_SRC_DIR		= $(TOP_DIR)/src/tjc
 TJC_BUILD_DIR		= $(BUILD_DIR)/btjc
+JANINO_SRC_DIR		= $(TOP_DIR)/src/janino
+JANINO_BUILD_DIR	= $(BUILD_DIR)/bjanino
 NATIVE_SRC_DIR		= $(TOP_DIR)/src/native
 DEMOS_SRC_DIR		= $(TOP_DIR)/demos
 DEMOS_BUILD_DIR		= $(BUILD_DIR)/bdemos
@@ -263,28 +265,23 @@ TCLBLEND_JNI_HEADER_CLASS_NAMES = \
 
 all: tcljava $(TCLJAVA)
 	@if test "$(TCLJAVA)" = "jacl" ; then \
-		$(MAKE) TCLJAVA=$(TCLJAVA) itcl ; \
-		$(MAKE) TCLJAVA=$(TCLJAVA) tjc ; \
+		$(MAKE) TCLJAVA=$(TCLJAVA) itcl tjc janino ; \
 	fi
 	@$(MAKE) TCLJAVA=$(TCLJAVA) tcljavasrc.jar
 	@if test "$(TCLJAVA)" = "jacl" ; then \
-		$(MAKE) TCLJAVA=$(TCLJAVA) jaclsrc.jar ; \
-		$(MAKE) TCLJAVA=$(TCLJAVA) itclsrc.jar ; \
-		$(MAKE) TCLJAVA=$(TCLJAVA) tjcsrc.jar ; \
+		$(MAKE) TCLJAVA=$(TCLJAVA) jaclsrc.jar itclsrc.jar tjcsrc.jar janinosrc.jar ; \
 	else \
 		$(MAKE) TCLJAVA=$(TCLJAVA) tclblendsrc.jar ; \
 	fi
 
 install: $(TCLJAVA).install.check tcljava.install $(TCLJAVA).install
 	@if test "$(TCLJAVA)" = "jacl" ; then \
-		$(MAKE) TCLJAVA=$(TCLJAVA) itcl.install ; \
-		$(MAKE) TCLJAVA=$(TCLJAVA) tjc.install ; \
+		$(MAKE) TCLJAVA=$(TCLJAVA) itcl.install tjc.install janino.install ; \
 	fi
 
 uninstall: $(TCLJAVA).uninstall tcljava.uninstall
 	@if test "$(TCLJAVA)" = "jacl" ; then \
-		$(MAKE) TCLJAVA=$(TCLJAVA) itcl.uninstall ; \
-		$(MAKE) TCLJAVA=$(TCLJAVA) tjc.uninstall ; \
+		$(MAKE) TCLJAVA=$(TCLJAVA) itcl.uninstall tjc.uninstall janino.uninstall ; \
 	fi
 
 # This rule is used to query the build CLASSPATH from an external program
@@ -1073,6 +1070,64 @@ tcljava.check:
 	fi
 
 
+#----------------------------------------------------------------
+# Build Janino "embedded java compiler" for Jacl
+#----------------------------------------------------------------
+
+janino: janino.jar
+
+janino.build: janino.clean
+	@echo "#"
+	@echo "# Making janino.build"
+	@echo "#"
+	mkdir -p $(JANINO_BUILD_DIR)
+	cd $(JANINO_SRC_DIR) ;\
+	CLASSPATH=$(TEST_CLASSPATH) \
+	$(JAVAC) $(JAVAC_FLAGS) \
+		$(JAVAC_D_FLAG) $(JANINO_BUILD_DIR) \
+		org/codehaus/janino/*.java \
+		org/codehaus/janino/util/*.java \
+		org/codehaus/janino/util/enumerator/*.java \
+		org/codehaus/janino/util/iterator/*.java \
+		org/codehaus/janino/util/resource/*.java
+
+# janino.jar will only be built when no janino.jar exists.
+janino.jar: janino.build
+	cd $(JANINO_BUILD_DIR) ;\
+	CLASSPATH=$(JAVA_CLASSPATH) \
+	$(JAR) $(JAR_COMPRESS_FLAGS) $(BUILD_DIR)/janino.jar \
+	    org
+
+#
+# Install janino, if the user did not build janino already
+# it would have been built by the janino.check rule
+#
+janino.install: janino.check janinosrc.jar
+	@echo "#"
+	@echo "# Installing janino"
+	@echo "#"
+	@echo "Installing janino.jar in $(XP_TCLJAVA_INSTALL_DIR)"
+	@$(INSTALL_DATA) $(BUILD_DIR)/janino.jar $(XP_TCLJAVA_INSTALL_DIR)
+	@echo "Installing janinosrc.jar in $(XP_TCLJAVA_INSTALL_DIR)"
+	@$(INSTALL_DATA) $(BUILD_DIR)/janinosrc.jar $(XP_TCLJAVA_INSTALL_DIR)
+
+janino.uninstall:
+	@echo "#"
+	@echo "# Uninstalling janino"
+	@echo "#"
+	@echo "Uninstalling $(XP_TCLJAVA_INSTALL_DIR)/janino.jar"
+	@rm -f $(XP_TCLJAVA_INSTALL_DIR)/janino.jar
+	@echo "Uninstalling $(XP_TCLJAVA_INSTALL_DIR)/janinosrc.jar"
+	@rm -f $(XP_TCLJAVA_INSTALL_DIR)/janinosrc.jar
+
+#
+# Check to make sure janino is built
+#
+
+janino.check:
+	@if test ! -f janino.jar ; then \
+		$(MAKE) TCLJAVA=$(TCLJAVA) janino ; \
+	fi
 
 #----------------------------------------------------------------
 # Build and run regression tests files for jacl and tclblend
@@ -1504,9 +1559,9 @@ configure: $(TOP_DIR)/configure.in
 
 clean: tclblend.clean jacl.clean tcljava.clean \
 	demos.clean test.clean tmp.clean \
-	jni_example.clean itcl.clean tjc.clean \
+	jni_example.clean itcl.clean tjc.clean janino.clean \
 	tcljavasrc.clean tclblendsrc.clean \
-	jaclsrc.clean itclsrc.clean tjcsrc.clean
+	jaclsrc.clean itclsrc.clean tjcsrc.clean janinosrc.clean
 
 tcljava.clean:
 	rm -rf $(TCLJAVA_BUILD_DIR)
@@ -1544,6 +1599,13 @@ tjc.clean:
 
 tjcsrc.clean:
 	rm -f  tjcsrc.jar
+
+janino.clean:
+	rm -rf $(JANINO_BUILD_DIR)
+	rm -f  janino.jar
+
+janinosrc.clean:
+	rm -f  janinosrc.jar
 
 demos.clean: 
 	rm -rf $(DEMOS_BUILD_DIR)
@@ -1827,6 +1889,7 @@ jaclDist: Makefile
 	$(MAKE) TCLJAVA=$(TCLJAVA) jaclDistSrc
 	$(MAKE) itclDistSrc
 	$(MAKE) tjcDistSrc
+	$(MAKE) janinoDistSrc
 
 	rm -f $(DISTDIR)/$(JACL_DISTNAME).tar.Z \
 		$(DISTDIR)/$(JACL_DISTNAME).tar.gz \
@@ -2030,6 +2093,38 @@ tjcDistSrc:
 	cp -p $(TOP_DIR)/src/tjc/tcl/lang/*.java \
 		$(JACL_DISTDIR)/src/tjc/tcl/lang
 
+# janinoDistSrc: Copy Janino for Jacl source files into JACL_DISTDIR
+
+janinoDistSrc:
+	mkdir -p $(JACL_DISTDIR)/src
+	mkdir -p $(JACL_DISTDIR)/src/janino
+	mkdir -p $(JACL_DISTDIR)/src/janino/org
+	mkdir -p $(JACL_DISTDIR)/src/janino/org/codehaus
+	mkdir -p $(JACL_DISTDIR)/src/janino/org/codehaus/janino
+	mkdir -p $(JACL_DISTDIR)/src/janino/org/codehaus/janino/doc-files
+	mkdir -p $(JACL_DISTDIR)/src/janino/org/codehaus/janino/samples
+	mkdir -p $(JACL_DISTDIR)/src/janino/org/codehaus/janino/tools
+	mkdir -p $(JACL_DISTDIR)/src/janino/org/codehaus/janino/util
+	mkdir -p $(JACL_DISTDIR)/src/janino/org/codehaus/janino/util/enumerator
+	mkdir -p $(JACL_DISTDIR)/src/janino/org/codehaus/janino/util/iterator
+	mkdir -p $(JACL_DISTDIR)/src/janino/org/codehaus/janino/util/resource
+	cp -p $(TOP_DIR)/src/janino/org/codehaus/janino/*.java \
+		$(JACL_DISTDIR)/src/janino/org/codehaus/janino
+	cp -p $(TOP_DIR)/src/janino/org/codehaus/janino/doc-files/*.txt \
+		$(JACL_DISTDIR)/src/janino/org/codehaus/janino/doc-files
+	cp -p $(TOP_DIR)/src/janino/org/codehaus/janino/samples/*.java \
+		$(JACL_DISTDIR)/src/janino/org/codehaus/janino/samples
+	cp -p $(TOP_DIR)/src/janino/org/codehaus/janino/tools/*.java \
+		$(JACL_DISTDIR)/src/janino/org/codehaus/janino/tools
+	cp -p $(TOP_DIR)/src/janino/org/codehaus/janino/util/*.java \
+		$(JACL_DISTDIR)/src/janino/org/codehaus/janino/util
+	cp -p $(TOP_DIR)/src/janino/org/codehaus/janino/util/enumerator/*.java \
+		$(JACL_DISTDIR)/src/janino/org/codehaus/janino/util/enumerator
+	cp -p $(TOP_DIR)/src/janino/org/codehaus/janino/util/iterator/*.java \
+		$(JACL_DISTDIR)/src/janino/org/codehaus/janino/util/iterator
+	cp -p $(TOP_DIR)/src/janino/org/codehaus/janino/util/resource/*.java \
+		$(JACL_DISTDIR)/src/janino/org/codehaus/janino/util/resource
+
 ############################################################################
 #
 # Purify is a commercial software package that finds leaks and memory
@@ -2214,5 +2309,15 @@ itclsrc.jar:
 tjcsrc.jar:
 	cd $(TJC_SRC_DIR) ; \
 	$(JAR) $(JAR_COMPRESS_FLAGS) $(BUILD_DIR)/tjcsrc.jar tcl/lang/*.java
+
+janinosrc.jar:
+	cd $(JANINO_SRC_DIR) ; \
+	$(JAR) $(JAR_COMPRESS_FLAGS) $(BUILD_DIR)/janinosrc.jar \
+	    org/codehaus/janino/*.java \
+	    org/codehaus/janino/util/*.java \
+	    org/codehaus/janino/util/enumerator/*.java \
+	    org/codehaus/janino/util/iterator/*.java \
+	    org/codehaus/janino/util/resource/*.java
+
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
