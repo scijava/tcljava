@@ -34,10 +34,6 @@
 
 package org.codehaus.janino;
 
-import org.codehaus.janino.util.*;
-import org.codehaus.janino.util.resource.*;
-import org.codehaus.janino.util.enumerator.*;
-
 import java.io.*;
 import java.lang.reflect.*;
 
@@ -119,104 +115,6 @@ public class SimpleCompiler extends EvaluatorBase {
             compilationUnit,
             DebuggingInformation.DEFAULT_DEBUGGING_INFORMATION
         );
-    }
-
-    /**
-     * This SimpleCompiler implementation is used when compiling Java
-     * source code stored in a String value. The SimpleCompiler object
-     * is created once and the CLASSPATH is setup. Then the compile()
-     * method is invoked 1 or more times to compile Java class source
-     * contained in a String object. Unlike the other implementations,
-     * this version of the SimpleCompiler will not attempt to load the
-     * compiled class data into the current thread using the class loader.
-     * This implementation will just compile the source code into
-     * an array of ClassFile objects.
-     */
-
-    boolean noloadSimpleCompiler = false;
-    IClassLoader icloader = null;
-
-    public SimpleCompiler()
-    {
-        super(null);
-        this.classLoader = null;
-        noloadSimpleCompiler = true;
-
-        // Use context class loader unless explicit class loader is given
-        //ClassLoader cloader = null;
-        //if (cloader == null) {
-        //    Thread cthread = Thread.currentThread();
-        //    cloader = cthread.getContextClassLoader();
-        //}
-
-/*
-        // Load classes from the CLASSPATH
-        String classPath = System.getProperty("java.class.path");
-        System.out.println("classPath is \"" + classPath + "\"");
-        ResourceFinder classPathResourceFinder = new PathResourceFinder(
-            PathResourceFinder.parsePath(classPath));
-
-        ResourceFinder classLoaderResourceFinder = new ResourceFinderClassLoader(            
-            classPathResourceFinder, cloader);
-
-        IClassLoader icloader = new ResourceFinderIClassLoader(
-            //classPathResourceFinder,
-            classLoaderResourceFinder,
-            null);
-
-        //cloader = new ResourceFinderClassLoader(classPathResourceFinder, cloader);
-        //ClassLoaderIClassLoader icloader = new ClassLoaderIClassLoader(cloader);
-*/
-
-/*
-        // Load classes from the CLASSPATH
-
-        String classPath = System.getProperty("java.class.path");
-        System.out.println("classPath is \"" + classPath + "\"");
-        ResourceFinder classPathResourceFinder = new PathResourceFinder(
-            PathResourceFinder.parsePath(classPath));
-        icloader = new ResourceFinderIClassLoader(
-            classPathResourceFinder,
-            null);
-*/
-
-        String classPath = System.getProperty("java.class.path");
-        //System.out.println("CLASSPATH is \"" + classPath + "\"");
-
-        icloader = Compiler.createJavacLikePathIClassLoader(
-                null, // optionalBootClassPath
-                null, // optionalExtDirs
-                PathResourceFinder.parsePath(classPath)
-        );
-    }
-
-    public
-    ClassFile[] compile(String javasrc) {
-        if (!noloadSimpleCompiler) {
-            throw new RuntimeException("SimpleCompiler.compile() can only be used with " +
-                "a SimpleCompiler() constructed with no arguments");
-        }
-
-        try {
-            // FIXME: Not clear that this implementation is saving
-            // the Class data read from the CLASSPATH, keeping
-            // already read classes around would really speed things
-            // on successive compiles. Look more into optimizing this.
-            StringReader sreader = new StringReader(javasrc);
-            Scanner scanner = new Scanner(null, sreader);
-            Parser parser = new Parser(scanner);
-            Java.CompilationUnit cunit = parser.parseCompilationUnit();
-
-            UnitCompiler ucompiler = new UnitCompiler(cunit, icloader);
-            EnumeratorSet defaultDebug =
-                DebuggingInformation.DEFAULT_DEBUGGING_INFORMATION;
-
-            ClassFile[] cfiles = ucompiler.compileUnit(defaultDebug);
-            return cfiles;
-        } catch (Exception ex) {
-            ex.printStackTrace(System.err);
-            return null;
-        }
     }
 
     /**

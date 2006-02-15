@@ -56,7 +56,7 @@ public class MultiResourceFinder extends ResourceFinder {
         for (Iterator it = this.resourceFinders.iterator(); it.hasNext();) {
             ResourceFinder rf = (ResourceFinder) it.next();
             Resource resource = rf.findResource(resourceName);
-//System.err.println("*** " + resourceName + " in " + rf + "? => " + resource);
+//System.err.println("*** " + resourceName + " in " + rf + "? => " + url);
             if (resource != null) return resource;
         }
         return null;

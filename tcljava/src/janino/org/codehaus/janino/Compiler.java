@@ -360,7 +360,7 @@ public class Compiler {
      * <code>optionalExtensionDirs</code> is the path defined in the "java.ext.dirs"
      * system property.
      */
-    static IClassLoader createJavacLikePathIClassLoader(
+    private static IClassLoader createJavacLikePathIClassLoader(
         final File[] optionalBootClassPath,
         final File[] optionalExtDirs,
         final File[] classPath

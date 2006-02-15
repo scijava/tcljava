@@ -74,14 +74,8 @@ public class JarDirectoriesResourceFinder extends LazyMultiResourceFinder {
                     return new TransformingIterator(Arrays.asList(jarFiles).iterator()) {
                         protected Object transform(Object o) {
                             try {
-                                if (false) {
-                                    System.out.println("Using ZipFileResourceFinder for " + ((File) o));
-                                }
                                 return new ZipFileResourceFinder(new ZipFile((File) o));
                             } catch (IOException e) {
-                                if (false) {
-                                    System.out.println("Using EMPTY_RESOURCE_FINDER for " + ((File) o));
-                                }
                                 return MultiResourceFinder.EMPTY_RESOURCE_FINDER;
                             }
                         }

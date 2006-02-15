@@ -1,3 +1,11 @@
+2006-02-15  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        Revert local changes to janino so that tree
+        state can be tagged before local mods.
+
+        Tagged as:
+            janino-2317-import
+
 2006-02-13  Mo DeJong  <mdejong@users.sourceforge.net>
 
         Add TJC::compile command to support runtime

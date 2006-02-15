@@ -119,30 +119,14 @@ public class PathResourceFinder extends LazyMultiResourceFinder {
      */
     private static ResourceFinder createResourceFinder(final File entry) {
 
-        final boolean DEBUG = false;
         // ZIP file or JAR file.
-        String name = entry.getName();
-        boolean isJar = name.endsWith(".jar");
-        boolean isZip = name.endsWith(".zip");
-        boolean isFile = entry.isFile();
-        if (DEBUG) {
-            System.out.println("createResourceFinder(" + name + ") : " + entry.getPath());
-            System.out.println("isJar " + isJar);
-            System.out.println("isZip " + isZip);
-            System.out.println("isFile " + isFile);
-        }
-        if ((isJar || isZip) && isFile) {
+        if (
+            (entry.getName().endsWith(".jar") || entry.getName().endsWith(".zip")) &&
+            entry.isFile()
+        ) {
             try {
-                ResourceFinder res = new ZipFileResourceFinder(new ZipFile(entry));
-                if (DEBUG) {
-                    System.out.println("Using ZipFileResourceFinder for " + entry);
-                }
-                return res;
+                return new ZipFileResourceFinder(new ZipFile(entry));
             } catch (IOException e) {
-                if (DEBUG) {
-                e.printStackTrace(System.out);
-                System.out.println("Using EMPTY_RESOURCE_FINDER for " + entry);
-                }
                 return MultiResourceFinder.EMPTY_RESOURCE_FINDER;
             }
         }
@@ -153,9 +137,6 @@ public class PathResourceFinder extends LazyMultiResourceFinder {
         }
 
         // Invalid entry.
-        if (DEBUG) {
-            System.out.println("Using EMPTY_RESOURCE_FINDER for invalid entry " + entry);
-        }
         return MultiResourceFinder.EMPTY_RESOURCE_FINDER;
     }
 }
