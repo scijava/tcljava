@@ -1,5 +1,20 @@
 2006-02-15  Mo DeJong  <mdejong@users.sourceforge.net>
 
+        Check in SimpleCompiler modifications to support
+        compilation of code contained in a Java String.
+
+        * src/janino/org/codehaus/janino/Compiler.java
+        (createJavacLikePathIClassLoader): Make method accessible
+        in rest of package so it can be used in SimpleCompiler.
+        * src/janino/org/codehaus/janino/SimpleCompiler.java
+        (SimpleCompiler, compile): Add constructor and compile
+        method to support compilation from a String object.
+        * src/janino/org/codehaus/janino/util/resource/MultiResourceFinder.java:
+        * src/janino/org/codehaus/janino/util/resource/PathResourceFinder.java:
+        Add debug statements.
+
+2006-02-15  Mo DeJong  <mdejong@users.sourceforge.net>
+
         Revert local changes to janino so that tree
         state can be tagged before local mods.
 
