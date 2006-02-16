@@ -4,7 +4,7 @@
 # This file has to have code that works in any version of Tcl that
 # the user would want to benchmark.
 #
-# RCS: @(#) $Id: libbench.tcl,v 1.1 2005/10/07 00:40:28 mdejong Exp $
+# RCS: @(#) $Id: libbench.tcl,v 1.2 2006/02/16 08:44:34 mdejong Exp $
 #
 # Copyright (c) 2000-2001 Jeffrey Hobbs.
 
@@ -147,6 +147,7 @@ proc bench {args} {
 	    set bench($opts(-desc)) $res
 	    puts $BENCH(OUTFID) [list Sourcing "$opts(-desc): $res"]
 	} else {
+	    puts "-body $opts(-body) -iter $opts(-iter)"
 	    set code [catch {uplevel \#0 \
 		    [list time $opts(-body) $opts(-iter)]} res]
 	    if {!$BENCH(THREADS)} {

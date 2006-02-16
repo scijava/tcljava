@@ -1,0 +1,27 @@
+# Test case for inlined string index command
+# inside a for loop.
+
+proc bench_string_index {} {
+    set string [string repeat "AAAA" 1000]
+    set sum 0
+    set len [string length $string]
+    for {set i 0} {$i < $len} {incr i} {
+        set c [string index $string $i]
+        incr sum
+    }
+    return
+}
+
+proc bench_string_index_foreach {} {
+    set string [string repeat "AAAA" 1000]
+    set slist [split $string {}]
+    set sum 0
+    foreach c $slist {
+        incr sum
+    }
+    return
+}
+
+bench -desc "bench_string_index" -body {bench_string_index}
+bench -desc "bench_string_index_foreach" -body {bench_string_index_foreach}
+
