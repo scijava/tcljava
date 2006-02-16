@@ -55,33 +55,46 @@ proc initJavaCompiler {} {
 
     #puts "drivers is \{$drivers\}"
 
+    # Look for compiler driver Jar in the same directory
+    # where tcljava.jar lives.
+
+    if {$::tcl_platform(host_platform) == "windows"} {
+        set sep \;
+    } else {
+        set sep :
+    }
+    set jardir ""
+    foreach path [split $::env(CLASSPATH) $sep] {
+        if {$path == {}} {
+            continue
+        }
+        if {[file tail $path] == "tcljava.jar"} {
+            set jardir [file dirname $path]
+        }
+    }
+    if {$jardir == ""} {
+        error "could not locate tcljava.jar on CLASSPATH \"$env(CLASSPATH)\""
+    }
+
     foreach driver $drivers {
         if {$driver == "pizza"} {
-            # Look for pizza compiler in current directory
-            set file [file join [pwd] "pizza-1.1.jar"]
-            if {![file exists $file]} {
-                # FIXME: Figure out how to deal with errors
-                #puts stderr "PIZZA JAR NOT FOUND"
-                continue
+            # Look for pizza compiler Jar
+            set file [file join $jardir "pizza-1.1.jar"]
+            if {[file exists $file]} {
+                set jar_file $file
+                set test_class net.sf.pizzacompiler.compiler.Main
+                set java_cmd pizzaCompile
+                break
             }
-            #puts "driver \"$driver\" located jar $file"
-            set jar_file $file
-            set test_class net.sf.pizzacompiler.compiler.Main
-            set java_cmd pizzaCompile
-            break
         } elseif {$driver == "janino"} {
-            # Look for janino compiler in current directory
-            set file [file join [pwd] "janino.jar"]
-            if {![file exists $file]} {
-                # FIXME: Figure out how to deal with errors
-                #puts stderr "JANINO JAR NOT FOUND"
-                continue
+            # Look for janino compiler Jar
+            set file [file join $jardir "janino.jar"]
+            if {[file exists $file]} {
+                set jar_file $file
+                set test_class org.codehaus.janino.SimpleCompiler
+                set java_cmd janinoCompile
+                break
             }
-            #puts "driver \"$driver\" located jar $file"
-            set jar_file $file
-            set test_class org.codehaus.janino.SimpleCompiler
-            set java_cmd janinoCompile
-            break
         }
     }
 
@@ -91,7 +104,7 @@ proc initJavaCompiler {} {
 
     #puts "Using Compiler Jar file $jar_file"
 
-    # Add Jar file to runtime classpath.
+    # Define runtime search path for TclClassLoader
 
     set env(TCL_CLASSPATH) $jar_file
 

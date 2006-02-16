@@ -1,8 +1,12 @@
 #! /bin/sh
 # Wrapper script to start up Tcl/Tk 8.x shell with tcl blend
-if (uname -s | grep CYGWIN > /dev/null) ; then
+if test "@WIN32_HOST@" = "1" ; then
+if (uname -s | grep MINGW > /dev/null) ; then
+    no=op ;
+else
     echo "Must be run from msys shell" ;
     exit 1 ;
+fi
 fi
 
 # Do not edit this script unless it is called jtclsh.in.

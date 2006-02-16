@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.69 2006/02/12 21:22:49 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.70 2006/02/16 03:03:22 mdejong Exp $
  *
  */
 
@@ -417,7 +417,8 @@ Interp()
             // 32 -> ' ' to 126 -> '~'
 
             obj = TclString.newInstance(
-                Character.toString((char) i));
+                //Character.toString((char) i)); // JDK 1.4 only
+                (((char) i) + ""));
 
             //System.out.println("m_charCommon[" + i + "] is \"" + obj + "\"");
         }

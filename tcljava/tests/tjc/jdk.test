@@ -60,15 +60,21 @@ CLASSPATH = C:/jdk1.2/lib/classes.jar
 
 tcltest::test jdk_config-2.3 {jdk_config_parse} {
     catch {unset _jdk_config}
-    set result [jdk_config_parse {
+
+    if {$::tcl_platform(host_platform) == "windows"} {
+        set CP "CLASSPATH = C:/jdk1.2/lib/classes.jar;C:/jacl.jar"
+    } else {
+        set CP "CLASSPATH = /jdk1.2/lib/classes.jar:/lib/jacl.jar"
+    }
+
+    set result [jdk_config_parse "
 JAVAC = C:/jdk1.2/bin/javac
 JAR = C:/jdk1.2/bin/jar
-# Note that next line includes a ; separator
-CLASSPATH = C:/jdk1.2/lib/classes.jar;C:/jacl.jar
-}]
+${CP}
+"]
     list $result \
-        [jdk_config_var CLASSPATH] \
-} {3 {C:/jdk1.2/lib/classes.jar;C:/jacl.jar}}
+        [expr {$CP == "CLASSPATH = [jdk_config_var CLASSPATH]"}]
+} {3 1}
 
 
 tcltest::test jdk_config-2.4 {jdk_config_parse} {
@@ -230,10 +236,17 @@ tcltest::test jdk_config-3.6 {jdk_config_parse_file} {
     close [open "fake_javac.exe" w]
     close [open "fake_jar.exe" w]
 
+
+    if {$::tcl_platform(host_platform) == "windows"} {
+        set sep \;
+    } else {
+        set sep :
+    }
+
     set data "
 JAVAC = $cwd/fake_javac.exe
 JAR = $cwd/fake_jar.exe
-CLASSPATH = tcljava.jar;foo.jar
+CLASSPATH = tcljava.jar${sep}foo.jar
     "
 
     set fd [open test.cfg w]
@@ -253,11 +266,19 @@ tcltest::test jdk_config-3.7 {jdk_config_parse_file} {
     close [open "fake_javac.exe" w]
     close [open "fake_jar.exe" w]
 
-    set data "
+    if {$::tcl_platform(host_platform) == "windows"} {
+        set data "
 JAVAC = $cwd/fake_javac.exe
 JAR = $cwd/fake_jar.exe
 CLASSPATH = tcljava.jar;jacl.jar;tjc.jar;C:/mart.zip
     "
+    } else {
+        set data "
+JAVAC = $cwd/fake_javac.exe
+JAR = $cwd/fake_jar.exe
+CLASSPATH = tcljava.jar:jacl.jar:tjc.jar:/tmp/mart.zip
+    "
+    }
 
     set fd [open test.cfg w]
     puts $fd $data
@@ -278,10 +299,16 @@ tcltest::test jdk_config-3.8 {jdk_config_parse_file} {
 
     # Path checks include .exe automatically
 
+    if {$::tcl_platform(host_platform) == "windows"} {
+        set CP "CLASSPATH = tcljava.jar;jacl.jar;tjc.jar;C:/mart.zip"
+    } else {
+        set CP "CLASSPATH = tcljava.jar:jacl.jar:tjc.jar:/tmp/mart.zip"
+    }
+
     set data "
 JAVAC = $cwd/fake_javac
 JAR = $cwd/fake_jar
-CLASSPATH = tcljava.jar;jacl.jar;tjc.jar;C:/mart.zip
+${CP}
     "
 
     set fd [open test.cfg w]

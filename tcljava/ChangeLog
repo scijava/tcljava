@@ -1,5 +1,25 @@
 2006-02-15  Mo DeJong  <mdejong@users.sourceforge.net>
 
+        * jaclsh.bat.in:
+        * jaclsh.in: Add janino.jar and janinosrc.jar
+        to debug classpath when debug is enabled.
+        Make sure Mingw test is only run under Win32.
+        * jtclsh.in: Make sure Mingw test is only
+        run under Win32.
+        * src/jacl/tcl/lang/Interp.java (Interp):
+        Use StringBuffer instead of Character.toString()
+        since it exists only in JDK 1.4.
+        * src/jacl/tcl/lang/Procedure.java: Typo.
+        * src/tjc/tjc/library/jdk.tcl: Use ':' as
+        path seperator unless running under Win32.
+        * src/tjc/tjc/library/tjcthread.tcl: Look
+        for janino.jar based on location of tcljava.jar
+        on the CLASSPATH.
+        * tests/tjc/jdk.test: Make tests work under
+        Unix and Win32.
+
+2006-02-15  Mo DeJong  <mdejong@users.sourceforge.net>
+
         Check in SimpleCompiler modifications to support
         compilation of code contained in a Java String.
 

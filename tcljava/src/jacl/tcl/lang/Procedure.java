@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Procedure.java,v 1.6 2005/09/12 00:00:50 mdejong Exp $
+ * RCS: @(#) $Id: Procedure.java,v 1.7 2006/02/16 03:03:22 mdejong Exp $
  *
  */
 
@@ -30,7 +30,7 @@ class Procedure implements Command, CommandWithDispose {
 
 TclObject[][] argList;
 
-// True if this proc takes an variable number of arguments. False
+// True if this proc takes a variable number of arguments. False
 // otherwise.
 
 boolean isVarArgs;

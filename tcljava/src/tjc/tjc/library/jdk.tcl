@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: jdk.tcl,v 1.2 2006/02/14 04:13:27 mdejong Exp $
+#  RCS: @(#) $Id: jdk.tcl,v 1.3 2006/02/16 03:03:22 mdejong Exp $
 #
 #
 
@@ -93,6 +93,8 @@ proc jdk_config_var { name } {
     }
 }
 
+# Parse "jdk.cfg" config file to load JDK tool names
+
 proc jdk_config_parse_file { filename } {
     set buffer [tjc_util_file_read $filename]
 
@@ -154,7 +156,13 @@ proc jdk_config_parse_file { filename } {
         set libdir ""
         set reason ""
 
-        foreach path [split $classpath \;] {
+        if {$::tcl_platform(host_platform) == "windows"} {
+            set sep \;
+        } else {
+            set sep :
+        }
+
+        foreach path [split $classpath $sep] {
             if {$path == {}} {
                 continue
             }
