@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclObjectBase.java,v 1.3 2006/02/14 04:13:27 mdejong Exp $
+ * RCS: @(#) $Id: TclObjectBase.java,v 1.4 2006/02/24 08:21:42 mdejong Exp $
  *
  */
 
@@ -308,7 +308,7 @@ abstract class TclObjectBase {
     /**
      * Return a String that describes TclObject and internal
      * rep type allocations and conversions. The string is
-     * in lines seperated by newlines. The saveObjRecords
+     * in lines separated by newlines. The saveObjRecords
      * needs to be set to true and Jacl recompiled for
      * this method to return a useful value.
      */

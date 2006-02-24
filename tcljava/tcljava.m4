@@ -306,7 +306,7 @@ AC_DEFUN([AC_PROG_JAVAC], [
 
     # Check for sickly javac delivered with JDK 1.1 on Win32.
     # The specific bug we are interested in is an inability
-    # to handle paths with a / seperator. We need to use a
+    # to handle paths with a / separator. We need to use a
     # special helper script to deal with this issue when
     # compiling under Win32.
 
@@ -738,7 +738,7 @@ AC_DEFUN([AC_JAVA_JNI_INCLUDE], [
 #	ac_java_jvm_ld_bind_now : if set to 1, then use LD_BIND_NOW=1
 #	ac_java_jvm_jni_lib_flags : library flags that we will pass to the compiler.
 #	    For instance, we might pass -L/usr/jdk/lib -ljava
-#	ac_java_jvm_jni_lib_runtime_path : colon seperated path of directories
+#	ac_java_jvm_jni_lib_runtime_path : colon separated path of directories
 #	    that is typically passed to rld.
 #
 # DEPENDS ON:

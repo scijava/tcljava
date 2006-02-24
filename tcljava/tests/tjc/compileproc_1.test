@@ -2,7 +2,7 @@ test_tjc_init
 
 # Test generation of code with +compile OPTION.
 # There could be quite a few optimization levels,
-# so each is convered in a seperate compileproc_N.test
+# so each is convered in a separate compileproc_N.test
 # file.
 
 

@@ -64,7 +64,7 @@ TCLSH=@TCLSH@
 # Setting for CLASSPATH determined by configure
 JAVA_CLASSPATH=@JAVA_CLASSPATH@
 
-# Colon seperated list of shared lib directories to search
+# Colon separated list of shared lib directories to search
 JAVA_LIB_RUNTIME_PATH=@JAVA_LIB_RUNTIME_PATH@:${TCLJAVA_INSTALL_DIR}
 
 # extra shared lib hack

@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TJCThread.java,v 1.1 2006/02/14 04:13:27 mdejong Exp $
+ * RCS: @(#) $Id: TJCThread.java,v 1.2 2006/02/24 08:21:42 mdejong Exp $
  *
  */
 
@@ -13,7 +13,7 @@
 // by any active interp that wishes to compile a Tcl method
 // into Java class files. Generating Java code and then
 // compiling it to Tcl code can take some time, so it is
-// done in a seperate thread and loaded into the requesting
+// done in a separate thread and loaded into the requesting
 // Interp when ready.
 
 package tcl.lang;

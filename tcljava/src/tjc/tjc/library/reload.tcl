@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: reload.tcl,v 1.2 2006/02/14 04:13:27 mdejong Exp $
+#  RCS: @(#) $Id: reload.tcl,v 1.3 2006/02/24 08:21:42 mdejong Exp $
 #
 #
 
@@ -42,7 +42,7 @@ proc reload {} {
         util.tcl \
         ]
 
-    # The embedded version of TJC is run in a seperate
+    # The embedded version of TJC is run in a separate
     # interp. It generates and compiles Java source
     # code directly, without writing to disk. For
     # that reason, the folllowing files are not needed.

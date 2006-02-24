@@ -2,7 +2,7 @@ package require tcltest
 
 # Test generation of code with -compile OPTION.
 # There could be quite a few optimization levels,
-# so they are kept seperated.
+# so they are kept separated.
 
 # Load jdk test data in case this has not already been done.
 source [file join [tcltest::testsDirectory] jdkutils.tcl]

@@ -121,7 +121,7 @@ static NsJavaEnvCache *NsJavaGetThreadEnvCache(void);
  *	NS_OK if initialized ok, NS_ERROR otherwise.
  *
  * Side effects:
- *	A seperate thread is spawned to actually start the jvm.
+ *	A separate thread is spawned to actually start the jvm.
  *
  *----------------------------------------------------------------------
  */
@@ -599,7 +599,7 @@ NsJavaStartJvm(void *context)
    * but because of signal handling conflicts between the jvm's garbage 
    * collector and aolserver's blocking of signals in the main thread, we
    * must start the jvm in another thread besides aolserver's main thread.
-   * We also need to use a seperate thread for the jvm because for 1.1 jdk's
+   * We also need to use a separate thread for the jvm because for 1.1 jdk's
    * the jvm thread must be destroyed in the thread that created it.
    */
 

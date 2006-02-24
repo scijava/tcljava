@@ -1,3 +1,17 @@
+2006-02-24  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * Makefile.in:
+        * jtclsh.in:
+        * tcljava.m4:
+        * src/aolserver/src/nsjava.c:
+        * src/jacl/tcl/lang/TclObject.java:
+        * src/tclblend/tcl/lang/TclObject.java:
+        * src/tcljava/tcl/lang/TclObjectBase.java:
+        * src/tjc/tcl/lang/TJCThread.java:
+        * src/tjc/tjc/library/reload.tcl:
+        * tests/tjc/compileproc_0.test:
+        * tests/tjc/compileproc_1.test: Fixup poor spelling.
+
 2006-02-23  Mo DeJong  <mdejong@users.sourceforge.net>
 
         Add new tests and update existing tests so that
@@ -49,7 +63,7 @@
         since it exists only in JDK 1.4.
         * src/jacl/tcl/lang/Procedure.java: Typo.
         * src/tjc/tjc/library/jdk.tcl: Use ':' as
-        path seperator unless running under Win32.
+        path separator unless running under Win32.
         * src/tjc/tjc/library/tjcthread.tcl: Look
         for janino.jar based on location of tcljava.jar
         on the CLASSPATH.
@@ -1844,8 +1858,8 @@
 	exist and other edge cases.
 	* mingw_path.test: Regression tests for mingw utils.
 	* mingw_paths.sh: Script to convert a set of
-	path elements seperated by : into win32 path
-	elements seperated by ; characters.
+	path elements separated by : into win32 path
+	elements separated by ; characters.
 
 2005-07-16  Mo DeJong  <mdejong@users.sourceforge.net>
 
@@ -3320,7 +3334,7 @@
 	getAccessibleMethods, getAccessibleInstanceMethods,
 	getAccessibleStaticMethods, mergeMethods,
 	mergeInstanceMethods):
-	Create seperate static and instance cache for
+	Create separate static and instance cache for
 	accessible methods. Add additional static flag
 	to get() so that search is confined to static
 	methods. Pass this flag down to lookupMethod
@@ -3329,7 +3343,7 @@
 	a static Method fails.
 	Add new getAccessibleStaticMethods and
 	getAccessibleInstanceMethods methods to
-	implement seperating out the static and
+	implement separating out the static and
 	instance method lookup tables.
 	Rename mergeMethods to mergeInstanceMethods
 	and avoid merging static or inaccessible
