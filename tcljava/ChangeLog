@@ -1,3 +1,30 @@
+2006-02-23  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        Add new tests and update existing tests so that
+        they have unique names. Rework the tclbench
+        module so that it runs tests until times converge.
+        This is needed so that the hotspot compiler will
+        fully compile code before tests results are used.
+        Add support for runtime compilation using the
+        TJC::compile command.
+
+        * tests/tclbench/data.bench:
+        * tests/tclbench/expr.bench:
+        * tests/tclbench/invoke.bench:
+        * tests/tclbench/jacl1+tjc.out:
+        * tests/tclbench/jacl1.out:
+        * tests/tclbench/jacl132.out:
+        * tests/tclbench/lappend.bench: moved tests to list.bench.
+        * tests/tclbench/libbench.tcl:
+        * tests/tclbench/list.bench: Add list tests.
+        * tests/tclbench/loops.bench:
+        * tests/tclbench/runbench.tcl:
+        * tests/tclbench/set.bench:
+        * tests/tclbench/string.bench:
+        * tests/tclbench/jworld/scripting.bench: Add rather
+        useless tests from Javaworld scripting article. These
+        tests suck up 128M of ram and take forever to run.
+
 2006-02-16  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * tests/tclbench/jacl132.out:

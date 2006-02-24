@@ -1,0 +1,180 @@
+# Test cases for inlined list commands.
+
+# Create a TclList with no string rep
+
+proc bench_list_constant {} {
+    return [list 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20]
+}
+
+# Set local scalar e to result of lindex with a constant integer
+# index. This operation is highly optimized by the TJC compiler.
+
+proc bench_list_index_constant {} {
+    set l [list 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20]
+    set e [lindex $l 0]
+    set e [lindex $l 1]
+    set e [lindex $l 2]
+    set e [lindex $l 3]
+    set e [lindex $l 4]
+    set e [lindex $l 5]
+    set e [lindex $l 6]
+    set e [lindex $l 7]
+    set e [lindex $l 8]
+    set e [lindex $l 9]
+    set e [lindex $l 10]
+    set e [lindex $l 11]
+    set e [lindex $l 12]
+    set e [lindex $l 13]
+    set e [lindex $l 14]
+    set e [lindex $l 15]
+    set e [lindex $l 16]
+    set e [lindex $l 17]
+    set e [lindex $l 18]
+    set e [lindex $l 19]
+    set e [lindex $l 20]
+    set e [lindex $l 21]
+    return
+}
+
+# Set local scalar e to result of lindex with a non-constant integer
+# index. This operation is optimized by the TJC compiler, but the
+# argument being non-constant means it is a little slower than
+# the operation above.
+
+proc bench_list_index_nonconstant {} {
+    set l [list 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20]
+    set i 0
+    set e [lindex $l $i]
+    set i 1
+    set e [lindex $l $i]
+    set i 2
+    set e [lindex $l $i]
+    set i 3
+    set e [lindex $l $i]
+    set i 4
+    set e [lindex $l $i]
+    set i 5
+    set e [lindex $l $i]
+    set i 6
+    set e [lindex $l $i]
+    set i 7
+    set e [lindex $l $i]
+    set i 8
+    set e [lindex $l $i]
+    set i 9
+    set e [lindex $l $i]
+    set i 10
+    set e [lindex $l $i]
+    set i 11
+    set e [lindex $l $i]
+    set i 12
+    set e [lindex $l $i]
+    set i 13
+    set e [lindex $l $i]
+    set i 14
+    set e [lindex $l $i]
+    set i 15
+    set e [lindex $l $i]
+    set i 16
+    set e [lindex $l $i]
+    set i 17
+    set e [lindex $l $i]
+    set i 18
+    set e [lindex $l $i]
+    set i 19
+    set e [lindex $l $i]
+    set i 20
+    set e [lindex $l $i]
+    set i 21
+    set e [lindex $l $i]
+    return
+}
+
+# lappend to lists
+
+proc bench_list_append {} {
+    set l1 [list]
+    set l2 [list]
+    set l3 [list]
+
+    foreach e {1 2 3 4 5 6 7} {
+        lappend l1 $e
+    }
+    foreach e {8 9 10 11 12 13 14} {
+        lappend l2 $e
+    }
+    foreach e {15 16 17 18 19 20 21 22 23 24 25 26 27 28} {
+        lappend l2 $e
+        lappend l3 $e $e
+    }
+    foreach e {29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48} {
+        lappend l3 $e
+    }
+    return [list $l1 $l2 $l3]
+}
+
+# Invoke llength over and over again. This test will be much
+# faster since llength is optimized by TJC.
+
+proc bench_list_llength {} {
+    set l [list 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20]
+    llength $l
+    llength $l
+    llength $l
+    llength $l
+    llength $l
+    llength $l
+    llength $l
+    llength $l
+    llength $l
+    llength $l
+    llength $l
+    llength $l
+    llength $l
+    llength $l
+    llength $l
+    llength $l
+    llength $l
+    llength $l
+    llength $l
+    llength $l
+    llength $l
+    llength $l
+    llength $l
+    llength $l
+    llength $l
+    llength $l
+    llength $l
+    llength $l
+    llength $l
+    llength $l
+    llength $l
+    llength $l
+    llength $l
+    llength $l
+    llength $l
+    llength $l
+    llength $l
+    llength $l
+    llength $l
+    llength $l
+    llength $l
+    llength $l
+    llength $l
+    llength $l
+    llength $l
+    llength $l
+    llength $l
+    llength $l
+    llength $l
+    llength $l
+    return [llength $l]
+}
+
+
+bench -desc "bench_list_constant" -body {bench_list_constant}
+bench -desc "bench_list_index_constant" -body {bench_list_index_constant}
+bench -desc "bench_list_index_nonconstant" -body {bench_list_index_nonconstant}
+bench -desc "bench_list_append" -body {bench_list_append}
+bench -desc "bench_list_llength" -body {bench_list_llength}
+

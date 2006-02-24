@@ -12,6 +12,9 @@ proc bench_string_index {} {
     return
 }
 
+# This implementation uses a foreach loop
+# and splits the string into a list.
+
 proc bench_string_index_foreach {} {
     set string [string repeat "AAAA" 1000]
     set slist [split $string {}]
@@ -22,6 +25,117 @@ proc bench_string_index_foreach {} {
     return
 }
 
+# The string compare command is inlined by TJC.
+
+proc bench_string_compare {} {
+    string compare "s1" "s2"
+    string compare "s2" "s1"
+    string compare \
+        "dlsakndalkdnaslkddaslkdnassldnaslkaslkdnalkddalskdnna" \
+        "dlsakndalkdnaslkddaslkdnassldnaslkaslkdnalkddalskdsad"
+    string compare "" "HELLO"
+    return
+}
+
+# The string equal command is inlined by TJC.
+
+proc bench_string_equal {} {
+    string equal "s1" "s2"
+    string equal "s2" "s1"
+    string equal \
+        "dlsakndalkdnaslkddaslkdnassldnaslkaslkdnalkddalskdnna" \
+        "dlsakndalkdnaslkddaslkdnassldnaslkaslkdnalkddalskdsad"
+    string equal "" "HELLO"
+    return
+}
+
+# The string length command is inlined by TJC.
+
+proc bench_string_length1 {} {
+    string length ""
+    string length ""
+    string length ""
+    string length ""
+    string length "1"
+    string length "12"
+    string length "123"
+    string length "1234"
+    return
+}
+
+# This test will compile into a much faster implementation because an
+# interpreted implementation would end up parsing the string constants
+# over and over again.
+
+proc bench_string_length2 {} {
+    string length "abcdefghijklmnopqrstuvwxyz"
+    string length \
+        "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+    string length \
+        "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+    string length \
+        "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+    string length \
+        "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+    string length \
+        "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+    string length \
+        "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+    string length \
+        "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+    string length \
+        "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+    string length \
+        "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+    string length \
+        "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+    string length \
+        "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+    string length \
+        "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+    string length \
+        "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+    string length \
+        "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+    string length \
+        "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+    string length \
+        "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+    string length \
+        "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+    string length \
+        "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+    string length \
+        "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+    string length \
+        "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+    string length \
+        "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+    string length \
+        "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+    string length \
+        "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+    string length \
+        "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+    string length \
+        "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+    string length \
+        "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+    string length \
+        "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+    string length \
+        "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+    string length \
+        "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+    string length \
+        "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+    return
+}
+
 bench -desc "bench_string_index" -body {bench_string_index}
 bench -desc "bench_string_index_foreach" -body {bench_string_index_foreach}
+bench -desc "bench_string_compare" -body {bench_string_compare}
+bench -desc "bench_string_equal" -body {bench_string_equal}
+bench -desc "bench_string_length1" -body {bench_string_length1}
+bench -desc "bench_string_length2" -body {bench_string_length2}
 

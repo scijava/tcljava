@@ -39,12 +39,12 @@ for {set i 0} {$i < $size} {incr i} {
     set array($i) $i
 }
 
-bench -desc "DATA create in a list" \
+bench -desc "data-create-list" \
 	-body {data-create-list $size}
-bench -desc "DATA create in an array" \
+bench -desc "data-create-array" \
 	-body {data-create-array $size}
 
-bench -desc "DATA access in a list" \
+bench -desc "data-access-list" \
 	-body {data-access-list list $size}
-bench -desc "DATA access in an array" \
+bench -desc "data-access-array" \
 	-body {data-access-array array $size}

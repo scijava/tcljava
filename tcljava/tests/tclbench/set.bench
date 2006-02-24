@@ -1,0 +1,157 @@
+# Bench test for set command. This is the
+# most basic Variable set/get testing on
+# could do. It also tests speed of plain
+# commands vs inlined set comamnds.
+
+# The following test sets the same variable
+# to different constant values. It should
+# be highly optimized by TJC since the
+# scalar variable is cached in the first
+# set operation.
+
+proc bench_set1 {} {
+    set i 0
+    set i 1
+    set i 2
+    set i 3
+    set i 4
+    set i 5
+    set i 6
+    set i 7
+    set i 8
+    set i 9
+    set i 10
+    set i 11
+    set i 12
+    set i 13
+    set i 14
+    set i 15
+    return
+}
+
+# The following test sets different variables
+# to the same constant value. This test is
+# not currently well optimized because each
+# set operation for a new variable inits a
+# cache which is not used again in the method.
+
+proc bench_set2 {} {
+    set a 0
+    set b 0
+    set c 0
+    set d 0
+    set e 0
+    set f 0
+    set g 0
+    set h 0
+    set i 0
+    set j 0
+    set k 0
+    set l 0
+    set m 0
+    set n 0
+    set o 0
+    set p 0
+    return
+}
+
+# The following test sets array variables,
+# each set command is inlined, but the
+# array variable sets are not optimzed.
+
+proc bench_set3 {} {
+    set arr(a) 0
+    set arr(b) 0
+    set arr(c) 0
+    set arr(d) 0
+    set arr(e) 0
+    set arr(f) 0
+    set arr(g) 0
+    set arr(h) 0
+    set arr(i) 0
+    set arr(j) 0
+    set arr(k) 0
+    set arr(l) 0
+    set arr(m) 0
+    set arr(n) 0
+    set arr(o) 0
+    set arr(p) 0
+    return
+}
+
+# This test will query the value of a variable over and over
+# again. This test is highly optimized by the TJC compiler
+# because the scalar variable is queried from a cached var.
+# This test basically tests command eval time in an uncompiled
+# command vs compiled and inlined set command times.
+
+proc bench_set4 {} {
+    set i 0
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    set i
+    return
+}
+
+bench -desc "bench_set1" -body {bench_set1}
+bench -desc "bench_set2" -body {bench_set2}
+bench -desc "bench_set3" -body {bench_set3}
+bench -desc "bench_set4" -body {bench_set4}
+

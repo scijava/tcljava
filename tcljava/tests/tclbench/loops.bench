@@ -137,32 +137,31 @@ for {set i 0} {$i < $size} {incr i} {
     append string "0"
 }
 
-bench -desc "LOOP for, iterate list" \
+bench -desc "loops-for-list" \
 	-body {loops-for-list $list}
-bench -desc "LOOP for-ten, iterate list" \
+bench -desc "loops-for-list-ten" \
 	-body {loops-for-list-ten $list}
 
-bench -desc "LOOP foreach, iterate list" \
+bench -desc "loops-foreach-list" \
 	-body {loops-foreach-list $list}
-bench -desc "LOOP foreach-ten, iterate list" \
+bench -desc "loops-foreach-list-ten" \
 	-body {loops-foreach-list-ten $list}
 
-bench -desc "LOOP for (to $size)" \
+bench -desc "loops-foo-num-$size" \
 	-body {loops-foo-num $size}
 
-bench -desc "LOOP while (to $size)" \
+bench -desc "loops-while-num-$size" \
 	-body {loops-while-num $size}
-bench -desc "LOOP while-ten (to $size)" \
+bench -desc "loops-while-num-ten-$size" \
 	-body {loops-while-num-ten $size}
 
-
-bench -desc "LOOP while 1 (to $size)" \
+bench -desc "loops-while-1-$size" \
 	-body {loops-while-1 $size}
-bench -desc "LOOP while 1 (ten) (to $size)" \
+bench -desc "loops-while-1-ten-$size" \
 	-body {loops-while-1-ten $size}
 
-bench -desc "LOOP for, iterate string" \
+bench -desc "loops-for-string" \
       -body {loops-for-string $string}
-bench -desc "LOOP foreach, iterate string" \
+bench -desc "loops-foreach-string" \
       -body {loops-foreach-string $string}
 

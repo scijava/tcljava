@@ -1,0 +1,19 @@
+# This set of benchmarks check Tcl proc invocation times.
+
+proc iempty {} {}
+
+proc invoke_empty {} {
+    iempty
+    iempty
+    iempty
+    iempty
+    iempty
+    iempty
+    iempty
+    iempty
+    iempty
+    iempty
+}
+
+bench -desc "invoke_empty" -body {invoke_empty}
+

@@ -4,7 +4,7 @@
 # This file has to have code that works in any version of Tcl that
 # the user would want to benchmark.
 #
-# RCS: @(#) $Id: libbench.tcl,v 1.2 2006/02/16 08:44:34 mdejong Exp $
+# RCS: @(#) $Id: libbench.tcl,v 1.3 2006/02/24 02:56:49 mdejong Exp $
 #
 # Copyright (c) 2000-2001 Jeffrey Hobbs.
 
@@ -147,32 +147,15 @@ proc bench {args} {
 	    set bench($opts(-desc)) $res
 	    puts $BENCH(OUTFID) [list Sourcing "$opts(-desc): $res"]
 	} else {
-	    puts "-body $opts(-body) -iter $opts(-iter)"
-	    set code [catch {uplevel \#0 \
-		    [list time $opts(-body) $opts(-iter)]} res]
-	    if {!$BENCH(THREADS)} {
-		if {$code == 0} {
-		    # Get just the microseconds value from the time result
-		    set res [lindex $res 0]
-		} elseif {$code != 666} {
-		    # A 666 result code means pass it through to the bench
-		    # suite. Otherwise throw errors all the way out, unless
-		    # we specified not to throw errors (option -errors 0 to
-		    # libbench).
-		    if {$BENCH(ERRORS)} {
-			return -code $code -errorinfo $errorInfo \
-				-errorcode $errorCode
-		    } else {
-			set res "ERR"
-		    }
-		}
-		set bench($opts(-desc)) $res
-		puts $BENCH(OUTFID) [list Sourcing "$opts(-desc): $res"]
-	    } else {
-		# Threaded runs report back asynchronously
-		thread::send $BENCH(us) \
-			[list thread_report $opts(-desc) $code $res]
+	    set results [prepare_and_run_body $opts(-body) $opts(-iter)]
+	    if {[lindex $results 0] == "ERROR"} {
+	        error [lindex $results 1]
 	    }
+	    # Note: Removed Thread running code since it is never used.
+	    # Get just the microseconds value from the time result
+            set msecs $results
+            set bench($opts(-desc)) $msecs
+            puts $BENCH(OUTFID) [list Sourcing "$opts(-desc): $msecs"]
 	}
     }
     if {($opts(-post) != "") && [catch {uplevel \#0 $opts(-post)} err] \
@@ -189,8 +172,134 @@ proc usage {} {
 	    \n\t-rmatch <regexp>	# only run tests matching this pattern\
 	    \n\t-match <glob>		# only run tests matching this pattern\
 	    \n\t-interp	<name>		# name of interp (tries to get it right)\
+	    \n\t-tjc	0|1		# 1 if TJC compiler will be used\
 	    \n\tfileList		# files to benchmark"
     exit 1
+}
+
+# This method will run the command and catch errors.
+# If an error was caught, the pair {ERROR MSG} will
+# be returned. Otherwise, an integer indicating the
+# time the method took to complete will be returned.
+#
+# This method takes care to run the tests a couple
+# of times to make sure it is fully compiled.
+
+proc prepare_and_run_body { body iterations } {
+    # Run test a coule of times to make sure
+    # no error is generated. After this block,
+    # just assume that the body will not generate
+    # an error.
+    if {[catch {
+        namespace eval :: [list time $body 2]
+    } err]} {
+        return [list ERROR $err]
+    }
+    # Run the body iterations times over and over
+    # again, saving the time results. We do this
+    # so that the body can be run enough times
+    # that any code it depends on is fully compiled
+    # by the JIT or HotSpot compiler.
+
+    set debug 0
+
+    set times [list]
+    set deltas [list]
+    set percents [list]
+
+    set t_last -1
+
+    set restarted 0
+
+    set max_loops 10
+    if {$iterations == 1} {
+        # Must be a really long test, don't try to run
+        # it multiple times
+        set max_loops 1
+    }
+
+    for {set i 0} {$i < $max_loops} {incr i} {
+        set t [run_body $body $iterations]
+        lappend times $t
+        if {$t_last != -1} {
+            set dt [expr {$t - $t_last}]
+            lappend deltas $dt
+            if {$t == 0} {
+                set pt 0.0
+            } else {
+                set pt [expr {$dt / double($t)}]
+            }
+            lappend percents $pt
+        }
+        set t_last $t
+
+        if {$i < 3} {
+            # Always run at least 4 iterations
+            continue
+        } else {
+            # It the results are converging, then
+            # no need to run tests anymore.
+            if {abs($pt) < 0.08} {
+                if {$debug} {
+                    puts stderr "delta percent $pt is no longer converging at $i"
+                }
+
+                # If the command seems to be taking no time at all,
+                # throw out the current results and rerun the tests
+                # with more iterations to try to get a more accurate
+                # average of the time data.
+
+                if {!$restarted && ($t <= 15)} {
+                    if {$debug} {
+                    puts stderr "Times :\t\t$times"
+                    puts stderr "restarted because time $t is very small"
+                    }
+                    set restarted 1
+                    set times [list]
+                    set deltas [list]
+                    set percents [list]
+                    set t_last -1
+
+                    set iterations [expr {$iterations * 5}]
+                    set i 0
+                    continue
+                }
+
+                break
+            }
+            if {$debug} {
+               puts stderr "delta percent $pt could still be converging at $i"
+            }
+        }
+    }
+
+    if {$debug} {
+        puts stderr "body $body : $iterations"
+        puts stderr "Times :\t\t$times"
+        puts stderr "Deltas :\t$deltas"
+        puts stderr "Percents :\t$percents"
+    }
+
+    # report the fastest time
+    set mt [lindex $times 0]
+    foreach t [lrange $times 1 end] {
+        if {$t < $mt} {
+            set mt $t
+        }
+    }
+
+    return $mt
+}
+
+# Run the body iterations number of times and return the time
+# it took per iteration.
+
+proc run_body { body iterations } {
+#    puts stderr "running \{$body\} $iterations times"
+    set results [namespace eval :: [list time $body $iterations]]
+    set t [lindex $results 0]
+#    puts stderr "timing results were $t"
+    return $t
 }
 
 #
@@ -207,6 +316,7 @@ foreach {var val} {
 	FILES		{}
 	ITERS		1000
 	THREADS		0
+	TJC		0
 	EXIT		"[info exists tk_version]"
 } {
     if {![info exists BENCH($var)]} {
@@ -226,6 +336,19 @@ if {[llength $argv]} {
 	    -mat*	{ set BENCH(MATCH)   [lindex $argv 1] }
 	    -iter*	{ set BENCH(ITERS)   [lindex $argv 1] }
 	    -thr*	{ set BENCH(THREADS) [lindex $argv 1] }
+	    -tjc	{
+                set BENCH(TJC) [lindex $argv 1]
+                # Double check that this interp supports compilation
+                # at runtime with TJC::compile.
+                if {$BENCH(TJC)} {
+                    #puts stderr "now to do \[package require TJC\]"
+                    package require TJC
+                    if {[info commands TJC::compile] == {}} {
+                        error "Runtime TJC compilation not supported"
+                    }
+                    #puts stderr "done with package require"
+                }
+            }
 	    default {
 		foreach arg $argv {
 		    if {![file exists $arg]} { usage }
@@ -235,16 +358,6 @@ if {[llength $argv]} {
 	    }
 	}
 	set argv [lreplace $argv 0 1]
-    }
-}
-
-if {$BENCH(THREADS)} {
-    # We have to be able to load threads if we want to use threads, and
-    # we don't want to create more threads than we have files.
-    if {[catch {package require Thread}]} {
-	set BENCH(THREADS) 0
-    } elseif {[llength $BENCH(FILES)] < $BENCH(THREADS)} {
-	set BENCH(THREADS) [llength $BENCH(FILES)]
     }
 }
 
@@ -259,131 +372,75 @@ if {[string compare $BENCH(OUTFILE) stdout]} {
     set BENCH(OUTFID) stdout
 }
 
-#
-# Everything that gets output must be in pairwise format, because
-# the data will be collected in via an 'array set'.
-#
+if {1} {
+    set debug 0
 
-if {$BENCH(THREADS)} {
-    # Each file must run in it's own thread because of all the extra
-    # header stuff they have.
-    #set DEBUG 1
-    proc thread_one {{id 0}} {
-	global BENCH
-	set file [lindex $BENCH(FILES) 0]
-	set BENCH(FILES) [lrange $BENCH(FILES) 1 end]
-	if {[file exists $file]} {
-	    incr BENCH(inuse)
-	    puts $BENCH(OUTFID) [list Sourcing $file]
-	    if {$id} {
-		set them $id
-	    } else {
-		set them [thread::create]
-		thread::send -async $them { load {} Thread }
-		thread::send -async $them \
-			[list array set BENCH [array get BENCH]]
-		thread::send -async $them \
-			[list proc bench_tmpfile {} [info body bench_tmpfile]]
-		thread::send -async $them \
-			[list proc bench_rm {args} [info body bench_rm]]
-		thread::send -async $them \
-			[list proc bench {args} [info body bench]]
-	    }
-	    if {[info exists ::DEBUG]} {
-		puts stderr "SEND [clock seconds] thread $them $file INUSE\
-		$BENCH(inuse) of $BENCH(THREADS)"
-	    }
-	    thread::send -async $them [list source $file]
-	    thread::send -async $them \
-		    [list thread::send $BENCH(us) [list thread_ready $them]]
-	    #thread::send -async $them { thread::unwind }
-	}
-    }
-
-    proc thread_em {} {
-	global BENCH
-	while {[llength $BENCH(FILES)]} {
-	    if {[info exists ::DEBUG]} {
-		puts stderr "THREAD ONE [lindex $BENCH(FILES) 0]"
-	    }
-	    thread_one
-	    if {$BENCH(inuse) >= $BENCH(THREADS)} {
-		break
-	    }
-	}
-    }
-
-    proc thread_ready {id} {
-	global BENCH
-
-	incr BENCH(inuse) -1
-	if {[llength $BENCH(FILES)]} {
-	    if {[info exists ::DEBUG]} {
-		puts stderr "SEND ONE [clock seconds] thread $id"
-	    }
-	    thread_one $id
-	} else {
-	    if {[info exists ::DEBUG]} {
-		puts stderr "UNWIND thread $id"
-	    }
-	    thread::send -async $id { thread::unwind }
-	}
-    }
-
-    proc thread_report {desc code res} {
-	global BENCH bench errorInfo errorCode
-
-	if {$code == 0} {
-	    # Get just the microseconds value from the time result
-	    set res [lindex $res 0]
-	} elseif {$code != 666} {
-	    # A 666 result code means pass it through to the bench suite.
-	    # Otherwise throw errors all the way out, unless we specified
-	    # not to throw errors (option -errors 0 to libbench).
-	    if {$BENCH(ERRORS)} {
-		return -code $code -errorinfo $errorInfo \
-			-errorcode $errorCode
-	    } else {
-		set res "ERR"
-	    }
-	}
-	set bench($desc) $res
-    }
-
-    proc thread_finish {{delay 4000}} {
-	global BENCH bench
-	set val [expr {[llength [thread::names]] > 1}]
-	#set val [expr {$BENCH(inuse)}]
-	if {$val} {
-	    after $delay [info level 0]
-	} else {
-	    foreach desc [array names bench] {
-		puts $BENCH(OUTFID) [list $desc $bench($desc)]
-	    }
-	    if {$BENCH(EXIT)} {
-		exit.true ; # needed for Tk tests
-	    }
-	}
-    }
-
-    set BENCH(us) [thread::id]
-    set BENCH(inuse) 0 ; # num threads in use
-    puts $BENCH(OUTFID) [list __THREADED [package provide Thread]]
-
-    thread_em
-    thread_finish
-    vwait forever
-} else {
     foreach BENCH(file) $BENCH(FILES) {
 	if {[file exists $BENCH(file)]} {
 	    puts $BENCH(OUTFID) [list Sourcing $BENCH(file)]
-            #puts "SOURCE $BENCH(file)"
+
+            if {$BENCH(TJC)} {
+                # This is kind of tricky, we need to compile procs
+                # defined in the .bench file but the tests are
+                # run right after the procs are defined. Work around
+                # this by renaming the proc command while this
+                # file is being sourced.
+
+                if {$debug} {
+                    puts stderr "TJC compile mode was enabled"
+                }
+
+                proc __tjc_proc { name args body } {
+                    global __tjc_proc_ready debug
+
+                    if {$debug} {
+                        puts stderr "DEFINED proc $name in TJC proc handler"
+                    }
+
+                    __tjc_proc $name $args $body
+                    TJC::compile $name \
+                        -readyvar __tjc_proc_ready
+
+                    # Wait for __tjc_proc_ready to be set when
+                    # the command has been compiled.
+                    if {$debug} {
+                        puts stderr "waiting for __tjc_proc_ready"
+                    }
+                    vwait __tjc_proc_ready
+                    if {$debug} {
+                        puts stderr "__tjc_proc_ready is \{$__tjc_proc_ready\}"
+                    }
+                    unset __tjc_proc_ready
+                }
+                rename proc __tmp
+                rename __tjc_proc proc
+                rename __tmp __tjc_proc
+            } else {
+                if {$debug} {
+                    puts stderr "TJC compile mode was NOT enabled"
+                }
+            }
+
+            # Sourcing the .bench file will define the procs
+            # or compiled commands and run the bench tests
+            # via the "bench" command that appears at the
+            # bottom of the .bench file.
+            if {$debug} {
+                puts stderr "source $BENCH(file)"
+            }
 	    source $BENCH(file)
+
+            if {$BENCH(TJC)} {
+                # Reset original proc command
+                rename proc {}
+                rename __tjc_proc proc
+            }
 	}
     }
 
-    foreach desc [array names bench] {
-	puts $BENCH(OUTFID) [list $desc $bench($desc)]
+    # Print test name and timing results:
+    foreach desc [lsort -dictionary [array names bench]] {
+	puts $BENCH(OUTFID) [list TIMING $desc $bench($desc)]
     }
 
     if {$BENCH(EXIT)} {
@@ -392,3 +449,4 @@ if {$BENCH(THREADS)} {
     #puts stdout "exit at end of bench tests"
     #flush stdout
 }
+

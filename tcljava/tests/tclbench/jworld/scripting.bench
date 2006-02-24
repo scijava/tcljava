@@ -1,0 +1,95 @@
+# Bench tests from "Choosing a Java scripting language: Round two"
+# http://www.javaworld.com/javaworld/jw-03-2005/jw-0314-scripting_p.html
+
+
+# "Count from 1 to 1 million"
+
+proc count {howmany} {
+   for {set i 1} {$i < $howmany} {incr i} {
+   }
+}
+
+# "Compare 1 million integers for equality"
+
+proc compare {howmany value} {
+   for {set i 1} {$i < $howmany} {incr i} {
+      if {$i == $value} {
+         puts $i
+      }
+   }
+}
+
+# "Allocate and initialize a 100,000 element array"
+
+# NOTE: This test allocates a hashtable with 100000
+# elements. While a hashtable can be indexed by
+# integers, it is the an "array" data structure
+# meaning a O(1) access indexed by integers.
+# The list object provides that kind of data
+# structure in Tcl. Since the tests in other
+# languages are done with integer indexes arrays
+# the results come out extremely slow in Jacl,
+# but these results are very misleading since
+# they do not compare the same things.
+
+proc allocArray {howmany} {
+   for {set j 1} {$j < $howmany} {incr j} {
+      set array($j) $j
+   }
+}
+
+# The following is a more accurate representation
+# of the kind of "array" access the test above
+# should have been using. The Python and Java
+# versions of this test use this type of implementation.
+# Note also that the first index should be 0 and not 1.
+
+proc allocArrayList {howmany} {
+   set array [list]
+   for {set j 0} {$j < $howmany} {incr j} {
+      lappend array $j
+   }
+   # Java: array[i]
+   #
+   # Tcl: [lindex $array $i]
+}
+
+
+# "Allocate and initialize a 500-by-500 element array"
+#
+# Note: this test is even slower than allocArray
+# because it creates a hashtable with 250000
+# elements.
+
+proc allocMatrix {howmany} {
+   for {set i 1} {$i < $howmany} {incr i} {
+      for {set j 1} {$j < $howmany} {incr j} {
+         set matrix($i,$j) $i
+      }
+   }
+}
+
+# This is how allocMatrix should have been implemented
+
+proc allocMatrixList {howmany} {
+   set matrix [list]
+   for {set i 0} {$i < $howmany} {incr i} {
+      set column [list]
+      for {set j 0} {$j < $howmany} {incr j} {
+         lappend column $i
+      }
+      lappend matrix $column
+   }
+   # Java: matrix[i][j]
+   #
+   # Tcl: [lindex $matrix $i $j]
+}
+
+
+bench -desc "count" -body {count 1000000} -iterations 1
+bench -desc "compare" -body {compare 1000000 [expr {1000000 - 1}]} -iterations 1
+bench -desc "allocArray" -body {allocArray 100000} -iterations 1
+bench -desc "allocArrayList" -body {allocArrayList 100000} -iterations 1
+bench -desc "allocMatrix" -body {allocMatrix 500} -iterations 1
+bench -desc "allocMatrixList" -body {allocMatrixList 500} -iterations 1
+
