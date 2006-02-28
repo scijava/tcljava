@@ -1,3 +1,36 @@
+2006-02-28  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/jacl/tcl/lang/Expression.java (ExprParseObject,
+        ExprParseString, evalUnaryOperator, evalBinaryOperator,
+        ExprLex): Make ExprParseObject and ExprParseString
+        static methods. Pass ExprValue into the ExprParseObject
+        and ExprParseString methods and update callers. Use
+        String.equals() instead of String.compareTo() since
+        equals will directly compare object refrences which
+        should be faster when dealing with the same String.
+        Check for the more common TclInteger before TclBoolean
+        and TclList in the ExprParseObject method.
+        Make evalUnaryOperator and evalBinaryOperator methods
+        static. Use ExprValue.setIntValue(boolean) method
+        when a boolean result is being set.
+        * src/tests/tjc/TestTJC.java: Update caller
+        of exprEqualsEmptyString().
+        * src/tjc/tcl/lang/TJC.java (getBoolean,
+        exprEqualsEmptyString, exprGetValue):
+        Check for TclInteger before TclBoolean and TclList.
+        Update ExprParseObject(), evalUnaryOperator(),
+        and evalBinaryOperator() calls. Do pointer compare
+        for empty string "" in exprEqualsEmptyString and
+        pass in negate flag instead of negating in caller code.
+        Add a exprGetValue() helper that accepts a boolean value.
+        * src/tjc/tjc/library/compileproc.tcl:
+        Rework compileproc_expr_evaluate_emit_binary_operator
+        so that calls to TJC.exprEqualsEmptyString() accept
+        a boolean negate flag. Use String.equals() instead of
+        String.compareTo() when comparing a TclObject to
+        a constant string value.
+        * tests/tjc/compileproc_2.test: Update tests.
+
 2006-02-24  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * Makefile.in:

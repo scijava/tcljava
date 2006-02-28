@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Expression.java,v 1.20 2006/02/10 02:20:12 mdejong Exp $
+ * RCS: @(#) $Id: Expression.java,v 1.21 2006/02/28 23:37:39 mdejong Exp $
  *
  */
 
@@ -331,69 +331,63 @@ class Expression {
 
     /**
      * Given a TclObject, such as the result of a command or
-     * variable evaluation, generate a ExprValue that contains
-     * the parsed result. If the TclObject already has an
-     * internal rep that is a numeric type, then no need to parse.
+     * variable evaluation, fill in a ExprValue with the
+     * parsed result. If the TclObject already has an
+     * internal rep that is a numeric type, then no need to
+     * parse from the string rep.
+     *
      * Note that this method does not change the internal rep
      * of parsed objects.
      */
 
-    ExprValue ExprParseObject(Interp interp, TclObject obj)
+    static void
+    ExprParseObject(Interp interp, TclObject obj, ExprValue value)
 	    throws TclException
     {
         // If the TclObject already has an integer, floating point,
         // or boolean representation then use it.
 
         InternalRep rep = obj.getInternalRep();
-        TclObject orig_obj = obj;
 
-        if (obj.hasNoStringRep() && (rep instanceof TclList)) {
-            if (TclList.getLength(interp, obj) == 1) {
-                // If a pure list is of length one, then use
-                // the list element in the typed tests below.
-                obj = TclList.index(interp, obj, 0);
-                rep = obj.getInternalRep();
-            }
-        }
-
-        if (rep instanceof TclBoolean) {
-            // A "pure" boolean created from a primitive
-            // type can be treated as an integer value.
-            // If the boolean has a string rep, then
-            // check to see if it is "0" or "1" and
-            // use an integer value. Otherwise, treat
-            // the object as a string since expr code
-            // can convert to a boolean value later
-            // on if needed.
-
-            if (obj.hasNoStringRep()) {
-                boolean bval = TclBoolean.get(interp, obj);
-                ExprValue value = grabExprValue();
-                value.setIntValue(bval ? 1 : 0);
-                return value;
-            } else {
-                String srep = obj.toString();
-                int slen = srep.length();
-                if (slen == 1 && srep.charAt(0) == '0') {
-                    ExprValue value = grabExprValue();
-                    value.setIntValue(0);
-                    return value;
-                } else if (slen == 1 && srep.charAt(0) == '1') {
-                    ExprValue value = grabExprValue();
-                    value.setIntValue(1);
-                    return value;
-                }
-            }
-        } else if (rep instanceof TclInteger) {
+        if (rep instanceof TclInteger) {
             // If the object is a "pure" number, meaning it
             // was created from a primitive type and there
             // is no string rep, then generate a string
             // from the primitive type later on, if needed.
 
-            ExprValue value = grabExprValue();
             value.setIntValue(TclInteger.get(interp, obj),
                 (obj.hasNoStringRep() ? null : obj.toString()));
-            return value;
+            return;
+        } else if (rep instanceof TclBoolean) {
+            // A "pure" boolean created from a primitive
+            // type can be treated as an integer value.
+            // If the boolean has a string rep, then
+            // check for the special cases of "0" or "1".
+            // Otherwise, treat the object as a string
+            // value since the expr code can convert
+            // to a boolean as needed.
+
+            if (obj.hasNoStringRep()) {
+                boolean bval = TclBoolean.get(interp, obj);
+                value.setIntValue(bval);
+                return;
+            } else {
+                String srep = obj.toString();
+                int slen = srep.length();
+                if (slen == 1 && srep.charAt(0) == '0') {
+                    value.setIntValue(0);
+                    return;
+                } else if (slen == 1 && srep.charAt(0) == '1') {
+                    value.setIntValue(1);
+                    return;
+                } else if (slen == 4 && srep.equals("true")) {
+                    value.setStringValue("true");
+                    return;
+                } else if (slen == 5 && srep.equals("false")) {
+                    value.setStringValue("false");
+                    return;
+                }
+            }
         } else if (rep instanceof TclDouble) {
             // An object with a double internal rep might
             // actually be an integer that was converted
@@ -404,9 +398,8 @@ class Expression {
 
             double dval = TclDouble.get(interp, obj);
             if (obj.hasNoStringRep()) {
-                ExprValue value = grabExprValue();
                 value.setDoubleValue(dval);
-                return value;
+                return;
             }
             String str = obj.toString();
             if (looksLikeInt(str, str.length(), 0, true)) {
@@ -415,41 +408,55 @@ class Expression {
                 // integer internal rep in this case.
                 // That would avoid lots of pointless
                 // calls to looksLikeInt() in a loop.
-                ExprValue value = grabExprValue();
                 value.setIntValue((int) dval, str);
-                return value;
+                return;
             } else {
-                ExprValue value = grabExprValue();
                 value.setDoubleValue(dval, str);
-                return value;
+                return;
+            }
+        } else if (rep instanceof TclList) {
+            if (obj.hasNoStringRep() && (TclList.getLength(interp, obj) == 1)) {
+                // If a pure list is of length one, then
+                // check for the case of an integer or boolean.
+
+                TclObject elem = TclList.index(interp, obj, 0);
+                if (elem.getInternalRep() instanceof TclInteger) {
+                    value.setIntValue(TclInteger.get(interp, elem),
+                        (elem.hasNoStringRep() ? null : elem.toString()));
+                    return;
+                }
             }
         }
-        // Parse value from String, use the original
-        // object in the case of a list of length 1.
-        if (obj != orig_obj) {
-            obj = orig_obj;
-        }
-        return ExprParseString(interp, obj.toString());
+
+        // Otherwise, parse value from the string rep
+
+        ExprParseString(interp, obj.toString(), value);
+        return;
     }
 
     /**
      * Given a string (such as one coming from command or variable
-     * substitution), make a Value based on the string.  The value
-     * be a floating-point or integer, if possible, or else it
-     * just be a copy of the string.
+     * substitution), fill in an ExprValue based on the string value.
+     * The value may be a floating-point, an integer, or a string.
      *
      * @param interp the context in which to evaluate the expression.
      * @param s the string to parse.
+     * @param value the ExprValue object to save the parsed value in.
      * @exception TclException for malformed expressions.
-     * @return the value of the expression.
      */
 
-    private ExprValue ExprParseString(Interp interp, String s)
+    private static void
+    ExprParseString(Interp interp, String s, ExprValue value)
 	    throws TclException {
 
 	char c;
-	int len = s.length();
-	ExprValue value = grabExprValue();
+	int len;
+
+	if (s == "") {
+	    len = 0;
+	} else {
+	    len = s.length();
+	}
 
 	//System.out.println("now to ExprParseString ->" + s +
 	//	 "<- of length " + len);
@@ -460,7 +467,7 @@ class Expression {
 
 	if (len == 0) {
 	    value.setStringValue(s);
-	    return value;
+	    return;
 	} else if (len == 1) {
             // Check for really common strings of length 1
             // that we know will be integers.
@@ -476,33 +483,28 @@ class Expression {
                 case '7':
                 case '8':
                 case '9':
-		    m_token = VALUE;
 		    value.setIntValue(c - '0', s);
-		    return value;
+		    return;
             }
 	} else if (len == 2) {
             // Check for really common strings of length 2
             // that we know will be integers.
-            if (s.compareTo("-1") == 0) {
-                m_token = VALUE;
+            if (s.equals("-1")) {
                 value.setIntValue(-1, s);
-                return value;
+                return;
             }
         } else if (len == 3) {
             // Check for really common strings of length 3
             // that we know will be doubles.
-            if (s.compareTo("0.0") == 0) {
-                m_token = VALUE;
+            if (s.equals("0.0")) {
                 value.setDoubleValue(0.0, s);
-                return value;
-            } else if (s.compareTo("0.5") == 0) {
-                m_token = VALUE;
+                return;
+            } else if (s.equals("0.5")) {
                 value.setDoubleValue(0.5, s);
-                return value;
-            } else if (s.compareTo("1.0") == 0) {
-                m_token = VALUE;
+                return;
+            } else if (s.equals("1.0")) {
                 value.setDoubleValue(1.0, s);
-                return value;
+                return;
             }
         }
 
@@ -535,9 +537,8 @@ class Expression {
 
                 if (trailing_blanks) {
 	            //System.out.println("string is an Integer of value " + res.value);
-		    m_token = VALUE;
 		    value.setIntValue((int) res.value, s);
-		    return value;
+		    return;
                 } else {
 		    //System.out.println("string failed trailing_blanks test, not an integer");
                 }
@@ -562,9 +563,8 @@ class Expression {
 
                 if (trailing_blanks) {
 	            //System.out.println("string is a Double of value " + res.value);
-		    m_token = VALUE;
 		    value.setDoubleValue(res.value, s);
-		    return value;
+		    return;
                 }
 
             }
@@ -576,7 +576,7 @@ class Expression {
 	// if it's already the value).
 
  	value.setStringValue(s);
- 	return value;
+ 	return;
     }
 
     /**
@@ -667,11 +667,11 @@ class Expression {
 	    if ((operator == AND) || (operator == OR) ||(operator == QUESTY)){
 
 		if (value.isDoubleType()) {
-		    value.setIntValue( (value.getDoubleValue() != 0.0) ? 1 : 0 );
+		    value.setIntValue( value.getDoubleValue() != 0.0 );
 		} else if (value.isStringType()) {
                    try {
                        boolean b = Util.getBoolean(interp, value.getStringValue());
-                       value.setIntValue(b ? 1 : 0);
+                       value.setIntValue(b);
                    } catch (TclException e) {
                        if (interp.noEval == 0) {
                            throw e;
@@ -747,7 +747,11 @@ class Expression {
 		continue;
 	    }
 
+	    if (operator == COLON) {
+	        SyntaxError(interp);
+	    }
 	    evalBinaryOperator(interp, operator, value, value2);
+	    releaseExprValue(value2);
         } // end of while(true) loop
     }
 
@@ -755,6 +759,7 @@ class Expression {
     // when it is applied to a value. The passed in value
     // contains the result.
 
+    static
     void evalUnaryOperator(
         Interp interp,
         int operator,
@@ -779,9 +784,9 @@ class Expression {
 		break;
 	    case NOT:
 		if (value.isIntType()) {
-		    value.setIntValue( (value.getIntValue() == 0) ? 1 : 0 );
+		    value.setIntValue( value.getIntValue() == 0 );
 		} else if (value.isDoubleType()) {
-		    value.setIntValue( (value.getDoubleValue() == 0.0) ? 1 : 0 );
+		    value.setIntValue( value.getDoubleValue() == 0.0 );
 		} else if (value.isStringType()) {
 		    String s = value.getStringValue();
 		    int s_len = s.length();
@@ -822,10 +827,10 @@ class Expression {
     // when applied to a pair of values. The result is returned in
     // the first (left hand) value. This method will check data
     // types and perform conversions if needed before executing
-    // the operation. The value2 argument (right hand) will
-    // be released back into the value pool and should not be
-    // used after this method returns.
+    // the operation. The value2 argument (right hand) value will
+    // not be released, the caller should release it.
 
+    static
     void evalBinaryOperator(
         Interp interp,
         int operator,
@@ -917,7 +922,7 @@ class Expression {
 		}
 		if (value2.isStringType()) {
 		    boolean b = Util.getBoolean(interp, value2.getStringValue());
-		    value2.setIntValue(b ? 1 : 0);
+		    value2.setIntValue(b);
 		}
 		break;
 
@@ -1088,84 +1093,72 @@ class Expression {
 		break;
 	    case LESS:
 		if (value.isIntType()) {
-		    value.setIntValue(
-			(value.getIntValue() < value2.getIntValue()) ? 1:0);
+		    value.setIntValue( value.getIntValue() < value2.getIntValue() );
 		} else if (value.isDoubleType()) {
-		    value.setIntValue(
-			(value.getDoubleValue() < value2.getDoubleValue()) ? 1:0);
+		    value.setIntValue( value.getDoubleValue() < value2.getDoubleValue() );
 		} else {
-		    value.setIntValue( (value.getStringValue().compareTo(
-			    value2.getStringValue()) < 0) ? 1:0);
+		    value.setIntValue( value.getStringValue().compareTo(
+			    value2.getStringValue()) < 0 );
 		}
 		break;
 	    case GREATER:
 		if (value.isIntType()) {
-		    value.setIntValue(
-			(value.getIntValue() > value2.getIntValue()) ? 1:0);
+		    value.setIntValue( value.getIntValue() > value2.getIntValue() );
 		} else if (value.isDoubleType()) {
-		    value.setIntValue(
-			(value.getDoubleValue() > value2.getDoubleValue()) ? 1:0);
+		    value.setIntValue( value.getDoubleValue() > value2.getDoubleValue() );
 		} else {
-		    value.setIntValue( (value.getStringValue().compareTo(
-			    value2.getStringValue()) > 0)? 1:0);
+		    value.setIntValue( value.getStringValue().compareTo(
+			    value2.getStringValue()) > 0 );
 		}
 		break;
 	    case LEQ:
 		if (value.isIntType()) {
-		    value.setIntValue(
-			(value.getIntValue() <= value2.getIntValue()) ? 1:0);
+		    value.setIntValue( value.getIntValue() <= value2.getIntValue() );
 		} else if (value.isDoubleType()) {
-		    value.setIntValue(
-			(value.getDoubleValue() <= value2.getDoubleValue()) ? 1:0);
+		    value.setIntValue( value.getDoubleValue() <= value2.getDoubleValue() );
 		} else {
-		    value.setIntValue( (value.getStringValue().compareTo(
-			    value2.getStringValue()) <= 0) ? 1:0);
+		    value.setIntValue( value.getStringValue().compareTo(
+			    value2.getStringValue()) <= 0 );
 		}
 		break;
 	    case GEQ:
 		if (value.isIntType()) {
-		    value.setIntValue(
-			(value.getIntValue() >= value2.getIntValue()) ? 1:0);
+		    value.setIntValue( value.getIntValue() >= value2.getIntValue() );
 		} else if (value.isDoubleType()) {
-		    value.setIntValue(
-			(value.getDoubleValue() >= value2.getDoubleValue()) ? 1:0);
+		    value.setIntValue( value.getDoubleValue() >= value2.getDoubleValue() );
 		} else {
-		    value.setIntValue( (value.getStringValue().compareTo(
-			    value2.getStringValue()) >= 0) ? 1:0);
+		    value.setIntValue( value.getStringValue().compareTo(
+			    value2.getStringValue()) >= 0 );
 		}
 		break;
 	    case EQUAL:
 		if (value.isIntType()) {
-		    value.setIntValue(
-			(value.getIntValue() == value2.getIntValue()) ? 1:0);
+		    value.setIntValue( value.getIntValue() == value2.getIntValue() );
 		} else if (value.isDoubleType()) {
-		    value.setIntValue(
-			(value.getDoubleValue() == value2.getDoubleValue()) ? 1:0);
+		    value.setIntValue( value.getDoubleValue() == value2.getDoubleValue() );
 		} else {
-		    value.setIntValue( (value.getStringValue().compareTo(
-			    value2.getStringValue()) == 0) ? 1:0);
+		    value.setIntValue( value.getStringValue().equals(
+			    value2.getStringValue()) );
 		}
 		break;
 	    case NEQ:
 		if (value.isIntType()) {
-		    value.setIntValue(
-			(value.getIntValue() != value2.getIntValue()) ? 1:0);
+		    value.setIntValue( value.getIntValue() != value2.getIntValue() );
 		} else if (value.isDoubleType()) {
-		    value.setIntValue(
-			(value.getDoubleValue() != value2.getDoubleValue()) ? 1:0);
+		    value.setIntValue( value.getDoubleValue() != value2.getDoubleValue() );
 		} else {
-		    value.setIntValue( (value.getStringValue().compareTo(
-			    value2.getStringValue()) != 0) ? 1:0);
+		    value.setIntValue( ! value.getStringValue().equals(
+			    value2.getStringValue()) );
 		}
 		break;
 	    case STREQ:
 		// Will compare original String values from token or variable
-		value.setIntValue( (value.getStringValue().compareTo(
-		    value2.getStringValue()) == 0) ? 1:0);
+		value.setIntValue( value.getStringValue().equals(
+		    value2.getStringValue()) );
 		break;
 	    case STRNEQ:
-		value.setIntValue( (value.getStringValue().compareTo(
-		    value2.getStringValue()) == 0) ? 0:1);
+		value.setIntValue( ! value.getStringValue().equals(
+		    value2.getStringValue()) );
 		break;
 	    case BIT_AND:
 		value.setIntValue( value.getIntValue() & value2.getIntValue() );
@@ -1183,26 +1176,22 @@ class Expression {
 
 	    case AND:
 		if (value2.isDoubleType()) {
-		    value2.setIntValue((value2.getDoubleValue() != 0.0) ? 1:0);
+		    value2.setIntValue( value2.getDoubleValue() != 0.0 );
 		}
 		value.setIntValue(
-			((value.getIntValue()!=0) && (value2.getIntValue()!=0)) ? 1:0);
+			((value.getIntValue()!=0) && (value2.getIntValue()!=0)) );
 		break;
 	    case OR:
 		if (value2.isDoubleType()) {
-		    value2.setIntValue((value2.getDoubleValue() != 0.0) ? 1:0);
+		    value2.setIntValue( value2.getDoubleValue() != 0.0 );
 		}
-		value.setIntValue( 
-			((value.getIntValue()!=0) || (value2.getIntValue()!=0)) ? 1:0);
+		value.setIntValue(
+			((value.getIntValue()!=0) || (value2.getIntValue()!=0)) );
 		break;
 
-	    case COLON:
-		SyntaxError(interp);
 	}
 
-	// release right hand value
-        releaseExprValue(value2);
-        return;
+	return;
     }
 
     /**
@@ -1319,7 +1308,8 @@ class Expression {
 		retval = grabExprValue();
 		retval.setIntValue(0);
 	    } else {
-		retval = ExprParseObject(interp, pres.value);
+		retval = grabExprValue();
+		ExprParseObject(interp, pres.value, retval);
 	    }
 	    pres.release();
 	    return retval;
@@ -1332,7 +1322,8 @@ class Expression {
 		retval = grabExprValue();
 		retval.setIntValue(0);
 	    } else {
-		retval = ExprParseObject(interp, pres.value);
+		retval = grabExprValue();
+		ExprParseObject(interp, pres.value, retval);
 	    }
 	    pres.release();
 	    return retval;
@@ -1354,7 +1345,8 @@ class Expression {
 		retval.setIntValue(0);
 	    } else {
 	   //     System.out.println("returning value string ->" + pres.value.toString() + "<-" );
-		retval = ExprParseObject(interp, pres.value);
+		retval = grabExprValue();
+		ExprParseObject(interp, pres.value, retval);
 	    }
 	    pres.release();
 	    return retval;
@@ -1366,7 +1358,8 @@ class Expression {
 		retval = grabExprValue();
 		retval.setIntValue(0);
 	    } else {
-		retval = ExprParseObject(interp, pres.value);
+		retval = grabExprValue();
+		ExprParseObject(interp, pres.value, retval);
 	    }
 	    pres.release();
 	    return retval;

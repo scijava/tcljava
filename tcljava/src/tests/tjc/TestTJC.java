@@ -545,7 +545,7 @@ public class TestTJC {
     public static String testExprOp10(Interp interp) throws TclException {
         // expr {$obj == ""}
         TclObject obj = TclString.newInstance("");
-        ExprValue result = TJC.exprEqualsEmptyString(interp, obj);
+        ExprValue result = TJC.exprEqualsEmptyString(interp, obj, false);
 
         TJC.exprSetResult(interp, result);
 
@@ -557,8 +557,7 @@ public class TestTJC {
     public static String testExprOp11(Interp interp) throws TclException {
         // expr {$obj != {}}
         TclObject obj = TclList.newInstance();
-        ExprValue result = TJC.exprEqualsEmptyString(interp, obj);
-        result.setIntValue( !result.getBooleanValue(interp) );
+        ExprValue result = TJC.exprEqualsEmptyString(interp, obj, true);
 
         TJC.exprSetResult(interp, result);
 

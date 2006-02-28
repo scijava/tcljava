@@ -4896,7 +4896,7 @@ public class Test1 extends TJC.CompiledCommand {
                 }
             } // End Invoke: cmd
             TclObject tmp7 = interp.getResult();
-            ExprValue tmp8 = TJC.exprEqualsEmptyString(interp, tmp7);
+            ExprValue tmp8 = TJC.exprEqualsEmptyString(interp, tmp7, false);
             // End Binary operator: ==
             TJC.exprSetResult(interp, tmp8);
         } // End Invoke: expr
@@ -5376,7 +5376,7 @@ public class Test1 extends TJC.CompiledCommand {
         { // Invoke: expr {$obj == ""}
             // Binary operator: $obj == ""
             TclObject tmp3 = interp.getVar("obj", null, 0);
-            ExprValue tmp4 = TJC.exprEqualsEmptyString(interp, tmp3);
+            ExprValue tmp4 = TJC.exprEqualsEmptyString(interp, tmp3, false);
             // End Binary operator: ==
             TJC.exprSetResult(interp, tmp4);
         } // End Invoke: expr
@@ -5427,8 +5427,7 @@ public class Test1 extends TJC.CompiledCommand {
         { // Invoke: expr {$obj != ""}
             // Binary operator: $obj != ""
             TclObject tmp3 = interp.getVar("obj", null, 0);
-            ExprValue tmp4 = TJC.exprEqualsEmptyString(interp, tmp3);
-            tmp4.setIntValue(!tmp4.getBooleanValue(interp));
+            ExprValue tmp4 = TJC.exprEqualsEmptyString(interp, tmp3, true);
             // End Binary operator: !=
             TJC.exprSetResult(interp, tmp4);
         } // End Invoke: expr
@@ -5492,7 +5491,7 @@ public class Test1 extends TJC.CompiledCommand {
                 }
             } // End Invoke: cmd
             TclObject tmp7 = interp.getResult();
-            ExprValue tmp8 = TJC.exprEqualsEmptyString(interp, tmp7);
+            ExprValue tmp8 = TJC.exprEqualsEmptyString(interp, tmp7, false);
             // End Binary operator: eq
             TJC.exprSetResult(interp, tmp8);
         } // End Invoke: expr
@@ -5563,8 +5562,7 @@ public class Test1 extends TJC.CompiledCommand {
                 }
             } // End Invoke: cmd
             TclObject tmp7 = interp.getResult();
-            ExprValue tmp8 = TJC.exprEqualsEmptyString(interp, tmp7);
-            tmp8.setIntValue(!tmp8.getBooleanValue(interp));
+            ExprValue tmp8 = TJC.exprEqualsEmptyString(interp, tmp7, true);
             // End Binary operator: ne
             TJC.exprSetResult(interp, tmp8);
         } // End Invoke: expr
@@ -5622,9 +5620,8 @@ public class Test1 extends TJC.CompiledCommand {
         { // Invoke: expr {$obj == "foo"}
             // Binary operator: $obj == "foo"
             TclObject tmp3 = interp.getVar("obj", null, 0);
-            int tmp4 = tmp3.toString().compareTo("foo");
-            tmp4 = ((tmp4 == 0) ? 1 : 0);
-            ExprValue tmp5 = TJC.exprGetValue(interp, tmp4, null);
+            boolean tmp4 = tmp3.toString().equals("foo");
+            ExprValue tmp5 = TJC.exprGetValue(interp, tmp4);
             // End Binary operator: ==
             TJC.exprSetResult(interp, tmp5);
         } // End Invoke: expr
@@ -5675,9 +5672,8 @@ public class Test1 extends TJC.CompiledCommand {
         { // Invoke: expr {$obj != "foo"}
             // Binary operator: $obj != "foo"
             TclObject tmp3 = interp.getVar("obj", null, 0);
-            int tmp4 = tmp3.toString().compareTo("foo");
-            tmp4 = ((tmp4 == 0) ? 0 : 1);
-            ExprValue tmp5 = TJC.exprGetValue(interp, tmp4, null);
+            boolean tmp4 = ! tmp3.toString().equals("foo");
+            ExprValue tmp5 = TJC.exprGetValue(interp, tmp4);
             // End Binary operator: !=
             TJC.exprSetResult(interp, tmp5);
         } // End Invoke: expr
@@ -5751,9 +5747,8 @@ public class Test1 extends TJC.CompiledCommand {
         { // Invoke: expr ...
             // Binary operator: $s eq "\\t1.0"
             TclObject tmp5 = interp.getVar("s", null, 0);
-            int tmp6 = tmp5.toString().compareTo("\\t1.0");
-            tmp6 = ((tmp6 == 0) ? 1 : 0);
-            ExprValue tmp7 = TJC.exprGetValue(interp, tmp6, null);
+            boolean tmp6 = tmp5.toString().equals("\\t1.0");
+            ExprValue tmp7 = TJC.exprGetValue(interp, tmp6);
             // End Binary operator: eq
             TJC.exprSetResult(interp, tmp7);
         } // End Invoke: expr

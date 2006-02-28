@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TJC.java,v 1.11 2006/02/12 21:22:50 mdejong Exp $
+ * RCS: @(#) $Id: TJC.java,v 1.12 2006/02/28 23:37:39 mdejong Exp $
  *
  */
 
@@ -208,7 +208,7 @@ public class TJC {
         protected void builtinCommandsCheck(Interp interp)
             throws TclException
         {
-            if (wcmd.ns.fullName.compareTo("::") == 0) {
+            if (wcmd.ns.fullName.equals("::")) {
                 return; // loaded into global namespace
             }
             String[] containers = {
@@ -986,31 +986,26 @@ public class TJC {
         TclObject obj)
             throws TclException
     {
-        TclObject orig_obj = obj;
         InternalRep rep = obj.getInternalRep();
 
-        if (obj.hasNoStringRep() && (rep instanceof TclList)) {
-            if (TclList.getLength(interp, obj) == 1) {
-                // If a pure list is of length one, then use
-                // the list element in the typed tests below.
-                obj = TclList.index(interp, obj, 0);
-                rep = obj.getInternalRep();
-            }
-        }
-
-        if (rep instanceof TclBoolean) {
-            return TclBoolean.get(interp, obj);
-        } else if (rep instanceof TclInteger) {
+        if (rep instanceof TclInteger) {
             return (TclInteger.get(interp, obj) != 0);
+        } else if (rep instanceof TclBoolean) {
+            return TclBoolean.get(interp, obj);
         } else if (rep instanceof TclDouble) {
             return (TclDouble.get(interp, obj) != 0.0);
-        } else {
-            // Attempt to convert the String to a boolean
-            if (obj != orig_obj) {
-                obj = orig_obj;
+        } else if (rep instanceof TclList) {
+            if (obj.hasNoStringRep() && (TclList.getLength(interp, obj) == 1)) {
+                // If a pure list is of length one, then
+                // check for the case of an integer or boolean.
+
+                TclObject elem = TclList.index(interp, obj, 0);
+                if (elem.getInternalRep() instanceof TclInteger) {
+                    return (TclInteger.get(interp, elem) != 0);
+                }
             }
-            return Util.getBoolean(interp, obj.toString());
         }
+        return Util.getBoolean(interp, obj.toString());
     }
 
     // This method will invoke logic for the switch
@@ -1136,6 +1131,21 @@ public class TJC {
         return value;
     }
 
+    // Return the expr value for the boolean, this
+    // boolean has no string rep and is represented
+    // by an integer type.
+
+    public static
+    ExprValue exprGetValue(
+        Interp interp,
+        boolean bval)
+            throws TclException
+    {
+        ExprValue value = interp.expr.grabExprValue();
+        value.setIntValue(bval);
+        return value;
+    }
+
     // Return the expr value contained in the TclObject
 
     public static
@@ -1144,7 +1154,9 @@ public class TJC {
         TclObject tobj)
             throws TclException
     {
-        return interp.expr.ExprParseObject(interp, tobj);
+        ExprValue value = interp.expr.grabExprValue();
+        Expression.ExprParseObject(interp, tobj, value);
+        return value;
     }
 
     // Evaluate a unary expr operator.
@@ -1156,13 +1168,13 @@ public class TJC {
         ExprValue value)
             throws TclException
     {
-        interp.expr.evalUnaryOperator(interp, op, value);
+        Expression.evalUnaryOperator(interp, op, value);
     }
 
     // Evaluate a binary expr operator. Note that this
     // method will always release the value2 argument,
     // so don't invoke exprReleaseValue for value2
-    // or make use of the value after the method finishes.
+    // or make use of value2 after this method finishes.
 
     public static
     void exprBinaryOperator(
@@ -1172,7 +1184,8 @@ public class TJC {
         ExprValue value2)
             throws TclException
     {
-        interp.expr.evalBinaryOperator(interp, op, value, value2);
+        Expression.evalBinaryOperator(interp, op, value, value2);
+        interp.expr.releaseExprValue(value2);
     }
 
     // Evaluate a math function. This method will release
@@ -1221,22 +1234,32 @@ public class TJC {
     // that contains either the integer 1 or 0.
 
     public static
-    ExprValue exprEqualsEmptyString(Interp interp, TclObject obj)
+    ExprValue exprEqualsEmptyString(
+        Interp interp,
+        TclObject obj,
+        final boolean negate)
 	    throws TclException
     {
         boolean isEmptyString;
+
         if (obj.hasNoStringRep() &&
                 (obj.getInternalRep() instanceof TclList)) {
             // A pure Tcl list is equal to the empty string
             // when the list length is zero. This check
             // avoids the possibly slow generation of
             // a string rep from a pure TclList object.
-            isEmptyString = (TclList.getLength(interp, obj) == 0);
+            isEmptyString = ( TclList.getLength(interp, obj) == 0 );
         } else {
-            isEmptyString = (obj.toString().length() == 0);
+            // TclObject already has a string rep, check if it is a
+            // ref to the interned empty string or if the len is 0.
+            String s = obj.toString();
+            isEmptyString = ( s == "" || s.length() == 0 );
+        }
+        if (negate) {
+            isEmptyString = !isEmptyString;
         }
         ExprValue value = interp.expr.grabExprValue();
-        value.setIntValue(isEmptyString);
+        value.setIntValue( isEmptyString );
         return value;
     }
 

@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: compileproc.tcl,v 1.12 2006/02/14 04:13:27 mdejong Exp $
+#  RCS: @(#) $Id: compileproc.tcl,v 1.13 2006/02/28 23:37:40 mdejong Exp $
 #
 #
 
@@ -6165,13 +6165,14 @@ proc compileproc_expr_evaluate_emit_binary_operator { op_tuple } {
             append buffer [lindex $right_eval_tuple 2]
         }
         set tmpsymbol [compileproc_tmpvar_next]
-        append buffer [emitter_indent] \
-            "ExprValue $tmpsymbol = TJC.exprEqualsEmptyString(interp, $tclobject_sym)\;\n"
         if {$op == "!=" || $op == "ne"} {
             # Negate equality test
-            append buffer [emitter_indent] \
-                "$tmpsymbol.setIntValue(!$tmpsymbol.getBooleanValue(interp))\;\n"
+            set negate true
+        } else {
+            set negate false
         }
+        append buffer [emitter_indent] \
+            "ExprValue $tmpsymbol = TJC.exprEqualsEmptyString(interp, $tclobject_sym, $negate)\;\n"
         set ev1 $tmpsymbol
     } elseif {$opt_tclobject_string_compare} {
         # Special case for: expr {$obj == "foo"}. The
@@ -6190,24 +6191,23 @@ proc compileproc_expr_evaluate_emit_binary_operator { op_tuple } {
             set tclobject_sym [lindex $right_eval_tuple 1]
             append buffer [lindex $right_eval_tuple 2]
         }
-        # Use string literal from first left/right type test
-        set jstr $string_literal
-        set int_tmpsymbol [compileproc_tmpvar_next]
-        append buffer [emitter_indent] \
-            "int $int_tmpsymbol = $tclobject_sym.toString().compareTo(\"$jstr\")\;\n"
+        # Use string literal from first left/right type test, it has
+        # already been escaped by the emitter layer.
+        set jstr "\"$string_literal\""
+        set boolean_tmpsymbol [compileproc_tmpvar_next]
         if {$op == "!=" || $op == "ne"} {
             # Negate equality test
-            set eqint 0
-            set neqint 1
+            set not "! "
         } else {
-            set eqint 1
-            set neqint 0
+            set not ""
         }
+        # Emit a call to String.equals(Object) which will do a pointer
+        # compare before trying to do a character by character compare.
         append buffer [emitter_indent] \
-            "$int_tmpsymbol = (($int_tmpsymbol == 0) ? $eqint : $neqint)\;\n"
+            "boolean $boolean_tmpsymbol = ${not}$tclobject_sym.toString().equals($jstr)\;\n"
         set tmpsymbol [compileproc_tmpvar_next]
         append buffer [emitter_indent] \
-            "ExprValue $tmpsymbol = TJC.exprGetValue(interp, $int_tmpsymbol, null)\;\n"
+            "ExprValue $tmpsymbol = TJC.exprGetValue(interp, $boolean_tmpsymbol)\;\n"
         set ev1 $tmpsymbol
     } else {
         # Append code to evaluate left and right values
