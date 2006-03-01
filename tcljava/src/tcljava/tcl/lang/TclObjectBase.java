@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclObjectBase.java,v 1.4 2006/02/24 08:21:42 mdejong Exp $
+ * RCS: @(#) $Id: TclObjectBase.java,v 1.5 2006/03/01 01:30:50 mdejong Exp $
  *
  */
 
@@ -154,10 +154,7 @@ abstract class TclObjectBase {
      * @return the string representation of the object.
      */
 
-    public /*final*/ String toString() {
-        // FIXME: This method is not final because of a bug
-        // in pizza and janino having to do with a method
-        // declared in an inaccessble base class.
+    public final String toString() {
 	if (extraRefCountChecks) {
 	    if (internalRep == null) {
 	        disposedError();

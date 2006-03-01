@@ -1131,9 +1131,9 @@ public class Java {
             return this.type.toString() + ' ' + this.name;
         }
 
-        final boolean     finaL;
-        public final Type type;
-        final String      name;
+        public final boolean finaL;
+        public final Type    type;
+        public final String  name;
     }
 
     /**
@@ -1231,6 +1231,9 @@ public class Java {
          */
         /*private*/ void followingStatementsAreDead() {
             this.keepCompiling = false;
+
+            Java.Scope s = this.getEnclosingScope();
+            if (s instanceof Java.Block) ((Java.Block) s).followingStatementsAreDead();
         }
 
         public final void accept(Visitor.BlockStatementVisitor visitor) { visitor.visitBlock(this); }
@@ -1901,7 +1904,15 @@ public class Java {
         private Type type = null;
         public Type toType() {
             if (this.type == null) {
-                this.type = new ReferenceType(this.getLocation(), this.scope, this.identifiers);
+                String[] sa;
+                if (this.identifiers.length == this.n) {
+                    sa = this.identifiers;
+                } else
+                {
+                    sa = new String[this.n];
+                    System.arraycopy(this.identifiers, 0, sa, 0, this.n);
+                }
+                this.type = new ReferenceType(this.getLocation(), this.scope, sa);
             }
             return this.type;
         }

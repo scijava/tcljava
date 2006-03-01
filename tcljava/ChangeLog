@@ -1,5 +1,17 @@
 2006-02-28  Mo DeJong  <mdejong@users.sourceforge.net>
 
+        * src/jacl/tcl/lang/TclObject.java (toString):
+        Remove workaround for Janino bug since this
+        problem is now fixed.
+        * src/janino/README.TXT: Import Janino 2.3.18.
+        This is really ugly since all files were changed
+        because all CRLF were changed to LF.
+        * src/janino/org/codehaus/janino/*.java:
+        * src/tcljava/tcl/lang/TclObjectBase.java (toString):
+        Make toString() final.
+
+2006-02-28  Mo DeJong  <mdejong@users.sourceforge.net>
+
         * src/jacl/tcl/lang/Interp.java (eval):
         Make maxNestingDepth a constant int.
         Update caller of Parser.grabObjv() and
