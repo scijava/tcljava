@@ -13,10 +13,12 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Parser.java,v 1.26 2005/11/22 22:28:04 mdejong Exp $
+ * RCS: @(#) $Id: Parser.java,v 1.27 2006/03/01 00:03:29 mdejong Exp $
  */
 
 package tcl.lang;
+
+import java.util.Arrays;
 
 class Parser 
 {
@@ -820,7 +822,7 @@ throws
 		evalObjv(interp, newObjv, length, 0);
 	    }
 	    newObjv[0].release();
-	    Parser.releaseObjv(interp, newObjv);
+	    Parser.releaseObjv(interp, newObjv, newObjv.length);
 	    return;
 	}
 
@@ -1214,7 +1216,7 @@ throws
 
 		if (objv.length != parse.numWords) {
                   //System.out.println("need new size " + objv.length);
-		  releaseObjv(interp, objv); //let go of resource
+		  releaseObjv(interp, objv, objv.length); //let go of resource
 		  objv = grabObjv(interp, parse.numWords); //get new resource
 		} else {
 		  //System.out.println("reusing size " + objv.length);
@@ -1305,7 +1307,7 @@ throws
       if (parse != null) {
           parse.release(); // Let go of parser resources
       }
-      releaseObjv(interp, objv); // Let go of objv buffer
+      releaseObjv(interp, objv, objv.length); // Let go of objv buffer
     }
 
     interp.termOffset = src_index - script_index;
@@ -2603,6 +2605,7 @@ static void init(Interp interp) {
     OBJV[i] = new TclObject[size][];
     USED[i] = 0;
     for (j=0;j<size;j++) {
+      // Java arrays are allocated with all null values
       OBJV[i][j] = new TclObject[i];
     }
   }
@@ -2611,6 +2614,8 @@ static void init(Interp interp) {
   interp.parserObjvUsed = USED;
 }
 
+// Get a TclObject[] array of a given size. The array
+// is always filled with null values.
 
 static TclObject[] grabObjv(Interp interp, int size) {
 
@@ -2635,30 +2640,53 @@ static TclObject[] grabObjv(Interp interp, int size) {
 
 }
 
+// Return a TclObject[] array of a given size to the cache.
+// The size argument is the length of the array, it is never zero.
 
-static void releaseObjv(Interp interp, TclObject[] objv) {
-  final int size = objv.length;
-  
+static void releaseObjv(Interp interp, TclObject[] objv, final int size) {
   if (size >= OBJV_CACHE_MAX) {
-    //System.out.println("release for big objv of size " + size);
-    return;
-  }
+      // No-op
+  } else {
+      int OPEN = interp.parserObjvUsed[size];
 
-  int OPEN = interp.parserObjvUsed[size];
-
-  if (OPEN > 0) {
-    OPEN--;
-    interp.parserObjvUsed[size] = OPEN;
-    interp.parserObjv[size][OPEN] = objv;
-    //System.out.println("released objv of size " + size);
+      if (OPEN > 0) {
+        OPEN--;
+        interp.parserObjvUsed[size] = OPEN;
+        // Optimize nulling out of array, the
+        // most common cases are handled here.
+        switch (size) {
+            case 1:
+                objv[0] = null;
+                break;
+            case 2:
+                objv[0] = null;
+                objv[1] = null;
+                break;
+            case 3:
+                objv[0] = null;
+                objv[1] = null;
+                objv[2] = null;
+                break;
+            case 4:
+                objv[0] = null;
+                objv[1] = null;
+                objv[2] = null;
+                objv[3] = null;
+                break;
+            case 5:
+                objv[0] = null;
+                objv[1] = null;
+                objv[2] = null;
+                objv[3] = null;
+                objv[4] = null;
+                break;
+            default:
+                Arrays.fill(objv, null);
+                break;
+        }
+        interp.parserObjv[size][OPEN] = objv;
+      }
   }
-  /*
-  else {
-    System.out.println("no release for objv of size " + size);
-  }
-  */
-
-  return;
 }
 
 // Raise an infinite loop TclException

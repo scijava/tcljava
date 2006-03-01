@@ -1,5 +1,27 @@
 2006-02-28  Mo DeJong  <mdejong@users.sourceforge.net>
 
+        * src/jacl/tcl/lang/Interp.java (eval):
+        Make maxNestingDepth a constant int.
+        Update caller of Parser.grabObjv() and
+        Parser.releaseObjv().
+        * src/jacl/tcl/lang/InterpSlaveCmd.java:
+        Don't set maxNestingDepth since it is constant.
+        * src/jacl/tcl/lang/Parser.java (evalObjv,
+        eval2, init, grabObjv, releaseObjv):
+        Reimplement TclObject[] grab and release logic
+        so that the array is always set to null values
+        when returned to the pool.
+        * src/tjc/tcl/lang/TJC.java (grabObjv, releaseObjv,
+        invoke): Update caller of grabObjv() and
+        releaseObjv() since we no longer need to set the
+        array elements to null before using and releasing
+        the array.
+        * src/tjc/tjc/library/main.tcl: When the -nocompile
+        flag is passed, don't write out generated Java
+        files. This avoids a huge amount of slow IO calls.
+
+2006-02-28  Mo DeJong  <mdejong@users.sourceforge.net>
+
         * src/jacl/tcl/lang/Expression.java (ExprParseObject,
         ExprParseString, evalUnaryOperator, evalBinaryOperator,
         ExprLex): Make ExprParseObject and ExprParseString

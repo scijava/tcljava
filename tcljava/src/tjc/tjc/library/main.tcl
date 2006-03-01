@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: main.tcl,v 1.3 2006/02/14 04:13:27 mdejong Exp $
+#  RCS: @(#) $Id: main.tcl,v 1.4 2006/03/01 00:03:29 mdejong Exp $
 #
 #
 
@@ -309,6 +309,11 @@ proc process_module_file { filename } {
         puts "parsed a total of $num_procs_parsed Tcl procs"
     }
 
+    set nocompile 0
+    if {[info exists _tjc(nocompile)] && $_tjc(nocompile)} {
+        set nocompile 1
+    }
+
     foreach pair $file_and_procs {
         set proc_filename [lindex $pair 0]
         set proc_tuples [lindex $pair 1]
@@ -338,7 +343,13 @@ proc process_module_file { filename } {
             set java_class [lindex $tuple 2]
             set java_source [lindex $tuple 3]
 
-            set java_filename [jdk_tool_javac_save $java_class $java_source]
+            # Don't write Java source file when -nocompile is passed
+
+            if {$nocompile} {
+                set java_filename {}
+            } else {
+                set java_filename [jdk_tool_javac_save $java_class $java_source]
+            }
 
             if {$debug || $_tjc(progress)} {
                 puts "Tcl proc \"$proc_name\" defined in\

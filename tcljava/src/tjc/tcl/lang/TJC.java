@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TJC.java,v 1.12 2006/02/28 23:37:39 mdejong Exp $
+ * RCS: @(#) $Id: TJC.java,v 1.13 2006/03/01 00:03:29 mdejong Exp $
  *
  */
 
@@ -809,9 +809,7 @@ public class TJC {
         Interp interp,
         final int size)
     {
-        TclObject[] objv = Parser.grabObjv(interp, size);
-        Arrays.fill(objv, null);
-        return objv;
+        return Parser.grabObjv(interp, size);
     }
 
     // For each non-null TclObject ref in the array, invoke
@@ -829,17 +827,16 @@ public class TJC {
         final int size)
     {
         if (size == 0) {
-            Arrays.fill(objv, null);
+            Parser.releaseObjv(interp, objv, objv.length);
         } else {
             for (int i=0; i < size; i++) {
                 TclObject tobj = objv[i];
                 if (tobj != null) {
                     tobj.release();
-                    objv[i] = null;
                 }
             }
+            Parser.releaseObjv(interp, objv, size);
         }
-        Parser.releaseObjv(interp, objv);
     }
 
     // Invoke a Command with TclObject arguments. This method
@@ -863,14 +860,6 @@ public class TJC {
             throws TclException
     {
         boolean grabbed_objv = false;
-
-        if (objv == null) {
-            throw new TclRuntimeError("null objv array");
-        }
-        int len = objv.length;
-        if (len == 0) {
-            throw new TclRuntimeError("zero length objv array");
-        }
 
         // Save copy of interp.varFrame in case TCL.EVAL_GLOBAL is set.
         CallFrame savedVarFrame = interp.varFrame;
@@ -902,6 +891,10 @@ public class TJC {
                     throw new TclException(interp, "invalid command name \""
                         + cmdName + "\"");
                 }
+                int len = objv.length;
+                if (len == 0) {
+                    throw new TclRuntimeError("zero length objv array");
+                }
                 TclObject[] newObjv = Parser.grabObjv(interp, len + 1);
                 newObjv[0] = TclString.newInstance("unknown");
                 newObjv[0].preserve();
@@ -910,7 +903,6 @@ public class TJC {
                 }
                 objv = newObjv;
                 grabbed_objv = true;
-                len = objv.length;
             }
         }
 
@@ -951,7 +943,11 @@ public class TJC {
             if ( ex.getCompletionCode() == TCL.ERROR &&
                     !(interp.errAlreadyLogged)) {
                 StringBuffer cmd_strbuf = new StringBuffer(64);
-                
+
+                int len = objv.length;
+                if (len == 0) {
+                    throw new TclRuntimeError("zero length objv array");
+                }
                 for (int i=0; i < len; i++) {
                     Util.appendElement(interp, cmd_strbuf, objv[i].toString());
                 }
@@ -968,8 +964,7 @@ public class TJC {
         } finally {
             if (grabbed_objv) {
                 objv[0].release();
-                Arrays.fill(objv, null);
-                Parser.releaseObjv(interp, objv);
+                Parser.releaseObjv(interp, objv, objv.length);
             }
             interp.nestLevel--;
             interp.varFrame = savedVarFrame;
