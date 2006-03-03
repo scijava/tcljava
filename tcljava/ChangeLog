@@ -1,3 +1,15 @@
+2006-03-03  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/tjc/tjc/library/compileproc.tcl:
+        Optimize compileproc_command_cache_lookup,
+        compileproc_argument_printable, and
+        compileproc_emit_invoke.
+        * src/tjc/tjc/library/emitter.tcl:
+        Optimize emitter methods that invoked
+        emitter_statement, it is better to call
+        emitter_indent and append the constant
+        strings in the method.
+
 2006-02-28  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/jacl/tcl/lang/TclObject.java (toString):

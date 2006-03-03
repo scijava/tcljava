@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: compileproc.tcl,v 1.13 2006/02/28 23:37:40 mdejong Exp $
+#  RCS: @(#) $Id: compileproc.tcl,v 1.14 2006/03/03 21:47:37 mdejong Exp $
 #
 #
 
@@ -1425,10 +1425,15 @@ proc compileproc_command_cache_lookup { dkey } {
     # name can't be determined statically just return
     # {} so that no cache will be used.
 
-    set tuple [compileproc_argument_printable $dkey 0]
-    set type [lindex $tuple 0]
-    if {$type != "constant"} {
-        return {}
+    #set tuple [compileproc_argument_printable $dkey 0]
+    #set type [lindex $tuple 0]
+    #if {$type != "constant"} {
+    #    return {}
+    #}
+
+    # Optimized type check for performance reasons
+    if {[lindex $::_compileproc_key_info($dkey,types) 0] != "constant"} {
+        return
     }
 
     # The command name is a constant string. Find
@@ -2371,80 +2376,68 @@ proc _compileproc_scan_word_iterate { script stree type values ranges } {
 # The pstr value is a printable string that
 # describes the argument. This is commonly used
 # to print an argument description inside a comment.
-# If the extra_info flag is set, then extra info
-# about the command will be included if it would
-# print nicely.
 
 proc compileproc_argument_printable { key i } {
-    global _compileproc_key_info
-
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
-
-    if {$debug} {
-        puts "compileproc_argument_printable $key"
-    }
-
-    # FIXME: This 20 character max word limit seems a bit too small
-    # but changing it would require a lot of test updates.
-    set maxvar 20
-    #set maxword 40
-    set maxword 20
-
-    set types $_compileproc_key_info($key,types)
-    set values $_compileproc_key_info($key,values)
-    set instrs $_compileproc_key_info($key,instrs)
-
     # Return string the describes the argument.
     # Use "..." if the string would not print
     # as simple text.
 
-    if {$i < 0 || $i >= [llength $types]} {
-        error "index $i out of argument range"
-    } else {
-        set type [lindex $types $i]
-        set print 1
-        switch -exact -- $type {
-            "constant" {
-                set str [lindex $instrs $i]
-            }
-            "variable" {
-                set str [lindex $instrs $i]
-                if {[string length $str] > $maxvar} {
-                    set str "\$..."
-                }
-            }
-            "command" {
-                # No need to print nested command text here since
-                # the command name will be printed in the invocation.
-                set str "\[...\]"
-            }
-            "word" {
-                set str [lindex $instrs $i]
-                if {[string length $str] > $maxword} {
-                    set str "\"...\""
-                }
-            }
-            default {
-                error "unknown type \"$type\" at index $i of types \{$types\}"
-            }
+    set type [lindex $::_compileproc_key_info($key,types) $i]
+    if {$type == {}} {
+        if {$i < 0 || \
+                $i >= $::_compileproc_key_info($key,num_args)} {
+            error "index $i out of argument range"
         }
-        # Don't print argument that is too long
-        if {[string length $str] > $maxword} {
-            set print 0
-        }
-        # Don't print argument that contains a funky string like a newline.
-        foreach funky [list "\a" "\b" "\f" "\n" "\r" "\t" "\v" "\\"] {
-            if {[string first $funky $str] != -1} {
+    }
+
+    set print 1
+    switch -exact -- $type {
+        "constant" {
+            set str [lindex $::_compileproc_key_info($key,instrs) $i]
+            if {[string length $str] > 20} {
                 set print 0
             }
         }
-
-        if {!$print} {
-            set str "..."
+        "variable" {
+            set str [lindex $::_compileproc_key_info($key,instrs) $i]
+            if {[string length $str] > 20} {
+                set str "\$..."
+            }
         }
-        return [list $type $str]
+        "command" {
+            # No need to print nested command text here since
+            # the command name will be printed in the invocation.
+            set str "\[...\]"
+        }
+        "word" {
+            set str [lindex $::_compileproc_key_info($key,instrs) $i]
+            if {[string length $str] > 20} {
+                set str "\"...\""
+            }
+        }
+        default {
+            error "unknown type \"$type\" at index $i"
+        }
     }
+    # Don't print argument that contains a funky string like a newline.
+    if {$print} {
+        if {\
+                [string first "\a" $str] != -1 ||
+                [string first "\b" $str] != -1 ||
+                [string first "\f" $str] != -1 ||
+                [string first "\n" $str] != -1 ||
+                [string first "\r" $str] != -1 ||
+                [string first "\t" $str] != -1 ||
+                [string first "\v" $str] != -1 ||
+                [string first "\\" $str] != -1} {
+            set print 0
+        }
+    }
+
+    if {!$print} {
+        set str "..."
+    }
+    return [list $type $str]
 }
 
 # Emit code that will invoke a Tcl method. The descend key for
@@ -2453,12 +2446,12 @@ proc compileproc_argument_printable { key i } {
 proc compileproc_emit_invoke { key } {
     global _compileproc_key_info
 
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
+#    set debug 0
+#    if {$::_compileproc(debug)} {set debug 1}
 
-    if {$debug} {
-        puts "compileproc_emit_invoke $key"
-    }
+#    if {$debug} {
+#        puts "compileproc_emit_invoke $key"
+#    }
 
     set num_args $_compileproc_key_info($key,num_args)
 
@@ -6032,7 +6025,7 @@ proc compileproc_expr_evaluate_emit_binary_operator { op_tuple } {
     set right_eval_tuple [compileproc_expr_evaluate_emit_exprvalue \
         $right_tuple]
 
-    if {1 && $debug} {
+    if {$debug} {
         puts "left_eval_tuple is \{$left_eval_tuple\}"
         puts "right_eval_tuple is \{$right_eval_tuple\}"
     }

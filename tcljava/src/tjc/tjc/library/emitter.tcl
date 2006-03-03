@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: emitter.tcl,v 1.7 2006/02/07 09:41:01 mdejong Exp $
+#  RCS: @(#) $Id: emitter.tcl,v 1.8 2006/03/03 21:47:37 mdejong Exp $
 #
 #
 
@@ -277,17 +277,17 @@ proc emitter_comment { text } {
 }
 
 proc emitter_tclobject_preserve { tobj } {
-    return [emitter_statement "$tobj.preserve()"]
+    return "[emitter_indent]$tobj.preserve()\;\n"
 }
 
 proc emitter_tclobject_release { tobj } {
-    return [emitter_statement "$tobj.release()"]
+    return "[emitter_indent]$tobj.release()\;\n"
 }
 
 # Assign value in valsym to the given index in arraysym
 
 proc emitter_array_assign { arraysym index valsym } {
-    return [emitter_statement "$arraysym\[$index\] = $valsym"]
+    return "[emitter_indent]$arraysym\[$index\] = $valsym\;\n"
 }
 
 # Start a class declaration.
@@ -363,9 +363,9 @@ proc emitter_eval_proc_body { body } {
 
     set buffer ""
     append buffer \
-        [emitter_statement "String body = $body_symbol"] \
-        [emitter_statement "TJC.evalProcBody(interp, body)"] \
-        [emitter_statement "return"]
+        [emitter_indent] "String body = $body_symbol" "\;\n" \
+        [emitter_indent] "TJC.evalProcBody(interp, body)" "\;\n" \
+        [emitter_indent] "return" "\;\n"
 
     return $buffer
 }
@@ -655,8 +655,7 @@ proc emitter_backslash_tcl_elem { elem } {
 # command implementation.
 
 proc emitter_callframe_push { ns } {
-    return [emitter_statement \
-        "CallFrame callFrame = TJC.pushLocalCallFrame(interp, $ns)"]
+    return "[emitter_indent]CallFrame callFrame = TJC.pushLocalCallFrame(interp, $ns)\;\n"
 }
 
 # Emit try statement at start of method impl block
@@ -681,17 +680,21 @@ proc emitter_callframe_pop { proc_name {clear_varcache 0} } {
     emitter_indent_level +1
     set proc_name_symbol [emitter_double_quote_tcl_string $proc_name]
     append buffer \
-        [emitter_statement "TJC.checkTclException(interp, te, $proc_name_symbol)"]
+        [emitter_indent] \
+        "TJC.checkTclException(interp, te, $proc_name_symbol)" "\;\n"
     emitter_indent_level -1
     append buffer \
         [emitter_indent] \
         "\} finally \{\n"
     emitter_indent_level +1
     if {$clear_varcache} {
-        append buffer [emitter_statement "updateVarCache(interp, 0)"]
+        append buffer \
+            [emitter_indent] \
+            "updateVarCache(interp, 0)" "\;\n"
     }
-    append buffer [emitter_statement \
-        "TJC.popLocalCallFrame(interp, callFrame)"]
+    append buffer \
+        [emitter_indent] \
+        "TJC.popLocalCallFrame(interp, callFrame)" "\;\n"
     emitter_indent_level -1
     append buffer \
         [emitter_indent] \
@@ -733,7 +736,8 @@ proc emitter_init_constants { tlist } {
         set name  [lindex $tuple 0]
         # Note: constants can't be made "final" since they are
         # note assigned until cmdProc is first invoked.
-        append buffer [emitter_statement "TclObject $name"]
+        append buffer \
+            [emitter_indent] "TclObject $name" "\;\n"
     }
 
     append buffer \
@@ -854,9 +858,13 @@ proc emitter_init_cmd_check { {cflags {}} } {
             "if (!initCmd) \{\n"
         emitter_indent_level +1
         foreach cflag $cflags {
-            append buffer [emitter_statement "$cflags = true"]
+            append buffer \
+                [emitter_indent] \
+                "$cflags = true" "\;\n"
         }
-        append buffer [emitter_statement "initCmd(interp)"]
+        append buffer \
+            [emitter_indent] \
+            "initCmd(interp)" "\;\n"
         emitter_indent_level -1
         append buffer \
             [emitter_indent] "\}"
@@ -891,8 +899,9 @@ proc emitter_invoke_command_start { arraysym size } {
     }
     set buffer ""
     append buffer \
-        [emitter_statement \
-            "TclObject\[\] $arraysym = TJC.grabObjv(interp, $size)"] \
+        [emitter_indent] \
+        "TclObject\[\] $arraysym = TJC.grabObjv(interp, $size)" \
+        "\;\n" \
         [emitter_container_try_start]
     return $buffer
 }
@@ -929,8 +938,7 @@ proc emitter_invoke_command_call { arraysym cmdref isglobal } {
     } else {
         set gflag 0
     }
-    return [emitter_statement \
-        "TJC.invoke(interp, $cmdref, $arraysym, $gflag)"]
+    return "[emitter_indent]TJC.invoke(interp, $cmdref, $arraysym, $gflag)\;\n"
 }
 
 # Close invoke try block and open finally block
@@ -944,7 +952,8 @@ proc emitter_invoke_command_finally {} {
 proc emitter_invoke_command_end { arraysym size } {
     set buffer ""
     append buffer \
-        [emitter_statement "TJC.releaseObjv(interp, $arraysym, $size)"] \
+        [emitter_indent] \
+        "TJC.releaseObjv(interp, $arraysym, $size)" "\;\n" \
         [emitter_container_try_end]
     return $buffer
 }
@@ -985,7 +994,7 @@ proc emitter_container_switch_invoke { tmpsymbol objv pbIndex size stringsymbol 
     emitter_indent_level -1
     append buffer \
         [emitter_container_try_finally] \
-        [emitter_statement "TJC.releaseObjv(interp, $objv, $size)"] \
+        [emitter_indent] "TJC.releaseObjv(interp, $objv, $size)" "\;\n" \
         [emitter_container_try_end]
     return $buffer
 }
@@ -1056,7 +1065,7 @@ proc emitter_is_java_keyword { str } {
 # Close block and reduce indent
 
 proc emitter_container_block_end {} {
-    set buffer ""    
+    set buffer ""
     emitter_indent_level -1
     append buffer [emitter_indent] \
         "\}\n"
@@ -1343,7 +1352,7 @@ proc emitter_set_cache_scalar_var { p1 is_p1_string valsym iflags cache_symbol c
 # Emit interp.resetResult() void statement.
 
 proc emitter_reset_result {} {
-    return [emitter_statement "interp.resetResult()"]
+    return "[emitter_indent]interp.resetResult()\;\n"
 }
 
 # Emit interp.setResult(...) void statement.
@@ -1353,16 +1362,15 @@ proc emitter_set_result { value value_is_string } {
         set jstr [emitter_backslash_tcl_string $value]
         set value "\"$jstr\""
     }
-    return [emitter_statement "interp.setResult($value)"]
+    return "[emitter_indent]interp.setResult($value)\;\n"
 }
 
 # Emit code that will declare a variable that contains
 # the length of the list identified by list_symbol.
 
 proc emitter_container_foreach_list_length { list_symbol } {
-    return [emitter_statement \
-        "final int ${list_symbol}_length =\
-            TclList.getLength(interp, $list_symbol)"]
+    return "[emitter_indent]final int ${list_symbol}_length =\
+        TclList.getLength(interp, $list_symbol)\;\n"
 }
 
 proc emitter_container_foreach_list_preserve { list_symbol } {
@@ -1476,8 +1484,7 @@ proc emitter_make_global_link_var { varname } {
     set jstr1 [emitter_double_quote_tcl_string $varname]
     set jstr2 [emitter_double_quote_tcl_string $tail]
 
-    return [emitter_statement \
-        "TJC.makeGlobalLinkVar(interp, $jstr1, $jstr2)"]
+    return "[emitter_indent]TJC.makeGlobalLinkVar(interp, $jstr1, $jstr2)\;\n"
 }
 
 # Quote a Tcl string so that it appears as a valid Java
