@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: compileproc.tcl,v 1.14 2006/03/03 21:47:37 mdejong Exp $
+#  RCS: @(#) $Id: compileproc.tcl,v 1.15 2006/03/04 03:09:49 mdejong Exp $
 #
 #
 
@@ -351,7 +351,7 @@ proc compileproc_assign_args_arg { index } {
 
     set buffer ""
     append buffer [emitter_indent] \
-    "if ( objv.length <= $index ) \{\n"
+    "if ( objv.length <= " $index " ) \{\n"
     emitter_indent_level +1
     set value ""
     append buffer [emitter_statement \
@@ -363,7 +363,7 @@ proc compileproc_assign_args_arg { index } {
     append buffer [emitter_indent] \
     "TclObject argl = TclList.newInstance()\;\n"
     append buffer [emitter_indent] \
-    "for (int i = $index; i < objv.length\; i++) \{\n"
+    "for (int i = " $index "\; i < objv.length\; i++) \{\n"
     emitter_indent_level +1
     append buffer [emitter_indent] \
     "TclList.append(interp, argl, objv\[i\])\;\n"
@@ -619,7 +619,7 @@ public class TJCExtension extends Extension \{
         set fname [lindex $tcl_files $i]
         append buffer \
             "            " \
-            "\"$fname\""
+            "\"" $fname "\""
         if {$i == ($len - 1)} {
             # No-op
         } else {
@@ -1228,7 +1228,7 @@ proc compileproc_command_cache_init_generate {} {
         set symbol $_compileproc_command_cache($key)
 
         append buffer [emitter_indent] \
-            "case $cacheId: \{\n"
+            "case " $cacheId ": \{\n"
 
         emitter_indent_level +1
 
@@ -1341,12 +1341,12 @@ proc compileproc_command_cache_epoch_check { symbol } {
     set buffer ""
 
     append buffer \
-        "((${symbol}_cmdEpoch == ${symbol}.cmdEpoch)\n"
+        "((" $symbol "_cmdEpoch == " $symbol ".cmdEpoch)\n"
 
     emitter_indent_level +1
 
     append buffer [emitter_indent] \
-        "? ${symbol}.cmd : null)"
+        "? " $symbol ".cmd : null)"
 
     emitter_indent_level -1
 
@@ -1589,7 +1589,7 @@ proc compileproc_variable_cache_update_generate {} {
             cacheId $cacheIds {
         set symbol $_compileproc_variable_cache($key)
 
-        append buffer [emitter_indent] "case $cacheId: \{\n"
+        append buffer [emitter_indent] "case " $cacheId ": \{\n"
         emitter_indent_level +1
 
         set jstr [emitter_backslash_tcl_string $vname]
@@ -1631,7 +1631,7 @@ proc compileproc_variable_cache_update_generate {} {
             cacheId $cacheIds {
         set symbol $_compileproc_variable_cache($key)
 
-        append buffer [emitter_indent] "case $cacheId: \{\n"
+        append buffer [emitter_indent] "case " $cacheId ": \{\n"
         emitter_indent_level +1
 
         append buffer \
@@ -2769,7 +2769,7 @@ proc compileproc_emit_argument { key i {declare_flag 1} {symbol_name {}} } {
                 }
 
                 append buffer [emitter_indent] \
-                    "${declare}$tmpsymbol = interp.getResult()\;\n"
+                    $declare $tmpsymbol " = interp.getResult()\;\n"
             }
             "word" {
                 # Concatenate word elements together and save the
@@ -2859,9 +2859,9 @@ proc compileproc_emit_variable { tmpsymbol vinfo {declare_flag 1} } {
     switch -exact -- $vtype {
         {scalar} {
             set vname [lindex $vinfo 1]
-            append buffer \
-                [emitter_statement \
-                    "${declare}${tmpsymbol} = [compileproc_emit_scalar_variable_get $vname]"]
+            append buffer [emitter_indent] \
+                $declare $tmpsymbol " = " [compileproc_emit_scalar_variable_get $vname] \
+                "\;\n"
         }
         {array text} {
             set avname [lindex $vinfo 1 0]
@@ -2869,7 +2869,7 @@ proc compileproc_emit_variable { tmpsymbol vinfo {declare_flag 1} } {
             set kname [lindex $vinfo 1 1]
             if {$kname == ""} {error "empty array key name in \{$vinfo\}"}
             append buffer [emitter_indent] \
-                "${declare}${tmpsymbol} = [emitter_get_var $avname true $kname true 0]\;\n"
+                $declare $tmpsymbol " = " [emitter_get_var $avname true $kname true 0] "\;\n"
         }
         {array scalar} {
             set avname [lindex $vinfo 1 0]
@@ -2877,10 +2877,12 @@ proc compileproc_emit_variable { tmpsymbol vinfo {declare_flag 1} } {
             set kvname [lindex $vinfo 1 1]
             if {$kvname == ""} {error "empty array key variable name in \{$vinfo\}"}
             append buffer \
-                [emitter_statement \
-                    "${declare}${tmpsymbol} = [compileproc_emit_scalar_variable_get $kvname]"] \
-                [emitter_statement \
-                    "$tmpsymbol = [emitter_get_var $avname true $tmpsymbol.toString() false 0]"]
+                [emitter_indent] \
+                    $declare $tmpsymbol " = " [compileproc_emit_scalar_variable_get $kvname] \
+                    "\;\n" \
+                [emitter_indent] \
+                    $tmpsymbol " = " [emitter_get_var $avname true $tmpsymbol.toString() false 0] \
+                    "\;\n"
         }
         {array command} {
             set avname [lindex $vinfo 1 0]
@@ -2889,17 +2891,19 @@ proc compileproc_emit_variable { tmpsymbol vinfo {declare_flag 1} } {
             if {[compileproc_is_empty_command $ckeys]} {
                 # Empty command
                 append buffer [emitter_indent] \
-                    "${declare}${tmpsymbol} = [emitter_get_var $avname true {} true 0]\;\n"
+                    $declare $tmpsymbol " = " [emitter_get_var $avname true {} true 0] "\;\n"
             } else {
                 # Emit 1 to N invocations, then query results
                 foreach ckey $ckeys {
                     append buffer [compileproc_emit_invoke $ckey]
                 }
                 append buffer \
-                    [emitter_statement \
-                        "${declare}${tmpsymbol} = interp.getResult()"] \
-                    [emitter_statement \
-                        "$tmpsymbol = [emitter_get_var $avname true $tmpsymbol.toString() false 0]"]
+                    [emitter_indent] \
+                        $declare $tmpsymbol " = interp.getResult()" \
+                        "\;\n" \
+                    [emitter_indent] \
+                        $tmpsymbol " = " [emitter_get_var $avname true $tmpsymbol.toString() false 0] \
+                        "\;\n"
             }
         }
         {word command} {
@@ -2907,16 +2911,18 @@ proc compileproc_emit_variable { tmpsymbol vinfo {declare_flag 1} } {
             if {[compileproc_is_empty_command $ckeys]} {
                 # Empty command, emit ref to constant empty Tcl string.
                 set esym [compileproc_constant_cache_get {}]
-                append buffer [emitter_indent] \
-                    "${declare}${tmpsymbol} = $esym\;\n"
+                append buffer \
+                    [emitter_indent] \
+                    $declare $tmpsymbol " = " $esym "\;\n"
             } else {
                 # Emit 1 to N invocations, then query results
                 foreach ckey $ckeys {
                     append buffer [compileproc_emit_invoke $ckey]
                 }
                 append buffer \
-                    [emitter_statement \
-                        "${declare}${tmpsymbol} = interp.getResult()"]
+                    [emitter_indent] \
+                        $declare $tmpsymbol " = interp.getResult()" \
+                        "\;\n"
             }
         }
         {array word} {
@@ -2927,7 +2933,7 @@ proc compileproc_emit_variable { tmpsymbol vinfo {declare_flag 1} } {
             # Declare tmp variable unless it was already defined earlier.
             if {$declare_flag} {
                 append buffer [emitter_indent] \
-                    "${declare}${tmpsymbol}\;\n"
+                    $declare $tmpsymbol "\;\n"
             }
             if {[llength $values] > 1} {
                 # Multiple values to concatenate into a single word
@@ -2941,7 +2947,7 @@ proc compileproc_emit_variable { tmpsymbol vinfo {declare_flag 1} } {
                         set str [emitter_backslash_tcl_string [lindex $value 1]]
                         # A constant string, just append it to the StringBuffer
                         append buffer [emitter_indent] \
-                            "$sbtmp.append(\"$str\")\;\n"
+                            $sbtmp ".append(\"" $str "\")\;\n"
                     } else {
                         # A variable or command that must be evaluated then appended
                         append buffer \
@@ -2963,7 +2969,8 @@ proc compileproc_emit_variable { tmpsymbol vinfo {declare_flag 1} } {
             }
             # Finally, evaluate the array with the word value as the key
             append buffer [emitter_indent] \
-                "$tmpsymbol = [emitter_get_var $avname true $result false 0]\;\n"
+                $tmpsymbol " = " [emitter_get_var $avname true $result false 0] \
+                "\;\n"
         }
         default {
             error "unhandled non-scalar type \"$vtype\" in vinfo \{$vinfo\}"
@@ -3060,11 +3067,11 @@ proc compileproc_emit_word { tmpsymbol winfo {declare_flag 1}} {
 
         if {$declare_flag} {
             append buffer [emitter_indent] \
-                "${declare}${tmpsymbol}\;\n"
+                $declare $tmpsymbol "\;\n"
         }
 
         append buffer [emitter_indent] \
-            "StringBuffer $sbtmp = new StringBuffer(64)\;\n"
+            "StringBuffer " $sbtmp " = new StringBuffer(64)\;\n"
 
         foreach wi $winfo {
             append buffer [compileproc_emit_word_element $wi $tmpsymbol true $sbtmp $declare_flag]
@@ -3072,7 +3079,7 @@ proc compileproc_emit_word { tmpsymbol winfo {declare_flag 1}} {
 
         # Create new TclString object that contains the new StringBuffer
         append buffer [emitter_indent] \
-            "$tmpsymbol = TclString.newInstance($sbtmp)\;\n"
+            $tmpsymbol " = TclString.newInstance(" $sbtmp ")\;\n"
     }
 
     return $buffer
@@ -3108,7 +3115,7 @@ proc compileproc_emit_word_element { winfo_element tmpsymbol append sbtmp {decla
         set str [emitter_backslash_tcl_string [lindex $winfo_element 1]]
         if {$append} {
             append buffer [emitter_indent] \
-                "$sbtmp.append(\"$str\")\;\n"
+                $sbtmp ".append(\"" $str "\")\;\n"
         } else {
             error "constant text can't be assigned"
         }
@@ -3122,7 +3129,7 @@ proc compileproc_emit_word_element { winfo_element tmpsymbol append sbtmp {decla
         append buffer [compileproc_emit_variable $tmpsymbol $vinfo $decl]
         if {$append} {
             append buffer [emitter_indent] \
-                "$sbtmp.append($tmpsymbol.toString())\;\n"
+                $sbtmp ".append(" $tmpsymbol ".toString())" "\;\n"
         }
     } elseif {$type == "command"} {
         # Emit command evaluation code
@@ -3133,10 +3140,10 @@ proc compileproc_emit_word_element { winfo_element tmpsymbol append sbtmp {decla
             set esym [compileproc_constant_cache_get {}]
             if {$append} {
                 append buffer [emitter_indent] \
-                    "$sbtmp.append($esym.toString())\;\n"
+                    $sbtmp ".append(" $esym ".toString())" "\;\n"
             } else {
                 append buffer [emitter_indent] \
-                    "${declare}$tmpsymbol = $esym\;\n"
+                    $declare $tmpsymbol " = $esym\;\n"
             }
         } else {
             # 1 or more command keys, emit a invocation for
@@ -3147,11 +3154,15 @@ proc compileproc_emit_word_element { winfo_element tmpsymbol append sbtmp {decla
             }
             if {$append} {
                 append buffer \
-                    [emitter_statement "$tmpsymbol = interp.getResult()"] \
-                    [emitter_statement "$sbtmp.append($tmpsymbol.toString())"]
+                    [emitter_indent] \
+                    $tmpsymbol " = interp.getResult()" "\;\n" \
+                    [emitter_indent] \
+                    $sbtmp ".append(" $tmpsymbol ".toString())" "\;\n"
             } else {
                 append buffer \
-                    [emitter_statement "${declare}$tmpsymbol = interp.getResult()"]
+                    [emitter_indent] \
+                    $declare $tmpsymbol " = interp.getResult()" \
+                    "\;\n"
             }
         }
     } else {
@@ -3781,7 +3792,7 @@ proc compileproc_expr_evaluate_boolean_emit { key expr_index } {
             [compileproc_emit_variable $tmpsymbol1 $vinfo]
         set tmpsymbol2 [compileproc_tmpvar_next]
         append buffer [emitter_indent] \
-            "boolean $tmpsymbol2 = " \
+            "boolean " $tmpsymbol2 " = " \
             [emitter_tclobject_to_boolean $tmpsymbol1] \
             "\;\n"
         set retsymbol $tmpsymbol2
@@ -3823,11 +3834,11 @@ proc compileproc_expr_evaluate_boolean_emit { key expr_index } {
         append buffer [compileproc_emit_invoke $gkey]
         set tmpsymbol1 [compileproc_tmpvar_next]
         append buffer [emitter_indent] \
-            "TclObject $tmpsymbol1 = interp.getResult()\;\n"
+            "TclObject " $tmpsymbol1 " = interp.getResult()" "\;\n"
 
         set tmpsymbol2 [compileproc_tmpvar_next]
         append buffer [emitter_indent] \
-            "boolean $tmpsymbol2 = " \
+            "boolean " $tmpsymbol2 " = " \
         [emitter_tclobject_to_boolean $tmpsymbol1] "\;\n"
 
         return [list $tmpsymbol2 $buffer 0]
@@ -3843,8 +3854,12 @@ proc compileproc_expr_evaluate_boolean_emit { key expr_index } {
 
         set tmpsymbol [compileproc_tmpvar_next]
         append buffer \
-            [emitter_statement "boolean $tmpsymbol = $ev.getBooleanValue(interp)"] \
-            [emitter_statement "TJC.exprReleaseValue(interp, $ev)"]
+            [emitter_indent] \
+            "boolean " $tmpsymbol " = " $ev ".getBooleanValue(interp)" \
+            "\;\n" \
+            [emitter_indent] \
+            "TJC.exprReleaseValue(interp, " $ev ")" \
+            "\;\n"
 
         return [list $tmpsymbol $buffer 0]
     }
@@ -4730,7 +4745,7 @@ proc compileproc_container_catch_handler { tmpsymbol empty_body {varname "__TJC_
             "interp.setResult(TCL.OK)\;\n"
     } else {
         append buffer [emitter_indent] \
-            "interp.setResult($tmpsymbol)\;\n"
+            "interp.setResult(" $tmpsymbol ")\;\n"
     }
 
     return $buffer
@@ -4817,7 +4832,7 @@ proc compileproc_emit_container_foreach { key } {
         append buffer $list_buffer
         if {$list_type == "constant"} {
             append buffer [emitter_indent] \
-                "$tmpsymbol = $list_symbol\;\n"
+                $tmpsymbol " = " $list_symbol "\;\n"
         }
 
         # Invoke TclObject.preserve() to hold a ref. Don't worry
@@ -4901,22 +4916,23 @@ proc compileproc_container_foreach_loop_start { varlists list_symbols } {
         set num_loops_tmpsymbol [compileproc_tmpvar_next num_loops]
         set max_loops_tmpsymbol [compileproc_tmpvar_next max_loops]
         append buffer [emitter_indent] \
-            "int $num_loops_tmpsymbol, $max_loops_tmpsymbol = 0\;\n"
+            "int " $num_loops_tmpsymbol ", " $max_loops_tmpsymbol " = 0\;\n"
         foreach varlist $varlists list_symbol $list_symbols {
             set num_variables [llength $varlist]
             if {$num_variables > 1} {
                 append buffer [emitter_indent] \
-                    "$num_loops_tmpsymbol =\
-                        (${list_symbol}_length + $num_variables - 1) / $num_variables\;\n"
+                    $num_loops_tmpsymbol " = (" \
+                    ${list_symbol} "_length + " $num_variables \
+                    " - 1) / " $num_variables "\;\n"
             } else {
                 append buffer [emitter_indent] \
-                    "$num_loops_tmpsymbol = ${list_symbol}_length\;\n"
+                    $num_loops_tmpsymbol " = " $list_symbol "_length\;\n"
             }
             append buffer [emitter_indent] \
-                "if ( $num_loops_tmpsymbol > $max_loops_tmpsymbol ) \{\n"
+                "if ( " $num_loops_tmpsymbol " > " $max_loops_tmpsymbol " ) \{\n"
             emitter_indent_level +1
             append buffer [emitter_indent] \
-                "$max_loops_tmpsymbol = $num_loops_tmpsymbol\;\n"
+                $max_loops_tmpsymbol " = " $num_loops_tmpsymbol "\;\n"
             emitter_indent_level -1
             append buffer [emitter_indent] \
                 "\}\n"
@@ -5000,7 +5016,7 @@ proc compileproc_container_foreach_loop_start { varlists list_symbols } {
                     continue
                 }
                 append buffer [emitter_indent] \
-                    "int $ivar = $tmpi * $mult\;\n"
+                    "int " $ivar " = " $tmpi " * " $mult "\;\n"
                 set declared_ivar($ivar) 1
             }
         }
@@ -5025,15 +5041,17 @@ proc compileproc_container_foreach_loop_start { varlists list_symbols } {
 
         if {!$multivars && !$multilists} {
             append buffer [emitter_indent] \
-                "TclObject $tmpsymbol = TclList.index(interp, $list_symbol, $index)\;\n"
+                "TclObject " $tmpsymbol " = TclList.index(interp, " \
+                $list_symbol ", " $index ")\;\n"
         } elseif {$multilists || $multivars} {
             append buffer \
-                [emitter_statement "TclObject $tmpsymbol = null"] \
                 [emitter_indent] \
-                "if ( $index < $list_symbol_length ) \{\n"
+                    "TclObject " $tmpsymbol " = null" "\;\n" \
+                [emitter_indent] \
+                "if ( " $index " < " $list_symbol_length " ) \{\n"
             emitter_indent_level +1
             append buffer [emitter_indent] \
-                "$tmpsymbol = TclList.index(interp, $list_symbol, $index)\;\n"
+                $tmpsymbol " = TclList.index(interp, " $list_symbol ", " $index ")\;\n"
             emitter_indent_level -1
             append buffer [emitter_indent] \
                 "\}\n"
@@ -5053,7 +5071,7 @@ proc compileproc_container_foreach_loop_start { varlists list_symbols } {
                 [compileproc_set_variable $varname true $tmpsymbol false] "\;\n"
         } elseif {$multilists || $multivars} {
             append buffer [emitter_indent] \
-                "if ( $tmpsymbol == null ) \{\n"
+                "if ( " $tmpsymbol " == null ) \{\n"
             emitter_indent_level +1
             append buffer [emitter_indent] \
                 [compileproc_set_variable $varname true "" true] "\;\n"
@@ -5169,14 +5187,14 @@ proc compileproc_emit_container_switch { key } {
     # Get string argument as a String
     set string_tmpsymbol [compileproc_tmpvar_next]
     append buffer [emitter_indent] \
-        "String $string_tmpsymbol = $str_symbol.toString()\;\n"
+        "String " $string_tmpsymbol " = " $str_symbol ".toString()\;\n"
 
     # If no -- appears before the string argument
     # then the string can't start with a "-" character.
 
     if {![descend_container_switch_has_last $key]} {
         append buffer [emitter_indent] \
-            "TJC.switchStringIsNotOption(interp, $string_tmpsymbol)\;\n"
+            "TJC.switchStringIsNotOption(interp, " $string_tmpsymbol ")\;\n"
     }
 
     if {$inline_constant_strings} {
@@ -5192,7 +5210,8 @@ proc compileproc_emit_container_switch { key } {
 
     # Declare match offset variable
     set offset_tmpsymbol [compileproc_tmpvar_next]
-    append buffer [emitter_statement "int $offset_tmpsymbol"]
+    append buffer [emitter_indent] \
+        "int " $offset_tmpsymbol "\;\n"
 
     # Allocate array of TclObject and open try block
     set array_tmpsymbol [compileproc_tmpvar_next objv]
@@ -5202,7 +5221,8 @@ proc compileproc_emit_container_switch { key } {
     # Assign values to the proper indexes in the array.
 
     set tmpsymbol [compileproc_tmpvar_next]
-    append buffer [emitter_statement "TclObject $tmpsymbol"]
+    append buffer [emitter_indent] \
+        "TclObject " $tmpsymbol "\;\n"
 
     set pattern_comments [list]
     set i 0
@@ -5323,12 +5343,12 @@ proc compileproc_emit_container_switch_constant { key string_tmpsymbol } {
     set first "${string_tmpsymbol}_first"
 
     append buffer [emitter_indent] \
-        "int $length = ${string_tmpsymbol}.length()\;\n" \
+        "int " $length " = " $string_tmpsymbol ".length()\;\n" \
         [emitter_indent] \
-        "char $first = '\\n'\;\n" \
+        "char " $first " = '\\n'\;\n" \
         [emitter_container_if_start "$length > 0"] \
         [emitter_indent] \
-        "$first = ${string_tmpsymbol}.charAt(0)\;\n" \
+        $first " = " $string_tmpsymbol ".charAt(0)\;\n" \
         [emitter_container_if_end] \
         [emitter_reset_result]
 
@@ -5387,14 +5407,16 @@ proc compileproc_emit_container_switch_constant { key string_tmpsymbol } {
         set expression ""
         if {$pattern_len > 0} {
             append expression \
-                "$length == $pattern_len && $first == '$pattern_first_jstr'"
+                $length " == " $pattern_len " && " \
+                $first " == '" $pattern_first_jstr "'"
             if {$pattern_len > 1} {
                 append expression "\n" $spacer2 \
-                    "&& ${string_tmpsymbol}.compareTo(\"$pattern_jstr\") == 0"
+                    "&& " $string_tmpsymbol ".compareTo(\"" \
+                    $pattern_jstr "\") == 0"
             }
         } else {
             append expression \
-                "$length == 0"
+                $length " == 0"
         }
 
         if {[descend_container_switch_is_fallthrough $key $bodyIndex]} {
@@ -5406,14 +5428,14 @@ proc compileproc_emit_container_switch_constant { key string_tmpsymbol } {
             if {$fallthrough_expression != ""} {
                 append fallthrough_expression $spacer1
             }
-            append fallthrough_expression "( $expression ) ||\n"
+            append fallthrough_expression "( " $expression " ) ||\n"
             incr i
             continue
         }
         if {$fallthrough_expression != ""} {
             append fallthrough_expression \
                 $spacer1 \
-                "( $expression )"
+                "( " $expression " )"
             set expression $fallthrough_expression
             set fallthrough_expression ""
         }
@@ -5435,7 +5457,7 @@ proc compileproc_emit_container_switch_constant { key string_tmpsymbol } {
         set tuple [compileproc_argument_printable $key $patIndex]
         set astr [lindex $tuple 1]
         append buffer [emitter_indent] \
-            "// Pattern $astr\n"
+            "// Pattern " $astr "\n"
 
         # Emit commands
 
@@ -5754,7 +5776,7 @@ proc compileproc_expr_evaluate_result_emit { key } {
     append buffer [lindex $eval_tuple 2]
 
     append buffer [emitter_indent] \
-        "TJC.exprSetResult(interp, $ev)\;\n"
+        "TJC.exprSetResult(interp, " $ev ")\;\n"
 
     return $buffer
 }
@@ -5878,7 +5900,7 @@ proc compileproc_expr_evaluate_emit_unary_operator { op_tuple } {
     # Printable info describing this operator and
     # the left and right operands:
     append buffer [emitter_indent] \
-        "// Unary operator: $op $infostr\n"
+        "// Unary operator: " $op " " $infostr "\n"
 
     # Append code to evaluate value
     append buffer $eval_buffer
@@ -5903,11 +5925,11 @@ proc compileproc_expr_evaluate_emit_unary_operator { op_tuple } {
 
     if {!$skip_unary_op_call} {
         append buffer [emitter_indent] \
-            "TJC.exprUnaryOperator(interp, $opval, $ev)\;\n"
+            "TJC.exprUnaryOperator(interp, " $opval ", " $ev ")\;\n"
     }
 
     append buffer [emitter_indent] \
-        "// End Unary operator: $op\n"
+        "// End Unary operator: " $op "\n"
 
     return [list $ev $buffer]
 }
@@ -6110,7 +6132,7 @@ proc compileproc_expr_evaluate_emit_binary_operator { op_tuple } {
     # Printable info describing this operator and
     # the left and right operands:
     append buffer [emitter_indent] \
-        "// Binary operator: $left_infostr $op $right_infostr\n"
+        "// Binary operator: " $left_infostr " " $op " " $right_infostr "\n"
 
     if {$logic_op} {
         # Handle && and || logic operators, the right
@@ -6127,21 +6149,21 @@ proc compileproc_expr_evaluate_emit_binary_operator { op_tuple } {
 
         append buffer \
             [emitter_indent] \
-            "if ($not$ev1.getBooleanValue(interp)) \{\n" \
+            "if (" $not $ev1 ".getBooleanValue(interp)) \{\n" \
             [lindex $right_eval_tuple 2] \
             [emitter_indent] \
-            "$ev1.setIntValue($ev2.getBooleanValue(interp))\;\n" \
+            $ev1 ".setIntValue(" $ev2 ".getBooleanValue(interp))\;\n" \
             [emitter_indent] \
-            "TJC.exprReleaseValue(interp, $ev2)\;\n" \
+            "TJC.exprReleaseValue(interp, " $ev2 ")\;\n" \
             [emitter_indent] \
             "\} else \{\n"
 
         set else_value [expr {($not == "") ? 0 : 1}]
         append buffer \
             [emitter_indent] \
-            "$ev1.setIntValue($else_value)\;\n" \
+            $ev1 ".setIntValue(" $else_value ")\;\n" \
             [emitter_indent] \
-            "\} // End if: $not$left_infostr\n"
+            "\} // End if: " $not $left_infostr "\n"
     } elseif {$opt_tclobject_empty_string_compare} {
         # Special case for: expr {$obj == ""}. Note that
         # we need to regenerate the eval buffer so that
@@ -6165,7 +6187,8 @@ proc compileproc_expr_evaluate_emit_binary_operator { op_tuple } {
             set negate false
         }
         append buffer [emitter_indent] \
-            "ExprValue $tmpsymbol = TJC.exprEqualsEmptyString(interp, $tclobject_sym, $negate)\;\n"
+            "ExprValue " $tmpsymbol \
+            " = TJC.exprEqualsEmptyString(interp, " $tclobject_sym ", " $negate ")\;\n"
         set ev1 $tmpsymbol
     } elseif {$opt_tclobject_string_compare} {
         # Special case for: expr {$obj == "foo"}. The
@@ -6197,10 +6220,12 @@ proc compileproc_expr_evaluate_emit_binary_operator { op_tuple } {
         # Emit a call to String.equals(Object) which will do a pointer
         # compare before trying to do a character by character compare.
         append buffer [emitter_indent] \
-            "boolean $boolean_tmpsymbol = ${not}$tclobject_sym.toString().equals($jstr)\;\n"
+            "boolean " $boolean_tmpsymbol \
+            " = " $not $tclobject_sym ".toString().equals(" $jstr ")\;\n"
         set tmpsymbol [compileproc_tmpvar_next]
         append buffer [emitter_indent] \
-            "ExprValue $tmpsymbol = TJC.exprGetValue(interp, $boolean_tmpsymbol)\;\n"
+            "ExprValue " $tmpsymbol \
+            " = TJC.exprGetValue(interp, " $boolean_tmpsymbol ")\;\n"
         set ev1 $tmpsymbol
     } else {
         # Append code to evaluate left and right values
@@ -6210,11 +6235,11 @@ proc compileproc_expr_evaluate_emit_binary_operator { op_tuple } {
 
         # Emit TJC binary operator invocation
         append buffer [emitter_indent] \
-            "TJC.exprBinaryOperator(interp, $opval, $ev1, $ev2)\;\n"
+            "TJC.exprBinaryOperator(interp, " $opval ", " $ev1 ", " $ev2 ")\;\n"
     }
 
     append buffer [emitter_indent] \
-        "// End Binary operator: $op\n"
+        "// End Binary operator: " $op "\n"
 
     return [list $ev1 $buffer]
 }
@@ -6256,22 +6281,22 @@ proc compileproc_expr_evaluate_emit_ternary_operator { op_tuple } {
 
     append buffer \
         [emitter_indent] \
-        "// Ternary operator: $cond_infostr ? $true_infostr : $false_infostr\n" \
+        "// Ternary operator: " $cond_infostr " ? " $true_infostr " : " $false_infostr "\n" \
         [lindex $cond_eval_tuple 2] \
         [emitter_indent] \
-        "if ($ev1.getBooleanValue(interp)) \{\n" \
+        "if (" $ev1 ".getBooleanValue(interp)) \{\n" \
         [lindex $true_eval_tuple 2] \
         [emitter_indent] \
-        "TJC.exprReleaseValue(interp, $ev1)\;\n" \
+        "TJC.exprReleaseValue(interp, " $ev1 ")\;\n" \
         [emitter_indent] \
-        "$ev1 = $ev2\;\n" \
+        $ev1 " = " $ev2 "\;\n" \
         [emitter_indent] \
         "\} else \{\n" \
         [lindex $false_eval_tuple 2] \
         [emitter_indent] \
-        "TJC.exprReleaseValue(interp, $ev1)\;\n" \
+        "TJC.exprReleaseValue(interp, " $ev1 ")\;\n" \
         [emitter_indent] \
-        "$ev1 = $ev3\;\n" \
+        $ev1 " = " $ev3 "\;\n" \
         [emitter_indent] \
         "\}\n" \
         [emitter_indent] \
@@ -6321,7 +6346,7 @@ proc compileproc_expr_evaluate_emit_math_function { op_tuple } {
     }
 
     append buffer [emitter_indent] \
-        "// Math function: $funcname"
+        "// Math function: " $funcname
     foreach infostr $infostrs {
         append buffer " " $infostr
     }
@@ -6345,28 +6370,28 @@ proc compileproc_expr_evaluate_emit_math_function { op_tuple } {
             set tjc_func "TJC.exprDoubleMathFunction"
         }
         append buffer [emitter_indent] \
-            "${tjc_func}(interp, $ev)\;\n"
+            ${tjc_func} "(interp, " $ev ")\;\n"
         set result_tmpsymbol $ev
     } else {
         set values_tmpsymbol [compileproc_tmpvar_next]
         append buffer [emitter_indent] \
-            "ExprValue\[\] $values_tmpsymbol = new ExprValue\[$len\]\;\n"
+            "ExprValue\[\] " $values_tmpsymbol " = new ExprValue\[" $len "\]\;\n"
 
         for {set i 0} {$i < $len} {incr i} {
             set ev [lindex $evsyms $i]
             append buffer [emitter_indent] \
-                "$values_tmpsymbol\[$i\] = $ev\;\n"
+                $values_tmpsymbol "\[" $i "\] = " $ev "\;\n"
         }
 
         set result_tmpsymbol [compileproc_tmpvar_next]
         set jstr [emitter_backslash_tcl_string $funcname]
         append buffer [emitter_indent] \
-            "ExprValue $result_tmpsymbol = " \
-            "TJC.exprMathFunction(interp, \"$jstr\", $values_tmpsymbol)\;\n"
+            "ExprValue " $result_tmpsymbol " = " \
+            "TJC.exprMathFunction(interp, \"" $jstr "\", " $values_tmpsymbol ")\;\n"
     }
 
     append buffer [emitter_indent] \
-        "// End Math function: $funcname\n"
+        "// End Math function: " $funcname "\n"
 
     return [list $result_tmpsymbol $buffer]
 }
@@ -6518,7 +6543,7 @@ proc compileproc_expr_evaluate_emit_exprvalue { tuple {no_exprvalue_for_tclobjec
                 }
                 set tmpsymbol [compileproc_tmpvar_next]
                 append buffer [emitter_indent] \
-                    "TclObject $tmpsymbol = interp.getResult()\;\n"
+                    "TclObject " $tmpsymbol " = interp.getResult()\;\n"
                 set result_type "TclObject"
                 set result_symbol $tmpsymbol
             }
@@ -6567,7 +6592,7 @@ proc compileproc_expr_evaluate_emit_exprvalue { tuple {no_exprvalue_for_tclobjec
     } elseif {$result_type != "ExprValue"} {
         set tmpsymbol [compileproc_tmpvar_next]
         append buffer [emitter_indent] \
-            "ExprValue $tmpsymbol = "
+            "ExprValue " $tmpsymbol " = "
         set value_symbol $tmpsymbol
     } else {
         set value_symbol $result_symbol
@@ -6576,9 +6601,9 @@ proc compileproc_expr_evaluate_emit_exprvalue { tuple {no_exprvalue_for_tclobjec
     if {$no_exprvalue_for_tclobject && $result_type == "TclObject"} {
        # No-op
     } elseif {$result_type == "int literal" || $result_type == "double literal"} {
-        append buffer "TJC.exprGetValue(interp, $result_symbol, $srep)"
+        append buffer "TJC.exprGetValue(interp, " $result_symbol ", $srep)"
     } elseif {$result_type == "String" || $result_type == "TclObject"} {
-        append buffer "TJC.exprGetValue(interp, $result_symbol)"
+        append buffer "TJC.exprGetValue(interp, " $result_symbol ")"
     } elseif {$result_type == "ExprValue"} {
         # No-op
     } else {
@@ -7204,7 +7229,7 @@ proc compileproc_emit_inline_command_incr { key } {
 
     if {!$cache_variables} {
         append buffer \
-            "TJC.incrVar(interp, $qvarname, $incr_symbol)\;\n"
+            "TJC.incrVar(interp, " $qvarname ", " $incr_symbol ")\;\n"
     } else {
         # In cache variable mode, inline special code for scalar var
 
@@ -7213,13 +7238,14 @@ proc compileproc_emit_inline_command_incr { key } {
             set p1 [lindex $vinfo 1]
             set p2 [lindex $vinfo 2]
             append buffer \
-                "TJC.incrVar(interp, $qvarname, $incr_symbol)\;\n"
+                "TJC.incrVar(interp, " $qvarname ", " $incr_symbol ")\;\n"
         } elseif {[lindex $vinfo 0] == "scalar"} {
             set cache_symbol [compileproc_variable_cache_lookup $varname]
             set cacheId [compileproc_get_cache_id_from_symbol $cache_symbol]
 
             append buffer \
-                "incrVarScalar(interp, $qvarname, $incr_symbol, 0, $cache_symbol, $cacheId)\;\n"
+                "incrVarScalar(interp, " $qvarname ", " $incr_symbol ", 0, " \
+                $cache_symbol ", " $cacheId ")\;\n"
         } else {
             error "unexpected result \{$vinfo\} from descend_simple_variable"
         }
@@ -7464,14 +7490,14 @@ proc compileproc_emit_inline_command_lindex { key } {
 
         if {$declare_result_symbol} {
             append buffer [emitter_indent] \
-                "TclObject $result_symbol = "
+                "TclObject " $result_symbol " = "
         } else {
             append buffer [emitter_indent] \
-                "$result_symbol = "
+                $result_symbol " = "
         }
 
         append buffer \
-            "TclList.index(interp, $value_symbol, $index_symbol)\;\n" \
+            "TclList.index(interp, " $value_symbol ", " $index_symbol ")\;\n" \
             [emitter_container_if_start "$result_symbol == null"] \
             [emitter_reset_result] \
             [emitter_container_if_else] \

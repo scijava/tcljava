@@ -1,6 +1,20 @@
 2006-03-03  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/tjc/tjc/library/compileproc.tcl:
+        * src/tjc/tjc/library/emitter.tcl:
+        When passing multiple arguments to the append
+        command, take care to pass constant strings
+        and variables in seperate arguments. This
+        will append directly to the StringBuffer
+        inside the TclString class instead of
+        creating a temp StringBuffer and then
+        wrapping it in a TclString. This change will
+        result in the TJC compiler implementation
+        creating far fewer tmp StringBuffer objects.
+
+2006-03-03  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/tjc/tjc/library/compileproc.tcl:
         Optimize compileproc_command_cache_lookup,
         compileproc_argument_printable, and
         compileproc_emit_invoke.
