@@ -11,6 +11,7 @@ array set imap {
     jacl1       C:/msys/home/Mo/install/cvs_jacl1/bin/jaclsh.bat
     jacl1+tjc   C:/msys/home/Mo/install/cvs_jacl1/bin/jaclsh.bat
     jacl2       C:/msys/home/Mo/install/cvs_jacl2/bin/jaclsh.bat
+    jacl2+tjc   C:/msys/home/Mo/install/cvs_jacl2/bin/jaclsh.bat
 }
 set inames [array names imap]
 

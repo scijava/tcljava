@@ -1,0 +1,173 @@
+# Test inlined append operation
+
+proc append-strings {} {
+    set buffer ""
+    set v "DATA"
+    append buffer "ONE"
+    append buffer $v
+    append buffer "THREE" $v
+    append buffer "FIVE" $v
+    append buffer "SEVEN" $v
+    return $buffer
+}
+
+proc append-inline-string {} {
+    set v "DATA"
+    return "ONE${v}THREE${v}THREE${v}FIVE${v}SEVEN${v}"
+}
+
+# Append elements that have been joined into a word.
+# Both tests take about the same amount of time uncompiled.
+# The first version uses inlined word concatenation
+# logic to build up a StringBuffer and then it
+# creates a TclObject and passes the TclObject to append.
+# The second version will pass multiple TclObject
+# values to the append command.
+
+# The first implementation actually runs a little faster
+# than the second when compiled.
+
+proc append-one-words {} {
+    set e1 "ONE"
+    set e2 "TWO"
+    set e3 "THREE"
+    set buffer ""
+    append buffer "$e1 $e2 $e3"
+    return $buffer
+}
+
+proc append-n-words {} {
+    set e1 "ONE"
+    set e2 "TWO"
+    set e3 "THREE"
+    set buffer ""
+    append buffer $e1 " " $e2 " " $e3
+    return $buffer
+}
+
+# Like the two tests above, but with large buffers.
+# These two run at about the same speed when
+# uncompiled. When compiled, the second verison
+# runs about twice as fast. It is likely that the
+# buffer size estimation logic in the inlined
+# append command leads to fewer allocations.
+
+proc append-one-words-big {} {
+    global __append_buffer_1 __append_buffer_2 __append_buffer_3
+    set buffer ""
+    append buffer "${__append_buffer_1} ${__append_buffer_2} ${__append_buffer_3}"
+    return $buffer
+}
+
+proc append-n-words-big {} {
+    global __append_buffer_1 __append_buffer_2 __append_buffer_3
+    set buffer ""
+    append buffer ${__append_buffer_1} " " ${__append_buffer_2} " " ${__append_buffer_3}
+    return $buffer
+}
+
+# append small buffers many times.
+# The second implementation runs
+# a bit faster when compiled.
+# The second implementaiton also
+# avoids creating 10 temp StringBuffers.
+
+proc append-ten-one-words {} {
+    set e1 "ONE"
+    set e2 "TWO"
+    set e3 "THREE"
+    set buffer ""
+    append buffer "$e1 $e2 $e3"
+    append buffer "$e1 $e2 $e3"
+    append buffer "$e1 $e2 $e3"
+    append buffer "$e1 $e2 $e3"
+    append buffer "$e1 $e2 $e3"
+    append buffer "$e1 $e2 $e3"
+    append buffer "$e1 $e2 $e3"
+    append buffer "$e1 $e2 $e3"
+    append buffer "$e1 $e2 $e3"
+    append buffer "$e1 $e2 $e3"
+    return $buffer
+}
+
+proc append-ten-n-words {} {
+    set e1 "ONE"
+    set e2 "TWO"
+    set e3 "THREE"
+    set buffer ""
+    append buffer $e1 " " $e2 " " $e3
+    append buffer $e1 " " $e2 " " $e3
+    append buffer $e1 " " $e2 " " $e3
+    append buffer $e1 " " $e2 " " $e3
+    append buffer $e1 " " $e2 " " $e3
+    append buffer $e1 " " $e2 " " $e3
+    append buffer $e1 " " $e2 " " $e3
+    append buffer $e1 " " $e2 " " $e3
+    append buffer $e1 " " $e2 " " $e3
+    append buffer $e1 " " $e2 " " $e3
+    return $buffer
+}
+
+# append large buffers many times. These two tests show
+# that the amount of time spent in the Tcl code is small
+# compared to the time spend appending the String values.
+# This is clear because the compiled and uncompiled versions
+# run at roughly the same speeds.
+
+proc append-ten-one-words-big {} {
+    global __append_buffer_1 __append_buffer_2 __append_buffer_3
+    set buffer ""
+    append buffer "${__append_buffer_1} ${__append_buffer_2} ${__append_buffer_3}"
+    append buffer "${__append_buffer_1} ${__append_buffer_2} ${__append_buffer_3}"
+    append buffer "${__append_buffer_1} ${__append_buffer_2} ${__append_buffer_3}"
+    append buffer "${__append_buffer_1} ${__append_buffer_2} ${__append_buffer_3}"
+    append buffer "${__append_buffer_1} ${__append_buffer_2} ${__append_buffer_3}"
+    append buffer "${__append_buffer_1} ${__append_buffer_2} ${__append_buffer_3}"
+    append buffer "${__append_buffer_1} ${__append_buffer_2} ${__append_buffer_3}"
+    append buffer "${__append_buffer_1} ${__append_buffer_2} ${__append_buffer_3}"
+    append buffer "${__append_buffer_1} ${__append_buffer_2} ${__append_buffer_3}"
+    append buffer "${__append_buffer_1} ${__append_buffer_2} ${__append_buffer_3}"
+    return $buffer
+}
+
+proc append-ten-n-words-big {} {
+    global __append_buffer_1 __append_buffer_2 __append_buffer_3
+    set buffer ""
+    append buffer ${__append_buffer_1} " " ${__append_buffer_2} " " ${__append_buffer_3}
+    append buffer ${__append_buffer_1} " " ${__append_buffer_2} " " ${__append_buffer_3}
+    append buffer ${__append_buffer_1} " " ${__append_buffer_2} " " ${__append_buffer_3}
+    append buffer ${__append_buffer_1} " " ${__append_buffer_2} " " ${__append_buffer_3}
+    append buffer ${__append_buffer_1} " " ${__append_buffer_2} " " ${__append_buffer_3}
+    append buffer ${__append_buffer_1} " " ${__append_buffer_2} " " ${__append_buffer_3}
+    append buffer ${__append_buffer_1} " " ${__append_buffer_2} " " ${__append_buffer_3}
+    append buffer ${__append_buffer_1} " " ${__append_buffer_2} " " ${__append_buffer_3}
+    append buffer ${__append_buffer_1} " " ${__append_buffer_2} " " ${__append_buffer_3}
+    append buffer ${__append_buffer_1} " " ${__append_buffer_2} " " ${__append_buffer_3}    
+    return $buffer
+}
+
+
+# Define big buffers
+
+set __append_buffer_1 [string repeat A 500]
+set __append_buffer_2 [string repeat B 1000]
+set __append_buffer_3 [string repeat C 1500]
+
+bench -desc "append-strings" -body {append-strings}
+
+bench -desc "append-inline-string" -body {append-inline-string}
+
+bench -desc "append-one-words" -body {append-one-words}
+bench -desc "append-n-words" -body {append-n-words}
+
+bench -desc "append-one-words-big" -body {append-one-words-big}
+bench -desc "append-n-words-big" -body {append-n-words-big}
+
+bench -desc "append-ten-one-words" -body {append-ten-one-words}
+bench -desc "append-ten-n-words" -body {append-ten-n-words}
+
+bench -desc "append-ten-one-words-big" -body {append-ten-one-words-big}
+bench -desc "append-ten-n-words-big" -body {append-ten-n-words-big}
+
+unset __append_buffer_1 __append_buffer_2 __append_buffer_3
+

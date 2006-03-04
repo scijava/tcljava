@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: main.tcl,v 1.4 2006/03/01 00:03:29 mdejong Exp $
+#  RCS: @(#) $Id: main.tcl,v 1.5 2006/03/04 22:18:34 mdejong Exp $
 #
 #
 
@@ -361,8 +361,8 @@ proc process_module_file { filename } {
         }
     }
     # release memory just in case the variable holds a lot of memory
-    unset java_source
-    unset file_and_procs
+    unset file_and_procs pair proc_tuples proc_tuple
+    unset tuple java_source
 
     # Generate Java code for TJCExtension class for the package.
     # This code assumes that we have already checked that no two

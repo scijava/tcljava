@@ -4,7 +4,7 @@
 # This file has to have code that works in any version of Tcl that
 # the user would want to benchmark.
 #
-# RCS: @(#) $Id: libbench.tcl,v 1.3 2006/02/24 02:56:49 mdejong Exp $
+# RCS: @(#) $Id: libbench.tcl,v 1.4 2006/03/04 22:18:34 mdejong Exp $
 #
 # Copyright (c) 2000-2001 Jeffrey Hobbs.
 
@@ -409,6 +409,9 @@ if {1} {
                     vwait __tjc_proc_ready
                     if {$debug} {
                         puts stderr "__tjc_proc_ready is \{$__tjc_proc_ready\}"
+                    }
+                    if {[lindex $__tjc_proc_ready 0] != "OK"} {
+                        puts $__tjc_proc_ready
                     }
                     unset __tjc_proc_ready
                 }

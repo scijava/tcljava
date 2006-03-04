@@ -2562,7 +2562,7 @@ tcltest::test compileproc7-8.3 {inline append command} {
     # Skip constant increment and use cache variable
     set script {
 proc p {} {
-    append var 1
+    append var "A"
 }
 }
 
@@ -2598,11 +2598,11 @@ public class Test1 extends TJC.CompiledCommand {
         if (objv.length != 1) {
             throw new TclNumArgsException(interp, 1, objv, "");
         }
-        { // Invoke: append var 1
+        { // Invoke: append var "A"
             TclObject[] objv0 = TJC.grabObjv(interp, 1);
             try {
                 TclObject tmp1;
-                // Arg 2 constant: 1
+                // Arg 2 constant: "A"
                 objv0[0] = const0;
                 interp.resetResult();
                 tmp1 = appendVarScalar(interp, "var", objv0, varcache1, 1);
@@ -2622,7 +2622,7 @@ public class Test1 extends TJC.CompiledCommand {
     TclObject const0;
 
     protected void initConstants(Interp interp) throws TclException {
-        const0 = TclInteger.newInstance(1);
+        const0 = TclString.newInstance("A");
         const0.preserve(); const0.preserve();
     }
 
@@ -2664,6 +2664,173 @@ public class Test1 extends TJC.CompiledCommand {
     }
 } // end class Test1
 }}
+
+tcltest::test compileproc7-8.4 {inline append command} {
+
+# FIXME: This append case shows that for simple strings,
+# it might be better to create an inlined append that
+# accepted String arguments. We know the items
+# are going to be converted to String elements anyway,
+# so why not create some append methods that accept
+# from 1 to 10 String arguments. That way each element
+# being appended would not need to be added to an array.
+# Allocation of the TclObject[] array could be avoided,
+# and the special case of one item to append could be
+# faster. It is kind of wasteful to add a TclObject to
+# the constant pool here for "A" and "CD" since they
+# can be appended as String objects. This could make
+# a big diff in the TJC impl because this is done a lot.
+
+# Would it be possible to mix passing of TclObject values
+# and String values? I think not, but everything gets
+# converted to a String anyway. Would it be possible to
+# just get the StringBuffer inside the object being
+# appended to inside the TJC.append() method and then
+# insert directly into the StringBuffer? Still how would
+# we pass both TclObject and String values from 1 to N?
+
+# void appendElems(TclObject obj, String s1) {
+#     StringBuffer b = TclString.breakInto(obj);
+#     b.append(s1);
+# }
+
+# void appendElems(TclObject obj, String s1, String s2) {
+#     StringBuffer b = TclString.breakInto(obj);
+#     b.append(s1);
+#     b.append(s2);
+# }
+
+# The above could would let us keep String arguments
+# to append out of the constant pool while still
+# avoiding the array allocation.
+
+    # Skip constant increment and use cache variable
+    set script {
+proc p {} {
+    append var "A" $s "CD"
+}
+}
+
+    set test_compileproc_7_cache_variables 1
+    set test_compileproc_7_skip_constant_increment 1
+    set test_compileproc_7_inline_commands 1
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_7_set_flags]
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) {
+            inlineCmds = true;
+            initCmd(interp);
+        }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        updateVarCache(interp, 0);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: append var "A" $s "CD"
+            TclObject[] objv0 = TJC.grabObjv(interp, 3);
+            try {
+                TclObject tmp1;
+                // Arg 2 constant: "A"
+                objv0[0] = const0;
+                // Arg 3 variable: $s
+                tmp1 = getVarScalar(interp, "s", 0, varcache1, 1);
+                tmp1.preserve();
+                objv0[1] = tmp1;
+                // Arg 4 constant: "CD"
+                objv0[2] = const1;
+                interp.resetResult();
+                tmp1 = appendVarScalar(interp, "var", objv0, varcache2, 2);
+                interp.setResult(tmp1);
+            } finally {
+                objv0[0] = null;
+                objv0[2] = null;
+                TJC.releaseObjv(interp, objv0, 3);
+            }
+        } // End Invoke: append
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            updateVarCache(interp, 0);
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+
+    TclObject const0;
+    TclObject const1;
+
+    protected void initConstants(Interp interp) throws TclException {
+        const0 = TclString.newInstance("A");
+        const0.preserve(); const0.preserve();
+        const1 = TclString.newInstance("CD");
+        const1.preserve(); const1.preserve();
+    }
+
+    Var varcache1 = null;
+    Var varcache2 = null;
+
+    protected
+    Var updateVarCache(
+        Interp interp,
+        int cacheId)
+    {
+        String part1;
+        String part2 = null;
+        int flags = 0;
+        Var lvar;
+
+        switch ( cacheId ) {
+            case 0: {
+                varcache1 = null;
+                varcache2 = null;
+                return null;
+            }
+            case 1: {
+                part1 = "s";
+                break;
+            }
+            case 2: {
+                part1 = "var";
+                break;
+            }
+            default: {
+                throw new TclRuntimeError("default: cacheId " + cacheId);
+            }
+        }
+
+        lvar = TJC.resolveVarScalar(interp, part1, flags);
+
+        switch ( cacheId ) {
+            case 1: {
+                varcache1 = lvar;
+                break;
+            }
+            case 2: {
+                varcache2 = lvar;
+                break;
+            }
+        }
+        return lvar;
+    }
+} // end class Test1
+}}
+
 
 
 tcltest::test compileproc7-9.0 {inline string command} {

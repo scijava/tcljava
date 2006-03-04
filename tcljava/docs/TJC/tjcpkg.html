@@ -82,7 +82,7 @@ compiled implementation in the Java class named <span
  style="font-family: monospace;">HelloCmd</span>.<big><big><br>
 <br>
 </big></big>
-<h3>Compiling Tcl procs at runtime<br>
+<h3><a name="runtime"></a>Compiling Tcl procs at runtime<br>
 </h3>
 Support for compiling Tcl procedures at runtime is included as part of
 the TJC package. Using <span style="font-family: monospace;">TJC::compile</span>,
@@ -243,7 +243,8 @@ either a <span style="font-family: monospace;">-readyvar</span> or <span
  style="font-family: monospace;">-readycmd</span> argument pair must
 also be passed. One or more classes generated from the Java class
 declaration are loaded into the current class loader. Be aware that the
-class loader can only load a given Java class once, redefining a class
+class loader can only load a given Java class once. Redefining or
+unloading a class
 is not supported. Also note that when a -readycmd or -readyvar
 notification is done with a -java argument, the Java classes that were
 loaded are passed in place of the cmd element.<br>

@@ -1,3 +1,26 @@
+2006-03-04  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * docs/contents.html:
+        * docs/TJC/example1.html:
+        * docs/TJC/example2.html:
+        * docs/TJC/future.html:
+        * docs/TJC/index.html:
+        * docs/TJC/jdkcfg.html:
+        * docs/TJC/tjcpkg.html: Update docs, replace
+        CRLF with LF.
+        * src/tjc/tcl/lang/TJC.java: Fixup comment.
+        * src/tjc/tjc/library/main.tcl: Unset vars.
+        * tests/tclbench/append.bench:
+        * tests/tclbench/expr.bench:
+        * tests/tclbench/libbench.tcl:
+        * tests/tclbench/runbench.tcl:
+        * tests/tclbench/switch.bench: Add a few
+        more tclbench tests and update impl
+        to detect when something goes wrong with
+        the compile step.
+        * tests/tjc/compileproc_7.test: Add test.
+        * tests/tjc/jdkutils.tcl: Change CRLF to LF.
+
 2006-03-03  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/tjc/tjc/library/compileproc.tcl:

@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TJC.java,v 1.13 2006/03/01 00:03:29 mdejong Exp $
+ * RCS: @(#) $Id: TJC.java,v 1.14 2006/03/04 22:18:33 mdejong Exp $
  *
  */
 
@@ -817,9 +817,9 @@ public class TJC {
     // cache of common array values. The array must have
     // been allocated with grabObjv(). If zero is passed
     // as the size argument, this method will not invoke
-    // TclObject.release() for any array values and
-    // will instead set them all to null before
-    // the array is released.
+    // TclObject.release() for any array values.
+    // In either case, all array indexes are set to null
+    // by the Parser.releaseObjv() method.
 
     public static void releaseObjv(
         Interp interp,

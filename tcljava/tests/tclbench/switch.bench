@@ -1,0 +1,39 @@
+# Bench test for switch command.
+
+proc switch-glob {} {
+    switch -glob "STR10" {
+        "ST?1" {}
+        "ST?2" {}
+        "ST?3" {}
+        "ST?4" {}
+        "ST?5" {}
+        "ST?6" {}
+        "ST?7" {}
+        "ST?8" {}
+        "ST?9" {}
+        "ST?10" {}
+    }
+    return
+}
+
+# switch on constant string patterns
+
+proc switch-constant {} {
+    switch -- "STR10" {
+        "STR1" {}
+        "STR2" {}
+        "STR3" {}
+        "STR4" {}
+        "STR5" {}
+        "STR6" {}
+        "STR7" {}
+        "STR8" {}
+        "STR9" {}
+        "STR10" {}
+    }
+    return
+}
+
+bench -desc "switch-glob" -body {switch-glob}
+bench -desc "switch-constant" -body {switch-constant}
+
