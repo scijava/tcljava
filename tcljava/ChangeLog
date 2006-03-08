@@ -1,5 +1,18 @@
 2006-03-08  Mo DeJong  <mdejong@users.sourceforge.net>
 
+        * src/tjc/tjc/library/jdk.tcl:
+        Reimplement jdk_tool_javac so that the javac
+        invocation is done with batches of files
+        instead of one invocation. The previous
+        implementation passed a file pattern when
+        more than 100 files were being compiled, but
+        that only worked on Win32. This implementation
+        will work on Unix and Windows and it avoids
+        problems where javac runs out of memory when
+        compiling a lot of files.
+
+2006-03-08  Mo DeJong  <mdejong@users.sourceforge.net>
+
         * docs/TJC/future.html: Describe optimizations.
         * src/jacl/tcl/lang/Expression.java (ExprLex):
         Fix a boolean literal parsing bug where

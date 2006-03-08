@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: jdk.tcl,v 1.3 2006/02/16 03:03:22 mdejong Exp $
+#  RCS: @(#) $Id: jdk.tcl,v 1.4 2006/03/08 21:50:35 mdejong Exp $
 #
 #
 
@@ -222,8 +222,8 @@ proc jdk_config_parse_file { filename } {
 
 
 # Invoke the JAVAC compiler with 1 to N Java filenames
-# as the arguments. The filenames is a list of arguments
-# or file name patterns that would be expanded by javac.
+# as the arguments. The filenames is a list of arguments.
+# Note that wildcard patterns are not supported in filenames.
 
 proc jdk_tool_javac { filenames } {
     global _tjc
@@ -283,49 +283,78 @@ proc jdk_tool_javac { filenames } {
         }
     }
 
+    set javac_flags -g
+
     if {![file exists $TJC_build]} {
         file mkdir $TJC_build
     }
 
     cd $TJC
 
-    # Passing a whole lot of filename arguments on the command
-    # line could eventually overflow the OS command line length.
-    # This method is typically used to compile a bunch of Java
-    # files in the same package, so check for a common directory
-    # and pass a *.java filename pattern in that case. It is
-    # really unlikely that an extra file not named on the command
-    # line would get slipped into the compile this way.
+    # Dealing with a lot of filename arguments on the command
+    # line can be very tricky. The OS will overflow the command
+    # line length at some point and javac can run itself out
+    # of memory when a lot of filenames are passed. Using the
+    # @file argument will make Javac read filenames from a file,
+    # but this will not work with every version of javac and
+    # it does not work with the Janino compiler. Deal with all
+    # these issues by invoking Javac 1 or more times with a
+    # small batch of filenames.
 
-    if {[llength $filenames] > 100} {
-        set first [lindex $filenames 0]
-        set dirname [file dirname $first]
-        set all_in_same_package 1
+    if {$debug} {
+        puts "there are [llength $filenames] files to be compiled with javac"
         foreach filename $filenames {
-            set d [file dirname $filename]
-            if {$d ne $dirname} {
-                set all_in_same_package 0
+            puts $filename
+        }
+    }
+
+    set batch_filenames [list]
+    set batch [list]
+
+    set batch_size 40
+    set i 0
+
+    foreach filename $filenames {
+        if {$i >= $batch_size} {
+            lappend batch_filenames $batch
+            set batch [list]
+            set i 0
+        }
+
+        lappend batch $filename
+        incr i
+    }
+    if {[llength $batch] > 0} {
+        lappend batch_filenames $batch
+    }
+
+    if {$debug} {
+        puts "files were broken into [llength $batch_filenames] batches"
+
+        set i 0
+        foreach batch $batch_filenames {
+            puts "batch $i:"
+            foreach filename $batch {
+                puts $filename
             }
+            incr i
         }
-        if {$all_in_same_package} {
-            set javac_filenames [file join $dirname *.java]
-        } else {
-            set javac_filenames $filenames
-        }
-    } else {
-        set javac_filenames $filenames
     }
 
     set caught 0
-    set javac_flags -g
 
-    if {$debug} {
-        puts "JAVAC exec: $javac $javac_flags -d $TJC_build $javac_filenames"
-    }
+    foreach batch $batch_filenames {
+        set javac_filenames $batch
 
-    if {[catch {eval exec $javac {$javac_flags -d $TJC_build} $javac_filenames} err]} {
-        puts stderr $err
-        set caught 1
+        if {$debug} {
+            puts "JAVAC exec: $javac $javac_flags -d $TJC_build $javac_filenames"
+        }
+
+        if {[catch {eval exec $javac {$javac_flags -d $TJC_build} $javac_filenames} err]} {
+            puts stderr $err
+            set caught 1
+            break
+        }
     }
 
     cd ..
@@ -335,10 +364,8 @@ proc jdk_tool_javac { filenames } {
     } else {
         # If filenames is a single filename, then check for
         # a compiled .class file with that name.
-        # If filenames is a pattern or more than one file,
-        # then just return "OK".
 
-        if {[llength $filenames] == 1 && [string first "*" [lindex $filenames 0]] == -1} {
+        if {[llength $filenames] == 1} {
             set filename [lindex $filenames 0]
             set classfile [jdk_tool_javac_classfile $filename]
             if {$debug} {
