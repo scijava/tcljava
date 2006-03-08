@@ -6078,6 +6078,108 @@ public class Test1 extends TJC.CompiledCommand {
 } // end class Test1
 }}
 
+tcltest::test compileproc2-9.35 {compile proc into Java source, +inline-containers} {
+    # inline expr container command, this test checks that
+    # the rand() function with no arguments is parsed properly.
+    set script {
+proc p {} {
+    expr {rand()}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_2_set_flags]
+    # Print generated buffer even if compile fails
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) { initCmd(interp); }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: expr {rand()}
+            // Math function: rand
+            ExprValue tmp0 = TJC.exprMathFunction(interp, "rand", null);
+            // End Math function: rand
+            TJC.exprSetResult(interp, tmp0);
+        } // End Invoke: expr
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+} // end class Test1
+}}
+
+tcltest::test compileproc2-9.36 {compile proc into Java source, +inline-containers} {
+    # inline expr container command, this test checks that
+    # the rand() function with no arguments is parsed properly.
+    set script {
+proc p {} {
+    expr {rand() * 1}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_2_set_flags]
+    # Print generated buffer even if compile fails
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) { initCmd(interp); }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: expr {rand() * 1}
+            // Binary operator: math() * 1
+            // Math function: rand
+            ExprValue tmp0 = TJC.exprMathFunction(interp, "rand", null);
+            // End Math function: rand
+            ExprValue tmp1 = TJC.exprGetValue(interp, 1, null);
+            TJC.exprBinaryOperator(interp, TJC.EXPR_OP_MULT, tmp0, tmp1);
+            // End Binary operator: *
+            TJC.exprSetResult(interp, tmp0);
+        } // End Invoke: expr
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+} // end class Test1
+}}
+
 
 tcltest::test compileproc2-10.0 {compile proc into Java source, +inline-containers} {
     # inline if container command and boolean expr expression.

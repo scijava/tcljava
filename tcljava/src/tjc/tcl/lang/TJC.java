@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TJC.java,v 1.14 2006/03/04 22:18:33 mdejong Exp $
+ * RCS: @(#) $Id: TJC.java,v 1.15 2006/03/08 19:12:07 mdejong Exp $
  *
  */
 
@@ -1184,13 +1184,15 @@ public class TJC {
     }
 
     // Evaluate a math function. This method will release
-    // the values ExprValue objects when finished.
+    // the values ExprValue objects when finished. The
+    // values argument should be null where the math
+    // function takes no arguments.
 
     public static
     ExprValue exprMathFunction(
-        Interp interp, // current interp, can't be null.
-        String funcName, // Name of math function
-        ExprValue[] values) // Array of arguments
+        Interp interp,      // current interp, can't be null.
+        String funcName,    // Name of math function
+        ExprValue[] values) // Array of arguments, can be null
             throws TclException
     {
         return interp.expr.evalMathFunction(interp, funcName, values);

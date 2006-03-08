@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Expression.java,v 1.21 2006/02/28 23:37:39 mdejong Exp $
+ * RCS: @(#) $Id: Expression.java,v 1.22 2006/03/08 19:12:07 mdejong Exp $
  *
  */
 
@@ -1501,22 +1501,50 @@ class Expression {
 
 		//
 		// Check for boolean literals (true, false, yes, no, on, off)
+		// This is kind of tricky since we don't want to pull a
+		// partial boolean literal "f" off of the front of a function
+		// invocation like expr {floor(1.1)}.
 		//
 
 		String substr = m_expr.substring(m_ind);
-		/*
-		System.out.println("default char '" + c + "' str is \"" +
-		    m_expr + "\" and m_ind " + m_ind + " substring is \"" +
-		    substr + "\"");
-		*/
+		boolean is_math_func = false;
 
-		String tok = getBooleanToken(substr);
-		if (tok != null) {
-		    m_ind += tok.length();
-		    m_token = VALUE;
-		    ExprValue value = grabExprValue();
-		    value.setStringValue(tok);
-		    return value;
+		//System.out.println("default char '" + c + "' str is \"" +
+		//    m_expr + "\" and m_ind " + m_ind + " substring is \"" +
+		//    substr + "\"");
+
+		final int max = substr.length();
+		int i;
+		for (i=0; i < max ; i++) {
+		    c = substr.charAt(i);
+		    if (! (Character.isLetterOrDigit(c) || c == '_')) {
+		        break;
+		    }
+		}
+		// Skip any whitespace characters too
+		for (; i < max; i++) {
+		    c = substr.charAt(i);
+		    if (c == ' ' || Character.isWhitespace(c)) {
+		        continue;
+		    } else {
+		        break;
+		    }
+		}
+		if ((i < max) && (substr.charAt(i) == '(')) {
+		    //System.out.println("known to be a math func, char is '" +
+		    //    substr.charAt(i) + "'");
+		    is_math_func = true;
+		}
+
+		if (!is_math_func) {
+		    String tok = getBooleanToken(substr);
+		    if (tok != null) {
+		        m_ind += tok.length();
+		        m_token = VALUE;
+		        ExprValue value = grabExprValue();
+		        value.setStringValue(tok);
+		        return value;
+		    }
 		}
 
 		return mathFunction(interp);
@@ -1647,6 +1675,8 @@ class Expression {
      * assumed that the caller has checked the number of arguments,
      * the type of the arguments will be adjusted before invocation
      * if needed.
+     *
+     * The values argument can be null when there are no args to pass.
      */
 
     ExprValue
@@ -1666,6 +1696,8 @@ class Expression {
      * See the comments for the function above, note that
      * this method is used when the math function pointer
      * has already been looked up.
+     *
+     * The values argument can be null when there are no args to pass.
      */
 
     ExprValue

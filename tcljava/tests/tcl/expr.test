@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr.test,v 1.13 2005/11/17 08:24:20 mdejong Exp $
+# RCS: @(#) $Id: expr.test,v 1.14 2006/03/08 19:12:09 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -152,6 +152,16 @@ test expr-2.3 {TclCompileExpr: junk after legal expr} {
 test expr-2.4 {TclCompileExpr: numeric expr string rep == formatted int rep} {
     expr {0001}
 } 1
+test expr-2.5 {math functions} {
+    expr {ceil(0.9)}
+} 1.0
+test expr-2.6 {math functions} {
+    expr {floor(1.1)}
+} 1.0
+test expr-2.7 {math functions} {
+    expr {floor  (1.1)}
+} 1.0
+
 
 test expr-3.1 {CompileCondExpr: just lor expr} {expr 3||0} 1
 test expr-3.2 {CompileCondExpr: error in lor expr} {

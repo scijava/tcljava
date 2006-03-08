@@ -313,12 +313,35 @@ tmp0 = setVarScalar(interp, "items", tmp0, 0, varcache1, 1);</span><br>
 <br>
 </span>Avoiding invocations of the <span
  style="font-family: monospace;">interp.setResult()</span> method in
-cases where it is not needed should significantly increase performance
+cases where it is not needed will increase performance
 of TJC compiled commands. Implementing this feature in TJC will require
 addition of logic to detect and handle these situations and addition of
 a number of test cases to validate the correctness of the optimized
-code.<span style="font-family: monospace;"><br>
-</span><span style="font-family: monospace;"></span><span
+code.<br>
+<br>
+Testing shows that the following Tcl command:<br>
+<br>
+<span style="font-family: monospace;">proc result1 {} {</span><br
+ style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp; set sum 0</span><br
+ style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp; for {set i 0}
+{$i &lt; 1000} {incr i} {</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+incr sum $i</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp; }</span><br
+ style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp; return $sum</span><br
+ style="font-family: monospace;">
+<span style="font-family: monospace;">}</span><br
+ style="font-family: monospace;">
+<br>
+Executes in about 850 ms when interp result setting is emitted. When
+modified to remove unneeded result setting operations, the same code
+executes in about 650 ms. These results show that this result set
+optimization can improve runtime performance by 25% in some cases.<br>
+<span style="font-family: monospace;"></span><span
+ style="font-family: monospace;"></span><span
  style="font-family: monospace;"></span>
 <h4>Local Variable Type Determination<br>
 </h4>
@@ -540,6 +563,156 @@ the value of <span style="font-family: monospace;">$max</span> and
 then extract the integer value contained in the <span
  style="font-family: monospace;">TclObject</span>&nbsp;<span
  style="font-family: monospace;"></span>once at the start of the loop.<br>
+<h4>Emit Compact Code<br>
+</h4>
+For many simple cases, the compiler could emit significantly smaller
+code for operations that appear frequently. Consider the following Tcl
+commands:<br>
+<br>
+<span style="font-family: monospace;">set i 0<br>
+set j 10<br>
+set k 100<br>
+</span><br>
+These three set operations could be emitted as inlined code like the
+following:<br>
+<br>
+<span style="font-family: monospace;"><span
+ style="font-family: monospace;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+{ // Invoke: set i 0<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+TclObject tmp0;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; tmp0
+= setVarScalar(interp, "i", const0, 0, varcache1, 1);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+interp.setResult(tmp0);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; } // End Invoke: set<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; { // Invoke: set j 10<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+TclObject tmp1;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; tmp1
+= setVarScalar(interp, "j", const1, 0, varcache2, 2);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+interp.setResult(tmp1);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; } // End Invoke: set<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; { // Invoke: set k 100<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+TclObject tmp2;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; tmp2
+= setVarScalar(interp, "k", const2, 0, varcache3, 3);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+interp.setResult(tmp2);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; } // End Invoke: set<br>
+</span></span><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><br>
+</span></span></span></span>This inlined code is already very compact,
+but it could be further simplified by creating a static method that
+invokes these same operations:<br>
+<span style="font-family: monospace;"></span><br
+ style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp; public static
+void setScalarConstant(Interp interp, String varname, TclObject const,
+Var cache, int cacheID) {</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+TclObject tmp;</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+tmp = setVarScalar(interp, varname, const, 0, cache, cacheID);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; interp.setResult(tmp);<br>
+&nbsp;&nbsp;&nbsp; }</span><span style="font-family: monospace;"></span><br
+ style="font-family: monospace;">
+<br>
+This emitted code could then invoke the <span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;">setScalarConstant()</span></span></span></span></span></span>
+method for each instance of the command:<br>
+<span style="font-family: monospace;"><span
+ style="font-family: monospace;"><br>
+<span style="font-family: monospace;"></span></span></span><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+{ // Invoke: set i 0<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span></span></span><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;">setScalarConstant(interp,
+"i", const0, </span></span></span></span></span></span><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;">varcache1, 1);</span></span></span></span></span></span></span></span></span></span></span><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"></span><br>
+</span></span></span></span></span><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+} // End Invoke: set<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; { // Invoke: set j 10<br>
+</span></span></span></span></span><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span></span></span><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;">setScalarConstant(interp, "j", const1,
+</span></span></span></span></span></span><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;">varcache2, 2);</span></span></span></span></span></span></span></span></span></span></span><br>
+</span></span></span></span></span><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+} // End Invoke: set<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; { // Invoke: set k 100<br>
+</span></span></span></span></span><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span></span></span><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;">setScalarConstant(interp, "k", const2,
+</span></span></span></span></span></span><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;">varcache3, 3);</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; } // End Invoke: set<br>
+</span></span><span style="font-family: monospace;"><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"></span></span></span></span></span></span></span><span
+ style="font-family: monospace;"><span style="font-family: monospace;"><span
+ style="font-family: monospace;"></span><span
+ style="font-family: monospace;"><span style="font-family: monospace;"></span></span><br>
+</span></span>The example above is extremely simplified, but it shows
+how the size of emitted Java code can be significantly reduced for many
+common cases. At runtime, the hotspot compiler should inline the method
+invocation so there should be no decrease in runtime performance. This
+change should reduce memory requirements since the emitted class files
+will be much smaller. This change should also speed up compile times
+since far fewer lines of code are passed to <span
+ style="font-family: monospace;">javac</span>.<span
+ style="font-family: monospace;"><span style="font-family: monospace;"><br>
+</span></span>
 <h4>Compile Itcl methods<br>
 </h4>
 Jacl supports the Itcl object system, but the TJC compiler does not

@@ -1,3 +1,31 @@
+2006-03-08  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * docs/TJC/future.html: Describe optimizations.
+        * src/jacl/tcl/lang/Expression.java (ExprLex):
+        Fix a boolean literal parsing bug where
+        a function name was parsed as a boolean literal.
+        This was causing an error when expr {floor(1.0)}
+        was parsed because it was parses a the boolean
+        literal "f" and the function loor(1.0). Fix the
+        problem by not parsing as a boolean when it is
+        clear that the code is a function.
+        * src/tjc/tcl/lang/TJC.java: Fixup comments.
+        * src/tjc/tjc/library/compileproc.tcl:
+        Fixup compileproc_expr_evaluate_emit_math_function
+        so that a null values array is passed when there
+        are no arguments to a math function like rand().
+        * src/tjc/tjc/library/parse.tcl:
+        Make _parse_expr_iterate_descend treat a math
+        function with no arguments like any other operator.
+        * tests/tcl/expr.test: Test fix for boolean literal
+        parsing bug.
+        * tests/tjc/compileproc_2.test: Emit code for rand()
+        math expression.
+        * tests/tjc/parse.test: Add test cases for no arg
+        emit bug fix. The rand() math function is the
+        only supported math function that accepts no
+        arguments.
+
 2006-03-04  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * docs/contents.html:

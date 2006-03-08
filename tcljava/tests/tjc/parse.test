@@ -2436,6 +2436,55 @@ tcltest::test parse-expr-1.21 {parse expr} {
     ] \
   ]
 
+tcltest::test parse-expr-1.22 {parse expr} {
+    set script {floor(1)}
+    set range {0 end}
+    parse expr $script $range
+} [list \
+    subexpr {0 8} \
+    [list \
+        {operator {0 5} {}} \
+        {subexpr {6 1} {{text {6 1} {}}}} \
+    ] \
+  ]
+
+tcltest::test parse-expr-1.23 {parse expr} {
+    set script {int(1.0) * 1}
+    set range {0 end}
+    parse expr $script $range
+} [list \
+    subexpr {0 12} \
+    [list \
+        {operator {9 1} {}} \
+        [list \
+            subexpr {0 8} \
+            [list \
+                {operator {0 3} {}} \
+                {subexpr {4 3} {{text {4 3} {}}}} \
+            ] \
+        ] \
+        {subexpr {11 1} {{text {11 1} {}}}} \
+    ] \
+  ]
+
+tcltest::test parse-expr-1.24 {parse expr} {
+    set script {rand() * 1}
+    set range {0 end}
+    parse expr $script $range
+} [list \
+    subexpr {0 10} \
+    [list \
+        {operator {7 1} {}} \
+        [list \
+            subexpr {0 6} \
+            [list \
+                {operator {0 4} {}} \
+            ] \
+        ] \
+        {subexpr {9 1} {{text {9 1} {}}}} \
+    ] \
+  ]
+
 
 # Note: a variable operand is not allowed in a braced expr
 #
@@ -2684,6 +2733,39 @@ tcltest::test parse-expr-iterator-descend-4.2 {_parse_expr_iterate_descend: sube
     {subexpr {}} \
   ]
 
+tcltest::test parse-expr-iterator-descend-4.3 {_parse_expr_iterate_descend: subexpression(s)} {
+    set script {round(2) * 1}
+    set etree [parse expr $script {0 end}]
+
+    set _parse(parse_expr_iterate_result) [list]
+    set _parse(parse_expr_iterate_stack) [list]
+    _parse_expr_iterate_descend $script $etree callback
+
+    set _parse(parse_expr_iterate_result)
+} [list \
+    {operator {round(2) * 1} {operator {0 5} {}} 1 round {{0 5}}} \
+    {value {callback {round(2) * 1} {text {6 1} {}} {literal operand} {{text 2}} {{6 1}}}} \
+    {operator {round(2) * 1} {operator {9 1} {}} 2 * {{9 1}}} \
+    {subexpr {}} \
+    {value {callback {round(2) * 1} {text {11 1} {}} {literal operand} {{text 1}} {{11 1}}}} \
+  ]
+
+tcltest::test parse-expr-iterator-descend-4.4 {_parse_expr_iterate_descend: subexpression(s)} {
+    set script {rand() * 1}
+    set etree [parse expr $script {0 end}]
+
+    set _parse(parse_expr_iterate_result) [list]
+    set _parse(parse_expr_iterate_stack) [list]
+    _parse_expr_iterate_descend $script $etree callback
+
+    set _parse(parse_expr_iterate_result)
+} [list \
+    {operator {rand() * 1} {operator {0 4} {}} 0 rand {{0 4}}} \
+    {operator {rand() * 1} {operator {7 1} {}} 2 * {{7 1}}} \
+    {subexpr {}} \
+    {value {callback {rand() * 1} {text {9 1} {}} {literal operand} {{text 1}} {{9 1}}}} \
+  ]
+
 
 # Invoked by parse_expr_iterate each time a element of a expression
 # is iterated over. The innermost subexpression is always evaluated
@@ -2909,6 +2991,42 @@ tcltest::test parse-expr-iterator-arguments-2.1 {expr iterator arguments} {
         {value {{}} {}} \
     ] \
   ]
+
+tcltest::test parse-expr-iterator-arguments-2.2 {expr iterator arguments} {
+    set script {int(1.0) * 1}
+    set etree [parse expr $script {0 end}]
+    set results [list]
+    list \
+        [parse_expr_iterate $script $etree test_expr_iterator_arguments_callback] \
+        $results
+} [list {} \
+    [list \
+        {{literal operand} {{text 1.0}} {{4 3}}} \
+        {{math function} {int {{text 1.0}}} {{0 3}}} \
+        {subexpression {} {}} \
+        {{literal operand} {{text 1}} {{11 1}}} \
+        {{binary operator} {* {{} {text 1}}} {{9 1}}} \
+        {value {{}} {}} \
+    ] \
+  ]
+
+tcltest::test parse-expr-iterator-arguments-2.3 {expr iterator arguments} {
+    set script {rand() * 1}
+    set etree [parse expr $script {0 end}]
+    set results [list]
+    list \
+        [parse_expr_iterate $script $etree test_expr_iterator_arguments_callback] \
+        $results
+} [list {} \
+    [list \
+        {{math function} {rand {}} {{0 4}}} \
+        {subexpression {} {}} \
+        {{literal operand} {{text 1}} {{9 1}}} \
+        {{binary operator} {* {{} {text 1}}} {{7 1}}} \
+        {value {{}} {}} \
+    ] \
+  ]
+
 
 tcltest::test parse-expr-iterator-arguments-3.0 {expr iterator arguments} {
     set script {[cmd]}

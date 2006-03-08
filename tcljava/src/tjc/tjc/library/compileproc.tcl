@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: compileproc.tcl,v 1.15 2006/03/04 03:09:49 mdejong Exp $
+#  RCS: @(#) $Id: compileproc.tcl,v 1.16 2006/03/08 19:12:08 mdejong Exp $
 #
 #
 
@@ -6373,6 +6373,7 @@ proc compileproc_expr_evaluate_emit_math_function { op_tuple } {
             ${tjc_func} "(interp, " $ev ")\;\n"
         set result_tmpsymbol $ev
     } else {
+        if {$len > 0} {
         set values_tmpsymbol [compileproc_tmpvar_next]
         append buffer [emitter_indent] \
             "ExprValue\[\] " $values_tmpsymbol " = new ExprValue\[" $len "\]\;\n"
@@ -6381,6 +6382,9 @@ proc compileproc_expr_evaluate_emit_math_function { op_tuple } {
             set ev [lindex $evsyms $i]
             append buffer [emitter_indent] \
                 $values_tmpsymbol "\[" $i "\] = " $ev "\;\n"
+        }
+        } else {
+        set values_tmpsymbol null
         }
 
         set result_tmpsymbol [compileproc_tmpvar_next]

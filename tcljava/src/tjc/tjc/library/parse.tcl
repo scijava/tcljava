@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: parse.tcl,v 1.2 2006/02/07 09:41:01 mdejong Exp $
+#  RCS: @(#) $Id: parse.tcl,v 1.3 2006/03/08 19:12:08 mdejong Exp $
 #
 #
 
@@ -1522,8 +1522,10 @@ proc parse_expr_iterate { in_script in_etree in_cmd } {
 #        # FIXME: Print cmdstack as stack elements
 #        puts "\n\n-----------------"
 #        puts "parse_expr_iterate: will iterate over cmdlist:"
+#        set i 0
 #        foreach elem $cmdlist {
-#            puts $elem
+#            puts "$i: $elem"
+#            incr i
 #        }
 #        puts "-----------------"
 #    }
@@ -1600,7 +1602,7 @@ proc parse_expr_iterate { in_script in_etree in_cmd } {
                     }
                 }
 #                if {$debug} {
-#                    puts "found $subexpr_found subexpr {} elements"
+#                    puts "will pop $subexpr_found subexpr {} elements"
 #                }
                 set stack_size [llength $subexpr_stack]
                 if {$subexpr_found > $stack_size} {
@@ -1801,12 +1803,23 @@ proc _parse_expr_iterate_descend { script etree cmd {private {}} } {
     if {$type == "subexpr"} {
         # descend into subexpression tree.
 
-        if {[llength $setree] >= 2} {
+        # Check for special case of math function with no arguments like rand().
+        # This needs to be handled as subexpression instead of as a value elem.
+
+        set no_arg_mfunc 0
+        if {[llength $setree] == 1} {
+            set value [lindex $setree 0]
+            if {[lindex $value 0] == "operator" && [lindex $value 2] == {}} {
+                set no_arg_mfunc 1
+            }
+        }
+
+        if {[llength $setree] >= 2 || $no_arg_mfunc} {
             # A subexpression with an operator and operands
             set op [lindex $setree 0]
             # Determine how many operands this operator takes
             set num_operands [expr {[llength $setree] - 1}]
-            if {$num_operands < 1 || $num_operands > 3} {
+            if {!$no_arg_mfunc && ($num_operands < 1 || $num_operands > 3)} {
                 error "invalid num_operands $num_operands"
             }
             set operands [list]
@@ -1815,7 +1828,7 @@ proc _parse_expr_iterate_descend { script etree cmd {private {}} } {
             }
 
 #            if {$debug} {
-#                puts "found operator subexpression"
+#                puts "found operator subexpression : [parse getstring $script [lindex $op 1]]"
 #                puts "op is \{$op\}"
 #                puts "num_operands is $num_operands"
 #                foreach operand $operands {
@@ -1826,8 +1839,10 @@ proc _parse_expr_iterate_descend { script etree cmd {private {}} } {
             # Push new subexpression onto the expression stack
             set expr_list [lindex $_parse(parse_expr_iterate_stack) 0]
             lappend expr_list [list subexpr {}]
-            set _parse(parse_expr_iterate_stack) [lreplace $_parse(parse_expr_iterate_stack) 0 0 $expr_list]
-            set _parse(parse_expr_iterate_stack) [linsert $_parse(parse_expr_iterate_stack) 0 {}]
+            set _parse(parse_expr_iterate_stack) \
+                [lreplace $_parse(parse_expr_iterate_stack) 0 0 $expr_list]
+            set _parse(parse_expr_iterate_stack) \
+                [linsert $_parse(parse_expr_iterate_stack) 0 {}]
 
             _parse_expr_iterate_descend $script $op $cmd $num_operands
 
@@ -1839,7 +1854,8 @@ proc _parse_expr_iterate_descend { script etree cmd {private {}} } {
             # and append to result list.
 
             set expr_list [lindex $_parse(parse_expr_iterate_stack) 0]
-            set _parse(parse_expr_iterate_stack) [lreplace $_parse(parse_expr_iterate_stack) 0 0]
+            set _parse(parse_expr_iterate_stack) \
+                [lreplace $_parse(parse_expr_iterate_stack) 0 0]
 
 #            if {$debug} {
 #                puts "inserting \{$expr_list\} at front of expression result"
