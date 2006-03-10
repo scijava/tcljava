@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclObjectBase.java,v 1.5 2006/03/01 01:30:50 mdejong Exp $
+ * RCS: @(#) $Id: TclObjectBase.java,v 1.6 2006/03/10 05:26:30 mdejong Exp $
  *
  */
 
@@ -281,25 +281,36 @@ abstract class TclObjectBase {
     /**
      * Dispose of the TclObject when the refCount reaches 0.
      *
+     * @exception TclRuntimeError if the object has already been deallocated.
      */
     protected final void disposeObject() {
+	if (internalRep == null) {
+	    throw DEALLOCATED;
+	}
 	internalRep.dispose();
 
 	// Setting the internalRep to null means any further
-	// use of the object will generate an error.
+	// use of the object will generate an error. Set the
+	// refCount to -1 so that the preserve() method
+	// can determine if the object has been deallocated
+	// by looking only at the refCount.
 
 	internalRep = null;
 	stringRep = null;
+	refCount = -1;
     }
 
     /**
      * Raise a TclRuntimeError in the case where a
-     * TclObject was disposed of because the last
+     * TclObject was already disposed of because the last
      * ref was released.
      */
 
+    protected static RuntimeException DEALLOCATED =
+        new TclRuntimeError("TclObject has been deallocated");
+
     protected final void disposedError() {
-	throw new TclRuntimeError("TclObject has been deallocated");
+        throw DEALLOCATED;
     }
 
     /**

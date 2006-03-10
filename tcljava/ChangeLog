@@ -1,5 +1,21 @@
 2006-03-09  Mo DeJong  <mdejong@users.sourceforge.net>
 
+        * src/jacl/tcl/lang/TclObject.java
+        (preserve, release): Optimize preserve and
+        release for speed and code size to make
+        inlinling of these methods easier.
+        * src/tcljava/tcl/lang/TclObjectBase.java
+        (disposeObject, disposedError): Check
+        for a disposed object at the start of
+        disposeObject() so that a call to release()
+        after the object is disposed will raise
+        the proper exception. Set the refCount
+        to -1 when disposeObject() is called so that
+        the preserve() method can check for a disposed
+        object by looking only at the refCount.
+
+2006-03-09  Mo DeJong  <mdejong@users.sourceforge.net>
+
         * src/jacl/tcl/lang/Parser.java (grabObjv,
         releaseObjv): Make arguments final.
         * src/tests/tjc/TestTJC.java: Update

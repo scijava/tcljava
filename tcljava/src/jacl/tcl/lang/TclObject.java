@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclObject.java,v 1.5 2006/03/01 01:30:48 mdejong Exp $
+ * RCS: @(#) $Id: TclObject.java,v 1.6 2006/03/10 05:26:30 mdejong Exp $
  *
  */
 
@@ -53,13 +53,13 @@ public final class TclObject extends TclObjectBase {
      * Increments the refCount to indicate the caller's intent to
      * preserve the value of this object. Each preserve() call must be matched
      * by a corresponding release() call. This method is Jacl specific
-     * an is intended to be easily inlined in calling code.
+     * and is intended to be easily inlined in calling code.
      *
      * @exception TclRuntimeError if the object has already been deallocated.
      */
     public final void preserve() {
-        if (internalRep == null) {
-            disposedError();
+        if (refCount < 0) {
+            throw DEALLOCATED;
         }
         refCount++;
     }
@@ -69,13 +69,12 @@ public final class TclObject extends TclObjectBase {
      *
      * Decrements the refCount to indicate that the caller is no longer
      * interested in the value of this object. If the refCount reaches 0,
-     * the obejct will be deallocated. This method is Jacl specific
+     * the object will be deallocated. This method is Jacl specific
      * an is intended to be easily inlined in calling code.
+     *
+     * @exception TclRuntimeError if the object has already been deallocated.
      */
     public final void release() {
-        if (internalRep == null) {
-            disposedError();
-        }
         if (--refCount <= 0) {
             disposeObject();
         }
