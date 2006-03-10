@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TJC.java,v 1.15 2006/03/08 19:12:07 mdejong Exp $
+ * RCS: @(#) $Id: TJC.java,v 1.16 2006/03/10 05:01:54 mdejong Exp $
  *
  */
 
@@ -806,37 +806,43 @@ public class TJC {
     // in the returned array will be null.
 
     public static TclObject[] grabObjv(
-        Interp interp,
+        final Interp interp,
         final int size)
     {
         return Parser.grabObjv(interp, size);
     }
 
-    // For each non-null TclObject ref in the array, invoke
-    // TclObject.release() and return the array to the
-    // cache of common array values. The array must have
-    // been allocated with grabObjv(). If zero is passed
-    // as the size argument, this method will not invoke
-    // TclObject.release() for any array values.
-    // In either case, all array indexes are set to null
-    // by the Parser.releaseObjv() method.
+    // Release the array back into the common array
+    // cache. This array must have been allocated
+    // with grabObjv(). This method will not release
+    // TclObject values in the array, use the
+    // releaseObjvRefs() method for that.
 
     public static void releaseObjv(
-        Interp interp,
-        TclObject[] objv,
+        final Interp interp,
+        final TclObject[] objv,
         final int size)
     {
-        if (size == 0) {
-            Parser.releaseObjv(interp, objv, objv.length);
-        } else {
-            for (int i=0; i < size; i++) {
-                TclObject tobj = objv[i];
-                if (tobj != null) {
-                    tobj.release();
-                }
+        Parser.releaseObjv(interp, objv, size);
+    }
+
+    // For each non-null TclObject element in the array,
+    // invoke TclObject.release() and then return the
+    // array to the common cache of array values.
+    // The array must have been allocated with grabObjv().
+
+    public static void releaseObjvElems(
+        final Interp interp,
+        final TclObject[] objv,
+        final int size)
+    {
+        for (int i=0; i < size; i++) {
+            TclObject tobj = objv[i];
+            if (tobj != null) {
+                tobj.release();
             }
-            Parser.releaseObjv(interp, objv, size);
         }
+        Parser.releaseObjv(interp, objv, size);
     }
 
     // Invoke a Command with TclObject arguments. This method
@@ -1374,8 +1380,9 @@ public class TJC {
                 interp.setResult(elem);
                 elem.release();
             } finally {
-                objv[1] = null; // Caller should preserve() list
-                TJC.releaseObjv(interp, objv, 3);
+                // Caller should preserve() and release() listObj
+                objv[2].release();
+                Parser.releaseObjv(interp, objv, 3);
             }
             return;
         }

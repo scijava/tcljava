@@ -425,10 +425,11 @@ tcltest::test emitter-invoke-start-end-1.1 {} {
     set buffer ""
     append buffer [emitter_invoke_start "one two"]
     append buffer [emitter_invoke_command_start $arraysym $size]
+    append buffer [emitter_container_try_start]
     append buffer [emitter_indent] "...\n"
     append buffer [emitter_invoke_command_call $arraysym {} 0]
     append buffer [emitter_invoke_command_finally]
-    append buffer [emitter_invoke_command_end $arraysym $size]
+    append buffer [emitter_invoke_command_end $arraysym $size false]
     append buffer [emitter_invoke_end one]
     set buffer
 } {{ // Invoke: one two
@@ -437,7 +438,7 @@ tcltest::test emitter-invoke-start-end-1.1 {} {
         ...
         TJC.invoke(interp, null, objv0, 0);
     } finally {
-        TJC.releaseObjv(interp, objv0, 1);
+        TJC.releaseObjvElems(interp, objv0, 1);
     }
 } // End Invoke: one
 }
@@ -453,12 +454,13 @@ tcltest::test emitter-invoke-start-end-1.2 {} {
     set buffer ""
     append buffer [emitter_invoke_start "one two"]
     append buffer [emitter_invoke_command_start $arraysym $size]
+    append buffer [emitter_container_try_start]
     append buffer [emitter_indent] "TclObject $tmpsym\;\n"
     append buffer [emitter_invoke_command_assign $arraysym $index \
         $tmpsym $valsym]
     append buffer [emitter_invoke_command_call $arraysym $cmdref 1]
     append buffer [emitter_invoke_command_finally]
-    append buffer [emitter_invoke_command_end $arraysym $size]
+    append buffer [emitter_invoke_command_end $arraysym $size false]
     append buffer [emitter_invoke_end one]
     set buffer
 } {{ // Invoke: one two
@@ -470,7 +472,7 @@ tcltest::test emitter-invoke-start-end-1.2 {} {
         objv0[0] = tmp1;
         TJC.invoke(interp, ccache0, objv0, TCL.EVAL_GLOBAL);
     } finally {
-        TJC.releaseObjv(interp, objv0, 1);
+        TJC.releaseObjvElems(interp, objv0, 1);
     }
 } // End Invoke: one
 }
@@ -485,13 +487,14 @@ tcltest::test emitter-invoke-start-end-1.3 {skip assignment of symbol to self} {
     set buffer ""
     append buffer [emitter_invoke_start "one two"]
     append buffer [emitter_invoke_command_start $arraysym $size]
+    append buffer [emitter_container_try_start]
     append buffer [emitter_indent] "TclObject $tmpsym\;\n"
     append buffer [emitter_indent] "$tmpsym = TclString.newInstance(\"foo\")\;\n"
     append buffer [emitter_invoke_command_assign $arraysym $index \
         $tmpsym $tmpsym]
     append buffer [emitter_invoke_command_call $arraysym {} 0]
     append buffer [emitter_invoke_command_finally]
-    append buffer [emitter_invoke_command_end $arraysym $size]
+    append buffer [emitter_invoke_command_end $arraysym $size false]
     append buffer [emitter_invoke_end one]
     set buffer
 } {{ // Invoke: one two
@@ -503,7 +506,7 @@ tcltest::test emitter-invoke-start-end-1.3 {skip assignment of symbol to self} {
         objv0[0] = tmp1;
         TJC.invoke(interp, null, objv0, 0);
     } finally {
-        TJC.releaseObjv(interp, objv0, 1);
+        TJC.releaseObjvElems(interp, objv0, 1);
     }
 } // End Invoke: one
 }

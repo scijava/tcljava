@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Parser.java,v 1.27 2006/03/01 00:03:29 mdejong Exp $
+ * RCS: @(#) $Id: Parser.java,v 1.28 2006/03/10 05:01:54 mdejong Exp $
  */
 
 package tcl.lang;
@@ -2617,8 +2617,10 @@ static void init(Interp interp) {
 // Get a TclObject[] array of a given size. The array
 // is always filled with null values.
 
-static TclObject[] grabObjv(Interp interp, int size) {
-
+static TclObject[] grabObjv(
+    final Interp interp,
+    final int size)
+{
   if (size >= OBJV_CACHE_MAX) {
     //System.out.println("allocate for big objv of size " + size);
     return new TclObject[size];
@@ -2643,10 +2645,12 @@ static TclObject[] grabObjv(Interp interp, int size) {
 // Return a TclObject[] array of a given size to the cache.
 // The size argument is the length of the array, it is never zero.
 
-static void releaseObjv(Interp interp, TclObject[] objv, final int size) {
-  if (size >= OBJV_CACHE_MAX) {
-      // No-op
-  } else {
+static void releaseObjv(
+    final Interp interp,
+    final TclObject[] objv,
+    final int size)
+{
+  if (size < OBJV_CACHE_MAX) {
       int OPEN = interp.parserObjvUsed[size];
 
       if (OPEN > 0) {

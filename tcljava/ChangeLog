@@ -1,3 +1,40 @@
+2006-03-09  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/jacl/tcl/lang/Parser.java (grabObjv,
+        releaseObjv): Make arguments final.
+        * src/tests/tjc/TestTJC.java: Update
+        TJC.releaseObjv() callers.
+        * src/tjc/tcl/lang/TJC.java (grabObjv,
+        releaseObjv, releaseObjvElems): Rename
+        releaseObjv() that invokes TclObject.release()
+        for each object to releaseObjvElems(). The
+        releaseObjv() method will now just release
+        the array back to the pool.
+        * src/tjc/tjc/library/compileproc.tcl:
+        Add logic to compileproc_emit_objv_assignment
+        that will unroll the array element release()
+        loop in releaseObjvElems() and apply it only
+        to those arguments that are non-constants.
+        This executes more quickly than releaseObjvElems().
+        Update callers of emitter_invoke_command_start
+        and emitter_invoke_command_end.
+        * src/tjc/tjc/library/emitter.tcl:
+        Don't emit the try block in emitter_invoke_command_start
+        since a tmp local may be declared before the
+        try block in some cases. In emitter_invoke_command_end,
+        invoke either TJC.releaseObjv() or TJC.releaseObjvElems().
+        * tests/tjc/compileproc.test:
+        * tests/tjc/compileproc_1.test:
+        * tests/tjc/compileproc_2.test:
+        * tests/tjc/compileproc_3.test:
+        * tests/tjc/compileproc_4.test:
+        * tests/tjc/compileproc_5.test:
+        * tests/tjc/compileproc_6.test:
+        * tests/tjc/compileproc_7.test:
+        * tests/tjc/emitter.test: Update test cases output
+        since just about every call to TJC.releaseObjv()
+        was changed to TJC.releaseObjvElems().
+
 2006-03-08  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/tjc/tjc/library/jdk.tcl:

@@ -65,7 +65,7 @@ public class Test1 extends TJC.CompiledCommand {
                     updateCmdCache(interp, 1);
                 }
             } finally {
-                TJC.releaseObjv(interp, objv0, 1);
+                TJC.releaseObjvElems(interp, objv0, 1);
             }
         } // End Invoke: cmd
         } catch (TclException te) {
@@ -172,7 +172,7 @@ public class Test1 extends TJC.CompiledCommand {
                     updateCmdCache(interp, 1);
                 }
             } finally {
-                TJC.releaseObjv(interp, objv0, 1);
+                TJC.releaseObjvElems(interp, objv0, 1);
             }
         } // End Invoke: cmd
         { // Invoke: cmd
@@ -192,7 +192,7 @@ public class Test1 extends TJC.CompiledCommand {
                     updateCmdCache(interp, 1);
                 }
             } finally {
-                TJC.releaseObjv(interp, objv2, 1);
+                TJC.releaseObjvElems(interp, objv2, 1);
             }
         } // End Invoke: cmd
         } catch (TclException te) {
@@ -299,7 +299,7 @@ public class Test1 extends TJC.CompiledCommand {
                     updateCmdCache(interp, 1);
                 }
             } finally {
-                TJC.releaseObjv(interp, objv0, 1);
+                TJC.releaseObjvElems(interp, objv0, 1);
             }
         } // End Invoke: cmd
         { // Invoke: ::cmd
@@ -319,7 +319,7 @@ public class Test1 extends TJC.CompiledCommand {
                     updateCmdCache(interp, 2);
                 }
             } finally {
-                TJC.releaseObjv(interp, objv2, 1);
+                TJC.releaseObjvElems(interp, objv2, 1);
             }
         } // End Invoke: ::cmd
         } catch (TclException te) {
@@ -433,7 +433,7 @@ public class Test1 extends TJC.CompiledCommand {
                 objv0[0] = tmp1;
                 TJC.invoke(interp, null, objv0, 0);
             } finally {
-                TJC.releaseObjv(interp, objv0, 1);
+                TJC.releaseObjvElems(interp, objv0, 1);
             }
         } // End Invoke: ...
         } catch (TclException te) {
@@ -495,7 +495,7 @@ public class Test1 extends TJC.CompiledCommand {
                     updateCmdCache(interp, 1);
                 }
             } finally {
-                TJC.releaseObjv(interp, objv0, 1);
+                TJC.releaseObjvElems(interp, objv0, 1);
             }
         } // End Invoke: ::ONE::cmd
         { // Invoke: ::ONE::cmd
@@ -515,7 +515,7 @@ public class Test1 extends TJC.CompiledCommand {
                     updateCmdCache(interp, 1);
                 }
             } finally {
-                TJC.releaseObjv(interp, objv2, 1);
+                TJC.releaseObjvElems(interp, objv2, 1);
             }
         } // End Invoke: ::ONE::cmd
         } catch (TclException te) {
@@ -623,7 +623,7 @@ public class Test1 extends TJC.CompiledCommand {
                     updateCmdCache(interp, 1);
                 }
             } finally {
-                TJC.releaseObjv(interp, objv0, 1);
+                TJC.releaseObjvElems(interp, objv0, 1);
             }
         } // End Invoke: ::ONE::cmd
         { // Invoke: ONE::cmd
@@ -643,7 +643,7 @@ public class Test1 extends TJC.CompiledCommand {
                     updateCmdCache(interp, 2);
                 }
             } finally {
-                TJC.releaseObjv(interp, objv2, 1);
+                TJC.releaseObjvElems(interp, objv2, 1);
             }
         } // End Invoke: ONE::cmd
         } catch (TclException te) {
@@ -764,7 +764,7 @@ public class Test1 extends TJC.CompiledCommand {
                     updateCmdCache(interp, 1);
                 }
             } finally {
-                TJC.releaseObjv(interp, objv0, 1);
+                TJC.releaseObjvElems(interp, objv0, 1);
             }
         } // End Invoke: ...
         } catch (TclException te) {

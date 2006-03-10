@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: emitter.tcl,v 1.9 2006/03/04 03:09:51 mdejong Exp $
+#  RCS: @(#) $Id: emitter.tcl,v 1.10 2006/03/10 05:01:55 mdejong Exp $
 #
 #
 
@@ -891,8 +891,8 @@ proc emitter_invoke_end { end_cmd_str } {
     return "[emitter_indent]\} // End Invoke: ${end_cmd_str}\n"
 }
 
-# Setup a TclObject[] array and invoke a Tcl command
-# with the array of arguments.
+# Declare a TclObject[] array that will be used to invoke
+# a Tcl command with TclObject arguments.
 
 proc emitter_invoke_command_start { arraysym size } {
     if {$size == "" || ![string is integer $size] || $size <= 0} {
@@ -902,8 +902,7 @@ proc emitter_invoke_command_start { arraysym size } {
     append buffer \
         [emitter_indent] \
         "TclObject\[\] " $arraysym " = TJC.grabObjv(interp, " $size ")" \
-        "\;\n" \
-        [emitter_container_try_start]
+        "\;\n"
     return $buffer
 }
 
@@ -948,14 +947,26 @@ proc emitter_invoke_command_finally {} {
     return [emitter_container_try_finally]
 }
 
-# invoke releaseObjv() and close finally block
+# Invoke either TJC.releaseObjv() or
+# TJC.releaseObjvRefs() based on the
+# none boolean flag. Also close the
+# finally block.
 
-proc emitter_invoke_command_end { arraysym size } {
-    set buffer ""
-    append buffer \
-        [emitter_indent] \
-        "TJC.releaseObjv(interp, " $arraysym ", " $size ")" "\;\n" \
-        [emitter_container_try_end]
+proc emitter_invoke_command_end { arraysym size none } {
+    set buffer [emitter_indent]
+
+    if {$size <= 0} {
+       error "size can't be zero or negative"
+    }
+
+    if {$none} {
+        append buffer \
+            "TJC.releaseObjv(interp, " $arraysym ", " $size ")" "\;\n"
+    } else {
+        append buffer \
+            "TJC.releaseObjvElems(interp, " $arraysym ", " $size ")" "\;\n"
+    }
+    append buffer [emitter_container_try_end]
     return $buffer
 }
 
@@ -995,7 +1006,7 @@ proc emitter_container_switch_invoke { tmpsymbol objv pbIndex size stringsymbol 
     emitter_indent_level -1
     append buffer \
         [emitter_container_try_finally] \
-        [emitter_indent] "TJC.releaseObjv(interp, " $objv ", " $size ")" "\;\n" \
+        [emitter_indent] "TJC.releaseObjvElems(interp, " $objv ", " $size ")" "\;\n" \
         [emitter_container_try_end]
     return $buffer
 }

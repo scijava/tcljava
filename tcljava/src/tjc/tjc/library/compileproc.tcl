@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: compileproc.tcl,v 1.16 2006/03/08 19:12:08 mdejong Exp $
+#  RCS: @(#) $Id: compileproc.tcl,v 1.17 2006/03/10 05:01:55 mdejong Exp $
 #
 #
 
@@ -2523,10 +2523,9 @@ proc compileproc_emit_objv_assignment { key starti endi decl_tmpsymbol callback 
     global _compileproc_key_info
 
     set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
 
     if {$debug} {
-        puts "compileproc_emit_invoke_call $key"
+        puts "compileproc_emit_objv_assignment $key"
     }
 
     set num_args $_compileproc_key_info($key,num_args)
@@ -2536,7 +2535,10 @@ proc compileproc_emit_objv_assignment { key starti endi decl_tmpsymbol callback 
     }
 
     # Init buffer with array symbol declaration
-    # and a tmp symbol inside the try block.
+    # and an optional tmp symbol. Only declare
+    # the tmp symbol before the try block when
+    # the skip_constant_increment flag is set
+    # to keep from having to change test output.
 
     set buffer ""
     set arraysym [compileproc_tmpvar_next objv]
@@ -2565,12 +2567,26 @@ proc compileproc_emit_objv_assignment { key starti endi decl_tmpsymbol callback 
         set use_tmp_local 1
     }
 
+    # Declare tmp symbol before the try block only
+    # when skipping const increment.
+
+    if {!$_compileproc(options,skip_constant_increment)} {
+        append buffer [emitter_container_try_start]
+    }
+
     if {$use_tmp_local} {
         set tmpsymbol [compileproc_tmpvar_next]
-        append buffer [emitter_statement "TclObject $tmpsymbol"]
+        append buffer [emitter_indent] "TclObject " $tmpsymbol "\;\n"
     } else {
         # constant arguments will not use this tmpsymbol
         set tmpsymbol {}
+    }
+
+    # Declare tmp symbol before the try block only
+    # when skipping const increment.
+
+    if {$_compileproc(options,skip_constant_increment)} {
+        append buffer [emitter_container_try_start]
     }
 
     # Evaluate each argument to the command, increment the
@@ -2622,30 +2638,63 @@ proc compileproc_emit_objv_assignment { key starti endi decl_tmpsymbol callback 
 
     append buffer [emitter_invoke_command_finally]
 
-    # When constant increment is skipped, set refs
-    # that are constant values in the objv array to
-    # null before invoking releaseObjv() so that
-    # TclObject.release() is not invoked for the
-    # constant TclObject refs.
+    # Special code for case where constant
+    # increment is skipped and one or more arguments
+    # is a constant. If all the arguments are constants
+    # then just release the array. Otherwise, unroll
+    # the non-constant release() loop and release the array.
 
-    set end_size $objv_size
+    set release_none_flag false
 
     if {[llength $const_unincremented_indexes] > 0} {
         if {[llength $const_unincremented_indexes] == $objv_size} {
-            # Special case, all the arguments are constants.
-            # Pass zero as the size argument to releaseObjv()
-            # so that all array elements are set to null
-            # inside releaseObjv(), instead of here.
+            # Special case, all the arguments are constants so
+            # there is no need to release any of them.
 
-            set end_size 0
+            set release_none_flag 1
         } else {
-            foreach i $const_unincremented_indexes {
-                append buffer [emitter_array_assign $arraysym $i null]
+            # No need to release the constant elements, but
+            # invoke TclObject.release() for each non-constant.
+            # Each statement must appear in an if block in case
+            # the statements above exited the try early.
+            # This unrolls the release loop in TJC.releaseObjvElems(),
+            # testing shows this is faster than invoking the method.
+            # Leave the old set array to null code in place if there
+            # are more than 4 inlined release() calls.
+
+            if {($objv_size - [llength $const_unincremented_indexes]) <= 4} {
+                if {$tmpsymbol == ""} {
+                    error "tmp local should have been declared"
+                }
+                set tmpsymbol_if_block ""
+                append tmpsymbol_if_block \
+                    [emitter_container_if_start "$tmpsymbol != null"] \
+                    [emitter_tclobject_release $tmpsymbol] \
+                    [emitter_container_if_end]
+
+                for {set i 0} {$i < $objv_size} {incr i} {
+                    set is_non_constant 1
+                    foreach cui $const_unincremented_indexes {
+                        if {$i == $cui} {
+                            set is_non_constant 0
+                        }
+                    }
+                    if {$is_non_constant} {
+                        append buffer [emitter_indent] \
+                            $tmpsymbol " = " $arraysym "\[" $i "\]" "\;\n" \
+                            $tmpsymbol_if_block
+                    }
+                }
+                set release_none_flag 1
+            } else {
+                foreach i $const_unincremented_indexes {
+                    append buffer [emitter_array_assign $arraysym $i null]
+                }
             }
         }
     }
 
-    append buffer [emitter_invoke_command_end $arraysym $end_size]
+    append buffer [emitter_invoke_command_end $arraysym $objv_size $release_none_flag]
 
     return $buffer
 }
@@ -5216,7 +5265,9 @@ proc compileproc_emit_container_switch { key } {
     # Allocate array of TclObject and open try block
     set array_tmpsymbol [compileproc_tmpvar_next objv]
     set size [llength $pbIndexes]
-    append buffer [emitter_container_switch_start $array_tmpsymbol $size]
+    append buffer \
+        [emitter_container_switch_start $array_tmpsymbol $size] \
+        [emitter_container_try_start]
 
     # Assign values to the proper indexes in the array.
 
@@ -5268,7 +5319,7 @@ proc compileproc_emit_container_switch { key } {
         incr i 1
     }
 
-    # call invokeSwitch(), close try block, and releaseObjv() in finally block
+    # call invokeSwitch(), close try block, and releaseObjvElems() in finally block
 
     append buffer [emitter_container_switch_invoke \
         $offset_tmpsymbol \

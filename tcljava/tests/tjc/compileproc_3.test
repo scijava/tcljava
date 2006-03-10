@@ -307,7 +307,7 @@ public class Test1 extends TJC.CompiledCommand {
                         objv0[0] = tmp1;
                         TJC.invoke(interp, null, objv0, 0);
                     } finally {
-                        TJC.releaseObjv(interp, objv0, 1);
+                        TJC.releaseObjvElems(interp, objv0, 1);
                     }
                 } // End Invoke: break
                 TclObject tmp2 = interp.getResult();
@@ -383,7 +383,7 @@ public class Test1 extends TJC.CompiledCommand {
                                 objv0[0] = tmp1;
                                 TJC.invoke(interp, null, objv0, 0);
                             } finally {
-                                TJC.releaseObjv(interp, objv0, 1);
+                                TJC.releaseObjvElems(interp, objv0, 1);
                             }
                         } // End Invoke: break
                         TclObject tmp2 = interp.getResult();
@@ -714,7 +714,7 @@ public class Test1 extends TJC.CompiledCommand {
                     objv0[0] = tmp1;
                     TJC.invoke(interp, null, objv0, 0);
                 } finally {
-                    TJC.releaseObjv(interp, objv0, 1);
+                    TJC.releaseObjvElems(interp, objv0, 1);
                 }
             } // End Invoke: break
             for ( boolean tmp2 = false ; tmp2 ; ) {
@@ -779,7 +779,7 @@ public class Test1 extends TJC.CompiledCommand {
                     objv0[0] = tmp1;
                     TJC.invoke(interp, null, objv0, 0);
                 } finally {
-                    TJC.releaseObjv(interp, objv0, 1);
+                    TJC.releaseObjvElems(interp, objv0, 1);
                 }
             } // End Invoke: continue
             for ( boolean tmp2 = true ; tmp2 ; ) {
@@ -913,7 +913,7 @@ public class Test1 extends TJC.CompiledCommand {
                             objv1[0] = tmp2;
                             TJC.invoke(interp, null, objv1, 0);
                         } finally {
-                            TJC.releaseObjv(interp, objv1, 1);
+                            TJC.releaseObjvElems(interp, objv1, 1);
                         }
                     } // End Invoke: continue
                     } catch (TclException ex) {
@@ -996,7 +996,7 @@ public class Test1 extends TJC.CompiledCommand {
                         objv0[0] = tmp1;
                         TJC.invoke(interp, null, objv0, 0);
                     } finally {
-                        TJC.releaseObjv(interp, objv0, 1);
+                        TJC.releaseObjvElems(interp, objv0, 1);
                     }
                 } // End Invoke: cmd
                 } catch (TclException ex) {
@@ -1079,7 +1079,7 @@ public class Test1 extends TJC.CompiledCommand {
                         objv0[0] = tmp1;
                         TJC.invoke(interp, null, objv0, 0);
                     } finally {
-                        TJC.releaseObjv(interp, objv0, 1);
+                        TJC.releaseObjvElems(interp, objv0, 1);
                     }
                 } // End Invoke: cmd
                 } catch (TclException ex) {
@@ -1158,7 +1158,7 @@ public class Test1 extends TJC.CompiledCommand {
                         objv0[0] = tmp1;
                         TJC.invoke(interp, null, objv0, 0);
                     } finally {
-                        TJC.releaseObjv(interp, objv0, 1);
+                        TJC.releaseObjvElems(interp, objv0, 1);
                     }
                 } // End Invoke: break
                 TclObject tmp2 = interp.getResult();
@@ -1179,7 +1179,7 @@ public class Test1 extends TJC.CompiledCommand {
                         objv5[0] = tmp6;
                         TJC.invoke(interp, null, objv5, 0);
                     } finally {
-                        TJC.releaseObjv(interp, objv5, 1);
+                        TJC.releaseObjvElems(interp, objv5, 1);
                     }
                 } // End Invoke: cmd
                 } catch (TclException ex) {
@@ -1269,7 +1269,7 @@ public class Test1 extends TJC.CompiledCommand {
                                 objv0[0] = tmp1;
                                 TJC.invoke(interp, null, objv0, 0);
                             } finally {
-                                TJC.releaseObjv(interp, objv0, 1);
+                                TJC.releaseObjvElems(interp, objv0, 1);
                             }
                         } // End Invoke: break
                         TclObject tmp2 = interp.getResult();
@@ -1290,7 +1290,7 @@ public class Test1 extends TJC.CompiledCommand {
                                 objv5[0] = tmp6;
                                 TJC.invoke(interp, null, objv5, 0);
                             } finally {
-                                TJC.releaseObjv(interp, objv5, 1);
+                                TJC.releaseObjvElems(interp, objv5, 1);
                             }
                         } // End Invoke: cmd
                         } catch (TclException ex) {
@@ -1385,7 +1385,7 @@ public class Test1 extends TJC.CompiledCommand {
                         objv0[0] = tmp1;
                         TJC.invoke(interp, null, objv0, 0);
                     } finally {
-                        TJC.releaseObjv(interp, objv0, 1);
+                        TJC.releaseObjvElems(interp, objv0, 1);
                     }
                 } // End Invoke: continue
                 TclObject tmp2 = interp.getResult();
@@ -1406,7 +1406,7 @@ public class Test1 extends TJC.CompiledCommand {
                         objv5[0] = tmp6;
                         TJC.invoke(interp, null, objv5, 0);
                     } finally {
-                        TJC.releaseObjv(interp, objv5, 1);
+                        TJC.releaseObjvElems(interp, objv5, 1);
                     }
                 } // End Invoke: cmd
                 } catch (TclException ex) {
@@ -1496,7 +1496,7 @@ public class Test1 extends TJC.CompiledCommand {
                                 objv0[0] = tmp1;
                                 TJC.invoke(interp, null, objv0, 0);
                             } finally {
-                                TJC.releaseObjv(interp, objv0, 1);
+                                TJC.releaseObjvElems(interp, objv0, 1);
                             }
                         } // End Invoke: continue
                         TclObject tmp2 = interp.getResult();
@@ -1517,7 +1517,7 @@ public class Test1 extends TJC.CompiledCommand {
                                 objv5[0] = tmp6;
                                 TJC.invoke(interp, null, objv5, 0);
                             } finally {
-                                TJC.releaseObjv(interp, objv5, 1);
+                                TJC.releaseObjvElems(interp, objv5, 1);
                             }
                         } // End Invoke: cmd
                         } catch (TclException ex) {
@@ -1791,7 +1791,7 @@ public class Test1 extends TJC.CompiledCommand {
                             objv1[0] = tmp2;
                             TJC.invoke(interp, null, objv1, 0);
                         } finally {
-                            TJC.releaseObjv(interp, objv1, 1);
+                            TJC.releaseObjvElems(interp, objv1, 1);
                         }
                     } // End Invoke: break
                     } catch (TclException ex) {
@@ -2035,7 +2035,7 @@ public class Test1 extends TJC.CompiledCommand {
                             objv3[2] = tmp4;
                             TJC.invoke(interp, null, objv3, 0);
                         } finally {
-                            TJC.releaseObjv(interp, objv3, 3);
+                            TJC.releaseObjvElems(interp, objv3, 3);
                         }
                     } // End Invoke: set
                     { // Invoke: return $str
@@ -2140,7 +2140,7 @@ public class Test1 extends TJC.CompiledCommand {
                             objv0[2] = tmp1;
                             TJC.invoke(interp, null, objv0, 0);
                         } finally {
-                            TJC.releaseObjv(interp, objv0, 3);
+                            TJC.releaseObjvElems(interp, objv0, 3);
                         }
                     } // End Invoke: list
                     if ( true ) { return; }
