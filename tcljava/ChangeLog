@@ -1,3 +1,9 @@
+2006-03-11  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/tests/jacl/tcl/lang/TestEvalExCmd.java:
+        * src/tests/jacl/tcl/lang/TestExprParserCmd.java:
+        Convert CRLF to LF.
+
 2006-03-09  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/jacl/tcl/lang/TclObject.java
