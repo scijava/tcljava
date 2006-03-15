@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: CallFrame.java,v 1.14 2006/01/26 19:49:18 mdejong Exp $
+ * RCS: @(#) $Id: CallFrame.java,v 1.15 2006/03/15 23:07:22 mdejong Exp $
  *
  */
 
@@ -82,6 +82,20 @@ class CallFrame {
 
     HashMap varTable;
 
+    /**
+     * Array of local variables in a compiled proc frame.
+     * These include locals set in the proc, globals
+     * or other variable brought into the proc scope,
+     * and compiler generated aliases to globals.
+     * This array is always null for an interpreted proc.
+     * A compiled proc implementation known which variable
+     * is associated with  each slot at compile time,
+     * so it is able to avoid a hashtable lookup each time
+     * the variable is accessed. Both scalar variables and
+     * array variables could appear in this array.
+     */
+
+    Var.CompiledLocal[] compiledLocals;
 
     /**
      * Creates a CallFrame for the global variables.
@@ -91,7 +105,8 @@ class CallFrame {
     CallFrame(Interp i) {
 	interp	        = i;
 	ns              = i.globalNs;
-	varTable        = new HashMap();
+	varTable        = null;
+	compiledLocals  = null;
 	caller          = null;
 	callerVar       = null;
 	objv            = null;
@@ -361,6 +376,10 @@ class CallFrame {
 	if (varTable != null) {
 	    Var.deleteVars(interp, varTable);
 	    varTable = null;
+	}
+	if (compiledLocals != null) {
+	    Var.deleteVars(interp, compiledLocals);
+	    compiledLocals = null;
 	}
     }
 

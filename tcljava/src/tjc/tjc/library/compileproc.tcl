@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: compileproc.tcl,v 1.17 2006/03/10 05:01:55 mdejong Exp $
+#  RCS: @(#) $Id: compileproc.tcl,v 1.18 2006/03/15 23:07:31 mdejong Exp $
 #
 #
 
@@ -913,11 +913,10 @@ proc compileproc_compile { proc_list class_name {config_init {}} } {
 
     set body_bufer ""
 
-    # Start try block
-    append body_buffer [emitter_callframe_try]
-
-    # Process proc args
-    append body_buffer $args_buffer
+    # Start try block and process proc args
+    append body_buffer \
+        [emitter_callframe_try] \
+        $args_buffer
 
     # Walk over commands at the toplevel and emit invocations
     # for each toplevel command.
@@ -926,20 +925,20 @@ proc compileproc_compile { proc_list class_name {config_init {}} } {
         append body_buffer [compileproc_emit_invoke $key]
     }
 
-    # If cached variables were used, then clear the cached
-    # variable table just after pushing the new call frame.
+    # If cached variables were used, then emit a local variable
+    # named compiledLocals just after pushing the call frame.
 
     if {[compileproc_variable_cache_is_used]} {
-        append buffer [emitter_statement "updateVarCache(interp, 0)"]
+        append buffer \
+            [emitter_callframe_init_compiledlocals \
+                [compileproc_variable_cache_count]]
     }
     append buffer $body_buffer
 
-    # end callframe block
-    set clear_varcache [compileproc_variable_cache_is_used]
-    append buffer [emitter_callframe_pop $name $clear_varcache]
-
-    # end cmdProc declaration
-    append buffer [emitter_cmd_proc_end]
+    # end callframe block and cmdProc declaration
+    append buffer \
+        [emitter_callframe_pop $name] \
+        [emitter_cmd_proc_end]
 
     # Emit constant TclObject values and an initConstants() method.
     # It is possible that constant were found while scanning but
@@ -960,13 +959,6 @@ proc compileproc_compile { proc_list class_name {config_init {}} } {
         if {$cdata != ""} {
             append buffer "\n" $cdata
         }
-    }
-
-    # Emit variable cache methods
-
-    if {$_compileproc(options,cache_variables) && \
-            [compileproc_variable_cache_is_used]} {
-        append buffer "\n" [compileproc_variable_cache_generate]
     }
 
     # end class declaration
@@ -1471,14 +1463,14 @@ proc compileproc_variable_cache_lookup { vname } {
     global _compileproc_variable_cache
 
     if {![info exists _compileproc_variable_cache(counter)]} {
-        set _compileproc_variable_cache(counter) 1
+        set _compileproc_variable_cache(counter) 0
     }
 
     set key "symbol,$vname"
 
     if {![info exists _compileproc_variable_cache($key)]} {
         # Create cache symbol for new scalar variable
-        set symbol "varcache$_compileproc_variable_cache(counter)"
+        set symbol "compiledLocals\[$_compileproc_variable_cache(counter)\]"
         incr _compileproc_variable_cache(counter)
         set _compileproc_variable_cache($key) $symbol
         lappend _compileproc_variable_cache(ordered_keys) $key
@@ -1489,6 +1481,14 @@ proc compileproc_variable_cache_lookup { vname } {
     }
 
     return $symbol
+}
+
+proc compileproc_get_variable_cache_id_from_symbol { symbol } {
+    # Get cache id number from symbol
+    if {![regexp {^compiledLocals\[([0-9]+)\]$} $symbol whole cacheId]} {
+        error "could not match cache id in \"$symbol\""
+    }
+    return $cacheId
 }
 
 # Return 1 if there are cached variables, this method is used
@@ -1505,159 +1505,11 @@ proc compileproc_variable_cache_is_used {} {
     return 1
 }
 
-# Generate code to setup variable cache refrences as well
-# as update and validate cached variable values.
+# Return the number of compiled local cache vars used in the method.
+# This is only valid when compileproc_variable_cache_is_used return 1.
 
-proc compileproc_variable_cache_generate {} {
-    global _compileproc_variable_cache
-
-    if {![compileproc_variable_cache_is_used]} {
-        return ""
-    }
-    return [compileproc_variable_cache_update_generate]
-}
-
-# Return code that implements "updateVarCache" method
-# for the current variable cache info.
-
-proc compileproc_variable_cache_update_generate {} {
-    global _compileproc
-    global _compileproc_variable_cache
-
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
-
-    set buffer ""
-
-    set cacheIds [list]
-
-    # declare class scoped cache vars
-
-    emitter_indent_level +1
-
-    foreach key $_compileproc_variable_cache(ordered_keys) {
-        set symbol $_compileproc_variable_cache($key)
-        append buffer [emitter_statement "Var $symbol = null"]
-
-        set cacheId [compileproc_get_cache_id_from_symbol $symbol]
-        lappend cacheIds $cacheId
-    }
-
-    set decl \
-"    protected
-    Var updateVarCache(
-        Interp interp,
-        int cacheId)
-    \{
-        String part1;
-        String part2 = null;
-        int flags = 0;
-        Var lvar;
-"
-
-    set decl_end "    \}\n"
-
-    append buffer \
-        "\n" \
-        $decl \
-        "\n"
-
-    emitter_indent_level +1
-
-    # first switch on cacheId
-
-    append buffer [emitter_indent] "switch ( cacheId ) \{\n"
-    emitter_indent_level +1
-
-    append buffer [emitter_indent] "case 0: \{\n"
-    emitter_indent_level +1
-
-    # init all cache symbols to null
-
-    foreach key $_compileproc_variable_cache(ordered_keys) {
-        set symbol $_compileproc_variable_cache($key)
-        append buffer [emitter_statement "$symbol = null"]
-    }
-    append buffer [emitter_statement "return null"]
-    emitter_indent_level -1
-    append buffer [emitter_indent] "\}\n"
-
-    # case block for each id
-
-    foreach vname $_compileproc_variable_cache(ordered_vars) \
-            key $_compileproc_variable_cache(ordered_keys) \
-            cacheId $cacheIds {
-        set symbol $_compileproc_variable_cache($key)
-
-        append buffer [emitter_indent] "case " $cacheId ": \{\n"
-        emitter_indent_level +1
-
-        set jstr [emitter_backslash_tcl_string $vname]
-        append buffer \
-            [emitter_statement "part1 = \"$jstr\""] \
-            [emitter_statement "break"]
-
-        emitter_indent_level -1
-        append buffer [emitter_indent] "\}\n"
-    }
-
-    append buffer [emitter_indent] "default: \{\n"
-    emitter_indent_level +1
-    append buffer [emitter_statement "throw new TclRuntimeError(\"default: cacheId \" + cacheId)"]
-    emitter_indent_level -1
-    append buffer [emitter_indent] "\}\n"
-
-    # end second switch
-
-    emitter_indent_level -1
-    append buffer [emitter_indent] "\}\n"
-
-    # resolve var
-
-    append buffer \
-        "\n" \
-        [emitter_statement "lvar = TJC.resolveVarScalar(interp, part1, flags)"] \
-        "\n"
-
-    # second switch on cacheId
-
-    append buffer [emitter_indent] "switch ( cacheId ) \{\n"
-    emitter_indent_level +1
-
-    # case block for each id
-
-    foreach vname $_compileproc_variable_cache(ordered_vars) \
-            key $_compileproc_variable_cache(ordered_keys) \
-            cacheId $cacheIds {
-        set symbol $_compileproc_variable_cache($key)
-
-        append buffer [emitter_indent] "case " $cacheId ": \{\n"
-        emitter_indent_level +1
-
-        append buffer \
-            [emitter_statement "$symbol = lvar"] \
-            [emitter_statement "break"]
-
-        emitter_indent_level -1
-        append buffer [emitter_indent] "\}\n"
-    }
-
-    # end second switch
-
-    emitter_indent_level -1
-    append buffer [emitter_indent] "\}\n"
-
-    append buffer [emitter_statement "return lvar"]
-
-    emitter_indent_level -1
-
-    # end method decl
-
-    append buffer [emitter_indent] "\}\n"
-
-    emitter_indent_level -1
-
-    return $buffer
+proc compileproc_variable_cache_count {} {
+    return [llength $::_compileproc_variable_cache(ordered_keys)]
 }
 
 # Loop over parsed command keys and determine information
@@ -3031,24 +2883,27 @@ proc compileproc_emit_variable { tmpsymbol vinfo {declare_flag 1} } {
 
 # Emit code to get the value of a scalar variable. This method
 # generates an assignable value of type TclObject. This method
-# is used by compileproc_emit_variable for scalars.
+# is used by compileproc_emit_variable for scalars. A local
+# variable scalar or a fully qualified global namespace
+# qualifier like $::myglobal are both supported. A namespace
+# relative with a scoped qualifier like $child::var can't
+# be cached and it not added to the compiled local table.
 
 proc compileproc_emit_scalar_variable_get { vname } {
     global _compileproc
 
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
+#    set debug 0
 
-    if {$debug} {
-        puts "compileproc_emit_scalar_variable_get $vname"
-    }
+#    if {$debug} {
+#        puts "compileproc_emit_scalar_variable_get $vname"
+#    }
 
-    if {[info exists _compileproc(options,cache_variables)] && \
+    if {([string first "::" $vname] == -1 || [string range $vname 0 1] == "::") && \
+            [info exists _compileproc(options,cache_variables)] && \
             $_compileproc(options,cache_variables)} {
         set symbol [compileproc_variable_cache_lookup $vname]
-        set cacheId [compileproc_get_cache_id_from_symbol $symbol]
-
-        set buffer [emitter_get_cache_scalar_var $vname true 0 $symbol $cacheId]
+        set cacheId [compileproc_get_variable_cache_id_from_symbol $symbol]
+        set buffer [emitter_get_compiled_local_scalar_var $vname "compiledLocals" $cacheId]
     } else {
         set buffer [emitter_get_var $vname true null false 0]
     }
@@ -3063,19 +2918,18 @@ proc compileproc_emit_scalar_variable_get { vname } {
 proc compileproc_emit_scalar_variable_set { vname value } {
     global _compileproc
 
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
+#    set debug 0
 
-    if {$debug} {
-        puts "compileproc_emit_scalar_variable_set $vname $value"
-    }
+#    if {$debug} {
+#        puts "compileproc_emit_scalar_variable_set $vname $value"
+#    }
 
-    if {[info exists _compileproc(options,cache_variables)] && \
+    if {([string first "::" $vname] == -1 || [string range $vname 0 1] == "::") && \
+            [info exists _compileproc(options,cache_variables)] && \
             $_compileproc(options,cache_variables)} {
-
         set symbol [compileproc_variable_cache_lookup $vname]
-        set cacheId [compileproc_get_cache_id_from_symbol $symbol]
-        set buffer [emitter_set_cache_scalar_var $vname true $value 0 $symbol $cacheId]
+        set cacheId [compileproc_get_variable_cache_id_from_symbol $symbol]
+        set buffer [emitter_set_cache_scalar_var $vname $value "compiledLocals" $cacheId]
     } else {
         set buffer [emitter_set_var $vname true null false $value 0]
     }
@@ -5562,7 +5416,7 @@ proc compileproc_set_variable { varname varname_is_string value value_is_string 
     }
 }
 
-# Generate code to get a variable to a value. This method
+# Generate code to get a variable value. This method
 # assumes that a variable name is statically defined.
 # This method will emit different code for scalar vs
 # array variables.
@@ -6681,12 +6535,11 @@ proc compileproc_expr_evaluate_emit_exprvalue { tuple {no_exprvalue_for_tclobjec
 # type.
 
 proc compileproc_string_is_java_integer { tstr } {
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
+#    set debug 0
 
-    if {$debug} {
-        puts "compileproc_string_is_java_integer \"$tstr\""
-    }
+#    if {$debug} {
+#        puts "compileproc_string_is_java_integer \"$tstr\""
+#    }
 
     # A Java int type must be in the range -2147483648 to 2147483647.
     # A Tcl implementation might support only 32 bit integer operations,
@@ -6695,9 +6548,9 @@ proc compileproc_string_is_java_integer { tstr } {
     # and then check the range.
 
     if {$tstr == "" || ![string is integer $tstr]} {
-        if {$debug} {
-            puts "string \"$tstr\" is not an integer as defined by string is integer"
-        }
+#        if {$debug} {
+#            puts "string \"$tstr\" is not an integer as defined by string is integer"
+#        }
         return 0
     }
 
@@ -6718,14 +6571,14 @@ proc compileproc_string_is_java_integer { tstr } {
     if {[regexp {^(\-|\+)?(0x|0X)?0+$} $tstr]} {
         set fnum "0.0"
     } elseif {[regexp {^(\-|\+)?[1-9][0-9]*$} $tstr]} {
-        if {$debug} {
-            puts "tstr looks like a decimal integer, will parse it as a double"
-        }
+#        if {$debug} {
+#            puts "tstr looks like a decimal integer, will parse it as a double"
+#        }
         set fnum "${tstr}.0"
     } else {
-        if {$debug} {
-            puts "tstr does not look like a decimal integer, parsing as int"
-        }
+#        if {$debug} {
+#            puts "tstr does not look like a decimal integer, parsing as int"
+#        }
 
         # An integer in a non-decimal base needs to be checked for
         # overflow by parsing as an unsigned number and checking
@@ -6747,9 +6600,9 @@ proc compileproc_string_is_java_integer { tstr } {
             set fnum $min
         } elseif {$fnum <= 0} {
             # Unsigned number must have overflowed, or been chopped to zero
-            if {$debug} {
-                puts "insigned integer \"$ptstr\" causes 32bit overflow, not a java integer"
-            }
+#            if {$debug} {
+#                puts "unsigned integer \"$ptstr\" causes 32bit overflow, not a java integer"
+#            }
             return 0
         } else {
             if {$is_neg} {
@@ -6758,16 +6611,16 @@ proc compileproc_string_is_java_integer { tstr } {
         }
     }
     set fnum [expr {double($fnum)}]
-    if {$debug} {
-        puts "tstr is $tstr"
-        puts "fnum is $fnum"
-    }
+#    if {$debug} {
+#        puts "tstr is $tstr"
+#        puts "fnum is $fnum"
+#    }
 
     if {($fnum > 0.0 && $fnum > $max) ||
             ($fnum < 0.0 && $fnum < $min)} {
-        if {$debug} {
-            puts "string \"$tstr\" is outside the java integer range"
-        }
+#        if {$debug} {
+#            puts "string \"$tstr\" is outside the java integer range"
+#        }
         return 0
     }
     return 1
@@ -6851,12 +6704,11 @@ proc compileproc_string_is_java_double { tstr } {
 # PARSED value would be "1e+016" and the PRINTED value would be "1e16".
 
 proc compileproc_parse_value { value } {
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
+#    set debug 0
 
-    if {$debug} {
-        puts "compileproc_parse_value \"$value\""
-    }
+#    if {$debug} {
+#        puts "compileproc_parse_value \"$value\""
+#    }
 
     set is_integer [compileproc_string_is_java_integer $value]
     if {!$is_integer} {
@@ -6865,10 +6717,10 @@ proc compileproc_parse_value { value } {
         set is_double 0
     }
 
-    if {$debug} {
-        puts "is_integer $is_integer"
-        puts "is_double $is_double"
-    }
+#    if {$debug} {
+#        puts "is_integer $is_integer"
+#        puts "is_double $is_double"
+#    }
 
     if {!$is_integer && !$is_double} {
         error "value \"$value\" is not a valid Java integer or double"
@@ -6884,11 +6736,11 @@ proc compileproc_parse_value { value } {
     if {!$matching_strrep && ($compare == 0)} {
         error "matching_strrep is false but compare is $compare"
     }
-    if {$debug} {
-        puts "value  is \"$value\""
-        puts "parsed is \"$parsed\""
-        puts "\$parsed eq \$value is $matching_strrep"
-    }
+#    if {$debug} {
+#        puts "value  is \"$value\""
+#        puts "parsed is \"$parsed\""
+#        puts "\$parsed eq \$value is $matching_strrep"
+#    }
 
     set printed $parsed
 
@@ -6897,16 +6749,16 @@ proc compileproc_parse_value { value } {
 
     if {$is_double} {
         set estr [format %g $value]
-        if {$debug} {
-            puts "exponent string is \"$estr\""
-        }
+#        if {$debug} {
+#            puts "exponent string is \"$estr\""
+#        }
 
         if {[regexp {^([0-9|.]+)e([\+|\-][0-9][0-9][0-9])$} \
                 $estr whole npart epart]} {
-            if {$debug} {
-                puts "number part is \"$npart\""
-                puts "exponent part is \"$epart\""
-            }
+#            if {$debug} {
+#                puts "number part is \"$npart\""
+#                puts "exponent part is \"$epart\""
+#            }
             set printed $npart
             append printed "e"
 
@@ -6929,9 +6781,9 @@ proc compileproc_parse_value { value } {
         }
     }
 
-    if {$debug} {
-        puts "printed is \"$printed\""
-    }
+#    if {$debug} {
+#        puts "printed is \"$printed\""
+#    }
 
     return [list $matching_strrep $parsed $printed]
 }
@@ -6941,12 +6793,11 @@ proc compileproc_parse_value { value } {
 proc compileproc_can_inline_command_append { key } {
     global _compileproc
 
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
+#    set debug 0
 
-    if {$debug} {
-        puts "compileproc_can_inline_command_append $key"
-    }
+#    if {$debug} {
+#        puts "compileproc_can_inline_command_append $key"
+#    }
 
     # The append command accepts 2, 3, or more than 3 arguments.
     # Pass to runtime impl if there are less than 3 arguments.
@@ -6955,9 +6806,9 @@ proc compileproc_can_inline_command_append { key } {
     set num_args [llength $tree]
 
     if {$num_args < 3} {
-        if {$debug} {
-            puts "returning false since there are $num_args args"
-        }
+#        if {$debug} {
+#            puts "returning false since there are $num_args args"
+#        }
         return 0
     }
 
@@ -6968,9 +6819,9 @@ proc compileproc_can_inline_command_append { key } {
     set type [lindex $tuple 0]
 
     if {$type != "constant"} {
-        if {$debug} {
-            puts "returning false since argument 1 is non-constant type $type"
-        }
+#        if {$debug} {
+#            puts "returning false since argument 1 is non-constant type $type"
+#        }
 
         return 0
     }
@@ -7057,12 +6908,12 @@ proc compileproc_emit_append_call_impl { key arraysym tmpsymbol userdata } {
                     "$tmpsymbol = TJC.appendVar(interp, $varname_symbol, $arraysym)"]
         } elseif {[lindex $vinfo 0] == "scalar"} {
             set cache_symbol [compileproc_variable_cache_lookup $varname]
-            set cacheId [compileproc_get_cache_id_from_symbol $cache_symbol]
+            set cacheId [compileproc_get_variable_cache_id_from_symbol $cache_symbol]
 
             append buffer \
                 [emitter_statement \
                     "$tmpsymbol = appendVarScalar(interp, $varname_symbol,\
-                        $arraysym, $cache_symbol, $cacheId)"]
+                        $arraysym, compiledLocals, $cacheId)"]
         } else {
             error "unexpected result \{$vinfo\} from descend_simple_variable"
         }
@@ -7078,12 +6929,11 @@ proc compileproc_emit_append_call_impl { key arraysym tmpsymbol userdata } {
 proc compileproc_can_inline_command_global { key } {
     global _compileproc
 
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
-
-    if {$debug} {
-        puts "compileproc_can_inline_command_global $key"
-    }
+#    set debug 0
+#
+#    if {$debug} {
+#        puts "compileproc_can_inline_command_global $key"
+#    }
 
     # The global command accepts 1 to N args, If no arguments
     # are given just pass to runtime global command impl to
@@ -7093,9 +6943,9 @@ proc compileproc_can_inline_command_global { key } {
     set num_args [llength $tree]
 
     if {$num_args < 2} {
-        if {$debug} {
-            puts "returning false since there are $num_args args"
-        }
+#        if {$debug} {
+#            puts "returning false since there are $num_args args"
+#        }
         return 0
     }
 
@@ -7107,9 +6957,24 @@ proc compileproc_can_inline_command_global { key } {
         set type [lindex $tuple 0]
 
         if {$type != "constant"} {
-            if {$debug} {
-                puts "returning false since argument $i is non-constant type $type"
-            }
+#            if {$debug} {
+#                puts "returning false since argument $i is non-constant type $type"
+#            }
+            return 0
+        }
+
+        # Global accepts what seem to be array variable names like
+        # ARR(elem), but it does not seem to be possible to access
+        # them. If an argument looks like an array then don't
+        # compile the global command in order to keep things simple.
+
+        set varname [lindex $tuple 1]
+        set tail [namespace tail $varname]
+        set vinfo [descend_simple_variable $tail]
+        if {[lindex $vinfo 0] != "scalar"} {
+#            if {$debug} {
+#                puts "returning false since argument $i is not a scalar"
+#            }
             return 0
         }
     }
@@ -7133,11 +6998,29 @@ proc compileproc_emit_inline_command_global { key } {
     set tree [descend_get_data $key tree]
     set num_args [llength $tree]
 
+    # Pass -1 when cache variables is disabled, otherwise
+    # pass a cache variable id that will be used for this
+    # variable.
+
+    if {$_compileproc(options,cache_variables)} {
+        set cache_variables 1
+    } else {
+        set cache_variables 0
+    }
+
     for {set i 1} {$i < $num_args} {incr i} {
         set tuple [compileproc_get_argument_tuple $key $i]
         set varname [lindex $tuple 1]
+        set tail [namespace tail $varname]
 
-        append buffer [emitter_make_global_link_var $varname]
+        if {$cache_variables} {
+            # Create a compiled local variable for this global variable
+            set cache_symbol [compileproc_variable_cache_lookup $tail]
+            set localIndex [compileproc_get_variable_cache_id_from_symbol $cache_symbol]
+        } else {
+            set localIndex -1
+        }
+        append buffer [emitter_make_global_link_var $varname $tail $localIndex]
     }
 
     return $buffer
@@ -7148,12 +7031,11 @@ proc compileproc_emit_inline_command_global { key } {
 proc compileproc_can_inline_command_incr { key } {
     global _compileproc
 
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
+#    set debug 0
 
-    if {$debug} {
-        puts "compileproc_can_inline_command_incr $key"
-    }
+#    if {$debug} {
+#        puts "compileproc_can_inline_command_incr $key"
+#    }
 
     # The incr command accepts 2 or 3 arguments. If wrong number
     # of args given just pass to runtime incr command impl to
@@ -7163,9 +7045,9 @@ proc compileproc_can_inline_command_incr { key } {
     set num_args [llength $tree]
 
     if {$num_args != 2 && $num_args != 3} {
-        if {$debug} {
-            puts "returning false since there are $num_args args"
-        }
+#        if {$debug} {
+#            puts "returning false since there are $num_args args"
+#        }
         return 0
     }
 
@@ -7176,9 +7058,9 @@ proc compileproc_can_inline_command_incr { key } {
     set type [lindex $tuple 0]
 
     if {$type != "constant"} {
-        if {$debug} {
-            puts "returning false since argument 1 is non-constant type $type"
-        }
+#        if {$debug} {
+#            puts "returning false since argument 1 is non-constant type $type"
+#        }
 
         return 0
     }
@@ -7296,11 +7178,11 @@ proc compileproc_emit_inline_command_incr { key } {
                 "TJC.incrVar(interp, " $qvarname ", " $incr_symbol ")\;\n"
         } elseif {[lindex $vinfo 0] == "scalar"} {
             set cache_symbol [compileproc_variable_cache_lookup $varname]
-            set cacheId [compileproc_get_cache_id_from_symbol $cache_symbol]
+            set cacheId [compileproc_get_variable_cache_id_from_symbol $cache_symbol]
 
             append buffer \
-                "incrVarScalar(interp, " $qvarname ", " $incr_symbol ", 0, " \
-                $cache_symbol ", " $cacheId ")\;\n"
+                "incrVarScalar(interp, " $qvarname ", " $incr_symbol ", " \
+                "compiledLocals" ", " $cacheId ")\;\n"
         } else {
             error "unexpected result \{$vinfo\} from descend_simple_variable"
         }
@@ -7321,12 +7203,11 @@ proc compileproc_emit_inline_command_incr { key } {
 proc compileproc_can_inline_command_lappend { key } {
     global _compileproc
 
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
+#    set debug 0
 
-    if {$debug} {
-        puts "compileproc_can_inline_command_lappend $key"
-    }
+#    if {$debug} {
+#        puts "compileproc_can_inline_command_lappend $key"
+#    }
 
     # The lappend command accepts 2, 3, or more than 3 arguments.
     # Pass to runtime impl if there are less than 3 arguments.
@@ -7335,9 +7216,9 @@ proc compileproc_can_inline_command_lappend { key } {
     set num_args [llength $tree]
 
     if {$num_args < 3} {
-        if {$debug} {
-            puts "returning false since there are $num_args args"
-        }
+#        if {$debug} {
+#            puts "returning false since there are $num_args args"
+#        }
         return 0
     }
 
@@ -7348,9 +7229,9 @@ proc compileproc_can_inline_command_lappend { key } {
     set type [lindex $tuple 0]
 
     if {$type != "constant"} {
-        if {$debug} {
-            puts "returning false since argument 1 is non-constant type $type"
-        }
+#        if {$debug} {
+#            puts "returning false since argument 1 is non-constant type $type"
+#        }
 
         return 0
     }
@@ -7437,12 +7318,12 @@ proc compileproc_emit_lappend_call_impl { key arraysym tmpsymbol userdata } {
                     "$tmpsymbol = TJC.lappendVar(interp, $varname_symbol, $arraysym)"]
         } elseif {[lindex $vinfo 0] == "scalar"} {
             set cache_symbol [compileproc_variable_cache_lookup $varname]
-            set cacheId [compileproc_get_cache_id_from_symbol $cache_symbol]
+            set cacheId [compileproc_get_variable_cache_id_from_symbol $cache_symbol]
 
             append buffer \
                 [emitter_statement \
                     "$tmpsymbol = lappendVarScalar(interp, $varname_symbol,\
-                        $arraysym, $cache_symbol, $cacheId)"]
+                        $arraysym, compiledLocals, $cacheId)"]
         } else {
             error "unexpected result \{$vinfo\} from descend_simple_variable"
         }
@@ -7458,12 +7339,11 @@ proc compileproc_emit_lappend_call_impl { key arraysym tmpsymbol userdata } {
 proc compileproc_can_inline_command_lindex { key } {
     global _compileproc
 
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
+#    set debug 0
 
-    if {$debug} {
-        puts "compileproc_can_inline_command_lindex $key"
-    }
+#    if {$debug} {
+#        puts "compileproc_can_inline_command_lindex $key"
+#    }
 
     # lindex accepts 2 to N argument, but we only
     # compile a lindex command that has 3 arguments.
@@ -7473,9 +7353,9 @@ proc compileproc_can_inline_command_lindex { key } {
     set num_args [llength $tree]
 
     if {$num_args != 3} {
-        if {$debug} {
-            puts "returning false since there are $num_args args"
-        }
+#        if {$debug} {
+#            puts "returning false since there are $num_args args"
+#        }
         return 0
     }
 
@@ -7755,12 +7635,11 @@ proc compileproc_emit_inline_command_list_argument { key i listsymbol valuesymbo
 proc compileproc_can_inline_command_llength { key } {
     global _compileproc
 
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
+#    set debug 0
 
-    if {$debug} {
-        puts "compileproc_can_inline_command_llength $key"
-    }
+#    if {$debug} {
+#        puts "compileproc_can_inline_command_llength $key"
+#    }
 
     # The llength command accepts 1 argument. Pass to runtime
     # llength command impl to raise error message otherwise.
@@ -7769,9 +7648,9 @@ proc compileproc_can_inline_command_llength { key } {
     set num_args [llength $tree]
 
     if {$num_args != 2} {
-        if {$debug} {
-            puts "returning false since there are $num_args args"
-        }
+#        if {$debug} {
+#            puts "returning false since there are $num_args args"
+#        }
         return 0
     }
 
@@ -7813,12 +7692,11 @@ proc compileproc_emit_inline_command_llength { key } {
 proc compileproc_can_inline_command_set { key } {
     global _compileproc
 
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
+#    set debug 0
 
-    if {$debug} {
-        puts "compileproc_can_inline_command_set $key"
-    }
+#    if {$debug} {
+#        puts "compileproc_can_inline_command_set $key"
+#    }
 
     # The set command accepts 2 or 3 arguments. If wrong number
     # of args given just pass to runtime set command impl to
@@ -7828,9 +7706,9 @@ proc compileproc_can_inline_command_set { key } {
     set num_args [llength $tree]
 
     if {$num_args != 2 && $num_args != 3} {
-        if {$debug} {
-            puts "returning false since there are $num_args args"
-        }
+#        if {$debug} {
+#            puts "returning false since there are $num_args args"
+#        }
         return 0
     }
 
@@ -7841,9 +7719,9 @@ proc compileproc_can_inline_command_set { key } {
     set type [lindex $tuple 0]
 
     if {$type != "constant"} {
-        if {$debug} {
-            puts "returning false since argument 1 is non-constant type $type"
-        }
+#        if {$debug} {
+#            puts "returning false since argument 1 is non-constant type $type"
+#        }
 
         return 0
     }
@@ -7931,12 +7809,11 @@ proc compileproc_emit_inline_command_set { key } {
 proc compileproc_can_inline_command_string { key } {
     global _compileproc
 
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
+#    set debug 0
 
-    if {$debug} {
-        puts "compileproc_can_inline_command_string $key"
-    }
+#    if {$debug} {
+#        puts "compileproc_can_inline_command_string $key"
+#    }
 
     # Some subcommands of the string command can be inlined
     # while others must be processed at runtime. The string
@@ -7946,9 +7823,9 @@ proc compileproc_can_inline_command_string { key } {
     set num_args [llength $tree]
 
     if {$num_args < 3} {
-        if {$debug} {
-            puts "returning false since there are $num_args args"
-        }
+#        if {$debug} {
+#            puts "returning false since there are $num_args args"
+#        }
         return 0
     }
 
@@ -7960,9 +7837,9 @@ proc compileproc_can_inline_command_string { key } {
     set subcmdname [lindex $tuple 1]
 
     if {$type != "constant"} {
-        if {$debug} {
-            puts "returning false since argument 1 is non-constant type $type"
-        }
+#        if {$debug} {
+#            puts "returning false since argument 1 is non-constant type $type"
+#        }
 
         return 0
     }
@@ -7980,10 +7857,10 @@ proc compileproc_can_inline_command_string { key } {
             # FIXME: could add -nocase support
 
             if {$num_args != 4} {
-                if {$debug} {
-                    puts "returning false since string $subcmdname\
-                        requires 4 arguments, there were $num_args args"
-                }
+#                if {$debug} {
+#                    puts "returning false since string $subcmdname\
+#                        requires 4 arguments, there were $num_args args"
+#                }
                 return 0
             }
         }
@@ -7993,10 +7870,10 @@ proc compileproc_can_inline_command_string { key } {
             # usage: string last subString string ?lastIndex?
 
             if {$num_args != 4 && $num_args != 5} {
-                if {$debug} {
-                    puts "returning false since string $subcmdname\
-                        requires 4 or 5 arguments, there were $num_args args"
-                }
+#                if {$debug} {
+#                    puts "returning false since string $subcmdname\
+#                        requires 4 or 5 arguments, there were $num_args args"
+#                }
                 return 0
             }
         }
@@ -8004,10 +7881,10 @@ proc compileproc_can_inline_command_string { key } {
             # usage: string index string charIndex
 
             if {$num_args != 4} {
-                if {$debug} {
-                    puts "returning false since string length\
-                        requires 4 arguments, there were $num_args args"
-                }
+#                if {$debug} {
+#                    puts "returning false since string length\
+#                        requires 4 arguments, there were $num_args args"
+#                }
                 return 0
             }
         }
@@ -8015,10 +7892,10 @@ proc compileproc_can_inline_command_string { key } {
             # usage: string length string
 
             if {$num_args != 3} {
-                if {$debug} {
-                    puts "returning false since string length\
-                        requires 3 arguments, there were $num_args args"
-                }
+#                if {$debug} {
+#                    puts "returning false since string length\
+#                        requires 3 arguments, there were $num_args args"
+#                }
                 return 0
             }
         }
@@ -8026,18 +7903,18 @@ proc compileproc_can_inline_command_string { key } {
             # usage: string range string first last
 
             if {$num_args != 5} {
-                if {$debug} {
-                    puts "returning false since string range\
-                        requires 5 arguments, there were $num_args args"
-                }
+#                if {$debug} {
+#                    puts "returning false since string range\
+#                        requires 5 arguments, there were $num_args args"
+#                }
                 return 0
             }
         }
         default {
-            if {$debug} {
-                puts "returning false since argument 1 is\
-                    unsupported subcommand $subcmdname"
-            }
+#            if {$debug} {
+#                puts "returning false since argument 1 is\
+#                    unsupported subcommand $subcmdname"
+#            }
             return 0
         }
     }

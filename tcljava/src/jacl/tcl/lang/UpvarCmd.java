@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: UpvarCmd.java,v 1.3 1999/07/12 02:38:53 mo Exp $
+ * RCS: @(#) $Id: UpvarCmd.java,v 1.4 2006/03/15 23:07:22 mdejong Exp $
  *
  */
 
@@ -70,13 +70,13 @@ class UpvarCmd implements Command {
 		Var.makeUpvar(interp, frame,
 				  otherVarName.substring(0,p),
 				  otherVarName.substring(p+1, otherLength - 1),
-				  0, myVarName, 0);
+				  0, myVarName, 0, -1);
 	    } else {
 		// This is a scalar variable name
 		Var.makeUpvar(interp, frame,
 				  otherVarName,
 				  null,
-				  0, myVarName, 0);
+				  0, myVarName, 0, -1);
 	    }
 	}
 	interp.resetResult();

@@ -1,3 +1,56 @@
+2006-03-15  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        Implement compiled locals for Jacl that mimic
+        the C Tcl implementation. A compiled proc
+        stores local and imported vars in an array
+        instead of a hashtable. Variables can then
+        be looked up using an index into the
+        compiled local array instead of a hashtable
+        search. Currently, only scalar variables
+        are supported. The previous scalar variable
+        cache logic in TJC has been removed.
+
+        * src/jacl/tcl/lang/CallFrame.java (CallFrame, dispose):
+        Add compiledLocals ref to call frame class.
+        * src/jacl/tcl/lang/GlobalCmd.java: Update makeUpvar().
+        * src/jacl/tcl/lang/InfoCmd.java: Add support for
+        compiled locals in [info locals] and [info vars].
+        * src/jacl/tcl/lang/UpvarCmd.java: Update makeUpvar().
+        * src/jacl/tcl/lang/Var.java (makeUpvar, setVar,
+        setVarPtr, setVarCompiledLocalScalar,
+        getVarCompiledLocalScalar, traceVar, deleteVars,
+        deleteVar, Var.CompiledLocal):
+        Implement compiled local scalar variables in Jacl.
+        The Var class now handles resolving variables
+        and caching the results.
+        * src/jacl/tcl/lang/VariableCmd.java: Update makeUpvar().
+        * src/tests/jacl/compiledLocals.test: Test cases
+        for compiled local vars.
+        * src/tests/jacl/tcl/lang/JavaTestExtension.java:
+        Add testvarframe command.
+        * src/tests/jacl/tcl/lang/TestVarFrameCmd.java:
+        New test command used to inspect compiled locals.
+        * src/tests/tjc/tcl/lang/TestTcl.java: Remove
+        old test code, cases moved to compiledLocals.test.
+        * src/tjc/tcl/lang/TJC.java (initCompiledLocals,
+        updateVarCache, getVarScalar, setVarScalar,
+        incrVarScalar, lappendVarScalar, appendVarScalar,
+        resolveVarScalar, makeGlobalLinkVar):
+        Reimplement scalar variable access so that the
+        compiledLocals array is used instead of the
+        previous TJC variable cache implementation.
+        * src/tjc/tcl/lang/TJCCompileCmd.java:
+        Fix case of fully qualified proc name.
+        * src/tjc/tjc/library/compileproc.tcl:
+        * src/tjc/tjc/library/emitter.tcl: Reimplement
+        cache variable code in compileproc and
+        emitter modules.
+        * tests/tjc/compileproc.test:
+        * tests/tjc/compileproc_6.test:
+        * tests/tjc/compileproc_7.test: Update test
+        cases that make use of compiled locals.
+        * tests/tjc/testtjc.test: Remove old tests.
+
 2006-03-11  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/tests/jacl/tcl/lang/TestEvalExCmd.java:

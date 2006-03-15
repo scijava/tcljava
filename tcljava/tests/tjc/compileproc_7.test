@@ -361,7 +361,8 @@ public class Test1 extends TJC.CompiledCommand {
             initCmd(interp);
         }
         CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
-        updateVarCache(interp, 0);
+        Var.CompiledLocal[] compiledLocals =
+            TJC.initCompiledLocals(interp, callFrame, 2);
         try {
         if (objv.length != 1) {
             throw new TclNumArgsException(interp, 1, objv, "");
@@ -369,66 +370,18 @@ public class Test1 extends TJC.CompiledCommand {
         { // Invoke: set x [...]
             TclObject tmp0;
             { // Invoke: set y
-                TclObject tmp1 = getVarScalar(interp, "y", 0, varcache1, 1);
+                TclObject tmp1 = getVarScalar(interp, "y", compiledLocals, 0);
                 interp.setResult(tmp1);
             } // End Invoke: set
             tmp0 = interp.getResult();
-            tmp0 = setVarScalar(interp, "x", tmp0, 0, varcache2, 2);
+            tmp0 = setVarScalar(interp, "x", tmp0, compiledLocals, 1);
             interp.setResult(tmp0);
         } // End Invoke: set
         } catch (TclException te) {
             TJC.checkTclException(interp, te, "p");
         } finally {
-            updateVarCache(interp, 0);
             TJC.popLocalCallFrame(interp, callFrame);
         }
-    }
-
-    Var varcache1 = null;
-    Var varcache2 = null;
-
-    protected
-    Var updateVarCache(
-        Interp interp,
-        int cacheId)
-    {
-        String part1;
-        String part2 = null;
-        int flags = 0;
-        Var lvar;
-
-        switch ( cacheId ) {
-            case 0: {
-                varcache1 = null;
-                varcache2 = null;
-                return null;
-            }
-            case 1: {
-                part1 = "y";
-                break;
-            }
-            case 2: {
-                part1 = "x";
-                break;
-            }
-            default: {
-                throw new TclRuntimeError("default: cacheId " + cacheId);
-            }
-        }
-
-        lvar = TJC.resolveVarScalar(interp, part1, flags);
-
-        switch ( cacheId ) {
-            case 1: {
-                varcache1 = lvar;
-                break;
-            }
-            case 2: {
-                varcache2 = lvar;
-                break;
-            }
-        }
-        return lvar;
     }
 } // end class Test1
 }}
@@ -467,14 +420,15 @@ public class Test1 extends TJC.CompiledCommand {
             initCmd(interp);
         }
         CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
-        updateVarCache(interp, 0);
+        Var.CompiledLocal[] compiledLocals =
+            TJC.initCompiledLocals(interp, callFrame, 1);
         try {
         if (objv.length != 1) {
             throw new TclNumArgsException(interp, 1, objv, "");
         }
         { // Invoke: set x 1
             TclObject tmp0;
-            tmp0 = setVarScalar(interp, "x", const0, 0, varcache1, 1);
+            tmp0 = setVarScalar(interp, "x", const0, compiledLocals, 0);
             interp.setResult(tmp0);
         } // End Invoke: set
         { // Invoke: set a(one) 1
@@ -485,7 +439,6 @@ public class Test1 extends TJC.CompiledCommand {
         } catch (TclException te) {
             TJC.checkTclException(interp, te, "p");
         } finally {
-            updateVarCache(interp, 0);
             TJC.popLocalCallFrame(interp, callFrame);
         }
     }
@@ -495,43 +448,6 @@ public class Test1 extends TJC.CompiledCommand {
     protected void initConstants(Interp interp) throws TclException {
         const0 = TclInteger.newInstance(1);
         const0.preserve(); const0.preserve();
-    }
-
-    Var varcache1 = null;
-
-    protected
-    Var updateVarCache(
-        Interp interp,
-        int cacheId)
-    {
-        String part1;
-        String part2 = null;
-        int flags = 0;
-        Var lvar;
-
-        switch ( cacheId ) {
-            case 0: {
-                varcache1 = null;
-                return null;
-            }
-            case 1: {
-                part1 = "x";
-                break;
-            }
-            default: {
-                throw new TclRuntimeError("default: cacheId " + cacheId);
-            }
-        }
-
-        lvar = TJC.resolveVarScalar(interp, part1, flags);
-
-        switch ( cacheId ) {
-            case 1: {
-                varcache1 = lvar;
-                break;
-            }
-        }
-        return lvar;
     }
 } // end class Test1
 }}
@@ -575,7 +491,7 @@ public class Test1 extends TJC.CompiledCommand {
         }
         { // Invoke: global x
             interp.resetResult();
-            TJC.makeGlobalLinkVar(interp, "x", "x");
+            TJC.makeGlobalLinkVar(interp, "x", "x", -1);
         } // End Invoke: global
         } catch (TclException te) {
             TJC.checkTclException(interp, te, "p");
@@ -593,6 +509,7 @@ proc p {} {
 }
 }
 
+    set test_compileproc_7_cache_variables 1
     set test_compileproc_7_inline_commands 1
     set plist [compileproc_script_to_proc_list $script]
     set buffer [compileproc_compile $plist testpkg.Test1 \
@@ -618,14 +535,16 @@ public class Test1 extends TJC.CompiledCommand {
             initCmd(interp);
         }
         CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        Var.CompiledLocal[] compiledLocals =
+            TJC.initCompiledLocals(interp, callFrame, 2);
         try {
         if (objv.length != 1) {
             throw new TclNumArgsException(interp, 1, objv, "");
         }
         { // Invoke: global x y
             interp.resetResult();
-            TJC.makeGlobalLinkVar(interp, "x", "x");
-            TJC.makeGlobalLinkVar(interp, "y", "y");
+            TJC.makeGlobalLinkVar(interp, "x", "x", 0);
+            TJC.makeGlobalLinkVar(interp, "y", "y", 1);
         } // End Invoke: global
         } catch (TclException te) {
             TJC.checkTclException(interp, te, "p");
@@ -674,8 +593,8 @@ public class Test1 extends TJC.CompiledCommand {
         }
         { // Invoke: global ::x ::one::two::y
             interp.resetResult();
-            TJC.makeGlobalLinkVar(interp, "::x", "x");
-            TJC.makeGlobalLinkVar(interp, "::one::two::y", "y");
+            TJC.makeGlobalLinkVar(interp, "::x", "x", -1);
+            TJC.makeGlobalLinkVar(interp, "::one::two::y", "y", -1);
         } // End Invoke: global
         } catch (TclException te) {
             TJC.checkTclException(interp, te, "p");
@@ -685,6 +604,103 @@ public class Test1 extends TJC.CompiledCommand {
     }
 } // end class Test1
 }}
+
+tcltest::test compileproc7-2.3 {inline global command} {
+    # These global commands seem to execute in Tcl, but
+    # it is not at all clear what they do. Don't compile
+    # them since these operations are not well defined.
+    set script {
+proc p {} {
+    global ARR(FOO)
+    global ARR()
+}
+}
+
+    set test_compileproc_7_inline_commands 1
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_7_set_flags]
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) {
+            inlineCmds = true;
+            initCmd(interp);
+        }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: global ARR(FOO)
+            TclObject[] objv0 = TJC.grabObjv(interp, 2);
+            try {
+                TclObject tmp1;
+                // Arg 0 constant: global
+                tmp1 = const0;
+                tmp1.preserve();
+                objv0[0] = tmp1;
+                // Arg 1 constant: ARR(FOO)
+                tmp1 = const1;
+                tmp1.preserve();
+                objv0[1] = tmp1;
+                TJC.invoke(interp, null, objv0, 0);
+            } finally {
+                TJC.releaseObjvElems(interp, objv0, 2);
+            }
+        } // End Invoke: global
+        { // Invoke: global ARR()
+            TclObject[] objv2 = TJC.grabObjv(interp, 2);
+            try {
+                TclObject tmp3;
+                // Arg 0 constant: global
+                tmp3 = const0;
+                tmp3.preserve();
+                objv2[0] = tmp3;
+                // Arg 1 constant: ARR()
+                tmp3 = const2;
+                tmp3.preserve();
+                objv2[1] = tmp3;
+                TJC.invoke(interp, null, objv2, 0);
+            } finally {
+                TJC.releaseObjvElems(interp, objv2, 2);
+            }
+        } // End Invoke: global
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+
+    TclObject const0;
+    TclObject const1;
+    TclObject const2;
+
+    protected void initConstants(Interp interp) throws TclException {
+        const0 = TclString.newInstance("global");
+        const0.preserve(); const0.preserve();
+        const1 = TclString.newInstance("ARR(FOO)");
+        const1.preserve(); const1.preserve();
+        const2 = TclString.newInstance("ARR()");
+        const2.preserve(); const2.preserve();
+    }
+} // end class Test1
+}}
+
 
 tcltest::test compileproc7-3.0 {inline list command} {
     set script {
@@ -1383,59 +1399,22 @@ public class Test1 extends TJC.CompiledCommand {
             initCmd(interp);
         }
         CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
-        updateVarCache(interp, 0);
+        Var.CompiledLocal[] compiledLocals =
+            TJC.initCompiledLocals(interp, callFrame, 1);
         try {
         if (objv.length != 1) {
             throw new TclNumArgsException(interp, 1, objv, "");
         }
         { // Invoke: incr x
             interp.resetResult();
-            TclObject tmp0 = incrVarScalar(interp, "x", 1, 0, varcache1, 1);
+            TclObject tmp0 = incrVarScalar(interp, "x", 1, compiledLocals, 0);
             interp.setResult(tmp0);
         } // End Invoke: incr
         } catch (TclException te) {
             TJC.checkTclException(interp, te, "p");
         } finally {
-            updateVarCache(interp, 0);
             TJC.popLocalCallFrame(interp, callFrame);
         }
-    }
-
-    Var varcache1 = null;
-
-    protected
-    Var updateVarCache(
-        Interp interp,
-        int cacheId)
-    {
-        String part1;
-        String part2 = null;
-        int flags = 0;
-        Var lvar;
-
-        switch ( cacheId ) {
-            case 0: {
-                varcache1 = null;
-                return null;
-            }
-            case 1: {
-                part1 = "x";
-                break;
-            }
-            default: {
-                throw new TclRuntimeError("default: cacheId " + cacheId);
-            }
-        }
-
-        lvar = TJC.resolveVarScalar(interp, part1, flags);
-
-        switch ( cacheId ) {
-            case 1: {
-                varcache1 = lvar;
-                break;
-            }
-        }
-        return lvar;
     }
 } // end class Test1
 }}
@@ -1524,71 +1503,24 @@ public class Test1 extends TJC.CompiledCommand {
             initCmd(interp);
         }
         CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
-        updateVarCache(interp, 0);
+        Var.CompiledLocal[] compiledLocals =
+            TJC.initCompiledLocals(interp, callFrame, 2);
         try {
         if (objv.length != 1) {
             throw new TclNumArgsException(interp, 1, objv, "");
         }
         { // Invoke: incr x $y
-            TclObject tmp0 = getVarScalar(interp, "y", 0, varcache1, 1);
+            TclObject tmp0 = getVarScalar(interp, "y", compiledLocals, 0);
             int tmp1 = TclInteger.get(interp, tmp0);
             interp.resetResult();
-            TclObject tmp2 = incrVarScalar(interp, "x", tmp1, 0, varcache2, 2);
+            TclObject tmp2 = incrVarScalar(interp, "x", tmp1, compiledLocals, 1);
             interp.setResult(tmp2);
         } // End Invoke: incr
         } catch (TclException te) {
             TJC.checkTclException(interp, te, "p");
         } finally {
-            updateVarCache(interp, 0);
             TJC.popLocalCallFrame(interp, callFrame);
         }
-    }
-
-    Var varcache1 = null;
-    Var varcache2 = null;
-
-    protected
-    Var updateVarCache(
-        Interp interp,
-        int cacheId)
-    {
-        String part1;
-        String part2 = null;
-        int flags = 0;
-        Var lvar;
-
-        switch ( cacheId ) {
-            case 0: {
-                varcache1 = null;
-                varcache2 = null;
-                return null;
-            }
-            case 1: {
-                part1 = "y";
-                break;
-            }
-            case 2: {
-                part1 = "x";
-                break;
-            }
-            default: {
-                throw new TclRuntimeError("default: cacheId " + cacheId);
-            }
-        }
-
-        lvar = TJC.resolveVarScalar(interp, part1, flags);
-
-        switch ( cacheId ) {
-            case 1: {
-                varcache1 = lvar;
-                break;
-            }
-            case 2: {
-                varcache2 = lvar;
-                break;
-            }
-        }
-        return lvar;
     }
 } // end class Test1
 }}
@@ -1626,7 +1558,8 @@ public class Test1 extends TJC.CompiledCommand {
             initCmd(interp);
         }
         CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
-        updateVarCache(interp, 0);
+        Var.CompiledLocal[] compiledLocals =
+            TJC.initCompiledLocals(interp, callFrame, 1);
         try {
         if (objv.length != 1) {
             throw new TclNumArgsException(interp, 1, objv, "");
@@ -1648,13 +1581,12 @@ public class Test1 extends TJC.CompiledCommand {
             TclObject tmp0 = interp.getResult();
             int tmp3 = TclInteger.get(interp, tmp0);
             interp.resetResult();
-            TclObject tmp4 = incrVarScalar(interp, "x", tmp3, 0, varcache1, 1);
+            TclObject tmp4 = incrVarScalar(interp, "x", tmp3, compiledLocals, 0);
             interp.setResult(tmp4);
         } // End Invoke: incr
         } catch (TclException te) {
             TJC.checkTclException(interp, te, "p");
         } finally {
-            updateVarCache(interp, 0);
             TJC.popLocalCallFrame(interp, callFrame);
         }
     }
@@ -1664,43 +1596,6 @@ public class Test1 extends TJC.CompiledCommand {
     protected void initConstants(Interp interp) throws TclException {
         const0 = TclString.newInstance("cmd");
         const0.preserve(); const0.preserve();
-    }
-
-    Var varcache1 = null;
-
-    protected
-    Var updateVarCache(
-        Interp interp,
-        int cacheId)
-    {
-        String part1;
-        String part2 = null;
-        int flags = 0;
-        Var lvar;
-
-        switch ( cacheId ) {
-            case 0: {
-                varcache1 = null;
-                return null;
-            }
-            case 1: {
-                part1 = "x";
-                break;
-            }
-            default: {
-                throw new TclRuntimeError("default: cacheId " + cacheId);
-            }
-        }
-
-        lvar = TJC.resolveVarScalar(interp, part1, flags);
-
-        switch ( cacheId ) {
-            case 1: {
-                varcache1 = lvar;
-                break;
-            }
-        }
-        return lvar;
     }
 } // end class Test1
 }}
@@ -2278,7 +2173,8 @@ public class Test1 extends TJC.CompiledCommand {
             initCmd(interp);
         }
         CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
-        updateVarCache(interp, 0);
+        Var.CompiledLocal[] compiledLocals =
+            TJC.initCompiledLocals(interp, callFrame, 1);
         try {
         if (objv.length != 1) {
             throw new TclNumArgsException(interp, 1, objv, "");
@@ -2290,7 +2186,7 @@ public class Test1 extends TJC.CompiledCommand {
                 // Arg 2 constant: 1
                 objv0[0] = const0;
                 interp.resetResult();
-                tmp1 = lappendVarScalar(interp, "var", objv0, varcache1, 1);
+                tmp1 = lappendVarScalar(interp, "var", objv0, compiledLocals, 0);
                 interp.setResult(tmp1);
             } finally {
                 TJC.releaseObjv(interp, objv0, 1);
@@ -2299,7 +2195,6 @@ public class Test1 extends TJC.CompiledCommand {
         } catch (TclException te) {
             TJC.checkTclException(interp, te, "p");
         } finally {
-            updateVarCache(interp, 0);
             TJC.popLocalCallFrame(interp, callFrame);
         }
     }
@@ -2309,43 +2204,6 @@ public class Test1 extends TJC.CompiledCommand {
     protected void initConstants(Interp interp) throws TclException {
         const0 = TclInteger.newInstance(1);
         const0.preserve(); const0.preserve();
-    }
-
-    Var varcache1 = null;
-
-    protected
-    Var updateVarCache(
-        Interp interp,
-        int cacheId)
-    {
-        String part1;
-        String part2 = null;
-        int flags = 0;
-        Var lvar;
-
-        switch ( cacheId ) {
-            case 0: {
-                varcache1 = null;
-                return null;
-            }
-            case 1: {
-                part1 = "var";
-                break;
-            }
-            default: {
-                throw new TclRuntimeError("default: cacheId " + cacheId);
-            }
-        }
-
-        lvar = TJC.resolveVarScalar(interp, part1, flags);
-
-        switch ( cacheId ) {
-            case 1: {
-                varcache1 = lvar;
-                break;
-            }
-        }
-        return lvar;
     }
 } // end class Test1
 }}
@@ -2593,7 +2451,8 @@ public class Test1 extends TJC.CompiledCommand {
             initCmd(interp);
         }
         CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
-        updateVarCache(interp, 0);
+        Var.CompiledLocal[] compiledLocals =
+            TJC.initCompiledLocals(interp, callFrame, 1);
         try {
         if (objv.length != 1) {
             throw new TclNumArgsException(interp, 1, objv, "");
@@ -2605,7 +2464,7 @@ public class Test1 extends TJC.CompiledCommand {
                 // Arg 2 constant: "A"
                 objv0[0] = const0;
                 interp.resetResult();
-                tmp1 = appendVarScalar(interp, "var", objv0, varcache1, 1);
+                tmp1 = appendVarScalar(interp, "var", objv0, compiledLocals, 0);
                 interp.setResult(tmp1);
             } finally {
                 TJC.releaseObjv(interp, objv0, 1);
@@ -2614,7 +2473,6 @@ public class Test1 extends TJC.CompiledCommand {
         } catch (TclException te) {
             TJC.checkTclException(interp, te, "p");
         } finally {
-            updateVarCache(interp, 0);
             TJC.popLocalCallFrame(interp, callFrame);
         }
     }
@@ -2624,43 +2482,6 @@ public class Test1 extends TJC.CompiledCommand {
     protected void initConstants(Interp interp) throws TclException {
         const0 = TclString.newInstance("A");
         const0.preserve(); const0.preserve();
-    }
-
-    Var varcache1 = null;
-
-    protected
-    Var updateVarCache(
-        Interp interp,
-        int cacheId)
-    {
-        String part1;
-        String part2 = null;
-        int flags = 0;
-        Var lvar;
-
-        switch ( cacheId ) {
-            case 0: {
-                varcache1 = null;
-                return null;
-            }
-            case 1: {
-                part1 = "var";
-                break;
-            }
-            default: {
-                throw new TclRuntimeError("default: cacheId " + cacheId);
-            }
-        }
-
-        lvar = TJC.resolveVarScalar(interp, part1, flags);
-
-        switch ( cacheId ) {
-            case 1: {
-                varcache1 = lvar;
-                break;
-            }
-        }
-        return lvar;
     }
 } // end class Test1
 }}
@@ -2738,7 +2559,8 @@ public class Test1 extends TJC.CompiledCommand {
             initCmd(interp);
         }
         CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
-        updateVarCache(interp, 0);
+        Var.CompiledLocal[] compiledLocals =
+            TJC.initCompiledLocals(interp, callFrame, 2);
         try {
         if (objv.length != 1) {
             throw new TclNumArgsException(interp, 1, objv, "");
@@ -2750,13 +2572,13 @@ public class Test1 extends TJC.CompiledCommand {
                 // Arg 2 constant: "A"
                 objv0[0] = const0;
                 // Arg 3 variable: $s
-                tmp1 = getVarScalar(interp, "s", 0, varcache1, 1);
+                tmp1 = getVarScalar(interp, "s", compiledLocals, 0);
                 tmp1.preserve();
                 objv0[1] = tmp1;
                 // Arg 4 constant: "CD"
                 objv0[2] = const1;
                 interp.resetResult();
-                tmp1 = appendVarScalar(interp, "var", objv0, varcache2, 2);
+                tmp1 = appendVarScalar(interp, "var", objv0, compiledLocals, 1);
                 interp.setResult(tmp1);
             } finally {
                 tmp1 = objv0[1];
@@ -2769,7 +2591,6 @@ public class Test1 extends TJC.CompiledCommand {
         } catch (TclException te) {
             TJC.checkTclException(interp, te, "p");
         } finally {
-            updateVarCache(interp, 0);
             TJC.popLocalCallFrame(interp, callFrame);
         }
     }
@@ -2782,53 +2603,6 @@ public class Test1 extends TJC.CompiledCommand {
         const0.preserve(); const0.preserve();
         const1 = TclString.newInstance("CD");
         const1.preserve(); const1.preserve();
-    }
-
-    Var varcache1 = null;
-    Var varcache2 = null;
-
-    protected
-    Var updateVarCache(
-        Interp interp,
-        int cacheId)
-    {
-        String part1;
-        String part2 = null;
-        int flags = 0;
-        Var lvar;
-
-        switch ( cacheId ) {
-            case 0: {
-                varcache1 = null;
-                varcache2 = null;
-                return null;
-            }
-            case 1: {
-                part1 = "s";
-                break;
-            }
-            case 2: {
-                part1 = "var";
-                break;
-            }
-            default: {
-                throw new TclRuntimeError("default: cacheId " + cacheId);
-            }
-        }
-
-        lvar = TJC.resolveVarScalar(interp, part1, flags);
-
-        switch ( cacheId ) {
-            case 1: {
-                varcache1 = lvar;
-                break;
-            }
-            case 2: {
-                varcache2 = lvar;
-                break;
-            }
-        }
-        return lvar;
     }
 } // end class Test1
 }}

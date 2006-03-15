@@ -1,0 +1,1743 @@
+# This file tests issues related to the CallFrame.compiledLocals
+# array and the hashtable variable frame for compiled procs.
+#
+# Copyright (c) 2006 by Mo DeJong.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+#
+# RCS: @(#) $Id: compiledLocals.test,v 1.1 2006/03/15 23:07:24 mdejong Exp $
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
+
+setupJavaPackage
+package require TJC
+
+proc clocals_tjc_compiled_proc { name } {
+    global _clocals_tjc_ready
+
+    TJC::compile $name -readyvar _clocals_tjc_ready
+    vwait _clocals_tjc_ready
+    if {[lindex $_clocals_tjc_ready 0] != "OK"} {
+        puts stderr "could not compile $name : $_clocals_tjc_ready"
+    }
+    return
+}
+
+# Used to set traces on variables and determine
+# if they were fired.
+
+set compiled_local_trace_counter 0
+
+proc compiled_local_trace_counter { args } {
+    global compiled_local_trace_counter
+    incr compiled_local_trace_counter
+}
+
+
+test compiledLocals-1.0 {uncompiled proc} {
+    list [catch {testvarframe} err] $err
+} {1 {can't be invoked from global scope}}
+
+test compiledLocals-1.1 {uncompiled proc} {
+    proc clocals_test11 {} {
+        testvarframe
+    }
+    clocals_test11
+} {localTable is null
+compiledLocals is null
+compiledLocals.resolved is null
+}
+
+test compiledLocals-1.2 {uncompiled proc} {
+    proc clocals_test12 {A} {
+        testvarframe
+    }
+    clocals_test12 1
+} {localTable is {
+A
+}
+compiledLocals is null
+compiledLocals.resolved is null
+}
+
+test compiledLocals-1.3 {uncompiled proc} {
+    proc clocals_test13 {} {
+        set A 1
+        testvarframe
+    }
+    clocals_test13
+} {localTable is {
+A
+}
+compiledLocals is null
+compiledLocals.resolved is null
+}
+
+test compiledLocals-1.4 {uncompiled proc} {
+    proc clocals_test14 {} {
+        set A 1
+        set B 2
+        testvarframe
+    }
+    clocals_test14
+} {localTable is {
+A
+B
+}
+compiledLocals is null
+compiledLocals.resolved is null
+}
+
+test compiledLocals-1.5 {uncompiled proc} {
+    catch {unset UNDEF}
+    proc clocals_test15 {} {
+        global UNDEF
+        testvarframe
+    }
+    clocals_test15
+} {localTable is {
+UNDEFINED UNDEF -> ::UNDEF
+}
+compiledLocals is null
+compiledLocals.resolved is null
+}
+
+test compiledLocals-1.6 {uncompiled proc} {
+    catch {unset DEFINED}
+    proc clocals_test16 {} {
+        global DEFINED
+        set DEFINED 1
+        testvarframe
+    }
+    clocals_test16
+} {localTable is {
+DEFINED -> ::DEFINED
+}
+compiledLocals is null
+compiledLocals.resolved is null
+}
+
+test compiledLocals-1.7 {uncompiled proc} {
+    catch {unset ARR}
+    set ARR(one) 1
+    proc clocals_test17 {} {
+        global ARR
+        testvarframe
+    }
+    clocals_test17
+} {localTable is {
+ARR() -> ::ARR
+}
+compiledLocals is null
+compiledLocals.resolved is null
+}
+
+
+# Note, these test are numbered in increasing order
+# because of a bug in the TclClassLoader when combined
+# with TJC::compile where a compiled command can't
+# be compiled twice.
+
+test compiledLocals-2.1 {compiled proc} {
+    proc clocals_test21 {} {
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test21
+    clocals_test21
+} {localTable is null
+compiledLocals is null
+compiledLocals.resolved is null
+}
+
+test compiledLocals-2.2 {compiled proc} {
+    proc clocals_test22 {A} {
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test22
+    clocals_test22 1
+} {localTable is null
+compiledLocals is {
+A
+}
+compiledLocals.resolved is {
+A
+}
+}
+
+test compiledLocals-2.3 {compiled proc} {
+    proc clocals_test23 {} {
+        set A 1
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test23
+    clocals_test23
+} {localTable is null
+compiledLocals is {
+A
+}
+compiledLocals.resolved is {
+A
+}
+}
+
+test compiledLocals-2.4 {compiled proc} {
+    proc clocals_test24 {} {
+        set A 1
+        set B 2
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test24
+    clocals_test24
+} {localTable is null
+compiledLocals is {
+A
+B
+}
+compiledLocals.resolved is {
+A
+B
+}
+}
+
+test compiledLocals-2.5 {compiled proc} {
+    # This test shows that a compiled local
+    # is allocated for the global variable
+    # link, but it is not resolved since
+    # the variable is undefined. Note also
+    # that the local table is not initialized.
+    catch {unset UNDEF}
+    proc clocals_test25 {} {
+        global UNDEF
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test25
+    clocals_test25
+} {localTable is null
+compiledLocals is {
+UNDEFINED UNDEF -> ::UNDEF
+}
+compiledLocals.resolved is {
+null
+}
+}
+
+test compiledLocals-2.6 {compiled proc} {
+    # This test shows that setting an
+    # undefined scalar that is linked to
+    # a global variable will resolve
+    # the compiledLocal ref to the scalar.
+    catch {unset DEFINED}
+    proc clocals_test26 {} {
+        global DEFINED
+        set DEFINED 1
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test26
+    clocals_test26
+} {localTable is null
+compiledLocals is {
+DEFINED -> ::DEFINED
+}
+compiledLocals.resolved is {
+DEFINED
+}
+}
+
+test compiledLocals-2.7 {compiled proc} {
+    # A variable set at runtime does
+    # not init a compiledLocals slot.
+    # Variable get here requires a lookup
+    # and does not move the variable
+    # into a compiledLocal slot.
+    proc clocals_test27 {} {
+        eval {set i 0}
+        set i
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test27
+    clocals_test27
+} {localTable is {
+i
+}
+compiledLocals is {
+null
+}
+compiledLocals.resolved is {
+null
+}
+}
+
+test compiledLocals-2.8 {compiled proc} {
+    # A variable set at runtime will be
+    # placed in the local table. Setting
+    # it again via a compiled set command
+    # will move the variable into a
+    # compiledLocal slot.
+    proc clocals_test28 {} {
+        eval {set i 0}
+        set i 1
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test28
+    clocals_test28
+} {localTable is {
+}
+compiledLocals is {
+i
+}
+compiledLocals.resolved is {
+i
+}
+}
+
+test compiledLocals-2.9 {compiled proc} {
+    # Unsetting a local table variable
+    proc clocals_test29 {} {
+        eval {set i 0}
+        eval {unset i}
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test29
+    clocals_test29
+} {localTable is {
+}
+compiledLocals is null
+compiledLocals.resolved is null
+}
+
+test compiledLocals-2.10 {compiled proc} {
+    # Unsetting a compiled local variable.
+    # This implementation make sure to
+    # use the runtime unset command, in
+    # case the unset command is inlined.
+    proc clocals_test210 {} {
+        set i 0
+        eval {unset i}
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test210
+    clocals_test210
+} {localTable is null
+compiledLocals is {
+null
+}
+compiledLocals.resolved is {
+null
+}
+}
+
+test compiledLocals-2.11 {compiled proc} {
+    # Unsetting a compiled local variable.
+    proc clocals_test211 {} {
+        set i 0
+        unset i
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test211
+    clocals_test211
+} {localTable is null
+compiledLocals is {
+null
+}
+compiledLocals.resolved is {
+null
+}
+}
+
+test compiledLocals-2.12 {compiled proc} {
+    # Unsetting a compiled local variable.
+    proc clocals_test212 {} {
+        set i 0
+        unset i
+        set i 1
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test212
+    clocals_test212
+} {localTable is null
+compiledLocals is {
+i
+}
+compiledLocals.resolved is {
+i
+}
+}
+
+
+
+
+test compiledLocals-3.0 {compiled proc} {
+    # Variable set via foreach is placed
+    # in the compiledLocals array.
+    proc clocals_test30 {} {
+        foreach V1 {1} {}
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test30
+    clocals_test30
+} {localTable is null
+compiledLocals is {
+V1
+}
+compiledLocals.resolved is {
+V1
+}
+}
+
+test compiledLocals-3.1 {compiled proc} {
+    # Variable set via catch is placed
+    # into the compiledLocals array.
+    proc clocals_test31 {} {
+        catch {} ERR
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test31
+    clocals_test31
+} {localTable is null
+compiledLocals is {
+ERR
+}
+compiledLocals.resolved is {
+ERR
+}
+}
+
+test compiledLocals-3.2 {compiled proc} {
+    # Use [info locals] to check that
+    # compiled locals are being returned.
+    proc clocals_test32 {} {
+        set i 0
+        set j 1
+        info locals
+    }
+    clocals_tjc_compiled_proc clocals_test32
+    lsort -dictionary [clocals_test32]
+} {i j}
+
+test compiledLocals-3.3 {compiled proc} {
+    # Use [info locals] to check that
+    # compiled locals are being returned.
+    proc clocals_test33 {} {
+        set i 0
+        set j 1
+        eval {set k 2}
+        info locals
+    }
+    clocals_tjc_compiled_proc clocals_test33
+    lsort -dictionary [clocals_test33]
+} {i j k}
+
+test compiledLocals-3.4 {compiled proc} {
+    # Use [info locals] to check that
+    # compiled locals are being returned.
+    proc clocals_test34 {} {
+        set i 0
+        set j 1
+        eval {set k 2}
+        unset j
+        info locals
+    }
+    clocals_tjc_compiled_proc clocals_test34
+    lsort -dictionary [clocals_test34]
+} {i k}
+
+
+test compiledLocals-4.0 {link vars} {
+    # global command will create a compiled
+    # local scalar for a defined global.
+    set DEFINED 1
+    proc clocals_test40 {} {
+        global DEFINED
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test40
+    clocals_test40
+} {localTable is null
+compiledLocals is {
+DEFINED -> ::DEFINED
+}
+compiledLocals.resolved is {
+DEFINED
+}
+}
+
+test compiledLocals-4.1 {link vars} {
+    # Invoking the global command twice for
+    # the same variable name will be a no-op.
+    set DEFINED 1
+    proc clocals_test41 {} {
+        global DEFINED
+        global DEFINED
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test41
+    clocals_test41
+} {localTable is null
+compiledLocals is {
+DEFINED -> ::DEFINED
+}
+compiledLocals.resolved is {
+DEFINED
+}
+}
+
+test compiledLocals-4.2 {link vars} {
+    # Invoke global command at runtime,
+    # this will create an undefined link var
+    # in the local table.
+    set DEFINED 1
+    proc clocals_test42 {} {
+        eval {global DEFINED}
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test42
+    clocals_test42
+} {localTable is {
+DEFINED -> ::DEFINED
+}
+compiledLocals is null
+compiledLocals.resolved is null
+}
+
+test compiledLocals-4.3 {link vars} {
+    # Invoke global command at runtime to
+    # add a link var to the local table. Then
+    # invoke a compiled version of the
+    # global command. The second invocation
+    # is a no-op upvar redefine since the
+    # link from and link to vars are the same.
+
+    set DEFINED 1
+    proc clocals_test43 {} {
+        eval {global DEFINED}
+        global DEFINED
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test43
+    clocals_test43
+} {localTable is {
+DEFINED -> ::DEFINED
+}
+compiledLocals is {
+null
+}
+compiledLocals.resolved is {
+null
+}
+}
+
+test compiledLocals-4.4 {link vars} {
+    # Invoke upvar to link var into the
+    # global scope. Currently, upvar is not
+    # compiled so it does not create a
+    # compiled local.
+    catch {unset UNDEF}
+    proc clocals_test44 {} {
+        upvar #0 UNDEF lvar
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test44
+    clocals_test44
+} {localTable is {
+UNDEFINED lvar -> ::UNDEF
+}
+compiledLocals is null
+compiledLocals.resolved is null
+}
+
+test compiledLocals-4.5 {link vars} {
+    # Invoke upvar to create a link var in
+    # the local table.
+    proc clocals_test45 {} {
+        set V1 0
+        upvar 0 V1 V2
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test45
+    clocals_test45
+} {localTable is {
+V2 -> V1
+}
+compiledLocals is {
+V1
+}
+compiledLocals.resolved is {
+V1
+}
+}
+
+test compiledLocals-4.6 {link vars} {
+    # Invoke upvar to create a link var in
+    # the local table, then invoke set
+    # to move the link var from the local
+    # table to the compiledLocal array.
+    proc clocals_test46 {} {
+        set V1 0
+        upvar 0 V1 V2
+        set V2 1
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test46
+    clocals_test46
+} {localTable is {
+}
+compiledLocals is {
+V1
+V2 -> V1
+}
+compiledLocals.resolved is {
+V1
+V1
+}
+}
+
+test compiledLocals-4.7 {link vars} {
+    # Invoke upvar to create a link var in
+    # the local table, then invoke set
+    # to move the link var from the local
+    # table to the compiledLocal array.
+    proc clocals_test47 {} {
+        set V1 0
+        upvar 0 V1 V2
+        upvar 0 V2 V3
+        set V3 1
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test47
+    clocals_test47
+} {localTable is {
+V2 -> V1
+}
+compiledLocals is {
+V1
+V3 -> V1
+}
+compiledLocals.resolved is {
+V1
+V1
+}
+}
+
+test compiledLocals-4.8 {link vars} {
+    # Invoke upvar to create a link var
+    # to an array element.
+    proc clocals_test48 {} {
+        set ARR(one) 1
+        upvar 0 ARR(one) var
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test48
+    clocals_test48
+} {localTable is {
+var -> ?()
+ARR()
+}
+compiledLocals is null
+compiledLocals.resolved is null
+}
+
+test compiledLocals-4.9 {link vars} {
+    # Invoke upvar to create a link var
+    # to an array element then set it
+    # to bring the link var into the
+    # compiledLocals array. The resolved
+    # ref should not be set since the
+    # link to var is not a scalar.
+    proc clocals_test49 {} {
+        set ARR(one) 1
+        upvar 0 ARR(one) var
+        set var 2
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test49
+    clocals_test49
+} {localTable is {
+ARR()
+}
+compiledLocals is {
+var -> ?()
+}
+compiledLocals.resolved is {
+null
+}
+}
+
+test compiledLocals-4.10 {link vars} {
+    # Upvar link to local variable that
+    # does not exist is valid.
+    proc clocals_test410 {} {
+        upvar 0 notyet var
+        set var 2
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test410
+    clocals_test410
+} {localTable is {
+notyet
+}
+compiledLocals is {
+var -> notyet
+}
+compiledLocals.resolved is {
+notyet
+}
+}
+
+test compiledLocals-4.11 {link vars} {
+    # Create 2 local variables
+    # that link to the same
+    # global scalar variable.
+
+    catch {unset DEFINED}
+    set DEFINED 1
+    proc clocals_test411 {} {
+        upvar #0 DEFINED var1
+        upvar #0 DEFINED var2
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test411
+    clocals_test411
+} {localTable is {
+var1 -> ::DEFINED
+var2 -> ::DEFINED
+}
+compiledLocals is null
+compiledLocals.resolved is null
+}
+
+test compiledLocals-4.12 {link vars} {
+    # Create upvar link to a global
+    # variable, then redirect the
+    # upvar link to a local scalar.
+    # This checks for the link var
+    # in same table special case
+    # in Var.deleteVar().
+    # This proc is not compiled.
+
+    proc clocals_test412 {} {
+        upvar 0 dummy_local1 var1
+        upvar 0 dummy_local2 var1
+        testvarframe
+    }
+    clocals_test412
+} {localTable is {
+UNDEFINED var1 -> dummy_local2
+UNDEFINED dummy_local2
+}
+compiledLocals is null
+compiledLocals.resolved is null
+}
+
+test compiledLocals-4.13 {link vars} {
+    # Create upvar link to a global
+    # variable, then redirect the
+    # upvar link to a local scalar.
+    # This checks for the link var
+    # in same table special case
+    # in Var.deleteVar().
+    # This proc is compiled.
+
+    proc clocals_test413 {} {
+        upvar 0 dummy_local1 var1
+        upvar 0 dummy_local2 var1
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test413
+    clocals_test413
+} {localTable is {
+UNDEFINED var1 -> dummy_local2
+UNDEFINED dummy_local2
+}
+compiledLocals is null
+compiledLocals.resolved is null
+}
+
+test compiledLocals-4.14 {link vars} {
+    # Create upvar link to a global
+    # variable, then redirect the
+    # upvar link to a local scalar.
+    # This checks for the link var
+    # in same table special case
+    # in Var.deleteVar().
+    # This proc is compiled.
+
+    proc clocals_test414 {} {
+        set dummy_local1 1
+        set dummy_local2 2
+        upvar 0 dummy_local1 var1
+        upvar 0 dummy_local2 var1
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test414
+    clocals_test414
+} {localTable is {
+var1 -> dummy_local2
+}
+compiledLocals is {
+dummy_local1
+dummy_local2
+}
+compiledLocals.resolved is {
+dummy_local1
+dummy_local2
+}
+}
+
+test compiledLocals-4.15 {link vars} {
+    # Create upvar link to a global
+    # variable, then redirect the
+    # upvar link to a local scalar.
+    # This proc is not compiled.
+
+    catch {unset DEFINED}
+    set DEFINED 1
+    proc clocals_test415 {} {
+        upvar #0 DEFINED var1
+        upvar 0 dummy_local var1
+        testvarframe
+    }
+    clocals_test415
+} {localTable is {
+UNDEFINED var1 -> dummy_local
+UNDEFINED dummy_local
+}
+compiledLocals is null
+compiledLocals.resolved is null
+}
+
+test compiledLocals-4.16 {link vars} {
+    # Create upvar link to a global
+    # variable, then redirect the
+    # upvar link to a local scalar
+    # in the compiledLocals array.
+    # This proc is compiled.
+
+    catch {unset DEFINED}
+    set DEFINED 1
+    proc clocals_test416 {} {
+        set L1 1
+        upvar #0 DEFINED var1
+        upvar 0 L1 var1
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test416
+    clocals_test416
+} {localTable is {
+var1 -> L1
+}
+compiledLocals is {
+L1
+}
+compiledLocals.resolved is {
+L1
+}
+}
+
+test compiledLocals-4.17 {link vars} {
+    # Create upvar link to a local
+    # variable in the compiledLocals
+    # array. Then redirect to another
+    # local variable in the compiled
+    # locals array.
+    # This proc is compiled.
+
+    proc clocals_test417 {} {
+        set L1 1
+        set L2 2
+        upvar 0 L1 var1
+        upvar 0 L2 var1
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test417
+    clocals_test417
+} {localTable is {
+var1 -> L2
+}
+compiledLocals is {
+L1
+L2
+}
+compiledLocals.resolved is {
+L1
+L2
+}
+}
+
+test compiledLocals-4.18 {link vars} {
+    # Upvar can't replace an existing
+    # local var. This proc is not compiled.
+
+    proc clocals_test418 {} {
+        set L1 1
+        upvar 0 dummy L1
+    }
+    list [catch {clocals_test418} err] $err
+} {1 {variable "L1" already exists}}
+
+test compiledLocals-4.19 {link vars} {
+    # Upvar can't replace an existing
+    # local var. This proc is compiled.
+
+    proc clocals_test419 {} {
+        set L1 1
+        upvar 0 dummy L1
+    }
+    clocals_tjc_compiled_proc clocals_test419
+    list [catch {clocals_test419} err] $err
+} {1 {variable "L1" already exists}}
+
+test compiledLocals-4.20 {link vars} {
+    # Create upvar link to a global
+    # variable, then create a second
+    # upvar link to the same global.
+    # Then, replace the second link
+    # with a link to a compiled local.
+    # This proc is compiled.
+
+    catch {unset DEFINED}
+    set DEFINED 1
+
+    proc clocals_test420 {} {
+        set L1 "HI"
+        upvar #0 DEFINED var
+        upvar #0 DEFINED local_ref
+        upvar 0 L1 local_ref
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test420
+    clocals_test420
+} {localTable is {
+var -> ::DEFINED
+local_ref -> L1
+}
+compiledLocals is {
+L1
+}
+compiledLocals.resolved is {
+L1
+}
+}
+
+test compiledLocals-4.21 {link vars} {
+    # global command creates a linked
+    # from var in the local table.
+    catch {unset DEFINED}
+    set DEFINED YES
+    proc clocals_test421 {} {
+        global DEFINED
+        testvarframe
+    }
+    clocals_test421
+} {localTable is {
+DEFINED -> ::DEFINED
+}
+compiledLocals is null
+compiledLocals.resolved is null
+}
+
+test compiledLocals-4.22 {link vars} {
+    # global command creates a linked from
+    # var in the local table.
+    # This linked from var is marked
+    # as undefined if the global is unset.
+    catch {unset DEFINED}
+    set DEFINED YES
+    proc clocals_test422 {} {
+        global DEFINED
+        namespace eval :: {unset DEFINED}
+        testvarframe
+    }
+    clocals_test422
+} {localTable is {
+UNDEFINED DEFINED -> ::DEFINED
+}
+compiledLocals is null
+compiledLocals.resolved is null
+}
+
+test compiledLocals-4.23 {link vars} {
+    # global command creates a linked from
+    # var in the compiled local array.
+    catch {unset DEFINED}
+    set DEFINED YES
+    proc clocals_test423 {} {
+        global DEFINED
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test423
+    clocals_test423
+} {localTable is null
+compiledLocals is {
+DEFINED -> ::DEFINED
+}
+compiledLocals.resolved is {
+DEFINED
+}
+}
+
+test compiledLocals-4.24 {link vars} {
+    # Unsetting the linked to var
+    # linked from a compiled local.
+    # This shows how the unset flag is
+    # set on the CompiledLocal.resolved
+    # var. It is not possible to null
+    # out the resolved var since the
+    # linked to var has no pointer back
+    # to the linked from var.
+    catch {unset DEFINED}
+    set DEFINED YES
+    proc clocals_test424 {} {
+        global DEFINED
+        namespace eval :: {unset DEFINED}
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test424
+    clocals_test424
+} {localTable is null
+compiledLocals is {
+UNDEFINED DEFINED -> ::DEFINED
+}
+compiledLocals.resolved is {
+UNDEFINED DEFINED
+}
+}
+
+test compiledLocals-4.25 {link vars} {
+    # Unsetting the linked to var
+    # linked from a compiled local
+    # and then setting it again
+    # should update the global.
+    catch {unset DEFINED}
+    set DEFINED YES
+    proc clocals_test425 {} {
+        global DEFINED
+        namespace eval :: {unset DEFINED}
+        set DEFINED RESET
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test425
+    clocals_test425
+} {localTable is null
+compiledLocals is {
+DEFINED -> ::DEFINED
+}
+compiledLocals.resolved is {
+DEFINED
+}
+}
+
+test compiledLocals-4.26 {link vars} {
+    # Unsetting the linked from
+    # var should unset the linked
+    # to var but keep the link from
+    # Var in the compiled locals array.
+
+    catch {unset DEFINED}
+    set DEFINED YES
+    proc clocals_test426 {} {
+        global DEFINED
+        unset DEFINED
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test426
+    clocals_test426
+} {localTable is null
+compiledLocals is {
+UNDEFINED DEFINED -> ::DEFINED
+}
+compiledLocals.resolved is {
+UNDEFINED DEFINED
+}
+}
+
+
+test compiledLocals-5.0 {local array variables} {
+    proc clocals_test50 {} {
+        set ARR(one) 1
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test50
+    clocals_test50
+} {localTable is {
+ARR()
+}
+compiledLocals is null
+compiledLocals.resolved is null
+}
+
+test compiledLocals-5.1 {local array variables} {
+    # use local table when uncompiled
+    catch {unset ARR}
+    set ARR(one) 1
+    proc clocals_test51 {} {
+        global ARR
+        testvarframe
+    }
+    clocals_test51
+} {localTable is {
+ARR() -> ::ARR
+}
+compiledLocals is null
+compiledLocals.resolved is null
+}
+
+test compiledLocals-5.2 {local array variables} {
+    # This test should show how an array
+    # is moved into the compiledLocal array,
+    # but that is not implemented yet.
+    catch {unset ARR}
+    set ARR(one) 1
+    proc clocals_test52 {} {
+        global ARR
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test52
+    clocals_test52
+} {localTable is {
+ARR() -> ::ARR
+}
+compiledLocals is {
+null
+}
+compiledLocals.resolved is {
+null
+}
+}
+
+test compiledLocals-5.3 {local array variables} {
+    # This test should show how a local array
+    # variable can be linked to via upvar.
+    proc clocals_test53 {} {
+        set arr(one) 1
+        upvar 0 arr var
+        set var(one) 2
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test53
+    clocals_test53
+} {localTable is {
+var() -> arr
+arr()
+}
+compiledLocals is null
+compiledLocals.resolved is null
+}
+
+
+
+
+test compileLocals-6.0 {var traces} {
+    # Setting a trace on a compiled
+    # local should null out the
+    # resolved field for the compiled
+    # local. The code can't set the
+    # NO_CACHE flag here since the
+    # compiled local resolves to
+    # itself and the NO_CACHE flag
+    # is only checked on link vars.
+
+    proc clocals_test60 {} {
+        set V1 0
+        trace variable V1 w compiled_local_trace_counter
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test60
+    clocals_test60
+} {localTable is null
+compiledLocals is {
+V1
+}
+compiledLocals.resolved is {
+null
+}
+}
+
+test compileLocals-6.1 {var traces} {
+    # This test checks that traces
+    # are fired for variables. The
+    # compiled var impl should not
+    # use the CompiledLocal.resolved
+    # ref when a trace is set on a
+    # variable. The second set should
+    # not reset the resolved ref
+    # since the var has traces.
+
+    set compiled_local_trace_counter 0
+
+    proc clocals_test61 {} {
+        set V1 0
+        trace variable V1 w compiled_local_trace_counter
+        set V1 2
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test61
+    list [clocals_test61] $compiled_local_trace_counter
+} {{localTable is null
+compiledLocals is {
+V1
+}
+compiledLocals.resolved is {
+null
+}
+} 1}
+
+test compileLocals-6.2 {var traces} {
+    # This test checks that setting
+    # a variable that exists in the
+    # local table but has traces,
+    # will result in a compiled
+    # local without a resolved ref.
+
+    set compiled_local_trace_counter 0
+
+    proc clocals_test62 {} {
+        eval {set V1 0}
+        trace variable V1 w compiled_local_trace_counter
+        set V1 2
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test62
+    list [clocals_test62] $compiled_local_trace_counter
+} {{localTable is {
+}
+compiledLocals is {
+V1
+}
+compiledLocals.resolved is {
+null
+}
+} 1}
+
+test compileLocals-6.3 {var traces} {
+    # This test checks that a read
+    # trace is run when a compiled
+    # local is read. The read trace
+    # was set when the var did not
+    # exist, so it is created in the
+    # local table.
+
+    set compiled_local_trace_counter 0
+
+    proc clocals_test63 {} {
+        trace variable V1 r compiled_local_trace_counter
+        set V1 0
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test63
+    list [clocals_test63] $compiled_local_trace_counter
+} {{localTable is {
+}
+compiledLocals is {
+V1
+}
+compiledLocals.resolved is {
+null
+}
+} 0}
+
+test compileLocals-6.4 {var traces} {
+    # This test checks that a read
+    # trace is run when a compiled
+    # local is read from a set
+    # command executed at runtime.
+
+    set compiled_local_trace_counter 0
+
+    proc clocals_test64 {} {
+        trace variable V1 r compiled_local_trace_counter
+        set V1 0
+        eval {set V1}
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test64
+    list [clocals_test64] $compiled_local_trace_counter
+} {{localTable is {
+}
+compiledLocals is {
+V1
+}
+compiledLocals.resolved is {
+null
+}
+} 1}
+
+test compileLocals-6.5 {var traces} {
+    # This test checks that a read
+    # trace that defines a global
+    # variable is run when a variable
+    # is accessed. The global needs
+    # to be defined for clocals_test65
+    # to finish without an error.
+
+    catch {unset clocals_test65_trace_var}
+
+    proc clocals_test65_trace { args } {
+        global clocals_test65_trace_var
+        set clocals_test65_trace_var 1
+    }
+
+    proc clocals_test65 {} {
+        upvar #0 clocals_test65_trace_var var
+        trace variable var r clocals_test65_trace
+        set var
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test65
+    clocals_test65
+} {localTable is {
+var -> ::clocals_test65_trace_var
+}
+compiledLocals is {
+null
+}
+compiledLocals.resolved is {
+null
+}
+}
+
+test compileLocals-6.6 {var traces} {
+    # This test checks that a write
+    # trace is run when a compiled
+    # local linked to a global
+    # is set. The scalar set code
+    # must check for an invalid
+    # link to resolved link for this
+    # to work.
+
+    set compiled_local_trace_counter 0
+    set clocals_test66_var YES
+
+    proc clocals_test66 {} {
+        global clocals_test66_var
+        namespace eval :: {
+            trace variable clocals_test66_var w compiled_local_trace_counter
+        }
+        set clocals_test66_var NO
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test66
+    list [clocals_test66] $compiled_local_trace_counter
+} {{localTable is null
+compiledLocals is {
+clocals_test66_var -> ::clocals_test66_var
+}
+compiledLocals.resolved is {
+null
+}
+} 1}
+
+test compileLocals-6.7 {var traces} {
+    # This test checks that a read
+    # trace is run when a compiled
+    # local linked to a global
+    # is read. The scalar get code
+    # must check for an invalid
+    # link to resolved link for this
+    # to work.
+
+    set compiled_local_trace_counter 0
+    set clocals_test67_var YES
+
+    proc clocals_test67 {} {
+        global clocals_test67_var
+        namespace eval :: {
+            trace variable clocals_test67_var r compiled_local_trace_counter
+        }
+        list $clocals_test67_var
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test67
+    list [clocals_test67] $compiled_local_trace_counter
+} {{localTable is null
+compiledLocals is {
+clocals_test67_var -> ::clocals_test67_var
+}
+compiledLocals.resolved is {
+null
+}
+} 1}
+
+test compileLocals-6.8 {var traces} {
+    # This test checks for the NO_CACHE
+    # flag in the CompiledLocal.resolved
+    # field. This flag is only set for
+    # a linked var that was resolved
+    # and then had traces set. In this
+    # case the global command resolves
+    # the variable, then it is made
+    # invalid by the trace command.
+
+    set compiled_local_trace_counter 0
+    set clocals_test68_var YES
+
+    proc clocals_test68 {} {
+        global clocals_test68_var
+        namespace eval :: {
+            trace variable clocals_test68_var r compiled_local_trace_counter
+        }
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test68
+    list [clocals_test68] $compiled_local_trace_counter
+} {{localTable is null
+compiledLocals is {
+clocals_test68_var -> ::clocals_test68_var
+}
+compiledLocals.resolved is {
+clocals_test68_var NO_CACHE
+}
+} 0}
+
+
+test compileLocals-7.0 {scoped variable names} {
+    # This test shows how a global variable
+    # can be accessed from inside a proc
+    # using the scoped var resolution syntax.
+    # This proc is uncompiled.
+
+    set clocals_test70_var 1
+
+    proc clocals_test70 {} {
+        list $::clocals_test70_var
+        testvarframe
+    }
+    clocals_test70
+} {localTable is null
+compiledLocals is null
+compiledLocals.resolved is null
+}
+
+test compileLocals-7.1 {scoped variable names} {
+    # This test shows how a global variable
+    # can be accessed from inside a proc
+    # using the scoped var resolution syntax.
+
+    set clocals_test71_var 1
+
+    proc clocals_test71 {} {
+        list $::clocals_test71_var
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test71
+    clocals_test71
+} {localTable is null
+compiledLocals is {
+Non-Local ::clocals_test71_var -> ::clocals_test71_var
+}
+compiledLocals.resolved is {
+clocals_test71_var
+}
+}
+
+test compileLocals-7.2 {scoped variable names} {
+    # This test shows how a global variable
+    # can be set from inside a proc
+    # using the scoped var resolution syntax.
+
+    set clocals_test72_var 1
+
+    proc clocals_test72 {} {
+        set ::clocals_test72_var VALUE
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test72
+    clocals_test72
+} {localTable is null
+compiledLocals is {
+Non-Local ::clocals_test72_var -> ::clocals_test72_var
+}
+compiledLocals.resolved is {
+clocals_test72_var
+}
+}
+
+test compileLocals-7.3 {scoped variable names} {
+    # Use global command to replace a compiled
+    # local link var with another link var.
+
+    namespace eval ::ONE { set VAR 1 }
+    namespace eval ::TWO { set VAR 1 }
+
+    proc clocals_test73 {} {
+        global ::ONE::VAR
+        global ::TWO::VAR
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test73
+    set results [clocals_test73]
+    namespace delete ONE TWO
+    set results
+} {localTable is null
+compiledLocals is {
+VAR -> ::TWO::VAR
+}
+compiledLocals.resolved is {
+VAR
+}
+}
+
+test compileLocals-7.4 {scoped variable names} {
+    # This test uses info local to make sure
+    # that the non-local compiledLocals var
+    # is not returned.
+
+    set clocals_test74_var 1
+
+    proc clocals_test74 {} {
+        set ::clocals_test74_var VALUE
+        set j 0
+        eval {set k 2}
+        info locals
+    }
+    clocals_tjc_compiled_proc clocals_test74
+    lsort [clocals_test74]
+} {j k}
+
+test compileLocals-7.5 {scoped variable names} {
+    # This test check that a local and a
+    # scoped global with the exact same
+    # name is handled properly.
+
+    catch {unset DEFINED}
+    set DEFINED 1
+
+    proc clocals_test75 {} {
+        set DEFINED 2
+        set ::DEFINED 3
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test75
+    clocals_test75
+} {localTable is null
+compiledLocals is {
+DEFINED
+Non-Local ::DEFINED -> ::DEFINED
+}
+compiledLocals.resolved is {
+DEFINED
+DEFINED
+}
+}
+
+test compileLocals-7.6 {scoped variable names} {
+    # Scoped scalar name that is a relative
+    # namespace qualifier. This type is not
+    # added to the compiled locals.
+
+    namespace eval ::ONE {
+        set V1 0
+        set V2 0
+    }
+
+    proc clocals_test76 {} {
+        set ONE::V1 1
+        set ONE::V2
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test76
+    set results [clocals_test76]
+    namespace delete ONE
+    set results
+} {localTable is null
+compiledLocals is null
+compiledLocals.resolved is null
+}
+
+test compileLocals-7.7 {scoped variable names} {
+    # A scoped scalar variable is accessed
+    # and then unset and set again. The last
+    # set command should resolve the
+    # scoped scalar to the newly set var.
+
+    namespace eval ::ONE { set VAR 1 }
+
+    proc clocals_test77 {} {
+        set ::ONE::VAR
+        namespace eval ::ONE {
+            unset VAR
+            set VAR 2
+        }
+        set ::ONE::VAR 1
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test77
+    set results [clocals_test77]
+    namespace delete ONE
+    set results
+} {localTable is null
+compiledLocals is {
+Non-Local ::ONE::VAR -> ::ONE::VAR
+}
+compiledLocals.resolved is {
+VAR
+}
+}
+
+test compileLocals-7.8 {scoped variable names} {
+    # A scoped scalar variable is accessed
+    # relative to the current namespace.
+
+    namespace eval ::ONE {
+        namespace eval child1 {
+            set V1 9
+        }
+    }
+
+    proc ::ONE::clocals_test78 {} {
+        set child1::V1
+        testvarframe
+    }
+    clocals_tjc_compiled_proc ::ONE::clocals_test78
+    set results [::ONE::clocals_test78]
+    namespace delete ::ONE
+    set results
+} {localTable is null
+compiledLocals is null
+compiledLocals.resolved is null
+}
+
+
+
+
+test compileLocals-8.0 {upvar to local vars in caller frame} {
+    # This test invokes a subcommand
+    # which creates an upvar link
+    # into the calling frame. The
+    # var V1 in the calling frame
+    # is then unset.
+
+    proc clocals_test80 {} {
+        set V1 "zero"
+        clocals_test80_sub
+        testvarframe
+    }
+    proc clocals_test80_sub {} {
+        upvar 1 V1 local
+        uplevel 1 {unset V1}
+        uplevel 1 testvarframe
+    }
+
+    clocals_test80
+} {localTable is {
+}
+compiledLocals is null
+compiledLocals.resolved is null
+}
+
+test compileLocals-8.1 {upvar to local vars in caller frame} {
+    # This test invokes a subcommand
+    # which creates an upvar link
+    # into the calling frame. The
+    # var V1 in the calling frame
+    # is unset when the link var
+    # is unset in the calling frame.
+
+    # If the Var class was able to
+    # set its own compiled local to
+    # null, then this would show
+    # null values instead of UNDEFINED.
+
+    proc clocals_test81 {} {
+        set V1 "zero"
+        clocals_test81_sub
+        testvarframe
+    }
+    proc clocals_test81_sub {} {
+        upvar 1 V1 local
+        unset local
+    }
+
+    clocals_tjc_compiled_proc clocals_test81
+    clocals_test81
+} {localTable is null
+compiledLocals is {
+UNDEFINED V1
+}
+compiledLocals.resolved is {
+UNDEFINED V1
+}
+}
+
+test compileLocals-8.2 {upvar to local vars in caller frame} {
+    # This test invokes a subcommand
+    # which creates an upvar link
+    # into the calling frame. The
+    # var V1 in the calling frame
+    # is then unset via uplevel.
+
+    proc clocals_test82 {} {
+        set V1 "zero"
+        clocals_test82_sub
+        testvarframe
+    }
+    proc clocals_test82_sub {} {
+        uplevel 1 {unset V1}
+    }
+
+    clocals_tjc_compiled_proc clocals_test82
+    clocals_test82
+} {localTable is null
+compiledLocals is {
+null
+}
+compiledLocals.resolved is {
+null
+}
+}
+
+
+# Add Var ref count checks for the case where
+# a CompiledLocal is linked to another
+# CompiledLocal in the same frame. This
+# should not delete out of the same
+# frame until the refCount goes to zero.
+
+
+# FIXME: Not clear if ref count management
+# is being done correctly for compiled
+# local more testing is needed to make
+# sure that compiled local work exactly
+# like regular vars when it comes to
+# subprocs that link up into the caller
+# proc.
+
+
+
+# FIXME: Add test cases for namespace resolved
+# variables. There seems to be a problem with
+# how these interact with the compiled local
+# vars as no global or set command will put
+# the var into the compiled local table. Does
+# this mean that there is no way to cache
+# the value of the resolved var in the local table?
+
+# When testing array vars, make sure to implement
+# a compiled version of [array set FOO {one 1 two 2}]
+# that will define the array in the compiledLocals
+# array of Var values.
+
+# Might also want to create special flag that would
+# look at the container stack and see if a var
+# access is only done once outside a loop. If there
+# is only one read or write access, then a compiled
+# local does not seem all that important. Of course,
+# if the compiled local keeps from using the Hashtable
+# then that is good for performance.
+
+# cleanup
+catch {unset _clocals_tjc_ready}
+catch {rename clocals_test {}}
+
+catch {unset compiled_local_trace_counter}
+catch {rename compiled_local_trace_counter {}}
+
+# Try to kill the TJCTread thread in case it is running
+java::call tcl.lang.TJCThread terminateThread
+
+::tcltest::cleanupTests
+return
+

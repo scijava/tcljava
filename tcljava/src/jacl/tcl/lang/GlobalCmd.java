@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: GlobalCmd.java,v 1.4 2006/01/13 03:40:11 mdejong Exp $
+ * RCS: @(#) $Id: GlobalCmd.java,v 1.5 2006/03/15 23:07:22 mdejong Exp $
  *
  */
 
@@ -43,11 +43,11 @@ class GlobalCmd implements Command {
 	    String varTail = NamespaceCmd.tail(varName);
 
 	    // Link to the variable "varName" in the global :: namespace.
-	    // A local link var name varTail is defined.
+	    // A local link var named varTail is defined.
 
 	    Var.makeUpvar(interp, null,
 		varName, null, TCL.GLOBAL_ONLY,
-	        varTail, 0);
+	        varTail, 0, -1);
 	}
     }
 }

@@ -5872,34 +5872,34 @@ tmp0 = interp.getVar("a", tmp0.toString(), 0);
 tcltest::test compileproc_emit_variable-3.0 {emit cache scalar read} {
     # Read Scalar : $s
     set _compileproc(options,cache_variables) 1
-    set _compileproc_variable_cache(counter) 1
+    set _compileproc_variable_cache(counter) 0
     set vinfo {scalar s}
     emitter_indent_level zero
     set result [compileproc_emit_variable tmp0 $vinfo]
     unset _compileproc(options,cache_variables)
     unset _compileproc_variable_cache(counter)
     set result
-} {TclObject tmp0 = getVarScalar(interp, "s", 0, varcache1, 1);
+} {TclObject tmp0 = getVarScalar(interp, "s", compiledLocals, 0);
 }
 
 tcltest::test compileproc_emit_variable-3.1 {emit cache scalar read} {
     # Read array variable: $a($k)
     set _compileproc(options,cache_variables) 1
-    set _compileproc_variable_cache(counter) 1
+    set _compileproc_variable_cache(counter) 0
     emitter_indent_level zero
     set vinfo {{array scalar} {a k}}
     set result [compileproc_emit_variable tmp0 $vinfo]
     unset _compileproc(options,cache_variables)
     unset _compileproc_variable_cache(counter)
     set result
-} {TclObject tmp0 = getVarScalar(interp, "k", 0, varcache1, 1);
+} {TclObject tmp0 = getVarScalar(interp, "k", compiledLocals, 0);
 tmp0 = interp.getVar("a", tmp0.toString(), 0);
 }
 
 tcltest::test compileproc_emit_variable-3.2 {emit cache scalar read} {
     # Read array variable: $a($b($c$c))
     set _compileproc(options,cache_variables) 1
-    set _compileproc_variable_cache(counter) 1
+    set _compileproc_variable_cache(counter) 0
     emitter_indent_level zero
     set vinfo {{array word} {a {{{array word} {b {{scalar c} {scalar c}}}}}}}
     compileproc_tmpvar_reset
@@ -5910,9 +5910,9 @@ tcltest::test compileproc_emit_variable-3.2 {emit cache scalar read} {
     set result
 } {TclObject tmp0;
 StringBuffer sbtmp1 = new StringBuffer(64);
-tmp0 = getVarScalar(interp, "c", 0, varcache1, 1);
+tmp0 = getVarScalar(interp, "c", compiledLocals, 0);
 sbtmp1.append(tmp0.toString());
-tmp0 = getVarScalar(interp, "c", 0, varcache1, 1);
+tmp0 = getVarScalar(interp, "c", compiledLocals, 0);
 sbtmp1.append(tmp0.toString());
 tmp0 = interp.getVar("b", sbtmp1.toString(), 0);
 tmp0 = interp.getVar("a", tmp0.toString(), 0);

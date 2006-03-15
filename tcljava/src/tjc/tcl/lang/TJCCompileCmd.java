@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TJCCompileCmd.java,v 1.1 2006/02/14 04:13:27 mdejong Exp $
+ * RCS: @(#) $Id: TJCCompileCmd.java,v 1.2 2006/03/15 23:07:31 mdejong Exp $
  *
  */
 
@@ -190,14 +190,21 @@ public void
         StringBuffer pname = new StringBuffer(64);
         StringBuffer cname = new StringBuffer(64);
 
-        String nsName = proc.wcmd.ns.fullName;
-        if (nsName.equals("::")) {
-            pname.append(nsName);
+        if (cmd.startsWith("::")) {
+            // already fully qualified
+            pname.append(cmd);
         } else {
-            pname.append(nsName);
-            pname.append("::");
+            // make it fully qualified
+            String nsName = proc.wcmd.ns.fullName;
+
+            if (nsName.equals("::")) {
+                pname.append(nsName);
+            } else {
+                pname.append(nsName);
+                pname.append("::");
+            }
+            pname.append(NamespaceCmd.tail(cmd));
         }
-        pname.append(cmd);
 
         fullyQualifiedCmd = pname.toString();
 

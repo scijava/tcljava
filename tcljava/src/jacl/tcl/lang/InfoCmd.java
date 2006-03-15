@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: InfoCmd.java,v 1.13 2006/01/26 19:49:18 mdejong Exp $
+ * RCS: @(#) $Id: InfoCmd.java,v 1.14 2006/03/15 23:07:22 mdejong Exp $
  *
  */
 
@@ -821,12 +821,9 @@ class InfoCmd implements Command {
     {
 	Var var;
 	String varName;
-	HashMap localVarTable;
+	CallFrame frame = interp.varFrame;
 
-	localVarTable = interp.varFrame.varTable;
-
-	// Compiled locals do not exist in Jacl
-
+	HashMap localVarTable = frame.varTable;
 	if (localVarTable != null) {
 	    for (Iterator iter = localVarTable.entrySet().iterator(); iter.hasNext() ;) {
 		Map.Entry entry = (Map.Entry) iter.next();
@@ -842,6 +839,28 @@ class InfoCmd implements Command {
 		}
 	    }
 	}
+
+	Var.CompiledLocal[] compiledLocals = frame.compiledLocals;
+	if (compiledLocals != null) {
+	    final int max = compiledLocals.length;
+	    for (int i=0 ; i < max ; i++) {
+		Var.CompiledLocal clocal = compiledLocals[i];
+		if (clocal != null && clocal.isLocal) {
+                    var = clocal.var;
+                    varName = (String) var.hashKey;
+
+		    if (!var.isVarUndefined()
+		        && (includeLinks || !var.isVarLink())) {
+		        if ((pattern == null)
+		            || Util.stringMatch(varName, pattern)) {
+			    TclList.append(interp, list,
+				       TclString.newInstance(varName));
+		        }
+		    }
+                }
+	    }
+	}
+
     }
 
     /*

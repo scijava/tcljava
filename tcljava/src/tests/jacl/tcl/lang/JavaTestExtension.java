@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaTestExtension.java,v 1.5 2005/10/29 00:27:43 mdejong Exp $
+ * RCS: @(#) $Id: JavaTestExtension.java,v 1.6 2006/03/15 23:07:25 mdejong Exp $
  *
  */
 
@@ -56,8 +56,8 @@ init(
     interp.createCommand("testsetplatform",   new TestsetplatformCmd());
     interp.createCommand("testtranslatefilename",
             new TesttranslatefilenameCmd());
-    interp.createCommand("testchannel",
-            new TestChannelCmd());
+    interp.createCommand("testchannel",       new TestChannelCmd());
+    interp.createCommand("testvarframe",      new TestVarFrameCmd());
 
     // Create "testobj" and friends
     TestObjCmd.init(interp);

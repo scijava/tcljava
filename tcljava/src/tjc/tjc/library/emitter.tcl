@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: emitter.tcl,v 1.10 2006/03/10 05:01:55 mdejong Exp $
+#  RCS: @(#) $Id: emitter.tcl,v 1.11 2006/03/15 23:07:31 mdejong Exp $
 #
 #
 
@@ -659,6 +659,19 @@ proc emitter_callframe_push { ns } {
     return "[emitter_indent]CallFrame callFrame = TJC.pushLocalCallFrame(interp, $ns)\;\n"
 }
 
+proc emitter_callframe_init_compiledlocals { size } {
+    set buffer ""
+    append buffer \
+        [emitter_indent] \
+        "Var.CompiledLocal\[\] compiledLocals =\n"
+    emitter_indent_level +1
+    append buffer \
+        [emitter_indent] \
+        "TJC.initCompiledLocals(interp, callFrame, " $size ")\;\n"
+    emitter_indent_level -1
+    return $buffer
+}
+
 # Emit try statement at start of method impl block
 
 proc emitter_callframe_try {} {
@@ -671,7 +684,7 @@ proc emitter_callframe_try {} {
 # cmdProc declaration to close the try block opened by
 # emitter_callframe_try.
 
-proc emitter_callframe_pop { proc_name {clear_varcache 0} } {
+proc emitter_callframe_pop { proc_name } {
     set buffer ""
 
     append buffer \
@@ -688,11 +701,6 @@ proc emitter_callframe_pop { proc_name {clear_varcache 0} } {
         [emitter_indent] \
         "\} finally \{\n"
     emitter_indent_level +1
-    if {$clear_varcache} {
-        append buffer \
-            [emitter_indent] \
-            "updateVarCache(interp, 0)" "\;\n"
-    }
     append buffer \
         [emitter_indent] \
         "TJC.popLocalCallFrame(interp, callFrame)" "\;\n"
@@ -1310,18 +1318,19 @@ proc emitter_get_var { p1 is_p1_string p2 is_p2_string iflags } {
     return "interp.getVar($p1sym, $p2sym, $iflags)"
 }
 
-# Query a cache scalar value
+# Query a compiled local scalar value
 
-proc emitter_get_cache_scalar_var { p1 is_p1_string iflags cache_symbol cache_id } {
-    if {$p1 == "" && !$is_p1_string} {
-        error "empty string can't be a symbol"
-    }
-    if {$is_p1_string} {
-        set p1sym "\"[emitter_backslash_tcl_string $p1]\""
-    } else {
-        set p1sym $p1
-    }
-    return "getVarScalar(interp, $p1sym, $iflags, $cache_symbol, $cache_id)"
+proc emitter_get_compiled_local_scalar_var { varname array_symbol index } {
+    set buffer ""
+    append buffer \
+        "getVarScalar(interp, \"" \
+        [emitter_backslash_tcl_string $varname] \
+        "\", " \
+        $array_symbol \
+        ", " \
+        $index \
+        ")"
+    return $buffer
 }
 
 # Set a variable value.
@@ -1346,16 +1355,16 @@ proc emitter_set_var { p1 is_p1_string p2 is_p2_string value iflags } {
 
 # Set a cache scalar value
 
-proc emitter_set_cache_scalar_var { p1 is_p1_string valsym iflags cache_symbol cache_id } {
-    if {$p1 == "" && !$is_p1_string} {
-        error "empty string can't be a symbol"
-    }
-    if {$is_p1_string} {
-        set p1sym "\"[emitter_backslash_tcl_string $p1]\""
-    } else {
-        set p1sym $p1
-    }
-    return "setVarScalar(interp, $p1sym, $valsym, $iflags, $cache_symbol, $cache_id)"
+proc emitter_set_cache_scalar_var { varname valsym array_symbol index } {
+    set buffer ""
+    append buffer \
+        "setVarScalar(interp, \"" \
+        [emitter_backslash_tcl_string $varname] \
+        "\", " $valsym \
+        ", " $array_symbol \
+        ", " $index \
+        ")"
+    return $buffer
 }
 
 # Emit interp.resetResult() void statement.
@@ -1486,13 +1495,11 @@ proc emitter_control_return_argument { symbol } {
 # would be passed as an argument to the
 # global command.
 
-proc emitter_make_global_link_var { varname } {
-    set tail [namespace tail $varname]
-
+proc emitter_make_global_link_var { varname tail localIndex } {
     set jstr1 [emitter_double_quote_tcl_string $varname]
     set jstr2 [emitter_double_quote_tcl_string $tail]
 
-    return "[emitter_indent]TJC.makeGlobalLinkVar(interp, $jstr1, $jstr2)\;\n"
+    return "[emitter_indent]TJC.makeGlobalLinkVar(interp, $jstr1, $jstr2, $localIndex)\;\n"
 }
 
 # Quote a Tcl string so that it appears as a valid Java
