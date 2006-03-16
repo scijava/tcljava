@@ -1,5 +1,12 @@
 2006-03-15  Mo DeJong  <mdejong@users.sourceforge.net>
 
+        Move file to correct directory.
+
+        * src/tests/jacl/compiledLocals.test: Removed.
+        * tests/tjc/compiledLocals.test: Added.
+
+2006-03-15  Mo DeJong  <mdejong@users.sourceforge.net>
+
         Implement compiled locals for Jacl that mimic
         the C Tcl implementation. A compiled proc
         stores local and imported vars in an array
