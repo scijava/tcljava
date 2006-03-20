@@ -219,6 +219,26 @@ in situations like those shown above is always going to execute more
 quickly than a <span style="font-family: monospace;">for</span>
 command because the TJC compiler contains specific optimizations to
 cover these usages.<br>
+<br>
+Be aware that in order to compile a <span
+ style="font-family: monospace;">foreach</span> command, the variable
+name argument(s) must be either a constant string or a constant list.
+The following usages are <span style="font-weight: bold;">NOT</span>
+recommended. The variable name(s) are not known at compile time, so the
+loop body would not get compiled and the resulting code would execute
+very slowly.<br>
+<br>
+<span style="font-family: monospace;">foreach $varname {1 2 3 4 5} {<br>
+</span><span style="font-family: monospace;"><span
+ style="font-family: monospace;">&nbsp;&nbsp;&nbsp; # Very slow!</span><br>
+</span><span style="font-family: monospace;">
+}<br>
+</span><span style="font-family: monospace;">
+foreach arr($key) {1 2 3 4 5} {<br>
+</span><span style="font-family: monospace;"><span
+ style="font-family: monospace;">&nbsp;&nbsp;&nbsp; # Very slow!</span><br>
+</span><span style="font-family: monospace;">
+}</span><br>
 <h4>Constant Values In Loops<br>
 </h4>
 It is generally a good idea to initialize a local variable to the value
