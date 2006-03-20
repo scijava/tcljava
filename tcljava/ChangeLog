@@ -1,3 +1,83 @@
+2006-03-19  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        Implement compiled local array variables. Array
+        variables are now kept in the compiled local
+        array just like scalars. This change makes
+        array variable access a bit faster as it avoids
+        a hashtable lookup for each array var access.
+        This implementation mimics the C Tcl implementation
+        of compiled local vars.
+
+        * docs/TJC/optcode.html: Mention how foreach can't
+        handle non-static variable names.
+        * src/jacl/tcl/lang/Procedure.java (Procedure):
+        Make proc command generate an error if an
+        argument is an array name or a namespace
+        qualified variable.
+        * src/jacl/tcl/lang/Var.java (lookupVar, lookupArrayElement,
+        getVarPtr, setVarCompiledLocalArray, getVarCompiledLocalArray,
+        setResolvedScalarToNull): Implement compiled local
+        array variables. These are stored in the compiled local
+        array just like scalars.
+        * src/tjc/tcl/lang/TJC.java (getVarScalar, getVarArray,
+        setVarScalar, setVarArray, incrVarScalar, lappendVarScalar,
+        appendVarScalar): Add array variable methods and
+        update scalar methods to detect the case of accessing
+        a scalar as an array or vice versa.
+        * src/tjc/tjc/library/compileproc.tcl (compileproc_emit_variable,
+        compileproc_emit_scalar_variable_get,
+        compileproc_emit_scalar_variable_set, compileproc_emit_word,
+        compileproc_emit_array_variable_set, compileproc_emit_container_catch,
+        compileproc_container_catch_handler, compileproc_set_variable,
+        compileproc_get_variable, compileproc_can_inline_command_set,
+        compileproc_emit_inline_command_set,
+        compileproc_can_inline_variable_access, 
+        compileproc_get_set_nonconstant_array_variable):
+        Reimplement variable get/set code to support compiled local
+        array variables. The catch command can now set non-static
+        variable name and arrays with non-static word keys. The
+        set command was also reimplemented to support static
+        array names with non-static word keys. Rework the
+        compileproc_emit_word method so that it is possible to
+        pass in a String symbol and assign a String value to
+        it instead of creating a tmp TclString wrapper.
+        Split the var set and no var set logic from the catch
+        command into two methods to make things easier to deal with.
+        * src/tjc/tjc/library/descend.tcl (descend_container_catch_validate,
+        descend_container_catch_variable, descend_container_is_valid):
+        Rework catch command parser so that a catch command with a
+        non-static variable name is considered valid.
+        * src/tjc/tjc/library/emitter.tcl (
+        emitter_get_compiled_local_scalar_var,
+        emitter_get_compiled_local_array_var,
+        emitter_set_compiled_local_scalar_var,
+        emitter_set_compiled_local_array_var): Add methods
+        to invoke TJC methods for compiled local array variables.
+        * tests/tcl/proc.test:
+        * tests/tclbench/invoke.bench:
+        * tests/tclbench/libbench.tcl: When a test case
+        runs in less than 50 ms, up the number of loops
+        to 5000 and run it again. This give a much more
+        accurate average for quick tests.
+        * tests/tclbench/list.bench:
+        * tests/tclbench/set.bench: Add a bunch of
+        new bench tests for scalars and arrays
+        and empty method invocations.
+        * tests/tjc/compiledLocals.test: Add compiled
+        local array tests.
+        * tests/tjc/compileproc.test: Add static
+        array name with non-static array key tests.
+        Add output tests for compiled local arrays.
+        * tests/tjc/compileproc_2.test: Test
+        catch command output with non-static var names.
+        * tests/tjc/compileproc_6.test: Test catch
+        with cache variables enabled.
+        * tests/tjc/compileproc_7.test: Test inlined
+        set command outpuut for array variable names.
+        * tests/tjc/descend.test: Update catch tests.
+        * tests/tjc/emitter.test: Remove catch
+        output tests since this is all tested elsewhere.
+
 2006-03-15  Mo DeJong  <mdejong@users.sourceforge.net>
 
         Move file to correct directory.
