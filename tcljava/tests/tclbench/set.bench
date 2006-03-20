@@ -1,15 +1,14 @@
 # Bench test for set command. This is the
-# most basic Variable set/get testing on
+# most basic Variable set/get testing one
 # could do. It also tests speed of plain
-# commands vs inlined set comamnds.
+# commands vs inlined set commands.
 
 # The following test sets the same variable
 # to different constant values. It should
-# be highly optimized by TJC since the
-# scalar variable is cached in the first
-# set operation.
+# be highly optimized by TJC since a local
+# scalar variable set could be inlined.
 
-proc bench_set1 {} {
+proc bench_set_same_scalar {} {
     set i 0
     set i 1
     set i 2
@@ -31,11 +30,11 @@ proc bench_set1 {} {
 
 # The following test sets different variables
 # to the same constant value. This test is
-# not currently well optimized because each
-# set operation for a new variable inits a
-# cache which is not used again in the method.
+# optimized by TJC since each local
+# variable set will add an entry to
+# to compiled local array.
 
-proc bench_set2 {} {
+proc bench_set_different_scalars {} {
     set a 0
     set b 0
     set c 0
@@ -55,37 +54,13 @@ proc bench_set2 {} {
     return
 }
 
-# The following test sets array variables,
-# each set command is inlined, but the
-# array variable sets are not optimzed.
-
-proc bench_set3 {} {
-    set arr(a) 0
-    set arr(b) 0
-    set arr(c) 0
-    set arr(d) 0
-    set arr(e) 0
-    set arr(f) 0
-    set arr(g) 0
-    set arr(h) 0
-    set arr(i) 0
-    set arr(j) 0
-    set arr(k) 0
-    set arr(l) 0
-    set arr(m) 0
-    set arr(n) 0
-    set arr(o) 0
-    set arr(p) 0
-    return
-}
-
 # This test will query the value of a variable over and over
 # again. This test is highly optimized by the TJC compiler
 # because the scalar variable is queried from a cached var.
 # This test basically tests command eval time in an uncompiled
 # command vs compiled and inlined set command times.
 
-proc bench_set4 {} {
+proc bench_set_get_same_scalar {} {
     set i 0
     set i
     set i
@@ -150,8 +125,245 @@ proc bench_set4 {} {
     return
 }
 
-bench -desc "bench_set1" -body {bench_set1}
-bench -desc "bench_set2" -body {bench_set2}
-bench -desc "bench_set3" -body {bench_set3}
-bench -desc "bench_set4" -body {bench_set4}
+# This test checks the runtime execution speed of
+# a proc that imports global variables and sets
+# them.
+
+set bench_set_global_import_v1 1
+set bench_set_global_import_v2 2
+set bench_set_global_import_v3 2
+set bench_set_global_import_v4 3
+set bench_set_global_import_v5 4
+
+proc bench_set_global_import {} {
+    global bench_set_global_import_v1 bench_set_global_import_v2
+    global bench_set_global_import_v3 bench_set_global_import_v4
+    global bench_set_global_import_v5
+
+    set bench_set_global_import_v1 1
+    set bench_set_global_import_v2 2
+    set bench_set_global_import_v3 3
+    set bench_set_global_import_v4 4
+    set bench_set_global_import_v5 5
+
+    return
+}
+
+# This test checks execution time for
+# assignment of argument variables.
+# Each argument is then read once.
+
+proc bench_set_six_arguments { one two three four five six } {
+    return [list $one $two $three $four $five $six]
+}
+
+
+# The following test sets an array element
+# to a constant value. The first set
+# command will create the array variable,
+# the array element, and init the compiled
+# local slot. The rest of the set commands
+# will not create an array element, they
+# will instead only do one table lookup
+# to find the existing var element.
+
+proc bench_set_array_same_element {} {
+    set arr(k) 0
+    set arr(k) 0
+    set arr(k) 0
+    set arr(k) 0
+    set arr(k) 0
+    set arr(k) 0
+    set arr(k) 0
+    set arr(k) 0
+    set arr(k) 0
+    set arr(k) 0
+    set arr(k) 0
+    set arr(k) 0
+    set arr(k) 0
+    set arr(k) 0
+    set arr(k) 0
+    set arr(k) 0
+    return
+}
+
+# Same as above except that value is
+# queried each time.
+
+proc bench_set_array_get_same_element {} {
+    set arr(k) 0
+
+    set arr(k)
+    set arr(k)
+    set arr(k)
+    set arr(k)
+    set arr(k)
+    set arr(k)
+    set arr(k)
+    set arr(k)
+    set arr(k)
+    set arr(k)
+    set arr(k)
+    set arr(k)
+    set arr(k)
+    set arr(k)
+    set arr(k)
+
+    return
+}
+
+# The following test sets array elements
+# to the same constant. Each set command
+# will create a new var entry in the
+# array hashtable. If this test shows
+# a speed improvement, that is because
+# the array variable lookup need not be
+# done for each set command.
+
+proc bench_set_different_array_elements {} {
+    set arr(a) 0
+    set arr(b) 0
+    set arr(c) 0
+    set arr(d) 0
+    set arr(e) 0
+    set arr(f) 0
+    set arr(g) 0
+    set arr(h) 0
+    set arr(i) 0
+    set arr(j) 0
+    set arr(k) 0
+    set arr(l) 0
+    set arr(m) 0
+    set arr(n) 0
+    set arr(o) 0
+    set arr(p) 0
+    return
+}
+
+# The following test checks the runtime
+# execution of the set command with
+# a variable name that has a variable
+# in the array key. This was not
+# optimized in earlier versions of TJC
+# which resulted in an extra word
+# evaluation to determine the var name.
+
+proc bench_set_array_variable_keys {} {
+    set k a
+    set arr($k) 0
+    set k b
+    set arr($k) 0
+    set k c
+    set arr($k) 0
+    set k d
+    set arr($k) 0
+    set k e
+    set arr($k) 0
+    set k f
+    set arr($k) 0
+    set k g
+    set arr($k) 0
+    set k h
+    set arr($k) 0
+    set k i
+    set arr($k) 0
+    set k j
+    set arr($k) 0
+    set k k
+    set arr($k) 0
+    set k l
+    set arr($k) 0
+    set k m
+    set arr($k) 0
+    set k n
+    set arr($k) 0
+    set k o
+    set arr($k) 0
+    set k p
+    set arr($k) 0
+    return
+}
+
+set bench_set_array_global_import(one) 1
+set bench_set_array_global_import(two) 2
+set bench_set_array_global_import(three) 3
+set bench_set_array_global_import(four) 4
+set bench_set_array_global_import(five) 5
+
+proc bench_set_array_global_import {} {
+    global bench_set_array_global_import
+
+    set bench_set_array_global_import(one) 1
+    set bench_set_array_global_import(two) 2
+    set bench_set_array_global_import(three) 3
+    set bench_set_array_global_import(four) 4
+    set bench_set_array_global_import(five) 4
+
+    return
+}
+
+# This test creates a bunch of local scalar
+# and global variables. This test is designed
+# to determine what effect compiled local
+# access vs hashtable search for local
+# var names has.
+
+proc bench_set_array_and_scalar_names {} {
+    set one 1
+    set two(k) 1
+    set three 1
+    set four(k) 1
+    set five 1
+    set six(k) 1
+    set seven 1
+    set eight(k) 1
+    set nine 1
+    set ten(k) 1
+    set eleven 1
+    set twelve(k) 1
+    set thirteen 1
+    set fourteen(k) 1
+    set fifteen 1
+    set sixteen(k) 1
+    set seventeen 1
+    set eighteen(k) 1
+    set nineteen 1
+    set twenty(k) 1
+
+    set one
+    set two(k)
+    set three
+    set four(k)
+    set five
+    set six(k)
+    set seven
+    set eight(k)
+    set nine
+    set ten(k)
+    set eleven
+    set twelve(k)
+    set thirteen
+    set fourteen(k)
+    set fifteen
+    set sixteen(k)
+    set seventeen
+    set eighteen(k)
+    set nineteen
+    set twenty(k)
+
+    return
+}
+
+bench -desc "bench_set_same_scalar" -body {bench_set_same_scalar}
+bench -desc "bench_set_different_scalars" -body {bench_set_different_scalars}
+bench -desc "bench_set_get_same_scalar" -body {bench_set_get_same_scalar}
+bench -desc "bench_set_global_import" -body {bench_set_global_import}
+bench -desc "bench_set_six_arguments" -body {bench_set_six_arguments 1 2 3 4 5 6}
+
+bench -desc "bench_set_array_same_element" -body {bench_set_array_same_element}
+bench -desc "bench_set_different_array_elements" -body {bench_set_different_array_elements}
+bench -desc "bench_set_array_get_same_element" -body {bench_set_array_get_same_element}
+bench -desc "bench_set_array_variable_keys" -body {bench_set_array_variable_keys}
+bench -desc "bench_set_array_global_import" -body {bench_set_array_global_import}
+bench -desc "bench_set_array_and_scalar_names" -body {bench_set_array_and_scalar_names}
 

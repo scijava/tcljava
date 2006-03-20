@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Procedure.java,v 1.7 2006/02/16 03:03:22 mdejong Exp $
+ * RCS: @(#) $Id: Procedure.java,v 1.8 2006/03/20 18:43:27 mdejong Exp $
  *
  */
 
@@ -107,8 +107,19 @@ throws
 	    throw new TclException(interp, "too many fields in argument " +
 		    "specifier \"" + argSpec + "\"");
 	}
-	
-	argList[i][0] = TclList.index(interp, argSpec, 0);
+	TclObject argName = TclList.index(interp, argSpec, 0);
+	String argNameStr = argName.toString();
+	if (argNameStr.indexOf("::") != -1) {
+	    throw new TclException(interp, "procedure \"" + name +
+		    "\" has formal parameter \"" + argSpec +
+		    "\" that is not a simple name");
+	} else if (Var.isArrayVarname(argNameStr)) {
+	    throw new TclException(interp, "procedure \"" + name +
+		    "\" has formal parameter \"" + argSpec +
+		    "\" that is an array element");
+	}
+
+	argList[i][0] = argName;
 	argList[i][0].preserve();
 	if (specLen == 2) {
 	    argList[i][1] = TclList.index(interp, argSpec, 1);

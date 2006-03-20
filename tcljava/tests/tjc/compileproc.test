@@ -984,6 +984,49 @@ proc p {} {
 
 } {{dkey0 dkey1 dkey2} dkey0 {dkey1 dkey2} 1 1 1 1}
 
+tcltest::test compileproc-can-inline-catch-1.4 {check catch container valid/static flags} {
+    set script {
+proc p {} {
+    catch $script err
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set _compileproc(options,inline_containers) {catch}
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [descend_commands dkey0 container] \
+        [compileproc_is_container_command dkey0] \
+        [descend_container_is_valid dkey0] \
+        [descend_container_is_static dkey0] \
+        [compileproc_can_inline_container dkey0] \
+
+} {dkey0 dkey0 {} 1 1 0 0}
+
+tcltest::test compileproc-can-inline-catch-1.5 {check catch container valid/static flags} {
+    set script {
+proc p {} {
+    catch {} $varname
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    set _compileproc(options,inline_containers) {catch}
+    list \
+        [compileproc_start $plist] \
+        [compileproc_keys] \
+        [descend_commands dkey0 container] \
+        [compileproc_is_container_command dkey0] \
+        [descend_container_is_valid dkey0] \
+        [descend_container_is_static dkey0] \
+        [compileproc_can_inline_container dkey0] \
+
+} {dkey0 dkey0 {} 1 1 1 1}
+
+
 tcltest::test compileproc-can-inline-foreach-1.0 {check foreach container valid/static flags} {
     # One list and one variable
     set script {
@@ -3157,6 +3200,86 @@ proc p {} {
     2 {constant word} {cmd1 {{command dkey2} {command dkey3}}}  \
     2 {constant word} {cmd4 {{command dkey5} {command dkey6} {command dkey7}}}  \
     ]
+
+tcltest::test compileproc_scan_keys-2.15 {scan command keys} {
+    # constant name of array element
+    set script {
+proc p {} {
+    set a(k)
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    list \
+        [llength [compileproc_keys]] \
+        $_compileproc_key_info($key,num_args) \
+        $_compileproc_key_info($key,types) \
+        $_compileproc_key_info($key,values) \
+        $_compileproc_key_info(constants_found) \
+        $_compileproc_key_info(cmd_needs_init) \
+
+} {1 2 {constant constant} {set a(k)} 1 1}
+
+tcltest::test compileproc_scan_keys-2.16 {scan command keys} {
+    # static array name, but argument is a word because
+    # the array key is non-static.
+    set script {
+proc p {} {
+    set a($k)
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    list \
+        [llength [compileproc_keys]] \
+        $_compileproc_key_info($key,num_args) \
+        $_compileproc_key_info($key,types) \
+        $_compileproc_key_info($key,values) \
+        $_compileproc_key_info(constants_found) \
+        $_compileproc_key_info(cmd_needs_init) \
+
+} {1 2 {constant word} {set {{text a(} {variable {scalar k}} {text )}}} 1 1}
+
+tcltest::test compileproc_scan_keys-2.17 {scan command keys} {knownbug} {
+    # static array name, but argument is a word because
+    # the array key is non-static. The array name contains
+    # a unicode escape, but it should be handled the same as the
+    # string "arr($k)".
+    set script {
+proc p {} {
+    set a\u0072r($k)
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    list \
+        [llength [compileproc_keys]] \
+        $_compileproc_key_info($key,num_args) \
+        $_compileproc_key_info($key,types) \
+        $_compileproc_key_info($key,values) \
+        $_compileproc_key_info(constants_found) \
+        $_compileproc_key_info(cmd_needs_init) \
+
+} {1 2 {constant word} {set {{text a\u0072r(} {variable {scalar k}} {text )}}} 1 1}
+
 
 # FIXME: The parse should treat {} as an empty list while
 # "" should be seen as an empty string type.
@@ -5735,6 +5858,13 @@ tmp0 = interp.getVar("b", sbtmp1.toString(), 0);
 tmp0 = interp.getVar("a", tmp0.toString(), 0);
 }
 
+tcltest::test compileproc_emit_variable-1.8 {emit code to read variable value} {
+    # Read array variable with empty string key: $a()
+    emitter_indent_level zero
+    set vinfo {{array text} {a {}}}
+    compileproc_emit_variable tmp0 $vinfo
+} {TclObject tmp0 = interp.getVar("a", "", 0);
+}
 
 
 tcltest::test compileproc_emit_variable-2.0 {emit code to read variable value} {
@@ -5869,36 +5999,45 @@ tmp0 = interp.getResult();
 tmp0 = interp.getVar("a", tmp0.toString(), 0);
 }
 
-tcltest::test compileproc_emit_variable-3.0 {emit cache scalar read} {
+tcltest::test compileproc_emit_variable-3.0 {emit compiled local scalar read} {
     # Read Scalar : $s
     set _compileproc(options,cache_variables) 1
+    if {[info exists _compileproc_variable_cache]} {
+        unset _compileproc_variable_cache
+    }
     set _compileproc_variable_cache(counter) 0
     set vinfo {scalar s}
     emitter_indent_level zero
     set result [compileproc_emit_variable tmp0 $vinfo]
     unset _compileproc(options,cache_variables)
-    unset _compileproc_variable_cache(counter)
+    unset _compileproc_variable_cache
     set result
 } {TclObject tmp0 = getVarScalar(interp, "s", compiledLocals, 0);
 }
 
-tcltest::test compileproc_emit_variable-3.1 {emit cache scalar read} {
+tcltest::test compileproc_emit_variable-3.1 {emit compiled local scalar and array read} {
     # Read array variable: $a($k)
     set _compileproc(options,cache_variables) 1
+    if {[info exists _compileproc_variable_cache]} {
+        unset _compileproc_variable_cache
+    }
     set _compileproc_variable_cache(counter) 0
     emitter_indent_level zero
     set vinfo {{array scalar} {a k}}
     set result [compileproc_emit_variable tmp0 $vinfo]
     unset _compileproc(options,cache_variables)
-    unset _compileproc_variable_cache(counter)
+    unset _compileproc_variable_cache
     set result
 } {TclObject tmp0 = getVarScalar(interp, "k", compiledLocals, 0);
-tmp0 = interp.getVar("a", tmp0.toString(), 0);
+tmp0 = getVarArray(interp, "a", tmp0.toString(), compiledLocals, 1);
 }
 
-tcltest::test compileproc_emit_variable-3.2 {emit cache scalar read} {
+tcltest::test compileproc_emit_variable-3.2 {emit compiled local scalar and array read} {
     # Read array variable: $a($b($c$c))
     set _compileproc(options,cache_variables) 1
+    if {[info exists _compileproc_variable_cache]} {
+        unset _compileproc_variable_cache
+    }
     set _compileproc_variable_cache(counter) 0
     emitter_indent_level zero
     set vinfo {{array word} {a {{{array word} {b {{scalar c} {scalar c}}}}}}}
@@ -5906,7 +6045,7 @@ tcltest::test compileproc_emit_variable-3.2 {emit cache scalar read} {
     set tmp [compileproc_tmpvar_next]
     set result [compileproc_emit_variable $tmp $vinfo]
     unset _compileproc(options,cache_variables)
-    unset _compileproc_variable_cache(counter)
+    unset _compileproc_variable_cache
     set result
 } {TclObject tmp0;
 StringBuffer sbtmp1 = new StringBuffer(64);
@@ -5914,8 +6053,8 @@ tmp0 = getVarScalar(interp, "c", compiledLocals, 0);
 sbtmp1.append(tmp0.toString());
 tmp0 = getVarScalar(interp, "c", compiledLocals, 0);
 sbtmp1.append(tmp0.toString());
-tmp0 = interp.getVar("b", sbtmp1.toString(), 0);
-tmp0 = interp.getVar("a", tmp0.toString(), 0);
+tmp0 = getVarArray(interp, "b", sbtmp1.toString(), compiledLocals, 1);
+tmp0 = getVarArray(interp, "a", tmp0.toString(), compiledLocals, 2);
 }
 
 
@@ -6339,6 +6478,26 @@ proc p {} {
     # to a command.
     compileproc_set_variable tmp0 false tmp1 false
 } {interp.setVar(tmp0, null, tmp1, 0)}
+
+tcltest::test compileproc_emit_variable_set-1.2 {emit code to set variable value} {
+    set script {
+proc p {} {
+    set a(k) 0
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+    compileproc_init
+    compileproc_start $plist
+    compileproc_scan_keys [compileproc_keys]
+
+    emitter_indent_level zero
+
+    # Emit variable set for dkey0, argument 2
+    compileproc_set_variable "a(k)" true "" true
+    #set key [lindex [compileproc_keys] 0]
+    #compileproc_emit_argument $key 1
+} {interp.setVar("a", "k", "", 0)}
+
 
 
 tcltest::test compileproc_entry_point-1.0 {process files that contain procs} {

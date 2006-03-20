@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TJC.java,v 1.17 2006/03/15 23:07:30 mdejong Exp $ *
+ * RCS: @(#) $Id: TJC.java,v 1.18 2006/03/20 18:44:27 mdejong Exp $ *
  */
 
 // Runtime support for TJC compiler implementation.
@@ -269,16 +269,41 @@ public class TJC {
         protected final
         TclObject getVarScalar(
             final Interp interp,
-            final String varname,
+            final String varname,    // Scalar variable name
             final Var.CompiledLocal[] compiledLocals,
             final int localIndex)
                 throws TclException
         {
             Var.CompiledLocal clocal = compiledLocals[localIndex];
-            if (clocal == null || clocal.isResolvedLinkInvalid()) {
+            if (clocal == null || clocal.isResolvedScalarInvalid()) {
                 return Var.getVarCompiledLocalScalar(interp, varname, localIndex);
             } else {
                 return (TclObject) clocal.resolved.value;
+            }
+        }
+
+        // getVarArray() will get an array element value,
+        // if a cached variable is available then it will be used,
+        // otherwise the runtime getVar() will be invoked to get
+        // the value. This method will raise a TclException
+        // on error, it will never return null.
+
+        protected final
+        TclObject getVarArray(
+            final Interp interp,
+            final String varname,    // Array variable name
+            final String key,        // Array key
+            final Var.CompiledLocal[] compiledLocals,
+            final int localIndex)
+                throws TclException
+        {
+            Var.CompiledLocal clocal = compiledLocals[localIndex];
+            if (clocal == null || clocal.isResolvedArrayInvalid()) {
+                return Var.getVarCompiledLocalArray(
+                    interp, varname, key, clocal, localIndex);
+            } else {
+                return Var.getVarCompiledLocalArray(
+                    interp, varname, key, clocal);
             }
         }
 
@@ -291,14 +316,14 @@ public class TJC {
         protected final
         TclObject setVarScalar(
             final Interp interp,
-            final String varname,
+            final String varname,    // Scalar variable name
             final TclObject value,
             final Var.CompiledLocal[] compiledLocals,
             final int localIndex)
                 throws TclException
         {
             Var.CompiledLocal clocal = compiledLocals[localIndex];
-            if (clocal == null || clocal.isResolvedLinkInvalid()) {
+            if (clocal == null || clocal.isResolvedScalarInvalid()) {
                 return Var.setVarCompiledLocalScalar(
                     interp, varname, value, localIndex);
             } else {
@@ -319,6 +344,46 @@ public class TJC {
             return setVarScalar(interp, varname, tobj, compiledLocals, localIndex);
         }
 
+        // setVarArray() will set an array element to a value,
+        // if a cached variable is available then it will be used,
+        // otherwise the runtime setVar() will be invoked to set
+        // the value. This method will raise a TclException
+        // on error, it will never return null.
+
+        protected final
+        TclObject setVarArray(
+            final Interp interp,
+            final String varname,
+            final String key,
+            final TclObject value,
+            final Var.CompiledLocal[] compiledLocals,
+            final int localIndex)
+                throws TclException
+        {
+            Var.CompiledLocal clocal = compiledLocals[localIndex];
+            if (clocal == null || clocal.isResolvedArrayInvalid()) {
+                return Var.setVarCompiledLocalArray(
+                    interp, varname, key, value, localIndex);
+            } else {
+                return Var.setVarCompiledLocalArray(
+                    interp, varname, key, value, clocal);
+            }
+        }
+
+        protected final
+        TclObject setVarArray(
+            final Interp interp,
+            final String varname,
+            final String key,
+            final String value,
+            final Var.CompiledLocal[] compiledLocals,
+            final int localIndex)
+                throws TclException
+        {
+            TclObject tobj = interp.checkCommonString(value);
+            return setVarArray(interp, varname, key, tobj, compiledLocals, localIndex);
+        }
+
         protected final
         TclObject incrVarScalar(
             final Interp interp,
@@ -329,7 +394,7 @@ public class TJC {
                 throws TclException
         {
             Var.CompiledLocal clocal = compiledLocals[localIndex];
-            if (clocal == null || clocal.isResolvedLinkInvalid()) {
+            if (clocal == null || clocal.isResolvedScalarInvalid()) {
                 return TJC.incrVar(interp, varname, incrAmount);
             } else {
                 TclObject varValue = (TclObject) clocal.resolved.value;
@@ -375,7 +440,7 @@ public class TJC {
             // accepts an undefined variable name, but we
             // don't optimize that case.
 
-            if (clocal == null || clocal.isResolvedLinkInvalid()) {
+            if (clocal == null || clocal.isResolvedScalarInvalid()) {
                 return TJC.lappendVar(interp, varname, values);
             }
 
@@ -424,7 +489,7 @@ public class TJC {
             // accepts an undefined variable name, but we
             // don't optimize that case.
 
-            if (clocal == null || clocal.isResolvedLinkInvalid()) {
+            if (clocal == null || clocal.isResolvedScalarInvalid()) {
                 return TJC.appendVar(interp, varname, values);
             }
 
@@ -652,7 +717,7 @@ public class TJC {
     // cache. This array must have been allocated
     // with grabObjv(). This method will not release
     // TclObject values in the array, use the
-    // releaseObjvRefs() method for that.
+    // releaseObjvElems() method for that.
 
     public static void releaseObjv(
         final Interp interp,

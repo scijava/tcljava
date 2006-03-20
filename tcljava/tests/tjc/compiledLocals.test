@@ -6,7 +6,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: compiledLocals.test,v 1.1 2006/03/16 00:54:11 mdejong Exp $
+# RCS: @(#) $Id: compiledLocals.test,v 1.2 2006/03/20 18:50:21 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -634,10 +634,13 @@ test compiledLocals-4.8 {link vars} {
     clocals_test48
 } {localTable is {
 var -> ?()
+}
+compiledLocals is {
 ARR()
 }
-compiledLocals is null
-compiledLocals.resolved is null
+compiledLocals.resolved is {
+ARR()
+}
 }
 
 test compiledLocals-4.9 {link vars} {
@@ -656,12 +659,13 @@ test compiledLocals-4.9 {link vars} {
     clocals_tjc_compiled_proc clocals_test49
     clocals_test49
 } {localTable is {
-ARR()
 }
 compiledLocals is {
+ARR()
 var -> ?()
 }
 compiledLocals.resolved is {
+ARR()
 null
 }
 }
@@ -1054,6 +1058,33 @@ UNDEFINED DEFINED
 }
 }
 
+test compiledLocals-4.27 {link vars} {
+    # Unsetting a compiled local
+    # that is linked to by a link
+    # var should not null out the
+    # compiled local slot since
+    # the Var ref count will be
+    # non-zero.
+
+    proc clocals_test427 {} {
+        set V1 1
+        upvar 0 V1 V2
+        eval {unset V1}
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test427
+    clocals_test427
+} {localTable is {
+UNDEFINED V2 -> V1
+}
+compiledLocals is {
+UNDEFINED V1
+}
+compiledLocals.resolved is {
+UNDEFINED V1
+}
+}
+
 
 test compiledLocals-5.0 {local array variables} {
     proc clocals_test50 {} {
@@ -1062,11 +1093,13 @@ test compiledLocals-5.0 {local array variables} {
     }
     clocals_tjc_compiled_proc clocals_test50
     clocals_test50
-} {localTable is {
+} {localTable is null
+compiledLocals is {
 ARR()
 }
-compiledLocals is null
-compiledLocals.resolved is null
+compiledLocals.resolved is {
+ARR()
+}
 }
 
 test compiledLocals-5.1 {local array variables} {
@@ -1086,9 +1119,9 @@ compiledLocals.resolved is null
 }
 
 test compiledLocals-5.2 {local array variables} {
-    # This test should show how an array
-    # is moved into the compiledLocal array,
-    # but that is not implemented yet.
+    # This test shows how the global command
+    # will add a linked var to the compiled
+    # local array.
     catch {unset ARR}
     set ARR(one) 1
     proc clocals_test52 {} {
@@ -1097,14 +1130,12 @@ test compiledLocals-5.2 {local array variables} {
     }
     clocals_tjc_compiled_proc clocals_test52
     clocals_test52
-} {localTable is {
+} {localTable is null
+compiledLocals is {
 ARR() -> ::ARR
 }
-compiledLocals is {
-null
-}
 compiledLocals.resolved is {
-null
+ARR()
 }
 }
 
@@ -1120,13 +1151,103 @@ test compiledLocals-5.3 {local array variables} {
     clocals_tjc_compiled_proc clocals_test53
     clocals_test53
 } {localTable is {
+}
+compiledLocals is {
+arr()
 var() -> arr
+}
+compiledLocals.resolved is {
+arr()
 arr()
 }
-compiledLocals is null
-compiledLocals.resolved is null
 }
 
+test compiledLocals-5.4 {local array variables} {
+    # Local scalar and array variables have
+    # the same name. Should make use of the
+    # same compiled local slot, the runtime
+    # would raise an error if scalar was accessed
+    # as an array or array accessed as a scalar.
+    proc clocals_test54 {} {
+        set a 1
+        return [testvarframe]
+        set a(b) 2
+    }
+    clocals_tjc_compiled_proc clocals_test54
+    clocals_test54
+} {localTable is null
+compiledLocals is {
+a
+}
+compiledLocals.resolved is {
+a
+}
+}
+
+test compiledLocals-5.5 {local array variables} {
+    # Local scalar and array variables have
+    # the same name. Should make use of the
+    # same compiled local slot, the runtime
+    # would raise an error if scalar was accessed
+    # as an array or array accessed as a scalar.
+    proc clocals_test55 {} {
+        set a(b) 2
+        return [testvarframe]
+        set a 1
+    }
+    clocals_tjc_compiled_proc clocals_test55
+    clocals_test55
+} {localTable is null
+compiledLocals is {
+a()
+}
+compiledLocals.resolved is {
+a()
+}
+}
+
+test compiledLocals-5.6 {local array variables} {
+    # Attempt to set array variable with
+    # non-static key.
+    proc clocals_test56 {} {
+        set key name
+        set a($key) bob
+        return [testvarframe]
+    }
+    clocals_tjc_compiled_proc clocals_test56
+    clocals_test56
+} {localTable is null
+compiledLocals is {
+key
+a()
+}
+compiledLocals.resolved is {
+key
+a()
+}
+}
+
+test compiledLocals-5.7 {local array variables} {
+    # Attempt to get array variable with
+    # non-static key.
+    proc clocals_test57 {} {
+        set a(name) bob
+        set key name
+        set a($key)
+        return [testvarframe]
+    }
+    clocals_tjc_compiled_proc clocals_test57
+    clocals_test57
+} {localTable is null
+compiledLocals is {
+a()
+key
+}
+compiledLocals.resolved is {
+a()
+key
+}
+}
 
 
 
@@ -1391,6 +1512,38 @@ compiledLocals.resolved is {
 clocals_test68_var NO_CACHE
 }
 } 0}
+
+test compileLocals-6.9 {var traces} {
+    # This test checks that a read
+    # trace set on the array variable
+    # is elements are accessed. The
+    # array var logic will use a
+    # resolved ref even when the
+    # NO_CACHE flag is set.
+
+    set compiled_local_trace_counter 0
+
+    proc clocals_test69 {} {
+        set arr(one) 1
+        set arr(two) 1
+        trace variable arr r compiled_local_trace_counter
+        set arr(one)
+        set arr(two)
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test69
+    list [clocals_test69] $compiled_local_trace_counter
+} {{localTable is null
+compiledLocals is {
+arr()
+}
+compiledLocals.resolved is {
+arr() NO_CACHE
+}
+} 2}
+
+
+
 
 
 test compileLocals-7.0 {scoped variable names} {

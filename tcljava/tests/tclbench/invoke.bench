@@ -2,7 +2,36 @@
 
 proc iempty {} {}
 
+# This invoke empty test invokes an empty Tcl proc
+# over and over again. This test checks the
+# cached command implementation in invoke_empty
+# and just pushes and pops a frame in the
+# iempty method. It does not use a loop so
+# as to avoid using local vars.
+
 proc invoke_empty {} {
+    iempty
+    iempty
+    iempty
+    iempty
+    iempty
+    iempty
+    iempty
+    iempty
+    iempty
+    iempty
+
+    iempty
+    iempty
+    iempty
+    iempty
+    iempty
+    iempty
+    iempty
+    iempty
+    iempty
+    iempty
+
     iempty
     iempty
     iempty
@@ -15,5 +44,173 @@ proc invoke_empty {} {
     iempty
 }
 
+# The next tests invoke methods that accept
+# 1 to 10 arguments. These commands do
+# nothing, so this is really a test of
+# cached command invocation, argument
+# assignment, and object array allocation
+# times.
+
+proc invoke_a0 {} {}
+proc invoke_a1 {1} {}
+proc invoke_a2 {1 2} {}
+proc invoke_a3 {1 2 3} {}
+proc invoke_a4 {1 2 3 4} {}
+proc invoke_a5 {1 2 3 4 5} {}
+proc invoke_a6 {1 2 3 4 5 6} {}
+proc invoke_a7 {1 2 3 4 5 6 7} {}
+proc invoke_a8 {1 2 3 4 5 6 7 8} {}
+proc invoke_a9 {1 2 3 4 5 6 7 8 9} {}
+proc invoke_a10 {1 2 3 4 5 6 7 8 9 10} {}
+
+# Invoke the commands 10 times without using a loop,
+# this keeps the test times free of loop overhead.
+# All the arguments are constants, so argument
+# assignment fast.
+
+proc invoke_1_to_10 {} {
+
+    invoke_a0
+    invoke_a1 1
+    invoke_a2 1 2
+    invoke_a3 1 2 3
+    invoke_a4 1 2 3 4
+    invoke_a5 1 2 3 4 5
+    invoke_a6 1 2 3 4 5 6
+    invoke_a7 1 2 3 4 5 6 7
+    invoke_a8 1 2 3 4 5 6 7 8
+    invoke_a9 1 2 3 4 5 6 7 8 9
+    invoke_a10 1 2 3 4 5 6 7 8 9 10
+
+    invoke_a0
+    invoke_a1 1
+    invoke_a2 1 2
+    invoke_a3 1 2 3
+    invoke_a4 1 2 3 4
+    invoke_a5 1 2 3 4 5
+    invoke_a6 1 2 3 4 5 6
+    invoke_a7 1 2 3 4 5 6 7
+    invoke_a8 1 2 3 4 5 6 7 8
+    invoke_a9 1 2 3 4 5 6 7 8 9
+    invoke_a10 1 2 3 4 5 6 7 8 9 10
+
+    invoke_a0
+    invoke_a1 1
+    invoke_a2 1 2
+    invoke_a3 1 2 3
+    invoke_a4 1 2 3 4
+    invoke_a5 1 2 3 4 5
+    invoke_a6 1 2 3 4 5 6
+    invoke_a7 1 2 3 4 5 6 7
+    invoke_a8 1 2 3 4 5 6 7 8
+    invoke_a9 1 2 3 4 5 6 7 8 9
+    invoke_a10 1 2 3 4 5 6 7 8 9 10
+
+    invoke_a0
+    invoke_a1 1
+    invoke_a2 1 2
+    invoke_a3 1 2 3
+    invoke_a4 1 2 3 4
+    invoke_a5 1 2 3 4 5
+    invoke_a6 1 2 3 4 5 6
+    invoke_a7 1 2 3 4 5 6 7
+    invoke_a8 1 2 3 4 5 6 7 8
+    invoke_a9 1 2 3 4 5 6 7 8 9
+    invoke_a10 1 2 3 4 5 6 7 8 9 10
+
+    invoke_a0
+    invoke_a1 1
+    invoke_a2 1 2
+    invoke_a3 1 2 3
+    invoke_a4 1 2 3 4
+    invoke_a5 1 2 3 4 5
+    invoke_a6 1 2 3 4 5 6
+    invoke_a7 1 2 3 4 5 6 7
+    invoke_a8 1 2 3 4 5 6 7 8
+    invoke_a9 1 2 3 4 5 6 7 8 9
+    invoke_a10 1 2 3 4 5 6 7 8 9 10
+
+    invoke_a0
+    invoke_a1 1
+    invoke_a2 1 2
+    invoke_a3 1 2 3
+    invoke_a4 1 2 3 4
+    invoke_a5 1 2 3 4 5
+    invoke_a6 1 2 3 4 5 6
+    invoke_a7 1 2 3 4 5 6 7
+    invoke_a8 1 2 3 4 5 6 7 8
+    invoke_a9 1 2 3 4 5 6 7 8 9
+    invoke_a10 1 2 3 4 5 6 7 8 9 10
+
+    invoke_a0
+    invoke_a1 1
+    invoke_a2 1 2
+    invoke_a3 1 2 3
+    invoke_a4 1 2 3 4
+    invoke_a5 1 2 3 4 5
+    invoke_a6 1 2 3 4 5 6
+    invoke_a7 1 2 3 4 5 6 7
+    invoke_a8 1 2 3 4 5 6 7 8
+    invoke_a9 1 2 3 4 5 6 7 8 9
+    invoke_a10 1 2 3 4 5 6 7 8 9 10
+
+    invoke_a0
+    invoke_a1 1
+    invoke_a2 1 2
+    invoke_a3 1 2 3
+    invoke_a4 1 2 3 4
+    invoke_a5 1 2 3 4 5
+    invoke_a6 1 2 3 4 5 6
+    invoke_a7 1 2 3 4 5 6 7
+    invoke_a8 1 2 3 4 5 6 7 8
+    invoke_a9 1 2 3 4 5 6 7 8 9
+    invoke_a10 1 2 3 4 5 6 7 8 9 10
+
+    invoke_a0
+    invoke_a1 1
+    invoke_a2 1 2
+    invoke_a3 1 2 3
+    invoke_a4 1 2 3 4
+    invoke_a5 1 2 3 4 5
+    invoke_a6 1 2 3 4 5 6
+    invoke_a7 1 2 3 4 5 6 7
+    invoke_a8 1 2 3 4 5 6 7 8
+    invoke_a9 1 2 3 4 5 6 7 8 9
+    invoke_a10 1 2 3 4 5 6 7 8 9 10
+
+    invoke_a0
+    invoke_a1 1
+    invoke_a2 1 2
+    invoke_a3 1 2 3
+    invoke_a4 1 2 3 4
+    invoke_a5 1 2 3 4 5
+    invoke_a6 1 2 3 4 5 6
+    invoke_a7 1 2 3 4 5 6 7
+    invoke_a8 1 2 3 4 5 6 7 8
+    invoke_a9 1 2 3 4 5 6 7 8 9
+    invoke_a10 1 2 3 4 5 6 7 8 9 10
+
+}
+
+# Invoke the commands a bunch of times in a loop
+
+proc invoke_1_to_10_loop {} {
+    for {set i 0} {$i < 500} {incr i} {
+        invoke_a0
+        invoke_a1 1
+        invoke_a2 1 2
+        invoke_a3 1 2 3
+        invoke_a4 1 2 3 4
+        invoke_a5 1 2 3 4 5
+        invoke_a6 1 2 3 4 5 6
+        invoke_a7 1 2 3 4 5 6 7
+        invoke_a8 1 2 3 4 5 6 7 8
+        invoke_a9 1 2 3 4 5 6 7 8 9
+        invoke_a10 1 2 3 4 5 6 7 8 9 10
+    }
+}
+
 bench -desc "invoke_empty" -body {invoke_empty}
+bench -desc "invoke_1_to_10" -body {invoke_1_to_10}
+bench -desc "invoke_1_to_10_loop" -body {invoke_1_to_10_loop} -iter 100
 

@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: emitter.tcl,v 1.11 2006/03/15 23:07:31 mdejong Exp $
+#  RCS: @(#) $Id: emitter.tcl,v 1.12 2006/03/20 18:46:21 mdejong Exp $
 #
 #
 
@@ -1320,18 +1320,49 @@ proc emitter_get_var { p1 is_p1_string p2 is_p2_string iflags } {
 
 # Query a compiled local scalar value
 
-proc emitter_get_compiled_local_scalar_var { varname array_symbol index } {
+proc emitter_get_compiled_local_scalar_var { varname clocal_array_symbol index } {
     set buffer ""
     append buffer \
         "getVarScalar(interp, \"" \
         [emitter_backslash_tcl_string $varname] \
         "\", " \
-        $array_symbol \
+        $clocal_array_symbol \
         ", " \
         $index \
         ")"
     return $buffer
 }
+
+# Query a compiled local array value.
+# The varname argument is always a static String.
+# The key argument is a static String if the
+# key_is_string argument is true, otherwise it
+# indicates a symbol of type String.
+
+proc emitter_get_compiled_local_array_var { varname key key_is_string \
+        clocal_array_symbol index } {
+    set buffer ""
+    append buffer \
+        "getVarArray(interp, \"" \
+        [emitter_backslash_tcl_string $varname] \
+        "\", "
+    if {$key_is_string} {
+        append buffer \
+            "\"" \
+            [emitter_backslash_tcl_string $key] \
+            "\", "
+    } else {
+        append buffer \
+            $key ", "
+    }
+    append buffer \
+        $clocal_array_symbol \
+        ", " \
+        $index \
+        ")"
+    return $buffer
+}
+
 
 # Set a variable value.
 
@@ -1353,15 +1384,44 @@ proc emitter_set_var { p1 is_p1_string p2 is_p2_string value iflags } {
     return "interp.setVar($p1, $p2,$value, $iflags)"
 }
 
-# Set a cache scalar value
+# Set a compiled local scalar var.
 
-proc emitter_set_cache_scalar_var { varname valsym array_symbol index } {
+proc emitter_set_compiled_local_scalar_var { varname valsym \
+        clocal_array_symbol index } {
     set buffer ""
     append buffer \
         "setVarScalar(interp, \"" \
         [emitter_backslash_tcl_string $varname] \
         "\", " $valsym \
-        ", " $array_symbol \
+        ", " $clocal_array_symbol \
+        ", " $index \
+        ")"
+    return $buffer
+}
+
+# Set a compiled local array var.
+
+proc emitter_set_compiled_local_array_var { varname key key_is_string \
+        valsym clocal_array_symbol index } {
+    set buffer ""
+    append buffer \
+        "setVarArray(interp, \"" \
+        [emitter_backslash_tcl_string $varname] \
+        "\", "
+
+    if {$key_is_string} {
+        append buffer \
+            "\"" \
+            [emitter_backslash_tcl_string $key] \
+            "\", "
+    } else {
+        append buffer \
+            $key ", "
+    }
+
+    append buffer \
+        $valsym \
+        ", " $clocal_array_symbol \
         ", " $index \
         ")"
     return $buffer

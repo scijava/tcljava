@@ -4,7 +4,7 @@
 # This file has to have code that works in any version of Tcl that
 # the user would want to benchmark.
 #
-# RCS: @(#) $Id: libbench.tcl,v 1.4 2006/03/04 22:18:34 mdejong Exp $
+# RCS: @(#) $Id: libbench.tcl,v 1.5 2006/03/20 18:49:49 mdejong Exp $
 #
 # Copyright (c) 2000-2001 Jeffrey Hobbs.
 
@@ -203,6 +203,10 @@ proc prepare_and_run_body { body iterations } {
 
     set debug 0
 
+    if {$debug} {
+        puts stderr "prepare_and_run_body $body $iterations"
+    }
+
     set times [list]
     set deltas [list]
     set percents [list]
@@ -219,6 +223,10 @@ proc prepare_and_run_body { body iterations } {
     }
 
     for {set i 0} {$i < $max_loops} {incr i} {
+        if {$debug} {
+            puts stderr "loop $i, time \{$body\} $iterations"
+        }
+
         set t [run_body $body $iterations]
         lappend times $t
         if {$t_last != -1} {
@@ -233,7 +241,7 @@ proc prepare_and_run_body { body iterations } {
         }
         set t_last $t
 
-        if {$i < 3} {
+        if {$i < 4} {
             # Always run at least 4 iterations
             continue
         } else {
@@ -249,7 +257,9 @@ proc prepare_and_run_body { body iterations } {
                 # with more iterations to try to get a more accurate
                 # average of the time data.
 
-                if {!$restarted && ($t <= 15)} {
+                set small 50
+
+                if {!$restarted && ($t <= $small)} {
                     if {$debug} {
                     puts stderr "Times :\t\t$times"
                     puts stderr "restarted because time $t is very small"

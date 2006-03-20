@@ -113,6 +113,55 @@ proc bench_list_append {} {
     return [list $l1 $l2 $l3]
 }
 
+# lappend a single item to a list in a loop.
+# This test appends to a scalar local variable.
+
+proc bench_list_loop_lappend_scalar1 {} {
+    set l [list]
+    for {set i 0} {$i < 1000} {incr i} {
+        lappend l $i
+    }
+    return [llength $l]
+}
+
+# lappend multiple items to a list in a loop.
+# This test appends to a scalar local variable.
+
+proc bench_list_loop_lappend_scalar2 {} {
+    set l [list]
+    for {set i 0} {$i < 1000} {incr i} {
+        lappend l \
+            1 2 3 4 5
+    }
+    return [llength $l]
+}
+
+# lappend a single item to a list in a loop.
+# This test appends to an array variable
+# element with a constant key.
+
+proc bench_list_loop_lappend_array1 {} {
+    set a(elem) [list]
+    for {set i 0} {$i < 1000} {incr i} {
+        lappend a(elem) $i
+    }
+    return [llength $l]
+}
+
+# lappend a single item to a list in a loop.
+# This test appends to an array variable
+# element that has a variable as the key.
+
+proc bench_list_loop_lappend_array2 {} {
+    set key elem
+    set a($key) [list]
+    for {set i 0} {$i < 1000} {incr i} {
+        lappend a($key) $i
+    }
+    return [llength $a($key)]
+}
+
+
 # Invoke llength over and over again. This test will be much
 # faster since llength is optimized by TJC.
 
@@ -176,5 +225,9 @@ bench -desc "bench_list_constant" -body {bench_list_constant}
 bench -desc "bench_list_index_constant" -body {bench_list_index_constant}
 bench -desc "bench_list_index_nonconstant" -body {bench_list_index_nonconstant}
 bench -desc "bench_list_append" -body {bench_list_append}
+bench -desc "bench_list_loop_lappend_scalar1" -body {bench_list_loop_lappend_scalar1}
+bench -desc "bench_list_loop_lappend_scalar2" -body {bench_list_loop_lappend_scalar2}
+bench -desc "bench_list_loop_lappend_array1" -body {bench_list_loop_lappend_array1}
+bench -desc "bench_list_loop_lappend_array2" -body {bench_list_loop_lappend_array2}
 bench -desc "bench_list_llength" -body {bench_list_llength}
 

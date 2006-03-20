@@ -1222,7 +1222,7 @@ tcltest::test descend-into-catch-3.8 {check catch command} {
         [set report] \
         [descend_get_data [lindex $keys 0] usage] \
         [descend_container_is_static [lindex $keys 0]]
-} {{{catch {{cmd}} {$var}} {} cmd catch} 0 0}
+} {{{catch {{cmd}} {$var}} {} cmd catch} 0 1}
 
 tcltest::test descend-into-catch-3.9 {check catch command} {
     set report [list]
@@ -1240,7 +1240,7 @@ tcltest::test descend-into-catch-3.9 {check catch command} {
         [descend_container_is_static [lindex $keys 0]] \
         [descend_container_catch_has_variable [lindex $keys 0]] \
         [descend_container_catch_variable [lindex $keys 0]]
-} {{{catch {{cmd}} err} {} cmd catch} 0 1 1 err}
+} {{{catch {{cmd}} err} {} cmd catch} 0 1 1 {1 err}}
 
 tcltest::test descend-into-catch-3.10 {check catch command} {
     set report [list]
@@ -1258,7 +1258,7 @@ tcltest::test descend-into-catch-3.10 {check catch command} {
         [descend_container_is_static [lindex $keys 0]] \
         [descend_container_catch_has_variable [lindex $keys 0]] \
         [descend_container_catch_variable [lindex $keys 0]]
-} {{{catch {{cmd}} arr(err)} {} cmd catch} 0 1 1 arr(err)}
+} {{{catch {{cmd}} arr(err)} {} cmd catch} 0 1 1 {1 arr(err)}}
 
 
 

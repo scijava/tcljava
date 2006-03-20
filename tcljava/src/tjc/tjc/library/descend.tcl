@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: descend.tcl,v 1.2 2006/02/07 09:41:01 mdejong Exp $
+#  RCS: @(#) $Id: descend.tcl,v 1.3 2006/03/20 18:46:20 mdejong Exp $
 #
 #
 
@@ -1415,12 +1415,6 @@ proc descend_container_catch { key } {
 proc descend_container_catch_validate { key } {
     global _descend
 
-    set debug 0
-
-    if {$debug} {
-        puts "descend_container_catch_validate $key"
-    }
-
     set script [descend_get_data $key script]
     set tree [descend_get_data $key tree]
 
@@ -1428,40 +1422,16 @@ proc descend_container_catch_validate { key } {
 
     # Usage: catch script ?varName?
 
-    if {$num_args < 2 || $num_args > 3} {
-        if {$debug} {
-            puts "usage error for catch command $key"
-        }
+    if {$num_args != 2 && $num_args != 3} {
         set _descend($key,usage) 1
         return [list numArgs "catch" $num_args "2 or 3"]
     }
 
-    if {$num_args == 2 && [descend_container_argument_body_is_static $key 1]} {
-        if {$debug} {
-            puts "argument script is static"
-        }
+    # The script argument must be a static string,
+    # but varname can be evaluated at runtime if needed.
+
+    if {[descend_container_argument_body_is_static $key 1]} {
         set _descend($key,static_container) 1
-    } else {
-        if {[descend_container_argument_body_is_static $key 1] &&
-            [descend_container_argument_body_is_static $key 2]} {
-            if {$debug} {
-                puts "argument script and variable name are static"
-            }
-            set _descend($key,static_container) 1
-        } else {
-            if {$debug} {
-            if {[descend_container_argument_body_is_static $key 1]} {
-                puts "argument 1 is static"
-            } else {
-                puts "argument 1 is NOT static"
-            }
-            if {[descend_container_argument_body_is_static $key 2]} {
-                puts "argument 2 is static"
-            } else {
-                puts "argument 2 is NOT static"
-            }
-            }
-        }
     }
 
     # Validated catch command is a list of length 2.
@@ -1497,8 +1467,10 @@ proc descend_container_catch_has_variable { key } {
     }
 }
 
-# Return the name of the optinal variable
-# for a catch command.
+# If the catch variable is statically defined,
+# return {1 VARNAME} indicating the name. Otherwise
+# return {0 {}} to indicate that the variable
+# name needs to be evaluated at runtime.
 
 proc descend_container_catch_variable { key } {
     set validated [descend_get_data $key validated]
@@ -1512,9 +1484,9 @@ proc descend_container_catch_variable { key } {
     set tree [descend_get_data $key tree]
     set subtree [lindex $tree $index]
     if {[parse_is_simple_text $subtree]} {
-        return [parse_get_simple_text $script $subtree "text"]
+        return [list 1 [parse_get_simple_text $script $subtree "text"]]
     } else {
-        error "expected simple/text type"
+        return {0 {}}
     }
 }
 
@@ -3505,8 +3477,7 @@ proc descend_container_expr_arg { key } {
 # command works for any of the constainer commands.
 
 proc descend_container_is_valid { key } {
-    set validated [descend_get_data $key validated]
-    if {$validated == {}} {
+    if {[descend_get_data $key validated] == {}} {
         return 0
     } else {
         return 1
