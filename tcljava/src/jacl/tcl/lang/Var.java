@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Var.java,v 1.28 2006/03/20 18:43:28 mdejong Exp $
+ * RCS: @(#) $Id: Var.java,v 1.29 2006/03/22 01:38:44 mdejong Exp $
  *
  */
 package tcl.lang;
@@ -1141,7 +1141,20 @@ class Var {
 // init when compiled local is null case. The initial variable
 // set from null is invoked for every variable and argument
 // set and accounts for most of the invoke time for the
-// invoke bench tests.
+// invoke bench tests. The init when clocl is zero case can
+// be significantly optimized. If the local table would
+// never contain entries that should be in the compiled
+// locals table, then init() can skip the table check
+// and it can accept a clocal argument instead of
+// looking up the table and the clocal again. Also,
+// the init case can just allocate since we know the
+// array is null. The setVarPtr() can also be optimized
+// to just clear the undefined flag in the init case.
+// All the other tests in setVarPtr() don't apply to
+// a new scalar. Getting upvar and trace to insert into
+// the compiled local array will take care of any unset
+// var issues that would cause the compiled local
+// array to be non-null.
 
     static TclObject setVarCompiledLocalScalar(
             Interp interp,      // interp to search for the var in
@@ -1669,17 +1682,36 @@ class Var {
 	    Interp interp,
 	    String varname,             // name of array  variable
 	    String key,                 // array key, can't be null
-            Var.CompiledLocal clocal)   // resolved array variable
+	    Var.CompiledLocal clocal,   // resolved array variable
+	    boolean leaveErrMsg)        // If true, will raise a
+	                                // TclException when the array
+	                                // element does not exist. If
+	                                // false, then return null.
 	throws TclException
     {
-        // Raise TclException instead of returning null
-        final int flags = TCL.LEAVE_ERR_MSG;
+	int flags = 0;
+	if (leaveErrMsg) {
+	    // If leaveErrMsg is true, will raise a TclException
+	    // in lookupArrayElement() if the array element does
+	    // not exist or is an undefined var. If leaveErrMsg is
+	    // false, then return null so that the calling code
+	    // can handle an array variable that does not exist
+	    // without throwing and catching an exception.
+
+	    flags = TCL.LEAVE_ERR_MSG;
+	}
 
 	Var[] result = Var.lookupArrayElement(interp, varname, key, flags,
 	    "read", false, false, clocal.resolved);
+	if (result == null) {
+	    return null;
+	}
+
+        // Always pass TCL.LEAVE_ERR_MSG so that an exception
+        // will be raised in case a trace raises an exception.
 
 	return Var.getVarPtr(interp, result[0], result[1],
-            varname, key, flags);
+	    varname, key, TCL.LEAVE_ERR_MSG);
     }
 
     // This method is invoked to set the value of an
@@ -1692,20 +1724,20 @@ class Var {
 
     static TclObject setVarCompiledLocalArray(
 	    Interp interp,
-	    String varname,             // name of array  variable
+	    String varname,             // name of array variable
 	    String key,                 // array key, can't be null
-            TclObject newValue,
-            Var.CompiledLocal clocal)   // resolved array variable
+	    TclObject newValue,
+	    Var.CompiledLocal clocal)   // resolved array variable
 	throws TclException
     {
-        // Raise TclException instead of returning null
-        final int flags = TCL.LEAVE_ERR_MSG;
+	// Raise TclException instead of returning null
+	final int flags = TCL.LEAVE_ERR_MSG;
 
 	Var[] result = lookupArrayElement(interp, varname, key, flags,
 	    "set", false, true, clocal.resolved);
 
 	return setVarPtr(interp, result[0], result[1], varname, key,
-            newValue, flags);
+	    newValue, flags);
     }
 
     /**

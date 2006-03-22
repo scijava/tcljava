@@ -146,6 +146,58 @@ proc append-ten-n-words-big {} {
     return $buffer
 }
 
+# append small buffers to a static
+# array variable. The compiler
+# will compile an append to an
+# array but it is not optimized
+# since the array semantics make
+# that vary difficult. Each element
+# append will require an array
+# lookup and an array element lookup.
+
+proc append-array-ten-n-words {} {
+    set e1 "ONE"
+    set e2 "TWO"
+    set e3 "THREE"
+    set arr(buffer) ""
+    append arr(buffer) $e1 " " $e2 " " $e3
+    append arr(buffer) $e1 " " $e2 " " $e3
+    append arr(buffer) $e1 " " $e2 " " $e3
+    append arr(buffer) $e1 " " $e2 " " $e3
+    append arr(buffer) $e1 " " $e2 " " $e3
+    append arr(buffer) $e1 " " $e2 " " $e3
+    append arr(buffer) $e1 " " $e2 " " $e3
+    append arr(buffer) $e1 " " $e2 " " $e3
+    append arr(buffer) $e1 " " $e2 " " $e3
+    append arr(buffer) $e1 " " $e2 " " $e3
+    return $arr(buffer)
+}
+
+# Like the test above except using variable
+# as the array key. An inlined append
+# command that knows about constant arrays
+# with variable keys will optimize this
+# by skipping the word evaluation for the
+# first argument.
+
+proc append-array-var-key-ten-n-words {} {
+    set e1 "ONE"
+    set e2 "TWO"
+    set e3 "THREE"
+    set arr(buffer) ""
+    set key buffer
+    append arr($key) $e1 " " $e2 " " $e3
+    append arr($key) $e1 " " $e2 " " $e3
+    append arr($key) $e1 " " $e2 " " $e3
+    append arr($key) $e1 " " $e2 " " $e3
+    append arr($key) $e1 " " $e2 " " $e3
+    append arr($key) $e1 " " $e2 " " $e3
+    append arr($key) $e1 " " $e2 " " $e3
+    append arr($key) $e1 " " $e2 " " $e3
+    append arr($key) $e1 " " $e2 " " $e3
+    append arr($key) $e1 " " $e2 " " $e3
+    return $arr($key)
+}
 
 # Define big buffers
 
@@ -168,6 +220,9 @@ bench -desc "append-ten-n-words" -body {append-ten-n-words}
 
 bench -desc "append-ten-one-words-big" -body {append-ten-one-words-big}
 bench -desc "append-ten-n-words-big" -body {append-ten-n-words-big}
+
+bench -desc "append-array-ten-n-words" -body {append-array-ten-n-words}
+bench -desc "append-array-var-key-ten-n-words" -body {append-array-var-key-ten-n-words}
 
 unset __append_buffer_1 __append_buffer_2 __append_buffer_3
 

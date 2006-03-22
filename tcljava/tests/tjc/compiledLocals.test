@@ -6,7 +6,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: compiledLocals.test,v 1.2 2006/03/20 18:50:21 mdejong Exp $
+# RCS: @(#) $Id: compiledLocals.test,v 1.3 2006/03/22 01:38:45 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1843,43 +1843,105 @@ null
 }
 
 
-# Add Var ref count checks for the case where
-# a CompiledLocal is linked to another
-# CompiledLocal in the same frame. This
-# should not delete out of the same
-# frame until the refCount goes to zero.
+test compiledLocals-9.0 {lappend} {
+    # lappend for undefined scalar var
+    # invokes runtime set command.
+    proc clocals_test90 {} {
+        lappend l 1
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test90
+    clocals_test90
+} {localTable is {
+l
+}
+compiledLocals is {
+null
+}
+compiledLocals.resolved is {
+null
+}
+}
 
+test compiledLocals-9.1 {lappend} {
+    # lappend for an undefined
+    # array variable will invoke
+    # the runtime set to create
+    # the array and the array element.
+    proc clocals_test91 {} {
+        lappend a(k) 1
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test91
+    clocals_test91
+} {localTable is {
+a()
+}
+compiledLocals is {
+null
+}
+compiledLocals.resolved is {
+null
+}
+}
 
-# FIXME: Not clear if ref count management
-# is being done correctly for compiled
-# local more testing is needed to make
-# sure that compiled local work exactly
-# like regular vars when it comes to
-# subprocs that link up into the caller
-# proc.
+test compiledLocals-9.2 {lappend} {
+    # lappend for an undefined
+    # array variable should set
+    # the array and the array
+    # element.
+    proc clocals_test92 {} {
+        lappend a(k)
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test92
+    clocals_test92
+} {localTable is {
+a()
+}
+compiledLocals is null
+compiledLocals.resolved is null
+}
 
+test compiledLocals-9.3 {lappend} {
+    # lappend for an array variable
+    # that is defined but does not
+    # contain the array element
+    # will set the array element.
+    proc clocals_test93 {} {
+        set a(k2) 1
+        lappend a(k) 1
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test93
+    clocals_test93
+} {localTable is null
+compiledLocals is {
+a()
+}
+compiledLocals.resolved is {
+a()
+}
+}
 
-
-# FIXME: Add test cases for namespace resolved
-# variables. There seems to be a problem with
-# how these interact with the compiled local
-# vars as no global or set command will put
-# the var into the compiled local table. Does
-# this mean that there is no way to cache
-# the value of the resolved var in the local table?
 
 # When testing array vars, make sure to implement
 # a compiled version of [array set FOO {one 1 two 2}]
 # that will define the array in the compiledLocals
 # array of Var values.
 
-# Might also want to create special flag that would
-# look at the container stack and see if a var
-# access is only done once outside a loop. If there
-# is only one read or write access, then a compiled
-# local does not seem all that important. Of course,
-# if the compiled local keeps from using the Hashtable
-# then that is good for performance.
+# compiled local scalars with an absolute
+# namespace qualifier may only be used
+# once. Implement a test during scan keys
+# so that the containment stack can be
+# determined to see if a given command is
+# executed in a loop. That way, a scoped
+# var that is only used once and not inside
+# a loop would not need to be added to the
+# compiled local array. It could just be
+# looked up once since that is faster than
+# creating a link var.
+
 
 # cleanup
 catch {unset _clocals_tjc_ready}

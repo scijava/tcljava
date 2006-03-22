@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TJC.java,v 1.18 2006/03/20 18:44:27 mdejong Exp $ *
+ * RCS: @(#) $Id: TJC.java,v 1.19 2006/03/22 01:38:44 mdejong Exp $ *
  */
 
 // Runtime support for TJC compiler implementation.
@@ -303,7 +303,7 @@ public class TJC {
                     interp, varname, key, clocal, localIndex);
             } else {
                 return Var.getVarCompiledLocalArray(
-                    interp, varname, key, clocal);
+                    interp, varname, key, clocal, true);
             }
         }
 
@@ -384,6 +384,11 @@ public class TJC {
             return setVarArray(interp, varname, key, tobj, compiledLocals, localIndex);
         }
 
+        // incrVarScalar() will increment a scalar compiled local
+        // by the given incrAmount. If the variable is not a
+        // scalar local or has traces set then the runtime version
+        // of the incr command will be used.
+
         protected final
         TclObject incrVarScalar(
             final Interp interp,
@@ -395,7 +400,7 @@ public class TJC {
         {
             Var.CompiledLocal clocal = compiledLocals[localIndex];
             if (clocal == null || clocal.isResolvedScalarInvalid()) {
-                return TJC.incrVar(interp, varname, incrAmount);
+                return TJC.incrVar(interp, varname, null, incrAmount);
             } else {
                 TclObject varValue = (TclObject) clocal.resolved.value;
 
@@ -424,6 +429,54 @@ public class TJC {
             }
         }
 
+        // incrVarArray() will increment an array element.
+        // If the array is not a compiled local scalar then
+        // the runtime implementation will be used.
+
+        protected final
+        TclObject incrVarArray(
+            final Interp interp,
+            final String varname,
+            final String key,
+            final int incrAmount,
+            final Var.CompiledLocal[] compiledLocals,
+            final int localIndex)
+                throws TclException
+        {
+            Var.CompiledLocal clocal = compiledLocals[localIndex];
+            if (clocal == null || clocal.isResolvedArrayInvalid()) {
+                return TJC.incrVar(interp, varname, key, incrAmount);
+            } else {
+                TclObject varValue = Var.getVarCompiledLocalArray(
+                    interp, varname, key, clocal, true);
+
+                boolean createdNewObj = false;
+                if (varValue.isShared()) {
+                    varValue = varValue.duplicate();
+                    createdNewObj = true;
+                }
+                try {
+                    TclInteger.incr(interp, varValue, incrAmount);
+                } catch (TclException ex) {
+                    if (createdNewObj) {
+                        varValue.release(); // free unneeded copy
+                    }
+                    throw ex;
+                }
+
+                // Set the array element once again since the
+                // variable could have traces.
+
+                return Var.setVarCompiledLocalArray(
+                    interp, varname, key, varValue, clocal);
+            }
+        }
+
+        // lappendVarScalar() will append list elements to
+        // a scalar local variable. If the variable is not a
+        // scalar local or has traces set then the runtime version
+        // of the lappend command will be used.
+
         protected final
         TclObject lappendVarScalar(
             final Interp interp,
@@ -441,7 +494,7 @@ public class TJC {
             // don't optimize that case.
 
             if (clocal == null || clocal.isResolvedScalarInvalid()) {
-                return TJC.lappendVar(interp, varname, values);
+                return TJC.lappendVar(interp, varname, null, values);
             }
 
             // The cache var is valid, but it might indicate
@@ -473,6 +526,68 @@ public class TJC {
             return varValue;
         }
 
+        // lappendVarArray() will append list elements to
+        // an array element in a compiled local array variable.
+        // If the variable is not an array variable then the runtime
+        // implementation of the lappend command will be used.
+
+        protected final
+        TclObject lappendVarArray(
+            final Interp interp,
+            final String varname,
+            final String key,
+            final TclObject[] values,
+            final Var.CompiledLocal[] compiledLocals,
+            final int localIndex)
+                throws TclException
+        {
+            Var.CompiledLocal clocal = compiledLocals[localIndex];
+
+            // Use runtime impl of lappend if resolved array
+            // var is null or is not valid. The lappend command
+            // accepts an undefined variable name, but we
+            // don't optimize that case.
+
+            if (clocal == null || clocal.isResolvedArrayInvalid()) {
+                return TJC.lappendVar(interp, varname, key, values);
+            }
+
+            // The cache var is valid but need to lookup the
+            // array element to see if it exists. If the
+            // array element does not exist then it is
+            // assumed to be an empty list. If the element
+            // does exist, then check to see if it is
+            // shared and if so then make a copy to
+            // implement "copy on write".
+
+            TclObject varValue = Var.getVarCompiledLocalArray(
+                interp, varname, key, clocal, false);
+
+            if (varValue == null) {
+                // Array element does not exist, use {}
+                varValue = TclList.newInstance();
+            } else if (varValue.isShared()) {
+                varValue = varValue.duplicate();
+            }
+
+            // Insert the new elements at the end of the list.
+
+            final int len = values.length;
+            if (len == 1) {
+                TclList.append(interp, varValue, values[0]);
+            } else {
+                TclList.append(interp, varValue, values, 0, len);
+            }
+
+            return Var.setVarCompiledLocalArray(
+                interp, varname, key, varValue, clocal);
+        }
+
+        // appendVarScalar() will append string elements to
+        // a scalar local variable. If the variable is not a
+        // scalar local or has traces set then the runtime version
+        // of the append command will be used.
+
         protected final
         TclObject appendVarScalar(
             final Interp interp,
@@ -490,7 +605,7 @@ public class TJC {
             // don't optimize that case.
 
             if (clocal == null || clocal.isResolvedScalarInvalid()) {
-                return TJC.appendVar(interp, varname, values);
+                return TJC.appendVar(interp, varname, null, values);
             }
 
             // The cache var is valid, but it might indicate
@@ -521,6 +636,32 @@ public class TJC {
 
             return varValue;
         }
+
+        // appendVarArray() will append string elements to an
+        // element inside an array variable.
+
+        protected final
+        TclObject appendVarArray(
+            final Interp interp,
+            final String varname,
+            final String key,
+            final TclObject[] values,
+            final Var.CompiledLocal[] compiledLocals,
+            final int localIndex)
+                throws TclException
+        {
+            // This is way lame, but the append command
+            // semantics for arrays with traces are
+            // such that we can't use an optimized
+            // implementation. Use the runtime append
+            // command implementation for now until
+            // the Tcl core can be fixed to correct this.
+            // The implementation should work the same
+            // way as the lappend command.
+
+            return TJC.appendVar(interp, varname, key, values);
+        }
+
     } // end class CompiledCommand
 
     // Used to create a TJC compiled command. This method will
@@ -693,11 +834,12 @@ public class TJC {
     public static final
     TclObject incrVar(
         Interp interp,
-        String name,
+        String part1,
+        String part2,
         int incrAmount)
 	    throws TclException
     {
-        return Var.incrVar(interp, name, null,
+        return Var.incrVar(interp, part1, part2,
             incrAmount, TCL.LEAVE_ERR_MSG);
     }
 
@@ -1303,10 +1445,18 @@ public class TJC {
     TclObject lappendVar(
         Interp interp,
         String varName,        // Name of variable
+        String key,            // Array element key (can be null)
         TclObject[] values)    // Array of TclObject values to append
             throws TclException
     {
-        return LappendCmd.lappendVar(interp, varName, values, 0);
+        if (key == null) {
+            return LappendCmd.lappendVar(interp, varName, values, 0);
+        } else {
+            // LappendCmd expects a single var name in a String,
+            // so create one for this uncommon case.
+            String avName = varName + "(" + key + ")";
+            return LappendCmd.lappendVar(interp, avName, values, 0);
+        }
     }
 
     // Implements inlined append command that appends 1 or more
@@ -1318,15 +1468,19 @@ public class TJC {
     TclObject appendVar(
         Interp interp,
         String varName,        // Name of variable
+        String key,            // Array element key (can be null)
         TclObject[] values)    // Array of TclObject values to append
             throws TclException
     {
         TclObject varValue = null;
         final int len = values.length;
+        if (key != null) {
+            varName = varName + "(" + key + ")";
+        }
 
-	for (int i = 0; i < len; i++) {
-	    varValue = interp.setVar(varName, values[i], TCL.APPEND_VALUE);
-	}
+        for (int i = 0; i < len; i++) {
+            varValue = interp.setVar(varName, values[i], TCL.APPEND_VALUE);
+        }
 
         if (varValue == null) {
             // Return empty result object if null

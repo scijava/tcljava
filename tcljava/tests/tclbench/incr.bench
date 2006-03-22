@@ -1,0 +1,361 @@
+# Test inlined incr command.
+
+# This test calls incr 50 times for
+# a scalar local variable with the
+# default incr amount of 1.
+
+proc bench_incr_scalar_default_50 {} {
+    set i 0
+
+    incr i
+    incr i
+    incr i
+    incr i
+    incr i
+    incr i
+    incr i
+    incr i
+    incr i
+    incr i
+    
+    incr i
+    incr i
+    incr i
+    incr i
+    incr i
+    incr i
+    incr i
+    incr i
+    incr i
+    incr i
+
+    incr i
+    incr i
+    incr i
+    incr i
+    incr i
+    incr i
+    incr i
+    incr i
+    incr i
+    incr i
+
+    incr i
+    incr i
+    incr i
+    incr i
+    incr i
+    incr i
+    incr i
+    incr i
+    incr i
+    incr i
+
+    incr i
+    incr i
+    incr i
+    incr i
+    incr i
+    incr i
+    incr i
+    incr i
+    incr i
+    incr i
+}
+
+# This test calls incr 50 times for
+# a scalar local variable with a
+# constant int value argument.
+# Because the argument is a constant
+# integer, it should not run any
+# slower than bench_incr_scalar_default_50.
+
+proc bench_incr_scalar_const_50 {} {
+    set i 0
+
+    incr i 1
+    incr i 1
+    incr i 1
+    incr i 1
+    incr i 1
+    incr i 1
+    incr i 1
+    incr i 1
+    incr i 1
+    incr i 1
+    
+    incr i 1
+    incr i 1
+    incr i 1
+    incr i 1
+    incr i 1
+    incr i 1
+    incr i 1
+    incr i 1
+    incr i 1
+    incr i 1
+
+    incr i 1
+    incr i 1
+    incr i 1
+    incr i 1
+    incr i 1
+    incr i 1
+    incr i 1
+    incr i 1
+    incr i 1
+    incr i 1
+
+    incr i 1
+    incr i 1
+    incr i 1
+    incr i 1
+    incr i 1
+    incr i 1
+    incr i 1
+    incr i 1
+    incr i 1
+    incr i 1
+
+    incr i 1
+    incr i 1
+    incr i 1
+    incr i 1
+    incr i 1
+    incr i 1
+    incr i 1
+    incr i 1
+    incr i 1
+    incr i 1
+}
+
+# This test calls incr 50 times for
+# a scalar local variable with a
+# non-constant int value argument.
+# The non-constant integer value
+# needs to be read each time, so
+# this should execute a bit slower
+# than bench_incr_scalar_default_50.
+
+proc bench_incr_scalar_nonconst_50 {} {
+    set i 0
+
+    incr i 0x1
+    incr i 0x1
+    incr i 0x1
+    incr i 0x1
+    incr i 0x1
+    incr i 0x1
+    incr i 0x1
+    incr i 0x1
+    incr i 0x1
+    incr i 0x1
+    
+    incr i 0x1
+    incr i 0x1
+    incr i 0x1
+    incr i 0x1
+    incr i 0x1
+    incr i 0x1
+    incr i 0x1
+    incr i 0x1
+    incr i 0x1
+    incr i 0x1
+
+    incr i 0x1
+    incr i 0x1
+    incr i 0x1
+    incr i 0x1
+    incr i 0x1
+    incr i 0x1
+    incr i 0x1
+    incr i 0x1
+    incr i 0x1
+    incr i 0x1
+
+    incr i 0x1
+    incr i 0x1
+    incr i 0x1
+    incr i 0x1
+    incr i 0x1
+    incr i 0x1
+    incr i 0x1
+    incr i 0x1
+    incr i 0x1
+    incr i 0x1
+
+    incr i 0x1
+    incr i 0x1
+    incr i 0x1
+    incr i 0x1
+    incr i 0x1
+    incr i 0x1
+    incr i 0x1
+    incr i 0x1
+    incr i 0x1
+    incr i 0x1
+}
+
+# Run the incr command on a constant array
+# variable name. Array variable access is
+# slower than scalar access.
+
+proc bench_incr_array_constant_50 {} {
+    set a(zero) 0
+    set a(one) 1
+    set a(two) 2
+    set a(three) 3
+    set a(four) 4
+    set a(five) 5
+    set a(six) 6
+    set a(seven) 7
+    set a(eight) 8
+    set a(nine) 9
+    set a(ten) 10
+
+    incr a(two)
+    incr a(two)
+    incr a(two)
+    incr a(two)
+    incr a(two)
+    incr a(two)
+    incr a(two)
+    incr a(two)
+    incr a(two)
+    incr a(two)
+
+    incr a(two)
+    incr a(two)
+    incr a(two)
+    incr a(two)
+    incr a(two)
+    incr a(two)
+    incr a(two)
+    incr a(two)
+    incr a(two)
+    incr a(two)
+
+    incr a(two)
+    incr a(two)
+    incr a(two)
+    incr a(two)
+    incr a(two)
+    incr a(two)
+    incr a(two)
+    incr a(two)
+    incr a(two)
+    incr a(two)
+
+    incr a(two)
+    incr a(two)
+    incr a(two)
+    incr a(two)
+    incr a(two)
+    incr a(two)
+    incr a(two)
+    incr a(two)
+    incr a(two)
+    incr a(two)
+
+    incr a(two)
+    incr a(two)
+    incr a(two)
+    incr a(two)
+    incr a(two)
+    incr a(two)
+    incr a(two)
+    incr a(two)
+    incr a(two)
+    incr a(two)
+}
+
+
+# Run the incr command with a non-constant
+# array variable name. Accessing an
+# array variable with a non-constant key
+# is slower than with a constant key
+# because the key also needs to be
+# evaluated.
+
+proc bench_incr_array_nonconstant_50 {} {
+    set a(zero) 0
+    set a(one) 1
+    set a(two) 2
+    set a(three) 3
+    set a(four) 4
+    set a(five) 5
+    set a(six) 6
+    set a(seven) 7
+    set a(eight) 8
+    set a(nine) 9
+    set a(ten) 10
+
+    set key two
+
+    incr a($key)
+    incr a($key)
+    incr a($key)
+    incr a($key)
+    incr a($key)
+    incr a($key)
+    incr a($key)
+    incr a($key)
+    incr a($key)
+    incr a($key)
+
+    incr a($key)
+    incr a($key)
+    incr a($key)
+    incr a($key)
+    incr a($key)
+    incr a($key)
+    incr a($key)
+    incr a($key)
+    incr a($key)
+    incr a($key)
+
+    incr a($key)
+    incr a($key)
+    incr a($key)
+    incr a($key)
+    incr a($key)
+    incr a($key)
+    incr a($key)
+    incr a($key)
+    incr a($key)
+    incr a($key)
+
+    incr a($key)
+    incr a($key)
+    incr a($key)
+    incr a($key)
+    incr a($key)
+    incr a($key)
+    incr a($key)
+    incr a($key)
+    incr a($key)
+    incr a($key)
+
+    incr a($key)
+    incr a($key)
+    incr a($key)
+    incr a($key)
+    incr a($key)
+    incr a($key)
+    incr a($key)
+    incr a($key)
+    incr a($key)
+    incr a($key)
+}
+
+
+bench -desc "bench_incr_scalar_default_50" -body {bench_incr_scalar_default_50}
+
+bench -desc "bench_incr_scalar_const_50" -body {bench_incr_scalar_const_50}
+
+bench -desc "bench_incr_scalar_nonconst_50" -body {bench_incr_scalar_nonconst_50}
+
+bench -desc "bench_incr_array_constant_50" -body {bench_incr_array_constant_50}
+
+bench -desc "bench_incr_array_nonconstant_50" -body {bench_incr_array_nonconstant_50}
+

@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: compileproc.tcl,v 1.19 2006/03/20 18:46:20 mdejong Exp $
+#  RCS: @(#) $Id: compileproc.tcl,v 1.20 2006/03/22 01:38:44 mdejong Exp $
 #
 #
 
@@ -2365,7 +2365,7 @@ proc compileproc_emit_invoke_call { key } {
     return [compileproc_emit_objv_assignment \
         $key \
         0 end \
-        0 \
+        {} 0 \
         compileproc_emit_invoke_call_impl \
         {} \
         ]
@@ -2376,16 +2376,22 @@ proc compileproc_emit_invoke_call { key } {
 # command will invoke a specific callback to
 # emit code that appears after the array has
 # been allocated and populated.
+#
+# key : dkey for command
+# starti : integer index of first argument to assign
+# endi : integer index of last argument to assign
+# tmpsymbol : pass already declared TclObject, {} if none
+# force_decl_tmpsymbol : pass true to force declaration of
+#     TclObject temp symbol before the try loop. This
+#     flag is only used if tmpsymbol is {}.
+# callback : command to invoke after array has been populated.
+# userdata : user supplied data to pass into callback command
 
-proc compileproc_emit_objv_assignment { key starti endi decl_tmpsymbol callback userdata } {
+proc compileproc_emit_objv_assignment { key starti endi \
+        tmpsymbol force_decl_tmpsymbol \
+        callback userdata } {
     global _compileproc
     global _compileproc_key_info
-
-    set debug 0
-
-    if {$debug} {
-        puts "compileproc_emit_objv_assignment $key"
-    }
 
     set num_args $_compileproc_key_info($key,num_args)
 
@@ -2394,10 +2400,13 @@ proc compileproc_emit_objv_assignment { key starti endi decl_tmpsymbol callback 
     }
 
     # Init buffer with array symbol declaration
-    # and an optional tmp symbol. Only declare
-    # the tmp symbol before the try block when
-    # the skip_constant_increment flag is set
-    # to keep from having to change test output.
+    # and an optional tmp symbol. Declare the
+    # tmp symbol before the try block when
+    # the use_tmp_local is set to true because
+    # a non-constant argument was passed or
+    # because the force_decl_tmpsymbol flag
+    # was true. This maintains compatibility
+    # with older test output.
 
     set buffer ""
     set arraysym [compileproc_tmpvar_next objv]
@@ -2422,7 +2431,7 @@ proc compileproc_emit_objv_assignment { key starti endi decl_tmpsymbol callback 
         set use_tmp_local 1
     }
 
-    if {!$use_tmp_local && $decl_tmpsymbol} {
+    if {!$use_tmp_local && $force_decl_tmpsymbol} {
         set use_tmp_local 1
     }
 
@@ -2433,12 +2442,11 @@ proc compileproc_emit_objv_assignment { key starti endi decl_tmpsymbol callback 
         append buffer [emitter_container_try_start]
     }
 
-    if {$use_tmp_local} {
+    if {$tmpsymbol != {}} {
+        # Use passed in TclObject tmpsymbol
+    } elseif {$use_tmp_local} {
         set tmpsymbol [compileproc_tmpvar_next]
         append buffer [emitter_indent] "TclObject " $tmpsymbol "\;\n"
-    } else {
-        # constant arguments will not use this tmpsymbol
-        set tmpsymbol {}
     }
 
     # Declare tmp symbol before the try block only
@@ -2452,7 +2460,7 @@ proc compileproc_emit_objv_assignment { key starti endi decl_tmpsymbol callback 
     # ref count if needed, and save the TclObject into
     # the argument array.
 
-    set const_unincremented_indexes {}
+    set const_unincremented_indexes [list]
 
     for {set i $starti} {$i < $endi} {incr i} {
         set tuple [compileproc_emit_argument $key $i 0 $tmpsymbol]
@@ -2505,7 +2513,7 @@ proc compileproc_emit_objv_assignment { key starti endi decl_tmpsymbol callback 
 
     set release_none_flag false
 
-    if {[llength $const_unincremented_indexes] > 0} {
+    if {$const_unincremented_indexes != {}} {
         if {[llength $const_unincremented_indexes] == $objv_size} {
             # Special case, all the arguments are constants so
             # there is no need to release any of them.
@@ -6992,12 +7000,6 @@ proc compileproc_parse_value { value } {
 proc compileproc_can_inline_command_append { key } {
     global _compileproc
 
-#    set debug 0
-
-#    if {$debug} {
-#        puts "compileproc_can_inline_command_append $key"
-#    }
-
     # The append command accepts 2, 3, or more than 3 arguments.
     # Pass to runtime impl if there are less than 3 arguments.
 
@@ -7005,23 +7007,14 @@ proc compileproc_can_inline_command_append { key } {
     set num_args [llength $tree]
 
     if {$num_args < 3} {
-#        if {$debug} {
-#            puts "returning false since there are $num_args args"
-#        }
         return 0
     }
 
-    # 2nd argument to inlined append must be a constant scalar or
-    # array variable name, otherwise pass to runtime append command.
+    # 2nd argument to inlined append command is typically a
+    # static scalar or array variable name. It could
+    # also be a static array name with a non-static key.
 
-    set tuple [compileproc_get_argument_tuple $key 1]
-    set type [lindex $tuple 0]
-
-    if {$type != "constant"} {
-#        if {$debug} {
-#            puts "returning false since argument 1 is non-constant type $type"
-#        }
-
+    if {![compileproc_can_inline_variable_access $key 1]} {
         return 0
     }
 
@@ -7030,14 +7023,15 @@ proc compileproc_can_inline_command_append { key } {
 
 # Emit code to implement inlined append command. The
 # inlined append command would have already been validated
-# to have a constant variable name and 3 or more arguments
-# when this method is invoked. The inlined append command
-# is a bit more tricky that then other commands because
-# it must emit special code when cache variables is
-# enabled.
+# to have 3 or more arguments and a constant variable
+# name or a constant array name with a non-constant key.
+# The inlined append command is a bit more tricky than
+# other commands because it must emit special code when
+# cache variables is enabled.
 
 proc compileproc_emit_inline_command_append { key } {
     set buffer ""
+    set tmpsymbol {}
 
     set tree [descend_get_data $key tree]
     set num_args [llength $tree]
@@ -7046,10 +7040,31 @@ proc compileproc_emit_inline_command_append { key } {
 
     set tuple [compileproc_get_argument_tuple $key 1]
     set type [lindex $tuple 0]
-    if {$type != "constant"} {
-        error "expected constant variable name"
+
+    if {$type == "constant"} {
+        set varname [lindex $tuple 1]
+        set userdata [list 1 $varname]
+        set force_decl_tmpsymbol 1
+    } else {
+        # Evaluate word key in argument 1 before
+        # evaluating arguments in the try block.
+        # This works with cache vars on or off.
+
+        set tmpsymbol [compileproc_tmpvar_next]
+        append buffer [emitter_statement "TclObject $tmpsymbol"]
+
+        set tuple [compileproc_setup_nonconstant_array_variable \
+            $key 1 $tmpsymbol]
+        set varname [lindex $tuple 0]
+        set keysym [lindex $tuple 1]
+        set word_buffer [lindex $tuple 2]
+
+        append buffer $word_buffer
+
+        set userdata [list 0 $varname $keysym]
+
+        set force_decl_tmpsymbol 0
     }
-    set varname [lindex $tuple 1]
 
     # Emit code to allocate an array of TclObject and
     # assign command argument values to the array
@@ -7058,9 +7073,9 @@ proc compileproc_emit_inline_command_append { key } {
     append buffer [compileproc_emit_objv_assignment \
         $key \
         2 end \
-        1 \
+        $tmpsymbol $force_decl_tmpsymbol \
         compileproc_emit_append_call_impl \
-        $varname \
+        $userdata \
         ]
 
     return $buffer
@@ -7080,6 +7095,14 @@ proc compileproc_emit_append_call_impl { key arraysym tmpsymbol userdata } {
 
     set buffer ""
 
+    set is_static_varname [lindex $userdata 0]
+    if {$is_static_varname} {
+        set varname [lindex $userdata 1]
+    } else {
+        set varname [lindex $userdata 1]
+        set keysym [lindex $userdata 2]
+    }
+
     # Reset interp result before the append
     # method is invoked. If the variable
     # contains the same TclObject saved
@@ -7090,32 +7113,63 @@ proc compileproc_emit_append_call_impl { key arraysym tmpsymbol userdata } {
 
     append buffer [emitter_reset_result]
 
-    set varname $userdata
-    set varname_symbol [emitter_double_quote_tcl_string $userdata]
-
     if {!$cache_variables} {
-        append buffer \
-            [emitter_statement \
-                "$tmpsymbol = TJC.appendVar(interp, $varname_symbol, $arraysym)"]
-    } else {
-        # In cache variable mode, inline special code for scalar var
+        # Note that TJC.appendVar() will concat the second varname
+        # if non-null, so passing whole name in first arg is better.
+
+        set qvarname [emitter_double_quote_tcl_string $varname]
+        if {$is_static_varname} {
+            append buffer \
+                [emitter_statement \
+                    "$tmpsymbol = TJC.appendVar(interp, $qvarname, null, $arraysym)"]
+        } else {
+            # array variable with word key, invoke runtime append.
+            append buffer \
+                [emitter_statement \
+                    "$tmpsymbol = TJC.appendVar(interp, $qvarname, $keysym, $arraysym)"]
+        }
+    } elseif {$is_static_varname} {
+        # Both array and scalar vars can be cached.
 
         set vinfo [descend_simple_variable $varname]
         if {[lindex $vinfo 0] == "array"} {
+            set p1 [lindex $vinfo 1]
+            set p2 [lindex $vinfo 2]
+
+            set cache_symbol [compileproc_variable_cache_lookup $p1]
+            set cacheId [compileproc_get_variable_cache_id_from_symbol $cache_symbol]
+
+            set qp1 [emitter_double_quote_tcl_string $p1]
+            set qp2 [emitter_double_quote_tcl_string $p2]
+
             append buffer \
                 [emitter_statement \
-                    "$tmpsymbol = TJC.appendVar(interp, $varname_symbol, $arraysym)"]
+                    "$tmpsymbol = appendVarArray(interp, $qp1, $qp2,\
+                        $arraysym, compiledLocals, $cacheId)"]
         } elseif {[lindex $vinfo 0] == "scalar"} {
             set cache_symbol [compileproc_variable_cache_lookup $varname]
             set cacheId [compileproc_get_variable_cache_id_from_symbol $cache_symbol]
 
+            set qvarname [emitter_double_quote_tcl_string $varname]
             append buffer \
                 [emitter_statement \
-                    "$tmpsymbol = appendVarScalar(interp, $varname_symbol,\
+                    "$tmpsymbol = appendVarScalar(interp, $qvarname,\
                         $arraysym, compiledLocals, $cacheId)"]
         } else {
             error "unexpected result \{$vinfo\} from descend_simple_variable"
         }
+    } else {
+        # array variable with word key, cache vars enabled.
+
+        set cache_symbol [compileproc_variable_cache_lookup $varname]
+        set cacheId [compileproc_get_variable_cache_id_from_symbol $cache_symbol]
+
+        set qvarname [emitter_double_quote_tcl_string $varname]
+
+        append buffer \
+            [emitter_statement \
+                "$tmpsymbol = appendVarArray(interp, $qvarname, $keysym,\
+                    $arraysym, compiledLocals, $cacheId)"]
     }
 
     append buffer [emitter_set_result $tmpsymbol false]
@@ -7250,17 +7304,11 @@ proc compileproc_can_inline_command_incr { key } {
         return 0
     }
 
-    # 2nd argument to inlined incr must be a constant scalar or
-    # array variable name, otherwise pass to runtime incr command.
+    # 2nd argument to inlined incr command is typically a
+    # static scalar or array variable name. It could
+    # also be a static array name with a non-static key.
 
-    set tuple [compileproc_get_argument_tuple $key 1]
-    set type [lindex $tuple 0]
-
-    if {$type != "constant"} {
-#        if {$debug} {
-#            puts "returning false since argument 1 is non-constant type $type"
-#        }
-
+    if {![compileproc_can_inline_variable_access $key 1]} {
         return 0
     }
 
@@ -7287,15 +7335,19 @@ proc compileproc_emit_inline_command_incr { key } {
     }
 
     set buffer ""
+    set incr_value_buffer ""
+    set incr_buffer ""
 
     # Determine constant variable name as a String.
 
     set tuple [compileproc_get_argument_tuple $key 1]
     set type [lindex $tuple 0]
-    if {$type != "constant"} {
-        error "expected constant variable name"
+    if {$type == "constant"} {
+        set constant_varname 1
+        set varname [lindex $tuple 1]
+    } else {
+        set constant_varname 0
     }
-    set varname [lindex $tuple 1]
 
     # Determine the incr amount, if there are 2
     # arguments then the incr amount is 1,
@@ -7337,10 +7389,10 @@ proc compileproc_emit_inline_command_incr { key } {
             set value_type [lindex $tuple 0]
             set value_symbol [lindex $tuple 1]
             set value_buffer [lindex $tuple 2]
-            append buffer $value_buffer
+            append incr_value_buffer $value_buffer
 
             set tmpsymbol [compileproc_tmpvar_next]
-            append buffer [emitter_statement \
+            append incr_value_buffer [emitter_statement \
                 "int $tmpsymbol = TclInteger.get(interp, $value_symbol)"]
 
             set incr_symbol $tmpsymbol
@@ -7352,30 +7404,75 @@ proc compileproc_emit_inline_command_incr { key } {
     # Reset the interp result in case it holds a ref
     # to the TclObject inside the variable.
 
-    append buffer [emitter_reset_result]
+    append incr_buffer [emitter_reset_result]
 
     # Emit incr statement, incr_symbol is an int value
-    # to add to the current value.
+    # to add to the current value in the variable.
 
     set result_tmpsymbol [compileproc_tmpvar_next]
-    set qvarname [emitter_double_quote_tcl_string $varname]
-
-    append buffer [emitter_indent] \
-        "TclObject $result_tmpsymbol = "
 
     if {!$cache_variables} {
+        # Not in cache variable mode, emit generic TJC.incrVar()
+        # that works for either scalars or arrays.
+
+        if {$constant_varname} {
+            set qvarname [emitter_double_quote_tcl_string $varname]
+            append buffer \
+                $incr_value_buffer \
+                $incr_buffer \
+                [emitter_indent] "TclObject $result_tmpsymbol = " \
+                "TJC.incrVar(interp, " $qvarname ", null" ", " $incr_symbol ")\;\n"
+        } else {
+            # Evaluate non-constant array varname as a word value.
+
+            append buffer \
+                [emitter_indent] "TclObject $result_tmpsymbol\;\n"
+
+            set tuple [compileproc_emit_argument $key 1 false $result_tmpsymbol]
+            append buffer [lindex $tuple 2]
+
+            # Save result of word evaluation in a String in case the value
+            # evaluation changes the interp result.
+
+            set avname_tmpsymbol [compileproc_tmpvar_next]
+            append buffer [emitter_statement \
+                "String $avname_tmpsymbol = ${result_tmpsymbol}.toString()"]
+
+            # Add argument 2 evaluation code, then call incr method
+
+            append buffer \
+                $incr_value_buffer \
+                $incr_buffer \
+                [emitter_indent] "$result_tmpsymbol = " \
+                "TJC.incrVar(interp, " $avname_tmpsymbol \
+                ", null" \
+                ", " $incr_symbol ")\;\n"
+        }
+    } elseif {$constant_varname} {
+        # cache variable mode with constant var name, emit either
+        # scalar or variable invocation.
+
         append buffer \
-            "TJC.incrVar(interp, " $qvarname ", " $incr_symbol ")\;\n"
-    } else {
-        # In cache variable mode, inline special code for scalar var
+            $incr_value_buffer \
+            $incr_buffer \
+            [emitter_indent] "TclObject $result_tmpsymbol = "
 
         set vinfo [descend_simple_variable $varname]
         if {[lindex $vinfo 0] == "array"} {
             set p1 [lindex $vinfo 1]
             set p2 [lindex $vinfo 2]
+            set cache_symbol [compileproc_variable_cache_lookup $p1]
+            set cacheId [compileproc_get_variable_cache_id_from_symbol $cache_symbol]
+
+            set qp1 [emitter_double_quote_tcl_string $p1]
+            set qp2 [emitter_double_quote_tcl_string $p2]
+
             append buffer \
-                "TJC.incrVar(interp, " $qvarname ", " $incr_symbol ")\;\n"
+                "incrVarArray(interp, " $qp1 ", " $qp2 ", " $incr_symbol ", " \
+                "compiledLocals" ", " $cacheId ")\;\n"
         } elseif {[lindex $vinfo 0] == "scalar"} {
+            set qvarname [emitter_double_quote_tcl_string $varname]
+
             set cache_symbol [compileproc_variable_cache_lookup $varname]
             set cacheId [compileproc_get_variable_cache_id_from_symbol $cache_symbol]
 
@@ -7385,12 +7482,35 @@ proc compileproc_emit_inline_command_incr { key } {
         } else {
             error "unexpected result \{$vinfo\} from descend_simple_variable"
         }
+    } else {
+        # Evaluate constant array varname with a non-constant key.
+
+        append buffer \
+            [emitter_indent] "TclObject $result_tmpsymbol\;\n"
+
+        # Evaluate array variable key in argument 1 before argument 2
+
+        set tuple [compileproc_setup_nonconstant_array_variable \
+            $key 1 $result_tmpsymbol]
+        set varname [lindex $tuple 0]
+        set keysym [lindex $tuple 1]
+        set word_buffer [lindex $tuple 2]
+
+        set qvarname [emitter_double_quote_tcl_string $varname]
+
+        set cache_symbol [compileproc_variable_cache_lookup $varname]
+        set cacheId [compileproc_get_variable_cache_id_from_symbol $cache_symbol]
+
+        append buffer \
+            $word_buffer \
+            $incr_value_buffer \
+            $incr_buffer \
+            [emitter_indent] "$result_tmpsymbol = " \
+            "incrVarArray(interp, " $qvarname ", " $keysym ", " $incr_symbol ", " \
+            "compiledLocals" ", " $cacheId ")\;\n"
     }
 
     # Set interp result to the returned value.
-    # This code always calls setResult(), so there
-    # is no need to worry about calling resetResult()
-    # before the inlined set impl begins.
 
     append buffer [emitter_set_result $result_tmpsymbol false]
 
@@ -7421,17 +7541,11 @@ proc compileproc_can_inline_command_lappend { key } {
         return 0
     }
 
-    # 2nd argument to inlined lappend must be a constant scalar or
-    # array variable name, otherwise pass to runtime lappend command.
+    # 2nd argument to inlined lappend command is typically a
+    # static scalar or array variable name. It could
+    # also be a static array name with a non-static key.
 
-    set tuple [compileproc_get_argument_tuple $key 1]
-    set type [lindex $tuple 0]
-
-    if {$type != "constant"} {
-#        if {$debug} {
-#            puts "returning false since argument 1 is non-constant type $type"
-#        }
-
+    if {![compileproc_can_inline_variable_access $key 1]} {
         return 0
     }
 
@@ -7440,14 +7554,15 @@ proc compileproc_can_inline_command_lappend { key } {
 
 # Emit code to implement inlined lappend command. The
 # inlined lappend command would have already been validated
-# to have a constant variable name and 3 or more arguments
-# when this method is invoked. The inlined lappend command
-# is a bit more tricky that then other commands because
-# it must emit special code when cache variables is
-# enabled.
+# to have 3 arguments and a constant variable name or
+# a constant array name with a non-constant key. The inlined
+# lappend command is tricky as compared to other commands
+# because it needs to emit special code when cached variables
+# are enabled.
 
 proc compileproc_emit_inline_command_lappend { key } {
     set buffer ""
+    set tmpsymbol {}
 
     set tree [descend_get_data $key tree]
     set num_args [llength $tree]
@@ -7456,10 +7571,30 @@ proc compileproc_emit_inline_command_lappend { key } {
 
     set tuple [compileproc_get_argument_tuple $key 1]
     set type [lindex $tuple 0]
-    if {$type != "constant"} {
-        error "expected constant variable name"
+    if {$type == "constant"} {
+        set varname [lindex $tuple 1]
+        set userdata [list 1 $varname]
+        set force_decl_tmpsymbol 1
+    } else {
+        # Evaluate word key in argument 1 before
+        # evaluating arguments in the try block.
+        # This works with cache vars on or off.
+
+        set tmpsymbol [compileproc_tmpvar_next]
+        append buffer [emitter_statement "TclObject $tmpsymbol"]
+
+        set tuple [compileproc_setup_nonconstant_array_variable \
+            $key 1 $tmpsymbol]
+        set varname [lindex $tuple 0]
+        set keysym [lindex $tuple 1]
+        set word_buffer [lindex $tuple 2]
+
+        append buffer $word_buffer
+
+        set userdata [list 0 $varname $keysym]
+
+        set force_decl_tmpsymbol 0
     }
-    set varname [lindex $tuple 1]
 
     # Emit code to allocate an array of TclObject and
     # assign command argument values to the array
@@ -7468,16 +7603,23 @@ proc compileproc_emit_inline_command_lappend { key } {
     append buffer [compileproc_emit_objv_assignment \
         $key \
         2 end \
-        1 \
+        $tmpsymbol $force_decl_tmpsymbol \
         compileproc_emit_lappend_call_impl \
-        $varname \
+        $userdata \
         ]
 
     return $buffer
 }
 
 # Invoked to emit code for inlined TJC.lappendVar() call
-# inside try block.
+# inside try block. This method is called after all
+# of the arguments have been evaluated and have
+# been assigned to the array.
+#
+# key : dkey for command
+# arraysym : symbol for TclObject[] array
+# tmpsymbol : symbol of type TclObject, can be used inside try/finally blocks
+# userdata : user defined data passed to compileproc_emit_objv_assignment
 
 proc compileproc_emit_lappend_call_impl { key arraysym tmpsymbol userdata } {
     global _compileproc
@@ -7490,6 +7632,14 @@ proc compileproc_emit_lappend_call_impl { key arraysym tmpsymbol userdata } {
 
     set buffer ""
 
+    set is_static_varname [lindex $userdata 0]
+    if {$is_static_varname} {
+        set varname [lindex $userdata 1]
+    } else {
+        set varname [lindex $userdata 1]
+        set keysym [lindex $userdata 2]
+    }
+
     # Reset interp result before the lappend
     # method is invoked. If the variable
     # contains the same TclObject saved
@@ -7500,32 +7650,61 @@ proc compileproc_emit_lappend_call_impl { key arraysym tmpsymbol userdata } {
 
     append buffer [emitter_reset_result]
 
-    set varname $userdata
-    set varname_symbol [emitter_double_quote_tcl_string $userdata]
-
     if {!$cache_variables} {
-        append buffer \
-            [emitter_statement \
-                "$tmpsymbol = TJC.lappendVar(interp, $varname_symbol, $arraysym)"]
-    } else {
-        # In cache variable mode, inline special code for scalar var
+        set qvarname [emitter_double_quote_tcl_string $varname]
+        if {$is_static_varname} {
+            append buffer \
+                [emitter_statement \
+                    "$tmpsymbol = TJC.lappendVar(interp, $qvarname, null, $arraysym)"]
+        } else {
+            # array variable with word key, invoke runtime lappend.
+            append buffer \
+                [emitter_statement \
+                    "$tmpsymbol = TJC.lappendVar(interp, $qvarname, $keysym, $arraysym)"]
+        }
+    } elseif {$is_static_varname} {
+        # static variable name, cache vars enabled, emit either
+        # scalar or array variable access.
 
         set vinfo [descend_simple_variable $varname]
         if {[lindex $vinfo 0] == "array"} {
+            set p1 [lindex $vinfo 1]
+            set p2 [lindex $vinfo 2]
+
+            set cache_symbol [compileproc_variable_cache_lookup $p1]
+            set cacheId [compileproc_get_variable_cache_id_from_symbol $cache_symbol]
+
+            set qp1 [emitter_double_quote_tcl_string $p1]
+            set qp2 [emitter_double_quote_tcl_string $p2]
+
             append buffer \
                 [emitter_statement \
-                    "$tmpsymbol = TJC.lappendVar(interp, $varname_symbol, $arraysym)"]
+                    "$tmpsymbol = lappendVarArray(interp, $qp1, $qp2,\
+                        $arraysym, compiledLocals, $cacheId)"]
         } elseif {[lindex $vinfo 0] == "scalar"} {
+            set qvarname [emitter_double_quote_tcl_string $varname]
             set cache_symbol [compileproc_variable_cache_lookup $varname]
             set cacheId [compileproc_get_variable_cache_id_from_symbol $cache_symbol]
 
             append buffer \
                 [emitter_statement \
-                    "$tmpsymbol = lappendVarScalar(interp, $varname_symbol,\
+                    "$tmpsymbol = lappendVarScalar(interp, $qvarname,\
                         $arraysym, compiledLocals, $cacheId)"]
         } else {
             error "unexpected result \{$vinfo\} from descend_simple_variable"
         }
+    } else {
+        # array variable with word key, cache vars enabled.
+
+        set cache_symbol [compileproc_variable_cache_lookup $varname]
+        set cacheId [compileproc_get_variable_cache_id_from_symbol $cache_symbol]
+
+        set qvarname [emitter_double_quote_tcl_string $varname]
+
+        append buffer \
+            [emitter_statement \
+                "$tmpsymbol = lappendVarArray(interp, $qvarname, $keysym,\
+                    $arraysym, compiledLocals, $cacheId)"]
     }
 
     append buffer [emitter_set_result $tmpsymbol false]
@@ -8614,6 +8793,49 @@ proc compileproc_can_inline_variable_access { key index } {
 
 proc compileproc_get_set_nonconstant_array_variable { key index \
         getset tmpsymbol {assign_tmpsymbol true} {value {}} } {
+
+    set tuple [compileproc_setup_nonconstant_array_variable \
+        $key $index $tmpsymbol]
+    set varname [lindex $tuple 0]
+    set keysym [lindex $tuple 1]
+    set word_buffer [lindex $tuple 2]
+
+    if {$getset == "get"} {
+        set get_set_buffer ""
+        append get_set_buffer \
+            [emitter_indent] \
+            $tmpsymbol " = " \
+            [compileproc_emit_array_variable_get $varname $keysym false] \
+            "\;\n"
+    } elseif {$getset == "set"} {
+        set get_set_buffer [emitter_indent]
+
+        if {$assign_tmpsymbol} {
+            append get_set_buffer \
+                $tmpsymbol " = "
+        }
+
+        append get_set_buffer \
+            [compileproc_emit_array_variable_set $varname $keysym false $value] \
+            "\;\n"
+    } else {
+        error "bad getset argument must be \"get\" or \"set\""
+    }
+
+    return [list $word_buffer $get_set_buffer]
+}
+
+# Util method used to evaluate the word elements in a
+# non-constant array variable name. This method
+# returns a tuple of:
+#
+# {ARRAYNAME KEYSYM WORD_BUFFER}
+#
+# ARRAYNAME : array variable name as constant String
+# KEYSM : array element key as String symbol
+# WORD_BUFFER : code to evaluate KEYSYM
+
+proc compileproc_setup_nonconstant_array_variable { key index tmpsymbol } {
     # Non-constant array variable name already validated by
     # compileproc_can_inline_variable_access, so just grab the
     # variable name here.
@@ -8661,31 +8883,6 @@ proc compileproc_get_set_nonconstant_array_variable { key index \
     append word_buffer \
         [compileproc_emit_word $tmpsymbol $key_elems $decl_flag $keysym]
 
-    # The array key has been evaluated and saved in tmpsymbol,
-    # so lookup the array element using the array key.
-
-    if {$getset == "get"} {
-        set get_set_buffer ""
-        append get_set_buffer \
-            [emitter_indent] \
-            $tmpsymbol " = " \
-            [compileproc_emit_array_variable_get $varname $keysym false] \
-            "\;\n"
-    } elseif {$getset == "set"} {
-        set get_set_buffer [emitter_indent]
-
-        if {$assign_tmpsymbol} {
-            append get_set_buffer \
-                $tmpsymbol " = "
-        }
-
-        append get_set_buffer \
-            [compileproc_emit_array_variable_set $varname $keysym false $value] \
-            "\;\n"
-    } else {
-        error "bad getset argument must be \"get\" or \"set\""
-    }
-
-    return [list $word_buffer $get_set_buffer]
+    return [list $varname $keysym $word_buffer]
 }
 

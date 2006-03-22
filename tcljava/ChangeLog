@@ -1,3 +1,48 @@
+2006-03-21  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        Create inlined versions of the incr, lappend,
+        and append commands that work with compiled
+        local array variables.
+
+        * docs/TJC/optcode.html: Mention inlined
+        array access for incr, lappend, and append.
+        Show examples where array access is slower
+        that using scalar vars.
+        * src/jacl/tcl/lang/Var.java (
+        getVarCompiledLocalArray): Add boolean flag
+        to indicate when an error should be raised
+        vs null returned. This is needs to optimize
+        lappend for a non-existent array element.
+        * src/tjc/tcl/lang/TJC.java (getVarArray,
+        incrVarScalar, incrVarArray, lappendVarArray,
+        appendVarArray, incrVar, lappendVar, appendVar):
+        Implement runtime support for inlined incr,
+        lappend, and append commands that work with
+        compiled local array variables.
+        * src/tjc/tjc/library/compileproc.tcl:
+        Update compileproc_emit_invoke_call,
+        compileproc_emit_objv_assignment,
+        compileproc_can_inline_command_append,
+        compileproc_emit_inline_command_append,
+        compileproc_emit_append_call_impl,
+        compileproc_can_inline_command_incr,
+        compileproc_emit_inline_command_incr,
+        compileproc_can_inline_command_lappend,
+        compileproc_emit_inline_command_lappend,
+        compileproc_emit_lappend_call_impl,
+        compileproc_get_set_nonconstant_array_variable,
+        and compileproc_setup_nonconstant_array_variable,
+        to support inlined versions of incr, lappend,
+        and append that work with compiled local
+        array variables. These methods now all accept
+        a static array var name with a non-static key.
+        * tests/tclbench/append.bench: Add append tests.
+        * tests/tclbench/incr.bench: Add incr tests.
+        * tests/tjc/compiledLocals.test: Add inline
+        command tests.
+        * tests/tjc/compileproc_7.test: Output tests
+        for inlined incr, lappend, and append commands.
+
 2006-03-19  Mo DeJong  <mdejong@users.sourceforge.net>
 
         Implement compiled local array variables. Array
