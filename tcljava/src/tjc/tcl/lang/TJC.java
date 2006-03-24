@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TJC.java,v 1.19 2006/03/22 01:38:44 mdejong Exp $ *
+ * RCS: @(#) $Id: TJC.java,v 1.20 2006/03/24 21:33:50 mdejong Exp $ *
  */
 
 // Runtime support for TJC compiler implementation.
@@ -112,9 +112,11 @@ public class TJC {
     // automatically when the CallFrame is popped.
 
     public static Var.CompiledLocal[] initCompiledLocals(
-            final Interp interp,
             final CallFrame frame,
-            final int size) {
+            final int size,
+            final String[] names)
+    {
+        frame.compiledLocalsNames = names;
         return frame.compiledLocals = new Var.CompiledLocal[size];
     }
 
@@ -260,6 +262,30 @@ public class TJC {
         // The following methods are used in compiled commands
         // that make use of cached variable access.
 
+        // initVarScoped() is invoked for scoped variable
+        // like "::myglobal". This method will create a local
+        // var linked to variable defined in another scope
+        // if that has not been done yet.
+
+        protected final
+        void initVarScoped(
+            final Interp interp,
+            final String varname,    // Fully qualified varname
+                                     // including namespace scope.
+                                     // Can be array or scalar.
+            final Var.CompiledLocal[] compiledLocals,
+            final int localIndex)
+                throws TclException
+        {
+            if (compiledLocals[localIndex] == null) {
+                // Passing EXPLICIT_LOCAL_NAME tells makeUpvar 
+                // to do nothing when varname lookup fails.
+                Var.makeUpvar(interp, null,
+                    varname, null, TCL.GLOBAL_ONLY,
+                    varname, Var.EXPLICIT_LOCAL_NAME, localIndex);
+            }
+        }
+
         // getVarScalar() will get a variable value, if a
         // cached variable is available then it will be used,
         // otherwise the runtime getVar() will be invoked to get
@@ -276,7 +302,8 @@ public class TJC {
         {
             Var.CompiledLocal clocal = compiledLocals[localIndex];
             if (clocal == null || clocal.isResolvedScalarInvalid()) {
-                return Var.getVarCompiledLocalScalar(interp, varname, localIndex);
+                return Var.getVarCompiledLocalScalarInvalid(interp,
+                    varname, clocal);
             } else {
                 return (TclObject) clocal.resolved.value;
             }
@@ -299,7 +326,7 @@ public class TJC {
         {
             Var.CompiledLocal clocal = compiledLocals[localIndex];
             if (clocal == null || clocal.isResolvedArrayInvalid()) {
-                return Var.getVarCompiledLocalArray(
+                return Var.getVarCompiledLocalArrayInvalid(
                     interp, varname, key, clocal, localIndex);
             } else {
                 return Var.getVarCompiledLocalArray(
@@ -317,15 +344,18 @@ public class TJC {
         TclObject setVarScalar(
             final Interp interp,
             final String varname,    // Scalar variable name
-            final TclObject value,
+            final TclObject value,   // New variable value
             final Var.CompiledLocal[] compiledLocals,
             final int localIndex)
                 throws TclException
         {
             Var.CompiledLocal clocal = compiledLocals[localIndex];
-            if (clocal == null || clocal.isResolvedScalarInvalid()) {
-                return Var.setVarCompiledLocalScalar(
-                    interp, varname, value, localIndex);
+            if (clocal == null) {
+                return Var.initVarCompiledLocalScalar(
+                    interp, varname, value, compiledLocals, localIndex);
+            } else if (clocal.isResolvedScalarInvalid()) {
+                return Var.setVarCompiledLocalScalarInvalid(
+                    interp, varname, value, compiledLocals, localIndex);
             } else {
                 return TJC.setVarScalar(clocal.resolved, value);
             }
@@ -361,9 +391,13 @@ public class TJC {
                 throws TclException
         {
             Var.CompiledLocal clocal = compiledLocals[localIndex];
-            if (clocal == null || clocal.isResolvedArrayInvalid()) {
-                return Var.setVarCompiledLocalArray(
-                    interp, varname, key, value, localIndex);
+
+            if (clocal == null) {
+                return Var.initVarCompiledLocalArray(
+                    interp, varname, key, value, compiledLocals, localIndex);
+            } else if (clocal.isResolvedArrayInvalid()) {
+                return Var.setVarCompiledLocalArrayInvalid(
+                    interp, varname, key, value, compiledLocals, localIndex);
             } else {
                 return Var.setVarCompiledLocalArray(
                     interp, varname, key, value, clocal);
@@ -1366,7 +1400,7 @@ public class TJC {
             throws TclException
     {
 	// Link to the variable "varName" in the global :: namespace.
-        // A local link var name varTail is defined.
+        // A local link var named varTail is defined.
 
 	Var.makeUpvar(interp, null,
 		varName, null, TCL.GLOBAL_ONLY,

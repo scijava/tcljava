@@ -127,7 +127,7 @@ public class Test1 extends TJC.CompiledCommand {
         if (!initCmd) { initCmd(interp); }
         CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
         Var.CompiledLocal[] compiledLocals =
-            TJC.initCompiledLocals(interp, callFrame, 1);
+            TJC.initCompiledLocals(callFrame, 1, compiledLocalsNames);
         try {
         if (objv.length != 1) {
             throw new TclNumArgsException(interp, 1, objv, "");
@@ -162,6 +162,10 @@ public class Test1 extends TJC.CompiledCommand {
         const0 = TclString.newInstance("list");
         const0.preserve(); const0.preserve();
     }
+
+    String[] compiledLocalsNames = {
+        "x"
+    };
 } // end class Test1
 }}
 
@@ -234,7 +238,7 @@ public class Test1 extends TJC.CompiledCommand {
     {
         CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
         Var.CompiledLocal[] compiledLocals =
-            TJC.initCompiledLocals(interp, callFrame, 1);
+            TJC.initCompiledLocals(callFrame, 1, compiledLocalsNames);
         try {
         if (objv.length != 2) {
             throw new TclNumArgsException(interp, 1, objv, "x");
@@ -246,6 +250,10 @@ public class Test1 extends TJC.CompiledCommand {
             TJC.popLocalCallFrame(interp, callFrame);
         }
     }
+
+    String[] compiledLocalsNames = {
+        "x"
+    };
 } // end class Test1
 }}
 
@@ -278,7 +286,7 @@ public class Test1 extends TJC.CompiledCommand {
         if (!initCmd) { initCmd(interp); }
         CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
         Var.CompiledLocal[] compiledLocals =
-            TJC.initCompiledLocals(interp, callFrame, 3);
+            TJC.initCompiledLocals(callFrame, 3, compiledLocalsNames);
         try {
         if (objv.length < 2) {
             throw new TclNumArgsException(interp, 1, objv, "x ?y? args");
@@ -308,6 +316,12 @@ public class Test1 extends TJC.CompiledCommand {
         const0 = TclInteger.newInstance(1);
         const0.preserve(); const0.preserve();
     }
+
+    String[] compiledLocalsNames = {
+        "x",
+        "y",
+        "args"
+    };
 } // end class Test1
 }}
 
@@ -341,7 +355,7 @@ public class Test1 extends TJC.CompiledCommand {
         if (!initCmd) { initCmd(interp); }
         CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
         Var.CompiledLocal[] compiledLocals =
-            TJC.initCompiledLocals(interp, callFrame, 1);
+            TJC.initCompiledLocals(callFrame, 1, compiledLocalsNames);
         try {
         if (objv.length != 1) {
             throw new TclNumArgsException(interp, 1, objv, "");
@@ -381,6 +395,10 @@ public class Test1 extends TJC.CompiledCommand {
         const0 = TclString.newInstance("1 2");
         const0.preserve(); const0.preserve();
     }
+
+    String[] compiledLocalsNames = {
+        "x"
+    };
 } // end class Test1
 }}
 
@@ -414,7 +432,7 @@ public class Test1 extends TJC.CompiledCommand {
         if (!initCmd) { initCmd(interp); }
         CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
         Var.CompiledLocal[] compiledLocals =
-            TJC.initCompiledLocals(interp, callFrame, 1);
+            TJC.initCompiledLocals(callFrame, 1, compiledLocalsNames);
         try {
         if (objv.length != 1) {
             throw new TclNumArgsException(interp, 1, objv, "");
@@ -468,6 +486,10 @@ public class Test1 extends TJC.CompiledCommand {
         const1 = TclString.newInstance("MSG");
         const1.preserve(); const1.preserve();
     }
+
+    String[] compiledLocalsNames = {
+        "x"
+    };
 } // end class Test1
 }}
 
@@ -505,7 +527,7 @@ public class Test1 extends TJC.CompiledCommand {
         if (!initCmd) { initCmd(interp); }
         CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
         Var.CompiledLocal[] compiledLocals =
-            TJC.initCompiledLocals(interp, callFrame, 1);
+            TJC.initCompiledLocals(callFrame, 1, compiledLocalsNames);
         try {
         if (objv.length != 1) {
             throw new TclNumArgsException(interp, 1, objv, "");
@@ -519,6 +541,7 @@ public class Test1 extends TJC.CompiledCommand {
                 tmp1.preserve();
                 objv0[0] = tmp1;
                 // Arg 1 variable: $::x
+                initVarScoped(interp, "::x", compiledLocals, 0);
                 tmp1 = getVarScalar(interp, "::x", compiledLocals, 0);
                 tmp1.preserve();
                 objv0[1] = tmp1;
@@ -540,6 +563,10 @@ public class Test1 extends TJC.CompiledCommand {
         const0 = TclString.newInstance("list");
         const0.preserve(); const0.preserve();
     }
+
+    String[] compiledLocalsNames = {
+        "::x"
+    };
 } // end class Test1
 }}
 
@@ -643,13 +670,14 @@ public class Test1 extends TJC.CompiledCommand {
         if (!initCmd) { initCmd(interp); }
         CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
         Var.CompiledLocal[] compiledLocals =
-            TJC.initCompiledLocals(interp, callFrame, 1);
+            TJC.initCompiledLocals(callFrame, 1, compiledLocalsNames);
         try {
         if (objv.length != 1) {
             throw new TclNumArgsException(interp, 1, objv, "");
         }
         { // Invoke: catch {} ::x
             try {
+                initVarScoped(interp, "::x", compiledLocals, 0);
                 setVarScalar(interp, "::x", "", compiledLocals, 0);
             } catch (TclException ex) {
                 TJC.catchVarErr(interp);
@@ -663,6 +691,10 @@ public class Test1 extends TJC.CompiledCommand {
             TJC.popLocalCallFrame(interp, callFrame);
         }
     }
+
+    String[] compiledLocalsNames = {
+        "::x"
+    };
 } // end class Test1
 }}
 
@@ -817,7 +849,7 @@ public class Test1 extends TJC.CompiledCommand {
         if (!initCmd) { initCmd(interp); }
         CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
         Var.CompiledLocal[] compiledLocals =
-            TJC.initCompiledLocals(interp, callFrame, 1);
+            TJC.initCompiledLocals(callFrame, 1, compiledLocalsNames);
         try {
         if (objv.length != 1) {
             throw new TclNumArgsException(interp, 1, objv, "");
@@ -852,6 +884,10 @@ public class Test1 extends TJC.CompiledCommand {
         const0 = TclString.newInstance("list");
         const0.preserve(); const0.preserve();
     }
+
+    String[] compiledLocalsNames = {
+        "arr"
+    };
 } // end class Test1
 }}
 
@@ -891,7 +927,7 @@ public class Test1 extends TJC.CompiledCommand {
         if (!initCmd) { initCmd(interp); }
         CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
         Var.CompiledLocal[] compiledLocals =
-            TJC.initCompiledLocals(interp, callFrame, 2);
+            TJC.initCompiledLocals(callFrame, 2, compiledLocalsNames);
         try {
         if (objv.length != 1) {
             throw new TclNumArgsException(interp, 1, objv, "");
@@ -970,10 +1006,15 @@ public class Test1 extends TJC.CompiledCommand {
         const1 = TclString.newInstance("cmd");
         const1.preserve(); const1.preserve();
     }
+
+    String[] compiledLocalsNames = {
+        "arr",
+        "s"
+    };
 } // end class Test1
 }}
 
-tcltest::test compileproc6-3.2 {no variable cache for array set} {
+tcltest::test compileproc6-3.3 {no variable cache for array set} {
     set script {
 proc p {} {
     catch {} a(k)
@@ -1024,7 +1065,7 @@ public class Test1 extends TJC.CompiledCommand {
 } // end class Test1
 }}
 
-tcltest::test compileproc6-3.3 {use variable cache for array set} {
+tcltest::test compileproc6-3.4 {use variable cache for array set} {
     set script {
 proc p {} {
     catch {} a(k)
@@ -1054,7 +1095,7 @@ public class Test1 extends TJC.CompiledCommand {
         if (!initCmd) { initCmd(interp); }
         CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
         Var.CompiledLocal[] compiledLocals =
-            TJC.initCompiledLocals(interp, callFrame, 1);
+            TJC.initCompiledLocals(callFrame, 1, compiledLocalsNames);
         try {
         if (objv.length != 1) {
             throw new TclNumArgsException(interp, 1, objv, "");
@@ -1074,10 +1115,14 @@ public class Test1 extends TJC.CompiledCommand {
             TJC.popLocalCallFrame(interp, callFrame);
         }
     }
+
+    String[] compiledLocalsNames = {
+        "a"
+    };
 } // end class Test1
 }}
 
-tcltest::test compileproc6-3.4 {no variable cache for array set} {
+tcltest::test compileproc6-3.5 {no variable cache for array set} {
     # The catch command accepts a non-static array variable name
 
     set script {
@@ -1109,7 +1154,7 @@ public class Test1 extends TJC.CompiledCommand {
         if (!initCmd) { initCmd(interp); }
         CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
         Var.CompiledLocal[] compiledLocals =
-            TJC.initCompiledLocals(interp, callFrame, 2);
+            TJC.initCompiledLocals(callFrame, 2, compiledLocalsNames);
         try {
         if (objv.length != 1) {
             throw new TclNumArgsException(interp, 1, objv, "");
@@ -1131,6 +1176,144 @@ public class Test1 extends TJC.CompiledCommand {
             TJC.popLocalCallFrame(interp, callFrame);
         }
     }
+
+    String[] compiledLocalsNames = {
+        "s",
+        "a"
+    };
+} // end class Test1
+}}
+
+tcltest::test compileproc6-3.6 {use variable cache for array set} {
+    # Init scoped array var
+    set script {
+proc p {} {
+    catch {} ::a(k)
+}
+}
+
+    set test_compileproc_6_cache_variables 1
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_6_set_flags]
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) { initCmd(interp); }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        Var.CompiledLocal[] compiledLocals =
+            TJC.initCompiledLocals(callFrame, 1, compiledLocalsNames);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: catch {} ::a(k)
+            try {
+                initVarScoped(interp, "::a", compiledLocals, 0);
+                setVarArray(interp, "::a", "k", "", compiledLocals, 0);
+            } catch (TclException ex) {
+                TJC.catchVarErr(interp);
+            }
+            interp.resetResult();
+            interp.setResult(TCL.OK);
+        } // End Invoke: catch
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+
+    String[] compiledLocalsNames = {
+        "::a"
+    };
+} // end class Test1
+}}
+
+tcltest::test compileproc6-3.7 {use variable cache for array set} {
+    # Init scoped array var
+    set script {
+proc p {} {
+    list $::a(k)
+}
+}
+
+    set test_compileproc_6_cache_variables 1
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_6_set_flags]
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) { initCmd(interp); }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        Var.CompiledLocal[] compiledLocals =
+            TJC.initCompiledLocals(callFrame, 1, compiledLocalsNames);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: list $::a(k)
+            TclObject[] objv0 = TJC.grabObjv(interp, 2);
+            try {
+                TclObject tmp1;
+                // Arg 0 constant: list
+                tmp1 = const0;
+                tmp1.preserve();
+                objv0[0] = tmp1;
+                // Arg 1 variable: $::a(k)
+                initVarScoped(interp, "::a", compiledLocals, 0);
+                tmp1 = getVarArray(interp, "::a", "k", compiledLocals, 0);
+                tmp1.preserve();
+                objv0[1] = tmp1;
+                TJC.invoke(interp, null, objv0, 0);
+            } finally {
+                TJC.releaseObjvElems(interp, objv0, 2);
+            }
+        } // End Invoke: list
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+
+    TclObject const0;
+
+    protected void initConstants(Interp interp) throws TclException {
+        const0 = TclString.newInstance("list");
+        const0.preserve(); const0.preserve();
+    }
+
+    String[] compiledLocalsNames = {
+        "::a"
+    };
 } // end class Test1
 }}
 

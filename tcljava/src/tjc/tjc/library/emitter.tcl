@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: emitter.tcl,v 1.12 2006/03/20 18:46:21 mdejong Exp $
+#  RCS: @(#) $Id: emitter.tcl,v 1.13 2006/03/24 21:33:50 mdejong Exp $
 #
 #
 
@@ -667,7 +667,8 @@ proc emitter_callframe_init_compiledlocals { size } {
     emitter_indent_level +1
     append buffer \
         [emitter_indent] \
-        "TJC.initCompiledLocals(interp, callFrame, " $size ")\;\n"
+        "TJC.initCompiledLocals(callFrame, " $size \
+        ", compiledLocalsNames)\;\n"
     emitter_indent_level -1
     return $buffer
 }
@@ -1295,9 +1296,11 @@ proc emitter_container_catch_try_end { tmpsymbol } {
     return $buffer
 }
 
-# Query a variable value.
+# Get a variable value and assign the result to
+# a tmpsymbol of type TclObject. If no result
+# assignment should be done, pass {} as tmpsymbol.
 
-proc emitter_get_var { p1 is_p1_string p2 is_p2_string iflags } {
+proc emitter_get_var { tmpsymbol p1 is_p1_string p2 is_p2_string iflags } {
     if {$p1 == "" && !$is_p1_string} {
         error "empty string can't be a symbol"
     }
@@ -1315,21 +1318,29 @@ proc emitter_get_var { p1 is_p1_string p2 is_p2_string iflags } {
     } else {
         set p2sym $p2
     }
-    return "interp.getVar($p1sym, $p2sym, $iflags)"
+    if {$tmpsymbol == {}} {
+        set assign ""
+    } else {
+        set assign "$tmpsymbol = "
+    }
+    return "[emitter_indent]${assign}interp.getVar($p1sym, $p2sym, $iflags)\;\n"
 }
 
-# Query a compiled local scalar value
+# Query a compiled local scalar value and assign the result
+# to a tmpsymbol of type TclObject.
 
-proc emitter_get_compiled_local_scalar_var { varname clocal_array_symbol index } {
+proc emitter_get_compiled_local_scalar_var { tmpsymbol varname clocal_array_symbol index } {
     set buffer ""
     append buffer \
+        [emitter_indent] \
+        $tmpsymbol " = " \
         "getVarScalar(interp, \"" \
         [emitter_backslash_tcl_string $varname] \
         "\", " \
         $clocal_array_symbol \
         ", " \
         $index \
-        ")"
+        ")\;\n"
     return $buffer
 }
 
@@ -1339,10 +1350,12 @@ proc emitter_get_compiled_local_scalar_var { varname clocal_array_symbol index }
 # key_is_string argument is true, otherwise it
 # indicates a symbol of type String.
 
-proc emitter_get_compiled_local_array_var { varname key key_is_string \
+proc emitter_get_compiled_local_array_var { tmpsymbol varname key key_is_string \
         clocal_array_symbol index } {
     set buffer ""
     append buffer \
+        [emitter_indent] \
+        $tmpsymbol " = " \
         "getVarArray(interp, \"" \
         [emitter_backslash_tcl_string $varname] \
         "\", "
@@ -1359,14 +1372,15 @@ proc emitter_get_compiled_local_array_var { varname key key_is_string \
         $clocal_array_symbol \
         ", " \
         $index \
-        ")"
+        ")\;\n"
     return $buffer
 }
 
+# Set a variable value and assign the result to
+# a tmpsymbol of type TclObject. If no result
+# assignment should be done, pass {} as tmpsymbol.
 
-# Set a variable value.
-
-proc emitter_set_var { p1 is_p1_string p2 is_p2_string value iflags } {
+proc emitter_set_var { tmpsymbol p1 is_p1_string p2 is_p2_string value iflags } {
     if {$is_p1_string} {
         set p1 "\"[emitter_backslash_tcl_string $p1]\""
     }
@@ -1381,29 +1395,49 @@ proc emitter_set_var { p1 is_p1_string p2 is_p2_string value iflags } {
     } else {
         set value " $value"
     }
-    return "interp.setVar($p1, $p2,$value, $iflags)"
+    if {$tmpsymbol == {}} {
+        set assign ""
+    } else {
+        set assign "$tmpsymbol = "
+    }
+    return "[emitter_indent]${assign}interp.setVar($p1, $p2,$value, $iflags)\;\n"
 }
 
-# Set a compiled local scalar var.
+# Set a compiled local scalar var and assign the result
+# to a tmpsymbol of type TclObject. If no result is
+# needed then pass {} as the tmpsymbol.
 
-proc emitter_set_compiled_local_scalar_var { varname valsym \
+proc emitter_set_compiled_local_scalar_var { tmpsymbol varname valsym \
         clocal_array_symbol index } {
     set buffer ""
+    append buffer \
+        [emitter_indent]
+    if {$tmpsymbol != {}} {
+        append buffer \
+            $tmpsymbol " = "
+    }
     append buffer \
         "setVarScalar(interp, \"" \
         [emitter_backslash_tcl_string $varname] \
         "\", " $valsym \
         ", " $clocal_array_symbol \
         ", " $index \
-        ")"
+        ")\;\n"
     return $buffer
 }
 
-# Set a compiled local array var.
+# Set a compiled local scalar var and assign the result
+# to a tmpsymbol of type TclObject.
 
-proc emitter_set_compiled_local_array_var { varname key key_is_string \
+proc emitter_set_compiled_local_array_var { tmpsymbol varname key key_is_string \
         valsym clocal_array_symbol index } {
     set buffer ""
+    append buffer \
+        [emitter_indent]
+    if {$tmpsymbol != {}} {
+        append buffer \
+            $tmpsymbol " = "
+    }
     append buffer \
         "setVarArray(interp, \"" \
         [emitter_backslash_tcl_string $varname] \
@@ -1423,7 +1457,25 @@ proc emitter_set_compiled_local_array_var { varname key key_is_string \
         $valsym \
         ", " $clocal_array_symbol \
         ", " $index \
-        ")"
+        ")\;\n"
+    return $buffer
+}
+
+# Emit method to init scoped var as a compiled local.
+# This method is of type void so it generates no result.
+
+proc emitter_init_compiled_local_scoped_var { varname clocal_array_symbol index } {
+    set buffer ""
+    append buffer \
+        [emitter_indent] \
+        "initVarScoped(interp, \"" \
+        [emitter_backslash_tcl_string $varname] \
+        "\", " \
+        $clocal_array_symbol \
+        ", " \
+        $index \
+        ")" \
+        "\;\n"
     return $buffer
 }
 

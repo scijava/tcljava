@@ -145,7 +145,7 @@ proc bench_list_loop_lappend_array1 {} {
     for {set i 0} {$i < 1000} {incr i} {
         lappend a(elem) $i
     }
-    return [llength $l]
+    return [llength $a(elem)]
 }
 
 # lappend a single item to a list in a loop.

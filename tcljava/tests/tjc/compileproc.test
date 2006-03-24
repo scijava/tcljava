@@ -6453,10 +6453,11 @@ proc p {} {
     emitter_indent_level zero
 
     # Emit variable set for dkey0, argument 2
-    compileproc_set_variable "s" true "" true
+    compileproc_set_variable {} "s" true "" true
     #set key [lindex [compileproc_keys] 0]
     #compileproc_emit_argument $key 1
-} {interp.setVar("s", null, "", 0)}
+} {interp.setVar("s", null, "", 0);
+}
 
 tcltest::test compileproc_emit_variable_set-1.1 {emit code to set variable value} {
     set script {
@@ -6476,8 +6477,9 @@ proc p {} {
     # FIXME: This need to be part of a generic
     # type of call that will evaluate an argument
     # to a command.
-    compileproc_set_variable tmp0 false tmp1 false
-} {interp.setVar(tmp0, null, tmp1, 0)}
+    compileproc_set_variable {} tmp0 false tmp1 false
+} {interp.setVar(tmp0, null, tmp1, 0);
+}
 
 tcltest::test compileproc_emit_variable_set-1.2 {emit code to set variable value} {
     set script {
@@ -6493,10 +6495,11 @@ proc p {} {
     emitter_indent_level zero
 
     # Emit variable set for dkey0, argument 2
-    compileproc_set_variable "a(k)" true "" true
+    compileproc_set_variable {} "a(k)" true "" true
     #set key [lindex [compileproc_keys] 0]
     #compileproc_emit_argument $key 1
-} {interp.setVar("a", "k", "", 0)}
+} {interp.setVar("a", "k", "", 0);
+}
 
 
 

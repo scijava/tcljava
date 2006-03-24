@@ -6,7 +6,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: compiledLocals.test,v 1.3 2006/03/22 01:38:45 mdejong Exp $
+# RCS: @(#) $Id: compiledLocals.test,v 1.4 2006/03/24 21:33:50 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -100,7 +100,7 @@ test compiledLocals-1.5 {uncompiled proc} {
     }
     clocals_test15
 } {localTable is {
-UNDEFINED UNDEF -> ::UNDEF
+UNDEFINED-> UNDEF -> ::UNDEF
 }
 compiledLocals is null
 compiledLocals.resolved is null
@@ -218,7 +218,7 @@ test compiledLocals-2.5 {compiled proc} {
     clocals_test25
 } {localTable is null
 compiledLocals is {
-UNDEFINED UNDEF -> ::UNDEF
+UNDEFINED-> UNDEF -> ::UNDEF
 }
 compiledLocals.resolved is {
 null
@@ -248,11 +248,11 @@ DEFINED
 }
 
 test compiledLocals-2.7 {compiled proc} {
-    # A variable set at runtime does
-    # not init a compiledLocals slot.
-    # Variable get here requires a lookup
-    # and does not move the variable
-    # into a compiledLocal slot.
+    # A variable set at runtime will
+    # init the compiled local slot
+    # because the runtime set command
+    # will find the var by name in
+    # the compiled local slot.
     proc clocals_test27 {} {
         eval {set i 0}
         set i
@@ -260,31 +260,31 @@ test compiledLocals-2.7 {compiled proc} {
     }
     clocals_tjc_compiled_proc clocals_test27
     clocals_test27
-} {localTable is {
+} {localTable is null
+compiledLocals is {
 i
 }
-compiledLocals is {
-null
-}
 compiledLocals.resolved is {
-null
+i
 }
 }
 
 test compiledLocals-2.8 {compiled proc} {
-    # A variable set at runtime will be
-    # placed in the local table. Setting
-    # it again via a compiled set command
-    # will move the variable into a
-    # compiledLocal slot.
+    # The var j is set at runtime in the
+    # compiled local array since it is
+    # not in the compiled local array.
+    # The var i is in the local array,
+    # so it is defined there.
     proc clocals_test28 {} {
         eval {set i 0}
+        eval {set j 0}
+        return [testvarframe]
         set i 1
-        testvarframe
     }
     clocals_tjc_compiled_proc clocals_test28
     clocals_test28
 } {localTable is {
+j
 }
 compiledLocals is {
 i
@@ -488,7 +488,9 @@ DEFINED
 test compiledLocals-4.2 {link vars} {
     # Invoke global command at runtime,
     # this will create an undefined link var
-    # in the local table.
+    # in the local table since no compiled
+    # local slot is for this variable
+    # was declared.
     set DEFINED 1
     proc clocals_test42 {} {
         eval {global DEFINED}
@@ -505,36 +507,36 @@ compiledLocals.resolved is null
 
 test compiledLocals-4.3 {link vars} {
     # Invoke global command at runtime to
-    # add a link var to the local table. Then
-    # invoke a compiled version of the
-    # global command. The second invocation
-    # is a no-op upvar redefine since the
-    # link from and link to vars are the same.
+    # add a link var. The link var will
+    # get added in the compiled local
+    # slot even though the uncompiled
+    # version of the global command
+    # is being used.
 
     set DEFINED 1
     proc clocals_test43 {} {
         eval {global DEFINED}
-        global DEFINED
-        testvarframe
+        return [testvarframe]
+        set DEFINED 2
     }
     clocals_tjc_compiled_proc clocals_test43
     clocals_test43
-} {localTable is {
+} {localTable is null
+compiledLocals is {
 DEFINED -> ::DEFINED
 }
-compiledLocals is {
-null
-}
 compiledLocals.resolved is {
-null
+DEFINED
 }
 }
 
 test compiledLocals-4.4 {link vars} {
     # Invoke upvar to link var into the
-    # global scope. Currently, upvar is not
-    # compiled so it does not create a
-    # compiled local.
+    # global scope. This will create the
+    # variable in the local table since
+    # the upvar command is not compiled
+    # and no compiled local slot is
+    # declared for the variable name.
     catch {unset UNDEF}
     proc clocals_test44 {} {
         upvar #0 UNDEF lvar
@@ -543,7 +545,7 @@ test compiledLocals-4.4 {link vars} {
     clocals_tjc_compiled_proc clocals_test44
     clocals_test44
 } {localTable is {
-UNDEFINED lvar -> ::UNDEF
+UNDEFINED-> lvar -> ::UNDEF
 }
 compiledLocals is null
 compiledLocals.resolved is null
@@ -571,20 +573,19 @@ V1
 }
 
 test compiledLocals-4.6 {link vars} {
-    # Invoke upvar to create a link var in
-    # the local table, then invoke set
-    # to move the link var from the local
-    # table to the compiledLocal array.
+    # Invoke upvar to create a link var.
+    # The link var is a compiled local,
+    # so create it in the compiled
+    # local array.
     proc clocals_test46 {} {
         set V1 0
         upvar 0 V1 V2
+        return [testvarframe]
         set V2 1
-        testvarframe
     }
     clocals_tjc_compiled_proc clocals_test46
     clocals_test46
-} {localTable is {
-}
+} {localTable is null
 compiledLocals is {
 V1
 V2 -> V1
@@ -597,9 +598,9 @@ V1
 
 test compiledLocals-4.7 {link vars} {
     # Invoke upvar to create a link var in
-    # the local table, then invoke set
-    # to move the link var from the local
-    # table to the compiledLocal array.
+    # the local table. Then create a
+    # second link to the same variable
+    # with a compiled local var name.
     proc clocals_test47 {} {
         set V1 0
         upvar 0 V1 V2
@@ -658,8 +659,7 @@ test compiledLocals-4.9 {link vars} {
     }
     clocals_tjc_compiled_proc clocals_test49
     clocals_test49
-} {localTable is {
-}
+} {localTable is null
 compiledLocals is {
 ARR()
 var -> ?()
@@ -729,7 +729,7 @@ test compiledLocals-4.12 {link vars} {
     }
     clocals_test412
 } {localTable is {
-UNDEFINED var1 -> dummy_local2
+UNDEFINED-> var1 -> dummy_local2
 UNDEFINED dummy_local2
 }
 compiledLocals is null
@@ -753,7 +753,7 @@ test compiledLocals-4.13 {link vars} {
     clocals_tjc_compiled_proc clocals_test413
     clocals_test413
 } {localTable is {
-UNDEFINED var1 -> dummy_local2
+UNDEFINED-> var1 -> dummy_local2
 UNDEFINED dummy_local2
 }
 compiledLocals is null
@@ -806,7 +806,7 @@ test compiledLocals-4.15 {link vars} {
     }
     clocals_test415
 } {localTable is {
-UNDEFINED var1 -> dummy_local
+UNDEFINED-> var1 -> dummy_local
 UNDEFINED dummy_local
 }
 compiledLocals is null
@@ -957,7 +957,7 @@ test compiledLocals-4.22 {link vars} {
     }
     clocals_test422
 } {localTable is {
-UNDEFINED DEFINED -> ::DEFINED
+UNDEFINED-> DEFINED -> ::DEFINED
 }
 compiledLocals is null
 compiledLocals.resolved is null
@@ -1003,7 +1003,7 @@ test compiledLocals-4.24 {link vars} {
     clocals_test424
 } {localTable is null
 compiledLocals is {
-UNDEFINED DEFINED -> ::DEFINED
+UNDEFINED-> DEFINED -> ::DEFINED
 }
 compiledLocals.resolved is {
 UNDEFINED DEFINED
@@ -1051,7 +1051,7 @@ test compiledLocals-4.26 {link vars} {
     clocals_test426
 } {localTable is null
 compiledLocals is {
-UNDEFINED DEFINED -> ::DEFINED
+UNDEFINED-> DEFINED -> ::DEFINED
 }
 compiledLocals.resolved is {
 UNDEFINED DEFINED
@@ -1075,13 +1075,107 @@ test compiledLocals-4.27 {link vars} {
     clocals_tjc_compiled_proc clocals_test427
     clocals_test427
 } {localTable is {
-UNDEFINED V2 -> V1
+UNDEFINED-> V2 -> V1
 }
 compiledLocals is {
 UNDEFINED V1
 }
 compiledLocals.resolved is {
 UNDEFINED V1
+}
+}
+
+test compiledLocals-4.28 {link vars} {
+    # An upvar can't replace an existing
+    # local variable. This command
+    # in uncompiled.
+    proc clocals_test428 {} {
+        set VAR 0
+        upvar 0 dummy VAR
+    }
+    list [catch {clocals_test428} err] $err
+} {1 {variable "VAR" already exists}}
+
+test compiledLocals-4.29 {link vars} {
+    # An upvar can't replace an existing
+    # local variable. This test makes
+    # sure the local table is checked
+    # when compiled.
+    proc clocals_test429 {} {
+        eval {set VAR 0}
+        upvar 0 dummy VAR
+    }
+    clocals_tjc_compiled_proc clocals_test429
+    list [catch {clocals_test429} err] $err
+} {1 {variable "VAR" already exists}}
+
+test compiledLocals-4.30 {link vars} {
+    # An upvar can't replace an existing
+    # local variable. This test makes
+    # sure that the compiled local array
+    # is checked.
+    proc clocals_test430 {} {
+        set VAR 0
+        upvar 0 dummy VAR
+    }
+    clocals_tjc_compiled_proc clocals_test430
+    list [catch {clocals_test430} err] $err
+} {1 {variable "VAR" already exists}}
+
+test compiledLocals-4.31 {link vars} {
+    # A global can't replace an existing
+    # local variable. This command is
+    # uncompiled.
+    proc clocals_test431 {} {
+        set VAR 0
+        global VAR
+    }
+    list [catch {clocals_test431} err] $err
+} {1 {variable "VAR" already exists}}
+
+test compiledLocals-4.32 {link vars} {
+    # A global can't replace an existing
+    # local variable. This test makes
+    # sure the local table is checked.
+    proc clocals_test432 {} {
+        eval {set VAR 0}
+        global VAR
+    }
+    clocals_tjc_compiled_proc clocals_test432
+    list [catch {clocals_test432} err] $err
+} {1 {variable "VAR" already exists}}
+
+test compiledLocals-4.33 {link vars} {
+    # A global can't replace an existing
+    # local variable. This test makes
+    # sure the compiled local array slot
+    # is checked.
+    proc clocals_test433 {} {
+        set VAR 0
+        global VAR
+    }
+    clocals_tjc_compiled_proc clocals_test433
+    list [catch {clocals_test433} err] $err
+} {1 {variable "VAR" already exists}}
+
+test compiledLocals-4.34 {link vars} {
+    # Duplicate global commands is
+    # a no-op. It does not matter
+    # that the first global command
+    # is uncompiled.
+    proc clocals_test434 {} {
+        eval {global UNKNOWN}
+        global UNKNOWN
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test434
+    clocals_test434
+} {localTable is null
+compiledLocals is {
+UNDEFINED-> UNKNOWN -> ::UNKNOWN
+}
+compiledLocals.resolved is {
+null
 }
 }
 
@@ -1150,8 +1244,7 @@ test compiledLocals-5.3 {local array variables} {
     }
     clocals_tjc_compiled_proc clocals_test53
     clocals_test53
-} {localTable is {
-}
+} {localTable is null
 compiledLocals is {
 arr()
 var() -> arr
@@ -1307,11 +1400,12 @@ null
 } 1}
 
 test compileLocals-6.2 {var traces} {
-    # This test checks that setting
-    # a variable that exists in the
-    # local table but has traces,
-    # will result in a compiled
-    # local without a resolved ref.
+    # This test sets a trace on a
+    # variable that was created at
+    # runtime. The compiled local
+    # slot should be initialized,
+    # so the trace will just make
+    # the resolved ref null.
 
     set compiled_local_trace_counter 0
 
@@ -1323,8 +1417,7 @@ test compileLocals-6.2 {var traces} {
     }
     clocals_tjc_compiled_proc clocals_test62
     list [clocals_test62] $compiled_local_trace_counter
-} {{localTable is {
-}
+} {{localTable is null
 compiledLocals is {
 V1
 }
@@ -1335,11 +1428,11 @@ null
 
 test compileLocals-6.3 {var traces} {
     # This test checks that a read
-    # trace is run when a compiled
-    # local is read. The read trace
-    # was set when the var did not
-    # exist, so it is created in the
-    # local table.
+    # trace is not run when a compiled
+    # local is set. The read trace
+    # was created when no var existed,
+    # so it initialized a compiled
+    # local slot.
 
     set compiled_local_trace_counter 0
 
@@ -1350,8 +1443,7 @@ test compileLocals-6.3 {var traces} {
     }
     clocals_tjc_compiled_proc clocals_test63
     list [clocals_test63] $compiled_local_trace_counter
-} {{localTable is {
-}
+} {{localTable is null
 compiledLocals is {
 V1
 }
@@ -1365,6 +1457,10 @@ test compileLocals-6.4 {var traces} {
     # trace is run when a compiled
     # local is read from a set
     # command executed at runtime.
+    # The trace command creates
+    # a scalar var in the compiled
+    # local array. It is later read
+    # from a runtime set command.
 
     set compiled_local_trace_counter 0
 
@@ -1376,8 +1472,7 @@ test compileLocals-6.4 {var traces} {
     }
     clocals_tjc_compiled_proc clocals_test64
     list [clocals_test64] $compiled_local_trace_counter
-} {{localTable is {
-}
+} {{localTable is null
 compiledLocals is {
 V1
 }
@@ -1409,11 +1504,9 @@ test compileLocals-6.5 {var traces} {
     }
     clocals_tjc_compiled_proc clocals_test65
     clocals_test65
-} {localTable is {
-var -> ::clocals_test65_trace_var
-}
+} {localTable is null
 compiledLocals is {
-null
+var -> ::clocals_test65_trace_var
 }
 compiledLocals.resolved is {
 null
@@ -1609,27 +1702,33 @@ clocals_test72_var
 }
 
 test compileLocals-7.3 {scoped variable names} {
-    # Use global command to replace a compiled
-    # local link var with another link var.
+    # Use global command to create a link
+    # var to a scoped value. This should
+    # not find the global var with the
+    # tail part.
 
-    namespace eval ::ONE { set VAR 1 }
-    namespace eval ::TWO { set VAR 1 }
+    catch {namespace delete ONE}
+
+    set CLOCAL_TEST_73_SCOPED BAD
+
+    namespace eval ::ONE {}
+    set ::ONE::CLOCAL_TEST_73_SCOPED GOOD
 
     proc clocals_test73 {} {
-        global ::ONE::VAR
-        global ::TWO::VAR
+        global ::ONE::CLOCAL_TEST_73_SCOPED
         testvarframe
     }
     clocals_tjc_compiled_proc clocals_test73
     set results [clocals_test73]
-    namespace delete ONE TWO
+    namespace delete ONE
+    unset CLOCAL_TEST_73_SCOPED
     set results
 } {localTable is null
 compiledLocals is {
-VAR -> ::TWO::VAR
+CLOCAL_TEST_73_SCOPED -> ::ONE::CLOCAL_TEST_73_SCOPED
 }
 compiledLocals.resolved is {
-VAR
+CLOCAL_TEST_73_SCOPED
 }
 }
 
@@ -1681,10 +1780,9 @@ test compileLocals-7.6 {scoped variable names} {
     # namespace qualifier. This type is not
     # added to the compiled locals.
 
-    namespace eval ::ONE {
-        set V1 0
-        set V2 0
-    }
+    namespace eval ::ONE {}
+    set ::ONE::V1 0
+    set ::ONE::V2 0
 
     proc clocals_test76 {} {
         set ONE::V1 1
@@ -1706,13 +1804,14 @@ test compileLocals-7.7 {scoped variable names} {
     # set command should resolve the
     # scoped scalar to the newly set var.
 
-    namespace eval ::ONE { set VAR 1 }
+    namespace eval ::ONE {}
+    set ::ONE::VAR 1
 
     proc clocals_test77 {} {
         set ::ONE::VAR
-        namespace eval ::ONE {
-            unset VAR
-            set VAR 2
+        namespace eval :: {
+            unset ::ONE::VAR
+            set ::ONE::VAR 2
         }
         set ::ONE::VAR 1
         testvarframe
@@ -1735,10 +1834,9 @@ test compileLocals-7.8 {scoped variable names} {
     # relative to the current namespace.
 
     namespace eval ::ONE {
-        namespace eval child1 {
-            set V1 9
-        }
+        namespace eval child1 {}
     }
+    set ::ONE::child1::V1 9
 
     proc ::ONE::clocals_test78 {} {
         set child1::V1
@@ -1753,6 +1851,38 @@ compiledLocals is null
 compiledLocals.resolved is null
 }
 
+test compileLocals-7.9 {scoped variable names} {
+    # Use global command to replace a compiled
+    # local link var with another link var.
+    # This should not see the global named VAR.
+
+    catch {namespace delete ONE}
+    catch {namespace delete TWO}
+
+    set VAR BAD
+
+    namespace eval ::ONE {}
+    namespace eval ::TWO {}
+    set ::ONE::VAR 1
+    set ::TWO::VAR 2
+
+    proc clocals_test79 {} {
+        global ::ONE::VAR
+        global ::TWO::VAR
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test79
+    set results [clocals_test79]
+    namespace delete ONE TWO
+    set results
+} {localTable is null
+compiledLocals is {
+VAR -> ::TWO::VAR
+}
+compiledLocals.resolved is {
+VAR
+}
+}
 
 
 
@@ -1842,24 +1972,50 @@ null
 }
 }
 
+test compileLocals-8.3 {upvar to local vars in same frame} {
+    # This test creates an upvar link in the
+    # local frame. The var is defined at runtime,
+    # so it lives in the local table.
+
+    proc clocals_test83 {} {
+        set V1 0
+        eval {upvar 0 V1 local}
+        testvarframe
+    }
+
+    clocals_tjc_compiled_proc clocals_test83
+    clocals_test83
+} {localTable is {
+local -> V1
+}
+compiledLocals is {
+V1
+}
+compiledLocals.resolved is {
+V1
+}
+}
+
 
 test compiledLocals-9.0 {lappend} {
     # lappend for undefined scalar var
-    # invokes runtime set command.
+    # invokes runtime lappend command.
+    # Since l is a compiled local, the
+    # runtime lappend command will
+    # create it in the compiled local
+    # array.
     proc clocals_test90 {} {
         lappend l 1
         testvarframe
     }
     clocals_tjc_compiled_proc clocals_test90
     clocals_test90
-} {localTable is {
+} {localTable is null
+compiledLocals is {
 l
 }
-compiledLocals is {
-null
-}
 compiledLocals.resolved is {
-null
+l
 }
 }
 
@@ -1868,20 +2024,21 @@ test compiledLocals-9.1 {lappend} {
     # array variable will invoke
     # the runtime set to create
     # the array and the array element.
+    # The array will be created in
+    # the compiled local slot since
+    # the slot is search for by name.
     proc clocals_test91 {} {
         lappend a(k) 1
         testvarframe
     }
     clocals_tjc_compiled_proc clocals_test91
     clocals_test91
-} {localTable is {
+} {localTable is null
+compiledLocals is {
 a()
 }
-compiledLocals is {
-null
-}
 compiledLocals.resolved is {
-null
+a()
 }
 }
 
@@ -1889,7 +2046,11 @@ test compiledLocals-9.2 {lappend} {
     # lappend for an undefined
     # array variable should set
     # the array and the array
-    # element.
+    # element. This version
+    # will not add an entry to
+    # the compiled local array
+    # since a 2 argument lappend
+    # is not compiled.
     proc clocals_test92 {} {
         lappend a(k)
         testvarframe
@@ -1915,6 +2076,26 @@ test compiledLocals-9.3 {lappend} {
     }
     clocals_tjc_compiled_proc clocals_test93
     clocals_test93
+} {localTable is null
+compiledLocals is {
+a()
+}
+compiledLocals.resolved is {
+a()
+}
+}
+
+test compiledLocals-9.4 {array} {
+    # array set comamnd will
+    # init a compiled local slot
+    # for the array variable.
+    proc clocals_test94 {} {
+        array set a {one 1 two 2}
+        return [testvarframe]
+        set a(one)
+    }
+    clocals_tjc_compiled_proc clocals_test94
+    clocals_test94
 } {localTable is null
 compiledLocals is {
 a()

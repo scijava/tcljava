@@ -1,3 +1,58 @@
+2006-03-24  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/jacl/tcl/lang/CallFrame.java (CallFrame, dispose):
+        Add compiledLocalsNames field to CallFrame,
+        this array of type String stores the names
+        for each compiled local variable.
+        * src/jacl/tcl/lang/Var.java (toString, lookupVar,
+        initVarCompiledLocalScalar,
+        setVarCompiledLocalScalarInvalid,
+        getVarCompiledLocalScalarInvalid,
+        initVarCompiledLocalArray,
+        setVarCompiledLocalArrayInvalid,
+        getVarCompiledLocalArrayInvalid,
+        getVarCompiledLocalArray,
+        setVarCompiledLocalArray, makeUpvar):        
+        Print state flags in toString(). Search the
+        compiled local names array to determine if a
+        variable being looked up should live in the
+        compiled local array. If a variable is being
+        created at runtime, check to see if it should
+        be created in the compiled local array. This
+        is much more simple than the previous implementation
+        which could end up checking the local table on
+        each var init. Split the var set when ref invalid
+        and var init cases out into two methods for both
+        the scalar and array types.
+        * src/tests/jacl/tcl/lang/TestVarFrameCmd.java:
+        Print UNDEFINED-> when the linked to var has
+        the UNDEFINED state set.
+        * src/tjc/tcl/lang/TJC.java (initCompiledLocals,
+        initVarScoped, getVarScalar, getVarArray,
+        setVarScalar, setVarArray)
+        Don't pass Interp to initCompiledLocals since it
+        is not used and init CallFrame.compiledLocalsNames.
+        Create initVarScoped method that will be called
+        to setup non-local scoped link vars. Invoke
+        compiled local var init methods when the compiled
+        local slot is null and invalid methods when the
+        resolved ref is not valid.
+        * src/tjc/tjc/library/compileproc.tcl: Rework
+        variable get and set code so that a result
+        tmpsymbol is passed into methods. This makes
+        it possible to emit more than 1 statement
+        in a get or set operation.
+        * src/tjc/tjc/library/emitter.tcl: Pass tmpsymbol
+        to var get and set methods.
+        * tests/tcl/upvar.test: Add scoped upvar test.
+        * tests/tclbench/list.bench: Fixup typo.
+        * tests/tjc/compiledLocals.test:
+        * tests/tjc/compileproc.test:
+        * tests/tjc/compileproc_6.test:
+        * tests/tjc/compileproc_7.test:
+        * tests/tjc/emitter.test:  Update tests to
+        account for compiled local changes.
+
 2006-03-21  Mo DeJong  <mdejong@users.sourceforge.net>
 
         Create inlined versions of the incr, lappend,

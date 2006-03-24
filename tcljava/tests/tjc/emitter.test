@@ -158,44 +158,52 @@ tcltest::test emitter-args-4.0 {emit proc args arg assignment} {
 
 tcltest::test emitter-getvar-1.0 {emit var query} {
     emitter_indent_level zero
-    emitter_get_var arr true k true 0
-} {interp.getVar("arr", "k", 0)}
+    emitter_get_var {} arr true k true 0
+} {interp.getVar("arr", "k", 0);
+}
 
 tcltest::test emitter-getvar-1.1 {emit var query} {
     emitter_indent_level zero
-    emitter_get_var arr true null false 0
-} {interp.getVar("arr", null, 0)}
+    emitter_get_var {} arr true null false 0
+} {interp.getVar("arr", null, 0);
+}
 
 tcltest::test emitter-getvar-1.2 {emit var query} {
     emitter_indent_level zero
-    emitter_get_var arr true tmp1.toString() false 0
-} {interp.getVar("arr", tmp1.toString(), 0)}
+    emitter_get_var {} arr true tmp1.toString() false 0
+} {interp.getVar("arr", tmp1.toString(), 0);
+}
 
 tcltest::test emitter-getvar-1.3 {emit var query} {
     emitter_indent_level zero
-    emitter_get_var arr true "" true 0
-} {interp.getVar("arr", "", 0)}
+    emitter_get_var {} arr true "" true 0
+} {interp.getVar("arr", "", 0);
+}
 
 
 tcltest::test emitter-setvar-1.0 {emit var set} {
     emitter_indent_level zero
-    emitter_set_var s true null false "" 0
-} {interp.setVar("s", null, "", 0)}
+    emitter_set_var {} s true null false "" 0
+} {interp.setVar("s", null, "", 0);
+}
 
 tcltest::test emitter-setvar-1.1 {emit var set} {
     emitter_indent_level zero
-    emitter_set_var a true k true tmp0 0
-} {interp.setVar("a", "k", tmp0, 0)}
+    emitter_set_var {} a true k true tmp0 0
+} {interp.setVar("a", "k", tmp0, 0);
+}
 
 tcltest::test emitter-setvar-1.2 {emit var set} {
     emitter_indent_level zero
-    emitter_set_var a true tmp0 false tmp1 0
-} {interp.setVar("a", tmp0, tmp1, 0)}
+    emitter_set_var {} a true tmp0 false tmp1 0
+} {interp.setVar("a", tmp0, tmp1, 0);
+}
 
 tcltest::test emitter-setvar-1.3 {emit var set} {
     emitter_indent_level zero
-    emitter_set_var tmp0 false tmp1 false tmp2 0
-} {interp.setVar(tmp0, tmp1, tmp2, 0)}
+    emitter_set_var {} tmp0 false tmp1 false tmp2 0
+} {interp.setVar(tmp0, tmp1, tmp2, 0);
+}
 
 
 

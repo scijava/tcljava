@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: compileproc.tcl,v 1.20 2006/03/22 01:38:44 mdejong Exp $
+#  RCS: @(#) $Id: compileproc.tcl,v 1.21 2006/03/24 21:33:50 mdejong Exp $
 #
 #
 
@@ -306,8 +306,7 @@ proc compileproc_assign_arg { name index } {
         error "index $index must be greater than 0"
     }
     set value "objv\[$index\]"
-    return [emitter_statement \
-        [compileproc_set_variable $name true $value false]]
+    return [compileproc_set_variable {} $name true $value false]
 }
 
 # Emit code to assign a procedure argument with a default value
@@ -326,14 +325,12 @@ proc compileproc_assign_default_arg { name index default_symbol } {
 
     set buffer ""
 
-    append buffer [emitter_indent]
     emitter_indent_level +1
     set sp "\n[emitter_indent]"
     emitter_indent_level -1
 
     set value "${sp}((objv.length <= $index) ? $default_symbol : objv\[$index\])"
-    append buffer [compileproc_set_variable $name true $value false] \
-        "\;\n"
+    append buffer [compileproc_set_variable {} $name true $value false]
 
     return $buffer
 }
@@ -354,8 +351,7 @@ proc compileproc_assign_args_arg { index } {
     "if ( objv.length <= " $index " ) \{\n"
     emitter_indent_level +1
     set value ""
-    append buffer [emitter_statement \
-        [compileproc_set_variable "args" true $value true]]
+    append buffer [compileproc_set_variable {} "args" true $value true]
     emitter_indent_level -1
     append buffer [emitter_indent] \
     "\} else \{\n"
@@ -372,8 +368,7 @@ proc compileproc_assign_args_arg { index } {
     "\}\n"
 
     set value argl
-    append buffer [emitter_statement \
-        [compileproc_set_variable "args" true $value false]]
+    append buffer [compileproc_set_variable {} "args" true $value false]
 
     emitter_indent_level -1
     append buffer [emitter_indent] \
@@ -961,6 +956,13 @@ proc compileproc_compile { proc_list class_name {config_init {}} } {
         }
     }
 
+    # Emit compiled local variable name array
+
+    if {[compileproc_variable_cache_is_used]} {
+        append buffer "\n" \
+            [compileproc_variable_cache_names_array]
+    }
+
     # end class declaration
     append buffer [emitter_class_end $_compileproc(classname)]
 
@@ -1517,6 +1519,46 @@ proc compileproc_variable_cache_is_used {} {
 
 proc compileproc_variable_cache_count {} {
     return [llength $::_compileproc_variable_cache(ordered_keys)]
+}
+
+# Return a buffer that declares an array containing
+# the name of each compiled local.
+
+proc compileproc_variable_cache_names_array {} {
+    global _compileproc_variable_cache
+
+    set buffer ""
+
+    emitter_indent_level +1
+
+    append buffer \
+        [emitter_indent] \
+        "String\[\] compiledLocalsNames = \{\n"
+
+    emitter_indent_level +1
+
+    set max [llength $_compileproc_variable_cache(ordered_vars)]
+
+    for {set i 0} {$i < $max} {incr i} {
+        set varname [lindex $_compileproc_variable_cache(ordered_vars) $i]
+        append buffer [emitter_indent] \
+            [emitter_double_quote_tcl_string $varname]
+        if {$i == ($max - 1)} {
+            append buffer "\n"
+        } else {
+            append buffer ",\n"
+        }
+    }
+
+    emitter_indent_level -1
+
+    append buffer \
+        [emitter_indent] \
+        "\}\;\n"
+
+    emitter_indent_level -1
+
+    return $buffer
 }
 
 # Loop over parsed command keys and determine information
@@ -2775,10 +2817,8 @@ proc compileproc_emit_variable { tmpsymbol vinfo {declare_flag 1} } {
     switch -exact -- $vtype {
         {scalar} {
             set vname [lindex $vinfo 1]
-            append buffer [emitter_indent] \
-                $declare $tmpsymbol " = " \
-                [compileproc_emit_scalar_variable_get $vname] \
-                "\;\n"
+            append buffer \
+                [compileproc_emit_scalar_variable_get $declare$tmpsymbol $vname]
         }
         {array text} {
             set avname [lindex $vinfo 1 0]
@@ -2786,10 +2826,8 @@ proc compileproc_emit_variable { tmpsymbol vinfo {declare_flag 1} } {
             set kname [lindex $vinfo 1 1]
             # Note: array key can be "" here
             #if {$kname == ""} {error "empty array key name in \{$vinfo\}"}
-            append buffer [emitter_indent] \
-                $declare $tmpsymbol " = " \
-                [compileproc_emit_array_variable_get $avname $kname true] \
-                "\;\n"
+            append buffer \
+                [compileproc_emit_array_variable_get $declare$tmpsymbol $avname $kname true]
         }
         {array scalar} {
             set avname [lindex $vinfo 1 0]
@@ -2797,15 +2835,9 @@ proc compileproc_emit_variable { tmpsymbol vinfo {declare_flag 1} } {
             set kvname [lindex $vinfo 1 1]
             if {$kvname == ""} {error "empty array key variable name in \{$vinfo\}"}
             append buffer \
-                [emitter_indent] \
-                    $declare $tmpsymbol " = " \
-                    [compileproc_emit_scalar_variable_get $kvname] \
-                    "\;\n" \
-                [emitter_indent] \
-                    $tmpsymbol " = " \
-                    [compileproc_emit_array_variable_get $avname \
-                        $tmpsymbol.toString() false] \
-                    "\;\n"
+                [compileproc_emit_scalar_variable_get $declare$tmpsymbol $kvname] \
+                [compileproc_emit_array_variable_get $tmpsymbol $avname \
+                    $tmpsymbol.toString() false]
         }
         {array command} {
             set avname [lindex $vinfo 1 0]
@@ -2813,11 +2845,9 @@ proc compileproc_emit_variable { tmpsymbol vinfo {declare_flag 1} } {
             set ckeys [lindex $vinfo 1 1]
             if {[compileproc_is_empty_command $ckeys]} {
                 # Empty command
-                append buffer [emitter_indent] \
-                    $declare $tmpsymbol " = " \
-                    [compileproc_emit_array_variable_get $avname \
-                        "" true] \
-                    "\;\n"
+                append buffer \
+                    [compileproc_emit_array_variable_get $declare$tmpsymbol $avname \
+                        "" true]
             } else {
                 # Emit 1 to N invocations, then query results
                 foreach ckey $ckeys {
@@ -2827,11 +2857,8 @@ proc compileproc_emit_variable { tmpsymbol vinfo {declare_flag 1} } {
                     [emitter_indent] \
                         $declare $tmpsymbol " = interp.getResult()" \
                         "\;\n" \
-                    [emitter_indent] \
-                        $tmpsymbol " = " \
-                        [compileproc_emit_array_variable_get $avname \
-                            $tmpsymbol.toString() false] \
-                        "\;\n"
+                    [compileproc_emit_array_variable_get $tmpsymbol $avname \
+                        $tmpsymbol.toString() false]
             }
         }
         {word command} {
@@ -2901,10 +2928,8 @@ proc compileproc_emit_variable { tmpsymbol vinfo {declare_flag 1} } {
                 set result $tmpsymbol.toString()
             }
             # Finally, evaluate the array with the word value as the key
-            append buffer [emitter_indent] \
-                $tmpsymbol " = " \
-                [compileproc_emit_array_variable_get $avname $result false] \
-                "\;\n"
+            append buffer \
+                [compileproc_emit_array_variable_get $tmpsymbol $avname $result false]
         }
         default {
             error "unhandled non-scalar type \"$vtype\" in vinfo \{$vinfo\}"
@@ -2914,21 +2939,21 @@ proc compileproc_emit_variable { tmpsymbol vinfo {declare_flag 1} } {
     return $buffer
 }
 
-# Emit code to get the value of a scalar variable. This method
-# generates an assignable value of type TclObject. This method
+# Emit code to get the value of a scalar variable and assign
+# it to a tmpsymbol of type TclObject. This method
 # is used by compileproc_emit_variable for scalars. A local
 # variable scalar or a fully qualified global namespace
 # qualifier like $::myglobal are both supported. A namespace
 # relative scoped qualifier like $child::var can't be
 # cached and is not added to the compiled local table.
 
-proc compileproc_emit_scalar_variable_get { vname } {
+proc compileproc_emit_scalar_variable_get { tmpsymbol vname } {
     global _compileproc
 
 #    set debug 0
 
 #    if {$debug} {
-#        puts "compileproc_emit_scalar_variable_get $vname"
+#        puts "compileproc_emit_scalar_variable_get $tmpsymbol $vname"
 #    }
 
     if {([string first "::" $vname] == -1 || \
@@ -2937,10 +2962,20 @@ proc compileproc_emit_scalar_variable_get { vname } {
             $_compileproc(options,cache_variables)} {
         set symbol [compileproc_variable_cache_lookup $vname]
         set cacheId [compileproc_get_variable_cache_id_from_symbol $symbol]
-        set buffer [emitter_get_compiled_local_scalar_var \
-            $vname "compiledLocals" $cacheId]
+
+        set buffer ""
+
+        # Need to emit special init call for scoped vars to init link
+        if {[string range $vname 0 1] == "::"} {
+            append buffer \
+                [emitter_init_compiled_local_scoped_var $vname \
+                    "compiledLocals" $cacheId]
+        }
+
+        append buffer [emitter_get_compiled_local_scalar_var \
+            $tmpsymbol $vname "compiledLocals" $cacheId]
     } else {
-        set buffer [emitter_get_var $vname true null false 0]
+        set buffer [emitter_get_var $tmpsymbol $vname true null false 0]
     }
     return $buffer
 }
@@ -2952,10 +2987,10 @@ proc compileproc_emit_scalar_variable_get { vname } {
 # relative scoped qualifier like $child::var can't be
 # cached and is not added to the compiled local table.
 
-proc compileproc_emit_scalar_variable_set { vname value } {
+proc compileproc_emit_scalar_variable_set { tmpsymbol vname value } {
     global _compileproc
 
-#    puts "compileproc_emit_scalar_variable_set $vname $value"
+#    puts "compileproc_emit_scalar_variable_set $tmpsymbol $vname $value"
 
     if {([string first "::" $vname] == -1 || \
                 [string range $vname 0 1] == "::") && \
@@ -2963,29 +2998,43 @@ proc compileproc_emit_scalar_variable_set { vname value } {
             $_compileproc(options,cache_variables)} {
         set symbol [compileproc_variable_cache_lookup $vname]
         set cacheId [compileproc_get_variable_cache_id_from_symbol $symbol]
-        set buffer [emitter_set_compiled_local_scalar_var \
-            $vname $value "compiledLocals" $cacheId]
+
+        set buffer ""
+
+        # Need to emit special init call for scoped vars to init link
+
+        if {[string range $vname 0 1] == "::"} {
+            append buffer \
+                [emitter_init_compiled_local_scoped_var $vname \
+                    "compiledLocals" $cacheId]
+        }
+
+        append buffer [emitter_set_compiled_local_scalar_var \
+            $tmpsymbol $vname $value "compiledLocals" $cacheId]
     } else {
-        set buffer [emitter_set_var $vname true null false $value 0]
+        set buffer [emitter_set_var $tmpsymbol $vname true null false $value 0]
     }
 
     return $buffer
 }
 
-# Emit code to get the value of an array variable. This method
-# generates an assignable value of type TclObject. This method
-# is used by compileproc_emit_variable for arrays. A local
+# Emit code to get the value of an array variable and assign
+# it to a tmpsymbol of type TclObject. This method is
+# used by compileproc_emit_variable for arrays. A local
 # variable array or a fully qualified global namespace
-# qualifier like $::myglobal(elem) are both supported. A namespace
-# relative scoped qualifier like $child::var(elem) can't
-# be cached and is not added to the compiled local table.
-# The key argument is the array key to be looked up, if
-# key_is_string is true it will be a literal string.
+# qualifier like $::myglobal(elem) are both supported.
+# A namespace relative scoped qualifier like $child::var(elem)
+# can't be cached and is not added to the compiled local table.
+#
+# tmpsymbol : TclObject symbol to assign get result to
+# vname : name of variable
+# key : array element key
+# key_is_string : true if key is a constant literal String.
 
-proc compileproc_emit_array_variable_get { vname key key_is_string } {
+proc compileproc_emit_array_variable_get { tmpsymbol vname key key_is_string } {
     global _compileproc
 
-#    puts "compileproc_emit_array_variable_get $vname $key $key_is_string"
+#    puts "compileproc_emit_array_variable_get $tmpsymbol $vname $key $key_is_string"
 
     if {([string first "::" $vname] == -1 ||
                 [string range $vname 0 1] == "::") && \
@@ -2993,27 +3042,39 @@ proc compileproc_emit_array_variable_get { vname key key_is_string } {
             $_compileproc(options,cache_variables)} {
         set symbol [compileproc_variable_cache_lookup $vname]
         set cacheId [compileproc_get_variable_cache_id_from_symbol $symbol]
-        set buffer [emitter_get_compiled_local_array_var \
-            $vname $key $key_is_string "compiledLocals" $cacheId]
+
+        set buffer ""
+
+        # Need to emit special init call for scoped vars to init link
+
+        if {[string range $vname 0 1] == "::"} {
+            append buffer \
+                [emitter_init_compiled_local_scoped_var $vname \
+                    "compiledLocals" $cacheId]
+        }
+
+        append buffer [emitter_get_compiled_local_array_var \
+            $tmpsymbol $vname $key $key_is_string "compiledLocals" $cacheId]
     } else {
-        set buffer [emitter_get_var $vname true $key $key_is_string 0]
+        set buffer [emitter_get_var $tmpsymbol $vname true $key $key_is_string 0]
     }
     return $buffer
 }
 
-# Emit code to set the value of an array variable. This method
-# assigns a new value to an array variable element and returns an
-# assignable value of type TclObject. This method is used
-# throughout this module to set an array variable value. A namespace
-# relative scoped qualifier like $child::var can't be
+# Emit code to set the value of an array variable and assign
+# the result to a tmpsymbol of type TclObject. This method
+# will assign a new value to an array element. This method is used
+# throughout this module to set an array variable value.
+# A absolute namespace scope array name like "::arr" is supported.
+# A namespace relative scoped qualifier like $child::var can't be
 # cached and is not added to the compiled local table.
 # The key argument is the array key to be looked up, if
 # key_is_string is true it will be a literal string.
 
-proc compileproc_emit_array_variable_set { vname key key_is_string value } {
+proc compileproc_emit_array_variable_set { tmpsymbol vname key key_is_string value } {
     global _compileproc
 
-#    puts "compileproc_emit_array_variable_set $vname $value"
+#    puts "compileproc_emit_array_variable_set $tmpsymbol $vname $value $key $key_is_string ..."
 
     if {([string first "::" $vname] == -1 || \
                 [string range $vname 0 1] == "::") && \
@@ -3021,10 +3082,21 @@ proc compileproc_emit_array_variable_set { vname key key_is_string value } {
             $_compileproc(options,cache_variables)} {
         set symbol [compileproc_variable_cache_lookup $vname]
         set cacheId [compileproc_get_variable_cache_id_from_symbol $symbol]
-        set buffer [emitter_set_compiled_local_array_var \
-            $vname $key $key_is_string $value "compiledLocals" $cacheId]
+
+        set buffer ""
+
+        # Need to emit special init call for scoped vars to init link
+
+        if {[string range $vname 0 1] == "::"} {
+            append buffer \
+                [emitter_init_compiled_local_scoped_var $vname \
+                    "compiledLocals" $cacheId]
+        }
+
+        append buffer [emitter_set_compiled_local_array_var \
+            $tmpsymbol $vname $key $key_is_string $value "compiledLocals" $cacheId]
     } else {
-        set buffer [emitter_set_var $vname true $key $key_is_string $value 0]
+        set buffer [emitter_set_var $tmpsymbol $vname true $key $key_is_string $value 0]
     }
 
     return $buffer
@@ -4709,9 +4781,8 @@ proc compileproc_emit_container_catch { key } {
                 # simple static varname
                 set set_var_buffer ""
                 emitter_indent_level +1
-                append set_var_buffer [emitter_indent] \
-                    [compileproc_set_variable $static_varname true "" true] \
-                    "\;\n"
+                append set_var_buffer \
+                    [compileproc_set_variable {} $static_varname true "" true]
                 emitter_indent_level -1
                 append buffer [compileproc_container_catch_handler_var \
                     {} true $set_var_buffer]
@@ -4728,9 +4799,8 @@ proc compileproc_emit_container_catch { key } {
                 # non-static varname evaluated at runtime
                 set set_var_buffer ""
                 emitter_indent_level +1
-                append set_var_buffer [emitter_indent] \
-                    [compileproc_set_variable $varsymbol false "" true] \
-                    "\;\n"
+                append set_var_buffer \
+                    [compileproc_set_variable {} $varsymbol false "" true]
                 emitter_indent_level -1
                 append buffer [compileproc_container_catch_handler_var \
                     {} true $set_var_buffer]
@@ -4770,9 +4840,8 @@ proc compileproc_emit_container_catch { key } {
                 append buffer $catch_body_buffer
                 set set_var_buffer ""
                 emitter_indent_level +1
-                append set_var_buffer [emitter_indent] \
-                    [compileproc_set_variable $static_varname true "result" false] \
-                    "\;\n"
+                append set_var_buffer \
+                    [compileproc_set_variable {} $static_varname true "result" false]
                 emitter_indent_level -1
                 append buffer [compileproc_container_catch_handler_var \
                     $code_tmpsymbol false $set_var_buffer]
@@ -4790,9 +4859,8 @@ proc compileproc_emit_container_catch { key } {
                 append buffer $catch_body_buffer
                 set set_var_buffer ""
                 emitter_indent_level +1
-                append set_var_buffer [emitter_indent] \
-                    [compileproc_set_variable $varsymbol false "result" false] \
-                    "\;\n"
+                append set_var_buffer \
+                    [compileproc_set_variable {} $varsymbol false "result" false]
                 emitter_indent_level -1
                 append buffer [compileproc_container_catch_handler_var \
                     $code_tmpsymbol false $set_var_buffer]
@@ -5180,20 +5248,20 @@ proc compileproc_container_foreach_loop_start { varlists list_symbols } {
 
         append buffer [emitter_container_foreach_var_try_start]
         if {!$multivars && !$multilists} {
-            append buffer [emitter_indent] \
-                [compileproc_set_variable $varname true $tmpsymbol false] "\;\n"
+            append buffer \
+                [compileproc_set_variable {} $varname true $tmpsymbol false]
         } elseif {$multilists || $multivars} {
             append buffer [emitter_indent] \
                 "if ( " $tmpsymbol " == null ) \{\n"
             emitter_indent_level +1
-            append buffer [emitter_indent] \
-                [compileproc_set_variable $varname true "" true] "\;\n"
+            append buffer \
+                [compileproc_set_variable {} $varname true "" true]
             emitter_indent_level -1
             append buffer [emitter_indent] \
                 "\} else \{\n"
             emitter_indent_level +1
-            append buffer [emitter_indent] \
-                [compileproc_set_variable $varname true $tmpsymbol false] "\;\n"
+            append buffer \
+                [compileproc_set_variable {} $varname true $tmpsymbol false]
             emitter_indent_level -1
             append buffer [emitter_indent] \
                 "\}\n"
@@ -5591,17 +5659,18 @@ proc compileproc_emit_container_switch_constant { key string_tmpsymbol } {
     return $buffer
 }
 
-# Generate code to set a variable to a value. This method
-# assumes that a variable name is statically defined.
-# This method will emit different code for scalar vs
-# array variables.
+# Generate code to set a variable to a value and assign
+# the result to a tmpsymbol of type TclObject. If no
+# result assignment is needed, pass {} as tmpsymbol.
+# This method assumes that a variable name is statically
+# defined. This method will emit different code for scalar
+# vs array variables.
 
-proc compileproc_set_variable { varname varname_is_string value value_is_string } {
+proc compileproc_set_variable { tmpsymbol varname varname_is_string value value_is_string } {
     if {$value_is_string} {
         # FIXME: Would be better to do this in the emitter layer, would
         # require adding is_value_string argument to emitter_set_var + scalar func.
-        set jstr [emitter_backslash_tcl_string $value]
-        set value "\"$jstr\""
+        set value [emitter_double_quote_tcl_string $value]
     }
 
     if {$varname_is_string} {
@@ -5610,34 +5679,35 @@ proc compileproc_set_variable { varname varname_is_string value value_is_string 
         if {[lindex $vinfo 0] == "array"} {
             set p1 [lindex $vinfo 1]
             set p2 [lindex $vinfo 2]
-            return [compileproc_emit_array_variable_set $p1 $p2 true $value]
+            return [compileproc_emit_array_variable_set $tmpsymbol $p1 $p2 true $value]
         } elseif {[lindex $vinfo 0] == "scalar"} {
-            return [compileproc_emit_scalar_variable_set $varname $value]
+            return [compileproc_emit_scalar_variable_set $tmpsymbol $varname $value]
         } else {
             error "unexpected result \{$vinfo\} from descend_simple_variable"
         }
     } else {
         # Non-static variable name, can't use cache so handle with
         # interp.setVar()
-        return [emitter_set_var $varname false null false $value 0]
+        return [emitter_set_var $tmpsymbol $varname false null false $value 0]
     }
 }
 
-# Generate code to get a variable value. This method
-# assumes that a variable name is statically defined.
+# Generate code to get a variable value and assign
+# the result to the passed in tmpsymbol. This
+# method assumes that a variable name is static.
 # This method will emit different code for scalar vs
 # array variables.
 
-proc compileproc_get_variable { varname varname_is_string } {
+proc compileproc_get_variable { tmpsymbol varname varname_is_string } {
     if {$varname_is_string} {
         # static variable name, emit either array or scalar assignment
         set vinfo [descend_simple_variable $varname]
         if {[lindex $vinfo 0] == "array"} {
             set p1 [lindex $vinfo 1]
             set p2 [lindex $vinfo 2]
-            return [compileproc_emit_array_variable_get $p1 $p2 true]
+            return [compileproc_emit_array_variable_get $tmpsymbol $p1 $p2 true]
         } elseif {[lindex $vinfo 0] == "scalar"} {
-            return [compileproc_emit_scalar_variable_get $varname]
+            return [compileproc_emit_scalar_variable_get $tmpsymbol $varname]
         } else {
             error "unexpected result \{$vinfo\} from descend_simple_variable"
         }
@@ -5645,7 +5715,7 @@ proc compileproc_get_variable { varname varname_is_string } {
         # Non-static variable name, can't use cache so handle with
         # interp.getVar() which works with either scalar or
         # array variable names.
-        return [emitter_get_var $varname false null false 0]
+        return [emitter_get_var $tmpsymbol $varname false null false 0]
     }
 }
 
@@ -7677,6 +7747,8 @@ proc compileproc_emit_lappend_call_impl { key arraysym tmpsymbol userdata } {
             set qp1 [emitter_double_quote_tcl_string $p1]
             set qp2 [emitter_double_quote_tcl_string $p2]
 
+# FIXME: Init scoped var
+
             append buffer \
                 [emitter_statement \
                     "$tmpsymbol = lappendVarArray(interp, $qp1, $qp2,\
@@ -7685,6 +7757,8 @@ proc compileproc_emit_lappend_call_impl { key arraysym tmpsymbol userdata } {
             set qvarname [emitter_double_quote_tcl_string $varname]
             set cache_symbol [compileproc_variable_cache_lookup $varname]
             set cacheId [compileproc_get_variable_cache_id_from_symbol $cache_symbol]
+
+# FIXME: Init scoped var
 
             append buffer \
                 [emitter_statement \
@@ -8134,9 +8208,9 @@ proc compileproc_emit_inline_command_set { key } {
     if {$num_args == 2} {
         # get variable value
         if {$constant_varname} {
-            set result [compileproc_get_variable $varname true]
-            append buffer [emitter_statement \
-                "TclObject $tmpsymbol = $result"]
+            append buffer \
+                [compileproc_get_variable "TclObject $tmpsymbol" \
+                    $varname true]
         } else {
             append buffer [emitter_statement \
                 "TclObject $tmpsymbol"]
@@ -8174,8 +8248,7 @@ proc compileproc_emit_inline_command_set { key } {
 
         if {$constant_varname} {
             append buffer $value_buffer
-            set result [compileproc_set_variable $varname true $value 0]
-            append buffer [emitter_statement "$tmpsymbol = $result"]
+            append buffer [compileproc_set_variable $tmpsymbol $varname true $value 0]
         } else {
             set gs_buffers \
                 [compileproc_get_set_nonconstant_array_variable $key 1 \
@@ -8801,23 +8874,18 @@ proc compileproc_get_set_nonconstant_array_variable { key index \
     set word_buffer [lindex $tuple 2]
 
     if {$getset == "get"} {
-        set get_set_buffer ""
-        append get_set_buffer \
-            [emitter_indent] \
-            $tmpsymbol " = " \
-            [compileproc_emit_array_variable_get $varname $keysym false] \
-            "\;\n"
+        set get_set_buffer \
+            [compileproc_emit_array_variable_get $tmpsymbol $varname $keysym false]
     } elseif {$getset == "set"} {
-        set get_set_buffer [emitter_indent]
-
         if {$assign_tmpsymbol} {
-            append get_set_buffer \
-                $tmpsymbol " = "
+            set set_tmpsymbol $tmpsymbol
+        } else {
+            set set_tmpsymbol {}
         }
 
-        append get_set_buffer \
-            [compileproc_emit_array_variable_set $varname $keysym false $value] \
-            "\;\n"
+        set get_set_buffer \
+            [compileproc_emit_array_variable_set $set_tmpsymbol \
+                $varname $keysym false $value]
     } else {
         error "bad getset argument must be \"get\" or \"set\""
     }

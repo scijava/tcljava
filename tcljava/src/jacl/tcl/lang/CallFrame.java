@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: CallFrame.java,v 1.15 2006/03/15 23:07:22 mdejong Exp $
+ * RCS: @(#) $Id: CallFrame.java,v 1.16 2006/03/24 21:33:49 mdejong Exp $
  *
  */
 
@@ -96,6 +96,7 @@ class CallFrame {
      */
 
     Var.CompiledLocal[] compiledLocals;
+    String[] compiledLocalsNames;
 
     /**
      * Creates a CallFrame for the global variables.
@@ -107,6 +108,7 @@ class CallFrame {
 	ns              = i.globalNs;
 	varTable        = null;
 	compiledLocals  = null;
+	compiledLocalsNames = null;
 	caller          = null;
 	callerVar       = null;
 	objv            = null;
@@ -380,6 +382,7 @@ class CallFrame {
 	if (compiledLocals != null) {
 	    Var.deleteVars(interp, compiledLocals);
 	    compiledLocals = null;
+	    compiledLocalsNames = null;
 	}
     }
 

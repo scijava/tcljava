@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: TestVarFrameCmd.java,v 1.1 2006/03/15 23:07:25 mdejong Exp $
+ * RCS: @(#) $Id: TestVarFrameCmd.java,v 1.2 2006/03/24 21:33:49 mdejong Exp $
  */
 
 package tcl.lang;
@@ -122,6 +122,8 @@ throws
         results.append("}\n");
     }
 
+    // FIXME: Print compiled in names of locals.
+
     interp.setResult(results.toString());
     return;
 }
@@ -137,14 +139,14 @@ void varInfo(Interp interp, StringBuffer results, Var var, boolean resolved) {
 
     Var linkto = var;
 
-    if (var.isVarLink()) {
-	while (linkto.isVarLink()) {
-	    linkto = (Var) linkto.value;
-	}
+    while (linkto.isVarLink()) {
+        linkto = (Var) linkto.value;
     }
 
-    if (var.isVarUndefined() || linkto.isVarUndefined()) {
+    if ((var == linkto) && var.isVarUndefined()) {
         results.append("UNDEFINED ");
+    } else if (linkto.isVarUndefined()) {
+        results.append("UNDEFINED-> ");
     }
 
     if (linkto.isVarScalar()) {
