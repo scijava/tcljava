@@ -126,7 +126,7 @@ public class Test1 extends TJC.CompiledCommand {
     {
         if (!initCmd) { initCmd(interp); }
         CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
-        Var.CompiledLocal[] compiledLocals =
+        Var[] compiledLocals =
             TJC.initCompiledLocals(callFrame, 1, compiledLocalsNames);
         try {
         if (objv.length != 1) {
@@ -237,7 +237,7 @@ public class Test1 extends TJC.CompiledCommand {
             throws TclException
     {
         CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
-        Var.CompiledLocal[] compiledLocals =
+        Var[] compiledLocals =
             TJC.initCompiledLocals(callFrame, 1, compiledLocalsNames);
         try {
         if (objv.length != 2) {
@@ -285,7 +285,7 @@ public class Test1 extends TJC.CompiledCommand {
     {
         if (!initCmd) { initCmd(interp); }
         CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
-        Var.CompiledLocal[] compiledLocals =
+        Var[] compiledLocals =
             TJC.initCompiledLocals(callFrame, 3, compiledLocalsNames);
         try {
         if (objv.length < 2) {
@@ -354,7 +354,7 @@ public class Test1 extends TJC.CompiledCommand {
     {
         if (!initCmd) { initCmd(interp); }
         CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
-        Var.CompiledLocal[] compiledLocals =
+        Var[] compiledLocals =
             TJC.initCompiledLocals(callFrame, 1, compiledLocalsNames);
         try {
         if (objv.length != 1) {
@@ -431,7 +431,7 @@ public class Test1 extends TJC.CompiledCommand {
     {
         if (!initCmd) { initCmd(interp); }
         CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
-        Var.CompiledLocal[] compiledLocals =
+        Var[] compiledLocals =
             TJC.initCompiledLocals(callFrame, 1, compiledLocalsNames);
         try {
         if (objv.length != 1) {
@@ -526,7 +526,7 @@ public class Test1 extends TJC.CompiledCommand {
     {
         if (!initCmd) { initCmd(interp); }
         CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
-        Var.CompiledLocal[] compiledLocals =
+        Var[] compiledLocals =
             TJC.initCompiledLocals(callFrame, 1, compiledLocalsNames);
         try {
         if (objv.length != 1) {
@@ -669,7 +669,7 @@ public class Test1 extends TJC.CompiledCommand {
     {
         if (!initCmd) { initCmd(interp); }
         CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
-        Var.CompiledLocal[] compiledLocals =
+        Var[] compiledLocals =
             TJC.initCompiledLocals(callFrame, 1, compiledLocalsNames);
         try {
         if (objv.length != 1) {
@@ -848,7 +848,7 @@ public class Test1 extends TJC.CompiledCommand {
     {
         if (!initCmd) { initCmd(interp); }
         CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
-        Var.CompiledLocal[] compiledLocals =
+        Var[] compiledLocals =
             TJC.initCompiledLocals(callFrame, 1, compiledLocalsNames);
         try {
         if (objv.length != 1) {
@@ -926,7 +926,7 @@ public class Test1 extends TJC.CompiledCommand {
     {
         if (!initCmd) { initCmd(interp); }
         CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
-        Var.CompiledLocal[] compiledLocals =
+        Var[] compiledLocals =
             TJC.initCompiledLocals(callFrame, 2, compiledLocalsNames);
         try {
         if (objv.length != 1) {
@@ -1094,7 +1094,7 @@ public class Test1 extends TJC.CompiledCommand {
     {
         if (!initCmd) { initCmd(interp); }
         CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
-        Var.CompiledLocal[] compiledLocals =
+        Var[] compiledLocals =
             TJC.initCompiledLocals(callFrame, 1, compiledLocalsNames);
         try {
         if (objv.length != 1) {
@@ -1153,7 +1153,7 @@ public class Test1 extends TJC.CompiledCommand {
     {
         if (!initCmd) { initCmd(interp); }
         CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
-        Var.CompiledLocal[] compiledLocals =
+        Var[] compiledLocals =
             TJC.initCompiledLocals(callFrame, 2, compiledLocalsNames);
         try {
         if (objv.length != 1) {
@@ -1214,7 +1214,7 @@ public class Test1 extends TJC.CompiledCommand {
     {
         if (!initCmd) { initCmd(interp); }
         CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
-        Var.CompiledLocal[] compiledLocals =
+        Var[] compiledLocals =
             TJC.initCompiledLocals(callFrame, 1, compiledLocalsNames);
         try {
         if (objv.length != 1) {
@@ -1273,7 +1273,7 @@ public class Test1 extends TJC.CompiledCommand {
     {
         if (!initCmd) { initCmd(interp); }
         CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
-        Var.CompiledLocal[] compiledLocals =
+        Var[] compiledLocals =
             TJC.initCompiledLocals(callFrame, 1, compiledLocalsNames);
         try {
         if (objv.length != 1) {

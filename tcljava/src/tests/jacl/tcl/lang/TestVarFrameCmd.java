@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: TestVarFrameCmd.java,v 1.2 2006/03/24 21:33:49 mdejong Exp $
+ * RCS: @(#) $Id: TestVarFrameCmd.java,v 1.3 2006/03/27 00:06:42 mdejong Exp $
  */
 
 package tcl.lang;
@@ -55,8 +55,9 @@ throws
     }
 
     HashMap localTable = varFrame.varTable;
-    Var.CompiledLocal[] compiledLocals = varFrame.compiledLocals;
-    Var.CompiledLocal clocal;
+    Var[] compiledLocals = varFrame.compiledLocals;
+    String[] compiledLocalsNames = varFrame.compiledLocalsNames;
+    Var clocal;
     Var var;
     StringBuffer results = new StringBuffer(128);
 
@@ -87,12 +88,22 @@ throws
 
 	for (int i=0; i < compiledLocals.length; i++) {
 	    clocal = compiledLocals[i];
+
             if (clocal == null) {
                 results.append("null\n");
                 continue;
             }
-	    var = clocal.var;
-            if (!clocal.isLocal) {
+
+            if (! clocal.hashKey.equals(compiledLocalsNames[i])) {
+                throw new TclException(interp,
+                    "compiledLocal[" + i + "] varname \"" +
+                    clocal.hashKey +
+                    "\" does not match compiledLocalsNames varname \"" +
+                    compiledLocalsNames[i] + "\"");
+            }
+
+	    var = clocal;
+            if (var.isVarNonLocal()) {
                 results.append("Non-Local ");
             }
             varInfo(interp, results, var, false);
@@ -101,7 +112,7 @@ throws
         results.append("}\n");
     }
 
-    // Print resolved scalar Var refs in compiledLocals array.
+    // Print info about the resolved refs in the compiled local array.
 
     if (compiledLocals == null) {
         results.append("compiledLocals.resolved is null\n");
@@ -115,14 +126,22 @@ throws
                 results.append("null\n");
                 continue;
             }
-	    var = clocal.resolved;
-            varInfo(interp, results, var, true);
+
+            Var resolved = clocal;
+            if (resolved.isVarLink()) {
+                resolved = (Var) resolved.value;
+            }
+            if (resolved.isVarScalar()) {
+                resolved = Var.resolveScalar(resolved);
+            } else if (resolved.isVarArray()) {
+                resolved = Var.resolveArray(resolved);
+            }
+
+            varInfo(interp, results, resolved, true);
 	}
 
         results.append("}\n");
     }
-
-    // FIXME: Print compiled in names of locals.
 
     interp.setResult(results.toString());
     return;
@@ -139,8 +158,14 @@ void varInfo(Interp interp, StringBuffer results, Var var, boolean resolved) {
 
     Var linkto = var;
 
-    while (linkto.isVarLink()) {
+    if (linkto.isVarLink()) {
         linkto = (Var) linkto.value;
+
+        // After resolve, Var can't be a link
+        if (linkto.isVarLink()) {
+            throw new TclRuntimeError(
+                "var is still a link var after resolve");
+        }
     }
 
     if ((var == linkto) && var.isVarUndefined()) {

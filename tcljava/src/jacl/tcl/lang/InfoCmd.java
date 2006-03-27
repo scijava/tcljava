@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: InfoCmd.java,v 1.14 2006/03/15 23:07:22 mdejong Exp $
+ * RCS: @(#) $Id: InfoCmd.java,v 1.15 2006/03/27 00:06:42 mdejong Exp $
  *
  */
 
@@ -790,77 +790,9 @@ class InfoCmd implements Command {
 	// table (if one exists).
 
 	list = TclList.newInstance();
-	AppendLocals(interp, list, pattern, false);
+	Var.AppendLocals(interp, list, pattern, false);
 	interp.setResult(list);
 	return;
-    }
-
-    /*
-     *----------------------------------------------------------------------
-     *
-     * AppendLocals --
-     *
-     *	Append the local variables for the current frame to the
-     *	specified list object.
-     *
-     * Results:
-     *	None.
-     *
-     * Side effects:
-     *	None.
-     *
-     *----------------------------------------------------------------------
-     */
-
-    private static void AppendLocals(
-			  Interp interp,        // Current interp
-			  TclObject list,       // list to append to
-			  String pattern,       // Pattern to match against.
-			  boolean includeLinks) // true if upvars should be included
-	throws TclException
-    {
-	Var var;
-	String varName;
-	CallFrame frame = interp.varFrame;
-
-	HashMap localVarTable = frame.varTable;
-	if (localVarTable != null) {
-	    for (Iterator iter = localVarTable.entrySet().iterator(); iter.hasNext() ;) {
-		Map.Entry entry = (Map.Entry) iter.next();
-		varName = (String) entry.getKey();
-		var = (Var) entry.getValue();
-		if (!var.isVarUndefined()
-		    && (includeLinks || !var.isVarLink())) {
-		    if ((pattern == null)
-		        || Util.stringMatch(varName, pattern)) {
-			TclList.append(interp, list,
-				       TclString.newInstance(varName));
-		    }
-		}
-	    }
-	}
-
-	Var.CompiledLocal[] compiledLocals = frame.compiledLocals;
-	if (compiledLocals != null) {
-	    final int max = compiledLocals.length;
-	    for (int i=0 ; i < max ; i++) {
-		Var.CompiledLocal clocal = compiledLocals[i];
-		if (clocal != null && clocal.isLocal) {
-                    var = clocal.var;
-                    varName = (String) var.hashKey;
-
-		    if (!var.isVarUndefined()
-		        && (includeLinks || !var.isVarLink())) {
-		        if ((pattern == null)
-		            || Util.stringMatch(varName, pattern)) {
-			    TclList.append(interp, list,
-				       TclString.newInstance(varName));
-		        }
-		    }
-                }
-	    }
-	}
-
     }
 
     /*
@@ -1176,7 +1108,7 @@ class InfoCmd implements Command {
 		var = (Var) entry.getValue();
 
 		if (!var.isVarUndefined()
-		    || ((var.flags & Var.NAMESPACE_VAR) != 0)) {
+		    || var.isVarNamespace()) {
 		    if ((simplePattern == null)
 	                || Util.stringMatch(varName, simplePattern)) {
 			if (specificNsInPattern) {
@@ -1204,7 +1136,7 @@ class InfoCmd implements Command {
 		    var = (Var) entry.getValue();
 
 		    if (!var.isVarUndefined()
-			|| ((var.flags & Var.NAMESPACE_VAR) != 0)) {
+			|| var.isVarNamespace()) {
 			if ((simplePattern == null)
 			    || Util.stringMatch(varName, simplePattern)) {
 
@@ -1218,7 +1150,7 @@ class InfoCmd implements Command {
 		}
 	    }
 	} else {
-	    AppendLocals(interp, list, simplePattern, true);
+	    Var.AppendLocals(interp, list, simplePattern, true);
 	}
     
 	interp.setResult(list);

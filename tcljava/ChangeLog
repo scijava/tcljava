@@ -1,3 +1,63 @@
+2006-03-26  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        Reimplement compiled locals array as a plain
+        array of Var objects. The previous implementation
+        used a Var.CompiledLocal class that just held
+        2 var refs and a state flag. This new
+        implementation avoids a pointless object
+        allocation for each variable and is much
+        simpler since we don't need to keep track
+        of a second resolved Var ref.
+
+        * src/jacl/tcl/lang/CallFrame.java:
+        Change compiledLocals decl from
+        Var.CompiledLocal[] to Var[].
+        * src/jacl/tcl/lang/InfoCmd.java (AppendLocals):
+        Move AppendLocals into Var class.
+        * src/jacl/tcl/lang/Var.java (isVarNonLocal,
+        setVarNonLocal, lookupVar, initVarCompiledLocalScalar,
+        setVarCompiledLocalScalarInvalid,
+        getVarCompiledLocalScalarInvalid,
+        initVarCompiledLocalArray,
+        setVarCompiledLocalArrayInvalid,
+        getVarCompiledLocalArrayInvalid,
+        getVarCompiledLocalArray,
+        setVarCompiledLocalArray,
+        unsetVar, makeUpvar, deleteVars, deleteVar,
+        resolveScalar, resolveArray,
+        setUndefinedToNull, AppendLocals):
+        Reimplement compiled local array as simple
+        array of Var. Remove all the resolved ref
+        management code since a link var is now
+        resolved on each invocation. Remove the
+        CompiledLocal class and update callers.
+        Add NON_LOCAL state flag to Var class
+        to replace CompiledLocal.isLocal flag.
+        Add logic so that we are sure a Var
+        object always refs either a scalar or
+        an array but never another Var. Simplify
+        compiled local methods by only passing
+        needed arguments.
+        * src/jacl/tcl/lang/VariableCmd.java:
+        Use Var.isVarNamespace() and Var.setVarNamespace()
+        instead of bit flags.
+        * src/tests/jacl/tcl/lang/TestVarFrameCmd.java:
+        Update compiled local array introspection.
+        * src/tjc/tcl/lang/TJC.java (initCompiledLocals,
+        initVarScoped, getVarScalar, getVarArray,
+        setVarScalar, setVarArray, incrVarScalar,
+        incrVarArray, lappendVarScalar, lappendVarArray,
+        appendVarScalar): Update compiled local
+        method callers. A link var is now resolved
+        on each invocation by a call to either
+        resolveScalar() or resolveArray().
+        * src/tjc/tjc/library/emitter.tcl:
+        Emit compiled local array as type Var[].
+        * tests/tjc/compiledLocals.test:
+        * tests/tjc/compileproc_6.test:
+        * tests/tjc/compileproc_7.test: Update
+        test output.
+
 2006-03-24  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/jacl/tcl/lang/CallFrame.java (CallFrame, dispose):

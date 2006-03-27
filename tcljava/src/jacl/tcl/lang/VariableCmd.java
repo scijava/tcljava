@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: VariableCmd.java,v 1.6 2006/03/15 23:07:22 mdejong Exp $
+ * RCS: @(#) $Id: VariableCmd.java,v 1.7 2006/03/27 00:06:42 mdejong Exp $
  */
 
 package tcl.lang;
@@ -83,8 +83,8 @@ class VariableCmd implements Command {
 	    // reference count so that it will persist until its namespace is
 	    // destroyed or until the variable is unset.
 
-	    if ((var.flags & Var.NAMESPACE_VAR) == 0) {
-		var.flags |= Var.NAMESPACE_VAR;
+	    if (!var.isVarNamespace()) {
+		var.setVarNamespace();
 		var.refCount++;
 	    }
 

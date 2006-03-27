@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Var.java,v 1.30 2006/03/24 21:33:49 mdejong Exp $
+ * RCS: @(#) $Id: Var.java,v 1.31 2006/03/27 00:06:42 mdejong Exp $
  *
  */
 package tcl.lang;
@@ -79,7 +79,25 @@ class Var {
      *				upvar. It is not possible to clear this flag,
      *				so the variable can't be cached as long as it
      *				exists.
+     * NON_LOCAL -		1 means that the variable exists in the
+     *				compiled local table, but it is not a
+     *				local or imported local. This flag is
+     *				only set in compiled code when scoped
+     *				global var refs like $::myvar are found.
+     *				These variables are not considered part
+     *				of a variable frame and can't be found
+     *				at runtime.
      */
+
+// FIXME: Could revisit this whole NO_CACHE flag with traces thing.
+// Should really make the NO_CACHE flag a different flags than
+// traces. Perhaps another HAS_TRACES flag that is set when
+// traces are defined would be better. The NO_CACHE could then
+// be used for tricky cases like a link to an array index
+// and resolver vars. There are array cases where we don't
+// care if there are traces, but it could be a problem if
+// NO_CACHE was set and we expect to have to look that up
+// every time.
 
     static final int SCALAR	   = 0x1;
     static final int ARRAY	   = 0x2;
@@ -90,6 +108,7 @@ class Var {
     static final int ARRAY_ELEMENT = 0x40;
     static final int NAMESPACE_VAR = 0x80;
     static final int NO_CACHE = 0x100;
+    static final int NON_LOCAL = 0x200;
 
     // Flag used only with makeUpvar()
     static final int EXPLICIT_LOCAL_NAME = 0x1000;
@@ -136,6 +155,13 @@ class Var {
         return ((flags & (UNDEFINED|NO_CACHE)) != 0);
     }
 
+    // True when a compiled local variable should
+    // not be a member of the var frame.
+
+    final boolean isVarNonLocal() {
+        return ((flags & NON_LOCAL) != 0);
+    }
+
     // Methods to ensure that various flag bits are set properly for variables.
 
     final void setVarScalar() {
@@ -164,6 +190,10 @@ class Var {
 
     final void setVarInHashtable() {
         flags |= IN_HASHTABLE;
+    }
+
+    final void setVarNonLocal() {
+        flags |= NON_LOCAL;
     }
 
     final void clearVarUndefined() {
@@ -651,18 +681,13 @@ class Var {
 	        // compiled local array and not in the local
 	        // var hash table.
 
-	        Var.CompiledLocal[] compiledLocals = varFrame.compiledLocals;
+	        Var[] compiledLocals = varFrame.compiledLocals;
 	        String[] compiledLocalsNames = varFrame.compiledLocalsNames;
 	        final int MAX = compiledLocals.length;
 
-	        // lookupVar() will not match scoped non-locals
-	        boolean isPart1Scoped = (part1.indexOf("::") != -1);
-
 	        for (int i=0; i < MAX ; i++) {
-	            String clocal_name = compiledLocalsNames[i];
-
-	            if (!isPart1Scoped && clocal_name.equals(part1)) {
-	                Var.CompiledLocal clocal = compiledLocals[i];
+	            if (compiledLocalsNames[i].equals(part1)) {
+	                Var clocal = compiledLocals[i];
 	                if (clocal == null) {
 	                    // No compiled local with this name, init it.
 	                    if (createPart1) {
@@ -670,18 +695,18 @@ class Var {
 	                        var.hashKey = part1;
 	                        var.clearVarInHashtable();
 
-	                        compiledLocals[i] = new CompiledLocal(var);
-
-	                        // The generic code can't resolve
-	                        // a compiled local until it is set, so
-	                        // take a shortcut here since we know
-	                        // that a local is being created.
-
-	                        compiledLocals[i].resolved = var;
+	                        compiledLocals[i] = var;
 	                    }
 	                } else {
-	                    // Found existing compiled local var
-	                    var = clocal.var;
+	                    // Found existing compiled local var, make
+                            // sure it is a not a scoped non-local.
+
+                            if (clocal.isVarNonLocal()) {
+                                throw new TclRuntimeError(
+                                    "can't lookup scoped variable \"" +
+                                    part1 + "\" in local table");
+                            }
+	                    var = clocal;
 	                }
 	                break;
 	            }
@@ -1194,8 +1219,7 @@ class Var {
             final Interp interp,      // interp to search for the var in
             final String varname,     // Name of scalar variable.
             final TclObject newValue, // New value for scalar variable.
-            final Var.CompiledLocal[]
-                compiledLocals, // compiled local array
+            final Var[] compiledLocals, // compiled local array
             final int localIndex)     // index into compiled local array, 0 to N.
         throws TclException
     {
@@ -1292,14 +1316,7 @@ class Var {
 
         // Add var to the compiled local array.
 
-        Var.CompiledLocal clocal = new CompiledLocal(var);
-        compiledLocals[localIndex] = clocal;
-
-        // Special case the resolved init since we know
-        // this is a local scalar.
-
-        //clocal.resolve();
-        clocal.resolved = var;
+        compiledLocals[localIndex] = var;
 
         return newValue;
     }
@@ -1312,10 +1329,7 @@ class Var {
     static TclObject setVarCompiledLocalScalarInvalid(
             Interp interp,      // interp to search for the var in
             String varname,     // Name of scalar variable.
-            TclObject newValue, // New value for scalar variable.
-            Var.CompiledLocal[]
-                compiledLocals, // compiled local array
-            int localIndex)     // index into compiled local array, 0 to N.
+            TclObject newValue) // New value for scalar variable.
         throws TclException
     {
         // Extra checking
@@ -1336,9 +1350,6 @@ class Var {
             }
             if (varFrame.isProcCallFrame == false) {
                 throw new TclRuntimeError("expected isProcCallFrame to be true");
-            }
-            if (compiledLocals[localIndex] == null) {
-                throw new TclRuntimeError("compiled local slot should not be null");
             }
 
             // Double check that scalar name is not actually an array
@@ -1364,38 +1375,7 @@ class Var {
         // the compiled local is unset, has traces,
         // or when the link var is unset or has traces.
 
-        Var.CompiledLocal clocal = compiledLocals[localIndex];
-
-        if (clocal.isResolvedLinkInvalid()) {
-            // If the linked to var is unset or has traces set
-            // then null out the resolved ref.
-            clocal.resolved = null;
-        }
-
-        if (validate) {
-        if (clocal.resolved != null && clocal.resolved.isVarScalar()) {
-            // Compiler methods should not invoke this method for a resolved ref.
-            throw new TclRuntimeError("compiledLocal at index " + localIndex +
-                " has already been resolved");
-        }
-        }
-
-        // The resolved ref is null, set the variable at runtime
-        // and attempt to resolve the ref again. This will raise
-        // the proper error if the var is not a scalar.
-
-        // FIXME: Are there some cases where setVarPtr() could be used
-        // to speed things up?
-
-        TclObject retval = setVar(interp, varname, null, newValue, TCL.LEAVE_ERR_MSG);
-
-        // Now resolve the CompiledLocal, this has to be done
-        // after the variable was actually set since the
-        // resolve logic only deals with set variables.
-
-        clocal.resolve();
-
-        return retval;
+        return setVar(interp, varname, null, newValue, TCL.LEAVE_ERR_MSG);
     }
 
     // This method is invoked to get the value of a
@@ -1409,8 +1389,7 @@ class Var {
 
     static TclObject getVarCompiledLocalScalarInvalid(
 	    Interp interp,      // interp to search for the var in
-	    String varname,     // Name of scalar variable.
-            Var.CompiledLocal clocal) // compiled local ref
+	    String varname)     // Name of scalar variable.
 	throws TclException
     {
         // Extra checking
@@ -1453,12 +1432,6 @@ class Var {
             }
         }
 
-        if (clocal != null && clocal.isResolvedScalarInvalid()) {
-            // If the linked to var was unset, had traces set,
-            // or is not a scalar, then raise error with runtime get.
-            clocal.resolved = null;
-        }
-
         return Var.getVar(interp, varname, null, TCL.LEAVE_ERR_MSG);
     }
 
@@ -1472,8 +1445,7 @@ class Var {
             final String varname,     // Name of scalar variable.
             final String key,         // Array key, can't be null
             final TclObject newValue, // New value for array entry variable.
-            final Var.CompiledLocal[]
-                compiledLocals, // compiled local array
+            final Var[] compiledLocals, // compiled local array
             final int localIndex)     // index into compiled local array, 0 to N.
         throws TclException
     {
@@ -1556,23 +1528,14 @@ class Var {
         // so that it will be found and used
         // by setVar().
 
-        Var.CompiledLocal clocal = new CompiledLocal(var);
-        compiledLocals[localIndex] = clocal;
+        compiledLocals[localIndex] = var;
 
         // Set the variable, can't use setVarPtr()
         // since lookupVar() does the array element
         // create logic.
 
-        TclObject retval = setVar(interp, varname, key, newValue,
+        return setVar(interp, varname, key, newValue,
             TCL.LEAVE_ERR_MSG);
-
-        // Now resolve the CompiledLocal, this has to be done
-        // after the variable was actually set since the
-        // resolve logic only works with set variables.
-
-        clocal.resolve();
-
-        return retval;
     }
 
     // This method is invoked to set a compiled local array
@@ -1584,10 +1547,7 @@ class Var {
             Interp interp,      // interp to search for the var in
             String varname,     // Name of scalar variable.
             String key,         // Array key, can't be null
-            TclObject newValue, // New value for scalar variable.
-            Var.CompiledLocal[]
-                compiledLocals, // compiled local array
-            int localIndex)     // index into compiled local array, 0 to N.
+            TclObject newValue) // New value for scalar variable.
         throws TclException
     {
         // Extra checking
@@ -1636,11 +1596,6 @@ class Var {
                 }
             }
 
-            if (compiledLocals[localIndex] == null) {
-                throw new TclException(interp,
-                    "compiled local slot should not be null for " + varname);
-            }
-
             // A compiled local that is a scoped value would never
             // be initialized by this method.
 
@@ -1651,59 +1606,25 @@ class Var {
 
         } // end if (validate)
 
-
-        // This method would never be invoked with a null
-        // compiled locals slot. It could be invoked when
-        // the compiled local array slot is invalid.
-        // A compiled local array with traces is still valid.
-        // An array with an element that does not exist
-        // is still considered valid, the element is set
-        // with the resolved ref at runtime (not here).
-
-        Var.CompiledLocal clocal = compiledLocals[localIndex];
-
-        if (clocal.resolved != null &&
-                clocal.resolved.isVarArray() &&
-                clocal.isResolvedArrayInvalid()) {
-            // If the linked to array var is unset, then null
-            // out the resolved ref. A scalar is not changed here.
-            clocal.resolved = null;
-        }
-
-        if (clocal.resolved != null && clocal.resolved.isVarArray()) {
-            // Compiler methods should not invoke this method for a resolved ref.
-            throw new TclRuntimeError("compiledLocal at index " + localIndex +
-                " has already been resolved");
-        }
-
-        // The compiled local array var already exists, but it does
-        // not have a valid resolved ref. This can happen when an
-        // undefined variable linked into another scope is
-        // being defined for the first time. It can also
-        // happen when the compiled local is not an array (as scalar).
+        // The compiled local array var already exists, but it
+        // could not be resolved to a valid var. This can happen
+        // when an undefined variable linked into another scope is
+        // being defined for the first time. This can also
+        // happen when the compiled local is not an array.
         // Handle these cases by invoking setVar() to either
-        // raise the proper error or set the var properly.
+        // raise the proper error or set the var.
 
-        TclObject retval = setVar(interp, varname, key, newValue,
+        return setVar(interp, varname, key, newValue,
             TCL.LEAVE_ERR_MSG);
-
-        // Now resolve the CompiledLocal, this has to be done
-        // after the variable was actually set since the
-        // resolve logic only deals with set variables.
-
-        clocal.resolve();
-
-        return retval;
     }
 
     // This method is invoked to get the value of an
     // array variable that is associated with a compiled
     // local slot. This method is invoked when the
-    // compiled local slot is null or the link var in
-    // the slot is invalid. This method will only
-    // attempt to read a variable. It will not init
-    // a compiled local slot or attempt to resolve
-    // a compiled local if it has become invalid.
+    // compiled local slot is null or when the var
+    // can't be resolved to a valid array variable.
+    // This method will only attempt to read a variable.
+    // It will not init a compiled local slot.
     // This method is only ever invoked from a compiled
     // proc implementation. This method is not in the
     // critical execution path.
@@ -1711,9 +1632,7 @@ class Var {
     static TclObject getVarCompiledLocalArrayInvalid(
 	    Interp interp,      // interp to search for the var in
 	    String varname,     // Name of array variable.
-	    String key,         // array key, can't be null
-            Var.CompiledLocal clocal,   // unresolved array variable (can be null)
-            int localIndex)     // index into compiled local array, 0 to N.
+	    String key)         // array key, can't be null
 	throws TclException
     {
         // Extra checking
@@ -1747,14 +1666,6 @@ class Var {
 
         } // end if (validate) block
 
-// FIXME: Should this be array invalid not just link invalid?
-
-        if (clocal != null && clocal.isResolvedLinkInvalid()) {
-            // If the linked to var was unset or has traces set
-            // then null out the resolved ref.
-            clocal.resolved = null;
-        }
-
         return Var.getVar(interp, varname, key, TCL.LEAVE_ERR_MSG);
     }
 
@@ -1770,11 +1681,11 @@ class Var {
 	    final Interp interp,
 	    final String varname,             // name of array  variable
 	    final String key,                 // array key, can't be null
-	    final Var.CompiledLocal clocal,   // resolved array variable
+	    final Var resolved,               // resolved array variable
 	    final boolean leaveErrMsg)        // If true, will raise a
-	                                // TclException when the array
-	                                // element does not exist. If
-	                                // false, then return null.
+	                                      // TclException when the array
+	                                      // element does not exist. If
+	                                      // false, then return null.
 	throws TclException
     {
 	int flags = 0;
@@ -1790,7 +1701,7 @@ class Var {
 	}
 
 	Var[] result = Var.lookupArrayElement(interp, varname, key, flags,
-	    "read", false, false, clocal.resolved);
+	    "read", false, false, resolved);
 	if (result == null) {
 	    return null;
 	}
@@ -1805,7 +1716,7 @@ class Var {
     // This method is invoked to set the value of an
     // array variable that is associated with a compiled
     // local slot. This method is invoked when the
-    // compiled local slot contains a valid resolved ref.
+    // compiled local slot can be resolved to an array.
     // This method is only ever invoked from a compiled
     // proc implementation. This method is in the
     // critical execution path.
@@ -1815,14 +1726,14 @@ class Var {
 	    final String varname,             // name of array variable
 	    final String key,                 // array key, can't be null
 	    final TclObject newValue,
-	    final Var.CompiledLocal clocal)   // resolved array variable
+	    final Var resolved)               // resolved array variable
 	throws TclException
     {
 	// Raise TclException instead of returning null
 	final int flags = TCL.LEAVE_ERR_MSG;
 
 	Var[] result = lookupArrayElement(interp, varname, key, flags,
-	    "set", false, true, clocal.resolved);
+	    "set", false, true, resolved);
 
 	return setVarPtr(interp, result[0], result[1], varname, key,
 	    newValue, flags);
@@ -2050,7 +1961,7 @@ class Var {
 	
 	cleanupVar(var, array);
 
-	CompiledLocal.setUndefinedToNull(interp, part1, part2);
+	Var.setUndefinedToNull(interp, part1, part2);
 
 	// It's an error to unset an undefined variable.
 	
@@ -2109,7 +2020,6 @@ class Var {
 
 	if (var.traces == null) {
 	    var.setVarNoCache(); // Invalidate link vars
-	    CompiledLocal.setResolvedScalarToNull(interp, part1, part2);
 
 	    var.traces = new ArrayList();
 	}
@@ -2194,6 +2104,15 @@ class Var {
 		    break;
 		}
 	    }
+
+	    // FIXME: traces not set to null, could this
+	    // lead to a logic error cleanup up where the
+	    // table cleanup looks for a null traces?
+	    // Try to construct a test case for this.
+
+	    //if (var.traces.size() == 0) {
+	    //    var.traces = null;
+	    //}
 	}
 
 	// If this is the last trace on the variable, and the variable is
@@ -2295,7 +2214,7 @@ class Var {
 	boolean newvar = false;
 	boolean foundInCompiledLocalsArray = false;
 	boolean foundInLocalTable = false;
-	Var.CompiledLocal[] compiledLocals = null;
+	Var[] compiledLocals = null;
 
 	// Find "other" in "frame". If not looking up other in just the
 	// current namespace, temporarily replace the current var frame
@@ -2340,6 +2259,16 @@ class Var {
 	    // was passed to generate a TclException.
 	    throw new TclRuntimeError("unexpected null reference");
 	}
+
+        // This module assumes that a link target will never
+        // be a link var. In this way, a link var is
+        // always resolved to either a scalar or an array
+        // by following a single link. The lookupVar() method
+        // should always return either a scalar or an array.
+
+        if (other.isVarLink()) {
+            throw new TclRuntimeError("other var resolved to a link var");
+        }
 
 	// Now create a variable entry for "myName". Create it as either a
 	// namespace variable or as a local variable in a procedure call
@@ -2422,10 +2351,7 @@ class Var {
 	                if (compiledLocalsNames[i].equals(myName)) {
 	                    foundInCompiledLocalsArray = true;
 	                    localIndex = i;
-	                    Var.CompiledLocal clocal = compiledLocals[i];
-	                    if (clocal != null) {
-	                        var = clocal.var;
-	                    }
+	                    var = compiledLocals[i];
 	                    break;
 	                }
                     }
@@ -2434,10 +2360,7 @@ class Var {
                     // Check to see if compiled local var exists already.
 
                     foundInCompiledLocalsArray = true;
-                    Var.CompiledLocal clocal = compiledLocals[localIndex];
-                    if (clocal != null) {
-                        var = clocal.var;
-                    }
+                    var = compiledLocals[localIndex];
                 }
 	    }
 
@@ -2511,6 +2434,11 @@ class Var {
 				               myName +
 				               "\" has traces: can't use for upvar");
 	    }
+            // FIXME: Is it possible that the other var
+            // would not be a var link type but it would
+            // be undefined waiting to be cleaned up?
+            // For example, a linked var in another scope?
+            // Add a test case for this.
 	}
 
 	var.setVarLink();
@@ -2519,19 +2447,17 @@ class Var {
 	other.refCount++;
 
 	// If the link var should be stored in the compiledLocals
-	// array then do that now. The var would never exist in
-	// the local table if it was a compiled local.
+	// array then do that now. A variable with this same
+	// name would never appear in the local table. Also mark
+	// this variable as non-local for scoped global.
 
 	if (foundInCompiledLocalsArray) {
-	    Var.CompiledLocal clocal;
-
-	    clocal = new CompiledLocal(var);
-	    compiledLocals[localIndex] = clocal;
-
-	    clocal.resolve();
+	    if (newvar) {
+	        compiledLocals[localIndex] = var;
+	    }
 
 	    if ((myFlags & EXPLICIT_LOCAL_NAME) != 0) {
-	        clocal.isLocal = false;
+	        var.setVarNonLocal();
 	    }
 	}
 
@@ -2634,7 +2560,10 @@ class Var {
 	// string in place, because the string might get used by the
 	// callbacks we invoke).
 
-	// FIXME : come up with parsing code to use for all situations!
+	// FIXME : a util method that parsed an array variable
+	// name into array and element component parts could
+	// be useful. There are a number of places where this
+	// is done inline in the code.
 	if (part2 == null) {
 	    int len = part1.length();
 
@@ -2744,11 +2673,7 @@ class Var {
 
     static protected void deleteVars(Interp interp, HashMap table)
     {
-	Var var;
-	Var link;
 	int flags;
-	//ActiveVarTrace active;
-	TclObject obj;
 	Namespace currNs = Namespace.getCurrentNamespace(interp);
 
 	// Determine what flags to pass to the trace callback procedures.
@@ -2762,9 +2687,7 @@ class Var {
 
 	for (Iterator iter = table.entrySet().iterator(); iter.hasNext() ;) {
 	    Map.Entry entry = (Map.Entry) iter.next();
-	    //String key = (String) entry.getKey();
-	    var = (Var) entry.getValue();
-	    deleteVar(interp, var, flags);
+	    deleteVar(interp, (Var) entry.getValue(), flags);
 	}
 	table.clear();
     }
@@ -2783,26 +2706,22 @@ class Var {
      * @param compiledLocals array of compiled local variables
      */
 
-    static protected void deleteVars(Interp interp, Var.CompiledLocal[] compiledLocals)
+    static protected void deleteVars(Interp interp, Var[] compiledLocals)
     {
-	int flags;
-
 	// A compiled local array only ever exists for a compiled
 	// proc, so flags is always the same.
 
-	flags = TCL.TRACE_UNSETS;
+	final int flags = TCL.TRACE_UNSETS;
 
 	final int max = compiledLocals.length;
+
 	for (int i=0 ; i < max ; i++) {
-	    Var.CompiledLocal clocal = compiledLocals[i];
+	    Var clocal = compiledLocals[i];
 	    if (clocal != null) {
-	        // Cleanup the Var struccture and then
+	        // Cleanup the Var instance and then
 	        // null out the compiled local slots.
 
-	        deleteVar(interp, clocal.var, flags);
-
-	        clocal.resolved = null;
-	        clocal.var = null;
+	        deleteVar(interp, clocal, flags);
 	        compiledLocals[i] = null;
 	    }
 	}
@@ -2831,14 +2750,15 @@ class Var {
 	// fine since this method is invoked after the regular variables
 	// are deleted.
 
-	if (var.isVarLink()) {
-// FIXME: Why is there only one resolve here, and not a while (isVarLink()) loop?
+	if ((var.flags & LINK) != 0) {
+	    // Follow link to either scalar or array variable
 	    Var link = (Var) var.value;
 	    link.refCount--;
-	    if ((link.refCount == 0) && link.isVarUndefined()
+	    if ((link.refCount == 0)
 	            && (link.traces == null)
-	            && ((link.flags & IN_HASHTABLE) != 0)) {
-
+	            // (link.isVarUndefined() && link.isVarInHashtable())
+	            && ((link.flags & (UNDEFINED|IN_HASHTABLE)) ==
+                        (UNDEFINED|IN_HASHTABLE))) {
 	        if (link.hashKey == null) {
 	            var.value = null; // Drops reference to the link Var
 	        } else if (link.table != var.table) {
@@ -2866,18 +2786,15 @@ class Var {
 	    // references to the traces which will free them up
 	}
 
-	if (var.isVarArray()) {
+	if ((var.flags & ARRAY) != 0) {
 	    deleteArray(interp, var.hashKey, var, flags);
 	    var.value = null;
-	}
-	if (var.isVarScalar() && (var.value != null)) {
+	} else if (((var.flags & SCALAR) != 0) && (var.value != null)) {
 	    TclObject obj = (TclObject) var.value;
 	    obj.release();
 	    var.value = null;
 	}
 
-	// There is no hPtr member in Jacl, The hPtr combines the table
-	// and the key used in a table lookup.
 	var.hashKey = null;
 	var.table   = null;
 	var.traces = null;
@@ -2896,11 +2813,15 @@ class Var {
 
 	// Recycle the variable's memory space if there aren't any upvar's
 	// pointing to it. If there are upvars to this variable, then the
-	// variable will get freed when the last upvar goes away.
+	// variable will get freed when the last upvar goes away. This
+	// variable could still be alive after this method finishes since
+	// it could be refrenced in a namespace. The code will catch
+	// that case by looking at the IN_HASHTABLE flag and seeing
+	// if the table member is null.
 
-	if (var.refCount == 0) {
-	    // When we drop the last reference it will be freeded
-	}
+//	if (var.refCount == 0) {
+//	    // When we drop the last reference it will be freeded
+//	}
     }
 
     /**
@@ -3006,225 +2927,194 @@ class Var {
 	}
     }
 
-    // CompiledLocal
+    // CompiledLocal utilitiy methods.
+
+    // The resolveScalar() method will
+    // attempt to resolve a scalar Var ref
+    // in the compiled local array.
+    // If the Var can't be resolved as
+    // a valid scalar, then null will
+    // be returned.
     //
-    // A compiled proc implementation can define an array
-    // of compiled local variables. The array is accessed
-    // as CallFrame.compiledLocals[INDEX] where INDEX is
-    // an integer index known at compile time. This array
-    // access is much faster than searching the local var
-    // table by name and it uses significantly less memory.
-    // The var field points to the Var object created in
-    // the local scope. The resolved field points to the
-    // same Var for scalar local vars, or to the linked Var
-    // in another scope for locals created by global
-    // or upvar. If the var ref points to an undefined Var,
-    // then the resolved ref is null.
+    // A resolved scalar is invalid when any
+    // of the following conditions is true.
+    //
+    // When the variable is not a scalar.
+    // When the variable is an array element.
+    // When the variable is undefined.
+    // When the variable has traces.
+    // When the variable can't be cached.
 
-    public
-    static final class CompiledLocal {
-        Var var;
-        Var resolved;
-
-        // This flag is set to false when a CompiledLocal
-        // is not a real local variable in the frame.
-        // This kind of variable is ignored when searching
-        // for a local varaible by name. The compiler can
-        // index it directly to set and get the value.
-
-        boolean isLocal;
-
-        // Allocate a CompiledLocal object that will be
-        // added to the CallFrame.compiledLocals array.
-
-        CompiledLocal(Var var) {
-            if (var == null) {throw new NullPointerException();}
-            this.var = var;
-            this.resolved = null;
-            this.isLocal = true;
+    static
+    Var resolveScalar(Var v) {
+        int flags = v.flags;
+        if ((flags & LINK) != 0) {
+             v = (Var) v.value;
+             flags = v.flags;
         }
 
-        // Return true if this compiled local has
-        // a null resolved ref or if the compiled
-        // local is a link var that links to a
-        // var that unset or has traces.
+        // If variable is not a scalar, or is an array element,
+        // or is unset, or has traces, then return null.
 
-        final boolean isResolvedLinkInvalid() {
-//            return ((resolved == null) ||
-//                ((var != resolved) && resolved.isVarCacheInvalid()));
+        if ((flags & (LINK|ARRAY|ARRAY_ELEMENT|UNDEFINED|NO_CACHE)) != 0) {
+            return null;
+        }
+        return v;
+    }
 
-// FIXME: This is less than optimal, for local vars and are not
-// link vars we should be able to just test to see if (var != resolved)
-// to know that the var is valid. The problem is that a subcommand
-// that unsets a linked var will not have the same var frame so
-// the compiled local will not get nulled out. So, for now check
-// the isVarCacheInvalid() on every access even if it is a local
-// var that resolves to itself. A better fix would be to make
-// the Var code more generic so that the compiled local would
-// be set to null when the var itself was unset. Perhaps the
-// CompiledLocal class coud be named CompiledLocalVar and
-// it could extend Var. That way, the CompiledLocalVar would
-// know where it was stored and it could null itself out
-// without hackey workarounds like setUndefinedToNull().
-// The method name is also not quite right now since
-// this method is used for both scalars and arrays.
+    // The resolveArray() method will
+    // attempt to resolve an array Var ref
+    // in the compiled local array.
+    // If the Var can't be resolved as
+    // a valid array variable, then null will
+    // be returned.
+    //
+    // A resolved array is invalid when any
+    // of the following conditions is true.
+    //
+    // When the variable is not an array.
+    // When the variable is undefined.
+    //
+    // Note that an array with traces is
+    // considered valid since the array
+    // methods support invoking traces.
 
-            return ((resolved == null) ||
-                resolved.isVarCacheInvalid());
+    static
+    Var resolveArray(Var v) {
+        int flags = v.flags;
+        if ((flags & LINK) != 0) {
+             v = (Var) v.value;
+             flags = v.flags;
         }
 
-        // Return true to indicate that the compiled
-        // local resolved ref can't be used when
-        // any of the following conditions are true.
-        //
-        // When the resolved link is null.
-        // When the variable is undefined.
-        // When the variable has traces.
-        // When the variable can't be cached.
-        // When the variable is not a scalar.
+        // If var is not an array or is unset,
+        // then array can't be resolved. An
+        // array var with traces can be resolved.
 
-        final boolean isResolvedScalarInvalid() {
-            if (isResolvedLinkInvalid()) {
-                return true;
-            }
-            if (!resolved.isVarScalar()) {
-                return true;
-            }
-            return false;
+        // FIXME: We don't check for NO_CACHE here,
+        // could that present a problem in the future
+        // WRT resolver vars? Should really have a
+        // traces flag and a NO_CACHE flag.
+
+        if ((flags & (LINK|SCALAR|UNDEFINED)) != 0) {
+            return null;
+        }
+        return v;
+    }
+
+    // Helper method invoked to null out a compiled local
+    // slot for a non-linked local variable that is now
+    // undefined. The unset command has no way of knowing
+    // if a variable being unset lives in the compiled
+    // local array, so this method is invoked after
+    // each unset operation to keep the compiled local
+    // array up to date. Variables linked into another
+    // scope can be undefined, so ignore those.
+
+    static void setUndefinedToNull(
+        Interp interp,
+        String part1,
+        String part2)
+    {
+        CallFrame varFrame = interp.varFrame;
+        if (varFrame == null) {
+            return; // Invoked from global scope
         }
 
-        // Return true to indicate that the compiled
-        // local resolved ref can't be used when
-        // any of the following conditions are true.
-        // An array variable can make use of the
-        // resolved ref when traces are set
-        // since the runtime impl checks for them.
-        //
-        // When the resolved link is null.
-        // When the variable is undefined.
-        // When the variable is not an array.
+        if (varFrame.compiledLocals != null) {
+            Var[] compiledLocals = varFrame.compiledLocals;
+            final int MAX = compiledLocals.length;
 
-        final boolean isResolvedArrayInvalid() {
-            if (resolved == null) {
-                return true;
-            }
-            if (resolved.isVarUndefined()) {
-                return true;
-            }
-            if (!resolved.isVarArray()) {
-                return true;
-            }
-            return false;
-        }
-
-        // If the compiled local is linked to
-        // a scalar or array variable in another
-        // scope, then resolve the ref now.
-        // If the compiled local is linked to
-        // an array element, then leave the
-        // resolved ref null. A local scalar
-        // resolves to itself.
-
-        final void resolve() {
-            Var resolved = null;
-            this.resolved = null;
-
-            if (var.isVarLink()) {
-                resolved = var;
-                while (resolved.isVarLink()) {
-                    resolved = (Var) resolved.value;
-                }
-            } else {
-                resolved = var;
-            }
-
-            if (resolved != null &&
-                    !resolved.isVarUndefined() &&
-                    !resolved.isVarArrayElement() &&
-                    !resolved.isVarCacheInvalid()) {
-                this.resolved = resolved;
-            }
-        }
-
-        // Helper method invoked to null out the resolved ref
-        // when a trace is set on a scalar compiled local. If
-        // there are no compiled locals or this scalar var
-        // is not found in the compiled locals then this is a no-op.
-
-        static void setResolvedScalarToNull(
-            Interp interp,
-            String part1,
-            String part2)
-        {
-            CallFrame varFrame = interp.varFrame;
-            if (varFrame == null) {
-                return; // Invoked from global scope
-            }
-
-	    if (varFrame.compiledLocals != null) {
-	        Var.CompiledLocal[] compiledLocals = varFrame.compiledLocals;
-	        final int MAX = compiledLocals.length;
-
-	        for (int i=0; i < MAX ; i++) {
-	            Var.CompiledLocal clocal = compiledLocals[i];
-	            if (clocal != null &&
-                            clocal.isLocal &&
-                            clocal.var.hashKey.equals(part1)) {
-                        if (clocal.resolved != null &&
-                                clocal.resolved.isVarScalar()) {
-	                    clocal.resolved = null;
+            for (int i=0; i < MAX ; i++) {
+                Var clocal = compiledLocals[i];
+                if (clocal != null &&
+                        !clocal.isVarNonLocal() &&
+                        clocal.hashKey.equals(part1)) {
+                    if (!clocal.isVarLink() && clocal.isVarUndefined()) {
+                        // Set the compiled local slot to null
+                        // if there are no other vars linked to
+                        // this var.
+                        if (clocal.refCount == 0) {
+// FIXME: Why set the hashKey to null here? If the
+// compiled local is not refrences anywhere else, should
+// it be deleted via deleteVar()? What if there are traces?
+// Seems like just setting to null would be safer.
+                            clocal.hashKey = null;
+                            compiledLocals[i] = null;
                         }
-	                return;
-	            }
-	        }
-	    }
-        }
-
-        // Helper method invoked to null out a compiled local
-        // slot for a non-linked local variable that is now
-        // undefined. The unset command has no way of knowing
-        // if a variable being unset lives in the compiled
-        // local array, so this method is invoked after
-        // each unset operation to keep the compiled local
-        // array up to date. Variables linked into another
-        // scope can be undefined, so ignore those.
-
-        static void setUndefinedToNull(
-            Interp interp,
-            String part1,
-            String part2)
-        {
-            CallFrame varFrame = interp.varFrame;
-            if (varFrame == null) {
-                return; // Invoked from global scope
-            }
-
-            if (varFrame.compiledLocals != null) {
-                Var.CompiledLocal[] compiledLocals = varFrame.compiledLocals;
-                final int MAX = compiledLocals.length;
-
-                for (int i=0; i < MAX ; i++) {
-                    Var.CompiledLocal clocal = compiledLocals[i];
-                    if (clocal != null &&
-                            clocal.isLocal &&
-                            clocal.var.hashKey.equals(part1)) {
-                        if ((clocal.var == clocal.resolved) &&
-                                clocal.var.isVarUndefined()) {
-                            // Set the compiled local slot to null
-                            // if there are no other vars linked to
-                            // this var.
-                            if (clocal.var.refCount == 0) {
-                                clocal.var.hashKey = null;
-                                clocal.resolved = null;
-                                compiledLocals[i] = null;
-                            }
-                        }
-                        return;
                     }
+                    return;
                 }
             }
         }
-    } // End of CompiledLocal class
+    }
+
+    /*
+     *----------------------------------------------------------------------
+     *
+     * AppendLocals --
+     *
+     *	Append the local variables for the current frame to the
+     *	specified list object. This method is used by InfoCmd.
+     *
+     * Results:
+     *	None.
+     *
+     * Side effects:
+     *	None.
+     *
+     *----------------------------------------------------------------------
+     */
+
+    static void AppendLocals(
+			  Interp interp,        // Current interp
+			  TclObject list,       // list to append to
+			  String pattern,       // Pattern to match against.
+			  boolean includeLinks) // true if upvars should be included
+	throws TclException
+    {
+	Var var;
+	String varName;
+	CallFrame frame = interp.varFrame;
+
+	HashMap localVarTable = frame.varTable;
+	if (localVarTable != null) {
+	    for (Iterator iter = localVarTable.entrySet().iterator(); iter.hasNext() ;) {
+		Map.Entry entry = (Map.Entry) iter.next();
+		varName = (String) entry.getKey();
+		var = (Var) entry.getValue();
+		if (!var.isVarUndefined()
+		    && (includeLinks || !var.isVarLink())) {
+		    if ((pattern == null)
+		        || Util.stringMatch(varName, pattern)) {
+			TclList.append(interp, list,
+				       TclString.newInstance(varName));
+		    }
+		}
+	    }
+	}
+
+	Var[] compiledLocals = frame.compiledLocals;
+	if (compiledLocals != null) {
+	    final int max = compiledLocals.length;
+	    for (int i=0 ; i < max ; i++) {
+		Var clocal = compiledLocals[i];
+		if (clocal != null && !clocal.isVarNonLocal()) {
+                    var = clocal;
+                    varName = (String) var.hashKey;
+
+		    if (!var.isVarUndefined()
+		        && (includeLinks || !var.isVarLink())) {
+		        if ((pattern == null)
+		            || Util.stringMatch(varName, pattern)) {
+			    TclList.append(interp, list,
+				       TclString.newInstance(varName));
+		        }
+		    }
+                }
+	    }
+	}
+    }
 
 } // End of Var class
 

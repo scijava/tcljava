@@ -6,7 +6,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: compiledLocals.test,v 1.4 2006/03/24 21:33:50 mdejong Exp $
+# RCS: @(#) $Id: compiledLocals.test,v 1.5 2006/03/27 00:06:42 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -986,12 +986,11 @@ DEFINED
 test compiledLocals-4.24 {link vars} {
     # Unsetting the linked to var
     # linked from a compiled local.
-    # This shows how the unset flag is
-    # set on the CompiledLocal.resolved
-    # var. It is not possible to null
-    # out the resolved var since the
-    # linked to var has no pointer back
-    # to the linked from var.
+    # This shows how the undefined flag is
+    # set on the linked to Var.
+    # Because the undefined flag is
+    # set, the scalar can't be resolved
+    # so it is null.
     catch {unset DEFINED}
     set DEFINED YES
     proc clocals_test424 {} {
@@ -1006,15 +1005,18 @@ compiledLocals is {
 UNDEFINED-> DEFINED -> ::DEFINED
 }
 compiledLocals.resolved is {
-UNDEFINED DEFINED
+null
 }
 }
 
 test compiledLocals-4.25 {link vars} {
-    # Unsetting the linked to var
-    # linked from a compiled local
-    # and then setting it again
-    # should update the global.
+    # Define a local linked var,
+    # then unset the linked to
+    # var in the global namespace.
+    # Setting the local to a new
+    # value should invoke the
+    # runtime set and update the
+    # linked to global var.
     catch {unset DEFINED}
     set DEFINED YES
     proc clocals_test425 {} {
@@ -1054,7 +1056,7 @@ compiledLocals is {
 UNDEFINED-> DEFINED -> ::DEFINED
 }
 compiledLocals.resolved is {
-UNDEFINED DEFINED
+null
 }
 }
 
@@ -1081,7 +1083,7 @@ compiledLocals is {
 UNDEFINED V1
 }
 compiledLocals.resolved is {
-UNDEFINED V1
+null
 }
 }
 
@@ -1576,14 +1578,11 @@ null
 } 1}
 
 test compileLocals-6.8 {var traces} {
-    # This test checks for the NO_CACHE
-    # flag in the CompiledLocal.resolved
-    # field. This flag is only set for
-    # a linked var that was resolved
-    # and then had traces set. In this
-    # case the global command resolves
-    # the variable, then it is made
-    # invalid by the trace command.
+    # This test shows how setting
+    # a trace on the linked to var
+    # will cause the resolve step
+    # to return null because the
+    # scalar is now invalid.
 
     set compiled_local_trace_counter 0
     set clocals_test68_var YES
@@ -1602,17 +1601,18 @@ compiledLocals is {
 clocals_test68_var -> ::clocals_test68_var
 }
 compiledLocals.resolved is {
-clocals_test68_var NO_CACHE
+null
 }
 } 0}
 
 test compileLocals-6.9 {var traces} {
     # This test checks that a read
     # trace set on the array variable
-    # is elements are accessed. The
-    # array var logic will use a
-    # resolved ref even when the
-    # NO_CACHE flag is set.
+    # is run when the array element
+    # is accessed. The array var
+    # logic will see the resolved
+    # variable as valid even when
+    # traces exist on the var.
 
     set compiled_local_trace_counter 0
 
@@ -1922,7 +1922,7 @@ test compileLocals-8.1 {upvar to local vars in caller frame} {
     # If the Var class was able to
     # set its own compiled local to
     # null, then this would show
-    # null values instead of UNDEFINED.
+    # null in the compiledLocals slot.
 
     proc clocals_test81 {} {
         set V1 "zero"
@@ -1941,7 +1941,7 @@ compiledLocals is {
 UNDEFINED V1
 }
 compiledLocals.resolved is {
-UNDEFINED V1
+null
 }
 }
 

@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: emitter.tcl,v 1.13 2006/03/24 21:33:50 mdejong Exp $
+#  RCS: @(#) $Id: emitter.tcl,v 1.14 2006/03/27 00:06:42 mdejong Exp $
 #
 #
 
@@ -663,7 +663,7 @@ proc emitter_callframe_init_compiledlocals { size } {
     set buffer ""
     append buffer \
         [emitter_indent] \
-        "Var.CompiledLocal\[\] compiledLocals =\n"
+        "Var\[\] compiledLocals =\n"
     emitter_indent_level +1
     append buffer \
         [emitter_indent] \

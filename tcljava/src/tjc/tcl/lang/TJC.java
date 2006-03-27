@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TJC.java,v 1.20 2006/03/24 21:33:50 mdejong Exp $ *
+ * RCS: @(#) $Id: TJC.java,v 1.21 2006/03/27 00:06:42 mdejong Exp $ *
  */
 
 // Runtime support for TJC compiler implementation.
@@ -111,13 +111,13 @@ public class TJC {
     // compiledLocals array is disposed of
     // automatically when the CallFrame is popped.
 
-    public static Var.CompiledLocal[] initCompiledLocals(
+    public static Var[] initCompiledLocals(
             final CallFrame frame,
             final int size,
             final String[] names)
     {
         frame.compiledLocalsNames = names;
-        return frame.compiledLocals = new Var.CompiledLocal[size];
+        return frame.compiledLocals = new Var[size];
     }
 
     // Evaluate a Tcl string that is the body of a Tcl procedure.
@@ -273,7 +273,7 @@ public class TJC {
             final String varname,    // Fully qualified varname
                                      // including namespace scope.
                                      // Can be array or scalar.
-            final Var.CompiledLocal[] compiledLocals,
+            final Var[] compiledLocals,
             final int localIndex)
                 throws TclException
         {
@@ -296,16 +296,18 @@ public class TJC {
         TclObject getVarScalar(
             final Interp interp,
             final String varname,    // Scalar variable name
-            final Var.CompiledLocal[] compiledLocals,
+            final Var[] compiledLocals,
             final int localIndex)
                 throws TclException
         {
-            Var.CompiledLocal clocal = compiledLocals[localIndex];
-            if (clocal == null || clocal.isResolvedScalarInvalid()) {
-                return Var.getVarCompiledLocalScalarInvalid(interp,
-                    varname, clocal);
+            Var var = compiledLocals[localIndex];
+
+            if ((var == null) ||
+                    ((var = Var.resolveScalar(var)) == null)) {
+                return Var.getVarCompiledLocalScalarInvalid(
+                    interp, varname);
             } else {
-                return (TclObject) clocal.resolved.value;
+                return (TclObject) var.value;
             }
         }
 
@@ -320,17 +322,19 @@ public class TJC {
             final Interp interp,
             final String varname,    // Array variable name
             final String key,        // Array key
-            final Var.CompiledLocal[] compiledLocals,
+            final Var[] compiledLocals,
             final int localIndex)
                 throws TclException
         {
-            Var.CompiledLocal clocal = compiledLocals[localIndex];
-            if (clocal == null || clocal.isResolvedArrayInvalid()) {
+            Var var = compiledLocals[localIndex];
+
+            if (var == null ||
+                    ((var = Var.resolveArray(var)) == null)) {
                 return Var.getVarCompiledLocalArrayInvalid(
-                    interp, varname, key, clocal, localIndex);
+                    interp, varname, key);
             } else {
                 return Var.getVarCompiledLocalArray(
-                    interp, varname, key, clocal, true);
+                    interp, varname, key, var, true);
             }
         }
 
@@ -345,19 +349,20 @@ public class TJC {
             final Interp interp,
             final String varname,    // Scalar variable name
             final TclObject value,   // New variable value
-            final Var.CompiledLocal[] compiledLocals,
+            final Var[] compiledLocals,
             final int localIndex)
                 throws TclException
         {
-            Var.CompiledLocal clocal = compiledLocals[localIndex];
-            if (clocal == null) {
+            Var var = compiledLocals[localIndex];
+
+            if (var == null) {
                 return Var.initVarCompiledLocalScalar(
                     interp, varname, value, compiledLocals, localIndex);
-            } else if (clocal.isResolvedScalarInvalid()) {
+            } else if ((var = Var.resolveScalar(var)) == null) {
                 return Var.setVarCompiledLocalScalarInvalid(
-                    interp, varname, value, compiledLocals, localIndex);
+                    interp, varname, value);
             } else {
-                return TJC.setVarScalar(clocal.resolved, value);
+                return TJC.setVarScalar(var, value);
             }
         }
 
@@ -366,7 +371,7 @@ public class TJC {
             final Interp interp,
             final String varname,
             final String value,
-            final Var.CompiledLocal[] compiledLocals,
+            final Var[] compiledLocals,
             final int localIndex)
                 throws TclException
         {
@@ -386,21 +391,21 @@ public class TJC {
             final String varname,
             final String key,
             final TclObject value,
-            final Var.CompiledLocal[] compiledLocals,
+            final Var[] compiledLocals,
             final int localIndex)
                 throws TclException
         {
-            Var.CompiledLocal clocal = compiledLocals[localIndex];
+            Var var = compiledLocals[localIndex];
 
-            if (clocal == null) {
+            if (var == null) {
                 return Var.initVarCompiledLocalArray(
                     interp, varname, key, value, compiledLocals, localIndex);
-            } else if (clocal.isResolvedArrayInvalid()) {
+            } else if ((var = Var.resolveArray(var)) == null) {
                 return Var.setVarCompiledLocalArrayInvalid(
-                    interp, varname, key, value, compiledLocals, localIndex);
+                    interp, varname, key, value);
             } else {
                 return Var.setVarCompiledLocalArray(
-                    interp, varname, key, value, clocal);
+                    interp, varname, key, value, var);
             }
         }
 
@@ -410,7 +415,7 @@ public class TJC {
             final String varname,
             final String key,
             final String value,
-            final Var.CompiledLocal[] compiledLocals,
+            final Var[] compiledLocals,
             final int localIndex)
                 throws TclException
         {
@@ -428,15 +433,17 @@ public class TJC {
             final Interp interp,
             final String varname,
             final int incrAmount,
-            final Var.CompiledLocal[] compiledLocals,
+            final Var[] compiledLocals,
             final int localIndex)
                 throws TclException
         {
-            Var.CompiledLocal clocal = compiledLocals[localIndex];
-            if (clocal == null || clocal.isResolvedScalarInvalid()) {
+            Var var = compiledLocals[localIndex];
+
+            if (var == null ||
+                     ((var = Var.resolveScalar(var)) == null)) {
                 return TJC.incrVar(interp, varname, null, incrAmount);
             } else {
-                TclObject varValue = (TclObject) clocal.resolved.value;
+                TclObject varValue = (TclObject) var.value;
 
                 boolean createdNewObj = false;
                 if (varValue.isShared()) {
@@ -456,7 +463,7 @@ public class TJC {
                 // as the variable value.
 
                 if (createdNewObj) {
-                    return TJC.setVarScalar(clocal.resolved, varValue);
+                    return TJC.setVarScalar(var, varValue);
                 } else {
                     return varValue;
                 }
@@ -473,16 +480,18 @@ public class TJC {
             final String varname,
             final String key,
             final int incrAmount,
-            final Var.CompiledLocal[] compiledLocals,
+            final Var[] compiledLocals,
             final int localIndex)
                 throws TclException
         {
-            Var.CompiledLocal clocal = compiledLocals[localIndex];
-            if (clocal == null || clocal.isResolvedArrayInvalid()) {
+            Var var = compiledLocals[localIndex];
+
+            if (var == null ||
+                    ((var = Var.resolveArray(var)) == null)) {
                 return TJC.incrVar(interp, varname, key, incrAmount);
             } else {
                 TclObject varValue = Var.getVarCompiledLocalArray(
-                    interp, varname, key, clocal, true);
+                    interp, varname, key, var, true);
 
                 boolean createdNewObj = false;
                 if (varValue.isShared()) {
@@ -502,7 +511,7 @@ public class TJC {
                 // variable could have traces.
 
                 return Var.setVarCompiledLocalArray(
-                    interp, varname, key, varValue, clocal);
+                    interp, varname, key, varValue, var);
             }
         }
 
@@ -516,18 +525,19 @@ public class TJC {
             final Interp interp,
             final String varname,
             final TclObject[] values,
-            final Var.CompiledLocal[] compiledLocals,
+            final Var[] compiledLocals,
             final int localIndex)
                 throws TclException
         {
-            Var.CompiledLocal clocal = compiledLocals[localIndex];
+            Var var = compiledLocals[localIndex];
 
             // Use runtime impl of lappend if resolved var
             // is not available. The lappend command
             // accepts an undefined variable name, but we
             // don't optimize that case.
 
-            if (clocal == null || clocal.isResolvedScalarInvalid()) {
+            if (var == null ||
+                    ((var = Var.resolveScalar(var)) == null)) {
                 return TJC.lappendVar(interp, varname, null, values);
             }
 
@@ -536,7 +546,7 @@ public class TJC {
             // we need to duplicate it and invoke setVar()
             // to implement "copy on write".
 
-            TclObject varValue = (TclObject) clocal.resolved.value;
+            TclObject varValue = (TclObject) var.value;
             boolean createdNewObj = false;
 
             if (varValue.isShared()) {
@@ -554,7 +564,7 @@ public class TJC {
             }
 
             if (createdNewObj) {
-                TJC.setVarScalar(clocal.resolved, varValue);
+                TJC.setVarScalar(var, varValue);
             }
 
             return varValue;
@@ -571,18 +581,19 @@ public class TJC {
             final String varname,
             final String key,
             final TclObject[] values,
-            final Var.CompiledLocal[] compiledLocals,
+            final Var[] compiledLocals,
             final int localIndex)
                 throws TclException
         {
-            Var.CompiledLocal clocal = compiledLocals[localIndex];
+            Var var = compiledLocals[localIndex];
 
             // Use runtime impl of lappend if resolved array
             // var is null or is not valid. The lappend command
             // accepts an undefined variable name, but we
             // don't optimize that case.
 
-            if (clocal == null || clocal.isResolvedArrayInvalid()) {
+            if (var == null ||
+                    ((var = Var.resolveArray(var)) == null)) {
                 return TJC.lappendVar(interp, varname, key, values);
             }
 
@@ -595,7 +606,7 @@ public class TJC {
             // implement "copy on write".
 
             TclObject varValue = Var.getVarCompiledLocalArray(
-                interp, varname, key, clocal, false);
+                interp, varname, key, var, false);
 
             if (varValue == null) {
                 // Array element does not exist, use {}
@@ -614,7 +625,7 @@ public class TJC {
             }
 
             return Var.setVarCompiledLocalArray(
-                interp, varname, key, varValue, clocal);
+                interp, varname, key, varValue, var);
         }
 
         // appendVarScalar() will append string elements to
@@ -627,18 +638,19 @@ public class TJC {
             final Interp interp,
             final String varname,
             final TclObject[] values,
-            final Var.CompiledLocal[] compiledLocals,
+            final Var[] compiledLocals,
             final int localIndex)
                 throws TclException
         {
-            Var.CompiledLocal clocal = compiledLocals[localIndex];
+            Var var = compiledLocals[localIndex];
 
             // Use runtime impl of append if resolved var
             // is not available. The append command
             // accepts an undefined variable name, but we
             // don't optimize that case.
 
-            if (clocal == null || clocal.isResolvedScalarInvalid()) {
+            if (var == null ||
+                    (var = Var.resolveScalar(var)) == null) {
                 return TJC.appendVar(interp, varname, null, values);
             }
 
@@ -647,7 +659,7 @@ public class TJC {
             // we need to create a new TclString object
             // and drop refs to the previous TclObject value.
 
-            TclObject varValue = (TclObject) clocal.resolved.value;
+            TclObject varValue = (TclObject) var.value;
             boolean createdNewObj = false;
 
             if (varValue.isShared()) {
@@ -665,10 +677,11 @@ public class TJC {
             }
 
             if (createdNewObj) {
-                TJC.setVarScalar(clocal.resolved, varValue);
+                TJC.setVarScalar(var, varValue);
             }
 
             return varValue;
+
         }
 
         // appendVarArray() will append string elements to an
@@ -680,7 +693,7 @@ public class TJC {
             final String varname,
             final String key,
             final TclObject[] values,
-            final Var.CompiledLocal[] compiledLocals,
+            final Var[] compiledLocals,
             final int localIndex)
                 throws TclException
         {
