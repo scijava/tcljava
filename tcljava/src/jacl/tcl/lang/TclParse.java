@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: TclParse.java,v 1.4 2005/10/24 00:36:36 mdejong Exp $
+ * RCS: @(#) $Id: TclParse.java,v 1.5 2006/03/27 21:42:55 mdejong Exp $
  */
 
 package tcl.lang;
@@ -115,6 +115,7 @@ int extra;
 // Default size of the tokenList array.
 
 private static final int INITIAL_NUM_TOKENS = 20;
+private static final boolean USE_TOKEN_CACHE = true;
 private static final int MAX_CACHED_TOKENS = 50; //my tests show 50 is best
 
 
@@ -181,7 +182,7 @@ TclParse(
  *----------------------------------------------------------------------
  */
 
-
+final
 TclToken
 getToken(
     int index)			// The index into tokenList.
@@ -201,7 +202,11 @@ getToken(
 
 void
 release() {
-  for (int index=0; index < tokensAvailable; index++) {
+  // Release tokens in reverse order so that the newest
+  // (possibly just allocated with new) tokens are returned
+  // to the pool first.
+
+  for (int index=tokensAvailable-1; index >= 0; index--) {
     if (tokenList[index] != null) {
       releaseToken( tokenList[index] );
       tokenList[index] = null;
@@ -209,52 +214,44 @@ release() {
   }
 }
 
-
-
-
 // Creating an interpreter will cause this init method to be called
 
 static void init(Interp interp) {
-  TclToken[] TOKEN_CACHE = new TclToken[MAX_CACHED_TOKENS];
-  for (int i=0; i < MAX_CACHED_TOKENS ; i++) {
-    TOKEN_CACHE[i] = new TclToken();
+  if (USE_TOKEN_CACHE) {
+    TclToken[] TOKEN_CACHE = new TclToken[MAX_CACHED_TOKENS];
+    for (int i=0; i < MAX_CACHED_TOKENS ; i++) {
+      TOKEN_CACHE[i] = new TclToken();
+    }
+
+    interp.parserTokens = TOKEN_CACHE;
+    interp.parserTokensUsed = 0;
   }
-  
-  interp.parserTokens = TOKEN_CACHE;
-  interp.parserTokensUsed = 0;
 }
 
 
-private TclToken grabToken() {
-  if (interp == null || interp.parserTokensUsed == MAX_CACHED_TOKENS) {
-    // either we do not have a cache because the interp is null or we have already
-    // used up all the open cache slots, we just allocate a new one in this case
-    return new TclToken();
+private final TclToken grabToken() {
+  if (USE_TOKEN_CACHE) {
+    if (interp == null || interp.parserTokensUsed == MAX_CACHED_TOKENS) {
+      // either we do not have a cache because the interp is null or we have already
+      // used up all the open cache slots, we just allocate a new one in this case
+      return new TclToken();
+    } else {
+      // the cache has an avaliable slot so grab it
+      return interp.parserTokens[interp.parserTokensUsed++];
+    }
   } else {
-    // the cache has an avaliable slot so grab it
-    return interp.parserTokens[interp.parserTokensUsed++];
+    return new TclToken();
   }
 }
 
-private void releaseToken(TclToken token) {
-  if (interp != null && interp.parserTokensUsed > 0) {
-    // if cache is not full put the object back in the cache
-    interp.parserTokensUsed -= 1;
-    interp.parserTokens[interp.parserTokensUsed] = token;
+private final void releaseToken(TclToken token) {
+  if (USE_TOKEN_CACHE) {
+    if (interp != null && interp.parserTokensUsed > 0) {
+      // if cache is not full put the object back in the cache
+      interp.parserTokens[--interp.parserTokensUsed] = token;
+    }
   }
 }
-
-
-/*
-//uncommenting these methods will disable caching
-
-static void init(Interp interp) {}
-private TclToken grabToken() {return new TclToken();}
-private void releaseToken(TclToken token) {}
-
-*/
-
-
 
 
 /*

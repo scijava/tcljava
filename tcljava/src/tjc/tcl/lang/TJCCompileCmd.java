@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TJCCompileCmd.java,v 1.2 2006/03/15 23:07:31 mdejong Exp $
+ * RCS: @(#) $Id: TJCCompileCmd.java,v 1.3 2006/03/27 21:42:55 mdejong Exp $
  *
  */
 
@@ -204,6 +204,19 @@ public void
                 pname.append("::");
             }
             pname.append(NamespaceCmd.tail(cmd));
+        }
+
+        if (false) {
+            // Debug
+            interp.eval("namespace current", 0);
+            String cns = interp.getResult().toString();
+            System.out.println("current namespace is \"" +
+                cns + "\"");
+            System.out.println("looked up proc \"" + cmd + "\"");
+            System.out.println("found proc in namespace \"" +
+                proc.wcmd.ns.fullName + "\"");
+            System.out.println("fully qualified name is \"" +
+                pname.toString());
         }
 
         fullyQualifiedCmd = pname.toString();

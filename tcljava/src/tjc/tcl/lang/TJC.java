@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TJC.java,v 1.21 2006/03/27 00:06:42 mdejong Exp $ *
+ * RCS: @(#) $Id: TJC.java,v 1.22 2006/03/27 21:42:55 mdejong Exp $ *
  */
 
 // Runtime support for TJC compiler implementation.
@@ -895,11 +895,17 @@ public class TJC {
     // The array must be released by releaseObjv(). Each element
     // in the returned array will be null.
 
+    private static final boolean USE_OBJV_CACHE = true;
+
     public static TclObject[] grabObjv(
         final Interp interp,
         final int size)
     {
-        return Parser.grabObjv(interp, size);
+        if (USE_OBJV_CACHE) {
+            return Parser.grabObjv(interp, size);
+        } else {
+            return new TclObject[size];
+        }
     }
 
     // Release the array back into the common array
@@ -913,7 +919,9 @@ public class TJC {
         final TclObject[] objv,
         final int size)
     {
-        Parser.releaseObjv(interp, objv, size);
+        if (USE_OBJV_CACHE) {
+            Parser.releaseObjv(interp, objv, size);
+        }
     }
 
     // For each non-null TclObject element in the array,
@@ -932,7 +940,9 @@ public class TJC {
                 tobj.release();
             }
         }
-        Parser.releaseObjv(interp, objv, size);
+        if (USE_OBJV_CACHE) {
+            Parser.releaseObjv(interp, objv, size);
+        }
     }
 
     // Invoke a Command with TclObject arguments. This method
@@ -991,7 +1001,7 @@ public class TJC {
                 if (len == 0) {
                     throw new TclRuntimeError("zero length objv array");
                 }
-                TclObject[] newObjv = Parser.grabObjv(interp, len + 1);
+                TclObject[] newObjv = TJC.grabObjv(interp, len + 1);
                 newObjv[0] = TclString.newInstance("unknown");
                 newObjv[0].preserve();
                 for (int i = (len - 1); i >= 0; i--) {
@@ -1060,7 +1070,7 @@ public class TJC {
         } finally {
             if (grabbed_objv) {
                 objv[0].release();
-                Parser.releaseObjv(interp, objv, objv.length);
+                TJC.releaseObjv(interp, objv, objv.length);
             }
             interp.nestLevel--;
             interp.varFrame = savedVarFrame;
@@ -1167,6 +1177,8 @@ public class TJC {
             varname + "\"");
     }
 
+    private static final boolean USE_EXPR_CACHE = true;
+
     // Release an ExprValue that was returned by
     // one of the exprGetValue methods.
 
@@ -1175,7 +1187,9 @@ public class TJC {
         Interp interp,
         ExprValue value)
     {
-        interp.expr.releaseExprValue(value);
+        if (USE_EXPR_CACHE) {
+            interp.expr.releaseExprValue(value);
+        }
     }
 
     // Return the ExprValue for the given int value.
@@ -1190,9 +1204,13 @@ public class TJC {
         String srep)
             throws TclException
     {
-        ExprValue value = interp.expr.grabExprValue();
-        value.setIntValue(ival, srep);
-        return value;
+        if (USE_EXPR_CACHE) {
+            ExprValue value = interp.expr.grabExprValue();
+            value.setIntValue(ival, srep);
+            return value;
+        } else {
+            return new ExprValue(ival, srep);
+        }
     }
 
     // Return the expr value contained in the double
@@ -1204,9 +1222,13 @@ public class TJC {
         String srep)
             throws TclException
     {
-        ExprValue value = interp.expr.grabExprValue();
-        value.setDoubleValue(dval, srep);
-        return value;
+        if (USE_EXPR_CACHE) {
+            ExprValue value = interp.expr.grabExprValue();
+            value.setDoubleValue(dval, srep);
+            return value;
+        } else {
+            return new ExprValue(dval, srep);
+        }
     }
 
     // Return the expr value for the String
@@ -1217,9 +1239,13 @@ public class TJC {
         String srep)
             throws TclException
     {
-        ExprValue value = interp.expr.grabExprValue();
-        value.setStringValue(srep);
-        return value;
+        if (USE_EXPR_CACHE) {
+            ExprValue value = interp.expr.grabExprValue();
+            value.setStringValue(srep);
+            return value;
+        } else {
+            return new ExprValue(srep);
+        }
     }
 
     // Return the expr value for the boolean, this
@@ -1232,9 +1258,13 @@ public class TJC {
         boolean bval)
             throws TclException
     {
-        ExprValue value = interp.expr.grabExprValue();
-        value.setIntValue(bval);
-        return value;
+        if (USE_EXPR_CACHE) {
+            ExprValue value = interp.expr.grabExprValue();
+            value.setIntValue(bval);
+            return value;
+        } else {    
+            return new ExprValue(bval);
+        }
     }
 
     // Return the expr value contained in the TclObject
@@ -1245,9 +1275,15 @@ public class TJC {
         TclObject tobj)
             throws TclException
     {
-        ExprValue value = interp.expr.grabExprValue();
-        Expression.ExprParseObject(interp, tobj, value);
-        return value;
+        if (USE_EXPR_CACHE) {
+            ExprValue value = interp.expr.grabExprValue();
+            Expression.ExprParseObject(interp, tobj, value);
+            return value;
+        } else {
+            ExprValue value = new ExprValue(0, null);
+            Expression.ExprParseObject(interp, tobj, value);
+            return value;        
+        }
     }
 
     // Evaluate a unary expr operator.
@@ -1276,7 +1312,9 @@ public class TJC {
             throws TclException
     {
         Expression.evalBinaryOperator(interp, op, value, value2);
-        interp.expr.releaseExprValue(value2);
+        if (USE_EXPR_CACHE) {
+            interp.expr.releaseExprValue(value2);        
+        }
     }
 
     // Evaluate a math function. This method will release
@@ -1315,7 +1353,9 @@ public class TJC {
 	default:
 	    throw new TclRuntimeError("internal error: expression, unknown");
 	}
-	interp.expr.releaseExprValue(value);
+        if (USE_EXPR_CACHE) {
+	    interp.expr.releaseExprValue(value);
+        }
 	return;
     }
 
@@ -1351,9 +1391,13 @@ public class TJC {
         if (negate) {
             isEmptyString = !isEmptyString;
         }
-        ExprValue value = interp.expr.grabExprValue();
-        value.setIntValue( isEmptyString );
-        return value;
+        if (USE_EXPR_CACHE) {
+            ExprValue value = interp.expr.grabExprValue();
+            value.setIntValue( isEmptyString );
+            return value;
+        } else {
+            return new ExprValue(isEmptyString);
+        }
     }
 
     // Implement an optimized version of the
@@ -1477,7 +1521,7 @@ public class TJC {
             } finally {
                 // Caller should preserve() and release() listObj
                 objv[2].release();
-                Parser.releaseObjv(interp, objv, 3);
+                TJC.releaseObjv(interp, objv, 3);
             }
             return;
         }

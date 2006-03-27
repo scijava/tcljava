@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.53 2006/02/24 08:21:36 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.54 2006/03/27 21:42:55 mdejong Exp $
 
 SHELL = /bin/sh
 
@@ -918,6 +918,7 @@ tjc2: tjc2/doesnotexist
 	$(JAR) $(JAR_EXTRACT_FLAGS) ../tjcsrc.jar ;\
 	echo "jar $(JAR_COMPRESS_FLAGS) tjcsrc.jar tcl tjc" ;\
 	$(JAR) $(JAR_COMPRESS_FLAGS) tjcsrc.jar tcl tjc
+	@$(MAKE) tjc2.replace
 
 # Build tjc.jar if it does not already exist
 # in the tjc2 directory. The tjc.jar build

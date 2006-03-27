@@ -4,7 +4,7 @@
 # This file has to have code that works in any version of Tcl that
 # the user would want to benchmark.
 #
-# RCS: @(#) $Id: libbench.tcl,v 1.5 2006/03/20 18:49:49 mdejong Exp $
+# RCS: @(#) $Id: libbench.tcl,v 1.6 2006/03/27 21:42:55 mdejong Exp $
 #
 # Copyright (c) 2000-2001 Jeffrey Hobbs.
 
@@ -134,29 +134,18 @@ proc bench {args} {
 	uplevel \#0 $opts(-pre)
     }
     if {$opts(-body) != ""} {
-	# always run it once to remove compile phase confusion
-	set code [catch {uplevel \#0 $opts(-body)} res]
-	if {!$code && [info exists opts(-res)] \
-		&& [string compare $opts(-res) $res]} {
-	    if {$BENCH(ERRORS)} {
-		return -code error "Result was:\n$res\nResult\
-			should have been:\n$opts(-res)"
-	    } else {
-		set res "BAD_RES"
-	    }
-	    set bench($opts(-desc)) $res
-	    puts $BENCH(OUTFID) [list Sourcing "$opts(-desc): $res"]
-	} else {
-	    set results [prepare_and_run_body $opts(-body) $opts(-iter)]
-	    if {[lindex $results 0] == "ERROR"} {
-	        error [lindex $results 1]
-	    }
-	    # Note: Removed Thread running code since it is never used.
-	    # Get just the microseconds value from the time result
-            set msecs $results
-            set bench($opts(-desc)) $msecs
-            puts $BENCH(OUTFID) [list Sourcing "$opts(-desc): $msecs"]
+        # Removed code that would execute command once here,
+        # this is now handled by prepare_and_run_body.
+
+	set results [prepare_and_run_body $opts(-body) $opts(-iter)]
+	if {[lindex $results 0] == "ERROR"} {
+	    error [lindex $results 1]
 	}
+	# Note: Removed Thread running code since it is never used.
+	# Get just the microseconds value from the time result
+        set msecs $results
+        set bench($opts(-desc)) $msecs
+        puts $BENCH(OUTFID) [list Sourcing "$opts(-desc): $msecs"]
     }
     if {($opts(-post) != "") && [catch {uplevel \#0 $opts(-post)} err] \
 	    && $BENCH(ERRORS)} {
@@ -186,13 +175,21 @@ proc usage {} {
 # of times to make sure it is fully compiled.
 
 proc prepare_and_run_body { body iterations } {
-    # Run test a coule of times to make sure
-    # no error is generated. After this block,
+    set debug 0
+
+    if {$debug} {
+        puts stderr "prepare_and_run_body $body $iterations"
+    }
+
+    # Run test to make sure no error is generated. After this block,
     # just assume that the body will not generate
     # an error.
     if {[catch {
-        namespace eval :: [list time $body 2]
+        namespace eval :: [list time $body 1]
     } err]} {
+        if {$debug} {
+            puts stderr "prepare_and_run_body returning ERROR \"$err\""
+        }
         return [list ERROR $err]
     }
     # Run the body iterations times over and over
@@ -200,12 +197,6 @@ proc prepare_and_run_body { body iterations } {
     # so that the body can be run enough times
     # that any code it depends on is fully compiled
     # by the JIT or HotSpot compiler.
-
-    set debug 0
-
-    if {$debug} {
-        puts stderr "prepare_and_run_body $body $iterations"
-    }
 
     set times [list]
     set deltas [list]
@@ -407,9 +398,16 @@ if {1} {
                         puts stderr "DEFINED proc $name in TJC proc handler"
                     }
 
-                    __tjc_proc $name $args $body
+                    # Be careful to execute the proc command
+                    # and the TJC::compile command in the calling
+                    # context, so that the proc is defined in
+                    # the correct namespace.
+
+                    uplevel 1 [list __tjc_proc $name $args $body]
+                    uplevel 1 [list \
                     TJC::compile $name \
-                        -readyvar __tjc_proc_ready
+                        -readyvar __tjc_proc_ready \
+                    ]
 
                     # Wait for __tjc_proc_ready to be set when
                     # the command has been compiled.
@@ -421,7 +419,7 @@ if {1} {
                         puts stderr "__tjc_proc_ready is \{$__tjc_proc_ready\}"
                     }
                     if {[lindex $__tjc_proc_ready 0] != "OK"} {
-                        puts $__tjc_proc_ready
+                        puts stderr "TJC compile status: $__tjc_proc_ready"
                     }
                     unset __tjc_proc_ready
                 }
@@ -441,7 +439,13 @@ if {1} {
             if {$debug} {
                 puts stderr "source $BENCH(file)"
             }
+            if {[catch {
 	    source $BENCH(file)
+            } err]} {
+                puts stderr "ERROR Sourcing $BENCH(file)"
+                puts stderr "ERROR: $err"
+                puts stderr "errorInfo: $::errorInfo"
+            }
 
             if {$BENCH(TJC)} {
                 # Reset original proc command

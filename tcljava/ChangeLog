@@ -1,3 +1,33 @@
+2006-03-27  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * Makefile.in: Running `make tjc2` will now
+        copy the generated tjc.jar and tjcsrc.jar
+        into the build dir so that they will be
+        installed by `make install`. The tjc two
+        stage build is now stable enough to be
+        used all the time.
+        * jaclsh.in: Add JAVA_FLAGS env var that
+        can be set in the user env.
+        * src/jacl/tcl/lang/ExprValue.java: Add
+        ExprValue constructor with boolean argument.
+        * src/jacl/tcl/lang/Parser.java: Make
+        objv cache larger for small sizes like
+        1 and 2 and add a cache for size 10.
+        * src/jacl/tcl/lang/TclParse.java: Add
+        boolean flag that can be used to disable
+        TclToken cache for testing. Release tokens
+        to cache in reverse order to keep the
+        objects in the cache fresh.
+        * src/tjc/tcl/lang/TJC.java: Add flag to
+        disable objv and expr value cache. These
+        caches should be used since disabling them
+        leads to a serious performance hit.
+        * src/tjc/tcl/lang/TJCCompileCmd.java:
+        Add debug output.
+        * tests/tclbench/libbench.tcl: Cleanup
+        code that runs the test method once
+        and checks for errors.
+
 2006-03-26  Mo DeJong  <mdejong@users.sourceforge.net>
 
         Reimplement compiled locals array as a plain

@@ -47,7 +47,7 @@ JACL_DEBUG_CLASSPATH=${JACL_DEBUG_CLASSPATH}:${XP_TCLJAVA_INSTALL_DIR}/janinosrc
 JAVA=@JAVA@
 
 # The arguments to the JAVA command
-JAVA_FLAGS="@JAVA_FLAGS@"
+JAVA_FLAGS="@JAVA_FLAGS@ ${JAVA_FLAGS}"
 
 # If JACL_DEBUG is set to 1, start the java executable with
 # debug flags so that a Java debugger can attach to the Jacl process.

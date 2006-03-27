@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Parser.java,v 1.28 2006/03/10 05:01:54 mdejong Exp $
+ * RCS: @(#) $Id: Parser.java,v 1.29 2006/03/27 21:42:55 mdejong Exp $
  */
 
 package tcl.lang;
@@ -2569,26 +2569,18 @@ static final int USE_EVAL_DIRECT		= 0x100;
 // These are private read only values that are used by the parser
 // class to implement a TclObject[] cache
 
-// Max size of array to cache (1..N)
-private static final int OBJV_CACHE_MAX = 10;
+// Max size of array to cache (1..N-1)
+private static final int OBJV_CACHE_MAX = 11;
 
 // The number of array to cache for each size
 // for example if the number of 3 elements is set to 5
 // an array of 5 TclObject[] objects
 // which will each be 3 elements long
 
-private static final int[] OBJV_CACHE_SIZES = {0,4,4,10,4,4,4,4,4,4};
+private static final int[] OBJV_CACHE_SIZES = {0,12,12,10,6,4,4,4,2,1,1};
 
-// use test results
-// 1 373
-// 2 2424
-// 3 11889
-// 4 840
-// 5 1374
-// 6 926
-// 7 0
-// 8 74
-// 9 0
+//private static final int[] OBJV_CACHE_HITS = {0,0,0,0,0,0,0,0,0,0,0};
+//private static final int[] OBJV_CACHE_MISSES = {0,0,0,0,0,0,0,0,0,0,0};
 
 
 static void init(Interp interp) {
@@ -2621,22 +2613,28 @@ static TclObject[] grabObjv(
     final Interp interp,
     final int size)
 {
-  if (size >= OBJV_CACHE_MAX) {
-    //System.out.println("allocate for big objv of size " + size);
-    return new TclObject[size];
-  }
+  // Get number of used markers for this size
+  int OPEN;
 
-  //get array of used markers for this size
-  final int OPEN = interp.parserObjvUsed[size];
-
-  if (OPEN < OBJV_CACHE_SIZES[size]) {
+  if ((size < OBJV_CACHE_MAX) &&
+      ((OPEN = interp.parserObjvUsed[size]) < OBJV_CACHE_SIZES[size])) {
     // Found an open cache slot
-    //System.out.println("cache hit for objv of size " + size);
+    if (false) {
+        //System.out.println("cache hit for objv of size " + size);
+        //OBJV_CACHE_HITS[i] = OBJV_CACHE_HITS[i] + 1;
+    }
     interp.parserObjvUsed[size] += 1;
     return interp.parserObjv[size][OPEN];
   } else {
     // Did not find a free cache array of this size
-    //System.out.println("cache miss for objv of size " + size);
+    if (false) {
+      if (size >= OBJV_CACHE_MAX) {
+        //System.out.println("cache allocate for big objv of size " + size);
+      } else {
+        //System.out.println("cache miss for objv of size " + size);
+        //OBJV_CACHE_MISS[i] = OBJV_CACHE_MISS[i] + 1;
+      }
+    }
     return new TclObject[size];
   }
 
