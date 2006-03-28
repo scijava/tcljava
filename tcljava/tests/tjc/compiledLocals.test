@@ -6,7 +6,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: compiledLocals.test,v 1.5 2006/03/27 00:06:42 mdejong Exp $
+# RCS: @(#) $Id: compiledLocals.test,v 1.6 2006/03/28 02:44:19 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -221,7 +221,7 @@ compiledLocals is {
 UNDEFINED-> UNDEF -> ::UNDEF
 }
 compiledLocals.resolved is {
-null
+!RESOLVED UNDEFINED UNDEF
 }
 }
 
@@ -646,11 +646,12 @@ ARR()
 
 test compiledLocals-4.9 {link vars} {
     # Invoke upvar to create a link var
-    # to an array element then set it
-    # to bring the link var into the
-    # compiledLocals array. The resolved
-    # ref should not be set since the
-    # link to var is not a scalar.
+    # to an array element and then set it
+    # to add the link var into the
+    # compiledLocals array. It should
+    # not be possible to resolve the link
+    # var since the scalar is an array
+    # element.
     proc clocals_test49 {} {
         set ARR(one) 1
         upvar 0 ARR(one) var
@@ -666,7 +667,7 @@ var -> ?()
 }
 compiledLocals.resolved is {
 ARR()
-null
+!RESOLVED one
 }
 }
 
@@ -989,8 +990,7 @@ test compiledLocals-4.24 {link vars} {
     # This shows how the undefined flag is
     # set on the linked to Var.
     # Because the undefined flag is
-    # set, the scalar can't be resolved
-    # so it is null.
+    # set, the scalar can't be resolved.
     catch {unset DEFINED}
     set DEFINED YES
     proc clocals_test424 {} {
@@ -1005,7 +1005,7 @@ compiledLocals is {
 UNDEFINED-> DEFINED -> ::DEFINED
 }
 compiledLocals.resolved is {
-null
+!RESOLVED UNDEFINED DEFINED
 }
 }
 
@@ -1056,7 +1056,7 @@ compiledLocals is {
 UNDEFINED-> DEFINED -> ::DEFINED
 }
 compiledLocals.resolved is {
-null
+!RESOLVED UNDEFINED DEFINED
 }
 }
 
@@ -1083,7 +1083,7 @@ compiledLocals is {
 UNDEFINED V1
 }
 compiledLocals.resolved is {
-null
+!RESOLVED UNDEFINED V1
 }
 }
 
@@ -1177,7 +1177,7 @@ compiledLocals is {
 UNDEFINED-> UNKNOWN -> ::UNKNOWN
 }
 compiledLocals.resolved is {
-null
+!RESOLVED UNDEFINED UNKNOWN
 }
 }
 
@@ -1348,13 +1348,9 @@ key
 
 test compileLocals-6.0 {var traces} {
     # Setting a trace on a compiled
-    # local should null out the
-    # resolved field for the compiled
-    # local. The code can't set the
-    # NO_CACHE flag here since the
-    # compiled local resolves to
-    # itself and the NO_CACHE flag
-    # is only checked on link vars.
+    # local scalar will define the
+    # TRACE_EXISTS flag. This will
+    # keep the scalar from being resolved.
 
     proc clocals_test60 {} {
         set V1 0
@@ -1368,7 +1364,7 @@ compiledLocals is {
 V1
 }
 compiledLocals.resolved is {
-null
+!RESOLVED V1 TRACE_EXISTS
 }
 }
 
@@ -1376,11 +1372,9 @@ test compileLocals-6.1 {var traces} {
     # This test checks that traces
     # are fired for variables. The
     # compiled var impl should not
-    # use the CompiledLocal.resolved
-    # ref when a trace is set on a
-    # variable. The second set should
-    # not reset the resolved ref
-    # since the var has traces.
+    # use a resolved var ref
+    # when a trace is set on a
+    # variable.
 
     set compiled_local_trace_counter 0
 
@@ -1397,7 +1391,7 @@ compiledLocals is {
 V1
 }
 compiledLocals.resolved is {
-null
+!RESOLVED V1 TRACE_EXISTS
 }
 } 1}
 
@@ -1406,8 +1400,8 @@ test compileLocals-6.2 {var traces} {
     # variable that was created at
     # runtime. The compiled local
     # slot should be initialized,
-    # so the trace will just make
-    # the resolved ref null.
+    # and the trace should keep
+    # the scalar from being resolved.
 
     set compiled_local_trace_counter 0
 
@@ -1424,7 +1418,7 @@ compiledLocals is {
 V1
 }
 compiledLocals.resolved is {
-null
+!RESOLVED V1 TRACE_EXISTS
 }
 } 1}
 
@@ -1450,7 +1444,7 @@ compiledLocals is {
 V1
 }
 compiledLocals.resolved is {
-null
+!RESOLVED V1 TRACE_EXISTS
 }
 } 0}
 
@@ -1479,7 +1473,7 @@ compiledLocals is {
 V1
 }
 compiledLocals.resolved is {
-null
+!RESOLVED V1 TRACE_EXISTS
 }
 } 1}
 
@@ -1511,7 +1505,7 @@ compiledLocals is {
 var -> ::clocals_test65_trace_var
 }
 compiledLocals.resolved is {
-null
+!RESOLVED clocals_test65_trace_var TRACE_EXISTS
 }
 }
 
@@ -1542,7 +1536,7 @@ compiledLocals is {
 clocals_test66_var -> ::clocals_test66_var
 }
 compiledLocals.resolved is {
-null
+!RESOLVED clocals_test66_var TRACE_EXISTS
 }
 } 1}
 
@@ -1573,7 +1567,7 @@ compiledLocals is {
 clocals_test67_var -> ::clocals_test67_var
 }
 compiledLocals.resolved is {
-null
+!RESOLVED clocals_test67_var TRACE_EXISTS
 }
 } 1}
 
@@ -1601,7 +1595,7 @@ compiledLocals is {
 clocals_test68_var -> ::clocals_test68_var
 }
 compiledLocals.resolved is {
-null
+!RESOLVED clocals_test68_var TRACE_EXISTS
 }
 } 0}
 
@@ -1631,11 +1625,87 @@ compiledLocals is {
 arr()
 }
 compiledLocals.resolved is {
-arr() NO_CACHE
+arr() TRACE_EXISTS
 }
 } 2}
 
+test compileLocals-6.10 {var traces} {
+    # Creating and then deleting a
+    # trace on a local variable should
+    # clear the TRACE_EXISTS flag.
 
+    proc clocals_test610 {} {
+        set V1 0
+        trace variable V1 w compiled_local_trace_counter
+        trace vdelete V1 w compiled_local_trace_counter
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test610
+    clocals_test610
+} {localTable is null
+compiledLocals is {
+V1
+}
+compiledLocals.resolved is {
+V1
+}
+}
+
+test compileLocals-6.11 {var traces} {
+    # Creating two traces and then
+    # deleting one of them should not
+    # clear the TRACE_EXISTS flag.
+
+    proc clocals_test611 {} {
+        set V1 0
+        trace variable V1 w compiled_local_trace_counter
+        trace variable V1 r compiled_local_trace_counter
+        trace vdelete V1 w compiled_local_trace_counter
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test611
+    clocals_test611
+} {localTable is null
+compiledLocals is {
+V1
+}
+compiledLocals.resolved is {
+!RESOLVED V1 TRACE_EXISTS
+}
+}
+
+test compileLocals-6.12 {var traces} {
+    # Defining a trace on a local var
+    # and then deleting it should
+    # clear the TRACE_EXISTS flag.
+    # That should set the var.traces
+    # field to null, check this by
+    # attempting to overwrite the
+    # local var with a link var.
+    # If the var.traces field is
+    # non-null, then this upvar
+    # will generate an error.
+    # The bug that caused this has
+    # been fixed, as the var.traces
+    # field is now set to null and
+    # the flag is cleared when the
+    # last trace is deleted.
+
+    proc clocals_test612 {} {
+        trace variable V1 w compiled_local_trace_counter
+        trace vdelete V1 w compiled_local_trace_counter
+        upvar 0 dummy_local V1
+        testvarframe
+    }
+    clocals_tjc_compiled_proc clocals_test612
+    clocals_test612
+} {localTable is {
+UNDEFINED-> V1 -> dummy_local
+UNDEFINED dummy_local
+}
+compiledLocals is null
+compiledLocals.resolved is null
+}
 
 
 
@@ -1941,7 +2011,7 @@ compiledLocals is {
 UNDEFINED V1
 }
 compiledLocals.resolved is {
-null
+!RESOLVED UNDEFINED V1
 }
 }
 
@@ -2112,7 +2182,7 @@ a()
 # array of Var values.
 
 # compiled local scalars with an absolute
-# namespace qualifier may only be used
+# namespace qualifier might only be used
 # once. Implement a test during scan keys
 # so that the containment stack can be
 # determined to see if a given command is

@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Var.java,v 1.31 2006/03/27 00:06:42 mdejong Exp $
+ * RCS: @(#) $Id: Var.java,v 1.32 2006/03/28 02:44:19 mdejong Exp $
  *
  */
 package tcl.lang;
@@ -55,6 +55,10 @@ class Var {
      *				a local variable that was assigned a slot
      *				in a procedure frame by	the compiler so the
      *				Var storage is part of the call frame.
+     * TRACE_EXISTS -		1 means that trace(s) exist on this
+     *				scalar or array variable. This flag is
+     *				set when (var.traces == null), it is
+     *				cleared when there are no more traces.
      * TRACE_ACTIVE -		1 means that trace processing is currently
      *				underway for a read or write access, so
      *				new read or write accesses should not cause
@@ -74,11 +78,10 @@ class Var {
      *				reflect the "reference" from its namespace.
      * NO_CACHE -		1 means that code should not be able to hold
      *				a cached reference to this variable. This flag
-     *				is set for a variable when traces are created
-     *				or when a linked variable is redirected via
-     *				upvar. It is not possible to clear this flag,
-     *				so the variable can't be cached as long as it
-     *				exists.
+     *				is only set for Var objects returned by
+     *				a namespace or interp resolver. It is not possible
+     *				to clear this flag, so the variable can't
+     *				be cached as long as it is alive.
      * NON_LOCAL -		1 means that the variable exists in the
      *				compiled local table, but it is not a
      *				local or imported local. This flag is
@@ -88,16 +91,6 @@ class Var {
      *				of a variable frame and can't be found
      *				at runtime.
      */
-
-// FIXME: Could revisit this whole NO_CACHE flag with traces thing.
-// Should really make the NO_CACHE flag a different flags than
-// traces. Perhaps another HAS_TRACES flag that is set when
-// traces are defined would be better. The NO_CACHE could then
-// be used for tricky cases like a link to an array index
-// and resolver vars. There are array cases where we don't
-// care if there are traces, but it could be a problem if
-// NO_CACHE was set and we expect to have to look that up
-// every time.
 
     static final int SCALAR	   = 0x1;
     static final int ARRAY	   = 0x2;
@@ -109,6 +102,7 @@ class Var {
     static final int NAMESPACE_VAR = 0x80;
     static final int NO_CACHE = 0x100;
     static final int NON_LOCAL = 0x200;
+    static final int TRACE_EXISTS = 0x400;
 
     // Flag used only with makeUpvar()
     static final int EXPLICIT_LOCAL_NAME = 0x1000;
@@ -143,16 +137,12 @@ class Var {
 	return ((flags & IN_HASHTABLE) != 0);
     }
 
-    // Return true when a ref to this variable
-    // would not be allowed or is no longer valid.
-    // This could be true if the variable was
-    // unset or if the variable could no longer
-    // be cached because of an upvar redirect.
-    // This method also returns true if traces
-    // were set on a variable.
+    final boolean isVarTraceExists() {
+	return ((flags & TRACE_EXISTS) != 0);
+    }
 
-    final boolean isVarCacheInvalid() {
-        return ((flags & (UNDEFINED|NO_CACHE)) != 0);
+    final boolean isVarNoCache() {
+        return ((flags & NO_CACHE) != 0);
     }
 
     // True when a compiled local variable should
@@ -196,6 +186,14 @@ class Var {
         flags |= NON_LOCAL;
     }
 
+    final void setVarNoCache() {
+	flags |= NO_CACHE;
+    }
+
+    final void setVarTraceExists() {
+	flags |= TRACE_EXISTS;
+    }
+
     final void clearVarUndefined() {
 	flags &= ~UNDEFINED;
     }
@@ -204,8 +202,8 @@ class Var {
         flags &= ~IN_HASHTABLE;
     }
 
-    final void setVarNoCache() {
-	flags |= NO_CACHE;
+    final void clearVarTraceExists() {
+	flags &= ~TRACE_EXISTS;
     }
 
     /**
@@ -353,7 +351,11 @@ class Var {
 	    sb.append(" ");
 	    sb.append("IN_HASHTABLE");
 	}
-	if ((flags & NO_CACHE) != 0) {
+	if (isVarTraceExists()) {
+	    sb.append(" ");
+	    sb.append("TRACE_EXISTS");
+	}
+	if (isVarNoCache()) {
 	    sb.append(" ");
 	    sb.append("NO_CACHE");
 	}
@@ -580,10 +582,11 @@ class Var {
 	if (cxtNs.resolver != null || interp.resolvers != null) {
 	    try {
 		if (cxtNs.resolver != null) {
-// FIXME: Should these vars be marked as NO_CACHE? Does the
-// Tcl C impl do that here?
 		    var = cxtNs.resolver.resolveVar(interp,
 			      part1, cxtNs, flags);
+		    if (var != null) {
+		        var.setVarNoCache();
+		    }
 		} else {
 		    var = null;
 		}
@@ -594,6 +597,9 @@ class Var {
 		        res = (Interp.ResolverScheme) iter.next();
 			var = res.resolver.resolveVar(interp,
 				  part1, cxtNs, flags);
+			if (var != null) {
+			    var.setVarNoCache();
+			}
 		    }
 		}
 	    } catch (TclException e) {
@@ -2013,14 +2019,13 @@ class Var {
 	var = result[0];
 	array = result[1];
 
-	// Set up trace information. If the variable is a compiled local
-	// scalar var then set the resolved ref to null so that the runtime
-	// version of setVar() and getVar() will be used. This is needed
-	// that that read/write traces will be executed for compiled locals.
+	// Set up trace information. Set a flag to indicate that traces
+	// exists so that resolveScalar() can determine if traces
+	// are set by checking only the Var flags filed. The rest of
+	// the code in this module makes use of the var.traces field.
 
 	if (var.traces == null) {
-	    var.setVarNoCache(); // Invalidate link vars
-
+	    var.setVarTraceExists();
 	    var.traces = new ArrayList();
 	}
 
@@ -2105,14 +2110,14 @@ class Var {
 		}
 	    }
 
-	    // FIXME: traces not set to null, could this
-	    // lead to a logic error cleanup up where the
-	    // table cleanup looks for a null traces?
-	    // Try to construct a test case for this.
+	    // If there are no more traces, then null
+	    // the var.traces field since logic in this
+	    // module depends on a null traces field.
 
-	    //if (var.traces.size() == 0) {
-	    //    var.traces = null;
-	    //}
+	    if (var.traces.size() == 0) {
+	        var.traces = null;
+	        var.clearVarTraceExists();
+	    }
 	}
 
 	// If this is the last trace on the variable, and the variable is
@@ -2953,10 +2958,11 @@ class Var {
              flags = v.flags;
         }
 
-        // If variable is not a scalar, or is an array element,
-        // or is unset, or has traces, then return null.
+        // Can't resolve var if it is not a scalar, if it is
+        // an array element, if it is undefined, if it has traces,
+        // or it can't be cached because it is a resolver var.
 
-        if ((flags & (LINK|ARRAY|ARRAY_ELEMENT|UNDEFINED|NO_CACHE)) != 0) {
+        if ((flags & (LINK|ARRAY|ARRAY_ELEMENT|UNDEFINED|TRACE_EXISTS|NO_CACHE)) != 0) {
             return null;
         }
         return v;
@@ -2987,16 +2993,12 @@ class Var {
              flags = v.flags;
         }
 
-        // If var is not an array or is unset,
-        // then array can't be resolved. An
-        // array var with traces can be resolved.
+        // Can't resolve var if it is not an array,
+        // if it is undefined, or it can't be cached
+        // because it is a resolver var. An array
+        // var with traces can be resolved.
 
-        // FIXME: We don't check for NO_CACHE here,
-        // could that present a problem in the future
-        // WRT resolver vars? Should really have a
-        // traces flag and a NO_CACHE flag.
-
-        if ((flags & (LINK|SCALAR|UNDEFINED)) != 0) {
+        if ((flags & (LINK|SCALAR|UNDEFINED|NO_CACHE)) != 0) {
             return null;
         }
         return v;
@@ -3035,11 +3037,6 @@ class Var {
                         // if there are no other vars linked to
                         // this var.
                         if (clocal.refCount == 0) {
-// FIXME: Why set the hashKey to null here? If the
-// compiled local is not refrences anywhere else, should
-// it be deleted via deleteVar()? What if there are traces?
-// Seems like just setting to null would be safer.
-                            clocal.hashKey = null;
                             compiledLocals[i] = null;
                         }
                     }

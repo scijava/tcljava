@@ -1,5 +1,25 @@
 2006-03-27  Mo DeJong  <mdejong@users.sourceforge.net>
 
+        * src/jacl/tcl/lang/Var.java: Create new
+        Var flag TRACE_EXISTS and set it instead of
+        NO_CACHE when traces are defined. Also, fix
+        a bug in untraceVar() where deleting a trace
+        should have nulled out the traces field.
+        Mark resolver vars as NO_CACHE to match the
+        C implementation. Check for this new
+        TRACE_EXISTS flag in the resolveScalar and
+        resolveArray methods. Remove questionable
+        setting of Var.hashKey to null when nulling
+        out a compiled local slot post unset.
+        * src/tests/jacl/tcl/lang/TestVarFrameCmd.java:
+        Reimplement resolve var printing so that
+        the state flags are printed. This shows why
+        a var can't be resolved if in fact it can't be.
+        * tests/tjc/compiledLocals.test: Update
+        test cases to show why resolve fails.
+
+2006-03-27  Mo DeJong  <mdejong@users.sourceforge.net>
+
         * src/tclblend/tcl/lang/Interp.java (evalFile):
         Add TclBlend implementation of Interp.evalFile().
         * tests/tcljava/javaInterp.test: Removed.

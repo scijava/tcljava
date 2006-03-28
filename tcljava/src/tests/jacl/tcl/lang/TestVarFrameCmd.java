@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: TestVarFrameCmd.java,v 1.3 2006/03/27 00:06:42 mdejong Exp $
+ * RCS: @(#) $Id: TestVarFrameCmd.java,v 1.4 2006/03/28 02:44:19 mdejong Exp $
  */
 
 package tcl.lang;
@@ -72,7 +72,11 @@ throws
 	for (Iterator iter = localTable.entrySet().iterator(); iter.hasNext() ;) {
 	    Map.Entry entry = (Map.Entry) iter.next();
 	    var = (Var) entry.getValue();
-            varInfo(interp, results, var, false);
+            if (var == null) {
+                results.append("null\n");
+            } else {
+                varInfo(interp, results, var, false);
+            }
 	}
 
         results.append("}\n");
@@ -127,17 +131,7 @@ throws
                 continue;
             }
 
-            Var resolved = clocal;
-            if (resolved.isVarLink()) {
-                resolved = (Var) resolved.value;
-            }
-            if (resolved.isVarScalar()) {
-                resolved = Var.resolveScalar(resolved);
-            } else if (resolved.isVarArray()) {
-                resolved = Var.resolveArray(resolved);
-            }
-
-            varInfo(interp, results, resolved, true);
+            varInfo(interp, results, clocal, true);
 	}
 
         results.append("}\n");
@@ -148,13 +142,32 @@ throws
 }
 
 static
-void varInfo(Interp interp, StringBuffer results, Var var, boolean resolved) {
-    // Compiled local entries can be null
+void varInfo(Interp interp, StringBuffer results, Var var, boolean resolveIt) {
+    // Compiled local entries can be null, but var passed to this
+    // method will never be null.
 
-    if (var == null) {
-        results.append("null\n");
-        return;
+    // If resolveIt is true then try to resolve the variable as
+    // a scalar or array var. We want to know when a variable
+    // can't be resolved. If the varible can't be resolved
+    // we still want to print info indicating the flags
+    // that were set so the reason a var can't be resolved
+    // can be determined.
+
+    if (resolveIt) {
+    Var resolved = var;
+    if (resolved.isVarLink()) {
+        resolved = (Var) resolved.value;
     }
+    if (resolved.isVarScalar()) {
+        resolved = Var.resolveScalar(resolved);
+    } else if (resolved.isVarArray()) {
+        resolved = Var.resolveArray(resolved);
+    }
+    if (resolved == null) {
+        results.append("!RESOLVED ");
+    }
+    }
+
 
     Var linkto = var;
 
@@ -166,6 +179,10 @@ void varInfo(Interp interp, StringBuffer results, Var var, boolean resolved) {
             throw new TclRuntimeError(
                 "var is still a link var after resolve");
         }
+    }
+    if (resolveIt) {
+        // Always use the linked to var when resolveIt is true.
+        var = linkto;
     }
 
     if ((var == linkto) && var.isVarUndefined()) {
@@ -200,12 +217,32 @@ void varInfo(Interp interp, StringBuffer results, Var var, boolean resolved) {
         }
     }
 
-    // The NO_CACHE flag would be set for a local
-    // or linked var when the linked to var has
-    // a trace set.
+    // The TRACE_EXISTS flag indicates that a variable has
+    // traces set. Most code would just test (var.traces == null),
+    // just make sure the two ways of representing this info
+    // are in sync.
 
-    if (resolved && !linkto.isVarUndefined() &&
-            linkto.isVarCacheInvalid()) {
+    if (resolveIt && linkto.isVarTraceExists()) {
+        results.append(" TRACE_EXISTS");
+    }
+    // If the var.traces field does not match the
+    // TRACE_EXISTS flag, then generate an error.
+
+    if (resolveIt) {
+        if (linkto.isVarTraceExists() && linkto.traces == null) {
+            throw new TclRuntimeError("TRACE_EXISTS flag set for var " +
+                " but var.traces is null");
+        } else if (!linkto.isVarTraceExists() && linkto.traces != null) {
+            throw new TclRuntimeError("TRACE_EXISTS flag is not set for var " +
+                " but var.traces non-null");
+        }
+    }
+
+    // The NO_CACHE flag indicates that a variable was
+    // returned by a resolver proc installed into the
+    // interp.
+
+    if (resolveIt && linkto.isVarNoCache()) {
         results.append(" NO_CACHE");
     }
 
