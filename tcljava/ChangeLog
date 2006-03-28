@@ -1,5 +1,13 @@
 2006-03-27  Mo DeJong  <mdejong@users.sourceforge.net>
 
+        * src/tclblend/tcl/lang/Interp.java (evalFile):
+        Add TclBlend implementation of Interp.evalFile().
+        * tests/tcljava/javaInterp.test: Removed.
+        * tests/tcljava/tcljavaInterp.test: Add test
+        case for Interp.evalFile() API.
+
+2006-03-27  Mo DeJong  <mdejong@users.sourceforge.net>
+
         * Makefile.in: Running `make tjc2` will now
         copy the generated tjc.jar and tjcsrc.jar
         into the build dir so that they will be
