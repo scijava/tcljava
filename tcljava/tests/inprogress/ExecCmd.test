@@ -241,6 +241,18 @@ test exec-3.5 {exec return values} {
     list [catch {exec $JAVA -classpath $env(CLASSPATH) tests.exec.PrintArgs $pair "last\$ one"} err] $err
 } "0 \{\{tcl/lang/AfterCmd\$AfterAssocData.class\} \{tcl/lang/AfterCmd\$TimerInfo.class\}\nlast\$ one\}"
 
+test exec-3.6 {exec with lots of stdout and stderr output} {
+    set status [catch {exec $JAVA -classpath $env(CLASSPATH) tests.exec.ExecLotsOutput} output]
+
+    set expected "[string repeat OOO 1000]\n[string repeat EEE 1000]"
+    if {[string compare $output $expected] == 0} {
+        set match 1
+    } else {
+        set match 0
+    }
+    list $status $match
+} {1 1}
+
 
 test exec-4.1 { setting of errorCode when exit value != 0 } {unixOnly} {
     # NOTE: This test ignores PID since we can't find that in Java.
