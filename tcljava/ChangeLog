@@ -1,3 +1,10 @@
+2006-03-30  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * tests/tjc/tjcthread.test: Adjust TIMEOUT
+        values based on how long the first compile
+        takes. This keeps the tests from timing out
+        too quickly on a heavily loaded system.
+
 2006-03-27  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/jacl/tcl/lang/Var.java: Create new

@@ -121,6 +121,8 @@ thread terminated
     } elseif {$log == $log3} {
         #puts "log 3 matched"
         set log_match 1
+    } else {
+        puts "log match failed for log:\n$log"
     }
 
     list [set __fake_results] $log_match
@@ -198,6 +200,8 @@ thread terminated
     } elseif {$log == $log2} {
         #puts "log 2 matched"
         set log_match 1
+    } else {
+        puts "log match failed for log:\n$log"
     }
 
     list [set __fake_results] $log_match
@@ -269,6 +273,14 @@ thread terminate request
 thread terminated
 }]
 
+# This test case will define a variable named
+# TIMEOUT which stores the number of ms to use
+# as the max wait timeout. This is needed so
+# that these tests can be run on a heavily
+# loaded system without a premature timeout.
+
+set TIMEOUT [expr {10 * 1000}]
+
 tcltest::test tjcthread-1.5 {compile test class} {
     catch {unset _TJC}
 
@@ -301,15 +313,37 @@ tcltest::test tjcthread-1.5 {compile test class} {
     # If not processed, then set a timeout and wait
     # until the compile finishes.
 
-    if {$_TJC($filename) == {}} {
-        set id [after 10000 "set _TJC($filename) TIMEOUT"]
-        vwait _TJC($filename)
-        after cancel $id
+    set thread_done_waits 0
+    while {$_TJC($filename) == {}} {
+        # Go to sleep for a second and then check to see
+        # if the event has been processed yet.
+        if {$thread_done_waits > 180} {
+            puts "TIMEOUT after 3 minutes"
+            break
+        }
+
+        after 1000 "set done 1"
+        vwait done
+        incr thread_done_waits
     }
 
+    # Define max wait time
+    if {$thread_done_waits < 10} {
+        set TIMEOUT [expr {20 * 1000}]
+    } else {
+        set TIMEOUT [expr {$thread_done_waits * 3 * 1000}]
+    }
+    if {0} {
+    puts "took $thread_done_waits seconds for compile to finish"
+    puts "timeout will be [expr {$TIMEOUT / 1000}] seconds"
+    }
+    unset thread_done_waits
+
     # Wait for other thread to get into a ready state
-    # again before terminating it.
-    after 2000 "set done 1"
+    # again before terminating it. Give this a long
+    # time to work, just in case.
+
+    after 5000 "set done 1"
     vwait done
 
     java::call tcl.lang.TJCThread terminateThread
@@ -384,7 +418,7 @@ tcltest::test tjcthread-1.6 {compile 2 test classes} {
     # until the compile finishes.
 
     if {$_TJC($file2) == {}} {
-        set id [after 10000 "set _TJC($file2) TIMEOUT"]
+        set id [after $TIMEOUT "set _TJC($file2) TIMEOUT"]
         vwait _TJC($file2)
         after cancel $id
     }
@@ -459,6 +493,8 @@ thread terminated
     } elseif {$log == $log2} {
         #puts "log 2 matched"
         set log_match 1
+    } else {
+        puts "log match failed for log:\n$log"
     }
 
     list \
@@ -505,7 +541,7 @@ tcltest::test tjcthread-1.7 {compile test class with inner class} {
     # until the compile finishes.
 
     if {$_TJC($filename) == {}} {
-        set id [after 10000 "set _TJC($filename) TIMEOUT"]
+        set id [after $TIMEOUT "set _TJC($filename) TIMEOUT"]
         vwait _TJC($filename)
         after cancel $id
     }
@@ -594,7 +630,7 @@ public class Test {
     # until the compile finishes.
 
     if {$_TJC($filename) == {}} {
-        set id [after 10000 "set _TJC($filename) TIMEOUT"]
+        set id [after $TIMEOUT "set _TJC($filename) TIMEOUT"]
         vwait _TJC($filename)
         after cancel $id
     }
@@ -673,7 +709,7 @@ public class Test2 {
     # until the compile finishes.
 
     if {$_TJC($filename) == {}} {
-        set id [after 10000 "set _TJC($filename) TIMEOUT"]
+        set id [after $TIMEOUT "set _TJC($filename) TIMEOUT"]
         #puts "waiting for _TJC($filename)"
         vwait _TJC($filename)
         #puts "done waiting for _TJC($filename): $_TJC($filename)"
@@ -751,7 +787,7 @@ proc tjcthread_test_3_0 {} {
     # until the compile finishes.
 
     if {$_TJC($filename) == {}} {
-        set id [after 10000 "set _TJC($filename) TIMEOUT"]
+        set id [after $TIMEOUT "set _TJC($filename) TIMEOUT"]
         vwait _TJC($filename)
         after cancel $id
     }
@@ -804,14 +840,16 @@ proc tjcthread_test_3_0 {} {
         set results "COMPILE FAILED"
     }
 
-    rename tjcthread_test_3_0 {}
+    if {[info commands tjcthread_test_3_0] == "tjcthread_test_3_0"} {
+        rename tjcthread_test_3_0 {}
+    }
     set results
 } {tjcthread_test_3_0 1 {} {defined class TjcthreadTest30Cmd} OK}
 
 
 # The following tests make use of the TJC::compile API.
 # This API will start the TJCThread if it is not already
-# running, but it does not shut it down.
+# running, but it does not shut the thread down.
 
 tcltest::test tjcthread-4.0 {use TJC::compile command to compile
         a Tcl proc into byte code and then replace the existing
