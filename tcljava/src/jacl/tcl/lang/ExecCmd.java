@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ExecCmd.java,v 1.11 2004/11/18 07:06:49 mdejong Exp $
+ * RCS: @(#) $Id: ExecCmd.java,v 1.11.2.1 2006/04/05 23:11:31 mdejong Exp $
  */
 
 package tcl.lang;
@@ -42,6 +42,8 @@ static {
         execMethod = null;
     }
 }
+
+private static boolean debug = false;
 
 
 /*
@@ -124,12 +126,24 @@ throws
 	 */
 
         if (execMethod != null) {
+	    if (debug) {
+	        System.out.println("using execReflection() for JDK 1.3 or newer");
+	    }
 	    p = execReflection(interp, argv, firstWord, argLen);
         } else if (Util.isUnix()) {
+	    if (debug) {
+	        System.out.println("using execUnix() for old unix systems");
+	    }
 	    p = execUnix(interp, argv, firstWord, argLen);
 	} else if (Util.isWindows()) {
+	    if (debug) {
+	        System.out.println("using execWin() for old windows systems");
+	    }
 	    p = execWin(interp, argv, firstWord, argLen);
 	} else {
+	    if (debug) {
+	        System.out.println("using execDefault() for old unknown systems");
+	    }
 	    p = execDefault(interp, argv, firstWord, argLen);
 	}
 
@@ -151,17 +165,48 @@ throws
         sbuf = new StringBuffer();
 
         if (execMethod != null) {
-            // JDK 1.3 or newer, so create another thread.
-            ExecInputStreamReader reader = new ExecInputStreamReader(
-                p.getInputStream(), p.getErrorStream(), sbuf );
+            // JDK 1.3 or newer, so create a thread to read the
+            // stdout and stderr of the subprocess. Each stream
+            // needs to be handled by a serarate thread.
 
-            // Start reading thread, wait for process to terminate in
-            // this thread, then make sure other thread has terminated.
-            reader.start();
+            ExecInputStreamReader stdout_reader = new ExecInputStreamReader(
+                p.getInputStream());
+
+            ExecInputStreamReader stderr_reader = new ExecInputStreamReader(
+                p.getErrorStream());
+
+            // Start reading threads, wait for process to terminate in
+            // this thread, then make sure other threads have terminated.
+            stdout_reader.start();
+            stderr_reader.start();
+
+            if (debug) {
+                System.out.println("started reader threads, invoking waitFor()");
+            }
+
             exit = p.waitFor();
-            reader.join();
 
-	    errorBytes = reader.getErrorBytes();
+            if (debug) {
+                System.out.println("waitFor() returned " + exit);
+                System.out.println("joining reader threads");
+            }
+
+            stdout_reader.join();
+            stderr_reader.join();
+
+            // Get stdout and stderr from other threads.
+
+            int numBytes;
+            numBytes = stdout_reader.appendBytes(sbuf);
+            if (debug) {
+                System.out.println("appended " + numBytes + " bytes from stdout stream");
+            }
+            numBytes = stderr_reader.appendBytes(sbuf);
+            if (debug) {
+                System.out.println("appended " + numBytes + " bytes from stderr stream");
+            }
+
+            errorBytes = stderr_reader.getInBytes();
         } else {
             // Earlier than JDK 1.3, read in same thread.
             exit = p.waitFor();
@@ -262,9 +307,18 @@ static int readStreamIntoBuffer(InputStream in, StringBuffer sbuf) {
         line = br.readLine();
       }
     } catch (IOException e) {
-      //do nothing just return numRead
+      // do nothing just return numRead
+      if (debug) {
+          System.out.println("IOException during stream read()");
+          e.printStackTrace(System.out);
+      }
     } finally {
-      try {br.close();} catch (IOException e) {} //ignore IO error
+      try {br.close();} catch (IOException e) {
+          if (debug) {
+              System.out.println("IOException during stream close()");
+              e.printStackTrace(System.out);
+          }
+      }
     }
 
     return numRead;
@@ -589,30 +643,32 @@ execReflection (Interp interp, TclObject argv[], int first, int last)
  *	This code is executed in its own thread since some
  *	JDK implementation would deadlock when reading
  *	from a stream after waitFor is invoked.
+ *----------------------------------------------------------------------
  */
 
 class ExecInputStreamReader extends Thread {
-    InputStream stdout;
-    InputStream stderr;
+    InputStream in;
     StringBuffer sb;
-    int errorBytes;
+    int inBytes;
 
-    ExecInputStreamReader(InputStream stdout, InputStream stderr, StringBuffer sb) {
-      this.stdout = stdout;
-      this.stderr = stderr;
-      this.sb = sb;
-      errorBytes = 0;
+    ExecInputStreamReader(InputStream in) {
+      this.in = in;
+      this.sb = new StringBuffer();
+      inBytes = 0;
     }
 
     public void run() {
-        ExecCmd.readStreamIntoBuffer(stdout, sb);
-
-        // Append any data from stderr stream to result
-        errorBytes = ExecCmd.readStreamIntoBuffer(stderr, sb);
+        inBytes = ExecCmd.readStreamIntoBuffer(in, sb);
     }
 
-    int getErrorBytes() {
-      return errorBytes;
+    int appendBytes(StringBuffer dest) {
+        int bytes = sb.length();
+        dest.append(sb.toString());
+        return bytes;
+    }
+
+    int getInBytes() {
+      return inBytes;
     }
 }
 
