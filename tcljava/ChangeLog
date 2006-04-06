@@ -1,5 +1,13 @@
 2006-04-05  Mo DeJong  <mdejong@users.sourceforge.net>
 
+        * src/jacl/tcl/lang/Interp.java (Interp):
+        Intern common String objects of length 1.
+        This optimization makes String.equals(String)
+        return true for the ref compare to a compiled
+        String of length 1 that holds an ASCII character.
+
+2006-04-05  Mo DeJong  <mdejong@users.sourceforge.net>
+
         * src/jacl/tcl/lang/Interp.java (evalResource):
         Implement cache for Tcl scripts loaded from
         jacl.jar and tcljava.jar. The init.tcl script

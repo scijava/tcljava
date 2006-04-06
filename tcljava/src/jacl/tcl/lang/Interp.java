@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.72 2006/04/06 00:13:11 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.73 2006/04/06 00:25:26 mdejong Exp $
  *
  */
 
@@ -426,13 +426,17 @@ Interp()
                  i == ((int) '\r') ||
                  i == ((int) '\n'))) ||
                 (i >= ((int) ' ')) && (i <= ((int) '~'))) {
+
             // Create cached value for '\t' '\r' '\n'
             // and all ASCII characters in the range
-            // 32 -> ' ' to 126 -> '~'
+            // 32 -> ' ' to 126 -> '~'. Intern each
+            // of the String objects so that an equals test
+            // like tobj.toString().equals("\n") will
+            // refrence compare to true.
 
-            obj = TclString.newInstance(
-                //Character.toString((char) i)); // JDK 1.4 only
-                (((char) i) + ""));
+            String s = "" + ((char) i);
+            s = s.intern();
+            obj = TclString.newInstance(s);
 
             //System.out.println("m_charCommon[" + i + "] is \"" + obj + "\"");
         }
