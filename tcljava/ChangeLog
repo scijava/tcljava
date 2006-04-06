@@ -1,5 +1,16 @@
 2006-04-05  Mo DeJong  <mdejong@users.sourceforge.net>
 
+        * src/jacl/tcl/lang/Interp.java (evalResource):
+        Implement cache for Tcl scripts loaded from
+        jacl.jar and tcljava.jar. The init.tcl script
+        is loaded when a new Interp() is created,
+        and this cache makes that operation a bit
+        faster. This change would make script loading
+        operations a lot faster in the worst case of
+        a class loader that did not cache loaded resources.
+
+2006-04-05  Mo DeJong  <mdejong@users.sourceforge.net>
+
         * src/jacl/tcl/lang/ExecCmd.java (cmdProc):
         Reimplement JDK 1.3 and newer exec so that two
         threads are created. One reads stdout of the

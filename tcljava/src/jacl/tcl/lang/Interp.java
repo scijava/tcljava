@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.71 2006/03/01 00:03:28 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.72 2006/04/06 00:13:11 mdejong Exp $
  *
  */
 
@@ -329,6 +329,20 @@ static final int INVOKE_NO_TRACEBACK = 4;
 // The ClassLoader for this interp
 
 TclClassLoader classLoader = null;
+
+// Map of Tcl library scripts that is initialized
+// the first time a script is loaded. All interps
+// will use the cached value once it has been
+// initialized. Tcl library scripts are located
+// in jacl.jar and tcljava.jar, this logic assumes
+// that they will not change at runtime. This
+// feature can be disabled by changing the
+// USE_SCRIPT_CACHE flag in evalResource to false,
+// but this object must be statically initialized
+// in order to avoid a possible race condition
+// during the first call to evalResource.
+
+static HashMap tclLibraryScripts = new HashMap();
 
 
 /*
@@ -3115,30 +3129,101 @@ closeChannel(
  *----------------------------------------------------------------------
  */
 
-void 
+void
 evalResource(
     String resName) 	// The location of the Java resource. See
 			// the Java documentation of
 			// Class.getResourceAsStream()
-			// for details on resources naming.
+			// for details on resource naming.
 throws 
     TclException
 {
-    InputStream stream = getResourceAsStream(resName);
+    final boolean debug = false;
+    final boolean USE_SCRIPT_CACHE = true;
 
-    if (stream == null) {
-	throw new TclException(this, "cannot read resource \"" + resName
-		+ "\"");
+    boolean couldBeCached = false;
+    boolean isCached = false;
+    InputStream stream;
+    String script = null;
+
+    if (debug) {
+        System.out.println("evalResource " + resName);
     }
 
-    // Define script name as resource so that [info script] can be used
-    // to construct names of other resources in the same resource directory.
+    // Tcl library scripts can be cached since they will not change
+    // after the JVM has started. A String value for the script is
+    // cached after it has been read from the filesystem and been
+    // processed for CRLF by the Tcl IO subsystem.
+
+    if (USE_SCRIPT_CACHE
+            && resName.startsWith("/tcl/lang/library/")
+            && (resName.equals("/tcl/lang/library/tclIndex") ||
+                resName.endsWith(".tcl"))) {
+        if (debug) {
+            System.out.println("Tcl script could be cached: " + resName);
+        }
+        couldBeCached = true;
+    }
+
+    // Note, we only want to synchronize to the tclLibraryScripts
+    // table when dealing with a Tcl library resource. Other
+    // resource loads should not need to grab a static monitor.
+
+    if (USE_SCRIPT_CACHE && couldBeCached) {
+        synchronized (tclLibraryScripts) {
+            if ((script = (String) tclLibraryScripts.get(resName)) == null) {
+                isCached = false;
+            } else {
+                isCached = true;
+            }
+
+            if (!isCached) {
+                if (debug) {
+                    System.out.println("Tcl script is not cached");
+                }
+
+                // When not cached, attempt to load via
+                // getResourceAsStream and then add to the cache.
+
+                stream = getResourceAsStream(resName);
+                if (stream == null) {
+                    throw new TclException(this,
+                        "cannot read resource \"" +
+                        resName + "\"");
+                }
+                script = readScriptFromInputStream(stream);
+
+                tclLibraryScripts.put(resName, script);
+            } else {
+                if (debug) {
+                    System.out.println("Tcl script is cached");
+                }
+
+                // No-op, just use script that was set above
+            }
+        }
+    } else {
+        if (debug) {
+            System.out.println("Not a Tcl library script, loading normally");
+        }
+
+        stream = getResourceAsStream(resName);
+        if (stream == null) {
+            throw new TclException(this,
+                "cannot read resource \"" +
+                resName + "\"");
+        }
+        script = readScriptFromInputStream(stream);
+    }
+
+    // Define Interp.scriptFile as a resource so that [info script]
+    // can be used to construct names of other resources in the
+    // same resource directory.
 
     String oldScript = scriptFile;
     scriptFile = "resource:" + resName;
 
     try {
-        String script = readScriptFromInputStream(stream);
         eval(script, 0);
     } finally {
         scriptFile = oldScript;
