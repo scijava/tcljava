@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclInteger.java,v 1.9 2006/01/14 01:29:26 mdejong Exp $
+ * RCS: @(#) $Id: TclInteger.java,v 1.10 2006/04/07 22:33:41 mdejong Exp $
  *
  */
 
@@ -259,5 +259,55 @@ public class TclInteger implements InternalRep {
 	TclInteger tint = (TclInteger) rep;
 	tint.value += incrAmount;
     }
+
+    /**
+     * This special helper method is used only by
+     * the Expression module. This method will
+     * change the internal rep to a TclInteger with
+     * the passed in int value. This method does
+     * not invalidate the string rep since the
+     * object's value is not being changed.
+     *
+     * @param tobj the object to operate on.
+     * @param i the new int value.
+     */
+
+    static void exprSetInternalRep(TclObject tobj, int i) {
+	// Extra debug checking
+	final boolean validate = false;
+
+	if (validate) {
+
+	    // Double check that the internal rep is not
+	    // already of type TclInteger.
+
+	    InternalRep rep = tobj.getInternalRep();
+
+	    if (rep instanceof TclInteger) {
+	        throw new TclRuntimeError("exprSetInternalRep() called with object" +
+	            " that is already of type TclInteger");
+	    }
+
+	    // Double check that the new int value and the
+	    // string rep would parse to the same integer.
+
+	    int i2;
+            try {
+                i2 = Util.getInt(null, tobj.toString());
+            } catch (TclException te) {
+	        throw new TclRuntimeError("exprSetInternalRep() called with int" +
+	            " value that could not be parsed from the string");
+            }
+	    if (i != i2) {
+	        throw new TclRuntimeError("exprSetInternalRep() called with int value " +
+	            i + " that does not match parsed int value " + i2 +
+                    ", parsed from str \"" +
+	            tobj.toString() + "\"");
+	    }
+	}
+
+	tobj.setInternalRep(new TclInteger(i));
+    }
+
 }
 

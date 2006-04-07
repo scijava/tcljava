@@ -7,20 +7,33 @@ package tcl.lang;
 
 public class TestTcl {
 
+    public
     static String internalRepToString(TclObject to) {
         InternalRep rep = to.getInternalRep();
 
-        if (rep instanceof TclBoolean) {
+        if (rep instanceof TclString) {
+            return "TclString";
+        } else if (rep instanceof TclBoolean) {
             return "TclBoolean";
         } else if (rep instanceof TclInteger) {
             return "TclInteger";
-        } else if (rep instanceof TclString) {
-            return "TclString";
         } else if (rep instanceof TclDouble) {
             return "TclDouble";
+        } else if (rep instanceof TclList) {
+            return "TclList";
         } else {
             return "Unknown";
         }
+    }
+
+    public
+    static String toString(TclObject to) {
+        return to.toString();
+    }
+
+    public
+    static boolean hasNoStringRep(TclObject to) {
+        return to.hasNoStringRep();
     }
 
     // Test code that checks the boolean value of an object.
@@ -70,9 +83,9 @@ public class TestTcl {
         return results.toString();
     }
 
-    // Test code that checks the boolean value of an object. We
-    // can't go changing the internal rep from some type to
-    // boolean if the object is shared.
+    // Test code that checks the boolean value of an object.
+    // A shared object can have its internal rep changed
+    // from TclString to TclBoolean and then to TclInteger.
 
     public static String testBoolQuery2(Interp interp) throws TclException {
         StringBuffer results = new StringBuffer(64);
@@ -116,7 +129,11 @@ public class TestTcl {
         return results.toString();
     }
 
-    // Use TJC method that does not change the internal rep.
+    // Use TJC.getBoolean(), this method will change the
+    // internal rep from TclString to TclInteger, but
+    // nothing is done in this case because the object
+    // is already a TclInteger and that is a valid boolean
+    // value.
 
     public static String testBoolQuery3(Interp interp) throws TclException {
         StringBuffer results = new StringBuffer(64);
@@ -136,6 +153,74 @@ public class TestTcl {
         // Use TJC.getBoolean() instead of TclBoolean.get()
         //bval = TclBoolean.get(interp, ival);
         bval = TJC.getBoolean(interp, ival);
+
+        results.append( ival.getRefCount() );
+        results.append( " " );
+        results.append( internalRepToString(ival) );
+        results.append( " " );
+        results.append( ival.toString() );
+        results.append( " " );
+        results.append( TclInteger.get(interp, ival) );
+        results.append( " " );
+        results.append( bval );
+
+        return results.toString();
+    }
+
+    // Use TJC.getBoolean(), this method will change the
+    // internal rep from TclString to TclInteger.
+
+    public static String testBoolQuery4(Interp interp) throws TclException {
+        StringBuffer results = new StringBuffer(64);
+        TclObject ival;
+        boolean bval;
+
+        ival = TclString.newInstance("2"); // string internal rep
+        ival.preserve(); // hold refCount at 1
+
+        results.append( ival.toString() );
+        results.append( " " );
+        results.append( ival.getRefCount() );
+        results.append( " " );
+        results.append( internalRepToString(ival) );
+        results.append( " " );
+
+        // Use TJC.getBoolean() instead of TclBoolean.get()
+        //bval = TclBoolean.get(interp, ival);
+        bval = TJC.getBoolean(interp, ival);
+
+        results.append( ival.getRefCount() );
+        results.append( " " );
+        results.append( internalRepToString(ival) );
+        results.append( " " );
+        results.append( ival.toString() );
+        results.append( " " );
+        results.append( TclInteger.get(interp, ival) );
+        results.append( " " );
+        results.append( bval );
+
+        return results.toString();
+    }
+
+    // Invoking TclBoolean.get() on a TclInteger that has
+    // the value 0 or 1 will return a boolean condition
+    // but it will not change the internal rep to TclBoolean.
+
+    public static String testBoolQuery5(Interp interp) throws TclException {
+        StringBuffer results = new StringBuffer(64);
+        TclObject ival;
+        boolean bval;
+
+        ival = TclInteger.newInstance(0); // string internal rep
+        ival.preserve();
+        ival.preserve(); // bump refCount to 2 (shared)
+
+        results.append( ival.getRefCount() );
+        results.append( " " );
+        results.append( internalRepToString(ival) );
+        results.append( " " );
+
+        bval = TclBoolean.get(interp, ival);
 
         results.append( ival.getRefCount() );
         results.append( " " );

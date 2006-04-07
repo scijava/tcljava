@@ -6,7 +6,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: compiledLocals.test,v 1.6 2006/03/28 02:44:19 mdejong Exp $
+# RCS: @(#) $Id: compiledLocals.test,v 1.7 2006/04/07 22:33:42 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -2192,6 +2192,452 @@ a()
 # compiled local array. It could just be
 # looked up once since that is faster than
 # creating a link var.
+
+
+
+
+# Test series 10 checks both uncompiled expr
+# commands and optimized expr operations.
+# These tests check the internal TclObject
+# type before and after expr operations.
+
+proc irep { obj } {
+    return [java::call tcl.lang.TestTcl internalRepToString $obj]
+}
+
+proc irepto { obj } {
+    list \
+        [java::call tcl.lang.TestTcl internalRepToString $obj] \
+        [java::call tcl.lang.TestTcl toString $obj]
+}
+
+proc tostring { obj } {
+    return [java::call tcl.lang.TestTcl toString $obj]
+}
+
+proc norep { obj } {
+    return [java::call tcl.lang.TestTcl hasNoStringRep $obj]
+}
+
+test compiledLocals-10.0 {expr} {
+    # This test shows that an uncompiled local
+    # starts life as a TclString and is converted
+    # to a TclInteger by the expr command.
+    proc clocals_test10_0 {} {
+        set V 1
+
+        set results [list]
+        lappend results [irepto $V]
+        lappend results [list "expr" [expr {$V}]]
+        lappend results [irepto $V]
+        return $results
+    }
+    clocals_test10_0
+} {{TclString 1} {expr 1} {TclInteger 1}}
+
+test compiledLocals-10.1 {expr} {
+    # compiled local starts life as TclInteger
+    proc clocals_test10_1 {} {
+        set V 1
+
+        set results [list]
+        lappend results [irepto $V]
+        lappend results [list "expr" [expr {$V}]]
+        lappend results [irepto $V]
+        return $results
+    }
+    clocals_tjc_compiled_proc clocals_test10_1
+    clocals_test10_1
+} {{TclInteger 1} {expr 1} {TclInteger 1}}
+
+test compiledLocals-10.2 {expr} {
+    # This compiled local is created from
+    # a word, so it is not a TclInteger.
+    proc clocals_test10_2 {} {
+        set p1 ""
+        set p2 "1"
+        set V "${p1}${p2}"
+
+        set results [list]
+        lappend results [irepto $V]
+        lappend results [list "expr" [expr {$V}]]
+        lappend results [irepto $V]
+        return $results
+    }
+    clocals_tjc_compiled_proc clocals_test10_2
+    clocals_test10_2
+} {{TclString 1} {expr 1} {TclInteger 1}}
+
+test compiledLocals-10.3 {expr} {
+    # This compiled local does not start
+    # out as a TclInteger, it is converted
+    # to one by the incr command. The incr
+    # command will also invalidate the
+    # string rep.
+    proc clocals_test10_3 {} {
+        set p1 " "
+        set p2 "1"
+        set V "$p1$p2"
+
+        set results [list]
+        lappend results [irepto $V]
+        incr V 0
+        lappend results [irepto $V]
+        lappend results [list "expr" [expr {$V}]]
+        lappend results [irepto $V]
+        return $results
+    }
+    clocals_tjc_compiled_proc clocals_test10_3
+    clocals_test10_3
+} {{TclString { 1}} {TclInteger 1} {expr 1} {TclInteger 1}}
+
+test compiledLocals-10.4 {expr} {
+    # This compiled local starts life
+    # as a TclInteger with a string
+    # rep containing a space. The expr
+    # operation does not invalidate the
+    # string rep.
+    proc clocals_test10_4 {} {
+        set V " 1"
+
+        set results [list]
+        lappend results [irepto $V]
+        lappend results [list "expr" [expr {$V}]]
+        lappend results [irepto $V]
+        return $results
+    }
+    clocals_tjc_compiled_proc clocals_test10_4
+    clocals_test10_4
+} {{TclInteger { 1}} {expr 1} {TclInteger { 1}}}
+
+test compiledLocals-10.5 {expr} {
+    # Compiled local is not a TclInteger,
+    # it is converted from a TclString to
+    # a TclInteger by the expr command.
+    proc clocals_test10_5 {} {
+        set V [string range "2" 0 end]
+
+        set results [list]
+        lappend results [irepto $V]
+        lappend results [list "expr" [expr {$V == 2}]]
+        lappend results [irepto $V]
+        return $results
+    }
+    clocals_tjc_compiled_proc clocals_test10_5
+    clocals_test10_5
+} {{TclString 2} {expr 1} {TclInteger 2}}
+
+test compiledLocals-10.6 {expr} {
+    # expr operation inside if command will
+    # convert from TclString to TclInteger.
+    proc clocals_test10_6 {} {
+        set V [string range "2" 0 end]
+
+        set results [list]
+        lappend results [irepto $V]
+        if {$V == 10} {}
+        lappend results [irepto $V]
+        return $results
+    }
+    clocals_tjc_compiled_proc clocals_test10_6
+    clocals_test10_6
+} {{TclString 2} {TclInteger 2}}
+
+test compiledLocals-10.7 {expr} {
+    # optimized expr operation to query boolean
+    # value inside if command will convert
+    # from TclString to TclInteger. One might
+    # assume this would convert to TclBoolean,
+    # but the TclInteger internal rep is preferred.
+    proc clocals_test10_7 {} {
+        set V [string range "1" 0 end]
+
+        set results [list]
+        lappend results [irepto $V]
+        if {$V} {}
+        lappend results [irepto $V]
+        return $results
+    }
+    clocals_tjc_compiled_proc clocals_test10_7
+    clocals_test10_7
+} {{TclString 1} {TclInteger 1}}
+
+test compiledLocals-10.8 {expr} {
+    # This expr operation will evaluate
+    # the TclString value 2 as non-zero
+    # and change the internal rep to TclInteger.
+    # This command is not compiled.
+    proc clocals_test10_8 {} {
+        set V [string range "2" 0 end]
+
+        set results [list]
+        lappend results [irepto $V]
+        lappend results [catch {
+            if {$V} {
+                set r OK
+            }
+        } err] $err
+        lappend results [irepto $V]
+        return $results
+    }
+    clocals_test10_8
+} {{TclString 2} 0 OK {TclInteger 2}}
+
+test compiledLocals-10.9 {expr} {
+    # This expr operation will see this
+    # TclString type as non-zero, so
+    # the if true block will be executed.
+    proc clocals_test10_9 {} {
+        set V [string range "2" 0 end]
+
+        set results [list]
+        lappend results [irepto $V]
+        lappend results [catch {
+            if {$V} {
+                set r OK
+            }
+        } err] $err
+        lappend results [irepto $V]
+        return $results
+    }
+    clocals_tjc_compiled_proc clocals_test10_9
+    clocals_test10_9
+} {{TclString 2} 0 OK {TclInteger 2}}
+
+test compiledLocals-10.10 {expr} {
+    # Passing a TclString that contains a
+    # double will convert to a TclDouble.
+    proc clocals_test10_10 {} {
+        set V [string range "2.0" 0 end]
+
+        lappend results [irepto $V]
+        lappend results [catch {
+            if {$V} {
+                set r OK
+            }
+        } err] $err
+        lappend results [irepto $V]
+        return $results
+    }
+    clocals_tjc_compiled_proc clocals_test10_10
+    clocals_test10_10
+} {{TclString 2.0} 0 OK {TclDouble 2.0}}
+
+test compiledLocals-10.11 {expr} {
+    # This format command will convert
+    # the TclString into a TclDouble.
+    # The optimized if expr should see
+    # a non-zero TclDouble as true.
+    proc clocals_test10_11 {} {
+        set V [string range "2.0" 0 end]
+
+        lappend results [irepto $V]
+        format %f $V
+        lappend results [irepto $V]
+        lappend results [catch {
+            if {$V} {
+                set r OK
+            }
+        } err] $err
+        lappend results [irepto $V]
+        return $results
+    }
+    clocals_tjc_compiled_proc clocals_test10_11
+    clocals_test10_11
+} {{TclString 2.0} {TclDouble 2.0} 0 OK {TclDouble 2.0}}
+
+test compiledLocals-10.12 {expr} {
+    # Passing a TclString that contains a
+    # double will convert to a TclDouble.
+    proc clocals_test10_12 {} {
+        set V [string range "2.0" 0 end]
+
+        lappend results [irepto $V]
+        lappend results [catch {
+            if {$V && $V} {
+                set r OK
+            }
+        } err] $err
+        lappend results [irepto $V]
+        return $results
+    }
+    clocals_tjc_compiled_proc clocals_test10_12
+    clocals_test10_12
+} {{TclString 2.0} 0 OK {TclDouble 2.0}}
+
+test compiledLocals-10.13 {expr} {
+    # Passing a TclBoolean will use the
+    # boolean condition. This boolean
+    # has no string rep.
+    proc clocals_test10_13 {} {
+        set V [string equal "" ""]
+
+        lappend results [irep $V]
+        lappend results [catch {
+            if {$V} {
+                set r OK
+            }
+        } err] $err
+        lappend results [irep $V]
+        return $results
+    }
+    clocals_tjc_compiled_proc clocals_test10_13
+    clocals_test10_13
+} {TclBoolean 0 OK TclBoolean}
+
+test compiledLocals-10.14 {expr} {
+    # A TclString that looks like a TclBoolean
+    # will not be converted by the expr logic.
+    proc clocals_test10_14 {} {
+        set V [string range "true" 0 end]
+
+        lappend results [irepto $V]
+        lappend results [catch {
+            if {$V} {
+                set r OK
+            }
+        } err] $err
+        lappend results [irepto $V]
+        return $results
+    }
+    clocals_tjc_compiled_proc clocals_test10_14
+    clocals_test10_14
+} {{TclString true} 0 OK {TclString true}}
+
+test compiledLocals-10.15 {expr} {
+    # A TclList that contains an Integer
+    # is reparsed from the string rep and
+    # converted to a TclInteger. The irep
+    # method is used so that no string rep
+    # is generated from the TclList.
+    proc clocals_test10_15 {} {
+        set i 1
+        incr i 0
+        set V [list $i]
+
+        lappend results [irep $V]
+        lappend results [irepto [lindex $V 0]]
+        lappend results [catch {
+            if {$V} {
+                set r OK
+            }
+        } err] $err
+        lappend results [irep $V]
+        return $results
+    }
+    clocals_tjc_compiled_proc clocals_test10_15
+    clocals_test10_15
+} {TclList {TclInteger 1} 0 OK TclInteger}
+
+test compiledLocals-10.16 {expr} {
+    # A TclList that contains an Integer
+    # is reparsed from the string rep and
+    # converted to a TclInteger. The irep
+    # method is used so that no string rep
+    # is generated from the TclList.
+    proc clocals_test10_16 {} {
+        set i 1
+        incr i 0
+        set V [list $i]
+
+        lappend results [irep $V]
+        lappend results [irepto [lindex $V 0]]
+        lappend results [catch {
+            if {$V && $V} {
+                set r OK
+            }
+        } err] $err
+        lappend results [irep $V]
+        return $results
+    }
+    clocals_tjc_compiled_proc clocals_test10_16
+    clocals_test10_16
+} {TclList {TclInteger 1} 0 OK TclInteger}
+
+test compiledLocals-10.17 {expr} {
+    # This TclString object is converted
+    # into a TclDouble, but it has a string
+    # rep that looks like an integer. The
+    # expr layer will convert the object
+    # back to a TclInteger so that parse
+    # operations in the future will know
+    # it is an integer.
+    proc clocals_test10_17 {} {
+        set V [string range "10" 0 end]
+
+        lappend results [irepto $V]
+        format %f $V
+        lappend results [irepto $V]
+        lappend results [catch {
+            expr {$V}
+        } err] $err
+        lappend results [irepto $V]
+        return $results
+    }
+    clocals_tjc_compiled_proc clocals_test10_17
+    clocals_test10_17
+} {{TclString 10} {TclDouble 10} 0 10 {TclInteger 10}}
+
+test compiledLocals-10.18 {expr} {
+    # This TclDouble has no string rep,
+    # so the expr layer knows that it can
+    # be used without reparsing or checking
+    # to see if it is an integer.
+    proc clocals_test10_18 {} {
+        set V 10.0
+
+        lappend results [irep $V]
+        lappend results [catch {
+            expr {$V}
+        } err] $err
+        lappend results [irep $V]
+        return $results
+    }
+    clocals_tjc_compiled_proc clocals_test10_18
+    clocals_test10_18
+} {TclDouble 0 10.0 TclDouble}
+
+test compiledLocals-10.19 {expr} {
+    # This TclDouble has no string rep,
+    # so the optimized boolean expr just
+    # uses it.
+    proc clocals_test10_19 {} {
+        set V 10.0
+
+        lappend results [irep $V]
+        lappend results [catch {
+            if {$V} {
+                set r OK
+            }
+        } err] $err
+        lappend results [irep $V]
+        return $results
+    }
+    clocals_tjc_compiled_proc clocals_test10_19
+    clocals_test10_19
+} {TclDouble 0 OK TclDouble}
+
+test compiledLocals-10.20 {expr} {
+    # A TclBoolean local var is used by
+    # the expr layer without parsing
+    # from the string. It is treated
+    # as a string value since the
+    # string "true" could be used in
+    # a string compare expr operation.
+
+    proc clocals_test10_20 {} {
+        set V true
+
+        lappend results [irep $V]
+        lappend results [catch {
+            expr {$V}
+        } err] $err
+        lappend results [irep $V]
+        return $results
+    }
+    clocals_tjc_compiled_proc clocals_test10_20
+    clocals_test10_20
+} {TclBoolean 0 true TclBoolean}
 
 
 # cleanup

@@ -73,6 +73,15 @@ tcltest::test testtjc-1.9 {call TestTcl methds} {
     java::call tcl.lang.TestTcl testBoolQuery3 [java::getinterp]
 } {2 1 TclInteger 1 TclInteger 2 2 true}
 
+tcltest::test testtjc-1.10 {call TestTcl methds} {
+    java::call tcl.lang.TestTcl testBoolQuery4 [java::getinterp]
+} {2 1 TclString 1 TclInteger 2 2 true}
+
+tcltest::test testtjc-1.11 {call TestTcl methds} {
+    java::call tcl.lang.TestTcl testBoolQuery5 [java::getinterp]
+} {2 TclInteger 2 TclInteger 0 0 false}
+
+
 tcltest::test testtjc-2.0 {call TestTJC methds} {
     java::call TestTJC testSwitchInvoke1 [java::getinterp]
 } {pass}

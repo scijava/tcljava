@@ -1,3 +1,38 @@
+2006-04-07  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        Update Jacl's expr module to behave like Tcl when
+        dealing with TclObject arguments to expr commands.
+        The expr module will now change the internal rep
+        of a TclString into either a TclInteger or TclDouble
+        when a number can be parsed from the string rep.
+        This makes future calls to expr with this same object
+        much faster since the string need not be parsed into
+        a number again.
+
+        * src/jacl/tcl/lang/Expression.java (ExprParseObject,
+        ExprParseString): Don't check for TclList internal
+        rep when attempting to parse a number. If a TclDouble
+        is found but the number looks like a TclInteger, then
+        convert the number back to a TclInteger. Pass a TclObject
+        argument to ExprParseString and let it change the
+        internal rep when a number is parsed from the string.
+        * src/tcljava/tcl/lang/TclDouble.java (exprSetInternalRep):
+        * src/tcljava/tcl/lang/TclInteger.java (exprSetInternalRep):
+        Implement util methods to allow the expr module to change
+        the internal rep of an object to an already parsed number.
+        * src/tests/tjc/tcl/lang/TestTcl.java: Add test methods.
+        * src/tjc/tcl/lang/TJC.java (getBoolean): Reimplement
+        string parsing logic so that any type of expr string can
+        be passed to getBoolean. The previous logic incorrectly
+        assumed that passed in TclString objects would contain
+        a string that could be parsed as a boolean. This bug
+        would only show up in compiled code that passed a TclString
+        object to an expr like [if {$obj} {...}].
+        * tests/tclbench/expr.bench: Add expr bench tests.
+        * tests/tjc/compiledLocals.test: Add tests to check the
+        internal rep of TclObject values passed to expr commands.
+        * tests/tjc/testtjc.test: Test new expr semantics.
+
 2006-04-05  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/jacl/tcl/lang/Interp.java (Interp):

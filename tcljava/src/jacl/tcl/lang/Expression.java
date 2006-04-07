@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Expression.java,v 1.22 2006/03/08 19:12:07 mdejong Exp $
+ * RCS: @(#) $Id: Expression.java,v 1.23 2006/04/07 22:33:41 mdejong Exp $
  *
  */
 
@@ -334,18 +334,17 @@ class Expression {
      * variable evaluation, fill in a ExprValue with the
      * parsed result. If the TclObject already has an
      * internal rep that is a numeric type, then no need to
-     * parse from the string rep.
-     *
-     * Note that this method does not change the internal rep
-     * of parsed objects.
+     * parse from the string rep. If the string rep is parsed
+     * into a numeric type, then update the internal rep
+     * of the object to the parsed value.
      */
 
     static void
     ExprParseObject(Interp interp, TclObject obj, ExprValue value)
 	    throws TclException
     {
-        // If the TclObject already has an integer, floating point,
-        // or boolean representation then use it.
+        // If the TclObject already has an integer, boolean,
+        // or floating point internal representation, use it.
 
         InternalRep rep = obj.getInternalRep();
 
@@ -403,116 +402,145 @@ class Expression {
             }
             String str = obj.toString();
             if (looksLikeInt(str, str.length(), 0, true)) {
-                // FIXME: Tcl seems to convert a double that
-                // looks like an int back into an
-                // integer internal rep in this case.
-                // That would avoid lots of pointless
-                // calls to looksLikeInt() in a loop.
-                value.setIntValue((int) dval, str);
+                // Convert a double that looks like an integer
+                // back into an integer internal rep.
+
+                int ival = (int) dval;
+                value.setIntValue(ival, str);
+                TclInteger.exprSetInternalRep(obj, ival);
                 return;
             } else {
                 value.setDoubleValue(dval, str);
                 return;
             }
-        } else if (rep instanceof TclList) {
-            if (obj.hasNoStringRep() && (TclList.getLength(interp, obj) == 1)) {
-                // If a pure list is of length one, then
-                // check for the case of an integer or boolean.
-
-                TclObject elem = TclList.index(interp, obj, 0);
-                if (elem.getInternalRep() instanceof TclInteger) {
-                    value.setIntValue(TclInteger.get(interp, elem),
-                        (elem.hasNoStringRep() ? null : elem.toString()));
-                    return;
-                }
-            }
         }
 
-        // Otherwise, parse value from the string rep
+        // Otherwise, try to parse a numeric value from the
+        // object's string rep.
 
-        ExprParseString(interp, obj.toString(), value);
+        ExprParseString(interp, obj, value);
+
         return;
     }
 
     /**
-     * Given a string (such as one coming from command or variable
-     * substitution), fill in an ExprValue based on the string value.
-     * The value may be a floating-point, an integer, or a string.
+     * TclParseNumber -> ExprParseString
+     *
+     * Given a TclObject that contains a String to be parsed (from
+     * a command or variable subst), fill in an ExprValue based on
+     * the string's numeric value. The value may be a floating-point,
+     * an integer, or a string. If the string value is converted to
+     * a numeric value, then update the internal rep of the TclObject.
      *
      * @param interp the context in which to evaluate the expression.
-     * @param s the string to parse.
+     * @param obj the TclObject containing the string to parse.
      * @param value the ExprValue object to save the parsed value in.
-     * @exception TclException for malformed expressions.
      */
 
     private static void
-    ExprParseString(Interp interp, String s, ExprValue value)
-	    throws TclException {
-
+    ExprParseString(Interp interp, TclObject obj, ExprValue value) {
 	char c;
-	int len;
-
-	if (s == "") {
-	    len = 0;
-	} else {
-	    len = s.length();
-	}
+	int ival;
+	double dval;
+	String s = obj.toString();
+	int len = s.length();
 
 	//System.out.println("now to ExprParseString ->" + s +
 	//	 "<- of length " + len);
 
-	// Take shortcut when string is of length 0, as there is
-        // only a string rep for an empty string (no int or double rep)
-        // this will happend a lot so this shortcut will speed things up!
-
 	if (len == 0) {
-	    value.setStringValue(s);
+	    // Take shortcut when string is of length 0, as the
+	    // empty string can't represent an int, double, or boolean.
+
+	    value.setStringValue("");
 	    return;
 	} else if (len == 1) {
-            // Check for really common strings of length 1
-            // that we know will be integers.
-            c = s.charAt(0);
-            switch (c) {
-                case '0':
-                case '1':
-                case '2':
-                case '3':
-                case '4':
-                case '5':
-                case '6':
-                case '7':
-                case '8':
-                case '9':
-		    value.setIntValue(c - '0', s);
-		    return;
-            }
-	} else if (len == 2) {
-            // Check for really common strings of length 2
-            // that we know will be integers.
-            if (s.equals("-1")) {
-                value.setIntValue(-1, s);
-                return;
-            }
-        } else if (len == 3) {
-            // Check for really common strings of length 3
-            // that we know will be doubles.
-            if (s.equals("0.0")) {
-                value.setDoubleValue(0.0, s);
-                return;
-            } else if (s.equals("0.5")) {
-                value.setDoubleValue(0.5, s);
-                return;
-            } else if (s.equals("1.0")) {
-                value.setDoubleValue(1.0, s);
-                return;
-            }
-        }
+	    // Check for really common strings of length 1
+	    // that we know will be integers.
 
-	int i;
+	    c = s.charAt(0);
+	    switch (c) {
+	        case '0':
+	        case '1':
+	        case '2':
+	        case '3':
+	        case '4':
+	        case '5':
+	        case '6':
+	        case '7':
+	        case '8':
+	        case '9':
+	            ival = (int) (c - '0');
+	            value.setIntValue(ival, s);
+	            TclInteger.exprSetInternalRep(obj, ival);
+	            return;
+	        default:
+	            // We know this string can't be parsed
+	            // as a number, so just treat it as
+	            // a string. A string of length 1 is
+	            // very common.
+
+	            value.setStringValue(s);
+	            return;
+	    }
+	} else if (len == 2) {
+	    // Check for really common strings of length 2
+	    // that we know will be integers.
+
+	    c = s.charAt(0);
+	    if (c == '-') {
+	        c = s.charAt(1);
+	        switch (c) {
+	            case '0':
+	            case '1':
+	            case '2':
+	            case '3':
+	            case '4':
+	            case '5':
+	            case '6':
+	            case '7':
+	            case '8':
+	            case '9':
+	                ival = (int) -(c - '0');
+	                value.setIntValue(ival, s);
+	                TclInteger.exprSetInternalRep(obj, ival);
+	                return;
+	        }
+	    }
+	} else if (len == 3) {
+	    // Check for really common strings of length 3
+	    // that we know will be doubles.
+
+	    c = s.charAt(1);
+	    if (c == '.') {
+	        if (s.equals("0.0")) {
+	            dval = 0.0;
+	            value.setDoubleValue(dval, s);
+	            TclDouble.exprSetInternalRep(obj, dval);
+	            return;
+	        } else if (s.equals("0.5")) {
+	            dval = 0.5;
+	            value.setDoubleValue(dval, s);
+	            TclDouble.exprSetInternalRep(obj, dval);
+	            return;
+	        } else if (s.equals("1.0")) {
+	            dval = 1.0;
+	            value.setDoubleValue(dval, s);
+	            TclDouble.exprSetInternalRep(obj, dval);
+	            return;
+	        } else if (s.equals("2.0")) {
+	            dval = 2.0;
+	            value.setDoubleValue(dval, s);
+	            TclDouble.exprSetInternalRep(obj, dval);
+	            return;
+	        }
+	    }
+	}
+
 	if (looksLikeInt(s, len, 0, false)) {
 	    //System.out.println("string looks like an int");
 
-	    // Note: the Util.strtoul() method handles 32 unsigned values
+	    // Note: the Util.strtoul() method handles 32bit unsigned values
 	    // as well as leading sign characters.
 
 	    StrtoulResult res = interp.strtoulResult;
@@ -528,7 +556,7 @@ class Expression {
 
                 boolean trailing_blanks = true;
 
-	        for (i = res.index; i < len ; i++) {
+	        for (int i = res.index; i < len ; i++) {
                     if ((c = s.charAt(i)) != ' ' &&
                             !Character.isWhitespace(c)) {
                         trailing_blanks = false;
@@ -536,8 +564,10 @@ class Expression {
 	        }
 
                 if (trailing_blanks) {
-	            //System.out.println("string is an Integer of value " + res.value);
-		    value.setIntValue((int) res.value, s);
+		    ival = (int) res.value;
+	            //System.out.println("string is an Integer of value " + ival);
+		    value.setIntValue(ival, s);
+		    TclInteger.exprSetInternalRep(obj, ival);
 		    return;
                 } else {
 		    //System.out.println("string failed trailing_blanks test, not an integer");
@@ -554,7 +584,7 @@ class Expression {
 
                 boolean trailing_blanks = true;
 
-	        for (i = res.index; i < len ; i++) {
+	        for (int i = res.index; i < len ; i++) {
                     if ((c = s.charAt(i)) != ' ' &&
                             !Character.isWhitespace(c)) {
                         trailing_blanks = false;
@@ -562,8 +592,10 @@ class Expression {
 	        }
 
                 if (trailing_blanks) {
-	            //System.out.println("string is a Double of value " + res.value);
-		    value.setDoubleValue(res.value, s);
+		    dval = res.value;
+	            //System.out.println("string is a Double of value " + dval);
+		    value.setDoubleValue(dval, s);
+		    TclDouble.exprSetInternalRep(obj, dval);
 		    return;
                 }
 

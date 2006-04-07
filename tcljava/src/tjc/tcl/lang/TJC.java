@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TJC.java,v 1.22 2006/03/27 21:42:55 mdejong Exp $ *
+ * RCS: @(#) $Id: TJC.java,v 1.23 2006/04/07 22:33:41 mdejong Exp $ *
  */
 
 // Runtime support for TJC compiler implementation.
@@ -1079,8 +1079,10 @@ public class TJC {
     }
 
     // Most efficient way to query a TclObject
-    // to determine its boolean value. This method
-    // will not change the internal rep of the obj.
+    // to determine its boolean value. If a
+    // TclString is passed into this method,
+    // it will be parsed and the object's internal
+    // rep will be updated to a numeric type.
 
     public static boolean getBoolean(
         Interp interp,
@@ -1095,18 +1097,13 @@ public class TJC {
             return TclBoolean.get(interp, obj);
         } else if (rep instanceof TclDouble) {
             return (TclDouble.get(interp, obj) != 0.0);
-        } else if (rep instanceof TclList) {
-            if (obj.hasNoStringRep() && (TclList.getLength(interp, obj) == 1)) {
-                // If a pure list is of length one, then
-                // check for the case of an integer or boolean.
-
-                TclObject elem = TclList.index(interp, obj, 0);
-                if (elem.getInternalRep() instanceof TclInteger) {
-                    return (TclInteger.get(interp, elem) != 0);
-                }
-            }
         }
-        return Util.getBoolean(interp, obj.toString());
+
+        ExprValue value = interp.expr.grabExprValue();
+        Expression.ExprParseObject(interp, obj, value);
+        boolean b = value.getBooleanValue(interp);
+        interp.expr.releaseExprValue(value);
+        return b;
     }
 
     // This method will invoke logic for the switch

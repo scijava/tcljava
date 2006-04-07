@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclDouble.java,v 1.4 2005/09/30 02:12:17 mdejong Exp $
+ * RCS: @(#) $Id: TclDouble.java,v 1.5 2006/04/07 22:33:41 mdejong Exp $
  *
  */
 
@@ -375,6 +375,54 @@ public String
 toString()
 {
     return Util.printDouble(value);
+}
+
+/**
+ * This special helper method is used only by
+ * the Expression module. This method will
+ * change the internal rep to a TclDouble with
+ * the passed in double value. This method does
+ * not invalidate the string rep since the
+ * object's value is not being changed.
+ *
+ * @param tobj the object to operate on.
+ * @param d the new double value.
+ */
+static void exprSetInternalRep(TclObject tobj, double d) {
+    // Extra debug checking
+    final boolean validate = false;
+
+    if (validate) {
+
+        // Double check that the internal rep is not
+        // already of type TclDouble.
+
+        InternalRep rep = tobj.getInternalRep();
+
+        if (rep instanceof TclDouble) {
+            throw new TclRuntimeError("exprSetInternalRep() called with object" +
+                " that is already of type TclDouble");
+        }
+
+        // Double check that the new int value and the
+        // string rep would parse to the same integer.
+
+        double d2;
+        try {
+            d2 = Util.getDouble(null, tobj.toString());
+        } catch (TclException te) {
+            throw new TclRuntimeError("exprSetInternalRep() called with double" +
+                " value that could not be parsed from the string");
+        }
+        if (d != d2) {
+            throw new TclRuntimeError("exprSetInternalRep() called with double value " +
+                d + " that does not match parsed double value " + d2 +
+                ", parsed from str \"" +
+                tobj.toString() + "\"");
+        }
+    }
+
+    tobj.setInternalRep(new TclDouble(d));
 }
 
 } // end TclDouble

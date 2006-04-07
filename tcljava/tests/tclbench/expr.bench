@@ -15,14 +15,32 @@ proc expr-braced {a} {
     expr {$a*$b+log($c)-pow($d,$e)}
 }
 
-proc expr-3.1 {a} {
+proc expr-evaluate-one {a} {
+    # This test will evaluate an argument object
+    # as an expr value. This test could parse
+    # the argument object from a string and
+    # change the internal rep to a numeric type.
     expr {$a}
 }
-proc expr-3.2 {a} {
+
+proc expr-evaluate-add-ten {a} {
+    # This test will evaluate the same argument object ten
+    # times. The expr layer should parse the object into
+    # a numeric internal rep the first time $a is read.
+    # Each read that follows should use the parsed
+    # numberic internal rep. If this logic is not implemented,
+    # then this test will not execute quickly because
+    # the integer values are parsed from the string each time.
+
     expr {$a + $a + $a + $a + $a + $a + $a + $a + $a + $a}
 }
-proc expr-3.3 {a} {
-    expr {$a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + $a +  $a + $a + $a + $a}
+proc expr-evaluate-add-fifty {a} {
+    # Same as above except that many more evaluations are done.
+    expr {$a + $a + $a + $a + $a + $a + $a + $a + $a + $a + \
+          $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + \
+          $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + \
+          $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + \
+          $a + $a + $a + $a + $a + $a + $a + $a + $a + $a}
 }
 
 proc expr-incr-incr {value} {
@@ -80,6 +98,44 @@ proc expr-empty-string-loop {} {
     }
     return
 }
+
+proc expr-empty-string-eq-loop {} {
+    set a ""
+    for {set i 0} {$i < 1000} {incr i} {
+        expr {$a eq ""}
+    }
+    return
+}
+
+# This next test compares two objects,
+# both are parsed into expr value objects.
+# The expr does not know that the second
+# argument is a string type like in the
+# two tests above.
+
+proc expr-empty-string-two-obj-loop {} {
+    set a ""
+    set b ""
+    for {set i 0} {$i < 1000} {incr i} {
+        expr {$a == $b}
+    }
+    return
+}
+
+# This next test compares two objects,
+# the objects are not parsed since the
+# string compare eq operator skips
+# the parse step.
+
+proc expr-empty-string-two-obj-eq-loop {} {
+    set a ""
+    set b ""
+    for {set i 0} {$i < 1000} {incr i} {
+        expr {$a eq $b}
+    }
+    return
+}
+
 
 # Negate compare a string to the empty string constant. 
 
@@ -139,6 +195,43 @@ proc expr-equal-same-big-constant-string {} {
     expr {$a == "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ" || $a == "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ"}
 }
 
+# Compare constant string in variable to constant string. Do this a number of
+# times so that the expr evaluation time is significant as compared to the
+# time required to just invoke the command.
+
+proc expr-equal-same-char-string {} {
+    set a "a"
+    expr { \
+        ($a eq "a") && ($a eq "a") && ($a eq "a") && ($a eq "a") && ($a eq "a") && \
+        ($a eq "a") && ($a eq "a") && ($a eq "a") && ($a eq "a") && ($a eq "a") && \
+        ($a eq "a") && ($a eq "a") && ($a eq "a") && ($a eq "a") && ($a eq "a") && \
+        ($a eq "a") && ($a eq "a") && ($a eq "a") && ($a eq "a") && ($a eq "a") \
+    }
+}
+
+proc expr-equal-same-char-string-parse {} {
+    set a "a"
+    expr { \
+        ($a == "a") && ($a == "a") && ($a == "a") && ($a == "a") && ($a == "a") && \
+        ($a == "a") && ($a == "a") && ($a == "a") && ($a == "a") && ($a == "a") && \
+        ($a == "a") && ($a == "a") && ($a == "a") && ($a == "a") && ($a == "a") && \
+        ($a == "a") && ($a == "a") && ($a == "a") && ($a == "a") && ($a == "a") \
+    }
+}
+
+# Compare constant string for char to constant string.
+
+proc expr-equal-same-char-string-index {} {
+    set a [string index "abc" 0]
+    expr { \
+        ($a eq "a") && ($a eq "a") && ($a eq "a") && ($a eq "a") && ($a eq "a") && \
+        ($a eq "a") && ($a eq "a") && ($a eq "a") && ($a eq "a") && ($a eq "a") && \
+        ($a eq "a") && ($a eq "a") && ($a eq "a") && ($a eq "a") && ($a eq "a") && \
+        ($a eq "a") && ($a eq "a") && ($a eq "a") && ($a eq "a") && ($a eq "a") \
+    }
+}
+
+
 # Compare an object that contains an int to a constant int value.
 
 proc expr-equal-constant-int {} {
@@ -150,7 +243,7 @@ proc expr-equal-constant-int {} {
     expr {$a == 0}
 }
 
-# Compare an object to a constant int value in a loop test
+# Compare an object to a constant int value in the loop test condition.
 
 proc expr-equal-constant-int-loop {} {
     set sum 0
@@ -194,9 +287,33 @@ bench -desc "expr-inline" -body {
     expr {$a*$b+log($c)-pow($d,$e)}
 }
 
-bench -desc "expr-one-operand" -body {expr-3.1 1}
-bench -desc "expr-ten-operands" -body {expr-3.2 1}
-bench -desc "expr-fifty-operands" -body {expr-3.3 1}
+bench -desc "expr-evaluate-one_int" -body {expr-evaluate-one 1}
+bench -desc "expr-evaluate-add-ten_int" -body {expr-evaluate-add-ten 1}
+
+bench -desc "expr-evaluate-add-fifty_int_easy" -body {expr-evaluate-add-fifty 1}
+
+# Unlike the test above, the number passed in can't be easily special cased.
+# Passing a trivial int could lead to confusing results because it would seem
+# like reparsing the string each time was not taking much longer than
+# changing the internal rep of the object. The same goes for double parsing.
+
+bench -desc "expr-evaluate-add-fifty_int_hard" -body {expr-evaluate-add-fifty 18853837}
+
+# This test passes an object that is already an integer so no parse is needed.
+
+set expr_int_obj [expr {int(50)}]
+
+bench -desc "expr-evaluate-add-fifty_int_obj" -body {expr-evaluate-add-fifty $expr_int_obj}
+
+bench -desc "expr-evaluate-one_double" -body {expr-evaluate-one 1.0}
+bench -desc "expr-evaluate-add-ten_double" -body {expr-evaluate-add-ten 1.0}
+
+bench -desc "expr-evaluate-add-fifty_double_easy" -body {expr-evaluate-add-fifty 1.0}
+bench -desc "expr-evaluate-add-fifty_double_hard" -body {expr-evaluate-add-fifty 123.78964e-4}
+
+set expr_double_obj [expr {double(123.78964e-4)}]
+bench -desc "expr-evaluate-add-fifty_double_obj" -body {expr-evaluate-add-fifty $expr_double_obj}
+
 
 bench -desc "expr-incr-with-incr" -body {expr-incr-incr 1}
 bench -desc "expr-incr-with-expr" -body {expr-incr-expr 1}
@@ -204,6 +321,11 @@ bench -desc "expr-big-expression" -body {expr-big}
 
 bench -desc "expr-empty-string" -body {expr-empty-string}
 bench -desc "expr-empty-string-loop" -body {expr-empty-string-loop}
+bench -desc "expr-empty-string-eq-loop" -body {expr-empty-string-eq-loop}
+
+bench -desc "expr-empty-string-two-obj-loop" -body {expr-empty-string-two-obj-loop}
+bench -desc "expr-empty-string-two-obj-eq-loop" -body {expr-empty-string-two-obj-eq-loop}
+
 bench -desc "expr-empty-not-string" -body {expr-empty-not-string}
 
 bench -desc "expr-equal-same-constant-string" \
@@ -211,6 +333,15 @@ bench -desc "expr-equal-same-constant-string" \
 
 bench -desc "expr-equal-same-big-constant-string" \
     -body {expr-equal-same-big-constant-string}
+
+bench -desc "expr-equal-same-char-string-parse" \
+    -body {expr-equal-same-char-string-parse}
+
+bench -desc "expr-equal-same-char-string" \
+    -body {expr-equal-same-char-string}
+
+bench -desc "expr-equal-same-char-string-index" \
+    -body {expr-equal-same-char-string-index}
 
 bench -desc "expr-equal-constant-int" -body {expr-equal-constant-int}
 bench -desc "expr-equal-constant-int-loop" -body {expr-equal-constant-int-loop}
