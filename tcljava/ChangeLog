@@ -1,3 +1,46 @@
+2006-04-10  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/jacl/tcl/lang/FormatCmd.java: Fix typos.
+        * src/jacl/tcl/lang/Util.java (strtod): Support
+        both Inf and Infinity so that both Tcl and
+        Java strings can be used for a TclDouble.
+        This also makes it possible to pass these
+        strings to Java methods as a double or float.
+        * src/native/javaUtil.c (getDoubleNative):
+        Rename native impl from getDouble to getDoubleNative.
+        * src/tclblend/tcl/lang/Util.java (getDouble,
+        getDoubleNative): Create wrapper around native
+        getDouble call so that the strings Inf, Infinity,
+        and NaN can be checked for before sending the
+        string to the native double code. This makes
+        TclBlend's impl of Util.getDouble() work
+        like the Jacl impl.
+        * src/tcljava/tcl/lang/JavaInvoke.java (newInstance,
+        convertTclObject, parseJavaInt, parseJavaLong):
+        When invoking a primitive wrapper constructor,
+        choose the version that accepts a primitive
+        Java type. This is needed so that the method
+        layer will not incorrectly choose the version
+        that accepts a String since that would bypass
+        all the primitive conversion logic.
+        Implement new int and long parsing routines
+        that correctly handle min and max values for
+        Java int and long types. Tcl does not use signed
+        32 bit numbers when parsing so it is not able to
+        detect overflow and underflow. Address this by
+        parsing from the string rep of each integer or
+        long before passing to Java. This change also
+        fixes passing of long literals which were being
+        incorrectly cropped to integer values before
+        being passed to Java.
+        * src/tcljava/tcl/lang/TclDouble.java: Argument name.
+        * tests/tcljava/JavaInvoke.test: Test correct
+        min/max integer and long values and error messages
+        when a number is out of range.
+        * tests/tcljava/JavaNewCmd.test: Test for typed
+        constructor invocations as well as a host of
+        floating point bound and integer bound issues.
+
 2006-04-07  Mo DeJong  <mdejong@users.sourceforge.net>
 
         Update Jacl's expr module to behave like Tcl when

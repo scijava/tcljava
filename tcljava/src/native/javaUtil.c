@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaUtil.c,v 1.6 2000/10/29 06:00:42 mdejong Exp $
+ * RCS: @(#) $Id: javaUtil.c,v 1.7 2006/04/10 21:13:56 mdejong Exp $
  */
 
 #include "java.h"
@@ -73,12 +73,12 @@ Java_tcl_lang_Util_getBoolean(
 /*
  *----------------------------------------------------------------------
  *
- * Java_tcl_lang_Util_getDouble --
+ * Java_tcl_lang_Util_getDoubleNative --
  *
  *	Convert a string to a double value.
  *
  * Class:     tcl_lang_Util
- * Method:    getDouble
+ * Method:    getDoubleNative
  * Signature: (Ltcl/lang/Interp;Ljava/lang/String;)D
  *
  * Results:
@@ -91,7 +91,7 @@ Java_tcl_lang_Util_getBoolean(
  */
 
 jdouble JNICALL
-Java_tcl_lang_Util_getDouble(
+Java_tcl_lang_Util_getDoubleNative(
     JNIEnv *env,		/* Java environment. */
     jclass utilClass,		/* Handle to Util class. */
     jobject interpObj,		/* Interp object. */

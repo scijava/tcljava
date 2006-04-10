@@ -5,7 +5,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: JavaInvoke.test,v 1.12 2003/01/02 22:29:36 mdejong Exp $
+# RCS: @(#) $Id: JavaInvoke.test,v 1.13 2006/04/10 21:13:56 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -450,7 +450,7 @@ set clsdata(java.lang.Integer) {
     {1 {0 1}}
     {0x100 {0 256}}
     {0x1000000000 
-	{1 {integer value too large to represent}}}
+	{1 {integer value too large to represent in a int}}}
 }
 set clsdata(java.lang.Boolean) {
     {0 {0 false}}
@@ -463,8 +463,10 @@ set clsdata(java.lang.Long) {
     {0 {0 0}}
     {1 {0 1}}
     {0x100 {0 256}}
-    {0x1000000000 
-	{1 {integer value too large to represent}}}
+    {0x1000000000
+	{0 68719476736}}
+    {0x10000000000000000
+	{1 {integer value too large to represent in a long}}}
 }
 set clsdata(java.lang.Float) {
     {0.0 {0 0.0}}
@@ -554,10 +556,10 @@ set values {
     {float 3.4 {0 3.40000009537}}
     {float blat {1 {expected floating-point number but got "blat"}}}
     {int 2 {0 2}}
-    {int 2147483648 {0 -2147483648}}
-    {int 21474836480 {1 {integer value too large to represent}}}
+    {int 2147483647 {0 2147483647}}
+    {int 2147483648 {1 {integer value too large to represent in a int}}}
     {int 2.3 {1 {expected integer but got "2.3"}}}
-    {long 2147483648 {0 -2147483648}}
+    {long 2147483648 {0 2147483648}}
     {long 2.3 {1 {expected integer but got "2.3"}}}
     {short 3 {0 3}}
     {short 40000 {1 {integer value too large to represent in a short}}}

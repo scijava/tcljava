@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaInvoke.java,v 1.20 2006/02/08 23:53:47 mdejong Exp $
+ * RCS: @(#) $Id: JavaInvoke.java,v 1.21 2006/04/10 21:13:56 mdejong Exp $
  *
  */
 
@@ -56,14 +56,44 @@ static TclObject
 newInstance(
     Interp interp,              // Current interpreter.
     TclObject signature,	// Constructor signature.
-    TclObject argv[],		// Arguments.
-    int startIdx,		// Index of the first argument in argv[] to
+    TclObject[] argv,		// Arguments.
+    int startIdx,		// Index of the first argument in argv to
 				// pass to the constructor.
     int count)			// Number of arguments to pass to the
 				// constructor.
 throws
     TclException		// Standard Tcl exception.
 {
+    // Some built-in types have wrapper classes that behave in
+    // unexpected ways. For example, the Boolean constructor
+    // is overloaded to accept either a boolean primitive or
+    // a String value. The FuncSig module prefers method signatures
+    // that accept a String, but the version that accepts a String
+    // does not match Tcl's number parsing semantics. Fix this problem
+    // by explicitly invoking the wrapper constructor that accepts
+    // a primitive type so that the type conversion logic in this
+    // module is used to pass a Tcl value to a Java primitive argument.
+
+    if (count == 1) {
+        if (signature.toString().equals("Boolean")) {
+            signature = TclString.newInstance("Boolean boolean");
+        } else if (signature.toString().equals("Integer")) {
+            signature = TclString.newInstance("Integer int");
+        } else if (signature.toString().equals("Byte")) {
+            signature = TclString.newInstance("Byte byte");
+        } else if (signature.toString().equals("Short")) {
+            signature = TclString.newInstance("Short short");
+        } else if (signature.toString().equals("Character")) {
+            signature = TclString.newInstance("Character char");
+        } else if (signature.toString().equals("Long")) {
+            signature = TclString.newInstance("Long long");
+        } else if (signature.toString().equals("Float")) {
+            signature = TclString.newInstance("Float float");
+        } else if (signature.toString().equals("Double")) {
+            signature = TclString.newInstance("Double double");
+        }
+    }
+
     FuncSig sig = FuncSig.get(interp, null, signature, argv, startIdx,
 	    count, false);
 
@@ -847,59 +877,81 @@ throws
 	    return tclObj.toString();
 
 	} else if ((type == Integer.TYPE) || (type == Integer.class)) {
-	    return new Integer(TclInteger.get(interp, tclObj));
+	    // If an object is already a TclInteger type, then pass
+	    // the existing value directly. Otherwise, parse the
+	    // number as a Java int and see if it can be represented
+	    // as a Java int. This logic will raise an exception
+	    // when a number can't be represented as a 32bit signed int.
+	    // Tcl's weird number parsing rules will wrap the integer
+	    // around and calling code can't detect an overflow.
+
+	    int jint = parseJavaInt(interp, tclObj);
+	    return new Integer(jint);
 
 	} else if ((type == Boolean.TYPE) || (type == Boolean.class)) {
 	    return new Boolean(TclBoolean.get(interp, tclObj));
 
 	} else if ((type == Long.TYPE) || (type == Long.class)) {
-	    // A tcl integer can be converted a long (widening conversion)
-	    // and a Java long may be represented as a tcl integer if it
-	    // is small enogh, so we try to convert the string to a
-	    // tcl integer and if that fails we try to convert to a
-	    // java Long object. If both of these fail throw original error.
+	    // If an object is already a TclInteger type, then pass
+	    // the existing value directly. Otherwise, parse the
+	    // number as a Java long. Raise a TclException if the
+	    // number is not an integer or is outside the long bounds.
 
-	    try {
-	        return new Long(TclInteger.get(interp, tclObj));
-	    } catch (TclException e1) {
-	        try {
-	            return new Long( tclObj.toString() );
-	        } catch (NumberFormatException e2) {
-	            throw e1;
-	        }
-	    }
+	    long jlong = parseJavaLong(interp, tclObj);
+	    return new Long(jlong);
 
 	} else if ((type == Float.TYPE) || (type == Float.class)) {
-	    return new Float((float) TclDouble.get(interp, tclObj));
+	    // Tcl stores floating point numbers as doubles,
+	    // so we just need to check to see if the value
+	    // is outside the float bounds. Invoking a Java
+	    // method should not automatically lose precision.
+
+	    double jdouble = TclDouble.get(interp, tclObj);
+	    float jfloat = (float) jdouble;
+
+	    if ((jdouble == Double.NaN) ||
+	           (jdouble == Double.NEGATIVE_INFINITY) ||
+	           (jdouble == Double.POSITIVE_INFINITY)) {
+	        // No-op
+	    } else if ((jdouble != 0.0) &&
+	          ((Math.abs(jdouble) > (double) Float.MAX_VALUE) ||
+	           (Math.abs(jdouble) < (double) Float.MIN_VALUE))) {
+	        throw new TclException(interp,
+	            "double value too large to represent in a float");
+	    }
+	    return new Float(jfloat);
 
 	} else if ((type == Double.TYPE) || (type == Double.class)) {
 	    return new Double(TclDouble.get(interp, tclObj));
 
 	} else if ((type == Byte.TYPE) || (type == Byte.class)) {
-	    int i = TclInteger.get(interp, tclObj);
-	    if ((i < Byte.MIN_VALUE) || (i > Byte.MAX_VALUE)) {
+	    // Parse a Java int, then check valid byte range.
+
+	    int jint = parseJavaInt(interp, tclObj);
+	    if ((jint < Byte.MIN_VALUE) || (jint > Byte.MAX_VALUE)) {
 		throw new TclException(interp,
 		   "integer value too large to represent in a byte");
 	    }
-	    return new Byte((byte) i);
+	    return new Byte((byte) jint);
 
 	} else if ((type == Short.TYPE) || (type == Short.class)) {
-	    int i = TclInteger.get(interp, tclObj);
-	    if ((i < Short.MIN_VALUE) || (i > Short.MAX_VALUE)) {
+	    // Parse a Java int, then check valid byte range.
+
+	    int jint = parseJavaInt(interp, tclObj);
+	    if ((jint < Short.MIN_VALUE) || (jint > Short.MAX_VALUE)) {
 		throw new TclException(interp,
 		    "integer value too large to represent in a short");
 	    }
-	    return new Short((short) i);
+	    return new Short((short) jint);
 
 	} else if ((type == Character.TYPE) || (type == Character.class)) {
 	    String str = tclObj.toString();
-
-	    if (str.length() == 1) {
-		return new Character(str.charAt(0));
-	    } else {
+	    if (str.length() != 1) {
 	        throw new TclException(interp, "expected character but got \""
 		    + tclObj + "\"");
 	    }
+	    return new Character(str.charAt(0));
+
 	} else if (type == TclObject.class) {
 	    // Pass a non ReflectObject TclObject directly to a Java method.
 	    return tclObj;
@@ -1051,6 +1103,291 @@ isAssignable(
             return false;
         }
     }
+}
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * parseJavaInt --
+ *
+ *	Parse a Java int type from a TclObject. Unlike the rest of Tcl,
+ *	this method will raise an error when an integer value is not
+ *	in the range Integer.MIN_VALUE to Integer.MAX_VALUE. This is
+ *	the range of a 32bit signed number as defined by Java. Tcl parses
+ *	integers as 32bit unsigned numbers and wraps values outside the
+ *	valid range. This method will catch the case of an integer outside
+ *	of the valid range and raise a TclException so that a bogus value
+ *	is not passed to Java.
+ *
+ * Results:
+ *	Returns an int value or raises a TclException to indicate that
+ *	the number can't be parsed as a Java int.
+ *
+ * Side effects:
+ *	None.
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+static int
+parseJavaInt(
+    Interp interp,
+    TclObject obj)
+        throws TclException
+{
+    // No point in reparsing a "pure" integer.
+
+    if (obj.hasNoStringRep() &&
+            (obj.getInternalRep() instanceof TclInteger)) {
+        return TclInteger.get(interp, obj);
+    }
+
+    String srep = obj.toString();
+    String s = srep;
+    int len = s.length();
+    char c;
+    int startInd, endInd;
+    boolean isNegative = false;
+
+    // Trim whitespace off front of string
+
+    int i = 0;
+    while (i < len && (((c = s.charAt(i)) == ' ') ||
+            Character.isWhitespace(c))) {
+        i++;
+    }
+    if (i >= len) {
+        throw new TclException(interp, "expected integer but got \"" + s + "\"");
+    }
+    startInd = i;
+
+    // Trim whitespace off end of string
+
+    endInd = len - 1;
+    while (endInd > startInd && (((c = s.charAt(endInd)) == ' ') ||
+            Character.isWhitespace(c))) {
+        endInd--;
+    }
+
+    // Check for optional '-' sign, needed for hex and octal parse.
+
+    c = s.charAt(i);
+    if (c == '-') {
+        isNegative = true;
+        i++;
+    }
+    if (i >= (endInd + 1)) {
+        throw new TclException(interp, "expected integer but got \"" + s + "\"");
+    }
+
+    // Check for hex or octal string prefix characters
+
+    int radix = Character.MIN_RADIX - 1; // An invalid value
+
+    c = s.charAt(i);
+    if (c == '0' && len > 1) {
+        // Either hex or octal
+        i++;
+        c = s.charAt(i);
+
+        if (len > 2 && (c == 'x' || c == 'X')) {
+            // Parse as hex
+            radix = 16;
+            i++;
+        } else {
+            // Parse as octal
+            radix = 8;
+        }
+
+        // Create string that contains a leading negative sign followed
+        // by the radix letters, leaving out the radix prefix.
+        // For example, "-0xFF" is parsed as "-FF".
+
+        if (isNegative) {
+            s = "-" + s.substring(i, endInd + 1);
+        } else {
+            s = s.substring(i, endInd + 1);
+        }
+    } else {
+        // Parse as decimal integer
+
+        if ((startInd > 0) || (endInd < (len - 1))) {
+            s = s.substring(startInd, endInd + 1);
+        }
+
+        radix = 10;
+    }
+
+    if (s.length() == 0) {
+        throw new TclException(interp,
+            "expected integer but got \"" + srep + "\"");
+    }
+
+    int ival;
+    try {
+        ival = Integer.parseInt(s, radix);
+    } catch (NumberFormatException nfe) {
+        // If one of the letters is not a valid radix character, then
+        // the number is not a valid. Otherwise, the number must be
+        // an integer value that is outside the valid range.
+
+        for (i=0; i < s.length(); i++) {
+            c = s.charAt(i);
+            if (i == 0 && c == '-') {
+                continue; // Skip minus sign
+            }
+            if (Character.digit(c, radix) == -1) {
+                throw new TclException(interp,
+                    "expected integer but got \"" + srep + "\"");
+            }
+        }
+
+        throw new TclException(interp, "integer value too large to represent in a int");
+    }
+
+    return ival;
+}
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * parseJavaLong --
+ *
+ *	Parse a Java long type from a TclObject. Tcl may not support
+ *	64 bit integers (Jacl does not), so this method needs to be used
+ *	to determine if a string can be parsed into a long and if the
+ *	result is in the range Long.MIN_VALUE to Long.MAX_VALUE.
+ *	This method will catch the case of an long outside of
+ *	the valid range and raise a TclException so that a bogus value
+ *	is not passed to Java.
+ *
+ * Results:
+ *	Returns a long value or raises a TclException to indicate that
+ *	the number can't be parsed as a Java long.
+ *
+ * Side effects:
+ *	None.
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+static long
+parseJavaLong(
+    Interp interp,
+    TclObject obj)
+        throws TclException
+{
+    // No point in reparsing a "pure" integer.
+
+    if (obj.hasNoStringRep() &&
+            (obj.getInternalRep() instanceof TclInteger)) {
+        return (long) TclInteger.get(interp, obj);
+    }
+
+    String srep = obj.toString();
+    String s = srep;
+    int len = s.length();
+    char c;
+    int startInd, endInd;
+    boolean isNegative = false;
+
+    // Trim whitespace off front of string
+
+    int i = 0;
+    while (i < len && (((c = s.charAt(i)) == ' ') ||
+            Character.isWhitespace(c))) {
+        i++;
+    }
+    if (i >= len) {
+        throw new TclException(interp, "expected integer but got \"" + s + "\"");
+    }
+    startInd = i;
+
+    // Trim whitespace off end of string
+
+    endInd = len - 1;
+    while (endInd > startInd && (((c = s.charAt(endInd)) == ' ') ||
+            Character.isWhitespace(c))) {
+        endInd--;
+    }
+
+    // Check for optional '-' sign, needed for hex and octal parse.
+
+    c = s.charAt(i);
+    if (c == '-') {
+        isNegative = true;
+        i++;
+    }
+    if (i >= (endInd + 1)) {
+        throw new TclException(interp, "expected integer but got \"" + s + "\"");
+    }
+
+    // Check for hex or octal string prefix characters
+
+    int radix = Character.MIN_RADIX - 1; // An invalid value
+
+    c = s.charAt(i);
+    if (c == '0' && len > 1) {
+        // Either hex or octal
+        i++;
+        c = s.charAt(i);
+
+        if (len > 2 && (c == 'x' || c == 'X')) {
+            // Parse as hex
+            radix = 16;
+            i++;
+        } else {
+            // Parse as octal
+            radix = 8;
+        }
+
+        // Create string that contains a leading negative sign followed
+        // by the radix letters, leaving out the radix prefix.
+        // For example, "-0xFF" is parsed as "-FF".
+
+        if (isNegative) {
+            s = "-" + s.substring(i, endInd + 1);
+        } else {
+            s = s.substring(i, endInd + 1);
+        }
+    } else {
+        // Parse as decimal integer
+
+        if ((startInd > 0) || (endInd < (len - 1))) {
+            s = s.substring(startInd, endInd + 1);
+        }
+
+        radix = 10;
+    }
+
+    if (s.length() == 0) {
+        throw new TclException(interp,
+            "expected integer but got \"" + srep + "\"");
+    }
+
+    long lval;
+    try {
+        lval = Long.parseLong(s, radix);
+    } catch (NumberFormatException nfe) {
+        // If one of the letters is not a valid radix character, then
+        // the number is not a valid. Otherwise, the number must be
+        // an integer value that is outside the valid range.
+
+        for (i=0; i < s.length(); i++) {
+            c = s.charAt(i);
+            if (i == 0 && c == '-') {
+                continue; // Skip minus sign
+            }
+            if (Character.digit(c, radix) == -1) {
+                throw new TclException(interp,
+                    "expected integer but got \"" + srep + "\"");
+            }
+        }
+
+        throw new TclException(interp, "integer value too large to represent in a long");
+    }
+
+    return lval;
 }
 
 } // end JavaInvoke

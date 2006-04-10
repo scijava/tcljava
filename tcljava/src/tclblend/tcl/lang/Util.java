@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Util.java,v 1.1 1998/10/14 21:09:10 cvsadmin Exp $
+ * RCS: @(#) $Id: Util.java,v 1.2 2006/04/10 21:13:56 mdejong Exp $
  */
 
 package tcl.lang;
@@ -43,16 +43,56 @@ static final native int getInt(Interp interp, String s)
 throws TclException;
 
 /**
- * Converts an ASCII string to a double.
+ * Converts an ASCII string to a double. Certain special strings
+ * like "NaN" and "-Inf" need to mapped to Java values. These
+ * need to be checked for before passing the string value into
+ * Tcl's native parsing logic.
  *
  * @param interp current interpreter.
  * @param s the string to convert from. Must be in valid Tcl double
  *      format.
  * @return the double value of the string.
  * @exception TclException if the string is not a valid Tcl double.
- */    
+ */
 
-static final native double getDouble(Interp interp, String s)
+static final double getDouble(Interp interp, String s)
+    throws TclException
+{
+    if (s != null) {
+        // Return special value for the string "NaN"
+
+        if (s.toLowerCase().equals("nan")) {
+            return Double.NaN;
+        }
+
+        // The strings "Inf", "-Inf", "Infinity", and "-Infinity"
+        // map to special double values.
+
+        char c = s.charAt(0);
+        String sub;
+        boolean negative;
+
+        if (c == '-') {
+            sub = s.substring(1);
+            negative = true;
+        } else {
+            sub = s;
+            negative = false;
+        }
+
+        if (sub.equals("Inf") || sub.equals("Infinity")) {
+            return (negative ?
+                Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY);
+        }
+    }
+
+    // Pass string to Tcl native double parsing routines once
+    // we know it is not a special value.
+
+    return getDoubleNative(interp, s);
+}
+
+static final native double getDoubleNative(Interp interp, String s)
 throws TclException;
 
 

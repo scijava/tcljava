@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: JavaNewCmd.test,v 1.5 2002/12/29 02:10:43 mdejong Exp $
+# RCS: @(#) $Id: JavaNewCmd.test,v 1.6 2006/04/10 21:13:57 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -289,6 +289,451 @@ test javaNewCmd-5.17 {array case, test classname} {
     } msg] $msg
 } {0 {{int[]} int 1 0}}
 
+
+
+# Test series 7 checks that primitive wrapper type
+# constructors like Boolean, Integer, and others
+# will make use of the overloaded constructor method
+# that accepts a primitive type. A Tcl primitive
+# should be converted to a Java primitive in
+# these constructor invocations. The previous
+# implementation would choose the overloaded
+# constructor method that accepted a String,
+# and Java string parsing rules did not match
+# the Tcl semantics.
+
+# The int parsing tests check the implementation
+# of JavaInvoke.parseJavaInt(). This Java int parsing
+# utility deals with int values defined by
+# the Java range Integer.MIN_VALUE to Integer.MAX_VALUE.
+# Tcl's integer parsing routines don't deal with
+# signed 32bit integers correctly and can't be fixed
+# without breaking backwards compatibility. Java
+# long values are handled separately. Tests that
+# make use of datatypes smaller than an int will
+# parse as an integer and then check the valid range.
+
+test javaNewCmd-7.0 {parse Java type from String} {
+    list \
+        [[java::new Boolean true] toString] \
+        [[java::new Boolean false] toString] \
+        [[java::new Boolean 0x1] toString] \
+        [[java::new Boolean 0] toString] \
+        [[java::new Boolean 01] toString] \
+        [[java::new Boolean -0] toString]
+} {true false true false true false}
+
+test javaNewCmd-7.1 {parse Java type from String} {
+    list \
+        [[java::new Integer -1] toString] \
+        [[java::new Integer 0] toString] \
+        [[java::new Integer 01] toString] \
+        [[java::new Integer 0x1] toString] \
+        [[java::new Integer " 0x1"] toString] \
+        [[java::new Integer "0x2 "] toString] \
+        [[java::new Integer " 01 "] toString] \
+        [[java::new Integer " 1 "] toString] \
+        [[java::new Integer "-0xAbCDeF"] toString]
+} {-1 0 1 1 1 2 1 1 -11259375}
+
+test javaNewCmd-7.2 {parse Java type from String} {
+    # Invalid int
+    list \
+        [catch {java::new Integer ""} err] $err \
+        [catch {java::new Integer " "} err] $err \
+        [catch {java::new Integer "-"} err] $err \
+        [catch {java::new Integer " -"} err] $err \
+        [catch {java::new Integer "- "} err] $err \
+        [catch {java::new Integer " - "} err] $err \
+        [catch {java::new Integer "0x"} err] $err \
+        [catch {java::new Integer " 0X "} err] $err \
+        [catch {java::new Integer "--1"} err] $err \
+        [catch {java::new Integer "-0xABCDEFG"} err] $err \
+        [catch {java::new Integer "A"} err] $err \
+        [catch {java::new Integer "-A"} err] $err \
+        [catch {java::new Integer "09"} err] $err \
+} [list \
+    1 {expected integer but got ""} \
+    1 {expected integer but got " "} \
+    1 {expected integer but got "-"} \
+    1 {expected integer but got " -"} \
+    1 {expected integer but got "- "} \
+    1 {expected integer but got " - "} \
+    1 {expected integer but got "0x"} \
+    1 {expected integer but got " 0X "} \
+    1 {expected integer but got "--1"} \
+    1 {expected integer but got "-0xABCDEFG"} \
+    1 {expected integer but got "A"} \
+    1 {expected integer but got "-A"} \
+    1 {expected integer but got "09"} \
+]
+
+test javaNewCmd-7.3 {parse Java type from String} {
+    # int bounds
+    list \
+        [[java::new Integer -2147483648] toString] \
+        [[java::new Integer -0x80000000] toString] \
+        [catch {java::new Integer -2147483649} err] $err \
+        [catch {java::new Integer -0x80000001} err] $err \
+        [[java::new Integer 2147483647] toString] \
+        [[java::new Integer 0x7FFFFFFF] toString] \
+        [catch {java::new Integer 2147483648} err] $err \
+        [catch {java::new Integer 0x80000000} err] $err
+} [list \
+    -2147483648 \
+    -2147483648 \
+    1 {integer value too large to represent in a int} \
+    1 {integer value too large to represent in a int} \
+    2147483647 \
+    2147483647 \
+    1 {integer value too large to represent in a int} \
+    1 {integer value too large to represent in a int} \
+]
+
+test javaNewCmd-7.4 {parse Java type from String} {
+    list \
+        [[java::new Byte -1] toString] \
+        [[java::new Byte 0] toString] \
+        [[java::new Byte 1] toString] \
+        [[java::new Byte 0x1] toString] \
+        [[java::new Byte 01] toString] \
+} {-1 0 1 1 1}
+
+test javaNewCmd-7.5 {parse Java type from String} {
+    # byte bounds, subset of int bounds
+    list \
+        [catch {java::new Byte 2147483648} err] $err \
+        [[java::new Byte -128] toString] \
+        [catch {java::new Byte -129} err] $err \
+        [[java::new Byte 127] toString] \
+        [catch {java::new Byte 128} err] $err
+
+} [list \
+    1 {integer value too large to represent in a int} \
+    -128 \
+    1 {integer value too large to represent in a byte} \
+    127 \
+    1 {integer value too large to represent in a byte} \
+]
+
+test javaNewCmd-7.6 {parse Java type from String} {
+    list \
+        [[java::new Short -1] toString] \
+        [[java::new Short 0] toString] \
+        [[java::new Short 1] toString] \
+        [[java::new Short 0x1] toString] \
+        [[java::new Short 01] toString] \
+} {-1 0 1 1 1}
+
+test javaNewCmd-7.7 {parse Java type from String} {
+    # short bounds, subset of int bounds
+    list \
+        [catch {java::new Short 2147483648} err] $err \
+        [[java::new Short -32768] toString] \
+        [catch {java::new Short -32769} err] $err \
+        [[java::new Short 32767] toString] \
+        [catch {java::new Short 32768} err] $err
+} [list \
+    1 {integer value too large to represent in a int} \
+    -32768 \
+    1 {integer value too large to represent in a short} \
+    32767 \
+    1 {integer value too large to represent in a short} \
+]
+
+test javaNewCmd-7.8 {parse Java type from String} {
+    list \
+        [[java::new Character a] toString] \
+        [[java::new Character b] toString] \
+        [[java::new Character \u0063] toString] \
+        [[java::new Character D] toString] \
+        [[java::new Character E] toString] \
+        [catch {java::new Character FG} err] $err
+} {a b c D E 1 {expected character but got "FG"}}
+
+# Java long values are supported like int Java
+# values, but they are parsed with Long.parseLong().
+# Jacl can't handle 64 bit integers.
+
+test javaNewCmd-7.9 {parse Java type from String} {
+    list \
+        [[java::new Long -1] toString] \
+        [[java::new Long 0] toString] \
+        [[java::new Long 01] toString] \
+        [[java::new Long 0x1] toString] \
+        [[java::new Long " 0x1"] toString] \
+        [[java::new Long "0x2 "] toString] \
+        [[java::new Long " 01 "] toString] \
+        [[java::new Long " 1 "] toString] \
+        [[java::new Long "-0xAbCDeF"] toString]
+} {-1 0 1 1 1 2 1 1 -11259375}
+
+test javaNewCmd-7.10 {parse Java type from String} {
+    # Invalid long
+    list \
+        [catch {java::new Long ""} err] $err \
+        [catch {java::new Long " "} err] $err \
+        [catch {java::new Long "-"} err] $err \
+        [catch {java::new Long " -"} err] $err \
+        [catch {java::new Long "- "} err] $err \
+        [catch {java::new Long " - "} err] $err \
+        [catch {java::new Long "0x"} err] $err \
+        [catch {java::new Long " 0X "} err] $err \
+        [catch {java::new Long "--1"} err] $err \
+        [catch {java::new Long "-0xABCDEFG"} err] $err \
+        [catch {java::new Long "A"} err] $err \
+        [catch {java::new Long "-A"} err] $err \
+        [catch {java::new Long "09"} err] $err \
+} [list \
+    1 {expected integer but got ""} \
+    1 {expected integer but got " "} \
+    1 {expected integer but got "-"} \
+    1 {expected integer but got " -"} \
+    1 {expected integer but got "- "} \
+    1 {expected integer but got " - "} \
+    1 {expected integer but got "0x"} \
+    1 {expected integer but got " 0X "} \
+    1 {expected integer but got "--1"} \
+    1 {expected integer but got "-0xABCDEFG"} \
+    1 {expected integer but got "A"} \
+    1 {expected integer but got "-A"} \
+    1 {expected integer but got "09"} \
+]
+
+test javaNewCmd-7.11 {parse Java type from String} {
+    # long bounds
+    list \
+        [[java::new Long -9223372036854775808] toString] \
+        [[java::new Long -0x8000000000000000] toString] \
+        [catch {java::new Long -9223372036854775809} err] $err \
+        [catch {java::new Long -0x8000000000000001} err] $err \
+        [[java::new Long 9223372036854775807] toString] \
+        [[java::new Long 0x7FFFFFFFFFFFFFFF] toString] \
+        [catch {java::new Long 9223372036854775808} err] $err \
+        [catch {java::new Long 0x8000000000000000} err] $err
+} [list \
+    -9223372036854775808 \
+    -9223372036854775808 \
+    1 {integer value too large to represent in a long} \
+    1 {integer value too large to represent in a long} \
+    9223372036854775807 \
+    9223372036854775807 \
+    1 {integer value too large to represent in a long} \
+    1 {integer value too large to represent in a long} \
+]
+
+# float bounds.
+
+# Note that conversion of floating point numbers to
+# strings in Tcl is problematic because of the
+# default tcl_precision setting. See TIP 132 for info.
+#
+# http://www.tcl.tk/cgi-bin/tct/tip/132.html
+
+# Float.MIN_VALUE
+set min  [java::field Float MIN_VALUE]
+set smin 1.401298464324817e-046
+# Float.MAX_VALUE
+set max  [java::field Float MAX_VALUE]
+set bmax 3.4028234663852886e+039
+set pmin 1.4E-45
+set pmax 3.4028235E38
+
+# Running expr operation changes the internal rep
+# from TclDouble to a native double type and that
+# seems to lose some precision and cause the test
+# method to fail. Not sure how to approach this!
+
+test javaNewCmd-7.12 {parse Java type from String} {
+    list \
+        [[java::new Float 0.0] toString] \
+        [[java::new Float -0.0] toString] \
+        [[java::new Float Infinity] toString] \
+        [[java::new Float -Infinity] toString] \
+        [[java::new Float NaN] toString] \
+        [[java::new Float 10e-4] toString] \
+        [[java::new Float 10e8] toString] \
+        [[java::new Float $min] toString] \
+        [catch {java::new Float $smin} err] $err \
+        [[java::new Float $max] toString] \
+        [catch {java::new Float $bmax} err] $err
+} [list \
+    0.0 \
+    -0.0 \
+    Infinity \
+    -Infinity \
+    NaN \
+    0.0010 \
+    1.0E9 \
+    $pmin \
+    1 {double value too large to represent in a float} \
+    $pmax \
+    1 {double value too large to represent in a float} \
+]
+
+test javaNewCmd-7.13 {float stored in TclDouble} {
+    # Float.MIN_VALUE stored in a TclDouble
+    # internal rep. Note that the Float.toString()
+    # method rounds to an invalid float when
+    # printing as a String.
+
+    set results [list]
+    set min [java::field Float MIN_VALUE]
+    lappend results [format %s $min]
+    set F [java::new Float $min]
+    lappend results [format %s [$F toString]]
+    lappend results [format %s [$F floatValue]]
+    set results
+} {1.40129846432e-045 1.4E-45 1.40129846432e-045}
+
+test javaNewCmd-7.14 {float stored in TclDouble} {
+    # Printing a double in Java via
+    # StringBuffer.append(double) vs
+    # Util.printDouble(). This shows
+    # that Tcl is not printing all the
+    # needed bits in the floating point
+    # representation when the default
+    # tcl_precision of 12 is used.
+
+    set sb [java::new StringBuffer]
+    set min [java::field Float MIN_VALUE]
+    $sb {append double} $min
+    list \
+        [$sb toString] \
+        [format %s $min]
+} [list \
+1.401298464324817E-45 \
+1.40129846432e-045 \
+]
+
+test javaNewCmd-7.15 {float stored in TclDouble} {tip132} {
+    # Printing the double value of Float.MIN_VALUE
+    # and then attempting to reparse from the
+    # string fails because of the default
+    # tcl_precision value of 12. This loss of
+    # precision is broken and needs to be fixed
+    # by implementing Tcl TIP 132 from Tcl 8.5.
+    # Applications need to work around this
+    # problem by setting tcl_precision to 17.
+
+    set results [list]
+    set min [java::field Float MIN_VALUE]
+    set min [format %s $min]
+    lappend results [format %s $min]
+    if {[catch {java::new Float $min} err]} {
+        lappend results ERROR $err
+    } else {
+        set F $err
+        lappend results [format %s [$F toString]]
+        lappend results [format %s [$F floatValue]]
+    }
+    set results
+} {1.40129846432e-045 1.4E-45 1.40129846432e-045}
+
+test javaNewCmd-7.16 {float stored in TclDouble} {
+    # Parsing Float.MIN_VALUE as a String.
+    # This test is the same as the one above
+    # except that tcl_precision is upped to 16
+    # here so that the tests pass. This precision
+    # should really be 17 but that keeps
+    # the tests from passing under both Jacl and
+    # Tcl Blend because of differences in floating
+    # point handling in Jacl and sprintf().
+    set save_tcl_precision $tcl_precision
+    set tcl_precision 16
+
+    set results [list]
+    set min [java::field Float MIN_VALUE]
+    set min [format %s $min] ; # toss out TclDouble internal rep!
+    lappend results [format %s $min]
+    set F [java::new Float $min]
+    lappend results [format %s [$F toString]]
+    lappend results [format %s [$F floatValue]]
+
+    set tcl_precision $save_tcl_precision
+    set results
+} {1.401298464324817e-045 1.4E-45 1.401298464324817e-045}
+
+test javaNewCmd-7.17 {parse Java type from String} {
+    # Float.MIN_VALUE stored in a TclDouble is
+    # then converted to a string rep and
+    # reparsed from the string by the expr.
+    # This test works in both Jacl and TclBlend
+    # because tcl_precision is change to 16.
+
+    set save_tcl_precision $tcl_precision
+    set tcl_precision 16
+
+    set results [list]
+    set min [java::field Float MIN_VALUE]
+    lappend results [format %s $min]
+
+    # In Tcl Blend, an expr will reparse the
+    # double from the string rep. The
+    # tcl_precision problem is triggered by
+    # the fact that the Tcl core can't make
+    # direct use of the double inside the
+    # Java object and it needs to convert
+    # to a Tcl double primitive from the string.
+    set min [expr {$min}]
+    lappend results [format %s $min]
+
+    # Create a Float object to test to see if the
+    # floating point is still equal to Float.MIN_VALUE.
+
+    if {[catch {java::new Float $min} err]} {
+        lappend results ERROR
+        lappend results $err
+    } else {
+        # No error
+        lappend results [format %s [$F toString]]
+        lappend results [format %s [$F floatValue]]
+    }
+
+    set tcl_precision $save_tcl_precision
+    set results
+} [list \
+    1.401298464324817e-045 \
+    1.401298464324817e-045 \
+    1.4E-45 \
+    1.401298464324817e-045 \
+    ]
+
+
+# double bounds
+set min [java::field Double MIN_VALUE]
+set max [java::field Double MAX_VALUE]
+# FIXME: Tcl rolls small double values over to zero
+set smin "5.0e-350"
+set bmax "2.0e350"
+set pmin 4.9E-324
+set pmax 1.7976931348623157E308
+
+test javaNewCmd-7.14 {parse Java type from String} {
+    list \
+        [[java::new Double 0.0] toString] \
+        [[java::new Double -0.0] toString] \
+        [[java::new Double Infinity] toString] \
+        [[java::new Double -Infinity] toString] \
+        [[java::new Double NaN] toString] \
+        [[java::new Double 10e-4] toString] \
+        [[java::new Double 10e8] toString] \
+        [[java::new Double $min] toString] \
+        [[java::new Double $max] toString]
+} [list \
+    0.0 \
+    -0.0 \
+    Infinity \
+    -Infinity \
+    NaN \
+    0.0010 \
+    1.0E9 \
+    $pmin \
+    $pmax \
+]
+
+
 # cleanup
 ::tcltest::cleanupTests
 return
+

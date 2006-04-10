@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Util.java,v 1.19 2005/11/22 22:10:02 mdejong Exp $
+ * RCS: @(#) $Id: Util.java,v 1.20 2006/04/10 21:13:56 mdejong Exp $
  */
 
 package tcl.lang;
@@ -501,12 +501,22 @@ strtod(
 	}
     }
 
-    // Return special value for the strings "Inf" and "-Inf"
+    // The strings "Inf", "-Inf", "Infinity", and "-Infinity"
+    // map to special double values.
 
-    if (s.substring(i).startsWith("Inf")) {
+    String inf = s.substring(i);
+    int infLen = 0;
+
+    if (inf.startsWith("Infinity")) {
+        infLen = "Infinity".length();
+    } else if (inf.startsWith("Inf")) {
+        infLen = "Inf".length();
+    }
+
+    if (infLen > 0) {
 	strtodResult.update(
             (negative ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY),
-            i + 3, 0);
+            i + infLen, 0);
         return;
     }
 
