@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.34 2006/03/28 01:46:20 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.35 2006/04/10 21:36:08 mdejong Exp $
  *
  */
 
@@ -1600,14 +1600,24 @@ ClassLoader
 getClassLoader()
 {
     // Allocate a TclClassLoader that will delagate to the
-    // context class loader and then search on the
-    // env(TCL_CLASSPATH) for classes.
+    // context class loader, or to the loader that loaded
+    // tcl.lang.Interp, or to the system class loader.
+    // If the parent class loader can't find the class
+    // or resource, then env(TCL_CLASSPATH) is searched.
 
     if (classLoader == null) {
-        classLoader = new TclClassLoader(this, null,
-            Thread.currentThread().getContextClassLoader()
-            //Interp.class.getClassLoader()
-            );
+        ClassLoader ctx = Thread.currentThread().getContextClassLoader();
+        if (ctx == null) {
+            ctx = Interp.class.getClassLoader();
+        }
+        if (ctx == null) {
+            ctx = ClassLoader.getSystemClassLoader();
+        }
+        if (ctx == null) {
+            throw new TclRuntimeError("could not locate parent class loader");
+        }
+
+        classLoader = new TclClassLoader(this, null, ctx);
     }
     return classLoader;
 }

@@ -1,5 +1,15 @@
 2006-04-10  Mo DeJong  <mdejong@users.sourceforge.net>
 
+        * src/tclblend/tcl/lang/Interp.java (getClassLoader):
+        If no context class loader is defined, then use the
+        class loader that loaded Interp.class. If that fails
+        use the system class loader. This is needed to avoid
+        crashing when Tcl Blend is loaded dynamically, as
+        a JVM created in a native thread does not define
+        a context class loader.
+
+2006-04-10  Mo DeJong  <mdejong@users.sourceforge.net>
+
         * src/jacl/tcl/lang/FormatCmd.java: Fix typos.
         * src/jacl/tcl/lang/Util.java (strtod): Support
         both Inf and Infinity so that both Tcl and
