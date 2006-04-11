@@ -124,7 +124,7 @@ public void eval(TclObject tobj, int flags) throws TclException {}
 
 public void evalFile(String s) throws TclException {}
 
-void evalResource(String resName) throws TclException {}
+public void evalResource(String resName) throws TclException {}
 
 public void setErrorCode(TclObject code) {}
 

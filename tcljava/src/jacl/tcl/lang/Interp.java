@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.73 2006/04/06 00:25:26 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.74 2006/04/11 00:59:19 mdejong Exp $
  *
  */
 
@@ -3133,6 +3133,7 @@ closeChannel(
  *----------------------------------------------------------------------
  */
 
+public
 void
 evalResource(
     String resName) 	// The location of the Java resource. See

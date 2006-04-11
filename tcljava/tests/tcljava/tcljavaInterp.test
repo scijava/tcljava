@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcljavaInterp.test,v 1.2 2006/03/28 01:46:20 mdejong Exp $
+# RCS: @(#) $Id: tcljavaInterp.test,v 1.3 2006/04/11 00:59:19 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -63,14 +63,19 @@ test tcljavaInterp-1.3 {source tl.tcl as resource from tl.jar} {
     catch {unset test_lengths}
     # Note: tl.jar appears on the system CLASSAPTH, so resource
     # loading is done via the system class loader here.
-    source resource:/tl/tl.tcl
+    if {$tcljava(tcljava) == "jacl"} {
+        source resource:/tl/tl.tcl
+    } else {
+        # Tcl Blend does not support "source resource:/..."
+        [java::getinterp] evalResource /tl/tl.tcl
+    }
     test_lengths
 } {1 1 1 1}
 
 test tcljavaInterp-1.4 {load class defined on TCL_CLASSPATH, this makes use
         the TclClassLoader to search for classes at runtime} {
-    # testext.jar must not appear on the CLASSPATH, it should not
-    # be loaded by the system class loader.
+    # testext.jar must not appear on the CLASSPATH, it should
+    # NOT be loaded by the system class loader.
     set env(TCL_CLASSPATH) [file join [pwd] testext.jar]
     set cl [java::field testext.Dummy class]
     set cloader [$cl getClassLoader]
@@ -124,7 +129,14 @@ test tcljavaInterp-1.6 {load resource via TclClassLoader} {
     # testext.jar must not appear on the CLASSPATH, it should not
     # be loaded by the system class loader.
     set env(TCL_CLASSPATH) [file join [pwd] testext.jar]
-    source resource:/testext/cmd.tcl
+
+    if {$tcljava(tcljava) == "jacl"} {
+        source resource:/testext/cmd.tcl
+    } else {
+        # Tcl Blend does not support "source resource:/..."
+        [java::getinterp] evalResource /testext/cmd.tcl
+    }
+
     testext_resource_cmd
 } {OK}
 

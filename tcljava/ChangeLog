@@ -1,5 +1,21 @@
 2006-04-10  Mo DeJong  <mdejong@users.sourceforge.net>
 
+        * src/empty/empty.jar: Regen.
+        * src/empty/tcl/lang/Interp.java (evalResource):
+        * src/jacl/tcl/lang/Interp.java (evalResource):
+        * src/tclblend/tcl/lang/Interp.java (evalResource):
+        Make Interp.evalResource() API public so that it
+        can be used outside the tcl.lang.* package.
+        Tcl Blend provides no way to access this API, so
+        it is now public so that anyone can call it.
+        * tests/tcljava/tcljavaInterp.test: Test eval
+        of Tcl script inside a jar both loaded by the
+        system loader from the CLASSPATH and by the
+        TclClassLoader from env(TCL_CLASSPATH). These
+        tests were failing under Tcl Blend.
+
+2006-04-10  Mo DeJong  <mdejong@users.sourceforge.net>
+
         * src/tclblend/tcl/lang/Interp.java (getClassLoader):
         If no context class loader is defined, then use the
         class loader that loaded Interp.class. If that fails

@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.35 2006/04/10 21:36:08 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.36 2006/04/11 00:59:19 mdejong Exp $
  *
  */
 
@@ -1133,13 +1133,14 @@ throws
  *----------------------------------------------------------------------
  */
 
-void 
+public
+void
 evalResource(
     String resName) 	// The location of the Java resource. See
 			// the Java documentation of
 			// Class.getResourceAsStream()
 			// for details on resources naming.
-throws 
+throws
     TclException
 {
     InputStream stream = getResourceAsStream(resName);
@@ -1149,10 +1150,13 @@ throws
 		+ "\"");
     }
 
-// FIXME: Impl in TclBlend
-
-    // Define script name as resource so that [info script] can be used
-    // to construct names of other resources in the same resource directory.
+    // It is not possible to set the "scriptFile" attribute of
+    // an interp to something logical here because Tcl Blend's
+    // source command can't handle a "resource:/" prefix so
+    // getting [info script] to return a path inside a resource
+    // is pointless. A better long term fix might be to create
+    // a filesystem mount point named "resource:/" and then
+    // read files out of Java resources using that prefix.
 
 /*
     String oldScript = scriptFile;
