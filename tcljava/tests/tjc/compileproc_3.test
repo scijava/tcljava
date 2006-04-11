@@ -2145,6 +2145,8 @@ public class Test1 extends TJC.CompiledCommand {
                     } // End Invoke: list
                     if ( true ) { return; }
                 } // End Invoke: return
+            } else {
+                interp.resetResult();
             }
         } // End Invoke: if
         } catch (TclException te) {

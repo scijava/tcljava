@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: compileproc.tcl,v 1.21 2006/03/24 21:33:50 mdejong Exp $
+#  RCS: @(#) $Id: compileproc.tcl,v 1.22 2006/04/11 20:22:21 mdejong Exp $
 #
 #
 
@@ -3765,8 +3765,13 @@ proc compileproc_emit_container_if { key } {
     append buffer [emitter_container_if_start $tmpsymbol]
 
     # true block
-    foreach true_key $true_keys {
-        append buffer [compileproc_emit_invoke $true_key]
+    if {$true_keys == {}} {
+        # Reset interp result in case result of if is used
+        append buffer [emitter_reset_result]
+    } else {
+        foreach true_key $true_keys {
+            append buffer [compileproc_emit_invoke $true_key]
+        }
     }
 
     # elseif blocks
@@ -3796,15 +3801,29 @@ proc compileproc_emit_container_if { key } {
                 incr elseif_depth
             }
 
-            foreach elseif_body_key $elseif_body_keys {
-                append buffer [compileproc_emit_invoke $elseif_body_key]
+            if {$elseif_body_keys == {}} {
+                # Reset interp result in case result of if is used
+                append buffer [emitter_reset_result]
+            } else {
+                foreach elseif_body_key $elseif_body_keys {
+                    append buffer [compileproc_emit_invoke $elseif_body_key]
+                }
             }
         }
     }
 
-    # else block
-    if {$else_keys != {}} {
+    # else block always needs to reset the interp result
+    # when no else commands are given so that the result
+    # of a previous command evaluation is not returned
+    # as the result of the if command.
+
+    if {$else_keys == {}} {
+        # Reset interp result in case result of if is used
         append buffer [emitter_container_if_else]
+        append buffer [emitter_reset_result]
+    } else {
+        append buffer [emitter_container_if_else]
+
         foreach else_key $else_keys {
             append buffer [compileproc_emit_invoke $else_key]
         }
@@ -5593,6 +5612,8 @@ proc compileproc_emit_container_switch_constant { key string_tmpsymbol } {
                 $length " == " $pattern_len " && " \
                 $first " == '" $pattern_first_jstr "'"
             if {$pattern_len > 1} {
+                # Note: Invoke "String.compareTo(String) == 0" here since
+                # testing shows that it is a bit faster than "String.equals(String)"
                 append expression "\n" $spacer2 \
                     "&& " $string_tmpsymbol ".compareTo(\"" \
                     $pattern_jstr "\") == 0"

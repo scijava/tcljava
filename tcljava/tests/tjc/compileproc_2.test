@@ -62,6 +62,9 @@ public class Test1 extends TJC.CompiledCommand {
         }
         { // Invoke: if {1} {}
             if ( true ) {
+                interp.resetResult();
+            } else {
+                interp.resetResult();
             }
         } // End Invoke: if
         } catch (TclException te) {
@@ -123,6 +126,8 @@ public class Test1 extends TJC.CompiledCommand {
                         TJC.releaseObjvElems(interp, objv2, 1);
                     }
                 } // End Invoke: cmd
+            } else {
+                interp.resetResult();
             }
         } // End Invoke: if
         } catch (TclException te) {
@@ -196,6 +201,9 @@ public class Test1 extends TJC.CompiledCommand {
             TclObject tmp2 = interp.getResult();
             boolean tmp3 = TJC.getBoolean(interp, tmp2);
             if ( tmp3 ) {
+                interp.resetResult();
+            } else {
+                interp.resetResult();
             }
         } // End Invoke: if
         } catch (TclException te) {
@@ -272,6 +280,9 @@ public class Test1 extends TJC.CompiledCommand {
             TclObject tmp2 = interp.getResult();
             boolean tmp3 = TJC.getBoolean(interp, tmp2);
             if ( tmp3 ) {
+                interp.resetResult();
+            } else {
+                interp.resetResult();
             }
         } // End Invoke: if
         } catch (TclException te) {
@@ -327,6 +338,9 @@ public class Test1 extends TJC.CompiledCommand {
         }
         { // Invoke: ::if {1} {}
             if ( true ) {
+                interp.resetResult();
+            } else {
+                interp.resetResult();
             }
         } // End Invoke: ::if
         } catch (TclException te) {
@@ -6859,6 +6873,9 @@ public class Test1 extends TJC.CompiledCommand {
             boolean tmp2 = tmp0.getBooleanValue(interp);
             TJC.exprReleaseValue(interp, tmp0);
             if ( tmp2 ) {
+                interp.resetResult();
+            } else {
+                interp.resetResult();
             }
         } // End Invoke: if
         } catch (TclException te) {
@@ -6905,6 +6922,7 @@ public class Test1 extends TJC.CompiledCommand {
         }
         { // Invoke: if {0} {} elseif {1||1} {}
             if ( false ) {
+                interp.resetResult();
             } else {
                 // Binary operator: 1 || 1
                 ExprValue tmp0 = TJC.exprGetValue(interp, 1, null);
@@ -6919,6 +6937,9 @@ public class Test1 extends TJC.CompiledCommand {
                 boolean tmp2 = tmp0.getBooleanValue(interp);
                 TJC.exprReleaseValue(interp, tmp0);
                 if ( tmp2 ) {
+                    interp.resetResult();
+                } else {
+                    interp.resetResult();
                 }
             }
         } // End Invoke: if
@@ -6968,10 +6989,14 @@ public class Test1 extends TJC.CompiledCommand {
             TclObject tmp0 = interp.getVar("b1", null, 0);
             boolean tmp1 = TJC.getBoolean(interp, tmp0);
             if ( tmp1 ) {
+                interp.resetResult();
             } else {
                 TclObject tmp2 = interp.getVar("b2", null, 0);
                 boolean tmp3 = TJC.getBoolean(interp, tmp2);
                 if ( tmp3 ) {
+                    interp.resetResult();
+                } else {
+                    interp.resetResult();
                 }
             }
         } // End Invoke: if
@@ -7170,9 +7195,6 @@ public class Test1 extends TJC.CompiledCommand {
 } // end class Test1
 }}
 
-
-# FIXME: Need to add test cases for command like if, while, and
-# so on that include expr evaluations.
 
 # Cleanup
 jdk_tool_cleanup

@@ -1,3 +1,17 @@
+2006-04-11  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/tjc/tjc/library/compileproc.tcl
+        (compileproc_emit_container_if):
+        Reset the interp result when emitting an inlined
+        if command with an empty block. Also reset the
+        interp result when there is no else block. It
+        is very unlikely that this would be a problem
+        in real code, but it is needed to for complete
+        compatibility.
+        * tests/tjc/compileproc.test:
+        * tests/tjc/compileproc_2.test:
+        * tests/tjc/compileproc_3.test: Update test cases.
+
 2006-04-10  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/empty/empty.jar: Regen.
