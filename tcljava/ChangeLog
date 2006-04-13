@@ -1,3 +1,14 @@
+2006-04-13  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * new_features.txt: Mention recent changes.
+        * docs/TclJava/JavaForCmd.html: Document java::for.
+        * docs/TclJava/contents.html:
+        * src/tcljava/tcl/lang/BlendExtension.java:
+        * src/tcljava/tcl/lang/JavaForCmd.java: Add new
+        java::for loop command. This provides an easy
+        way to loop over Collection and array objects.
+        * tests/tcljava/JavaForCmd.test: Test new command.
+
 2006-04-12  Mo DeJong  <mdejong@users.sourceforge.net>
 
         Implement support for inner classes without

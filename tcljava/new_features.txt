@@ -413,4 +413,23 @@ loading classes from the env(TCL_CLASSPATH) path have been fixed
 and support for loading resources from the env(TCL_CLASSPATH)
 path has been added.
 
+(SUPPORT FOR INNER CLASSES)
+
+Inner classes are now supported in the Java package. In
+earlier versions of Tcl/Java, an inner class like
+java.util.Map.Entry would be indicated by a string like
+"java.util.Map\$Entry". This worked, but it is ugly and
+it could not work with imported class names from
+java::import. The new implementation makes it possible
+to pass "java.util.Map.Entry" or import java.util.Map and
+pass just "Map.Entry".
+
+(NEW COMMAND FOR JAVA PACKAGE)
+
+The java package includes a new command named java::for.
+This command provides a mapping to Java's enhanced for
+loop statement and provides an simplified way to loop over
+the elements of a Collection or array object.
+
+
 </PRE></BODY></HTML>
