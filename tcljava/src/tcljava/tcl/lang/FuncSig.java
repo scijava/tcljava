@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: FuncSig.java,v 1.13 2006/01/26 19:49:19 mdejong Exp $
+ * RCS: @(#) $Id: FuncSig.java,v 1.14 2006/04/13 07:36:50 mdejong Exp $
  *
  */
 
@@ -223,12 +223,12 @@ throws
     }
 
     if ((isConstructor || isStatic) && !PkgInvoker.isAccessible(cls)) {
-        throw new TclException(interp, "Class \"" + cls.getName() +
-	    "\" is not accessible");
+        JavaInvoke.notAccessibleError(interp, cls);
     }
 
     if (isConstructor && Modifier.isAbstract(cls.getModifiers())) {
-        throw new TclException(interp, "Class \"" + cls.getName() +
+        throw new TclException(interp, "Class \"" +
+	    JavaInfoCmd.getNameFromClass(cls) +
 	    "\" is abstract");
     }
 
@@ -259,7 +259,8 @@ throws
 			    signature + "\"");
 	      } else {
 		throw new TclException(interp, "can't find accessible constructor with " +
-			    count + " argument(s) for class \"" + cls.getName() +
+			    count + " argument(s) for class \"" +
+			      JavaInfoCmd.getNameFromClass(cls) +
 			      "\"");
 	      }
 	    }
@@ -341,12 +342,15 @@ lookupMethod(
   if (paramTypes.length > 0 || !foundSameName) {
     throw new TclException(interp,
       "no accessible" + (isStatic?" static ":" ") + "method \"" +
-      signature + "\" in class " + cls.getName());
+      signature + "\" in class " +
+      JavaInfoCmd.getNameFromClass(cls));
   } else {
     throw new TclException(interp,
       "can't find accessible" + (isStatic?" static ":" ") + "method \"" +
       signature + "\" with " + paramTypes.length +
-      " argument(s) for class \"" + cls.getName() + "\"");
+      " argument(s) for class \"" +
+      JavaInfoCmd.getNameFromClass(cls) +
+      "\"");
   }
 }
 
@@ -1045,19 +1049,21 @@ matchSignature(
   if (isConstructor) {
     throw new TclException(interp, "can't find accessible constructor with " +
 			       argv_count + " argument(s) for class \"" +
-			       cls.getName() + "\"");
+			       JavaInfoCmd.getNameFromClass(cls) +
+			       "\"");
   } else {
     if (!foundSameName) {
       throw new TclException(interp,
 			     "no accessible" + (isStatic?" static ":" ") +
 			     "method \"" + signature + "\" in class " +
-			     cls.getName());
+			     JavaInfoCmd.getNameFromClass(cls));
     } else {
       throw new TclException(interp,
 			     "can't find accessible" + (isStatic?" static ":" ") +
 			     "method \"" + signature + "\" with " +
 			     argv_count + " argument(s) for class \"" +
-			     cls.getName() + "\"");
+			     JavaInfoCmd.getNameFromClass(cls) +
+			     "\"");
     }
   }
 }

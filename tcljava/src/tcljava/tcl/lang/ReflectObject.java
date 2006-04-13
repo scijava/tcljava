@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: ReflectObject.java,v 1.18 2006/01/26 19:49:19 mdejong Exp $
+ * RCS: @(#) $Id: ReflectObject.java,v 1.19 2006/04/13 07:36:50 mdejong Exp $
  *
  */
 
@@ -455,8 +455,7 @@ makeReflectObject(
     //final boolean debug = false;
 
     if (cl != null && !PkgInvoker.isAccessible(cl)) {
-	throw new TclException(interp, "Class \"" + cl.getName() +
-	        "\" is not accessible");
+	JavaInvoke.notAccessibleError(interp, cl);
     }
 
     if (obj == null) {

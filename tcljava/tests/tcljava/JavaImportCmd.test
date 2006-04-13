@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: JavaImportCmd.test,v 1.3 2001/05/06 03:19:41 mdejong Exp $
+# RCS: @(#) $Id: JavaImportCmd.test,v 1.4 2006/04/13 07:36:51 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -343,20 +343,66 @@ test JavaImportCmd-4.8 {import a class and use the java::info command} {
 } {2}
 
 
+test JavaImportCmd-5.0 {import a class, then allocate an inner class} {
+    forget_all
+    java::import tests.InnerTest
+    set o [java::new InnerTest.InnerClass1]
+    java::info class $o
+} {tests.InnerTest.InnerClass1}
 
+test JavaImportCmd-5.1 {import a class, then allocate an inner class} {
+    forget_all
+    java::import tests.InnerTest
+    set o [java::new InnerTest.InnerClass2]
+    set i [java::cast InnerTest.InnerInterface1 $o]
+    list [java::info class $o] [java::info class $i]
+} {tests.InnerTest.InnerClass2 tests.InnerTest.InnerInterface1}
 
-# What about imported classes conflicting with global package classes?
+test JavaImportCmd-5.2 {import a class, then access an inner inerface} {
+    forget_all
+    java::import java.util.Map
+    set r [java::cast Map.Entry [java::null]]
+    list \
+        [java::info class $r] \
+        [java::info dimensions {Map.Entry[]}]
+} {java.util.Map.Entry 1}
 
-# When a class is imported we need to try to load just the name first
-# Then we can try to load the full name, this will protect global
-# package stuff
+test JavaImportCmd-5.3 {import a class, then inner class inside inner class} {
+    forget_all
+    java::import tests.InnerTest
+    # Multiple levels of inner class names, InnerTest is imported.
+    set o [java::new InnerTest.InnerClass3.InnerClass4]
+    java::info class $o
+} {tests.InnerTest.InnerClass3.InnerClass4}
 
+test JavaImportCmd-5.4 {inner class can't be imported} {
+    forget_all
+    # Only toplevel classes can be imported.
+    list [catch {
+    java::import tests.InnerTest\$InnerClass1
+    } err] $err
+} {1 {can't import an inner class}}
 
+test JavaImportCmd-5.5 {inner class can't be imported} {
+    forget_all
+    # Only toplevel classes can be imported.
+    list [catch {
+    java::import tests.InnerTest.InnerClass1
+    } err] $err
+} {1 {can't import an inner class}}
 
+test JavaImportCmd-5.6 {inner class can't be imported} {
+    forget_all
+    # Only toplevel classes can be imported.
+    list [catch {
+    java::import java.util.Map.Entry
+    } err] $err
+} {1 {can't import an inner class}}
+
+# FIXME:
 # Be sure to check that when we forget a class, we remove that class
 # element from the list of elements in the package, and if the package
 # has zero elements, remove the package too.
-
 
 # cleanup
 ::tcltest::cleanupTests

@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Extension.java,v 1.4 2006/02/08 23:53:47 mdejong Exp $
+ * RCS: @(#) $Id: Extension.java,v 1.5 2006/04/13 07:36:50 mdejong Exp $
  *
  */
 
@@ -138,6 +138,9 @@ class AutoloadStub implements Command {
 	} catch (ClassNotFoundException e) {
 	    throw new TclException(interp,
 	        "ClassNotFoundException for class \"" + className + "\"");
+	} catch (PackageNameException e) {
+	    throw new TclException(interp,
+	        "PackageNameException for class \"" + className + "\"");
 	}
 
 	try {

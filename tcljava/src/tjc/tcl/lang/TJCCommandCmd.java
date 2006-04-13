@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TJCCommandCmd.java,v 1.3 2006/02/14 04:13:27 mdejong Exp $
+ * RCS: @(#) $Id: TJCCommandCmd.java,v 1.4 2006/04/13 07:36:51 mdejong Exp $
  *
  */
 
@@ -38,7 +38,11 @@ public void
         } catch (ClassNotFoundException cnfe) {
             throw new TclException(interp,
                 "class " + classname + " not found");
+        } catch (PackageNameException pne) {
+            throw new TclException(interp,
+                "class " + classname + " could not be loaded");
         }
+
         Object o = null;
         try {
             o = c.newInstance();

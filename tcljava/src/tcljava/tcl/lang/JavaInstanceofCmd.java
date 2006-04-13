@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: JavaInstanceofCmd.java,v 1.2 2002/12/27 14:33:19 mdejong Exp $
+ * RCS: @(#) $Id: JavaInstanceofCmd.java,v 1.3 2006/04/13 07:36:50 mdejong Exp $
  */
 
 package tcl.lang;
@@ -53,8 +53,7 @@ throws
 
     // instanceof an inaccessible type is not legal in Java.
     if (!PkgInvoker.isAccessible(cls)) {
-        throw new TclException(interp, "Class \"" + cls.getName() +
-            "\" is not accessible");
+        JavaInvoke.notAccessibleError(interp, cls);
     }
 
     if (obj == null) {

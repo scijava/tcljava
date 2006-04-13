@@ -12,7 +12,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaImportCmd.java,v 1.6 2006/02/08 23:53:47 mdejong Exp $
+ * RCS: @(#) $Id: JavaImportCmd.java,v 1.7 2006/04/13 07:36:50 mdejong Exp $
  *
  */
 
@@ -333,6 +333,8 @@ public class JavaImportCmd implements Command {
 		    tclClassLoader.loadClass(class_name);
 		} catch (ClassNotFoundException e) {
 		    inGlobal = false;
+		} catch (PackageNameException e) {
+		    throw e;
 		}
 
 		if (inGlobal) {
@@ -346,29 +348,42 @@ public class JavaImportCmd implements Command {
 
 		// Make sure the class can be loaded (using the fully qualified name)
 
-		TclException notfound = new TclException(interp,
-		        "cannot import class \"" +
-			fullyqualified +
-			"\", it does not exist");
-
+		Class c = null;
 		try {
-		    Class c = tclClassLoader.loadClass(fullyqualified);
+		    c = tclClassLoader.loadClass(fullyqualified);
+
 		    if (!PkgInvoker.isAccessible(c)) {
-		        throw new TclException(interp, "Class \"" + c.getName() +
-		                "\" is not accessible");
+		        JavaInvoke.notAccessibleError(interp, c);
 		    }
-
+		    if (JavaInvoke.isInnerClass(c)) {
+		        throw new TclException(interp, "can't import an inner class");
+		    }
 		} catch (ClassNotFoundException e) {
-		    throw notfound;
-		} catch (SecurityException e) {
-		    // The tcljava loader throws a SecurityException when
-		    // a class cannot be loaded and it is in any of the
-		    // java.* packages or tcl.* packages. We catch that
-		    // exception here and treat it like ClassNotFoundException
-
-		    throw notfound;
+		} catch (PackageNameException e) {
 		}
 
+		if (c == null) {
+		    // Generate a specific error message for an inner class.
+		    // An inner class would not have been loaded by loadClass()
+		    // above, we need to invoke getClassByName() to find it.
+
+		    Class inner = null;
+		    try {
+		        inner = JavaInvoke.getClassByName(interp, fullyqualified);
+		    } catch (TclException e2) {
+		        // No-op
+		    }
+
+		    if (inner != null && JavaInvoke.isInnerClass(inner)) {
+		        throw new TclException(interp,
+		            "can't import an inner class");
+		    } else {
+		        throw new TclException(interp,
+		            "cannot import class \"" +
+		            fullyqualified +
+		            "\", it does not exist");
+		    }
+		}
 	    }
 
 	    // When processing a -forget argument, make sure the class

@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: PkgInvoker.java,v 1.7 2006/02/08 23:53:47 mdejong Exp $
+ * RCS: @(#) $Id: PkgInvoker.java,v 1.8 2006/04/13 07:36:50 mdejong Exp $
  *
  */
 
@@ -223,12 +223,13 @@ getPkgInvoker(
 
     PkgInvoker invoker = (PkgInvoker) cachedInvokers.get(pkg);
     if (invoker == null) {
-	try {
-	    // Use the class loader that loaded the class
-	    // in question.
+	// Use the class loader that loaded the class
+	// in question.
 
-	    //ClassLoader cloader = this.class.getClassLoader();
-	    ClassLoader cloader = cls.getClassLoader();
+	//ClassLoader cloader = this.class.getClassLoader();
+	ClassLoader cloader = cls.getClassLoader();
+
+	try {
 	    Class invCls = cloader.loadClass(pkg + ".TclPkgInvoker");
 	    invoker = (PkgInvoker) invCls.newInstance();
 	} catch (Exception e) {

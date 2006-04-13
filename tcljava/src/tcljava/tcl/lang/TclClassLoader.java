@@ -24,7 +24,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: TclClassLoader.java,v 1.12 2006/02/14 04:13:27 mdejong Exp $
+ * RCS: @(#) $Id: TclClassLoader.java,v 1.13 2006/04/13 07:36:50 mdejong Exp $
  */
 
 
@@ -263,7 +263,9 @@ public Class
 loadClass(
     String className)       // The name of the desired Class.
 throws
-    ClassNotFoundException  // The class could not be found.
+    ClassNotFoundException,  // The class could not be found.
+    PackageNameException     // The class is in the java or tcl package
+                             // but it could not be loaded by system loader.
 {
     return loadClass(className, true);
 }
@@ -292,7 +294,8 @@ loadClass(
     boolean resolveIt)      // If true, then resolve all referenced classes.
 throws
     ClassNotFoundException, // The class could not be found.
-    SecurityException
+    PackageNameException,   // The classes package starts with java or tcl prefix.
+    SecurityException       // If something goes terribly wrong in defineClass().
 {
     Class result;           // The Class that is loaded.             
     byte[] classData = null;      // The bytes that compose the class file.
@@ -364,15 +367,20 @@ throws
         }
     }
 
+    if (debug) {
+	System.out.println("parent load did not work for class \"" + className + "\"");
+    }
+
     // Protect against attempts to load a class that contains the 'java'
     // or 'tcl' prefix, but is not in the corresponding file structure.
 
     if ((className.startsWith("java."))
 	    || (className.startsWith("tcl."))) {
-	throw new SecurityException("Java loader failed to load the class " +
-                "and the Tcl Java loader is not permitted to " +
+	throw new PackageNameException("Java loader failed to load the class " +
+                "and the TclClassLoader is not permitted to " +
                 "load classes in the tcl or java package at runtime, " +
-                "check your CLASSPATH.");
+                "check your CLASSPATH.",
+                className);
     }
 
     if (debug) {
@@ -488,7 +496,8 @@ throws
 
 protected URL
 findResource(
-    String resName)       // The name of the desired resource.
+    String resName)                    // The name of the desired resource.
+        throws PackageNameException    // In case resource starts with java or tcl prefix
 {
     final boolean debug = false;
     URL result = null;
@@ -512,8 +521,8 @@ findResource(
 
     if ((resName.startsWith("java/"))
 	    || (resName.startsWith("tcl/"))) {
-	throw new SecurityException("Can't load resource \"" + resName +
-            "\" with java or tcl prefix via TCL_CLASSPATH");
+	throw new PackageNameException("Can't load resource \"" + resName +
+            "\" with java or tcl prefix via TCL_CLASSPATH", resName);
     }
 
     if (debug) {

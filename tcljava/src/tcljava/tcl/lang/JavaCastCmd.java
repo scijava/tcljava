@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaCastCmd.java,v 1.3 2002/12/27 14:33:19 mdejong Exp $
+ * RCS: @(#) $Id: JavaCastCmd.java,v 1.4 2006/04/13 07:36:50 mdejong Exp $
  *
  */
 
@@ -58,8 +58,7 @@ throws
 
     // A cast to an inaccessible type is not legal in Java.
     if (!PkgInvoker.isAccessible(cast_to)) {
-        throw new TclException(interp, "Class \"" + cast_to.getName() +
-            "\" is not accessible");
+        JavaInvoke.notAccessibleError(interp, cast_to);
     }
 
     Object obj = ReflectObject.get(interp,argv[2]);

@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaInvoke.java,v 1.21 2006/04/10 21:13:56 mdejong Exp $
+ * RCS: @(#) $Id: JavaInvoke.java,v 1.22 2006/04/13 07:36:50 mdejong Exp $
  *
  */
 
@@ -141,20 +141,21 @@ throws
     FuncSig sig = FuncSig.get(interp, javaCl, signature, argv,
                                                startIdx, count, false);
     Method method = (Method) sig.func;
+    Class rtype = method.getReturnType();
 
-    if (!PkgInvoker.isAccessible(method.getReturnType())) {
+    if (!PkgInvoker.isAccessible(rtype)) {
 	throw new TclException(interp, "Return type \"" +
-	        method.getReturnType().getName() +
+	        JavaInfoCmd.getNameFromClass(rtype) +
 	        "\" is not accessible");
     }
 
     Object result = call(interp, sig.pkgInvoker, signature, method, javaObj,
 	    argv, startIdx, count);
 
-    if (method.getReturnType() == Void.TYPE) {
+    if (rtype == Void.TYPE) {
 	return null;
     } else {
-	return wrap(interp, method.getReturnType(), result, convert);
+	return wrap(interp, rtype, result, convert);
     }
 }
 
@@ -196,17 +197,18 @@ throws
 	    startIdx, count, true);
 
     Method method = (Method) sig.func;
+    Class rtype = method.getReturnType();
 
-    if (!PkgInvoker.isAccessible(method.getReturnType())) {
+    if (!PkgInvoker.isAccessible(rtype)) {
 	throw new TclException(interp, "Return type \"" +
-	        method.getReturnType().getName() +
+	        JavaInfoCmd.getNameFromClass(rtype) +
 	        "\" is not accessible");
     }
 
     Object result = call(interp, sig.pkgInvoker, signature, method, null,
 	    argv, startIdx, count);
 
-    if (method.getReturnType() == Void.TYPE) {
+    if (rtype == Void.TYPE) {
 	return null;
     } else {
 	return wrap(interp, method.getReturnType(), result, convert);
@@ -422,8 +424,7 @@ throws
 	isStatic = true;
 
 	if (!PkgInvoker.isAccessible(cls)) {
-	    throw new TclException(interp, "Class \"" + cls.getName() +
-	            "\" is not accessible");
+	    JavaInvoke.notAccessibleError(interp, cls);
 	}
     }
 
@@ -449,10 +450,11 @@ throws
 	throw new TclException(interp,
 		"can't access an instance field without an object");
     }
+    Class ftype = field.getType();
 
     if (!PkgInvoker.isAccessible(field.getType())) {
 	throw new TclException(interp, "Field type \"" +
-	        field.getType().getName() +
+	        JavaInfoCmd.getNameFromClass(ftype) +
 	        "\" is not accessible");
     }
 
@@ -463,10 +465,10 @@ throws
 
     try {
 	if (isget) {
-	    return wrap(interp, field.getType(),
+	    return wrap(interp, ftype,
 		    sig.pkgInvoker.getField(field, obj), convert);
 	} else {
-	    Object javaValue = convertTclObject(interp, field.getType(),
+	    Object javaValue = convertTclObject(interp, ftype,
 		    value);
 	    sig.pkgInvoker.setField(field, obj, javaValue);
 	    return null;
@@ -605,7 +607,8 @@ throws
  *	Returns Class object identified by the string name. We allow
  *	abbreviation of the java.lang.* class if there is no ambiguity:
  *	e.g., if there is no class whose fully qualified name is "String",
- *	then "String" means java.lang.String.
+ *	then "String" means java.lang.String. Inner classes are supported
+ *	both with fully qualified names and imported class names.
  *
  * Results:
  *	If successful, The Class object identified by the string name.
@@ -621,17 +624,25 @@ getClassByName(
     Interp interp,                      // Interp used by TclClassLoader
     String clsName)			// String name of the class.
 throws
-    TclException			// If the class cannot be found.
+    TclException			// If the class cannot be found or loaded.
+    
 {
     Class result = null;
     int dimension;
 
+    final boolean debug = false;
+    if (debug) {
+        System.out.println("JavaInvoke.getClassByName(\"" + clsName + "\")");
+    }
+
     // If the string is of the form className[][]..., strip out the trailing
     // []s and record the dimension of the array.
 
-    StringBuffer prefix_buf = new StringBuffer();
-    StringBuffer suffix_buf = new StringBuffer();
+    StringBuffer prefix_buf = new StringBuffer(64);
+    StringBuffer suffix_buf = new StringBuffer(64);
     StringBuffer clsName_buf = new StringBuffer(clsName);
+
+    String lname;
 
     int clsName_len;
     for (dimension = 0; true ; dimension++) {
@@ -648,44 +659,52 @@ throws
         }
     }
 
-    try {
+    boolean package_name_exception = false;
+
+    if (true) {
         clsName = clsName_buf.toString(); // Use shortened form of name
 
         // Search for the char '.' in the name. If '.' is in
         // the name then we know it is not a builtin type.
-        // Search for builtin types uses system class loader
-        // since tcljava.jar is loaded from the CLASSPATH.
 
 	if (clsName.indexOf('.') == -1) {
 	    if (dimension > 0) {
+		boolean isPrimitive = true;
+
 		if (clsName.equals("int")) {
 		    prefix_buf.append('I');
-		    return Class.forName(prefix_buf.toString());
 		} else if (clsName.equals("boolean")) {
 		    prefix_buf.append('Z');
-		    return Class.forName(prefix_buf.toString());
 		} else if (clsName.equals("long")) {
 		    prefix_buf.append('J');
-		    return Class.forName(prefix_buf.toString());
 		} else if (clsName.equals("float")) {
 		    prefix_buf.append('F');
-		    return Class.forName(prefix_buf.toString());
 		} else if (clsName.equals("double")) {
 		    prefix_buf.append('D');
-		    return Class.forName(prefix_buf.toString());
 		} else if (clsName.equals("byte")) {
 		    prefix_buf.append('B');
-		    return Class.forName(prefix_buf.toString());
 		} else if (clsName.equals("short")) {
 		    prefix_buf.append('S');
-		    return Class.forName(prefix_buf.toString());
 		} else if (clsName.equals("char")) {
 		    prefix_buf.append('C');
-		    return Class.forName(prefix_buf.toString());
 		} else {
-		    prefix_buf.append('L');
-		    suffix_buf.append(';');
+		    isPrimitive = false;
 		}
+
+		if (isPrimitive) {
+		    try {
+		        return Class.forName(prefix_buf.toString());
+		    } catch (ClassNotFoundException e) {
+		        throw new TclRuntimeError(
+		            "unexpected ClassNotFoundException: " +
+		            e.getMessage());
+		    }
+		}
+
+		// Otherwise, not a primitive array type
+
+		prefix_buf.append('L');
+		suffix_buf.append(';');
 	    } else {
 		if (clsName.equals("int")) {
 		    return Integer.TYPE;
@@ -710,48 +729,304 @@ throws
 	    TclClassLoader tclClassLoader = (TclClassLoader) interp.getClassLoader();
 
 	    try {
-		result = tclClassLoader.loadClass(prefix_buf + clsName + suffix_buf);
+		lname = prefix_buf + clsName + suffix_buf;
+
+		if (debug) {
+		    System.out.println("attempting load of \"" + lname + "\"");
+		}
+
+		result = tclClassLoader.loadClass(lname);
 	    } catch (ClassNotFoundException e) {
+		result = null;
+	    } catch (PackageNameException e) {
+		// Should not be possible to catch a PackageNameException
+		// here since the class name above should contain no '.' chars.
+		throw new TclRuntimeError("unexpected PackageNameException :" +
+		    e.getMessage());
+	    }
+
+	    if (result == null) {
 		// If the class loader can not find the class then check with
 		// the "import" feature to see if the given clsName maps to
 		// a fully qualified class name.
 
+		boolean inJavaLang = false;
 		String fullyqualified = JavaImportCmd.getImport(interp, clsName);
 
 		// If we do not find a fully qualified name in the import table
 		// then try to fully qualify the class with the java.lang prefix 
-		
+
 		if (fullyqualified == null) {
+		    inJavaLang = true;
 		    fullyqualified = "java.lang." + clsName;
 		}
 
-		// If the system class loader cannot resolve the class, than a
-		// SecurityException is thrown, catch this and 
-		// throw the standard error.
+		// If the class starts with "java." and it can't be
+		// loaded with the system class loader, then a
+		// PackageNameException is raised.
 
 		try {
-		    result = tclClassLoader.loadClass(prefix_buf +
-			        fullyqualified +  suffix_buf);
-		} catch (SecurityException e2) {
+		    lname = prefix_buf + fullyqualified + suffix_buf;
+
+		    if (debug) {
+		        System.out.println("attempting load of \"" + lname + "\"");
+		    }
+
+		    result = tclClassLoader.loadClass(lname);
+		} catch (ClassNotFoundException e) {
+		    result = null;
+		} catch (PackageNameException e) {
+		    // If loading a class from java.lang package fails
+		    // and we fully qualified the class name with the
+		    // java.lang prefix, then don't emit a special
+		    // error message related to the package name.
+
+		    if (inJavaLang) {
+                        // No-op
+		    } else {
+		        package_name_exception = true;
+		    }
 		    result = null;
 		}
+
+	        if (debug) {
+                    if (result == null) {
+	                System.out.println("load failed");
+                    } else {
+	                System.out.println("load worked");
+                    }
+	        }
 	    }
 	} else {
+	    // clsName contains a '.' character. It is either a fully
+	    // qualified toplevel class name or an inner class name.
+	    // Note that use of a '$' to indicate an inner class is
+	    // supported only for backwards compatibility and
+	    // works only with a fully qualified class name.
+
 	    TclClassLoader tclClassLoader = (TclClassLoader) interp.getClassLoader();
 
 	    if (dimension > 0) {
-		clsName = prefix_buf + "L" + clsName + ";";
+                prefix_buf.append("L");
+                suffix_buf.append(";");
 	    }
-	    result = tclClassLoader.loadClass(clsName);
+
+	    try {
+		lname = prefix_buf + clsName + suffix_buf;
+
+		if (debug) {
+		    System.out.println("attempting load of \"" + lname + "\"");
+		}
+
+		result = tclClassLoader.loadClass(lname);
+	    } catch (ClassNotFoundException e) {
+	        result = null;
+	    } catch (PackageNameException e) {
+	        package_name_exception = true;
+	        result = null;
+	    }
+
+	    if (debug) {
+                if (result == null) {
+	            System.out.println("load failed");
+                } else {
+	            System.out.println("load worked");
+                }
+	    }
+
+	    if ((result == null) && (clsName.indexOf('$') == -1)) {
+	        // Toplevel class with fully qualified name not found.
+	        // Search for an inner class with this name. This
+	        // search is tricky because inner classes can be
+	        // nested inside other inner classes. Find a containing
+	        // class that exists, then search for an inner class
+	        // relative to the containing class. Old style inner class
+	        // names that contain a literal '$' character are not searched.
+
+	        ArrayList parts = new ArrayList(5);
+	        int si = 0;
+	        int clsNameLength = clsName.length();
+	        for (int i=0; i <= clsNameLength; i++) {
+	            if ((i == clsNameLength) || (clsName.charAt(i) == '.')) {
+	                parts.add( clsName.substring(si, i) );
+	                si = i + 1;
+	            }
+	        }
+	        if (debug) {
+	            System.out.println("clsName parts is " + parts);
+	        }
+
+	        // Search for a contanining class, construct inner
+	        // class name if a contanining class was found.
+
+	        String toplevel = null;
+	        String inner = null;
+	        boolean load_inner = false;
+
+	        for (int i = parts.size() - 1; i > 0; i--) {
+	            StringBuffer sb;
+
+	            sb = new StringBuffer(64);
+	            for (int bi=0; bi < i; bi++) {
+	                sb.append( parts.get(bi) );
+	                sb.append( '.' );
+	            }
+	            if ((sb.length() > 0) && (sb.charAt(sb.length() - 1) == '.')) {
+	                sb.setLength(sb.length() - 1);
+	            }
+	            toplevel = sb.toString();
+
+	            sb = new StringBuffer(64);
+	            for (int ai=i; ai < parts.size(); ai++) {
+	                sb.append( parts.get(ai) );
+	                sb.append( '$' );
+	            }
+	            if ((sb.length() > 0) && (sb.charAt(sb.length() - 1) == '$')) {
+	                sb.setLength(sb.length() - 1);
+	            }
+	            inner = sb.toString();
+
+	            if (debug) {
+	                System.out.println("loop " + i + ":");
+	                System.out.println("toplevel is " + toplevel);
+	                System.out.println("inner is " + inner);
+	            }
+
+	            try {
+	                lname = prefix_buf + toplevel + suffix_buf;
+
+	                if (debug) {
+	                    System.out.println("attempting load of \"" + lname + "\"");
+	                }
+
+	                result = tclClassLoader.loadClass(lname);
+	            } catch (ClassNotFoundException e) {
+	                // Not an enclosing toplevel class, raise TclException
+	                result = null;
+	            } catch (PackageNameException e) {
+	                package_name_exception = true;
+	                result = null;
+	            }
+
+	            if (debug) {
+	                if (result == null) {
+	                    System.out.println("load failed");
+	                } else {
+	                    System.out.println("load worked");
+	                }
+	            }
+
+	            if (result != null) {
+	                // Containing class was loaded, break out of
+	                // this loop and load the inner class by name.
+
+	                load_inner = true;
+	                break;
+	            } else if ((toplevel.indexOf('.') == -1)) {
+	                // The toplevel class was not loaded, it could
+	                // be an imported class name. Check the import
+	                // table for this class name. Don't bother
+	                // loading an imported name since the class
+	                // had to exist to be imported in the first place.
+
+	                if (debug) {
+	                    System.out.println("checking import table for \"" + toplevel + "\"");
+	                }
+	                String fullyqualified = JavaImportCmd.getImport(interp, toplevel);
+	                if (debug) {
+	                    if (fullyqualified == null) {
+	                        System.out.println("was not imported");
+	                    } else {
+	                        System.out.println("was imported as \"" + fullyqualified + "\"");
+	                    }
+	                }
+
+	                if (fullyqualified != null) {
+	                    load_inner = true;
+	                    toplevel = fullyqualified;
+	                    break;
+	                } else {
+	                    // Not an imported toplevel class. Check to
+	                    // see if the class is in the java.lang package.
+
+	                    fullyqualified = "java.lang." + toplevel;
+
+	                    try {
+	                        lname = prefix_buf + fullyqualified + suffix_buf;
+
+	                        if (debug) {
+	                            System.out.println("attempting load of \"" + lname + "\"");
+	                        }
+
+	                        result = tclClassLoader.loadClass(lname);
+	                    } catch (ClassNotFoundException e) {
+	                        result = null;
+	                    } catch (PackageNameException e) {
+	                        result = null;
+	                    }
+
+	                    if (debug) {
+	                        if (result == null) {
+	                            System.out.println("load failed");
+	                        } else {
+	                            System.out.println("load worked");
+	                        }
+	                    }
+
+	                    if (result != null) {
+	                        load_inner = true;
+	                        toplevel = fullyqualified;
+	                        break;
+	                    }
+	                }
+	            }
+	        }
+
+	        if (load_inner) {
+	            // If enclosing class exists, attempt to load inner class.
+
+	            try {
+	                lname = prefix_buf + toplevel + "$" + inner + suffix_buf;
+
+	                if (debug) {
+	                    System.out.println("attempting load of \"" + lname + "\"");
+	                }
+
+	                result = tclClassLoader.loadClass(lname);
+	            } catch (ClassNotFoundException e) {
+	                // Not an inner class, raise TclException
+	                result = null;
+	            } catch (PackageNameException e) {
+	                package_name_exception = true;
+	                result = null;
+	            }
+
+	            if (debug) {
+	                if (result == null) {
+	                    System.out.println("load failed");
+	                } else {
+	                    System.out.println("load worked");
+	                }
+	            }
+	        } // end if (load_inner)
+	    }
 	}
-    } catch (ClassNotFoundException e) {
-	result = null;
-    } catch (SecurityException e) {
-	throw new TclException(interp, 
-		"cannot load new class into java or tcl package");
+    } // end if (true) block
+
+    if ((result == null) && package_name_exception) {
+        if (debug) {
+            System.out.println("throwing TclException because of PackageNameException");
+        }
+
+        throw new TclException(interp, 
+            "cannot load new class into java or tcl package");
     }
 
     if (result == null) {
+        if (debug) {
+            System.out.println("throwing unknown class TclException");
+        }
+
 	throw new TclException(interp, "unknown class \"" + clsName_buf + "\"");
     }
 
@@ -1102,6 +1377,62 @@ isAssignable(
         } else {
             return false;
         }
+    }
+}
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * notAccessibleError --
+ *
+ *	Raise a specific TclException when a class that is not accessible
+ *	is found.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+static void
+notAccessibleError(Interp interp, Class cls)
+    throws TclException
+{
+    throw new TclException(interp,
+        "Class \"" +
+        JavaInfoCmd.getNameFromClass(cls) +
+        "\" is not accessible");
+}
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * isInnerClass --
+ *
+ *	Return true is a class is either an inner class or an inner interface.
+ *	This is true only for classes defined inside other classes.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+static boolean
+isInnerClass(Class cls)
+    throws TclException
+{
+    String cname = cls.getName();
+    if (cname.indexOf('$') == -1) {
+        return false;
+    } else {
+        return true;
     }
 }
 

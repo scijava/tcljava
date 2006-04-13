@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: JavaNewCmd.test,v 1.6 2006/04/10 21:13:57 mdejong Exp $
+# RCS: @(#) $Id: JavaNewCmd.test,v 1.7 2006/04/13 07:36:51 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -289,6 +289,130 @@ test javaNewCmd-5.17 {array case, test classname} {
     } msg] $msg
 } {0 {{int[]} int 1 0}}
 
+
+test javaNewCmd-6.0 {static inner class} {
+    # Allocate static inner class given the fully
+    # qualified name of the inner class.
+    list [catch {
+	set handle [java::new tests.InnerTest.InnerClass1]
+	java::info class $handle
+    } msg] $msg
+} {0 tests.InnerTest.InnerClass1}
+
+test javaNewCmd-6.1 {static inner class} {
+    # Old method of passing fully qualified name containing a '$'
+    # is still supported even though it does not work very well.
+    list [catch {
+	set handle [java::new {tests.InnerTest$InnerClass1}]
+	java::info class $handle
+    } msg] $msg
+} {0 tests.InnerTest.InnerClass1}
+
+test javaNewCmd-6.2 {cast static inner class to inner Interface} {
+    # Allocate a static inner class, then cast it to a
+    # static interface. This checks loading of both
+    # types via the fully qualified name.
+    list [catch {
+	set handle [java::new tests.InnerTest.InnerClass2]
+	set i [java::cast tests.InnerTest.InnerInterface1 $handle]
+        list [java::info class $handle] [java::info class $i]
+    } msg] $msg
+} {0 {tests.InnerTest.InnerClass2 tests.InnerTest.InnerInterface1}}
+
+test javaNewCmd-6.3 {toplevel class and static inner class with same name} {
+    # Test a situation that can't come up in compiled Java code.
+    # There is a toplevel class named tests.InnerTest.DupName
+    # that has the same name as a static inner class defined
+    # in the class tests.InnerTest. Compiling with javac would
+    # generate an error at compile time, the runtime logic will
+    # just choose the toplevel class over the static inner class.
+    # These two methods show that the generated .class files
+    # contain static constructor refrences to either the inner
+    # class or to the toplevel class. Also note that java::info
+    # converts the $ in inner class names to a . character.
+
+    list [catch {
+        set h1 [java::call tests.DupTest call]
+        set h2 [java::call tests.InnerTest.DupTest call]
+        set h3 [java::new tests.InnerTest.DupName]
+        list \
+            [[$h1 getClass] getName] \
+            [[$h2 getClass] getName] \
+            [[$h3 getClass] getName]
+    } msg] $msg
+} [list 0 \
+    [list {tests.InnerTest$DupName} \
+          tests.InnerTest.DupName \
+          tests.InnerTest.DupName \
+    ]]
+
+test javaNewCmd-6.4 {static inner class} {
+    # Get handle to static inner class.
+    list [catch {
+	set c [java::field tests.InnerTest.InnerClass1 class]
+        $c toString
+    } msg] $msg
+} {0 {class tests.InnerTest$InnerClass1}}
+
+test javaNewCmd-6.5 {static array of inner class} {
+    # Get handle to array of static inner class.
+    list [catch {
+	set c [java::new {tests.InnerTest.InnerClass1[]} {0}]
+        java::info class $c
+    } msg] $msg
+} {0 {tests.InnerTest.InnerClass1[]}}
+
+test javaNewCmd-6.6 {cast to inner interface} {
+    # Get handle to static inner interface
+    list [catch {
+        set c [java::field java.util.Map.Entry class]
+        $c toString
+    } msg] $msg
+} {0 {interface java.util.Map$Entry}}
+
+test javaNewCmd-6.7 {multiple inner classes} {
+    # Get inner class inside inner class.
+    list [catch {
+        set o [java::call tests.InnerTest getInnerClass4]
+        java::info class $o
+    } msg] $msg
+} {0 tests.InnerTest.InnerClass3.InnerClass4}
+
+test javaNewCmd-6.8 {multiple inner classes} {
+    # Use java::new to allocate inner class inside inner class.
+    # This checks that loading of inner classes works with
+    # multiple level of inner class names.
+    list [catch {
+        set o [java::new tests.InnerTest.InnerClass3.InnerClass4]
+        java::info class $o
+    } msg] $msg
+} {0 tests.InnerTest.InnerClass3.InnerClass4}
+
+test javaNewCmd-6.9 {multiple inner classes} {
+    # Invoke Java methods that make use of imported
+    # inner classes.
+    list \
+        [java::info class [java::call tests.InnerImport newA]] \
+        [java::info class [java::call tests.InnerImport newB]] \
+        [java::info class [java::call tests.InnerImport newC]] \
+        [java::info class [java::call tests.InnerImport newD]] \
+        [java::info class [java::call tests.InnerImport newE]]
+} [list \
+    tests.InnerTest.InnerClass3 \
+    tests.InnerTest.InnerClass3 \
+    tests.InnerTest.InnerClass3.InnerClass4 \
+    tests.InnerTest.InnerClass3.InnerClass4 \
+    tests.InnerTest.InnerClass3.InnerClass4 \
+  ]
+
+test javaNewCmd-6.10 {class in java.lang package} {
+    # Ref to class in java.lang
+    list \
+        [java::info class \
+            [java::cast java.lang.Character.Subset [java::null]]] \
+        [java::info class \
+            [java::cast Character.Subset [java::null]]] \
+} {java.lang.Character.Subset java.lang.Character.Subset}
 
 
 # Test series 7 checks that primitive wrapper type

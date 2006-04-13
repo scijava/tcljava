@@ -142,7 +142,7 @@ test AutomaticSignature-3.1 {ambiguous method failures} {
     lappend result [java::call $class call $a]
     lappend result [java::call $class call $i]
     list $result [catch {java::call $class call $b} err] $err
-} {{A I} 1 {ambiguous method signature, assignable signatures are {call {tests.signature.MethodFailure1$A}} {call {tests.signature.MethodFailure1$I}}}}
+} {{A I} 1 {ambiguous method signature, assignable signatures are {call tests.signature.MethodFailure1.A} {call tests.signature.MethodFailure1.I}}}
 
 
 test AutomaticSignature-3.2 {ambiguous method failures} {
@@ -155,7 +155,7 @@ test AutomaticSignature-3.2 {ambiguous method failures} {
     lappend result [java::call $class call $a]
     lappend result [java::call $class call $i]
     list $result [catch {java::call $class call $b} err] $err
-} {{A I} 1 {ambiguous method signature, assignable signatures are {call {tests.signature.MethodFailure2$A}} {call {tests.signature.MethodFailure2$I}}}}
+} {{A I} 1 {ambiguous method signature, assignable signatures are {call tests.signature.MethodFailure2.A} {call tests.signature.MethodFailure2.I}}}
 
 
 test AutomaticSignature-3.3 {ambiguous method failures} {
@@ -170,7 +170,7 @@ test AutomaticSignature-3.3 {ambiguous method failures} {
     lappend result [java::call $class call $b]
     lappend result [java::call $class call $i]
     list $result [catch {java::call $class call $c} err] $err
-} {{A A I} 1 {ambiguous method signature, assignable signatures are {call {tests.signature.MethodFailure3$A}} {call {tests.signature.MethodFailure3$I}}}}
+} {{A A I} 1 {ambiguous method signature, assignable signatures are {call tests.signature.MethodFailure3.A} {call tests.signature.MethodFailure3.I}}}
 
 
 test AutomaticSignature-3.4 {ambiguous method failures} {
@@ -185,7 +185,7 @@ test AutomaticSignature-3.4 {ambiguous method failures} {
     lappend result [java::call $class call $i]
     list $result [catch {java::call $class call $b} err] $err \
                  [catch {java::call $class call $c} err] $err
-} {{A I} 1 {ambiguous method signature, assignable signatures are {call {tests.signature.MethodFailure4$A}} {call {tests.signature.MethodFailure4$I}}} 1 {ambiguous method signature, assignable signatures are {call {tests.signature.MethodFailure4$A}} {call {tests.signature.MethodFailure4$I}}}}
+} {{A I} 1 {ambiguous method signature, assignable signatures are {call tests.signature.MethodFailure4.A} {call tests.signature.MethodFailure4.I}} 1 {ambiguous method signature, assignable signatures are {call tests.signature.MethodFailure4.A} {call tests.signature.MethodFailure4.I}}}
 
 
 test AutomaticSignature-3.5 {ambiguous method failures} {

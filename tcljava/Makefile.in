@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.54 2006/03/27 21:42:55 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.55 2006/04/13 07:36:49 mdejong Exp $
 
 SHELL = /bin/sh
 
@@ -1196,6 +1196,18 @@ test_tcljava.build: $(TCLJAVA).check
 		tcl/lang/*.java tests/*.java tests/invoke/*.java \
 		tests/javainfo/*.java tests/signature/*.java \
 		tests/javabind/*.java tests/exec/*.java
+	@# javac would generate an error if both tests.InnerTest
+	@# and tests.InnerTest.DupName are compiled at the same
+	@# time or can be found one the CLASSPATH at compile time.
+	@# Work around that to create the strange situation of
+	@# a duplicate toplevel class and inner class name.
+	@# Note that JAVA_CLASSPATH is used instead of TEST_CLASSPATH
+	@# so that the duplicate class is not found on the CLASSPATH.
+	cd $(TEST_TCLJAVA_SRC_DIR) ;\
+	CLASSPATH=$(JAVA_CLASSPATH) \
+	$(JAVAC) $(JAVAC_FLAGS) \
+		$(JAVAC_D_FLAG) $(TEST_BUILD_DIR) \
+		tests/InnerTest/*.java
 	mkdir -p $(TEST_BUILD_DIR)/javaload
 	@# workaround for bug in jikes (extra mkdir)
 	mkdir -p $(TEST_BUILD_DIR)/javaload/tests/javaload

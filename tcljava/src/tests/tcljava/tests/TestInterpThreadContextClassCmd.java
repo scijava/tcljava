@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: TestInterpThreadContextClassCmd.java,v 1.1 2006/02/08 23:53:47 mdejong Exp $
+ * RCS: @(#) $Id: TestInterpThreadContextClassCmd.java,v 1.2 2006/04/13 07:36:51 mdejong Exp $
  */
 
 package tests;
@@ -77,6 +77,7 @@ public class TestInterpThreadContextClassCmd
         try {
             c = loader.loadClass("TestInterpThreadUnknown");
         } catch (ClassNotFoundException e) {
+        } catch (PackageNameException e) {
         }
 
         if (c != null) {

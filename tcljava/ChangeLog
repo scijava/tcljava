@@ -1,3 +1,55 @@
+2006-04-12  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        Implement support for inner classes without
+        having to use $ in the class name. Inner
+        classes can now be indicated using either
+        and imported or fully qualified class name.
+        The [java::info class $c] will now return
+        inner class names with no $ in the name.
+
+        * Makefile.in:
+        * src/jacl/tcl/lang/Interp.java:
+        * src/tclblend/tcl/lang/Interp.java:
+        * src/tcljava/tcl/lang/Extension.java:
+        * src/tcljava/tcl/lang/FieldSig.java:
+        * src/tcljava/tcl/lang/FuncSig.java:
+        * src/tcljava/tcl/lang/JavaCastCmd.java:
+        * src/tcljava/tcl/lang/JavaImportCmd.java:
+        * src/tcljava/tcl/lang/JavaInfoCmd.java:
+        * src/tcljava/tcl/lang/JavaInstanceofCmd.java:
+        * src/tcljava/tcl/lang/JavaInvoke.java: Implement
+        inner class loading by searching for containing
+        class in the given class name.
+        * src/tcljava/tcl/lang/JavaLoadCmd.java:
+        * src/tcljava/tcl/lang/JavaNewCmd.java:
+        * src/tcljava/tcl/lang/PackageNameException.java:
+        * src/tcljava/tcl/lang/ReflectObject.java:
+        * src/tcljava/tcl/lang/TclClassLoader.java:
+        Rework TclClassLoader so that a PackageNameException
+        is raised when a class in the java. or tcl.
+        package is loaded but can't be found. The
+        previous implementation would raise a SecurityException
+        but this was confusing because there are situations
+        where SecurityException could be raised and it is
+        not useful to treat these like a class not found error.
+        * src/tcljava/tcl/lang/reflect/PkgInvoker.java:
+        * src/tests/tcljava/tests/DupTest.java:
+        * src/tests/tcljava/tests/ImportTest.java:
+        * src/tests/tcljava/tests/InnerImport.java:
+        * src/tests/tcljava/tests/InnerTest.java:
+        * src/tests/tcljava/tests/TestInterpThreadContextClassCmd.java:
+        * src/tests/tcljava/tests/InnerTest/DupName.java:
+        * src/tests/tcljava/tests/InnerTest/DupTest.java:
+        * src/tjc/tcl/lang/TJCCommandCmd.java:
+        * src/tjc/tcl/lang/TJCPackageCmd.java:
+        * tests/tcljava/AutomaticSignature.test:
+        * tests/tcljava/JavaImportCmd.test: Add
+        test cases for inner class names where the
+        containing class is imported.
+        * tests/tcljava/JavaLoadCmd.test:
+        * tests/tcljava/JavaNewCmd.test: Add allocation
+        of inner static inner class tests.
+
 2006-04-11  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/tjc/tjc/library/compileproc.tcl

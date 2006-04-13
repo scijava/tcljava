@@ -1,12 +1,14 @@
 /*
  * ImportTest.java --
  *
+ * This class is used to regression test the java::import command.
+ *
  * Copyright (c) 1999 by Moses DeJong
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: ImportTest.java,v 1.1 1999/08/09 08:52:36 mo Exp $
+ * RCS: @(#) $Id: ImportTest.java,v 1.2 2006/04/13 07:36:51 mdejong Exp $
  *
  */
 
@@ -60,4 +62,6 @@ public class ImportTest {
   // static class member
 
   public final static int ten = 10;
+
 }
+

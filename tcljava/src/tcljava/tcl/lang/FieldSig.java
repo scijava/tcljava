@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: FieldSig.java,v 1.8 2006/01/26 19:49:19 mdejong Exp $
+ * RCS: @(#) $Id: FieldSig.java,v 1.9 2006/04/13 07:36:50 mdejong Exp $
  *
  */
 
@@ -158,13 +158,14 @@ throws
     if (sigClsObj != null) {
 	sigCls = ClassRep.get(interp, sigClsObj);
 	if (!sigCls.isAssignableFrom(targetCls)) {
-	    throw new TclException(interp, "\"" + sigCls.getName() +
-		    "\" is not a superclass of \"" + targetCls.getName() +
+	    throw new TclException(interp, "\"" +
+		    JavaInfoCmd.getNameFromClass(sigCls) +
+		    "\" is not a superclass of \"" +
+		    JavaInfoCmd.getNameFromClass(targetCls) +
 		    "\"");
 	}
 	if (!PkgInvoker.isAccessible(sigCls)) {
-	    throw new TclException(interp, "Class \"" + sigCls.getName() +
-	            "\" is not accessible");
+	    JavaInvoke.notAccessibleError(interp, sigCls);
 	}
     } else {
 	sigCls = targetCls;
@@ -174,7 +175,8 @@ throws
 	field = getAccessibleField(sigCls, fieldName);
     } catch (NoSuchFieldException e) {
 	throw new TclException(interp, "no accessible field \"" + signature +
-		"\" found in class " + sigCls.getName());
+		"\" found in class " +
+		JavaInfoCmd.getNameFromClass(sigCls));
     }
 
     FieldSig sig = new FieldSig(targetCls, sigCls, PkgInvoker.getPkgInvoker(

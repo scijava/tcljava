@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.36 2006/04/11 00:59:19 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.37 2006/04/13 07:36:50 mdejong Exp $
  *
  */
 
@@ -1653,7 +1653,9 @@ getResourceAsStream(String resName)
 
     try {
         return classLoader.getResourceAsStream(resName);
-    } catch (SecurityException e2) {
+    } catch (PackageNameException e) {
+        return null;
+    } catch (SecurityException e) {
         return null;
     }
 }

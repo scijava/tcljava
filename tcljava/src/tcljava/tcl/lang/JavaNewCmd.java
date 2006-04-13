@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaNewCmd.java,v 1.5 2002/12/27 14:33:19 mdejong Exp $
+ * RCS: @(#) $Id: JavaNewCmd.java,v 1.6 2006/04/13 07:36:50 mdejong Exp $
  *
  */
 
@@ -281,8 +281,7 @@ throws
 	}
 
 	if (!PkgInvoker.isAccessible(componentType)) {
-	    throw new TclException(interp, "Class \"" + componentType.getName() +
-	        "\" is not accessible");
+	    JavaInvoke.notAccessibleError(interp, componentType);
 	}
 
 	int dimensions = 0;

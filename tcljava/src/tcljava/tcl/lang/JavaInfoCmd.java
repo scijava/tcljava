@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaInfoCmd.java,v 1.6 2002/12/27 14:33:19 mdejong Exp $
+ * RCS: @(#) $Id: JavaInfoCmd.java,v 1.7 2006/04/13 07:36:50 mdejong Exp $
  */
 
 package tcl.lang;
@@ -130,8 +130,7 @@ throws
 	    return;
 	}
  	if (!PkgInvoker.isAccessible(c)) {
-	    throw new TclException(interp, "Class \"" + c.getName() +
-	        "\" is not accessible");
+	    JavaInvoke.notAccessibleError(interp, c);
 	}
 	lookup: {
 	    BeanInfo beanInfo;
@@ -150,7 +149,7 @@ throws
 	    TclObject list = TclList.newInstance();
 	    for (int i = 0; i < events.length; i++) {
 		TclList.append(interp, list, TclString.newInstance(
-			events[i].getListenerType().getName()));
+			getNameFromClass(events[i].getListenerType())));
 	    }
 	    interp.setResult(list);
 	    return;
@@ -179,8 +178,7 @@ throws
 	c = getClassFromObj(interp, argv[lastArg]);
 	if (c != null) {
 	    if (!PkgInvoker.isAccessible(c)) {
-	        throw new TclException(interp, "Class \"" + c.getName() +
-	            "\" is not accessible");
+	        JavaInvoke.notAccessibleError(interp, c);
 	    }
 	    resultListObj = getFieldInfoList(interp, c, statOpt, typeOpt);
 	    interp.setResult(resultListObj);
@@ -205,8 +203,7 @@ throws
 	c = getClassFromObj(interp, argv[lastArg]);
         if (c != null) {
 	    if (!PkgInvoker.isAccessible(c)) {
-	        throw new TclException(interp, "Class \"" + c.getName() +
-	            "\" is not accessible");
+	        JavaInvoke.notAccessibleError(interp, c);
 	    }
 	    resultListObj = getMethodInfoList(interp, c, statOpt, typeOpt);
 	    interp.setResult(resultListObj);
@@ -214,13 +211,12 @@ throws
 	return;
     case CONSTRUCTORS:
 	if (argv.length != 3) {
-	    throw new TclNumArgsException(interp, 2, argv,"objOrClass");
+	    throw new TclNumArgsException(interp, 2, argv, "objOrClass");
 	}
 	c = getClassFromObj(interp, argv[lastArg]);
         if (c != null) {
 	    if (!PkgInvoker.isAccessible(c)) {
-	        throw new TclException(interp, "Class \"" + c.getName() +
-	            "\" is not accessible");
+	        JavaInvoke.notAccessibleError(interp, c);
 	    }
 	    resultListObj = getConstructorInfoList(interp, c);
 	    interp.setResult(resultListObj);
@@ -243,8 +239,7 @@ throws
 	c = getClassFromObj(interp, argv[lastArg]);
         if (c != null) {
 	    if (!PkgInvoker.isAccessible(c)) {
-	        throw new TclException(interp, "Class \"" + c.getName() +
-	            "\" is not accessible");
+	        JavaInvoke.notAccessibleError(interp, c);
 	    }
 	    resultListObj = getPropInfoList(interp, c, typeOpt);
 	    interp.setResult(resultListObj);
@@ -343,16 +338,16 @@ throws
 
     PropertyDescriptor propDesc[] = null;
     propDesc = beaninfo.getPropertyDescriptors();
-    
+
     TclObject resultListObj = TclList.newInstance();
     TclObject elementObj, pairObj;
 
     for (int i = 0; i < propDesc.length; i++) {
 	// If the -type option was specified, create a list containing
 	// the field's type and name.
-	    
+
 	pairObj = TclList.newInstance();
-		
+
 	if (typeOpt) {
 	    // The result of getPropertyType() may be "null" if this is an
 	    // indexed property that does not support non-indexed access.
@@ -361,7 +356,8 @@ throws
 	    // case in which null was returned.
 	    
 	    elementObj = 
-		TclString.newInstance(propDesc[i].getPropertyType().getName());
+		TclString.newInstance(
+                    getNameFromClass(propDesc[i].getPropertyType()));
 	    if (elementObj != null) {
 		TclList.append(interp, pairObj, elementObj);
 	    }
@@ -438,8 +434,8 @@ throws
 		    }
 		    Class tmpClass = fieldArray[i].getDeclaringClass();
 		    if (declClass.isAssignableFrom(tmpClass)) {
-			
-			elementObj = TclString.newInstance(declClass.getName());
+			elementObj = TclString.newInstance(
+                            getNameFromClass(declClass));
 			TclList.append(interp, sigObj, elementObj);
 			break;
 		    }			
@@ -535,7 +531,7 @@ throws
 		Class ex[] = methodArray[m].getExceptionTypes();
 		for (int i = 0; i < ex.length; i++) {
 		    TclList.append(interp, exceptions, TclString.newInstance(
-			    ex[i].getName()));
+			    getNameFromClass(ex[i])));
 		}
 
 		TclList.append(interp, sublist, TclString.newInstance(
@@ -655,12 +651,13 @@ getNameFromClass(
     Class type)			// The class for which we return the name.
 {
     StringBuffer name = new StringBuffer();
-    
+
     while (type.isArray()) {
 	name.append("[]");
 	type = type.getComponentType();
     }
-    name.insert(0,type.getName());
+    String className = type.getName().replace('$', '.'); // For inner classes
+    name.insert(0, className);
     return name.toString();
 }
 
@@ -687,7 +684,7 @@ getBaseNameFromClass(
     while (type.isArray()) {
 	type = type.getComponentType();
     }
-    return type.getName();
+    return type.getName().toString().replace('$', '.'); // For inner classes
 }
 
 } //end JavaInfoCmd

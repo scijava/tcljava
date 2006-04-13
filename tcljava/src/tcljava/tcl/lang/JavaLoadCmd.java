@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: JavaLoadCmd.java,v 1.4 2006/02/08 23:53:47 mdejong Exp $
+ * RCS: @(#) $Id: JavaLoadCmd.java,v 1.5 2006/04/13 07:36:50 mdejong Exp $
  */
 
 package tcl.lang;
@@ -59,7 +59,7 @@ throws
 	throw new TclNumArgsException(interp, 1, argv,
 		"?-classpath arg? packageName");
     }
-    
+
     // Populate the classpath array with arguments from command line, if 
     // the -classpath option was specified.
 
@@ -76,7 +76,7 @@ throws
 
     // The class loader dosen't want .class at the end, so strip
     // it off if it exists.
-    
+
     if (packageName.endsWith(".class")) {
 	packageName = packageName.substring(0,
 		packageName.lastIndexOf(".class"));
@@ -106,7 +106,7 @@ throws
     } catch (ClassFormatError e) {
 	throw new TclException(interp, errorMsg +
 		"use the fully qualified package name");
-    } catch (SecurityException e) {
+    } catch (PackageNameException e) {
 	throw new TclException(interp, errorMsg + e);
     } finally {
 	// If we did not have a valid load, the packageName
@@ -114,12 +114,12 @@ throws
 	// cache of loaded classes.  If this is not done
 	// any other attempts to load this package will always
 	// use this tclClassLoader and will always fail.
-	
+
 	if (!validLoad) {
 	    tclClassLoader.removeCache(packageName);
 	}
     }
-    
+
     try {
 	// Create an instance of the class.  It is important that the class
 	// be casted to a class that was created by the System ClassLoader.
