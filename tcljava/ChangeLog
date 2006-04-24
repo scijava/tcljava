@@ -1,3 +1,17 @@
+2006-04-24  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/jacl/tcl/lang/Notifier.java (processEvent):
+        When an after event blocks in a vwait, any
+        remaining after events should be processed
+        via another TclEvent. The Notifier class
+        contained a bug that would cause after events
+        to not be processed. Fix the problem by setting
+        the timerPending flag to false before invoking
+        a callback that might invoke vwait. Add some
+        null pointer and disposed notifier checks.
+        * tests/tcl/timer.test: Add test case for
+        an after command that blocks in a vwait.
+
 2006-04-13  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * new_features.txt: Mention recent changes.

@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Notifier.java,v 1.9 2006/01/26 19:49:18 mdejong Exp $
+ * RCS: @(#) $Id: Notifier.java,v 1.10 2006/04/24 22:23:56 mdejong Exp $
  *
  */
 
@@ -107,9 +107,12 @@ int refCount;
 
 private
 Notifier(
-    Thread primaryTh)		// The primary thread for this Notifier.
+    Thread primaryThread)		// The primary thread for this Notifier.
 {
-    primaryThread     = primaryTh;
+    if (primaryThread == null) {
+        throw new NullPointerException("primaryThread");
+    }
+    this.primaryThread = primaryThread;
     firstEvent        = null;
     lastEvent         = null;
     markerEvent       = null;
@@ -243,6 +246,16 @@ queueEvent(
     int position)		// One of TCL.QUEUE_TAIL,
 				// TCL.QUEUE_HEAD or TCL.QUEUE_MARK.
 {
+    if (primaryThread == null) {
+        // queueEvent() invoked after the Notifier has been
+        // released. This could happen if this method was
+        // invoked after all the Interp objects in this
+        // thread have been disposed.
+
+        throw new TclRuntimeError("Notifier.queueEvent() with " +
+            "no Interp() objects in the current thread");
+    }
+
     evt.notifier = this;
 
     if (position == TCL.QUEUE_TAIL) {
@@ -479,7 +492,7 @@ serviceEvent(
  *	Search through the internal event list to find the first event
  *	that is has not being processed AND the event is not equal to the given
  *	'skipEvent'.  This method is concurrent safe.
- *	
+ *
  * Results:
  *	The return value is a pointer to the first found event that can be
  * 	processed.  If no event is found, this method returns null.
@@ -542,10 +555,22 @@ doOneEvent(
 				// TCL.TIMER_EVENTS, TCL.IDLE_EVENTS,
 				// or others defined by event sources.
 {
+    final boolean debug = false;
+
     int result = 0;
 
+    if (primaryThread == null) {
+        // queueEvent() invoked after the Notifier has been
+        // released. This could happen if this method was
+        // invoked after all the Interp objects in this
+        // thread have been disposed.
+
+        throw new TclRuntimeError("Notifier.doOneEvent() with " +
+            "no Interp() objects in the current thread");
+    }
+
     // No event flags is equivalent to TCL_ALL_EVENTS.
-    
+
     if ((flags & TCL.ALL_EVENTS) == 0) {
 	flags |= TCL.ALL_EVENTS;
     }
@@ -705,7 +730,7 @@ serviceIdle()
 
 class TimerEvent extends TclEvent {
 
-// The notifier what owns this TimerEvent.
+// The notifier that owns this TimerEvent.
 
 Notifier notifier;
 
@@ -713,13 +738,17 @@ Notifier notifier;
 /*
  *----------------------------------------------------------------------
  *
- * processEvent --
+ * TimerHandlerEventProc -> processEvent
  *
- *	Process the timer event by invoking the TimerHandler. 
+ *	This function is called by Tcl_ServiceEvent when a timer event reaches
+ *	the front of the event queue. This function handles the event by
+ *	invoking the callbacks for all timers that are ready.
  *
- * Results:	
- *	Always returns 1, meaning the timer event has been
- *	successfully processed.
+ * Results:
+ *	Returns 1 if the event was handled, meaning it should be removed from
+ *	the queue. Returns 0 if the event was not handled, meaning it should
+ *	stay on the queue. The only time the event isn't handled is if the
+ *	TCL.TIMER_EVENTS flag bit isn't set.
  *
  * Side effects:
  *	The TimerHandler may have arbitrary side effects while
@@ -732,6 +761,10 @@ public int
 processEvent(
     int flags)			// Same as flags passed to Notifier.doOneEvent.
 {
+    // Do nothing if timers aren't enabled. This leaves the event on the
+    // queue, so we will get to it as soon as ServiceEvents() is called with
+    // timers enabled.
+
     if ((flags & TCL.TIMER_EVENTS) == 0) {
 	return 0;
     }
@@ -753,7 +786,10 @@ processEvent(
     // 2. The handler can call doOneEvent, so we have to remove
     //    the handler from the list before calling it. Otherwise an
     //    infinite loop could result.
-    // 3. Because we only fetch the current time before entering the loop,
+    // 3. Tcl_DeleteTimerHandler can be called to remove an element from the
+    //	  list while a handler is executing, so the list could change
+    //	  structure during the call.
+    // 4. Because we only fetch the current time before entering the loop,
     //    the only way a new timer will even be considered runnable is if
     //	  its expiration time is within the same millisecond as the
     //	  current time.  This is fairly likely on Windows, since it has
@@ -762,6 +798,8 @@ processEvent(
     //    handler appearing after earlier ones with the same expiration
     //	  time, we don't have to worry about newer generation timers
     //	  appearing before later ones.
+
+    notifier.timerPending = false;
 
     while (notifier.timerList.size() > 0) {
 	TimerHandler h = (TimerHandler)notifier.timerList.get(0);
@@ -773,9 +811,8 @@ processEvent(
 	}
 	notifier.timerList.remove(0);
 	h.invoke();
-    }    
+    }
 
-    notifier.timerPending = false;
     return 1;
 }
 

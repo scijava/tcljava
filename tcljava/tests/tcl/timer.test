@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: timer.test,v 1.2 2003/03/17 21:33:42 mdejong Exp $
+# RCS: @(#) $Id: timer.test,v 1.3 2006/04/24 22:23:56 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -538,12 +538,66 @@ test timer-9.1 {AfterCleanupProc procedure} {
     set x
 } {before after2 after4}
 
+test timer-10.1 {after events at same time are processed in order} {
+    set results [list]
+    after 10 {lappend results 1}
+    after 10 {lappend results 2}
+    after 10 {lappend results 3}
+    after 1000 {set done 1}
+    vwait done
+    set results
+} {1 2 3}
+
+test timer-10.2 {after events processed in order} {
+    set results [list]
+    after 10 {lappend results 3}
+    after 9 {lappend results 2}
+    after 8 {lappend results 1}
+    after 1000 {set done 1}
+    vwait done
+    set results
+} {1 2 3}
+
+test timer-10.3 {after events processed in order} {
+    set results [list]
+    after 10 {
+        lappend results 1
+        # Entering a vwait while processing
+        # an after event should not keep other
+        # after events queued up at the same
+        # time from being processed.
+        vwait done
+    }
+    after 10 {lappend results 2}
+    after 500 {lappend results 3}
+    after 1000 {set done 1}
+    vwait done
+    set results
+} {1 2 3}
+
+test timer-10.4 {after events processed in order} {
+    set results [list]
+    after idle {lappend results 1}
+    after idle {lappend results 2}
+    after idle {lappend results 3}
+    after idle {set done 1}
+    vwait done
+    set results
+} {1 2 3}
+
+test timer-10.5 {after events processed in order} {
+    set results [list]
+    after idle {lappend results 1 ; vwait done}
+    after idle {lappend results 2}
+    after idle {lappend results 3}
+    after idle {set done 1}
+    vwait done
+    set results
+} {1 2 3}
+
 # cleanup
 ::tcltest::cleanupTests
 return
-
-
-
 
 
 
