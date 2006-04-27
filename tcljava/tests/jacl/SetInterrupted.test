@@ -1,0 +1,180 @@
+# SetInterrupted.test --
+#
+#	Tests implementation of Jacl's Interp.setInterrupted() API
+#	and associated interrupt processing logic.
+#
+# Copyright (c) 2006 Mo DeJong
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+#
+# RCS: @(#) $Id: SetInterrupted.test,v 1.1 2006/04/27 02:16:13 mdejong Exp $
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
+
+setupJavaPackage
+
+# Copy util script to build dir.
+file delete -force SetInterrupted.tcl
+file copy [tcltest::testsDirectory]/SetInterrupted.tcl .
+
+test SetInterrupted-1.1 {} {
+    # Create a thread, create a new Interp in this thread,
+    # define some procs in the interp, then eval a command.
+    # The command should interrupt itself during the eval.
+
+    java::call tcl.lang.JaclSetInterrupted ThreadInterrupt1
+} {1}
+
+test SetInterrupted-1.2 {} {
+    # Create a thread, create a new Interp in this thread,
+    # define some procs in the interp, then eval a command.
+    # The command should be interrupted by the creating
+    # thread after entering a while loop.
+
+    java::call tcl.lang.JaclSetInterrupted ThreadInterrupt2
+} {1}
+
+test SetInterrupted-1.3 {} {
+    # Create a thread, create a new Interp in this thread,
+    # then wait in the event processing loop. This test
+    # should interrupt out of the wait for the next
+    # event by adding an event to the queue so that
+    # the Notifier will wake up and process an event.
+
+    java::call tcl.lang.JaclSetInterrupted ThreadInterrupt3
+} {1}
+
+test SetInterrupted-1.4 {} {
+    # Create a thread, create a new Interp in this thread,
+    # then start processing events. One of these events
+    # will enter a loop that will be interrupted by
+    # the other thread.
+
+    java::call tcl.lang.JaclSetInterrupted ThreadInterrupt4
+} {1}
+
+test SetInterrupted-1.5 {} {
+    # Create a thread, create a new Interp in this thread,
+    # then start processing events. One of these events
+    # will enter a loop that will invoke vwait and begin
+    # processing events in a second event loop. Both
+    # loops will be terminated when the interp is
+    # interrupted.
+
+    java::call tcl.lang.JaclSetInterrupted ThreadInterrupt5
+} {1}
+
+test SetInterrupted-1.6 {} {
+    # Create a thread, create a new Interp in this thread,
+    # then start processing events. The code will enter a
+    # vwait that will be interrupted when the event
+    # placed into the event queue by the Interp class
+    # is processed during the vwait event loop.
+
+    java::call tcl.lang.JaclSetInterrupted ThreadInterrupt6
+} {1}
+
+test SetInterrupted-1.7 {} {
+    # Create a thread, create a new Interp in this thread,
+    # then start processing events. This code will interrupt
+    # out of a for loop and then invoke the
+    # Interp.disposeInterrupted() method for the interp
+    # that was interrupted.
+
+    java::call tcl.lang.JaclSetInterrupted ThreadInterrupt7
+} {1}
+
+# Note: Could not figure out how to test [update] or [update idletasks]
+# but these should work just fine.
+
+test SetInterrupted-2.0 {} {
+    # Create a thread, then create 2 interpreters in
+    # this thread. One of the interpreters will be
+    # interrupted and the other should continue to
+    # process events. This test checks that the
+    # interrupted event is canceled when an interrupt
+    # is raised after an eval finishes.
+
+    java::call tcl.lang.JaclSetInterrupted ThreadInterrupt20
+} {1}
+
+test SetInterrupted-2.1 {} {
+    # Create a thread, then create 2 interpreters in
+    # this thread. One of the interpreters will be
+    # interrupted and the other should continue to
+    # process events. The interrupted interp will
+    # have an after event in queue, but this after
+    # event should be canceled when the interrupted
+    # exception is processed.
+
+    java::call tcl.lang.JaclSetInterrupted ThreadInterrupt21
+} {SETUP_ONE SETUP_TWO INTERRUPTED_ONE INTERRUPTED_TWO END_EVENT_LOOP}
+
+test SetInterrupted-2.2 {} {
+    # Create a thread, then create 2 interpreters in
+    # this thread. One of the interpreters will be
+    # interrupted and will need to process additional
+    # Tcl code during the stack unwinding process.
+
+    java::call tcl.lang.JaclSetInterrupted ThreadInterrupt22
+} {SETUP_ONE SETUP_TWO INTERRUPTED_ONE {1 2} INTERRUPTED_TWO {1 2} END_EVENT_LOOP}
+
+test SetInterrupted-2.3 {} {
+    # Create a thread, then create 2 interpreters in
+    # this thread. The first interp will interrupt
+    # itself right away and then execute Tcl code
+    # in a java::try finally block. The second thread
+    # will just run in a loop executing after events
+    # to make sure that the first interrupted interp
+    # does not stop the second interp from procesing
+    # events.
+
+    java::call tcl.lang.JaclSetInterrupted ThreadInterrupt23
+} {SETUP_ONE SETUP_TWO INTERRUPTED_ONE {invoking finally} INTERRUPTED_TWO {start done} END_EVENT_LOOP}
+
+test SetInterrupted-2.4 {} {
+    # Create a thread, then create 2 interpreters in
+    # this thread. The first interp will interrupt
+    # itself and then try to use the java:::try
+    # command to catch the TclInterruptedException.
+    # Each attempt should fail since user code
+    # can't be allowed to catch a TclInterruptedException
+    # as that would make it possible to ignore an interrupt.
+
+    java::call tcl.lang.JaclSetInterrupted ThreadInterrupt24
+} {SETUP_ONE SETUP_TWO INTERRUPTED_ONE {F2 F3 F4} INTERRUPTED_TWO {start done} END_EVENT_LOOP}
+
+test SetInterrupted-2.5 {} {
+    # Create a thread, then create 2 interpreters in
+    # this thread. The first interp will interrupt
+    # itself and then try to use Tcl's catch command
+    # to catch a TclInterruptedException. This will
+    # fail since catch only works with TclExceptions.
+    # This test will also queue up a couple of after
+    # commands in a finally block, they will be
+    # canceled when the interp is cleaned up.
+
+    java::call tcl.lang.JaclSetInterrupted ThreadInterrupt25
+} {SETUP_ONE SETUP_TWO INTERRUPTED_ONE {finally} INTERRUPTED_TWO {start done} END_EVENT_LOOP}
+
+test SetInterrupted-2.6 {} {
+    # Create a thread, then create 2 interpreters in
+    # this thread. The first interp will interrupt
+    # itself and use java::try to execute a finally
+    # block of Tcl code. This Tcl code will raise
+    # an error, but the error will be ignored
+    # and the TclInterruptedException will continue
+    # to propagate.
+
+    java::call tcl.lang.JaclSetInterrupted ThreadInterrupt26
+} {SETUP_ONE SETUP_TWO INTERRUPTED_ONE {finally} INTERRUPTED_TWO {start done} END_EVENT_LOOP}
+
+
+# cleanup
+::tcltest::cleanupTests
+return
+

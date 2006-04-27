@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.75 2006/04/13 07:36:50 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.76 2006/04/27 02:16:13 mdejong Exp $
  *
  */
 
@@ -343,6 +343,14 @@ TclClassLoader classLoader = null;
 // during the first call to evalResource.
 
 static HashMap tclLibraryScripts = new HashMap();
+
+// The interruptedEvent field is set after a call
+// to Interp.setInterrupted(). When non-null, this
+// field indicates that the user has requested
+// that the interp execution should be interrupted
+// at the next safe moment.
+
+private TclInterruptedExceptionEvent interruptedEvent = null;
 
 
 /*
@@ -2560,6 +2568,8 @@ throws
 	    e.setCompletionCode(result);
 	    throw e;
 	}
+    } finally {
+        checkInterrupted();
     }
 }
 
@@ -2604,7 +2614,10 @@ throws
             eval(tobj.toString(), flags);
         } finally {
             tobj.release();
+
+            checkInterrupted();
         }
+
         return;
     }
 
@@ -2696,6 +2709,8 @@ throws
             Parser.releaseObjv(this, objv, objv.length);
         }
         tobj.release();
+
+        checkInterrupted();
     }
 }
 
@@ -3602,9 +3617,14 @@ throws
  * getNotifier --
  *
  *	Retrieve the Notifier associated with this Interp.
+ *	This method can safely be invoked from a thread
+ *	other than the thread the Interp was created in.
+ *	If this method is invoked after the Interp object
+ *	has been disposed of then null will be returned.
  *
  * Results:
- *	Returns the Notifier.
+ *	Returns the Notifier for the thread the interp was
+ *	created in.
  *
  * Side effects:
  *	None.
@@ -4752,6 +4772,220 @@ getResourceAsStream(String resName)
 
         return null;
     }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * setInterrupted --
+ *
+ *	Invoke this method to indicate that an executing interp
+ *	should be interrupted at the next safe moment. Interrupting
+ *	a running interpreter will unwind the stack by throwing
+ *	an exception. This method can safely be called from a
+ *	thread other than the one processsing events. No explicit
+ *	synchronization is needed. Once a thread has been interrupted
+ *	or disposed of, setInterrupted() calls will do nothing.
+ *
+ * Results:
+ *	Stops execution of the Interp via an Exception.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+public
+void
+setInterrupted()
+{
+    if (interruptedEvent != null) {
+        // This interpreter was interrupted already. Do nothing and
+        // return right away. This logic handles the case of an
+        // interpreter that was already disposed of because of a
+        // previous interrupted event.
+
+        return;
+    }
+
+    TclInterruptedExceptionEvent ie = new TclInterruptedExceptionEvent(this);
+
+    // Set the interruptedEvent field in the Interp. It is possible
+    // that a race condition between two threads could cause
+    // multiple assignments of the interruptedEvent field to
+    // overwrite each other. Give up if the assignment was overwritten
+    // so that only one thread continues to execute.
+
+    interruptedEvent = ie;
+
+    if (interruptedEvent != ie) {
+        return;
+    }
+
+    // Queue up an event that will generate a TclInterruptedException
+    // the next time events from the Tcl event queue are processed.
+    // If an eval returns and invokes checkInterrupted() before
+    // the event loop is entered, then this event will be canceled.
+    // It is possible that getNotifier() could return 
+
+    Notifier notifier = getNotifier();
+    if (notifier == null) {
+        // The Interp object was deleted via dispose() so there is
+        // no need to queue the interruptedEvent. The caller has
+        // no way to check for a deleted interp so this method needs
+        // to fail gracefully when the interp has been deleted.
+        // This avoids a race condition bettween a timeout thread
+        // that will interrupt the interp and the main thread that
+        // could interrupt and then dispose of the interp.
+
+        return;
+    }
+    notifier.queueEvent(interruptedEvent, TCL.QUEUE_TAIL);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * checkInterrupted --
+ *
+ *	This method is invoked after an eval operation to check
+ *	if a running interp has been marked as interrupted.
+ *	This method is not public since it should only be
+ *	used by the Jacl internal implementation.
+ *
+ * Results:
+ *	This method will raise a TclInterruptedException if
+ *	the Interp.setInterrupted() method was invoked for
+ *	this interp. This method will only raise a
+ *	TclInterruptedException once.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+final
+void
+checkInterrupted()
+{
+    if ((interruptedEvent != null) && (!interruptedEvent.exceptionRaised)) {
+        // Note that the interruptedEvent in not removed from the
+        // event queue since all queued events should be removed
+        // from the queue in the disposeInterrupted() method.
+
+        interruptedEvent.exceptionRaised = true;
+
+        throw new TclInterruptedException(this);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * disposeInterrupted --
+ *
+ *	This method is invoked to cleanup an Interp object that
+ *	has been interrupted and had its stack unwound. This method
+ *	will remove any pending events from the Tcl event queue and
+ *	then invoke the dispose() method for this interp. The interp
+ *	object should not be used after this method has finished.
+ *	This method must only ever be invoked after catching
+ *	a TclInterrupted exception at the outermost level of
+ *	the Tcl event processing loop.
+ *
+ *----------------------------------------------------------------------
+ */
+
+final
+void
+disposeInterrupted()
+{
+    final boolean debug = false;
+
+    if (deleted) {
+        final String msg = "Interp.disposeInterrupted() invoked for " +
+            "a deleted interp";
+
+        if (debug) {
+            System.out.println(msg);
+        }
+
+        throw new TclRuntimeError(msg);
+    }
+
+    if (interruptedEvent == null) {
+        final String msg = "Interp.disposeInterrupted() invoked for " +
+            "an interp that was not interrupted via setInterrupted()";
+
+        if (debug) {
+            System.out.println(msg);
+        }
+
+        throw new TclRuntimeError(msg);
+    }
+
+    // If the interruptedEvent has not been processed yet,
+    // then remove it from the Tcl event queue.
+
+    if ((interruptedEvent != null) && !interruptedEvent.wasProcessed) {
+        getNotifier().deleteEvents(interruptedEvent);
+    }
+
+    if (debug) {
+        if (interruptedEvent == null) {
+            System.out.println("interruptedEvent was null");
+        } else if (interruptedEvent.wasProcessed) {
+            System.out.println("interruptedEvent was processed already");
+        } else {
+            System.out.println("interruptedEvent has not been processed, removed from queue");
+        }
+    }
+
+    // Remove each after event from the Tcl event queue.
+    // It is not possible to remove events from the Tcl
+    // event queue directly since an event does not
+    // know which interp it was registered for. This
+    // logic loops of pending after events and deletes
+    // each one from the Tcl event queue. Note that
+    // an interrupted interp only raises the interrupted
+    // exception once, so it is legal to execute Tcl code
+    // here to cleanup after events.
+
+    try {
+        if (debug) {
+            System.out.println("eval: after info");
+        }
+
+        eval("after info", 0);
+        TclObject tobj = getResult();
+        tobj.preserve();
+        int len = TclList.getLength(this, tobj);
+        for (int i=0; i < len; i++) {
+            TclObject evt = TclList.index(this, tobj, i);
+            String cmd = "after cancel " + evt;
+            if (debug) {
+                System.out.println("eval: " + cmd);
+            }
+            eval(cmd, 0);
+        }
+        tobj.release();
+    } catch (TclException te) {
+        if (debug) {
+            te.printStackTrace(System.err);
+        }
+    }
+
+    // Actually dispose of the interp. After this dispose
+    // call is invoked, it should not be possible to invoke
+    // commands in this interp.
+
+    if (debug) {
+        System.out.println("Invoking Interp.dispose()");
+    }
+
+    dispose();
 }
 
 } // end Interp

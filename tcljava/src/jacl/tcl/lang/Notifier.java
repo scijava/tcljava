@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Notifier.java,v 1.10 2006/04/24 22:23:56 mdejong Exp $
+ * RCS: @(#) $Id: Notifier.java,v 1.11 2006/04/27 02:16:13 mdejong Exp $
  *
  */
 
@@ -583,7 +583,7 @@ doOneEvent(
 	// If idle events are the only things to service, skip the
 	// main part of the loop and go directly to handle idle
 	// events (i.e. don't wait even if TCL_DONT_WAIT isn't set).
-	    
+
 	if ((flags & TCL.ALL_EVENTS) == TCL.IDLE_EVENTS) {
 	    return serviceIdle();
 	}
@@ -596,7 +596,7 @@ doOneEvent(
 
 	if (!timerPending && (timerList.size() > 0)) {
 	    TimerHandler h = (TimerHandler) timerList.get(0);
-		
+
 	    if (h.atTime <= sysTime) {
 		TimerEvent event = new TimerEvent();
 		event.notifier = this;
@@ -608,7 +608,7 @@ doOneEvent(
 	// Service a queued event, if there are any.
 
 	if (serviceEvent(flags) != 0) {
-	    result = 1;	    
+	    result = 1;
 	    break;
 	}
 
@@ -717,6 +717,86 @@ serviceIdle()
     }
 
     return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * hasActiveInterps --
+ *
+ *	Return true if this Notifier is processing events for 1
+ *	or more active Interp objects. When an Interp is disposed()
+ *	of it decrements the refCount of the Notifier object.
+ *	When the last active Interp in a thread is disposed of,
+ *	the Notifier is disposed of. This method will return true
+ *	for a Notifier object that has active Interp object and
+ *	false when the Notifier has been disposed of because the
+ *	last active interp was disposed of.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+public synchronized boolean
+hasActiveInterps()
+{
+    if (primaryThread == null) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * processTclEvents --
+ *
+ *	This util method is provided for use in a thread
+ *	dedicated to processing events from the Tcl event queue.
+ *	This method must only be used as the outermost event
+ *	processing loop. It is not legal to use this method
+ *	from any code that could be invoked by Tcl. This
+ *	method supports interps that will make use of the
+ *	setInterrupted() API.
+ *	
+ *	If only one Interp exists in the thread and the
+ *	interp is interrupted, then this method will return.
+ *	If more than one interp exists in the thread and
+ *	one interp is interrupted, then events for the other
+ *	interps will continue to be processed. This method
+ *	will return when all the interps in the current
+ *	thread have been disposed of. This is a convience
+ *	method only, there is no reason this logic could
+ *	not appear in user code.
+ *
+ *----------------------------------------------------------------------
+ */
+
+public static void
+processTclEvents(Notifier notifier)
+{
+    while (notifier.hasActiveInterps()) {
+        try {
+            notifier.doOneEvent(TCL.ALL_EVENTS);
+        } catch (TclInterruptedException tie) {
+            tie.disposeInterruptedInterp();
+        }
+    }
+
+    // The while loop will exit when the last
+    // interp is disposed of. If this was
+    // called by Thread.run() then the thread
+    // will die when that method terminates.
+    // If "exit" is called the process will
+    // terminate without unwinding the stack.
+
+    return;
 }
 
 } // end Notifier

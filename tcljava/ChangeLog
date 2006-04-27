@@ -1,3 +1,46 @@
+2006-04-26  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * docs/contents.html: Add new Jacl and
+        Tcl Blend topics directory.
+        * docs/TclJava/JavaTryCmd.html: Mention
+        that java::try can't be used to catch
+        a TclInterruptedException.
+        * docs/Topics/EventLoop.html: Document Tcl
+        event loop basics.
+        * docs/Topics/SetInterrupted.html: Document
+        new interp.setInterrupted() API.
+        * docs/Topics/el1.gif:
+        * docs/Topics/el2.gif:
+        * docs/Topics/el3.gif:
+        * docs/Topics/el4.gif:
+        * docs/Topics/index.html:
+        * docs/Topics/si1.gif:
+        * src/jacl/tcl/lang/Interp.java (setInterrupted,
+        checkInterrupted, disposeInterrupted): Add
+        new public interp.setInterrupted() API.
+        This is used to interrupt execution of an
+        interpreter and unwind the stack from another
+        thread. See SetInterrupted.html for details.
+        * src/jacl/tcl/lang/Notifier.java (hasActiveInterps,
+        processTclEvents): Add method so that user code
+        can determine if there are any active interpreters.
+        Add util method to process events in a loop including
+        TclInterruptedException support.
+        * src/jacl/tcl/lang/Shell.java: Invoke new
+        Notifier.processTclEvents() method.
+        * src/jacl/tcl/lang/TclInterruptedException.java:
+        New TclInterruptedException and event that will
+        interrupt a waiting event loop.
+        * src/jacl/tcl/lang/TimerHandler.java:
+        * src/tcljava/tcl/lang/JavaTryCmd.java: Docs fixup.
+        * src/tests/jacl/tcl/lang/JaclSetInterrupted.java:
+        Don't allow catch of TclInterruptedException in
+        Tcl code, but do run the finally block when
+        interrupted.
+        * tests/jacl/SetInterrupted.tcl:
+        * tests/jacl/SetInterrupted.test: Regression tests
+        for interp.setInterrupted() API.
+
 2006-04-24  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/jacl/tcl/lang/Notifier.java (processEvent):

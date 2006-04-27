@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Shell.java,v 1.15 2005/07/22 04:47:24 mdejong Exp $
+ * RCS: @(#) $Id: Shell.java,v 1.16 2006/04/27 02:16:13 mdejong Exp $
  */
 
 package tcl.lang;
@@ -143,13 +143,16 @@ main(
 	consoleThread.start();
 
 	// Loop forever to handle user input events in the command line.
+	// This method will loop until "exit" is called or the interp
+	// is interrupted.
 
 	Notifier notifier = interp.getNotifier();
-	while (true) {
-	    // process events until "exit" is called.
 
-	    notifier.doOneEvent(TCL.ALL_EVENTS);
-	}
+        try {
+            Notifier.processTclEvents(notifier);
+        } finally {
+            interp.dispose();
+        }
     }
 }
 } // end class Shell

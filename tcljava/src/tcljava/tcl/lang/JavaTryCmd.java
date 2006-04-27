@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaTryCmd.java,v 1.5 2002/12/30 22:49:24 mdejong Exp $
+ * RCS: @(#) $Id: JavaTryCmd.java,v 1.6 2006/04/27 02:16:13 mdejong Exp $
  *
  */
 
@@ -176,14 +176,39 @@ public class JavaTryCmd implements Command
 		} else {
 		    throw new TclRuntimeError("Exception not found");
 		}
+                
+                if (debug) {
+                    System.out.println("ex_type.getName() is " + ex_type.getName());
+                }
 
 		String ex_type_name;
 
+		// Check for special case of TclInterruptedException.
+		// This runtime exception is defined only in Jacl.
+		// This exception can't be caught since it is
+		// raised to unwind the stack and terminate execution.
+
+		if (type_name.equals("TclInterruptedException") ||
+		        type_name.equals("tcl.lang.TclInterruptedException")) {
+                    throw new TclException(interp,
+                        "can't catch TclInterruptedException");
+                } else if ((exrec.runtime_exception != null) &&
+                            ex_type.getName().equals(
+                                "tcl.lang.TclInterruptedException")) {
+
+	            // Scripts can't be allowed to catch TclInterruptedException
+                    // since this is raised when interp is being taken down.
+
+	            if (debug) {
+		        System.out.println("skipped TclInterruptedException");
+	            }
+
+	            break; // out of for loop
 
 		// check for special case where the type name is
 		// "TclException" and we caught a TclException
 
-		if (type_name.equals("TclException") ||
+		} else if (type_name.equals("TclException") ||
 		    (exrec.tcl_exception != null)) {
 
 		    if (type_name.equals("TclException") &&
@@ -214,7 +239,7 @@ public class JavaTryCmd implements Command
 		        continue; //for loop
 		    }
 		} else {
-	
+
 		  while (ex_type != null) {
 		      ex_type_name = ex_type.getName();
 
@@ -271,7 +296,7 @@ public class JavaTryCmd implements Command
 			  ex_type = ex_type.getSuperclass();
 		      }
 
-		  } // end while lop
+		  } // end while loop
 
                 } // end else
 
@@ -409,8 +434,20 @@ public class JavaTryCmd implements Command
 	    // If the finally block did not raise an error
 	    // then reset the previous interpreter result
 	    // and use the previous exception record.
+            // Also reset when the original exception was
+            // a TclInterruptedException since an exception
+            // in the finally block is ignored in that case.
 
-	    if (exrec.exception_thrown == false) {
+	    if ((exrec.exception_thrown == false) ||
+                    ((exrec.exception_thrown == true) &&
+                        (tmp_exrec.runtime_exception != null) &&
+                        tmp_exrec.runtime_exception.getClass().getName().equals(
+                            "tcl.lang.TclInterruptedException"))) {
+
+	        if (debug) {
+	            System.out.println("resetting result and exception record");
+	        }
+
 	        interp.setResult(res);
 	        tmp = exrec;
 	        exrec = tmp_exrec;

@@ -34,7 +34,6 @@ providing a way to manage multiple exceptional conditions in Tcl,
 just like Java programmers can do with the try-catch-finally construct.
 
 <P>
-
 The <I>script</I> argument is evaluated in the interpreter. If a
 Tcl error or a Java exception is raised during the evaluation of
 <I>script</I> then each <I>catch</I> clause is searched to determine
@@ -51,12 +50,18 @@ clause will be executed. It is important to note that if a
 <I>finally</I> clause is given, the  <I>script</I> for the finally
 clause will be executed even if the exceptional condition was not caught
 in any of the <I>catch</I> clauses and that after the evaluation the
-original exceptional condition will be raised again. It is also important
-to note that at least one <I>catch</I> clause must be given if the
-optional <I>finally</I> clause is not provided.
+original exceptional condition will be raised again. At least one
+<I>catch</I> clause must be given if the optional <I>finally</I>
+clause is not provided.
+</P>
 
 <P>
-
+The only special case to take note of is <code>TclInterruptedException</code>.
+This exception can't be caught since it is used to indicate that
+interp execution has been interrupted. If a <code>TclInterruptedException</code>
+is raised, none of the catch blocks will be matched, but a
+finally block will still be run before the exception is propagated.
+</P>
 
 </DL>
 
