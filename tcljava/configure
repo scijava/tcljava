@@ -1503,7 +1503,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 #	ac_java_jvm_ld_bind_now : if set to 1, then use LD_BIND_NOW=1
 #	ac_java_jvm_jni_lib_flags : library flags that we will pass to the compiler.
 #	    For instance, we might pass -L/usr/jdk/lib -ljava
-#	ac_java_jvm_jni_lib_runtime_path : colon seperated path of directories
+#	ac_java_jvm_jni_lib_runtime_path : colon separated path of directories
 #	    that is typically passed to rld.
 #
 # DEPENDS ON:
@@ -1572,7 +1572,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 #--------------------------------------------------------------------
 # 	Version identification info (also set in source files)
 #--------------------------------------------------------------------
-TCLJAVA_VERSION=1.3.2
+TCLJAVA_VERSION=1.4.0
 TCLJAVA_NODOT_VERSION=`echo $TCLJAVA_VERSION | sed -e 's/\.//g'`
 
 # Convert into full path name
@@ -2422,7 +2422,7 @@ echo "$as_me: error: Could not compile simple Java program with '$JAVAC'" >&2;}
 
     # Check for sickly javac delivered with JDK 1.1 on Win32.
     # The specific bug we are interested in is an inability
-    # to handle paths with a / seperator. We need to use a
+    # to handle paths with a / separator. We need to use a
     # special helper script to deal with this issue when
     # compiling under Win32.
 
