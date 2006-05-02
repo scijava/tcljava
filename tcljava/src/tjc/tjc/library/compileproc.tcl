@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: compileproc.tcl,v 1.22 2006/04/11 20:22:21 mdejong Exp $
+#  RCS: @(#) $Id: compileproc.tcl,v 1.23 2006/05/02 03:35:40 mdejong Exp $
 #
 #
 
@@ -1564,11 +1564,13 @@ proc compileproc_variable_cache_names_array {} {
 # Loop over parsed command keys and determine information
 # about each command and its arguments. Scanning the commands
 # generates meta-data about the parse trees that is then
-# used to generate with specific optimizations. The scan
-# starts with the toplevel keys for a specific proc and
-# descends into all the keys that are children of these
+# used to generate code with specific optimizations enabled.
+# The scan starts with the toplevel keys for a specific proc
+# and descends into all the keys that are children of these
 # toplevel keys. The scan will also descend into container
-# commands if that option is enabled.
+# commands if that option is enabled. The keys list indicates
+# a "block" of commands, starting with the toplevel keys
+# in a proc.
 
 proc compileproc_scan_keys { keys } {
     global _compileproc _compileproc_key_info
@@ -1822,34 +1824,7 @@ proc compileproc_scan_keys { keys } {
 
         if {[compileproc_is_container_command $key] &&
                 [compileproc_can_inline_container $key]} {
-#            if {$debug} {
-#            puts "descend into container keys for command $key"
-#            }
-            set ccmds [descend_commands $key container]
-#            if {$debug} {
-#            puts "container keys for command $key are \{$ccmds\}"
-#            }
-            set klist [list]
-            foreach list [descend_commands $key container] {
-                if {[llength $list] == 1} {
-                    lappend klist [lindex $list 0]
-                } else {
-                    foreach elem $list {
-                        if {$elem != {}} {
-                            lappend klist $elem
-                        }
-                    }
-                }
-            }
-            if {$klist != {}} {
-#                if {$debug} {
-#                puts "scanning container commands \{$klist\} (child of $key)"
-#                }
-                compileproc_scan_keys $klist
-#                if {$debug} {
-#                puts "done scanning container commands \{$klist\} (child of $key)"
-#                }
-            }
+            compileproc_scan_keys_in_container $key
         }
     } ; # end foreach key $keys loop
 
@@ -1863,6 +1838,124 @@ proc compileproc_scan_keys { keys } {
 
     set _compileproc_key_info(cmd_needs_init) $cmd_needs_init
     set _compileproc_key_info(constants_found) $constants_found
+}
+
+# Scan each command key inside the container command indicated
+# by the passed in key. This method is able to handle
+# container commands like "while" that use a flat list of keys
+# as well as complex commands like "if" that use lists
+# containing sublists for each block.
+
+proc compileproc_scan_keys_in_container { key } {
+#    set debug 1
+
+#    if {$debug} {
+#        puts "compileproc_scan_keys_in_container: $key"
+#    }
+
+    set ccmds [descend_commands $key container]
+
+#    if {$debug} {
+#        puts "container keys are \{$ccmds\}"
+#    }
+
+    if {$ccmds == {}} {
+        return
+    }
+
+    # If this is a "catch" or "foreach" command, need to
+    # handle flat container command list so that all
+    # keys in the block are handled correctly.
+
+    set is_flat_list [compileproc_is_container_command_keys_flat $key]
+
+    if {$is_flat_list} {
+#        if {$debug} {
+#        puts "container commands is a flat list"
+#        }
+
+        compileproc_scan_keys_in_container_sublist $key [list $ccmds]
+    } else {
+#        if {$debug} {
+#        puts "container commands is not a flat list"
+#        }
+
+        compileproc_scan_keys_in_container_sublist $key $ccmds
+    }
+    return
+}
+
+# Scan input klists list, each element is a list of keys.
+# This method is tricky because a list element can itself
+# be a list of keys and this method will need to be
+# invoked recursively in that case.
+
+proc compileproc_scan_keys_in_container_sublist { key klists } {
+    global _compileproc_key_info
+
+#    set debug 1
+
+#    if {$debug} {
+#        puts "compileproc_scan_keys_in_container_sublist: $klists"
+#    }
+
+    # Iterate over each sublist passed in via klists
+
+    foreach klist $klists {
+        if {$klist == {}} {
+            # Skip empty sublist
+            continue
+        }
+
+        # Scan the elements of klist looking for an element
+        # that is actually a sublist that indicates a nested
+        # command. Scan these nested command keys with a
+        # recursive invocation and then remove the sublist.
+
+        set trimmed_klist [list]
+        foreach ckey $klist {
+            set len [llength $ckey]
+            if {$len == 0} {
+                # Ignore empty sublist
+            } elseif {$len > 1} {
+                compileproc_scan_keys_in_container_sublist $key [list $ckey]
+            } else {
+                lappend trimmed_klist $ckey
+            }
+        }
+#        if {$debug} {
+#            if {$trimmed_klist == $klist} {
+#                puts "no sublist elements found in \{$klist\}"
+#            } else {
+#                puts "sublist elements trimmed out of klist, now \{$klist\}"
+#            }
+#        }
+        set klist $trimmed_klist
+
+        if {$klist == {}} {
+            continue
+        }
+
+#        if {$debug} {
+#        puts "scanning container commands \{$klist\} (child of $key)"
+#        }
+
+        # Define a "container" field for the keys that are
+        # about to be scanned so that the contained command
+        # key can be used to lookup the container key.
+
+        foreach ckey $klist {
+            set _compileproc_key_info($ckey,container) $key
+        }
+
+        compileproc_scan_keys $klist
+
+#        if {$debug} {
+#            puts "done scanning container commands \{$klist\} (child of $key)"
+#        }
+    } ; # end foreach klist in $klists
+
+    return
 }
 
 # Returns true if the given dkey is an empty command, meaning
@@ -3307,6 +3400,34 @@ proc compileproc_is_container_command { key } {
         "switch" -
         "::while" -
         "while" {
+            return 1
+        }
+        default {
+            return 0
+        }
+    }
+}
+
+# Return true if the container keys list for a
+# given container command is a flat list. Only
+# the "catch" and "foreach" commands make use
+# of a flat list of container commands.
+
+proc compileproc_is_container_command_keys_flat { key } {
+    global _compileproc_ckeys
+    if {![info exists _compileproc_ckeys($key,info_key)]} {
+        return 0
+    }
+    set cmdname [lindex $_compileproc_ckeys($key,info_key) 1]
+    if {$cmdname == "_UNKNOWN"} {
+        return 0
+    }
+
+    switch -exact -- $cmdname {
+        "::catch" -
+        "catch" -
+        "::foreach" -
+        "foreach" {
             return 1
         }
         default {

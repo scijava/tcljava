@@ -7136,7 +7136,7 @@ public class Test1 extends TJC.CompiledCommand {
 }}
 
 tcltest::test compileproc2-10.4 {compile proc into Java source, +inline-containers} {
-    # inline if container command and boolean expr expression.
+    # inline while container command and boolean expr expression.
     set script {
 proc p {} {
     while {($n / 100) != 0} {}
@@ -7195,6 +7195,112 @@ public class Test1 extends TJC.CompiledCommand {
 } // end class Test1
 }}
 
+tcltest::test compileproc2-10.5 {compile proc into Java source, +inline-containers} {
+    # inline if container command with 2 nested commands in an expr block
+    set script {
+proc p {} {
+    if {[set x 0 ; incr x]} {}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_2_set_flags]
+    # Print generated buffer even if compile fails
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) { initCmd(interp); }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: if {[set x 0 ; incr x]} {}
+            { // Invoke: set x 0
+                TclObject[] objv0 = TJC.grabObjv(interp, 3);
+                try {
+                    TclObject tmp1;
+                    // Arg 0 constant: set
+                    tmp1 = const0;
+                    tmp1.preserve();
+                    objv0[0] = tmp1;
+                    // Arg 1 constant: x
+                    tmp1 = const1;
+                    tmp1.preserve();
+                    objv0[1] = tmp1;
+                    // Arg 2 constant: 0
+                    tmp1 = const2;
+                    tmp1.preserve();
+                    objv0[2] = tmp1;
+                    TJC.invoke(interp, null, objv0, 0);
+                } finally {
+                    TJC.releaseObjvElems(interp, objv0, 3);
+                }
+            } // End Invoke: set
+            { // Invoke: incr x
+                TclObject[] objv2 = TJC.grabObjv(interp, 2);
+                try {
+                    TclObject tmp3;
+                    // Arg 0 constant: incr
+                    tmp3 = const3;
+                    tmp3.preserve();
+                    objv2[0] = tmp3;
+                    // Arg 1 constant: x
+                    tmp3 = const1;
+                    tmp3.preserve();
+                    objv2[1] = tmp3;
+                    TJC.invoke(interp, null, objv2, 0);
+                } finally {
+                    TJC.releaseObjvElems(interp, objv2, 2);
+                }
+            } // End Invoke: incr
+            TclObject tmp4 = interp.getResult();
+            ExprValue tmp5 = TJC.exprGetValue(interp, tmp4);
+            boolean tmp6 = tmp5.getBooleanValue(interp);
+            TJC.exprReleaseValue(interp, tmp5);
+            if ( tmp6 ) {
+                interp.resetResult();
+            } else {
+                interp.resetResult();
+            }
+        } // End Invoke: if
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+
+    TclObject const0;
+    TclObject const1;
+    TclObject const2;
+    TclObject const3;
+
+    protected void initConstants(Interp interp) throws TclException {
+        const0 = TclString.newInstance("set");
+        const0.preserve(); const0.preserve();
+        const1 = TclString.newInstance("x");
+        const1.preserve(); const1.preserve();
+        const2 = TclInteger.newInstance(0);
+        const2.preserve(); const2.preserve();
+        const3 = TclString.newInstance("incr");
+        const3.preserve(); const3.preserve();
+    }
+} // end class Test1
+}}
 
 # Cleanup
 jdk_tool_cleanup

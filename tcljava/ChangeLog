@@ -1,3 +1,18 @@
+2006-05-01  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/tjc/tjc/library/compileproc.tcl:
+        Fix problem in compileproc_scan_keys where
+        a container command with a nested expr
+        block that contained more than 1 nested
+        command would result in a compiler error.
+        Add compileproc_scan_keys_in_container and
+        compileproc_scan_keys_in_container_sublist
+        so that container keys are scanned in a
+        type specific way. Recurse on a keys sublist
+        to fix the multiple nested commands bug.
+        * tests/tjc/compileproc_2.test: Add test
+        case for multiple nested commands bug.
+
 2006-04-29  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * configure: Regen.
