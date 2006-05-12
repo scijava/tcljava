@@ -493,7 +493,6 @@ public class UnitCompiler {
         this.codeContext.saveLocalVariables();
         try {
             boolean previousStatementCanCompleteNormally = true;
-            b.keepCompiling = true;
             for (int i = 0; b.keepCompiling && i < b.statements.size(); ++i) {
                 Java.BlockStatement bs = (Java.BlockStatement) b.statements.get(i);
                 if (!previousStatementCanCompleteNormally) {
@@ -501,6 +500,36 @@ public class UnitCompiler {
                     break;
                 }
                 previousStatementCanCompleteNormally = this.compile(bs);
+
+                // A statement that can't complete normally because of a
+                // "break", "continue", or "return" could set the
+                // "keepCompiling" flag in this block. Make sure the
+                // "keepCompiling" flag does not get set to false
+                // when a statement can complete normally. Mark
+                // the containing scope as dead when this statement
+                // can't complete and keepCompiling is false, so that
+                // the keepCompiling condition will propagate up the stack.
+
+                if (previousStatementCanCompleteNormally && !b.keepCompiling) {
+                    b.keepCompiling = true;
+                } else if (!previousStatementCanCompleteNormally) {
+                    Java.Block eb = b.getEnclosingBlock();
+
+                    // The null ref is returned when the enclosing
+                    // scope is a method or an init block.
+
+                    if (eb != null) {
+                        if (!b.keepCompiling) {
+                            eb.followingStatementsAreDead();
+                        }
+
+                        // When a statement can't complete normally,
+                        // save the reason in the enclosing block.
+
+                        eb.doesNotCompleteNormallyCause =
+                            b.doesNotCompleteNormallyCause;
+                    }
+                }
             }
             return previousStatementCanCompleteNormally;
         } finally {
@@ -514,22 +543,45 @@ public class UnitCompiler {
 
         ds.whereToContinue = this.codeContext.new Offset();
         ds.bodyHasContinue = false;
+        ds.bodyHasBreak = false;
 
         CodeContext.Offset bodyOffset = this.codeContext.newOffset();
 
         // Compile body.
-        if (!this.compile(ds.body) && !ds.bodyHasContinue) this.compileError("\"do\" statement never tests its condition", ds.getLocation());
+        boolean bodyCCN = this.compile(ds.body);
+        boolean resetCCN = false;
+
+        if (! bodyCCN) {
+            // When a do loop body block completes abruptly because of
+            // a break or continue statement, the loop statement
+            // should complete normally. When the loop body can't
+            // complete normally for some other reason, then
+            // the loop can't complete normally (JLS2 14.13.3).
+
+            Java.Block bl = (Java.Block) ds.body;
+
+            if ((bl.doesNotCompleteNormallyCause == bl.BLOCK_CCN_BREAK) ||
+                    (bl.doesNotCompleteNormallyCause == bl.BLOCK_CCN_CONTINUE)) {
+                resetCCN = true;
+            }
+        }
 
         // Compile condition.
         ds.whereToContinue.set();
-        this.compileBoolean(ds.condition, bodyOffset, Java.Rvalue.JUMP_IF_TRUE);
+        if (bodyCCN || ds.bodyHasContinue) {
+            this.compileBoolean(ds.condition, bodyOffset, Java.Rvalue.JUMP_IF_TRUE);
+        }
 
         if (ds.whereToBreak != null) ds.whereToBreak.set();
 
-        return true;
+        if (resetCCN) {
+            bodyCCN = true;
+        }
+        return bodyCCN;
     }
     /*private*/ boolean compile2(Java.ForStatement fs) throws CompileException {
         this.codeContext.saveLocalVariables();
+
         try {
 
             // Compile init.
@@ -543,20 +595,26 @@ public class UnitCompiler {
             CodeContext.Offset toCondition = this.codeContext.new Offset();
             this.writeBranch(fs, Opcode.GOTO, toCondition);
 
-            // Compile body.
+            // Compile body. Note that a for statement with a
+            // non-constant condition can complete normally
+            // since the loop body might never be executed.
+
             fs.whereToContinue = this.codeContext.new Offset();
             fs.bodyHasContinue = false;
+            fs.bodyHasBreak = false;
             CodeContext.Offset bodyOffset = this.codeContext.newOffset();
+
             boolean bodyCCN = this.compile(fs.body);
 
             // Compile update.
             fs.whereToContinue.set();
-            if (fs.optionalUpdate != null) {
-                if (!bodyCCN && !fs.bodyHasContinue) {
-                    this.compileError("For update is unreachable", fs.getLocation());
-                    return true;
-                }
 
+            // Skip compilation of update statements when the
+            // body can't complete normally due to a break
+            // or return statement. Don't skip for a continue.
+
+            if ((fs.optionalUpdate != null) &&
+                    (bodyCCN || fs.bodyHasContinue)) {
                 for (int i = 0; i < fs.optionalUpdate.length; ++i) {
                     this.compile(fs.optionalUpdate[i]);
                 }
@@ -580,19 +638,22 @@ public class UnitCompiler {
 
         ws.whereToContinue = this.codeContext.new Offset();
         ws.bodyHasContinue = false;
+        ws.bodyHasBreak = false;
         this.writeBranch(ws, Opcode.GOTO, ws.whereToContinue);
 
-        // Compile body.
+        // Compile body. Note that a while statement with a
+        // non-constant condition can complete normally
+        // since the loop body might never be executed.
+
         CodeContext.Offset bodyOffset = this.codeContext.newOffset();
         boolean bodyCCN = this.compile(ws.body);
 
         // Compile condition.
-        if (bodyCCN || ws.bodyHasContinue) {
-            ws.whereToContinue.set();
-            this.compileBoolean(ws.condition, bodyOffset, Java.Rvalue.JUMP_IF_TRUE);
-        }
+        ws.whereToContinue.set();
+        this.compileBoolean(ws.condition, bodyOffset, Java.Rvalue.JUMP_IF_TRUE);
 
         if (ws.whereToBreak != null) ws.whereToBreak.set();
+
         return true;
     }
     private boolean compileUnconditionalLoop(
@@ -604,13 +665,48 @@ public class UnitCompiler {
 
         cs.whereToContinue = this.codeContext.newOffset();
         cs.bodyHasContinue = false;
+        cs.bodyHasBreak = false;
 
         // Compile body.
-        if (this.compile(body)) this.writeBranch(cs, Opcode.GOTO, cs.whereToContinue);
+        boolean bodyCCN = this.compile(body);
+        boolean resetCCN = false;
 
-        if (cs.whereToBreak == null) return false;
-        cs.whereToBreak.set();
-        return true;
+        if (! bodyCCN) {
+            // When loop body block completes abruptly because of a
+            // break or continue statement, the loop statement
+            // should complete normally. When the loop body
+            // can't complete normally for some other reason, then
+            // the loop can't complete normally (JLS2 14.13.3).
+
+            Java.Block bl = (Java.Block) body;
+
+            if ((bl.doesNotCompleteNormallyCause == bl.BLOCK_CCN_BREAK) ||
+                    (bl.doesNotCompleteNormallyCause == bl.BLOCK_CCN_CONTINUE)) {
+                resetCCN = true;
+            }
+        }
+
+        if (bodyCCN) {
+            this.writeBranch(cs, Opcode.GOTO, cs.whereToContinue);
+        }
+
+        // An unconditional loop should invoke break
+        // somewhere in the loop body or it will not
+        // be able to complete normally. Don't bother
+        // checking when a loop body can't complete
+        // normally due to a return or an exception.
+
+        if (!cs.bodyHasBreak && (bodyCCN || resetCCN)) {
+            bodyCCN = false;
+            resetCCN = false;
+        }
+
+        if (cs.whereToBreak != null) cs.whereToBreak.set();
+
+        if (resetCCN) {
+            bodyCCN = true;
+        }
+        return bodyCCN;
     }
     private boolean compileUnconditionalLoopWithUpdate(
         Java.ContinuableStatement cs,
@@ -619,23 +715,62 @@ public class UnitCompiler {
     ) throws CompileException {
         cs.whereToContinue = this.codeContext.new Offset();
         cs.bodyHasContinue = false;
+        cs.bodyHasBreak = false;
 
         // Compile body.
         CodeContext.Offset bodyOffset = this.codeContext.newOffset();
         boolean bodyCCN = this.compile(body);
+        boolean resetCCN = false;
 
         // Compile the "update".
         cs.whereToContinue.set();
-        if (!bodyCCN && !cs.bodyHasContinue) {
-            this.compileError("Loop update is unreachable", update[0].getLocation());
-            return cs.whereToBreak != null;
-        }
-        for (int i = 0; i < update.length; ++i) this.compile(update[i]);
-        this.writeBranch(cs, Opcode.GOTO, bodyOffset);
 
-        if (cs.whereToBreak == null) return false;
-        cs.whereToBreak.set();
-        return true;
+        if (! bodyCCN) {
+            // When loop body block completes abruptly because of a
+            // break or continue statement, the loop statement
+            // should complete normally. When the loop body
+            // can't complete normally for some other reason, then
+            // the loop can't complete normally (JLS2 14.13.3).
+            // Note that there are no cases where the optional
+            // update statements can generate an unreachable error.
+
+            Java.Block bl = (Java.Block) body;
+
+            if ((bl.doesNotCompleteNormallyCause == bl.BLOCK_CCN_BREAK) ||
+                    (bl.doesNotCompleteNormallyCause == bl.BLOCK_CCN_CONTINUE)) {
+                resetCCN = true;
+            }
+        }
+
+        // Skip compilation of update statements when the
+        // body can't complete normally due to a break
+        // or return statement. Don't skip for a continue.
+
+        if ((update.length > 0) &&
+                (bodyCCN || cs.bodyHasContinue)) {
+            for (int i = 0; i < update.length; ++i) {
+                this.compile(update[i]);
+            }
+            this.writeBranch(cs, Opcode.GOTO, bodyOffset);
+        }
+
+        // An unconditional loop should invoke break
+        // somewhere in the loop body or it will not
+        // be able to complete normally. Don't bother
+        // checking when a loop body can't complete
+        // normally due to a return or an exception.
+
+        if (!cs.bodyHasBreak && (bodyCCN || resetCCN)) {
+            bodyCCN = false;
+            resetCCN = false;
+        }
+
+        if (cs.whereToBreak != null) cs.whereToBreak.set();
+
+        if (resetCCN) {
+            bodyCCN = true;
+        }
+        return bodyCCN;
     }
 
     /*private*/ final boolean compile2(Java.LabeledStatement ls) throws CompileException {
@@ -807,6 +942,11 @@ public class UnitCompiler {
             }
         }
 
+        // Save CCN reason in enclosing block
+        Java.Block eb = bs.getEnclosingBlock();
+        eb.doesNotCompleteNormallyCause = eb.BLOCK_CCN_BREAK;
+
+        brokenStatement.bodyHasBreak = true;
         this.leaveStatements(
             bs.enclosingScope,              // from
             brokenStatement.enclosingScope, // to
@@ -859,6 +999,10 @@ public class UnitCompiler {
                 return false;
             }
         }
+
+        // Save CCN reason in enclosing block
+        Java.Block eb = cs.getEnclosingBlock();
+        eb.doesNotCompleteNormallyCause = eb.BLOCK_CCN_CONTINUE;
 
         continuedStatement.bodyHasContinue = true;
         this.leaveStatements(
@@ -937,16 +1081,22 @@ public class UnitCompiler {
             // order to determine whether the IF statement can complete
             // normally, we need to check whether the "blind statement" can
             // complete normally.
-            if (!this.canCompleteNormally(blindStatement)) return false;
+            if (!this.canCompleteNormally(blindStatement)) {
+                Java.Block.setEnclosingBlockCCN(blindStatement);
+                return false;
+            }
 
             // We have a very complicated case here: The blind statement can complete
             // normally, but the seeing statement can't. This makes the following
             // code physically unreachable, but JLS2 14.20 says that this should not
             // be considered an error.
-            // Calling "followingStatementsAreDead()" on the enclosing Block
-            // keeps it from generating unreachable code.
-            Java.Scope s = is.getEnclosingScope();
-            if (s instanceof Java.Block) ((Java.Block) s).followingStatementsAreDead();
+            // Calling "followingStatementsAreDead()" will mark the enclosing
+            // block so that statements following this one are not compiled
+            // and unreachable code errors are not generated.
+
+            Java.Block eb = is.getEnclosingBlock();
+            eb.followingStatementsAreDead();
+            Java.Block.setEnclosingBlockCCN(seeingStatement);
             return false;
         }
 
@@ -963,6 +1113,15 @@ public class UnitCompiler {
                 eso.set();
                 boolean esccn = this.compile(es);
                 end.set();
+
+                if (!tsccn && !esccn) {
+                    // Move CCN reason into calling scope, reason could
+                    // be in the then or else block.
+
+                    Java.Block.setEnclosingBlockCCN(is.thenStatement);
+                    Java.Block.setEnclosingBlockCCN(es);
+                }
+
                 return tsccn || esccn;
             } else {
 
@@ -1033,6 +1192,10 @@ public class UnitCompiler {
         return true;
     }
     /*private*/ boolean compile2(Java.ReturnStatement rs) throws CompileException {
+
+        // Save CCN reason in enclosing block
+        Java.Block eb = rs.getEnclosingBlock();
+        eb.doesNotCompleteNormallyCause = eb.BLOCK_CCN_RETURN;
 
         // Determine enclosing block, function and compilation Unit.
         Java.FunctionDeclarator enclosingFunction = null;

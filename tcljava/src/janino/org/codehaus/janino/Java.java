@@ -1156,6 +1156,10 @@ public class Java {
 
         // Implement "Scope".
         public Scope getEnclosingScope() { return this.enclosingScope; }
+
+        public Block getEnclosingBlock() {
+            return Block.getEnclosingBlock(this);
+        }
     }
 
     public final static class LabeledStatement extends BreakableStatement {
@@ -1227,19 +1231,86 @@ public class Java {
          *   }
          *   b = 2; // Same thing.
          * </pre>
+         *
          * The "if" statement notifies its enclosing block by calling this method.
          */
         /*private*/ void followingStatementsAreDead() {
             this.keepCompiling = false;
+        }
 
-            Java.Scope s = this.getEnclosingScope();
-            if (s instanceof Java.Block) ((Java.Block) s).followingStatementsAreDead();
+        /*private*/ static
+        Java.Block getEnclosingBlock(Java.Statement st) {
+            Java.Scope s = st.getEnclosingScope();
+
+            if (s instanceof Java.Block) {
+                return (Java.Block) s;
+            }
+
+            if (s instanceof Java.Statement) {
+                // Could be TryStatement or SynchronizedStatement
+
+                s = s.getEnclosingScope();
+            }
+
+            if (s instanceof AbstractTypeBodyDeclaration) {
+                // Outermost scope for method declarations
+                return null;
+            }
+
+            if (s instanceof Java.Block) {
+                return (Java.Block) s;
+            }
+
+            throw new RuntimeException(
+                "expected statement " +
+                st.getClass().getName() + " to be in a Block," +
+                " but it has an enclosing scope of " +
+                s.getClass().getName());
+        }
+
+        /*private*/ static
+        void setEnclosingBlockCCN(Java.BlockStatement st) {
+            if (st instanceof Java.Statement) {
+                setEnclosingBlockCCN((Java.Statement) st);
+            }
+        }
+
+        /*private*/ static
+        void setEnclosingBlockCCN(Java.Statement st) {
+            // If statement is not a block then the
+            // CCN reason would already be set in the
+            // enclosing block. Ignore when the enclosing
+            // block is a method or the CCN cause is
+            // already set in the enclosing block.
+
+            Java.Block eb = st.getEnclosingBlock();
+
+            if ((eb == null) ||
+                    !(st instanceof Java.Block) ||
+                    (eb.doesNotCompleteNormallyCause != eb.BLOCK_CCN_UNKNOWN)) {
+                return;
+            }
+
+            Java.Block b = (Java.Block) st;
+            eb.doesNotCompleteNormallyCause = b.doesNotCompleteNormallyCause;
         }
 
         public final void accept(Visitor.BlockStatementVisitor visitor) { visitor.visitBlock(this); }
 
         HashMap localVariables = new HashMap(); // String name => LocalVariable
-        boolean keepCompiling;
+        boolean keepCompiling = true;
+
+        // When a block does not complete normally, this field indicates
+        // the specific reason why the block does not complete normally.
+        // For example, a block that contains an unconditional return
+        // statement can't complete normally.
+
+        final int BLOCK_CCN_UNKNOWN = 0;
+        final int BLOCK_CCN_RETURN = 1;
+        final int BLOCK_CCN_BREAK = 2;
+        final int BLOCK_CCN_CONTINUE = 3;
+
+        int doesNotCompleteNormallyCause = BLOCK_CCN_UNKNOWN;
     }
 
     /**
@@ -1247,7 +1318,7 @@ public class Java {
      * "break" statement.
      * <p>
      * According to the JLS, statements that can be terminated abnormally with
-     * a "break" statement are: "COntinuable" statements ("for", "do" and
+     * a "break" statement are: "Continuable" statements ("for", "do" and
      * "while"), labeled statements, and the "switch" statement.
      */
     public static abstract class BreakableStatement extends Statement {
@@ -1259,6 +1330,7 @@ public class Java {
         }
 
         CodeContext.Offset whereToBreak = null;
+        protected boolean bodyHasBreak = false;
     }
 
     public static abstract class ContinuableStatement extends BreakableStatement {
