@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclInteger.java,v 1.10 2006/04/07 22:33:41 mdejong Exp $
+ * RCS: @(#) $Id: TclInteger.java,v 1.11 2006/05/13 21:07:15 mdejong Exp $
  *
  */
 
@@ -120,7 +120,6 @@ public class TclInteger implements InternalRep {
      * Called to convert the other object's internal rep to this type.
      *
      * @param interp current interpreter.
-     * @param forIndex true if this methid is called by getForIndex.
      * @param tobj the TclObject to convert to use the
      *     representation provided by this class.
      */
@@ -146,7 +145,7 @@ public class TclInteger implements InternalRep {
                 // reparse the integer from the string.
 		TclInteger irep;
 		String srep = tobj.toString();
-		if (srep.compareTo("1") == 0) {
+		if (srep.equals("1")) {
 		    irep = new TclInteger(1);
 		} else {
 		    irep = new TclInteger(interp, srep);
@@ -170,8 +169,9 @@ public class TclInteger implements InternalRep {
 	    }
 	} else {
 	    // Note that conversion from a double to an
-	    // integer internal rep should always raise
-	    // an error.
+	    // integer internal rep will raise an error
+	    // for number like "1.0". An octal like "040"
+	    // could be parsed as a double or an integer.
 
 	    tobj.setInternalRep(new TclInteger(interp, tobj.toString()));
 

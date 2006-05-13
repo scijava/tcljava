@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclDouble.java,v 1.6 2006/04/10 21:13:56 mdejong Exp $
+ * RCS: @(#) $Id: TclDouble.java,v 1.7 2006/05/13 21:07:15 mdejong Exp $
  *
  */
 
@@ -191,92 +191,23 @@ throws
 				// the interp if it's not null.
 
 {
-    InternalRep rep = tobj.getInternalRep();
+    // This method is only ever invoked from TclDouble.get().
+    // This method will never be invoked when the internal
+    // rep is already a TclDouble. This method will always
+    // reparse a double from the string rep so that tricky
+    // special cases like "040" are handled correctly.
 
-    if (rep instanceof TclDouble) {
-	/*
-	 * Do nothing.
-	 */
+    tobj.setInternalRep(new TclDouble(interp, tobj.toString()));
 
-    } else if (rep instanceof TclBoolean) {
-	/*
-	 * Short-cut.
-	 */
-
-	boolean b = TclBoolean.get(interp, tobj);
-
-	// Can't convert from a "pure" boolean
-	// to a "pure" double since it is possible
-	// that the expr code would want to check
-	// for an integer that was converted to
-	// a double. If a "pure" boolean has no
-	// string rep then generate one that
-	// looks like an integer.
-
-	if (tobj.hasNoStringRep()) {
-	    tobj.toString();
-	}
-
-	if (b) {
-	    tobj.setInternalRep(new TclDouble(1.0));
-	} else {
-	    tobj.setInternalRep(new TclDouble(0.0));
-	}
-
-	if (TclObject.saveObjRecords) {
-	    String key = "TclBoolean -> TclDouble";
-	    Integer num = (Integer) TclObject.objRecordMap.get(key);
-	    if (num == null) {
-	        num = new Integer(1);
-	    } else {
-	        num = new Integer(num.intValue() + 1);
-	    }
-	    TclObject.objRecordMap.put(key, num);
-	}
-    } else if (rep instanceof TclInteger) {
-	/*
-	 * Short-cut.
-	 */
-
-	int i = TclInteger.get(interp, tobj);
-
-	// Can't convert from a "pure" integer
-	// to a "pure" double since it is possible
-	// that the expr code would want to check
-	// for an integer that was converted to
-	// a double. If a "pure" integer has no
-	// string rep then generate one that
-	// looks like an integer.
-
-	if (tobj.hasNoStringRep()) {
-	    tobj.toString();
-	}
-
-	tobj.setInternalRep(new TclDouble((double) i));
-
-	if (TclObject.saveObjRecords) {
-	    String key = "TclInteger -> TclDouble";
-	    Integer num = (Integer) TclObject.objRecordMap.get(key);
-	    if (num == null) {
-	        num = new Integer(1);
-	    } else {
-	        num = new Integer(num.intValue() + 1);
-	    }
-	    TclObject.objRecordMap.put(key, num);
-	}
-    } else {
-	tobj.setInternalRep(new TclDouble(interp, tobj.toString()));
-
-	if (TclObject.saveObjRecords) {
-	    String key = "TclString -> TclDouble";
-	    Integer num = (Integer) TclObject.objRecordMap.get(key);
-	    if (num == null) {
-	        num = new Integer(1);
-	    } else {
-	        num = new Integer(num.intValue() + 1);
-	    }
-	    TclObject.objRecordMap.put(key, num);
-	}
+    if (TclObject.saveObjRecords) {
+        String key = "TclString -> TclDouble";
+        Integer num = (Integer) TclObject.objRecordMap.get(key);
+        if (num == null) {
+            num = new Integer(1);
+        } else {
+            num = new Integer(num.intValue() + 1);
+        }
+        TclObject.objRecordMap.put(key, num);
     }
 }
 

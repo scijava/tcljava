@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Expression.java,v 1.23 2006/04/07 22:33:41 mdejong Exp $
+ * RCS: @(#) $Id: Expression.java,v 1.24 2006/05/13 21:07:15 mdejong Exp $
  *
  */
 
@@ -402,12 +402,14 @@ class Expression {
             }
             String str = obj.toString();
             if (looksLikeInt(str, str.length(), 0, true)) {
-                // Convert a double that looks like an integer
-                // back into an integer internal rep.
+                // Convert a double that looks like an
+                // integer back into an integer. Note
+                // that the integer must be reparsed
+                // from the string rep so that an octal
+                // like "040" is handled correctly.
 
-                int ival = (int) dval;
+                int ival = TclInteger.get(interp, obj);
                 value.setIntValue(ival, str);
-                TclInteger.exprSetInternalRep(obj, ival);
                 return;
             } else {
                 value.setDoubleValue(dval, str);

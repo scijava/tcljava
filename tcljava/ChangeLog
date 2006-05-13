@@ -1,3 +1,17 @@
+2006-05-13  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/jacl/tcl/lang/Expression.java (ExprParseObject):
+        * src/tcljava/tcl/lang/TclDouble.java (setDoubleFromAny):
+        * src/tcljava/tcl/lang/TclInteger.java (setIntegerFromAny):
+        Fixup logic to deal with tricky octal string case.
+        This is a string the looks like an integer but
+        can be parsed as a double. Both the Expression
+        and TclDouble modules now reparse from the
+        string rep.
+        * tests/tcl/expr.test: Add test cases for octal
+        string that looks like an int but can be parsed
+        as a double.
+
 2006-05-12  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/janino/org/codehaus/janino/UnitCompiler.java:
