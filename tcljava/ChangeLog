@@ -1,5 +1,14 @@
 2006-05-12  Mo DeJong  <mdejong@users.sourceforge.net>
 
+        * src/janino/org/codehaus/janino/UnitCompiler.java:
+        Implement tempory workaround for verifier errors
+        in foreach and return tjcruntime modules by
+        upping the try/catch register used. This is not
+        the correct long term solution, but it makes janino
+        pass all the tests cases in the tjcruntime suite.
+
+2006-05-12  Mo DeJong  <mdejong@users.sourceforge.net>
+
         * src/janino/org/codehaus/janino/Java.java:
         * src/janino/org/codehaus/janino/UnitCompiler.java:
         Fixup support for break and continue statements

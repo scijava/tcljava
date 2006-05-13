@@ -1301,19 +1301,18 @@ public class UnitCompiler {
         CodeContext.Offset beginningOfBody = this.codeContext.newOffset();
         CodeContext.Offset afterStatement = this.codeContext.new Offset();
 
+        boolean canCompleteNormally = false;
+
         // Allocate a future LV that will be used to preserve the "leave stack".
         this.codeContext.saveLocalVariables();
-        ts.stackValueLvIndex = this.codeContext.allocateLocalVariable((short) 2);
-        this.codeContext.restoreLocalVariables();
-
-        boolean canCompleteNormally = this.compile(ts.body);
-        CodeContext.Offset afterBody = this.codeContext.newOffset();
-        if (canCompleteNormally) {
-            this.writeBranch(ts, Opcode.GOTO, afterStatement);
-        }
-
-        this.codeContext.saveLocalVariables();
         try {
+            ts.stackValueLvIndex = this.codeContext.allocateLocalVariable((short) 2);
+
+            canCompleteNormally = this.compile(ts.body);
+            CodeContext.Offset afterBody = this.codeContext.newOffset();
+            if (canCompleteNormally) {
+                this.writeBranch(ts, Opcode.GOTO, afterStatement);
+            }
 
             // Local variable for exception object.
             // Notice: Must be same size as "this.stackValueLvIndex".
@@ -1345,7 +1344,7 @@ public class UnitCompiler {
                             exceptionObjectLvIndex        // localVariableIndex
                         )
                     );
-    
+
                     if (this.compile(cc.body)) {
                         canCompleteNormally = true;
                         if (
@@ -1386,9 +1385,14 @@ public class UnitCompiler {
                     this.iClassLoader.OBJECT, // valueType
                     pcLVIndex                 // localVariableIndex
                 );
-                if (this.compile(ts.optionalFinally)) {
+                boolean finallyCCN = this.compile(ts.optionalFinally);
+                if (finallyCCN) {
                     this.writeOpcode(ts, Opcode.RET);
                     this.writeByte(ts, pcLVIndex);
+                }
+                // JLS 14.19.2, with no catch blocks
+                if (canCompleteNormally && !finallyCCN) {
+                    canCompleteNormally = false;
                 }
             }
 
