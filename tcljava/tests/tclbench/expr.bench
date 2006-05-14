@@ -28,7 +28,7 @@ proc expr-evaluate-add-ten {a} {
     # times. The expr layer should parse the object into
     # a numeric internal rep the first time $a is read.
     # Each read that follows should use the parsed
-    # numberic internal rep. If this logic is not implemented,
+    # numeric internal rep. If this logic is not implemented,
     # then this test will not execute quickly because
     # the integer values are parsed from the string each time.
 
@@ -253,6 +253,45 @@ proc expr-equal-constant-int-loop {} {
     return
 }
 
+proc expr-bigsqrt1 { y } {
+    # Initial estimate of 1/sqrt(y) to 2 decimal places.
+    set est [expr {1 / sqrt($y)}]
+    set ipart [expr {int($est)}]
+    set fpart [expr {$est - $ipart}]
+    set fpart [string range $fpart 2 3]
+    set est "${ipart}.${fpart}"
+
+    # Run a couple of iterations
+    set x $est
+    set z [expr {$y * 0.5}]
+    for {set i 0} {$i < 4} {incr i} {
+        set x [expr {(1.5*$x) - ($x*$x)*($x*$z)}]
+    }
+    return [expr {$x * $y}]
+}
+
+proc expr-bigsqrt2 { num } {
+    set epsilon .0001
+
+    set ans [expr {1 << int((log($num)/log(2) / 2))}] ;# Initial guess
+    while {1} {
+        set last $ans
+        set ans [expr {(($num / $ans) + $ans) / 2.0}]
+        if {abs($last - $ans) < $epsilon} break
+    }
+    # Trim to integer part if number is between
+    # integer and (integer + epsilon).
+    set ipart [expr {int($ans)}]
+    set sepsilon $epsilon
+    if {$num < 0} {
+        set sepsilon [expr {-1 * $epsilon}]
+    }
+    if {($ipart < $ans) && (($ipart + $sepsilon) > $ans)} {
+        set ans [expr {double($ipart)}]
+    }
+    return $ans
+}
+
 
 if { [catch {string repeat "abc" 10}] } {
     proc str-repeat {str num} {
@@ -345,4 +384,9 @@ bench -desc "expr-equal-same-char-string-index" \
 
 bench -desc "expr-equal-constant-int" -body {expr-equal-constant-int}
 bench -desc "expr-equal-constant-int-loop" -body {expr-equal-constant-int-loop}
+
+bench -desc "expr-bigsqrt1-1" -body {expr-bigsqrt1 36}
+bench -desc "expr-bigsqrt1-2" -body {expr-bigsqrt1 121}
+bench -desc "expr-bigsqrt2-1" -body {expr-bigsqrt2 36}
+bench -desc "expr-bigsqrt2-2" -body {expr-bigsqrt2 121}
 

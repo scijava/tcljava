@@ -1,3 +1,18 @@
+2006-05-14  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/jacl/tcl/lang/Expression.java: Check
+        in a number of little util fixes.
+        * src/jacl/tcl/lang/FormatCmd.java: Comment fixup.
+        * src/jacl/tcl/lang/TclList.java: Return
+        empty string constant for a list with 0 elems.
+        * src/jacl/tcl/lang/Util.java: Avoid raising
+        an exception for the empty string.
+        * tests/tclbench/expr.bench: Add a couple of
+        square root generation tests.
+        * tests/tclbench/libbench.tcl: Use integer times.
+        * tests/tclbench/switch.bench: Add a bunch
+        of switch runtime tests.
+
 2006-05-13  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/jacl/tcl/lang/Expression.java (ExprParseObject):

@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Expression.java,v 1.24 2006/05/13 21:07:15 mdejong Exp $
+ * RCS: @(#) $Id: Expression.java,v 1.25 2006/05/14 22:07:49 mdejong Exp $
  *
  */
 
@@ -166,21 +166,8 @@ class Expression {
      */
     boolean evalBoolean(Interp interp, String string)
 	    throws TclException {
-	boolean b;
 	ExprValue value = ExprTopLevel(interp, string);
-	switch (value.getType()) {
-	case ExprValue.INT:
-	    b = (value.getIntValue() != 0);
-	    break;
-	case ExprValue.DOUBLE:
-	    b = (value.getDoubleValue() != 0.0);
-	    break;
-	case ExprValue.STRING:
-	    b = Util.getBoolean(interp, value.getStringValue());
-	    break;
-	default:
-	    throw new TclRuntimeError("internal error: expression, unknown");
-	}
+	boolean b = value.getBooleanValue(interp);
 	releaseExprValue(value);
 	return b;
     }
@@ -349,10 +336,11 @@ class Expression {
         InternalRep rep = obj.getInternalRep();
 
         if (rep instanceof TclInteger) {
-            // If the object is a "pure" number, meaning it
-            // was created from a primitive type and there
-            // is no string rep, then generate a string
-            // from the primitive type later on, if needed.
+            // A TclObject is a "pure" number if it
+            // was created from a primitive type and
+            // has no string rep. Pass the string rep
+            // along in the ExprValue object is there
+            // is one.
 
             value.setIntValue(TclInteger.get(interp, obj),
                 (obj.hasNoStringRep() ? null : obj.toString()));
@@ -1831,9 +1819,14 @@ class Expression {
 	if (! Character.isDigit(c)) {
 	    return false;
 	}
-	while (i < len && Character.isDigit(s.charAt(i))) {
-	    //System.out.println("'" + s.charAt(i) + "' is a digit");
-	    i++;
+	for ( ; i < len ; i++) {
+	    c = s.charAt(i);
+	    if ((c >= '0' && c <= '9') || Character.isDigit(c)) {
+	        // This is a digit, keep looking at rest of string.
+	        //System.out.println("'" + c + "' is a digit");
+	    } else {
+	        break;
+	    }
 	}
 	if (i >= len) {
             return true;

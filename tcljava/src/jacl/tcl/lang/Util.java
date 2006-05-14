@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Util.java,v 1.20 2006/04/10 21:13:56 mdejong Exp $
+ * RCS: @(#) $Id: Util.java,v 1.21 2006/05/14 22:07:49 mdejong Exp $
  */
 
 package tcl.lang;
@@ -572,6 +572,13 @@ strtod(
 
     s = s.substring(si, i);
     double result = 0;
+
+    // Avoid raising NumberFormatException for empty string.
+
+    if (s.length() == 0) {
+	strtodResult.update(0, 0, TCL.INVALID_DOUBLE);
+	return;
+    }
 
     try {
 	result = Double.valueOf(s).doubleValue();

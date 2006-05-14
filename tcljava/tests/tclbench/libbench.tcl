@@ -4,7 +4,7 @@
 # This file has to have code that works in any version of Tcl that
 # the user would want to benchmark.
 #
-# RCS: @(#) $Id: libbench.tcl,v 1.6 2006/03/27 21:42:55 mdejong Exp $
+# RCS: @(#) $Id: libbench.tcl,v 1.7 2006/05/14 22:07:49 mdejong Exp $
 #
 # Copyright (c) 2000-2001 Jeffrey Hobbs.
 
@@ -293,14 +293,14 @@ proc prepare_and_run_body { body iterations } {
 }
 
 # Run the body iterations number of times and return the time
-# it took per iteration.
+# it took per iteration in integer ms.
 
 proc run_body { body iterations } {
 #    puts stderr "running \{$body\} $iterations times"
     set results [namespace eval :: [list time $body $iterations]]
     set t [lindex $results 0]
 #    puts stderr "timing results were $t"
-    return $t
+    return [expr round($t)]
 }
 
 #

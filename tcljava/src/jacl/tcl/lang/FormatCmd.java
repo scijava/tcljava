@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FormatCmd.java,v 1.12 2006/04/10 21:13:56 mdejong Exp $
+ * RCS: @(#) $Id: FormatCmd.java,v 1.13 2006/05/14 22:07:49 mdejong Exp $
  *
  */
 
@@ -456,7 +456,7 @@ class FormatCmd implements Command {
 
 
     /**
-     * This procedure is invoked in "phase 6" of the Format cmdProc.  It 
+     * This procedure is invoked in "phase 6" od the Format cmdProc.  It 
      * converts the lngValue to a string with a specified format determined by
      * the other input variables.
      * @param lngValue  - Is the value of the argument input
@@ -569,8 +569,8 @@ class FormatCmd implements Command {
     }
 
     /**
-     * This procedure is invoked in "phase 6" of the Format cmdProc.  It 
-     * converts the dblValue to a string with a specified format determined 
+     * This procedure is invoked in "phase 6" od the Format cmdProc.  It 
+     * converts the lngValue to a string with a specified format determined 
      * by the other input variables.
      * @param dblValue  - Is the value of the argument input
      * @param width     - The minimum width of the string.
@@ -658,7 +658,7 @@ class FormatCmd implements Command {
 	    precision--;
 	}
 
-	// Rounding works like BSD when the constant 0.4999 is used.  Weird!
+	// Rounding works like BSD when the constant 0.4999 is used.  Wierd!
 
 	for (i = precision, rounder = 0.4999; i > 0; i--, rounder*=0.1);
 
@@ -874,7 +874,7 @@ class FormatCmd implements Command {
     }
 
     /**
-     * This procedure is invoked in "phase 6" of the Format cmdProc.  It 
+     * This procedure is invoked in "phase 6" od the Format cmdProc.  It 
      * converts the strValue to a string with a specified format determined 
      * by the other input variables.
      * @param strValue  - Is the String w/o formatting.

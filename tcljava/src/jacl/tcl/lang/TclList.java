@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclList.java,v 1.11 2006/01/27 23:39:02 mdejong Exp $
+ * RCS: @(#) $Id: TclList.java,v 1.12 2006/05/14 22:07:49 mdejong Exp $
  *
  */
 
@@ -115,6 +115,9 @@ public class TclList implements InternalRep {
     public String toString() {
 	StringBuffer sbuf = new StringBuffer(32);
 	final int size = alist.size();
+	if (size == 0) {
+	    return "";
+	}
 
 	try {
 	    for (int i=0; i<size; i++) {

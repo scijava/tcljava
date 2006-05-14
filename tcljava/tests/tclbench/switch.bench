@@ -1,39 +1,1217 @@
-# Bench test for switch command.
+# Bench test for switch command. Note that
+# it is important to have some code in
+# each switch block in order to keep
+# the compiler from optimizing away
+# empty blocks. Note that using a
+# constant string as the string to
+# match does not cause anything to
+# be optimized away at compile since
+# the string argument is always
+# evaluated as a non-constant string
+# at runtime.
+
+
+# This first test is just a dummy
+# that matches the string to the
+# first argument. It gives us some
+# idea of how much time just calling
+# the command, setting a local, and
+# executing one block of a switch
+# takes without lots of match options
+# to complicate things.
+
+proc switch-dummy {} {
+    set i 0
+    switch -exact "A" {
+        "A" {
+            set i 1
+        }
+    }
+    return $i
+}
+
+# A glob pattern will invoke the switch
+# command at runtime to do the glob match
+# and find the pattern to jump to. Same
+# goes for a regexp, these cases are not
+# optimized in TJC.
 
 proc switch-glob {} {
-    switch -glob "STR10" {
-        "ST?1" {}
-        "ST?2" {}
-        "ST?3" {}
-        "ST?4" {}
-        "ST?5" {}
-        "ST?6" {}
-        "ST?7" {}
-        "ST?8" {}
-        "ST?9" {}
-        "ST?10" {}
+    set i 0
+    switch -glob "ZAP" {
+        "AP?" {
+            set i 1
+        }
+        "BO?" {
+            set i 2
+        }
+        "CO?" {
+            set i 3
+        }
+        "DI?" {
+            set i 4
+        }
+        "ER?" {
+            set i 5
+        }
+        "FE?" {
+            set i 6
+        }
+        "GO?" {
+            set i 7
+        }
+        "HI?" {
+            set i 8
+        }
+        "II?" {
+            set i 9
+        }
+        "JI?" {
+            set i 10
+        }
+        "KI?" {
+            set i 11
+        }
+        "LI?" {
+            set i 12
+        }
+        "MA?" {
+            set i 13
+        }
+        "NA?" {
+            set i 14
+        }
+        "OO?" {
+            set i 15
+        }
+        "PO?" {
+            set i 16
+        }
+        "QA?" {
+            set i 17
+        }
+        "RA?" {
+            set i 18
+        }
+        "SA?" {
+            set i 19
+        }
+        "TU?" {
+            set i 20
+        }
+        "UR?" {
+            set i 21
+        }
+        "VE?" {
+            set i 22
+        }
+        "WE?" {
+            set i 23
+        }
+        "XX?" {
+            set i 24
+        }
+        "YE?" {
+            set i 25
+        }
+        "ZA?" {
+            set i 26
+        }
+    }
+    return $i
+}
+
+# The switch command is optimized to only
+# invoke a string compare when the string
+# and the pattern are the same length
+# and the first letter is the same.
+# All these strings are the same length,
+# but because the first letter does not
+# match a string compare is not done
+# for any of the patters up until the
+# last match.
+
+proc switch-constant-az-first {} {
+    set i 0
+    switch -- "ZAP" {
+        "APP" {
+            set i 1
+        }
+        "BOP" {
+            set i 2
+        }
+        "COP" {
+            set i 3
+        }
+        "DIP" {
+            set i 4
+        }
+        "ERP" {
+            set i 5
+        }
+        "FEZ" {
+            set i 6
+        }
+        "GOV" {
+            set i 7
+        }
+        "HID" {
+            set i 8
+        }
+        "III" {
+            set i 9
+        }
+        "JIB" {
+            set i 10
+        }
+        "KIK" {
+            set i 11
+        }
+        "LIP" {
+            set i 12
+        }
+        "MAN" {
+            set i 13
+        }
+        "NAN" {
+            set i 14
+        }
+        "OOP" {
+            set i 15
+        }
+        "POP" {
+            set i 16
+        }
+        "QAT" {
+            set i 17
+        }
+        "RAT" {
+            set i 18
+        }
+        "SAT" {
+            set i 19
+        }
+        "TUB" {
+            set i 20
+        }
+        "URG" {
+            set i 21
+        }
+        "VEX" {
+            set i 22
+        }
+        "WED" {
+            set i 23
+        }
+        "XXX" {
+            set i 24
+        }
+        "YES" {
+            set i 25
+        }
+        "ZAP" {
+            set i 26
+        }
+    }
+    return $i
+}
+
+# This test uses patterns that start with
+# the same character but have different
+# lengths than the string. This test
+# shows how TJC will optimize a switch
+# so that input strings that are not the
+# same length of the pattern string are
+# quickly skipped during matching.
+
+proc switch-constant-az-len {} {
+    set i 0
+    switch -- "ZAP" {
+        "Z" {
+            set i 1
+        }
+        "ZA" {
+            set i 2
+        }
+        "ZAP1" {
+            set i 3
+        }
+        "ZAPIT" {
+            set i 4
+        }
+        "ZI" {
+            set i 5
+        }
+        "ZAG2" {
+            set i 6
+        }
+        "ZAGGY" {
+            set i 7
+        }
+        "ZAPPER" {
+            set i 8
+        }
+        "ZIGGY" {
+            set i 9
+        }
+        "ZONE" {
+            set i 10
+        }
+        "ZIZZLE" {
+            set i 11
+        }
+        "ZIXX" {
+            set i 12
+        }
+        "ZOPE" {
+            set i 13
+        }
+        "ZANGY" {
+            set i 14
+        }
+        "ZORRO" {
+            set i 15
+        }
+        "ZANZABAR" {
+            set i 16
+        }
+        "ZONER" {
+            set i 17
+        }
+        "ZING" {
+            set i 18
+        }
+        "ZUNT" {
+            set i 19
+        }
+        "ZARGG" {
+            set i 20
+        }
+        "ZIPP" {
+            set i 21
+        }
+        "ZAXX" {
+            set i 22
+        }
+        "ZONG" {
+            set i 23
+        }
+        "ZILCH" {
+            set i 24
+        }
+        "ZUBB" {
+            set i 25
+        }
+        "ZAP" {
+            set i 26
+        }
+    }
+    return $i
+}
+
+# All the patterns in this test are
+# the same length as the string
+# and start with the same character.
+# A string compare is done for each
+# branch.
+
+proc switch-constant-az-compare {} {
+    set i 0
+    switch -- "COP" {
+        "CAP" {
+            set i 1
+        }
+        "COD" {
+            set i 2
+        }
+        "COG" {
+            set i 3
+        }
+        "CAG" {
+            set i 4
+        }
+        "CUD" {
+            set i 5
+        }
+        "CUZ" {
+            set i 6
+        }
+        "CAR" {
+            set i 7
+        }
+        "CRE" {
+            set i 8
+        }
+        "CAW" {
+            set i 9
+        }
+        "CIG" {
+            set i 10
+        }
+        "CON" {
+            set i 11
+        }
+        "COB" {
+            set i 12
+        }
+        "COZ" {
+            set i 13
+        }
+        "CAQ" {
+            set i 14
+        }
+        "CAT" {
+            set i 15
+        }
+        "CAL" {
+            set i 16
+        }
+        "CAM" {
+            set i 17
+        }
+        "CAD" {
+            set i 18
+        }
+        "CEY" {
+            set i 19
+        }
+        "CEH" {
+            set i 20
+        }
+        "CEP" {
+            set i 21
+        }
+        "CEW" {
+            set i 22
+        }
+        "CAC" {
+            set i 23
+        }
+        "COV" {
+            set i 24
+        }
+        "CER" {
+            set i 25
+        }
+        "COP" {
+            set i 26
+        }
+    }
+    return $i
+}
+
+
+# This test tries to match a big constant
+# string. The patterns are the same length
+# and start with the same character, but
+# the will not string compare as the same.
+# These strings should be big enough that
+# the string compare operations are not trivial.
+# It does not matter that all the non-matching
+# strings are exactly the same.
+
+proc switch-constant-az-compare-big {} {
+    set i 0
+    switch -- "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ" {
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYX" {
+            set i 1
+        }
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYX" {
+            set i 2
+        }
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYX" {
+            set i 3
+        }
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYX" {
+            set i 4
+        }
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYX" {
+            set i 5
+        }
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYX" {
+            set i 6
+        }
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYX" {
+            set i 7
+        }
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYX" {
+            set i 8
+        }
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYX" {
+            set i 9
+        }
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYX" {
+            set i 10
+        }
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYX" {
+            set i 11
+        }
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYX" {
+            set i 12
+        }
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYX" {
+            set i 13
+        }
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYX" {
+            set i 14
+        }
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYX" {
+            set i 15
+        }
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYX" {
+            set i 16
+        }
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYX" {
+            set i 17
+        }
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYX" {
+            set i 18
+        }
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYX" {
+            set i 19
+        }
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYX" {
+            set i 20
+        }
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYX" {
+            set i 21
+        }
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYX" {
+            set i 22
+        }
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYX" {
+            set i 23
+        }
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYX" {
+            set i 24
+        }
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYX" {
+            set i 25
+        }
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ" {
+            set i 26
+        }
+    }
+    return $i
+}
+
+
+# This switch command uses a string
+# that is a single character and
+# each pattern is a single character.
+# No string compares are done here
+# since this case is optimized to
+# do only a static char compare.
+
+proc switch-constant-az-char {} {
+    set i 0
+    switch -- "Z" {
+        "A" {
+            set i 1
+        }
+        "B" {
+            set i 2
+        }
+        "C" {
+            set i 3
+        }
+        "D" {
+            set i 4
+        }
+        "E" {
+            set i 5
+        }
+        "F" {
+            set i 6
+        }
+        "G" {
+            set i 7
+        }
+        "H" {
+            set i 8
+        }
+        "I" {
+            set i 9
+        }
+        "J" {
+            set i 10
+        }
+        "K" {
+            set i 11
+        }
+        "L" {
+            set i 12
+        }
+        "M" {
+            set i 13
+        }
+        "N" {
+            set i 14
+        }
+        "O" {
+            set i 15
+        }
+        "P" {
+            set i 16
+        }
+        "Q" {
+            set i 17
+        }
+        "R" {
+            set i 18
+        }
+        "S" {
+            set i 19
+        }
+        "T" {
+            set i 20
+        }
+        "U" {
+            set i 21
+        }
+        "V" {
+            set i 22
+        }
+        "W" {
+            set i 23
+        }
+        "X" {
+            set i 24
+        }
+        "Y" {
+            set i 25
+        }
+        "Z" {
+            set i 26
+        }
+    }
+    return $i
+}
+
+
+# This switch will match the 3rd pattern
+# in strings that are all the same length
+# and start with the same character. A
+# string compare is done for each pattern
+# until the match is found.
+
+proc switch-constant-3 {} {
+    set i 0
+    switch -- "STR3" {
+        "STR1" {
+            set i 1
+        }
+        "STR2" {
+            set i 2
+        }
+        "STR3" {
+            set i 3
+        }
+        "STR4" {
+            set i 4
+        }
+        "STR5" {
+            set i 5
+        }
+        "STR6" {
+            set i 6
+        }
+        "STR7" {
+            set i 7
+        }
+        "STR8" {
+            set i 8
+        }
+        "STR9" {
+            set i 9
+        }
+    }
+    return $i
+}
+
+
+# This switch will match 10 patterns
+# inside a loop. This test attempts
+# to get timing results from multiple
+# switch invocations in one command
+# so that the overhead of the command
+# invocation does not dwarf the switch
+# processing time.
+
+proc switch-loop-constant-10 {} {
+    set str STR9
+
+    for {set i 50} {$i} {} {
+        switch -- $str {
+            "STR0" {
+                incr i -1
+            }
+            "STR1" {
+                incr i -1
+            }
+            "STR2" {
+                incr i -1
+            }
+            "STR3" {
+                incr i -1
+            }
+            "STR4" {
+                incr i -1
+            }
+            "STR5" {
+                incr i -1
+            }
+            "STR6" {
+                incr i -1
+            }
+            "STR7" {
+                incr i -1
+            }
+            "STR8" {
+                incr i -1
+            }
+            "STR9" {
+                incr i -1
+            }
+            default {
+                incr i -1
+            }
+        }
     }
     return
 }
 
-# switch on constant string patterns
+# This test is like switch-constant-az-first
+# except that multiple switch statements
+# are executed in a loop.
 
-proc switch-constant {} {
-    switch -- "STR10" {
-        "STR1" {}
-        "STR2" {}
-        "STR3" {}
-        "STR4" {}
-        "STR5" {}
-        "STR6" {}
-        "STR7" {}
-        "STR8" {}
-        "STR9" {}
-        "STR10" {}
+proc switch-loop-constant-az-first {} {
+    set str ZAP
+
+    for {set i 50} {$i} {} {
+        switch -- $str {
+            "APP" {
+                incr i -1
+            }
+            "BOP" {
+                incr i -1
+            }
+            "COP" {
+                incr i -1
+            }
+            "DIP" {
+                incr i -1
+            }
+            "ERP" {
+                incr i -1
+            }
+            "FEZ" {
+                incr i -1
+            }
+            "GOV" {
+                incr i -1
+            }
+            "HID" {
+                incr i -1
+            }
+            "III" {
+                incr i -1
+            }
+            "JIB" {
+                incr i -1
+            }
+            "KIK" {
+                incr i -1
+            }
+            "LIP" {
+                incr i -1
+            }
+            "MAN" {
+                incr i -1
+            }
+            "NAN" {
+                incr i -1
+            }
+            "OOP" {
+                incr i -1
+            }
+            "POP" {
+                incr i -1
+            }
+            "QAT" {
+                incr i -1
+            }
+            "RAT" {
+                incr i -1
+            }
+            "SAT" {
+                incr i -1
+            }
+            "TUB" {
+                incr i -1
+            }
+            "URG" {
+                incr i -1
+            }
+            "VEX" {
+                incr i -1
+            }
+            "WED" {
+                incr i -1
+            }
+            "XXX" {
+                incr i -1
+            }
+            "YES" {
+                incr i -1
+            }
+            "ZAP" {
+                incr i -1
+            }
+            default {
+                incr i -1
+            }
+        }
     }
+
     return
 }
+
+
+# This test is like switch-constant-az-len
+# except that multiple switch statements
+# are executed in a loop.
+
+proc switch-loop-constant-az-len {} {
+    set str ZAP
+
+    for {set i 50} {$i} {} {
+        switch -- $str {
+            "Z" {
+                incr i -1
+            }
+            "ZA" {
+                incr i -1
+            }
+            "ZAP1" {
+                incr i -1
+            }
+            "ZAPIT" {
+                incr i -1
+            }
+            "ZI" {
+                incr i -1
+            }
+            "ZAG2" {
+                incr i -1
+            }
+            "ZAGGY" {
+                incr i -1
+            }
+            "ZAPPER" {
+                incr i -1
+            }
+            "ZIGGY" {
+                incr i -1
+            }
+            "ZONE" {
+                incr i -1
+            }
+            "ZIZZLE" {
+                incr i -1
+            }
+            "ZIXX" {
+                incr i -1
+            }
+            "ZOPE" {
+                incr i -1
+            }
+            "ZANGY" {
+                incr i -1
+            }
+            "ZORRO" {
+                incr i -1
+            }
+            "ZANZABAR" {
+                incr i -1
+            }
+            "ZONER" {
+                incr i -1
+            }
+            "ZING" {
+                incr i -1
+            }
+            "ZUNT" {
+                incr i -1
+            }
+            "ZARGG" {
+                incr i -1
+            }
+            "ZIPP" {
+                incr i -1
+            }
+            "ZAXX" {
+                incr i -1
+            }
+            "ZONG" {
+                incr i -1
+            }
+            "ZILCH" {
+                incr i -1
+            }
+            "ZUBB" {
+                incr i -1
+            }
+            "ZAP" {
+                incr i -1
+            }
+            default {
+                incr i -1
+            }
+        }
+    }
+
+    return
+}
+
+# This test is like switch-constant-az-compare
+# except that multiple switch statements
+# are executed in a loop. This test tends
+# to execute about twice as slow as the
+# two loop test above. Those two test
+# avoid the string compare based on length
+# or first char tests. C based Tcl tends
+# to execute the two loop test at about
+# the same speed as this one, indicating
+# that Tcl is not taking advantage of
+# a static length or first char optimization.
+# The TJC version executes about 3 times
+# faster than the C Tcl version.
+
+proc switch-loop-constant-az-compare {} {
+    set str COP
+
+    for {set i 50} {$i} {} {
+        switch -- $str {
+            "CAP" {
+                incr i -1
+            }
+            "COD" {
+                incr i -1
+            }
+            "COG" {
+                incr i -1
+            }
+            "CAG" {
+                incr i -1
+            }
+            "CUD" {
+                incr i -1
+            }
+            "CUZ" {
+                incr i -1
+            }
+            "CAR" {
+                incr i -1
+            }
+            "CRE" {
+                incr i -1
+            }
+            "CAW" {
+                incr i -1
+            }
+            "CIG" {
+                incr i -1
+            }
+            "CON" {
+                incr i -1
+            }
+            "COB" {
+                incr i -1
+            }
+            "COZ" {
+                incr i -1
+            }
+            "CAQ" {
+                incr i -1
+            }
+            "CAT" {
+                incr i -1
+            }
+            "CAL" {
+                incr i -1
+            }
+            "CAM" {
+                incr i -1
+            }
+            "CAD" {
+                incr i -1
+            }
+            "CEY" {
+                incr i -1
+            }
+            "CEH" {
+                incr i -1
+            }
+            "CEP" {
+                incr i -1
+            }
+            "CEW" {
+                incr i -1
+            }
+            "CAC" {
+                incr i -1
+            }
+            "COV" {
+                incr i -1
+            }
+            "CER" {
+                incr i -1
+            }
+            "COP" {
+                incr i -1
+            }
+            default {
+                incr i -1
+            }
+        }
+    }
+
+    return
+}
+
+
+# This test is like switch-constant-az-compare-big
+# except that multiple switch statements
+# are executed in a loop. Test results indicate
+# that comparing big constant strings is about
+# 7 times slower than small ones with TJC but
+# only 2 times as slow in the Tcl version. Even
+# so, TJC compiled code is still about 20% faster
+# than the C Tcl version.
+
+proc switch-loop-constant-az-compare-big {} {
+    set str "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+    for {set i 50} {$i} {} {
+        switch -- $str {
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYX" {
+                incr i -1
+            }
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYX" {
+                incr i -1
+            }
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYX" {
+                incr i -1
+            }
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYX" {
+                incr i -1
+            }
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYX" {
+                incr i -1
+            }
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYX" {
+                incr i -1
+            }
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYX" {
+                incr i -1
+            }
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYX" {
+                incr i -1
+            }
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYX" {
+                incr i -1
+            }
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYX" {
+                incr i -1
+            }
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYX" {
+                incr i -1
+            }
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYX" {
+                incr i -1
+            }
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYX" {
+                incr i -1
+            }
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYX" {
+                incr i -1
+            }
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYX" {
+                incr i -1
+            }
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYX" {
+                incr i -1
+            }
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYX" {
+                incr i -1
+            }
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYX" {
+                incr i -1
+            }
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYX" {
+                incr i -1
+            }
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYX" {
+                incr i -1
+            }
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYX" {
+                incr i -1
+            }
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYX" {
+                incr i -1
+            }
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYX" {
+                incr i -1
+            }
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYX" {
+                incr i -1
+            }
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYX" {
+                incr i -1
+            }
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ" {
+                incr i -1
+            }
+            default {
+                incr i -1
+            }
+        }
+    }
+
+    return
+}
+
+
+# This test is like switch-constant-az-char
+# except that multiple switch statements
+# are executed in a loop. TJC contains
+# a specific optimization for a switch
+# on a single character. This loop runs
+# at the same speed as the other loop
+# tests that skip a string compare.
+# The C version of Tcl runs equally
+# as slow as the version that does
+# string compares.
+
+proc switch-loop-constant-az-char {} {
+    set str "Z"
+
+    for {set i 50} {$i} {} {
+        switch -- $str {
+            "A" {
+                incr i -1
+            }
+            "B" {
+                incr i -1
+            }
+            "C" {
+                incr i -1
+            }
+            "D" {
+                incr i -1
+            }
+            "E" {
+                incr i -1
+            }
+            "F" {
+                incr i -1
+            }
+            "G" {
+                incr i -1
+            }
+            "H" {
+                incr i -1
+            }
+            "I" {
+                incr i -1
+            }
+            "J" {
+                incr i -1
+            }
+            "K" {
+                incr i -1
+            }
+            "L" {
+                incr i -1
+            }
+            "M" {
+                incr i -1
+            }
+            "N" {
+                incr i -1
+            }
+            "O" {
+                incr i -1
+            }
+            "P" {
+                incr i -1
+            }
+            "Q" {
+                incr i -1
+            }
+            "R" {
+                incr i -1
+            }
+            "S" {
+                incr i -1
+            }
+            "T" {
+                incr i -1
+            }
+            "U" {
+                incr i -1
+            }
+            "V" {
+                incr i -1
+            }
+            "W" {
+                incr i -1
+            }
+            "X" {
+                incr i -1
+            }
+            "Y" {
+                incr i -1
+            }
+            "Z" {
+                incr i -1
+            }
+            default {
+                incr i -1
+            }
+        }
+    }
+
+    return
+}
+
+
+bench -desc "switch-dummy" -body {switch-dummy}
 
 bench -desc "switch-glob" -body {switch-glob}
-bench -desc "switch-constant" -body {switch-constant}
+
+bench -desc "switch-constant-az-first" -body {switch-constant-az-first}
+
+bench -desc "switch-constant-az-len" -body {switch-constant-az-len}
+
+bench -desc "switch-constant-az-compare" -body {switch-constant-az-compare}
+
+bench -desc "switch-constant-az-compare-big" -body {switch-constant-az-compare-big}
+
+bench -desc "switch-constant-az-char" -body {switch-constant-az-char}
+
+bench -desc "switch-constant-3" -body {switch-constant-3}
+
+bench -desc "switch-loop-constant-10" -body {switch-loop-constant-10}
+
+bench -desc "switch-loop-constant-az-first" -body {switch-loop-constant-az-first}
+
+bench -desc "switch-loop-constant-az-len" -body {switch-loop-constant-az-len}
+
+bench -desc "switch-loop-constant-az-compare" -body {switch-loop-constant-az-compare}
+
+bench -desc "switch-loop-constant-az-compare-big" -body {switch-loop-constant-az-compare-big}
+
+bench -desc "switch-loop-constant-az-char" -body {switch-loop-constant-az-char}
 
