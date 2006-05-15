@@ -1,3 +1,21 @@
+2006-05-15  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        Regenerate files that include version numbers
+        because vsub.sh incorrectly wrote files with
+        CRLF translation.
+
+        * configure.in:
+        * src/pkgIndex.tcl:
+        * src/jacl/tcl/lang/Interp.java:
+        * src/tcljava/tcl/lang/BlendExtension.java:
+        * unix/tools/vutil/current:
+        * unix/tools/vutil/fsub.tcl: Fixup file
+        output logic so that lf translation is
+        always used.
+        * unix/tools/vutil/vsub.sh: Test for
+        empty version argument.
+        * win/makefile.vc:
+
 2006-05-14  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/empty/empty.jar: Regen.

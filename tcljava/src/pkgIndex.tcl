@@ -1,6 +1,6 @@
 # Cross platform init script for Tcl Blend. Known to work on unix and windows.
 # Author:  Christopher Hylands, Mo Dejong
-# RCS: @(#) $Id: pkgIndex.tcl,v 1.25 2006/04/29 23:05:58 mdejong Exp $
+# RCS: @(#) $Id: pkgIndex.tcl,v 1.26 2006/05/15 20:26:25 mdejong Exp $
 
 proc loadtclblend {dir} {
     global tclblend_init env tcljava

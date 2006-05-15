@@ -17,6 +17,7 @@ proc file.regsub { file pat subspec } {
 
     if {$changed} {
         set fd [open $file w]
+        fconfigure $fd -translation lf
         foreach line $lines {
             puts $fd $line
         }

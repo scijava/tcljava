@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: BlendExtension.java,v 1.24 2006/04/29 23:05:58 mdejong Exp $
+ * RCS: @(#) $Id: BlendExtension.java,v 1.25 2006/05/15 20:26:26 mdejong Exp $
  */
 
 package tcl.lang;

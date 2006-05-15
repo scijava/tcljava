@@ -13,6 +13,10 @@ cd ../../..
 # get first argument passed into this shell
 
 TCLJAVA_VERSION=${1}
+if test "${TCLJAVA_VERSION}" = "" ; then
+    echo "must pass version number as argument"
+    exit 1
+fi
 
 
 # Update version numbers of the files with package statements in them
