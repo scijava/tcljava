@@ -249,10 +249,11 @@ tcltest::test module-3.5 {parse module file data} {
 PACKAGE com.chairsoft.recliner.controls
 OPTIONS +inline +cmdcache +someotherone \\
 # Ignore this comment line
-        +somemore
+        +somemore \\
+        +andsomemore
 "
     list [module_parse $data] $_module(options)
-} {2 {inline 1 cmdcache 1 someotherone 1 somemore 1}}
+} {2 {inline 1 cmdcache 1 someotherone 1 somemore 1 andsomemore 1}}
 
 tcltest::test module-3.6 {parse module file data} {
     # The empty line here terminates the OPTIONS command, so

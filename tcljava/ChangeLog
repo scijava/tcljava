@@ -1,5 +1,14 @@
 2006-05-15  Mo DeJong  <mdejong@users.sourceforge.net>
 
+        * src/tjc/tjc/library/module.tcl (module_parse):
+        Fixup backslash processing bug where lines that
+        appear after the first do not have the backslash
+        removed and result in a parse error.
+        * tests/tjc/module.test: Add test case for
+        backslash processing bug.
+
+2006-05-15  Mo DeJong  <mdejong@users.sourceforge.net>
+
         * src/jacl/tcl/lang/ExprValue.java: Comment fixup.
         * src/jacl/tcl/lang/TclList.java (toString):
         Don't allocate a StringBuffer for an empty list.

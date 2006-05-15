@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: module.tcl,v 1.5 2006/01/17 05:13:37 mdejong Exp $
+#  RCS: @(#) $Id: module.tcl,v 1.6 2006/05/15 22:42:51 mdejong Exp $
 #
 #
 
@@ -33,6 +33,8 @@ proc module_get_filename {} {
 proc module_parse { data } {
     global _module
 
+    set debug 0
+
     # Clear out old settings
     if {[info exists _module]} {
         unset _module
@@ -46,8 +48,15 @@ proc module_parse { data } {
 
     set lines [split $data \n]
     set num_cmds 0
+    set max [llength $lines]
+    if {$debug} {
+        puts "$max lines of module data:"
+        foreach line $lines {
+            puts "->$line<-"
+        }
+    }
 
-    for {set i 0 ; set max [llength $lines]} {$i < $max} {incr i} {
+    for {set i 0} {$i < $max} {incr i} {
         set line [string trim [lindex $lines $i]]
         if {[string length $line] == 0} {
             continue
@@ -57,16 +66,37 @@ proc module_parse { data } {
         } elseif {[string index $line end] == "\\"} {
             # Command continued on next line
             set line [string range $line 0 end-1]
+            if {$debug} {
+                puts "continued line starts as:"
+                puts "->$line<-"
+            }
             for {set i [expr {$i + 1}]} {$i < $max} {incr i} {
                 set next_line [string trim [lindex $lines $i]]
                 if {[string index $next_line 0] == "#"} {
                     continue
                 }
+                if {[string index $next_line end] == "\\"} {
+                    set next_line [string range $next_line 0 end-1]
+                    set continued 1
+                } else {
+                    set continued 0
+                }
                 append line $next_line
-                if {[string index $next_line end] != "\\"} {
+                if {$debug} {
+                    puts "appending:"
+                    puts "->$next_line<-"
+                    puts "continued line is now:"
+                    puts "->$line<-"
+                }
+                if {!$continued} {
                     break
                 }
             }
+        }
+
+        if {$debug} {
+            puts "parsed command:"
+            puts "->$line<-"
         }
 
         module_parse_command $line [expr {$i + 1}]
