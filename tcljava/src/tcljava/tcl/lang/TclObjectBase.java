@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclObjectBase.java,v 1.6 2006/03/10 05:26:30 mdejong Exp $
+ * RCS: @(#) $Id: TclObjectBase.java,v 1.7 2006/05/15 22:14:23 mdejong Exp $
  *
  */
 
@@ -155,16 +155,15 @@ abstract class TclObjectBase {
      */
 
     public final String toString() {
-	if (extraRefCountChecks) {
+	if (stringRep == null) {
+	    // If this object has been deallocated, then
+	    // the stringRep and the internalRep would
+	    // have both been set to null. Generate
+	    // a specific error in this case.
+
 	    if (internalRep == null) {
 	        disposedError();
 	    }
-        }
-
-	if (internalRep == null) {
-	    disposedError();
-	}
-	if (stringRep == null) {
 	    stringRep = internalRep.toString();
 	}
 	return stringRep;
@@ -223,9 +222,11 @@ abstract class TclObjectBase {
      */
 
     public final TclObject duplicate() {
-	if (internalRep == null) {
-	    disposedError();
-	}
+	if (extraRefCountChecks) {
+	    if (internalRep == null) {
+	        disposedError();
+	    }
+        }
 	if (internalRep instanceof TclString) {
 	    if (stringRep == null) {
 	        stringRep = internalRep.toString();
@@ -243,7 +244,9 @@ abstract class TclObjectBase {
      * method would modify the ref count of the original object
      * and return an object with a ref count of 1 instead of 0.
      * These two behaviors lead to lots of useless duplication
-     * of objects that could be modified directly.
+     * of objects that could be modified directly. This method
+     * exists only for backwards compatibility and will be
+     * removed at some point.
      */
 
     public final TclObject takeExclusive() throws TclRuntimeError {

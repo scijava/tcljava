@@ -1,5 +1,19 @@
 2006-05-15  Mo DeJong  <mdejong@users.sourceforge.net>
 
+        * src/jacl/tcl/lang/ExprValue.java: Comment fixup.
+        * src/jacl/tcl/lang/TclList.java (toString):
+        Don't allocate a StringBuffer for an empty list.
+        * src/tcljava/tcl/lang/FuncSig.java
+        (getAccessibleConstructors): Fix minor bug where
+        no accessible constructors could lead to a NPE.
+        * src/tcljava/tcl/lang/TclObjectBase.java (toString,
+        duplicate): Minor disposed object optimizations.
+        * src/tests/tjc/TestTJC.java: Comment fixups.
+        * tests/tcljava/FuncSig.test: Add test case
+        for getAccessibleConstructors NPE.
+
+2006-05-15  Mo DeJong  <mdejong@users.sourceforge.net>
+
         Regenerate files that include version numbers
         because vsub.sh incorrectly wrote files with
         CRLF translation.

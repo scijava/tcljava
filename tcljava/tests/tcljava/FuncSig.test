@@ -5,7 +5,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: FuncSig.test,v 1.12 2003/03/18 00:07:29 mdejong Exp $
+# RCS: @(#) $Id: FuncSig.test,v 1.13 2006/05/15 22:14:23 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -160,6 +160,10 @@ test FuncSig-1.24 {get, method short signature} {
 test FuncSig-1.25 {can't call static method via instance} {
     list [catch {[java::new tests.JavaTest] smethod} err] $err
 } {1 {no accessible method "smethod" in class tests.JavaTest}}
+
+test FuncSig-1.26 {constructor does not exist} {
+    list [catch {java::new tcl.lang.TclDouble A} err] $err
+} {1 {can't find accessible constructor with 1 argument(s) for class "tcl.lang.TclDouble"}}
 
 
 test FuncSig-2.1 {getAccessible*Methods, caching} {

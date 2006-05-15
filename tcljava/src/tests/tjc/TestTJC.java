@@ -597,7 +597,7 @@ public class TestTJC {
         try {
             tstr.toString();
         } catch (TclRuntimeError tre) {
-            // error raise because object was deallocated
+            // error raised because object was deallocated
             err = tre.getMessage();
         }
         return err;
@@ -611,7 +611,7 @@ public class TestTJC {
         try {
             tstr.toString();
         } catch (TclRuntimeError tre) {
-            // error raise because object was deallocated
+            // error raised because object was deallocated
             err = tre.getMessage();
         }
         return err;
@@ -652,7 +652,7 @@ public class TestTJC {
         try {
             tstr.toString();
         } catch (TclRuntimeError tre) {
-            // error raise because object was deallocated
+            // error raised because object was deallocated
             err = tre.getMessage();
         }
         return err;
@@ -670,7 +670,7 @@ public class TestTJC {
         try {
             tstr.toString();
         } catch (TclRuntimeError tre) {
-            // error raise because object was deallocated
+            // error raised because object was deallocated
             err = tre.getMessage();
         }
         return err;
@@ -692,7 +692,7 @@ public class TestTJC {
         try {
             tstr.toString();
         } catch (TclRuntimeError tre) {
-            // error raise because object was deallocated
+            // error raised because object was deallocated
             err = tre.getMessage();
         }
         return err;
@@ -715,7 +715,7 @@ public class TestTJC {
         try {
             tstr.toString();
         } catch (TclRuntimeError tre) {
-            // error raise because object was deallocated
+            // error raised because object was deallocated
             err = tre.getMessage();
         }
         return err;
@@ -737,7 +737,7 @@ public class TestTJC {
         try {
             tstr.toString();
         } catch (TclRuntimeError tre) {
-            // error raise because object was deallocated
+            // error raised because object was deallocated
             err = tre.getMessage();
         }
         return err;
@@ -761,7 +761,7 @@ public class TestTJC {
         try {
             tstr.toString();
         } catch (TclRuntimeError tre) {
-            // error raise because object was deallocated
+            // error raised because object was deallocated
             err = tre.getMessage();
         }
         return err;
@@ -785,7 +785,7 @@ public class TestTJC {
             // could be updated to the Tcl 8.4 implementation
             // since it seems to be different in this respect.
         } catch (TclRuntimeError tre) {
-            // error raise because object was deallocated
+            // error raised because object was deallocated
             err = tre.getMessage();
         }
         return err;
