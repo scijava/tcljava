@@ -1,5 +1,39 @@
 2006-05-14  Mo DeJong  <mdejong@users.sourceforge.net>
 
+        * src/empty/empty.jar: Regen.
+        * src/empty/tcl/lang/Util.java: Add fake
+        method impl.
+        * src/jacl/tcl/lang/Expression.java (ExprParseObject):
+        Remove ugly logic that dealt with TclObject
+        passed into expr module. The previous code
+        needed to check every TclDouble to see if it
+        looked like an int that was converted to a
+        double. The TclDouble class will no longer
+        convert a TclObject to a TclDouble if the
+        string could be parsed as an integer.
+        * src/jacl/tcl/lang/Util.java (isJacl,
+        looksLikeInt): Add util methods for
+        use in TclDouble class.
+        * src/tclblend/tcl/lang/Util.java: Add
+        method impl that do nothing under Tcl Blend.
+        * src/tcljava/tcl/lang/TclDouble.java (get):
+        When running in Jacl, check for a string that
+        can be parsed as both a double and an int.
+        Change the internal rep to TclInteger in a
+        case like this.
+        * src/tcljava/tcl/lang/TclInteger.java: Comment fixup.
+        * src/tests/tjc/tcl/lang/TestTcl.java: Add
+        tests for TclDouble conversion special cases.
+        * tests/tcl/obj.test: Update test since internal
+        rep is no longer changed to TclDouble.
+        * tests/tclbench/expr.bench: Add double tests.
+        * tests/tjc/compiledLocals.test: Add tests to
+        check the internal rep of object when dealing
+        with TclDouble conversions.
+        * tests/tjc/testtjc.test: Add tests.
+
+2006-05-14  Mo DeJong  <mdejong@users.sourceforge.net>
+
         * src/jacl/tcl/lang/Expression.java: Check
         in a number of little util fixes.
         * src/jacl/tcl/lang/FormatCmd.java: Comment fixup.

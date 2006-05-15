@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: obj.test,v 1.3 2005/10/12 22:39:39 mdejong Exp $
+# RCS: @(#) $Id: obj.test,v 1.4 2006/05/15 01:25:46 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -88,10 +88,14 @@ test obj-2.2 {Tcl_GetObjType and Tcl_ConvertToType} {
     set result ""
     lappend result [testobj freeallvars]
     lappend result [testintobj set 1 12]
+    # Attempt conversion to TclDouble, this will
+    # not work. Since the number could be an
+    # integer or a double, it will be left as
+    # a TclInteger internal rep.
     lappend result [testobj convert 1 double]
     lappend result [testobj type 1]
     lappend result [testobj refcount 1]
-} {{} 12 12 double 3}
+} {{} 12 12 int 3}
 
 test obj-3.1 {Tcl_ConvertToType error} {
     list [testdoubleobj set 1 12.34] [catch {testobj convert 1 int} msg] $msg

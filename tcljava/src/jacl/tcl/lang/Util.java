@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Util.java,v 1.21 2006/05/14 22:07:49 mdejong Exp $
+ * RCS: @(#) $Id: Util.java,v 1.22 2006/05/15 01:25:46 mdejong Exp $
  */
 
 package tcl.lang;
@@ -1856,6 +1856,50 @@ isWindows() {
 	return true;
     }
     return false;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * isJacl --
+ *
+ *	Returns true if running in Jacl. This method is used
+ *	by conditional logic in the tcljava module.
+ *
+ * Results:
+ *	Returns a boolean.
+ *
+ * Side effects:
+ *	 None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static boolean 
+isJacl() {
+    return true;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * looksLikeInt --
+ *
+ *	Returns true when isJacl() is true and this string looks
+ *	like an integer.
+ *
+ * Results:
+ *	Returns a boolean.
+ *
+ * Side effects:
+ *	 None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static boolean 
+looksLikeInt(String s) {
+    return Expression.looksLikeInt(s, s.length(), 0, true);
 }
 
 /*

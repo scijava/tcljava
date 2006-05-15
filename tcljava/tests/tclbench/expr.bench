@@ -43,6 +43,16 @@ proc expr-evaluate-add-fifty {a} {
           $a + $a + $a + $a + $a + $a + $a + $a + $a + $a}
 }
 
+proc expr-evaluate-add-fifty-fifty {a} {
+    for {set i 0} {$i < 50} {incr i} {
+        expr {$a + $a + $a + $a + $a + $a + $a + $a + $a + $a + \
+          $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + \
+          $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + \
+          $a + $a + $a + $a + $a + $a + $a + $a + $a + $a + \
+          $a + $a + $a + $a + $a + $a + $a + $a + $a + $a}
+    }
+}
+
 proc expr-incr-incr {value} {
     incr value
 }
@@ -337,6 +347,7 @@ bench -desc "expr-evaluate-add-fifty_int_easy" -body {expr-evaluate-add-fifty 1}
 # changing the internal rep of the object. The same goes for double parsing.
 
 bench -desc "expr-evaluate-add-fifty_int_hard" -body {expr-evaluate-add-fifty 18853837}
+bench -desc "expr-evaluate-add-fifty_fifty_int_hard" -body {expr-evaluate-add-fifty-fifty 18853837}
 
 # This test passes an object that is already an integer so no parse is needed.
 
@@ -349,6 +360,7 @@ bench -desc "expr-evaluate-add-ten_double" -body {expr-evaluate-add-ten 1.0}
 
 bench -desc "expr-evaluate-add-fifty_double_easy" -body {expr-evaluate-add-fifty 1.0}
 bench -desc "expr-evaluate-add-fifty_double_hard" -body {expr-evaluate-add-fifty 123.78964e-4}
+bench -desc "expr-evaluate-add-fifty_fifty_double_hard" -body {expr-evaluate-add-fifty-fifty 123.78964e-4}
 
 set expr_double_obj [expr {double(123.78964e-4)}]
 bench -desc "expr-evaluate-add-fifty_double_obj" -body {expr-evaluate-add-fifty $expr_double_obj}

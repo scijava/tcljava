@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Util.java,v 1.2 2006/04/10 21:13:56 mdejong Exp $
+ * RCS: @(#) $Id: Util.java,v 1.3 2006/05/15 01:25:46 mdejong Exp $
  */
 
 package tcl.lang;
@@ -159,6 +159,51 @@ static public final native boolean
 stringMatch(
     String string,		// String to match.
     String pattern);		// Pattern to compare against.
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * isJacl --
+ *
+ *	Returns true if running in Jacl. This method is used
+ *	by conditional logic in the tcljava module.
+ *
+ * Results:
+ *	Returns a boolean.
+ *
+ * Side effects:
+ *	 None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+
+static boolean
+isJacl() {
+    return false;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * looksLikeInt --
+ *
+ *	Returns true when isJacl() is true and this string looks
+ *	like an integer.
+ *
+ * Results:
+ *	Returns a boolean.
+ *
+ * Side effects:
+ *	 None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static boolean
+looksLikeInt(String s) {
+    return false;
+}
 
 } // end Util
 

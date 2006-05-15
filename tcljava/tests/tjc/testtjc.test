@@ -142,6 +142,38 @@ tcltest::test testtjc-3.13 {call TestTJC methds} {
     java::call TestTJC testExprOp13 [java::getinterp]
 } {1.0}
 
+tcltest::test testtjc-4.0 {TclDouble number class} {
+    java::call tcl.lang.TestTcl testDouble1 [java::getinterp]
+} {1.0}
+
+tcltest::test testtjc-4.1 {TclDouble number class} {
+    java::call tcl.lang.TestTcl testDouble2 [java::getinterp]
+} {0.0}
+
+tcltest::test testtjc-4.2 {TclDouble number class} {
+    java::call tcl.lang.TestTcl testDouble3 [java::getinterp]
+} {1.0 TclInteger}
+
+tcltest::test testtjc-4.3 {TclDouble number class} {
+    java::call tcl.lang.TestTcl testDouble4 [java::getinterp]
+} {0.0 TclInteger}
+
+tcltest::test testtjc-4.4 {TclDouble number class} {
+    java::call tcl.lang.TestTcl testDouble5 [java::getinterp]
+} {1.0 TclInteger 1.0 1}
+
+tcltest::test testtjc-4.5 {TclDouble number class} {
+    java::call tcl.lang.TestTcl testDouble6 [java::getinterp]
+} {40.0 TclInteger 40.0 32}
+
+tcltest::test testtjc-4.6 {TclDouble number class} {
+    java::call tcl.lang.TestTcl testDouble7 [java::getinterp]
+} {TclException 255}
+
+tcltest::test testtjc-4.7 {TclDouble number class} {
+    java::call tcl.lang.TestTcl testDouble8 [java::getinterp]
+} {TclException 1.0}
+
 
 tcltest::test testtjc-args-1.0 {assign proc args} {
     java::call TestTJC testArg1 [java::getinterp]

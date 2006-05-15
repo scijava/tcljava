@@ -37,4 +37,14 @@ stringMatch(String string, String pattern)
   return true;
 }
 
+static boolean
+isJacl() {
+    return false;
+}
+
+static boolean
+looksLikeInt(String s) {
+    return false;
+}
+
 } // end Util

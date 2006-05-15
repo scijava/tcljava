@@ -6,7 +6,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: compiledLocals.test,v 1.7 2006/04/07 22:33:42 mdejong Exp $
+# RCS: @(#) $Id: compiledLocals.test,v 1.8 2006/05/15 01:25:46 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -2555,13 +2555,19 @@ test compiledLocals-10.16 {expr} {
 } {TclList {TclInteger 1} 0 OK TclInteger}
 
 test compiledLocals-10.17 {expr} {
-    # This TclString object is converted
-    # into a TclDouble, but it has a string
-    # rep that looks like an integer. The
-    # expr layer will convert the object
-    # back to a TclInteger so that parse
-    # operations in the future will know
-    # it is an integer.
+    # This test used to check that the
+    # TclString that was converted to
+    # a TclDouble was converted back
+    # to a TclInteger in the expr module.
+    # That slow logic has not been replaced
+    # by changes to the TclDouble module
+    # so that a string that can be parsed
+    # as both a double and an int will
+    # never be converted to a TclDouble
+    # internal rep. This change optimizes
+    # use of floating point numbers in
+    # Jacl's expr command.
+
     proc clocals_test10_17 {} {
         set V [string range "10" 0 end]
 
@@ -2576,7 +2582,7 @@ test compiledLocals-10.17 {expr} {
     }
     clocals_tjc_compiled_proc clocals_test10_17
     clocals_test10_17
-} {{TclString 10} {TclDouble 10} 0 10 {TclInteger 10}}
+} {{TclString 10} {TclInteger 10} 0 10 {TclInteger 10}}
 
 test compiledLocals-10.18 {expr} {
     # This TclDouble has no string rep,
@@ -2638,6 +2644,82 @@ test compiledLocals-10.20 {expr} {
     clocals_tjc_compiled_proc clocals_test10_20
     clocals_test10_20
 } {TclBoolean 0 true TclBoolean}
+
+test compiledLocals-10.21 {TclDouble} {
+    # This compiled local starts life as TclString.
+    # When the format command attempts to convert
+    # it to a TclDouble, the internal rep is instead
+    # converted to TclInteger. Dealing with numeric
+    # conversion logic in the TclInteger and TclDouble
+    # class like this means that the expr expression
+    # module will not need to scan every TclDouble
+    # to see if it looks like an integer.
+
+    proc clocals_test10_21 {} {
+        set V [string range "1" 0 end]
+
+        set results [list]
+        lappend results [irep $V]
+        format %f $V
+        lappend results [irep $V]
+        lappend results [list "expr" [expr {$V}]]
+        lappend results [irep $V]
+        return $results
+    }
+    clocals_tjc_compiled_proc clocals_test10_21
+    clocals_test10_21
+} {TclString TclInteger {expr 1} TclInteger}
+
+test compiledLocals-10.22 {TclDouble} {
+    # compiled local starts life as TclInteger,
+    # but the format command tries to convert
+    # it to a TclDouble. This conversion attempt
+    # fails and the number retains the TclInteger
+    # internal rep.
+
+    proc clocals_test10_22 {} {
+        set V 1
+
+        set results [list]
+        lappend results [irep $V]
+        format %f $V
+        lappend results [irep $V]
+        lappend results [list "expr" [expr {$V}]]
+        lappend results [irep $V]
+        return $results
+    }
+    clocals_tjc_compiled_proc clocals_test10_22
+    clocals_test10_22
+} {TclInteger TclInteger {expr 1} TclInteger}
+
+test compiledLocals-10.23 {TclDouble} {
+    # compiled local starts life as TclInteger,
+    # the format command then tries to convert
+    # it to a TclDouble. The object can't be
+    # converted into a TclDouble internal rep
+    # since it looks like an integer. The
+    # tricky part here is that the TclDouble.get()
+    # method must return the correct parsed
+    # value as a double and then not convert
+    # to a TclDouble internal rep. The
+    # parsed double value does not match
+    # the parse integer value in this case.
+
+    proc clocals_test10_23 {} {
+        set V 040
+
+        set results [list]
+        lappend results [irep $V]
+        lappend results [format %0.1f $V]
+        lappend results [irep $V]
+        lappend results [list "expr" [expr {$V}]]
+        lappend results [irep $V]
+        return $results
+    }
+    clocals_tjc_compiled_proc clocals_test10_23
+    clocals_test10_23
+} {TclInteger 40.0 TclInteger {expr 32} TclInteger}
+
 
 
 # cleanup

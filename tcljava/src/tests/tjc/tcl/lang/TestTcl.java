@@ -235,5 +235,144 @@ public class TestTcl {
         return results.toString();
     }
 
+    // Invoke TclDouble related methods.
+
+    public static String testDouble1(Interp interp) throws TclException {
+        TclObject tobj = TclDouble.newInstance(1.0);
+        return tobj.toString();
+    }
+
+    public static String testDouble2(Interp interp) throws TclException {
+        TclObject tobj = TclDouble.newInstance(0);
+        return tobj.toString();
+    }
+
+    public static String testDouble3(Interp interp) throws TclException {
+        StringBuffer results = new StringBuffer();
+
+        TclObject tobj = TclString.newInstance("1");
+        double d = TclDouble.get(interp, tobj);
+
+        results.append(d);
+        results.append(' ');
+        results.append(internalRepToString(tobj));
+
+        return results.toString();
+    }
+
+    public static String testDouble4(Interp interp) throws TclException {
+        StringBuffer results = new StringBuffer();
+
+        TclObject tobj = TclString.newInstance("0");
+        double d = TclDouble.get(interp, tobj);
+
+        results.append(d);
+        results.append(' ');
+        results.append(internalRepToString(tobj));
+
+        return results.toString();
+    }
+
+    public static String testDouble5(Interp interp) throws TclException {
+        StringBuffer results = new StringBuffer();
+
+        String srep = "1";
+
+        TclObject tobj = TclString.newInstance(srep);
+        double d = TclDouble.get(interp, tobj);
+
+        results.append(d);
+        results.append(' ');
+        results.append(internalRepToString(tobj));
+        results.append(' ');
+        // Parse double directly without going through TclDouble logic.
+        results.append(Util.getDouble(interp, srep));
+        results.append(' ');
+        // Parse int directly
+        results.append(Util.getInt(interp, srep));
+
+        return results.toString();
+    }
+
+    public static String testDouble6(Interp interp) throws TclException {
+        StringBuffer results = new StringBuffer();
+
+        // Tcl's behavior related to parsing of integers vs doubles
+        // is confusing. Numbers with a leading zero are parsed as
+        // an octal integer but the leading zeros are ignored when
+        // parsing as a double.
+
+        String srep = "040"; // parsed as int 32 but double 40.0
+
+        TclObject tobj = TclString.newInstance(srep);
+        double d = TclDouble.get(interp, tobj);
+
+        results.append(d);
+        results.append(' ');
+        results.append(internalRepToString(tobj));
+        results.append(' ');
+        // Parse double directly without going through TclDouble logic.
+        results.append(Util.getDouble(interp, srep));
+        results.append(' ');
+        // Parse int directly
+        results.append(Util.getInt(interp, srep));
+
+        return results.toString();
+    }
+
+    public static String testDouble7(Interp interp) throws TclException {
+        StringBuffer results = new StringBuffer();
+
+        String srep = "0xFF";
+        TclObject tobj = TclString.newInstance(srep);
+
+        // Try to parse as a TclDouble
+        try {
+            double dval = TclDouble.get(interp, tobj);
+            results.append(dval);
+        } catch (TclException te) {
+            results.append("TclException");
+        }
+
+        results.append(' ');
+
+        // Try to parse as a TclInteger
+        try {
+            int ival = TclInteger.get(interp, tobj);
+            results.append(ival);
+        } catch (TclException te) {
+            results.append("TclException");
+        }
+
+        return results.toString();
+    }
+
+    public static String testDouble8(Interp interp) throws TclException {
+        StringBuffer results = new StringBuffer();
+
+        String srep = "1.0";
+        TclObject tobj = TclString.newInstance(srep);
+
+        // Try to parse as a TclInteger
+        try {
+            int ival = TclInteger.get(interp, tobj);
+            results.append(ival);
+        } catch (TclException te) {
+            results.append("TclException");
+        }
+
+        results.append(' ');
+
+        // Try to parse as a TclDouble
+        try {
+            double dval = TclDouble.get(interp, tobj);
+            results.append(dval);
+        } catch (TclException te) {
+            results.append("TclException");
+        }
+
+        return results.toString();
+    }
+
 }
 

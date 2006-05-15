@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclInteger.java,v 1.11 2006/05/13 21:07:15 mdejong Exp $
+ * RCS: @(#) $Id: TclInteger.java,v 1.12 2006/05/15 01:25:46 mdejong Exp $
  *
  */
 
@@ -169,9 +169,12 @@ public class TclInteger implements InternalRep {
 	    }
 	} else {
 	    // Note that conversion from a double to an
-	    // integer internal rep will raise an error
-	    // for number like "1.0". An octal like "040"
-	    // could be parsed as a double or an integer.
+	    // integer internal rep should always raise
+	    // an error. A double value like "1.0" can't
+	    // be parsed as an integer. An octal like "040"
+	    // could be parsed as both a double and an
+	    // integer, but the TclDouble module should
+	    // not allow conversion to TclDouble in that case.
 
 	    tobj.setInternalRep(new TclInteger(interp, tobj.toString()));
 

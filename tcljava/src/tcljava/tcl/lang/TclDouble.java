@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclDouble.java,v 1.7 2006/05/13 21:07:15 mdejong Exp $
+ * RCS: @(#) $Id: TclDouble.java,v 1.8 2006/05/15 01:25:46 mdejong Exp $
  *
  */
 
@@ -27,6 +27,10 @@ public class TclDouble implements InternalRep {
  */
 
 private double value;
+
+// Extra debug checking
+
+private final static boolean validate = false;
 
 
 /*
@@ -197,6 +201,13 @@ throws
     // reparse a double from the string rep so that tricky
     // special cases like "040" are handled correctly.
 
+    if (validate) {
+        if (tobj.getInternalRep() instanceof TclDouble) {
+            throw new TclRuntimeError("should not be TclDouble, was a " +
+                tobj.getInternalRep().getClass().getName());
+        }
+    }
+
     tobj.setInternalRep(new TclDouble(interp, tobj.toString()));
 
     if (TclObject.saveObjRecords) {
@@ -242,8 +253,63 @@ throws
     TclDouble tdouble;
 
     if (!(rep instanceof TclDouble)) {
-	setDoubleFromAny(interp, tobj);
-	tdouble = (TclDouble) tobj.getInternalRep();
+	if (Util.isJacl()) {
+	    // Try to convert to TclDouble. If the string can't be
+	    // parsed as a double, then raise a TclException here.
+
+	    setDoubleFromAny(interp, tobj);
+	    double dval;
+	    tdouble = (TclDouble) tobj.getInternalRep();
+	    dval = tdouble.value;
+
+	    // The string can be parsed as a double, but if it
+	    // can also be parsed as an integer then we need
+	    // to convert the internal rep back to TclInteger.
+	    // This logic handles the special case of an octal
+	    // string like "040". The most common path through
+	    // this code is a normal double like "1.0", so this
+	    // code will only attempt a conversion to TclInteger
+	    // when the string looks like an integer. This logic
+	    // is tricky, but it leads to a speedup in performance
+	    // critical expr code since the double value from a
+	    // TclDouble can be used without having to check to
+	    // see if the double looks like an integer.
+
+	    if (Util.looksLikeInt(tobj.toString())) {
+	        try {
+	            int ival = TclInteger.get(null, tobj);
+
+	            // A tricky octal like "040" can be parsed as
+	            // the double 40.0 or the integer 32, return
+	            // the value parsed as a double and leave
+	            // the object with a TclInteger internal rep.
+
+	            return dval;
+	        } catch (TclException te) {
+	            throw new TclRuntimeError("looksLikeInt() is true, " +
+                        "but TclInteger.get() failed for \"" +
+                        tobj.toString() + "\"");
+	        }
+	    }
+
+	    if (validate) {
+	        // Double check that we did not just create a TclDouble
+	        // that looks like an integer.
+
+	        InternalRep tmp = tobj.getInternalRep();
+	        if (!(tmp instanceof TclDouble)) {
+                    throw new TclRuntimeError("not a TclDouble, is a " +
+                        tmp.getClass().getName());
+	        }
+	        String stmp = tobj.toString();
+                if (Util.looksLikeInt(stmp)) {
+                    throw new TclRuntimeError("looks like an integer");
+	        }
+	    }
+        } else {
+	    setDoubleFromAny(interp, tobj);
+	    tdouble = (TclDouble) tobj.getInternalRep();
+        }
     } else {
 	tdouble = (TclDouble) rep;
     }
@@ -320,9 +386,6 @@ toString()
  * @param d the new double value.
  */
 static void exprSetInternalRep(TclObject tobj, double d) {
-    // Extra debug checking
-    final boolean validate = false;
-
     if (validate) {
 
         // Double check that the internal rep is not
@@ -350,6 +413,19 @@ static void exprSetInternalRep(TclObject tobj, double d) {
                 d + " that does not match parsed double value " + d2 +
                 ", parsed from str \"" +
                 tobj.toString() + "\"");
+        }
+
+        // It should not be possible to parse the TclObject's string
+        // rep as an integer since we know it is a double. An object
+        // that could be parsed as either a double or an integer
+        // should have been parsed as an integer.
+
+        try {
+            int ival = Util.getInt(null, tobj.toString());
+            throw new TclRuntimeError("should not be able to parse string rep as int: " +
+                tobj.toString());
+        } catch (TclException e) {
+            // No-op
         }
     }
 

@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Expression.java,v 1.25 2006/05/14 22:07:49 mdejong Exp $
+ * RCS: @(#) $Id: Expression.java,v 1.26 2006/05/15 01:25:46 mdejong Exp $
  *
  */
 
@@ -376,33 +376,13 @@ class Expression {
                 }
             }
         } else if (rep instanceof TclDouble) {
-            // An object with a double internal rep might
-            // actually be an integer that was converted
-            // to a double. Check to see if the double
-            // looks like an integer to handle this case.
-            // A "pure" double with no string rep is
-            // always valid.
+            // An object with a double internal rep will
+            // never have a string rep that could be parsed
+            // as an integer.
 
-            double dval = TclDouble.get(interp, obj);
-            if (obj.hasNoStringRep()) {
-                value.setDoubleValue(dval);
-                return;
-            }
-            String str = obj.toString();
-            if (looksLikeInt(str, str.length(), 0, true)) {
-                // Convert a double that looks like an
-                // integer back into an integer. Note
-                // that the integer must be reparsed
-                // from the string rep so that an octal
-                // like "040" is handled correctly.
-
-                int ival = TclInteger.get(interp, obj);
-                value.setIntValue(ival, str);
-                return;
-            } else {
-                value.setDoubleValue(dval, str);
-                return;
-            }
+            value.setDoubleValue(TclDouble.get(interp, obj),
+                (obj.hasNoStringRep() ? null : obj.toString()));
+            return;
         }
 
         // Otherwise, try to parse a numeric value from the
