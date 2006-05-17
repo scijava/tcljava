@@ -1,3 +1,13 @@
+2006-05-16  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/tests/jacl/tcl/lang/JaclSetInterrupted.java:
+        * src/tjc/tcl/lang/TJC.java (invoke): Add
+        missing checkInterrupted() call so that compiled
+        code can be interrupted.
+        * tests/jacl/SetInterrupted.tcl:
+        * tests/jacl/SetInterrupted.test: Add test
+        case for interruption of TJC compiled code.
+
 2006-05-15  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/tjc/tjc/library/module.tcl (module_parse):
@@ -105,7 +115,7 @@
 2006-05-12  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/janino/org/codehaus/janino/UnitCompiler.java:
-        Implement tempory workaround for verifier errors
+        Implement temporary workaround for verifier errors
         in foreach and return tjcruntime modules by
         upping the try/catch register used. This is not
         the correct long term solution, but it makes janino

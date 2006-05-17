@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: SetInterrupted.test,v 1.1 2006/04/27 02:16:13 mdejong Exp $
+# RCS: @(#) $Id: SetInterrupted.test,v 1.2 2006/05/17 01:59:11 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -173,6 +173,16 @@ test SetInterrupted-2.6 {} {
     java::call tcl.lang.JaclSetInterrupted ThreadInterrupt26
 } {SETUP_ONE SETUP_TWO INTERRUPTED_ONE {finally} INTERRUPTED_TWO {start done} END_EVENT_LOOP}
 
+
+test SetInterrupted-3.0 {} {
+    # Create a thread, then create 2 interpreters in
+    # this thread. The first interp will go into a
+    # loop and be interrupted. This tests will
+    # compile Tcl procs with TJC so that compiled
+    # interrupt checking code is tested.
+
+    java::call tcl.lang.JaclSetInterrupted ThreadInterrupt30
+} {SETUP_ONE SETUP_TWO INTERRUPTED_ONE {start 1K 2K-interrupting} INTERRUPTED_TWO {interrupting} END_EVENT_LOOP}
 
 # cleanup
 ::tcltest::cleanupTests

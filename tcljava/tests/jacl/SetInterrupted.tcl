@@ -558,3 +558,73 @@ proc ti26_cmd3 { id } {
     }
 }
 
+
+# Test 30 will use TJC to compile the next two procs.
+# The interrupted flag will be set during the loop
+# and the first interp will be interrupted.
+
+proc ti30_ONE_cmd {} {
+    global results
+
+#    puts "ti30_ONE_cmd start"
+
+    lappend results start
+
+    for {set i 0} {$i < 5000} {incr i} {
+        #puts "ti30_ONE_cmd loop $i"
+
+        if {$i == 1000} {
+            lappend results 1K
+        } elseif {$i == 2000} {
+            lappend results 2K-interrupting
+            [java::getinterp] setInterrupted
+        }
+    }
+
+    lappend results loopdone
+}
+
+proc ti30_TWO_cmd { iter } {
+    global results
+
+#    puts "ti30_TWO_cmd start"
+
+    lappend results interrupting
+    [java::getinterp] setInterrupted
+}
+
+proc ti30_setup { id } {
+    global compile_results
+
+#    puts "ti30_setup $id"
+
+    namespace eval :: {package require TJC}
+    if {$id == "ONE"} {
+        TJC::compile ti30_ONE_cmd -readyvar compile_results
+    } elseif {$id == "TWO"} {
+        TJC::compile ti30_TWO_cmd -readyvar compile_results
+    }
+
+    vwait compile_results
+    if {[lindex $compile_results 0] != "OK"} {
+        error "TJC error $compile_results"
+    }
+#    puts "compiled proc in $id"
+}
+
+proc ti30_start { id } {
+    global results
+
+#    puts "ti30_start $id"
+
+    set ::results [list]
+
+    if {$id == "ONE"} {
+        after 0 ti30_ONE_cmd
+    } elseif {$id == "TWO"} {
+        after 0 "ti30_TWO_cmd 0"
+    } else {
+        error "unknown id $id"
+    }
+}
+

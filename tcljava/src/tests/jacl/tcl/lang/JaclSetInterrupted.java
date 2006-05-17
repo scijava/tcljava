@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JaclSetInterrupted.java,v 1.1 2006/04/27 02:16:13 mdejong Exp $
+ * RCS: @(#) $Id: JaclSetInterrupted.java,v 1.2 2006/05/17 01:59:11 mdejong Exp $
  *
  */
 
@@ -1774,6 +1774,190 @@ static class ThreadInterrupt26Runner implements Runnable {
     }
 
 }
+
+
+// Test method that will create 2 interps in a thread
+// and then process events in the Tcl event queue.
+// This test checks that a TJC compiled proc can
+// be interrupted.
+
+public static
+String ThreadInterrupt30() throws Exception {
+    ThreadInterrupt30Runner r = new ThreadInterrupt30Runner();
+    Thread thr = new Thread(r);
+    thr.start();
+
+    // No need to interrupt here since both interps
+    // will interrupt themselves.
+
+    thr.join(); // Wait for thread to die
+
+    return r.results.toString();
+}
+
+static class ThreadInterrupt30Runner implements Runnable {
+    Interp interp1;
+    Interp interp2;
+    boolean interrupted_one = false;
+    boolean interrupted_two = false;
+    StringBuffer results = new StringBuffer();
+    boolean running = false;
+    final boolean debug = false;
+
+    public void run() {
+        try {
+            interp1 = new Interp();
+            interp2 = new Interp();
+
+            // Load util Tcl commands and setup interps.
+
+            if (debug) {
+                System.out.println("starting interp setup");
+            }
+
+            interp1.eval("source SetInterrupted.tcl", 0);
+            interp1.eval("setup", 0);
+            interp1.eval("ti30_setup " + "ONE", 0);
+            results.append("SETUP_ONE ");
+
+            if (debug) {
+                System.out.println("interp ONE was setup");
+            }
+
+            interp2.eval("source SetInterrupted.tcl", 0);
+            interp2.eval("setup", 0);
+            interp2.eval("ti30_setup " + "TWO", 0);
+            results.append("SETUP_TWO ");
+
+            if (debug) {
+                System.out.println("interps were setup");
+            }
+
+            interp1.eval("ti30_start " + "ONE", 0);
+            interp2.eval("ti30_start " + "TWO", 0);
+
+            if (debug) {
+                System.out.println("interps were started");
+            }
+
+            // Both interps use the same Notifier since there
+            // is one Notifier for each thread.
+
+            Notifier notifier = interp1.getNotifier();
+
+            while (true) {
+                if (debug) {
+                    System.out.println("invoking notifier.doOneEvent()");
+                }
+
+                running = true;
+
+                try {
+                    notifier.doOneEvent(TCL.ALL_EVENTS);
+                } catch (TclInterruptedException te) {
+                    if (debug) {
+                        System.out.println("caught TclInterruptedException");
+                        te.printStackTrace(System.out);
+                    }
+
+                    // Double check that the interrupted interp is
+                    // the correct one.
+
+                    if (te.interp == interp1) {
+                        if (debug) {
+                            System.out.println("interp1 interrupted");
+                        }
+
+                        if (interrupted_one == true) {
+                            // Interp should not be interrupted a second time.
+                            // This might happen if events were not removed
+                            // from the event queue.
+
+                            throw new TclRuntimeError("TclInterruptedException was " +
+                                "raised more than once for the same interp");
+                        }
+
+                        interrupted_one = true;
+                        results.append("INTERRUPTED_ONE ");
+
+                        // Query the "results" variable.
+
+                        TclObject tobj = interp1.getVar("results", null, 0);
+                        results.append("{");
+                        results.append(tobj.toString());
+                        results.append("} ");
+                    } else if (te.interp == interp2) {
+                        if (debug) {
+                            System.out.println("interp2 interrupted");
+                        }
+
+                        if (interrupted_two == true) {
+                            // Interp should not be interrupted a second time.
+                            // This might happen if events were not removed
+                            // from the event queue.
+
+                            throw new TclRuntimeError("TclInterruptedException was " +
+                                "raised more than once for the same interp");
+                        }
+
+                        interrupted_two = true;
+                        results.append("INTERRUPTED_TWO ");
+
+                        // Query the "results" variable.
+
+                        TclObject tobj = interp2.getVar("results", null, 0);
+                        results.append("{");
+                        results.append(tobj.toString());
+                        results.append("} ");
+                    }
+
+                    // Cleanup and then dispose of Interp object.
+                    // This method is invoked after the stack
+                    // has been fully unwound and any cleanup
+                    // logic in each stack frame has been run.
+
+                    te.disposeInterruptedInterp();
+
+                } catch (Throwable te) {
+                    if (debug) {
+                        System.out.println("caught Throwable");
+                        te.printStackTrace(System.out);
+                    }
+                }
+
+                // Break out of the event processing loop
+                // when the last Interp object in this
+                // thread has been disposed of.
+
+                if (debug) {
+                    System.out.println("notifier.hasActiveInterps() is " +
+                        notifier.hasActiveInterps());
+                }
+
+                if (!notifier.hasActiveInterps()) {
+                    results.append("END_EVENT_LOOP");
+                    break;
+                }
+            }
+
+        } catch (Exception e) {
+            // Should never be reached
+            e.printStackTrace(System.err);
+        }
+
+        if (debug) {
+            System.out.println("end results are : " + results.toString());
+        }
+
+        return;
+    }
+
+    public boolean isRunning() {
+        return running;
+    }
+
+}
+
 
 } // end class JaclSetInterrupted
 
