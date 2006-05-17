@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: QSort.java,v 1.2 1999/05/09 01:14:07 dejong Exp $
+ * RCS: @(#) $Id: QSort.java,v 1.3 2006/05/17 21:56:34 mdejong Exp $
  *
  */
 
@@ -406,21 +406,16 @@ final class QSort {
 
 	}
 
-	if(i1 >= len1 && i2 < len2) {
-	    if (!Character.isDigit(str2.charAt(i2))) {
-	        return 1;
-	    } else {
-	        return -1;
-	    }
-
-	} else if(i2 >= len2 && i1 < len1) {
-	    if (!Character.isDigit(str1.charAt(i1))) {
-	        return -1;
-	    } else {
-	        return 1;
-	    }
-
-	}
+	if (i1 >= len1 || i2 >= len2) {
+            char c1 = '\0', c2 = '\0';
+            if (i1 < len1) {
+                c1 = str1.charAt(i1);
+            }
+            if (i2 < len2) {
+                c2 = str2.charAt(i2);
+            }
+            diff = (int) (c1 - c2);
+        }
 
 	if (diff == 0) {
 	    diff = secondaryDiff;

@@ -1,3 +1,12 @@
+2006-05-17  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/jacl/tcl/lang/QSort.java (doDictionary):
+        Fix lsort -dictionary bug where strings of
+        differing lengths were not sorting correctly.
+        The sort order logic now works like C Tcl 8.4.
+        * tests/tcl/lsort.test: Add Tcl test cases for
+        lsort -dictionary from Tcl 8.4.
+
 2006-05-16  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/tests/jacl/tcl/lang/JaclSetInterrupted.java:
