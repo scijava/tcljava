@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaInvoke.java,v 1.22 2006/04/13 07:36:50 mdejong Exp $
+ * RCS: @(#) $Id: JavaInvoke.java,v 1.23 2006/05/18 22:52:58 mdejong Exp $
  *
  */
 
@@ -75,22 +75,31 @@ throws
     // module is used to pass a Tcl value to a Java primitive argument.
 
     if (count == 1) {
-        if (signature.toString().equals("Boolean")) {
-            signature = TclString.newInstance("Boolean boolean");
-        } else if (signature.toString().equals("Integer")) {
-            signature = TclString.newInstance("Integer int");
-        } else if (signature.toString().equals("Byte")) {
-            signature = TclString.newInstance("Byte byte");
-        } else if (signature.toString().equals("Short")) {
-            signature = TclString.newInstance("Short short");
-        } else if (signature.toString().equals("Character")) {
-            signature = TclString.newInstance("Character char");
-        } else if (signature.toString().equals("Long")) {
-            signature = TclString.newInstance("Long long");
-        } else if (signature.toString().equals("Float")) {
-            signature = TclString.newInstance("Float float");
-        } else if (signature.toString().equals("Double")) {
-            signature = TclString.newInstance("Double double");
+        final String sig = signature.toString();
+        if (sig.equals("Boolean") ||
+                sig.equals("java.lang.Boolean")) {
+            signature = TclString.newInstance("java.lang.Boolean boolean");
+        } else if (sig.equals("Integer") ||
+                sig.equals("java.lang.Integer")) {
+            signature = TclString.newInstance("java.lang.Integer int");
+        } else if (sig.equals("Byte") ||
+                sig.equals("java.lang.Byte")) {
+            signature = TclString.newInstance("java.lang.Byte byte");
+        } else if (sig.equals("Short") ||
+                sig.equals("java.lang.Short")) {
+            signature = TclString.newInstance("java.lang.Short short");
+        } else if (sig.equals("Character") ||
+                sig.equals("java.lang.Character")) {
+            signature = TclString.newInstance("java.lang.Character char");
+        } else if (sig.equals("Long") ||
+                sig.equals("java.lang.Long")) {
+            signature = TclString.newInstance("java.lang.Long long");
+        } else if (sig.equals("Float") ||
+                sig.equals("java.lang.Float")) {
+            signature = TclString.newInstance("java.lang.Float float");
+        } else if (sig.equals("Double") ||
+                sig.equals("java.lang.Double")) {
+            signature = TclString.newInstance("java.lang.Double double");
         }
     }
 

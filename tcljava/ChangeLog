@@ -1,3 +1,11 @@
+2006-05-18  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/tcljava/tcl/lang/JavaInvoke.java (newInstance):
+        Fixup support for both "Boolean" and "java.lang.Boolean"
+        in overloaded construtor signatures.
+        * tests/tcljava/JavaNewCmd.test: Add test case for
+        fully qualified primitive wrapper constructor.
+
 2006-05-17  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/jacl/tcl/lang/QSort.java (doDictionary):
