@@ -684,6 +684,19 @@ PROC_OPTIONS {ONE::two ONE::three} -cache-commands
     list [catch {module_options_validate} err] $err
 } {0 {}}
 
+tcltest::test module-options-validate-2.10 {validate options} {
+    set data {
+PACKAGE com.chairsoft.recliner.controls
+SOURCE C:/foo.tcl
+INIT_SOURCE C:/foo.tcl
+OPTIONS +inline-containers +omit-results
+    }
+    module_parse $data
+    #module_parse_validate
+
+    list [catch {module_options_validate} err] $err
+} {1 {+omit-results option must appear after +inline-commands}}
+
 # Validate additional OPTIONS in addition to the basic ones.
 
 tcltest::test module-options-validate-3.0 {validate options} {
@@ -726,6 +739,19 @@ OPTIONS +inline-commands
 } {0 {}}
 
 tcltest::test module-options-validate-3.3 {validate options} {
+    set data {
+PACKAGE com.chairsoft.recliner.controls
+SOURCE C:/foo.tcl
+INIT_SOURCE C:/foo.tcl
+OPTIONS +inline-containers +inline-commands +omit-results
+    }
+    module_parse $data
+    #module_parse_validate
+
+    list [catch {module_options_validate} err] $err
+} {0 {}}
+
+tcltest::test module-options-validate-3.4 {validate options} {
     set data {
 PACKAGE com.chairsoft.recliner.controls
 SOURCE C:/foo.tcl
@@ -811,7 +837,7 @@ OPTIONS +cache-commands
     module_option_value cache-commands
 } 1
 
-tcltest::test module-options-value-1.5 {query option} {
+tcltest::test module-options-value-1.5 {options enabled by +O} {
     set data {
 PACKAGE com.chairsoft.recliner.controls
 SOURCE C:/foo.tcl
@@ -828,8 +854,9 @@ OPTIONS +O
         [module_option_value cache-commands] \
         [module_option_value constant-increment] \
         [module_option_value cache-variables] \
-        [module_option_value inline-commands]
-} {1 1 1 0 1 1}
+        [module_option_value inline-commands] \
+        [module_option_value omit-results]
+} {1 1 1 0 1 1 1}
 
 tcltest::test module-options-default-1.0 {query default option value} {
     module_option_default compile
@@ -861,6 +888,10 @@ tcltest::test module-options-default-1.6 {query default option value} {
 
 tcltest::test module-options-default-1.7 {query default option value} {
     module_option_default O
+} 0
+
+tcltest::test module-options-default-1.8 {query default option value} {
+    module_option_default omit-results
 } 0
 
 

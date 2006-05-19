@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: compileproc.tcl,v 1.23 2006/05/02 03:35:40 mdejong Exp $
+#  RCS: @(#) $Id: compileproc.tcl,v 1.24 2006/05/19 22:27:45 mdejong Exp $
 #
 #
 
@@ -83,17 +83,8 @@ proc compileproc_args_split { proc_args } {
 proc compileproc_args_assign { proc_args } {
     global _compileproc_key_info
 
-    if {[info exists _compileproc_key_info(cmd_needs_init)]} {
-        set cmd_needs_init $_compileproc_key_info(cmd_needs_init)
-    } else {
-        set cmd_needs_init 0
-    }
-
-    if {[info exists _compileproc_key_info(constants_found)]} {
-        set constants_found $_compileproc_key_info(constants_found)
-    } else {
-        set constants_found 0
-    }
+    set cmd_needs_init $_compileproc_key_info(cmd_needs_init)
+    set constants_found $_compileproc_key_info(constants_found)
 
     if {[llength $proc_args] == 0} {
         # No arguments to proc
@@ -717,6 +708,17 @@ proc compileproc_init {} {
     # Is set to 1 if built-in Tcl command can
     # be replaced by inline code.
     set _compileproc(options,inline_commands) 0
+
+    # Is set to 1 if inlined Tcl commands can
+    # avoid emitting a setResult() or
+    # resetResult() operation because the
+    # result of the command is never used.
+    set _compileproc(options,omit_results) 0
+
+    # Init flags in key info array
+    set _compileproc_key_info(cmd_needs_init) 0
+    set _compileproc_key_info(constants_found) 0
+    set _compileproc_key_info(generated) 0
 }
 
 proc compileproc_start { proc_list } {
@@ -1575,29 +1577,21 @@ proc compileproc_variable_cache_names_array {} {
 proc compileproc_scan_keys { keys } {
     global _compileproc _compileproc_key_info
 
-#    set debug 0
-#    if {$::_compileproc(debug)} {set debug 1}
-#
+#    set debug 1
+
 #    if {$debug} {
-#        puts "compileproc_scan_keys: $keys"
+#        puts "compileproc_scan_keys: \{$keys\}"
 #    }
 
-    if {[info exists _compileproc_key_info(cmd_needs_init)]} {
-        set cmd_needs_init $_compileproc_key_info(cmd_needs_init)
-    } else {
-        set cmd_needs_init 0
-    }
-
-    if {[info exists _compileproc_key_info(constants_found)]} {
-        set constants_found $_compileproc_key_info(constants_found)
-    } else {
-        set constants_found 0
-    }
+    set cmd_needs_init $_compileproc_key_info(cmd_needs_init)
+    set constants_found $_compileproc_key_info(constants_found)
 
     # Create lookup table for command arguments. Figure out
     # types and values for each word as we iterate over the
     # command keys. The first time compileproc_scan_keys
     # in invoked, the toplevel keys in the proc are passed.
+
+    set last_key [lindex $keys end]
 
     foreach key $keys {
         # If the command name is a simple string, then get
@@ -1818,6 +1812,90 @@ proc compileproc_scan_keys { keys } {
         set _compileproc_key_info($key,num_args) $num_args
         set _compileproc_key_info($key,cmaps) $cmaps
 
+        if {$_compileproc(options,omit_results)} {
+            # The last command in a given block could become
+            # the result for the block. If this is not
+            # the last command in the block then there
+            # is no need to save the result. A nested
+            # command invocation is considered a block.
+
+#            if {$debug} {
+#                puts "omit_results test: key is $key"
+#            }
+
+            set is_nested [descend_get_data $key nested]
+
+#            if {$debug} {
+#                puts "is_nested is $is_nested"
+#            }
+
+            set is_last_key [expr {$key == $last_key}]
+
+#            if {$debug} {
+#                puts "is_last_key is $is_last_key"
+#            }
+
+            if {$is_last_key} {
+                if {[info exists _compileproc_key_info($key,container)]} {
+                    set container_key $_compileproc_key_info($key,container)
+                    set container_result $_compileproc_key_info($container_key,result)
+                } else {
+                    set container_key ""
+                    set container_result 1
+                }
+
+#                if {$debug} {
+#                    puts "container_key is $container_key"
+#                    puts "container_result is $container_result"
+#                }
+
+                # Some container commands like "while" always reset
+                # the interp result after executing commands. In
+                # these cases, there is no need to actually set the
+                # interp result for commands in the body block.
+
+                if {$container_result && \
+                        $container_key != "" && \
+                        [compileproc_is_result_reset_container_command $container_key]} {
+                    set container_result 0
+                }
+
+                # The "catch" command is a tricky special case. If a
+                # variable is passed to the catch command then the
+                # last command is the catch block will need to set
+                # the result so that it can be saved into the var.
+                # Note that this not depend on the result flag for
+                # the container command.
+
+                if {$container_key != ""} {
+                    set tuple [compileproc_container_catch_with_varname $container_key]
+                    if {[lindex $tuple 0]} {
+                        set has_varname [lindex $tuple 1]
+
+                        # set container_result to either true or false
+                        # depending in the has_varname value.
+
+                        set container_result $has_varname
+                    }
+                }
+            } ; # end if {$is_last_key}
+
+            if {$is_last_key && ($container_result || $is_nested)} {
+                # Last command in block or contained command
+                # is a nested command.
+                set _compileproc_key_info($key,result) 1
+            } else {
+                # This command is not the last one in the block, or
+                # it is inside a container and the result of the
+                # container is not used.
+                set _compileproc_key_info($key,result) 0
+            }
+
+#            if {$debug} {
+#                puts "result used is $_compileproc_key_info($key,result)"
+#            }
+        }
+
         # If inlining of containers is enabled and this
         # container can be inlined, then scan the
         # commands contained inside it.
@@ -1838,6 +1916,7 @@ proc compileproc_scan_keys { keys } {
 
     set _compileproc_key_info(cmd_needs_init) $cmd_needs_init
     set _compileproc_key_info(constants_found) $constants_found
+    return
 }
 
 # Scan each command key inside the container command indicated
@@ -3408,6 +3487,68 @@ proc compileproc_is_container_command { key } {
     }
 }
 
+# Return true if the key indicates a container command
+# that explicitly resets the interp result after running
+# contained commands. The compiler can generate optimized
+# code in some cases when it is known that the commands
+# inside a block do not need to set the interp result
+# because the command will always explicitly reset
+# the interp result after running commands in the block.
+
+proc compileproc_is_result_reset_container_command { key } {
+    global _compileproc_ckeys
+    if {![info exists _compileproc_ckeys($key,info_key)]} {
+        return 0
+    }
+    set cmdname [lindex $_compileproc_ckeys($key,info_key) 1]
+    if {$cmdname == "_UNKNOWN"} {
+        return 0
+    }
+
+    switch -exact -- $cmdname {
+        "::catch" -
+        "catch" {
+            # Catch will reset the interp result after
+            # invoking the body block, but it will also
+            # set the result to a condition code. Return
+            # false here since the interp result is not
+            # set to null after catch is finidhied. See
+            # compileproc_container_catch_with_varname
+            # for more about tricky special case handling
+            # related to the catch command.
+
+            return 0
+        }
+        "::expr" -
+        "expr" {
+            return 0
+        }
+        "::for" -
+        "for" {
+            return 1
+        }
+        "::foreach" -
+        "foreach" {
+            return 1
+        }
+        "::if" -
+        "if" {
+            return 0
+        }
+        "::switch" -
+        "switch" {
+            return 0
+        }
+        "::while" -
+        "while" {
+            return 1
+        }
+        default {
+            return 0
+        }
+    }
+}
+
 # Return true if the container keys list for a
 # given container command is a flat list. Only
 # the "catch" and "foreach" commands make use
@@ -3445,25 +3586,24 @@ proc compileproc_is_container_command_keys_flat { key } {
 
 proc compileproc_can_inline_container { key } {
     global _compileproc _compileproc_ckeys
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
+#    set debug 1
 
-    if {$debug} {
-        puts "compileproc_can_inline_container $key"
-    }
+#    if {$debug} {
+#        puts "compileproc_can_inline_container $key"
+#    }
 
     if {$_compileproc(options,inline_containers) == {}} {
-        if {$debug} {
-            puts "inline_containers is {}, returning 0"
-        }
+#        if {$debug} {
+#            puts "inline_containers is {}, returning 0"
+#        }
         return 0
     }
 
     # Determine the command name
     if {![info exists _compileproc_ckeys($key,info_key)]} {
-        if {$debug} {
-            puts "no info_key for key $key"
-        }
+#        if {$debug} {
+#            puts "no info_key for key $key"
+#        }
         return 0
     }
     set qcmdname [lindex $_compileproc_ckeys($key,info_key) 1]
@@ -3471,9 +3611,9 @@ proc compileproc_can_inline_container { key } {
         error "container should not have non-constant name"
     }
     set cmdname [namespace tail $qcmdname]
-    if {$debug} {
-        puts "container command name \"$cmdname\" for key $key"
-    }
+#    if {$debug} {
+#        puts "container command name \"$cmdname\" for key $key"
+#    }
 
     # Determine if command can be inlined based on module config.
     set inline 0
@@ -3485,10 +3625,10 @@ proc compileproc_can_inline_container { key } {
     if {$inline == 0} {
         set ind [lsearch -exact $_compileproc(options,inline_containers) $cmdname]
         if {$ind == -1} {
-            if {$debug} {
-                puts "container \"$cmdname\" not found in inline_containers list\
-                    \{$_compileproc(options,inline_containers)\}"
-            }
+#            if {$debug} {
+#                puts "container \"$cmdname\" not found in inline_containers list\
+#                    \{$_compileproc(options,inline_containers)\}"
+#            }
             return 0
         } else {
             set inline 1
@@ -3506,9 +3646,9 @@ proc compileproc_can_inline_container { key } {
     if {[descend_container_is_valid $key] && \
             [descend_container_is_static $key]} {
 
-        if {$debug} {
-            puts "container is valid and static, cmdname is \"$cmdname\""
-        }
+#        if {$debug} {
+#            puts "container is valid and static, cmdname is \"$cmdname\""
+#        }
 
         #if {$cmdname == "foreach"} {
         #    # Don't try to inline foreach with multiple lists
@@ -3531,11 +3671,11 @@ proc compileproc_can_inline_container { key } {
 
         return 1
     } else {
-        if {$debug} {
-            puts "container command \"$cmdname\" is not valid or not static"
-            puts "is_valid [descend_container_is_valid $key]"
-            puts "is_static [descend_container_is_static $key]"
-        }
+#        if {$debug} {
+#            puts "container command \"$cmdname\" is not valid or not static"
+#            puts "is_valid [descend_container_is_valid $key]"
+#            puts "is_static [descend_container_is_static $key]"
+#        }
         return 0
     }
 }
@@ -3885,10 +4025,14 @@ proc compileproc_emit_container_if { key } {
     set is_constant [lindex $tuple 2]
     append buffer [emitter_container_if_start $tmpsymbol]
 
+    set omit_result [compileproc_omit_set_result $key]
+
     # true block
     if {$true_keys == {}} {
-        # Reset interp result in case result of if is used
-        append buffer [emitter_reset_result]
+        # If result of if is used, reset interp result
+        if {!$omit_result} {
+            append buffer [emitter_reset_result]
+        }
     } else {
         foreach true_key $true_keys {
             append buffer [compileproc_emit_invoke $true_key]
@@ -3923,8 +4067,10 @@ proc compileproc_emit_container_if { key } {
             }
 
             if {$elseif_body_keys == {}} {
-                # Reset interp result in case result of if is used
-                append buffer [emitter_reset_result]
+                # If result of if is used, reset interp result
+                if {!$omit_result} {
+                    append buffer [emitter_reset_result]
+                }
             } else {
                 foreach elseif_body_key $elseif_body_keys {
                     append buffer [compileproc_emit_invoke $elseif_body_key]
@@ -3933,15 +4079,18 @@ proc compileproc_emit_container_if { key } {
         }
     }
 
-    # else block always needs to reset the interp result
-    # when no else commands are given so that the result
-    # of a previous command evaluation is not returned
-    # as the result of the if command.
+    # else block will need to reset the interp result
+    # when no else commands are found so that the
+    # result is set properly when no if block is run.
+    # There is no need to worry about this if the result
+    # of this command is not used and we are omitting results.
 
     if {$else_keys == {}} {
-        # Reset interp result in case result of if is used
-        append buffer [emitter_container_if_else]
-        append buffer [emitter_reset_result]
+        # If result of if is used, reset interp result in else block
+        if {!$omit_result} {
+            append buffer [emitter_container_if_else]
+            append buffer [emitter_reset_result]
+        }
     } else {
         append buffer [emitter_container_if_else]
 
@@ -4498,6 +4647,16 @@ proc compileproc_query_module_flags { proc_name } {
         set _compileproc(options,inline_commands) 1
     }
 
+    set omit_results_option \
+        [module_option_value omit-results $proc_name]
+    if {$omit_results_option == {}} {
+        set omit_results_option \
+            [module_option_value omit-results]
+    }
+    if {$omit_results_option} {
+        set _compileproc(options,omit_results) 1
+    }
+
     if {$debug} {
         puts "compileproc module options set to:"
         puts "inline_containers = $_compileproc(options,inline_containers)"
@@ -4506,6 +4665,7 @@ proc compileproc_query_module_flags { proc_name } {
         puts "skip_constant_increment = $_compileproc(options,skip_constant_increment)"
         puts "cache_variables = $_compileproc(options,cache_variables)"
         puts "inline_commands = $_compileproc(options,inline_commands)"
+        puts "omit_results = $_compileproc(options,omit_results)"
     }
 }
 
@@ -4567,6 +4727,9 @@ proc compileproc_emit_container_while { key } {
             ![descend_container_is_static $key]} {
         error "NOT valid or NOT static for key $key"
     }
+
+    # Container commands for a while block is
+    # a list of expr keys and a list of body keys.
 
     set ccmds [descend_commands $key container]
     if {[llength $ccmds] != 2} {
@@ -4665,7 +4828,10 @@ proc compileproc_emit_container_while { key } {
     }
 
     # Close loop block and call interp.resetResult()
-    append buffer [emitter_container_for_end]
+    # if the result of this command is used.
+
+    append buffer \
+        [emitter_container_for_end [compileproc_omit_set_result $key]]
 
     return $buffer
 }
@@ -4847,7 +5013,10 @@ proc compileproc_emit_container_for { key } {
     }
 
     # Close loop block and call interp.resetResult()
-    append buffer [emitter_container_for_end]
+    # if the result of this command is used.
+
+    append buffer \
+        [emitter_container_for_end [compileproc_omit_set_result $key]]
 
     return $buffer
 }
@@ -4871,7 +5040,7 @@ proc compileproc_emit_container_catch { key } {
         error "NOT valid or NOT static for key $key"
     }
 
-    # container commands is 0 to N keys
+    # Container commands is 0 to N keys for a catch
     set body_keys [descend_commands $key container]
 #    if {$debug} {
 #        puts "body_keys is \{$body_keys\}"
@@ -5072,6 +5241,33 @@ proc compileproc_container_catch_handler_var { tmpsymbol is_empty_body setvar_bu
     return $buffer
 }
 
+# Return tuple if {IS_CATCH IS_RESULT_USED} for the
+# given command key. The IS_CATCH element will be
+# true if the command is "catch". The IS_RESULT_USED
+# element will be true when a variable name argument
+# is passed to the catch command and false otherwise.
+
+proc compileproc_container_catch_with_varname { key } {
+    global _compileproc_ckeys
+    if {![info exists _compileproc_ckeys($key,info_key)]} {
+        return {0 0}
+    }
+    set cmdname [lindex $_compileproc_ckeys($key,info_key) 1]
+    if {$cmdname == "_UNKNOWN"} {
+        return {0 0}
+    }
+    switch -exact -- $cmdname {
+        "::catch" -
+        "catch" {
+            return [list 1 \
+                [descend_container_catch_has_variable $key]]
+        }
+        default {
+            return {0 0}
+        }
+    }
+}
+
 # Emit code for an inlined foreach container.
 
 proc compileproc_emit_container_foreach { key } {
@@ -5193,7 +5389,7 @@ proc compileproc_emit_container_foreach { key } {
         append buffer [emitter_container_for_try_end]
     }
 
-    append buffer [compileproc_container_foreach_loop_end $list_symbols]
+    append buffer [compileproc_container_foreach_loop_end $key $list_symbols]
 
     return $buffer
 }
@@ -5412,13 +5608,16 @@ proc compileproc_container_foreach_loop_start { varlists list_symbols } {
     return $buffer
 }
 
-# End foreach loop
+# End foreach loop end logic
 
-proc compileproc_container_foreach_loop_end { list_symbols } {
+proc compileproc_container_foreach_loop_end { key list_symbols } {
     set buffer ""
 
-    # End for loop and reset interp result
-    append buffer [emitter_container_for_end]
+    # Close loop block and call interp.resetResult()
+    # if the result of this command is used.
+
+    append buffer \
+        [emitter_container_for_end [compileproc_omit_set_result $key]]
 
     # Add finally block to decrement ref count for lists
     append buffer [emitter_container_foreach_try_finally]
@@ -5672,8 +5871,14 @@ proc compileproc_emit_container_switch_constant { key string_tmpsymbol } {
         [emitter_container_if_start "$length > 0"] \
         [emitter_indent] \
         $first " = " $string_tmpsymbol ".charAt(0)\;\n" \
-        [emitter_container_if_end] \
-        [emitter_reset_result]
+        [emitter_container_if_end]
+
+    # Don't bother invoking resetResult() when we know the
+    # result of this switch command is not used.
+
+    if {![compileproc_omit_set_result $key]} {
+        append buffer [emitter_reset_result]
+    }
 
     emitter_indent_level +2
     set spacer2 [emitter_indent]
@@ -7325,6 +7530,14 @@ proc compileproc_emit_append_call_impl { key arraysym tmpsymbol userdata } {
 
     append buffer [emitter_reset_result]
 
+    set omit_result [compileproc_omit_set_result $key]
+    
+    if {$omit_result} {
+        set assign ""
+    } else {
+        set assign "$tmpsymbol = "
+    }
+
     if {!$cache_variables} {
         # Note that TJC.appendVar() will concat the second varname
         # if non-null, so passing whole name in first arg is better.
@@ -7333,12 +7546,12 @@ proc compileproc_emit_append_call_impl { key arraysym tmpsymbol userdata } {
         if {$is_static_varname} {
             append buffer \
                 [emitter_statement \
-                    "$tmpsymbol = TJC.appendVar(interp, $qvarname, null, $arraysym)"]
+                    "${assign}TJC.appendVar(interp, $qvarname, null, $arraysym)"]
         } else {
             # array variable with word key, invoke runtime append.
             append buffer \
                 [emitter_statement \
-                    "$tmpsymbol = TJC.appendVar(interp, $qvarname, $keysym, $arraysym)"]
+                    "${assign}TJC.appendVar(interp, $qvarname, $keysym, $arraysym)"]
         }
     } elseif {$is_static_varname} {
         # Both array and scalar vars can be cached.
@@ -7356,7 +7569,7 @@ proc compileproc_emit_append_call_impl { key arraysym tmpsymbol userdata } {
 
             append buffer \
                 [emitter_statement \
-                    "$tmpsymbol = appendVarArray(interp, $qp1, $qp2,\
+                    "${assign}appendVarArray(interp, $qp1, $qp2,\
                         $arraysym, compiledLocals, $cacheId)"]
         } elseif {[lindex $vinfo 0] == "scalar"} {
             set cache_symbol [compileproc_variable_cache_lookup $varname]
@@ -7365,7 +7578,7 @@ proc compileproc_emit_append_call_impl { key arraysym tmpsymbol userdata } {
             set qvarname [emitter_double_quote_tcl_string $varname]
             append buffer \
                 [emitter_statement \
-                    "$tmpsymbol = appendVarScalar(interp, $qvarname,\
+                    "${assign}appendVarScalar(interp, $qvarname,\
                         $arraysym, compiledLocals, $cacheId)"]
         } else {
             error "unexpected result \{$vinfo\} from descend_simple_variable"
@@ -7380,11 +7593,15 @@ proc compileproc_emit_append_call_impl { key arraysym tmpsymbol userdata } {
 
         append buffer \
             [emitter_statement \
-                "$tmpsymbol = appendVarArray(interp, $qvarname, $keysym,\
+                "${assign}appendVarArray(interp, $qvarname, $keysym,\
                     $arraysym, compiledLocals, $cacheId)"]
     }
 
-    append buffer [emitter_set_result $tmpsymbol false]
+    # If result of append is not used, then don't bother setting it.
+
+    if {!$omit_result} {
+        append buffer [emitter_set_result $tmpsymbol false]
+    }
 
     return $buffer
 }
@@ -7454,9 +7671,12 @@ proc compileproc_emit_inline_command_global { key } {
 
     set buffer ""
 
-    # Reset interp result in case result of command is checked.
+    # Reset interp result if the result of the global
+    # command is used.
 
-    append buffer [emitter_reset_result]
+    if {![compileproc_omit_set_result $key]} {
+        append buffer [emitter_reset_result]
+    }
 
     # Emit global function invocation for each argument
 
@@ -7621,11 +7841,14 @@ proc compileproc_emit_inline_command_incr { key } {
     # Emit incr statement, incr_symbol is an int value
     # to add to the current value in the variable.
 
-    set result_tmpsymbol [compileproc_tmpvar_next]
+    set omit_result 0
 
     if {!$cache_variables} {
         # Not in cache variable mode, emit generic TJC.incrVar()
-        # that works for either scalars or arrays.
+        # that works for either scalars or arrays. Note that
+        # omit result logic is ignored here.
+
+        set result_tmpsymbol [compileproc_tmpvar_next]
 
         if {$constant_varname} {
             set qvarname [emitter_double_quote_tcl_string $varname]
@@ -7664,10 +7887,18 @@ proc compileproc_emit_inline_command_incr { key } {
         # cache variable mode with constant var name, emit either
         # scalar or variable invocation.
 
+        set omit_result [compileproc_omit_set_result $key]
+
         append buffer \
             $incr_value_buffer \
             $incr_buffer \
-            [emitter_indent] "TclObject $result_tmpsymbol = "
+            [emitter_indent]
+
+        if {!$omit_result} {
+            set result_tmpsymbol [compileproc_tmpvar_next]
+            append buffer \
+                "TclObject $result_tmpsymbol = "
+        }
 
         set vinfo [descend_simple_variable $varname]
         if {[lindex $vinfo 0] == "array"} {
@@ -7697,8 +7928,12 @@ proc compileproc_emit_inline_command_incr { key } {
     } else {
         # Evaluate constant array varname with a non-constant key.
 
+        set omit_result [compileproc_omit_set_result $key]
+
+        set result_tmpsymbol [compileproc_tmpvar_next]
         append buffer \
-            [emitter_indent] "TclObject $result_tmpsymbol\;\n"
+            [emitter_indent] \
+            "TclObject $result_tmpsymbol\;\n"
 
         # Evaluate array variable key in argument 1 before argument 2
 
@@ -7717,14 +7952,23 @@ proc compileproc_emit_inline_command_incr { key } {
             $word_buffer \
             $incr_value_buffer \
             $incr_buffer \
-            [emitter_indent] "$result_tmpsymbol = " \
+            [emitter_indent]
+
+        if {!$omit_result} {
+            append buffer \
+                "$result_tmpsymbol = "
+        }
+
+        append buffer \
             "incrVarArray(interp, " $qvarname ", " $keysym ", " $incr_symbol ", " \
             "compiledLocals" ", " $cacheId ")\;\n"
     }
 
     # Set interp result to the returned value.
 
-    append buffer [emitter_set_result $result_tmpsymbol false]
+    if {!$omit_result} {
+        append buffer [emitter_set_result $result_tmpsymbol false]
+    }
 
     return $buffer
 }
@@ -7862,17 +8106,25 @@ proc compileproc_emit_lappend_call_impl { key arraysym tmpsymbol userdata } {
 
     append buffer [emitter_reset_result]
 
+    set omit_result [compileproc_omit_set_result $key]
+
+    if {$omit_result} {
+        set assign ""
+    } else {
+        set assign "$tmpsymbol = "
+    }
+
     if {!$cache_variables} {
         set qvarname [emitter_double_quote_tcl_string $varname]
         if {$is_static_varname} {
             append buffer \
                 [emitter_statement \
-                    "$tmpsymbol = TJC.lappendVar(interp, $qvarname, null, $arraysym)"]
+                    "${assign}TJC.lappendVar(interp, $qvarname, null, $arraysym)"]
         } else {
             # array variable with word key, invoke runtime lappend.
             append buffer \
                 [emitter_statement \
-                    "$tmpsymbol = TJC.lappendVar(interp, $qvarname, $keysym, $arraysym)"]
+                    "${assign}TJC.lappendVar(interp, $qvarname, $keysym, $arraysym)"]
         }
     } elseif {$is_static_varname} {
         # static variable name, cache vars enabled, emit either
@@ -7893,7 +8145,7 @@ proc compileproc_emit_lappend_call_impl { key arraysym tmpsymbol userdata } {
 
             append buffer \
                 [emitter_statement \
-                    "$tmpsymbol = lappendVarArray(interp, $qp1, $qp2,\
+                    "${assign}lappendVarArray(interp, $qp1, $qp2,\
                         $arraysym, compiledLocals, $cacheId)"]
         } elseif {[lindex $vinfo 0] == "scalar"} {
             set qvarname [emitter_double_quote_tcl_string $varname]
@@ -7904,7 +8156,7 @@ proc compileproc_emit_lappend_call_impl { key arraysym tmpsymbol userdata } {
 
             append buffer \
                 [emitter_statement \
-                    "$tmpsymbol = lappendVarScalar(interp, $qvarname,\
+                    "${assign}lappendVarScalar(interp, $qvarname,\
                         $arraysym, compiledLocals, $cacheId)"]
         } else {
             error "unexpected result \{$vinfo\} from descend_simple_variable"
@@ -7919,11 +8171,15 @@ proc compileproc_emit_lappend_call_impl { key arraysym tmpsymbol userdata } {
 
         append buffer \
             [emitter_statement \
-                "$tmpsymbol = lappendVarArray(interp, $qvarname, $keysym,\
+                "${assign}lappendVarArray(interp, $qvarname, $keysym,\
                     $arraysym, compiledLocals, $cacheId)"]
     }
 
-    append buffer [emitter_set_result $tmpsymbol false]
+    # If result of lappend is not used, then don't bother setting it.
+
+    if {!$omit_result} {
+        append buffer [emitter_set_result $tmpsymbol false]
+    }
 
     return $buffer
 }
@@ -8345,10 +8601,11 @@ proc compileproc_emit_inline_command_set { key } {
     set tree [descend_get_data $key tree]
     set num_args [llength $tree]
 
-    set tmpsymbol [compileproc_tmpvar_next]
+    set omit_result 0
 
     if {$num_args == 2} {
         # get variable value
+        set tmpsymbol [compileproc_tmpvar_next]
         if {$constant_varname} {
             append buffer \
                 [compileproc_get_variable "TclObject $tmpsymbol" \
@@ -8363,8 +8620,33 @@ proc compileproc_emit_inline_command_set { key } {
             }
         }
     } elseif {$num_args == 3} {
-        append buffer [emitter_statement \
-            "TclObject $tmpsymbol"]
+        # Determine if command can avoid emitting a setResult() call.
+
+        set omit_result [compileproc_omit_set_result $key]
+
+#        puts "omit_result for $key is $omit_result"
+
+        if {$omit_result} {
+            # If the result is not set and the value
+            # is a constant, then there is no need
+            # to declare a tmpsymbol.
+
+            set tuple [compileproc_get_argument_tuple $key 2]
+            set type [lindex $tuple 0]
+            
+            if {$type == "constant"} {
+                set tmpsymbol {}
+            } else {
+                set tmpsymbol [compileproc_tmpvar_next]
+            }
+        } else {
+            set tmpsymbol [compileproc_tmpvar_next]
+        }
+
+        if {$tmpsymbol != {}} {
+            append buffer [emitter_statement \
+                "TclObject $tmpsymbol"]
+        }
 
         # Evaluate value argument
         set tuple [compileproc_emit_argument $key 2 false $tmpsymbol]
@@ -8390,6 +8672,9 @@ proc compileproc_emit_inline_command_set { key } {
 
         if {$constant_varname} {
             append buffer $value_buffer
+            if {$omit_result} {
+                set tmpsymbol {}
+            }
             append buffer [compileproc_set_variable $tmpsymbol $varname true $value 0]
         } else {
             set gs_buffers \
@@ -8407,9 +8692,12 @@ proc compileproc_emit_inline_command_set { key } {
     # Set interp result to the returned value.
     # This code always calls setResult(), so there
     # is no need to worry about calling resetResult()
-    # before the inlined set impl begins.
+    # before the inlined set impl begins. In the case
+    # where the result is not used, don't set it.
 
-    append buffer [emitter_set_result $tmpsymbol false]
+    if {!$omit_result} {
+        append buffer [emitter_set_result $tmpsymbol false]
+    }
 
     return $buffer
 }
@@ -9094,5 +9382,15 @@ proc compileproc_setup_nonconstant_array_variable { key index tmpsymbol } {
         [compileproc_emit_word $tmpsymbol $key_elems $decl_flag $keysym]
 
     return [list $varname $keysym $word_buffer]
+}
+
+# Return true when a setResult() operation can be
+# omitted for the given command key.
+
+proc compileproc_omit_set_result { key } {
+    global _compileproc _compileproc_key_info
+
+    return [expr {$_compileproc(options,omit_results) && \
+        !$_compileproc_key_info($key,result)}]
 }
 

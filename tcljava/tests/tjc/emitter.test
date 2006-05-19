@@ -848,7 +848,7 @@ tcltest::test emitter-container-for-1.2 {skip loop local} {
 
 tcltest::test emitter-container-for-1.3 {for loop} {
     emitter_indent_level zero
-    set result [emitter_container_for_start "boolean tmp0 = false" true][emitter_container_for_end]
+    set result [emitter_container_for_start "boolean tmp0 = false" true][emitter_container_for_end 0]
 } {for ( boolean tmp0 = false ; true ; ) {
 }
 interp.resetResult();
@@ -856,10 +856,9 @@ interp.resetResult();
 
 tcltest::test emitter-container-for-1.4 {for loop} {
     emitter_indent_level zero
-    set result [emitter_container_for_start "" true][emitter_container_for_end]
+    set result [emitter_container_for_start "" true][emitter_container_for_end 1]
 } {for ( ; true ; ) {
 }
-interp.resetResult();
 }
 
 tcltest::test emitter-container-for-1.5 {for expr test} {

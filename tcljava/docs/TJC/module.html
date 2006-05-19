@@ -202,6 +202,15 @@ list, llength,</span> and
 <span style="font-family: monospace;">set</span> commands. This option
 is enabled by the <span style="font-family: monospace;">+O </span>option.<br>
 <br>
+<span style="font-family: monospace; font-weight: bold;">+omit-results</span><br>
+<br>
+The <span style="font-family: monospace;">+omit-results</span>
+option will omit code that resets or sets the interp result
+when the result of a command is not used by another command.
+Inlined Tcl commands will emit optimized code for the most common
+use cases when this option is enabled.
+This option is enabled by the <span style="font-family: monospace;">+O </span>option.<br>
+<br>
 <span style="font-family: monospace;"></span> <span
  style="font-family: monospace;"></span>
 </body>

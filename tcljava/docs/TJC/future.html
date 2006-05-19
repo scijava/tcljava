@@ -50,18 +50,6 @@ the following:<br>
   <li>string range&nbsp;&nbsp; (done)<br>
   </li>
 </ul>
-<h4>CompiledLocal Variables<br>
-</h4>
-Profiling of TJC compiled Jacl code indicates that the most time
-consuming operation is looking up variables by name. A variable lookup
-requires at least one hashtable lookup to find the Var reference for a
-given variable name contained in a string. The C implementation of Tcl
-supports an array of "compiled local" scalar vars that are stored in a
-flat array instead of in the regular hashtable. The C implementation
-avoids the cost of hashtable lookups for local variables inside a
-compiled proc body since hashtable insertion and lookup is not done at
-runtime. Implementing "compiled local" scalar variables in Jacl would
-lead to a significant performance improvement in TJC compiled Tcl procs.<br>
 <h4>Inlined Integer Expr Operations<br>
 </h4>
 It is very common for a math expression to deal only with integer

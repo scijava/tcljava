@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: emitter.tcl,v 1.14 2006/03/27 00:06:42 mdejong Exp $
+#  RCS: @(#) $Id: emitter.tcl,v 1.15 2006/05/19 22:27:45 mdejong Exp $
 #
 #
 
@@ -1185,13 +1185,16 @@ proc emitter_container_for_start { init_buffer expr_symbol {incr_buffer ""} } {
 
 # Emit for loop end
 
-proc emitter_container_for_end {} {
+proc emitter_container_for_end { omit_reset } {
     set buffer ""    
     emitter_indent_level -1
     append buffer \
         [emitter_indent] \
-        "\}\n" \
-        [emitter_reset_result]
+        "\}\n"
+    if {!$omit_reset} {
+        append buffer \
+            [emitter_reset_result]
+    }
     return $buffer
 }
 

@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: module.tcl,v 1.6 2006/05/15 22:42:51 mdejong Exp $
+#  RCS: @(#) $Id: module.tcl,v 1.7 2006/05/19 22:27:45 mdejong Exp $
 #
 #
 
@@ -510,7 +510,6 @@ proc module_option_validate { op val index num_options options } {
         }
         "inline-containers" {
             # No-op
-            # FIXME: If +inline is already given, then invalid ?
         }
         "inline-controls" {
             # If +inline-controls is found then +inline-containers
@@ -527,8 +526,25 @@ proc module_option_validate { op val index num_options options } {
         }
         "O" {
             # +O is a psudo option, it should be replaced with the
-            # options that it activates in the validate stage.
+            # options that it activates during the validate stage.
             error "O option should not be validated"
+        }
+        "omit-results" {
+            # Both +inline-containers and +inline-commands must
+            # be set when using this flag.
+
+            if {$val} {
+                array set options_before_map $options_before
+
+                if {![info exists options_before_map(inline-containers)] ||
+                        $options_before_map(inline-containers) == 0} {
+                    error "+omit-results option must appear after +inline-containers"
+                }
+                if {![info exists options_before_map(inline-commands)] ||
+                        $options_before_map(inline-commands) == 0} {
+                    error "+omit-results option must appear after +inline-commands"
+                }
+            }
         }
         default {
             error "unknown option \"$op\""
@@ -586,6 +602,7 @@ proc module_option_default { option } {
         "inline-containers" {return 0}
         "inline-controls" {return 0}
         "O" {return 0}
+        "omit-results" {return 0}
         default {
             error "unknown option \"$option\""
         }
@@ -643,6 +660,7 @@ proc module_option_replace_psudo_option { option enabled } {
                 constant-increment 0 \
                 cache-variables 1  \
                 inline-commands 1 \
+                omit-results 1 \
                 ]
         } else {
             return [list \
@@ -652,6 +670,7 @@ proc module_option_replace_psudo_option { option enabled } {
                 constant-increment 1 \
                 cache-variables 0 \
                 inline-commands 0 \
+                omit-results 0 \
                 ]
         }
     } else {
