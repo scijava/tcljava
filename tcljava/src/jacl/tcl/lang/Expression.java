@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Expression.java,v 1.26 2006/05/15 01:25:46 mdejong Exp $
+ * RCS: @(#) $Id: Expression.java,v 1.27 2006/05/22 21:23:35 mdejong Exp $
  *
  */
 
@@ -530,6 +530,7 @@ class Expression {
                     if ((c = s.charAt(i)) != ' ' &&
                             !Character.isWhitespace(c)) {
                         trailing_blanks = false;
+                        break;
                     }
 	        }
 
@@ -547,7 +548,7 @@ class Expression {
 	    //System.out.println("string does not look like an int, checking for Double");
 
 	    StrtodResult res = interp.strtodResult;
-	    Util.strtod(s, 0, res);
+	    Util.strtod(s, 0, len, res);
 
             if (res.errno == 0) {
 		// Trailing whitespaces are treated just like the Integer case
@@ -558,6 +559,7 @@ class Expression {
                     if ((c = s.charAt(i)) != ' ' &&
                             !Character.isWhitespace(c)) {
                         trailing_blanks = false;
+                        break;
                     }
 	        }
 
@@ -1276,7 +1278,7 @@ class Expression {
 	    } else if (startsWithDigit || (c == '.')
 		    || (c == 'n') || (c == 'N')) {
 		StrtodResult res = interp.strtodResult;
-		Util.strtod(m_expr, m_ind, res);
+		Util.strtod(m_expr, m_ind, -1, res);
 		if (res.errno == 0) {
                     String token = m_expr.substring(m_ind, res.index);
 		    m_ind = res.index;
@@ -1780,7 +1782,7 @@ class Expression {
 
     static boolean
     looksLikeInt(String s, int len, int i, boolean whole) {
-	char c;
+	char c = '\0';
 	while (i < len && (((c = s.charAt(i)) == ' ') ||
                 Character.isWhitespace(c))) {
 	    i++;
@@ -1788,7 +1790,6 @@ class Expression {
 	if (i >= len) {
 	    return false;
 	}
-	c = s.charAt(i);
 	if ((c == '+') || (c == '-')) {
 	    i++;
 	    if (i >= len) {
@@ -1796,7 +1797,10 @@ class Expression {
 	    }
 	    c = s.charAt(i);
 	}
-	if (! Character.isDigit(c)) {
+	if ((c >= '0' && c <= '9') || Character.isDigit(c)) {
+	    // This is a digit
+	    i++;
+	} else {
 	    return false;
 	}
 	for ( ; i < len ; i++) {
@@ -1811,8 +1815,6 @@ class Expression {
 	if (i >= len) {
             return true;
 	}
-
-        c = s.charAt(i);
 
         if (!whole && (c != '.') && (c != 'E') && (c != 'e') ) {
             return true;

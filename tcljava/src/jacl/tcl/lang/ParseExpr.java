@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: ParseExpr.java,v 1.5 2005/11/17 09:12:06 mdejong Exp $
+ * RCS: @(#) $Id: ParseExpr.java,v 1.6 2006/05/22 21:23:35 mdejong Exp $
  */
 
 package tcl.lang;
@@ -1329,7 +1329,7 @@ GetLexeme(Interp interp,ParseInfo info) throws TclException
             s = new String(info.originalExpr, src, length);
 
 	    StrtodResult res = interp.strtodResult;
-	    Util.strtod(s, 0, res);
+	    Util.strtod(s, 0, -1, res);
 	    if (res.index > 0) {
 	        if (res.errno != 0) {
 	            parseObj.errorType = Parser.TCL_PARSE_BAD_NUMBER;

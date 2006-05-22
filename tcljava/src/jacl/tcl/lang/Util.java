@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Util.java,v 1.22 2006/05/15 01:25:46 mdejong Exp $
+ * RCS: @(#) $Id: Util.java,v 1.23 2006/05/22 21:23:35 mdejong Exp $
  */
 
 package tcl.lang;
@@ -157,7 +157,7 @@ strtoul(
     boolean negative = false;
     int len = s.length();
     int i = start;
-    char c;
+    char c = '\0';
 
     // Skip any leading blanks.
 
@@ -170,32 +170,28 @@ strtoul(
         return;
     }
 
-    c = s.charAt(i);
     if (c == '-') {
         negative = true;
-        i++;
-    } else {
-        if (c == '+') {
-            i++;
-        }
     }
-
-    if (i >= len) {
-        strtoulResult.update(0, 0, TCL.INVALID_INTEGER);
-        return;
+    if (c == '-' || c == '+') {
+        i++;
+        if (i >= len) {
+            strtoulResult.update(0, 0, TCL.INVALID_INTEGER);
+            return;
+        }
+        c = s.charAt(i);
     }
 
     // If no base was provided, pick one from the leading characters
     // of the string.
 
     if (base == 0) {
-	c = s.charAt(i);
 	if (c == '0') {
 	    if (i < len-1) {
 		i++;
 		c = s.charAt(i);
 		if (c == 'x' || c == 'X') {
-		    i += 1;
+		    i++;
 		    base = 16;
 		}
 	    }
@@ -213,7 +209,7 @@ strtoul(
 	if (i < len-2) {
 	    // Skip a leading "0x" from hex numbers.
 
-	    if ((s.charAt(i) == '0') && (s.charAt(i+1) == 'x')) {
+	    if ((c == '0') && (s.charAt(i+1) == 'x')) {
 		i += 2;
 	    }
 	}
@@ -462,62 +458,75 @@ strtod(
     String s, 	// String of ASCII digits, possibly preceded by
 	    	// white space.  For bases greater than 10, either lower- or
    		// upper-case digits may be used.
-    int start,	// The index of the string to start on.
+    final int start,	// The index of the string to start on.
+    int len,	// The string length, or -1
     StrtodResult strtodResult) // place to store results
 {
-    boolean negative = false;
-    char c;
-    int mantSize;		// Number of digits in mantissa.
-    int decPt;			// Number of mantissa digits BEFORE decimal
-				// point. 
-    int len = s.length();
+    int decPt = -1;		// Number of mantissa digits BEFORE decimal
+				// point.
     int si;
-    int i = start;
+    int i = (start < 0 ? 0 : start);
+    boolean negative = false;
+    char c = '\0';
+    String sub;
+
+    if (len < 0) {
+        len = s.length();
+    }
 
     // Skip any leading blanks.
 
     while (i < len && (((c = s.charAt(i)) == ' ') ||
             Character.isWhitespace(c))) {
-	i++;
+        i++;
     }
     if (i >= len) {
-	strtodResult.update(0, 0, TCL.INVALID_DOUBLE);
+        strtodResult.update(0, 0, TCL.INVALID_DOUBLE);
         return;
     }
 
     // Return special value for the string "NaN"
-    if (s.substring(i).toLowerCase().startsWith("nan")) {
-	strtodResult.update(Double.NaN, i + 3, 0);
-        return;
+
+    if (c == 'N' || c == 'n') {
+        sub = (i == 0 ? s : s.substring(i));
+        if (sub.toLowerCase().startsWith("nan")) {
+            strtodResult.update(Double.NaN, i + 3, 0);
+            return;
+        }
     }
 
-    c = s.charAt(i);
     if (c == '-') {
-	negative = true;
-	i++;
-    } else {
-	if (c == '+') {
-	    i++;
-	}
+        negative = true;
+    }
+    if (c == '-' || c == '+') {
+        i++;
+        if (i >= len) {
+            strtodResult.update(0, 0, TCL.INVALID_DOUBLE);
+            return;
+        }
+        c = s.charAt(i);
     }
 
     // The strings "Inf", "-Inf", "Infinity", and "-Infinity"
     // map to special double values.
 
-    String inf = s.substring(i);
-    int infLen = 0;
+    if (c == 'I') {
+        int infLen = 0;
 
-    if (inf.startsWith("Infinity")) {
-        infLen = "Infinity".length();
-    } else if (inf.startsWith("Inf")) {
-        infLen = "Inf".length();
-    }
+        sub = (i == 0 ? s : s.substring(i));
 
-    if (infLen > 0) {
-	strtodResult.update(
-            (negative ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY),
-            i + infLen, 0);
-        return;
+        if (sub.startsWith("Infinity")) {
+            infLen = "Infinity".length();
+        } else if (sub.startsWith("Inf")) {
+            infLen = "Inf".length();
+        }
+
+        if (infLen > 0) {
+            strtodResult.update(
+                (negative ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY),
+                i + infLen, 0);
+            return;
+        }
     }
 
     // Index of first digit now known
@@ -528,10 +537,11 @@ strtod(
     // point), and also locate the decimal point.
 
     boolean maybeZero = true;
-    decPt = -1;
-    for (mantSize = 0; ; mantSize += 1) {
-	c = CharAt(s, i, len);
-	if (!Character.isDigit(c)) {
+
+    for (int mantSize = 0; ; mantSize += 1) {
+	if ((c >= '0' && c <= '9') || Character.isDigit(c)) {
+	    // This is a digit
+	} else {
 	    if ((c != '.') || (decPt >= 0)) {
 		break;
 	    }
@@ -541,44 +551,72 @@ strtod(
 	    maybeZero = false; // non zero digit found...
 	}
 	i++;
+	if (i >= len) {
+	    break;
+	} else {
+	    c = s.charAt(i);
+	}
     }
 
     // Skim off the exponent.
 
-    c = CharAt(s, i, len);
-    if ((c == 'E') || (c == 'e')) {
-	i += 1;
-        c = CharAt(s, i, len);
-	if (c == '-') {
-	    i += 1;
-	} else if (c == '+') {
-	    i += 1;
-	}
-
-        if (i >= len || !Character.isDigit(CharAt(s, i, len))) {
-            // A number like 1E+ or 1eq2 is not a double
-            // with an exponent part. In this case, return
-            // the number up to the 'E' or 'e'.
-            if (c == '-' || c == '+') {
-                i -= 1;
-            }
-            i -= 1;
-        } else {
-	    while (Character.isDigit(CharAt(s, i, len))) {
-	        i += 1;
-	    }
+    if (i < len) {
+        if (si != i) { // same c value as when above for loop was entered
+            c = s.charAt(i);
         }
+        if ((c == 'E') || (c == 'e')) {
+	    i++;
+            if (i < len) {
+                c = s.charAt(i);
+	        if (c == '-') {
+	            i++;
+	        } else if (c == '+') {
+	            i++;
+	        }
+
+                boolean notdigit = false;
+                if (i < len) {
+                    c = s.charAt(i);
+                    if ((c >= '0' && c <= '9') || Character.isDigit(c)) {
+                        // This is a digit
+                    } else {
+                        notdigit = true;
+                    }
+                }
+
+                if (i >= len || notdigit) {
+                    // A number like 1E+ or 1eq2 is not a double
+                    // with an exponent part. In this case, return
+                    // the number up to the 'E' or 'e'.
+                    if (c == '-' || c == '+') {
+                        i--;
+                    }
+                    i--;
+                } else {
+	            for ( ; i < len ; i++) {
+	                c = s.charAt(i);
+	                if ((c >= '0' && c <= '9') || Character.isDigit(c)) {
+	                    // This is a digit
+	                } else {
+	                    break;
+	                }
+	            }
+                }
+            }
+        }
+    }
+
+    // Avoid pointless substring or NumberFormatException
+    // for an empty string or for a string like "abc"
+    // that has no digits.
+
+    if (si == i) {
+	strtodResult.update(0, 0, TCL.INVALID_DOUBLE);
+	return;
     }
 
     s = s.substring(si, i);
     double result = 0;
-
-    // Avoid raising NumberFormatException for empty string.
-
-    if (s.length() == 0) {
-	strtodResult.update(0, 0, TCL.INVALID_DOUBLE);
-	return;
-    }
 
     try {
 	result = Double.valueOf(s).doubleValue();
@@ -602,37 +640,6 @@ strtod(
     strtodResult.update((negative ? -result : result),
             i, 0);
     return;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * CharAt --
- *
- *	This simply calls String.charAt() with an extra check to
- *	make sure the index is bigger than 0 and smaller than
- *	the length of the string.
- *
- * Results:
- *	If the the index is out of range, \0 is returned.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-static final char 
-CharAt(
-    String s, 
-    int index, 
-    int len)
-{
-    if (index >= 0 && index < len) {
-	return s.charAt(index);
-    } else {
-	return '\0';
-    }
 }
 
 /*
@@ -669,7 +676,7 @@ throws
     } else {
         res = interp.strtodResult;
     }
-    Util.strtod(s, i, res);
+    Util.strtod(s, i, len, res);
 
     if (res.errno != 0) {
 	if (res.errno == TCL.DOUBLE_RANGE) {

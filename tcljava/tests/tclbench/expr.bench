@@ -241,6 +241,21 @@ proc expr-equal-same-char-string-index {} {
     }
 }
 
+# This next test compares two objects that
+# contain strings that are not parsed into
+# either integers or doubles. This test
+# how quickly the expr module is able to
+# determine that a string is not either
+# a double or an integer.
+
+proc expr-equal-same-string-two-obj-loop {} {
+    set a "abc"
+    set b "abc"
+    for {set i 0} {$i < 1000} {incr i} {
+        expr {$a == $b}
+    }
+    return
+}
 
 # Compare an object that contains an int to a constant int value.
 
@@ -393,6 +408,9 @@ bench -desc "expr-equal-same-char-string" \
 
 bench -desc "expr-equal-same-char-string-index" \
     -body {expr-equal-same-char-string-index}
+
+bench -desc "expr-equal-same-string-two-obj-loop" \
+    -body {expr-equal-same-string-two-obj-loop}
 
 bench -desc "expr-equal-constant-int" -body {expr-equal-constant-int}
 bench -desc "expr-equal-constant-int-loop" -body {expr-equal-constant-int-loop}

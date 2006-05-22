@@ -1,3 +1,25 @@
+2006-05-22  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/jacl/tcl/lang/Expression.java (ExprParseString,
+        looksLikeInt):
+        Update strtod() caller and break out of space
+        scanning loop as soon as non-space is found.
+        Optimize looksLikeInt, invoke charAt() only
+        when needed and use inlined char range.
+        * src/jacl/tcl/lang/ParseExpr.java:
+        * src/jacl/tcl/lang/ScanCmd.java:
+        * src/jacl/tcl/lang/StringCmd.java:
+        Update strtod() caller.
+        * src/jacl/tcl/lang/Util.java (strtoul, strtod,
+        CharAt): Optimize int and double parsing functions,
+        call charAt() only when needed and avoid invoking
+        functions when char literal can be tested.
+        * tests/tcl/expr.test: Add literal tests.
+        * tests/tclbench/expr.bench: Add runtime test
+        for case where non-numeric string is
+        compared to itself over an over.
+        * tests/tclbench/runbench.tcl:
+
 2006-05-19  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * docs/TJC/future.html: Remove compiled local

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr.test,v 1.15 2006/05/13 21:07:15 mdejong Exp $
+# RCS: @(#) $Id: expr.test,v 1.16 2006/05/22 21:23:35 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -161,6 +161,18 @@ test expr-2.6 {math functions} {
 test expr-2.7 {math functions} {
     expr {floor  (1.1)}
 } 1.0
+test expr-2.8 {TclCompileExpr} {
+    list [catch {expr {"0x"}} err] $err
+} {0 0x}
+test expr-2.9 {TclCompileExpr: 0x is not a legal integer} {
+    list [catch {expr {0x+1}} err] $err
+} {1 {syntax error in expression "0x+1"}}
+test expr-2.10 {TclCompileExpr} {
+    list [catch {expr {"1e"}} err] $err
+} {0 1e}
+test expr-2.11 {TclCompileExpr} {
+    list [catch {expr {" 008"}} err] $err
+} {0 { 008}}
 
 
 test expr-3.1 {CompileCondExpr: just lor expr} {expr 3||0} 1

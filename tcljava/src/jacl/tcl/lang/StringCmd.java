@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: StringCmd.java,v 1.13 2006/02/12 21:22:49 mdejong Exp $
+ * RCS: @(#) $Id: StringCmd.java,v 1.14 2006/05/22 21:23:35 mdejong Exp $
  *
  */
 
@@ -420,7 +420,7 @@ throws
 		    }
 
 		    StrtodResult res = interp.strtodResult;
-		    Util.strtod(string1, 0, res);
+		    Util.strtod(string1, 0, -1, res);
 		    if (res.errno == TCL.DOUBLE_RANGE) {
 			// if (errno == ERANGE), then it was an over/underflow
 			// problem, but in this method, we only want to know
