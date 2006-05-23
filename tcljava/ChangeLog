@@ -1,5 +1,16 @@
 2006-05-22  Mo DeJong  <mdejong@users.sourceforge.net>
 
+        * src/jacl/tcl/lang/SplitCmd.java (cmdProc):
+        Reimplement split command so that it will
+        make use of a shared empty string and single
+        character objects. This change speeds up the
+        case of splitting on every char by 3x.
+        * tests/tcl/split.test: Add additional split tests.
+        * tests/tclbench/loops.bench: Add string split
+        test and rename existing test.
+
+2006-05-22  Mo DeJong  <mdejong@users.sourceforge.net>
+
         * src/jacl/tcl/lang/Expression.java (ExprParseString,
         looksLikeInt):
         Update strtod() caller and break out of space

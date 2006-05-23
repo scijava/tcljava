@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: SplitCmd.java,v 1.1 1998/10/14 21:09:19 cvsadmin Exp $
+ * RCS: @(#) $Id: SplitCmd.java,v 1.2 2006/05/23 00:36:40 mdejong Exp $
  *
  */
 
@@ -18,86 +18,148 @@ package tcl.lang;
  */
 
 class SplitCmd implements Command {
-    /**
-     * Default characters for splitting up strings.
-     */
 
-    private static char defSplitChars[] = {' ', '\n', '\t', '\r'};
+    // Default characters for splitting up strings.
+
+    private final static char defSplitChars[] = {' ', '\n', '\t', '\r'};
 
     /**
      * This procedure is invoked to process the "split" Tcl
      * command. See Tcl user documentation for details.
      *
      * @param interp the current interpreter.
-     * @param argv command arguments.
+     * @param objv command arguments.
      * @exception TclException If incorrect number of arguments.
      */
 
-    public void cmdProc(Interp interp, TclObject argv[])
-	    throws TclException {
-	char splitChars[] = null;
-	String string;
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+	    throws TclException
+    {
+        int numSplitChars;
+        String splitString = null;
 
-	if (argv.length == 2) {
-	    splitChars = defSplitChars;
-	} else if (argv.length == 3) {
-	    splitChars = argv[2].toString().toCharArray();
+	if (objv.length == 2) {
+	    numSplitChars = defSplitChars.length;
+	} else if (objv.length == 3) {
+	    splitString = objv[2].toString();
+	    if (splitString.equals("")) {
+                numSplitChars = 0;
+	    } else if (splitString.length() == 1) {
+                numSplitChars = 1;
+            } else {
+                numSplitChars = splitString.length();
+            }
 	} else {
-	    throw new TclNumArgsException(interp, 1, argv, "string ?splitChars?");
+	    throw new TclNumArgsException(interp, 1, objv, "string ?splitChars?");
 	}
 
-	string = argv[1].toString();
-	int len = string.length();
-	int num = splitChars.length;
-
-	/*
-	 * Handle the special case of splitting on every character.
-	 */
-
-	if (num == 0) {
-	    TclObject list = TclList.newInstance();
-
-	    list.preserve();
-	    try {
-		for (int i=0; i<len; i++) {
-		    TclList.append(interp, list, TclString.newInstance(
-			    string.charAt(i)));
-		}
-		interp.setResult(list);
-	    } finally {
-		list.release();
-	    }
-	    return;
-	}
-
-	/*
-	 * Normal case: split on any of a given set of characters.
-	 * Discard instances of the split characters.
-	 */
-	TclObject list = TclList.newInstance();
+	String string = objv[1].toString();
+	final int slen = string.length();
 	int elemStart = 0;
-	
+	int i = 0;
+
+	TclObject list = TclList.newInstance();
 	list.preserve();
-	try {
-	    int i, j;
-	    for (i=0; i<len; i++) {
-		char c = string.charAt(i);
-		for (j=0; j<num; j++) {
-		    if (c == splitChars[j]) {
-			TclList.append(interp, list, TclString.newInstance(
-			    string.substring(elemStart, i)));
-			elemStart = i+1;
-			break;
+
+        try {
+	    if (numSplitChars == 0) {
+	        // Splitting on every character.
+
+		for (; i < slen; i++) {
+		    TclObject tobj = interp.checkCommonCharacter(string.charAt(i));
+		    if (tobj == null) {
+		        tobj = TclString.newInstance(string.substring(i, i+1));
 		    }
+		    TclList.append(interp, list, tobj);
 		}
-	    }
-	    if (i != 0) {
-		TclList.append(interp, list, TclString.newInstance(
-		        string.substring(elemStart)));
-	    }
-	    interp.setResult(list);
-	} finally {
-	    list.release();
-	}
+            } else if (numSplitChars == 1) {
+	        // Splitting on one character.
+	        // Discard instances of the split character.
+
+	        char splitChar = splitString.charAt(0);
+
+	        for (; i < slen; i++) {
+		    if (string.charAt(i) == splitChar) {
+                        appendElement(interp, list, string, elemStart, i);
+			elemStart = i+1;
+		    }
+	        }
+	        if (i != 0) {
+                    appendElement(interp, list, string, elemStart, i);
+	        }
+            } else {
+	        // Splitting on any char in a group of character.
+	        // Discard instances of the split characters.
+
+                char[] splitChars;
+                if (objv.length == 2) {
+                    splitChars = defSplitChars;
+                } else {
+                    splitChars = splitString.toCharArray();
+                }
+
+	        for (; i < slen; i++) {
+	            char c = string.charAt(i);
+	            for (int j=0; j < numSplitChars; j++) {
+		        if (c == splitChars[j]) {
+                            appendElement(interp, list, string, elemStart, i);
+			    elemStart = i+1;
+			    break;
+		        }
+		    }
+	        }
+	        if (i != 0) {
+                    appendElement(interp, list, string, elemStart, i);
+	        }
+            }
+
+            interp.setResult(list);
+        } finally {
+            list.release();
+        }
     }
+
+    // Util method used to append a string range
+    // to a TclList. The range might indicate
+    // an empty string or a single character, so
+    // use shared objects to optimize those cases.
+
+    static
+    void appendElement(
+        Interp interp,
+        TclObject list,
+        String string,
+        int starti,
+        int endi)
+            throws TclException
+    {
+        TclObject tobj;
+
+        switch (starti - endi) {
+            case 0: {
+                tobj = interp.checkCommonString(null);
+                break;
+            }
+            case 1: {
+                tobj = interp.checkCommonCharacter(
+                    string.charAt(starti));
+                if (tobj != null) {
+                    break;
+                }
+                // Fall through when not a common character
+            }
+            default: {
+                tobj = TclString.newInstance(
+                    string.substring(starti, endi));
+                break;
+            }
+        }
+
+        TclList.append(interp, list, tobj);
+        return;
+    }
+
 }
+

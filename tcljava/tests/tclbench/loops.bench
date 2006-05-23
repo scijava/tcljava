@@ -123,8 +123,22 @@ proc loops-for-string {s} {
 }
 
 # iterate over chars in string using [foreach] and [split]
-proc loops-foreach-string {s} {
+proc loops-foreach-split-every-char {s} {
     foreach c [split $s {}] {
+	set var $c
+    }
+}
+
+# iterate over split string using foreach, split on one char.
+proc loops-foreach-split-char { str } {
+    foreach c [split $str "\n"] {
+	set var $c
+    }
+}
+
+# iterate over split string using foreach, split on default chars.
+proc loops-foreach-split-char-def { str } {
+    foreach c [split $str] {
 	set var $c
     }
 }
@@ -136,6 +150,9 @@ for {set i 0} {$i < $size} {incr i} {
     lappend list $i
     append string "0"
 }
+
+set newlinestr [string repeat \
+    "ONETWOTHREE\n54985348543538434535435\nxysssksdalsdjjalsk\n" 500]
 
 bench -desc "loops-for-list" \
 	-body {loops-for-list $list}
@@ -162,6 +179,11 @@ bench -desc "loops-while-1-ten-$size" \
 
 bench -desc "loops-for-string" \
       -body {loops-for-string $string}
-bench -desc "loops-foreach-string" \
-      -body {loops-foreach-string $string}
+
+bench -desc "loops-foreach-split-every-char" \
+      -body {loops-foreach-split-every-char $string}
+bench -desc "loops-foreach-split-char" \
+      -body {loops-foreach-split-char $newlinestr}
+bench -desc "loops-foreach-split-char-def" \
+      -body {loops-foreach-split-char-def $newlinestr}
 
