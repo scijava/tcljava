@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ArrayCmd.java,v 1.6 2006/01/26 19:49:18 mdejong Exp $
+ * RCS: @(#) $Id: ArrayCmd.java,v 1.7 2006/05/23 05:34:33 mdejong Exp $
  *
  */
 
@@ -169,8 +169,8 @@ class ArrayCmd implements Command {
 	        if (objv.length == 4) {
 	            pattern = objv[3].toString();
 	        }
-	    
-		HashMap table = (HashMap) var.value;
+
+		HashMap table = var.arraymap;
 	        TclObject tobj = TclList.newInstance();
 	        String arrayName = objv[2].toString();
 	        String key, strValue;
@@ -219,7 +219,7 @@ class ArrayCmd implements Command {
 	            pattern = objv[3].toString();
 	        }
 
-		HashMap table = (HashMap) var.value;
+		HashMap table = var.arraymap;
 	        TclObject tobj = TclList.newInstance();
 	        String key;
 
@@ -312,7 +312,7 @@ class ArrayCmd implements Command {
 	        if (notArray) {
 		    interp.setResult(0);
 	        } else {
-		    HashMap table = (HashMap) var.value;
+		    HashMap table = var.arraymap;
 		    int size = 0;
 
 		    for (Iterator iter = table.entrySet().iterator();
@@ -361,7 +361,7 @@ class ArrayCmd implements Command {
 
 		int i = var.getNextIndex();
 		String s = "s-" + i  + "-" + objv[2].toString();
-		HashMap table = (HashMap) var.value;
+		HashMap table = var.arraymap;
 		Iterator iter = table.entrySet().iterator();
 		var.sidVec.add(new SearchId(iter,s,i));
 		interp.setResult(s);
@@ -384,7 +384,7 @@ class ArrayCmd implements Command {
 	            interp.unsetVar(objv[2], 0);
 	        } else {
 	            pattern = objv[3].toString();
-	            HashMap table = (HashMap) var.value;
+	            HashMap table = var.arraymap;
 
 	            for (Iterator iter = table.entrySet().iterator();
 	                    iter.hasNext() ;) {

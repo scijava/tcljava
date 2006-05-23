@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TJC.java,v 1.24 2006/05/17 01:59:11 mdejong Exp $ *
+ * RCS: @(#) $Id: TJC.java,v 1.25 2006/05/23 05:34:33 mdejong Exp $ *
  */
 
 // Runtime support for TJC compiler implementation.
@@ -307,7 +307,7 @@ public class TJC {
                 return Var.getVarCompiledLocalScalarInvalid(
                     interp, varname);
             } else {
-                return (TclObject) var.value;
+                return var.tobj;
             }
         }
 
@@ -443,7 +443,7 @@ public class TJC {
                      ((var = Var.resolveScalar(var)) == null)) {
                 return TJC.incrVar(interp, varname, null, incrAmount);
             } else {
-                TclObject varValue = (TclObject) var.value;
+                TclObject varValue = var.tobj;
 
                 boolean createdNewObj = false;
                 if (varValue.isShared()) {
@@ -546,7 +546,7 @@ public class TJC {
             // we need to duplicate it and invoke setVar()
             // to implement "copy on write".
 
-            TclObject varValue = (TclObject) var.value;
+            TclObject varValue = var.tobj;
             boolean createdNewObj = false;
 
             if (varValue.isShared()) {
@@ -659,7 +659,7 @@ public class TJC {
             // we need to create a new TclString object
             // and drop refs to the previous TclObject value.
 
-            TclObject varValue = (TclObject) var.value;
+            TclObject varValue = var.tobj;
             boolean createdNewObj = false;
 
             if (varValue.isShared()) {
@@ -857,9 +857,9 @@ public class TJC {
         Var var,
         TclObject newValue)    // New value to set varible to, can't be null
     {
-        if (var.value != newValue) {
-            TclObject oldValue = (TclObject) var.value;
-            var.value = newValue;
+        TclObject oldValue = var.tobj;
+        if (oldValue != newValue) {
+            var.tobj = newValue;
             newValue.preserve();
             if (oldValue != null) {
                 oldValue.release();

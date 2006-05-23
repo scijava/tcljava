@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: TestVarFrameCmd.java,v 1.4 2006/03/28 02:44:19 mdejong Exp $
+ * RCS: @(#) $Id: TestVarFrameCmd.java,v 1.5 2006/05/23 05:34:33 mdejong Exp $
  */
 
 package tcl.lang;
@@ -156,7 +156,7 @@ void varInfo(Interp interp, StringBuffer results, Var var, boolean resolveIt) {
     if (resolveIt) {
     Var resolved = var;
     if (resolved.isVarLink()) {
-        resolved = (Var) resolved.value;
+        resolved = resolved.linkto;
     }
     if (resolved.isVarScalar()) {
         resolved = Var.resolveScalar(resolved);
@@ -172,7 +172,7 @@ void varInfo(Interp interp, StringBuffer results, Var var, boolean resolveIt) {
     Var linkto = var;
 
     if (linkto.isVarLink()) {
-        linkto = (Var) linkto.value;
+        linkto = linkto.linkto;
 
         // After resolve, Var can't be a link
         if (linkto.isVarLink()) {

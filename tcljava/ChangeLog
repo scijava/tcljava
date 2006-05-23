@@ -1,5 +1,28 @@
 2006-05-22  Mo DeJong  <mdejong@users.sourceforge.net>
 
+        * src/jacl/tcl/lang/ArrayCmd.java:
+        Update Var field names.
+        * src/jacl/tcl/lang/Var.java (Var, lookupVar,
+        lookupArrayElement, getVarPtr, setVarPtr,
+        initVarCompiledLocalScalar, unsetVar,
+        makeUpvar, deleteVar, deleteArray,
+        resolveScalar, resolveArray):
+        Reimplement Var class using three typed references
+        instead of a generic Object reference. This
+        approach uses more memory for each instance
+        in an already bloated class, but it avoids
+        a slow up cast operation in the critical
+        execution path in compiled code.
+        * src/tests/jacl/tcl/lang/TestVarFrameCmd.java:
+        Update Var field names.
+        * src/tjc/tcl/lang/TJC.java (getVarScalar,
+        incrVarScalar, lappendVarScalar,
+        appendVarScalar, setVarScalar):
+        Rewrite inline methods so that costly upcast
+        is avoided.
+
+2006-05-22  Mo DeJong  <mdejong@users.sourceforge.net>
+
         * src/jacl/tcl/lang/SplitCmd.java (cmdProc):
         Reimplement split command so that it will
         make use of a shared empty string and single

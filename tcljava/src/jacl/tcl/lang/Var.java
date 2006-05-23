@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Var.java,v 1.32 2006/03/28 02:44:19 mdejong Exp $
+ * RCS: @(#) $Id: Var.java,v 1.33 2006/05/23 05:34:33 mdejong Exp $
  *
  */
 package tcl.lang;
@@ -32,11 +32,11 @@ class Var {
      * the Var object would be the same.
      *
      * SCALAR -			1 means this is a scalar variable and not
-     *				an array or link. The value field points
-     *				to the variable's value, a Tcl object.
+     *				an array or link. The tobj field contains
+     *				the variable's value.
      * ARRAY -			1 means this is an array variable rather
      *				than a scalar variable or link. The
-     *				table field points to the array's
+     *				arraymap field points to the array's
      *				hashtable for its elements.
      * LINK -			1 means this Var structure contains a
      *				reference to another Var structure that
@@ -207,17 +207,18 @@ class Var {
     }
 
     /**
-     * Stores the "value" of the variable. It stored different information
-     * depending on the type of the variable: <ul>
-     *  <li>Scalar variable - (TclObject) value is the object stored in the
-     *	   variable.
-     *	<li> Array variable - (Hashtable) value is the hashtable that stores
+     * A Var object is one of the following three types.
+     *
+     *  <li>Scalar variable - tobj is the object stored in the var.
+     *	<li> Array variable - arraymap is the hashtable that stores
      *     all the elements. <p>
-     *  <li> Upvar (Link) - (Var) value is the variable associated by this upvar.
+     *  <li> Upvar (Link) - linkto is the variable associated by this upvar.
      * </ul>
      */
 
-    Object value;
+    TclObject tobj;
+    HashMap arraymap;
+    Var linkto;
 
     /**
      * List that holds the traces that were placed in this Var
@@ -293,7 +294,9 @@ class Var {
      */
 
     Var() {
-	value    = null;
+	tobj     = null;
+	arraymap = null;
+	linkto   = null;
 	//name     = null; // Like hashKey in Jacl
 	ns       = null;
 	hashKey  = null;  // Like hPtr in the C implementation
@@ -756,7 +759,7 @@ class Var {
 	// through any links until we find the referenced variable.
 
 	while (var.isVarLink()) {
-	    var = (Var) var.value;
+	    var = var.linkto;
 	}
 
 	// If we're not dealing with an array element, return var.
@@ -819,7 +822,7 @@ class Var {
 
 	    var.setVarArray();
 	    var.clearVarUndefined();
-	    var.value = new HashMap();
+	    var.arraymap = new HashMap();
 	} else if (!var.isVarArray()) {
 	    if ((flags & TCL.LEAVE_ERR_MSG) != 0) {
 		throw new TclVarException(interp,
@@ -829,7 +832,7 @@ class Var {
 	}
 
 	Var arrayVar = var;
-	HashMap arrayTable = (HashMap) var.value;
+	HashMap arrayTable = var.arraymap;
 	if (createPart2) {
 	    Var searchvar = (Var) arrayTable.get(part2);
 
@@ -949,7 +952,7 @@ class Var {
 	    }
 
 	    if (var.isVarScalar() && !var.isVarUndefined()) {
-		return (TclObject) var.value;
+		return var.tobj;
 	    }
 
 	    if ((flags & TCL.LEAVE_ERR_MSG) != 0) {
@@ -1111,23 +1114,23 @@ class Var {
 	// "copy on write".
 
 	try {
-	    oldValue = (TclObject) var.value;
-	    
+	    oldValue = var.tobj;
+
 	    if ((flags & TCL.APPEND_VALUE) != 0) {
 		if (var.isVarUndefined() && (oldValue != null)) {
 		    oldValue.release();          // discard old value
-		    var.value = null;
+		    var.tobj = null;
 		    oldValue  = null;
 		}
 		if ((flags & TCL.LIST_ELEMENT) != 0) {	// append list element
 		    if (oldValue == null) {
 			oldValue = TclList.newInstance();
-			var.value = oldValue;
+			var.tobj = oldValue;
 			oldValue.preserve(); // since var is referenced
 		    } else if (oldValue.isShared()) { // append to copy
-			var.value = oldValue.duplicate();
+			var.tobj = oldValue.duplicate();
 			oldValue.release();
-			oldValue = (TclObject) var.value;
+			oldValue = var.tobj;
 			oldValue.preserve(); // since var is referenced
 		    }
 		    TclList.append(interp, oldValue, newValue);
@@ -1136,13 +1139,13 @@ class Var {
 
 		    bytes = newValue.toString();
 		    if (oldValue == null) {
-			var.value = TclString.newInstance(bytes);
-			((TclObject) var.value).preserve();
+			var.tobj = TclString.newInstance(bytes);
+			var.tobj.preserve();
 		    } else {
 			if (oldValue.isShared()) { // append to copy
-			    var.value = oldValue.duplicate();
+			    var.tobj = oldValue.duplicate();
 			    oldValue.release();
-			    oldValue = (TclObject) var.value;
+			    oldValue = var.tobj;
 			    oldValue.preserve(); // since var is referenced
 			}
 			TclString.append(oldValue, bytes);
@@ -1163,10 +1166,10 @@ class Var {
 		    listFlags = Util.scanElement(interp, bytes);
 		    oldValue = TclString.newInstance(
 			           Util.convertElement(bytes, listFlags));
-		    var.value = oldValue;
-		    ((TclObject) var.value).preserve();
+		    var.tobj = oldValue;
+		    var.tobj.preserve();
 		} else if (newValue != oldValue) {
-		    var.value = newValue;
+		    var.tobj = newValue;
 		    newValue.preserve();               // var is another ref
 		    if (oldValue != null) {
 			oldValue.release();            // discard old value
@@ -1199,7 +1202,7 @@ class Var {
 	    // array).
 
 	    if (var.isVarScalar() && !var.isVarUndefined()) {
-		return (TclObject) var.value;
+		return var.tobj;
 	    }
 
 	    // A trace changed the value in some gross way. Return an empty string
@@ -1297,8 +1300,14 @@ class Var {
             if (var.flags != (SCALAR | UNDEFINED | IN_HASHTABLE)) {
                 throw new TclRuntimeError("invalid Var flags state");
             }
-            if (var.value != null) {
-                throw new TclRuntimeError("expected null Var value");
+            if (var.tobj != null) {
+                throw new TclRuntimeError("expected null Var tobj value");
+            }
+            if (var.arraymap != null) {
+                throw new TclRuntimeError("expected null Var arraymap value");
+            }
+            if (var.linkto != null) {
+                throw new TclRuntimeError("expected null Var linkto value");
             }
             if (var.table != null) {
                 throw new TclRuntimeError("expected null Var table");
@@ -1317,7 +1326,7 @@ class Var {
 
         // Assign TclObject value for scalar and incr ref count
 
-        var.value = newValue;
+        var.tobj = newValue;
         newValue.preserve();
 
         // Add var to the compiled local array.
@@ -1902,7 +1911,9 @@ class Var {
 
 	dummyVar          = new Var();
 	//FIXME: Var class really should implement clone to make a bit copy. 
-	dummyVar.value    = var.value;
+	dummyVar.tobj     = var.tobj;
+	dummyVar.arraymap = var.arraymap;
+	dummyVar.linkto   = var.linkto;
 	dummyVar.traces   = var.traces;
 	dummyVar.flags    = var.flags;
 	dummyVar.hashKey  = var.hashKey;
@@ -1912,7 +1923,9 @@ class Var {
 
 	var.setVarUndefined();
 	var.setVarScalar();
-	var.value  = null;  // dummyVar points to any value object
+	var.tobj   = null;  // dummyVar points to any value object
+	var.arraymap = null;
+	var.linkto  = null;
 	var.traces = null;
 	var.sidVec = null;
 
@@ -1948,10 +1961,10 @@ class Var {
 	        (flags & (TCL.GLOBAL_ONLY|TCL.NAMESPACE_ONLY)) | TCL.TRACE_UNSETS);
 	}
 	if (dummyVar.isVarScalar()
-	    && (dummyVar.value != null)) {
-	    obj = (TclObject) dummyVar.value;
+	    && (dummyVar.tobj != null)) {
+	    obj = dummyVar.tobj;
 	    obj.release();
-	    dummyVar.value = null;
+	    dummyVar.tobj = null;
 	}
 
 	// If the variable was a namespace variable, decrement its reference count.
@@ -2421,7 +2434,7 @@ class Var {
 		throw new TclException(interp, "can't upvar from variable to itself");
 	    }
 	    if (var.isVarLink()) {
-		Var link = (Var) var.value;
+		Var link = var.linkto;
 		if (link == other) {
 		    // Already linked to the variable, no-op
 		    return;
@@ -2448,7 +2461,7 @@ class Var {
 
 	var.setVarLink();
 	var.clearVarUndefined();
-	var.value = other;
+	var.linkto = other;
 	other.refCount++;
 
 	// If the link var should be stored in the compiledLocals
@@ -2757,7 +2770,7 @@ class Var {
 
 	if ((var.flags & LINK) != 0) {
 	    // Follow link to either scalar or array variable
-	    Var link = (Var) var.value;
+	    Var link = var.linkto;
 	    link.refCount--;
 	    if ((link.refCount == 0)
 	            && (link.traces == null)
@@ -2765,11 +2778,11 @@ class Var {
 	            && ((link.flags & (UNDEFINED|IN_HASHTABLE)) ==
                         (UNDEFINED|IN_HASHTABLE))) {
 	        if (link.hashKey == null) {
-	            var.value = null; // Drops reference to the link Var
+	            var.linkto = null; // Drops reference to the link Var
 	        } else if (link.table != var.table) {
 	            link.table.remove(link.hashKey);
 	            link.table = null; // Drops the link var's table reference
-	            var.value = null;  // Drops reference to the link Var
+	            var.linkto = null;  // Drops reference to the link Var
 	        }
 	    }
 	}
@@ -2793,11 +2806,11 @@ class Var {
 
 	if ((var.flags & ARRAY) != 0) {
 	    deleteArray(interp, var.hashKey, var, flags);
-	    var.value = null;
-	} else if (((var.flags & SCALAR) != 0) && (var.value != null)) {
-	    TclObject obj = (TclObject) var.value;
+	    var.arraymap = null;
+	} else if (((var.flags & SCALAR) != 0) && (var.tobj != null)) {
+	    TclObject obj = var.tobj;
 	    obj.release();
-	    var.value = null;
+	    var.tobj = null;
 	}
 
 	var.hashKey = null;
@@ -2858,17 +2871,17 @@ class Var {
 	TclObject obj;
 
 	deleteSearches(var);
-	HashMap table = (HashMap) var.value;
+	HashMap table = var.arraymap;
 
 	for (Iterator iter = table.entrySet().iterator(); iter.hasNext() ;) {
 	    Map.Entry entry = (Map.Entry) iter.next();
 	    //String key = (String) entry.getKey();
 	    el = (Var) entry.getValue();
 
-	    if (el.isVarScalar() && (el.value != null)) {
-		obj = (TclObject) el.value;
+	    if (el.isVarScalar() && (el.tobj != null)) {
+		obj = el.tobj;
 		obj.release();
-		el.value = null;
+		el.tobj = null;
 	    }
 
 	    String tmpkey = (String) el.hashKey;
@@ -2892,7 +2905,7 @@ class Var {
 	    }
 	}
 	table.clear();
-	var.value = null;
+	var.arraymap = null;
     }
 
 
@@ -2954,7 +2967,7 @@ class Var {
     Var resolveScalar(Var v) {
         int flags = v.flags;
         if ((flags & LINK) != 0) {
-             v = (Var) v.value;
+             v = v.linkto;
              flags = v.flags;
         }
 
@@ -2989,7 +3002,7 @@ class Var {
     Var resolveArray(Var v) {
         int flags = v.flags;
         if ((flags & LINK) != 0) {
-             v = (Var) v.value;
+             v = v.linkto;
              flags = v.flags;
         }
 
