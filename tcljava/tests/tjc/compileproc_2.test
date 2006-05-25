@@ -352,6 +352,61 @@ public class Test1 extends TJC.CompiledCommand {
 } // end class Test1
 }}
 
+tcltest::test compileproc2-1.5 {compile proc into Java source, +inline-containers} {
+    # This "+1" expression is not a constant boolean. A constant
+    # boolean must be "1" or "true".
+    set script {
+proc p {} {
+    if {+1} {}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_2_set_flags]
+    # Print generated buffer even if compile fails
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) { initCmd(interp); }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: if {+1} {}
+            // Unary operator: + 1
+            ExprValue tmp1 = TJC.exprGetValue(interp, 1, null);
+            // End Unary operator: +
+            boolean tmp2 = tmp1.getBooleanValue(interp);
+            TJC.exprReleaseValue(interp, tmp1);
+            if ( tmp2 ) {
+                interp.resetResult();
+            } else {
+                interp.resetResult();
+            }
+        } // End Invoke: if
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+} // end class Test1
+}}
+
 
 tcltest::test compileproc2-2.0 {compile proc into Java source, +inline-containers} {
     set script {
@@ -5248,10 +5303,9 @@ public class Test1 extends TJC.CompiledCommand {
             TJC.exprUnaryOperator(interp, TJC.EXPR_OP_UNARY_NOT, tmp0);
             // End Unary operator: !
             // Unary operator: ~ 1
-            ExprValue tmp1 = TJC.exprGetValue(interp, 1, null);
-            TJC.exprUnaryOperator(interp, TJC.EXPR_OP_UNARY_BIT_NOT, tmp1);
+            ExprValue tmp2 = TJC.exprGetValue(interp, ~1, null);
             // End Unary operator: ~
-            TJC.exprBinaryOperator(interp, TJC.EXPR_OP_PLUS, tmp0, tmp1);
+            TJC.exprBinaryOperator(interp, TJC.EXPR_OP_PLUS, tmp0, tmp2);
             // End Binary operator: +
             TJC.exprSetResult(interp, tmp0);
         } // End Invoke: expr
@@ -6815,6 +6869,367 @@ public class Test1 extends TJC.CompiledCommand {
             TJC.exprBinaryOperator(interp, TJC.EXPR_OP_MULT, tmp0, tmp1);
             // End Binary operator: *
             TJC.exprSetResult(interp, tmp0);
+        } // End Invoke: expr
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+} // end class Test1
+}}
+
+tcltest::test compileproc2-9.37 {compile proc into Java source, +inline-containers} {
+    # expression contains a single unary operator
+
+    set script {
+proc p {} {
+    expr {-1}
+    expr {+1}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_2_set_flags]
+    # Print generated buffer even if compile fails
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) { initCmd(interp); }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: expr {-1}
+            // Unary operator: - 1
+            ExprValue tmp1 = TJC.exprGetValue(interp, -1, null);
+            // End Unary operator: -
+            TJC.exprSetResult(interp, tmp1);
+        } // End Invoke: expr
+        { // Invoke: expr {+1}
+            // Unary operator: + 1
+            ExprValue tmp3 = TJC.exprGetValue(interp, 1, null);
+            // End Unary operator: +
+            TJC.exprSetResult(interp, tmp3);
+        } // End Invoke: expr
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+} // end class Test1
+}}
+
+tcltest::test compileproc2-9.38 {compile proc into Java source, +inline-containers} {
+    set script {
+proc p {} {
+    # Unary operator applied to int literal
+    expr {-1}
+    expr {- 1}
+    # Unary operator applied two times to int literal
+    expr {- -1}
+    # Unary operator applied to int literal
+    expr {+1}
+    expr {+ 1}
+    # Unary operator applied two times to int literal
+    expr {+ +1}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_2_set_flags]
+    # Print generated buffer even if compile fails
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) { initCmd(interp); }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: expr {-1}
+            // Unary operator: - 1
+            ExprValue tmp1 = TJC.exprGetValue(interp, -1, null);
+            // End Unary operator: -
+            TJC.exprSetResult(interp, tmp1);
+        } // End Invoke: expr
+        { // Invoke: expr {- 1}
+            // Unary operator: - 1
+            ExprValue tmp3 = TJC.exprGetValue(interp, -1, null);
+            // End Unary operator: -
+            TJC.exprSetResult(interp, tmp3);
+        } // End Invoke: expr
+        { // Invoke: expr {- -1}
+            // Unary operator: - ()
+            // Unary operator: - 1
+            ExprValue tmp5 = TJC.exprGetValue(interp, -1, null);
+            // End Unary operator: -
+            TJC.exprUnaryOperator(interp, TJC.EXPR_OP_UNARY_MINUS, tmp5);
+            // End Unary operator: -
+            TJC.exprSetResult(interp, tmp5);
+        } // End Invoke: expr
+        { // Invoke: expr {+1}
+            // Unary operator: + 1
+            ExprValue tmp7 = TJC.exprGetValue(interp, 1, null);
+            // End Unary operator: +
+            TJC.exprSetResult(interp, tmp7);
+        } // End Invoke: expr
+        { // Invoke: expr {+ 1}
+            // Unary operator: + 1
+            ExprValue tmp9 = TJC.exprGetValue(interp, 1, null);
+            // End Unary operator: +
+            TJC.exprSetResult(interp, tmp9);
+        } // End Invoke: expr
+        { // Invoke: expr {+ +1}
+            // Unary operator: + ()
+            // Unary operator: + 1
+            ExprValue tmp11 = TJC.exprGetValue(interp, 1, null);
+            // End Unary operator: +
+            TJC.exprUnaryOperator(interp, TJC.EXPR_OP_UNARY_PLUS, tmp11);
+            // End Unary operator: +
+            TJC.exprSetResult(interp, tmp11);
+        } // End Invoke: expr
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+} // end class Test1
+}}
+
+tcltest::test compileproc2-9.39 {compile proc into Java source, +inline-containers} {
+    set script {
+proc p {} {
+    # Unary operator applied to hex int literal
+    expr {+0xFF}
+    expr {-0xFF}
+    expr {+ 0xFF}
+    expr {- 0xFF}
+    expr {+ "0XFF"}
+    expr {- "0XFF"}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_2_set_flags]
+    # Print generated buffer even if compile fails
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) { initCmd(interp); }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: expr {+0xFF}
+            // Unary operator: + 255
+            ExprValue tmp1 = TJC.exprGetValue(interp, 255, null);
+            // End Unary operator: +
+            TJC.exprSetResult(interp, tmp1);
+        } // End Invoke: expr
+        { // Invoke: expr {-0xFF}
+            // Unary operator: - 255
+            ExprValue tmp3 = TJC.exprGetValue(interp, -255, null);
+            // End Unary operator: -
+            TJC.exprSetResult(interp, tmp3);
+        } // End Invoke: expr
+        { // Invoke: expr {+ 0xFF}
+            // Unary operator: + 255
+            ExprValue tmp5 = TJC.exprGetValue(interp, 255, null);
+            // End Unary operator: +
+            TJC.exprSetResult(interp, tmp5);
+        } // End Invoke: expr
+        { // Invoke: expr {- 0xFF}
+            // Unary operator: - 255
+            ExprValue tmp7 = TJC.exprGetValue(interp, -255, null);
+            // End Unary operator: -
+            TJC.exprSetResult(interp, tmp7);
+        } // End Invoke: expr
+        { // Invoke: expr {+ "0XFF"}
+            // Unary operator: + 255
+            ExprValue tmp9 = TJC.exprGetValue(interp, 255, null);
+            // End Unary operator: +
+            TJC.exprSetResult(interp, tmp9);
+        } // End Invoke: expr
+        { // Invoke: expr {- "0XFF"}
+            // Unary operator: - 255
+            ExprValue tmp11 = TJC.exprGetValue(interp, -255, null);
+            // End Unary operator: -
+            TJC.exprSetResult(interp, tmp11);
+        } // End Invoke: expr
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+} // end class Test1
+}}
+
+tcltest::test compileproc2-9.40 {compile proc into Java source, +inline-containers} {
+    set script {
+proc p {} {
+    # Unary operator applied to double literal
+    expr {+ 1.0}
+    expr {- 1.0}
+    # Unary operator applied to double literal,
+    # the string rep is discarded at compile time.
+    expr {+ 1e0}
+    expr {- 1e0}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_2_set_flags]
+    # Print generated buffer even if compile fails
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) { initCmd(interp); }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: expr {+ 1.0}
+            // Unary operator: + 1.0
+            ExprValue tmp1 = TJC.exprGetValue(interp, 1.0, null);
+            // End Unary operator: +
+            TJC.exprSetResult(interp, tmp1);
+        } // End Invoke: expr
+        { // Invoke: expr {- 1.0}
+            // Unary operator: - 1.0
+            ExprValue tmp3 = TJC.exprGetValue(interp, -1.0, null);
+            // End Unary operator: -
+            TJC.exprSetResult(interp, tmp3);
+        } // End Invoke: expr
+        { // Invoke: expr {+ 1e0}
+            // Unary operator: + 1.0
+            ExprValue tmp5 = TJC.exprGetValue(interp, 1.0, null);
+            // End Unary operator: +
+            TJC.exprSetResult(interp, tmp5);
+        } // End Invoke: expr
+        { // Invoke: expr {- 1e0}
+            // Unary operator: - 1.0
+            ExprValue tmp7 = TJC.exprGetValue(interp, -1.0, null);
+            // End Unary operator: -
+            TJC.exprSetResult(interp, tmp7);
+        } // End Invoke: expr
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+} // end class Test1
+}}
+
+tcltest::test compileproc2-9.41 {compile proc into Java source, +inline-containers} {
+    set script {
+proc p {} {
+    # Unary operator applied to int literal becomes
+    # a compile time constant integer value.
+    expr {~ 0}
+    # Unary operator not applied at compile time since
+    # bitwise not operator works only with integers.
+    expr {~ 0.0}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_2_set_flags]
+    # Print generated buffer even if compile fails
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) { initCmd(interp); }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: expr {~ 0}
+            // Unary operator: ~ 0
+            ExprValue tmp1 = TJC.exprGetValue(interp, ~0, null);
+            // End Unary operator: ~
+            TJC.exprSetResult(interp, tmp1);
+        } // End Invoke: expr
+        { // Invoke: expr {~ 0.0}
+            // Unary operator: ~ 0.0
+            ExprValue tmp2 = TJC.exprGetValue(interp, 0.0, null);
+            TJC.exprUnaryOperator(interp, TJC.EXPR_OP_UNARY_BIT_NOT, tmp2);
+            // End Unary operator: ~
+            TJC.exprSetResult(interp, tmp2);
         } // End Invoke: expr
         } catch (TclException te) {
             TJC.checkTclException(interp, te, "p");

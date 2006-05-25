@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ExprValue.java,v 1.7 2006/05/15 22:14:23 mdejong Exp $
+ * RCS: @(#) $Id: ExprValue.java,v 1.8 2006/05/25 02:59:43 mdejong Exp $
  *
  */
 
@@ -198,6 +198,12 @@ public final class ExprValue {
         }
 	stringValue = s;
 	type = STRING;
+    }
+
+    public
+    final
+    void nullStringValue() {
+	stringValue = null;
     }
 
     final

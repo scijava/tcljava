@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Expression.java,v 1.27 2006/05/22 21:23:35 mdejong Exp $
+ * RCS: @(#) $Id: Expression.java,v 1.28 2006/05/25 02:59:43 mdejong Exp $
  *
  */
 
@@ -781,10 +781,14 @@ class Expression {
 		}
 		break;
 	    case UNARY_PLUS:
-		if (!value.isIntOrDoubleType()) {
+		// Unary + operator raises an error for a String,
+		// otherwise it tosses out the string rep.
+
+		if (value.isIntOrDoubleType()) {
+		    value.nullStringValue();
+		} else {
 		    IllegalType(interp, value.getType(), operator);
 		}
-		// Unary + operator on for numeric type is a no-op
 		break;
 	    case NOT:
 		if (value.isIntType()) {

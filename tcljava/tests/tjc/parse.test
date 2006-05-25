@@ -2485,6 +2485,65 @@ tcltest::test parse-expr-1.24 {parse expr} {
     ] \
   ]
 
+tcltest::test parse-expr-1.25 {parse expr command} {
+    set script {1}
+    set range {0 end}
+    parse expr $script $range
+} [list \
+    subexpr {0 1} \
+    [list \
+        {text {0 1} {}} \
+    ] \
+]
+
+tcltest::test parse-expr-1.26 {parse expr command} {
+    set script {-1}
+    set range {0 end}
+    parse expr $script $range
+} [list \
+    subexpr {0 2} \
+    [list \
+        {operator {0 1} {}} \
+        {subexpr {1 1} {{text {1 1} {}}}} \
+    ] \
+]
+
+tcltest::test parse-expr-1.27 {parse expr command} {
+    set script {- 1}
+    set range {0 end}
+    parse expr $script $range
+} [list \
+    subexpr {0 3} \
+    [list \
+        {operator {0 1} {}} \
+        {subexpr {2 1} {{text {2 1} {}}}} \
+    ] \
+]
+
+tcltest::test parse-expr-1.28 {parse expr command} {
+    set script {+1}
+    set range {0 end}
+    parse expr $script $range
+} [list \
+    subexpr {0 2} \
+    [list \
+        {operator {0 1} {}} \
+        {subexpr {1 1} {{text {1 1} {}}}} \
+    ] \
+]
+
+tcltest::test parse-expr-1.29 {parse expr command} {
+    set script {+ 1}
+    set range {0 end}
+    parse expr $script $range
+} [list \
+    subexpr {0 3} \
+    [list \
+        {operator {0 1} {}} \
+        {subexpr {2 1} {{text {2 1} {}}}} \
+    ] \
+]
+
 
 # Note: a variable operand is not allowed in a braced expr
 #
@@ -2630,6 +2689,63 @@ tcltest::test parse-expr-iterator-descend-2.2 {_parse_expr_iterate_descend: sing
     {operator !1 {operator {0 1} {}} 1 ! {{0 1}}} \
     {value {callback !1 {text {1 1} {}} {literal operand} {{text 1}} {{1 1}}}} \
   ]
+
+tcltest::test parse-expr-iterator-descend-2.3 {_parse_expr_iterate_descend: single expression} {
+    set script {-1}
+    set etree [parse expr $script {0 end}]
+
+    set _parse(parse_expr_iterate_result) [list]
+    set _parse(parse_expr_iterate_stack) [list]
+    _parse_expr_iterate_descend $script $etree callback
+
+    set _parse(parse_expr_iterate_result)
+} [list \
+    {operator -1 {operator {0 1} {}} 1 - {{0 1}}} \
+    {value {callback -1 {text {1 1} {}} {literal operand} {{text 1}} {{1 1}}}} \
+  ]
+
+tcltest::test parse-expr-iterator-descend-2.4 {_parse_expr_iterate_descend: single expression} {
+    set script {- 1}
+    set etree [parse expr $script {0 end}]
+
+    set _parse(parse_expr_iterate_result) [list]
+    set _parse(parse_expr_iterate_stack) [list]
+    _parse_expr_iterate_descend $script $etree callback
+
+    set _parse(parse_expr_iterate_result)
+} [list \
+    {operator {- 1} {operator {0 1} {}} 1 - {{0 1}}} \
+    {value {callback {- 1} {text {2 1} {}} {literal operand} {{text 1}} {{2 1}}}} \
+  ]
+
+tcltest::test parse-expr-iterator-descend-2.5 {_parse_expr_iterate_descend: single expression} {
+    set script {+1}
+    set etree [parse expr $script {0 end}]
+
+    set _parse(parse_expr_iterate_result) [list]
+    set _parse(parse_expr_iterate_stack) [list]
+    _parse_expr_iterate_descend $script $etree callback
+
+    set _parse(parse_expr_iterate_result)
+} [list \
+    {operator +1 {operator {0 1} {}} 1 + {{0 1}}} \
+    {value {callback +1 {text {1 1} {}} {literal operand} {{text 1}} {{1 1}}}} \
+  ]
+
+tcltest::test parse-expr-iterator-descend-2.6 {_parse_expr_iterate_descend: single expression} {
+    set script {+ 1}
+    set etree [parse expr $script {0 end}]
+
+    set _parse(parse_expr_iterate_result) [list]
+    set _parse(parse_expr_iterate_stack) [list]
+    _parse_expr_iterate_descend $script $etree callback
+
+    set _parse(parse_expr_iterate_result)
+} [list \
+    {operator {+ 1} {operator {0 1} {}} 1 + {{0 1}}} \
+    {value {callback {+ 1} {text {2 1} {}} {literal operand} {{text 1}} {{2 1}}}} \
+  ]
+
 
 tcltest::test parse-expr-iterator-descend-3.0 {_parse_expr_iterate_descend: single expression} {
     set script {rand()}

@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: compileproc.tcl,v 1.24 2006/05/19 22:27:45 mdejong Exp $
+#  RCS: @(#) $Id: compileproc.tcl,v 1.25 2006/05/25 02:59:43 mdejong Exp $
 #
 #
 
@@ -4266,10 +4266,12 @@ proc compileproc_expr_evaluate { key expr_index } {
 
     set expr_str [lindex $values $expr_index]
     set simple_bool 0
-    if {$expr_str == "1" || $expr_str == "true"} {
+    # Use string compare here so the "+1" is not
+    # seen as a constant boolean.
+    if {$expr_str eq "1" || $expr_str eq "true"} {
         set simple_bool 1
         set simple_bool_value "true"
-    } elseif {$expr_str == "0" || $expr_str == "false"} {
+    } elseif {$expr_str eq "0" || $expr_str eq "false"} {
         set simple_bool 1
         set simple_bool_value "false"
     }
@@ -4295,6 +4297,10 @@ proc compileproc_expr_evaluate { key expr_index } {
     set stree [lindex $tree $expr_index]
     set range [parse_get_simple_text_range $stree text]
     set etree [parse expr $script $range]
+
+    if {$debug} {
+        puts "parsed etree: $etree"
+    }
 
     # When iterating over an expr command or a command
     # that contains an implicit expr, we need to map
@@ -6356,6 +6362,10 @@ proc compileproc_expr_evaluate_emit_unary_operator { op_tuple } {
             $value_info_type == {double literal}} {
         set is_numeric_literal 1
         set numeric_literal $value_info_value
+        set is_numeric_literal_int [string equal \
+            $value_info_type {int literal}]
+        set is_numeric_literal_double [string equal \
+            $value_info_type {double literal}]
     } else {
         set is_numeric_literal 0
     }
@@ -6366,6 +6376,11 @@ proc compileproc_expr_evaluate_emit_unary_operator { op_tuple } {
         puts "value_info_type is $value_info_type"
         puts "value_info_value is $value_info_value"
     }
+
+    set skip_unary_op_call 0
+    set plus_number 0
+    set negate_number 0
+    set bitwise_negate_number 0
 
     # Check for the special case of the smallest
     # possible integer -0x80000000. This number
@@ -6407,15 +6422,48 @@ proc compileproc_expr_evaluate_emit_unary_operator { op_tuple } {
     } elseif {$op == "-" && $is_numeric_literal && \
             ($numeric_literal > 0)} {
         set negate_number 1
-    } else {
-        set negate_number 0
+    } elseif {$op == "+" && $is_numeric_literal} {
+        # A unary plus operator checks that an
+        # operand is a number and tosses out
+        # the string rep. If a literal is known
+        # to be a number, then there is no point
+        # in invoking the unary operator at
+        # runtime.
+
+        set plus_number 1
+    } elseif {$op == "~" &&
+            $is_numeric_literal && $is_numeric_literal_int} {
+        # A unary bitwise not operator only
+        # works with int operands. If a literal
+        # integer is found, then it can be inlined
+        # without invoking the unary operator.
+
+        set bitwise_negate_number 1
     }
 
-    if {$negate_number} {
+    if {$negate_number || \
+            $bitwise_negate_number || \
+            $plus_number} {
         # Negate numeric literal and regerate
         # eval buffer. This skips a tmpsymbol
         # but it is no big deal.
-        set tuple [list [lindex $tuple 0] "-${numeric_literal}"]
+
+        if {$bitwise_negate_number} {
+            set tuple [list {constant int} "~${numeric_literal}"]
+        } elseif {$plus_number} {
+            if {$is_numeric_literal_int} {
+                set tuple [list {constant int} $numeric_literal]
+            } elseif {$is_numeric_literal_double} {
+                set tuple [list {constant double} $numeric_literal]
+            } else {
+                error "unknown literal type"
+            }
+        } elseif {$negate_number} {
+            set tuple [list [lindex $tuple 0] "-${numeric_literal}"]
+        } else {
+            error "unknown operation"
+        }
+
         set eval_tuple [compileproc_expr_evaluate_emit_exprvalue \
             $tuple]
 
@@ -6423,8 +6471,6 @@ proc compileproc_expr_evaluate_emit_unary_operator { op_tuple } {
         set ev [lindex $eval_tuple 1]
         set eval_buffer [lindex $eval_tuple 2]
         set skip_unary_op_call 1
-    } else {
-        set skip_unary_op_call 0
     }
 
     # Printable info describing this operator and
@@ -6453,7 +6499,11 @@ proc compileproc_expr_evaluate_emit_unary_operator { op_tuple } {
         }
     }
 
-    if {!$skip_unary_op_call} {
+    if {$skip_unary_op_call} {
+        # Don't emit anything when a unary operator
+        # has been applied to a constant value.
+
+    } else {
         append buffer [emitter_indent] \
             "TJC.exprUnaryOperator(interp, " $opval ", " $ev ")\;\n"
     }
@@ -6932,7 +6982,7 @@ proc compileproc_expr_evaluate_emit_math_function { op_tuple } {
 
 # Emit code to get an expression value for the given string.
 # Note that a value could require that a subexpression with
-# an operator could need to be evaluated before a value is known.
+# an operator needs to be evaluated before a value is known.
 # If the no_exprvalue_for_tclobject flag is set to true then
 # an ExprValue object will not be allocated in the case where
 # the value is a TclObject.
@@ -6956,6 +7006,22 @@ proc compileproc_expr_evaluate_emit_exprvalue { tuple {no_exprvalue_for_tclobjec
     set value [lindex $tuple 1]
 
     switch -exact -- $type {
+        {constant int} -
+        {constant double} {
+            # Compiler knows this tuple represents a literal
+            # int or double value with no string rep. The compiler
+            # uses this logic to implement compiled constants
+            # for unary operator results like "-1" or "~0".
+
+            if {$type eq {constant int}} {
+                set result_type "int literal"
+            } else {
+                set result_type "double literal"
+            }
+            set result_symbol $value
+            set infostr $value
+            set srep null
+        }
         {constant boolean} -
         {constant string} -
         {constant braced string} -

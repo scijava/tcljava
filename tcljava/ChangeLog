@@ -1,3 +1,25 @@
+2006-05-24  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/jacl/tcl/lang/ExprValue.java (nullStringValue):
+        Add method for use in expr unary plus operator.
+        * src/jacl/tcl/lang/Expression.java (evalUnaryOperator):
+        Set string rep of expr value to null in unary +.
+        * src/tjc/tjc/library/compileproc.tcl
+        (compileproc_expr_evaluate,
+        compileproc_expr_evaluate_emit_unary_operator,
+        compileproc_expr_evaluate_emit_exprvalue):
+        Fixup detection of constant boolean expr.
+        The string "+1" was incorrectly detected
+        as a constant boolean value. Implement
+        +, -, and ~ operators as compile time
+        constants when applied to literal numeric values.
+        * tests/tjc/compileproc_2.test: Add test
+        cases for constant boolean bug and constant
+        literal unary operators.
+        * tests/tjc/parse.test: Add tests for unary
+        plus and minus operators. These tests did not
+        reveal a bug in the parser layer.
+
 2006-05-22  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/jacl/tcl/lang/ArrayCmd.java:
