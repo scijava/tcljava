@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclBoolean.java,v 1.5 2005/10/12 22:39:39 mdejong Exp $
+ * RCS: @(#) $Id: TclBoolean.java,v 1.6 2006/05/25 23:17:58 mdejong Exp $
  *
  */
 
@@ -93,9 +93,7 @@ public class TclBoolean implements InternalRep {
 	// Get the string representation. Make it up-to-date if necessary.
 	String string = tobj.toString();
 
-	if (rep instanceof TclBoolean) {
-	    // Do nothing.
-	} else if (rep instanceof TclInteger) {
+	if (rep instanceof TclInteger) {
 	    int i = TclInteger.get(interp, tobj);
 	    if (i == 0) {
 	        tobj.setInternalRep(falseRep);
@@ -198,6 +196,11 @@ public class TclBoolean implements InternalRep {
 
     /**
      * Returns the value of the object as an boolean.
+     *
+     * An object with a TclBoolean internal rep has
+     * a boolean value. An object with a TclInteger
+     * internal rep and has the int value "0" or "1"
+     * is also a valid boolean value.
      *
      * @param interp current interpreter.
      * @param tobj the TclObject to use as an boolean.

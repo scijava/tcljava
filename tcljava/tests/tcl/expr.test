@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr.test,v 1.16 2006/05/22 21:23:35 mdejong Exp $
+# RCS: @(#) $Id: expr.test,v 1.17 2006/05/25 23:17:58 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -174,6 +174,17 @@ test expr-2.11 {TclCompileExpr} {
     list [catch {expr {" 008"}} err] $err
 } {0 { 008}}
 
+test expr-2.12 {string compare shared boolean value} {
+    list \
+        [expr {[string is integer 1] eq "true"}] \
+        [expr {[string is integer 1] eq "1"}]
+} {0 1}
+
+test expr-2.13 {string compare shared boolean value} {
+    list \
+        [expr {[string is integer A] eq "false"}] \
+        [expr {[string is integer A] eq "0"}]
+} {0 1}
 
 test expr-3.1 {CompileCondExpr: just lor expr} {expr 3||0} 1
 test expr-3.2 {CompileCondExpr: error in lor expr} {

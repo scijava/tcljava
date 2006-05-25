@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Expression.java,v 1.29 2006/05/25 19:32:42 mdejong Exp $
+ * RCS: @(#) $Id: Expression.java,v 1.30 2006/05/25 23:17:58 mdejong Exp $
  *
  */
 
@@ -345,36 +345,6 @@ class Expression {
             value.setIntValue(TclInteger.get(interp, obj),
                 (obj.hasNoStringRep() ? null : obj.toString()));
             return;
-        } else if (rep instanceof TclBoolean) {
-            // A "pure" boolean created from a primitive
-            // type can be treated as an integer value.
-            // If the boolean has a string rep, then
-            // check for the special cases of "0" or "1".
-            // Otherwise, treat the object as a string
-            // value since the expr code can convert
-            // to a boolean as needed.
-
-            if (obj.hasNoStringRep()) {
-                boolean bval = TclBoolean.get(interp, obj);
-                value.setIntValue(bval);
-                return;
-            } else {
-                String srep = obj.toString();
-                int slen = srep.length();
-                if (slen == 1 && srep.charAt(0) == '0') {
-                    value.setIntValue(0);
-                    return;
-                } else if (slen == 1 && srep.charAt(0) == '1') {
-                    value.setIntValue(1);
-                    return;
-                } else if (slen == 4 && srep.equals("true")) {
-                    value.setStringValue("true");
-                    return;
-                } else if (slen == 5 && srep.equals("false")) {
-                    value.setStringValue("false");
-                    return;
-                }
-            }
         } else if (rep instanceof TclDouble) {
             // An object with a double internal rep will
             // never have a string rep that could be parsed
@@ -407,7 +377,7 @@ class Expression {
      * @param value the ExprValue object to save the parsed value in.
      */
 
-    private static void
+    static void
     ExprParseString(Interp interp, TclObject obj, ExprValue value) {
 	char c;
 	int ival;
@@ -418,48 +388,19 @@ class Expression {
 	//System.out.println("now to ExprParseString ->" + s +
 	//	 "<- of length " + len);
 
-	if (len == 0) {
-	    // Take shortcut when string is of length 0, as the
-	    // empty string can't represent an int, double, or boolean.
+	switch (len) {
+	    case 0: {
+	        // Take shortcut when string is of length 0, as the
+	        // empty string can't represent an int, double, or boolean.
 
-	    value.setStringValue("");
-	    return;
-	} else if (len == 1) {
-	    // Check for really common strings of length 1
-	    // that we know will be integers.
-
-	    c = s.charAt(0);
-	    switch (c) {
-	        case '0':
-	        case '1':
-	        case '2':
-	        case '3':
-	        case '4':
-	        case '5':
-	        case '6':
-	        case '7':
-	        case '8':
-	        case '9':
-	            ival = (int) (c - '0');
-	            value.setIntValue(ival, s);
-	            TclInteger.exprSetInternalRep(obj, ival);
-	            return;
-	        default:
-	            // We know this string can't be parsed
-	            // as a number, so just treat it as
-	            // a string. A string of length 1 is
-	            // very common.
-
-	            value.setStringValue(s);
-	            return;
+	        value.setStringValue("");
+	        return;
 	    }
-	} else if (len == 2) {
-	    // Check for really common strings of length 2
-	    // that we know will be integers.
+	    case 1: {
+	        // Check for really common strings of length 1
+	        // that we know will be integers.
 
-	    c = s.charAt(0);
-	    if (c == '-') {
-	        c = s.charAt(1);
+	        c = s.charAt(0);
 	        switch (c) {
 	            case '0':
 	            case '1':
@@ -471,39 +412,89 @@ class Expression {
 	            case '7':
 	            case '8':
 	            case '9':
-	                ival = (int) -(c - '0');
+	                ival = (int) (c - '0');
 	                value.setIntValue(ival, s);
 	                TclInteger.exprSetInternalRep(obj, ival);
 	                return;
+	            default:
+	                // We know this string can't be parsed
+	                // as a number, so just treat it as
+	                // a string. A string of length 1 is
+	                // very common.
+
+	                value.setStringValue(s);
+	                return;
 	        }
 	    }
-	} else if (len == 3) {
-	    // Check for really common strings of length 3
-	    // that we know will be doubles.
+	    case 2: {
+	        // Check for really common strings of length 2
+	        // that we know will be integers.
 
-	    c = s.charAt(1);
-	    if (c == '.') {
-	        if (s.equals("0.0")) {
-	            dval = 0.0;
-	            value.setDoubleValue(dval, s);
-	            TclDouble.exprSetInternalRep(obj, dval);
-	            return;
-	        } else if (s.equals("0.5")) {
-	            dval = 0.5;
-	            value.setDoubleValue(dval, s);
-	            TclDouble.exprSetInternalRep(obj, dval);
-	            return;
-	        } else if (s.equals("1.0")) {
-	            dval = 1.0;
-	            value.setDoubleValue(dval, s);
-	            TclDouble.exprSetInternalRep(obj, dval);
-	            return;
-	        } else if (s.equals("2.0")) {
-	            dval = 2.0;
-	            value.setDoubleValue(dval, s);
-	            TclDouble.exprSetInternalRep(obj, dval);
+	        c = s.charAt(0);
+	        if (c == '-') {
+	            c = s.charAt(1);
+	            switch (c) {
+	                case '0':
+	                case '1':
+	                case '2':
+	                case '3':
+	                case '4':
+	                case '5':
+	                case '6':
+	                case '7':
+	                case '8':
+	                case '9':
+	                    ival = (int) -(c - '0');
+	                    value.setIntValue(ival, s);
+	                    TclInteger.exprSetInternalRep(obj, ival);
+	                    return;
+	            }
+	        }
+	        break;
+	    }
+	    case 3: {
+	        // Check for really common strings of length 3
+	        // that we know will be doubles.
+
+	        c = s.charAt(1);
+	        if (c == '.') {
+	            if (s.equals("0.0")) {
+	                dval = 0.0;
+	                value.setDoubleValue(dval, s);
+	                TclDouble.exprSetInternalRep(obj, dval);
+	                return;
+	            } else if (s.equals("0.5")) {
+	                dval = 0.5;
+	                value.setDoubleValue(dval, s);
+	                TclDouble.exprSetInternalRep(obj, dval);
+	                return;
+	            } else if (s.equals("1.0")) {
+	                dval = 1.0;
+	                value.setDoubleValue(dval, s);
+	                TclDouble.exprSetInternalRep(obj, dval);
+	                return;
+	            } else if (s.equals("2.0")) {
+	                dval = 2.0;
+	                value.setDoubleValue(dval, s);
+	                TclDouble.exprSetInternalRep(obj, dval);
+	                return;
+	            }
+	        }
+	        break;
+	    }
+	    case 4: {
+	        if (s.equals("true")) {
+	            value.setStringValue(s);
 	            return;
 	        }
+	        break;
+	    }
+	    case 5: {
+	        if (s.equals("false")) {
+	            value.setStringValue(s);
+	            return;
+	        }
+	        break;
 	    }
 	}
 

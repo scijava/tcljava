@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.78 2006/05/15 20:26:26 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.79 2006/05/25 23:17:58 mdejong Exp $
  *
  */
 
@@ -245,8 +245,15 @@ private TclObject m_nullResult;
 // methods for built-in Java types. The internal rep
 // of these shared values should not be changed.
 
-private final TclObject m_falseBooleanResult;    // false
-private final TclObject m_trueBooleanResult;     // true
+// The boolean true and false constants are tricky.
+// The true value is the integer 1, it is not
+// an instance of TclBoolean with a string rep
+// of "true". The false value is the integer 0.
+// This approach makes it possible for the expr
+// module to treat boolean results as integers.
+
+private final TclObject m_falseBooleanResult;    // false (int 0)
+private final TclObject m_trueBooleanResult;     // true (int 1)
 
 private final TclObject m_minusoneIntegerResult; // -1
 private final TclObject m_zeroIntegerResult;     // 0
@@ -384,14 +391,6 @@ Interp()
     m_nullResult.preserve();  // Increment refCount to 2 (shared)
     m_result = m_nullResult;  // correcponds to iPtr->objResultPtr
 
-    m_falseBooleanResult = TclBoolean.newInstance(false);
-    m_falseBooleanResult.preserve();  // Increment refCount to 1
-    m_falseBooleanResult.preserve();  // Increment refCount to 2 (shared)
-
-    m_trueBooleanResult = TclBoolean.newInstance(true);
-    m_trueBooleanResult.preserve();  // Increment refCount to 1
-    m_trueBooleanResult.preserve();  // Increment refCount to 2 (shared)
-
     m_minusoneIntegerResult = TclInteger.newInstance(-1);
     m_minusoneIntegerResult.preserve();  // Increment refCount to 1
     m_minusoneIntegerResult.preserve();  // Increment refCount to 2 (shared)
@@ -403,6 +402,9 @@ Interp()
     m_oneIntegerResult = TclInteger.newInstance(1);
     m_oneIntegerResult.preserve();  // Increment refCount to 1
     m_oneIntegerResult.preserve();  // Increment refCount to 2 (shared)
+
+    m_falseBooleanResult = m_zeroIntegerResult;
+    m_trueBooleanResult = m_oneIntegerResult;
 
     m_twoIntegerResult = TclInteger.newInstance(2);
     m_twoIntegerResult.preserve();  // Increment refCount to 1

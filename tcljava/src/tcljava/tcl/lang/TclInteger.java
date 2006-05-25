@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclInteger.java,v 1.12 2006/05/15 01:25:46 mdejong Exp $
+ * RCS: @(#) $Id: TclInteger.java,v 1.13 2006/05/25 23:17:58 mdejong Exp $
  *
  */
 
@@ -125,69 +125,34 @@ public class TclInteger implements InternalRep {
      */
 
     private static void setIntegerFromAny(Interp interp, TclObject tobj)
-	    throws TclException {
-	InternalRep rep = tobj.getInternalRep();
+	    throws TclException
+    {
+	// Note that this method is never invoked when the
+	// object is already an integer type. This method
+	// does not check for a TclBoolean internal rep
+	// since it would typically only be used only for
+	// the "true" and "false" string values. An
+	// int value like "1" or "0" that can be a boolean
+	// value will not be converted to TclBoolean.
+	//
+	// This method also does not check for a TclDouble
+	// internal rep since a double like "1.0" can't
+	// be converted to an integer. An octal like
+	// "040" could be parsed as both a double and
+	// an integer, but the TclDouble module should
+	// not allow conversion to TclDouble in that case.
 
-	if (rep instanceof TclInteger) {
-	    // Do nothing.
-	} else if (rep instanceof TclBoolean) {
-	    boolean b = TclBoolean.get(interp, tobj);
-	    if (tobj.hasNoStringRep()) {
-		// A "pure" boolean can be converted
-		// directly to an integer.
-		tobj.setInternalRep(new TclInteger(b ? 1 : 0));
-	    } else if (b) {
-		// The integer "2" would be converted to
-		// a true boolean value. Converting it
-		// back to an integer should not return
-		// the value 1. If the string rep is "1"
-                // then take the shortcut. Otherwise,
-                // reparse the integer from the string.
-		TclInteger irep;
-		String srep = tobj.toString();
-		if (srep.equals("1")) {
-		    irep = new TclInteger(1);
-		} else {
-		    irep = new TclInteger(interp, srep);
-		}
-		tobj.setInternalRep(irep);
+	tobj.setInternalRep(new TclInteger(interp, tobj.toString()));
+
+	if (TclObject.saveObjRecords) {
+	    String key = "TclString -> TclInteger";
+	    Integer num = (Integer) TclObject.objRecordMap.get(key);
+	    if (num == null) {
+	        num = new Integer(1);
 	    } else {
-		// A boolean false value can be converted
-		// directly to the integer value 0.
-		tobj.setInternalRep(new TclInteger(0));
+	        num = new Integer(num.intValue() + 1);
 	    }
-
-	    if (TclObject.saveObjRecords) {
-	        String key = "TclBoolean -> TclInteger";
-	        Integer num = (Integer) TclObject.objRecordMap.get(key);
-	        if (num == null) {
-	            num = new Integer(1);
-	        } else {
-	            num = new Integer(num.intValue() + 1);
-	        }
-	        TclObject.objRecordMap.put(key, num);
-	    }
-	} else {
-	    // Note that conversion from a double to an
-	    // integer internal rep should always raise
-	    // an error. A double value like "1.0" can't
-	    // be parsed as an integer. An octal like "040"
-	    // could be parsed as both a double and an
-	    // integer, but the TclDouble module should
-	    // not allow conversion to TclDouble in that case.
-
-	    tobj.setInternalRep(new TclInteger(interp, tobj.toString()));
-
-	    if (TclObject.saveObjRecords) {
-	        String key = "TclString -> TclInteger";
-	        Integer num = (Integer) TclObject.objRecordMap.get(key);
-	        if (num == null) {
-	            num = new Integer(1);
-	        } else {
-	            num = new Integer(num.intValue() + 1);
-	        }
-	        TclObject.objRecordMap.put(key, num);
-	    }
+	    TclObject.objRecordMap.put(key, num);
 	}
     }
 

@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TJC.java,v 1.25 2006/05/23 05:34:33 mdejong Exp $ *
+ * RCS: @(#) $Id: TJC.java,v 1.26 2006/05/25 23:17:58 mdejong Exp $ *
  */
 
 // Runtime support for TJC compiler implementation.
@@ -1095,16 +1095,24 @@ public class TJC {
 
         if (rep instanceof TclInteger) {
             return (TclInteger.get(interp, obj) != 0);
-        } else if (rep instanceof TclBoolean) {
-            return TclBoolean.get(interp, obj);
         } else if (rep instanceof TclDouble) {
             return (TclDouble.get(interp, obj) != 0.0);
         }
 
-        ExprValue value = interp.expr.grabExprValue();
-        Expression.ExprParseObject(interp, obj, value);
+        ExprValue value;
+        if (USE_EXPR_CACHE) {
+            value = interp.expr.grabExprValue();
+        } else {
+            value = new ExprValue(0, null);
+        }
+        // The logic above already checked for an int or
+        // double type so just reparse from the string
+        // instead of calling ExprParseObject().
+        Expression.ExprParseString(interp, obj, value);
         boolean b = value.getBooleanValue(interp);
-        interp.expr.releaseExprValue(value);
+        if (USE_EXPR_CACHE) {
+            interp.expr.releaseExprValue(value);
+        }
         return b;
     }
 

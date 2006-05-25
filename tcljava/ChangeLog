@@ -1,5 +1,36 @@
 2006-05-25  Mo DeJong  <mdejong@users.sourceforge.net>
 
+        * src/jacl/tcl/lang/Expression.java (ExprParseObject,
+        ExprParseString): Optimize expr int and double parse
+        routines by removing logic that dealt with TclBoolean
+        object type. The TclBoolean class is seldom used,
+        so dealing with only int and double types makes
+        things more simple and it removed an instanceof op.
+        * src/jacl/tcl/lang/Interp.java:
+        Use shared int constants for the boolean true and
+        false constants. The TclBoolean class can make use
+        of these objects as boolean values and this change
+        makes it much less likely that the expr module
+        will ever encounter an object of type TclBoolean.
+        * src/tcljava/tcl/lang/TclBoolean.java
+        (setBooleanFromAny):
+        Remove unused instanceof operation and update comments.
+        * src/tcljava/tcl/lang/TclInteger.java (setIntegerFromAny):
+        Remove special logic that dealt with TclBoolean
+        values. An integer is now reparsed from the string
+        rep in all cases.
+        * src/tjc/tcl/lang/TJC.java (getBoolean): Remove
+        logic to deal with TclBoolean object type and
+        invoke ExprParseString() instead of ExprParseObject()
+        to avoid pointless instanceof operations.
+        * tests/tcl/expr.test: Add string rep tests
+        for boolean constant value.
+        * tests/tjc/compiledLocals.test: Update tests
+        to account for change in shared boolean constant
+        which is now an object of type TclInteger.
+
+2006-05-25  Mo DeJong  <mdejong@users.sourceforge.net>
+
         * src/jacl/tcl/lang/Expression.java (evalBinaryOperator):
         Optimize evalBinaryOperator method by doing a
         query of the left and right operand type at

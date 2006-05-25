@@ -6,7 +6,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: compiledLocals.test,v 1.8 2006/05/15 01:25:46 mdejong Exp $
+# RCS: @(#) $Id: compiledLocals.test,v 1.9 2006/05/25 23:17:58 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -2347,7 +2347,7 @@ test compiledLocals-10.7 {expr} {
     # optimized expr operation to query boolean
     # value inside if command will convert
     # from TclString to TclInteger. One might
-    # assume this would convert to TclBoolean,
+    # think this would convert to TclBoolean,
     # but the TclInteger internal rep is preferred.
     proc clocals_test10_7 {} {
         set V [string range "1" 0 end]
@@ -2466,9 +2466,10 @@ test compiledLocals-10.12 {expr} {
 } {{TclString 2.0} 0 OK {TclDouble 2.0}}
 
 test compiledLocals-10.13 {expr} {
-    # Passing a TclBoolean will use the
-    # boolean condition. This boolean
-    # has no string rep.
+    # The shared boolean true result
+    # is actually an integer with
+    # the value 1. It seen as an int
+    # by the expr module.
     proc clocals_test10_13 {} {
         set V [string equal "" ""]
 
@@ -2483,7 +2484,7 @@ test compiledLocals-10.13 {expr} {
     }
     clocals_tjc_compiled_proc clocals_test10_13
     clocals_test10_13
-} {TclBoolean 0 OK TclBoolean}
+} {TclInteger 0 OK TclInteger}
 
 test compiledLocals-10.14 {expr} {
     # A TclString that looks like a TclBoolean
@@ -2720,6 +2721,65 @@ test compiledLocals-10.23 {TclDouble} {
     clocals_test10_23
 } {TclInteger 40.0 TclInteger {expr 32} TclInteger}
 
+test compiledLocals-10.24 {TclBoolean} {
+    # This TclBoolean will be treated as
+    # a string value, it will not
+    # be parsed as an integer or double.
+    proc clocals_test10_24 {} {
+        set V true
+
+        lappend results [irep $V]
+        lappend results [catch {
+            if {$V} {
+                set r OK
+            }
+        } err] $err
+        lappend results [irep $V]
+        return $results
+    }
+    clocals_tjc_compiled_proc clocals_test10_24
+    clocals_test10_24
+} {TclBoolean 0 OK TclBoolean}
+
+test compiledLocals-10.25 {TclBoolean} {
+    # This TclBoolean will be treated as
+    # a string value, it will not
+    # be parsed as an integer or double.
+    proc clocals_test10_25 {} {
+        set V false
+
+        lappend results [irep $V]
+        lappend results [catch {
+            if {!$V} {
+                set r OK
+            }
+        } err] $err
+        lappend results [irep $V]
+        return $results
+    }
+    clocals_tjc_compiled_proc clocals_test10_25
+    clocals_test10_25
+} {TclBoolean 0 OK TclBoolean}
+
+test compiledLocals-10.26 {TclBoolean} {
+    # This TclString could be a TclBoolean,
+    # it is treated like any other string
+    # by the expr module.
+    proc clocals_test10_26 {} {
+        set V tru
+
+        lappend results [irep $V]
+        lappend results [catch {
+            if {$V} {
+                set r OK
+            }
+        } err] $err
+        lappend results [irep $V]
+        return $results
+    }
+    clocals_tjc_compiled_proc clocals_test10_26
+    clocals_test10_26
+} {TclString 0 OK TclString}
 
 
 # cleanup
