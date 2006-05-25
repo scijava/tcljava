@@ -1,3 +1,12 @@
+2006-05-25  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/jacl/tcl/lang/Expression.java (evalBinaryOperator):
+        Optimize evalBinaryOperator method by doing a
+        query of the left and right operand type at
+        the start of the binary operator method.
+        Each type check in the method will then use
+        the local instead of an inlined ExprValue method.
+
 2006-05-24  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/jacl/tcl/lang/ExprValue.java (nullStringValue):

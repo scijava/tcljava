@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Expression.java,v 1.28 2006/05/25 02:59:43 mdejong Exp $
+ * RCS: @(#) $Id: Expression.java,v 1.29 2006/05/25 19:32:42 mdejong Exp $
  *
  */
 
@@ -846,25 +846,29 @@ class Expression {
         ExprValue value2)   // value on right hand side
             throws TclException
     {
+	int t1 = value.getType();
+	int t2 = value2.getType();
+
 	switch (operator) {
 	    // For the operators below, no strings are allowed and
 	    // ints get converted to floats if necessary.
 
 	    case MULT: case DIVIDE: case PLUS: case MINUS:
-		if (value.isStringType() || value2.isStringType()) {
+		if (t1 == ExprValue.STRING || t2 == ExprValue.STRING) {
 		    if ((value.getStringValue().length() == 0) ||
 		        (value2.getStringValue().length() == 0)) {
 		        EmptyStringOperandError(interp, operator);
 		    }
 		    IllegalType(interp, ExprValue.STRING, operator);
-		}
-		if (value.isDoubleType()) {
-		    if (value2.isIntType()) {
+		} else if (t1 == ExprValue.DOUBLE) {
+		    if (t2 == ExprValue.INT) {
 			value2.setDoubleValue( (double) value2.getIntValue() );
+			t2 = ExprValue.DOUBLE;
 		    }
-		} else if (value2.isDoubleType()) {
-		    if (value.isIntType()) {
+		} else if (t2 == ExprValue.DOUBLE) {
+		    if (t1 == ExprValue.INT) {
 			value.setDoubleValue( (double) value.getIntValue() );
+			t1 = ExprValue.DOUBLE;
 		    }
 		}
 		break;
@@ -873,12 +877,12 @@ class Expression {
 
 	    case MOD: case LEFT_SHIFT: case RIGHT_SHIFT:
 	    case BIT_AND: case BIT_XOR: case BIT_OR:
-		 if (value.getType() != ExprValue.INT) {
+		 if (t1 != ExprValue.INT) {
 		     if (value.getStringValue().length() == 0) {
 		         EmptyStringOperandError(interp, operator);
 		     }
 		     IllegalType(interp, value.getType(), operator);
-		 } else if (value2.getType() != ExprValue.INT) {
+		 } else if (t2 != ExprValue.INT) {
 		     if (value2.getStringValue().length() == 0) {
 		         EmptyStringOperandError(interp, operator);
 		     }
@@ -893,23 +897,27 @@ class Expression {
 
 	    case LESS: case GREATER: case LEQ: case GEQ:
 	    case EQUAL: case NEQ:
-		if (value.getType() == value2.getType()) {
+		if (t1 == t2) {
 		    // No-op, both operators are already the same type
-		} else if (value.isStringType()) {
-		    if (!value2.isStringType()) {
-			ExprMakeString(interp, value2);
+		} else if (t1 == ExprValue.STRING) {
+		    if (t2 != ExprValue.STRING) {
+			value2.toStringType();
+			t2 = ExprValue.STRING;
 		    }
-		} else if (value2.isStringType()) {
-		    if (!value.isStringType()) {
-			ExprMakeString(interp, value);
+		} else if (t2 == ExprValue.STRING) {
+		    if (t1 != ExprValue.STRING) {
+			value.toStringType();
+			t1 = ExprValue.STRING;
 		    }
-		} else if (value.isDoubleType()) {
-		    if (value2.isIntType()) {
+		} else if (t1 == ExprValue.DOUBLE) {
+		    if (t2 == ExprValue.INT) {
 			value2.setDoubleValue( (double) value2.getIntValue() );
+			t2 = ExprValue.DOUBLE;
 		    }
-		} else if (value2.isDoubleType()) {
-		     if (value.isIntType()) {
+		} else if (t2 == ExprValue.DOUBLE) {
+		     if (t1 == ExprValue.INT) {
 			value.setDoubleValue( (double) value.getIntValue() );
+			t1 = ExprValue.DOUBLE;
 		    }
 		}
 		break;
@@ -925,10 +933,10 @@ class Expression {
 	    // no int->double conversions are performed.
 
 	    case AND: case OR:
-		if (value.isStringType()) {
-		    IllegalType(interp, value.getType(), operator);
+		if (t1 == ExprValue.STRING) {
+		    IllegalType(interp, ExprValue.STRING, operator);
 		}
-		if (value2.isStringType()) {
+		if (t2 == ExprValue.STRING) {
 		    boolean b = Util.getBoolean(interp, value2.getStringValue());
 		    value2.setIntValue(b);
 		}
@@ -951,14 +959,14 @@ class Expression {
 
 	switch (operator) {
 	    case MULT:
-		if (value.isIntType()) {
+		if (t1 == ExprValue.INT) {
 		    value.setIntValue( value.getIntValue() * value2.getIntValue() );
 		} else {
 		    value.setDoubleValue( value.getDoubleValue() * value2.getDoubleValue() );
 		}
 		break;
 	    case DIVIDE:
-		if (value.isIntType()) {
+		if (t1 == ExprValue.INT) {
 		    int dividend, divisor, quotient;
 
 		    if (value2.getIntValue() == 0) {
@@ -1052,14 +1060,14 @@ class Expression {
 		value.setIntValue(remainder);
 		break;
 	    case PLUS:
-		if (value.isIntType()) {
+		if (t1 == ExprValue.INT) {
 		    value.setIntValue( value.getIntValue() + value2.getIntValue() );
 		} else {
 		    value.setDoubleValue( value.getDoubleValue() + value2.getDoubleValue() );
 		}
 		break;
 	    case MINUS:
-		if (value.isIntType()) {
+		if (t1 == ExprValue.INT) {
 		    value.setIntValue( value.getIntValue() - value2.getIntValue() );
 		} else {
 		    value.setDoubleValue( value.getDoubleValue() - value2.getDoubleValue() );
@@ -1100,9 +1108,9 @@ class Expression {
 		value.setIntValue(right_shift_num);
 		break;
 	    case LESS:
-		if (value.isIntType()) {
+		if (t1 == ExprValue.INT) {
 		    value.setIntValue( value.getIntValue() < value2.getIntValue() );
-		} else if (value.isDoubleType()) {
+		} else if (t1 == ExprValue.DOUBLE) {
 		    value.setIntValue( value.getDoubleValue() < value2.getDoubleValue() );
 		} else {
 		    value.setIntValue( value.getStringValue().compareTo(
@@ -1110,9 +1118,9 @@ class Expression {
 		}
 		break;
 	    case GREATER:
-		if (value.isIntType()) {
+		if (t1 == ExprValue.INT) {
 		    value.setIntValue( value.getIntValue() > value2.getIntValue() );
-		} else if (value.isDoubleType()) {
+		} else if (t1 == ExprValue.DOUBLE) {
 		    value.setIntValue( value.getDoubleValue() > value2.getDoubleValue() );
 		} else {
 		    value.setIntValue( value.getStringValue().compareTo(
@@ -1120,9 +1128,9 @@ class Expression {
 		}
 		break;
 	    case LEQ:
-		if (value.isIntType()) {
+		if (t1 == ExprValue.INT) {
 		    value.setIntValue( value.getIntValue() <= value2.getIntValue() );
-		} else if (value.isDoubleType()) {
+		} else if (t1 == ExprValue.DOUBLE) {
 		    value.setIntValue( value.getDoubleValue() <= value2.getDoubleValue() );
 		} else {
 		    value.setIntValue( value.getStringValue().compareTo(
@@ -1130,9 +1138,9 @@ class Expression {
 		}
 		break;
 	    case GEQ:
-		if (value.isIntType()) {
+		if (t1 == ExprValue.INT) {
 		    value.setIntValue( value.getIntValue() >= value2.getIntValue() );
-		} else if (value.isDoubleType()) {
+		} else if (t1 == ExprValue.DOUBLE) {
 		    value.setIntValue( value.getDoubleValue() >= value2.getDoubleValue() );
 		} else {
 		    value.setIntValue( value.getStringValue().compareTo(
@@ -1140,9 +1148,9 @@ class Expression {
 		}
 		break;
 	    case EQUAL:
-		if (value.isIntType()) {
+		if (t1 == ExprValue.INT) {
 		    value.setIntValue( value.getIntValue() == value2.getIntValue() );
-		} else if (value.isDoubleType()) {
+		} else if (t1 == ExprValue.DOUBLE) {
 		    value.setIntValue( value.getDoubleValue() == value2.getDoubleValue() );
 		} else {
 		    value.setIntValue( value.getStringValue().equals(
@@ -1150,9 +1158,9 @@ class Expression {
 		}
 		break;
 	    case NEQ:
-		if (value.isIntType()) {
+		if (t1 == ExprValue.INT) {
 		    value.setIntValue( value.getIntValue() != value2.getIntValue() );
-		} else if (value.isDoubleType()) {
+		} else if (t1 == ExprValue.DOUBLE) {
 		    value.setIntValue( value.getDoubleValue() != value2.getDoubleValue() );
 		} else {
 		    value.setIntValue( ! value.getStringValue().equals(
@@ -1183,14 +1191,14 @@ class Expression {
 	    // the possibility of int vs. double for the second value.
 
 	    case AND:
-		if (value2.isDoubleType()) {
+		if (t2 == ExprValue.DOUBLE) {
 		    value2.setIntValue( value2.getDoubleValue() != 0.0 );
 		}
 		value.setIntValue(
 			((value.getIntValue()!=0) && (value2.getIntValue()!=0)) );
 		break;
 	    case OR:
-		if (value2.isDoubleType()) {
+		if (t2 == ExprValue.DOUBLE) {
 		    value2.setIntValue( value2.getDoubleValue() != 0.0 );
 		}
 		value.setIntValue(
@@ -1854,18 +1862,6 @@ class Expression {
         }
 
 	return false;
-    }
-
-    /**
-     * Converts a value from int or double representation to a string.
-     * @param interp interpreter to use for precision information.
-     * @param value Value to be converted.
-     */
-
-    static void ExprMakeString(Interp interp, ExprValue value) {
-	if (value.isIntOrDoubleType()) {
-	    value.toStringType();
-	}
     }
 
     static void checkIntegerRange(Interp interp,double d) throws TclException {
