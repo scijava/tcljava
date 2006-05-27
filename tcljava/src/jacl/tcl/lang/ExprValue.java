@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ExprValue.java,v 1.8 2006/05/25 02:59:43 mdejong Exp $
+ * RCS: @(#) $Id: ExprValue.java,v 1.9 2006/05/27 01:30:39 mdejong Exp $
  *
  */
 
@@ -246,6 +246,156 @@ public final class ExprValue {
             }
         }
         return sb.toString();
+    }
+
+    // Optimized int multiply operation
+
+    final
+    void optIntMult(final ExprValue value2) {
+        stringValue = null;
+        intValue *= value2.intValue;
+    }
+
+    // Optimized double multiply operation
+
+    final
+    void optDoubleMult(final ExprValue value2) {
+        stringValue = null;
+        doubleValue *= value2.doubleValue;
+    }
+
+    // Optimized int plus operation
+
+    final
+    void optIntPlus(final ExprValue value2) {
+        stringValue = null;
+        intValue += value2.intValue;
+    }
+
+    // Optimized double plus operation
+
+    final
+    void optDoublePlus(final ExprValue value2) {
+        stringValue = null;
+        doubleValue += value2.doubleValue;
+    }
+
+    // Optimized int minus operation
+
+    final
+    void optIntMinus(final ExprValue value2) {
+        stringValue = null;
+        intValue -= value2.intValue;
+    }
+
+    // Optimized double minus operation
+
+    final
+    void optDoubleMinus(final ExprValue value2) {
+        stringValue = null;
+        doubleValue -= value2.doubleValue;
+    }
+
+    // Optimized int less than operation
+
+    final
+    void optIntLess(final ExprValue value2) {
+        stringValue = null;
+        intValue = ((intValue < value2.intValue) ? 1 : 0);
+    }
+
+    // Optimized double less than operation
+
+    final
+    void optDoubleLess(final ExprValue value2) {
+        stringValue = null;
+        intValue = ((doubleValue < value2.doubleValue) ? 1 : 0);
+	type = INT;
+    }
+
+    // Optimized int greater than operation
+
+    final
+    void optIntGreater(final ExprValue value2) {
+        stringValue = null;
+        intValue = ((intValue > value2.intValue) ? 1 : 0);
+    }
+
+    // Optimized double greater than operation
+
+    final
+    void optDoubleGreater(final ExprValue value2) {
+        stringValue = null;
+        intValue = ((doubleValue > value2.doubleValue) ? 1 : 0);
+	type = INT;
+    }
+
+    // Optimized int less than or equal to operation
+
+    final
+    void optIntLessEq(final ExprValue value2) {
+        stringValue = null;
+        intValue = ((intValue <= value2.intValue) ? 1 : 0);
+    }
+
+    // Optimized int less than or equal to operation
+
+    final
+    void optDoubleLessEq(final ExprValue value2) {
+        stringValue = null;
+        intValue = ((doubleValue <= value2.doubleValue) ? 1 : 0);
+	type = INT;
+    }
+
+    // Optimized int greater than or equal to operation
+
+    final
+    void optIntGreaterEq(final ExprValue value2) {
+        stringValue = null;
+        intValue = ((intValue >= value2.intValue) ? 1 : 0);
+    }
+
+    // Optimized double greater than or equal to operation
+
+    final
+    void optDoubleGreaterEq(final ExprValue value2) {
+        stringValue = null;
+        intValue = ((doubleValue >= value2.doubleValue) ? 1 : 0);
+	type = INT;
+    }
+
+    // Optimized int equal to operation
+
+    final
+    void optIntEq(final ExprValue value2) {
+        stringValue = null;
+        intValue = ((intValue == value2.intValue) ? 1 : 0);
+    }
+
+    // Optimized double equal to operation
+
+    final
+    void optDoubleEq(final ExprValue value2) {
+        stringValue = null;
+        intValue = ((doubleValue == value2.doubleValue) ? 1 : 0);
+	type = INT;
+    }
+
+    // Optimized int not equal to operation
+
+    final
+    void optIntNotEq(final ExprValue value2) {
+        stringValue = null;
+        intValue = ((intValue != value2.intValue) ? 1 : 0);
+    }
+
+    // Optimized double not equal to operation
+
+    final
+    void optDoubleNotEq(final ExprValue value2) {
+        stringValue = null;
+        intValue = ((doubleValue != value2.doubleValue) ? 1 : 0);
+	type = INT;
     }
 
 }

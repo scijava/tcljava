@@ -1,3 +1,20 @@
+2006-05-26  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/jacl/tcl/lang/ExprValue.java: Add
+        a series of inlined math operations.
+        These methods will be inlined in the
+        Expression.evalBinaryOperator() method.
+        * src/jacl/tcl/lang/Expression.java
+        (evalBinaryOperator): Add implementation
+        of math operators that makes use of inlined
+        methods in the ExprValue. This implementation
+        executes slightly faster than the previous
+        implementation. Also move STREQ and STRNEQ
+        operators into first switch since no operand
+        validation is needed for these operators.
+        * src/tjc/tcl/lang/TJC.java (exprBinaryOperator,
+        exprUnaryOperator): Make arguments final.
+
 2006-05-25  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/jacl/tcl/lang/Expression.java (ExprParseObject,

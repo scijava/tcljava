@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Expression.java,v 1.30 2006/05/25 23:17:58 mdejong Exp $
+ * RCS: @(#) $Id: Expression.java,v 1.31 2006/05/27 01:30:39 mdejong Exp $
  *
  */
 
@@ -756,9 +756,9 @@ class Expression {
 
     static
     void evalUnaryOperator(
-        Interp interp,
-        int operator,
-        ExprValue value)
+        final Interp interp,
+        final int operator,
+        final ExprValue value)
             throws TclException
     {
         switch (operator) {
@@ -831,12 +831,14 @@ class Expression {
 
     static
     void evalBinaryOperator(
-        Interp interp,
-        int operator,
-        ExprValue value,    // value on left hand side
-        ExprValue value2)   // value on right hand side
+        final Interp interp,
+        final int operator,
+        final ExprValue value,    // value on left hand side
+        final ExprValue value2)   // value on right hand side
             throws TclException
     {
+	final boolean USE_INLINED = true;
+
 	int t1 = value.getType();
 	int t2 = value2.getType();
 
@@ -914,11 +916,16 @@ class Expression {
 		break;
 
 	    // For the 2 operators below, string comparison is always
-            // done.
+            // done, so no operand validation is needed.
 
-	    case STREQ: case STRNEQ:
-		// No-op
-		break;
+	    case STREQ:
+		value.setIntValue( value.getStringValue().equals(
+		    value2.getStringValue()) );
+		return;
+	    case STRNEQ:
+		value.setIntValue( ! value.getStringValue().equals(
+		    value2.getStringValue()) );
+		return;
 
 	    // For the operators below, no strings are allowed, but
 	    // no int->double conversions are performed.
@@ -951,9 +958,17 @@ class Expression {
 	switch (operator) {
 	    case MULT:
 		if (t1 == ExprValue.INT) {
-		    value.setIntValue( value.getIntValue() * value2.getIntValue() );
+                    if (USE_INLINED) {
+		        value.optIntMult( value2 );
+                    } else {
+		        value.setIntValue( value.getIntValue() * value2.getIntValue() );
+                    }
 		} else {
-		    value.setDoubleValue( value.getDoubleValue() * value2.getDoubleValue() );
+                    if (USE_INLINED) {
+		        value.optDoubleMult( value2 );
+                    } else {
+		        value.setDoubleValue( value.getDoubleValue() * value2.getDoubleValue() );
+                    }
 		}
 		break;
 	    case DIVIDE:
@@ -995,7 +1010,7 @@ class Expression {
 		    double divisor = value2.getDoubleValue();
 		    if (divisor == 0.0) {
 			DivideByZero(interp);
-		    } 
+		    }
 		    value.setDoubleValue(value.getDoubleValue() / divisor);
 		}
 		break;
@@ -1052,16 +1067,32 @@ class Expression {
 		break;
 	    case PLUS:
 		if (t1 == ExprValue.INT) {
-		    value.setIntValue( value.getIntValue() + value2.getIntValue() );
+                    if (USE_INLINED) {
+		        value.optIntPlus( value2 );
+                    } else {
+		        value.setIntValue( value.getIntValue() + value2.getIntValue() );
+                    }
 		} else {
-		    value.setDoubleValue( value.getDoubleValue() + value2.getDoubleValue() );
+                    if (USE_INLINED) {
+		        value.optDoublePlus( value2 );
+                    } else {
+		        value.setDoubleValue( value.getDoubleValue() + value2.getDoubleValue() );
+                    }
 		}
 		break;
 	    case MINUS:
 		if (t1 == ExprValue.INT) {
-		    value.setIntValue( value.getIntValue() - value2.getIntValue() );
+                    if (USE_INLINED) {
+		        value.optIntMinus( value2 );
+                    } else {
+		        value.setIntValue( value.getIntValue() - value2.getIntValue() );
+                    }
 		} else {
-		    value.setDoubleValue( value.getDoubleValue() - value2.getDoubleValue() );
+                    if (USE_INLINED) {
+		        value.optDoubleMinus( value2 );
+                    } else {
+		        value.setDoubleValue( value.getDoubleValue() - value2.getDoubleValue() );
+                    }
 		}
 		break;
 	    case LEFT_SHIFT:
@@ -1100,9 +1131,17 @@ class Expression {
 		break;
 	    case LESS:
 		if (t1 == ExprValue.INT) {
-		    value.setIntValue( value.getIntValue() < value2.getIntValue() );
+                    if (USE_INLINED) {
+		        value.optIntLess( value2 );
+                    } else {
+		        value.setIntValue( value.getIntValue() < value2.getIntValue() );
+                    }
 		} else if (t1 == ExprValue.DOUBLE) {
-		    value.setIntValue( value.getDoubleValue() < value2.getDoubleValue() );
+                    if (USE_INLINED) {
+		        value.optDoubleLess( value2 );
+                    } else {
+		        value.setIntValue( value.getDoubleValue() < value2.getDoubleValue() );
+                    }
 		} else {
 		    value.setIntValue( value.getStringValue().compareTo(
 			    value2.getStringValue()) < 0 );
@@ -1110,9 +1149,17 @@ class Expression {
 		break;
 	    case GREATER:
 		if (t1 == ExprValue.INT) {
-		    value.setIntValue( value.getIntValue() > value2.getIntValue() );
+                    if (USE_INLINED) {
+		        value.optIntGreater( value2 );
+                    } else {
+		        value.setIntValue( value.getIntValue() > value2.getIntValue() );
+                    }
 		} else if (t1 == ExprValue.DOUBLE) {
-		    value.setIntValue( value.getDoubleValue() > value2.getDoubleValue() );
+                    if (USE_INLINED) {
+		        value.optDoubleGreater( value2 );
+                    } else {
+		        value.setIntValue( value.getDoubleValue() > value2.getDoubleValue() );
+                    }
 		} else {
 		    value.setIntValue( value.getStringValue().compareTo(
 			    value2.getStringValue()) > 0 );
@@ -1120,9 +1167,17 @@ class Expression {
 		break;
 	    case LEQ:
 		if (t1 == ExprValue.INT) {
-		    value.setIntValue( value.getIntValue() <= value2.getIntValue() );
+                    if (USE_INLINED) {
+		        value.optIntLessEq( value2 );
+                    } else {
+		        value.setIntValue( value.getIntValue() <= value2.getIntValue() );
+                    }
 		} else if (t1 == ExprValue.DOUBLE) {
-		    value.setIntValue( value.getDoubleValue() <= value2.getDoubleValue() );
+                    if (USE_INLINED) {
+		        value.optDoubleLessEq( value2 );
+                    } else {
+		        value.setIntValue( value.getDoubleValue() <= value2.getDoubleValue() );
+                    }
 		} else {
 		    value.setIntValue( value.getStringValue().compareTo(
 			    value2.getStringValue()) <= 0 );
@@ -1130,9 +1185,17 @@ class Expression {
 		break;
 	    case GEQ:
 		if (t1 == ExprValue.INT) {
-		    value.setIntValue( value.getIntValue() >= value2.getIntValue() );
+                    if (USE_INLINED) {
+		        value.optIntGreaterEq( value2 );
+                    } else {
+		        value.setIntValue( value.getIntValue() >= value2.getIntValue() );
+                    }
 		} else if (t1 == ExprValue.DOUBLE) {
-		    value.setIntValue( value.getDoubleValue() >= value2.getDoubleValue() );
+                    if (USE_INLINED) {
+		        value.optDoubleGreaterEq( value2 );
+                    } else {
+		        value.setIntValue( value.getDoubleValue() >= value2.getDoubleValue() );
+                    }
 		} else {
 		    value.setIntValue( value.getStringValue().compareTo(
 			    value2.getStringValue()) >= 0 );
@@ -1140,9 +1203,17 @@ class Expression {
 		break;
 	    case EQUAL:
 		if (t1 == ExprValue.INT) {
-		    value.setIntValue( value.getIntValue() == value2.getIntValue() );
+                    if (USE_INLINED) {
+		        value.optIntEq( value2 );
+                    } else {
+		        value.setIntValue( value.getIntValue() == value2.getIntValue() );
+                    }
 		} else if (t1 == ExprValue.DOUBLE) {
-		    value.setIntValue( value.getDoubleValue() == value2.getDoubleValue() );
+                    if (USE_INLINED) {
+		        value.optDoubleEq( value2 );
+                    } else {
+		        value.setIntValue( value.getDoubleValue() == value2.getDoubleValue() );
+                    }
 		} else {
 		    value.setIntValue( value.getStringValue().equals(
 			    value2.getStringValue()) );
@@ -1150,22 +1221,21 @@ class Expression {
 		break;
 	    case NEQ:
 		if (t1 == ExprValue.INT) {
-		    value.setIntValue( value.getIntValue() != value2.getIntValue() );
+                    if (USE_INLINED) {
+		        value.optIntNotEq( value2 );
+                    } else {
+		        value.setIntValue( value.getIntValue() != value2.getIntValue() );
+                    }
 		} else if (t1 == ExprValue.DOUBLE) {
-		    value.setIntValue( value.getDoubleValue() != value2.getDoubleValue() );
+                    if (USE_INLINED) {
+		        value.optDoubleNotEq( value2 );
+                    } else {
+		        value.setIntValue( value.getDoubleValue() != value2.getDoubleValue() );
+                    }
 		} else {
 		    value.setIntValue( ! value.getStringValue().equals(
 			    value2.getStringValue()) );
 		}
-		break;
-	    case STREQ:
-		// Will compare original String values from token or variable
-		value.setIntValue( value.getStringValue().equals(
-		    value2.getStringValue()) );
-		break;
-	    case STRNEQ:
-		value.setIntValue( ! value.getStringValue().equals(
-		    value2.getStringValue()) );
 		break;
 	    case BIT_AND:
 		value.setIntValue( value.getIntValue() & value2.getIntValue() );

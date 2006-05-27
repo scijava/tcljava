@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TJC.java,v 1.26 2006/05/25 23:17:58 mdejong Exp $ *
+ * RCS: @(#) $Id: TJC.java,v 1.27 2006/05/27 01:30:40 mdejong Exp $ *
  */
 
 // Runtime support for TJC compiler implementation.
@@ -1297,9 +1297,9 @@ public class TJC {
 
     public static
     void exprUnaryOperator(
-        Interp interp, // current interp, can't be null.
-        int op,        // One of the EXPR_OP_* values
-        ExprValue value)
+        final Interp interp, // current interp, can't be null.
+        final int op,        // One of the EXPR_OP_* values
+        final ExprValue value)
             throws TclException
     {
         Expression.evalUnaryOperator(interp, op, value);
@@ -1312,10 +1312,10 @@ public class TJC {
 
     public static
     void exprBinaryOperator(
-        Interp interp, // current interp, can't be null.
-        int op,        // One of the EXPR_OP_* values
-        ExprValue value,
-        ExprValue value2)
+        final Interp interp, // current interp, can't be null.
+        final int op,        // One of the EXPR_OP_* values
+        final ExprValue value,
+        final ExprValue value2)
             throws TclException
     {
         Expression.evalBinaryOperator(interp, op, value, value2);
