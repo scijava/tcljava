@@ -242,8 +242,8 @@ proc expr-equal-same-char-string-index {} {
 }
 
 # This next test compares two objects that
-# contain strings that are not parsed into
-# either integers or doubles. This test
+# contain strings that can't be parsed into
+# either integers or doubles. This tests
 # how quickly the expr module is able to
 # determine that a string is not either
 # a double or an integer.
@@ -253,6 +253,56 @@ proc expr-equal-same-string-two-obj-loop {} {
     set b "abc"
     for {set i 0} {$i < 1000} {incr i} {
         expr {$a == $b}
+    }
+    return
+}
+
+# This test is like expr-equal-same-string-two-obj-loop
+# except the two strings are not the same. If expr
+# has been optimized to check for the same
+# TclObject as each operand or the same
+# String object inside the operands then
+# this test could execute less quickly
+# than expr-equal-same-string-two-obj-loop.
+
+proc expr-equal-not-same-string-two-obj-loop {} {
+    set a "abc"
+    set b "defg"
+    for {set i 0} {$i < 1000} {incr i} {
+        expr {$a == $b}
+    }
+    return
+}
+
+# This test compares two objects using the
+# 'eq' operator. This test should show
+# that the eq operator is faster than ==
+# since the logic does not attempt to
+# parse the TclObject as an int or double
+# before doing a string compare.
+
+proc expr-equal-same-string-two-obj-eq-loop {} {
+    set a "abc"
+    set b "abc"
+    for {set i 0} {$i < 1000} {incr i} {
+        expr {$a eq $b}
+    }
+    return
+}
+
+# This test is like expr-equal-same-string-two-obj-eq-loop
+# except the two strings are not the same. If expr
+# has been optimized to check for the same
+# TclObject as each operand or the same
+# String object inside the operands then
+# this test could execute less quickly
+# than expr-equal-same-string-two-obj-eq-loop.
+
+proc expr-equal-not-same-string-two-obj-eq-loop {} {
+    set a "abc"
+    set b "defg"
+    for {set i 0} {$i < 1000} {incr i} {
+        expr {$a eq $b}
     }
     return
 }
@@ -315,6 +365,36 @@ proc expr-bigsqrt2 { num } {
         set ans [expr {double($ipart)}]
     }
     return $ans
+}
+
+# Use if command to query boolean values from variables
+# in a loop. The if command makes use of an optimized
+# expr boolean query method.
+
+proc expr-if-branch-loop {} {
+    set v1 0
+    set v2 0
+    set v3 0
+
+    set i 0
+    while {1} {
+        # All 4 expr boolean query operations should return
+        # false, until the loop ends.
+
+        if {$v1} {
+            set v1 0
+        } elseif {$v2} {
+            set v2 0
+        } elseif {$v3} {
+            set v3 0
+        }
+
+        if {$i > 500} {
+            break
+        }
+        incr i
+    }
+    return
 }
 
 
@@ -409,8 +489,19 @@ bench -desc "expr-equal-same-char-string" \
 bench -desc "expr-equal-same-char-string-index" \
     -body {expr-equal-same-char-string-index}
 
+
 bench -desc "expr-equal-same-string-two-obj-loop" \
     -body {expr-equal-same-string-two-obj-loop}
+
+bench -desc "expr-equal-not-same-string-two-obj-loop" \
+    -body {expr-equal-not-same-string-two-obj-loop}
+
+bench -desc "expr-equal-same-string-two-obj-eq-loop" \
+    -body {expr-equal-same-string-two-obj-eq-loop}
+
+bench -desc "expr-equal-not-same-string-two-obj-eq-loop" \
+    -body {expr-equal-not-same-string-two-obj-eq-loop}
+
 
 bench -desc "expr-equal-constant-int" -body {expr-equal-constant-int}
 bench -desc "expr-equal-constant-int-loop" -body {expr-equal-constant-int-loop}
@@ -419,4 +510,6 @@ bench -desc "expr-bigsqrt1-1" -body {expr-bigsqrt1 36}
 bench -desc "expr-bigsqrt1-2" -body {expr-bigsqrt1 121}
 bench -desc "expr-bigsqrt2-1" -body {expr-bigsqrt2 36}
 bench -desc "expr-bigsqrt2-2" -body {expr-bigsqrt2 121}
+
+bench -desc "expr-if-branch-loop" -body {expr-if-branch-loop}
 

@@ -697,6 +697,19 @@ OPTIONS +inline-containers +omit-results
     list [catch {module_options_validate} err] $err
 } {1 {+omit-results option must appear after +inline-commands}}
 
+tcltest::test module-options-validate-2.11 {validate options} {
+    set data {
+PACKAGE com.chairsoft.recliner.controls
+SOURCE C:/foo.tcl
+INIT_SOURCE C:/foo.tcl
+OPTIONS +inline-expr
+    }
+    module_parse $data
+    #module_parse_validate
+
+    list [catch {module_options_validate} err] $err
+} {1 {+inline-expr option must appear after +inline-containers}}
+
 # Validate additional OPTIONS in addition to the basic ones.
 
 tcltest::test module-options-validate-3.0 {validate options} {
@@ -855,8 +868,9 @@ OPTIONS +O
         [module_option_value constant-increment] \
         [module_option_value cache-variables] \
         [module_option_value inline-commands] \
-        [module_option_value omit-results]
-} {1 1 1 0 1 1 1}
+        [module_option_value omit-results] \
+        [module_option_value inline-expr]
+} {1 1 1 0 1 1 1 1}
 
 tcltest::test module-options-default-1.0 {query default option value} {
     module_option_default compile
@@ -892,6 +906,10 @@ tcltest::test module-options-default-1.7 {query default option value} {
 
 tcltest::test module-options-default-1.8 {query default option value} {
     module_option_default omit-results
+} 0
+
+tcltest::test module-options-default-1.9 {query default option value} {
+    module_option_default inline-expr
 } 0
 
 

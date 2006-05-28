@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: module.tcl,v 1.7 2006/05/19 22:27:45 mdejong Exp $
+#  RCS: @(#) $Id: module.tcl,v 1.8 2006/05/28 05:11:00 mdejong Exp $
 #
 #
 
@@ -505,6 +505,19 @@ proc module_option_validate { op val index num_options options } {
         "dummy" {
             # No-op, this option is just for testing
         }
+        "inline-expr" {
+            # If +inline-expr is found then +inline-containers
+            # must appear before it.
+
+            if {$val} {
+                array set options_before_map $options_before
+
+                if {![info exists options_before_map(inline-containers)] ||
+                        $options_before_map(inline-containers) == 0} {
+                    error "+inline-expr option must appear after +inline-containers"
+                }
+            }
+        }
         "inline-commands" {
             # No-op
         }
@@ -598,6 +611,7 @@ proc module_option_default { option } {
         "compile" {return 1}
         "constant-increment" {return 1}
         "dummy" {return 0}
+        "inline-expr" {return 0}
         "inline-commands" {return 0}
         "inline-containers" {return 0}
         "inline-controls" {return 0}
@@ -661,6 +675,7 @@ proc module_option_replace_psudo_option { option enabled } {
                 cache-variables 1  \
                 inline-commands 1 \
                 omit-results 1 \
+                inline-expr 1 \
                 ]
         } else {
             return [list \
@@ -671,6 +686,7 @@ proc module_option_replace_psudo_option { option enabled } {
                 cache-variables 0 \
                 inline-commands 0 \
                 omit-results 0 \
+                inline-expr 0 \
                 ]
         }
     } else {

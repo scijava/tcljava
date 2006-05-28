@@ -1,3 +1,18 @@
+2006-05-27  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/tjc/tjc/library/compileproc.tcl: Add support
+        for +inline-expr flag. Implement inlined logic
+        in compileproc_expr_evaluate_emit_binary_operator
+        for the eq and ne expr operators.
+        * src/tjc/tjc/library/module.tcl: Add support
+        for +inline-expr flag.
+        * tests/tclbench/expr.bench: Add tests for
+        specific inlined operations.
+        * tests/tjc/compileproc_2.test:
+        * tests/tjc/compileproc_9.test: Add test cases
+        for inlined unary and binary operators.
+        * tests/tjc/module.test: Add +inline-expr tests.
+
 2006-05-26  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/jacl/tcl/lang/ExprValue.java: Add

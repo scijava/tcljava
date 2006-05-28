@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: compileproc.tcl,v 1.25 2006/05/25 02:59:43 mdejong Exp $
+#  RCS: @(#) $Id: compileproc.tcl,v 1.26 2006/05/28 05:11:00 mdejong Exp $
 #
 #
 
@@ -714,6 +714,14 @@ proc compileproc_init {} {
     # resetResult() operation because the
     # result of the command is never used.
     set _compileproc(options,omit_results) 0
+
+    # Is set to 1 if inlined/optimized expr
+    # operations should be emitted. These
+    # optimizations do more to speed up
+    # expr logic than the basic output
+    # enabled by the inline containers
+    # option.
+    set _compileproc(options,inline_expr) 0
 
     # Init flags in key info array
     set _compileproc_key_info(cmd_needs_init) 0
@@ -4663,6 +4671,16 @@ proc compileproc_query_module_flags { proc_name } {
         set _compileproc(options,omit_results) 1
     }
 
+    set inline_expr_option \
+        [module_option_value inline-expr $proc_name]
+    if {$inline_expr_option == {}} {
+        set inline_expr_option \
+            [module_option_value inline-expr]
+    }
+    if {$inline_expr_option} {
+        set _compileproc(options,inline_expr) 1
+    }
+
     if {$debug} {
         puts "compileproc module options set to:"
         puts "inline_containers = $_compileproc(options,inline_containers)"
@@ -4672,6 +4690,7 @@ proc compileproc_query_module_flags { proc_name } {
         puts "cache_variables = $_compileproc(options,cache_variables)"
         puts "inline_commands = $_compileproc(options,inline_commands)"
         puts "omit_results = $_compileproc(options,omit_results)"
+        puts "inline_expr = $_compileproc(options,inline_expr)"
     }
 }
 
@@ -6523,8 +6542,7 @@ proc compileproc_expr_evaluate_emit_binary_operator { op_tuple } {
     global _compileproc
 
     set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
-    
+
     if {$debug} {
         puts "compileproc_expr_evaluate_emit_binary_operator \{$op_tuple\}"
     }
@@ -6656,7 +6674,11 @@ proc compileproc_expr_evaluate_emit_binary_operator { op_tuple } {
     set is_tclobject_string_compare 0
     set opt_tclobject_empty_string_compare 0
     set opt_tclobject_string_compare 0
-    set is_left_operand_tclobject 0 ; # Only useful when above is true
+    # Set only when one operand is a TclObject and the other is not
+    set is_left_operand_tclobject 0
+
+    set opt_tclobject_to_tclobject_string_compare 0
+    set opt_tclobject_to_exprvalue_string_compare 0
 
     if {$debug} {
         puts "pre empty_string_compare check: op is $op"
@@ -6692,12 +6714,47 @@ proc compileproc_expr_evaluate_emit_binary_operator { op_tuple } {
         }
     }
 
+    if {($left_value_info_type == "TclObject" && \
+            $right_value_info_type == "String") || \
+            ($left_value_info_type == "String" && \
+                $right_value_info_type == "TclObject")} {
+        set is_tclobject_string_compare 1
+        set is_left_operand_tclobject [expr {$left_value_info_type == "TclObject"}]
+    }
+
+    # Generate inlined 'eq' and 'ne' logic when +inline-expr
+    # is enabled and no other optimized case is found.
+
+    if {!$is_tclobject_string_compare && \
+            !$opt_tclobject_empty_string_compare && \
+            $_compileproc(options,inline_expr) && \
+            ($op == "eq" || $op == "ne")} {
+
+        if {$left_value_info_type == "TclObject" && \
+                $right_value_info_type == "TclObject"} {
+            # Invocation like [expr {$v1 eq $v2}]
+            set opt_tclobject_to_tclobject_string_compare 1
+        } elseif {$left_value_info_type == "TclObject" || \
+                $right_value_info_type == "TclObject"} {
+            # Invocation like [expr {$v eq 1}] where one operand
+            # is a TclObject and the other is a ExprValue.
+            set opt_tclobject_to_exprvalue_string_compare 1
+            set is_left_operand_tclobject [expr {$left_value_info_type == "TclObject"}]
+        } else {
+            # Invocation like [expr {1 eq (1 + 0)}] where
+            # both operands are ExprValue types are handled
+            # by the default invocation of the binary operator.
+        }
+    }
+
     if {$debug} {
         puts "post empty_string_compare check: op is $op"
         puts "is_tclobject_string_compare $is_tclobject_string_compare"
         puts "opt_tclobject_empty_string_compare $opt_tclobject_empty_string_compare"
         puts "opt_tclobject_string_compare $opt_tclobject_string_compare"
         puts "is_left_operand_tclobject $is_left_operand_tclobject"
+        puts "opt_tclobject_to_tclobject_string_compare $opt_tclobject_to_tclobject_string_compare"
+        puts "opt_tclobject_to_exprvalue_string_compare $opt_tclobject_to_exprvalue_string_compare"
     }
 
     # Check for special flag used only during code generation testing
@@ -6807,8 +6864,125 @@ proc compileproc_expr_evaluate_emit_binary_operator { op_tuple } {
             "ExprValue " $tmpsymbol \
             " = TJC.exprGetValue(interp, " $boolean_tmpsymbol ")\;\n"
         set ev1 $tmpsymbol
+    } elseif {$opt_tclobject_to_tclobject_string_compare} {
+        # Special case for: [expr {$v1 eq $v2}].
+        # No need to parse TclObject as a number or
+        # invoke the binary operator method.
+        # Note that we need to regenerate the eval
+        # buffers so that neither TclObject is
+        # converted to an ExprValue.
+
+        set left_eval_tuple [compileproc_expr_evaluate_emit_exprvalue \
+            $left_tuple 1]
+        set left_tclobject_sym [lindex $left_eval_tuple 1]
+        append buffer [lindex $left_eval_tuple 2]
+
+        # Save string rep of left operand, the TclObject could
+        # be modified when the right operand is evaluated.
+
+        set left_str_sym [compileproc_tmpvar_next]
+        append buffer [emitter_statement \
+            "String $left_str_sym = $left_tclobject_sym.toString()"]
+
+        set right_eval_tuple [compileproc_expr_evaluate_emit_exprvalue \
+            $right_tuple 1]
+        set right_tclobject_sym [lindex $right_eval_tuple 1]
+        append buffer [lindex $right_eval_tuple 2]
+
+        # Save string rep of right operand
+
+        set right_str_sym [compileproc_tmpvar_next]
+        append buffer [emitter_statement \
+            "String $right_str_sym = $right_tclobject_sym.toString()"]
+
+        set boolean_tmpsymbol [compileproc_tmpvar_next]
+        if {$op == "ne"} {
+            # Negate equality test
+            set not "! "
+        } else {
+            set not ""
+        }
+        # Emit a call to String.equals(Object) which will do a pointer
+        # compare before trying to do a character by character compare.
+        append buffer [emitter_indent] \
+            "boolean " $boolean_tmpsymbol \
+            " = " $not $left_str_sym ".equals(" $right_str_sym ")\;\n"
+        set tmpsymbol [compileproc_tmpvar_next]
+        append buffer [emitter_indent] \
+            "ExprValue " $tmpsymbol \
+            " = TJC.exprGetValue(interp, " $boolean_tmpsymbol ")\;\n"
+        set ev1 $tmpsymbol
+    } elseif {$opt_tclobject_to_exprvalue_string_compare} {
+        # Special case for: [expr {$v1 eq 1}].
+        # No need to parse TclObject as a number or
+        # invoke binary operator method.
+        # Note that we need to regenerate the eval
+        # buffer for the TclObject so that it is not
+        # converted to an ExprValue.
+
+        if {$is_left_operand_tclobject} {
+            set left_eval_tuple [compileproc_expr_evaluate_emit_exprvalue \
+                $left_tuple 1]
+            set left_tclobject_sym [lindex $left_eval_tuple 1]
+            append buffer [lindex $left_eval_tuple 2]
+
+            # Save string rep of left operand, the TclObject could
+            # be modified when the right operand is evaluated.
+
+            set left_str_sym [compileproc_tmpvar_next]
+            append buffer [emitter_statement \
+                "String $left_str_sym = $left_tclobject_sym.toString()"]
+
+            # append eval code for right hand ExprValue
+            append buffer [lindex $right_eval_tuple 2]
+
+            set right_str_sym "$ev2.getStringValue()"
+
+            set ev $ev2
+        } else {
+            # Right operand must be the TclObject
+
+            # append eval code for left hand ExprValue
+            append buffer [lindex $left_eval_tuple 2]
+
+            set right_eval_tuple [compileproc_expr_evaluate_emit_exprvalue \
+                $right_tuple 1]
+            set right_tclobject_sym [lindex $right_eval_tuple 1]
+            append buffer [lindex $right_eval_tuple 2]
+
+            # The right operand does not need to be saved as
+            # a String tmp since no further variable evaluaion
+            # will be done before the compare operation.
+
+            set left_str_sym "$ev1.getStringValue()"
+            set right_str_sym "$right_tclobject_sym.toString()"
+
+            set ev $ev1
+        }
+
+        set boolean_tmpsymbol [compileproc_tmpvar_next]
+        if {$op == "ne"} {
+            # Negate equality test
+            set not "! "
+        } else {
+            set not ""
+        }
+        # Emit a call to String.equals(Object) which will do a pointer
+        # compare before trying to do a character by character compare.
+        append buffer [emitter_indent] \
+            "boolean " $boolean_tmpsymbol \
+            " = " $not $left_str_sym ".equals(" $right_str_sym ")\;\n"
+
+        # Reuse the ExprValue for the result, this will also
+        # release the ExprValue.
+
+        append buffer [emitter_indent] \
+            $ev ".setIntValue(" $boolean_tmpsymbol ")\;\n"
+
+        set ev1 $ev
     } else {
-        # Append code to evaluate left and right values
+        # Append code to evaluate left and right values and
+        # invoke the binary operator.
         append buffer \
             [lindex $left_eval_tuple 2] \
             [lindex $right_eval_tuple 2]

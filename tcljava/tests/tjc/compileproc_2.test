@@ -7240,6 +7240,421 @@ public class Test1 extends TJC.CompiledCommand {
 } // end class Test1
 }}
 
+tcltest::test compileproc2-9.42 {compile proc into Java source, +inline-containers} {
+    # This test contains an invocation for each unary operator
+    # applied to a variable.
+    set script {
+proc p {} {
+    set v 1
+    expr {+$v}
+    expr {-$v}
+    expr {!$v}
+    expr {~$v}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_2_set_flags]
+    # Print generated buffer even if compile fails
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) { initCmd(interp); }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: set v 1
+            TclObject[] objv0 = TJC.grabObjv(interp, 3);
+            try {
+                TclObject tmp1;
+                // Arg 0 constant: set
+                tmp1 = const0;
+                tmp1.preserve();
+                objv0[0] = tmp1;
+                // Arg 1 constant: v
+                tmp1 = const1;
+                tmp1.preserve();
+                objv0[1] = tmp1;
+                // Arg 2 constant: 1
+                tmp1 = const2;
+                tmp1.preserve();
+                objv0[2] = tmp1;
+                TJC.invoke(interp, null, objv0, 0);
+            } finally {
+                TJC.releaseObjvElems(interp, objv0, 3);
+            }
+        } // End Invoke: set
+        { // Invoke: expr {+$v}
+            // Unary operator: + $v
+            TclObject tmp2 = interp.getVar("v", null, 0);
+            ExprValue tmp3 = TJC.exprGetValue(interp, tmp2);
+            TJC.exprUnaryOperator(interp, TJC.EXPR_OP_UNARY_PLUS, tmp3);
+            // End Unary operator: +
+            TJC.exprSetResult(interp, tmp3);
+        } // End Invoke: expr
+        { // Invoke: expr {-$v}
+            // Unary operator: - $v
+            TclObject tmp4 = interp.getVar("v", null, 0);
+            ExprValue tmp5 = TJC.exprGetValue(interp, tmp4);
+            TJC.exprUnaryOperator(interp, TJC.EXPR_OP_UNARY_MINUS, tmp5);
+            // End Unary operator: -
+            TJC.exprSetResult(interp, tmp5);
+        } // End Invoke: expr
+        { // Invoke: expr {!$v}
+            // Unary operator: ! $v
+            TclObject tmp6 = interp.getVar("v", null, 0);
+            ExprValue tmp7 = TJC.exprGetValue(interp, tmp6);
+            TJC.exprUnaryOperator(interp, TJC.EXPR_OP_UNARY_NOT, tmp7);
+            // End Unary operator: !
+            TJC.exprSetResult(interp, tmp7);
+        } // End Invoke: expr
+        { // Invoke: expr {~$v}
+            // Unary operator: ~ $v
+            TclObject tmp8 = interp.getVar("v", null, 0);
+            ExprValue tmp9 = TJC.exprGetValue(interp, tmp8);
+            TJC.exprUnaryOperator(interp, TJC.EXPR_OP_UNARY_BIT_NOT, tmp9);
+            // End Unary operator: ~
+            TJC.exprSetResult(interp, tmp9);
+        } // End Invoke: expr
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+
+    TclObject const0;
+    TclObject const1;
+    TclObject const2;
+
+    protected void initConstants(Interp interp) throws TclException {
+        const0 = TclString.newInstance("set");
+        const0.preserve(); const0.preserve();
+        const1 = TclString.newInstance("v");
+        const1.preserve(); const1.preserve();
+        const2 = TclInteger.newInstance(1);
+        const2.preserve(); const2.preserve();
+    }
+} // end class Test1
+}}
+
+tcltest::test compileproc2-9.43 {compile proc into Java source, +inline-containers} {
+    # This test contains an invocation for each binary operator
+    set script {
+proc p {} {
+    set v1 1
+    set v2 2
+    expr {$v1 * $v2}
+    expr {$v1 / $v2}
+    expr {$v1 % $v2}
+    expr {$v1 + $v2}
+    expr {$v1 - $v2}
+    expr {$v1 << $v2}
+    expr {$v1 >> $v2}
+    expr {$v1 < $v2}
+    expr {$v1 > $v2}
+    expr {$v1 <= $v2}
+    expr {$v1 >= $v2}
+    expr {$v1 == $v2}
+    expr {$v1 != $v2}
+    expr {$v1 eq $v2}
+    expr {$v1 ne $v2}
+    expr {$v1 & $v2}
+    expr {$v1 ^ $v2}
+    expr {$v1 | $v2}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_2_set_flags]
+    # Print generated buffer even if compile fails
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) { initCmd(interp); }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: set v1 1
+            TclObject[] objv0 = TJC.grabObjv(interp, 3);
+            try {
+                TclObject tmp1;
+                // Arg 0 constant: set
+                tmp1 = const0;
+                tmp1.preserve();
+                objv0[0] = tmp1;
+                // Arg 1 constant: v1
+                tmp1 = const1;
+                tmp1.preserve();
+                objv0[1] = tmp1;
+                // Arg 2 constant: 1
+                tmp1 = const2;
+                tmp1.preserve();
+                objv0[2] = tmp1;
+                TJC.invoke(interp, null, objv0, 0);
+            } finally {
+                TJC.releaseObjvElems(interp, objv0, 3);
+            }
+        } // End Invoke: set
+        { // Invoke: set v2 2
+            TclObject[] objv2 = TJC.grabObjv(interp, 3);
+            try {
+                TclObject tmp3;
+                // Arg 0 constant: set
+                tmp3 = const0;
+                tmp3.preserve();
+                objv2[0] = tmp3;
+                // Arg 1 constant: v2
+                tmp3 = const3;
+                tmp3.preserve();
+                objv2[1] = tmp3;
+                // Arg 2 constant: 2
+                tmp3 = const4;
+                tmp3.preserve();
+                objv2[2] = tmp3;
+                TJC.invoke(interp, null, objv2, 0);
+            } finally {
+                TJC.releaseObjvElems(interp, objv2, 3);
+            }
+        } // End Invoke: set
+        { // Invoke: expr {$v1 * $v2}
+            // Binary operator: $v1 * $v2
+            TclObject tmp4 = interp.getVar("v1", null, 0);
+            ExprValue tmp5 = TJC.exprGetValue(interp, tmp4);
+            TclObject tmp6 = interp.getVar("v2", null, 0);
+            ExprValue tmp7 = TJC.exprGetValue(interp, tmp6);
+            TJC.exprBinaryOperator(interp, TJC.EXPR_OP_MULT, tmp5, tmp7);
+            // End Binary operator: *
+            TJC.exprSetResult(interp, tmp5);
+        } // End Invoke: expr
+        { // Invoke: expr {$v1 / $v2}
+            // Binary operator: $v1 / $v2
+            TclObject tmp8 = interp.getVar("v1", null, 0);
+            ExprValue tmp9 = TJC.exprGetValue(interp, tmp8);
+            TclObject tmp10 = interp.getVar("v2", null, 0);
+            ExprValue tmp11 = TJC.exprGetValue(interp, tmp10);
+            TJC.exprBinaryOperator(interp, TJC.EXPR_OP_DIVIDE, tmp9, tmp11);
+            // End Binary operator: /
+            TJC.exprSetResult(interp, tmp9);
+        } // End Invoke: expr
+        { // Invoke: expr {$v1 % $v2}
+            // Binary operator: $v1 % $v2
+            TclObject tmp12 = interp.getVar("v1", null, 0);
+            ExprValue tmp13 = TJC.exprGetValue(interp, tmp12);
+            TclObject tmp14 = interp.getVar("v2", null, 0);
+            ExprValue tmp15 = TJC.exprGetValue(interp, tmp14);
+            TJC.exprBinaryOperator(interp, TJC.EXPR_OP_MOD, tmp13, tmp15);
+            // End Binary operator: %
+            TJC.exprSetResult(interp, tmp13);
+        } // End Invoke: expr
+        { // Invoke: expr {$v1 + $v2}
+            // Binary operator: $v1 + $v2
+            TclObject tmp16 = interp.getVar("v1", null, 0);
+            ExprValue tmp17 = TJC.exprGetValue(interp, tmp16);
+            TclObject tmp18 = interp.getVar("v2", null, 0);
+            ExprValue tmp19 = TJC.exprGetValue(interp, tmp18);
+            TJC.exprBinaryOperator(interp, TJC.EXPR_OP_PLUS, tmp17, tmp19);
+            // End Binary operator: +
+            TJC.exprSetResult(interp, tmp17);
+        } // End Invoke: expr
+        { // Invoke: expr {$v1 - $v2}
+            // Binary operator: $v1 - $v2
+            TclObject tmp20 = interp.getVar("v1", null, 0);
+            ExprValue tmp21 = TJC.exprGetValue(interp, tmp20);
+            TclObject tmp22 = interp.getVar("v2", null, 0);
+            ExprValue tmp23 = TJC.exprGetValue(interp, tmp22);
+            TJC.exprBinaryOperator(interp, TJC.EXPR_OP_MINUS, tmp21, tmp23);
+            // End Binary operator: -
+            TJC.exprSetResult(interp, tmp21);
+        } // End Invoke: expr
+        { // Invoke: expr {$v1 << $v2}
+            // Binary operator: $v1 << $v2
+            TclObject tmp24 = interp.getVar("v1", null, 0);
+            ExprValue tmp25 = TJC.exprGetValue(interp, tmp24);
+            TclObject tmp26 = interp.getVar("v2", null, 0);
+            ExprValue tmp27 = TJC.exprGetValue(interp, tmp26);
+            TJC.exprBinaryOperator(interp, TJC.EXPR_OP_LEFT_SHIFT, tmp25, tmp27);
+            // End Binary operator: <<
+            TJC.exprSetResult(interp, tmp25);
+        } // End Invoke: expr
+        { // Invoke: expr {$v1 >> $v2}
+            // Binary operator: $v1 >> $v2
+            TclObject tmp28 = interp.getVar("v1", null, 0);
+            ExprValue tmp29 = TJC.exprGetValue(interp, tmp28);
+            TclObject tmp30 = interp.getVar("v2", null, 0);
+            ExprValue tmp31 = TJC.exprGetValue(interp, tmp30);
+            TJC.exprBinaryOperator(interp, TJC.EXPR_OP_RIGHT_SHIFT, tmp29, tmp31);
+            // End Binary operator: >>
+            TJC.exprSetResult(interp, tmp29);
+        } // End Invoke: expr
+        { // Invoke: expr {$v1 < $v2}
+            // Binary operator: $v1 < $v2
+            TclObject tmp32 = interp.getVar("v1", null, 0);
+            ExprValue tmp33 = TJC.exprGetValue(interp, tmp32);
+            TclObject tmp34 = interp.getVar("v2", null, 0);
+            ExprValue tmp35 = TJC.exprGetValue(interp, tmp34);
+            TJC.exprBinaryOperator(interp, TJC.EXPR_OP_LESS, tmp33, tmp35);
+            // End Binary operator: <
+            TJC.exprSetResult(interp, tmp33);
+        } // End Invoke: expr
+        { // Invoke: expr {$v1 > $v2}
+            // Binary operator: $v1 > $v2
+            TclObject tmp36 = interp.getVar("v1", null, 0);
+            ExprValue tmp37 = TJC.exprGetValue(interp, tmp36);
+            TclObject tmp38 = interp.getVar("v2", null, 0);
+            ExprValue tmp39 = TJC.exprGetValue(interp, tmp38);
+            TJC.exprBinaryOperator(interp, TJC.EXPR_OP_GREATER, tmp37, tmp39);
+            // End Binary operator: >
+            TJC.exprSetResult(interp, tmp37);
+        } // End Invoke: expr
+        { // Invoke: expr {$v1 <= $v2}
+            // Binary operator: $v1 <= $v2
+            TclObject tmp40 = interp.getVar("v1", null, 0);
+            ExprValue tmp41 = TJC.exprGetValue(interp, tmp40);
+            TclObject tmp42 = interp.getVar("v2", null, 0);
+            ExprValue tmp43 = TJC.exprGetValue(interp, tmp42);
+            TJC.exprBinaryOperator(interp, TJC.EXPR_OP_LEQ, tmp41, tmp43);
+            // End Binary operator: <=
+            TJC.exprSetResult(interp, tmp41);
+        } // End Invoke: expr
+        { // Invoke: expr {$v1 >= $v2}
+            // Binary operator: $v1 >= $v2
+            TclObject tmp44 = interp.getVar("v1", null, 0);
+            ExprValue tmp45 = TJC.exprGetValue(interp, tmp44);
+            TclObject tmp46 = interp.getVar("v2", null, 0);
+            ExprValue tmp47 = TJC.exprGetValue(interp, tmp46);
+            TJC.exprBinaryOperator(interp, TJC.EXPR_OP_GEQ, tmp45, tmp47);
+            // End Binary operator: >=
+            TJC.exprSetResult(interp, tmp45);
+        } // End Invoke: expr
+        { // Invoke: expr {$v1 == $v2}
+            // Binary operator: $v1 == $v2
+            TclObject tmp48 = interp.getVar("v1", null, 0);
+            ExprValue tmp49 = TJC.exprGetValue(interp, tmp48);
+            TclObject tmp50 = interp.getVar("v2", null, 0);
+            ExprValue tmp51 = TJC.exprGetValue(interp, tmp50);
+            TJC.exprBinaryOperator(interp, TJC.EXPR_OP_EQUAL, tmp49, tmp51);
+            // End Binary operator: ==
+            TJC.exprSetResult(interp, tmp49);
+        } // End Invoke: expr
+        { // Invoke: expr {$v1 != $v2}
+            // Binary operator: $v1 != $v2
+            TclObject tmp52 = interp.getVar("v1", null, 0);
+            ExprValue tmp53 = TJC.exprGetValue(interp, tmp52);
+            TclObject tmp54 = interp.getVar("v2", null, 0);
+            ExprValue tmp55 = TJC.exprGetValue(interp, tmp54);
+            TJC.exprBinaryOperator(interp, TJC.EXPR_OP_NEQ, tmp53, tmp55);
+            // End Binary operator: !=
+            TJC.exprSetResult(interp, tmp53);
+        } // End Invoke: expr
+        { // Invoke: expr {$v1 eq $v2}
+            // Binary operator: $v1 eq $v2
+            TclObject tmp56 = interp.getVar("v1", null, 0);
+            ExprValue tmp57 = TJC.exprGetValue(interp, tmp56);
+            TclObject tmp58 = interp.getVar("v2", null, 0);
+            ExprValue tmp59 = TJC.exprGetValue(interp, tmp58);
+            TJC.exprBinaryOperator(interp, TJC.EXPR_OP_STREQ, tmp57, tmp59);
+            // End Binary operator: eq
+            TJC.exprSetResult(interp, tmp57);
+        } // End Invoke: expr
+        { // Invoke: expr {$v1 ne $v2}
+            // Binary operator: $v1 ne $v2
+            TclObject tmp60 = interp.getVar("v1", null, 0);
+            ExprValue tmp61 = TJC.exprGetValue(interp, tmp60);
+            TclObject tmp62 = interp.getVar("v2", null, 0);
+            ExprValue tmp63 = TJC.exprGetValue(interp, tmp62);
+            TJC.exprBinaryOperator(interp, TJC.EXPR_OP_STRNEQ, tmp61, tmp63);
+            // End Binary operator: ne
+            TJC.exprSetResult(interp, tmp61);
+        } // End Invoke: expr
+        { // Invoke: expr {$v1 & $v2}
+            // Binary operator: $v1 & $v2
+            TclObject tmp64 = interp.getVar("v1", null, 0);
+            ExprValue tmp65 = TJC.exprGetValue(interp, tmp64);
+            TclObject tmp66 = interp.getVar("v2", null, 0);
+            ExprValue tmp67 = TJC.exprGetValue(interp, tmp66);
+            TJC.exprBinaryOperator(interp, TJC.EXPR_OP_BIT_AND, tmp65, tmp67);
+            // End Binary operator: &
+            TJC.exprSetResult(interp, tmp65);
+        } // End Invoke: expr
+        { // Invoke: expr {$v1 ^ $v2}
+            // Binary operator: $v1 ^ $v2
+            TclObject tmp68 = interp.getVar("v1", null, 0);
+            ExprValue tmp69 = TJC.exprGetValue(interp, tmp68);
+            TclObject tmp70 = interp.getVar("v2", null, 0);
+            ExprValue tmp71 = TJC.exprGetValue(interp, tmp70);
+            TJC.exprBinaryOperator(interp, TJC.EXPR_OP_BIT_XOR, tmp69, tmp71);
+            // End Binary operator: ^
+            TJC.exprSetResult(interp, tmp69);
+        } // End Invoke: expr
+        { // Invoke: expr {$v1 | $v2}
+            // Binary operator: $v1 | $v2
+            TclObject tmp72 = interp.getVar("v1", null, 0);
+            ExprValue tmp73 = TJC.exprGetValue(interp, tmp72);
+            TclObject tmp74 = interp.getVar("v2", null, 0);
+            ExprValue tmp75 = TJC.exprGetValue(interp, tmp74);
+            TJC.exprBinaryOperator(interp, TJC.EXPR_OP_BIT_OR, tmp73, tmp75);
+            // End Binary operator: |
+            TJC.exprSetResult(interp, tmp73);
+        } // End Invoke: expr
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+
+    TclObject const0;
+    TclObject const1;
+    TclObject const2;
+    TclObject const3;
+    TclObject const4;
+
+    protected void initConstants(Interp interp) throws TclException {
+        const0 = TclString.newInstance("set");
+        const0.preserve(); const0.preserve();
+        const1 = TclString.newInstance("v1");
+        const1.preserve(); const1.preserve();
+        const2 = TclInteger.newInstance(1);
+        const2.preserve(); const2.preserve();
+        const3 = TclString.newInstance("v2");
+        const3.preserve(); const3.preserve();
+        const4 = TclInteger.newInstance(2);
+        const4.preserve(); const4.preserve();
+    }
+} // end class Test1
+}}
+
 
 tcltest::test compileproc2-10.0 {compile proc into Java source, +inline-containers} {
     # inline if container command and boolean expr expression.
