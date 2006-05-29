@@ -1,3 +1,10 @@
+2006-05-29  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * tests/tclbench/compare.tcl: Add script that
+        is used to process the output of tclbench
+        and convert it to a CSV file that can easily
+        be imported into a spreadsheet.
+
 2006-05-27  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/tjc/tjc/library/compileproc.tcl: Add support
