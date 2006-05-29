@@ -1,5 +1,14 @@
 2006-05-29  Mo DeJong  <mdejong@users.sourceforge.net>
 
+        Comment out debug statements. This generates
+        less code in a compiled tjc.jar.
+
+        * src/tjc/tjc/library/compileproc.tcl:
+        * src/tjc/tjc/library/descend.tcl:
+        * src/tjc/tjc/library/parse.tcl:
+
+2006-05-29  Mo DeJong  <mdejong@users.sourceforge.net>
+
         * tests/tclbench/compare.tcl: Add script that
         is used to process the output of tclbench
         and convert it to a CSV file that can easily

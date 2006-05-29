@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: descend.tcl,v 1.3 2006/03/20 18:46:20 mdejong Exp $
+#  RCS: @(#) $Id: descend.tcl,v 1.4 2006/05/29 21:56:14 mdejong Exp $
 #
 #
 
@@ -52,11 +52,11 @@ proc descend_next_key {} {
 proc descend_start { script {range {0 end}} {nested 0} {chknested 1} {undetermined 0} {outermost 1} } {
     global _descend
 
-    set debug 0
+#    set debug 0
 
-    if {$debug} {
-        puts "descend_start \"$script\"\nrange \{$range\}, nested $nested, chknested $chknested"
-    }
+#    if {$debug} {
+#        puts "descend_start \"$script\"\nrange \{$range\}, nested $nested, chknested $chknested"
+#    }
 
     set start_key_id $_descend(key)
     if {$outermost} {
@@ -65,23 +65,23 @@ proc descend_start { script {range {0 end}} {nested 0} {chknested 1} {undetermin
 
     while {1} {
         # Reset script since a reparsing operation could have changed it
-        if {$debug} {
-            puts "Invoking descend_next_command with script \"$script\" and range \{$range\}"
-        }
+#        if {$debug} {
+#            puts "Invoking descend_next_command with script \"$script\" and range \{$range\}"
+#        }
         set key [descend_next_command $script $range $nested $undetermined]
 
         if {$key == ""} {
             # Done parsing commands from script
-            if {$debug} {
-                puts "got empty key from descend_next_command, done parsing"
-            }
+#            if {$debug} {
+#                puts "got empty key from descend_next_command, done parsing"
+#            }
             break
         } elseif {[llength $key] == 2 && [lindex $key 0] == "continue"} {
             # Empty command found, keep parsing the rest of the script
             set range [lindex $key 1]
-            if {$debug} {
-                puts "got continue key from descend_next_command, parsing from $range"
-            }
+#            if {$debug} {
+#                puts "got continue key from descend_next_command, parsing from $range"
+#            }
             continue
         }
 
@@ -89,9 +89,9 @@ proc descend_start { script {range {0 end}} {nested 0} {chknested 1} {undetermin
         _descend_commands_add $key
 
         # Report that a given command was parsed
-        if {$debug} {
-            puts "now to report command key $key"
-        }
+#        if {$debug} {
+#            puts "now to report command key $key"
+#        }
         descend_report_command $key
 
         # Check command and arguments for nested commands.
@@ -99,27 +99,27 @@ proc descend_start { script {range {0 end}} {nested 0} {chknested 1} {undetermin
         # is an unquoted argument, since nested command
         # would have already been checked for.
         if {$chknested} {
-            if {$debug} {
-                puts "checking for nested commands for key $key"
-            }
+#            if {$debug} {
+#                puts "checking for nested commands for key $key"
+#            }
             descend_check_nested_commands $key
         } else {
-            if {$debug} {
-                puts "skipping nested commands check for key $key"
-            }
+#            if {$debug} {
+#                puts "skipping nested commands check for key $key"
+#            }
         }
 
         # Descend into body blocks of a known container.
-        if {$debug} {
-            puts "checking container commands for key $key"
-        }
+#        if {$debug} {
+#            puts "checking container commands for key $key"
+#        }
         descend_check_container_command $key
 
         # Report that we are done processing the given command
         # and any commands contained within it.
-        if {$debug} {
-            puts "now to report command key $key as finished"
-        }
+#        if {$debug} {
+#            puts "now to report command key $key as finished"
+#        }
         descend_report_command_finish $key
 
         # Set range to the range of the rest of the code.
@@ -140,7 +140,7 @@ proc descend_start { script {range {0 end}} {nested 0} {chknested 1} {undetermin
         set level_keys [_descend_commands_pop]
         # Stack should be empty again
         if {[llength $_descend(commands_stack)] != 0} {
-            puts "level stack depth is [llength $_descend(commands_stack)], expected depth of 0"
+            error "level stack depth is [llength $_descend(commands_stack)], expected depth of 0"
         }
         set _descend(commands,outermost) $level_keys
     }
@@ -280,17 +280,17 @@ proc descend_next_command { script range nested undetermined } {
 proc descend_report_command { key } {
     global _descend_callbacks
 
-    set debug 0
+#    set debug 0
 
-    if {$debug} {
-        puts "descend_report_command $key"
-    }
+#    if {$debug} {
+#        puts "descend_report_command $key"
+#    }
 
     if {[info exists _descend_callbacks(report_command)]} {
         set cmd $_descend_callbacks(report_command)
-        if {$debug} {
-            puts "descend_report_command callback : $cmd $key"
-        }
+#        if {$debug} {
+#            puts "descend_report_command callback : $cmd $key"
+#        }
         namespace eval :: [list $cmd $key]
     }
 }
@@ -302,11 +302,11 @@ proc descend_report_command { key } {
 proc descend_report_command_finish { key } {
     global _descend_callbacks
 
-    set debug 0
+#    set debug 0
 
-    if {$debug} {
-        puts "descend_report_command_finish $key"
-    }
+#    if {$debug} {
+#        puts "descend_report_command_finish $key"
+#    }
 
     if {[info exists _descend_callbacks(report_command_finish)]} {
         set cmd $_descend_callbacks(report_command_finish)
@@ -398,11 +398,11 @@ proc _descend_commands_add { key } {
 proc descend_report_usage { key info } {
     global _descend_callbacks
 
-    set debug 0
+#    set debug 0
 
-    if {$debug} {
-        puts "descend_report_usage $key \{$info\}"
-    }
+#    if {$debug} {
+#        puts "descend_report_usage $key \{$info\}"
+#    }
 
     if {[info exists _descend_callbacks(report_usage)]} {
         set cmd $_descend_callbacks(report_usage)
@@ -500,11 +500,11 @@ proc descend_get_command_name { key } {
 # command name is returned.
 
 proc descend_get_command { key } {
-    set debug 0
+#    set debug 0
 
-    if {$debug} {
-        puts "descend_get_command : $key"
-    }
+#    if {$debug} {
+#        puts "descend_get_command : $key"
+#    }
 
     # Query parse tree and see if the command
     # name is a simple name that can be returned
@@ -516,9 +516,9 @@ proc descend_get_command { key } {
     # just pass a tree for the command name.
 
     if {[descend_arguments_undetermined $key]} {
-        if {$debug} {
-            puts "descend_get_command: arguments undetermined"
-        }
+#        if {$debug} {
+#            puts "descend_get_command: arguments undetermined"
+#        }
         set tree [list [lindex $tree 0]]
     }
 
@@ -581,11 +581,11 @@ proc descend_tree_get { script tree index } {
 proc descend_check_nested_commands { key } {
     global _descend
 
-    set debug 0
+#    set debug 0
 
-    if {$debug} {
-        puts "descend_check_nested_commands $key"
-    }
+#    if {$debug} {
+#        puts "descend_check_nested_commands $key"
+#    }
 
     set script [descend_get_data $key script]
     set tree [descend_get_data $key tree]
@@ -612,9 +612,9 @@ proc descend_check_nested_commands { key } {
 
     # Define list of keys for each argument that is a command
     set _descend($key,commands) $argument_keys
-    if {$debug} {
-        puts "descend_check_nested_commands $key: set nested commands list to \{$argument_keys\}"
-    }
+#    if {$debug} {
+#        puts "descend_check_nested_commands $key: set nested commands list to \{$argument_keys\}"
+#    }
 
     return
 }
@@ -623,10 +623,10 @@ proc descend_check_nested_commands { key } {
 # command invocations.
 
 proc descend_check_variable_for_nested_commands { script stree } {
-    set debug 0
-    if {$debug} {
-        puts "descend_check_variable_for_nested_commands: \"$script\" \{$stree\}"
-    }
+#    set debug 0
+#    if {$debug} {
+#        puts "descend_check_variable_for_nested_commands: \"$script\" \{$stree\}"
+#    }
     
     if {![parse_is_variable $stree]} {
         error "expected variable stree but got \{$stree\}"
@@ -646,11 +646,11 @@ proc descend_check_variable_for_nested_commands { script stree } {
 # command elements.
 
 proc descend_check_variable_for_nested_commands_iterator { script stree type values ranges } {
-    set debug 0
+#    set debug 0
 
-    if {$debug} {
-        puts "descend_check_variable_for_nested_commands_iterator : \"$script\" : \{$type\} \{$values\} \{$ranges\}"
-    }
+#    if {$debug} {
+#        puts "descend_check_variable_for_nested_commands_iterator : \"$script\" : \{$type\} \{$values\} \{$ranges\}"
+#    }
 
     # Use array type info from parse layer to decide how to
     # handle the variable.
@@ -676,9 +676,9 @@ proc descend_check_variable_for_nested_commands_iterator { script stree type val
             # or an array with a word element that is a command (values {cmd})
             # or an array with a word element that is an array with a command key (values {ARRAY_NAME cmd})
 
-            if {$debug} {
-                puts "descend_check_variable_for_nested_commands_iterator : found nested command in array variable word"
-            }
+#            if {$debug} {
+#                puts "descend_check_variable_for_nested_commands_iterator : found nested command in array variable word"
+#            }
             if {$type == {array command} || $type == {word array command}} {
                 set cmd_stree [lindex $stree 2 1]
             } elseif {$type == {word command}} {
@@ -701,11 +701,11 @@ proc descend_check_variable_for_nested_commands_iterator { script stree type val
 # of the word elements are command invocations.
 
 proc descend_check_word_for_nested_commands { script stree } {
-    set debug 0
+#    set debug 0
 
-    if {$debug} {
-        puts "descend_check_word_for_nested_commands: \"$script\" \{$stree\}"
-    }
+#    if {$debug} {
+#        puts "descend_check_word_for_nested_commands: \"$script\" \{$stree\}"
+#    }
 
     if {![parse_is_word $stree]} {
         error "expected word type stree: got type [lindex $stree 0] from \{$stree\}"
@@ -720,11 +720,11 @@ proc descend_check_word_for_nested_commands { script stree } {
 # command elements.
 
 proc descend_check_word_for_nested_commands_iterator { script stree type values ranges } {
-    set debug 0
+#    set debug 0
 
-    if {$debug} {
-        puts "descend_check_word_for_nested_commands_iterator : \"$script\" \{$stree\} : \{$type\} \{$values\} \{$ranges\}"
-    }
+#    if {$debug} {
+#        puts "descend_check_word_for_nested_commands_iterator : \"$script\" \{$stree\} : \{$type\} \{$values\} \{$ranges\}"
+#    }
 
     switch -exact -- $type {
         {backslash} {
@@ -761,7 +761,7 @@ proc descend_check_word_for_nested_commands_iterator { script stree type values 
 proc descend_check_container_command { key } {
     global _descend
 
-    set debug 0
+#    set debug 0
 
     # If the command name is not a simple/text type, then
     # we can't determine what it is statically.
@@ -769,9 +769,9 @@ proc descend_check_container_command { key } {
     set result [descend_get_command_name $key]
 
     if {[lindex $result 0] == 0} {
-        if {$debug} {
-            puts "descend_check_container_command: returning since command name is not static"
-        }
+#        if {$debug} {
+#            puts "descend_check_container_command: returning since command name is not static"
+#        }
         return
     }
 
@@ -779,9 +779,9 @@ proc descend_check_container_command { key } {
     # can't determine arguments for.
 
     if {[descend_arguments_undetermined $key]} {
-        if {$debug} {
-            puts "descend_check_container_command: returning since command arguments can't be determined"
-        }
+#        if {$debug} {
+#            puts "descend_check_container_command: returning since command arguments can't be determined"
+#        }
         return
     }
 
@@ -829,9 +829,9 @@ proc descend_check_container_command { key } {
         }
     }
 
-    if {$debug} {
-        puts "descend_check_container_command: found descend_cmd $descend_cmd"
-    }
+#    if {$debug} {
+#        puts "descend_check_container_command: found descend_cmd $descend_cmd"
+#    }
 
     # Push command onto container stack
     set _descend(container_stack) [linsert $_descend(container_stack) 0 $cmdname]
@@ -938,7 +938,7 @@ proc descend_range_bracked { script subtree range } {
 # a list of keys parsed.
 
 proc descend_container_body_argument { key script tree body_index {undetermined 0} } {
-    set debug 0
+#    set debug 0
 
     set nested [descend_get_data $key nested]
 
@@ -952,15 +952,15 @@ proc descend_container_body_argument { key script tree body_index {undetermined 
     set chknested $isbraced
     set outermost 0
 
-    if {$debug} {
-        puts "descend_container_body_argument in container command $key"
-        puts "script is \"$script\""
-        puts "range is \"$unquoted_body_range\""
-        puts "range_text is \"[parse getstring $script $unquoted_body_range]\""
-        puts "isbraced is $isbraced"
-        puts "chknested is $chknested"
-        puts "undetermined is $undetermined"
-    }
+#    if {$debug} {
+#        puts "descend_container_body_argument in container command $key"
+#        puts "script is \"$script\""
+#        puts "range is \"$unquoted_body_range\""
+#        puts "range_text is \"[parse getstring $script $unquoted_body_range]\""
+#        puts "isbraced is $isbraced"
+#        puts "chknested is $chknested"
+#        puts "undetermined is $undetermined"
+#    }
 
     return [descend_start $script $unquoted_body_range $nested $chknested $undetermined $outermost]
 }
@@ -974,7 +974,7 @@ proc descend_container_body_argument { key script tree body_index {undetermined 
 # a list of keys parsed.
 
 proc descend_container_concat_body_arguments { key script tree body_indexes {undetermined 0} } {
-    set debug 0
+#    set debug 0
 
     set nested [descend_get_data $key nested]
 
@@ -1007,9 +1007,9 @@ proc descend_container_concat_body_arguments { key script tree body_indexes {und
         set text [parse_get_simple_text $script $body_subtree "text"]
         # append each element to generated script
         foreach elem $text {
-            if {$debug} {
-                puts "appended simple/text element \"$elem\""
-            }
+#            if {$debug} {
+#                puts "appended simple/text element \"$elem\""
+#            }
             append command $elem
             append command " "
         }
@@ -1021,11 +1021,11 @@ proc descend_container_concat_body_arguments { key script tree body_indexes {und
     # simple/text entries.
     set chknested 0
 
-    if {$debug} {
-        puts "descend_container_concat_body_arguments in container command $key"
-        puts "command is \"$command\""
-        puts "chknested is $chknested"
-    }
+#    if {$debug} {
+#        puts "descend_container_concat_body_arguments in container command $key"
+#        puts "command is \"$command\""
+#        puts "chknested is $chknested"
+#    }
 
     # FIXME: problem with command here, the script argument does not match
     # the original. Need to check for this special case somehow in caller code.
@@ -1039,7 +1039,7 @@ proc descend_container_concat_body_arguments { key script tree body_indexes {und
 # This procedure returns a list of keys parsed.
 
 proc descend_nested_subtree { script subtree {undetermined 0} } {
-    set debug 0
+#    set debug 0
 
     set nested 1
     set chknested 1
@@ -1048,12 +1048,12 @@ proc descend_nested_subtree { script subtree {undetermined 0} } {
     set range [lindex $subtree 1]
     set unbracked_range [descend_range_bracked $script $subtree $range]
 
-    if {$debug} {
-        puts "descending into nested command in subtree \{$subtree\}"
-        puts "script is \"$script\""
-        puts "range is \"$unbracked_range\""
-        puts "range_text is \"[parse getstring $script $unbracked_range]\""
-    }
+#    if {$debug} {
+#        puts "descending into nested command in subtree \{$subtree\}"
+#        puts "script is \"$script\""
+#        puts "range is \"$unbracked_range\""
+#        puts "range_text is \"[parse getstring $script $unbracked_range]\""
+#    }
 
     set keys [descend_start $script $unbracked_range $nested $chknested $undetermined $outermost]
     # An empty nested command would report no keys. Create a special empty
@@ -1093,8 +1093,6 @@ proc descend_empty_nested_command { script range } {
 
 proc descend_container_if { key } {
     global _descend
-
-    set debug 0
 
     set script [descend_get_data $key script]
     set tree [descend_get_data $key tree]
@@ -1176,11 +1174,11 @@ proc descend_container_if { key } {
 proc descend_container_if_validate { key } {
     global _descend
 
-    set debug 0
+#    set debug 0
 
-    if {$debug} {
-        puts "descend_container_if_validate $key"
-    }
+#    if {$debug} {
+#        puts "descend_container_if_validate $key"
+#    }
 
     set script [descend_get_data $key script]
     set tree [descend_get_data $key tree]
@@ -1382,7 +1380,6 @@ proc descend_container_if_else_body { key } {
 
 proc descend_container_catch { key } {
     global _descend
-    set debug 0
 
     set script [descend_get_data $key script]
     set tree [descend_get_data $key tree]
@@ -1495,7 +1492,6 @@ proc descend_container_catch_variable { key } {
 
 proc descend_container_while { key } {
     global _descend
-    set debug 0
 
     set script [descend_get_data $key script]
     set tree [descend_get_data $key tree]
@@ -1541,11 +1537,11 @@ proc descend_container_while { key } {
 proc descend_container_while_validate { key } {
     global _descend
 
-    set debug 0
+#    set debug 0
 
-    if {$debug} {
-        puts "descend_container_while_validate $key"
-    }
+#    if {$debug} {
+#        puts "descend_container_while_validate $key"
+#    }
 
     set script [descend_get_data $key script]
     set tree [descend_get_data $key tree]
@@ -1596,7 +1592,6 @@ proc descend_container_while_body { key } {
 
 proc descend_container_for { key } {
     global _descend
-    set debug 0
 
     set script [descend_get_data $key script]
     set tree [descend_get_data $key tree]
@@ -1659,11 +1654,11 @@ proc descend_container_for { key } {
 proc descend_container_for_validate { key } {
     global _descend
 
-    set debug 0
+#    set debug 0
 
-    if {$debug} {
-        puts "descend_container_for_validate $key"
-    }
+#    if {$debug} {
+#        puts "descend_container_for_validate $key"
+#    }
 
     set script [descend_get_data $key script]
     set tree [descend_get_data $key tree]
@@ -1737,7 +1732,8 @@ proc descend_container_for_body { key } {
 
 proc descend_container_foreach { key } {
     global _descend
-    set debug 0
+
+#    set debug 0
 
     set script [descend_get_data $key script]
     set tree [descend_get_data $key tree]
@@ -1761,19 +1757,19 @@ proc descend_container_foreach { key } {
         # Handle the case of a single variable name.
 
         if {[descend_container_foreach_has_single_variable $key]} {
-            if {$debug} {
-                puts "foreach with single variable and single list"
-            }
+#            if {$debug} {
+#                puts "foreach with single variable and single list"
+#            }
         } else {
-            if {$debug} {
-                puts "foreach with multiple variables and single list"
-            }
+#            if {$debug} {
+#                puts "foreach with multiple variables and single list"
+#            }
         }
     } else {
         # Iterating over multiple lists
-        if {$debug} {
-            puts "foreach with single or multiple variables and multiple lists"
-        }
+#        if {$debug} {
+#            puts "foreach with single or multiple variables and multiple lists"
+#        }
     }
 
     # Descend into body argument.
@@ -1794,11 +1790,11 @@ proc descend_container_foreach { key } {
 proc descend_container_foreach_validate { key } {
     global _descend
 
-    set debug 0
+#    set debug 0
 
-    if {$debug} {
-        puts "descend_container_foreach_validate $key"
-    }
+#    if {$debug} {
+#        puts "descend_container_foreach_validate $key"
+#    }
 
     set script [descend_get_data $key script]
     set tree [descend_get_data $key tree]
@@ -1869,9 +1865,9 @@ proc descend_container_foreach_validate { key } {
     if {$is_static} {
         if {![descend_container_argument_body_is_static $key \
                 [lindex $_descend($key,validated) end]]} {
-            if {$debug} {
-                puts "body at index [lindex $_descend($key,validated) end] is NOT static"
-            }
+#            if {$debug} {
+#                puts "body at index [lindex $_descend($key,validated) end] is NOT static"
+#            }
             set is_static 0
         }
     }
@@ -1915,7 +1911,7 @@ proc descend_container_foreach_has_single_variable { key } {
 # it is returned.
 
 proc descend_container_foreach_varlist { key varindex } {
-    set debug 0
+#    set debug 0
 
     set script [descend_get_data $key script]
     set tree [descend_get_data $key tree]
@@ -1927,10 +1923,10 @@ proc descend_container_foreach_varlist { key varindex } {
     }
     set text_range [lindex $subtree 2 0 1]
 
-    if {$debug} {
-        puts "text range: \{$text_range\}"    
-        puts "parsing list from text range: \"[parse getstring $script $text_range]\""    
-    }
+#    if {$debug} {
+#        puts "text range: \{$text_range\}"    
+#        puts "parsing list from text range: \"[parse getstring $script $text_range]\""    
+#    }
 
     if {[catch {parse list $script $text_range} list_ranges]} {
         # Mark command a non-static when parse error is found
@@ -1965,7 +1961,7 @@ proc descend_container_foreach_body { key } {
 proc descend_container_switch { key } {
     global _descend
 
-    set debug 0
+#    set debug 0
 
     # Validate arguments, ignore if invalid.
     set result [descend_container_switch_validate $key]
@@ -1987,17 +1983,17 @@ proc descend_container_switch { key } {
     set tree [descend_get_data $key tree]
 
     set string_index [descend_container_switch_string $key]
-    if {$debug} {
-        puts "string_index is $string_index"
-    }
+#    if {$debug} {
+#        puts "string_index is $string_index"
+#    }
 
     set container_commands [list]
 
     # Descend into each switch body
     foreach {pat_index body_index} [descend_container_switch_patbody_indexes $key] {
-        if {$debug} {
-            puts "descending into switch body argument at index $body_index"
-        }
+#        if {$debug} {
+#            puts "descending into switch body argument at index $body_index"
+#        }
 
         # If the body command is the fallthrough token "-" then skip
         # descending into the body.
@@ -2062,11 +2058,11 @@ proc descend_container_switch_is_switch_mode { option_str } {
 proc descend_container_switch_validate { key } {
     global _descend
 
-    set debug 0
+#    set debug 0
 
-    if {$debug} {
-        puts "descend_container_switch_validate $key"
-    }
+#    if {$debug} {
+#        puts "descend_container_switch_validate $key"
+#    }
 
     set script [descend_get_data $key script]
     set tree [descend_get_data $key tree]
@@ -2373,18 +2369,18 @@ proc descend_container_switch_validate { key } {
         # unbraced_script length as compared to script.
         set original_range [parse getrange $script]
         set unbraced_range [parse getrange $unbraced_script]
-        if {$debug} {
-            puts "parse_range is \{$parse_range\}"
-            puts "original_range is \{$original_range\}"
-            puts "unbraced_range is \{$unbraced_range\}"            
-        }
+#        if {$debug} {
+#            puts "parse_range is \{$parse_range\}"
+#            puts "original_range is \{$original_range\}"
+#            puts "unbraced_range is \{$unbraced_range\}"            
+#        }
 
         set original_range_len [lindex $original_range 1]
         set mod_range_len [lindex $unbraced_range 1]
         set delta_len [expr {($original_range_len - $mod_range_len) * -1}]
-        if {$debug} {
-            puts "delta_len is $delta_len"
-        }
+#        if {$debug} {
+#            puts "delta_len is $delta_len"
+#        }
 
         set unbraced_parse_range [list \
             [lindex $parse_range 0] \
@@ -2394,11 +2390,11 @@ proc descend_container_switch_validate { key } {
         # Now reparse the modified script so that the switch body
         # elements are parsed as braced arguments.
 
-        if {$debug} {
-            puts "reparsing switch script"
-            puts "original script \{$script\} with range \{$parse_range\}"
-            puts "unbraced script \{$unbraced_script\} with range \{$unbraced_parse_range\}"
-        }
+#        if {$debug} {
+#            puts "reparsing switch script"
+#            puts "original script \{$script\} with range \{$parse_range\}"
+#            puts "unbraced script \{$unbraced_script\} with range \{$unbraced_parse_range\}"
+#        }
 
         set key [descend_next_command $unbraced_script $unbraced_parse_range $nested $undetermined]
 
@@ -2415,12 +2411,12 @@ proc descend_container_switch_validate { key } {
         # Reset the saved key id after regenerating the key
         set _descend(key) $saved_key
 
-        if {$debug} {
-            puts "reparsed key $key"
-            puts "original command range was \{$original_command_range\}"
-            puts "reparsed command range is \{[descend_get_data $key command]\}"
-            puts "reparsed command text is \{[parse getstring [descend_get_data $key script] [descend_get_data $key command]]\}"
-        }
+#        if {$debug} {
+#            puts "reparsed key $key"
+#            puts "original command range was \{$original_command_range\}"
+#            puts "reparsed command range is \{[descend_get_data $key command]\}"
+#            puts "reparsed command text is \{[parse getstring [descend_get_data $key script] [descend_get_data $key command]]\}"
+#        }
 
         # Reset rest range, this needs to be in terms of the original
         # script so that parsing the next script works as expected.
@@ -2485,9 +2481,9 @@ proc descend_container_switch_validate { key } {
         # Note: body blocks reparsed into arguments are always
         # going to be static strings.
         if {![descend_container_argument_body_is_static $key $bIndex]} {
-            if {$debug} {
-                puts "non-static body argument at $bIndex"
-            }
+#            if {$debug} {
+#                puts "non-static body argument at $bIndex"
+#            }
             set is_static 0
         }
     }
@@ -2512,11 +2508,11 @@ proc descend_container_switch_validate { key } {
 # script is returned.
 
 proc descend_container_switch_script_recreate { script range } {
-    set debug 0
+#    set debug 0
 
-    if {$debug} {
-        puts "descend_container_switch_script_recreate \"$script\" \{$range\}"
-    }
+#    if {$debug} {
+#        puts "descend_container_switch_script_recreate \"$script\" \{$range\}"
+#    }
 
     set range_start [lindex $range 0]
     set range_len [lindex $range 1]
@@ -2532,9 +2528,9 @@ proc descend_container_switch_script_recreate { script range } {
     set unbraced_script [parse getstring $script \
         [list 0 [expr {$range_start - 1}]]]
 
-    if {$debug} {
-        puts "unbraced_script(1) is \"$unbraced_script\""
-    }
+#    if {$debug} {
+#        puts "unbraced_script(1) is \"$unbraced_script\""
+#    }
 
     set extra_space 0
     set newlines_added 0
@@ -2545,10 +2541,10 @@ proc descend_container_switch_script_recreate { script range } {
 
     set patbody_str [parse getstring $script $range]
     set no_bs_patbody_str [string map {"\\\n" ""} $patbody_str]
-    if {$debug} {
-        puts "patbody_str is\t\t\"$patbody_str\""
-        puts "no_bs_patbody_str is\t\"$no_bs_patbody_str\""
-    }
+#    if {$debug} {
+#        puts "patbody_str is\t\t\"$patbody_str\""
+#        puts "no_bs_patbody_str is\t\"$no_bs_patbody_str\""
+#    }
     if {[string length $no_bs_patbody_str] < [string length $patbody_str]} {
         set patbody_str $no_bs_patbody_str
     }
@@ -2575,9 +2571,9 @@ proc descend_container_switch_script_recreate { script range } {
         set str [parse getstring $patbody_str $list_range]
         set lstr [lindex $patbody_str $i]
 
-        if {$debug} {
-        puts "processing patbody string ->$str-> ->$lstr<-, is_pattern is $is_pattern"
-        }
+#        if {$debug} {
+#        puts "processing patbody string ->$str-> ->$lstr<-, is_pattern is $is_pattern"
+#        }
 
         # Convert the element to either a double quoted or
         # a brace quoted string.
@@ -2604,10 +2600,10 @@ proc descend_container_switch_script_recreate { script range } {
             set quoted_str "\"$str\""
         }
 
-        if {$debug} {
-            puts "got unquoted_str ->$unquoted_str<-"
-            puts "got quoted_str ->$quoted_str<-"
-        }
+#        if {$debug} {
+#            puts "got unquoted_str ->$unquoted_str<-"
+#            puts "got quoted_str ->$quoted_str<-"
+#        }
 
         # Determine if a double quoted element contains
         # backslash characters. If it does not, then
@@ -2621,9 +2617,9 @@ proc descend_container_switch_script_recreate { script range } {
             if {[string equal $unquoted_str $bs_subst_str]} {
                 # No backslash subst
                 set quoted_str "\{$unquoted_str\}"
-                if {$debug} {
-                    puts "no backslash subst, converted to brace quoted constant ->$quoted_str<-"
-                }
+#                if {$debug} {
+#                    puts "no backslash subst, converted to brace quoted constant ->$quoted_str<-"
+#                }
             } else {
                 # There were backslash subst characters. If
                 # the backslash subst does not match the
@@ -2700,9 +2696,9 @@ proc descend_container_switch_script_recreate { script range } {
             }
         }
 
-        if {$debug} {
-            puts "appending quoted_str >$quoted_str<-"
-        }
+#        if {$debug} {
+#            puts "appending quoted_str >$quoted_str<-"
+#        }
 
         append unbraced_script $quoted_str
         append unbraced_script " "
@@ -2710,9 +2706,9 @@ proc descend_container_switch_script_recreate { script range } {
 
         set newlines [parse countnewline $str {0 end}]
         if {$newlines > 0} {
-            if {$debug} {
-                puts "added $newlines newlines to unbraced_script"
-            }
+#            if {$debug} {
+#                puts "added $newlines newlines to unbraced_script"
+#            }
             incr newlines_added $newlines
         }
 
@@ -2727,19 +2723,19 @@ proc descend_container_switch_script_recreate { script range } {
         set unbraced_script [string range $unbraced_script 0 end-1]
     }
 
-    if {$debug} {
-        puts "unbraced_script(2) is \"$unbraced_script\""
-    }
+#    if {$debug} {
+#        puts "unbraced_script(2) is \"$unbraced_script\""
+#    }
 
     # Fill with continued lines
     set numnewlines [parse countnewline $script $range]
     set newlines_needed [expr {$numnewlines - $newlines_added}]
 
-    if {$debug} {
-        puts "numnewlines is $numnewlines"
-        puts "newlines_added is $newlines_added"
-        puts "newlines_needed is $newlines_needed"
-    }
+#    if {$debug} {
+#        puts "numnewlines is $numnewlines"
+#        puts "newlines_added is $newlines_added"
+#        puts "newlines_needed is $newlines_needed"
+#    }
 
     for {set i 0} {$i < $newlines_needed} {incr i} {
         append unbraced_script "\\\n"
@@ -2748,17 +2744,17 @@ proc descend_container_switch_script_recreate { script range } {
     # Append any characters after the last brace in the original script
     set last_range [list [expr {$range_start + $range_len + 1}] end]
     set last_string [parse getstring $script $last_range]
-    if {$debug} {
-        puts "last_string is \"$last_string\""
-    }
+#    if {$debug} {
+#        puts "last_string is \"$last_string\""
+#    }
     if {[string length $last_string] > 0} {
         append unbraced_script $last_string
     }
 
-    if {$debug} {
-    puts "script is\t\t\"$script\""
-    puts "unbraced_script is\t\"$unbraced_script\""
-    }
+#    if {$debug} {
+#    puts "script is\t\t\"$script\""
+#    puts "unbraced_script is\t\"$unbraced_script\""
+#    }
 
     # Check that number of lines in old script and new script are equal
 
@@ -2771,11 +2767,11 @@ proc descend_container_switch_script_recreate { script range } {
 # returned.
 
 proc descend_container_switch_mode { key } {
-    set debug 0
+#    set debug 0
 
-    if {$debug} {
-        puts "descend_container_switch_mode $key"
-    }
+#    if {$debug} {
+#        puts "descend_container_switch_mode $key"
+#    }
 
     set script [descend_get_data $key script]
     set tree [descend_get_data $key tree]
@@ -2790,11 +2786,11 @@ proc descend_container_switch_mode { key } {
 # just before the string argument.
 
 proc descend_container_switch_has_last { key } {
-    set debug 0
+#    set debug 0
 
-    if {$debug} {
-        puts "descend_container_switch_has_last $key"
-    }
+#    if {$debug} {
+#        puts "descend_container_switch_has_last $key"
+#    }
 
     set script [descend_get_data $key script]
     set tree [descend_get_data $key tree]
@@ -2811,11 +2807,11 @@ proc descend_container_switch_has_last { key } {
 # Return the index of the string argument to the switch command
 
 proc descend_container_switch_string { key } {
-    set debug 0
+#    set debug 0
 
-    if {$debug} {
-        puts "descend_container_switch_string $key"
-    }
+#    if {$debug} {
+#        puts "descend_container_switch_string $key"
+#    }
 
     set script [descend_get_data $key script]
     set tree [descend_get_data $key tree]
@@ -2828,11 +2824,11 @@ proc descend_container_switch_string { key } {
 # Return list of {PATTERN_INDEX BODY_INDEX} argument indexes.
 
 proc descend_container_switch_patbody_indexes { key } {
-    set debug 0
+#    set debug 0
 
-    if {$debug} {
-        puts "descend_container_switch_patbody_indexes $key"
-    }
+#    if {$debug} {
+#        puts "descend_container_switch_patbody_indexes $key"
+#    }
 
     set script [descend_get_data $key script]
     set tree [descend_get_data $key tree]
@@ -2846,11 +2842,11 @@ proc descend_container_switch_patbody_indexes { key } {
 # before it was reparsed.
 
 proc descend_container_switch_has_patbody_list { key } {
-    set debug 0
+#    set debug 0
 
-    if {$debug} {
-        puts "descend_container_switch_has_patbody_list $key"
-    }
+#    if {$debug} {
+#        puts "descend_container_switch_has_patbody_list $key"
+#    }
 
     set script [descend_get_data $key script]
     set tree [descend_get_data $key tree]
@@ -2871,11 +2867,11 @@ proc descend_container_switch_has_patbody_list { key } {
 # evaluated.
 
 proc descend_container_switch_is_fallthrough { key bodyindex } {
-    set debug 0
+#    set debug 0
 
-    if {$debug} {
-        puts "descend_container_switch_is_fallthrough $key $bodyindex"
-    }
+#    if {$debug} {
+#        puts "descend_container_switch_is_fallthrough $key $bodyindex"
+#    }
 
     set script [descend_get_data $key script]
     set tree [descend_get_data $key tree]
@@ -2900,7 +2896,6 @@ proc descend_container_switch_is_fallthrough { key bodyindex } {
 
 proc descend_container_after { key } {
     global _descend
-    set debug 0
 
     set script [descend_get_data $key script]
     set tree [descend_get_data $key tree]
@@ -2944,11 +2939,11 @@ proc descend_container_after { key } {
 proc descend_container_after_validate { key } {
     global _descend
 
-    set debug 0
+#    set debug 0
 
-    if {$debug} {
-        puts "descend_container_after_validate $key"
-    }
+#    if {$debug} {
+#        puts "descend_container_after_validate $key"
+#    }
 
     set script [descend_get_data $key script]
     set tree [descend_get_data $key tree]
@@ -2974,9 +2969,9 @@ proc descend_container_after_validate { key } {
     set subtree [lindex $tree 1]
     if {[parse_is_simple_text $subtree]} {
         set text [parse_get_simple_text $script $subtree text]
-        if {$debug} {
-            puts "subcommand text is \"$text\""
-        }
+#        if {$debug} {
+#            puts "subcommand text is \"$text\""
+#        }
         switch -regexp -- $text {
             "^[0-9]+$" {
                 if {$num_args == 2} {
@@ -3055,11 +3050,11 @@ proc descend_container_after_validate { key } {
 # to be evaluated later is passed into the after command.
 
 proc descend_container_after_has_command_indexes { key } {
-    set debug 0
+#    set debug 0
 
-    if {$debug} {
-        puts "descend_container_after_has_command_indexes $key"
-    }
+#    if {$debug} {
+#        puts "descend_container_after_has_command_indexes $key"
+#    }
 
     set script [descend_get_data $key script]
     set tree [descend_get_data $key tree]
@@ -3081,11 +3076,11 @@ proc descend_container_after_has_command_indexes { key } {
 # corresponds to arguments to the command.
 
 proc descend_container_after_command_indexes { key } {
-    set debug 0
+#    set debug 0
 
-    if {$debug} {
-        puts "descend_container_after_command_indexes $key"
-    }
+#    if {$debug} {
+#        puts "descend_container_after_command_indexes $key"
+#    }
 
     set script [descend_get_data $key script]
     set tree [descend_get_data $key tree]
@@ -3102,8 +3097,6 @@ proc descend_container_after_command_indexes { key } {
 
 proc descend_container_lsort { key } {
     global _descend
-
-    set debug 0
 
     # Validate arguments, ignore if invalid.
     set result [descend_container_lsort_validate $key]
@@ -3144,11 +3137,11 @@ proc descend_container_lsort { key } {
 proc descend_container_lsort_validate { key } {
     global _descend
 
-    set debug 0
+#    set debug 0
 
-    if {$debug} {
-        puts "descend_container_after_validate $key"
-    }
+#    if {$debug} {
+#        puts "descend_container_after_validate $key"
+#    }
 
     set script [descend_get_data $key script]
     set tree [descend_get_data $key tree]
@@ -3212,11 +3205,11 @@ proc descend_container_lsort_validate { key } {
 }
 
 proc descend_container_lsort_has_command { key } {
-    set debug 0
+#    set debug 0
 
-    if {$debug} {
-        puts "descend_container_lsort_has_command $key"
-    }
+#    if {$debug} {
+#        puts "descend_container_lsort_has_command $key"
+#    }
 
     set script [descend_get_data $key script]
     set tree [descend_get_data $key tree]
@@ -3236,11 +3229,11 @@ proc descend_container_lsort_has_command { key } {
 # Return index of -commmand argument for lsort command
 
 proc descend_container_lsort_command { key } {
-    set debug 0
+#    set debug 0
 
-    if {$debug} {
-        puts "descend_container_lsort_has_command $key"
-    }
+#    if {$debug} {
+#        puts "descend_container_lsort_has_command $key"
+#    }
 
     set script [descend_get_data $key script]
     set tree [descend_get_data $key tree]
@@ -3258,7 +3251,7 @@ proc descend_container_lsort_command { key } {
 proc descend_container_expr { key } {
     global _descend
 
-    set debug 0
+#    set debug 0
 
     # Validate arguments passed to expr command.
     # If the command is not valid, just ignore it.
@@ -3295,21 +3288,21 @@ proc descend_container_expr { key } {
 # that the expr argument has already been validated.
 
 proc descend_container_expr_argument { key argindex } {
-    set debug 0
+#    set debug 0
 
-    if {$debug} {
-        puts "descend_container_expr_argument: $key $argindex"
-    }
+#    if {$debug} {
+#        puts "descend_container_expr_argument: $key $argindex"
+#    }
 
     set script [descend_get_data $key script]
     set tree [descend_get_data $key tree]
 
     set stree [lindex $tree $argindex]
     set range [parse_get_simple_text_range $stree text]
-    if {$debug} {
-        set range_script [parse_get_simple_text $script $stree text]
-        puts "parse expr \{$range_script\} in range \{$range\} at argument $argindex"
-    }
+#    if {$debug} {
+#        set range_script [parse_get_simple_text $script $stree text]
+#        puts "parse expr \{$range_script\} in range \{$range\} at argument $argindex"
+#    }
     set etree [parse expr $script $range]
     parse_expr_iterate $script $etree descend_container_expr_argument_iterate_callback
 }
@@ -3317,12 +3310,12 @@ proc descend_container_expr_argument { key argindex } {
 # Invoked once for each subexpression inside the expr argument tree.
 
 proc descend_container_expr_argument_iterate_callback { script etree type values ranges } {
-    set debug 0
+#    set debug 0
 
-    if {$debug} {
-        puts "descend_container_expr_iterate_callback:\
-            \"$script\" \{$etree\} \{$type\} \{$values\} \{$ranges\}"
-    }
+#    if {$debug} {
+#        puts "descend_container_expr_iterate_callback:\
+#            \"$script\" \{$etree\} \{$type\} \{$values\} \{$ranges\}"
+#    }
 
     switch -exact -- $type {
         {literal operand} {
@@ -3333,9 +3326,9 @@ proc descend_container_expr_argument_iterate_callback { script etree type values
             set cmd_script $script
             set cmd_range [lindex $ranges 0]
 
-            if {$debug} {
-                puts "descending into expr nested command \[[parse getstring $script $cmd_range]\]"
-            }
+#            if {$debug} {
+#                puts "descending into expr nested command \[[parse getstring $script $cmd_range]\]"
+#            }
 
             _descend_commands_push
             descend_nested_subtree $script $etree
@@ -3380,11 +3373,11 @@ proc descend_container_expr_argument_iterate_callback { script etree type values
 proc descend_container_expr_validate { key } {
     global _descend
 
-    set debug 0
+#    set debug 0
 
-    if {$debug} {
-        puts "descend_container_expr_validate $key"
-    }
+#    if {$debug} {
+#        puts "descend_container_expr_validate $key"
+#    }
 
     set script [descend_get_data $key script]
     set tree [descend_get_data $key tree]
@@ -3420,7 +3413,7 @@ proc descend_container_expr_validate { key } {
 
 proc descend_container_expr_argument_validate { key argindex } {
     global _descend
-    set debug 0
+#    set debug 0
 
     set script [descend_get_data $key script]
     set tree [descend_get_data $key tree]
@@ -3448,10 +3441,10 @@ proc descend_container_expr_argument_validate { key argindex } {
 
     # If the expr can't be parsed, then don't try to descend into.
     set range [parse_get_simple_text_range $stree text]
-    if {$debug} {
-        set range_script [parse_get_simple_text $script $stree text]
-        puts "checking expr \{$range_script\} in range \{$range\} at argument $argindex"
-    }
+#    if {$debug} {
+#        set range_script [parse_get_simple_text $script $stree text]
+#        puts "checking expr \{$range_script\} in range \{$range\} at argument $argindex"
+#    }
     # FIXME: Need to output expr parse error. The user would want to know
     # about a real problem before running the code and we don't want to
     # just revert to simpler code if there is actually a bug in the

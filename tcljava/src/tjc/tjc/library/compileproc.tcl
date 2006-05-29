@@ -5,13 +5,11 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: compileproc.tcl,v 1.26 2006/05/28 05:11:00 mdejong Exp $
+#  RCS: @(#) $Id: compileproc.tcl,v 1.27 2006/05/29 21:56:14 mdejong Exp $
 #
 #
 
 # The compileproc module will parse and compile the contents of a proc.
-
-set _compileproc(debug) 0
 
 # Convert a proc declaration to a list of proc arguments.
 # This method assumes that the script string is already
@@ -39,12 +37,11 @@ proc compileproc_script_to_proc_list { script } {
 # the last element.
 
 proc compileproc_args_split { proc_args } {
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
+#    set debug 0
 
-    if {$debug} {
-        puts "compileproc_args_split : \{$proc_args\}"
-    }
+#    if {$debug} {
+#        puts "compileproc_args_split : \{$proc_args\}"
+#    }
 
     set non_default_args [list]
     set default_args [list]
@@ -69,9 +66,9 @@ proc compileproc_args_split { proc_args } {
         set max_num_args [expr {$min_num_args + [llength $default_args]}]
     }
 
-    if {$debug} {
-        puts "returning \{$non_default_args\} \{$default_args\} $args : $min_num_args $max_num_args"
-    }
+#    if {$debug} {
+#        puts "returning \{$non_default_args\} \{$default_args\} $args : $min_num_args $max_num_args"
+#    }
 
     return [list $non_default_args $default_args $args $min_num_args $max_num_args]
 }
@@ -375,12 +372,11 @@ proc compileproc_assign_args_arg { index } {
 proc compileproc_nocompile { proc_list class_name } {
     global _compileproc
 
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
+#    set debug 0
 
-    if {$debug} {
-        puts "compileproc_nocompile [lindex $proc_list 0] : \{$proc_list\} $class_name"
-    }
+#    if {$debug} {
+#        puts "compileproc_nocompile [lindex $proc_list 0] : \{$proc_list\} $class_name"
+#    }
 
     if {[llength $proc_list] != 3} {
         error "expected \{PROC_NAME PROC_ARGS PROC_BODY\} : passed [llength $proc_list] args"
@@ -478,22 +474,21 @@ proc compileproc_split_classname { class_name } {
 #     The list length is 4: like {proc p {} {}}
 
 proc compileproc_entry_point { filename proc_tuple } {
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
+#    set debug 0
 
     set proc_name [lindex $proc_tuple 0]
 
-    if {$debug} {
-        puts "compileproc_entry_point $filename $proc_name"
-        puts "proc_tuple is \{$proc_tuple\}"
-    }
+#    if {$debug} {
+#        puts "compileproc_entry_point $filename $proc_name"
+#        puts "proc_tuple is \{$proc_tuple\}"
+#    }
 
     set package [module_query PACKAGE]
     set compile_option [module_option_value compile]
 
-    if {$debug} {
-        puts "compile options is $compile_option"
-    }
+#    if {$debug} {
+#        puts "compile options is $compile_option"
+#    }
 
     set class_name [lindex $proc_tuple 1]
 
@@ -538,10 +533,10 @@ proc compileproc_entry_point { filename proc_tuple } {
             return "ERROR"
         }
 
-        if {$debug} {
-            puts "generated $class_name data from proc \"$proc_name\""
-            puts "class data is:\n$class_data"
-        }
+#        if {$debug} {
+#            puts "generated $class_name data from proc \"$proc_name\""
+#            puts "class data is:\n$class_data"
+#        }
 
         return [list $filename $proc_name $class_name $class_data]
     } else {
@@ -553,10 +548,10 @@ proc compileproc_entry_point { filename proc_tuple } {
             return "ERROR"
         }
 
-        if {$debug} {
-            puts "generated $class_name data from proc \"$proc_name\""
-            puts "class data is:\n$class_data"
-        }
+#        if {$debug} {
+#            puts "generated $class_name data from proc \"$proc_name\""
+#            puts "class data is:\n$class_data"
+#        }
 
         return [list $filename $proc_name $class_name $class_data]
     }
@@ -662,9 +657,6 @@ proc compileproc_init {} {
     compileproc_constant_cache_init
     emitter_indent_level zero
 
-    # Set to 1 to enabled debug output for each method invocation
-    set _compileproc(debug) 0
-
     # Init variables needed for recursive var and word iteration
     set _compileproc(var_scan_key) {}
     set _compileproc(var_scan_results) {}
@@ -732,8 +724,7 @@ proc compileproc_init {} {
 proc compileproc_start { proc_list } {
     global _compileproc
 
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
+#    set debug 0
 
     if {[llength $proc_list] != 3} {
         error "expected \{PROC_NAME PROC_ARGS PROC_BODY\} : passed [llength $proc_list] args"
@@ -794,12 +785,11 @@ proc compileproc_key_children { pkey } {
 proc compileproc_command_start_callback { key } {
     global _compileproc _compileproc_ckeys
 
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
+#    set debug 0
 
-    if {$debug} {
-        puts "compileproc_command_start_callback $key"
-    }
+#    if {$debug} {
+#        puts "compileproc_command_start_callback $key"
+#    }
 
     set result [descend_get_command_name $key]
     #set container_stack [descend_get_container_stack]
@@ -811,9 +801,9 @@ proc compileproc_command_start_callback { key } {
     } elseif {[lindex $result 0]} {
         # Command name could be determined statically
         set cmdname [lindex $result 1]
-        if {$debug} {
-            puts "parsed command \"$cmdname\""
-        }
+#        if {$debug} {
+#            puts "parsed command \"$cmdname\""
+#        }
     } else {
         set cmdname _UNKNOWN
     }
@@ -828,14 +818,13 @@ proc compileproc_command_start_callback { key } {
 # Invoked when a command is no longer being processed.
 
 proc compileproc_command_finish_callback { key } {
-    global _compileproc
+#    global _compileproc
 
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
+#    set debug 0
 
-    if {$debug} {
-        puts "compileproc_command_finish_callback $key"
-    }
+#    if {$debug} {
+#        puts "compileproc_command_finish_callback $key"
+#    }
 }
 
 # Entry point for all compiled proc variations. This method
@@ -846,12 +835,11 @@ proc compileproc_compile { proc_list class_name {config_init {}} } {
     global _compileproc
     global _compileproc_key_info
 
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
+#    set debug 0
 
-    if {$debug} {
-        puts "compileproc_compile [lindex $proc_list 0] : \{$proc_list\} $class_name"
-    }
+#    if {$debug} {
+#        puts "compileproc_compile [lindex $proc_list 0] : \{$proc_list\} $class_name"
+#    }
 
     if {[llength $proc_list] != 3} {
         error "expected \{PROC_NAME PROC_ARGS PROC_BODY\} : passed [llength $proc_list] args"
@@ -1017,34 +1005,33 @@ proc compileproc_constant_cache_add { tstr } {
 # integer and double ranges that are valid in Java.
 
 proc compileproc_constant_cache_type { tstr } {
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
+#    set debug 0
 
-    if {$debug} {
-        puts "compileproc_constant_cache_type \"$tstr\""
-    }
+#    if {$debug} {
+#        puts "compileproc_constant_cache_type \"$tstr\""
+#    }
 
     if {$tstr == ""} {
         return STRING
     } elseif {$tstr == "false" || $tstr == "true"} {
-        if {$debug} {
-            puts "string \"$tstr\" looks like an BOOLEAN"
-        }
+#        if {$debug} {
+#            puts "string \"$tstr\" looks like an BOOLEAN"
+#        }
         return BOOLEAN
     } elseif {[compileproc_string_is_java_integer $tstr]} {
-        if {$debug} {
-            puts "string \"$tstr\" looks like an INTEGER"
-        }
+#        if {$debug} {
+#            puts "string \"$tstr\" looks like an INTEGER"
+#        }
         return INTEGER
     } elseif {[compileproc_string_is_java_double $tstr]} {
-        if {$debug} {
-            puts "string \"$tstr\" looks like a DOUBLE"
-        }
+#        if {$debug} {
+#            puts "string \"$tstr\" looks like a DOUBLE"
+#        }
         return DOUBLE
     } else {
-        if {$debug} {
-            puts "string \"$tstr\" must be a STRING"
-        }
+#        if {$debug} {
+#            puts "string \"$tstr\" must be a STRING"
+#        }
         return STRING
     }
 }
@@ -1100,17 +1087,16 @@ proc compileproc_constant_cache_get { tstr } {
 proc compileproc_constant_cache_generate {} {
     global _compileproc_constant_cache
 
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
+#    set debug 0
 
     set tlist [list]
 
     foreach key $_compileproc_constant_cache(ordered_keys) {
         set tuple $_compileproc_constant_cache($key)
 
-        if {$debug} {
-            puts "processing key $key, tuple is \{$tuple\}"
-        }
+#        if {$debug} {
+#            puts "processing key $key, tuple is \{$tuple\}"
+#        }
 
         set ident [lindex $tuple 0]
         if {$ident == {}} {
@@ -1139,12 +1125,11 @@ proc compileproc_command_cache_init_generate {} {
     global _compileproc
     global _compileproc_command_cache
 
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
+#    set debug 0
 
-    if {$debug} {
-        puts "compileproc_command_cache_init_generate"
-    }
+#    if {$debug} {
+#        puts "compileproc_command_cache_init_generate"
+#    }
 
     if {![info exists _compileproc_command_cache(ordered_cmds)]} {
         return ""
@@ -1585,7 +1570,7 @@ proc compileproc_variable_cache_names_array {} {
 proc compileproc_scan_keys { keys } {
     global _compileproc _compileproc_key_info
 
-#    set debug 1
+#    set debug 0
 
 #    if {$debug} {
 #        puts "compileproc_scan_keys: \{$keys\}"
@@ -1934,7 +1919,7 @@ proc compileproc_scan_keys { keys } {
 # containing sublists for each block.
 
 proc compileproc_scan_keys_in_container { key } {
-#    set debug 1
+#    set debug 0
 
 #    if {$debug} {
 #        puts "compileproc_scan_keys_in_container: $key"
@@ -1980,7 +1965,7 @@ proc compileproc_scan_keys_in_container { key } {
 proc compileproc_scan_keys_in_container_sublist { key klists } {
     global _compileproc_key_info
 
-#    set debug 1
+#    set debug 0
 
 #    if {$debug} {
 #        puts "compileproc_scan_keys_in_container_sublist: $klists"
@@ -2104,16 +2089,15 @@ proc compileproc_childkey_validate { key } {
 
 proc compileproc_scan_variable { key script vstree } {
     global _compileproc
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
+#    set debug 0
 
     if {[parse_is_scalar_variable $vstree]} {
         set vname [parse_get_scalar_variable $script $vstree]
         set vinfo [list scalar $vname]
 
-        if {$debug} {
-            puts "found scalar variable type"
-        }
+#        if {$debug} {
+#            puts "found scalar variable type"
+#        }
     } else {
         # Parse array variable into a vinfo list that is
         # evaluated by compileproc_emit_variable.
@@ -2130,9 +2114,9 @@ proc compileproc_scan_variable { key script vstree } {
         set _compileproc(var_scan_key) $saved_var_scan_key
         set _compileproc(var_scan_results) $saved_var_scan_results
 
-        if {$debug} {
-            puts "found array variable type"
-        }
+#        if {$debug} {
+#            puts "found array variable type"
+#        }
     }
 
     return $vinfo
@@ -2145,12 +2129,11 @@ proc _compileproc_scan_variable_iterator { script stree type values ranges } {
     global _compileproc
     upvar #0 _compileproc(var_scan_results) results
 
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
+#    set debug 0
 
-    if {$debug} {
-        puts "_compileproc_scan_variable_iterator : \{$type\} \{$values\} \{$ranges\}"
-    }
+#    if {$debug} {
+#        puts "_compileproc_scan_variable_iterator : \{$type\} \{$values\} \{$ranges\}"
+#    }
 
     # Use array type info from parse layer to decide how to
     # handle the variable.
@@ -2178,16 +2161,16 @@ proc _compileproc_scan_variable_iterator { script stree type values ranges } {
                 # that is the empty string.
                 set ckeys {}
             } else {
-                if {$debug} {
-                puts "scanning child keys \{$ckeys\} (child of $key)"
-                }
+#                if {$debug} {
+#                puts "scanning child keys \{$ckeys\} (child of $key)"
+#                }
                 # There does not appear to be a way for an {array command}
                 # to have anything other than a flat list of keys, so
                 # no need to loop over keys looking for {}.
                 compileproc_scan_keys $ckeys
-                if {$debug} {
-                puts "done scanning child keys \{$ckeys\} (child of $key)"
-                }
+#                if {$debug} {
+#                puts "done scanning child keys \{$ckeys\} (child of $key)"
+#                }
             }
             lappend results $type [list [lindex $values 0] $ckeys]
         }
@@ -2230,13 +2213,13 @@ proc _compileproc_scan_variable_iterator { script stree type values ranges } {
                 set ckeys {}
                 compileproc_constant_cache_add {}
             } else {
-                if {$debug} {
-                puts "scanning child keys \{$ckeys\} (child of $key)"
-                }
+#                if {$debug} {
+#                puts "scanning child keys \{$ckeys\} (child of $key)"
+#                }
                 compileproc_scan_keys $ckeys
-                if {$debug} {
-                puts "done scanning child keys \{$ckeys\} (child of $key)"
-                }
+#                if {$debug} {
+#                puts "done scanning child keys \{$ckeys\} (child of $key)"
+#                }
             }
 
             set word [parse_variable_iterate_word_value]
@@ -2268,13 +2251,13 @@ proc _compileproc_scan_variable_iterator { script stree type values ranges } {
                 set ckeys {}
                 compileproc_constant_cache_add {}
             } else {
-                if {$debug} {
-                puts "scanning child key \{$ckeys\} (child of $key)"
-                }
+#                if {$debug} {
+#                puts "scanning child key \{$ckeys\} (child of $key)"
+#                }
                 compileproc_scan_keys $ckeys
-                if {$debug} {
-                puts "done scanning child key \{$ckeys\} (child of $key)"
-                }
+#                if {$debug} {
+#                puts "done scanning child key \{$ckeys\} (child of $key)"
+#                }
             }
 
             set word [parse_variable_iterate_word_value]
@@ -2301,12 +2284,11 @@ proc _compileproc_scan_variable_iterator { script stree type values ranges } {
 proc compileproc_scan_word { key script wstree } {
     global _compileproc
 
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
+#    set debug 0
 
-    if {$debug} {
-        puts "compileproc_scan_word $key \{$script\} \{$wstree\}"
-    }
+#    if {$debug} {
+#        puts "compileproc_scan_word $key \{$script\} \{$wstree\}"
+#    }
 
     # Parse word elements into a list that describes
     # each word element.
@@ -2322,9 +2304,9 @@ proc compileproc_scan_word { key script wstree } {
     set _compileproc(word_scan_key) $saved_word_scan_key
     set _compileproc(word_scan_results) $saved_word_scan_results
 
-    if {$debug} {
-        puts "checking returned word info \{$winfo\}"
-    }
+#    if {$debug} {
+#        puts "checking returned word info \{$winfo\}"
+#    }
 
     # If each element is a {text} element, then combine them
     # all into a single constant string and return a constant
@@ -2341,9 +2323,9 @@ proc compileproc_scan_word { key script wstree } {
         }
     }
     if {$all_text} {
-        if {$debug} {
-            puts "all word types were {text}, returning constant string"
-        }
+#        if {$debug} {
+#            puts "all word types were {text}, returning constant string"
+#        }
         set all_str ""
         set has_escapes 0
         set cmap [list]
@@ -2376,15 +2358,14 @@ proc compileproc_scan_word { key script wstree } {
 proc _compileproc_scan_word_iterate { script stree type values ranges } {
     global _compileproc
 
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
+#    set debug 0
 
     upvar #0 _compileproc(word_scan_results) results
     set key $_compileproc(word_scan_key)
 
-    if {$debug} {
-        puts "_compileproc_scan_word_iterate : \"$script\" \{$stree\} $type \{$values\} \{$ranges\}"
-    }
+#    if {$debug} {
+#        puts "_compileproc_scan_word_iterate : \"$script\" \{$stree\} $type \{$values\} \{$ranges\}"
+#    }
 
     switch -exact -- $type {
         {backslash} {
@@ -2407,13 +2388,13 @@ proc _compileproc_scan_word_iterate { script stree type values ranges } {
                 set ckeys {}
                 compileproc_constant_cache_add {}
             } else {
-                if {$debug} {
-                puts "scanning child key \{$ckeys\} (child of $key)"
-                }
+#                if {$debug} {
+#                puts "scanning child key \{$ckeys\} (child of $key)"
+#                }
                 compileproc_scan_keys $ckeys
-                if {$debug} {
-                puts "done scanning child key \{$ckeys\} (child of $key)"
-                }
+#                if {$debug} {
+#                puts "done scanning child key \{$ckeys\} (child of $key)"
+#                }
             }
 
             set word [parse_word_iterate_word_value]
@@ -2528,7 +2509,6 @@ proc compileproc_emit_invoke { key } {
     global _compileproc_key_info
 
 #    set debug 0
-#    if {$::_compileproc(debug)} {set debug 1}
 
 #    if {$debug} {
 #        puts "compileproc_emit_invoke $key"
@@ -2842,12 +2822,11 @@ proc compileproc_emit_invoke_call_impl { key arraysym tmpsymbol userdata } {
 proc compileproc_emit_argument { key i {declare_flag 1} {symbol_name {}} } {
     global _compileproc_key_info
 
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
+#    set debug 0
 
-    if {$debug} {
-        puts "compileproc_emit_argument $key $i $declare_flag \{$symbol_name\}"
-    }
+#    if {$debug} {
+#        puts "compileproc_emit_argument $key $i $declare_flag \{$symbol_name\}"
+#    }
 
     if {$declare_flag} {
         set declare "TclObject "
@@ -2941,12 +2920,11 @@ proc compileproc_emit_argument { key i {declare_flag 1} {symbol_name {}} } {
 proc compileproc_get_argument_tuple { key i } {
     global _compileproc_key_info
 
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
+#    set debug 0
 
-    if {$debug} {
-        puts "compileproc_get_argument_type $key $i"
-    }
+#    if {$debug} {
+#        puts "compileproc_get_argument_type $key $i"
+#    }
 
     set types $_compileproc_key_info($key,types)
     set values $_compileproc_key_info($key,values)
@@ -2983,8 +2961,7 @@ proc compileproc_get_argument_tuple { key i } {
 proc compileproc_emit_variable { tmpsymbol vinfo {declare_flag 1} } {
     global _compileproc
 
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
+#    set debug 0
 
     set buffer ""
     if {$declare_flag} {
@@ -3361,12 +3338,11 @@ proc compileproc_emit_word { tmpsymbol winfo {declare_flag true} {string_symbol 
 # before hand.
 
 proc compileproc_emit_word_element { winfo_element tmpsymbol append sbtmp {declare_flag 1} } {
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
+#    set debug 0
 
-    if {$debug} {
-        puts "compileproc_emit_word_element \{$winfo_element\} $tmpsymbol $append $sbtmp $declare_flag"
-    }
+#    if {$debug} {
+#        puts "compileproc_emit_word_element \{$winfo_element\} $tmpsymbol $append $sbtmp $declare_flag"
+#    }
 
     set buffer ""
 
@@ -3594,7 +3570,7 @@ proc compileproc_is_container_command_keys_flat { key } {
 
 proc compileproc_can_inline_container { key } {
     global _compileproc _compileproc_ckeys
-#    set debug 1
+#    set debug 0
 
 #    if {$debug} {
 #        puts "compileproc_can_inline_container $key"
@@ -3700,17 +3676,16 @@ proc compileproc_can_inline_control { key } {
     global _compileproc
     global _compileproc_ckeys
 
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
+#    set debug 0
 
-    if {$debug} {
-        puts "compileproc_can_inline_control $key"
-    }
+#    if {$debug} {
+#        puts "compileproc_can_inline_control $key"
+#    }
 
     if {!$_compileproc(options,inline_controls)} {
-        if {$debug} {
-            puts "inline_controls option is not enabled"
-        }
+#        if {$debug} {
+#            puts "inline_controls option is not enabled"
+#        }
         return 0
     }
     if {![info exists _compileproc_ckeys($key,info_key)]} {
@@ -3740,9 +3715,9 @@ proc compileproc_can_inline_control { key } {
             set is_return 1
         }
         default {
-            if {$debug} {
-                puts "command \"$cmdname\" is not a break, continue, or return command"
-            }
+#            if {$debug} {
+#                puts "command \"$cmdname\" is not a break, continue, or return command"
+#            }
             return 0
         }
     }
@@ -3753,17 +3728,17 @@ proc compileproc_can_inline_control { key } {
 
     if {$is_break || $is_continue} {
         if {$num_args != 1} {
-            if {$debug} {
-                puts "invalid num_args $num_args to break or continue command"
-            }
+#            if {$debug} {
+#                puts "invalid num_args $num_args to break or continue command"
+#            }
             return 0
         }
     } elseif {$is_return} {
         # Let runtime handle a return with special options.
         if {$num_args != 1 && $num_args != 2} {
-            if {$debug} {
-                puts "unhandled return with $num_args arguments"
-            }
+#            if {$debug} {
+#                puts "unhandled return with $num_args arguments"
+#            }
             return 0
         }
     }
@@ -3775,9 +3750,9 @@ proc compileproc_can_inline_control { key } {
 
     set stack $_compileproc(options,controls_stack)
     if {[llength $stack] == 0} {
-        if {$debug} {
-            puts "empty controls_stack, can't inline break/continue"
-        }
+#        if {$debug} {
+#            puts "empty controls_stack, can't inline break/continue"
+#        }
         return 0
     }
     set tuple [lindex $stack 0]
@@ -3788,35 +3763,35 @@ proc compileproc_can_inline_control { key } {
         error "expected controls_stack top tuple\
             {type break 0|1 continue 0|1 return 0|1} but got \{$tuple\}"
     }
-    if {$debug} {
-        puts "checking command $cmdname : controls context is \{$tuple\}"
-    }
+#    if {$debug} {
+#        puts "checking command $cmdname : controls context is \{$tuple\}"
+#    }
     array set stack_map [lrange $tuple 1 end]
     if {$is_break && $stack_map(break)} {
         # break can be inlined
-        if {$debug} {
-            puts "can inline break command"
-        }
+#        if {$debug} {
+#            puts "can inline break command"
+#        }
         return 1
     }
     if {$is_continue && $stack_map(continue)} {
         # continue can be inlined
-        if {$debug} {
-            puts "can inline continue command"
-        }
+#        if {$debug} {
+#            puts "can inline continue command"
+#        }
         return 1
     }
     if {$is_return && $stack_map(return)} {
         # return can be inlined
-        if {$debug} {
-            puts "can inline return command"
-        }
+#        if {$debug} {
+#            puts "can inline return command"
+#        }
         return 1
     }
 
-    if {$debug} {
-        puts "can't inline break/continue/return command, not valid in context [lindex $tuple 0]"
-    }
+#    if {$debug} {
+#        puts "can't inline break/continue/return command, not valid in context [lindex $tuple 0]"
+#    }
     return 0
 }
 
@@ -3829,12 +3804,11 @@ proc compileproc_can_inline_command { key } {
     global _compileproc
     global _compileproc_ckeys
 
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
+#    set debug 0
 
-    if {$debug} {
-        puts "compileproc_can_inline_command $key"
-    }
+#    if {$debug} {
+#        puts "compileproc_can_inline_command $key"
+#    }
 
     if {!$_compileproc(options,inline_commands)} {
         return 0
@@ -3996,9 +3970,6 @@ proc compileproc_emit_container { key } {
 # Emit code for an inlined if container.
 
 proc compileproc_emit_container_if { key } {
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
-
     set buffer ""
 
     if {![descend_container_is_valid $key] || \
@@ -4126,8 +4097,7 @@ proc compileproc_expr_evaluate_boolean_emit { key expr_index } {
     global _compileproc_key_info
     global _compileproc
 
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
+#    set debug 0
 
     set buffer ""
 
@@ -4140,9 +4110,9 @@ proc compileproc_expr_evaluate_boolean_emit { key expr_index } {
         {constant boolean} -
         {constant string} {
             set value [lindex $expr_result 1]
-            if {$debug} {
-                puts "got constant value \"$value\""
-            }
+#            if {$debug} {
+#                puts "got constant value \"$value\""
+#            }
             # Convert constant value to a constant boolean.
             if {$type == {constant string}} {
                 set ovalue "\"$value\""
@@ -4151,9 +4121,9 @@ proc compileproc_expr_evaluate_boolean_emit { key expr_index } {
             }
             if {[catch {expr "!!$ovalue"} result]} {
                 # Not a constant boolean expression
-                if {$debug} {
-                    puts "expr \{!!$ovalue\} returned: $err"
-                }
+#                if {$debug} {
+#                    puts "expr \{!!$ovalue\} returned: $err"
+#                }
             } else {
                 if {$result} {
                     set simple_bool_value true
@@ -4258,12 +4228,11 @@ proc compileproc_expr_evaluate_boolean_emit { key expr_index } {
 proc compileproc_expr_evaluate { key expr_index } {
     global _compileproc _compileproc_key_info
 
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
+#    set debug 0
 
-    if {$debug} {
-        puts "compileproc_expr_evaluate $key $expr_index"
-    }
+#    if {$debug} {
+#        puts "compileproc_expr_evaluate $key $expr_index"
+#    }
 
     set types $_compileproc_key_info($key,types)
     set values $_compileproc_key_info($key,values)
@@ -4285,15 +4254,15 @@ proc compileproc_expr_evaluate { key expr_index } {
     }
 
     if {$simple_bool} {
-        if {$debug} {
-            puts "compileproc_expr_evaluate returning constant bool $simple_bool_value"
-        }
+#        if {$debug} {
+#            puts "compileproc_expr_evaluate returning constant bool $simple_bool_value"
+#        }
         return [list {constant boolean} $simple_bool_value $expr_str]
     }
 
-    if {$debug} {
-        puts "compileproc_expr_evaluate: a non-constant-boolean expr will be iterated"
-    }
+#    if {$debug} {
+#        puts "compileproc_expr_evaluate: a non-constant-boolean expr will be iterated"
+#    }
 
     # FIXME: Is there any way we could save the etree created during the descend
     # parse so we don't need to do this all over again. Also, if we parsed the
@@ -4306,9 +4275,9 @@ proc compileproc_expr_evaluate { key expr_index } {
     set range [parse_get_simple_text_range $stree text]
     set etree [parse expr $script $range]
 
-    if {$debug} {
-        puts "parsed etree: $etree"
-    }
+#    if {$debug} {
+#        puts "parsed etree: $etree"
+#    }
 
     # When iterating over an expr command or a command
     # that contains an implicit expr, we need to map
@@ -4322,23 +4291,23 @@ proc compileproc_expr_evaluate { key expr_index } {
     # since its container commands data applies to
     # the whole expression.
     set ccmds [descend_commands $key container]
-    if {$debug} {
-        puts "container commands for key $key are \{$ccmds\}"
-    }
+#    if {$debug} {
+#        puts "container commands for key $key are \{$ccmds\}"
+#    }
     set tuple [compileproc_expr_container_index $key $expr_index]
     if {[lindex $tuple 0] == "expr"} {
         set argument_ccmds $ccmds
-        if {$debug} {
-            puts "expr command found, argument_ccmds is \{$argument_ccmds\}"
-        }
+#        if {$debug} {
+#            puts "expr command found, argument_ccmds is \{$argument_ccmds\}"
+#        }
     } else {
         set container_index [lindex $tuple 1]
         set argument_ccmds [lindex $ccmds $container_index]
-        if {$debug} {
-            puts "[lindex $tuple 0] command with expr found"
-            puts "argument $expr_index maps to container index $container_index"
-            puts "argument_ccmds is \{$argument_ccmds\}"
-        }
+#        if {$debug} {
+#            puts "[lindex $tuple 0] command with expr found"
+#            puts "argument $expr_index maps to container index $container_index"
+#            puts "argument_ccmds is \{$argument_ccmds\}"
+#        }
     }
     compileproc_childkey_reset $key $argument_ccmds
 
@@ -4364,9 +4333,9 @@ proc compileproc_expr_evaluate { key expr_index } {
     set _compileproc(expr_eval_expressions) $saved_expr_eval_expressions
 
     # Check that each container command was processed.
-    if {$debug} {
-        puts "calling compileproc_childkey_validate for $key with argument_ccmds \{$argument_ccmds\}"
-    }
+#    if {$debug} {
+#        puts "calling compileproc_childkey_validate for $key with argument_ccmds \{$argument_ccmds\}"
+#    }
     compileproc_childkey_validate $key
 
     # Examine results of expr iteration
@@ -4374,13 +4343,13 @@ proc compileproc_expr_evaluate { key expr_index } {
     set type [lindex $type_value 0]
     set value [lindex $type_value 1]
 
-    if {$debug} {
-        puts "type value is: $type_value"
-        puts "num expressions is $_compileproc(expr_eval_expressions)"
-        if {$_compileproc(expr_eval_buffer) != {}} {
-        puts "eval buffer is:\n$_compileproc(expr_eval_buffer)"
-        }
-    }
+#    if {$debug} {
+#        puts "type value is: $type_value"
+#        puts "num expressions is $_compileproc(expr_eval_expressions)"
+#        if {$_compileproc(expr_eval_buffer) != {}} {
+#        puts "eval buffer is:\n$_compileproc(expr_eval_buffer)"
+#        }
+#    }
 
     return $type_value
 }
@@ -4397,12 +4366,11 @@ proc compileproc_expr_evaluate { key expr_index } {
 proc compileproc_expr_container_index { key in_expr_index } {
     global _compileproc_ckeys
 
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
+#    set debug 0
 
-    if {$debug} {
-    puts "compileproc_expr_container_index $key $in_expr_index"
-    }
+#    if {$debug} {
+#    puts "compileproc_expr_container_index $key $in_expr_index"
+#    }
 
     if {$in_expr_index == {}} {
         error "empty in_expr_index argument"
@@ -4426,9 +4394,9 @@ proc compileproc_expr_container_index { key in_expr_index } {
         # else block -> No-op
 
         # Find index in expr_indexes for in_expr_index
-        if {$debug} {
-            puts "searching list \{$expr_indexes\} for $in_expr_index"
-        }
+#        if {$debug} {
+#            puts "searching list \{$expr_indexes\} for $in_expr_index"
+#        }
         set ind [lsearch -exact $expr_indexes $in_expr_index]
         if {$ind == -1} {
             error "if: failed to find expr index $in_expr_index\
@@ -4448,18 +4416,17 @@ proc compileproc_expr_container_index { key in_expr_index } {
 proc compileproc_expr_evaluate_callback { script etree type values ranges } {
     global _compileproc
 
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
+#    set debug 0
 
     # Init
     #set _compileproc(expr_eval_key) $key
     #set _compileproc(expr_eval_buffer) {}
     #set _compileproc(expr_eval_expressions) 0
 
-    if {$debug} {
-        puts "compileproc_expr_evaluate_callback:\
-            \{$type\} \{$values\} \{$ranges\}"
-    }
+#    if {$debug} {
+#        puts "compileproc_expr_evaluate_callback:\
+#            \{$type\} \{$values\} \{$ranges\}"
+#    }
 
     switch -exact -- $type {
         {literal operand} {
@@ -4530,9 +4497,9 @@ proc compileproc_expr_evaluate_callback { script etree type values ranges } {
             set value [lindex $type_winfo 1]
             set cmap [lindex $type_winfo 2]
 
-            if {$debug} {
-            puts "compileproc_scan_word returned type/value/cmap: $type \{$value\} \{$cmap\}"
-            }
+#            if {$debug} {
+#            puts "compileproc_scan_word returned type/value/cmap: $type \{$value\} \{$cmap\}"
+#            }
 
             if {$type == "constant"} {
                 parse_expr_iterate_type_value {constant string} $value
@@ -4580,20 +4547,11 @@ proc compileproc_expr_evaluate_callback { script etree type values ranges } {
 proc compileproc_query_module_flags { proc_name } {
     global _compileproc
 
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
+#    set debug 0
 
-    # Query global debug flag and set debug flag for this
-    # module if global flag is set. This is typically
-    # set via the -debug command line flag.
-    if {0 && $::_tjc(debug)} {
-        set _compileproc(debug) 1
-        set debug 1
-    }
-
-    if {$debug} {
-        puts "compileproc_query_module_flags $proc_name"
-    }
+#    if {$debug} {
+#        puts "compileproc_query_module_flags $proc_name"
+#    }
 
     # If +inline-containers if set for this proc of for the whole module, then
     # enable the flag in this module.
@@ -4681,17 +4639,17 @@ proc compileproc_query_module_flags { proc_name } {
         set _compileproc(options,inline_expr) 1
     }
 
-    if {$debug} {
-        puts "compileproc module options set to:"
-        puts "inline_containers = $_compileproc(options,inline_containers)"
-        puts "inline_controls = $_compileproc(options,inline_controls)"
-        puts "cache_commands = $_compileproc(options,cache_commands)"
-        puts "skip_constant_increment = $_compileproc(options,skip_constant_increment)"
-        puts "cache_variables = $_compileproc(options,cache_variables)"
-        puts "inline_commands = $_compileproc(options,inline_commands)"
-        puts "omit_results = $_compileproc(options,omit_results)"
-        puts "inline_expr = $_compileproc(options,inline_expr)"
-    }
+#    if {$debug} {
+#        puts "compileproc module options set to:"
+#        puts "inline_containers = $_compileproc(options,inline_containers)"
+#        puts "inline_controls = $_compileproc(options,inline_controls)"
+#        puts "cache_commands = $_compileproc(options,cache_commands)"
+#        puts "skip_constant_increment = $_compileproc(options,skip_constant_increment)"
+#        puts "cache_variables = $_compileproc(options,cache_variables)"
+#        puts "inline_commands = $_compileproc(options,inline_commands)"
+#        puts "omit_results = $_compileproc(options,omit_results)"
+#        puts "inline_expr = $_compileproc(options,inline_expr)"
+#    }
 }
 
 # Generate fake key that we can pass to compileproc_emit_invoke
@@ -4742,9 +4700,6 @@ proc compileproc_generate_key { cmdname argl inargl } {
 
 proc compileproc_emit_container_while { key } {
     global _compileproc
-
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
 
     set buffer ""
 
@@ -4865,9 +4820,6 @@ proc compileproc_emit_container_while { key } {
 
 proc compileproc_emit_container_for { key } {
     global _compileproc
-
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
 
     set buffer ""
 
@@ -5298,12 +5250,11 @@ proc compileproc_container_catch_with_varname { key } {
 proc compileproc_emit_container_foreach { key } {
     global _compileproc
 
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
+#    set debug 0
 
-    if {$debug} {
-        puts "compileproc_emit_container_foreach $key"
-    }
+#    if {$debug} {
+#        puts "compileproc_emit_container_foreach $key"
+#    }
 
     set buffer ""
 
@@ -5314,9 +5265,9 @@ proc compileproc_emit_container_foreach { key } {
 
     # container commands is 0 to N keys for the body block
     set body_keys [descend_commands $key container]
-    if {$debug} {
-        puts "body_keys is \{$body_keys\}"
-    }
+#    if {$debug} {
+#        puts "body_keys is \{$body_keys\}"
+#    }
 
     # The varlist needs to be constant, but the values
     # lists to be iterated over can be a constant, a
@@ -5344,11 +5295,11 @@ proc compileproc_emit_container_foreach { key } {
         lappend varnamelists $varlist
     }
 
-    if {$debug} {
-        puts "varnamelists is \{$varnamelists\}"
-        puts "varnamelist_indexes is \{$varnamelist_indexes\}"
-        puts "valuelist_indexes is \{$valuelist_indexes\}"
-    }
+#    if {$debug} {
+#        puts "varnamelists is \{$varnamelists\}"
+#        puts "varnamelist_indexes is \{$varnamelist_indexes\}"
+#        puts "valuelist_indexes is \{$valuelist_indexes\}"
+#    }
 
     # Declare a local variable to hold a ref to each list value.
 
@@ -5425,12 +5376,11 @@ proc compileproc_emit_container_foreach { key } {
 
 proc compileproc_container_foreach_loop_start { varlists list_symbols } {
     set buffer ""
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
+#    set debug 0
 
-    if {$debug} {
-        puts "compileproc_container_foreach_loop_start: varlists \{$varlists\} : list_symbols \{$list_symbols\}"
-    }
+#    if {$debug} {
+#        puts "compileproc_container_foreach_loop_start: varlists \{$varlists\} : list_symbols \{$list_symbols\}"
+#    }
 
     if {[llength $varlists] == 0} {
         error "varlists can't be {}"
@@ -5541,9 +5491,9 @@ proc compileproc_container_foreach_loop_start { varlists list_symbols } {
         }
     }
 
-    if {$debug} {
-        parray tmpsymbols_map
-    }
+#    if {$debug} {
+#        parray tmpsymbols_map
+#    }
 
     # Determine indexes for each list if needed
 
@@ -5664,8 +5614,7 @@ proc compileproc_container_foreach_loop_end { key list_symbols } {
 # is a constant string then an optimized search is used.
 
 proc compileproc_emit_container_switch { key } {
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
+#    set debug 0
 
     set buffer ""
 
@@ -5690,16 +5639,16 @@ proc compileproc_emit_container_switch { key } {
     set switch_mode [descend_container_switch_mode $key]
     if {$switch_mode != "default" && $switch_mode != "exact"} {
         set inline_constant_strings 0
-        if {$debug} {
-            puts "inline_constant_strings set to 0 because mode is $switch_mode"
-        }
+#        if {$debug} {
+#            puts "inline_constant_strings set to 0 because mode is $switch_mode"
+#        }
     }
 
     # container commands is 0 to N lists of keys for each body block
     set body_keys [descend_commands $key container]
-    if {$debug} {
-        puts "body_keys is \{$body_keys\}"
-    }
+#    if {$debug} {
+#        puts "body_keys is \{$body_keys\}"
+#    }
 
     set pbIndexes [descend_container_switch_patbody_indexes $key]
     set pbIndex [lindex $pbIndexes 0]
@@ -5714,9 +5663,9 @@ proc compileproc_emit_container_switch { key } {
             set type [lindex $tuple 0]
             if {$type != "constant"} {
                 set inline_constant_strings 0
-                if {$debug} {
-                    puts "inline_constant_strings set to 0 because pattern index $pIndex is type $type"
-                }
+#                if {$debug} {
+#                    puts "inline_constant_strings set to 0 because pattern index $pIndex is type $type"
+#                }
             }
         }
     }
@@ -5874,12 +5823,11 @@ proc compileproc_emit_container_switch { key } {
 # patterns are all constant strings.
 
 proc compileproc_emit_container_switch_constant { key string_tmpsymbol } {
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
+#    set debug 0
 
-    if {$debug} {
-        puts "compileproc_emit_container_switch_constant $key $string_tmpsymbol"
-    }
+#    if {$debug} {
+#        puts "compileproc_emit_container_switch_constant $key $string_tmpsymbol"
+#    }
 
     set buffer ""
 
@@ -5922,10 +5870,10 @@ proc compileproc_emit_container_switch_constant { key string_tmpsymbol } {
         set tuple [compileproc_get_argument_tuple $key $patIndex]
         set pattern [lindex $tuple 1]
         set cmap [lindex $tuple 3]
-        if {$debug} {
-            puts "pattern ->$pattern<- at index $patIndex"
-            puts "pattern cmap is \{$cmap\}"
-        }
+#        if {$debug} {
+#            puts "pattern ->$pattern<- at index $patIndex"
+#            puts "pattern cmap is \{$cmap\}"
+#        }
 
         if {$cmap == {}} {
             # Grab the first character out of a pattern
@@ -5945,17 +5893,17 @@ proc compileproc_emit_container_switch_constant { key string_tmpsymbol } {
             # length of the escaped string.
             set pattern_len [llength $cmap]
         }
-        if {$debug} {
-            puts "pattern_first is ->$pattern_first<-"
-            puts "pattern_len is $pattern_len"
-        }
+#        if {$debug} {
+#            puts "pattern_first is ->$pattern_first<-"
+#            puts "pattern_len is $pattern_len"
+#        }
 
         set pattern_jstr [emitter_backslash_tcl_string $pattern]
         set pattern_first_jstr [emitter_backslash_tcl_string $pattern_first]
-        if {$debug} {
-            puts "pattern_jstr is ->$pattern_jstr<-"
-            puts "pattern_first_jstr is '$pattern_first_jstr'"
-        }
+#        if {$debug} {
+#            puts "pattern_jstr is ->$pattern_jstr<-"
+#            puts "pattern_first_jstr is '$pattern_first_jstr'"
+#        }
 
         set expression ""
         if {$pattern_len > 0} {
@@ -6101,13 +6049,12 @@ proc compileproc_get_variable { tmpsymbol varname varname_is_string } {
 proc compileproc_push_controls_context { type can_break can_continue {can_return keep} } {
     global _compileproc
 
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
+#    set debug 0
 
-    if {$debug} {
-        puts "compileproc_push_controls_context $type $can_break\
-            $can_continue $can_return"
-    }
+#    if {$debug} {
+#        puts "compileproc_push_controls_context $type $can_break\
+#            $can_continue $can_return"
+#    }
 
     # The default can_return means that the new context should retain the
     # can_return value from the current controls context. This is so that
@@ -6121,19 +6068,19 @@ proc compileproc_push_controls_context { type can_break can_continue {can_return
 
     set tuple [list $type "break" $can_break "continue" $can_continue \
         "return" $can_return]
-    if {$debug} {
-        puts "push controls stack tuple \{$tuple\}"
-    }
+#    if {$debug} {
+#        puts "push controls stack tuple \{$tuple\}"
+#    }
 
     set _compileproc(options,controls_stack) [linsert \
         $_compileproc(options,controls_stack) 0 $tuple]
 
-    if {$debug} {
-        puts "controls_stack:"
-        foreach tuple $_compileproc(options,controls_stack) {
-            puts $tuple
-        }
-    }
+#    if {$debug} {
+#        puts "controls_stack:"
+#        foreach tuple $_compileproc(options,controls_stack) {
+#            puts $tuple
+#        }
+#    }
 }
 
 # Pop a controls context off the stack.
@@ -6141,12 +6088,11 @@ proc compileproc_push_controls_context { type can_break can_continue {can_return
 proc compileproc_pop_controls_context { type } {
     global _compileproc
 
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
+#    set debug 0
 
-    if {$debug} {
-        puts "compileproc_pop_controls_context $type"
-    }
+#    if {$debug} {
+#        puts "compileproc_pop_controls_context $type"
+#    }
 
     set stack $_compileproc(options,controls_stack)
     if {[llength $stack] == 0} {
@@ -6165,13 +6111,13 @@ proc compileproc_pop_controls_context { type } {
         error "popped proc control context off of controls stack"
     }
 
-    if {$debug} {
-        puts "popped controls stack tuple \{$tuple\}"
-        puts "controls_stack:"
-        foreach tuple $_compileproc(options,controls_stack) {
-            puts $tuple
-        }
-    }
+#    if {$debug} {
+#        puts "popped controls stack tuple \{$tuple\}"
+#        puts "controls_stack:"
+#        foreach tuple $_compileproc(options,controls_stack) {
+#            puts $tuple
+#        }
+#    }
 
     set _compileproc(options,controls_stack) $stack
 }
@@ -6184,12 +6130,11 @@ proc compileproc_emit_control { key } {
     global _compileproc
     global _compileproc_ckeys
 
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
+#    set debug 0
 
-    if {$debug} {
-        puts "compileproc_emit_control $key"
-    }
+#    if {$debug} {
+#        puts "compileproc_emit_control $key"
+#    }
 
     set cmdname [lindex $_compileproc_ckeys($key,info_key) 1]
     switch -exact -- $cmdname {
@@ -6283,12 +6228,11 @@ proc compileproc_emit_control_return { key } {
 # expression as a boolean.
 
 proc compileproc_emit_container_expr { key } {
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
+#    set debug 0
 
-    if {$debug} {
-        puts "compileproc_emit_container_expr $key"
-    }
+#    if {$debug} {
+#        puts "compileproc_emit_container_expr $key"
+#    }
 
     set buffer ""
 
@@ -6310,20 +6254,19 @@ proc compileproc_emit_container_expr { key } {
 proc compileproc_expr_evaluate_result_emit { key } {
     global _compileproc_key_info
 
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
+#    set debug 0
 
-    if {$debug} {
-        puts "compileproc_expr_evaluate_result_emit $key"
-    }
+#    if {$debug} {
+#        puts "compileproc_expr_evaluate_result_emit $key"
+#    }
 
     set buffer ""
 
     set expr_index 1
     set expr_result [compileproc_expr_evaluate $key $expr_index]
-    if {$debug} {
-        puts "expr_result is \{$expr_result\}"
-    }
+#    if {$debug} {
+#        puts "expr_result is \{$expr_result\}"
+#    }
     set eval_tuple [compileproc_expr_evaluate_emit_exprvalue \
         $expr_result]
     set infostr [lindex $eval_tuple 0]
@@ -6342,12 +6285,11 @@ proc compileproc_expr_evaluate_result_emit { key } {
 # the bufer that will evaluate the expr value.
 
 proc compileproc_expr_evaluate_emit_unary_operator { op_tuple } {
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
+#    set debug 0
 
-    if {$debug} {
-        puts "compileproc_expr_evaluate_emit_unary_operator \{$op_tuple\}"
-    }
+#    if {$debug} {
+#        puts "compileproc_expr_evaluate_emit_unary_operator \{$op_tuple\}"
+#    }
 
     set buffer ""
 
@@ -6389,12 +6331,12 @@ proc compileproc_expr_evaluate_emit_unary_operator { op_tuple } {
         set is_numeric_literal 0
     }
 
-    if {$debug} {
-        puts "op is $op"
-        puts "passed tuple \{$tuple\} to compileproc_expr_evaluate_emit_exprvalue"
-        puts "value_info_type is $value_info_type"
-        puts "value_info_value is $value_info_value"
-    }
+#    if {$debug} {
+#        puts "op is $op"
+#        puts "passed tuple \{$tuple\} to compileproc_expr_evaluate_emit_exprvalue"
+#        puts "value_info_type is $value_info_type"
+#        puts "value_info_value is $value_info_value"
+#    }
 
     set skip_unary_op_call 0
     set plus_number 0
@@ -6408,10 +6350,10 @@ proc compileproc_expr_evaluate_emit_unary_operator { op_tuple } {
     # with a negative sign added to the front.
 
     if {$op == "-" && $value_info_type == "String"} {
-        if {$debug} {
-            puts "possible smallest int negation: op is $op,\
-                \{$value_info_type $value_info_value\}"
-        }
+#        if {$debug} {
+#            puts "possible smallest int negation: op is $op,\
+#                \{$value_info_type $value_info_value\}"
+#        }
         set numeric_literal [string range \
             $value_info_value 1 end-1]
         set numeric_literal [string trim $numeric_literal]
@@ -6424,13 +6366,13 @@ proc compileproc_expr_evaluate_emit_unary_operator { op_tuple } {
         set min "-0x80000000"
         set wneg "-${numeric_literal}"
         set is_jint [compileproc_string_is_java_integer $wneg]
-        if {$debug} {
-            puts "wneg is $wneg"
-            puts "min is $min"
-            puts "is_already_negative is $is_already_negative"
-            puts "is java integer is $is_jint"
-            puts "expr == compare is [expr {$wneg == $min}]"
-        }
+#        if {$debug} {
+#            puts "wneg is $wneg"
+#            puts "min is $min"
+#            puts "is_already_negative is $is_already_negative"
+#            puts "is java integer is $is_jint"
+#            puts "expr == compare is [expr {$wneg == $min}]"
+#        }
         if {!$is_already_negative && \
                 $is_jint && \
                 ($wneg == $min)} {
@@ -6541,11 +6483,11 @@ proc compileproc_expr_evaluate_emit_unary_operator { op_tuple } {
 proc compileproc_expr_evaluate_emit_binary_operator { op_tuple } {
     global _compileproc
 
-    set debug 0
+#    set debug 0
 
-    if {$debug} {
-        puts "compileproc_expr_evaluate_emit_binary_operator \{$op_tuple\}"
-    }
+#    if {$debug} {
+#        puts "compileproc_expr_evaluate_emit_binary_operator \{$op_tuple\}"
+#    }
 
     set buffer ""
 
@@ -6635,20 +6577,20 @@ proc compileproc_expr_evaluate_emit_binary_operator { op_tuple } {
     set left_tuple [lindex $values 0]
     set right_tuple [lindex $values 1]
 
-    if {$debug} {
-        puts "left_tuple is \{$left_tuple\}"
-        puts "right_tuple is \{$right_tuple\}"
-    }
+#    if {$debug} {
+#        puts "left_tuple is \{$left_tuple\}"
+#        puts "right_tuple is \{$right_tuple\}"
+#    }
 
     set left_eval_tuple [compileproc_expr_evaluate_emit_exprvalue \
         $left_tuple]
     set right_eval_tuple [compileproc_expr_evaluate_emit_exprvalue \
         $right_tuple]
 
-    if {$debug} {
-        puts "left_eval_tuple is \{$left_eval_tuple\}"
-        puts "right_eval_tuple is \{$right_eval_tuple\}"
-    }
+#    if {$debug} {
+#        puts "left_eval_tuple is \{$left_eval_tuple\}"
+#        puts "right_eval_tuple is \{$right_eval_tuple\}"
+#    }
 
     set left_infostr [lindex $left_eval_tuple 0]
     set right_infostr [lindex $right_eval_tuple 0]
@@ -6680,13 +6622,13 @@ proc compileproc_expr_evaluate_emit_binary_operator { op_tuple } {
     set opt_tclobject_to_tclobject_string_compare 0
     set opt_tclobject_to_exprvalue_string_compare 0
 
-    if {$debug} {
-        puts "pre empty_string_compare check: op is $op"
-        puts "left_value_info_type $left_value_info_type"
-        puts "left_value_info_value $left_value_info_value"
-        puts "right_value_info_type $right_value_info_type"
-        puts "right_value_info_value $right_value_info_value"
-    }
+#    if {$debug} {
+#        puts "pre empty_string_compare check: op is $op"
+#        puts "left_value_info_type $left_value_info_type"
+#        puts "left_value_info_value $left_value_info_value"
+#        puts "right_value_info_type $right_value_info_type"
+#        puts "right_value_info_value $right_value_info_value"
+#    }
 
     if {($left_value_info_type == "TclObject" && \
             $right_value_info_type == "String") || \
@@ -6747,23 +6689,23 @@ proc compileproc_expr_evaluate_emit_binary_operator { op_tuple } {
         }
     }
 
-    if {$debug} {
-        puts "post empty_string_compare check: op is $op"
-        puts "is_tclobject_string_compare $is_tclobject_string_compare"
-        puts "opt_tclobject_empty_string_compare $opt_tclobject_empty_string_compare"
-        puts "opt_tclobject_string_compare $opt_tclobject_string_compare"
-        puts "is_left_operand_tclobject $is_left_operand_tclobject"
-        puts "opt_tclobject_to_tclobject_string_compare $opt_tclobject_to_tclobject_string_compare"
-        puts "opt_tclobject_to_exprvalue_string_compare $opt_tclobject_to_exprvalue_string_compare"
-    }
+#    if {$debug} {
+#        puts "post empty_string_compare check: op is $op"
+#        puts "is_tclobject_string_compare $is_tclobject_string_compare"
+#        puts "opt_tclobject_empty_string_compare $opt_tclobject_empty_string_compare"
+#        puts "opt_tclobject_string_compare $opt_tclobject_string_compare"
+#        puts "is_left_operand_tclobject $is_left_operand_tclobject"
+#        puts "opt_tclobject_to_tclobject_string_compare $opt_tclobject_to_tclobject_string_compare"
+#        puts "opt_tclobject_to_exprvalue_string_compare $opt_tclobject_to_exprvalue_string_compare"
+#    }
 
     # Check for special flag used only during code generation testing
     if {[info exists _compileproc(options,expr_no_string_compare_optimizations)]} {
         set opt_tclobject_string_compare 0
         set opt_tclobject_empty_string_compare 0
-        if {$debug} {
-            puts "expr_no_string_compare_optimizations flag set"
-        }
+#        if {$debug} {
+#            puts "expr_no_string_compare_optimizations flag set"
+#        }
     }
 
     # Printable info describing this operator and
@@ -7065,12 +7007,11 @@ proc compileproc_expr_evaluate_emit_ternary_operator { op_tuple } {
 # evaluate the expr value.
 
 proc compileproc_expr_evaluate_emit_math_function { op_tuple } {
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
+#    set debug 0
 
-    if {$debug} {
-        puts "compileproc_expr_evaluate_emit_math_function \{$op_tuple\}"
-    }
+#    if {$debug} {
+#        puts "compileproc_expr_evaluate_emit_math_function \{$op_tuple\}"
+#    }
 
     set buffer ""
 
@@ -7162,12 +7103,11 @@ proc compileproc_expr_evaluate_emit_math_function { op_tuple } {
 # the value is a TclObject.
 
 proc compileproc_expr_evaluate_emit_exprvalue { tuple {no_exprvalue_for_tclobject 0} } {
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
+#    set debug 0
 
-    if {$debug} {
-        puts "compileproc_expr_evaluate_emit_exprvalue \{$tuple\} $no_exprvalue_for_tclobject"
-    }
+#    if {$debug} {
+#        puts "compileproc_expr_evaluate_emit_exprvalue \{$tuple\} $no_exprvalue_for_tclobject"
+#    }
 
     set buffer ""
     set infostr ""
@@ -7303,9 +7243,9 @@ proc compileproc_expr_evaluate_emit_exprvalue { tuple {no_exprvalue_for_tclobjec
         }
         {command operand} {
             set ccmds $value
-            if {$debug} {
-                puts "container commands for command operand are \{$ccmds\}"
-            }
+#            if {$debug} {
+#                puts "container commands for command operand are \{$ccmds\}"
+#            }
             if {$ccmds == {}} {
                 set infostr "\[\]"
                 set result_type "String"
@@ -7327,12 +7267,12 @@ proc compileproc_expr_evaluate_emit_exprvalue { tuple {no_exprvalue_for_tclobjec
             set types [lindex $value 0]
             set values [lindex $value 1]
             set cmap [lindex $value 2]
-            if {$debug} {
-                puts "expr value is a {word operand}:"
-                puts "types is \{$types\}"
-                puts "values is \{$values\}"
-                puts "cmap is \{$cmap\}"
-            }
+#            if {$debug} {
+#                puts "expr value is a {word operand}:"
+#                puts "types is \{$types\}"
+#                puts "values is \{$values\}"
+#                puts "cmap is \{$cmap\}"
+#            }
 
             set winfo $values
 
@@ -7350,11 +7290,11 @@ proc compileproc_expr_evaluate_emit_exprvalue { tuple {no_exprvalue_for_tclobjec
         }
     }
 
-    if {$debug} {
-        puts "result_type is \"$result_type\""
-        puts "result_symbol is ->$result_symbol<-"
-        puts "srep is \"$srep\""
-    }
+#    if {$debug} {
+#        puts "result_type is \"$result_type\""
+#        puts "result_symbol is ->$result_symbol<-"
+#        puts "srep is \"$srep\""
+#    }
 
     # Invoke one of the TJC.exprGetValue() methods, there is
     # one for int, double, String, and TclObject argument types.
@@ -7496,12 +7436,11 @@ proc compileproc_string_is_java_integer { tstr } {
 # this method will return 0.
 
 proc compileproc_string_is_java_double { tstr } {
-    set debug 0
-    if {$::_compileproc(debug)} {set debug 1}
+#    set debug 0
 
-    if {$debug} {
-        puts "compileproc_string_is_java_double \"$tstr\""
-    }
+#    if {$debug} {
+#        puts "compileproc_string_is_java_double \"$tstr\""
+#    }
 
     if {$tstr == "" || ![string is double $tstr]} {
         return 0

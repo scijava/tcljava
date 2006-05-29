@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: parse.tcl,v 1.3 2006/03/08 19:12:08 mdejong Exp $
+#  RCS: @(#) $Id: parse.tcl,v 1.4 2006/05/29 21:56:14 mdejong Exp $
 #
 #
 
@@ -346,7 +346,7 @@ proc parse_is_text { stree } {
 # given the subtree and the script it was generated from.
 
 proc parse_get_text { script stree } {
-    set debug 0
+#    set debug 0
 
     if {![parse_is_text $stree]} {
         error "not a text type stree : \{$stree\}"
@@ -354,10 +354,10 @@ proc parse_get_text { script stree } {
 
     set range [lindex $stree 1]
 
-    if {$debug} {
-        puts "range is \{$range\}"
-        puts "will return range string \"[parse getstring $script $range]\""
-    }
+#    if {$debug} {
+#        puts "range is \{$range\}"
+#        puts "will return range string \"[parse getstring $script $range]\""
+#    }
 
     return [parse getstring $script $range]
 }
@@ -854,7 +854,7 @@ proc parse_is_command { stree } {
 # Return the command text inside the brackets for a command type.
 
 proc parse_get_command { script stree } {
-    set debug 0
+#    set debug 0
 
     if {![parse_is_command $stree]} {
         error "not a command type stree : \{$stree\}"
@@ -862,10 +862,10 @@ proc parse_get_command { script stree } {
 
     set range [parse_range_without_brackets $script [lindex $stree 1]]
 
-    if {$debug} {
-        puts "range is \{$range\}"
-        puts "will return range string \"[parse getstring $script $range]\""
-    }
+#    if {$debug} {
+#        puts "range is \{$range\}"
+#        puts "will return range string \"[parse getstring $script $range]\""
+#    }
 
     return [parse getstring $script $range]
 }
