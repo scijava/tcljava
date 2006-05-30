@@ -1,3 +1,14 @@
+2006-05-30  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/tcljava/tcl/lang/TclString.java:
+        Reimplement TclString so that a dummy
+        ref is set inside the TclObject. This
+        dummy value is used for each TclObject
+        that contains a TclString unless the
+        TclString is appended to. This change
+        avoids having to allocate thousands of
+        unused TclString instances.
+
 2006-05-29  Mo DeJong  <mdejong@users.sourceforge.net>
 
         Comment out debug statements. This generates

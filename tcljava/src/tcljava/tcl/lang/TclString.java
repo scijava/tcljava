@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclString.java,v 1.10 2006/01/27 23:39:02 mdejong Exp $
+ * RCS: @(#) $Id: TclString.java,v 1.11 2006/05/30 17:28:01 mdejong Exp $
  *
  */
 
@@ -16,6 +16,15 @@ package tcl.lang;
 // This class implements the string object type in Tcl.
 
 public class TclString implements InternalRep {
+
+    // This dummy field is used as the internal rep for every
+    // TclString that has not been modified via an append
+    // operation. The most common case is for a TclString
+    // to be created but never be appended to. This field
+    // makes it possible to avoid allocating an internal
+    // rep instance until a string is actually modified.
+
+    private static TclString dummy = new TclString();
 
     // Used to perform "append" operations. After an append op,
     // sbuf.toString() will contain the latest value of the string and
@@ -71,7 +80,7 @@ public class TclString implements InternalRep {
 	    TclObject.objRecordMap.put(key, num);
 	}
 
-	return new TclString();
+	return dummy;
     }
 
     /**
@@ -100,7 +109,7 @@ public class TclString implements InternalRep {
      * the given string value.
      */
     public static TclObject newInstance(String str) {
-	return new TclObject(new TclString(), str);
+	return new TclObject(dummy, str);
     }
 
     /**
@@ -144,7 +153,7 @@ public class TclString implements InternalRep {
 
 	    // Change the type of the object to TclString.
 
-	    tobj.setInternalRep(new TclString());
+	    tobj.setInternalRep(dummy);
 
 	    if (TclObject.saveObjRecords) {
 	        String key = "String -> TclString";
@@ -178,6 +187,10 @@ public class TclString implements InternalRep {
 	setStringFromAny(tobj);
 
 	TclString tstr = (TclString) tobj.getInternalRep();
+	if (tstr == dummy) {
+	    tstr = new TclString();
+	    tobj.setInternalRep(tstr);
+	}
 	if (tstr.sbuf == null) {
 	    tstr.sbuf = new StringBuffer(tobj.toString());
 	}
@@ -199,6 +212,10 @@ public class TclString implements InternalRep {
 	setStringFromAny(tobj);
 
 	TclString tstr = (TclString) tobj.getInternalRep();
+	if (tstr == dummy) {
+	    tstr = new TclString();
+	    tobj.setInternalRep(tstr);
+	}
 	if (tstr.sbuf == null) {
 	    tstr.sbuf = new StringBuffer(tobj.toString());
 	}
@@ -236,6 +253,10 @@ public class TclString implements InternalRep {
 	setStringFromAny(tobj);
 
 	TclString tstr = (TclString) tobj.getInternalRep();
+	if (tstr == dummy) {
+	    tstr = new TclString();
+	    tobj.setInternalRep(tstr);
+	}
 	if (tstr.sbuf == null) {
 	    tstr.sbuf = new StringBuffer(tobj.toString());
 	}
@@ -261,13 +282,18 @@ public class TclString implements InternalRep {
 
     /**
      * This procedure clears out an existing TclObject so
-     * that it has a string representation of "".
+     * that it has a string representation of "". This
+     * method is used only in the IO layer.
      */
 
     public static void empty(TclObject tobj) {
 	setStringFromAny(tobj);
 
 	TclString tstr = (TclString) tobj.getInternalRep();
+	if (tstr == dummy) {
+	    tstr = new TclString();
+	    tobj.setInternalRep(tstr);
+	}
 	if (tstr.sbuf == null) {
 	    tstr.sbuf = new StringBuffer();
 	} else {
