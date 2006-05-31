@@ -1,3 +1,9 @@
+2006-05-31  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/jacl/tcl/lang/Interp.java (eval, evalResource):
+        Check for exception and raise proper error message
+        in case Jacl is run in an applet.
+
 2006-05-30  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/tcljava/tcl/lang/TclString.java:

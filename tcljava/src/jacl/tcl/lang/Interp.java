@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.79 2006/05/25 23:17:58 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.80 2006/05/31 19:22:44 mdejong Exp $
  *
  */
 
@@ -2540,6 +2540,10 @@ eval(
 throws 
     TclException 	// A standard Tcl exception.
 {
+    if (string == null) {
+        throw new NullPointerException("passed null String to eval()");
+    }
+
     int evalFlags = this.evalFlags;
     this.evalFlags &= ~Parser.TCL_ALLOW_EXCEPTIONS;
 
@@ -3213,6 +3217,11 @@ throws
                         resName + "\"");
                 }
                 script = readScriptFromInputStream(stream);
+                if (script == null) {
+                    throw new TclException(this,
+                        "cannot read resource \"" +
+                        resName + "\"");
+                }
 
                 tclLibraryScripts.put(resName, script);
             } else {
@@ -3235,6 +3244,11 @@ throws
                 resName + "\"");
         }
         script = readScriptFromInputStream(stream);
+        if (script == null) {
+            throw new TclException(this,
+                "cannot read resource \"" +
+                resName + "\"");
+        }
     }
 
     // Define Interp.scriptFile as a resource so that [info script]
