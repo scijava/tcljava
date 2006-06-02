@@ -66,7 +66,7 @@ proc invoke_a10 {1 2 3 4 5 6 7 8 9 10} {}
 # Invoke the commands 10 times without using a loop,
 # this keeps the test times free of loop overhead.
 # All the arguments are constants, so argument
-# assignment fast.
+# assignment is fast.
 
 proc invoke_1_to_10 {} {
 
@@ -212,5 +212,5 @@ proc invoke_1_to_10_loop {} {
 
 bench -desc "invoke_empty" -body {invoke_empty}
 bench -desc "invoke_1_to_10" -body {invoke_1_to_10}
-bench -desc "invoke_1_to_10_loop" -body {invoke_1_to_10_loop} -iter 100
+bench -desc "invoke_1_to_10_loop" -body {invoke_1_to_10_loop}
 

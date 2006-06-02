@@ -4,7 +4,7 @@
 # This file has to have code that works in any version of Tcl that
 # the user would want to benchmark.
 #
-# RCS: @(#) $Id: libbench.tcl,v 1.7 2006/05/14 22:07:49 mdejong Exp $
+# RCS: @(#) $Id: libbench.tcl,v 1.8 2006/06/02 00:47:46 mdejong Exp $
 #
 # Copyright (c) 2000-2001 Jeffrey Hobbs.
 
@@ -206,6 +206,8 @@ proc prepare_and_run_body { body iterations } {
 
     set restarted 0
 
+    set converged_before 0
+
     set max_loops 10
     if {$iterations == 1} {
         # Must be a really long test, don't try to run
@@ -220,6 +222,9 @@ proc prepare_and_run_body { body iterations } {
 
         set t [run_body $body $iterations]
         lappend times $t
+        if {$debug} {
+            puts stderr "time is $t"
+        }
         if {$t_last != -1} {
             set dt [expr {$t - $t_last}]
             lappend deltas $dt
@@ -237,8 +242,28 @@ proc prepare_and_run_body { body iterations } {
             continue
         } else {
             # It the results are converging, then
-            # no need to run tests anymore.
-            if {abs($pt) < 0.08} {
+            # no need to run tests anymore. Test
+            # that do not take long have a smaller
+            # threshhold for convergence.
+
+            if {$t <= 400} {
+                set small_delta 0.08
+            } else {
+                set small_delta 0.01
+            }
+
+            if {abs($pt) < $small_delta} {
+                # Require that the results converge twice
+                # before stopping the loop.
+
+                if {!$converged_before} {
+                    if {$debug} {
+                        puts stderr "delta percent $pt, converged_before flag set"
+                    }
+                    set converged_before 1
+                    continue
+                }
+
                 if {$debug} {
                     puts stderr "delta percent $pt is no longer converging at $i"
                 }
@@ -260,6 +285,7 @@ proc prepare_and_run_body { body iterations } {
                     set deltas [list]
                     set percents [list]
                     set t_last -1
+                    set converged_before 0
 
                     set iterations [expr {$iterations * 5}]
                     set i 0
@@ -267,7 +293,12 @@ proc prepare_and_run_body { body iterations } {
                 }
 
                 break
+            } else {
+                if {$converged_before} {
+                    set converged_before 0
+                }
             }
+            
             if {$debug} {
                puts stderr "delta percent $pt could still be converging at $i"
             }
@@ -281,14 +312,25 @@ proc prepare_and_run_body { body iterations } {
         puts stderr "Percents :\t$percents"
     }
 
-    # report the fastest time
-    set mt [lindex $times 0]
-    foreach t [lrange $times 1 end] {
-        if {$t < $mt} {
-            set mt $t
-        }
+    # The last couple of times in the list indicate
+    # the times that were converged to. Get an
+    # average of the last 3 times and report that.
+
+    set ctimes [lrange $times end-2 end]
+
+    if {$debug} {
+        puts stderr "converged to times \{$ctimes\}"
     }
 
+    set t1 [lindex $ctimes 0]
+    set t2 [lindex $ctimes 1]
+    set t3 [lindex $ctimes 2]
+
+    set mt [expr {round(($t1 + $t2 + $t3) / 3.0)}]
+
+    if {$debug} {
+        puts stderr "reporting test time $mt"
+    }
     return $mt
 }
 
@@ -315,7 +357,7 @@ foreach {var val} {
 	RMATCH		{}
 	OUTFILE		stdout
 	FILES		{}
-	ITERS		1000
+	ITERS		2000
 	THREADS		0
 	TJC		0
 	EXIT		"[info exists tk_version]"
