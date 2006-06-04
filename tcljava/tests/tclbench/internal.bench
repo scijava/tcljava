@@ -1,0 +1,34 @@
+# This series of tests checks specific internal
+# TJC/Jacl APIs. These tests may need to
+# invoke a specific function in a tight loop
+# in order to get specific measurements about
+# how the API performs on its own.
+
+package require TJC
+
+set tuples [list \
+    {internal-expr-parse-int-value tcl.lang.TJCBench InternalExprParseIntValue} \
+    {internal-expr-parse-double-value tcl.lang.TJCBench InternalExprParseDoubleValue} \
+    {internal-expr-get-boolean-int tcl.lang.TJCBench InternalExprGetBooleanInt} \
+    {internal-expr-get-boolean-double tcl.lang.TJCBench InternalExprGetBooleanDouble} \
+    {internal-expr-get-boolean-string tcl.lang.TJCBench InternalExprGetBooleanString} \
+    {internal-expr-op-int-plus tcl.lang.TJCBench InternalExprOpIntPlus} \
+    {internal-expr-op-double-plus tcl.lang.TJCBench InternalExprOpDoublePlus} \
+    {internal-expr-op-int-not tcl.lang.TJCBench InternalExprOpIntNot} \
+    {internal-incr tcl.lang.TJCBench InternalIncr} \
+    ]
+
+foreach tuple $tuples {
+    set cmd [lindex $tuple 0]
+    set jclass [lindex $tuple 1]
+    set test [lindex $tuple 2]
+    TJC::command $cmd $jclass
+}
+
+foreach tuple $tuples {
+    set cmd [lindex $tuple 0]
+    set jclass [lindex $tuple 1]
+    set test [lindex $tuple 2]
+    bench -desc $cmd -body [list $cmd $test] -iter 5000
+}
+

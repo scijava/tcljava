@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TJCCommandCmd.java,v 1.4 2006/04/13 07:36:51 mdejong Exp $
+ * RCS: @(#) $Id: TJCCommandCmd.java,v 1.5 2006/06/04 20:35:21 mdejong Exp $
  *
  */
 
@@ -30,18 +30,7 @@ public void
         String classname = objv[2].toString();
 
         // Create instance of named command
-
-        Class c = null;
-        try {
-            ClassLoader tclClassLoader = interp.getClassLoader();
-            c = tclClassLoader.loadClass(classname);
-        } catch (ClassNotFoundException cnfe) {
-            throw new TclException(interp,
-                "class " + classname + " not found");
-        } catch (PackageNameException pne) {
-            throw new TclException(interp,
-                "class " + classname + " could not be loaded");
-        }
+        Class c = JavaInvoke.getClassByName(interp, classname);
 
         Object o = null;
         try {

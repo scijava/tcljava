@@ -1,3 +1,15 @@
+2006-06-03  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/tjc/tcl/lang/TJCBench.java: Add Tcl Bench
+        tests for internal APIs.
+        * src/tjc/tcl/lang/TJCCommandCmd.java:
+        * src/tjc/tcl/lang/TJCPackageCmd.java: Update
+        class loading logic so that getClassByName()
+        is used to load a Java class by name. This
+        fixes support for inner class names.
+        * tests/tclbench/internal.bench: Add internal
+        benchmark tests for TJC and Expression modules.
+
 2006-06-01  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * tests/tclbench/invoke.bench: Run invoke_1_to_10_loop
