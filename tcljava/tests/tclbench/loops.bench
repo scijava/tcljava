@@ -115,7 +115,7 @@ proc loops-while-1-ten {size} {
 
 
 # iterate over chars in string using [string index]
-proc loops-for-string {s} {
+proc loops-for-string-index {s} {
     set len [string length $s]
     for {set i 0} {$i < $len} {incr i} {
         set var [string index $s $i]
@@ -129,11 +129,33 @@ proc loops-foreach-split-every-char {s} {
     }
 }
 
+# split a string of characters over and over again to
+# get timing results for the split command.
+
+proc loops-split-every-char {s} {
+    split $s {}
+    split $s {}
+    split $s {}
+    split $s {}
+    split $s {}
+}
+
 # iterate over split string using foreach, split on one char.
 proc loops-foreach-split-char { str } {
     foreach c [split $str "\n"] {
 	set var $c
     }
+}
+
+# split a string of characters over and over again to
+# get timing results for the split command.
+
+proc loops-split-char {s} {
+    split $s "\n"
+    split $s "\n"
+    split $s "\n"
+    split $s "\n"
+    split $s "\n"
 }
 
 # iterate over split string using foreach, split on default chars.
@@ -142,6 +164,18 @@ proc loops-foreach-split-char-def { str } {
 	set var $c
     }
 }
+
+# split a string of characters over and over again to
+# get timing results for the split command.
+
+proc loops-split-char-def {s} {
+    split $s
+    split $s
+    split $s
+    split $s
+    split $s
+}
+
 
 set list {}
 set string ""
@@ -177,13 +211,24 @@ bench -desc "loops-while-1-$size" \
 bench -desc "loops-while-1-ten-$size" \
 	-body {loops-while-1-ten $size}
 
-bench -desc "loops-for-string" \
-      -body {loops-for-string $string}
+bench -desc "loops-for-string-index" \
+      -body {loops-for-string-index $string}
 
 bench -desc "loops-foreach-split-every-char" \
       -body {loops-foreach-split-every-char $string}
+
+bench -desc "loops-split-every-char" \
+      -body {loops-split-every-char $string}
+
 bench -desc "loops-foreach-split-char" \
       -body {loops-foreach-split-char $newlinestr}
+
+bench -desc "loops-split-char" \
+      -body {loops-split-char $newlinestr}
+
 bench -desc "loops-foreach-split-char-def" \
       -body {loops-foreach-split-char-def $newlinestr}
+
+bench -desc "loops-split-char-def" \
+      -body {loops-split-char-def $newlinestr}
 

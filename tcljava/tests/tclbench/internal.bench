@@ -16,6 +16,9 @@ set tuples [list \
     {internal-expr-op-double-plus tcl.lang.TJCBench InternalExprOpDoublePlus} \
     {internal-expr-op-int-not tcl.lang.TJCBench InternalExprOpIntNot} \
     {internal-incr tcl.lang.TJCBench InternalIncr} \
+    {internal-tcl-list-append tcl.lang.TJCBench InternalTclListAppend} \
+    {internal-tcl-list-length tcl.lang.TJCBench InternalTclListLength} \
+    {internal-tcl-list-lindex tcl.lang.TJCBench InternalTclListLindex} \
     ]
 
 foreach tuple $tuples {

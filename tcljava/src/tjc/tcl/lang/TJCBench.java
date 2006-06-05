@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TJCBench.java,v 1.1 2006/06/04 20:35:21 mdejong Exp $
+ * RCS: @(#) $Id: TJCBench.java,v 1.2 2006/06/05 03:29:10 mdejong Exp $
  *
  */
 
@@ -50,6 +50,12 @@ public class TJCBench extends TJC.CompiledCommand {
              InternalExprOpIntNot(interp);
         } else if (testname.equals("InternalIncr")) {
              InternalIncr(interp);
+        } else if (testname.equals("InternalTclListAppend")) {
+             InternalTclListAppend(interp);
+        } else if (testname.equals("InternalTclListLength")) {
+             InternalTclListLength(interp);
+        } else if (testname.equals("InternalTclListLindex")) {
+             InternalTclListLindex(interp);
         } else {
              throw new TclException(interp, "unknown test name \"" + testname + "\"");
         }
@@ -179,6 +185,72 @@ public class TJCBench extends TJC.CompiledCommand {
         for (int i=0; i < 5000; i++) {
             TclInteger.incr(interp, tobj, 1);
         }
+    }
+
+    // Invoke TclList.append() on an unshared
+    // TclObject with the TclList type. This
+    // will get timing info for TclList.append(),
+    // a low level and commonly used operation.
+
+    void InternalTclListAppend(Interp interp)
+        throws TclException
+    {
+        TclObject tlist = TclList.newInstance();
+        TclObject tobj = interp.checkCommonString(null); // Empty string
+
+        for (int i=0; i < 5000; i++) {
+            TclList.append(interp, tlist, tobj);
+        }
+    }
+
+    // Invoke TclList.getLength() on an unshared
+    // TclObject with the TclList type. This
+    // will get timing info for this commonly
+    // used low level operation.
+
+    void InternalTclListLength(Interp interp)
+        throws TclException
+    {
+        TclObject tlist = TclList.newInstance();
+        TclObject tobj = interp.checkCommonString(null); // Empty string
+
+        // Create list of length 3
+        TclList.append(interp, tlist, tobj);
+        TclList.append(interp, tlist, tobj);
+        TclList.append(interp, tlist, tobj);
+        int size = 0;
+
+        for (int i=0; i < 5000; i++) {
+            size += TclList.getLength(interp, tlist);
+        }
+        size += 1; // Don't optimize away int assignment
+    }
+
+    // Invoke TclList.index() in a loop to get
+    // timing info for this low level operation.
+
+    void InternalTclListLindex(Interp interp)
+        throws TclException
+    {
+        TclObject tlist = TclList.newInstance();
+        TclObject tobj = interp.checkCommonString(null); // Empty string
+
+        // Create list of length 10
+        TclList.append(interp, tlist, tobj);
+        TclList.append(interp, tlist, tobj);
+        TclList.append(interp, tlist, tobj);
+        TclList.append(interp, tlist, tobj);
+        TclList.append(interp, tlist, tobj);
+        TclList.append(interp, tlist, tobj);
+        TclList.append(interp, tlist, tobj);
+        TclList.append(interp, tlist, tobj);
+        TclList.append(interp, tlist, tobj);
+        TclList.append(interp, tlist, tobj);
+
+        for (int i=0; i < 5000; i++) {
+            tobj = TclList.index(interp, tlist, 6);
+        }
+        tlist = tobj; // Don't optimize away assignment
     }
 
 } // end class TJCBench

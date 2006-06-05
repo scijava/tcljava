@@ -25,10 +25,9 @@ set f2 [lindex $argv 1]
 set t1 [read_timings $f1]
 set t2 [read_timings $f2]
 
-# Make sure each test id matches, then write
-# out a text file separated by spaces.
+# Make sure each test id matches, then write csv file.
 
-set output "TEST,[file tail $f1],[file tail $f2]\n"
+set output "TEST,[file tail $f1],[file tail $f2],Delta\n"
 
 foreach e1 $t1 e2 $t2 {
     set name1 [lindex $e1 0]
@@ -39,7 +38,8 @@ foreach e1 $t1 e2 $t2 {
 
     set time1 [lindex $e1 1]
     set time2 [lindex $e2 1]
-    append output "$name1,$time1,$time2\n"
+    set delta [expr {$time2 - $time1}]
+    append output "$name1,$time1,$time2,$delta\n"
 }
 
 set outfile compare.csv
