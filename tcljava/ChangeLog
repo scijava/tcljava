@@ -1,3 +1,12 @@
+2006-06-04  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/tjc/tcl/lang/TJCBench.java: Add TclList
+        basic operation tests.
+        * tests/tclbench/compare.tcl: Calc time delta.
+        * tests/tclbench/internal.bench:
+        * tests/tclbench/loops.bench: Add tests for
+        split command.
+
 2006-06-03  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/tjc/tcl/lang/TJCBench.java: Add Tcl Bench
