@@ -19,6 +19,13 @@ set tuples [list \
     {internal-tcl-list-append tcl.lang.TJCBench InternalTclListAppend} \
     {internal-tcl-list-length tcl.lang.TJCBench InternalTclListLength} \
     {internal-tcl-list-lindex tcl.lang.TJCBench InternalTclListLindex} \
+    {internal-split-char-cmd tcl.lang.TJCBench InternalSplitCharCmd} \
+    {internal-split-default-cmd tcl.lang.TJCBench InternalSplitDefaultCmd} \
+    {internal-split-every-char-cmd tcl.lang.TJCBench InternalSplitEveryCharCmd} \
+    {internal-split-append-element tcl.lang.TJCBench InternalSplitAppendElement} \
+    {internal-split-append-empty-string tcl.lang.TJCBench InternalSplitAppendEmptyString} \
+    {internal-split-append-newline tcl.lang.TJCBench InternalSplitAppendNewline} \
+    {internal-split-append-substring tcl.lang.TJCBench InternalSplitAppendSubstring} \
     ]
 
 foreach tuple $tuples {

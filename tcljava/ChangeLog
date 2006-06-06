@@ -1,3 +1,12 @@
+2006-06-05  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/jacl/tcl/lang/SplitCmd.java (appendElement):
+        Fix bug that resulted in common char and empty
+        string not being used when splitting a string.
+        * src/tjc/tcl/lang/TJCBench.java:
+        * tests/tclbench/internal.bench: Add string
+        split runtime tests.
+
 2006-06-04  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/tjc/tcl/lang/TJCBench.java: Add TclList

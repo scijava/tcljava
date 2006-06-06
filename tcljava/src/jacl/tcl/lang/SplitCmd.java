@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: SplitCmd.java,v 1.2 2006/05/23 00:36:40 mdejong Exp $
+ * RCS: @(#) $Id: SplitCmd.java,v 1.3 2006/06/06 04:48:03 mdejong Exp $
  *
  */
 
@@ -137,7 +137,7 @@ class SplitCmd implements Command {
     {
         TclObject tobj;
 
-        switch (starti - endi) {
+        switch (endi - starti) {
             case 0: {
                 tobj = interp.checkCommonString(null);
                 break;

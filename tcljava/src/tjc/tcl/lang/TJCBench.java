@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TJCBench.java,v 1.2 2006/06/05 03:29:10 mdejong Exp $
+ * RCS: @(#) $Id: TJCBench.java,v 1.3 2006/06/06 04:48:03 mdejong Exp $
  *
  */
 
@@ -21,6 +21,27 @@
 package tcl.lang;
 
 public class TJCBench extends TJC.CompiledCommand {
+
+    static String fiveHundredZeros;
+    static String newlineStr;
+
+    static {
+        StringBuffer sb1 = new StringBuffer( 500 );
+
+        // Generate string of 500 zeros
+        for (int i=0; i < 50 ; i++) {
+            sb1.append("0000000000");
+        }
+        fiveHundredZeros = sb1.toString();
+
+        // Generate newlinestr
+        String rep = "ONETWOTHREE\n54985348543538434535435\nxysssksdalsdjjalsk\n";
+        StringBuffer sb2 = new StringBuffer( rep.length() * 500 );
+        for (int i=0; i < 500 ; i++) {
+            sb2.append(rep);
+        }
+        newlineStr = sb2.toString();
+    }
 
     public void cmdProc(
         Interp interp,
@@ -56,6 +77,20 @@ public class TJCBench extends TJC.CompiledCommand {
              InternalTclListLength(interp);
         } else if (testname.equals("InternalTclListLindex")) {
              InternalTclListLindex(interp);
+        } else if (testname.equals("InternalSplitCharCmd")) {
+             InternalSplitCharCmd(interp);
+        } else if (testname.equals("InternalSplitDefaultCmd")) {
+             InternalSplitDefaultCmd(interp);
+        } else if (testname.equals("InternalSplitEveryCharCmd")) {
+             InternalSplitEveryCharCmd(interp);
+        } else if (testname.equals("InternalSplitAppendElement")) {
+             InternalSplitAppendElement(interp);
+        } else if (testname.equals("InternalSplitAppendEmptyString")) {
+             InternalSplitAppendEmptyString(interp);
+        } else if (testname.equals("InternalSplitAppendNewline")) {
+             InternalSplitAppendNewline(interp);
+        } else if (testname.equals("InternalSplitAppendSubstring")) {
+             InternalSplitAppendSubstring(interp);
         } else {
              throw new TclException(interp, "unknown test name \"" + testname + "\"");
         }
@@ -251,6 +286,195 @@ public class TJCBench extends TJC.CompiledCommand {
             tobj = TclList.index(interp, tlist, 6);
         }
         tlist = tobj; // Don't optimize away assignment
+    }
+
+    // Invoke "split" command to get execution time results.
+    // The split command is generating some very strange
+    // timing results WRT the int/double internal rep
+    // changes to TclObject.
+
+    void InternalSplitCharCmd(Interp interp)
+        throws TclException
+    {
+        TclObject tstr = TclString.newInstance(newlineStr);
+
+        // Lookup "split" command
+        Command cmd = TJC.resolveCmd(interp, "split").cmd;
+
+        // Invoke [split $s "\n"] 5 times
+        TclObject[] objv = new TclObject[3];
+        objv[0] = TclString.newInstance("split");
+        objv[1] = tstr;
+        objv[2] = TclString.newInstance("\n");
+
+        for (int i=0; i < 5; i++) {
+            cmd.cmdProc(interp, objv);
+        }
+    }
+
+    // Invoke "split" with default chars to get timing info.
+    // This invocation also shows some very strange slowdown
+    // results WRT the int/double TclObject rewrite.
+
+    void InternalSplitDefaultCmd(Interp interp)
+        throws TclException
+    {
+        TclObject tstr = TclString.newInstance(newlineStr);
+
+        // Lookup "split" command
+        Command cmd = TJC.resolveCmd(interp, "split").cmd;
+
+        // Invoke [split $s] 5 times
+        TclObject[] objv = new TclObject[2];
+        objv[0] = TclString.newInstance("split");
+        objv[1] = tstr;
+
+        for (int i=0; i < 5; i++) {
+            cmd.cmdProc(interp, objv);
+        }
+    }
+
+    // Invoke "split" with empty string argument so that
+    // string is split into a list containing every character.
+    // This invocation does not display a strange slowdown
+    // that is seen in the two tests above.
+
+    void InternalSplitEveryCharCmd(Interp interp)
+        throws TclException
+    {
+        TclObject tstr = TclString.newInstance(fiveHundredZeros);
+
+        // Lookup "split" command
+        Command cmd = TJC.resolveCmd(interp, "split").cmd;
+
+        // Invoke [split $s ""] 5 times
+        TclObject[] objv = new TclObject[3];
+        objv[0] = TclString.newInstance("split");
+        objv[1] = tstr;
+        objv[2] = TclString.newInstance("");
+
+        for (int i=0; i < 5; i++) {
+            cmd.cmdProc(interp, objv);
+        }
+    }
+
+    // Invoke the SplitCmd.appendElement() method
+    // in a loop to get timing results for the
+    // list append and cache value lookup logic.
+    // This inlines logic from the SplitCmd class
+    // to get timing info for a split on one char.
+
+    void InternalSplitAppendElement(Interp interp)
+        throws TclException
+    {
+        String string = newlineStr;
+        int slen = string.length();
+
+        // Invoke [split $s "\n"] 5 times
+        final char splitChar = '\n';
+
+        for (int loop=0; loop < 5; loop++) {
+            int i = 0;
+            int elemStart = 0;
+
+            // Create TclList that will be appended to.
+            TclObject list = TclList.newInstance();
+
+            for (; i < slen; i++) {
+                if (string.charAt(i) == splitChar) {
+                    SplitCmd.appendElement(interp, list, string, elemStart, i);
+                    elemStart = i+1;
+                }
+            }
+            if (i != 0) {
+                SplitCmd.appendElement(interp, list, string, elemStart, i);
+            }
+        }
+    }
+
+    // Invoke SplitCmd.appendElement() to append
+    // a empty string element to the list.
+
+    void InternalSplitAppendEmptyString(Interp interp)
+        throws TclException
+    {
+        String string = newlineStr;
+        int slen = string.length();
+
+        // Append empty string each time a newline
+        // is found in the string.
+        final char splitChar = '\n';
+
+        for (int loop=0; loop < 5; loop++) {
+            int i = 0;
+            int elemStart = 0;
+
+            // Create TclList that will be appended to.
+            TclObject list = TclList.newInstance();
+
+            for (; i < slen; i++) {
+                if (string.charAt(i) == splitChar) {
+                    SplitCmd.appendElement(interp, list, string, i, i);
+                }
+            }
+        }
+    }
+
+    // Invoke SplitCmd.appendElement() to append
+    // a newline character element to the list.
+
+    void InternalSplitAppendNewline(Interp interp)
+        throws TclException
+    {
+        String string = newlineStr;
+        int slen = string.length();
+
+        // Append empty string each time a newline
+        // is found in the string.
+        final char splitChar = '\n';
+
+        for (int loop=0; loop < 5; loop++) {
+            int i = 0;
+            int elemStart = 0;
+
+            // Create TclList that will be appended to.
+            TclObject list = TclList.newInstance();
+
+            for (; i < slen; i++) {
+                if (string.charAt(i) == splitChar) {
+                    SplitCmd.appendElement(interp, list, string, i, i+1);
+                }
+            }
+        }
+    }
+
+    // Invoke SplitCmd.appendElement() to append
+    // a substring element to the list. The
+    // append operation is only done when a
+    // string of length 2 or more is found.
+
+    void InternalSplitAppendSubstring(Interp interp)
+        throws TclException
+    {
+        String string = newlineStr;
+        int slen = string.length();
+
+        final char splitChar = '\n';
+
+        for (int loop=0; loop < 5; loop++) {
+            int i = 0;
+            int elemStart = 0;
+
+            // Create TclList that will be appended to.
+            TclObject list = TclList.newInstance();
+
+            for (; i < slen; i++) {
+                if ((string.charAt(i) == splitChar) && ((i - elemStart) >= 2)) {
+                    SplitCmd.appendElement(interp, list, string, elemStart, i);
+                    elemStart = i+1;
+                }
+            }
+        }
     }
 
 } // end class TJCBench
