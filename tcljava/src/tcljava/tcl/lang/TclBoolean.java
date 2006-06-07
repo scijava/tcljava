@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclBoolean.java,v 1.6 2006/05/25 23:17:58 mdejong Exp $
+ * RCS: @(#) $Id: TclBoolean.java,v 1.7 2006/06/07 17:16:10 mdejong Exp $
  *
  */
 
@@ -208,22 +208,25 @@ public class TclBoolean implements InternalRep {
      * @exception TclException if the object cannot be converted into a
      *     boolean.
      */
-    public static boolean get(Interp interp, TclObject tobj)
-	    throws TclException {
-	InternalRep rep = tobj.getInternalRep();
-	TclBoolean tbool;
-
-	if (rep instanceof TclInteger) {
+    public static boolean get(
+	final Interp interp,
+	final TclObject tobj)
+	    throws TclException
+    {
+	if (tobj.isIntegerType()) {
 	    // An integer with the value 0 or 1 can be
 	    // considered a boolean value, so there is
 	    // no need to change the internal rep.
-	    int ival = TclInteger.get(interp, tobj);
+	    int ival = tobj.ivalue;  // Inline TclInteger.get()
 	    if (ival == 0) {
 	        return false;
 	    } else if (ival == 1) {
 	        return true;
 	    }
 	}
+
+	InternalRep rep = tobj.getInternalRep();
+	TclBoolean tbool;
 
 	if (!(rep instanceof TclBoolean)) {
 	    setBooleanFromAny(interp, tobj);

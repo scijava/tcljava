@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Expression.java,v 1.31 2006/05/27 01:30:39 mdejong Exp $
+ * RCS: @(#) $Id: Expression.java,v 1.32 2006/06/07 17:16:10 mdejong Exp $
  *
  */
 
@@ -327,26 +327,28 @@ class Expression {
      */
 
     static void
-    ExprParseObject(Interp interp, TclObject obj, ExprValue value)
+    ExprParseObject(
+        final Interp interp,
+        final TclObject obj,
+        final ExprValue value)
 	    throws TclException
     {
         // If the TclObject already has an integer, boolean,
         // or floating point internal representation, use it.
 
-        InternalRep rep = obj.getInternalRep();
-
-        if (rep instanceof TclInteger) {
+        if (obj.isIntegerType()) {
             // A TclObject is a "pure" number if it
             // was created from a primitive type and
             // has no string rep. Pass the string rep
-            // along in the ExprValue object is there
+            // along in the ExprValue object if there
             // is one.
 
-            value.setIntValue(TclInteger.get(interp, obj),
+            value.setIntValue(
+                obj.ivalue, // Inline TclInteger.get()
                 (obj.hasNoStringRep() ? null : obj.toString()));
             return;
-        } else if (rep instanceof TclDouble) {
-            // An object with a double internal rep will
+        } else if (obj.isDoubleType()) {
+            // A TclObject with a double internal rep will
             // never have a string rep that could be parsed
             // as an integer.
 
@@ -378,12 +380,16 @@ class Expression {
      */
 
     static void
-    ExprParseString(Interp interp, TclObject obj, ExprValue value) {
+    ExprParseString(
+        final Interp interp,
+        final TclObject obj,
+        final ExprValue value)
+    {
 	char c;
 	int ival;
 	double dval;
-	String s = obj.toString();
-	int len = s.length();
+	final String s = obj.toString();
+	final int len = s.length();
 
 	//System.out.println("now to ExprParseString ->" + s +
 	//	 "<- of length " + len);

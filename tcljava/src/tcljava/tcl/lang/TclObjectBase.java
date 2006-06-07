@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclObjectBase.java,v 1.7 2006/05/15 22:14:23 mdejong Exp $
+ * RCS: @(#) $Id: TclObjectBase.java,v 1.8 2006/06/07 17:16:10 mdejong Exp $
  *
  */
 
@@ -28,6 +28,25 @@ import java.util.Enumeration;
  */
 
 abstract class TclObjectBase {
+
+    // The ivalue field is used for a TclObject that contains
+    // an integer value. This implementation uses less
+    // memory than the previous approach that stored an
+    // int value in a internal rep of type TclInteger.
+    // This implementation executes integer operations
+    // more quickly since instanceof and upcast operations
+    // are no longer needed in the critical execution path.
+
+    int ivalue;
+
+    final boolean isIntegerType() {
+        return (internalRep == TclInteger.dummy);
+    }
+
+    final boolean isDoubleType() {
+        return (internalRep instanceof TclDouble);
+    }
+
     // Internal representation of the object. A valid TclObject
     // will always have a non-null internal rep.
 
@@ -64,6 +83,7 @@ abstract class TclObjectBase {
 	    throw new TclRuntimeError("null InternalRep");
 	}
 	internalRep = rep;
+//	ivalue = 0;
 	stringRep = null;
 	refCount = 0;
 
@@ -81,8 +101,8 @@ abstract class TclObjectBase {
 
     /**
      * Creates a TclObject with the given InternalRep and stringRep.
-     * This constructor is used by the TclString class only. No other place
-     * should call this constructor.
+     * This constructor is used by the TclString class only.
+     * No other code should call this constructor.
      *
      * @param rep the initial InternalRep for this object.
      * @param s the initial string rep for this object.
@@ -92,6 +112,7 @@ abstract class TclObjectBase {
 	    throw new TclRuntimeError("null InternalRep");
 	}
 	internalRep = rep;
+//	ivalue = 0;
 	stringRep = s;
 	refCount = 0;
 
@@ -146,6 +167,7 @@ abstract class TclObjectBase {
         //    "\" to \"" + rep.getClass().getName() + "\"");
 	internalRep.dispose();
 	internalRep = rep;
+//	ivalue = 0;
     }
 
     /**
@@ -164,7 +186,12 @@ abstract class TclObjectBase {
 	    if (internalRep == null) {
 	        disposedError();
 	    }
-	    stringRep = internalRep.toString();
+
+	    if (internalRep == TclInteger.dummy) {
+	        stringRep = Integer.toString(ivalue);
+	    } else {
+	        stringRep = internalRep.toString();
+	    }
 	}
 	return stringRep;
     }
@@ -232,7 +259,14 @@ abstract class TclObjectBase {
 	        stringRep = internalRep.toString();
 	    }
 	}
-	TclObject newObj = new TclObject(internalRep.duplicate());
+	TclObject newObj;
+	if (internalRep == TclInteger.dummy) {
+	    newObj = new TclObject(internalRep);
+	    newObj.ivalue = ivalue;
+	} else {
+	    newObj = new TclObject(internalRep.duplicate());
+	}
+
 	newObj.stringRep = this.stringRep;
 	newObj.refCount = 0;
 	return newObj;
@@ -261,8 +295,15 @@ abstract class TclObjectBase {
 		    stringRep = internalRep.toString();
 		}
 	    }
-	    TclObject newObj = new TclObject(internalRep.duplicate());
-	    newObj.stringRep = this.stringRep;
+	    TclObject newObj;
+	    if (internalRep == TclInteger.dummy) {
+	        newObj = new TclObject(internalRep);
+	        newObj.ivalue = ivalue;
+	    } else {
+	        newObj = new TclObject(internalRep.duplicate());
+	    }
+
+	    newObj.stringRep = stringRep;
 	    newObj.refCount = 1;
 	    refCount--;
 	    return newObj;

@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TJC.java,v 1.27 2006/05/27 01:30:40 mdejong Exp $ *
+ * RCS: @(#) $Id: TJC.java,v 1.28 2006/06/07 17:16:10 mdejong Exp $ *
  */
 
 // Runtime support for TJC compiler implementation.
@@ -1087,15 +1087,13 @@ public class TJC {
     // rep will be updated to a numeric type.
 
     public static boolean getBoolean(
-        Interp interp,
-        TclObject obj)
+        final Interp interp,
+        final TclObject obj)
             throws TclException
     {
-        InternalRep rep = obj.getInternalRep();
-
-        if (rep instanceof TclInteger) {
-            return (TclInteger.get(interp, obj) != 0);
-        } else if (rep instanceof TclDouble) {
+        if (obj.isIntegerType()) {
+            return (obj.ivalue != 0);   // Inline TclInteger.get()
+        } else if (obj.isDoubleType()) {
             return (TclDouble.get(interp, obj) != 0.0);
         }
 
@@ -1289,7 +1287,7 @@ public class TJC {
         } else {
             ExprValue value = new ExprValue(0, null);
             Expression.ExprParseObject(interp, tobj, value);
-            return value;        
+            return value;
         }
     }
 
@@ -1480,30 +1478,17 @@ public class TJC {
 
     public static final
     void lindexNonconst(
-        Interp interp,
-        TclObject listObj,     // List value
-        TclObject indexValue)  // List index to be resolved.
+        final Interp interp,
+        final TclObject listObj,     // List value
+        final TclObject indexValue)  // List index to be resolved.
             throws TclException
     {
         // Optimized check for integer indexValue argument.
         // This is the most common use case:
         // set obj [lindex $list $i]
 
-        boolean intIndex = false;
-        int index = -1;
-
-        try {
-            if (indexValue.getInternalRep() instanceof TclInteger) {
-                index = TclInteger.get(interp, indexValue);
-                intIndex = true;
-            }
-        } catch (TclException te) {
-            throw new TclRuntimeError(
-                "unexpected TclException getting index value");
-        }
-
-        if (intIndex) {
-            TclObject result = TclList.index(interp, listObj, index);
+        if (indexValue.isIntegerType()) {
+            TclObject result = TclList.index(interp, listObj, indexValue.ivalue);
             if (result == null) {
                 interp.resetResult();
             } else{
@@ -1596,16 +1581,16 @@ public class TJC {
 
     public static final
     TclObject stringIndex(
-        Interp interp,
-        String str,          // string
-        TclObject indObj)    // index into string
+        final Interp interp,
+        final String str,          // string
+        final TclObject indObj)    // index into string
             throws TclException
     {
-        int len = str.length();
+        final int len = str.length();
         int i;
 
-        if (indObj.getInternalRep() instanceof TclInteger) {
-	    i = TclInteger.get(interp, indObj);
+        if (indObj.isIntegerType()) {
+            i = indObj.ivalue;  // Inline TclInteger.get()
         } else {
             i = Util.getIntForIndex(interp, indObj, len - 1);
         }
@@ -1631,18 +1616,18 @@ public class TJC {
 
     public static final
     TclObject stringRange(
-        Interp interp,
-        String str,          // string
-        TclObject firstObj,  // first index (ref count incremented)
-        TclObject lastObj)   // last index
+        final Interp interp,
+        final String str,          // string
+        final TclObject firstObj,  // first index (ref count incremented)
+        final TclObject lastObj)   // last index
             throws TclException
     {
-        int len = str.length();
+        final int len = str.length();
         int first, last;
 
         try {
-            if (firstObj.getInternalRep() instanceof TclInteger) {
-	        first = TclInteger.get(interp, firstObj);
+            if (firstObj.isIntegerType()) {
+                first = firstObj.ivalue;  // Inline TclInteger.get()
             } else {
                 first = Util.getIntForIndex(interp, firstObj, len - 1);
             }
@@ -1650,8 +1635,8 @@ public class TJC {
                 first = 0;
             }
 
-            if (lastObj.getInternalRep() instanceof TclInteger) {
-	        last = TclInteger.get(interp, lastObj);
+            if (lastObj.isIntegerType()) {
+                last = lastObj.ivalue;  // Inline TclInteger.get()
             } else {
                 last = Util.getIntForIndex(interp, lastObj, len - 1);
             }

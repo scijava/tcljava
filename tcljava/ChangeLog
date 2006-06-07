@@ -1,3 +1,43 @@
+2006-06-07  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        Rewrite TclObject and TclInteger classes so
+        that an object that contains an integer value
+        stores the int inside the TclObject instance.
+        This change allows direct access for int read,
+        write, and incr operations. Each TclObject
+        is now 4 bytes larger, but this is more than
+        made up for by the fact that each TclObject
+        that contains an int value no longer needs
+        to allocate a 16 byte TclInteger internal rep.
+        This implementation shows a significant
+        improvement across the whole TclBench suite
+        and shaves 8 seconds off the TJC recompile time.
+
+        * src/jacl/tcl/lang/Expression.java (ExprParseObject,
+        ExprParseString): Make arguments to method final.
+        Check for int/double type using new TclObject
+        methods and read int value directly.
+        * src/tcljava/tcl/lang/TclBoolean.java (get):
+        Read int value directly when getting a boolean
+        result from an integer value.
+        * src/tcljava/tcl/lang/TclInteger.java:
+        Use the same TclInteger dummy value as the internal
+        rep for every TclObject that contains an integer.
+        This makes it possible to determine if a TclObject
+        contains an integer by doing a pointer compare
+        instead of an instanceof operation. This also
+        makes it possible to access or change an int value
+        without having to upcast from an internal rep.
+        * src/tcljava/tcl/lang/TclObjectBase.java (TclObjectBase,
+        duplicate, takeExclusive): Implement special case
+        logic for a TclObject that contains an int value.
+        * src/tjc/tcl/lang/TJC.java (getBoolean, lindexNonconst,
+        stringIndex, stringRange, stringLast):
+        Reimplement getBoolean logic so that it works like
+        ExprParseObject. Access integer value directly in
+        lindex and string methods that accept a TclObject
+        that could contain an integer.
+
 2006-06-06  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/tests/jacl/tcl/lang/JavaTestExtension.java:

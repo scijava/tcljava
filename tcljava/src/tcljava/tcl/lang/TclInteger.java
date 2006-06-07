@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclInteger.java,v 1.13 2006/05/25 23:17:58 mdejong Exp $
+ * RCS: @(#) $Id: TclInteger.java,v 1.14 2006/06/07 17:16:10 mdejong Exp $
  *
  */
 
@@ -18,69 +18,31 @@ package tcl.lang;
  */
 
 public class TclInteger implements InternalRep {
-    /**
-     * Internal representation of a integer value.
-     */
-    private int value;
+
+    // The int value for a TclInteger type is stored
+    // in the TclObject instance. The TclObject API
+    // requires that every TclObject have a non-null
+    // internal rep, so this dummy value is used
+    // for every TclObject with an int value.
+    // The dummy value also maintains compatibility with
+    // old code that might check for an internal
+    // rep via:
+    //
+    // if (tobj.getInternalRep() instanceof TclInteger) {...}
+
+    final static TclInteger dummy = new TclInteger();
+
+    // Extra debug checking
+    private static final boolean validate = false;
+
+    private TclInteger() {}
 
     /**
-     * Construct a TclInteger representation with the given integer value.
+     * Should never be invoked.
      */
-    private TclInteger(int i) {
-	value = i;
 
-	if (TclObject.saveObjRecords) {
-	    String key = "TclInteger";
-	    Integer num = (Integer) TclObject.objRecordMap.get(key);
-	    if (num == null) {
-	        num = new Integer(1);
-	    } else {
-	        num = new Integer(num.intValue() + 1);
-	    }
-	    TclObject.objRecordMap.put(key, num);
-	}
-    }
-
-    /**
-     * Construct a TclInteger representation with the initial value taken
-     * from the given string.
-     *
-     * @param interp current interpreter.
-     * @param str string rep of the integer.
-     * @exception TclException if the string is not a well-formed Tcl integer
-     *    value.
-     */
-    private TclInteger(Interp interp, String str) throws TclException {
-	value = Util.getInt(interp, str);
-
-	if (TclObject.saveObjRecords) {
-	    String key = "TclInteger";
-	    Integer num = (Integer) TclObject.objRecordMap.get(key);
-	    if (num == null) {
-	        num = new Integer(1);
-	    } else {
-	        num = new Integer(num.intValue() + 1);
-	    }
-	    TclObject.objRecordMap.put(key, num);
-	}
-    }
-
-    /**
-     * Returns a dupilcate of the current object.
-     */
     public InternalRep duplicate() {
-	if (TclObject.saveObjRecords) {
-	    String key = "TclInteger.duplicate()";
-	    Integer num = (Integer) TclObject.objRecordMap.get(key);
-	    if (num == null) {
-	        num = new Integer(1);
-	    } else {
-	        num = new Integer(num.intValue() + 1);
-	    }
-	    TclObject.objRecordMap.put(key, num);
-	}
-
-	return new TclInteger(value);
+	throw new TclRuntimeError("TclInteger.duplicate() should not be invoked");
     }
 
     /**
@@ -90,14 +52,10 @@ public class TclInteger implements InternalRep {
     public void dispose() {}
 
     /**
-     * Called to query the string representation of the Tcl object. This
-     * method is called only by TclObject.toString() when
-     * TclObject.stringRep is null.
-     *
-     * @return the string representation of the Tcl object.
+     * Should never be invoked.
      */
     public String toString() {
-	return Integer.toString(value);
+	throw new TclRuntimeError("TclInteger.toString() should not be invoked");
     }
 
     /**
@@ -111,7 +69,9 @@ public class TclInteger implements InternalRep {
      */
 
     public static TclObject newInstance(int i) {
-	return new TclObject(new TclInteger(i));
+	TclObject tobj = new TclObject(dummy);
+	tobj.ivalue = i;
+	return tobj;
     }
 
     /**
@@ -142,7 +102,8 @@ public class TclInteger implements InternalRep {
 	// an integer, but the TclDouble module should
 	// not allow conversion to TclDouble in that case.
 
-	tobj.setInternalRep(new TclInteger(interp, tobj.toString()));
+	tobj.ivalue = Util.getInt(interp, tobj.toString());
+	tobj.setInternalRep(dummy);
 
 	if (TclObject.saveObjRecords) {
 	    String key = "TclString -> TclInteger";
@@ -166,18 +127,15 @@ public class TclInteger implements InternalRep {
      * @return the integer value of the object.
      */
 
-    public static int get(Interp interp, TclObject tobj)
-	    throws TclException {
-	InternalRep rep = tobj.getInternalRep();
-	TclInteger tint;
-
-	if (!(rep instanceof TclInteger)) {
+    public static int get(
+	final Interp interp,
+	final TclObject tobj)
+	    throws TclException
+    {
+	if (!tobj.isIntegerType()) {
 	    setIntegerFromAny(interp, tobj);
-	    tint = (TclInteger) tobj.getInternalRep();
-	} else {
-	    tint = (TclInteger) rep;
 	}
-	return tint.value;
+	return tobj.ivalue;
     }
 
     /**
@@ -188,16 +146,14 @@ public class TclInteger implements InternalRep {
      * @param i the new integer value.
      */
     public static void set(TclObject tobj, int i) {
-	tobj.invalidateStringRep();
-	InternalRep rep = tobj.getInternalRep();
-	TclInteger tint;
-
-	if (rep instanceof TclInteger) {
-	    tint = (TclInteger)rep;
-	    tint.value = i;
-	} else {
-	    tobj.setInternalRep(new TclInteger(i));
+	if (!tobj.isIntegerType()) {
+	    // Change the internal rep if not an integer.
+	    // Note that this method does not reparse
+	    // an int value from the string rep.
+	    tobj.setInternalRep(dummy);
 	}
+	tobj.invalidateStringRep();
+	tobj.ivalue = i;
     }
 
     /**
@@ -212,20 +168,16 @@ public class TclInteger implements InternalRep {
      * @param incrAmount amount to increment
      */
     static void incr(
-        Interp interp,
-        TclObject tobj,
-        int incrAmount)
+        final Interp interp,
+        final TclObject tobj,
+        final int incrAmount)
             throws TclException
     {
-	InternalRep rep = tobj.getInternalRep();
-
-	if (!(rep instanceof TclInteger)) {
+	if (!tobj.isIntegerType()) {
 	    setIntegerFromAny(interp, tobj);
-	    rep = tobj.getInternalRep();
 	}
 	tobj.invalidateStringRep();
-	TclInteger tint = (TclInteger) rep;
-	tint.value += incrAmount;
+	tobj.ivalue += incrAmount;
     }
 
     /**
@@ -240,18 +192,16 @@ public class TclInteger implements InternalRep {
      * @param i the new int value.
      */
 
-    static void exprSetInternalRep(TclObject tobj, int i) {
-	// Extra debug checking
-	final boolean validate = false;
-
+    static void exprSetInternalRep(
+	final TclObject tobj,
+	final int i)
+    {
 	if (validate) {
 
 	    // Double check that the internal rep is not
 	    // already of type TclInteger.
 
-	    InternalRep rep = tobj.getInternalRep();
-
-	    if (rep instanceof TclInteger) {
+	    if (tobj.isIntegerType()) {
 	        throw new TclRuntimeError("exprSetInternalRep() called with object" +
 	            " that is already of type TclInteger");
 	    }
@@ -274,7 +224,8 @@ public class TclInteger implements InternalRep {
 	    }
 	}
 
-	tobj.setInternalRep(new TclInteger(i));
+	tobj.setInternalRep(dummy);
+	tobj.ivalue = i;
     }
 
 }
