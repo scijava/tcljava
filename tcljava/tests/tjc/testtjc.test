@@ -269,7 +269,7 @@ tcltest::test testtjc-command-1.0 {TJC::command} {
     package require TJC
     catch {TJC::command foo one.two.three.four.FooCmd} err
     set err
-} {class one.two.three.four.FooCmd not found}
+} {unknown class "one.two.three.four.FooCmd"}
 
 tcltest::test testtjc-command-1.1 {TJC::command} {
     package require TJC
@@ -291,13 +291,13 @@ tcltest::test testtjc-package-1.0 {TJC::package} {
     package require TJC
     catch {TJC::package one.two.three.four} err
     set err
-} {class one.two.three.four.TJCExtension not found}
+} {unknown class "one.two.three.four.TJCExtension"}
 
 tcltest::test testtjc-package-1.1 {TJC::package} {
     package require TJC
     catch {TJC::package default} err
     set err
-} {class TJCExtension not found}
+} {unknown class "TJCExtension"}
 
 tcltest::test testtjc-package-1.2 {TJC::package} {
     package require TJC

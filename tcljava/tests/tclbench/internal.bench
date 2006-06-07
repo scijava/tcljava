@@ -16,16 +16,17 @@ set tuples [list \
     {internal-expr-op-double-plus tcl.lang.TJCBench InternalExprOpDoublePlus} \
     {internal-expr-op-int-not tcl.lang.TJCBench InternalExprOpIntNot} \
     {internal-incr tcl.lang.TJCBench InternalIncr} \
-    {internal-tcl-list-append tcl.lang.TJCBench InternalTclListAppend} \
-    {internal-tcl-list-length tcl.lang.TJCBench InternalTclListLength} \
-    {internal-tcl-list-lindex tcl.lang.TJCBench InternalTclListLindex} \
-    {internal-split-char-cmd tcl.lang.TJCBench InternalSplitCharCmd} \
-    {internal-split-default-cmd tcl.lang.TJCBench InternalSplitDefaultCmd} \
-    {internal-split-every-char-cmd tcl.lang.TJCBench InternalSplitEveryCharCmd} \
-    {internal-split-append-element tcl.lang.TJCBench InternalSplitAppendElement} \
-    {internal-split-append-empty-string tcl.lang.TJCBench InternalSplitAppendEmptyString} \
-    {internal-split-append-newline tcl.lang.TJCBench InternalSplitAppendNewline} \
-    {internal-split-append-substring tcl.lang.TJCBench InternalSplitAppendSubstring} \
+    {internal-tcllist-length tcl.lang.TJCBench InternalTclListLength} \
+    {internal-tcllist-lindex tcl.lang.TJCBench InternalTclListLindex} \
+    {internal-tcllist-append tcl.lang.TJCBench InternalTclListAppend} \
+    {internal-tclobject-newinstance-tclstring tcl.lang.TJCBench InternalTclStringNewInstance} \
+    {internal-tclobject-newinstance-tclinteger tcl.lang.TJCBench InternalTclIntegerNewInstance} \
+    {internal-tclobject-newinstance-tcldouble tcl.lang.TJCBench InternalTclDoubleNewInstance} \
+    {internal-tclobject-newinstance-tcllist tcl.lang.TJCBench InternalTclListNewInstance} \
+    {internal-tclobject-duplicate-tclstring tcl.lang.TJCBench InternalTclStringDuplicate} \
+    {internal-tclobject-duplicate-tclinteger tcl.lang.TJCBench InternalTclIntegerDuplicate} \
+    {internal-tclobject-duplicate-tcldouble tcl.lang.TJCBench InternalTclDoubleDuplicate} \
+    {internal-tclobject-duplicate-tcllist tcl.lang.TJCBench InternalTclListDuplicate} \
     ]
 
 foreach tuple $tuples {

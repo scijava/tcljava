@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: NativeTestExtension.java,v 1.2 2002/12/18 07:07:19 mdejong Exp $
+ * RCS: @(#) $Id: NativeTestExtension.java,v 1.3 2006/06/07 01:53:51 mdejong Exp $
  *
  */
 
@@ -40,6 +40,7 @@ init(
 {
     interp.createCommand("jtest", 	      new JtestCmd());
     interp.createCommand("testcompcode",    new TestcompcodeCmd());
+    interp.createCommand("testtclobjectmemory",      new TclObjectMemory());
     interp.createBTestCommand();
 }
 

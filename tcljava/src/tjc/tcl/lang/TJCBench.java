@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TJCBench.java,v 1.3 2006/06/06 04:48:03 mdejong Exp $
+ * RCS: @(#) $Id: TJCBench.java,v 1.4 2006/06/07 01:53:51 mdejong Exp $
  *
  */
 
@@ -21,27 +21,6 @@
 package tcl.lang;
 
 public class TJCBench extends TJC.CompiledCommand {
-
-    static String fiveHundredZeros;
-    static String newlineStr;
-
-    static {
-        StringBuffer sb1 = new StringBuffer( 500 );
-
-        // Generate string of 500 zeros
-        for (int i=0; i < 50 ; i++) {
-            sb1.append("0000000000");
-        }
-        fiveHundredZeros = sb1.toString();
-
-        // Generate newlinestr
-        String rep = "ONETWOTHREE\n54985348543538434535435\nxysssksdalsdjjalsk\n";
-        StringBuffer sb2 = new StringBuffer( rep.length() * 500 );
-        for (int i=0; i < 500 ; i++) {
-            sb2.append(rep);
-        }
-        newlineStr = sb2.toString();
-    }
 
     public void cmdProc(
         Interp interp,
@@ -77,20 +56,22 @@ public class TJCBench extends TJC.CompiledCommand {
              InternalTclListLength(interp);
         } else if (testname.equals("InternalTclListLindex")) {
              InternalTclListLindex(interp);
-        } else if (testname.equals("InternalSplitCharCmd")) {
-             InternalSplitCharCmd(interp);
-        } else if (testname.equals("InternalSplitDefaultCmd")) {
-             InternalSplitDefaultCmd(interp);
-        } else if (testname.equals("InternalSplitEveryCharCmd")) {
-             InternalSplitEveryCharCmd(interp);
-        } else if (testname.equals("InternalSplitAppendElement")) {
-             InternalSplitAppendElement(interp);
-        } else if (testname.equals("InternalSplitAppendEmptyString")) {
-             InternalSplitAppendEmptyString(interp);
-        } else if (testname.equals("InternalSplitAppendNewline")) {
-             InternalSplitAppendNewline(interp);
-        } else if (testname.equals("InternalSplitAppendSubstring")) {
-             InternalSplitAppendSubstring(interp);
+        } else if (testname.equals("InternalTclStringNewInstance")) {
+             InternalTclStringNewInstance(interp);
+        } else if (testname.equals("InternalTclIntegerNewInstance")) {
+             InternalTclIntegerNewInstance(interp);
+        } else if (testname.equals("InternalTclDoubleNewInstance")) {
+             InternalTclDoubleNewInstance(interp);
+        } else if (testname.equals("InternalTclListNewInstance")) {
+             InternalTclListNewInstance(interp);
+        } else if (testname.equals("InternalTclStringDuplicate")) {
+             InternalTclStringDuplicate(interp);
+        } else if (testname.equals("InternalTclIntegerDuplicate")) {
+             InternalTclIntegerDuplicate(interp);
+        } else if (testname.equals("InternalTclDoubleDuplicate")) {
+             InternalTclDoubleDuplicate(interp);
+        } else if (testname.equals("InternalTclListDuplicate")) {
+             InternalTclListDuplicate(interp);
         } else {
              throw new TclException(interp, "unknown test name \"" + testname + "\"");
         }
@@ -222,22 +203,6 @@ public class TJCBench extends TJC.CompiledCommand {
         }
     }
 
-    // Invoke TclList.append() on an unshared
-    // TclObject with the TclList type. This
-    // will get timing info for TclList.append(),
-    // a low level and commonly used operation.
-
-    void InternalTclListAppend(Interp interp)
-        throws TclException
-    {
-        TclObject tlist = TclList.newInstance();
-        TclObject tobj = interp.checkCommonString(null); // Empty string
-
-        for (int i=0; i < 5000; i++) {
-            TclList.append(interp, tlist, tobj);
-        }
-    }
-
     // Invoke TclList.getLength() on an unshared
     // TclObject with the TclList type. This
     // will get timing info for this commonly
@@ -288,193 +253,132 @@ public class TJCBench extends TJC.CompiledCommand {
         tlist = tobj; // Don't optimize away assignment
     }
 
-    // Invoke "split" command to get execution time results.
-    // The split command is generating some very strange
-    // timing results WRT the int/double internal rep
-    // changes to TclObject.
+    // Invoke TclList.append() on an unshared
+    // TclObject with the TclList type. This
+    // will get timing info for TclList.append(),
+    // a low level and commonly used operation.
 
-    void InternalSplitCharCmd(Interp interp)
+    void InternalTclListAppend(Interp interp)
         throws TclException
     {
-        TclObject tstr = TclString.newInstance(newlineStr);
+        TclObject tlist = TclList.newInstance();
+        TclObject tobj = interp.checkCommonString(null); // Empty string
 
-        // Lookup "split" command
-        Command cmd = TJC.resolveCmd(interp, "split").cmd;
-
-        // Invoke [split $s "\n"] 5 times
-        TclObject[] objv = new TclObject[3];
-        objv[0] = TclString.newInstance("split");
-        objv[1] = tstr;
-        objv[2] = TclString.newInstance("\n");
-
-        for (int i=0; i < 5; i++) {
-            cmd.cmdProc(interp, objv);
+        for (int i=0; i < 5000; i++) {
+            TclList.append(interp, tlist, tobj);
         }
     }
 
-    // Invoke "split" with default chars to get timing info.
-    // This invocation also shows some very strange slowdown
-    // results WRT the int/double TclObject rewrite.
+    // Establish timing results for allocation of a
+    // TclObject with a TclString internal rep.
 
-    void InternalSplitDefaultCmd(Interp interp)
+    void InternalTclStringNewInstance(Interp interp)
         throws TclException
     {
-        TclObject tstr = TclString.newInstance(newlineStr);
+        TclObject tobj = null;
 
-        // Lookup "split" command
-        Command cmd = TJC.resolveCmd(interp, "split").cmd;
-
-        // Invoke [split $s] 5 times
-        TclObject[] objv = new TclObject[2];
-        objv[0] = TclString.newInstance("split");
-        objv[1] = tstr;
-
-        for (int i=0; i < 5; i++) {
-            cmd.cmdProc(interp, objv);
+        for (int i=0; i < 5000; i++) {
+            tobj = TclString.newInstance("foo");
         }
+        tobj.toString(); // Don't optimize away assignment
     }
 
-    // Invoke "split" with empty string argument so that
-    // string is split into a list containing every character.
-    // This invocation does not display a strange slowdown
-    // that is seen in the two tests above.
+    // Establish timing results for allocation of a
+    // TclObject with a TclInteger internal rep.
 
-    void InternalSplitEveryCharCmd(Interp interp)
+    void InternalTclIntegerNewInstance(Interp interp)
         throws TclException
     {
-        TclObject tstr = TclString.newInstance(fiveHundredZeros);
+        TclObject tobj = null;
 
-        // Lookup "split" command
-        Command cmd = TJC.resolveCmd(interp, "split").cmd;
-
-        // Invoke [split $s ""] 5 times
-        TclObject[] objv = new TclObject[3];
-        objv[0] = TclString.newInstance("split");
-        objv[1] = tstr;
-        objv[2] = TclString.newInstance("");
-
-        for (int i=0; i < 5; i++) {
-            cmd.cmdProc(interp, objv);
+        for (int i=0; i < 5000; i++) {
+            tobj = TclInteger.newInstance(1);
         }
+        tobj.toString(); // Don't optimize away assignment
     }
 
-    // Invoke the SplitCmd.appendElement() method
-    // in a loop to get timing results for the
-    // list append and cache value lookup logic.
-    // This inlines logic from the SplitCmd class
-    // to get timing info for a split on one char.
+    // Establish timing results for allocation of a
+    // TclObject with a TclDouble internal rep.
 
-    void InternalSplitAppendElement(Interp interp)
+    void InternalTclDoubleNewInstance(Interp interp)
         throws TclException
     {
-        String string = newlineStr;
-        int slen = string.length();
+        TclObject tobj = null;
 
-        // Invoke [split $s "\n"] 5 times
-        final char splitChar = '\n';
-
-        for (int loop=0; loop < 5; loop++) {
-            int i = 0;
-            int elemStart = 0;
-
-            // Create TclList that will be appended to.
-            TclObject list = TclList.newInstance();
-
-            for (; i < slen; i++) {
-                if (string.charAt(i) == splitChar) {
-                    SplitCmd.appendElement(interp, list, string, elemStart, i);
-                    elemStart = i+1;
-                }
-            }
-            if (i != 0) {
-                SplitCmd.appendElement(interp, list, string, elemStart, i);
-            }
+        for (int i=0; i < 5000; i++) {
+            tobj = TclDouble.newInstance(1.0);
         }
+        tobj.toString(); // Don't optimize away assignment
     }
 
-    // Invoke SplitCmd.appendElement() to append
-    // a empty string element to the list.
+    // Establish timing results for allocation of a
+    // TclObject with a TclList internal rep.
 
-    void InternalSplitAppendEmptyString(Interp interp)
+    void InternalTclListNewInstance(Interp interp)
         throws TclException
     {
-        String string = newlineStr;
-        int slen = string.length();
+        TclObject tobj = null;
 
-        // Append empty string each time a newline
-        // is found in the string.
-        final char splitChar = '\n';
-
-        for (int loop=0; loop < 5; loop++) {
-            int i = 0;
-            int elemStart = 0;
-
-            // Create TclList that will be appended to.
-            TclObject list = TclList.newInstance();
-
-            for (; i < slen; i++) {
-                if (string.charAt(i) == splitChar) {
-                    SplitCmd.appendElement(interp, list, string, i, i);
-                }
-            }
+        for (int i=0; i < 5000; i++) {
+            tobj = TclList.newInstance();
         }
+        tobj.toString(); // Don't optimize away assignment
     }
 
-    // Invoke SplitCmd.appendElement() to append
-    // a newline character element to the list.
+    // Establish timing results for TclObject.duplicate()
+    // of TclObject with a TclString internal rep.
 
-    void InternalSplitAppendNewline(Interp interp)
+    void InternalTclStringDuplicate(Interp interp)
         throws TclException
     {
-        String string = newlineStr;
-        int slen = string.length();
+        TclObject tobj = TclString.newInstance("foo");;
 
-        // Append empty string each time a newline
-        // is found in the string.
-        final char splitChar = '\n';
-
-        for (int loop=0; loop < 5; loop++) {
-            int i = 0;
-            int elemStart = 0;
-
-            // Create TclList that will be appended to.
-            TclObject list = TclList.newInstance();
-
-            for (; i < slen; i++) {
-                if (string.charAt(i) == splitChar) {
-                    SplitCmd.appendElement(interp, list, string, i, i+1);
-                }
-            }
+        for (int i=0; i < 5000; i++) {
+            tobj = tobj.duplicate();
         }
+        tobj.toString(); // Don't optimize away assignment
     }
 
-    // Invoke SplitCmd.appendElement() to append
-    // a substring element to the list. The
-    // append operation is only done when a
-    // string of length 2 or more is found.
+    // Establish timing results for TclObject.duplicate()
+    // of TclObject with a TclInteger internal rep.
 
-    void InternalSplitAppendSubstring(Interp interp)
+    void InternalTclIntegerDuplicate(Interp interp)
         throws TclException
     {
-        String string = newlineStr;
-        int slen = string.length();
+        TclObject tobj = TclInteger.newInstance(1);
 
-        final char splitChar = '\n';
-
-        for (int loop=0; loop < 5; loop++) {
-            int i = 0;
-            int elemStart = 0;
-
-            // Create TclList that will be appended to.
-            TclObject list = TclList.newInstance();
-
-            for (; i < slen; i++) {
-                if ((string.charAt(i) == splitChar) && ((i - elemStart) >= 2)) {
-                    SplitCmd.appendElement(interp, list, string, elemStart, i);
-                    elemStart = i+1;
-                }
-            }
+        for (int i=0; i < 5000; i++) {
+            tobj = tobj.duplicate();
         }
+        tobj.toString(); // Don't optimize away assignment
+    }
+
+    // Establish timing results for TclObject.duplicate()
+    // of TclObject with a TclDouble internal rep.
+
+    void InternalTclDoubleDuplicate(Interp interp)
+        throws TclException
+    {
+        TclObject tobj = TclDouble.newInstance(1.0);
+
+        for (int i=0; i < 5000; i++) {
+            tobj = tobj.duplicate();
+        }
+        tobj.toString(); // Don't optimize away assignment
+    }
+
+    // Establish timing results for TclObject.duplicate()
+    // of TclObject with a TclList internal rep.
+
+    void InternalTclListDuplicate(Interp interp)
+        throws TclException
+    {
+        TclObject tobj = TclList.newInstance();
+
+        for (int i=0; i < 5000; i++) {
+            tobj = tobj.duplicate();
+        }
+        tobj.toString(); // Don't optimize away assignment
     }
 
 } // end class TJCBench

@@ -1,3 +1,19 @@
+2006-06-06  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/tests/jacl/tcl/lang/JavaTestExtension.java:
+        * src/tests/tclblend/tcl/lang/NativeTestExtension.java:
+        * src/tests/tcljava/tcl/lang/TclObjectMemory.java:
+        Add testtclobjectmemory command.
+        * src/tjc/tcl/lang/TJCBench.java:
+        * tests/tclbench/internal.bench: Remove split
+        tests since they take far too long to execute.
+        Add TclObject internal tests.
+        * tests/tcljava/tcljavaInterp.test: Add test case
+        that checks TclObject and related object memory sizes.
+        * tests/tjc/testtjc.test: Update unknown class
+        message as a result of recent changes to
+        the TJC::compile and TJC::command commands.
+
 2006-06-05  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/jacl/tcl/lang/SplitCmd.java (appendElement):
