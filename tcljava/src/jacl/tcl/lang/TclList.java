@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclList.java,v 1.13 2006/05/15 22:14:23 mdejong Exp $
+ * RCS: @(#) $Id: TclList.java,v 1.14 2006/06/08 07:44:51 mdejong Exp $
  *
  */
 
@@ -153,25 +153,22 @@ public class TclList implements InternalRep {
      * @param tobj the TclObject to convert to use the List internal rep.
      * @exception TclException if the object doesn't contain a valid list.
      */
+    private
     static void setListFromAny(Interp interp, TclObject tobj)
 	    throws TclException {
-	InternalRep rep = tobj.getInternalRep();
+	TclList tlist = new TclList();
+	splitList(interp, tlist.alist, tobj.toString());
+	tobj.setInternalRep(tlist);
 
-	if (!(rep instanceof TclList)) {
-	    TclList tlist = new TclList();
-	    splitList(interp, tlist.alist, tobj.toString());
-	    tobj.setInternalRep(tlist);
-
-	    if (TclObject.saveObjRecords) {
-	        String key = "TclString -> TclList";
-	        Integer num = (Integer) TclObject.objRecordMap.get(key);
-	        if (num == null) {
-	            num = new Integer(1);
-	        } else {
-	            num = new Integer(num.intValue() + 1);
-	        }
-	        TclObject.objRecordMap.put(key, num);
+	if (TclObject.saveObjRecords) {
+	    String key = "TclString -> TclList";
+	    Integer num = (Integer) TclObject.objRecordMap.get(key);
+	    if (num == null) {
+	        num = new Integer(1);
+	    } else {
+	        num = new Integer(num.intValue() + 1);
 	    }
+	    TclObject.objRecordMap.put(key, num);
 	}
     }
 
@@ -218,15 +215,13 @@ public class TclList implements InternalRep {
 	if (tobj.isShared()) {
 	    throw new TclRuntimeError("TclList.append() called with shared object");
 	}
-	InternalRep irep = tobj.getInternalRep();
-	if (! (irep instanceof TclList)) {
+	if (! tobj.isListType()) {
 	    setListFromAny(interp, tobj);
-	    irep = tobj.getInternalRep();
 	}
 	tobj.invalidateStringRep();
 
 	elemObj.preserve();
-	((TclList) irep).alist.add(elemObj);
+	((TclList) tobj.getInternalRep()).alist.add(elemObj);
     }
 
     /**
@@ -248,14 +243,12 @@ public class TclList implements InternalRep {
 	if (tobj.isShared()) {
 	    throw new TclRuntimeError("TclList.append() called with shared object");
 	}
-	InternalRep irep = tobj.getInternalRep();
-	if (! (irep instanceof TclList)) {
+	if (! tobj.isListType()) {
 	    setListFromAny(interp, tobj);
-	    irep = tobj.getInternalRep();
 	}
 	tobj.invalidateStringRep();
 
-	ArrayList alist = ((TclList) irep).alist;
+	ArrayList alist = ((TclList) tobj.getInternalRep()).alist;
 
 	for (int i = startIdx ; i < endIdx ; i++) {
 	    TclObject elemObj = objv[i];
@@ -275,13 +268,11 @@ public class TclList implements InternalRep {
      */
     public static final int getLength(Interp interp, TclObject tobj)
 	    throws TclException {
-	InternalRep irep = tobj.getInternalRep();
-	if (! (irep instanceof TclList)) {
+	if (! tobj.isListType()) {
 	    setListFromAny(interp, tobj);
-	    irep = tobj.getInternalRep();
 	}
 
-	TclList tlist = (TclList) irep;
+	TclList tlist = (TclList) tobj.getInternalRep();
 	return tlist.alist.size();
     }
 
@@ -301,7 +292,9 @@ public class TclList implements InternalRep {
      */
     public static TclObject[] getElements(Interp interp, TclObject tobj)
 	    throws TclException {
-	setListFromAny(interp, tobj);
+	if (! tobj.isListType()) {
+	    setListFromAny(interp, tobj);
+	}
 	TclList tlist = (TclList) tobj.getInternalRep();
 
 	int size = tlist.alist.size();
@@ -327,13 +320,11 @@ public class TclList implements InternalRep {
      */
     public static final TclObject index(Interp interp, TclObject tobj,
 	    int index) throws TclException {
-	InternalRep irep = tobj.getInternalRep();
-	if (! (irep instanceof TclList)) {
+	if (! tobj.isListType()) {
 	    setListFromAny(interp, tobj);
-	    irep = tobj.getInternalRep();
 	}
 
-	TclList tlist = (TclList) irep;
+	TclList tlist = (TclList) tobj.getInternalRep();
 	if (index < 0 || index >= tlist.alist.size()) {
 	    return null;
 	} else {
@@ -390,7 +381,9 @@ public class TclList implements InternalRep {
 	if (tobj.isShared()) {
 	    throw new TclRuntimeError("TclList.replace() called with shared object");
 	}
-	setListFromAny(interp, tobj);
+	if (! tobj.isListType()) {
+	    setListFromAny(interp, tobj);
+	}
 	tobj.invalidateStringRep();
 	TclList tlist = (TclList) tobj.getInternalRep();
 
@@ -436,7 +429,9 @@ public class TclList implements InternalRep {
     static void sort(Interp interp, TclObject tobj, int sortMode,
 	    int sortIndex, boolean sortIncreasing, String command)
 	    throws TclException {
-	setListFromAny(interp, tobj);
+	if (! tobj.isListType()) {
+	    setListFromAny(interp, tobj);
+	}
 	tobj.invalidateStringRep();
 	TclList tlist = (TclList) tobj.getInternalRep();
 

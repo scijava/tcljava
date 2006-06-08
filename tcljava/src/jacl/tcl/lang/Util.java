@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Util.java,v 1.23 2006/05/22 21:23:35 mdejong Exp $
+ * RCS: @(#) $Id: Util.java,v 1.24 2006/06/08 07:44:51 mdejong Exp $
  */
 
 package tcl.lang;
@@ -341,7 +341,7 @@ static final int getIntForIndex(
 {
     int length, offset;
 
-    if (tobj.getInternalRep() instanceof TclInteger) {
+    if (tobj.isIntegerType()) {
 	return TclInteger.get(interp, tobj);
     }
 
@@ -751,7 +751,7 @@ concat(
     allList = true;
     for (i = from; i <= to; i++) {
 	obj = objv[i];
-	if (obj.hasNoStringRep() && (obj.getInternalRep() instanceof TclList)) {
+	if (obj.hasNoStringRep() && obj.isListType()) {
 	    // A pure list element
 	} else {
 	    allList = false;

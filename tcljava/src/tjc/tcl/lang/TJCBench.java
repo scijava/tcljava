@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TJCBench.java,v 1.4 2006/06/07 01:53:51 mdejong Exp $
+ * RCS: @(#) $Id: TJCBench.java,v 1.5 2006/06/08 07:44:51 mdejong Exp $
  *
  */
 
@@ -72,6 +72,14 @@ public class TJCBench extends TJC.CompiledCommand {
              InternalTclDoubleDuplicate(interp);
         } else if (testname.equals("InternalTclListDuplicate")) {
              InternalTclListDuplicate(interp);
+        } else if (testname.equals("InternalTclIntegerType")) {
+             InternalTclIntegerType(interp);
+        } else if (testname.equals("InternalTclDoubleType")) {
+             InternalTclDoubleType(interp);
+        } else if (testname.equals("InternalTclStringType")) {
+             InternalTclStringType(interp);
+        } else if (testname.equals("InternalTclListType")) {
+             InternalTclListType(interp);
         } else {
              throw new TclException(interp, "unknown test name \"" + testname + "\"");
         }
@@ -379,6 +387,62 @@ public class TJCBench extends TJC.CompiledCommand {
             tobj = tobj.duplicate();
         }
         tobj.toString(); // Don't optimize away assignment
+    }
+
+    // Establish timing results for TclObject.isIntegerType() API.
+
+    void InternalTclIntegerType(Interp interp)
+        throws TclException
+    {
+        TclObject tobj = TclInteger.newInstance(1);
+        boolean b = false;
+
+        for (int i=0; i < 5000; i++) {
+            b = tobj.isIntegerType();
+        }
+        b = !b; // Don't optimize away assignment
+    }
+
+    // Establish timing results for TclObject.isDoubleType() API.
+
+    void InternalTclDoubleType(Interp interp)
+        throws TclException
+    {
+        TclObject tobj = TclDouble.newInstance(1.0);
+        boolean b = false;
+
+        for (int i=0; i < 5000; i++) {
+            b = tobj.isDoubleType();
+        }
+        b = !b; // Don't optimize away assignment
+    }
+
+    // Establish timing results for TclObject.isStringType() API.
+
+    void InternalTclStringType(Interp interp)
+        throws TclException
+    {
+        TclObject tobj = TclString.newInstance("foo");
+        boolean b = false;
+
+        for (int i=0; i < 5000; i++) {
+            b = tobj.isStringType();
+        }
+        b = !b; // Don't optimize away assignment
+    }
+
+    // Establish timing results for TclObject.isListType() API.
+
+    void InternalTclListType(Interp interp)
+        throws TclException
+    {
+        TclObject tobj = TclList.newInstance();
+        boolean b = false;
+
+        for (int i=0; i < 5000; i++) {
+            b = tobj.isListType();
+        }
+        b = !b; // Don't optimize away assignment
     }
 
 } // end class TJCBench

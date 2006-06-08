@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclBoolean.java,v 1.7 2006/06/07 17:16:10 mdejong Exp $
+ * RCS: @(#) $Id: TclBoolean.java,v 1.8 2006/06/08 07:44:51 mdejong Exp $
  *
  */
 
@@ -89,11 +89,10 @@ public class TclBoolean implements InternalRep {
      */
     private static void setBooleanFromAny(Interp interp, TclObject tobj)
 	    throws TclException {
-	InternalRep rep = tobj.getInternalRep();
 	// Get the string representation. Make it up-to-date if necessary.
 	String string = tobj.toString();
 
-	if (rep instanceof TclInteger) {
+	if (tobj.isIntegerType()) {
 	    int i = TclInteger.get(interp, tobj);
 	    if (i == 0) {
 	        tobj.setInternalRep(falseRep);
@@ -111,7 +110,7 @@ public class TclBoolean implements InternalRep {
 	        }
 	        TclObject.objRecordMap.put(key, num);
 	    }
-	} else if (rep instanceof TclDouble) {
+	} else if (tobj.isDoubleType()) {
 	    double d = TclDouble.get(interp, tobj);
 	    if (d == 0.0) {
 	        tobj.setInternalRep(falseRep);

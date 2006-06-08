@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclInteger.java,v 1.14 2006/06/07 17:16:10 mdejong Exp $
+ * RCS: @(#) $Id: TclInteger.java,v 1.15 2006/06/08 07:44:51 mdejong Exp $
  *
  */
 
@@ -102,8 +102,9 @@ public class TclInteger implements InternalRep {
 	// an integer, but the TclDouble module should
 	// not allow conversion to TclDouble in that case.
 
-	tobj.ivalue = Util.getInt(interp, tobj.toString());
+	int ivalue = Util.getInt(interp, tobj.toString());
 	tobj.setInternalRep(dummy);
+	tobj.ivalue = ivalue;
 
 	if (TclObject.saveObjRecords) {
 	    String key = "TclString -> TclInteger";

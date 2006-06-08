@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcljavaInterp.test,v 1.4 2006/06/07 01:53:51 mdejong Exp $
+# RCS: @(#) $Id: tcljavaInterp.test,v 1.5 2006/06/08 07:44:51 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -162,7 +162,7 @@ test javaInterp-2.0 {TclObject memory sizes} {
     testtclobjectmemory
 } {TclObject 40 bytes
 TclString 16 bytes
-TclInteger 16 bytes
+TclInteger 8 bytes
 TclDouble 16 bytes
 TclList 96 bytes}
 

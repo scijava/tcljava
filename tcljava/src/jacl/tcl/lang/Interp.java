@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.80 2006/05/31 19:22:44 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.81 2006/06/08 07:44:51 mdejong Exp $
  *
  */
 
@@ -2608,7 +2608,7 @@ throws
 {
     boolean isPureList = false;
 
-    if (tobj.hasNoStringRep() && (tobj.getInternalRep() instanceof TclList)) {
+    if (tobj.hasNoStringRep() && tobj.isListType()) {
         isPureList = true;
     }
 

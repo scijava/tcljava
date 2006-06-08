@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: LindexCmd.java,v 1.4 2006/01/17 05:13:37 mdejong Exp $
+ * RCS: @(#) $Id: LindexCmd.java,v 1.5 2006/06/08 07:44:51 mdejong Exp $
  *
  */
 
@@ -123,7 +123,7 @@ TclLindexList(
     // repeated shimmering; see TIP#22 and TIP#33 for the details.
 
     TclObject arg = objv[argIndex];
-    boolean isListType = (arg.getInternalRep() instanceof TclList);
+    boolean isListType = arg.isListType();
     boolean isValidIndex = false;
 
     if (!isListType) {

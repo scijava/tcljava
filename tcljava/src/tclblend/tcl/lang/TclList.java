@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: TclList.java,v 1.6 2005/09/21 21:22:56 mdejong Exp $
+ * RCS: @(#) $Id: TclList.java,v 1.7 2006/06/08 07:44:51 mdejong Exp $
  */
 
 package tcl.lang;
@@ -153,6 +153,7 @@ newInstance(
  *----------------------------------------------------------------------
  */
 
+private
 static void
 setListFromAny(
     Interp interp,		// Interp to report errors in, or null.
@@ -172,7 +173,7 @@ throws
      * and needs to be added to the cleanup queue.
      */
 
-    if (!(rep instanceof TclList)) {
+    if (!tobj.isListType()) {
 	TclList tlist;
 	long interpPtr = (interp == null) ? 0 : interp.interpPtr;
 

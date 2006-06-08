@@ -1,5 +1,42 @@
 2006-06-07  Mo DeJong  <mdejong@users.sourceforge.net>
 
+        Create type test methods in TclObject class.
+        Replace use of instanceof with calls to type
+        test methods.
+
+        * src/jacl/tcl/lang/AfterCmd.java:
+        * src/jacl/tcl/lang/FconfigureCmd.java:
+        * src/jacl/tcl/lang/Interp.java:
+        * src/jacl/tcl/lang/LindexCmd.java:
+        * src/jacl/tcl/lang/StringCmd.java:
+        * src/jacl/tcl/lang/TclList.java:
+        * src/jacl/tcl/lang/Util.java:
+        * src/tclblend/tcl/lang/TclList.java (setListFromAny):
+        Update setListFromAny so that it matches set
+        methods in other common classes.
+        * src/tcljava/tcl/lang/JavaInvoke.java:
+        * src/tcljava/tcl/lang/TclBoolean.java:
+        * src/tcljava/tcl/lang/TclDouble.java:
+        * src/tcljava/tcl/lang/TclInteger.java (setIntegerFromAny):
+        Set ivalue after invoking setInternalRep() since
+        this method will reset the ivalue.
+        * src/tcljava/tcl/lang/TclObjectBase.java (isStringType,
+        isListType, TclObjectBase, TclObjectBase, setInternalRep):
+        Set ivalue to default value and add accessor methods.
+        * src/tcljava/tcl/lang/TclString.java (setStringFromAny):
+        Update setStringFromAny so that it matches set
+        methods in other common classes.
+        * src/tjc/tcl/lang/TJC.java (setVarScalar):
+        Change method to void return type since it always
+        returns the argument. Make it non-public since
+        this method is not used anywhere.
+        * src/tjc/tcl/lang/TJCBench.java:
+        * tests/tclbench/internal.bench: Add bench tests.
+        * tests/tcljava/tcljavaInterp.test: Fixup TclObject
+        size output changed by last checkin.
+
+2006-06-07  Mo DeJong  <mdejong@users.sourceforge.net>
+
         Rewrite TclObject and TclInteger classes so
         that an object that contains an integer value
         stores the int inside the TclObject instance.

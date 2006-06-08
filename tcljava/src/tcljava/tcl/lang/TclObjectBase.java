@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclObjectBase.java,v 1.8 2006/06/07 17:16:10 mdejong Exp $
+ * RCS: @(#) $Id: TclObjectBase.java,v 1.9 2006/06/08 07:44:51 mdejong Exp $
  *
  */
 
@@ -36,15 +36,35 @@ abstract class TclObjectBase {
     // This implementation executes integer operations
     // more quickly since instanceof and upcast operations
     // are no longer needed in the critical execution path.
+    // The ivalue field is always set after a call to
+    // setInternalRep() in the TclInteger class.
 
     int ivalue;
+
+    private static final int IVALUE_DEFAULT = 0;
+
+    // Return true if the TclObject contains an int.
 
     final boolean isIntegerType() {
         return (internalRep == TclInteger.dummy);
     }
 
+    // Return true if the TclObject contains a TclString.
+
+    final boolean isStringType() {
+        return (internalRep instanceof TclString);
+    }
+
+    // Return true if the TclObject contains a TclDouble.
+
     final boolean isDoubleType() {
         return (internalRep instanceof TclDouble);
+    }
+
+    // Return true if the TclObject contains a TclList.
+
+    final boolean isListType() {
+        return (internalRep instanceof TclList);
     }
 
     // Internal representation of the object. A valid TclObject
@@ -83,7 +103,7 @@ abstract class TclObjectBase {
 	    throw new TclRuntimeError("null InternalRep");
 	}
 	internalRep = rep;
-//	ivalue = 0;
+	ivalue = IVALUE_DEFAULT;
 	stringRep = null;
 	refCount = 0;
 
@@ -112,7 +132,7 @@ abstract class TclObjectBase {
 	    throw new TclRuntimeError("null InternalRep");
 	}
 	internalRep = rep;
-//	ivalue = 0;
+	ivalue = IVALUE_DEFAULT;
 	stringRep = s;
 	refCount = 0;
 
@@ -167,7 +187,7 @@ abstract class TclObjectBase {
         //    "\" to \"" + rep.getClass().getName() + "\"");
 	internalRep.dispose();
 	internalRep = rep;
-//	ivalue = 0;
+	ivalue = IVALUE_DEFAULT;
     }
 
     /**
@@ -254,7 +274,7 @@ abstract class TclObjectBase {
 	        disposedError();
 	    }
         }
-	if (internalRep instanceof TclString) {
+	if (isStringType()) {
 	    if (stringRep == null) {
 	        stringRep = internalRep.toString();
 	    }
@@ -290,7 +310,7 @@ abstract class TclObjectBase {
 	if (refCount == 1) {
 	    return (TclObject) this;
 	} else if (refCount > 1) {
-	    if (internalRep instanceof TclString) {
+	    if (isStringType()) {
 		if (stringRep == null) {
 		    stringRep = internalRep.toString();
 		}

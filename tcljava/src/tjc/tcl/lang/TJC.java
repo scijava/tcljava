@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TJC.java,v 1.28 2006/06/07 17:16:10 mdejong Exp $ *
+ * RCS: @(#) $Id: TJC.java,v 1.29 2006/06/08 07:44:51 mdejong Exp $ *
  */
 
 // Runtime support for TJC compiler implementation.
@@ -362,7 +362,8 @@ public class TJC {
                 return Var.setVarCompiledLocalScalarInvalid(
                     interp, varname, value);
             } else {
-                return TJC.setVarScalar(var, value);
+                TJC.setVarScalar(var, value);
+                return value;
             }
         }
 
@@ -463,10 +464,9 @@ public class TJC {
                 // as the variable value.
 
                 if (createdNewObj) {
-                    return TJC.setVarScalar(var, varValue);
-                } else {
-                    return varValue;
+                    TJC.setVarScalar(var, varValue);
                 }
+                return varValue;
             }
         }
 
@@ -566,7 +566,6 @@ public class TJC {
             if (createdNewObj) {
                 TJC.setVarScalar(var, varValue);
             }
-
             return varValue;
         }
 
@@ -679,9 +678,7 @@ public class TJC {
             if (createdNewObj) {
                 TJC.setVarScalar(var, varValue);
             }
-
             return varValue;
-
         }
 
         // appendVarArray() will append string elements to an
@@ -852,10 +849,10 @@ public class TJC {
     // be used when a valid cached var reference is
     // held.
 
-    public static final
-    TclObject setVarScalar(
-        Var var,
-        TclObject newValue)    // New value to set varible to, can't be null
+    static final
+    void setVarScalar(
+        final Var var,
+        final TclObject newValue)    // New value to set varible to, can't be null
     {
         TclObject oldValue = var.tobj;
         if (oldValue != newValue) {
@@ -869,8 +866,10 @@ public class TJC {
         // setVarScalar() or clearVarUndefined() since a
         // cached array variable will never be passed to
         // this method and an undefined variable will never
-        // be cached.
-        return newValue;
+        // be cached. This method does not return a value
+        // since the return value would always be the passed
+        // in newValue.
+        return;
     }
 
     // This method is invoked when a compiled incr command
@@ -1380,8 +1379,7 @@ public class TJC {
     {
         boolean isEmptyString;
 
-        if (obj.hasNoStringRep() &&
-                (obj.getInternalRep() instanceof TclList)) {
+        if (obj.hasNoStringRep() && obj.isListType()) {
             // A pure Tcl list is equal to the empty string
             // when the list length is zero. This check
             // avoids the possibly slow generation of

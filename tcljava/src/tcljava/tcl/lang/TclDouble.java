@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclDouble.java,v 1.8 2006/05/15 01:25:46 mdejong Exp $
+ * RCS: @(#) $Id: TclDouble.java,v 1.9 2006/06/08 07:44:51 mdejong Exp $
  *
  */
 
@@ -249,10 +249,9 @@ throws
 				// Error message will be left inside
 				// the interp if it's not null.
 {
-    InternalRep rep = tobj.getInternalRep();
     TclDouble tdouble;
 
-    if (!(rep instanceof TclDouble)) {
+    if (! tobj.isDoubleType()) {
 	if (Util.isJacl()) {
 	    // Try to convert to TclDouble. If the string can't be
 	    // parsed as a double, then raise a TclException here.
@@ -311,7 +310,7 @@ throws
 	    tdouble = (TclDouble) tobj.getInternalRep();
         }
     } else {
-	tdouble = (TclDouble) rep;
+	tdouble = (TclDouble) tobj.getInternalRep();
     }
 
     return tdouble.value;
@@ -340,10 +339,9 @@ set(
     double d)			// The new value for the object. 
 {
     tobj.invalidateStringRep();
-    InternalRep rep = tobj.getInternalRep();
 
-    if (rep instanceof TclDouble) {
-	TclDouble tdouble = (TclDouble) rep;
+    if (tobj.isDoubleType()) {
+	TclDouble tdouble = (TclDouble) tobj.getInternalRep();
 	tdouble.value = d;
     } else {
 	tobj.setInternalRep(new TclDouble(d));

@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclString.java,v 1.11 2006/05/30 17:28:01 mdejong Exp $
+ * RCS: @(#) $Id: TclString.java,v 1.12 2006/06/08 07:44:51 mdejong Exp $
  *
  */
 
@@ -144,27 +144,23 @@ public class TclString implements InternalRep {
      * @param tobj the TclObject to convert to use the TclString internal rep.
      */
     private static void setStringFromAny(TclObject tobj) {
-	InternalRep rep = tobj.getInternalRep();
+	// Create string rep if object did not have one already
 
-	if (!(rep instanceof TclString)) {
-	    // make sure that this object now has a valid string rep.
+	tobj.toString();
 
-	    tobj.toString();
+	// Change the type of the object to TclString.
 
-	    // Change the type of the object to TclString.
+	tobj.setInternalRep(dummy);
 
-	    tobj.setInternalRep(dummy);
-
-	    if (TclObject.saveObjRecords) {
-	        String key = "String -> TclString";
-	        Integer num = (Integer) TclObject.objRecordMap.get(key);
-	        if (num == null) {
-	            num = new Integer(1);
-	        } else {
-	            num = new Integer(num.intValue() + 1);
-	        }
-	        TclObject.objRecordMap.put(key, num);
+	if (TclObject.saveObjRecords) {
+	    String key = "String -> TclString";
+	    Integer num = (Integer) TclObject.objRecordMap.get(key);
+	    if (num == null) {
+	        num = new Integer(1);
+	    } else {
+	        num = new Integer(num.intValue() + 1);
 	    }
+	    TclObject.objRecordMap.put(key, num);
 	}
     }
 
@@ -184,7 +180,9 @@ public class TclString implements InternalRep {
      * @param string the string to append to the object.
      */
     public static final void append(TclObject tobj, String string) {
-	setStringFromAny(tobj);
+	if (!tobj.isStringType()) {
+	    setStringFromAny(tobj);
+	}
 
 	TclString tstr = (TclString) tobj.getInternalRep();
 	if (tstr == dummy) {
@@ -209,7 +207,9 @@ public class TclString implements InternalRep {
      */
     public static final void append(TclObject tobj,
             char[] charArr, int offset, int length) {
-	setStringFromAny(tobj);
+	if (!tobj.isStringType()) {
+	    setStringFromAny(tobj);
+	}
 
 	TclString tstr = (TclString) tobj.getInternalRep();
 	if (tstr == dummy) {
@@ -250,7 +250,9 @@ public class TclString implements InternalRep {
     static final void append(TclObject tobj,
 	    TclObject[] objv,
             final int startIdx, final int endIdx) {
-	setStringFromAny(tobj);
+	if (!tobj.isStringType()) {
+	    setStringFromAny(tobj);
+	}
 
 	TclString tstr = (TclString) tobj.getInternalRep();
 	if (tstr == dummy) {
@@ -287,7 +289,9 @@ public class TclString implements InternalRep {
      */
 
     public static void empty(TclObject tobj) {
-	setStringFromAny(tobj);
+	if (!tobj.isStringType()) {
+	    setStringFromAny(tobj);
+	}
 
 	TclString tstr = (TclString) tobj.getInternalRep();
 	if (tstr == dummy) {

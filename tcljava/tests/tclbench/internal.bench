@@ -27,6 +27,10 @@ set tuples [list \
     {internal-tclobject-duplicate-tclinteger tcl.lang.TJCBench InternalTclIntegerDuplicate} \
     {internal-tclobject-duplicate-tcldouble tcl.lang.TJCBench InternalTclDoubleDuplicate} \
     {internal-tclobject-duplicate-tcllist tcl.lang.TJCBench InternalTclListDuplicate} \
+    {internal-tclobject-is-tclinteger-type tcl.lang.TJCBench InternalTclIntegerType} \
+    {internal-tclobject-is-tcldouble-type tcl.lang.TJCBench InternalTclDoubleType} \
+    {internal-tclobject-is-tclstring-type tcl.lang.TJCBench InternalTclStringType} \
+    {internal-tclobject-is-tcllist-type tcl.lang.TJCBench InternalTclListType} \
     ]
 
 foreach tuple $tuples {

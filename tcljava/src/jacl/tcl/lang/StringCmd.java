@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: StringCmd.java,v 1.14 2006/05/22 21:23:35 mdejong Exp $
+ * RCS: @(#) $Id: StringCmd.java,v 1.15 2006/06/08 07:44:51 mdejong Exp $
  *
  */
 
@@ -392,8 +392,7 @@ throws
 		    break;
 		}
 		case STR_IS_DOUBLE: {
-		    if ((obj.getInternalRep() instanceof TclDouble) ||
-			(obj.getInternalRep() instanceof TclInteger)) {
+		    if (obj.isDoubleType() || obj.isIntegerType()) {
 			break;
 		    }
 
@@ -449,7 +448,7 @@ throws
 		    break;
 		}
 		case STR_IS_INT: {
-		    if (obj.getInternalRep() instanceof TclInteger) {
+		    if (obj.isIntegerType()) {
 			break;
 		    }
 		    boolean isInteger = true;
