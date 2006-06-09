@@ -10,12 +10,16 @@ public final class TclObject extends TclObjectBase {
 static final boolean saveObjRecords = TclObjectBase.saveObjRecords;
 static Hashtable objRecordMap = TclObjectBase.objRecordMap;
 
-public TclObject(InternalRep rep) {
+public TclObject(final InternalRep rep) {
     super(rep);
 }
 
-protected TclObject(TclString rep, String s) {
+protected TclObject(final TclString rep, final String s) {
     super(rep, s);
+}
+
+protected TclObject(final int ivalue) {
+    super(ivalue);
 }
 
 public final void preserve() {}

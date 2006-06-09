@@ -374,5 +374,145 @@ public class TestTcl {
         return results.toString();
     }
 
+    // Test logic related to TclObject.ivalue field. This
+    // is either an int value or a bit field based on the
+    // internal rep type.
+
+    public static String testIvalueUtil(TclObject tobj) {
+        StringBuffer results = new StringBuffer();
+
+        results.append( "isIntegerType" + " " );
+        results.append( tobj.isIntegerType() );
+        results.append( " " );
+
+        results.append( "isStringType" + " " );
+        results.append( tobj.isStringType() );
+        results.append( " " );
+
+        results.append( "isDoubleType" + " " );
+        results.append( tobj.isDoubleType() );
+        results.append( " " );
+
+        results.append( "isListType" + " " );
+        results.append( tobj.isListType() );
+
+        return results.toString();
+    }
+
+    public static String testIvalue0(Interp interp) throws TclException {
+        TclObject tobj = TclInteger.newInstance(0);
+        return testIvalueUtil(tobj);
+    }
+
+    public static String testIvalue1(Interp interp) throws TclException {
+        TclObject tobj = TclInteger.newInstance(1);
+        return testIvalueUtil(tobj);
+    }
+
+    public static String testIvalue2(Interp interp) throws TclException {
+        TclObject tobj = TclInteger.newInstance(2);
+        TclObject dup = tobj.duplicate();
+        return testIvalueUtil(dup);
+    }
+
+    public static String testIvalue3(Interp interp) throws TclException {
+        TclObject tobj = TclInteger.newInstance(2);
+        // TclInteger -> TclString
+        TclString.append(tobj, "");
+        return testIvalueUtil(tobj);
+    }
+
+    public static String testIvalue4(Interp interp) throws TclException {
+        TclObject tobj = TclInteger.newInstance(2);
+        // TclInteger -> TclString
+        TclString.append(tobj, "");
+        TclObject dup = tobj.duplicate();
+        return testIvalueUtil(dup);
+    }
+
+    public static String testIvalue5(Interp interp) throws TclException {
+        TclObject tobj = TclString.newInstance("foo");
+        return testIvalueUtil(tobj);
+    }
+
+    public static String testIvalue6(Interp interp) throws TclException {
+        TclObject tobj = TclString.newInstance("foo");
+        TclObject dup = tobj.duplicate();
+        return testIvalueUtil(dup);
+    }
+
+    public static String testIvalue7(Interp interp) throws TclException {
+        TclObject tobj = TclString.newInstance("");
+        // TclString -> TclList
+        TclList.getLength(interp, tobj);
+        return testIvalueUtil(tobj);
+    }
+
+    public static String testIvalue8(Interp interp) throws TclException {
+        TclObject tobj = TclString.newInstance("1");
+        // TclString -> TclInteger
+        TclInteger.get(interp, tobj);
+        return testIvalueUtil(tobj);
+    }
+
+    public static String testIvalue9(Interp interp) throws TclException {
+        TclObject tobj = TclString.newInstance("1.0");
+        // TclString -> TclDouble
+        TclDouble.get(interp, tobj);
+        return testIvalueUtil(tobj);
+    }
+
+    public static String testIvalue10(Interp interp) throws TclException {
+        TclObject tobj = TclDouble.newInstance(1.0);
+        // TclDouble -> TclString
+        TclString.append(tobj, "");
+        return testIvalueUtil(tobj);
+    }
+
+    public static String testIvalue11(Interp interp) throws TclException {
+        TclObject tobj = TclList.newInstance();
+        TclObject dup = tobj.duplicate();
+        return testIvalueUtil(dup);
+    }
+
+    public static String testIvalue12(Interp interp) throws TclException {
+        TclObject tobj = TclDouble.newInstance(1.0);
+        TclObject dup = tobj.duplicate();
+        return testIvalueUtil(dup);
+    }
+
+    public static String testIvalue13(Interp interp) throws TclException {
+        byte[] bytes = new byte[1];
+        TclObject tba = TclByteArray.newInstance(bytes);
+
+        // Int value matches default ivalue for new TclObject with an internal rep.
+        TclObject tobj = TclInteger.newInstance(tba.ivalue);
+        return testIvalueUtil(tobj);
+    }
+
+    public static String testIvalue14(Interp interp) throws TclException {
+        TclObject td = TclDouble.newInstance(1.0);
+
+        // Int value matches default double ivalue.
+        TclObject tobj = TclInteger.newInstance(td.ivalue);
+        return testIvalueUtil(tobj);
+    }
+
+    public static String testIvalue15(Interp interp) throws TclException {
+        TclObject tstr = TclString.newInstance("foo");
+
+        // Int value matches default string ivalue.
+        TclObject tobj = TclInteger.newInstance(tstr.ivalue);
+        return testIvalueUtil(tobj);
+    }
+
+    public static String testIvalue16(Interp interp) throws TclException {
+        TclObject tlist = TclList.newInstance();
+
+        // Int value matches default list ivalue.
+        TclObject tobj = TclInteger.newInstance(tlist.ivalue);
+        return testIvalueUtil(tobj);
+    }
+
 }
 

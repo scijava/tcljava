@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclObjectBase.java,v 1.9 2006/06/08 07:44:51 mdejong Exp $
+ * RCS: @(#) $Id: TclObjectBase.java,v 1.10 2006/06/09 20:13:39 mdejong Exp $
  *
  */
 
@@ -29,6 +29,32 @@ import java.util.Enumeration;
 
 abstract class TclObjectBase {
 
+    // Internal representation of the object. A valid TclObject
+    // will always have a non-null internal rep.
+
+    protected InternalRep internalRep;
+
+    // Reference count of this object. When 0 the object will be deallocated.
+
+    protected int refCount;
+
+    // String  representation of the object.
+
+    protected String stringRep;
+
+    // Setting to true will enable a feature that keeps
+    // track of TclObject allocation, internal rep allocation,
+    // and transitions from one internal rep to another.
+
+    static final boolean saveObjRecords = false;
+    static Hashtable objRecordMap = ( saveObjRecords ? new Hashtable() : null );
+
+    // Only set this to true if running test code and
+    // the user wants to run extra ref count checks.
+    // Setting this to true will make key methods larger.
+
+    static final boolean validate = false;
+
     // The ivalue field is used for a TclObject that contains
     // an integer value. This implementation uses less
     // memory than the previous approach that stored an
@@ -40,8 +66,6 @@ abstract class TclObjectBase {
     // setInternalRep() in the TclInteger class.
 
     int ivalue;
-
-    private static final int IVALUE_DEFAULT = 0;
 
     // Return true if the TclObject contains an int.
 
@@ -67,45 +91,37 @@ abstract class TclObjectBase {
         return (internalRep instanceof TclList);
     }
 
-    // Internal representation of the object. A valid TclObject
-    // will always have a non-null internal rep.
-
-    protected InternalRep internalRep;
-
-    // Reference count of this object. When 0 the object will be deallocated.
-
-    protected int refCount;
-
-    // String  representation of the object.
-
-    protected String stringRep;
-
-    // Setting to true will enable a feature that keeps
-    // track of TclObject allocation, internal rep allocation,
-    // and transitions from one internal rep to another.
-
-    static final boolean saveObjRecords = false;
-    static Hashtable objRecordMap = ( saveObjRecords ? new Hashtable() : null );
-
-    // Only set this to true if running test code and
-    // the user wants to run extra ref count checks.
-    // Setting this to true will make key methods larger.
-    static final boolean extraRefCountChecks = false;
-
     /**
      * Creates a TclObject with the given InternalRep. This method should be
      * called only by an InternalRep implementation.
      *
      * @param rep the initial InternalRep for this object.
      */
-    protected TclObjectBase(InternalRep rep) {
-	if (rep == null) {
-	    throw new TclRuntimeError("null InternalRep");
+    protected TclObjectBase(final InternalRep rep) {
+	if (validate) {
+	    if (rep == null) {
+	        throw new TclRuntimeError("null InternalRep");
+	    }
 	}
 	internalRep = rep;
-	ivalue = IVALUE_DEFAULT;
-	stringRep = null;
-	refCount = 0;
+	//ivalue = 0;
+	//stringRep = null;
+	//refCount = 0;
+
+	if (validate) {
+	    if (internalRep == null) {
+	        throw new TclRuntimeError("null internalRep");
+	    }
+	    if (ivalue != 0) {
+	        throw new TclRuntimeError("non-zero ivalue");
+	    }
+	    if (stringRep != null) {
+	        throw new TclRuntimeError("non-null stringRep");
+	    }
+	    if (refCount != 0) {
+	        throw new TclRuntimeError("non-zero refCount");
+	    }
+	}
 
 	if (TclObjectBase.saveObjRecords) {
 	    String key = "TclObject";
@@ -127,14 +143,71 @@ abstract class TclObjectBase {
      * @param rep the initial InternalRep for this object.
      * @param s the initial string rep for this object.
      */
-    protected TclObjectBase(TclString rep, String s) {
-	if (rep == null) {
-	    throw new TclRuntimeError("null InternalRep");
+    protected TclObjectBase(final TclString rep, final String s) {
+	if (validate) {
+	    if (rep == null) {
+	        throw new TclRuntimeError("null InternalRep");
+	    }
+	    if (s == null) {
+	        throw new TclRuntimeError("null String");
+	    }
 	}
 	internalRep = rep;
-	ivalue = IVALUE_DEFAULT;
+	//ivalue = 0;
 	stringRep = s;
-	refCount = 0;
+	//refCount = 0;
+
+	if (validate) {
+	    if (internalRep == null) {
+	        throw new TclRuntimeError("null internalRep");
+	    }
+	    if (ivalue != 0) {
+	        throw new TclRuntimeError("non-zero ivalue");
+	    }
+	    if (stringRep == null) {
+	        throw new TclRuntimeError("null stringRep");
+	    }
+	    if (refCount != 0) {
+	        throw new TclRuntimeError("non-zero refCount");
+	    }
+	}
+
+	if (TclObjectBase.saveObjRecords) {
+	    String key = "TclObject";
+	    Integer num = (Integer) TclObject.objRecordMap.get(key);
+	    if (num == null) {
+	        num = new Integer(1);
+	    } else {
+	        num = new Integer(num.intValue() + 1);
+	    }
+	    TclObject.objRecordMap.put(key, num);
+	}
+    }
+
+    /**
+     * Creates a TclObject with the given integer value.
+     * This constructor is used by the TclInteger class only.
+     * No other code should call this constructor.
+     *
+     * @param ivalue the integer value
+     */
+    protected TclObjectBase(final int ivalue) {
+	internalRep = TclInteger.dummy;
+	this.ivalue = ivalue;
+	//stringRep = null;
+	//refCount = 0;
+
+	if (validate) {
+	    if (internalRep == null) {
+	        throw new TclRuntimeError("null internalRep");
+	    }
+	    if (stringRep != null) {
+	        throw new TclRuntimeError("non-null stringRep");
+	    }
+	    if (refCount != 0) {
+	        throw new TclRuntimeError("non-zero refCount");
+	    }
+	}
 
 	if (TclObjectBase.saveObjRecords) {
 	    String key = "TclObject";
@@ -155,7 +228,7 @@ abstract class TclObjectBase {
      * @return the handle to the current internal rep.
      */
     public final InternalRep getInternalRep() {
-	if (extraRefCountChecks) {
+	if (validate) {
 	    if (internalRep == null) {
 	        disposedError();
 	    }
@@ -187,7 +260,7 @@ abstract class TclObjectBase {
         //    "\" to \"" + rep.getClass().getName() + "\"");
 	internalRep.dispose();
 	internalRep = rep;
-	ivalue = IVALUE_DEFAULT;
+	ivalue = 0;
     }
 
     /**
@@ -241,7 +314,7 @@ abstract class TclObjectBase {
      *
      */
     public final boolean isShared() {
-	if (extraRefCountChecks) {
+	if (validate) {
 	    if (internalRep == null) {
 	        disposedError();
 	    }
@@ -269,15 +342,13 @@ abstract class TclObjectBase {
      */
 
     public final TclObject duplicate() {
-	if (extraRefCountChecks) {
+	if (validate) {
 	    if (internalRep == null) {
 	        disposedError();
 	    }
         }
-	if (isStringType()) {
-	    if (stringRep == null) {
-	        stringRep = internalRep.toString();
-	    }
+	if (isStringType() && (stringRep == null)) {
+	    stringRep = internalRep.toString();
 	}
 	TclObject newObj;
 	if (internalRep == TclInteger.dummy) {
@@ -287,8 +358,8 @@ abstract class TclObjectBase {
 	    newObj = new TclObject(internalRep.duplicate());
 	}
 
-	newObj.stringRep = this.stringRep;
-	newObj.refCount = 0;
+	newObj.stringRep = stringRep;
+	//newObj.refCount = 0;
 	return newObj;
     }
 
@@ -310,10 +381,8 @@ abstract class TclObjectBase {
 	if (refCount == 1) {
 	    return (TclObject) this;
 	} else if (refCount > 1) {
-	    if (isStringType()) {
-		if (stringRep == null) {
-		    stringRep = internalRep.toString();
-		}
+	    if (isStringType() && (stringRep == null)) {
+		stringRep = internalRep.toString();
 	    }
 	    TclObject newObj;
 	    if (internalRep == TclInteger.dummy) {

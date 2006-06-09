@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclObject.java,v 1.3 2006/02/24 08:21:40 mdejong Exp $
+ * RCS: @(#) $Id: TclObject.java,v 1.4 2006/06/09 20:13:39 mdejong Exp $
  *
  */
 
@@ -31,7 +31,7 @@ public final class TclObject extends TclObjectBase {
      *
      * @param rep the initial InternalRep for this object.
      */
-    public TclObject(InternalRep rep) {
+    public TclObject(final InternalRep rep) {
         super(rep);
     }
 
@@ -43,8 +43,19 @@ public final class TclObject extends TclObjectBase {
      * @param rep the initial InternalRep for this object.
      * @param s the initial string rep for this object.
      */
-    protected TclObject(TclString rep, String s) {
+    protected TclObject(final TclString rep, final String s) {
         super(rep, s);
+    }
+
+    /**
+     * Creates a TclObject with the given integer value.
+     * This constructor is used by the TclInteger class only. No other place
+     * should call this constructor.
+     *
+     * @param ivalue the integer value
+     */
+    protected TclObject(final int ivalue) {
+        super(ivalue);
     }
 
     /**
@@ -93,6 +104,7 @@ public final class TclObject extends TclObjectBase {
         //    "\" to \"" + rep.getClass().getName() + "\"");
 	internalRep.dispose();
 	internalRep = rep;
+	ivalue = 0;
     }
 
     /**

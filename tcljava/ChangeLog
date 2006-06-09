@@ -1,3 +1,28 @@
+2006-06-09  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * Makefile.in: Add test source info to debug
+        target output.
+        * src/empty/empty.jar: Regen.
+        * src/empty/tcl/lang/TclObject.java (TclObject):
+        * src/jacl/tcl/lang/TclObject.java (TclObject):
+        Add TclObject ctor that accepts an int.
+        * src/tclblend/tcl/lang/TclObject.java (TclObject,
+        setInternalRep):
+        Add TclObject ctor that accepts an int. Set
+        ivalue to zero in setInternalRep.
+        * src/tcljava/tcl/lang/TclInteger.java (newInstance):
+        Just invoke new TclObject ctor.
+        * src/tcljava/tcl/lang/TclObjectBase.java (TclObject,
+        setInternalRep, duplicate):
+        Add TclObject ctor that accepts an int. Set
+        ivalue to zero in setInternalRep. Comment out
+        var set operations that set the default value.
+        This improves execution speed slightly.
+        * src/tests/tjc/tcl/lang/TestTcl.java:
+        * tests/tjc/testtjc.test:
+        Add regression test for TclObject type
+        util methods.
+
 2006-06-07  Mo DeJong  <mdejong@users.sourceforge.net>
 
         Create type test methods in TclObject class.

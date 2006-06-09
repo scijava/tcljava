@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.55 2006/04/13 07:36:49 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.56 2006/06/09 20:13:38 mdejong Exp $
 
 SHELL = /bin/sh
 
@@ -1497,6 +1497,7 @@ gdb : gdb_$(TCLJAVA)
 
 jpda:
 	@echo "Attach to shell via ${JDB_ATTACH_FLAGS}"
+	@echo "To run test: source $(TOP_DIR_NATIVE)/tests/all.tcl"
 	CLASSPATH=$(JACL_DEBUG_CLASSPATH) \
 	$(JAVA) $(JAVA_FLAGS) ${JAVA_G_FLAGS} \
 		-DBUILD_DIR=$(BUILD_DIR) -DJAVA=$(JAVA) tcl.lang.Shell
