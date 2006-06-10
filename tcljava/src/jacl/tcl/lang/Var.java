@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Var.java,v 1.33 2006/05/23 05:34:33 mdejong Exp $
+ * RCS: @(#) $Id: Var.java,v 1.34 2006/06/10 04:15:59 mdejong Exp $
  *
  */
 package tcl.lang;
@@ -1164,8 +1164,9 @@ class Var {
 		    }
 		    bytes = newValue.toString();
 		    listFlags = Util.scanElement(interp, bytes);
-		    oldValue = TclString.newInstance(
-			           Util.convertElement(bytes, listFlags));
+		    StringBuffer sb = new StringBuffer(64);
+		    Util.convertElement(bytes, listFlags, sb);
+		    oldValue = TclString.newInstance( sb.toString() );
 		    var.tobj = oldValue;
 		    var.tobj.preserve();
 		} else if (newValue != oldValue) {

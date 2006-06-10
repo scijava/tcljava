@@ -220,6 +220,15 @@ proc bench_list_llength {} {
     return [llength $l]
 }
 
+proc bench_list_tostring {} {
+    # Convert list to a String object to get runtime metrics for
+    # TclList.toString() and Util.appendElement() methods.
+    set l [list 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 \
+        21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40]
+    string index $l 0
+    return
+}
+
 
 bench -desc "bench_list_constant" -body {bench_list_constant}
 bench -desc "bench_list_index_constant" -body {bench_list_index_constant}
@@ -230,4 +239,5 @@ bench -desc "bench_list_loop_lappend_scalar2" -body {bench_list_loop_lappend_sca
 bench -desc "bench_list_loop_lappend_array1" -body {bench_list_loop_lappend_array1}
 bench -desc "bench_list_loop_lappend_array2" -body {bench_list_loop_lappend_array2}
 bench -desc "bench_list_llength" -body {bench_list_llength}
+bench -desc "bench_list_tostring" -body {bench_list_tostring}
 

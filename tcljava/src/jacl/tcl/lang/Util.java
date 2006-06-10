@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Util.java,v 1.24 2006/06/08 07:44:51 mdejong Exp $
+ * RCS: @(#) $Id: Util.java,v 1.25 2006/06/10 04:15:59 mdejong Exp $
  */
 
 package tcl.lang;
@@ -1070,7 +1070,7 @@ throws TclException
     }
 
     int flags = scanElement(interp, s);
-    sbuf.append(convertElement(s, flags));
+    convertElement(s, flags, sbuf);
 }
 
 /*
@@ -1107,7 +1107,7 @@ findElement(
 {
     int openBraces = 0;
     boolean inQuotes = false;
-    char c;
+    char c = '\0';
     int elemStart, elemEnd;
     int size = 0;
 
@@ -1118,7 +1118,6 @@ findElement(
     if (i >= len) {
 	return false;
     }
-    c = s.charAt(i);
     if (c == '{') {
 	openBraces = 1;
 	i++;
@@ -1452,10 +1451,11 @@ throws
  *----------------------------------------------------------------------
  */
 
-static String 
+static void 
 convertElement(
     String s, 		// Source information for list element.
-    int flags) 		// Flags produced by ccanElement
+    int flags,		// Flags produced by scanElement
+    StringBuffer sbuf)    // Buffer to write element to
 {
     int i = 0;
     char c;
@@ -1465,18 +1465,15 @@ convertElement(
     // code for details of how this works.
 
     if ((s == null) || (s.length() == 0) || (s.charAt(0) == '\0')) {
-	return "{}";
+	sbuf.append("{}");
+	return;
     }
-
-    StringBuffer sbuf = new StringBuffer();
 
     if (((flags & USE_BRACES) != 0) &&
 	    ((flags & TCL_DONT_USE_BRACES) == 0)) {
 	sbuf.append('{');
-	for (i=0; i<len; i++) {
-	    sbuf.append(s.charAt(i));
-	}
-	sbuf.append('}');	    
+	sbuf.append(s);
+	sbuf.append('}');
     } else {
 	c = s.charAt(0);
 	if (c == '{') {
@@ -1551,7 +1548,7 @@ convertElement(
 	}
     }
 
-    return sbuf.toString();
+    return;
 }
 
 /*

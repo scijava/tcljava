@@ -1,5 +1,17 @@
 2006-06-09  Mo DeJong  <mdejong@users.sourceforge.net>
 
+        * src/jacl/tcl/lang/TclList.java (toString):
+        * src/jacl/tcl/lang/Util.java (appendElement,
+        convertElement): Reimplement convertElement
+        so that it uses a StringBuffer argument passed
+        into the method.
+        * src/jacl/tcl/lang/Var.java: Update convertElement
+        caller.
+        * tests/tclbench/list.bench: Add TclList.toString()
+        test case.
+
+2006-06-09  Mo DeJong  <mdejong@users.sourceforge.net>
+
         * Makefile.in: Add test source info to debug
         target output.
         * src/empty/empty.jar: Regen.
