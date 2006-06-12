@@ -1,3 +1,10 @@
+2006-06-11  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/jacl/tcl/lang/AfterCmd.java:
+        * src/jacl/tcl/lang/IdleHandler.java:
+        Implement toString() methods that describe the after
+        or idle event to make debugging easier.
+
 2006-06-09  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/jacl/tcl/lang/TclList.java (toString):

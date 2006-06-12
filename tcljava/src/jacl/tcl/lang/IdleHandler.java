@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: IdleHandler.java,v 1.2 2006/01/26 19:49:18 mdejong Exp $
+ * RCS: @(#) $Id: IdleHandler.java,v 1.3 2006/06/12 04:00:18 mdejong Exp $
  *
  */
 
@@ -176,6 +176,23 @@ invoke()
 
 abstract public void
 processIdleEvent();
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * toString --
+ *
+ *	This method prints a text description of the event for debugging.
+ *
+ *----------------------------------------------------------------------
+ */
+
+public
+String toString() {
+    StringBuffer sb = new StringBuffer(64);
+    sb.append("IdleHandler.generation is " + generation + "\n");
+    return sb.toString();
+}
 
 } // end IdleHandler
 

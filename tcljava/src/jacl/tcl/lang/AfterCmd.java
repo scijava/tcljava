@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: AfterCmd.java,v 1.7 2006/06/08 07:44:51 mdejong Exp $
+ * RCS: @(#) $Id: AfterCmd.java,v 1.8 2006/06/12 04:00:18 mdejong Exp $
  *
  */
 
@@ -529,6 +529,14 @@ processTimerEvent()
     }
 }
 
+public
+String toString() {
+    StringBuffer sb = new StringBuffer(64);
+    sb.append(super.toString());
+    sb.append("AfterCmd.TimerInfo : " + command + "\n");
+    return sb.toString();
+}
+
 } // end AfterCmd.AfterInfo
 
 
@@ -615,6 +623,14 @@ processIdleEvent()
 	command.release();
 	command = null;
     }
+}
+
+public
+String toString() {
+    StringBuffer sb = new StringBuffer(64);
+    sb.append(super.toString());
+    sb.append("AfterCmd.IdleInfo : " + command + "\n");
+    return sb.toString();
 }
 
 } // end AfterCmd.AfterInfo
