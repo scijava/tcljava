@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TJCBench.java,v 1.5 2006/06/08 07:44:51 mdejong Exp $
+ * RCS: @(#) $Id: TJCBench.java,v 1.6 2006/06/12 21:33:02 mdejong Exp $
  *
  */
 
@@ -80,6 +80,16 @@ public class TJCBench extends TJC.CompiledCommand {
              InternalTclStringType(interp);
         } else if (testname.equals("InternalTclListType")) {
              InternalTclListType(interp);
+        } else if (testname.equals("InternalTclIntegerGet")) {
+             InternalTclIntegerGet(interp);
+        } else if (testname.equals("InternalExprGetKnownInt")) {
+             InternalExprGetKnownInt(interp);
+        } else if (testname.equals("InternalExprInlineGetInt")) {
+             InternalExprInlineGetInt(interp);
+        } else if (testname.equals("InternalTclDoubleGet")) {
+             InternalTclDoubleGet(interp);
+        } else if (testname.equals("InternalExprGetKnownDouble")) {
+             InternalExprGetKnownDouble(interp);
         } else {
              throw new TclException(interp, "unknown test name \"" + testname + "\"");
         }
@@ -444,6 +454,90 @@ public class TJCBench extends TJC.CompiledCommand {
         }
         b = !b; // Don't optimize away assignment
     }
+
+    // Establish timing results for TclInteger.get().
+
+    void InternalTclIntegerGet(Interp interp)
+        throws TclException
+    {
+        TclObject tobj = TclInteger.newInstance(1);
+        int ivalue = 0;
+
+        for (int i=0; i < 5000; i++) {
+            ivalue = TclInteger.get(interp, tobj);
+        }
+        ivalue++; // Don't optimize away assignment
+    }
+
+    // Establish timing results for TJC.exprGetKnownInt(),
+    // this API is used to access the int value inside
+    // a TclObject known to contain an int in expr code.
+
+    void InternalExprGetKnownInt(Interp interp)
+        throws TclException
+    {
+        TclObject tobj = TclInteger.newInstance(1);
+        int ivalue = 0;
+
+        for (int i=0; i < 5000; i++) {
+            ivalue = TJC.exprGetKnownInt(tobj);
+        }
+        ivalue++; // Don't optimize away assignment
+    }
+
+    // Grab the int value out of a TclObject by
+    // directly accessing the package protected
+    // field. Testing seems to indicate that
+    // the method inliner is working well and
+    // that the TJC.exprGetKnownInt() method
+    // works just as fast as directly accessing
+    // the field in this case.
+
+    void InternalExprInlineGetInt(Interp interp)
+        throws TclException
+    {
+        TclObject tobj = TclInteger.newInstance(1);
+        int ivalue = 0;
+
+        for (int i=0; i < 5000; i++) {
+            ivalue = tobj.ivalue;
+        }
+        ivalue++; // Don't optimize away assignment
+    }
+
+    // Establish timing results for TclDouble.get().
+
+    void InternalTclDoubleGet(Interp interp)
+        throws TclException
+    {
+        TclObject tobj = TclDouble.newInstance(1.0);
+        double d = 0.0;
+
+        for (int i=0; i < 5000; i++) {
+            d = TclDouble.get(interp, tobj);
+        }
+        d++; // Don't optimize away assignment
+    }
+
+    // Establish timing results for TJC.exprGetKnownInt(),
+    // this API is used to access the int value inside
+    // a TclObject known to contain an int in expr code.
+
+    void InternalExprGetKnownDouble(Interp interp)
+        throws TclException
+    {
+        TclObject tobj = TclDouble.newInstance(1.0);
+        double d = 0.0;
+
+        for (int i=0; i < 5000; i++) {
+            d = TJC.exprGetKnownDouble(tobj);
+        }
+        d++; // Don't optimize away assignment
+    }
+
+    // Note that there is no test like
+    // InternalExprInlineGetInt since there
+    // is no double field to access.
 
 } // end class TJCBench
 

@@ -31,6 +31,11 @@ set tuples [list \
     {internal-tclobject-is-tcldouble-type tcl.lang.TJCBench InternalTclDoubleType} \
     {internal-tclobject-is-tclstring-type tcl.lang.TJCBench InternalTclStringType} \
     {internal-tclobject-is-tcllist-type tcl.lang.TJCBench InternalTclListType} \
+    {internal-expr-tclinteger-get tcl.lang.TJCBench InternalTclIntegerGet} \
+    {internal-expr-get-known-int tcl.lang.TJCBench InternalExprGetKnownInt} \
+    {internal-expr-inline-get-int tcl.lang.TJCBench InternalExprInlineGetInt} \
+    {internal-expr-tcldouble-get tcl.lang.TJCBench InternalTclDoubleGet} \
+    {internal-expr-get-known-double tcl.lang.TJCBench InternalExprGetKnownDouble} \
     ]
 
 foreach tuple $tuples {

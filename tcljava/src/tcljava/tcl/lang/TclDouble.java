@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclDouble.java,v 1.9 2006/06/08 07:44:51 mdejong Exp $
+ * RCS: @(#) $Id: TclDouble.java,v 1.10 2006/06/12 21:33:02 mdejong Exp $
  *
  */
 
@@ -24,9 +24,11 @@ public class TclDouble implements InternalRep {
 
 /*
  * Internal representation of a double value.
+ * This field is package scoped so that the
+ * expr module can quickly read the value.
  */
 
-private double value;
+double value;
 
 // Extra debug checking
 

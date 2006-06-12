@@ -1,3 +1,21 @@
+2006-06-12  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/jacl/tcl/lang/Expression.java (ExprParseObject):
+        Inline TclDouble.get() operation since this change
+        makes a double get about 4x faster and this method
+        is performance critical.
+        * src/tcljava/tcl/lang/TclDouble.java: Make the
+        value field package protected so that it can
+        be accessed in expr functions.
+        * src/tjc/tcl/lang/TJC.java (getBoolean, exprGetKnownInt,
+        exprGetKnownDouble): Inline TclDouble.get() inside
+        getBoolean, this makes getting a boolean value
+        just as fast as an integer value. Add access methods
+        for the int or double value inside a TclObject.
+        * src/tjc/tcl/lang/TJCBench.java:
+        * tests/tclbench/internal.bench: Add test cases
+        for int/double access methods.
+
 2006-06-11  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/jacl/tcl/lang/AfterCmd.java:

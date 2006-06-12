@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TJC.java,v 1.29 2006/06/08 07:44:51 mdejong Exp $ *
+ * RCS: @(#) $Id: TJC.java,v 1.30 2006/06/12 21:33:02 mdejong Exp $ *
  */
 
 // Runtime support for TJC compiler implementation.
@@ -1093,7 +1093,7 @@ public class TJC {
         if (obj.isIntegerType()) {
             return (obj.ivalue != 0);   // Inline TclInteger.get()
         } else if (obj.isDoubleType()) {
-            return (TclDouble.get(interp, obj) != 0.0);
+            return (TJC.exprGetKnownDouble(obj) != 0.0);
         }
 
         ExprValue value;
@@ -1288,6 +1288,30 @@ public class TJC {
             Expression.ExprParseObject(interp, tobj, value);
             return value;
         }
+    }
+
+    // Return the int value inside a TclObject known
+    // to be of type integer. This method should
+    // only be used inside the expr layer. Testing
+    // indicates that this method executes 25%
+    // faster than TclInteger.get().
+
+    public static
+    int exprGetKnownInt(final TclObject tobj)
+    {
+        return tobj.ivalue;
+    }
+
+    // Return the double value inside a TclObject known
+    // to be of type double. This method should
+    // only be used inside the expr layer. Testing
+    // indicates that this method executes about
+    // 4x faster than TclDouble.get().
+
+    public static
+    double exprGetKnownDouble(final TclObject tobj)
+    {
+        return ((TclDouble) tobj.getInternalRep()).value;
     }
 
     // Evaluate a unary expr operator.

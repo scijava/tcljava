@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Expression.java,v 1.32 2006/06/07 17:16:10 mdejong Exp $
+ * RCS: @(#) $Id: Expression.java,v 1.33 2006/06/12 21:33:02 mdejong Exp $
  *
  */
 
@@ -352,7 +352,9 @@ class Expression {
             // never have a string rep that could be parsed
             // as an integer.
 
-            value.setDoubleValue(TclDouble.get(interp, obj),
+            value.setDoubleValue(
+                // Inline TclDouble.get()
+                ((TclDouble) obj.getInternalRep()).value,
                 (obj.hasNoStringRep() ? null : obj.toString()));
             return;
         }
