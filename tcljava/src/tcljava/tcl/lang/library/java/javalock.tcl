@@ -14,7 +14,7 @@
 #
 # Copyright (c) 1998 by Sun Microsystems, Inc.
 #
-# RCS: @(#) $Id: javalock.tcl,v 1.4 2002/12/21 04:04:04 mdejong Exp $
+# RCS: @(#) $Id: javalock.tcl,v 1.5 2006/06/13 22:30:52 mdejong Exp $
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -80,7 +80,7 @@ proc java::unlock { javaObj } {
 
     # Remove the copy of the reference.
 
-    set index [lsearch $java::objLockedList $javaObj]
+    set index [lsearch -exact $java::objLockedList $javaObj]
     if {$index < 0} {
 	error "unknown java object \"$javaObj\""
     } else {

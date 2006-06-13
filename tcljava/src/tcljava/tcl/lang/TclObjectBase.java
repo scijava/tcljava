@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclObjectBase.java,v 1.11 2006/06/13 06:52:47 mdejong Exp $
+ * RCS: @(#) $Id: TclObjectBase.java,v 1.12 2006/06/13 22:30:52 mdejong Exp $
  *
  */
 
@@ -352,13 +352,15 @@ abstract class TclObjectBase {
 	}
 	TclObject newObj;
 	if (isIntType()) {
-	    newObj = new TclObject(internalRep);
+	    newObj = new TclObject(TclInteger.dummy);
 	    newObj.ivalue = ivalue;
 	} else {
 	    newObj = new TclObject(internalRep.duplicate());
 	}
 
-	newObj.stringRep = stringRep;
+	if (stringRep != null) {
+	    newObj.stringRep = stringRep;
+	}
 	//newObj.refCount = 0;
 	return newObj;
     }
@@ -386,7 +388,7 @@ abstract class TclObjectBase {
 	    }
 	    TclObject newObj;
 	    if (isIntType()) {
-	        newObj = new TclObject(internalRep);
+	        newObj = new TclObject(TclInteger.dummy);
 	        newObj.ivalue = ivalue;
 	    } else {
 	        newObj = new TclObject(internalRep.duplicate());

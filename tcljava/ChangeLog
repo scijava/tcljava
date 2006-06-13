@@ -1,3 +1,12 @@
+2006-06-13  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/tcljava/tcl/lang/TclObjectBase.java (duplicate,
+        takeExclusive): Explicitly ref TclInteger.dummy
+        in the int case so that the code is more clear.
+        Also, don't copy the string ref if it is null.
+        * src/tcljava/tcl/lang/library/java/javalock.tcl
+        (java::unlock): Pass -exact flag to lsearch.
+
 2006-06-12  Mo DeJong  <mdejong@users.sourceforge.net>
 
         Rename TclObject.isIntegerType() to isIntType()
