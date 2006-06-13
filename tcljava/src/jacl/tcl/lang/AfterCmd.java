@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: AfterCmd.java,v 1.8 2006/06/12 04:00:18 mdejong Exp $
+ * RCS: @(#) $Id: AfterCmd.java,v 1.9 2006/06/13 06:52:47 mdejong Exp $
  *
  */
 
@@ -98,7 +98,7 @@ throws
     boolean isNumber = false;
     int ms = 0;
 
-    if (argv[1].isIntegerType()) {
+    if (argv[1].isIntType()) {
 	ms = TclInteger.get(interp, argv[1]);
 	isNumber = true;
     } else {

@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclInteger.java,v 1.16 2006/06/09 20:13:39 mdejong Exp $
+ * RCS: @(#) $Id: TclInteger.java,v 1.17 2006/06/13 06:52:47 mdejong Exp $
  *
  */
 
@@ -131,7 +131,7 @@ public class TclInteger implements InternalRep {
 	final TclObject tobj)
 	    throws TclException
     {
-	if (!tobj.isIntegerType()) {
+	if (!tobj.isIntType()) {
 	    setIntegerFromAny(interp, tobj);
 	}
 	return tobj.ivalue;
@@ -145,7 +145,7 @@ public class TclInteger implements InternalRep {
      * @param i the new integer value.
      */
     public static void set(TclObject tobj, int i) {
-	if (!tobj.isIntegerType()) {
+	if (!tobj.isIntType()) {
 	    // Change the internal rep if not an integer.
 	    // Note that this method does not reparse
 	    // an int value from the string rep.
@@ -172,7 +172,7 @@ public class TclInteger implements InternalRep {
         final int incrAmount)
             throws TclException
     {
-	if (!tobj.isIntegerType()) {
+	if (!tobj.isIntType()) {
 	    setIntegerFromAny(interp, tobj);
 	}
 	tobj.invalidateStringRep();
@@ -200,7 +200,7 @@ public class TclInteger implements InternalRep {
 	    // Double check that the internal rep is not
 	    // already of type TclInteger.
 
-	    if (tobj.isIntegerType()) {
+	    if (tobj.isIntType()) {
 	        throw new TclRuntimeError("exprSetInternalRep() called with object" +
 	            " that is already of type TclInteger");
 	    }

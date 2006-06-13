@@ -397,6 +397,116 @@ proc expr-if-branch-loop {} {
     return
 }
 
+# This test checks the unary not operator
+# applied to a constant int or double value.
+# The compiler does not attempt evaluate
+# this operation at compile time since
+# it is unlikely to be used in that way.
+# This compiler may inline specific
+# logic for the int type. These results
+# can be compared to the string literal
+# which is passed to the runtime expr method.
+
+proc expr-unary-not-int-literal {} {
+    for {set i 1000} {$i} {incr i -1} {
+        expr {!1}
+    }
+    return
+}
+
+proc expr-unary-not-double-literal {} {
+    for {set i 1000} {$i} {incr i -1} {
+        expr {!1.0}
+    }
+    return
+}
+
+proc expr-unary-not-string-literal {} {
+    for {set i 1000} {$i} {incr i -1} {
+        expr {!"true"}
+    }
+    return
+}
+
+# This test applies a not operator to
+# the result of a subexpression evaluation.
+# The result is an integer, so an optimized
+# execution path may be used.
+
+proc expr-unary-not-int-literal-subexpr {} {
+    for {set i 1000} {$i} {incr i -1} {
+        expr {!(1 ? 1 : 0)}
+    }
+    return
+}
+
+proc expr-unary-not-double-literal-subexpr {} {
+    for {set i 1000} {$i} {incr i -1} {
+        expr {!(1 ? 1.0 : 0.0)}
+    }
+    return
+}
+
+proc expr-unary-not-string-literal-subexpr {} {
+    for {set i 1000} {$i} {incr i -1} {
+        expr {!(1 ? "true" : "false")}
+    }
+    return
+}
+
+# This test applies a not operator to
+# a TclObject operand. An optimized
+# execution path may be used when
+# the TclObject is an int or double.
+
+proc expr-unary-not-int-tclobject {} {
+    set v 1
+    for {set i 1000} {$i} {incr i -1} {
+        expr {!$v}
+    }
+    return
+}
+
+proc expr-unary-not-double-tclobject {} {
+    set v 1.0
+    for {set i 1000} {$i} {incr i -1} {
+        expr {!$v}
+    }
+    return
+}
+
+proc expr-unary-not-string-tclobject {} {
+    set v "true"
+    for {set i 1000} {$i} {incr i -1} {
+        expr {!$v}
+    }
+    return
+}
+
+# This test applies a not operator to
+# a TclObject operand that needs to
+# be parsed into either an int or
+# double internal rep. Only the first
+# iteration of this loop should
+# reparse, so this method should
+# be about as fast as the ones above.
+
+proc expr-unary-not-int-tclobject-parse {} {
+    set v [string range "1" 0 end]
+    for {set i 1000} {$i} {incr i -1} {
+        expr {!$v}
+    }
+    return
+}
+
+proc expr-unary-not-double-tclobject-parse {} {
+    set v [string range "1.0" 0 end]
+    for {set i 1000} {$i} {incr i -1} {
+        expr {!$v}
+    }
+    return
+}
+
 
 if { [catch {string repeat "abc" 10}] } {
     proc str-repeat {str num} {
@@ -512,4 +622,19 @@ bench -desc "expr-bigsqrt2-1" -body {expr-bigsqrt2 36}
 bench -desc "expr-bigsqrt2-2" -body {expr-bigsqrt2 121}
 
 bench -desc "expr-if-branch-loop" -body {expr-if-branch-loop}
+
+bench -desc "expr-unary-not-int-literal" -body {expr-unary-not-int-literal}
+bench -desc "expr-unary-not-double-literal" -body {expr-unary-not-double-literal}
+bench -desc "expr-unary-not-string-literal" -body {expr-unary-not-string-literal}
+
+bench -desc "expr-unary-not-int-literal-subexpr" -body {expr-unary-not-int-literal-subexpr}
+bench -desc "expr-unary-not-double-literal-subexpr" -body {expr-unary-not-double-literal-subexpr}
+bench -desc "expr-unary-not-string-literal-subexpr" -body {expr-unary-not-string-literal-subexpr}
+
+bench -desc "expr-unary-not-int-tclobject" -body {expr-unary-not-int-tclobject}
+bench -desc "expr-unary-not-double-tclobject" -body {expr-unary-not-double-tclobject}
+bench -desc "expr-unary-not-string-tclobject" -body {expr-unary-not-string-tclobject}
+
+bench -desc "expr-unary-not-int-tclobject-parse" -body {expr-unary-not-int-tclobject-parse}
+bench -desc "expr-unary-not-double-tclobject-parse" -body {expr-unary-not-double-tclobject-parse}
 

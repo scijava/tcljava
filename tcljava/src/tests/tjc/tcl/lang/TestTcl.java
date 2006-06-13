@@ -381,8 +381,8 @@ public class TestTcl {
     public static String testIvalueUtil(TclObject tobj) {
         StringBuffer results = new StringBuffer();
 
-        results.append( "isIntegerType" + " " );
-        results.append( tobj.isIntegerType() );
+        results.append( "isIntType" + " " );
+        results.append( tobj.isIntType() );
         results.append( " " );
 
         results.append( "isStringType" + " " );

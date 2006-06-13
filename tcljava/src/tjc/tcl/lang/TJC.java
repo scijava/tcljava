@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TJC.java,v 1.30 2006/06/12 21:33:02 mdejong Exp $ *
+ * RCS: @(#) $Id: TJC.java,v 1.31 2006/06/13 06:52:47 mdejong Exp $ *
  */
 
 // Runtime support for TJC compiler implementation.
@@ -1090,7 +1090,7 @@ public class TJC {
         final TclObject obj)
             throws TclException
     {
-        if (obj.isIntegerType()) {
+        if (obj.isIntType()) {
             return (obj.ivalue != 0);   // Inline TclInteger.get()
         } else if (obj.isDoubleType()) {
             return (TJC.exprGetKnownDouble(obj) != 0.0);
@@ -1509,7 +1509,7 @@ public class TJC {
         // This is the most common use case:
         // set obj [lindex $list $i]
 
-        if (indexValue.isIntegerType()) {
+        if (indexValue.isIntType()) {
             TclObject result = TclList.index(interp, listObj, indexValue.ivalue);
             if (result == null) {
                 interp.resetResult();
@@ -1611,7 +1611,7 @@ public class TJC {
         final int len = str.length();
         int i;
 
-        if (indObj.isIntegerType()) {
+        if (indObj.isIntType()) {
             i = indObj.ivalue;  // Inline TclInteger.get()
         } else {
             i = Util.getIntForIndex(interp, indObj, len - 1);
@@ -1648,7 +1648,7 @@ public class TJC {
         int first, last;
 
         try {
-            if (firstObj.isIntegerType()) {
+            if (firstObj.isIntType()) {
                 first = firstObj.ivalue;  // Inline TclInteger.get()
             } else {
                 first = Util.getIntForIndex(interp, firstObj, len - 1);
@@ -1657,7 +1657,7 @@ public class TJC {
                 first = 0;
             }
 
-            if (lastObj.isIntegerType()) {
+            if (lastObj.isIntType()) {
                 last = lastObj.ivalue;  // Inline TclInteger.get()
             } else {
                 last = Util.getIntForIndex(interp, lastObj, len - 1);

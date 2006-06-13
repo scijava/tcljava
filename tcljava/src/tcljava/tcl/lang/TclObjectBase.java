@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclObjectBase.java,v 1.10 2006/06/09 20:13:39 mdejong Exp $
+ * RCS: @(#) $Id: TclObjectBase.java,v 1.11 2006/06/13 06:52:47 mdejong Exp $
  *
  */
 
@@ -69,7 +69,7 @@ abstract class TclObjectBase {
 
     // Return true if the TclObject contains an int.
 
-    final boolean isIntegerType() {
+    final boolean isIntType() {
         return (internalRep == TclInteger.dummy);
     }
 
@@ -280,7 +280,7 @@ abstract class TclObjectBase {
 	        disposedError();
 	    }
 
-	    if (internalRep == TclInteger.dummy) {
+	    if (isIntType()) {
 	        stringRep = Integer.toString(ivalue);
 	    } else {
 	        stringRep = internalRep.toString();
@@ -351,7 +351,7 @@ abstract class TclObjectBase {
 	    stringRep = internalRep.toString();
 	}
 	TclObject newObj;
-	if (internalRep == TclInteger.dummy) {
+	if (isIntType()) {
 	    newObj = new TclObject(internalRep);
 	    newObj.ivalue = ivalue;
 	} else {
@@ -385,7 +385,7 @@ abstract class TclObjectBase {
 		stringRep = internalRep.toString();
 	    }
 	    TclObject newObj;
-	    if (internalRep == TclInteger.dummy) {
+	    if (isIntType()) {
 	        newObj = new TclObject(internalRep);
 	        newObj.ivalue = ivalue;
 	    } else {

@@ -177,71 +177,71 @@ tcltest::test testtjc-4.7 {TclDouble number class} {
 
 tcltest::test testtjc-5.0 {TclObject ivalue field} {
     java::call tcl.lang.TestTcl testIvalue0 [java::getinterp]
-} {isIntegerType true isStringType false isDoubleType false isListType false}
+} {isIntType true isStringType false isDoubleType false isListType false}
 
 tcltest::test testtjc-5.1 {TclObject ivalue field} {
     java::call tcl.lang.TestTcl testIvalue1 [java::getinterp]
-} {isIntegerType true isStringType false isDoubleType false isListType false}
+} {isIntType true isStringType false isDoubleType false isListType false}
 
 tcltest::test testtjc-5.2 {TclObject ivalue field} {
     java::call tcl.lang.TestTcl testIvalue2 [java::getinterp]
-} {isIntegerType true isStringType false isDoubleType false isListType false}
+} {isIntType true isStringType false isDoubleType false isListType false}
 
 tcltest::test testtjc-5.3 {TclObject ivalue field} {
     java::call tcl.lang.TestTcl testIvalue3 [java::getinterp]
-} {isIntegerType false isStringType true isDoubleType false isListType false}
+} {isIntType false isStringType true isDoubleType false isListType false}
 
 tcltest::test testtjc-5.4 {TclObject ivalue field} {
     java::call tcl.lang.TestTcl testIvalue4 [java::getinterp]
-} {isIntegerType false isStringType true isDoubleType false isListType false}
+} {isIntType false isStringType true isDoubleType false isListType false}
 
 tcltest::test testtjc-5.5 {TclObject ivalue field} {
     java::call tcl.lang.TestTcl testIvalue5 [java::getinterp]
-} {isIntegerType false isStringType true isDoubleType false isListType false}
+} {isIntType false isStringType true isDoubleType false isListType false}
 
 tcltest::test testtjc-5.6 {TclObject ivalue field} {
     java::call tcl.lang.TestTcl testIvalue6 [java::getinterp]
-} {isIntegerType false isStringType true isDoubleType false isListType false}
+} {isIntType false isStringType true isDoubleType false isListType false}
 
 tcltest::test testtjc-5.7 {TclObject ivalue field} {
     java::call tcl.lang.TestTcl testIvalue7 [java::getinterp]
-} {isIntegerType false isStringType false isDoubleType false isListType true}
+} {isIntType false isStringType false isDoubleType false isListType true}
 
 tcltest::test testtjc-5.8 {TclObject ivalue field} {
     java::call tcl.lang.TestTcl testIvalue8 [java::getinterp]
-} {isIntegerType true isStringType false isDoubleType false isListType false}
+} {isIntType true isStringType false isDoubleType false isListType false}
 
 tcltest::test testtjc-5.9 {TclObject ivalue field} {
     java::call tcl.lang.TestTcl testIvalue9 [java::getinterp]
-} {isIntegerType false isStringType false isDoubleType true isListType false}
+} {isIntType false isStringType false isDoubleType true isListType false}
 
 tcltest::test testtjc-5.10 {TclObject ivalue field} {
     java::call tcl.lang.TestTcl testIvalue10 [java::getinterp]
-} {isIntegerType false isStringType true isDoubleType false isListType false}
+} {isIntType false isStringType true isDoubleType false isListType false}
 
 tcltest::test testtjc-5.11 {TclObject ivalue field} {
     java::call tcl.lang.TestTcl testIvalue11 [java::getinterp]
-} {isIntegerType false isStringType false isDoubleType false isListType true}
+} {isIntType false isStringType false isDoubleType false isListType true}
 
 tcltest::test testtjc-5.12 {TclObject ivalue field} {
     java::call tcl.lang.TestTcl testIvalue12 [java::getinterp]
-} {isIntegerType false isStringType false isDoubleType true isListType false}
+} {isIntType false isStringType false isDoubleType true isListType false}
 
 tcltest::test testtjc-5.13 {TclObject ivalue field} {
     java::call tcl.lang.TestTcl testIvalue13 [java::getinterp]
-} {isIntegerType true isStringType false isDoubleType false isListType false}
+} {isIntType true isStringType false isDoubleType false isListType false}
 
 tcltest::test testtjc-5.14 {TclObject ivalue field} {
     java::call tcl.lang.TestTcl testIvalue14 [java::getinterp]
-} {isIntegerType true isStringType false isDoubleType false isListType false}
+} {isIntType true isStringType false isDoubleType false isListType false}
 
 tcltest::test testtjc-5.15 {TclObject ivalue field} {
     java::call tcl.lang.TestTcl testIvalue15 [java::getinterp]
-} {isIntegerType true isStringType false isDoubleType false isListType false}
+} {isIntType true isStringType false isDoubleType false isListType false}
 
 tcltest::test testtjc-5.16 {TclObject ivalue field} {
     java::call tcl.lang.TestTcl testIvalue16 [java::getinterp]
-} {isIntegerType true isStringType false isDoubleType false isListType false}
+} {isIntType true isStringType false isDoubleType false isListType false}
 
 
 tcltest::test testtjc-args-1.0 {assign proc args} {

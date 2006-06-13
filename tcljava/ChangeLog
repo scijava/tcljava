@@ -1,5 +1,34 @@
 2006-06-12  Mo DeJong  <mdejong@users.sourceforge.net>
 
+        Rename TclObject.isIntegerType() to isIntType()
+        so that it matches ExprValue. Update callers.
+        This patch makes no functional changes.
+
+        * src/jacl/tcl/lang/AfterCmd.java:
+        * src/jacl/tcl/lang/ExprValue.java (getIntValue,
+        getDoubleValue, optIntUnaryNot, optIntUnaryNotNstr):
+        Add validate boolean that can be used to enable
+        extra debug checking in getIntValue and getDoubleValue.
+        Add inline method impls for use in Expression class.
+        * src/jacl/tcl/lang/Expression.java (evalUnaryOperator):
+        Invoke optIntUnaryNot().
+        * src/jacl/tcl/lang/StringCmd.java:
+        * src/jacl/tcl/lang/Util.java:
+        * src/tcljava/tcl/lang/JavaInvoke.java:
+        * src/tcljava/tcl/lang/TclBoolean.java:
+        * src/tcljava/tcl/lang/TclInteger.java:
+        * src/tcljava/tcl/lang/TclObjectBase.java (isIntegerType):
+        Use isIntType() instead of inlined compare to
+        TclInteger.dummy, there is no performance advantage.
+        * src/tests/tjc/tcl/lang/TestTcl.java:
+        * src/tjc/tcl/lang/TJC.java:
+        * src/tjc/tcl/lang/TJCBench.java:
+        * tests/tclbench/expr.bench: Add logical not operator
+        tests.
+        * tests/tjc/testtjc.test:
+
+2006-06-12  Mo DeJong  <mdejong@users.sourceforge.net>
+
         * src/jacl/tcl/lang/Expression.java (ExprParseObject):
         Inline TclDouble.get() operation since this change
         makes a double get about 4x faster and this method

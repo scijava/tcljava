@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: StringCmd.java,v 1.15 2006/06/08 07:44:51 mdejong Exp $
+ * RCS: @(#) $Id: StringCmd.java,v 1.16 2006/06/13 06:52:47 mdejong Exp $
  *
  */
 
@@ -392,7 +392,7 @@ throws
 		    break;
 		}
 		case STR_IS_DOUBLE: {
-		    if (obj.isDoubleType() || obj.isIntegerType()) {
+		    if (obj.isDoubleType() || obj.isIntType()) {
 			break;
 		    }
 
@@ -448,7 +448,7 @@ throws
 		    break;
 		}
 		case STR_IS_INT: {
-		    if (obj.isIntegerType()) {
+		    if (obj.isIntType()) {
 			break;
 		    }
 		    boolean isInteger = true;

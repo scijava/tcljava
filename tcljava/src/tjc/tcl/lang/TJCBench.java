@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TJCBench.java,v 1.6 2006/06/12 21:33:02 mdejong Exp $
+ * RCS: @(#) $Id: TJCBench.java,v 1.7 2006/06/13 06:52:48 mdejong Exp $
  *
  */
 
@@ -399,7 +399,7 @@ public class TJCBench extends TJC.CompiledCommand {
         tobj.toString(); // Don't optimize away assignment
     }
 
-    // Establish timing results for TclObject.isIntegerType() API.
+    // Establish timing results for TclObject.isIntType() API.
 
     void InternalTclIntegerType(Interp interp)
         throws TclException
@@ -408,7 +408,7 @@ public class TJCBench extends TJC.CompiledCommand {
         boolean b = false;
 
         for (int i=0; i < 5000; i++) {
-            b = tobj.isIntegerType();
+            b = tobj.isIntType();
         }
         b = !b; // Don't optimize away assignment
     }

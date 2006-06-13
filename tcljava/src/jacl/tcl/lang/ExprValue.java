@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ExprValue.java,v 1.9 2006/05/27 01:30:39 mdejong Exp $
+ * RCS: @(#) $Id: ExprValue.java,v 1.10 2006/06/13 06:52:47 mdejong Exp $
  *
  */
 
@@ -46,6 +46,11 @@ public final class ExprValue {
      * Type of value: INT, DOUBLE, or STRING.
      */
     private int type;
+
+    /**
+     * Extra debug checking
+     */
+    private static final boolean validate = false;
 
     public
     ExprValue(int i, String s) {
@@ -100,8 +105,10 @@ public final class ExprValue {
     public
     final
     int getIntValue() {
-        if (type != INT) {
-            throw new TclRuntimeError("called getIntValue() on non-INT type");
+        if (validate) {
+            if (type != INT) {
+                throw new TclRuntimeError("called getIntValue() on non-INT type");
+            }
         }
         return intValue;
     }
@@ -109,8 +116,10 @@ public final class ExprValue {
     public
     final
     double getDoubleValue() {
-        if (type != DOUBLE) {
-            throw new TclRuntimeError("called getDoubleValue() on non-DOUBLE type");
+        if (validate) {
+            if (type != DOUBLE) {
+                throw new TclRuntimeError("called getDoubleValue() on non-DOUBLE type");
+            }
         }
         return doubleValue;
     }
@@ -327,7 +336,7 @@ public final class ExprValue {
     void optDoubleGreater(final ExprValue value2) {
         stringValue = null;
         intValue = ((doubleValue > value2.doubleValue) ? 1 : 0);
-	type = INT;
+        type = INT;
     }
 
     // Optimized int less than or equal to operation
@@ -344,7 +353,7 @@ public final class ExprValue {
     void optDoubleLessEq(final ExprValue value2) {
         stringValue = null;
         intValue = ((doubleValue <= value2.doubleValue) ? 1 : 0);
-	type = INT;
+        type = INT;
     }
 
     // Optimized int greater than or equal to operation
@@ -361,7 +370,7 @@ public final class ExprValue {
     void optDoubleGreaterEq(final ExprValue value2) {
         stringValue = null;
         intValue = ((doubleValue >= value2.doubleValue) ? 1 : 0);
-	type = INT;
+        type = INT;
     }
 
     // Optimized int equal to operation
@@ -378,7 +387,7 @@ public final class ExprValue {
     void optDoubleEq(final ExprValue value2) {
         stringValue = null;
         intValue = ((doubleValue == value2.doubleValue) ? 1 : 0);
-	type = INT;
+        type = INT;
     }
 
     // Optimized int not equal to operation
@@ -395,7 +404,35 @@ public final class ExprValue {
     void optDoubleNotEq(final ExprValue value2) {
         stringValue = null;
         intValue = ((doubleValue != value2.doubleValue) ? 1 : 0);
-	type = INT;
+        type = INT;
+    }
+
+    // Optimized unary logical not operation '!'
+
+    final
+    void optIntUnaryNot() {
+        if (validate) {
+            if (type != INT) {
+                throw new TclRuntimeError("called optIntUnaryNot() on non-INT type");
+            }
+        }
+
+        stringValue = null;
+        intValue = (intValue == 0) ? 1 : 0;
+    }
+
+    final
+    void optIntUnaryNotNstr() {
+        if (validate) {
+            if (type != INT) {
+                throw new TclRuntimeError("called optIntUnaryNotNstr() on non-INT type");
+            }
+            if (stringValue != null) {
+                throw new TclRuntimeError("called optIntUnaryNotNstr() with non-null string value");
+            }
+        }
+
+        intValue = (intValue == 0) ? 1 : 0;
     }
 
 }

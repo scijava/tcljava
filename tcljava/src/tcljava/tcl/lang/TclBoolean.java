@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclBoolean.java,v 1.8 2006/06/08 07:44:51 mdejong Exp $
+ * RCS: @(#) $Id: TclBoolean.java,v 1.9 2006/06/13 06:52:47 mdejong Exp $
  *
  */
 
@@ -92,7 +92,7 @@ public class TclBoolean implements InternalRep {
 	// Get the string representation. Make it up-to-date if necessary.
 	String string = tobj.toString();
 
-	if (tobj.isIntegerType()) {
+	if (tobj.isIntType()) {
 	    int i = TclInteger.get(interp, tobj);
 	    if (i == 0) {
 	        tobj.setInternalRep(falseRep);
@@ -212,7 +212,7 @@ public class TclBoolean implements InternalRep {
 	final TclObject tobj)
 	    throws TclException
     {
-	if (tobj.isIntegerType()) {
+	if (tobj.isIntType()) {
 	    // An integer with the value 0 or 1 can be
 	    // considered a boolean value, so there is
 	    // no need to change the internal rep.

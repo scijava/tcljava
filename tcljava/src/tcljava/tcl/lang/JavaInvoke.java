@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaInvoke.java,v 1.24 2006/06/08 07:44:51 mdejong Exp $
+ * RCS: @(#) $Id: JavaInvoke.java,v 1.25 2006/06/13 06:52:47 mdejong Exp $
  *
  */
 
@@ -1477,7 +1477,7 @@ parseJavaInt(
 {
     // No point in reparsing a "pure" integer.
 
-    if (obj.hasNoStringRep() && obj.isIntegerType()) {
+    if (obj.hasNoStringRep() && obj.isIntType()) {
         return TclInteger.get(interp, obj);
     }
 
@@ -1618,7 +1618,7 @@ parseJavaLong(
 {
     // No point in reparsing a "pure" integer.
 
-    if (obj.hasNoStringRep() && obj.isIntegerType()) {
+    if (obj.hasNoStringRep() && obj.isIntType()) {
         return (long) TclInteger.get(interp, obj);
     }
 
