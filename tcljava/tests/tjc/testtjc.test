@@ -142,6 +142,11 @@ tcltest::test testtjc-3.13 {call TestTJC methds} {
     java::call TestTJC testExprOp13 [java::getinterp]
 } {1.0}
 
+tcltest::test testtjc-3.14 {call TestTJC methds} {
+    java::call TestTJC testExprOp14 [java::getinterp]
+} {4.0}
+
+
 tcltest::test testtjc-4.0 {TclDouble number class} {
     java::call tcl.lang.TestTcl testDouble1 [java::getinterp]
 } {1.0}

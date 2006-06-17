@@ -6833,6 +6833,328 @@ proc p {} {
 } // End Invoke: for
 }}
 
+# Test expr parse functionality and some
+# util commands that can be used to
+# determine info about an expr parse tree.
+
+tcltest::test compileproc_parse_expr-1.0 {parse expr operands} {
+    set script {
+proc p {} {
+    expr {1}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set tuple [compileproc_expr_evaluate $key 1]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $tuple
+} {1 {{constant boolean} true 1}}
+
+tcltest::test compileproc_parse_expr-1.1 {parse expr operands} {
+    set script {
+proc p {} {
+    expr {2}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set tuple [compileproc_expr_evaluate $key 1]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $tuple
+} {2 {{constant braced string} 2}}
+
+tcltest::test compileproc_parse_expr-1.2 {parse expr operands} {
+    set script {
+proc p {} {
+    expr {-1}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set tuple [compileproc_expr_evaluate $key 1]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $tuple
+} {-1 {{unary operator} {- {{constant 1}}}}}
+
+tcltest::test compileproc_parse_expr-1.3 {parse expr operands} {
+    set script {
+proc p {} {
+    expr {!1}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set tuple [compileproc_expr_evaluate $key 1]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $tuple
+} {!1 {{unary operator} {! {{constant 1}}}}}
+
+tcltest::test compileproc_parse_expr-1.4 {parse expr operands} {
+    set script {
+proc p {} {
+    expr {1 + 1}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set tuple [compileproc_expr_evaluate $key 1]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $tuple
+} {{1 + 1} {{binary operator} {+ {{constant 1} {constant 1}}}}}
+
+tcltest::test compileproc_parse_expr-1.5 {parse expr operands} {
+    set script {
+proc p {} {
+    expr {1 ? "true" : 2.0}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set tuple [compileproc_expr_evaluate $key 1]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $tuple
+} {{1 ? "true" : 2.0} {{ternary operator} {? {{constant 1} {{constant string} true} {constant 2.0}}}}}
+
+tcltest::test compileproc_parse_expr-1.6 {parse expr operands} {
+    set script {
+proc p {} {
+    expr {$v1 && $v2}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set tuple [compileproc_expr_evaluate $key 1]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $tuple
+} {{$v1 && $v2} {{binary operator} {&& {{{variable scalar} v1} {{variable scalar} v2}}}}}
+
+# These next tests make use of compileproc utility methods
+# to peek at an operand tuple. In the case of the unary
+# minus operator it is very useful to be able to tell
+# that the operand is a constant integer since such a
+# value can be computed at compile time.
+
+tcltest::test compileproc_parse_expr-2.0 {parse expr operands, peek at operand} {
+    set script {
+proc p {} {
+    expr {-1}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set tuple [compileproc_expr_evaluate $key 1]
+    set operand [lindex $tuple 1 1 0]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $tuple \
+        [compileproc_expr_peek_operand $operand]
+} [list \
+    -1 \
+    {{unary operator} {- {{constant 1}}}} \
+    {{int literal} 1 1 1} \
+    ]
+
+tcltest::test compileproc_parse_expr-2.1 {parse expr operands, peek at operand} {
+    set script {
+proc p {} {
+    expr {~1.0}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set tuple [compileproc_expr_evaluate $key 1]
+    set operand [lindex $tuple 1 1 0]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $tuple \
+        [compileproc_expr_peek_operand $operand]
+} [list \
+    ~1.0 \
+    {{unary operator} {~ {{constant 1.0}}}} \
+    {{double literal} 1.0 1 1.0} \
+    ]
+
+tcltest::test compileproc_parse_expr-2.2 {parse expr operands, peek at operand} {
+    set script {
+proc p {} {
+    expr {+ " 1 "}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set tuple [compileproc_expr_evaluate $key 1]
+    set operand [lindex $tuple 1 1 0]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $tuple \
+        [compileproc_expr_peek_operand $operand]
+} [list \
+    {+ " 1 "} \
+    {{unary operator} {+ {{{constant string} { 1 }}}}} \
+    {{int literal} 1 0 1} \
+    ]
+
+tcltest::test compileproc_parse_expr-2.3 {parse expr operands, peek at operand} {
+    set script {
+proc p {} {
+    expr {-$v}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set tuple [compileproc_expr_evaluate $key 1]
+    set operand [lindex $tuple 1 1 0]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $tuple \
+        [compileproc_expr_peek_operand $operand]
+} [list \
+    {-$v} \
+    {{unary operator} {- {{{variable scalar} v}}}} \
+    {TclObject {} 0 {$v}} \
+    ]
+
+tcltest::test compileproc_parse_expr-2.4 {parse expr operands, peek at operand} {
+    set script {
+proc p {} {
+    expr {-(1 + 2)}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set tuple [compileproc_expr_evaluate $key 1]
+    set operand [lindex $tuple 1 1 0]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $tuple \
+        [compileproc_expr_peek_operand $operand]
+} [list \
+    {-(1 + 2)} \
+    {{unary operator} {- {{{binary operator} {+ {{constant 1} {constant 2}}}}}}} \
+    {ExprValue {} 0 ()} \
+    ]
+
+tcltest::test compileproc_parse_expr-2.5 {parse expr operands, peek at operand} {
+    set script {
+proc p {} {
+    expr {"one" eq "two"}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set tuple [compileproc_expr_evaluate $key 1]
+    set loperand [lindex $tuple 1 1 0]
+    set roperand [lindex $tuple 1 1 1]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $tuple \
+        [compileproc_expr_peek_operand $loperand] \
+        [compileproc_expr_peek_operand $roperand]
+} [list \
+    {"one" eq "two"} \
+    {{binary operator} {eq {{{constant string} one} {{constant string} two}}}} \
+    {String {"one"} 0 {"one"}} \
+    {String {"two"} 0 {"two"}} \
+    ]
+
 
 tcltest::test compileproc_emit_catch-1.0 {emit catch container} {
     # Constant expr value

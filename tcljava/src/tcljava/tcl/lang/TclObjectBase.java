@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclObjectBase.java,v 1.12 2006/06/13 22:30:52 mdejong Exp $
+ * RCS: @(#) $Id: TclObjectBase.java,v 1.13 2006/06/17 20:48:10 mdejong Exp $
  *
  */
 
@@ -67,27 +67,37 @@ abstract class TclObjectBase {
 
     int ivalue;
 
+    // Note that the isIntType() and isDoubleType()
+    // methods are public because they need to be
+    // invoked by TJC compiled code. User code
+    // should not need to query the internal rep of
+    // a TclObject before operating on it.
+
     // Return true if the TclObject contains an int.
 
-    final boolean isIntType() {
+    public final
+    boolean isIntType() {
         return (internalRep == TclInteger.dummy);
     }
 
     // Return true if the TclObject contains a TclString.
 
-    final boolean isStringType() {
+    final
+    boolean isStringType() {
         return (internalRep instanceof TclString);
     }
 
     // Return true if the TclObject contains a TclDouble.
 
-    final boolean isDoubleType() {
+    public final
+    boolean isDoubleType() {
         return (internalRep instanceof TclDouble);
     }
 
     // Return true if the TclObject contains a TclList.
 
-    final boolean isListType() {
+    final
+    boolean isListType() {
         return (internalRep instanceof TclList);
     }
 

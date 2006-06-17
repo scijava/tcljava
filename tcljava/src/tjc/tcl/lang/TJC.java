@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TJC.java,v 1.31 2006/06/13 06:52:47 mdejong Exp $ *
+ * RCS: @(#) $Id: TJC.java,v 1.32 2006/06/17 20:48:11 mdejong Exp $ *
  */
 
 // Runtime support for TJC compiler implementation.
@@ -1290,6 +1290,31 @@ public class TJC {
         }
     }
 
+    // Init expr value with the value in the TclObject
+
+    public static
+    void exprInitValue(
+        final Interp interp,
+        final ExprValue value,
+        final TclObject tobj)
+            throws TclException
+    {
+        Expression.ExprParseObject(interp, tobj, value);
+    }
+
+    // Return an uninitialized ExprValue.
+
+    public static
+    ExprValue exprGetValue(
+        Interp interp)
+    {
+        if (USE_EXPR_CACHE) {
+            return interp.expr.grabExprValue();
+        } else {
+            return new ExprValue(0, null);
+        }
+    }
+
     // Return the int value inside a TclObject known
     // to be of type integer. This method should
     // only be used inside the expr layer. Testing
@@ -1326,10 +1351,7 @@ public class TJC {
         Expression.evalUnaryOperator(interp, op, value);
     }
 
-    // Evaluate a binary expr operator. Note that this
-    // method will always release the value2 argument,
-    // so don't invoke exprReleaseValue for value2
-    // or make use of value2 after this method finishes.
+    // Evaluate a binary expr operator.
 
     public static
     void exprBinaryOperator(
@@ -1340,9 +1362,6 @@ public class TJC {
             throws TclException
     {
         Expression.evalBinaryOperator(interp, op, value, value2);
-        if (USE_EXPR_CACHE) {
-            interp.expr.releaseExprValue(value2);        
-        }
     }
 
     // Evaluate a math function. This method will release
@@ -1351,18 +1370,20 @@ public class TJC {
     // function takes no arguments.
 
     public static
-    ExprValue exprMathFunction(
+    void exprMathFunction(
         Interp interp,      // current interp, can't be null.
         String funcName,    // Name of math function
-        ExprValue[] values) // Array of arguments, can be null
+        ExprValue[] values, // Array of arguments, can be null
+        ExprValue result)   // Location to store result
             throws TclException
     {
-        return interp.expr.evalMathFunction(interp, funcName, values);
+        interp.expr.evalMathFunction(interp, funcName,
+            values, false, result);
     }
 
     // Set the interp result to the given expr value. This
     // method is used only for a compiled version of the expr
-    // command. Note that this method will release the value.
+    // command.
 
     public static
     void exprSetResult(Interp interp, ExprValue value)
@@ -1381,9 +1402,6 @@ public class TJC {
 	default:
 	    throw new TclRuntimeError("internal error: expression, unknown");
 	}
-        if (USE_EXPR_CACHE) {
-	    interp.expr.releaseExprValue(value);
-        }
 	return;
     }
 
@@ -1391,14 +1409,14 @@ public class TJC {
     // the empty string. This method implements an
     // optimized version of an expr comparison
     // like expr {$obj == ""} or expr {$obj != {}}.
-    // This method will return an ExprValue object
-    // that contains either the integer 1 or 0.
+    // This method sets the value argument to
+    // an integer, either 0 or 1.
 
     public static
-    ExprValue exprEqualsEmptyString(
-        Interp interp,
-        TclObject obj,
-        final boolean negate)
+    void exprEqualsEmptyString(
+        ExprValue value,       // Location for result value
+        TclObject obj,         // TclObject to compare to empty string
+        final boolean negate)  // Negate result if true
 	    throws TclException
     {
         boolean isEmptyString;
@@ -1408,7 +1426,10 @@ public class TJC {
             // when the list length is zero. This check
             // avoids the possibly slow generation of
             // a string rep from a pure TclList object.
-            isEmptyString = ( TclList.getLength(interp, obj) == 0 );
+            // Note that passing null as the Interp
+            // argument is fine since we know this object
+            // has the TclList internal rep already.
+            isEmptyString = ( TclList.getLength(null, obj) == 0 );
         } else {
             // TclObject already has a string rep, check if it is a
             // ref to the interned empty string or if the len is 0.
@@ -1418,13 +1439,7 @@ public class TJC {
         if (negate) {
             isEmptyString = !isEmptyString;
         }
-        if (USE_EXPR_CACHE) {
-            ExprValue value = interp.expr.grabExprValue();
-            value.setIntValue( isEmptyString );
-            return value;
-        } else {
-            return new ExprValue(isEmptyString);
-        }
+        value.setIntValue( isEmptyString );
     }
 
     // Implement an optimized version of the
@@ -1437,16 +1452,24 @@ public class TJC {
     void exprIntMathFunction(Interp interp, ExprValue value)
 	    throws TclException
     {
-        if (value.isStringType()) {
-            throw new TclException(interp,
-                "argument to math function didn't have numeric value");
-        } else if (value.isDoubleType()) {
-            double d = value.getDoubleValue();
-            if (((d < 0) && (d < ((double) TCL.INT_MIN))) ||
-                    ((d > 0) && (d > ((double) TCL.INT_MAX)))) {
-                Expression.IntegerTooLarge(interp);
+        switch (value.getType()) {
+            case ExprValue.INT: {
+                // No-op
+                break;
             }
-            value.setIntValue((int) d);
+            case ExprValue.DOUBLE: {
+                double d = value.getDoubleValue();
+                if (((d < 0) && (d < ((double) TCL.INT_MIN))) ||
+                        ((d > 0) && (d > ((double) TCL.INT_MAX)))) {
+                    Expression.IntegerTooLarge(interp);
+                }
+                value.setIntValue((int) d);
+                break;
+            }
+            case ExprValue.STRING: {
+                throw new TclException(interp,
+                    "argument to math function didn't have numeric value");
+            }
         }
     }
 

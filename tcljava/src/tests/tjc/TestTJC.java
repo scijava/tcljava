@@ -447,6 +447,7 @@ public class TestTJC {
         ExprValue value2 = TJC.exprGetValue(interp, tobj2);
 
         TJC.exprBinaryOperator(interp, TJC.EXPR_OP_MINUS, value, value2);
+        TJC.exprReleaseValue(interp, value2);
         int result = value.getIntValue();
         TJC.exprReleaseValue(interp, value);
         return result;
@@ -457,12 +458,13 @@ public class TestTJC {
         ExprValue value = TJC.exprGetValue(interp, 1000, null);
         ExprValue value2 = TJC.exprGetValue(interp, 10, null);
 
-        // Note: value2 released by binary operator
         TJC.exprBinaryOperator(interp, TJC.EXPR_OP_DIVIDE, value, value2);
+        TJC.exprReleaseValue(interp, value2);
 
         value2 = TJC.exprGetValue(interp, 1.0, null);
 
         TJC.exprBinaryOperator(interp, TJC.EXPR_OP_PLUS, value, value2);
+        TJC.exprReleaseValue(interp, value2);
 
         double result = value.getDoubleValue();
 
@@ -477,6 +479,7 @@ public class TestTJC {
         ExprValue value2 = TJC.exprGetValue(interp, 10, null);
 
         TJC.exprBinaryOperator(interp, TJC.EXPR_OP_STREQ, value, value2);
+        TJC.exprReleaseValue(interp, value2);
 
         int result = value.getIntValue();
 
@@ -494,9 +497,10 @@ public class TestTJC {
         ExprValue value2 = TJC.exprGetValue(interp, 10, null);
 
         TJC.exprBinaryOperator(interp, TJC.EXPR_OP_EQUAL, value, value2);
+        TJC.exprReleaseValue(interp, value2);
 
-        // Note: value released by exprSetResult()
         TJC.exprSetResult(interp, value);
+        TJC.exprReleaseValue(interp, value);
 
         TclObject result = interp.getResult();
 
@@ -512,6 +516,7 @@ public class TestTJC {
         ExprValue value2 = TJC.exprGetValue(interp, 10, null);
 
         TJC.exprBinaryOperator(interp, TJC.EXPR_OP_EQUAL, value, value2);
+        TJC.exprReleaseValue(interp, value2);
 
         return value.getBooleanValue(interp);
     }
@@ -524,6 +529,7 @@ public class TestTJC {
         ExprValue value2 = TJC.exprGetValue(interp, "two");
 
         TJC.exprBinaryOperator(interp, TJC.EXPR_OP_EQUAL, value, value2);
+        TJC.exprReleaseValue(interp, value2);
 
         return value.getBooleanValue(interp);
     }
@@ -535,9 +541,13 @@ public class TestTJC {
         ExprValue[] values = new ExprValue[2];
         values[0] = TJC.exprGetValue(interp, 2, null);
         values[1] = TJC.exprGetValue(interp, 2, null);
-        ExprValue result = TJC.exprMathFunction(interp, "pow", values);
+        ExprValue result = TJC.exprGetValue(interp, 2, null);
+        TJC.exprMathFunction(interp, "pow", values, result);
+        TJC.exprReleaseValue(interp, values[1]);
+        TJC.exprReleaseValue(interp, values[0]);
 
         TJC.exprSetResult(interp, result);
+        TJC.exprReleaseValue(interp, result);
 
         return interp.getResult().toString();
     }
@@ -547,9 +557,11 @@ public class TestTJC {
     public static String testExprOp10(Interp interp) throws TclException {
         // expr {$obj == ""}
         TclObject obj = TclString.newInstance("");
-        ExprValue result = TJC.exprEqualsEmptyString(interp, obj, false);
+        ExprValue result = new ExprValue(0, null);
+        TJC.exprEqualsEmptyString(result, obj, false);
 
         TJC.exprSetResult(interp, result);
+        TJC.exprReleaseValue(interp, result);
 
         return interp.getResult().toString();
     }
@@ -559,9 +571,11 @@ public class TestTJC {
     public static String testExprOp11(Interp interp) throws TclException {
         // expr {$obj != {}}
         TclObject obj = TclList.newInstance();
-        ExprValue result = TJC.exprEqualsEmptyString(interp, obj, true);
+        ExprValue result = new ExprValue(0, null);
+        TJC.exprEqualsEmptyString(result, obj, true);
 
         TJC.exprSetResult(interp, result);
+        TJC.exprReleaseValue(interp, result);
 
         return interp.getResult().toString();
     }
@@ -573,6 +587,7 @@ public class TestTJC {
         ExprValue value = TJC.exprGetValue(interp, 1.0, null);
         TJC.exprIntMathFunction(interp, value);
         TJC.exprSetResult(interp, value);
+        TJC.exprReleaseValue(interp, value);
         return interp.getResult().toString();
     }
 
@@ -583,8 +598,32 @@ public class TestTJC {
         ExprValue value = TJC.exprGetValue(interp, 1, null);
         TJC.exprDoubleMathFunction(interp, value);
         TJC.exprSetResult(interp, value);
+        TJC.exprReleaseValue(interp, value);
         return interp.getResult().toString();
     }
+
+    // Invoke an expr math function, this tests
+    // a special case in the impl of exprMathFunction()
+    // that will keep the result in values[0]
+    // when null is passed as the result argument.
+
+    public static String testExprOp14(Interp interp) throws TclException {
+        // expr {pow(2,2)}
+        ExprValue[] values = new ExprValue[2];
+        values[0] = TJC.exprGetValue(interp, 2, null);
+        values[1] = TJC.exprGetValue(interp, 2, null);
+
+        TJC.exprMathFunction(interp, "pow", values, null);
+        TJC.exprReleaseValue(interp, values[1]);
+        // Don't release values[0] yet, since it is the result.
+        ExprValue result = values[0];
+
+        TJC.exprSetResult(interp, result);
+        TJC.exprReleaseValue(interp, result);
+
+        return interp.getResult().toString();
+    }
+
 
     // Check TclObject ref count issues
 

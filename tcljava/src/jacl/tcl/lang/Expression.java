@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Expression.java,v 1.34 2006/06/13 06:52:47 mdejong Exp $
+ * RCS: @(#) $Id: Expression.java,v 1.35 2006/06/17 20:48:10 mdejong Exp $
  *
  */
 
@@ -125,6 +125,9 @@ class Expression {
 
     private ExprValue[] cachedExprValue;
     private int cachedExprIndex = 0;
+// FIXME: Likely need to make this 50 since each method invocation
+// could now hold 1 or 2 of these on average. Need some performance
+// number about usage of this pool.
     private static final int cachedExprLength = 20;
 
     /**
@@ -1747,8 +1750,10 @@ class Expression {
 	    rvalue.setIntValue(0);
 	    return rvalue;
 	} else {
-	    // Invoke the function and copy its result back into valuePtr.
-	    return evalMathFunction(interp, funcName, mathFunc, values);
+	    // Invoke the function and copy its result back into rvalue.
+	    ExprValue rvalue = grabExprValue();
+	    evalMathFunction(interp, funcName, mathFunc, values, true, rvalue);
+	    return rvalue;
 	}
     }
 
@@ -1763,32 +1768,49 @@ class Expression {
      * if needed.
      *
      * The values argument can be null when there are no args to pass.
+     *
+     * The releaseValues argument should be true when the ExprValue
+     * objecys in the array should be released.
      */
 
-    ExprValue
-    evalMathFunction(Interp interp, String funcName, ExprValue[] values)
-        throws TclException
+    void
+    evalMathFunction(
+        Interp interp,
+        String funcName,
+        ExprValue[] values,
+        boolean releaseValues,
+        ExprValue result)
+            throws TclException
     {
         MathFunction mathFunc = (MathFunction) mathFuncTable.get(funcName);
         if (mathFunc == null) {
             throw new TclException(interp,
         	    "unknown math function \"" + funcName + "\"");
         }
-        return evalMathFunction(interp, funcName, mathFunc, values);
+        evalMathFunction(interp, funcName, mathFunc, values, releaseValues, result);
     }
 
     /**
-     * This procedure implement a math function invocation.
+     * This procedure implements a math function invocation.
      * See the comments for the function above, note that
      * this method is used when the math function pointer
-     * has already been looked up.
+     * has already been resolved.
      *
      * The values argument can be null when there are no args to pass.
+     *
+     * The releaseValues argument should be true when the ExprValue
+     * objecys in the array should be released.
      */
 
-    ExprValue
-    evalMathFunction(Interp interp, String funcName, MathFunction mathFunc, ExprValue[] values)
-        throws TclException
+    void
+    evalMathFunction(
+        Interp interp,
+        String funcName,
+        MathFunction mathFunc,
+        ExprValue[] values,
+        boolean releaseValues,
+        ExprValue result)
+            throws TclException
     {
         if (mathFunc.argTypes == null) {
             throw new TclRuntimeError("math function \"" + funcName + "\" has null argTypes");
@@ -1831,14 +1853,28 @@ class Expression {
             }
         }
 
-        ExprValue rval = mathFunc.apply(interp, values);
-        if (values != null) {
+        if (mathFunc instanceof NoArgMathFunction) {
+            ((NoArgMathFunction) mathFunc).apply(interp, result);
+        } else {
+            mathFunc.apply(interp, values);
+
+            // Copy result from first argument to passed in ref.
+            // It is possible that the caller passed null as
+            // the result, leave the value in values[0] in that
+            // case. This optimization is only valid when
+            // releaseValues is false.
+
+            if (result != null) {
+                result.setValue( values[0] );
+            }
+        }
+
+        if (releaseValues && values != null) {
             // Release ExprValue elements in values array
             for (int i=0; i < values.length ; i++) {
                 releaseExprValue(values[i]);
             }
         }
-        return rval;
     }
 
     /**
@@ -2073,7 +2109,7 @@ abstract class MathFunction {
 
     int[] argTypes;
 
-    abstract ExprValue apply(Interp interp, ExprValue[] values)
+    abstract void apply(Interp interp, ExprValue[] values)
 	    throws TclException;
 }
 
@@ -2097,17 +2133,31 @@ abstract class NoArgMathFunction extends MathFunction {
     NoArgMathFunction() {
 	argTypes = new int[0];
     }
+
+    // A NoArgMathFunction is a special case for the
+    // rand() math function. There are no arguments,
+    // so pass just a result ExprValue.
+
+    abstract void apply(Interp interp, ExprValue value)
+	    throws TclException;
+
+    // Raise a runtime error if the wrong apply is invoked.
+
+    void apply(Interp interp, ExprValue[] values)
+	throws TclException
+    {
+        throw new TclRuntimeError(
+            "NoArgMathFunction must be invoked via apply(interp, ExprValue)");
+    }
 }
 
 
 class Atan2Function extends BinaryMathFunction {
-    ExprValue apply(Interp interp, ExprValue[] values)
+    void apply(Interp interp, ExprValue[] values)
 	    throws TclException {
-	ExprValue value = interp.expr.grabExprValue();
-	value.setDoubleValue(Math.atan2(
+	values[0].setDoubleValue(Math.atan2(
 		values[0].getDoubleValue(),
 		values[1].getDoubleValue()));
-	return value;
     }
 }
 
@@ -2117,25 +2167,24 @@ class AbsFunction extends MathFunction {
 	argTypes[0] = EITHER;
     }
 
-    ExprValue apply(Interp interp, ExprValue[] values)
+    void apply(Interp interp, ExprValue[] values)
 	    throws TclException {
-	ExprValue value = interp.expr.grabExprValue();
-	if (values[0].isDoubleType()) {
-	    double d = values[0].getDoubleValue();
+	ExprValue value = values[0];
+	if (value.isDoubleType()) {
+	    double d = value.getDoubleValue();
 	    if (d>0) {
 		value.setDoubleValue(d);
 	    } else {
 		value.setDoubleValue(-d);
 	    }
 	} else {
-	    int i = values[0].getIntValue();
+	    int i = value.getIntValue();
 	    if (i>0) {
 		value.setIntValue(i);
 	    } else {
 		value.setIntValue(-i);
 	    }
 	}
-        return value;
     }
 }
 
@@ -2145,15 +2194,12 @@ class DoubleFunction extends MathFunction {
 	argTypes[0] = EITHER;
     }
 
-    ExprValue apply(Interp interp, ExprValue[] values)
+    void apply(Interp interp, ExprValue[] values)
 	    throws TclException {
-	ExprValue value = interp.expr.grabExprValue();
-	if (values[0].isIntType()) {
-	    value.setDoubleValue( (double) values[0].getIntValue() );
-	} else {
-	    value.setDoubleValue( values[0].getDoubleValue() );
+	ExprValue value = values[0];
+	if (value.isIntType()) {
+	    value.setDoubleValue( (double) value.getIntValue() );
 	}
-	return value;
     }
 }
 
@@ -2163,17 +2209,14 @@ class IntFunction extends MathFunction {
 	argTypes[0] = EITHER;
     }
 
-    ExprValue apply(Interp interp, ExprValue[] values)
+    void apply(Interp interp, ExprValue[] values)
 	    throws TclException {
-	ExprValue value = interp.expr.grabExprValue();
-	if (values[0].isIntType()) {
-	    value.setIntValue( values[0].getIntValue() );
-	} else {
-	    double d = values[0].getDoubleValue();
+	ExprValue value = values[0];
+	if (!value.isIntType()) {
+	    double d = value.getDoubleValue();
 	    Expression.checkIntegerRange(interp, d);
 	    value.setIntValue( (int) d );
 	}
-	return value;
     }
 }
 
@@ -2183,11 +2226,11 @@ class RoundFunction extends MathFunction {
 	argTypes[0] = EITHER;
     }
 
-    ExprValue apply(Interp interp, ExprValue[] values)
+    void apply(Interp interp, ExprValue[] values)
 	    throws TclException {
-	ExprValue value = interp.expr.grabExprValue();
-	if (values[0].isDoubleType()) {
-	    double d = values[0].getDoubleValue();
+	ExprValue value = values[0];
+	if (value.isDoubleType()) {
+	    double d = value.getDoubleValue();
 	    double i = (d < 0.0 ? Math.ceil(d) : Math.floor(d));
 	    double f = d - i;
 	    if (d < 0.0) {
@@ -2203,23 +2246,18 @@ class RoundFunction extends MathFunction {
 		Expression.checkIntegerRange(interp, i);
 		value.setIntValue((int) i);
 	    }
-	} else {
-	    value.setIntValue( values[0].getIntValue() );
 	}
-        return value;
     }
 }
 
 class PowFunction extends BinaryMathFunction {
-    ExprValue apply(Interp interp, ExprValue[] values)
+    void apply(Interp interp, ExprValue[] values)
 	    throws TclException {
 	double d = Math.pow(
 		values[0].getDoubleValue(),
 		values[1].getDoubleValue());
 	Expression.checkDoubleRange(interp, d);
-	ExprValue value = interp.expr.grabExprValue();
-	value.setDoubleValue(d);
-	return value;
+	values[0].setDoubleValue(d);
     }
 }
 
@@ -2245,158 +2283,144 @@ class $func\Function extends UnaryMathFunction {
  */
 
 class AcosFunction extends UnaryMathFunction {
-    ExprValue apply(Interp interp, ExprValue[] values)
+    void apply(Interp interp, ExprValue[] values)
 	    throws TclException {
-	double d = values[0].getDoubleValue();
+	ExprValue value = values[0];
+	double d = value.getDoubleValue();
 	if ((d < -1) || (d > 1)) {
 	    Expression.DomainError(interp);
 	}
-	ExprValue value = interp.expr.grabExprValue();
 	value.setDoubleValue(Math.acos(d));
-	return value;
     }
 }
 
 class AsinFunction extends UnaryMathFunction {
-    ExprValue apply(Interp interp, ExprValue[] values)
+    void apply(Interp interp, ExprValue[] values)
 	    throws TclException {
-	ExprValue value = interp.expr.grabExprValue();
-	value.setDoubleValue(Math.asin(values[0].getDoubleValue()));
-	return value;
+	ExprValue value = values[0];
+	value.setDoubleValue(Math.asin(value.getDoubleValue()));
     }
 }
 
 class AtanFunction extends UnaryMathFunction {
-    ExprValue apply(Interp interp, ExprValue[] values)
+    void apply(Interp interp, ExprValue[] values)
 	    throws TclException {
-	ExprValue value = interp.expr.grabExprValue();
-	value.setDoubleValue(Math.atan(values[0].getDoubleValue()));
-	return value;
+	ExprValue value = values[0];
+	value.setDoubleValue(Math.atan(value.getDoubleValue()));
     }
 }
 
 
 class CeilFunction extends UnaryMathFunction {
-    ExprValue apply(Interp interp, ExprValue[] values)
+    void apply(Interp interp, ExprValue[] values)
 	    throws TclException {
-	ExprValue value = interp.expr.grabExprValue();
-	value.setDoubleValue(Math.ceil(values[0].getDoubleValue()));
-	return value;
+	ExprValue value = values[0];
+	value.setDoubleValue(Math.ceil(value.getDoubleValue()));
     }
 }
 
 
 class CosFunction extends UnaryMathFunction {
-    ExprValue apply(Interp interp, ExprValue[] values)
+    void apply(Interp interp, ExprValue[] values)
 	    throws TclException {
-	ExprValue value = interp.expr.grabExprValue();
-	value.setDoubleValue(Math.cos(values[0].getDoubleValue()));
-	return value;
+	ExprValue value = values[0];
+	value.setDoubleValue(Math.cos(value.getDoubleValue()));
     }
 }
 
 
 class CoshFunction extends UnaryMathFunction {
-    ExprValue apply(Interp interp, ExprValue[] values)
+    void apply(Interp interp, ExprValue[] values)
 	    throws TclException {
-	double x = values[0].getDoubleValue();
+	ExprValue value = values[0];
+	double x = value.getDoubleValue();
 	double d1 = Math.pow(Math.E, x);
 	double d2 = Math.pow(Math.E,-x);
 
 	Expression.checkDoubleRange(interp, d1);
 	Expression.checkDoubleRange(interp, d2);
-	ExprValue value = interp.expr.grabExprValue();
 	value.setDoubleValue((d1+d2)/2);
-	return value;
     }
 }
 
 class ExpFunction extends UnaryMathFunction {
-    ExprValue apply(Interp interp, ExprValue[] values)
+    void apply(Interp interp, ExprValue[] values)
 	    throws TclException {
-	double d = Math.exp(values[0].getDoubleValue());
+	ExprValue value = values[0];
+	double d = Math.exp(value.getDoubleValue());
 	if ((d == Double.NaN) ||
 		(d == Double.NEGATIVE_INFINITY) ||
 		(d == Double.POSITIVE_INFINITY)) {
 	    Expression.DoubleTooLarge(interp);
 	}
-	ExprValue value = interp.expr.grabExprValue();
 	value.setDoubleValue(d);
-	return value;
     }
 }
 
 
 class FloorFunction extends UnaryMathFunction {
-    ExprValue apply(Interp interp, ExprValue[] values)
+    void apply(Interp interp, ExprValue[] values)
 	    throws TclException {
-	ExprValue value = interp.expr.grabExprValue();
-	value.setDoubleValue(Math.floor(values[0].getDoubleValue()));
-	return value;
+	ExprValue value = values[0];
+	value.setDoubleValue(Math.floor(value.getDoubleValue()));
     }
 }
 
 
 class FmodFunction extends BinaryMathFunction {
-    ExprValue apply(Interp interp, ExprValue[] values)
+    void apply(Interp interp, ExprValue[] values)
 	    throws TclException {
 	double d1 = values[0].getDoubleValue();
 	double d2 = values[1].getDoubleValue();
-	ExprValue value = interp.expr.grabExprValue();
-	value.setDoubleValue(Math.IEEEremainder(d1, d2));
-	return value;
+	values[0].setDoubleValue(Math.IEEEremainder(d1, d2));
     }
 }
 
 class HypotFunction extends BinaryMathFunction {
-    ExprValue apply(Interp interp, ExprValue[] values)
+    void apply(Interp interp, ExprValue[] values)
 	    throws TclException {
 	double x = values[0].getDoubleValue();
 	double y = values[1].getDoubleValue();
-	ExprValue value = interp.expr.grabExprValue();
-	value.setDoubleValue(Math.sqrt(((x * x) + (y * y)))); 
-	return value;
+	values[0].setDoubleValue(Math.sqrt(((x * x) + (y * y)))); 
     }
 }
 
 
 class LogFunction extends UnaryMathFunction {
-    ExprValue apply(Interp interp, ExprValue[] values)
+    void apply(Interp interp, ExprValue[] values)
 	    throws TclException {
-	ExprValue value = interp.expr.grabExprValue();
-	value.setDoubleValue(Math.log(values[0].getDoubleValue())); 
-	return value;
+	ExprValue value = values[0];
+	value.setDoubleValue(Math.log(value.getDoubleValue())); 
     }
 }
 
 
 class Log10Function extends UnaryMathFunction {
    private static final double log10 = Math.log(10);
-   ExprValue apply(Interp interp, ExprValue[] values)
+   void apply(Interp interp, ExprValue[] values)
 	    throws TclException {
-	double d = values[0].getDoubleValue();
-	ExprValue value = interp.expr.grabExprValue();
+	ExprValue value = values[0];
+	double d = value.getDoubleValue();
 	value.setDoubleValue(Math.log(d / log10)); 
-	return value;
    }
 }
 
 
 class SinFunction extends UnaryMathFunction {
-    ExprValue apply(Interp interp, ExprValue[] values)
+    void apply(Interp interp, ExprValue[] values)
 	    throws TclException {
-	double d = values[0].getDoubleValue();
-	ExprValue value = interp.expr.grabExprValue();
+	ExprValue value = values[0];
+	double d = value.getDoubleValue();
 	value.setDoubleValue(Math.sin(d));
-	return value;
     }
 }
 
 
 class SinhFunction extends UnaryMathFunction {
-   ExprValue apply(Interp interp, ExprValue[] values)
+   void apply(Interp interp, ExprValue[] values)
 	    throws TclException {
-	double x = values[0].getDoubleValue();
+	ExprValue value = values[0];
+	double x = value.getDoubleValue();
 
 	double d1 = Math.pow(Math.E, x);
 	double d2 = Math.pow(Math.E,-x);
@@ -2404,42 +2428,35 @@ class SinhFunction extends UnaryMathFunction {
 	Expression.checkDoubleRange(interp, d1);
 	Expression.checkDoubleRange(interp, d2);
 
-	ExprValue value = interp.expr.grabExprValue();
 	value.setDoubleValue((d1-d2)/2);
-	return value;
     }
 }
 
 
 class SqrtFunction extends UnaryMathFunction {
-    ExprValue apply(Interp interp, ExprValue[] values)
+    void apply(Interp interp, ExprValue[] values)
 	    throws TclException {
-	double d = values[0].getDoubleValue();
-	ExprValue value = interp.expr.grabExprValue();
-	value.setDoubleValue(Math.sqrt(d));
-	return value;
+	ExprValue value = values[0];
+	value.setDoubleValue(Math.sqrt(value.getDoubleValue()));
     }
 }
 
 
 class TanFunction extends UnaryMathFunction {
-    ExprValue apply(Interp interp, ExprValue[] values)
+    void apply(Interp interp, ExprValue[] values)
 	    throws TclException {
-	double d = values[0].getDoubleValue();
-	ExprValue value = interp.expr.grabExprValue();
-	value.setDoubleValue(Math.tan(d));
-	return value;
+	ExprValue value = values[0];
+	value.setDoubleValue(Math.tan(value.getDoubleValue()));
     }
 }
 
 class TanhFunction extends UnaryMathFunction {
-    ExprValue apply(Interp interp, ExprValue[] values)
+    void apply(Interp interp, ExprValue[] values)
 	    throws TclException {
-	double x = values[0].getDoubleValue();
-	ExprValue value = interp.expr.grabExprValue();
-	if (x == 0) {
-	    value.setDoubleValue(0.0);
-	    return value;
+	ExprValue value = values[0];
+	double x = value.getDoubleValue();
+	if (x == 0.0) {
+	    return;
 	}
 
 	double d1 = Math.pow(Math.E, x);
@@ -2449,7 +2466,6 @@ class TanhFunction extends UnaryMathFunction {
 	Expression.checkDoubleRange(interp, d2);
 
 	value.setDoubleValue((d1 - d2) / (d1 + d2));
-	return value;
     }
 }
 
@@ -2486,17 +2502,15 @@ class RandFunction extends NoArgMathFunction {
      * statApply().
      */
 
-    ExprValue apply(Interp interp, ExprValue[] values)
+    void apply(Interp interp, ExprValue value)
 	    throws TclException {
-        return(statApply(interp, values));
+        statApply(interp, value);
     }
 
-
-    static ExprValue statApply(Interp interp, ExprValue[] values)
+    static void statApply(Interp interp, ExprValue value)
 	    throws TclException {
 
 	int tmp;
-	ExprValue value = interp.expr.grabExprValue();
 
 	if (!(interp.randSeedInit)) {
 	    interp.randSeedInit = true;
@@ -2519,25 +2533,25 @@ class RandFunction extends NoArgMathFunction {
 	}
 
 	value.setDoubleValue( interp.randSeed * (1.0/randIM) );
-	return value;
     }
 }
 
 
 class SrandFunction extends UnaryMathFunction {
 
-    ExprValue apply(Interp interp, ExprValue[] values)
+    void apply(Interp interp, ExprValue[] values)
 	    throws TclException {
+	ExprValue value = values[0];
 
 	// Reset the seed.
 
 	interp.randSeedInit = true;
-	interp.randSeed     = (long) values[0].getDoubleValue();
+	interp.randSeed     = (long) value.getDoubleValue();
 
 	// To avoid duplicating the random number generation code we simply
 	// call the static random number generator in the RandFunction 
 	// class.
 
-	return (RandFunction.statApply(interp, null));
+	RandFunction.statApply(interp, value);
     }
 }

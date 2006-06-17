@@ -507,6 +507,21 @@ proc expr-unary-not-double-tclobject-parse {} {
     return
 }
 
+# Invoke each expr math func in a loop.
+
+proc expr-math-funcs {} {
+    for {set i 50} {$i} {incr i -1} {
+        # All the supported math functions in alpha order
+        expr {abs(0.0) + acos(0.0) + asin(0.0) + atan(0.0) + atan2(-0.5, 0.5) \
+        + ceil(0.0) + cos(0.0) + cosh(0.0) \
+        + double(0) + exp(1) + floor(0.0) + fmod(1.0, 1.0) \
+        + hypot(1, 1) + int(0.0) + log(1.0) + log10(1.0) \
+        + pow(2,3) + rand() + round(1.0) + sin(0.0) \
+        + sinh(0) + sqrt(1) + srand(1) + tan(1.0) + tanh(1.0)}
+    }
+    return
+}
+
 
 if { [catch {string repeat "abc" 10}] } {
     proc str-repeat {str num} {
@@ -637,4 +652,6 @@ bench -desc "expr-unary-not-string-tclobject" -body {expr-unary-not-string-tclob
 
 bench -desc "expr-unary-not-int-tclobject-parse" -body {expr-unary-not-int-tclobject-parse}
 bench -desc "expr-unary-not-double-tclobject-parse" -body {expr-unary-not-double-tclobject-parse}
+
+bench -desc "expr-math-funcs" -body {expr-math-funcs}
 

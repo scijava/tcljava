@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaTestExtension.java,v 1.7 2006/06/07 01:53:51 mdejong Exp $
+ * RCS: @(#) $Id: JavaTestExtension.java,v 1.8 2006/06/17 20:48:11 mdejong Exp $
  *
  */
 
@@ -85,11 +85,9 @@ class TestMathFunc extends NoArgMathFunction {
         this.clientData = clientData;
     }
 
-    ExprValue apply(Interp interp, ExprValue[] values)
+    void apply(Interp interp, ExprValue value)
 	    throws TclException {
-	ExprValue value = interp.expr.grabExprValue();
         value.setIntValue(clientData);
-        return value;
     }
 }
 
@@ -105,23 +103,22 @@ class TestMathFunc2 extends MathFunction {
 
     // Return the maximum of the two arguments with the correct type.
 
-    ExprValue apply(Interp interp, ExprValue[] values)
+    void apply(Interp interp, ExprValue[] values)
 	    throws TclException
     {
         ExprValue arg0 = values[0];
         ExprValue arg1 = values[1];
-        ExprValue value = interp.expr.grabExprValue();
 
         if (arg0.isIntType()) {
             int i0 = arg0.getIntValue();
 
             if (arg1.isIntType()) {
                 int i1 = arg1.getIntValue();
-                value.setIntValue( ((i0 > i1)? i0 : i1) );
+                arg0.setIntValue( ((i0 > i1)? i0 : i1) );
             } else if (arg1.isDoubleType()) {
                 double d0 = (double) i0;
                 double d1 = arg1.getDoubleValue();
-                value.setDoubleValue( ((d0 > d1)? d0 : d1) );
+                arg0.setDoubleValue( ((d0 > d1)? d0 : d1) );
             } else {
                 throw new TclException(interp,
                     "T3: wrong type for arg 2");
@@ -131,10 +128,10 @@ class TestMathFunc2 extends MathFunction {
 
             if (arg1.isIntType()) {
                 double d1 = (double) arg1.getIntValue();
-                value.setDoubleValue( ((d0 > d1)? d0 : d1) );
+                arg0.setDoubleValue( ((d0 > d1)? d0 : d1) );
             } else if (arg1.isDoubleType()) {
                 double d1 = arg1.getDoubleValue();
-                value.setDoubleValue( ((d0 > d1)? d0 : d1) );
+                arg0.setDoubleValue( ((d0 > d1)? d0 : d1) );
             } else {
                 throw new TclException(interp,
                     "T3: wrong type for arg 2");
@@ -143,7 +140,6 @@ class TestMathFunc2 extends MathFunction {
             throw new TclException(interp,
                 "T3: wrong type for arg 1");
         }
-        return value;
     }
 }
 

@@ -1,3 +1,51 @@
+2006-06-17  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/jacl/tcl/lang/ExprValue.java (setValue):
+        Add method to support copying the value
+        inside an ExprValue into a second ExprValue.
+        * src/jacl/tcl/lang/Expression.java (evalMathFunction):
+        Reimplement all math functions so that a value
+        is returned in the first argument instead of
+        grabbing another ExprValue. Invoke rand() with
+        special case since it takes no arguments.
+        * src/tcljava/tcl/lang/TclObjectBase.java (isIntType,
+        isDoubleType): Make these methods public so that
+        they can be used in TJC compiled code.
+        * src/tests/jacl/tcl/lang/JavaTestExtension.java:
+        Update math function tests.
+        * src/tests/tjc/TestTJC.java: Update tests
+        so that ExprValues are explicitly released.
+        * src/tjc/tcl/lang/TJC.java (exprInitValue,
+        exprGetValue, exprMathFunction, exprEqualsEmptyString,
+        exprIntMathFunction): Reimplement math function
+        invocation so that ExprValue objects must be explicitly
+        freed. Pass ExprValue to the empty string test.
+        Don't grab/release ExprValues inside TJC methods,
+        assume the caller will take care of this.
+        * src/tjc/tjc/library/compileproc.tcl:
+        Init +inline-expr cars in compileproc_init.
+        Invoke compileproc_expr_evaluate_boolean_emit
+        to explicitly release ExprValue object when
+        done with them. The TJC layer no longer implicitly
+        releases objects inside TJC mehtods. Rewrite
+        compileproc_expr_evaluate_emit_unary_operator and
+        compileproc_expr_evaluate_emit_binary_operator so
+        that they make use of new compileproc_expr_peek_operand
+        API. The compileproc_expr_peek_operand makes it easy
+        for an operator to examine an operand without having
+        to generate code twice for special cases. Rewrite
+        compileproc_expr_evaluate_emit_math_function so that
+        it is possible to pass an ExprValue object to a math
+        function.
+        * tests/tclbench/expr.bench: Add math function test.
+        * tests/tjc/compileproc.test: Test expr parser
+        logic and new compileproc_expr_peek_operand method.
+        * tests/tjc/compileproc_2.test:
+        * tests/tjc/compileproc_9.test: Update tests that
+        regenerated eval buffers and caused tmp local
+        ids to be skipped.
+        * tests/tjc/testtjc.test: Add tests.
+
 2006-06-13  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/tcljava/tcl/lang/TclObjectBase.java (duplicate,

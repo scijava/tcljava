@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ExprValue.java,v 1.10 2006/06/13 06:52:47 mdejong Exp $
+ * RCS: @(#) $Id: ExprValue.java,v 1.11 2006/06/17 20:48:10 mdejong Exp $
  *
  */
 
@@ -211,6 +211,18 @@ public final class ExprValue {
 
     public
     final
+    void setValue(ExprValue value2) {
+        // Copy bits over, including any logic based
+        // on type that causes branching make this
+        // method execute 2x slower.
+        type = value2.type;
+        intValue = value2.intValue;
+        doubleValue = value2.doubleValue;
+        stringValue = value2.stringValue;
+    }
+
+    public
+    final
     void nullStringValue() {
 	stringValue = null;
     }
@@ -407,7 +419,7 @@ public final class ExprValue {
         type = INT;
     }
 
-    // Optimized unary logical not operation '!'
+    // Optimized integer unary logical not operation '!'
 
     final
     void optIntUnaryNot() {
