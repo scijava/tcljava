@@ -12,9 +12,6 @@ set tuples [list \
     {internal-expr-get-boolean-int tcl.lang.TJCBench InternalExprGetBooleanInt} \
     {internal-expr-get-boolean-double tcl.lang.TJCBench InternalExprGetBooleanDouble} \
     {internal-expr-get-boolean-string tcl.lang.TJCBench InternalExprGetBooleanString} \
-    {internal-expr-op-int-plus tcl.lang.TJCBench InternalExprOpIntPlus} \
-    {internal-expr-op-double-plus tcl.lang.TJCBench InternalExprOpDoublePlus} \
-    {internal-expr-op-int-not tcl.lang.TJCBench InternalExprOpIntNot} \
     {internal-incr tcl.lang.TJCBench InternalIncr} \
     {internal-tcllist-length tcl.lang.TJCBench InternalTclListLength} \
     {internal-tcllist-lindex tcl.lang.TJCBench InternalTclListLindex} \
@@ -36,6 +33,18 @@ set tuples [list \
     {internal-expr-inline-get-int tcl.lang.TJCBench InternalExprInlineGetInt} \
     {internal-expr-tcldouble-get tcl.lang.TJCBench InternalTclDoubleGet} \
     {internal-expr-get-known-double tcl.lang.TJCBench InternalExprGetKnownDouble} \
+    {internal-set-tclobject-result tcl.lang.TJCBench InternalSetTclObjectResult} \
+    {internal-reset-result tcl.lang.TJCBench InternalResetResult} \
+    {internal-set-boolean-result tcl.lang.TJCBench InternalSetBooleanResult} \
+    {internal-set-int-result tcl.lang.TJCBench InternalSetIntResult} \
+    {internal-set-int-result-via-exprvalue tcl.lang.TJCBench InternalSetIntResultViaExprValue} \
+    {internal-expr-set-int-result tcl.lang.TJCBench InternalExprSetIntResult} \
+    {internal-expr-op-int-plus tcl.lang.TJCBench InternalExprOpIntPlus} \
+    {internal-expr-op-double-plus tcl.lang.TJCBench InternalExprOpDoublePlus} \
+    {internal-expr-op-int-not tcl.lang.TJCBench InternalExprOpIntNot} \
+    {internal-expr-op-int-not-grab-release-result tcl.lang.TJCBench InternalExprOpIntNotGrabReleaseResult} \
+    {internal-expr-op-int-not-stack-value-result tcl.lang.TJCBench InternalExprOpIntNotStackValueResult} \
+    {internal-expr-op-int-not-stack-value-int-result tcl.lang.TJCBench InternalExprOpIntNotStackValueIntResult} \
     ]
 
 foreach tuple $tuples {

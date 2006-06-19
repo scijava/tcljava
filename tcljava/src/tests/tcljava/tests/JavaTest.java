@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: JavaTest.java,v 1.4 2002/12/30 06:28:06 mdejong Exp $
+ * RCS: @(#) $Id: JavaTest.java,v 1.5 2006/06/19 02:54:27 mdejong Exp $
  */
 
 package tests;
@@ -117,6 +117,28 @@ public class JavaTest implements CommandWithDispose {
 
     public static void throwTclException(Interp interp) throws TclException {
         throw new TclException(interp, "no nuts in my fudge please!");
+    }
+    
+    // Raise NullPointerException if Interp.setResult()
+    // is invoked with a null pointer.
+
+    public static String testSetResultNPE(Interp interp) throws TclException {
+        try {
+            interp.setResult((TclObject) null);
+        } catch (NullPointerException npe) {
+            return "OK";
+        }
+        return "ERROR";
+    }
+
+    public static String testResetResultNPE(Interp interp) throws TclException {
+        try {
+            interp.resetResult();
+            interp.setResult((TclObject) null);
+        } catch (NullPointerException npe) {
+            return "OK";
+        }
+        return "ERROR";
     }
 }
 

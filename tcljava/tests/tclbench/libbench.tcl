@@ -4,7 +4,7 @@
 # This file has to have code that works in any version of Tcl that
 # the user would want to benchmark.
 #
-# RCS: @(#) $Id: libbench.tcl,v 1.8 2006/06/02 00:47:46 mdejong Exp $
+# RCS: @(#) $Id: libbench.tcl,v 1.9 2006/06/19 02:54:27 mdejong Exp $
 #
 # Copyright (c) 2000-2001 Jeffrey Hobbs.
 
@@ -178,7 +178,7 @@ proc prepare_and_run_body { body iterations } {
     set debug 0
 
     if {$debug} {
-        puts stderr "prepare_and_run_body $body $iterations"
+        puts stderr "prepare_and_run_body \[$body\] $iterations"
     }
 
     # Run test to make sure no error is generated. After this block,
@@ -213,11 +213,14 @@ proc prepare_and_run_body { body iterations } {
         # Must be a really long test, don't try to run
         # it multiple times
         set max_loops 1
+        if {$debug} {
+            puts stderr "really long test detected, will iterate once"
+        }
     }
 
     for {set i 0} {$i < $max_loops} {incr i} {
         if {$debug} {
-            puts stderr "loop $i, time \{$body\} $iterations"
+            puts stderr "loop $i, time \[$body\] $iterations"
         }
 
         set t [run_body $body $iterations]
@@ -239,6 +242,9 @@ proc prepare_and_run_body { body iterations } {
 
         if {$i < 4} {
             # Always run at least 4 iterations
+            if {$debug} {
+                puts stderr "continue until 4 iterations"
+            }
             continue
         } else {
             # It the results are converging, then
@@ -250,6 +256,11 @@ proc prepare_and_run_body { body iterations } {
                 set small_delta 0.08
             } else {
                 set small_delta 0.01
+            }
+
+            if {$debug} {
+                puts stderr "checking convergence delta\
+                    (abs($pt) < $small_delta) at loop $i"
             }
 
             if {abs($pt) < $small_delta} {
@@ -292,17 +303,25 @@ proc prepare_and_run_body { body iterations } {
                     continue
                 }
 
+                if {$debug} {
+                   puts stderr "break out of test loop, times converged twice"
+                }
                 break
             } else {
                 if {$converged_before} {
                     set converged_before 0
                 }
             }
-            
+
             if {$debug} {
                puts stderr "delta percent $pt could still be converging at $i"
             }
         }
+    }
+
+    if {$debug} {
+        puts stderr "i is $i"
+        puts stderr "max_loops is $max_loops"
     }
 
     if {$debug} {
@@ -312,11 +331,19 @@ proc prepare_and_run_body { body iterations } {
         puts stderr "Percents :\t$percents"
     }
 
+    if {([llength $times] < 4) && ($max_loops != 1)} {
+        error "times should have at least 4 entries : \{$times\}"
+    }
+
     # The last couple of times in the list indicate
     # the times that were converged to. Get an
     # average of the last 3 times and report that.
 
     set ctimes [lrange $times end-2 end]
+
+    if {[llength $ctimes] != 3} {
+        error "error getting last 3 times from \{$times\}"
+    }
 
     if {$debug} {
         puts stderr "converged to times \{$ctimes\}"

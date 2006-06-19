@@ -1,3 +1,23 @@
+2006-06-18  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/tests/tcljava/tests/JavaTest.java:
+        Pass null to Interp.setResult(TclObject).
+        * src/tjc/tcl/lang/TJCBench.java: Add
+        a series of result set, reset result,
+        and unary int not tests to establish
+        base times for ExprValue related optimizations.
+        Tests now take special care to always
+        set a static result after a loop so
+        that optimizer does not omit code
+        in loop body.
+        * tests/tclbench/internal.bench: Invoke
+        new tests.
+        * tests/tclbench/libbench.tcl: Add more debug
+        code to test run method.
+        * tests/tcljava/JavaCallCmd.test: Add
+        NPE test for when Interp.setResult(TclObject)
+        is invoked with a null argument.
+
 2006-06-17  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/jacl/tcl/lang/ExprValue.java (setValue):
