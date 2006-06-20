@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclObjectBase.java,v 1.13 2006/06/17 20:48:10 mdejong Exp $
+ * RCS: @(#) $Id: TclObjectBase.java,v 1.14 2006/06/20 01:48:23 mdejong Exp $
  *
  */
 
@@ -451,7 +451,7 @@ abstract class TclObjectBase {
      * ref was released.
      */
 
-    protected static RuntimeException DEALLOCATED =
+    protected final static RuntimeException DEALLOCATED =
         new TclRuntimeError("TclObject has been deallocated");
 
     protected final void disposedError() {

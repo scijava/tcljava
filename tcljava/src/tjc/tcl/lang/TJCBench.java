@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TJCBench.java,v 1.8 2006/06/19 02:54:27 mdejong Exp $
+ * RCS: @(#) $Id: TJCBench.java,v 1.9 2006/06/20 01:48:23 mdejong Exp $
  *
  */
 
@@ -32,7 +32,11 @@ public class TJCBench extends TJC.CompiledCommand {
 	}
         String testname = objv[1].toString();
 
-        if (testname.equals("InternalExprParseIntValue")) {
+        if (testname.equals("InternalTclObjectPreserve")) {
+             InternalTclObjectPreserve(interp);
+        } else if (testname.equals("InternalTclObjectPreserveRelease")) {
+             InternalTclObjectPreserveRelease(interp);
+        } else if (testname.equals("InternalExprParseIntValue")) {
              InternalExprParseIntValue(interp);
         } else if (testname.equals("InternalExprParseDoubleValue")) {
              InternalExprParseDoubleValue(interp);
@@ -120,6 +124,36 @@ public class TJCBench extends TJC.CompiledCommand {
 
     static int RESULT_INT = 0;
     static Object RESULT_OBJ = null;
+
+    // Invoke TclObject.preserve() over and over again
+    // on a new TclObject.
+
+    void InternalTclObjectPreserve(Interp interp)
+        throws TclException
+    {
+        TclObject tobj = TclInteger.newInstance(1);
+
+        for (int i=0; i < 5000; i++) {
+            tobj.preserve();
+        }
+        RESULT_INT = tobj.getRefCount();
+    }
+
+    // Invoke preserve() and release() on a TclObject.
+
+    void InternalTclObjectPreserveRelease(Interp interp)
+        throws TclException
+    {
+        TclObject tobj = TclInteger.newInstance(1);
+        tobj.preserve(); // refcount = 1
+        tobj.preserve(); // refcount = 2
+
+        for (int i=0; i < 5000; i++) {
+            tobj.preserve();
+            tobj.release();
+        }
+        RESULT_INT = tobj.getRefCount();
+    }
 
     // Invoke ExprParseObject() over and over again on a
     // TclObject with a TclInteger internal rep.

@@ -1,3 +1,23 @@
+2006-06-19  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * jaclsh.bat.in: Include existing JAVA_FLAGS
+        env var value when setting JAVA_FLAGS.
+        * src/jacl/tcl/lang/Expression.java (releaseExprValue):
+        Improve check for duplicate value in the
+        ExprValue cache.
+        * src/jacl/tcl/lang/Interp.java: Add final boolean
+        value that will disable shared constant checking.
+        This code path is execution time critical and the
+        extra shared ref checking is not needed by default.
+        Remove extra null ref check in setResult.
+        * src/tcljava/tcl/lang/TclObjectBase.java:
+        Make the DEALLOCATED field final since it
+        will not be changed at runtime.
+        * src/tjc/tcl/lang/TJCBench.java:
+        * tests/tclbench/internal.bench: Add
+        TclObject preserve() and release() timing tests.
+        Rename result tests so that they get sorted together.
+
 2006-06-18  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/tests/tcljava/tests/JavaTest.java:

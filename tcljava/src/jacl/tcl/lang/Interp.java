@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.81 2006/06/08 07:44:51 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.82 2006/06/20 01:48:23 mdejong Exp $
  *
  */
 
@@ -237,7 +237,7 @@ private TclObject m_result;
 
 // Value m_result is set to when resetResult() is called.
 
-private TclObject m_nullResult;
+private final TclObject m_nullResult;
 
 // Shared common result values. For common values, it
 // is much better to use a shared TclObject. These
@@ -265,9 +265,17 @@ private final TclObject m_onehalfDoubleResult;   // 0.5
 private final TclObject m_oneDoubleResult;       // 1.0
 private final TclObject m_twoDoubleResult;       // 2.0
 
+// Set to true to enable debug code that will double check
+// that each common value is a shared object. It is
+// possible that buggy code might decr the ref count
+// of a shared result so this code would raise an
+// error if that case were detected.
+
+private final static boolean VALIDATE_SHARED_RESULTS = false;
+
 // Common char values wrapped in a TclObject
 
-private TclObject[] m_charCommon;
+private final TclObject[] m_charCommon;
 private final int m_charCommonMax = 128;
 
 // Java thread this interp was created in. This is used
@@ -2305,11 +2313,6 @@ public final void
 setResult(
     TclObject newResult) // A Tcl Object to be set as the result.
 {
-    if (newResult == null) {
-	throw new NullPointerException(
-		"Interp.setResult() called with null TclObject argument.");
-    }
-
     if (newResult == m_result) {
         // Setting to current value (including m_nullResult) is a no-op.
         return;
@@ -2454,8 +2457,10 @@ resetResult()
     if (m_result != m_nullResult) {
 	m_result.release();
 	m_result = m_nullResult;
-	if (!m_nullResult.isShared()) {
-	    throw new TclRuntimeError("m_nullResult is not shared");
+	if (VALIDATE_SHARED_RESULTS) {
+	    if (!m_nullResult.isShared()) {
+	        throw new TclRuntimeError("m_nullResult is not shared");
+	    }
 	}
     }
     errAlreadyLogged = false;
@@ -4557,10 +4562,12 @@ TclObject checkCommonInteger(int value)
             obj = TclInteger.newInstance( value );
             return obj;
     }
-    if (!obj.isShared()) {
-        throw new TclRuntimeError("ref count error: " +
-            "integer constant should be shared but refCount was " +
-            obj.getRefCount());
+    if (VALIDATE_SHARED_RESULTS) {
+        if (!obj.isShared()) {
+            throw new TclRuntimeError("ref count error: " +
+                "integer constant should be shared but refCount was " +
+                obj.getRefCount());
+        }
     }
     return obj;
 }
@@ -4594,10 +4601,12 @@ TclObject checkCommonDouble(double value)
         obj = TclDouble.newInstance( value );
         return obj;
     }
-    if (!obj.isShared()) {
-        throw new TclRuntimeError("ref count error: " +
-            "double constant should be shared but refCount was " +
-            obj.getRefCount());
+    if (VALIDATE_SHARED_RESULTS) {
+        if (!obj.isShared()) {
+            throw new TclRuntimeError("ref count error: " +
+                "double constant should be shared but refCount was " +
+                obj.getRefCount());
+        }
     }
     return obj;
 }
@@ -4615,18 +4624,22 @@ TclObject checkCommonDouble(double value)
 final
 TclObject checkCommonBoolean(boolean value)
 {
-    TclObject obj;
-    if ( value ) {
-        obj = m_trueBooleanResult;
+    if (VALIDATE_SHARED_RESULTS) {
+        TclObject obj;
+        if ( value ) {
+            obj = m_trueBooleanResult;
+        } else {
+            obj = m_falseBooleanResult;
+        }
+        if (!obj.isShared()) {
+            throw new TclRuntimeError("ref count error: " +
+                "boolean constant for " + value + " should be shared but refCount was " +
+                obj.getRefCount());
+        }
+        return obj;
     } else {
-        obj = m_falseBooleanResult;
+        return (value ? m_trueBooleanResult : m_falseBooleanResult);
     }
-    if (!obj.isShared()) {
-        throw new TclRuntimeError("ref count error: " +
-            "boolean constant should be shared but refCount was " +
-            obj.getRefCount());
-    }
-    return obj;
 }
 
 /**
@@ -4646,10 +4659,12 @@ final
 TclObject checkCommonString(String value)
 {
     if ( value == null || value == "" || value.length() == 0 ) {
-        if (!m_nullResult.isShared()) {
-            throw new TclRuntimeError("ref count error: " +
-                "empty string constant should be shared but refCount was " +
-                m_nullResult.getRefCount());
+        if (VALIDATE_SHARED_RESULTS) {
+            if (!m_nullResult.isShared()) {
+                throw new TclRuntimeError("ref count error: " +
+                    "empty string constant should be shared but refCount was " +
+                    m_nullResult.getRefCount());
+            }
         }
         return m_nullResult;
     } else {
@@ -4678,6 +4693,12 @@ TclObject checkCommonCharacter(int c)
 {
     if ((c <= 0) || (c >= m_charCommonMax)) {
         return null;
+    }
+    if (VALIDATE_SHARED_RESULTS) {
+        if ((m_charCommon[c] != null) && !m_charCommon[c].isShared()) {
+            throw new TclRuntimeError("ref count error: " +
+                "common character for '" + c + "' is not shared");
+        }
     }
     return m_charCommon[c];
 }

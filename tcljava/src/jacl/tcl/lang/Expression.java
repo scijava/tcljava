@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Expression.java,v 1.35 2006/06/17 20:48:10 mdejong Exp $
+ * RCS: @(#) $Id: Expression.java,v 1.36 2006/06/20 01:48:23 mdejong Exp $
  *
  */
 
@@ -2077,27 +2077,26 @@ class Expression {
     }
 
     final void releaseExprValue(ExprValue val) {
-        if (cachedExprIndex > 0) {
-            // Cache is not full, return value to cache
-            cachedExprValue[--cachedExprIndex] = val;
-        }
-
-        // Debug check for duplicate values in range > cachedExprIndex
+        // Debug check for duplicate value already in cachedExprValue
         if (false) {
-        if (cachedExprIndex < 0) {
-            throw new TclRuntimeError("cachedExprIndex is " + cachedExprIndex);
-        }
-        for (int i=cachedExprIndex; i < cachedExprLength ; i++) {
-            for (int j=cachedExprIndex; j < cachedExprLength ; j++) {
-                if ((j == i) || (cachedExprValue[i] == null)) {
-                    continue;
-                }
-                if (cachedExprValue[i] == cachedExprValue[j]) {
+            if (cachedExprIndex < 0) {
+                throw new TclRuntimeError("cachedExprIndex is " + cachedExprIndex);
+            }
+            if (val == null) {
+                throw new TclRuntimeError("ExprValue is null");
+            }
+            for (int i=cachedExprIndex; i < cachedExprLength ; i++) {
+                if (cachedExprValue[i] != null &&
+                        val == cachedExprValue[i]) {
                     throw new TclRuntimeError(
-                        "same object at " + i + " and " + j);
+                        "released ExprValue is already in cache slot " + i);
                 }
             }
         }
+
+        if (cachedExprIndex > 0) {
+            // Cache is not full, return value to cache
+            cachedExprValue[--cachedExprIndex] = val;
         }
     }
 }
