@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: module.tcl,v 1.8 2006/05/28 05:11:00 mdejong Exp $
+#  RCS: @(#) $Id: module.tcl,v 1.9 2006/06/21 02:43:27 mdejong Exp $
 #
 #
 
@@ -518,6 +518,41 @@ proc module_option_validate { op val index num_options options } {
                 }
             }
         }
+        "inline-expr-value-stack" {
+            # If -inline-expr-value-stack is found, then
+            # +inline-expr must appear before it.
+
+            if {$val} {
+                error "only -inline-expr-value-stack is allowed"
+            } else {
+                array set options_before_map $options_before
+
+                if {![info exists options_before_map(inline-expr)] || \
+                        $options_before_map(inline-expr) == 0} {
+                    error "+inline-expr-value-stack option must appear after +inline-expr"
+                }
+                if {[info exists options_before_map(inline-expr-value-stack-null)] && \
+                        $options_before_map(inline-expr-value-stack-null) == 0} {
+                    error "-inline-expr-value-stack option can't appear after +inline-expr-value-stack-null"
+                }
+            }
+        }
+        "inline-expr-value-stack-null" {
+            # If +inline-expr-value-stack-null is found, then
+            # +inline-expr must appear before it. Also,
+            # the -inline-expr-value-stack must not appear.
+
+            if {!$val} {
+                error "only +inline-expr-value-stack-null is allowed"
+            } else {
+                array set options_before_map $options_before
+
+                if {![info exists options_before_map(inline-expr)] || \
+                        $options_before_map(inline-expr) == 0} {
+                    error "+inline-expr-value-stack option must appear after +inline-expr"
+                }
+            }
+        }
         "inline-commands" {
             # No-op
         }
@@ -612,6 +647,8 @@ proc module_option_default { option } {
         "constant-increment" {return 1}
         "dummy" {return 0}
         "inline-expr" {return 0}
+        "inline-expr-value-stack" {return 1}
+        "inline-expr-value-stack-null" {return 0}
         "inline-commands" {return 0}
         "inline-containers" {return 0}
         "inline-controls" {return 0}

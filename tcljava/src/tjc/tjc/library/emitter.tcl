@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: emitter.tcl,v 1.15 2006/05/19 22:27:45 mdejong Exp $
+#  RCS: @(#) $Id: emitter.tcl,v 1.16 2006/06/21 02:43:27 mdejong Exp $
 #
 #
 
@@ -683,9 +683,12 @@ proc emitter_callframe_try {} {
 # cases that need to be handled, and finally pop the local
 # variable call frame. This code appears at the end of a
 # cmdProc declaration to close the try block opened by
-# emitter_callframe_try.
+# emitter_callframe_try. The optional finally_buffer
+# argument can be used to pass a buffer in that will
+# be evaluated before the call frame is popped in the
+# finally block.
 
-proc emitter_callframe_pop { proc_name } {
+proc emitter_callframe_pop { proc_name {finally_buffer {}} } {
     set buffer ""
 
     append buffer \
@@ -702,6 +705,10 @@ proc emitter_callframe_pop { proc_name } {
         [emitter_indent] \
         "\} finally \{\n"
     emitter_indent_level +1
+    # Allow caller to insert cleanup code
+    if {$finally_buffer != {}} {
+        append buffer $finally_buffer
+    }
     append buffer \
         [emitter_indent] \
         "TJC.popLocalCallFrame(interp, callFrame)" "\;\n"

@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: compileproc.tcl,v 1.28 2006/06/17 20:48:11 mdejong Exp $
+#  RCS: @(#) $Id: compileproc.tcl,v 1.29 2006/06/21 02:43:27 mdejong Exp $
 #
 #
 
@@ -633,6 +633,7 @@ public class TJCExtension extends Extension \{
 proc compileproc_init {} {
     global _compileproc _compileproc_ckeys _compileproc_key_info
     global _compileproc_command_cache _compileproc_variable_cache
+    global _compileproc_expr_value_stack
 
     if {[info exists _compileproc]} {
         unset _compileproc
@@ -648,6 +649,9 @@ proc compileproc_init {} {
     }
     if {[info exists _compileproc_variable_cache]} {
         unset _compileproc_variable_cache
+    }
+    if {[info exists _compileproc_expr_value_stack]} {
+        unset _compileproc_expr_value_stack
     }
 
     # Counter for local variable names inside cmdProc scope
@@ -926,12 +930,37 @@ proc compileproc_compile { proc_list class_name {config_init {}} } {
             [emitter_callframe_init_compiledlocals \
                 [compileproc_variable_cache_count]]
     }
+
+    # If expr evaluations are going to grab values
+    # and save them on the stack, then do that now.
+
+    if {[compileproc_expr_value_stack_is_used]} {
+        append buffer \
+            [compileproc_expr_value_stack_generate]
+    }
+
+    # Append code for each toplevel command
     append buffer $body_buffer
 
-    # end callframe block and cmdProc declaration
+    # End callframe block and cmdProc declaration,
+    # expr value cleanup may be needed in the
+    # finally block.
+
+    if {[compileproc_expr_value_stack_is_used]} {
+        emitter_indent_level +1
+        set expr_value_buffer \
+            [compileproc_expr_value_stack_release_generate]
+        emitter_indent_level -1
+
+        append buffer \
+            [emitter_callframe_pop $name $expr_value_buffer]
+    } else {
+        append buffer \
+            [emitter_callframe_pop $name]
+    }
+
     append buffer \
-        [emitter_callframe_pop $name] \
-        [emitter_cmd_proc_end]
+            [emitter_cmd_proc_end]
 
     # Emit constant TclObject values and an initConstants() method.
     # It is possible that constant were found while scanning but
@@ -1552,6 +1581,193 @@ proc compileproc_variable_cache_names_array {} {
         "\}\;\n"
 
     emitter_indent_level -1
+
+    return $buffer
+}
+
+# Return 1 if the expr value stack option is enabled
+# and expr values will be grabbed and stored on the
+# stack instead of being grabbed and released before
+# each use.
+
+proc compileproc_expr_value_stack_is_used {} {
+    global _compileproc_expr_value_stack
+
+    if {![info exists _compileproc_expr_value_stack(ordered_symbols)]} {
+        return 0
+    }
+
+    return 1
+}
+
+# Get an ExprValue ref from the stack. This
+# method is invoked during code generation
+# when an ExprValue ref is needed. The returned
+# ref must be released.
+
+proc compileproc_expr_value_stack_get {} {
+    global _compileproc_expr_value_stack
+
+#    set debug 0
+
+    if {!$::_compileproc(options,expr_value_stack)} {
+        error "compileproc_expr_value_stack_get invoked but expr_value_stack flag is off"
+    }
+
+    if {![info exists _compileproc_expr_value_stack(ordered_symbols)]} {
+        set ordered_symbols [list]
+        set used_stack [list]
+    } else {
+        set ordered_symbols $_compileproc_expr_value_stack(ordered_symbols)
+        set used_stack $_compileproc_expr_value_stack(used_stack)
+    }
+
+#    if {$debug} {
+#        puts "compileproc_expr_value_stack_get"
+#        puts "ordered_symbols is \{$ordered_symbols\}"
+#        puts "used_stack is \{$used_stack\}"
+#    }
+
+    set symbols_size [llength $ordered_symbols]
+    set stack_size [llength $used_stack]
+
+    if {$stack_size > $symbols_size} {
+       error "stack \{$used_stack\} size is larger than symbols \{$ordered_symbols\}"
+    } elseif {$stack_size == $symbols_size} {
+        # Another symbol is needed for this expr evaluation
+        set symbol "evs${symbols_size}"
+        lappend ordered_symbols $symbol
+    } else {
+        # Reuse existing symbol
+        set symbol [lindex $ordered_symbols $stack_size]
+        if {$symbol == ""} {
+           error "empty symbol grabbed from ordered_symbols index $stack_size : \{$ordered_symbols\}"
+        }
+    }
+    lappend used_stack $symbol
+
+    set _compileproc_expr_value_stack(ordered_symbols) $ordered_symbols
+    set _compileproc_expr_value_stack(used_stack) $used_stack
+
+#    if {$debug} {
+#        puts "post compileproc_expr_value_stack_get: $symbol"
+#        puts "ordered_symbols is \{$_compileproc_expr_value_stack(ordered_symbols)\}"
+#        puts "used_stack is \{$_compileproc_expr_value_stack(used_stack)\}"
+#    }
+
+    return $symbol
+}
+
+proc compileproc_expr_value_stack_release { symbol } {
+    global _compileproc_expr_value_stack
+
+#    set debug 0
+
+#    if {$debug} {
+#        puts "compileproc_expr_value_stack_release: $symbol"
+#        puts "ordered_symbols is \{$_compileproc_expr_value_stack(ordered_symbols)\}"
+#        puts "used_stack is \{$_compileproc_expr_value_stack(used_stack)\}"
+#    }
+
+    if {[info exists _compileproc_expr_value_stack(alias,$symbol)]} {
+#        if {$debug} {
+#            puts "$symbol is an alias for $_compileproc_expr_value_stack(alias,$symbol)"
+#        }
+        set top $_compileproc_expr_value_stack(alias,$symbol)
+        unset _compileproc_expr_value_stack(alias,$symbol)
+        set symbol $top
+    }
+
+    # Released symbol must be on top of the used stack
+
+    set used_stack $_compileproc_expr_value_stack(used_stack)
+
+    set top [lindex $used_stack end]
+    if {$symbol ne $top} {
+        error "released symbol $symbol is not at the top of the stack \{$used_stack\}"
+    }
+
+    # Pop symbol off used stack and reset it
+    set used_stack [lreplace $used_stack end end]
+    set _compileproc_expr_value_stack(used_stack) $used_stack
+
+#    if {$debug} {
+#        puts "post compileproc_expr_value_stack_release: $symbol"
+#        puts "ordered_symbols is \{$_compileproc_expr_value_stack(ordered_symbols)\}"
+#        puts "used_stack is \{$_compileproc_expr_value_stack(used_stack)\}"
+#    }
+
+    return
+}
+
+# Create alias from a local to an expr value local.
+# This tricky little bit of code is needed so that
+# an alias symbol can be released instread of
+# the actual expr value symbol on the stack.
+
+proc compileproc_expr_value_stack_alias { alias symbol } {
+    global _compileproc_expr_value_stack
+    set _compileproc_expr_value_stack(alias,$alias) $symbol
+    return
+}
+
+proc compileproc_expr_value_stack_lookup_alias { alias } {
+    return $::_compileproc_expr_value_stack(alias,$alias)
+}
+
+# Return a buffer that declares local ExprValue variables
+# and grabs values from the runtime pool.
+
+proc compileproc_expr_value_stack_generate {} {
+    global _compileproc_expr_value_stack
+
+    set buffer ""
+
+    foreach symbol $_compileproc_expr_value_stack(ordered_symbols) {
+        append buffer [emitter_indent] \
+            "ExprValue $symbol = TJC.exprGetValue(interp)\;\n"
+    }
+
+    return $buffer
+}
+
+# Return a buffer that releases a local ExprValue
+# back into the runtime pool of objects.
+
+proc compileproc_expr_value_stack_release_generate {} {
+    global _compileproc_expr_value_stack
+
+    set buffer ""
+
+    # Release most recently grabbed values first
+    # so that cache is refreshed with newer
+    # generation objects.
+
+    set ordered_symbols $_compileproc_expr_value_stack(ordered_symbols)
+    set i [llength $ordered_symbols]
+    incr i -1
+
+    set expr_value_stack_null $::_compileproc(options,expr_value_stack_null)
+
+    for {} {$i >= 0} {incr i -1} {
+        set symbol [lindex $ordered_symbols $i]
+
+        # If expr value stack null is enabled, an
+        # error could cause execution to jump
+        # to the finally block without resetting
+        # the ExprValue on the stack. Just ignore
+        # a null value in this case.
+
+        if {$expr_value_stack_null} {
+            append buffer \
+                [emitter_indent] \
+                "if ( $symbol != null ) \{ TJC.exprReleaseValue(interp, $symbol)\; \}\n"
+        } else {
+            append buffer \
+                [emitter_indent] \
+                "TJC.exprReleaseValue(interp, $symbol)\;\n"
+        }
+    }
 
     return $buffer
 }
@@ -4635,6 +4851,28 @@ proc compileproc_query_module_flags { proc_name } {
     }
     if {$inline_expr_option} {
         set _compileproc(options,expr_inline_operators) 1
+
+        # The -inline-expr-value-stack and
+        # +inline-expr-value-stack-null options
+        # can be used to disable the stack expr
+        # value feature and enable debug nulling
+        # of stack values.
+
+        set inline_expr_value_stack_option \
+            [module_option_value inline-expr-value-stack $proc_name]
+        if {$inline_expr_value_stack_option == {}} {
+            set inline_expr_value_stack_option \
+                [module_option_value inline-expr-value-stack]
+        }
+        set _compileproc(options,expr_value_stack) $inline_expr_value_stack_option
+
+        set inline_expr_value_stack_null_option \
+            [module_option_value inline-expr-value-stack-null $proc_name]
+        if {$inline_expr_value_stack_null_option == {}} {
+            set inline_expr_value_stack_null_option \
+                [module_option_value inline-expr-value-stack-null]
+        }
+        set _compileproc(options,expr_value_stack_null) $inline_expr_value_stack_null_option
     }
 
 #    if {$debug} {
@@ -4648,6 +4886,8 @@ proc compileproc_query_module_flags { proc_name } {
 #        puts "omit_results = $_compileproc(options,omit_results)"
 
 #        puts "expr_inline_operators = $_compileproc(options,expr_inline_operators)"
+#        puts "expr_value_stack = $_compileproc(options,expr_value_stack)"
+#        puts "expr_value_stack_null = $_compileproc(options,expr_value_stack_null)"
 #    }
 }
 
@@ -7027,6 +7267,9 @@ proc compileproc_expr_evaluate_emit_ternary_operator { op_tuple } {
 
     #puts "compileproc_expr_evaluate_emit_ternary_operator \{$op_tuple\}"
 
+    set buffer ""
+    set op_buffer ""
+
     set vtuple [lindex $op_tuple 1]
     set op [lindex $vtuple 0]
     set values [lindex $vtuple 1]
@@ -7037,41 +7280,77 @@ proc compileproc_expr_evaluate_emit_ternary_operator { op_tuple } {
             values_list was \{$values\}"
     }
 
+    # Emit code to evaluate condition value
+
     set cond_tuple [lindex $values 0]
     set cond_eval_tuple [compileproc_expr_evaluate_emit_exprvalue $cond_tuple]
+    set cond_infostr [lindex $cond_eval_tuple 0]
+    set ev1 [lindex $cond_eval_tuple 1]
+
+    append op_buffer [lindex $cond_eval_tuple 2]
+
+    # Emit code to evaluate true value
 
     set true_tuple [lindex $values 1]
     set true_eval_tuple [compileproc_expr_evaluate_emit_exprvalue $true_tuple]
+    set true_infostr [lindex $true_eval_tuple 0]
+    set ev2 [lindex $true_eval_tuple 1]
+
+    append op_buffer \
+        [emitter_indent] \
+        "if (" $ev1 ".getBooleanValue(interp)) \{\n" \
+        [lindex $true_eval_tuple 2]
+
+    if {$_compileproc(options,expr_value_stack)} {
+        # Copy ev2 into ev1, then release ev2
+        append op_buffer \
+            [emitter_indent] \
+            $ev1 ".setValue(" $ev2 ")" "\;\n" \
+            [compileproc_emit_exprvalue_release $ev2]
+    } else {
+        # Release ev1, then assign ev2 to ev1
+        append op_buffer \
+            [compileproc_emit_exprvalue_release $ev1] \
+            [emitter_indent] \
+            $ev1 " = " $ev2 "\;\n"
+    }
+
+    append op_buffer \
+        [emitter_indent] \
+        "\} else \{\n"
+
+    # Emit code to evaluate false value
 
     set false_tuple [lindex $values 2]
     set false_eval_tuple [compileproc_expr_evaluate_emit_exprvalue $false_tuple]
-
-    set cond_infostr [lindex $cond_eval_tuple 0]
-    set true_infostr [lindex $true_eval_tuple 0]
     set false_infostr [lindex $false_eval_tuple 0]
-
-    set ev1 [lindex $cond_eval_tuple 1]
-    set ev2 [lindex $true_eval_tuple 1]
     set ev3 [lindex $false_eval_tuple 1]
+
+    append op_buffer \
+        [lindex $false_eval_tuple 2]
+
+    if {$_compileproc(options,expr_value_stack)} {
+        # Copy ev3 into ev1, then release ev3
+        append op_buffer \
+            [emitter_indent] \
+            $ev1 ".setValue(" $ev3 ")" "\;\n" \
+            [compileproc_emit_exprvalue_release $ev3]
+    } else {
+        # Release ev1, then assign ev3 to ev1
+        append op_buffer \
+            [compileproc_emit_exprvalue_release $ev1] \
+            [emitter_indent] \
+            $ev1 " = " $ev3 "\;\n"
+    }
+
+    append op_buffer \
+        [emitter_indent] \
+        "\}\n"
 
     append buffer \
         [emitter_indent] \
         "// Ternary operator: " $cond_infostr " ? " $true_infostr " : " $false_infostr "\n" \
-        [lindex $cond_eval_tuple 2] \
-        [emitter_indent] \
-        "if (" $ev1 ".getBooleanValue(interp)) \{\n" \
-        [lindex $true_eval_tuple 2] \
-        [compileproc_emit_exprvalue_release $ev1] \
-        [emitter_indent] \
-        $ev1 " = " $ev2 "\;\n" \
-        [emitter_indent] \
-        "\} else \{\n" \
-        [lindex $false_eval_tuple 2] \
-        [compileproc_emit_exprvalue_release $ev1] \
-        [emitter_indent] \
-        $ev1 " = " $ev3 "\;\n" \
-        [emitter_indent] \
-        "\}\n" \
+        $op_buffer \
         [emitter_indent] \
         "// End Ternary operator: ?\n"
 
@@ -7563,12 +7842,18 @@ proc compileproc_expr_evaluate_emit_exprvalue { tuple {genflags {}} } {
 
 # symbol: The ExprValue symbol to be declared
 # value_type: Type of next argument, either int, double,
-#     boolean, TclObject, String, or ""
+#     boolean, TclObject, String, or "" (for no init)
 # value:  A value of type indicated by value_type, or ""
 # srep:   String rep of value (can be null), or "".
 
-proc compileproc_emit_exprvalue_get { symbol value_type value {srep ""} } {
+proc compileproc_emit_exprvalue_get { symbol value_type value {srep __TJC_NONE} } {
     global _compileproc
+
+#    set debug 0
+
+#    if {$debug} {
+#        puts "compileproc_emit_exprvalue_get $symbol $value_type ->$value<- \"$srep\""
+#    }
 
     # Validate value_type argument
     switch -exact -- $value_type {
@@ -7591,9 +7876,9 @@ proc compileproc_emit_exprvalue_get { symbol value_type value {srep ""} } {
     if {! $_compileproc(options,expr_value_stack)} {
         # Invoke overloaded TJC.exprGetValue() method
 
-        if {$value == ""} {
+        if {$value_type == "" && $value == ""} {
             append buffer "TJC.exprGetValue(interp)" "\;\n"
-        } elseif {$srep == ""} {
+        } elseif {$srep == "__TJC_NONE"} {
             append buffer "TJC.exprGetValue(interp, " $value ")" "\;\n"
         } else {
             append buffer "TJC.exprGetValue(interp, " $value ", " $srep ")" "\;\n"
@@ -7601,7 +7886,76 @@ proc compileproc_emit_exprvalue_get { symbol value_type value {srep ""} } {
     } else {
         # Get ExprValue symbol from the stack
 
-        error "unimplemented"
+        set stack_sym [compileproc_expr_value_stack_get]
+        compileproc_expr_value_stack_alias $symbol $stack_sym
+
+        append buffer $stack_sym "\;\n"
+
+        # If special debug flag is set, then null the
+        # expr value initialized at the start of the
+        # method. This will generate a NPE if some
+        # generation logic caused the same slot to
+        # be used more than once.
+
+        if {$_compileproc(options,expr_value_stack_null)} {
+            append buffer \
+                [emitter_indent] \
+                $stack_sym " = null" \
+                "\;\n"
+        }
+
+        if {$value_type == "" && $value == ""} {
+            # Get ExprValue but don't initialize it
+        } else {
+            # Invoke type specific initilization method
+
+            if {$srep == "__TJC_NONE" || $srep == "null"} {
+                set args $value
+            } else {
+                set args "$value, $srep"
+            }
+
+            append buffer [emitter_indent]
+ 
+            switch -exact -- $value_type {
+                "int" {
+                    append buffer \
+                        $symbol ".setIntValue(" $args ")"
+                }
+                "double" {
+                    append buffer \
+                        $symbol ".setDoubleValue(" $args ")"
+                }
+                "boolean" {
+                    append buffer \
+                        $symbol ".setIntValue(" $args ")"
+                }
+                "TclObject" {
+                    # Parse TclObject value into ExprValue
+                    if {$args ne $value} {
+                        error "unexpected string rep \"$srep\" for TclObject type"
+                    }
+                    append buffer \
+                        "TJC.exprInitValue(interp, $symbol, $value)"
+                }
+                "String" {
+                    # String value never has a string rep
+                    if {$args ne $value} {
+                        error "unexpected string rep \"$srep\" for String type"
+                    }
+                    append buffer \
+                        $symbol ".setStringValue(" $value ")"
+                }
+                "" {
+                    error "unexpected empty string as value_type"
+                }
+                default {
+                    error "unmatched value_type \"$value_type\""
+                }
+            }
+
+            append buffer "\;\n"
+        }
     }
 
     return $buffer
@@ -7617,6 +7971,27 @@ proc compileproc_emit_exprvalue_get { symbol value_type value {srep ""} } {
 
 proc compileproc_emit_exprvalue_release { symbol } {
     global _compileproc
+
+    if {$_compileproc(options,expr_value_stack)} {
+        set buffer ""
+
+        # If special flag to enable nulling of grabbed
+        # ExprValue was on, then reset the alias value.
+
+        if {$_compileproc(options,expr_value_stack_null)} {
+            set ev [compileproc_expr_value_stack_lookup_alias $symbol]
+
+            append buffer \
+                [emitter_indent] \
+                $ev " = " $symbol \
+                "\;\n"
+        }
+
+        # Release the ExprValue symbol (it is actualy an alias)
+        compileproc_expr_value_stack_release $symbol
+
+        return $buffer
+    }
 
     set buffer ""
     append buffer \

@@ -4,7 +4,12 @@
 # in order to get specific measurements about
 # how the API performs on its own.
 
+if {[catch {
 package require TJC
+}]} {
+    return
+}
+
 
 set tuples [list \
     {internal-tclobject-preserve tcl.lang.TJCBench InternalTclObjectPreserve} \

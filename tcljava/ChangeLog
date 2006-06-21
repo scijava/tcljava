@@ -1,3 +1,35 @@
+2006-06-20  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/tjc/tjc/library/compileproc.tcl:
+        Implement stack based expr values by
+        adding or updating compileproc_init,
+        compileproc_compile,
+        compileproc_variable_cache_names_array,
+        compileproc_expr_value_stack_is_used,
+        compileproc_expr_value_stack_get,
+        compileproc_expr_value_stack_release,
+        compileproc_expr_value_stack_alias,
+        compileproc_expr_value_stack_lookup_alias,
+        compileproc_expr_value_stack_generate,
+        compileproc_expr_value_stack_release_generate,
+        compileproc_expr_evaluate_emit_ternary_operator,
+        compileproc_emit_exprvalue_get, and
+        compileproc_emit_exprvalue_release. This
+        change will store an ExprValue ref on the
+        stack and then use these refs in every
+        expr expression evaluation in the command.
+        Update the ternary operator since the values
+        need to be released back onto the stack as
+        they are processed.
+        * src/tjc/tjc/library/emitter.tcl: Add
+        a finally buffer argument to the
+        emitter_callframe_pop command.
+        * src/tjc/tjc/library/module.tcl: Add
+        support for -inline-expr-value-stack
+        and +inline-expr-value-stack-null options.
+        * tests/tjc/compileproc_9.test: Add test
+        cases for expr stack values logic.
+
 2006-06-19  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * jaclsh.bat.in: Include existing JAVA_FLAGS
