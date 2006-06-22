@@ -1,3 +1,16 @@
+2006-06-21  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/tjc/tcl/lang/TJCBench.java: Add possible
+        implementations for unary not operator.
+        * src/tjc/tjc/library/compileproc.tcl:
+        Rewrite compileproc_expr_evaluate_emit_binary_operator
+        and add so that expr logic and equals operators
+        are generated in util methods named
+        compileproc_expr_evaluate_emit_binary_equals_operator
+        and compileproc_expr_evaluate_emit_binary_logic_operator.
+        This makes no changes to emitted code.
+        * tests/tclbench/internal.bench: Invoke new bench tests.
+
 2006-06-20  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/tjc/tjc/library/compileproc.tcl:

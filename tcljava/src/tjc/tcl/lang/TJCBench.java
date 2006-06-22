@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TJCBench.java,v 1.9 2006/06/20 01:48:23 mdejong Exp $
+ * RCS: @(#) $Id: TJCBench.java,v 1.10 2006/06/22 06:21:27 mdejong Exp $
  *
  */
 
@@ -88,8 +88,18 @@ public class TJCBench extends TJC.CompiledCommand {
              InternalTclDoubleGet(interp);
         } else if (testname.equals("InternalExprGetKnownDouble")) {
              InternalExprGetKnownDouble(interp);
+        } else if (testname.equals("InternalExprInlinedIntNotOperator")) {
+             InternalExprInlinedIntNotOperator(interp);
+        } else if (testname.equals("InternalExprInlinedIntNotBitwiseOperator")) {
+             InternalExprInlinedIntNotBitwiseOperator(interp);
+        } else if (testname.equals("InternalExprValueIntNotOperator")) {
+             InternalExprValueIntNotOperator(interp);
+        } else if (testname.equals("InternalExprValueIntNotNstrOperator")) {
+             InternalExprValueIntNotNstrOperator(interp);
         } else if (testname.equals("InternalSetTclObjectResult")) {
              InternalSetTclObjectResult(interp);
+        } else if (testname.equals("InternalSetSameTclObjectResult")) {
+             InternalSetSameTclObjectResult(interp);
         } else if (testname.equals("InternalResetResult")) {
              InternalResetResult(interp);
         } else if (testname.equals("InternalSetBooleanResult")) {
@@ -112,6 +122,18 @@ public class TJCBench extends TJC.CompiledCommand {
              InternalExprOpIntNotStackValueResult(interp);
         } else if (testname.equals("InternalExprOpIntNotStackValueIntResult")) {
              InternalExprOpIntNotStackValueIntResult(interp);
+        } else if (testname.equals("InternalExprOpIntNotStackValueBooleanResult")) {
+             InternalExprOpIntNotStackValueBooleanResult(interp);
+        } else if (testname.equals("InternalExprOpIntNotStackValueBooleanLookupResult")) {
+             InternalExprOpIntNotStackValueBooleanLookupResult(interp);
+        } else if (testname.equals("InternalExprOpIntInlinedNotStackValueResult")) {
+             InternalExprOpIntInlinedNotStackValueResult(interp);
+        } else if (testname.equals("InternalExprOpIntInlinedNotNstrStackValueResult")) {
+             InternalExprOpIntInlinedNotNstrStackValueResult(interp);
+        } else if (testname.equals("InternalExprOpIntInlinedNotNstrStackValueIntResult")) {
+             InternalExprOpIntInlinedNotNstrStackValueIntResult(interp);
+        } else if (testname.equals("InternalExprOpIntInlinedNotNstrStackValueBooleanResult")) {
+             InternalExprOpIntInlinedNotNstrStackValueBooleanResult(interp);
         } else {
              throw new TclException(interp, "unknown test name \"" + testname + "\"");
         }
@@ -563,15 +585,103 @@ public class TJCBench extends TJC.CompiledCommand {
     // is no double field to access.
 
 
+    // Integer not operator as inlined logic
+
+    void InternalExprInlinedIntNotOperator(Interp interp)
+        throws TclException
+    {
+        int v = 1;
+
+        for (int i=0; i < 5000; i++) {
+            v = ((v == 0) ? 1 : 0);
+        }
+        RESULT_INT = v;
+    }
+
+    // Integer not operator as inlined bitwise operation
+
+    void InternalExprInlinedIntNotBitwiseOperator(Interp interp)
+        throws TclException
+    {
+        int v = 1;
+
+        for (int i=0; i < 5000; i++) {
+            v = ((v | -v) >>> 31) ^ 1;
+        }
+        RESULT_INT = v;
+    }
+
+    // Integer not operator via ExprValue.optIntUnaryNot() method
+
+    void InternalExprValueIntNotOperator(Interp interp)
+        throws TclException
+    {
+        ExprValue ev = new ExprValue(1, null);
+
+        for (int i=0; i < 5000; i++) {
+            ev.optIntUnaryNot();
+        }
+        RESULT_INT = ev.getIntValue();
+    }
+
+    // Integer not operator via ExprValue.optIntUnaryNotNstr() method.
+    // Unlike optIntUnaryNot, this method does not null out the
+    // string value.
+
+    void InternalExprValueIntNotNstrOperator(Interp interp)
+        throws TclException
+    {
+        ExprValue ev = new ExprValue(1, null);
+
+        for (int i=0; i < 5000; i++) {
+            ev.optIntUnaryNotNstr();
+        }
+        RESULT_INT = ev.getIntValue();
+    }
+
     // Establish timing results for integer.setResult(TclObject).
+    // Note that we need to use two different TclObject values
+    // here to avoid an optimization in setResult() that
+    // returns right away when the same result is set again.
+    // There also need to be two set operations in the loop
+    // so we can compare to the int/boolean operations below.
 
     void InternalSetTclObjectResult(Interp interp)
         throws TclException
     {
-        TclObject tobj = TclInteger.newInstance(1);
+        TclObject tobj1 = TclInteger.newInstance(1);
+        TclObject tobj2 = TclInteger.newInstance(2);
+
+        // Make the objects shared so that they don't
+        // get deallocated when the interp result
+        // is changed.
+        tobj1.preserve();
+        tobj1.preserve();
+        tobj2.preserve();
+        tobj2.preserve();
 
         for (int i=0; i < 5000; i++) {
-            interp.setResult(tobj);
+            interp.setResult(tobj1);
+            interp.setResult(tobj2);
+        }
+        RESULT_INT = TclInteger.get(interp, interp.getResult());
+    }
+
+    // Invoke integer.setResult(TclObject) over and over
+    // again on the same TclObject. This should execute
+    // very quickly since the setResult() API contains
+    // a short circut return in this case.
+
+    void InternalSetSameTclObjectResult(Interp interp)
+        throws TclException
+    {
+        TclObject tobj1 = TclInteger.newInstance(1);
+        tobj1.preserve();
+        tobj1.preserve();
+
+        for (int i=0; i < 5000; i++) {
+            interp.setResult(tobj1);
+            interp.setResult(tobj1);
         }
         RESULT_INT = TclInteger.get(interp, interp.getResult());
     }
@@ -582,6 +692,7 @@ public class TJCBench extends TJC.CompiledCommand {
         throws TclException
     {
         for (int i=0; i < 5000; i++) {
+            interp.resetResult();
             interp.resetResult();
         }
         RESULT_OBJ = interp.getResult();
@@ -737,7 +848,12 @@ public class TJCBench extends TJC.CompiledCommand {
     // logical ! operator with +inline-containers.
     // This code will grab an ExprValue, init it,
     // invoke the operator method, and then
-    // set the interp result.
+    // set the interp result. Note that because
+    // the interp is set to the int 0 over
+    // and over again, short circut logic
+    // in the setResult(TclObject) method
+    // will return right away since the new
+    // value is the same as the existing result.
 
     void InternalExprOpIntNotGrabReleaseResult(Interp interp)
         throws TclException
@@ -759,6 +875,8 @@ public class TJCBench extends TJC.CompiledCommand {
     // this implementation will reuse an ExprValue
     // saved on the stack and avoid having to
     // grab and release during each loop iteration.
+    // This implementation should be the baseline
+    // for optimized not operator implementations.
 
     void InternalExprOpIntNotStackValueResult(Interp interp)
         throws TclException
@@ -797,6 +915,169 @@ public class TJCBench extends TJC.CompiledCommand {
             tmp0.setIntValue(1);
             TJC.exprUnaryOperator(interp, TJC.EXPR_OP_UNARY_NOT, tmp0);
             interp.setResult( tmp0.getIntValue() );
+        }
+        RESULT_INT = TclInteger.get(interp, interp.getResult());
+    }
+
+    // This method is like InternalExprOpIntNotStackValueIntResult
+    // except that it invokes Interp.setResult(boolean) to
+    // directly set the result to a boolean value.
+
+    void InternalExprOpIntNotStackValueBooleanResult(Interp interp)
+        throws TclException
+    {
+        // expr {!1}
+
+        ExprValue evs0 = TJC.exprGetValue(interp);
+
+        for (int i=0; i < 5000; i++) {
+            ExprValue tmp0 = evs0;
+            tmp0.setIntValue(1);
+            TJC.exprUnaryOperator(interp, TJC.EXPR_OP_UNARY_NOT, tmp0);
+            interp.setResult( (tmp0.getIntValue() != 0) );
+        }
+        RESULT_INT = TclInteger.get(interp, interp.getResult());
+    }
+
+    // This method implements an optimization that looks up
+    // the ref used for the boolean true and false objects
+    // and then invokes Interp.setResult(TclObject) with
+    // the object as the argument. Both the Interp.setResult(int)
+    // and Interp.setResult(boolean) methods execute in
+    // about the same amount of time for true/false values.
+    // This logic does the true/false symbol lookup inline.
+
+    void InternalExprOpIntNotStackValueBooleanLookupResult(Interp interp)
+        throws TclException
+    {
+        // expr {!1}
+
+        ExprValue evs0 = TJC.exprGetValue(interp);
+
+        interp.setResult(true);
+        TclObject trueRef = interp.getResult();
+        interp.setResult(false);
+        TclObject falseRef = interp.getResult();
+
+        for (int i=0; i < 5000; i++) {
+            ExprValue tmp0 = evs0;
+            tmp0.setIntValue(1);
+            TJC.exprUnaryOperator(interp, TJC.EXPR_OP_UNARY_NOT, tmp0);
+            interp.setResult( (tmp0.getIntValue() != 0) ? trueRef : falseRef );
+        }
+        RESULT_INT = TclInteger.get(interp, interp.getResult());
+    }
+
+    // This optimized logic will check the type of an
+    // ExprValue operand and inline a call to a
+    // specific optimized method for the ExprValue.
+    // This should execute significantly faster
+    // than the TJC.exprUnaryOperator() call found in
+    // InternalExprOpIntNotStackValueResult().
+    // Note that exprSetResult() can end up executing
+    // very quickly when the same value is set
+    // as the result twice.
+
+    void InternalExprOpIntInlinedNotStackValueResult(Interp interp)
+        throws TclException
+    {
+        // expr {!1}
+
+        ExprValue evs0 = TJC.exprGetValue(interp);
+
+        for (int i=0; i < 5000; i++) {
+            ExprValue tmp0 = evs0;
+            tmp0.setIntValue(1);
+            // Use optimized impl when ExprValue is known to be an int.
+            if ( tmp0.isIntType() ) {
+                tmp0.optIntUnaryNot();
+            } else {
+                //TJC.exprUnaryOperator(interp, TJC.EXPR_OP_UNARY_NOT, tmp0);
+                throw new TclRuntimeError("else branch reached");
+            }
+            TJC.exprSetResult(interp, tmp0);
+        }
+        RESULT_INT = TclInteger.get(interp, interp.getResult());
+    }
+
+    // This implementation is like InternalExprOpIntInlinedNotStackValueResult
+    // except that it invokes optIntUnaryNotNstr() which does not null
+    // the string value. If this shaves a few ms off the execution time
+    // then it is worthwhile to implement in compiled code.
+
+    void InternalExprOpIntInlinedNotNstrStackValueResult(Interp interp)
+        throws TclException
+    {
+        // expr {!1}
+
+        ExprValue evs0 = TJC.exprGetValue(interp);
+
+        for (int i=0; i < 5000; i++) {
+            ExprValue tmp0 = evs0;
+            tmp0.setIntValue(1);
+            // Use optimized impl when ExprValue is known to be an int
+            // that has no string value.
+            if ( tmp0.isIntType() ) {
+                tmp0.optIntUnaryNotNstr();
+            } else {
+                //TJC.exprUnaryOperator(interp, TJC.EXPR_OP_UNARY_NOT, tmp0);
+                throw new TclRuntimeError("else branch reached");
+            }
+            TJC.exprSetResult(interp, tmp0);
+        }
+        RESULT_INT = TclInteger.get(interp, interp.getResult());
+    }
+
+    // This implementation takes advantage of the inlined not
+    // operator logic and the int result set logic. This method
+    // should indicate how much faster the implementation can
+    // be made compared to InternalExprOpIntNotStackValueResult.
+
+    void InternalExprOpIntInlinedNotNstrStackValueIntResult(Interp interp)
+        throws TclException
+    {
+        // expr {!1}
+
+        ExprValue evs0 = TJC.exprGetValue(interp);
+
+        for (int i=0; i < 5000; i++) {
+            ExprValue tmp0 = evs0;
+            tmp0.setIntValue(1);
+            // Use optimized impl when ExprValue is known to be an int
+            // that has no string value.
+            if ( tmp0.isIntType() ) {
+                tmp0.optIntUnaryNotNstr();
+            } else {
+                //TJC.exprUnaryOperator(interp, TJC.EXPR_OP_UNARY_NOT, tmp0);
+                throw new TclRuntimeError("else branch reached");
+            }
+            interp.setResult( tmp0.getIntValue() );
+        }
+        RESULT_INT = TclInteger.get(interp, interp.getResult());
+    }
+
+    // Like InternalExprOpIntInlinedNotNstrStackValueIntResult
+    // except makes use of interp.setResult(boolean).
+
+    void InternalExprOpIntInlinedNotNstrStackValueBooleanResult(Interp interp)
+        throws TclException
+    {
+        // expr {!1}
+
+        ExprValue evs0 = TJC.exprGetValue(interp);
+
+        for (int i=0; i < 5000; i++) {
+            ExprValue tmp0 = evs0;
+            tmp0.setIntValue(0);
+            // Use optimized impl when ExprValue is known to be an int
+            // that has no string value.
+            if ( tmp0.isIntType() ) {
+                tmp0.optIntUnaryNotNstr();
+            } else {
+                //TJC.exprUnaryOperator(interp, TJC.EXPR_OP_UNARY_NOT, tmp0);
+                throw new TclRuntimeError("else branch reached");
+            }
+            interp.setResult( (tmp0.getIntValue() != 0) );
         }
         RESULT_INT = TclInteger.get(interp, interp.getResult());
     }

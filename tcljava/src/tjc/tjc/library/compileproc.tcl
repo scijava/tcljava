@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: compileproc.tcl,v 1.29 2006/06/21 02:43:27 mdejong Exp $
+#  RCS: @(#) $Id: compileproc.tcl,v 1.30 2006/06/22 06:21:27 mdejong Exp $
 #
 #
 
@@ -6757,13 +6757,14 @@ proc compileproc_expr_evaluate_emit_unary_operator { op_tuple } {
 proc compileproc_expr_evaluate_emit_binary_operator { op_tuple } {
     global _compileproc
 
-    set debug 0
+#    set debug 0
 
-    if {$debug} {
-        puts "compileproc_expr_evaluate_emit_binary_operator \{$op_tuple\}"
-    }
+#    if {$debug} {
+#        puts "compileproc_expr_evaluate_emit_binary_operator \{$op_tuple\}"
+#    }
 
     set buffer ""
+    set op_buffer ""
 
     set type [lindex $op_tuple 0]
     if {$type != {binary operator}} {
@@ -6781,7 +6782,9 @@ proc compileproc_expr_evaluate_emit_binary_operator { op_tuple } {
     }
 
     # Figure out which operator this is
-    set logic_op 0 ; # true if && or || operators
+
+    set logic_op 0 ; # true if && or || operator
+    set equals_op 0 ; # true if == != eq or ne operator
 
     switch -exact -- $op {
         "*" {
@@ -6819,9 +6822,11 @@ proc compileproc_expr_evaluate_emit_binary_operator { op_tuple } {
         }
         "==" {
             set opval TJC.EXPR_OP_EQUAL
+            set equals_op 1
         }
         "!=" {
             set opval TJC.EXPR_OP_NEQ
+            set equals_op 1
         }
         "&" {
             set opval TJC.EXPR_OP_BIT_AND
@@ -6834,9 +6839,11 @@ proc compileproc_expr_evaluate_emit_binary_operator { op_tuple } {
         }
         "eq" {
             set opval TJC.EXPR_OP_STREQ
+            set equals_op 1
         }
         "ne" {
             set opval TJC.EXPR_OP_STRNEQ
+            set equals_op 1
         }
         "&&" -
         "||" {
@@ -6864,6 +6871,104 @@ proc compileproc_expr_evaluate_emit_binary_operator { op_tuple } {
 #        puts "right_peek_tuple is \{$right_peek_tuple\}"
 #    }
 
+    set left_infostr [lindex $left_peek_tuple 3]
+    set right_infostr [lindex $right_peek_tuple 3]
+
+    # Generate code to evaluate left and right operands
+    # for logic and generic operator cases.
+
+    if {$equals_op} {
+        set op_tuple [compileproc_expr_evaluate_emit_binary_equals_operator \
+            $op $left_tuple $left_peek_tuple $right_tuple $right_peek_tuple]
+    } elseif {$logic_op} {
+        set op_tuple [compileproc_expr_evaluate_emit_binary_logic_operator \
+            $op $left_tuple $left_peek_tuple $right_tuple $right_peek_tuple]
+    } else {
+        set op_tuple {}
+    }
+
+    if {$op_tuple != {}} {
+        set ev1 [lindex $op_tuple 0]
+        set op_buffer [lindex $op_tuple 1]
+    } else {
+        # Append code to evaluate left and right values and
+        # invoke the binary operator evaluation method.
+
+        set left_eval_tuple [compileproc_expr_evaluate_emit_exprvalue \
+            $left_tuple]
+        set right_eval_tuple [compileproc_expr_evaluate_emit_exprvalue \
+            $right_tuple]
+
+        set ev1 [lindex $left_eval_tuple 1]
+        set ev2 [lindex $right_eval_tuple 1]
+
+        append op_buffer \
+            [lindex $left_eval_tuple 2] \
+            [lindex $right_eval_tuple 2]
+
+        # Emit TJC binary operator invocation
+        append op_buffer [emitter_indent] \
+            "TJC.exprBinaryOperator(interp, " $opval ", " $ev1 ", " $ev2 ")\;\n" \
+            [compileproc_emit_exprvalue_release $ev2]
+    }
+
+    # Printable info describing this operator and
+    # the left and right operands:
+
+    append buffer [emitter_indent] \
+        "// Binary operator: " $left_infostr " " $op " " $right_infostr "\n" \
+        $op_buffer \
+        [emitter_indent] \
+        "// End Binary operator: " $op "\n"
+
+    return [list $ev1 $buffer]
+}
+
+# FIXME: Cleanup binary operator function by moving logic
+# related to emotting of special cases into operator
+# specific function. Then, these operator specific
+# functions can be invoked on a per-operator basis.
+
+if {0} {
+
+MATH (* / + -) (no strings allowed)
+
+MATH (%) (only int)
+
+BIT (<< >> & ^ |) (only int)
+
+COMPARE (< > <= >=) (any, operands converted)
+
+EQUALS (== != eq ne) (any, eq ne not converted)
+
+LOGIC (&& ||) (no strings, no conversion)
+
+}
+
+# Emit code for the ==, !=, eq, and ne operators.
+# These equals operators accept any type.
+# The == and != operators will convert operands
+# so that the types match. This method will
+# return a tuple consisting of:
+# {EXPRVALUE_SYMBOL BUFFER}
+
+proc compileproc_expr_evaluate_emit_binary_equals_operator {
+        op left_tuple left_peek_tuple right_tuple right_peek_tuple } {
+    global _compileproc
+
+#    set debug 0
+
+#    if {$debug} {
+#        puts "compileproc_expr_evaluate_emit_binary_equals_operator $op \
+#            \{$left_tuple\} \{$left_peek_tuple\} \{$right_tuple\} \{$right_peek_tuple\}"
+#    }
+
+    if {$op != "==" && $op != "!=" && $op != "eq" && $op != "ne"} {
+        error "operator \"$op\" is not an equals operator"
+    }
+
+    set op_buffer ""
+
     # Check for the common special case of comparing a
     # TclObject to the empty string. This check will
     # work for a variable that has been resolved into
@@ -6879,13 +6984,10 @@ proc compileproc_expr_evaluate_emit_binary_operator { op_tuple } {
 # FIXME: Currently, the IS_STRING_VALUE_NULL value is ignored
 # in the right_peek_tuple here??
 
-    set left_infostr [lindex $left_peek_tuple 3]
-    set right_infostr [lindex $right_peek_tuple 3]
-
     set is_tclobject_string_compare 0
 
     # These flags are set to 1 to indicate that a specific
-    # optimized case has been found.    
+    # optimized case has been found.
     set opt_tclobject_empty_string_compare 0
     set opt_tclobject_string_compare 0
     set opt_tclobject_to_tclobject_string_compare 0
@@ -6899,13 +7001,13 @@ proc compileproc_expr_evaluate_emit_binary_operator { op_tuple } {
 
     set is_any_optimized_op 0
 
-    if {$debug} {
-        puts "pre empty_string_compare check: op is $op"
-        puts "left_value_info_type $left_value_info_type"
-        puts "left_value_info_value ->$left_value_info_value<-"
-        puts "right_value_info_type $right_value_info_type"
-        puts "right_value_info_value ->$right_value_info_value<-"
-    }
+#    if {$debug} {
+#        puts "pre empty_string_compare check: op is $op"
+#        puts "left_value_info_type $left_value_info_type"
+#        puts "left_value_info_value ->$left_value_info_value<-"
+#        puts "right_value_info_type $right_value_info_type"
+#        puts "right_value_info_value ->$right_value_info_value<-"
+#    }
 
     # Check for a string compare like {$v == "foo"} or {"foo" == $v}
  
@@ -6917,8 +7019,7 @@ proc compileproc_expr_evaluate_emit_binary_operator { op_tuple } {
         set is_left_operand_tclobject [expr {$left_value_info_type == "TclObject"}]
     }
 
-    if {$is_tclobject_string_compare && \
-            ($op == "==" || $op == "!=" || $op == "eq" || $op == "ne")} {
+    if {$is_tclobject_string_compare} {
         if {$is_left_operand_tclobject} {
             set str $right_value_info_value
         } else {
@@ -6963,17 +7064,17 @@ proc compileproc_expr_evaluate_emit_binary_operator { op_tuple } {
         }
     }
 
-    if {$debug} {
-        puts "post empty_string_compare check: op is $op"
-        puts "is_tclobject_string_compare $is_tclobject_string_compare"
-        puts "is_left_operand_tclobject $is_left_operand_tclobject"
+#    if {$debug} {
+#        puts "post empty_string_compare check: op is $op"
+#        puts "is_tclobject_string_compare $is_tclobject_string_compare"
+#        puts "is_left_operand_tclobject $is_left_operand_tclobject"
 
-        puts "is_any_optimized_op $is_any_optimized_op"
-        puts "opt_tclobject_empty_string_compare $opt_tclobject_empty_string_compare"
-        puts "opt_tclobject_string_compare $opt_tclobject_string_compare"
-        puts "opt_tclobject_to_tclobject_string_compare $opt_tclobject_to_tclobject_string_compare"
-        puts "opt_tclobject_to_exprvalue_string_compare $opt_tclobject_to_exprvalue_string_compare"
-    }
+#        puts "is_any_optimized_op $is_any_optimized_op"
+#        puts "opt_tclobject_empty_string_compare $opt_tclobject_empty_string_compare"
+#        puts "opt_tclobject_string_compare $opt_tclobject_string_compare"
+#        puts "opt_tclobject_to_tclobject_string_compare $opt_tclobject_to_tclobject_string_compare"
+#        puts "opt_tclobject_to_exprvalue_string_compare $opt_tclobject_to_exprvalue_string_compare"
+#    }
 
     # Check for special flag used only during code generation testing
     if {[info exists _compileproc(options,expr_no_string_compare_optimizations)]} {
@@ -6982,57 +7083,15 @@ proc compileproc_expr_evaluate_emit_binary_operator { op_tuple } {
         set opt_tclobject_to_tclobject_string_compare 0
         set opt_tclobject_to_exprvalue_string_compare 0
         set is_any_optimized_op 0
-        if {$debug} {
-            puts "expr_no_string_compare_optimizations flag set"
-        }
+#        if {$debug} {
+#            puts "expr_no_string_compare_optimizations flag set"
+#        }
     }
 
-    set op_buffer ""
+    # Generate code for specific optimized logic, or
+    # use the default operator invocation.
 
-    # If no specific optimized case is found at this point,
-    # the generate code to evaluate the left and right
-    # operands as ExprValue objects.
-
-    if {!$is_any_optimized_op} {
-        set left_eval_tuple [compileproc_expr_evaluate_emit_exprvalue \
-            $left_tuple]
-        set right_eval_tuple [compileproc_expr_evaluate_emit_exprvalue \
-            $right_tuple]
-
-        set ev1 [lindex $left_eval_tuple 1]
-        set ev2 [lindex $right_eval_tuple 1]
-    }
-
-    if {$logic_op} {
-        # Handle && and || logic operators, the right
-        # value is not evaluated until the value of
-        # the left one is known.
-        append op_buffer [lindex $left_eval_tuple 2]
-        if {$op == "&&"} {
-            set not ""
-        } elseif {$op == "||"} {
-            set not "!"
-        } else {
-            error "unmatched logic_op \"$op\""
-        }
-
-        append op_buffer \
-            [emitter_indent] \
-            "if (" $not $ev1 ".getBooleanValue(interp)) \{\n" \
-            [lindex $right_eval_tuple 2] \
-            [emitter_indent] \
-            $ev1 ".setIntValue(" $ev2 ".getBooleanValue(interp))\;\n" \
-            [compileproc_emit_exprvalue_release $ev2] \
-            [emitter_indent] \
-            "\} else \{\n"
-
-        set else_value [expr {($not == "") ? 0 : 1}]
-        append op_buffer \
-            [emitter_indent] \
-            $ev1 ".setIntValue(" $else_value ")\;\n" \
-            [emitter_indent] \
-            "\} // End if: " $not $left_infostr "\n"
-    } elseif {$opt_tclobject_empty_string_compare} {
+    if {$opt_tclobject_empty_string_compare} {
         # Special case for: expr {$obj == ""}. Generate
         # an eval buffer with a TclObject result for
         # the object operand.
@@ -7228,34 +7287,78 @@ proc compileproc_expr_evaluate_emit_binary_operator { op_tuple } {
 
         set ev1 $ev
     } else {
-        # Append code to evaluate left and right values and
-        # invoke the binary operator.
-        append op_buffer \
-            [lindex $left_eval_tuple 2] \
-            [lindex $right_eval_tuple 2]
-
-        # Emit TJC binary operator invocation
-        append op_buffer [emitter_indent] \
-            "TJC.exprBinaryOperator(interp, " $opval ", " $ev1 ", " $ev2 ")\;\n" \
-            [compileproc_emit_exprvalue_release $ev2]
+        return {}
     }
 
-    # Printable info describing this operator and
-    # the left and right operands:
-
-    append buffer [emitter_indent] \
-        "// Binary operator: " $left_infostr " " $op " " $right_infostr "\n" \
-        $op_buffer \
-        [emitter_indent] \
-        "// End Binary operator: " $op "\n"
-
-    return [list $ev1 $buffer]
+    return [list $ev1 $op_buffer]
 }
 
-# FIXME: Cleanup binary operator function by moving logic
-# related to emotting of special cases into operator
-# specific function. Then, these operator specific
-# functions can be invoked on a per-operator basis.
+# Emit code for the || and && operators.
+# These operators evaluate operands as
+# booleans and can be used for short
+# circut logic. This method will return
+# a tupleof:
+# {EXPRVALUE_SYMBOL BUFFER}
+
+proc compileproc_expr_evaluate_emit_binary_logic_operator {
+        op left_tuple left_peek_tuple right_tuple right_peek_tuple } {
+    global _compileproc
+
+#    set debug 0
+
+#    if {$debug} {
+#        puts "compileproc_expr_evaluate_emit_binary_logic_operator $op \
+#            \{$left_tuple\} \{$left_peek_tuple\} \{$right_tuple\} \{$right_peek_tuple\}"
+#    }
+
+    if {$op != "||" && $op != "&&"} {
+        error "operator \"$op\" is not a logic operator"
+    }
+
+    set left_infostr [lindex $left_peek_tuple 3]
+#    set right_infostr [lindex $right_peek_tuple 3]
+
+    set left_eval_tuple [compileproc_expr_evaluate_emit_exprvalue \
+        $left_tuple]
+    set right_eval_tuple [compileproc_expr_evaluate_emit_exprvalue \
+        $right_tuple]
+
+    set ev1 [lindex $left_eval_tuple 1]
+    set ev2 [lindex $right_eval_tuple 1]
+
+    append op_buffer [lindex $left_eval_tuple 2]
+    if {$op == "&&"} {
+        set not ""
+    } elseif {$op == "||"} {
+        set not "!"
+    } else {
+        error "unmatched logic_op \"$op\""
+    }
+
+# FIXME: Should be able to evaluate this logic using only
+# a single ExprValue and a single boolean condition that
+# lives on the stack. Only implement when inline-operators
+# flags is true so that old code is still emitted.
+
+    append op_buffer \
+        [emitter_indent] \
+        "if (" $not $ev1 ".getBooleanValue(interp)) \{\n" \
+        [lindex $right_eval_tuple 2] \
+        [emitter_indent] \
+        $ev1 ".setIntValue(" $ev2 ".getBooleanValue(interp))\;\n" \
+        [compileproc_emit_exprvalue_release $ev2] \
+        [emitter_indent] \
+        "\} else \{\n"
+
+    set else_value [expr {($not == "") ? 0 : 1}]
+    append op_buffer \
+        [emitter_indent] \
+        $ev1 ".setIntValue(" $else_value ")\;\n" \
+        [emitter_indent] \
+        "\} // End if: " $not $left_infostr "\n"
+
+    return [list $ev1 $op_buffer]
+}
 
 # Emit a ternary operator like ($b ? 1 : 0). Return a
 # tuple of {EXPRVALUE BUFFER} containing the name of
@@ -7346,6 +7449,11 @@ proc compileproc_expr_evaluate_emit_ternary_operator { op_tuple } {
     append op_buffer \
         [emitter_indent] \
         "\}\n"
+
+# FIXME: When stack values is enabled, is it possible to process
+# all of these ExprValues using just 1 symbol from the stack?
+# It should be if the boolean condition is saved in a boolean
+# on the stack instead of in an ExprValue.
 
     append buffer \
         [emitter_indent] \

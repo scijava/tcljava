@@ -40,8 +40,13 @@ set tuples [list \
     {internal-expr-inline-get-int tcl.lang.TJCBench InternalExprInlineGetInt} \
     {internal-expr-tcldouble-get tcl.lang.TJCBench InternalTclDoubleGet} \
     {internal-expr-get-known-double tcl.lang.TJCBench InternalExprGetKnownDouble} \
+    {internal-expr-inlined-int-not-operator tcl.lang.TJCBench InternalExprInlinedIntNotOperator} \
+    {internal-expr-inlined-int-not-bitwise-operator tcl.lang.TJCBench InternalExprInlinedIntNotBitwiseOperator} \
+    {internal-expr-value-int-not-operator tcl.lang.TJCBench InternalExprValueIntNotOperator} \
+    {internal-expr-value-int-not-nstr-operator tcl.lang.TJCBench InternalExprValueIntNotNstrOperator} \
     {internal-result-reset tcl.lang.TJCBench InternalResetResult} \
     {internal-result-set-tclobject tcl.lang.TJCBench InternalSetTclObjectResult} \
+    {internal-result-set-same-tclobject tcl.lang.TJCBench InternalSetSameTclObjectResult} \
     {internal-result-set-boolean tcl.lang.TJCBench InternalSetBooleanResult} \
     {internal-result-set-int tcl.lang.TJCBench InternalSetIntResult} \
     {internal-result-set-int-via-expr-value tcl.lang.TJCBench InternalSetIntResultViaExprValue} \
@@ -52,6 +57,12 @@ set tuples [list \
     {internal-result-expr-op-int-not-grab-release tcl.lang.TJCBench InternalExprOpIntNotGrabReleaseResult} \
     {internal-result-expr-op-int-not-stack-value tcl.lang.TJCBench InternalExprOpIntNotStackValueResult} \
     {internal-result-expr-op-int-not-stack-value-int tcl.lang.TJCBench InternalExprOpIntNotStackValueIntResult} \
+    {internal-result-expr-op-int-not-stack-value-boolean tcl.lang.TJCBench InternalExprOpIntNotStackValueBooleanResult} \
+    {internal-result-expr-op-int-not-stack-value-boolean-lookup tcl.lang.TJCBench InternalExprOpIntNotStackValueBooleanLookupResult} \
+    {internal-result-expr-op-int-inlined-not-stack-value tcl.lang.TJCBench InternalExprOpIntInlinedNotStackValueResult} \
+    {internal-result-expr-op-int-inlined-not-nstr-stack-value tcl.lang.TJCBench InternalExprOpIntInlinedNotNstrStackValueResult} \
+    {internal-result-expr-op-int-inlined-not-nstr-stack-value-int tcl.lang.TJCBench InternalExprOpIntInlinedNotNstrStackValueIntResult} \
+    {internal-result-expr-op-int-inlined-not-nstr-stack-value-boolean tcl.lang.TJCBench InternalExprOpIntInlinedNotNstrStackValueBooleanResult} \
     ]
 
 foreach tuple $tuples {
