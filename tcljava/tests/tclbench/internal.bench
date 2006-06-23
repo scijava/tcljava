@@ -49,10 +49,11 @@ set tuples [list \
     {internal-result-set-same-tclobject tcl.lang.TJCBench InternalSetSameTclObjectResult} \
     {internal-result-set-boolean tcl.lang.TJCBench InternalSetBooleanResult} \
     {internal-result-set-int tcl.lang.TJCBench InternalSetIntResult} \
+    {internal-result-set-uncommon-int tcl.lang.TJCBench InternalSetUncommonIntResult} \
+    {internal-result-set-uncommon-double tcl.lang.TJCBench InternalSetUncommonDoubleResult} \
+    {internal-result-set-uncommon-string tcl.lang.TJCBench InternalSetUncommonStringResult} \
     {internal-result-set-int-via-expr-value tcl.lang.TJCBench InternalSetIntResultViaExprValue} \
     {internal-result-expr-set-int tcl.lang.TJCBench InternalExprSetIntResult} \
-    {internal-expr-op-int-plus tcl.lang.TJCBench InternalExprOpIntPlus} \
-    {internal-expr-op-double-plus tcl.lang.TJCBench InternalExprOpDoublePlus} \
     {internal-expr-op-int-not tcl.lang.TJCBench InternalExprOpIntNot} \
     {internal-result-expr-op-int-not-grab-release tcl.lang.TJCBench InternalExprOpIntNotGrabReleaseResult} \
     {internal-result-expr-op-int-not-stack-value tcl.lang.TJCBench InternalExprOpIntNotStackValueResult} \
@@ -63,6 +64,16 @@ set tuples [list \
     {internal-result-expr-op-int-inlined-not-nstr-stack-value tcl.lang.TJCBench InternalExprOpIntInlinedNotNstrStackValueResult} \
     {internal-result-expr-op-int-inlined-not-nstr-stack-value-int tcl.lang.TJCBench InternalExprOpIntInlinedNotNstrStackValueIntResult} \
     {internal-result-expr-op-int-inlined-not-nstr-stack-value-boolean tcl.lang.TJCBench InternalExprOpIntInlinedNotNstrStackValueBooleanResult} \
+    {internal-expr-op-int-plus tcl.lang.TJCBench InternalExprOpIntPlus} \
+    {internal-result-expr-op-int-plus-grab-release tcl.lang.TJCBench InternalExprOpIntPlusGrabReleaseResult} \
+    {internal-result-expr-op-int-plus-stack-value tcl.lang.TJCBench InternalExprOpIntPlusStackValueResult} \
+    {internal-result-expr-op-int-plus-stack-value-int tcl.lang.TJCBench InternalExprOpIntPlusStackValueIntResult} \
+    {internal-result-expr-op-int-inlined-plus-stack-value-int tcl.lang.TJCBench InternalExprOpIntInlinedPlusStackValueIntResult} \
+    {internal-expr-op-double-plus tcl.lang.TJCBench InternalExprOpDoublePlus} \
+    {internal-result-expr-op-logical-or tcl.lang.TJCBench InternalExprOpLogicalOrResult} \
+    {internal-result-expr-op-inlined-logical-or tcl.lang.TJCBench InternalExprOpInlinedLogicalOrResult} \
+    {internal-result-expr-op-inlined-int-logical-or tcl.lang.TJCBench InternalExprOpInlinedIntLogicalOrResult} \
+    {internal-result-expr-op-inlined-noexpr-logical-or tcl.lang.TJCBench InternalExprOpInlinedNoExprLogicalOrResult} \
     ]
 
 foreach tuple $tuples {

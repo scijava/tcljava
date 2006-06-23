@@ -1,3 +1,17 @@
+2006-06-22  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/tjc/tcl/lang/TJCBench.java: Add a seires
+        of new bench test for int operator plus
+        and logical or operations. Also add specific
+        tests that set the interp result to int,
+        double, and String values.
+        * tests/tclbench/expr.bench: Add test cases
+        for setting an interp result to int, double,
+        and String values that are not shared
+        constants.
+        * tests/tclbench/internal.bench: Invoke
+        new bench tests.
+
 2006-06-21  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/tjc/tcl/lang/TJCBench.java: Add possible

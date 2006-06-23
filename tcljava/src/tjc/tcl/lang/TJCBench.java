@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TJCBench.java,v 1.10 2006/06/22 06:21:27 mdejong Exp $
+ * RCS: @(#) $Id: TJCBench.java,v 1.11 2006/06/23 04:14:06 mdejong Exp $
  *
  */
 
@@ -106,14 +106,16 @@ public class TJCBench extends TJC.CompiledCommand {
              InternalSetBooleanResult(interp);
         } else if (testname.equals("InternalSetIntResult")) {
              InternalSetIntResult(interp);
+        } else if (testname.equals("InternalSetUncommonIntResult")) {
+             InternalSetUncommonIntResult(interp);
+        } else if (testname.equals("InternalSetUncommonDoubleResult")) {
+             InternalSetUncommonDoubleResult(interp);
+        } else if (testname.equals("InternalSetUncommonStringResult")) {
+             InternalSetUncommonStringResult(interp);
         } else if (testname.equals("InternalSetIntResultViaExprValue")) {
              InternalSetIntResultViaExprValue(interp);
         } else if (testname.equals("InternalExprSetIntResult")) {
              InternalExprSetIntResult(interp);
-        } else if (testname.equals("InternalExprOpIntPlus")) {
-             InternalExprOpIntPlus(interp);
-        } else if (testname.equals("InternalExprOpDoublePlus")) {
-             InternalExprOpDoublePlus(interp);
         } else if (testname.equals("InternalExprOpIntNot")) {
              InternalExprOpIntNot(interp);
         } else if (testname.equals("InternalExprOpIntNotGrabReleaseResult")) {
@@ -134,6 +136,26 @@ public class TJCBench extends TJC.CompiledCommand {
              InternalExprOpIntInlinedNotNstrStackValueIntResult(interp);
         } else if (testname.equals("InternalExprOpIntInlinedNotNstrStackValueBooleanResult")) {
              InternalExprOpIntInlinedNotNstrStackValueBooleanResult(interp);
+        } else if (testname.equals("InternalExprOpIntPlus")) {
+             InternalExprOpIntPlus(interp);
+        } else if (testname.equals("InternalExprOpIntPlusGrabReleaseResult")) {
+             InternalExprOpIntPlusGrabReleaseResult(interp);
+        } else if (testname.equals("InternalExprOpIntPlusStackValueResult")) {
+             InternalExprOpIntPlusStackValueResult(interp);
+        } else if (testname.equals("InternalExprOpIntPlusStackValueIntResult")) {
+             InternalExprOpIntPlusStackValueIntResult(interp);
+        } else if (testname.equals("InternalExprOpIntInlinedPlusStackValueIntResult")) {
+             InternalExprOpIntInlinedPlusStackValueIntResult(interp);
+        } else if (testname.equals("InternalExprOpDoublePlus")) {
+             InternalExprOpDoublePlus(interp);
+        } else if (testname.equals("InternalExprOpLogicalOrResult")) {
+             InternalExprOpLogicalOrResult(interp);
+        } else if (testname.equals("InternalExprOpInlinedLogicalOrResult")) {
+             InternalExprOpInlinedLogicalOrResult(interp);
+        } else if (testname.equals("InternalExprOpInlinedIntLogicalOrResult")) {
+             InternalExprOpInlinedIntLogicalOrResult(interp);
+        } else if (testname.equals("InternalExprOpInlinedNoExprLogicalOrResult")) {
+             InternalExprOpInlinedNoExprLogicalOrResult(interp);
         } else {
              throw new TclException(interp, "unknown test name \"" + testname + "\"");
         }
@@ -742,6 +764,53 @@ public class TJCBench extends TJC.CompiledCommand {
         RESULT_INT = TclInteger.get(interp, interp.getResult());
     }
 
+    // Establish timing results for integer.setResult(int).
+    // These int values are not common shared results.
+    // This might allocate 5000 new TclObject values
+    // during the setResult() operation, or it might
+    // reuse a recycled TclObject value.
+
+    void InternalSetUncommonIntResult(Interp interp)
+        throws TclException
+    {
+        for (int i=0; i < 5000; i++) {
+            interp.setResult(i * 2);
+            interp.setResult(i * 3);
+        }
+        RESULT_INT = TclInteger.get(interp, interp.getResult());
+    }
+
+    // Establish timing results for integer.setResult(double)
+    // when the double is not a common value.
+    // This might allocate 5000 new TclObject values
+    // during the setResult() operation, or it might
+    // reuse a recycled TclObject value.
+
+    void InternalSetUncommonDoubleResult(Interp interp)
+        throws TclException
+    {
+        for (int i=0; i < 5000; i++) {
+            interp.setResult(i * 2.0);
+            interp.setResult(i * 3.0);
+        }
+        RESULT_INT = (int) TclDouble.get(interp, interp.getResult());
+    }
+
+    // Establish timing results for integer.setResult(String)
+    // when the string is not the empty string. This operation
+    // is executed frequently in real code, so a recycled
+    // object optimization here would be a big diff.
+
+    void InternalSetUncommonStringResult(Interp interp)
+        throws TclException
+    {
+        for (int i=0; i < 5000; i++) {
+            interp.setResult("2" + i);
+            interp.setResult("3" + i);
+        }
+        RESULT_OBJ = interp.getResult();
+    }
+
     // Invoke integer.setResult(int) with a result
     // stored in an ExprValue. This is like the
     // test above except that it includes execution
@@ -795,38 +864,6 @@ public class TJCBench extends TJC.CompiledCommand {
             TJC.exprSetResult(interp, value2);
         }
         RESULT_INT = TclInteger.get(interp, interp.getResult());
-    }
-
-    // Invoke binary + operator on a TclInteger.
-    // This tests the execution time for just the
-    // Expression.evalBinaryOperator() API.
-
-    void InternalExprOpIntPlus(Interp interp)
-        throws TclException
-    {
-        ExprValue value1 = new ExprValue(1, null);
-        ExprValue value2 = new ExprValue(2, null);
-
-        for (int i=0; i < 5000; i++) {
-            Expression.evalBinaryOperator(interp, TJC.EXPR_OP_PLUS, value1, value2);
-        }
-        RESULT_INT = value1.getIntValue();
-    }
-
-    // Invoke binary + operator on a TclDouble.
-    // This tests the execution time for just the
-    // Expression.evalBinaryOperator() API.
-
-    void InternalExprOpDoublePlus(Interp interp)
-        throws TclException
-    {
-        ExprValue value1 = new ExprValue(1.0, null);
-        ExprValue value2 = new ExprValue(2.0, null);
-
-        for (int i=0; i < 5000; i++) {
-            Expression.evalBinaryOperator(interp, TJC.EXPR_OP_PLUS, value1, value2);
-        }
-        RESULT_INT = (int) value1.getDoubleValue();
     }
 
     // Invoke unary ! operator on a TclInteger.
@@ -1078,6 +1115,250 @@ public class TJCBench extends TJC.CompiledCommand {
                 throw new TclRuntimeError("else branch reached");
             }
             interp.setResult( (tmp0.getIntValue() != 0) );
+        }
+        RESULT_INT = TclInteger.get(interp, interp.getResult());
+    }
+
+    // Invoke binary + operator on a TclInteger.
+    // This tests the execution time for just the
+    // Expression.evalBinaryOperator() API.
+
+    void InternalExprOpIntPlus(Interp interp)
+        throws TclException
+    {
+        ExprValue value1 = new ExprValue(1, null);
+        ExprValue value2 = new ExprValue(2, null);
+
+        for (int i=0; i < 5000; i++) {
+            Expression.evalBinaryOperator(interp, TJC.EXPR_OP_PLUS, value1, value2);
+        }
+        RESULT_INT = value1.getIntValue();
+    }
+
+    // This is the logic emitted for a binary
+    // plus operator with +inline-containers.
+    // This code will grab two ExprValues,
+    // init them, and then pass these
+    // values to the exprBinaryOperator()
+
+    void InternalExprOpIntPlusGrabReleaseResult(Interp interp)
+        throws TclException
+    {
+        // expr {1 + 2}
+
+        for (int i=0; i < 5000; i++) {
+            ExprValue tmp0 = TJC.exprGetValue(interp, 1, null);
+            ExprValue tmp1 = TJC.exprGetValue(interp, 2, null);
+            TJC.exprBinaryOperator(interp, TJC.EXPR_OP_PLUS, tmp0, tmp1);
+            TJC.exprReleaseValue(interp, tmp1);
+            TJC.exprSetResult(interp, tmp0);
+            TJC.exprReleaseValue(interp, tmp0);
+        }
+        RESULT_INT = TclInteger.get(interp, interp.getResult());
+    }
+
+    // This is the logic emitted for a binary
+    // plus operator with +inline-expr.
+    // Unlike InternalExprOpIntPlusGrabReleaseResult
+    // this implementation will reuse two ExprValues
+    // saved on the stack and avoid having to
+    // grab and release during each loop iteration.
+    // This implementation should be the baseline
+    // for optimized plus operator implementations.
+    // Note that the integer 3 is not a common value
+    // so a new TclObject is allocated during each
+    // result set operation.
+
+    void InternalExprOpIntPlusStackValueResult(Interp interp)
+        throws TclException
+    {
+        // expr {1 + 2}
+
+        ExprValue evs0 = TJC.exprGetValue(interp);
+        ExprValue evs1 = TJC.exprGetValue(interp);
+
+        for (int i=0; i < 5000; i++) {
+            ExprValue tmp0 = evs0;
+            tmp0.setIntValue(1);
+            ExprValue tmp1 = evs1;
+            tmp1.setIntValue(2);
+            TJC.exprBinaryOperator(interp, TJC.EXPR_OP_PLUS, tmp0, tmp1);
+            TJC.exprSetResult(interp, tmp0);
+        }
+        RESULT_INT = TclInteger.get(interp, interp.getResult());
+    }
+
+    // This method is like InternalExprOpIntPlusStackValueResult
+    // except that it invokes the Interp.setResult(int) method
+    // directly instead of calling TJC.exprSetResult().
+    // This optimization is only valid when both operands are
+    // known to be of type int.
+
+    void InternalExprOpIntPlusStackValueIntResult(Interp interp)
+        throws TclException
+    {
+        // expr {1 + 2}
+
+        ExprValue evs0 = TJC.exprGetValue(interp);
+        ExprValue evs1 = TJC.exprGetValue(interp);
+
+        for (int i=0; i < 5000; i++) {
+            ExprValue tmp0 = evs0;
+            tmp0.setIntValue(1);
+            ExprValue tmp1 = evs1;
+            tmp1.setIntValue(2);
+            TJC.exprBinaryOperator(interp, TJC.EXPR_OP_PLUS, tmp0, tmp1);
+            interp.setResult( tmp0.getIntValue() );
+        }
+        RESULT_INT = TclInteger.get(interp, interp.getResult());
+    }
+
+    // This methods makes use of an inline plus operator
+    // method using inlined logic when both operands are
+    // ExprValues of type int.
+
+    void InternalExprOpIntInlinedPlusStackValueIntResult(Interp interp)
+        throws TclException
+    {
+        // expr {1 + 2}
+
+        ExprValue evs0 = TJC.exprGetValue(interp);
+        ExprValue evs1 = TJC.exprGetValue(interp);
+
+        for (int i=0; i < 5000; i++) {
+            ExprValue tmp0 = evs0;
+            tmp0.setIntValue(1);
+            ExprValue tmp1 = evs1;
+            tmp1.setIntValue(2);
+            if ( tmp0.isIntType() && tmp1.isIntType() ) {
+                tmp0.optIntPlus( tmp1 );
+            } else {
+                //TJC.exprBinaryOperator(interp, TJC.EXPR_OP_PLUS, tmp0, tmp1);
+                throw new TclRuntimeError("else branch reached");
+            }
+// Most of the execution time in this method is spent allocating
+// new TclObject values that become the result.
+// Unshared: 778
+// Shared:   113
+            interp.setResult( tmp0.getIntValue() );
+        }
+        RESULT_INT = TclInteger.get(interp, interp.getResult());
+    }
+
+    // Invoke binary + operator on a TclDouble.
+    // This tests the execution time for just the
+    // Expression.evalBinaryOperator() API.
+
+    void InternalExprOpDoublePlus(Interp interp)
+        throws TclException
+    {
+        ExprValue value1 = new ExprValue(1.0, null);
+        ExprValue value2 = new ExprValue(2.0, null);
+
+        for (int i=0; i < 5000; i++) {
+            Expression.evalBinaryOperator(interp, TJC.EXPR_OP_PLUS, value1, value2);
+        }
+        RESULT_INT = (int) value1.getDoubleValue();
+    }
+
+    // This logic is currently emitted with +inline-expr
+    // for a logical || operator. It makes use of two
+    // ExprValues on the stack.
+
+    void InternalExprOpLogicalOrResult(Interp interp)
+        throws TclException
+    {
+        // expr {0 || 1}
+
+        ExprValue evs0 = TJC.exprGetValue(interp);
+        ExprValue evs1 = TJC.exprGetValue(interp);
+
+        for (int i=0; i < 5000; i++) {
+            ExprValue tmp0 = evs0;
+            tmp0.setIntValue(0);
+            if (!tmp0.getBooleanValue(interp)) {
+            ExprValue tmp1 = evs1;
+            tmp1.setIntValue(1);
+            tmp0.setIntValue(tmp1.getBooleanValue(interp));
+            } else {
+            tmp0.setIntValue(1);
+            } // End if: !0
+            TJC.exprSetResult(interp, tmp0);
+        }
+        RESULT_INT = TclInteger.get(interp, interp.getResult());
+    }
+
+    // This implementation will use a boolean value
+    // on the stack. A second ExprValue will not
+    // be needed and the result will be set as a boolean.
+
+    void InternalExprOpInlinedLogicalOrResult(Interp interp)
+        throws TclException
+    {
+        // expr {0 || 1}
+
+        ExprValue evs0 = TJC.exprGetValue(interp);
+
+        for (int i=0; i < 5000; i++) {
+            boolean tmp0;
+            ExprValue tmp1 = evs0;
+            tmp1.setIntValue(0);
+            tmp0 = tmp1.getBooleanValue(interp);
+            if ( !tmp0 ) {
+            ExprValue tmp2 = evs0;
+            tmp2.setIntValue(1);
+            tmp0 = tmp2.getBooleanValue(interp);
+            }
+            interp.setResult(tmp0);
+        }
+        RESULT_INT = TclInteger.get(interp, interp.getResult());
+    }
+
+    // If an operand is known to be of type int, an inlined
+    // boolean condition check can be used.
+
+    void InternalExprOpInlinedIntLogicalOrResult(Interp interp)
+        throws TclException
+    {
+        // expr {0 || 1}
+
+        ExprValue evs0 = TJC.exprGetValue(interp);
+
+        for (int i=0; i < 5000; i++) {
+            boolean tmp0;
+            ExprValue tmp1 = evs0;
+            tmp1.setIntValue(0);
+            tmp0 = (tmp1.getIntValue() != 0);
+            if ( !tmp0 ) {
+            ExprValue tmp2 = evs0;
+            tmp2.setIntValue(1);
+            tmp0 = (tmp2.getIntValue() != 0);
+            }
+            interp.setResult(tmp0);
+        }
+        RESULT_INT = TclInteger.get(interp, interp.getResult());
+    }
+
+    // If an operand is known to be of type int and the
+    // expr module is able to pass around an int value
+    // already declared on the stack, then no ExprValue
+    // would be needed for the || operator.
+
+    void InternalExprOpInlinedNoExprLogicalOrResult(Interp interp)
+        throws TclException
+    {
+        // expr {0 || 1}
+
+        for (int i=0; i < 5000; i++) {
+            boolean tmp0;
+            int value;
+            value = 0;
+            tmp0 = (value != 0);
+            if ( !tmp0 ) {
+            value = 1;
+            tmp0 = (value != 0);
+            }
+            interp.setResult(tmp0);
         }
         RESULT_INT = TclInteger.get(interp, interp.getResult());
     }

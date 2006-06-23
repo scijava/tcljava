@@ -397,6 +397,39 @@ proc expr-if-branch-loop {} {
     return
 }
 
+# Set the interp result to an int value over
+# and over again in a loop. This test the
+# time needed to read a value and set the
+# result to an int. Note that the expr
+# command always sets the interp result,
+# if the result is not saved into a variable
+# or is not the last command in a block.
+
+proc expr-set-result-int-loop {} {
+    set sum 0
+    for {set i 0} {$i < 5000} {incr i} {
+        expr {$i}
+    }
+    return
+}
+
+proc expr-set-result-double-loop {} {
+    set sum 0
+    for {set i 0} {$i < 5000} {incr i} {
+        expr {double($i)}
+    }
+    return
+}
+
+proc expr-set-result-string-loop {} {
+    set sum 0
+    for {set i 0} {$i < 5000} {incr i} {
+        expr {(1 ? "hello" : "bye")}
+    }
+    return
+}
+
+
 # This test checks the unary not operator
 # applied to a constant int or double value.
 # The compiler does not attempt evaluate
@@ -637,6 +670,10 @@ bench -desc "expr-bigsqrt2-1" -body {expr-bigsqrt2 36}
 bench -desc "expr-bigsqrt2-2" -body {expr-bigsqrt2 121}
 
 bench -desc "expr-if-branch-loop" -body {expr-if-branch-loop}
+
+bench -desc "expr-set-result-int-loop" -body {expr-set-result-int-loop}
+bench -desc "expr-set-result-double-loop" -body {expr-set-result-double-loop}
+bench -desc "expr-set-result-string-loop" -body {expr-set-result-string-loop}
 
 bench -desc "expr-unary-not-int-literal" -body {expr-unary-not-int-literal}
 bench -desc "expr-unary-not-double-literal" -body {expr-unary-not-double-literal}
