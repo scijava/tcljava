@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: refCount.test,v 1.4 2005/11/21 02:02:41 mdejong Exp $
+# RCS: @(#) $Id: refCount.test,v 1.5 2006/06/23 20:53:40 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -225,6 +225,47 @@ test refcount-8.0 {Command epoch gets incremented on rename, delete, and so on} 
         [java::call tcl.lang.TestEpoch testCmdEpoch2 [java::getinterp]] \
         [java::call tcl.lang.TestEpoch testCmdEpoch2 [java::getinterp]]
 } {OK OK OK}
+
+test refcount-9.0 {recycled int TclObject} {
+    java::call tcl.lang.TestRecycled testRecycledInt0 [java::getinterp]
+} {recycled 100 refCount 2 recycled 200 refCount 2 was_recycled true}
+
+test refcount-9.1 {recycled int TclObject} {
+    java::call tcl.lang.TestRecycled testRecycledInt1 [java::getinterp]
+} {recycled 100 refCount 2 refCount 3 refCount 2}
+
+test refcount-9.2 {recycled int TclObject} {
+    java::call tcl.lang.TestRecycled testRecycledInt2 [java::getinterp]
+} {recycled 100 refCount 2 refCount 3 new_recycled true refCount 2 recycled 100 refCount 1}
+
+test refcount-9.3 {recycled int TclObject} {
+    java::call tcl.lang.TestRecycled testRecycledInt3 [java::getinterp]
+} {recycled 100 refCount 2 refCount 1 was_recycled true getResult 200 refCount 2}
+
+test refcount-9.4 {recycled int TclObject} {
+    java::call tcl.lang.TestRecycled testRecycledInt4 [java::getinterp]
+} {recycled 100 refCount 2 recycled 200 refCount 3 refCount 2}
+
+test refcount-10.0 {recycled double TclObject} {
+    java::call tcl.lang.TestRecycled testRecycledDouble0 [java::getinterp]
+} {recycled 100.0 refCount 2 recycled 200.0 refCount 2 was_recycled true}
+
+test refcount-10.1 {recycled double TclObject} {
+    java::call tcl.lang.TestRecycled testRecycledDouble1 [java::getinterp]
+} {recycled 100.0 refCount 2 refCount 3 refCount 2}
+
+test refcount-10.2 {recycled double TclObject} {
+    java::call tcl.lang.TestRecycled testRecycledDouble2 [java::getinterp]
+} {recycled 100.0 refCount 2 refCount 3 new_recycled true refCount 2 recycled 100.0 refCount 1}
+
+test refcount-10.3 {recycled double TclObject} {
+    java::call tcl.lang.TestRecycled testRecycledDouble3 [java::getinterp]
+} {recycled 100.0 refCount 2 refCount 1 was_recycled true getResult 200.0 refCount 2}
+
+test refcount-10.4 {recycled double TclObject} {
+    java::call tcl.lang.TestRecycled testRecycledDouble4 [java::getinterp]
+} {recycled 100.0 refCount 2 recycled 200.0 refCount 3 refCount 2}
+
 
 # cleanup
 catch {unset obj}

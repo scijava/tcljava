@@ -1,3 +1,16 @@
+2006-06-23  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/jacl/tcl/lang/Interp.java (Interp, checkCommonInteger,
+        checkCommonDouble, checkCommonBoolean): Implement a
+        "recycled" object for int and double values. This
+        is a TclObject that gets set to a primitive value
+        and it then set to the result or a variable. This
+        implementation avoids thousands of TclObject allocations
+        for the most common result set operations.
+        * src/tests/jacl/tcl/lang/TestRecycled.java:
+        Test recycled result object refCount.
+        * tests/jacl/refCount.test: Invoke TestRecycled tests.
+
 2006-06-22  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/tjc/tcl/lang/TJCBench.java: Add a seires
