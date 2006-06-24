@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclDouble.java,v 1.10 2006/06/12 21:33:02 mdejong Exp $
+ * RCS: @(#) $Id: TclDouble.java,v 1.11 2006/06/24 00:30:42 mdejong Exp $
  *
  */
 
@@ -430,6 +430,16 @@ static void exprSetInternalRep(TclObject tobj, double d) {
     }
 
     tobj.setInternalRep(new TclDouble(d));
+}
+
+// This method is used to set the internal rep for a recycled
+// object to TclDouble, in the edge case where it might have
+// been changed. This method exists only because the
+// TclDouble ctor can't be made package access without
+// changing signature regression tests.
+
+static void setRecycledInternalRep(TclObject tobj) {
+     tobj.setInternalRep( new TclDouble(0.0) );
 }
 
 } // end TclDouble

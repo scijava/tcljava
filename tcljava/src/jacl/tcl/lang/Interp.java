@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.83 2006/06/23 20:53:40 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.84 2006/06/24 00:30:42 mdejong Exp $
  *
  */
 
@@ -2395,7 +2395,7 @@ setResult(
 
 public final void 
 setResult(
-    int r)		// An int result.
+    final int r)		// An int result.
 {
     setResult( checkCommonInteger(r) );
 }
@@ -2421,7 +2421,7 @@ setResult(
 
 public final void 
 setResult(
-    double r)		// A double result.
+    final double r)		// A double result.
 {
     setResult( checkCommonDouble(r) );
 }
@@ -2447,9 +2447,13 @@ setResult(
 
 public final void 
 setResult(
-    boolean r)		// A boolean result.
+    final boolean r)		// A boolean result.
 {
-    setResult( checkCommonBoolean(r) );
+    if (VALIDATE_SHARED_RESULTS) {
+        setResult( checkCommonBoolean(r) );
+    } else {
+        setResult( r ? m_trueBooleanResult : m_falseBooleanResult );
+    }
 }
 
 /*
@@ -4569,7 +4573,7 @@ TclObject checkCommonInteger(int value)
                              m_twoIntegerResult };
         for (int i=0; i < objv.length; i++) {
             TclObject obj = objv[i];
-            if (obj.isShared()) {
+            if (!obj.isShared()) {
                 throw new TclRuntimeError("ref count error: " +
                     "integer constant for " + obj.toString() +
                     " should be shared but refCount was " +
@@ -4592,21 +4596,17 @@ TclObject checkCommonInteger(int value)
             return m_twoIntegerResult;
         }
         default: {
-            int refCount = recycledI.getRefCount();
+            if ((recycledI.getRefCount() == 1) ||
+                    ((recycledI.getRefCount() == 2) &&
+                        (recycledI == m_result))) {
+                // If (refCount == 1) then interp result
+                // is not recycledI and nobody else holds a ref,
+                // so we can modify recycledI.
 
-            if (refCount == 1) {
-                // Interp result is not recycledI and
-                // nobody else holds a ref.
+                // If (refCount == 2) and this object is the
+                // interp result then we can modify recycledI.
 
-                TclInteger.set(recycledI, value);
-            } else if ((refCount == 2) && (m_result == recycledI)) {
-                // Interp result is holding the only other ref.
-                // Optimized setResult() will short-circut
-                // when same result is set again.
-
-                recycledI.release();
-                TclInteger.set(recycledI, value);
-                recycledI.preserve();
+                recycledI.setRecycledIntValue(value);
             } else {
                 // This logic is executed when some other
                 // code holds a ref to recycledI. This
@@ -4657,7 +4657,7 @@ TclObject checkCommonDouble(double value)
                              m_twoDoubleResult };
         for (int i=0; i < objv.length; i++) {
             TclObject obj = objv[i];
-            if (obj.isShared()) {
+            if (!obj.isShared()) {
                 throw new TclRuntimeError("ref count error: " +
                     "double constant for " + obj.toString() +
                     " should be shared but refCount was " +
@@ -4675,21 +4675,17 @@ TclObject checkCommonDouble(double value)
     } else if ( value == 2.0 ) {
         return m_twoDoubleResult;
     } else {
-        final int refCount = recycledD.getRefCount();
+        if ((recycledD.getRefCount() == 1) ||
+                ((recycledD.getRefCount() == 2) &&
+                        (recycledD == m_result))) {
+            // If (refCount == 1) then interp result
+            // is not recycledD and nobody else holds a ref,
+            // so we can modify recycledD.
 
-        if (refCount == 1) {
-            // Interp result is not recycledD and
-            // nobody else holds a ref.
+            // If (refCount == 2) and this object is the
+            // interp result then we can modify recycledD.
 
-            TclDouble.set(recycledD, value);
-        } else if ((refCount == 2) && (m_result == recycledD)) {
-            // Interp result is holding the only other ref.
-            // Optimized setResult() will short-circut
-            // when same result is set again.
-
-            recycledD.release();
-            TclDouble.set(recycledD, value);
-            recycledD.preserve();
+            recycledD.setRecycledDoubleValue(value);
         } else {
             // This logic is executed when some other
             // code holds a ref to recycledD. This
@@ -4734,7 +4730,7 @@ TclObject checkCommonBoolean(boolean value)
                              m_falseBooleanResult };
         for (int i=0; i < objv.length; i++) {
             TclObject obj = objv[i];
-            if (obj.isShared()) {
+            if (!obj.isShared()) {
                 throw new TclRuntimeError("ref count error: " +
                     "boolean constant for " + obj.toString() +
                     " should be shared but refCount was " +

@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclObject.java,v 1.7 2006/06/09 20:13:39 mdejong Exp $
+ * RCS: @(#) $Id: TclObject.java,v 1.8 2006/06/24 00:30:42 mdejong Exp $
  *
  */
 
@@ -101,6 +101,66 @@ public final class TclObject extends TclObjectBase {
 
     public static String getObjRecords() {
         return TclObjectBase.getObjRecords();
+    }
+
+    /**
+     * Modify a "recycled" int value so that it
+     * contains a new int value. This optimized
+     * logic is like TclInteger.set() except
+     * that it does not invoke invalidateStringRep().
+     * This method is only invoked from the Interp
+     * class when the TclObject is known to
+     * have a refCount of 1 or when the refCount
+     * is 2 but the interp result holds the
+     * other ref. An object with a refCount of
+     * 2 would normally raise an exception in
+     * invalidateStringRep, but this optimized
+     * case is worth it for this common case.
+     */
+
+    final
+    void setRecycledIntValue(int i) {
+	if (validate) {
+	    if ((refCount != 1) && (refCount != 2)) {
+	        throw new TclRuntimeError("Invalid refCount " + refCount);
+	    }
+	}
+
+        if (internalRep != TclInteger.dummy) {
+            setInternalRep( TclInteger.dummy );
+        }
+        ivalue = i;
+        stringRep = null;
+    }
+
+    /**
+     * Modify a "recycled" double value so that it
+     * contains a new double value. This optimized
+     * logic is like TclDouble.set() except
+     * that it does not invoke invalidateStringRep().
+     * This method is only invoked from the Interp
+     * class when the TclObject is known to
+     * have a refCount of 1 or when the refCount
+     * is 2 but the interp result holds the
+     * other ref. An object with a refCount of
+     * 2 would normally raise an exception in
+     * invalidateStringRep, but this optimized
+     * case is worth it for this common case.
+     */
+
+    final
+    void setRecycledDoubleValue(double d) {
+	if (validate) {
+	    if ((refCount != 1) && (refCount != 2)) {
+	        throw new TclRuntimeError("Invalid refCount " + refCount);
+	    }
+	}
+
+        if (!isDoubleType()) {
+            TclDouble.setRecycledInternalRep(this);
+        }
+        ((TclDouble) internalRep).value = d;
+        stringRep = null;
     }
 }
 

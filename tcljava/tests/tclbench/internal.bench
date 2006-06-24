@@ -59,7 +59,6 @@ set tuples [list \
     {internal-result-expr-op-int-not-stack-value tcl.lang.TJCBench InternalExprOpIntNotStackValueResult} \
     {internal-result-expr-op-int-not-stack-value-int tcl.lang.TJCBench InternalExprOpIntNotStackValueIntResult} \
     {internal-result-expr-op-int-not-stack-value-boolean tcl.lang.TJCBench InternalExprOpIntNotStackValueBooleanResult} \
-    {internal-result-expr-op-int-not-stack-value-boolean-lookup tcl.lang.TJCBench InternalExprOpIntNotStackValueBooleanLookupResult} \
     {internal-result-expr-op-int-inlined-not-stack-value tcl.lang.TJCBench InternalExprOpIntInlinedNotStackValueResult} \
     {internal-result-expr-op-int-inlined-not-nstr-stack-value tcl.lang.TJCBench InternalExprOpIntInlinedNotNstrStackValueResult} \
     {internal-result-expr-op-int-inlined-not-nstr-stack-value-int tcl.lang.TJCBench InternalExprOpIntInlinedNotNstrStackValueIntResult} \
@@ -69,6 +68,9 @@ set tuples [list \
     {internal-result-expr-op-int-plus-stack-value tcl.lang.TJCBench InternalExprOpIntPlusStackValueResult} \
     {internal-result-expr-op-int-plus-stack-value-int tcl.lang.TJCBench InternalExprOpIntPlusStackValueIntResult} \
     {internal-result-expr-op-int-inlined-plus-stack-value-int tcl.lang.TJCBench InternalExprOpIntInlinedPlusStackValueIntResult} \
+    {internal-result-expr-op-int-inlined-plus-nb-stack-value-int tcl.lang.TJCBench InternalExprOpIntInlinedPlusNBStackValueIntResult} \
+    {internal-result-expr-op-int-inlined-plus-im-stack-value-int tcl.lang.TJCBench InternalExprOpIntInlinedPlusIMStackValueIntResult} \
+    {internal-result-expr-op-int-inlined-plus-imr-stack-value-int tcl.lang.TJCBench InternalExprOpIntInlinedPlusIMRStackValueIntResult} \
     {internal-expr-op-double-plus tcl.lang.TJCBench InternalExprOpDoublePlus} \
     {internal-result-expr-op-logical-or tcl.lang.TJCBench InternalExprOpLogicalOrResult} \
     {internal-result-expr-op-inlined-logical-or tcl.lang.TJCBench InternalExprOpInlinedLogicalOrResult} \
