@@ -1,3 +1,21 @@
+2006-06-26  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/tjc/tjc/library/compileproc.tcl:
+        Update compileproc_expr_evaluate_result_emit
+        so that it will use new compile time type
+        info to invoke a specific interp.setResult()
+        method based on the ExprValue result type.
+        Each operator and math function now returns
+        info to indicate the result type if it is
+        known at compile time. This change makes
+        most expr commands execute more quickly
+        since it removes a call to a method that
+        branches based on type.
+        * tests/tjc/compileproc.test:
+        * tests/tjc/compileproc_9.test: Add test
+        cases for setting of result based on
+        compile time result info.
+
 2006-06-23  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/jacl/tcl/lang/Interp.java (setResult,

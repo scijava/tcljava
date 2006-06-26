@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: compileproc.tcl,v 1.30 2006/06/22 06:21:27 mdejong Exp $
+#  RCS: @(#) $Id: compileproc.tcl,v 1.31 2006/06/26 21:29:32 mdejong Exp $
 #
 #
 
@@ -718,6 +718,7 @@ proc compileproc_init {} {
     set _compileproc(options,expr_inline_operators) 0
     set _compileproc(options,expr_value_stack) 0
     set _compileproc(options,expr_value_stack_null) 0
+    set _compileproc(options,expr_inline_set_result) 0
 
     # Init flags in key info array
     set _compileproc_key_info(cmd_needs_init) 0
@@ -4873,6 +4874,8 @@ proc compileproc_query_module_flags { proc_name } {
                 [module_option_value inline-expr-value-stack-null]
         }
         set _compileproc(options,expr_value_stack_null) $inline_expr_value_stack_null_option
+
+        set _compileproc(options,expr_inline_set_result) 1
     }
 
 #    if {$debug} {
@@ -4888,6 +4891,7 @@ proc compileproc_query_module_flags { proc_name } {
 #        puts "expr_inline_operators = $_compileproc(options,expr_inline_operators)"
 #        puts "expr_value_stack = $_compileproc(options,expr_value_stack)"
 #        puts "expr_value_stack_null = $_compileproc(options,expr_value_stack_null)"
+#        puts "expr_inline_set_result = $_compileproc(options,expr_inline_set_result)"
 #    }
 }
 
@@ -6491,6 +6495,7 @@ proc compileproc_emit_container_expr { key } {
 # returned by this method.
 
 proc compileproc_expr_evaluate_result_emit { key } {
+    global _compileproc
     global _compileproc_key_info
 
 #    set debug 0
@@ -6512,27 +6517,64 @@ proc compileproc_expr_evaluate_result_emit { key } {
     set ev [lindex $eval_tuple 1]
     append buffer [lindex $eval_tuple 2]
 
-    append buffer [emitter_indent] \
-        "TJC.exprSetResult(interp, " $ev ")\;\n" \
+    set ev_types [lindex $eval_tuple 3 3]
+#    puts "ev_types \{$ev_types\}"
+
+    if {$_compileproc(options,expr_inline_set_result)} {
+        # Invoke specific Interp.setResult() method
+        # based on compile time info about the
+        # return value inside the ExprValue.
+
+        if {$ev_types == {boolean}} {
+            append buffer [emitter_indent] \
+                "interp.setResult( " $ev ".getIntValue() != 0 )\;\n"
+        } elseif {$ev_types == {int}} {
+            append buffer [emitter_indent] \
+                "interp.setResult( " $ev ".getIntValue() )\;\n"
+        } elseif {$ev_types == {double}} {
+            append buffer [emitter_indent] \
+                "interp.setResult( " $ev ".getDoubleValue() )\;\n"
+        } elseif {$ev_types == {String}} {
+            append buffer [emitter_indent] \
+                "interp.setResult( " $ev ".getStringValue() )\;\n"
+        } else {
+            append buffer [emitter_indent] \
+                "TJC.exprSetResult(interp, " $ev ")\;\n"
+        }
+    } else {
+        # Invoke exprSetResult() to set interp result
+        # based on runtime type info.
+
+        append buffer [emitter_indent] \
+            "TJC.exprSetResult(interp, " $ev ")\;\n"
+    }
+
+    append buffer \
         [compileproc_emit_exprvalue_release $ev]
 
     return $buffer
 }
 
 # Emit a unary operator after evaluating a value.
-# Return a tuple of {EXPRVALUE BUFFER} containing
-# the name of an ExprValue variable and
-# the buffer that will evaluate the expr value.
+# Return a tuple of {EXPRVALUE BUFFER EV_TYPES}
+#
+# EXPRVALUE : symbol of type ExprValue
+# BUFFER : Buffer that will evaluate EXPRVALUE
+# EV_TYPES : List of possible result types
+#     Can be {} if types are not known at compile time
+#     Can be 1 or more of {int double String}
+#     Can be {boolean} for logical unary not operator
 
 proc compileproc_expr_evaluate_emit_unary_operator { op_tuple } {
-    set debug 0
+#    set debug 0
 
-    if {$debug} {
-        puts "compileproc_expr_evaluate_emit_unary_operator \{$op_tuple\}"
-    }
+#    if {$debug} {
+#        puts "compileproc_expr_evaluate_emit_unary_operator \{$op_tuple\}"
+#    }
 
     set buffer ""
     set op_buffer ""
+    set operand_ev_types {}
 
     set type [lindex $op_tuple 0]
     if {$type != {unary operator}} {
@@ -6562,6 +6604,10 @@ proc compileproc_expr_evaluate_emit_unary_operator { op_tuple } {
     set value_info_has_null_string [lindex $peek_tuple 2]
     set infostr [lindex $peek_tuple 3]
 
+    set is_numeric_literal 0
+    set is_numeric_literal_int 0
+    set is_numeric_literal_double 0
+
     if {$value_info_type == {int literal} ||
             $value_info_type == {double literal}} {
         set is_numeric_literal 1
@@ -6570,19 +6616,17 @@ proc compileproc_expr_evaluate_emit_unary_operator { op_tuple } {
             $value_info_type {int literal}]
         set is_numeric_literal_double [string equal \
             $value_info_type {double literal}]
-    } else {
-        set is_numeric_literal 0
     }
 
-    if {$debug} {
-        puts "op is $op"
-        puts "passed tuple \{$tuple\} to compileproc_expr_peek_operand"
-
-        puts "value_info_type is $value_info_type"
-        puts "value_info_value is $value_info_value"
-        puts "value_info_has_null_string is $value_info_has_null_string"
-        puts "infostr is ->$infostr<-"
-    }
+#    if {$debug} {
+#        puts "op is $op"
+#        puts "passed tuple \{$tuple\} to compileproc_expr_peek_operand"
+#
+#        puts "value_info_type is $value_info_type"
+#        puts "value_info_value is $value_info_value"
+#        puts "value_info_has_null_string is $value_info_has_null_string"
+#        puts "infostr is ->$infostr<-"
+#    }
 
     set skip_unary_op_call 0
     set plus_number 0
@@ -6656,16 +6700,24 @@ proc compileproc_expr_evaluate_emit_unary_operator { op_tuple } {
 
         if {$bitwise_negate_number} {
             set tuple [list {constant int} "~${numeric_literal}"]
+            set operand_ev_types int
         } elseif {$plus_number} {
             if {$is_numeric_literal_int} {
                 set tuple [list {constant int} $numeric_literal]
+                set operand_ev_types int
             } elseif {$is_numeric_literal_double} {
                 set tuple [list {constant double} $numeric_literal]
+                set operand_ev_types double
             } else {
                 error "unknown literal type"
             }
         } elseif {$negate_number} {
             set tuple [list [lindex $tuple 0] "-${numeric_literal}"]
+            if {$is_numeric_literal_int} {
+                set operand_ev_types int
+            } elseif {$is_numeric_literal_double} {
+                set operand_ev_types double
+            }
         } else {
             error "unknown operation"
         }
@@ -6730,6 +6782,8 @@ proc compileproc_expr_evaluate_emit_unary_operator { op_tuple } {
             $tuple]
         set ev [lindex $eval_tuple 1]
 
+        set operand_ev_types [lindex $eval_tuple 3 3]
+
         append op_buffer \
             [lindex $eval_tuple 2] \
             [emitter_indent] \
@@ -6746,13 +6800,37 @@ proc compileproc_expr_evaluate_emit_unary_operator { op_tuple } {
         [emitter_indent] \
         "// End Unary operator: " $op "\n"
 
-    return [list $ev $buffer]
+    # Determine the operator result type. Some operators
+    # have only one possible type while others
+    # depend on the type of the operand.
+
+    if {$op == "!"} {
+        set ev_types boolean
+    } elseif {$op == "~"} {
+        set ev_types int
+    } elseif {$op == "+" || $op == "-"} {
+        if {$operand_ev_types == {int}} {
+            set ev_types int
+        } elseif {$operand_ev_types == {double}} {
+            set ev_types double
+        } else {
+            set ev_types {int double}
+        }
+    }
+
+    return [list $ev $buffer $ev_types]
 }
 
 # Emit a binary operator after evaluating a left
-# and right value. Return a tuple of {EXPRVALUE BUFFER}
-# containing the name of an ExprValue variable and
-# the bufer that will evaluate the expr value.
+# and right value.
+# Return a tuple of {EXPRVALUE BUFFER EV_TYPES}
+#
+# EXPRVALUE : symbol of type ExprValue
+# BUFFER : Buffer that will evaluate EXPRVALUE
+# EV_TYPES : List of possible result types
+#     Can be {} if types are not known at compile time
+#     Can be 1 or more of {int double String}
+#     Can be {boolean} for logical operators
 
 proc compileproc_expr_evaluate_emit_binary_operator { op_tuple } {
     global _compileproc
@@ -6785,65 +6863,86 @@ proc compileproc_expr_evaluate_emit_binary_operator { op_tuple } {
 
     set logic_op 0 ; # true if && or || operator
     set equals_op 0 ; # true if == != eq or ne operator
+    set bcompare_op 0 ; # true for any boolean compare op
+    set math_op 0 ; # true for + - / * and %
+    set bitwise_op 0 ; # true for << >> & | and ^
 
     switch -exact -- $op {
         "*" {
             set opval TJC.EXPR_OP_MULT
+            set math_op 1
         }
         "/" {
             set opval TJC.EXPR_OP_DIVIDE
+            set math_op 1
         }
         "%" {
             set opval TJC.EXPR_OP_MOD
+            set math_op 1
         }
         "+" {
             set opval TJC.EXPR_OP_PLUS
+            set math_op 1
         }
         "-" {
             set opval TJC.EXPR_OP_MINUS
+            set math_op 1
         }
         "<<" {
             set opval TJC.EXPR_OP_LEFT_SHIFT
+            set bitwise_op 1
         }
         ">>" {
             set opval TJC.EXPR_OP_RIGHT_SHIFT
+            set bitwise_op 1
         }
         "<" {
             set opval TJC.EXPR_OP_LESS
+            set bcompare_op 1
         }
         ">" {
             set opval TJC.EXPR_OP_GREATER
+            set bcompare_op 1
         }
         "<=" {
             set opval TJC.EXPR_OP_LEQ
+            set bcompare_op 1
         }
         ">=" {
             set opval TJC.EXPR_OP_GEQ
+            set bcompare_op 1
         }
         "==" {
             set opval TJC.EXPR_OP_EQUAL
             set equals_op 1
+            set bcompare_op 1
         }
         "!=" {
             set opval TJC.EXPR_OP_NEQ
             set equals_op 1
+            set bcompare_op 1
         }
         "&" {
             set opval TJC.EXPR_OP_BIT_AND
+            set bitwise_op 1
         }
         "^" {
             set opval TJC.EXPR_OP_BIT_XOR
+            set bitwise_op 1
         }
         "|" {
             set opval TJC.EXPR_OP_BIT_OR
+            set bitwise_op 1
         }
         "eq" {
             set opval TJC.EXPR_OP_STREQ
             set equals_op 1
+            set bcompare_op 1
         }
         "ne" {
             set opval TJC.EXPR_OP_STRNEQ
             set equals_op 1
+            set bcompare_op 1
         }
         "&&" -
         "||" {
@@ -6890,6 +6989,10 @@ proc compileproc_expr_evaluate_emit_binary_operator { op_tuple } {
     if {$op_tuple != {}} {
         set ev1 [lindex $op_tuple 0]
         set op_buffer [lindex $op_tuple 1]
+        # operand types will be {} if inlined operator
+        # function returns just a symbols and a buffer.
+        set left_operand_ev_types [lindex $op_tuple 2]
+        set right_operand_ev_types [lindex $op_tuple 3]
     } else {
         # Append code to evaluate left and right values and
         # invoke the binary operator evaluation method.
@@ -6906,6 +7009,9 @@ proc compileproc_expr_evaluate_emit_binary_operator { op_tuple } {
             [lindex $left_eval_tuple 2] \
             [lindex $right_eval_tuple 2]
 
+        set left_operand_ev_types [lindex $left_eval_tuple 3 3]
+        set right_operand_ev_types [lindex $right_eval_tuple 3 3]
+
         # Emit TJC binary operator invocation
         append op_buffer [emitter_indent] \
             "TJC.exprBinaryOperator(interp, " $opval ", " $ev1 ", " $ev2 ")\;\n" \
@@ -6921,11 +7027,44 @@ proc compileproc_expr_evaluate_emit_binary_operator { op_tuple } {
         [emitter_indent] \
         "// End Binary operator: " $op "\n"
 
-    return [list $ev1 $buffer]
+    # Determine the operator result type.
+    # Some operators have only one possible type
+    # while others depend on the type of the operand.
+
+    if {$bcompare_op || $logic_op} {
+        set ev_types boolean
+    } elseif {$math_op} {
+        if {$op == "%"} {
+            set ev_types int
+        } else {
+            # Result type for math operators depends
+            # on operand types. If either operand
+            # is known to be a double then the result
+            # is a double. If both operands are known
+            # to be of type int, then the result is int.
+            # Otherwise, result could be int or double.
+
+            if {$left_operand_ev_types == {int} && \
+                $right_operand_ev_types == {int}} {
+                set ev_types int
+            } elseif {$left_operand_ev_types == {double} || \
+                $right_operand_ev_types == {double}} {
+                set ev_types double
+            } else {
+                set ev_types {int double}
+            }
+        }
+    } elseif {$bitwise_op} {
+        set ev_types int
+    } else {
+        set ev_types {int double}
+    }
+
+    return [list $ev1 $buffer $ev_types]
 }
 
 # FIXME: Cleanup binary operator function by moving logic
-# related to emotting of special cases into operator
+# related to emitting of special cases into operator
 # specific function. Then, these operator specific
 # functions can be invoked on a per-operator basis.
 
@@ -6948,9 +7087,13 @@ LOGIC (&& ||) (no strings, no conversion)
 # Emit code for the ==, !=, eq, and ne operators.
 # These equals operators accept any type.
 # The == and != operators will convert operands
-# so that the types match. This method will
-# return a tuple consisting of:
-# {EXPRVALUE_SYMBOL BUFFER}
+# so that the types match. 
+# Return a tuple of {EXPRVALUE BUFFER}
+# or {} if the default binary operator method
+# should be invoked.
+#
+# EXPRVALUE : symbol of type ExprValue
+# BUFFER : Buffer that will evaluate EXPRVALUE
 
 proc compileproc_expr_evaluate_emit_binary_equals_operator {
         op left_tuple left_peek_tuple right_tuple right_peek_tuple } {
@@ -7296,9 +7439,13 @@ proc compileproc_expr_evaluate_emit_binary_equals_operator {
 # Emit code for the || and && operators.
 # These operators evaluate operands as
 # booleans and can be used for short
-# circut logic. This method will return
-# a tupleof:
-# {EXPRVALUE_SYMBOL BUFFER}
+# circut logic.
+# Return a tuple of {EXPRVALUE BUFFER}
+# or {} if the default binary operator method
+# should be invoked.
+#
+# EXPRVALUE : symbol of type ExprValue
+# BUFFER : Buffer that will evaluate EXPRVALUE
 
 proc compileproc_expr_evaluate_emit_binary_logic_operator {
         op left_tuple left_peek_tuple right_tuple right_peek_tuple } {
@@ -7360,10 +7507,15 @@ proc compileproc_expr_evaluate_emit_binary_logic_operator {
     return [list $ev1 $op_buffer]
 }
 
-# Emit a ternary operator like ($b ? 1 : 0). Return a
-# tuple of {EXPRVALUE BUFFER} containing the name of
-# an ExprValue variable and the bufer that will
-# evaluate the expr value.
+# Emit a ternary operator like ($b ? 1 : 0)
+# Return a tuple of {EXPRVALUE BUFFER EV_TYPES}
+#
+# EXPRVALUE : symbol of type ExprValue
+# BUFFER : Buffer that will evaluate EXPRVALUE
+# EV_TYPES : List of possible result types
+#     Can be {} if types are not known at compile time
+#     Can be 1 or more of {int double String}
+#     Can be {boolean} if both values are boolean values
 
 proc compileproc_expr_evaluate_emit_ternary_operator { op_tuple } {
     global _compileproc
@@ -7389,6 +7541,9 @@ proc compileproc_expr_evaluate_emit_ternary_operator { op_tuple } {
     set cond_eval_tuple [compileproc_expr_evaluate_emit_exprvalue $cond_tuple]
     set cond_infostr [lindex $cond_eval_tuple 0]
     set ev1 [lindex $cond_eval_tuple 1]
+    set cond_ev_types [lindex $cond_eval_tuple 3 3]
+
+#    puts "cond_ev_types \{$cond_ev_types\}"
 
     append op_buffer [lindex $cond_eval_tuple 2]
 
@@ -7398,6 +7553,17 @@ proc compileproc_expr_evaluate_emit_ternary_operator { op_tuple } {
     set true_eval_tuple [compileproc_expr_evaluate_emit_exprvalue $true_tuple]
     set true_infostr [lindex $true_eval_tuple 0]
     set ev2 [lindex $true_eval_tuple 1]
+    set true_ev_types [lindex $true_eval_tuple 3 3]
+
+#    puts "true_ev_types \{$true_ev_types\}"
+
+    # FIXME: If ev1 is known to be of type boolean or int at compile
+    # time, then an optimized call can be used instead of
+    # getBooleanValue() here. Invoke inlined getIntValue()
+    # and then do a (val ? true : false) branch to set
+    # a local boolean value. This is also done in the setResult logic!
+
+    # if {$true_ev_types = {int}} ...
 
     append op_buffer \
         [emitter_indent] \
@@ -7428,6 +7594,9 @@ proc compileproc_expr_evaluate_emit_ternary_operator { op_tuple } {
     set false_eval_tuple [compileproc_expr_evaluate_emit_exprvalue $false_tuple]
     set false_infostr [lindex $false_eval_tuple 0]
     set ev3 [lindex $false_eval_tuple 1]
+    set false_ev_types [lindex $false_eval_tuple 3 3]
+
+#    puts "false_ev_types \{$false_ev_types\}"
 
     append op_buffer \
         [lindex $false_eval_tuple 2]
@@ -7462,13 +7631,61 @@ proc compileproc_expr_evaluate_emit_ternary_operator { op_tuple } {
         [emitter_indent] \
         "// End Ternary operator: ?\n"
 
-    return [list $ev1 $buffer]
+    # If types for both true and false values are known
+    # at compile time, then the type for the whole
+    # expression is known at compile time. This
+    # works for int, double, String, and boolean.
+    # If {int double} and a specific type then
+    # return {int double}.
+
+    set true_size [llength $true_ev_types]
+    set false_size [llength $false_ev_types]
+
+    set true_is_int [expr {$true_size == 1 && $true_ev_types == {int}}]
+    set true_is_double [expr {$true_size == 1 && $true_ev_types == {double}}]
+    set true_is_int_double [expr {$true_ev_types == {int double}}]
+
+    set false_is_int [expr {$false_size == 1 && $false_ev_types == {int}}]
+    set false_is_double [expr {$false_size == 1 && $false_ev_types == {double}}]
+    set false_is_int_double [expr {$false_ev_types == {int double}}]
+
+    if {$true_size == 1 && $false_size == 1 && \
+        ($true_ev_types eq $false_ev_types)} {
+        # ( ... ? 1 : 0 )
+        # ( ... ? 1.0 : 0.0 )
+        # ( ... ? true : false )
+        # ( ... ? "a" : "b" )
+        set ev_types $true_ev_types
+    } elseif {($true_is_int && $false_is_double) || \
+        ($true_is_double && $false_is_int)} {
+        # ( ... ? 0 : 0.0 )
+        # ( ... ? 0.0 : 1 )
+        set ev_types {int double}
+    } elseif {($true_is_int_double && \
+            ($false_is_int || $false_is_double)) || \
+        ($false_is_int_double && \
+            ($true_is_int || $true_is_double)) || \
+        ($true_is_int_double && $false_is_int_double)} {
+        # ( ... ? 1 : abs($v) )
+        # ( ... ? 1.0 : abs($v) )
+        # ( ... ? abs($v) : 0 )
+        # ( ... ? abs($v) : 1.0 )
+        # ( ... ? abs($v) : abs($v) )
+        set ev_types {int double}
+    } else {
+        # Specific type not known at compile time
+        set ev_types {}
+    }
+
+    return [list $ev1 $buffer $ev_types]
 }
 
-# Emit a math function like pow(2,2). Return a
-# tuple of {EXPRVALUE BUFFER} containing the name of
-# an ExprValue variable and the bufer that will
-# evaluate the expr value.
+# Emit a math function like pow(2,2).
+# Return a tuple of {EXPRVALUE BUFFER EV_TYPES}
+#
+# EXPRVALUE : symbol of type ExprValue
+# BUFFER : Buffer that will evaluate EXPRVALUE
+# EV_TYPES : List of possible result types {int double String} or {boolean}
 
 proc compileproc_expr_evaluate_emit_math_function { op_tuple } {
 #    set debug 0
@@ -7478,6 +7695,7 @@ proc compileproc_expr_evaluate_emit_math_function { op_tuple } {
 #    }
 
     set buffer ""
+    set ev_types {}
 
     # There is no checking of the number of arguments to
     # a math function. We just pass in however many
@@ -7491,17 +7709,19 @@ proc compileproc_expr_evaluate_emit_math_function { op_tuple } {
     set infostrs [list]
     set evsyms [list]
     set buffers [list]
+    set rtuples [list]
 
     # Emit ExprValue for each argument to the math function
     set len [llength $values]
     for {set i 0} {$i < $len} {incr i} {
         set tuple [lindex $values $i]
         set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $tuple]
-        foreach {infostr ev eval_buffer} $eval_tuple {break}
+        foreach {infostr ev eval_buffer rtuple} $eval_tuple {break}
 
         lappend infostrs $infostr
         lappend evsyms $ev
         lappend buffers $eval_buffer
+        lappend rtuples $rtuple
     }
 
     append buffer [emitter_indent] \
@@ -7525,8 +7745,10 @@ proc compileproc_expr_evaluate_emit_math_function { op_tuple } {
         set ev [lindex $evsyms 0]
         if {$funcname == "int"} {
             set tjc_func "TJC.exprIntMathFunction"
+            set ev_types int
         } else {
             set tjc_func "TJC.exprDoubleMathFunction"
+            set ev_types double
         }
         append buffer [emitter_indent] \
             ${tjc_func} "(interp, " $ev ")\;\n"
@@ -7589,12 +7811,71 @@ proc compileproc_expr_evaluate_emit_math_function { op_tuple } {
                     [compileproc_emit_exprvalue_release $ev]
             }
         }
+
+        # Determine return ev_types, int and double are handled above
+
+        switch -- $funcname {
+            "abs" {
+                # Result type of abs() should match the
+                # input type, assuming the input type
+                # is known at compile time.
+
+                if {$len == 1} {
+                    set rtuple [lindex $rtuples 0]
+                    set result_type [lindex $rtuple 0]
+                    set result_ev_types [lindex $rtuple 3]
+                    
+                    if {$result_type == "int literal" || \
+                        ($result_type == "ExprValue" && \
+                            $result_ev_types == "int")} {
+                        set ev_types int
+                    } elseif {$result_type == "double literal" || \
+                        ($result_type == "ExprValue" && \
+                            $result_ev_types == "double")} {
+                        set ev_types double
+                    } else {
+                        # Argument type not known at compile time
+                        set ev_types {int double}
+                    }
+                }
+            }
+            "round" {
+                set ev_types int
+            }
+            "acos" -
+            "asin" -
+            "atan" -
+            "atan2" -
+            "ceil" -
+            "cos" -
+            "cosh" -
+            "exp" -
+            "floor" -
+            "fmod" -
+            "hypot" -
+            "log" -
+            "log10" -
+            "pow" -
+            "rand" -
+            "sin" -
+            "sinh" -
+            "sqrt" -
+            "srand" -
+            "tan" -
+            "tanh" {
+                # All these math functions return double
+                set ev_types double
+            }
+            default {
+                # No-op for unknown math function
+            }
+        }
     }
 
     append buffer [emitter_indent] \
         "// End Math function: " $funcname "\n"
 
-    return [list $result_tmpsymbol $buffer]
+    return [list $result_tmpsymbol $buffer $ev_types]
 }
 
 # Determine information about an expr operand by peeking
@@ -7605,15 +7886,15 @@ proc compileproc_expr_evaluate_emit_math_function { op_tuple } {
 proc compileproc_expr_peek_operand { tuple } {
     set debug 0
 
-    if {$debug} {
-        puts "compileproc_expr_peek_operand \{$tuple\}"
-    }
+#    if {$debug} {
+#        puts "compileproc_expr_peek_operand \{$tuple\}"
+#    }
 
     set peek_tuple [compileproc_expr_evaluate_emit_exprvalue $tuple {peek 1}]
 
-    if {$debug} {
-        puts "peek tuple \{$peek_tuple\}"
-    }
+#    if {$debug} {
+#        puts "peek tuple \{$peek_tuple\}"
+#    }
 
     # peek_tuple is {INFOSTR SYMBOL BUFFER RESULT_TUPLE}
     #
@@ -7624,8 +7905,13 @@ proc compileproc_expr_peek_operand { tuple } {
     if {$buffer != ""} {
         error "expected empty eval buffer but got : \"$buffer\""
     }
-    set result_tuple [lindex $peek_tuple 3]
+    set result_info [lindex $peek_tuple 3]
+    # Replace EV_TYPES with INFOSTR. EV_TYPES is always
+    # going to be {} in peek mode.
+    set result_tuple [lrange $result_info 0 2]
 
+    # result_info tuple {TYPE SYMBOL IS_STRING_VALUE_NULL EV_TYPES}
+    #
     # return tuple {TYPE SYMBOL IS_STRING_VALUE_NULL INFOSTR}
 
     lappend result_tuple $infostr
@@ -7655,13 +7941,15 @@ proc compileproc_expr_peek_operand { tuple } {
 #
 #     rtype : Indicates the preferred result type. Type can
 #             be either ExprValue (the default) or TclObject.
+#
+# Return tuple {INFOSTR SYMBOL BUFFER RESULT_INFO}
 
 proc compileproc_expr_evaluate_emit_exprvalue { tuple {genflags {}} } {
-    set debug 0
+#    set debug 0
 
-    if {$debug} {
-        puts "compileproc_expr_evaluate_emit_exprvalue \{$tuple\} \{$genflags\}"
-    }
+#    if {$debug} {
+#        puts "compileproc_expr_evaluate_emit_exprvalue \{$tuple\} \{$genflags\}"
+#    }
 
     # Examine genflags
 
@@ -7704,6 +7992,11 @@ proc compileproc_expr_evaluate_emit_exprvalue { tuple {genflags {}} } {
     set type [lindex $tuple 0]
     set value [lindex $tuple 1]
 
+    # Could be 1 or more of {int double String}
+    # or {boolean}. An empty ev_types is
+    # the same as {int double String}.
+    set ev_types {}
+
     switch -exact -- $type {
         {constant int} -
         {constant double} {
@@ -7714,8 +8007,10 @@ proc compileproc_expr_evaluate_emit_exprvalue { tuple {genflags {}} } {
 
             if {$type eq {constant int}} {
                 set result_type "int literal"
+                lappend ev_types int
             } else {
                 set result_type "double literal"
+                lappend ev_types double
             }
             set result_symbol $value
             set infostr $value
@@ -7804,6 +8099,7 @@ proc compileproc_expr_evaluate_emit_exprvalue { tuple {genflags {}} } {
                     $tuple]
                 set result_symbol [lindex $eval_tuple 0]
                 append buffer [lindex $eval_tuple 1]
+                set ev_types [lindex $eval_tuple 2]
             }
         }
         {binary operator} {
@@ -7815,6 +8111,7 @@ proc compileproc_expr_evaluate_emit_exprvalue { tuple {genflags {}} } {
                     $tuple]
                 set result_symbol [lindex $eval_tuple 0]
                 append buffer [lindex $eval_tuple 1]
+                set ev_types [lindex $eval_tuple 2]
             }
         }
         {ternary operator} {
@@ -7826,6 +8123,7 @@ proc compileproc_expr_evaluate_emit_exprvalue { tuple {genflags {}} } {
                     $tuple]
                 set result_symbol [lindex $eval_tuple 0]
                 append buffer [lindex $eval_tuple 1]
+                set ev_types [lindex $eval_tuple 2]
             }
         }
         {math function} {
@@ -7837,6 +8135,7 @@ proc compileproc_expr_evaluate_emit_exprvalue { tuple {genflags {}} } {
                     $tuple]
                 set result_symbol [lindex $eval_tuple 0]
                 append buffer [lindex $eval_tuple 1]
+                set ev_types [lindex $eval_tuple 2]
             }
         }
         {command operand} {
@@ -7920,11 +8219,15 @@ proc compileproc_expr_evaluate_emit_exprvalue { tuple {genflags {}} } {
         if {$result_type == "double literal"} {
             set type "double"
         }
+        lappend ev_types $type
         if {$gencode} {
             append buffer \
                 [compileproc_emit_exprvalue_get $tmpsymbol $type $result_symbol $srep]
         }
     } elseif {$result_type == "String" || $result_type == "TclObject"} {
+        if {$result_type == "String"} {
+            lappend ev_types "String"
+        }
         if {$gencode} {
             append buffer \
                 [compileproc_emit_exprvalue_get $tmpsymbol $result_type $result_symbol]
@@ -7935,10 +8238,13 @@ proc compileproc_expr_evaluate_emit_exprvalue { tuple {genflags {}} } {
         error "unknown result type \"$result_type\""
     }
 
-    # Tuple of {TYPE SYMBOL IS_STRING_VALUE_NULL}
+    # Tuple of {TYPE SYMBOL IS_STRING_VALUE_NULL EV_TYPES}
     set result_info [list $result_type $result_symbol \
         [expr {$srep == "null"}] \
+        $ev_types \
         ]
+
+    # Return tuple {INFOSTR SYMBOL BUFFER RESULT_INFO}
 
     return [list $infostr $value_symbol $buffer $result_info]
 }

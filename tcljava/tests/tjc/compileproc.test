@@ -7156,6 +7156,1909 @@ proc p {} {
     ]
 
 
+# The following tests check the ExprValue return types
+# info via compileproc_expr_evaluate_emit_exprvalue.
+# These values indicate when the type of the value inside
+# an ExprValue is known at compile time. In the most simple
+# case of a literal int, the value inside an ExprValue would
+# be known to be of type int after evaluation code for
+# the value is emitted. It is not currently possible to
+# determine the type an ExprValue (a peek operation)
+# without generating code to evaluate the ExprValue.
+
+tcltest::test compileproc_exprvalue_types-1.0 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {1}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $buffer \
+        $ev_types
+} [list \
+    {1} \
+    {{constant boolean} true 1} \
+    {ExprValue tmp0 = TJC.exprGetValue(interp, 1, null);
+} \
+    {int} \
+    ]
+
+tcltest::test compileproc_exprvalue_types-1.1 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {1.0}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $buffer \
+        $ev_types
+} [list \
+    {1.0} \
+    {{constant braced string} 1.0} \
+    {ExprValue tmp0 = TJC.exprGetValue(interp, 1.0, null);
+} \
+    {double} \
+    ]
+
+tcltest::test compileproc_exprvalue_types-1.2 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {"str"}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $buffer \
+        $ev_types
+} [list \
+    {"str"} \
+    {{constant string} str} \
+    {ExprValue tmp0 = TJC.exprGetValue(interp, "str");
+} \
+    {String} \
+    ]
+
+tcltest::test compileproc_exprvalue_types-1.3 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {01}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $buffer \
+        $ev_types
+} [list \
+    {01} \
+    {{constant braced string} 01} \
+    {ExprValue tmp0 = TJC.exprGetValue(interp, 1, "01");
+} \
+    {int} \
+    ]
+
+
+tcltest::test compileproc_exprvalue_types-2.0 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {- 1}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $buffer \
+        $ev_types
+} [list \
+    {- 1} \
+    {{unary operator} {- {{constant 1}}}} \
+    {// Unary operator: - 1
+ExprValue tmp0 = TJC.exprGetValue(interp, -1, null);
+// End Unary operator: -
+} \
+    {int} \
+    ]
+
+tcltest::test compileproc_exprvalue_types-2.1 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {- 1.5}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $buffer \
+        $ev_types
+} [list \
+    {- 1.5} \
+    {{unary operator} {- {{constant 1.5}}}} \
+    {// Unary operator: - 1.5
+ExprValue tmp0 = TJC.exprGetValue(interp, -1.5, null);
+// End Unary operator: -
+} \
+    {double} \
+    ]
+
+tcltest::test compileproc_exprvalue_types-2.2 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {!1}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $buffer \
+        $ev_types
+} [list \
+    {!1} \
+    {{unary operator} {! {{constant 1}}}} \
+    {// Unary operator: ! 1
+ExprValue tmp0 = TJC.exprGetValue(interp, 1, null);
+TJC.exprUnaryOperator(interp, TJC.EXPR_OP_UNARY_NOT, tmp0);
+// End Unary operator: !
+} \
+    {boolean} \
+    ]
+
+tcltest::test compileproc_exprvalue_types-2.3 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {~0}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $buffer \
+        $ev_types
+} [list \
+    {~0} \
+    {{unary operator} {~ {{constant 0}}}} \
+    {// Unary operator: ~ 0
+ExprValue tmp0 = TJC.exprGetValue(interp, ~0, null);
+// End Unary operator: ~
+} \
+    {int} \
+    ]
+
+tcltest::test compileproc_exprvalue_types-2.4 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {+ 1}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $buffer \
+        $ev_types
+} [list \
+    {+ 1} \
+    {{unary operator} {+ {{constant 1}}}} \
+    {// Unary operator: + 1
+ExprValue tmp0 = TJC.exprGetValue(interp, 1, null);
+// End Unary operator: +
+} \
+    {int} \
+    ]
+
+tcltest::test compileproc_exprvalue_types-2.5 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {+ $v}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $ev_types
+} [list \
+    {+ $v} \
+    {{unary operator} {+ {{{variable scalar} v}}}} \
+    {int double} \
+    ]
+
+tcltest::test compileproc_exprvalue_types-2.6 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {~ $v}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $ev_types
+} [list \
+    {~ $v} \
+    {{unary operator} {~ {{{variable scalar} v}}}} \
+    {int} \
+    ]
+
+tcltest::test compileproc_exprvalue_types-2.7 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {! $v}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $ev_types
+} [list \
+    {! $v} \
+    {{unary operator} {! {{{variable scalar} v}}}} \
+    {boolean} \
+    ]
+
+tcltest::test compileproc_exprvalue_types-2.8 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {- $v}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $ev_types
+} [list \
+    {- $v} \
+    {{unary operator} {- {{{variable scalar} v}}}} \
+    {int double} \
+    ]
+
+tcltest::test compileproc_exprvalue_types-2.9 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {- (- 1)}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $ev_types
+} [list \
+    {- (- 1)} \
+    {{unary operator} {- {{{unary operator} {- {{constant 1}}}}}}} \
+    {int} \
+    ]
+
+tcltest::test compileproc_exprvalue_types-2.10 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {- (- 1.0)}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $ev_types
+} [list \
+    {- (- 1.0)} \
+    {{unary operator} {- {{{unary operator} {- {{constant 1.0}}}}}}} \
+    {double} \
+    ]
+
+
+tcltest::test compileproc_exprvalue_types-3.0 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {1 && 1}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $ev_types
+} [list \
+    {1 && 1} \
+    {{binary operator} {&& {{constant 1} {constant 1}}}} \
+    {boolean} \
+    ]
+
+tcltest::test compileproc_exprvalue_types-3.1 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {0 || 1}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $ev_types
+} [list \
+    {0 || 1} \
+    {{binary operator} {|| {{constant 0} {constant 1}}}} \
+    {boolean} \
+    ]
+
+tcltest::test compileproc_exprvalue_types-3.2 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {1 == 1}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $ev_types
+} [list \
+    {1 == 1} \
+    {{binary operator} {== {{constant 1} {constant 1}}}} \
+    {boolean} \
+    ]
+
+tcltest::test compileproc_exprvalue_types-3.3 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {1 != 1}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $ev_types
+} [list \
+    {1 != 1} \
+    {{binary operator} {!= {{constant 1} {constant 1}}}} \
+    {boolean} \
+    ]
+
+tcltest::test compileproc_exprvalue_types-3.4 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {1 eq 1}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $ev_types
+} [list \
+    {1 eq 1} \
+    {{binary operator} {eq {{constant 1} {constant 1}}}} \
+    {boolean} \
+    ]
+
+tcltest::test compileproc_exprvalue_types-3.5 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {1 ne 1}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $ev_types
+} [list \
+    {1 ne 1} \
+    {{binary operator} {ne {{constant 1} {constant 1}}}} \
+    {boolean} \
+    ]
+
+tcltest::test compileproc_exprvalue_types-3.6 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {1 < 0}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $ev_types
+} [list \
+    {1 < 0} \
+    {{binary operator} {< {{constant 1} {constant 0}}}} \
+    {boolean} \
+    ]
+
+tcltest::test compileproc_exprvalue_types-3.7 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {1 > 0}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $ev_types
+} [list \
+    {1 > 0} \
+    {{binary operator} {> {{constant 1} {constant 0}}}} \
+    {boolean} \
+    ]
+
+tcltest::test compileproc_exprvalue_types-3.8 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {1 <= 0}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $ev_types
+} [list \
+    {1 <= 0} \
+    {{binary operator} {<= {{constant 1} {constant 0}}}} \
+    {boolean} \
+    ]
+
+tcltest::test compileproc_exprvalue_types-3.9 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {1 >= 0}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $ev_types
+} [list \
+    {1 >= 0} \
+    {{binary operator} {>= {{constant 1} {constant 0}}}} \
+    {boolean} \
+    ]
+
+
+tcltest::test compileproc_exprvalue_types-4.0 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {0 + 1}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $ev_types
+} [list \
+    {0 + 1} \
+    {{binary operator} {+ {{constant 0} {constant 1}}}} \
+    {int} \
+    ]
+
+tcltest::test compileproc_exprvalue_types-4.1 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {0.0 + 1}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $ev_types
+} [list \
+    {0.0 + 1} \
+    {{binary operator} {+ {{constant 0.0} {constant 1}}}} \
+    {double} \
+    ]
+
+tcltest::test compileproc_exprvalue_types-4.2 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {0 + 1.0}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $ev_types
+} [list \
+    {0 + 1.0} \
+    {{binary operator} {+ {{constant 0} {constant 1.0}}}} \
+    {double} \
+    ]
+
+tcltest::test compileproc_exprvalue_types-4.3 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {0.0 + 1.0}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $ev_types
+} [list \
+    {0.0 + 1.0} \
+    {{binary operator} {+ {{constant 0.0} {constant 1.0}}}} \
+    {double} \
+    ]
+
+tcltest::test compileproc_exprvalue_types-4.4 {emit ExprValue, check ev_types} {
+    # This code would actually generate an error at runtime in the
+    # plus operator, but that does not matter when it comes to
+    # the result type. If one of the operands is known to be
+    # a double at compile time, then the result can only be
+    # of type double.
+    set script {
+proc p {} {
+    expr {0.0 + ""}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $ev_types
+} [list \
+    {0.0 + ""} \
+    {{binary operator} {+ {{constant 0.0} {{constant string} {}}}}} \
+    {double} \
+    ]
+
+tcltest::test compileproc_exprvalue_types-4.5 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {1 % 1}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $ev_types
+} [list \
+    {1 % 1} \
+    {{binary operator} {% {{constant 1} {constant 1}}}} \
+    {int} \
+    ]
+
+tcltest::test compileproc_exprvalue_types-4.6 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {1.0 % ""}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $ev_types
+} [list \
+    {1.0 % ""} \
+    {{binary operator} {% {{constant 1.0} {{constant string} {}}}}} \
+    {int} \
+    ]
+
+tcltest::test compileproc_exprvalue_types-4.7 {emit ExprValue, check ev_types} {
+    # When one operand is an int and the other is a TclObject, then
+    # the compiler can't tell if the result will be int or double.
+    set script {
+proc p {} {
+    expr {0 + $v}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $ev_types
+} [list \
+    {0 + $v} \
+    {{binary operator} {+ {{constant 0} {{variable scalar} v}}}} \
+    {int double} \
+    ]
+
+tcltest::test compileproc_exprvalue_types-4.8 {emit ExprValue, check ev_types} {
+    # When one operand is a double, then the result will be a
+    # double, it does not matter what the other type is.
+    set script {
+proc p {} {
+    expr {0.0 + $v}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $ev_types
+} [list \
+    {0.0 + $v} \
+    {{binary operator} {+ {{constant 0.0} {{variable scalar} v}}}} \
+    {double} \
+    ]
+
+# FIXME: math operator with unknown type operands!
+
+
+tcltest::test compileproc_exprvalue_types-5.0 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {1 << 1}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $ev_types
+} [list \
+    {1 << 1} \
+    {{binary operator} {<< {{constant 1} {constant 1}}}} \
+    {int} \
+    ]
+
+tcltest::test compileproc_exprvalue_types-5.1 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {1 >> 1}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $ev_types
+} [list \
+    {1 >> 1} \
+    {{binary operator} {>> {{constant 1} {constant 1}}}} \
+    {int} \
+    ]
+
+tcltest::test compileproc_exprvalue_types-5.2 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {1 | 1}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $ev_types
+} [list \
+    {1 | 1} \
+    {{binary operator} {| {{constant 1} {constant 1}}}} \
+    {int} \
+    ]
+
+tcltest::test compileproc_exprvalue_types-5.3 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {1 ^ 1.0}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $ev_types
+} [list \
+    {1 ^ 1.0} \
+    {{binary operator} {^ {{constant 1} {constant 1.0}}}} \
+    {int} \
+    ]
+
+tcltest::test compileproc_exprvalue_types-5.4 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {1 & 1}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $ev_types
+} [list \
+    {1 & 1} \
+    {{binary operator} {& {{constant 1} {constant 1}}}} \
+    {int} \
+    ]
+
+tcltest::test compileproc_exprvalue_types-5.5 {emit ExprValue, check ev_types} {
+    # Type of right operand is not int, so the operand will raise
+    # an error at execution time. Still, the return type for
+    # the bitwise operator is always int.
+    set script {
+proc p {} {
+    expr {1 & ""}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $ev_types
+} [list \
+    {1 & ""} \
+    {{binary operator} {& {{constant 1} {{constant string} {}}}}} \
+    {int} \
+    ]
+
+
+tcltest::test compileproc_exprvalue_types-6.0 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {(1 ? 0 : 1)}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $ev_types
+} [list \
+    {(1 ? 0 : 1)} \
+     {{ternary operator} {? {{constant 1} {constant 0} {constant 1}}}} \
+    {int} \
+    ]
+
+tcltest::test compileproc_exprvalue_types-6.1 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {(1 ? 0.0 : 1.0)}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $ev_types
+} [list \
+    {(1 ? 0.0 : 1.0)} \
+     {{ternary operator} {? {{constant 1} {constant 0.0} {constant 1.0}}}} \
+    {double} \
+    ]
+
+tcltest::test compileproc_exprvalue_types-6.2 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {(1 ? "a" : "b")}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $ev_types
+} [list \
+    {(1 ? "a" : "b")} \
+     {{ternary operator} {? {{constant 1} {{constant string} a} {{constant string} b}}}} \
+    {String} \
+    ]
+
+tcltest::test compileproc_exprvalue_types-6.3 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {(1 ? !1 : !0)}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $ev_types
+} [list \
+    {(1 ? !1 : !0)} \
+    {{ternary operator} {? {{constant 1} {{unary operator} {! {{constant 1}}}} {{unary operator} {! {{constant 0}}}}}}} \
+    {boolean} \
+    ]
+
+tcltest::test compileproc_exprvalue_types-6.4 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {(1 ? 1 : 0.0)}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $ev_types
+} [list \
+    {(1 ? 1 : 0.0)} \
+    {{ternary operator} {? {{constant 1} {constant 1} {constant 0.0}}}} \
+    {int double} \
+    ]
+
+tcltest::test compileproc_exprvalue_types-6.5 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {(1 ? 1.0 : 0)}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $ev_types
+} [list \
+    {(1 ? 1.0 : 0)} \
+    {{ternary operator} {? {{constant 1} {constant 1.0} {constant 0}}}} \
+    {int double} \
+    ]
+
+tcltest::test compileproc_exprvalue_types-6.6 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {(1 ? 1.0 : "")}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $ev_types
+} [list \
+    {(1 ? 1.0 : "")} \
+    {{ternary operator} {? {{constant 1} {constant 1.0} {{constant string} {}}}}} \
+    {} \
+    ]
+
+tcltest::test compileproc_exprvalue_types-6.7 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {(1 ? -$v : +$v)}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $ev_types
+} [list \
+    {(1 ? -$v : +$v)} \
+    {{ternary operator} {? {{constant 1} {{unary operator} {- {{{variable scalar} v}}}} {{unary operator} {+ {{{variable scalar} v}}}}}}} \
+    {int double} \
+    ]
+
+tcltest::test compileproc_exprvalue_types-6.8 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {(1 ? -$v : 1)}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $ev_types
+} [list \
+    {(1 ? -$v : 1)} \
+    {{ternary operator} {? {{constant 1} {{unary operator} {- {{{variable scalar} v}}}} {constant 1}}}} \
+    {int double} \
+    ]
+
+tcltest::test compileproc_exprvalue_types-6.9 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {(1 ? 1.0 : -$v)}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $ev_types
+} [list \
+    {(1 ? 1.0 : -$v)} \
+    {{ternary operator} {? {{constant 1} {constant 1.0} {{unary operator} {- {{{variable scalar} v}}}}}}} \
+    {int double} \
+    ]
+
+
+tcltest::test compileproc_exprvalue_types-7.0 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {int(1.0)}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $ev_types
+} [list \
+    {int(1.0)} \
+     {{math function} {int {{constant 1.0}}}} \
+    {int} \
+    ]
+
+tcltest::test compileproc_exprvalue_types-7.1 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {double(1)}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $ev_types
+} [list \
+    {double(1)} \
+     {{math function} {double {{constant 1}}}} \
+    {double} \
+    ]
+
+tcltest::test compileproc_exprvalue_types-7.2 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {round(1.5)}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $ev_types
+} [list \
+    {round(1.5)} \
+     {{math function} {round {{constant 1.5}}}} \
+    {int} \
+    ]
+
+tcltest::test compileproc_exprvalue_types-7.3 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {sqrt(121)}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $ev_types
+} [list \
+    {sqrt(121)} \
+     {{math function} {sqrt {{constant 121}}}} \
+    {double} \
+    ]
+
+tcltest::test compileproc_exprvalue_types-7.4 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {abs(1)}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $ev_types
+} [list \
+    {abs(1)} \
+     {{math function} {abs {{constant 1}}}} \
+    {int} \
+    ]
+
+tcltest::test compileproc_exprvalue_types-7.5 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {abs(1.0)}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $ev_types
+} [list \
+    {abs(1.0)} \
+     {{math function} {abs {{constant 1.0}}}} \
+    {double} \
+    ]
+
+tcltest::test compileproc_exprvalue_types-7.6 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {abs(int(1.0))}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $ev_types
+} [list \
+    {abs(int(1.0))} \
+     {{math function} {abs {{{math function} {int {{constant 1.0}}}}}}} \
+    {int} \
+    ]
+
+tcltest::test compileproc_exprvalue_types-7.7 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {abs(double(1))}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $ev_types
+} [list \
+    {abs(double(1))} \
+     {{math function} {abs {{{math function} {double {{constant 1}}}}}}} \
+    {double} \
+    ]
+
+tcltest::test compileproc_exprvalue_types-7.8 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {abs($v)}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $ev_types
+} [list \
+    {abs($v)} \
+    {{math function} {abs {{{variable scalar} v}}}} \
+    {int double} \
+    ]
+
+# FIXME: Unknown math function currently generates a
+# compile time error. This seems to be a bug in
+# the parser layer.
+
+tcltest::test compileproc_exprvalue_types-7.9 {emit ExprValue, check ev_types} {knownbug} {
+    set script {
+proc p {} {
+    expr {unknown(1)}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $ev_types
+} [list \
+    {unknown(1)} \
+     {{math function} {unknown {{constant 1}}}} \
+    {} \
+    ]
+
+tcltest::test compileproc_exprvalue_types-7.10 {emit ExprValue, check ev_types} {
+    set script {
+proc p {} {
+    expr {1 + abs($v)}
+}
+}
+    set plist [compileproc_script_to_proc_list $script]
+
+    compileproc_init
+    compileproc_start $plist
+
+    compileproc_scan_keys [compileproc_keys]
+
+    set key [lindex [compileproc_keys] 0]
+    set value_tuple [compileproc_expr_evaluate $key 1]
+    set eval_tuple [compileproc_expr_evaluate_emit_exprvalue $value_tuple]
+    set buffer [lindex $eval_tuple 2]
+    set result_info [lindex $eval_tuple 3]
+    set ev_types [lindex $result_info 3]
+
+    list \
+        [lindex $_compileproc_key_info($key,values) 1] \
+        $value_tuple \
+        $ev_types
+} [list \
+    {1 + abs($v)} \
+    {{binary operator} {+ {{constant 1} {{math function} {abs {{{variable scalar} v}}}}}}} \
+    {int double} \
+    ]
+
+
 tcltest::test compileproc_emit_catch-1.0 {emit catch container} {
     # Constant expr value
     set script {
