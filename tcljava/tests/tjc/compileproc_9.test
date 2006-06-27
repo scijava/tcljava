@@ -847,6 +847,502 @@ public class Test1 extends TJC.CompiledCommand {
 } // end class Test1
 }}
 
+tcltest::test compileproc9-2.1 {expr logical not operator, enable +inline-expr} {
+    set script {
+proc p {} {
+    expr {!0}
+    expr {!1}
+}
+}
+
+    set test_compileproc_9_inline_expr_operators 1
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_9_set_flags]
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) {
+            inlineCmds = true;
+            initCmd(interp);
+        }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: expr {!0}
+            // Unary operator: ! 0
+            ExprValue tmp0 = TJC.exprGetValue(interp, 0, null);
+            tmp0.optIntUnaryNotNstr();
+            // End Unary operator: !
+            TJC.exprSetResult(interp, tmp0);
+            TJC.exprReleaseValue(interp, tmp0);
+        } // End Invoke: expr
+        { // Invoke: expr {!1}
+            // Unary operator: ! 1
+            ExprValue tmp1 = TJC.exprGetValue(interp, 1, null);
+            tmp1.optIntUnaryNotNstr();
+            // End Unary operator: !
+            TJC.exprSetResult(interp, tmp1);
+            TJC.exprReleaseValue(interp, tmp1);
+        } // End Invoke: expr
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+} // end class Test1
+}}
+
+tcltest::test compileproc9-2.2 {expr logical not operator, enable +inline-expr} {
+    # This ExprValue is generated without a string value
+    # since the compiler knowns that the logical not
+    # operator would always set it to null.
+    set script {
+proc p {} {
+    expr {! 0x0}
+}
+}
+
+    set test_compileproc_9_inline_expr_operators 1
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_9_set_flags]
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) {
+            inlineCmds = true;
+            initCmd(interp);
+        }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: expr {! 0x0}
+            // Unary operator: ! 0
+            ExprValue tmp0 = TJC.exprGetValue(interp, 0, null);
+            tmp0.optIntUnaryNotNstr();
+            // End Unary operator: !
+            TJC.exprSetResult(interp, tmp0);
+            TJC.exprReleaseValue(interp, tmp0);
+        } // End Invoke: expr
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+} // end class Test1
+}}
+
+tcltest::test compileproc9-2.3 {expr logical not operator, enable +inline-expr} {
+    # This ExprValue is generated without a string value
+    # since the compiler knowns that the logical not
+    # operator would always set it to null.
+    set script {
+proc p {} {
+    expr {! 0.0e0}
+}
+}
+
+    set test_compileproc_9_inline_expr_operators 1
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_9_set_flags]
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) {
+            inlineCmds = true;
+            initCmd(interp);
+        }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: expr {! 0.0e0}
+            // Unary operator: ! 0.0
+            ExprValue tmp0 = TJC.exprGetValue(interp, 0.0, null);
+            TJC.exprUnaryNotOperator(interp, tmp0);
+            // End Unary operator: !
+            TJC.exprSetResult(interp, tmp0);
+            TJC.exprReleaseValue(interp, tmp0);
+        } // End Invoke: expr
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+} // end class Test1
+}}
+
+tcltest::test compileproc9-2.4 {expr logical not operator, enable +inline-expr} {
+    # This ExprValue has a string type, so it is passed to
+    # the runtime impl.
+    set script {
+proc p {} {
+    expr {! "true"}
+}
+}
+
+    set test_compileproc_9_inline_expr_operators 1
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_9_set_flags]
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) {
+            inlineCmds = true;
+            initCmd(interp);
+        }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: expr {! "true"}
+            // Unary operator: ! "true"
+            ExprValue tmp0 = TJC.exprGetValue(interp, "true");
+            if ( tmp0.isIntType() ) {
+                tmp0.optIntUnaryNot();
+            } else {
+                TJC.exprUnaryNotOperator(interp, tmp0);
+            }
+            // End Unary operator: !
+            TJC.exprSetResult(interp, tmp0);
+            TJC.exprReleaseValue(interp, tmp0);
+        } // End Invoke: expr
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+} // end class Test1
+}}
+
+tcltest::test compileproc9-2.5 {expr logical not operator, enable +inline-expr} {
+    # This test executes a unary logical not operator directly on
+    # the contents of a TclObject. The optimized branch will be
+    # executed when the TclObject contains an int.
+    set script {
+proc p {} {
+    set v 0
+    expr {!$v}
+}
+}
+
+    set test_compileproc_9_inline_expr_operators 1
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_9_set_flags]
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) {
+            inlineCmds = true;
+            initCmd(interp);
+        }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        Var[] compiledLocals =
+            TJC.initCompiledLocals(callFrame, 1, compiledLocalsNames);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: set v 0
+            setVarScalar(interp, "v", const0, compiledLocals, 0);
+        } // End Invoke: set
+        { // Invoke: expr {!$v}
+            // Unary operator: ! $v
+            TclObject tmp0 = getVarScalar(interp, "v", compiledLocals, 0);
+            ExprValue tmp1 = TJC.exprGetValue(interp);
+            if ( tmp0.isIntType() ) {
+                TJC.exprUnaryNotOperatorKnownInt(tmp1, tmp0);
+            } else {
+                TJC.exprUnaryNotOperator(interp, tmp1, tmp0);
+            }
+            // End Unary operator: !
+            TJC.exprSetResult(interp, tmp1);
+            TJC.exprReleaseValue(interp, tmp1);
+        } // End Invoke: expr
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+
+    TclObject const0;
+
+    protected void initConstants(Interp interp) throws TclException {
+        const0 = TclInteger.newInstance(0);
+        const0.preserve(); const0.preserve();
+    }
+
+    String[] compiledLocalsNames = {
+        "v"
+    };
+} // end class Test1
+}}
+
+tcltest::test compileproc9-2.6 {expr logical not operator, enable +inline-expr} {
+    # This ternary operator has a result type of int,
+    # so optimized logic can be unconditionally emitted.
+    set script {
+proc p {} {
+    expr {!(1 ? 1 : 0)}
+}
+}
+
+    set test_compileproc_9_inline_expr_operators 1
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_9_set_flags]
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) {
+            inlineCmds = true;
+            initCmd(interp);
+        }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: expr {!(1 ? 1 : 0)}
+            // Unary operator: ! (?:)
+            // Ternary operator: 1 ? 1 : 0
+            ExprValue tmp0 = TJC.exprGetValue(interp, 1, null);
+            if (tmp0.getBooleanValue(interp)) {
+            ExprValue tmp1 = TJC.exprGetValue(interp, 1, null);
+            TJC.exprReleaseValue(interp, tmp0);
+            tmp0 = tmp1;
+            } else {
+            ExprValue tmp2 = TJC.exprGetValue(interp, 0, null);
+            TJC.exprReleaseValue(interp, tmp0);
+            tmp0 = tmp2;
+            }
+            // End Ternary operator: ?
+            tmp0.optIntUnaryNot();
+            // End Unary operator: !
+            TJC.exprSetResult(interp, tmp0);
+            TJC.exprReleaseValue(interp, tmp0);
+        } // End Invoke: expr
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+} // end class Test1
+}}
+
+tcltest::test compileproc9-2.7 {expr logical not operator, enable +inline-expr} {
+    # This test checks that a unary logic not operator
+    # correctly pushes the "null string value" flag
+    # up to its caller. The outermost not operator
+    # should be able to tell that the result is
+    # of type int and that it has no string value.
+    set script {
+proc p {} {
+    expr {!(!0)}
+}
+}
+
+    set test_compileproc_9_inline_expr_operators 1
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_9_set_flags]
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) {
+            inlineCmds = true;
+            initCmd(interp);
+        }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: expr {!(!0)}
+            // Unary operator: ! ()
+            // Unary operator: ! 0
+            ExprValue tmp0 = TJC.exprGetValue(interp, 0, null);
+            tmp0.optIntUnaryNotNstr();
+            // End Unary operator: !
+            tmp0.optIntUnaryNotNstr();
+            // End Unary operator: !
+            TJC.exprSetResult(interp, tmp0);
+            TJC.exprReleaseValue(interp, tmp0);
+        } // End Invoke: expr
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+} // end class Test1
+}}
+
+tcltest::test compileproc9-2.8 {expr logical not operator, enable +inline-expr} {
+    # This test checks that a unary plus operator
+    # pushes the "null string value" flag out
+    # to the enclosing expression.
+    set script {
+proc p {} {
+    expr {!(+0)}
+}
+}
+
+    set test_compileproc_9_inline_expr_operators 1
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_9_set_flags]
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) {
+            inlineCmds = true;
+            initCmd(interp);
+        }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: expr {!(+0)}
+            // Unary operator: ! ()
+            // Unary operator: + 0
+            ExprValue tmp0 = TJC.exprGetValue(interp, 0, null);
+            // End Unary operator: +
+            tmp0.optIntUnaryNotNstr();
+            // End Unary operator: !
+            TJC.exprSetResult(interp, tmp0);
+            TJC.exprReleaseValue(interp, tmp0);
+        } // End Invoke: expr
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+} // end class Test1
+}}
+
 
 # Test series 3 checks the stack expr value functionality
 # enabled via +inline-expr. This feature grabs
@@ -2017,7 +2513,6 @@ public class Test1 extends TJC.CompiledCommand {
 } // end class Test1
 }}
 
-
 # Test flag that enables invocation of a specific
 # typed interp.setResult() call based on compile
 # time type info.
@@ -2334,7 +2829,7 @@ public class Test1 extends TJC.CompiledCommand {
             // Unary operator: ! 0
             ExprValue tmp0 = evs0;
             tmp0.setIntValue(0);
-            TJC.exprUnaryOperator(interp, TJC.EXPR_OP_UNARY_NOT, tmp0);
+            tmp0.optIntUnaryNotNstr();
             // End Unary operator: !
             interp.setResult( tmp0.getIntValue() != 0 );
         } // End Invoke: expr
@@ -2394,8 +2889,11 @@ public class Test1 extends TJC.CompiledCommand {
             // Unary operator: ! $v
             TclObject tmp0 = getVarScalar(interp, "v", compiledLocals, 0);
             ExprValue tmp1 = evs0;
-            TJC.exprInitValue(interp, tmp1, tmp0);
-            TJC.exprUnaryOperator(interp, TJC.EXPR_OP_UNARY_NOT, tmp1);
+            if ( tmp0.isIntType() ) {
+                TJC.exprUnaryNotOperatorKnownInt(tmp1, tmp0);
+            } else {
+                TJC.exprUnaryNotOperator(interp, tmp1, tmp0);
+            }
             // End Unary operator: !
             interp.setResult( tmp1.getIntValue() != 0 );
         } // End Invoke: expr
@@ -2658,7 +3156,7 @@ public class Test1 extends TJC.CompiledCommand {
 } // end class Test1
 }}
 
-tcltest::test compileproc9-4.11 {result type known at compile time} {
+tcltest::test compileproc9-4.11 {result type not known at compile time} {
     set script {
 proc p {} {
     expr {1 + abs($v)}
@@ -2730,6 +3228,11 @@ public class Test1 extends TJC.CompiledCommand {
 } // end class Test1
 }}
 
+
+# Should be able to significantly speed up the
+# binary || and && operators when the operands
+# are known to be TclObjects. The generator
+# does not seem to know how to do this currently.
 
 # Cleanup
 jdk_tool_cleanup

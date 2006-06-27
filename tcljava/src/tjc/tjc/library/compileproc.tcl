@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: compileproc.tcl,v 1.31 2006/06/26 21:29:32 mdejong Exp $
+#  RCS: @(#) $Id: compileproc.tcl,v 1.32 2006/06/27 21:14:42 mdejong Exp $
 #
 #
 
@@ -6741,6 +6741,10 @@ proc compileproc_expr_evaluate_emit_unary_operator { op_tuple } {
         }
         "!" {
             set opval TJC.EXPR_OP_UNARY_NOT
+
+            if {$::_compileproc(options,expr_inline_operators)} {
+                set inline_op 1
+            }
         }
         "~" {
             set opval TJC.EXPR_OP_UNARY_BIT_NOT
@@ -6766,12 +6770,22 @@ proc compileproc_expr_evaluate_emit_unary_operator { op_tuple } {
                 error "operator - should not be matched"
             }
             "!" {
-                error "operator ! should not be matched"
+                set op_tuple [\
+                    compileproc_expr_evaluate_emit_inlined_unary_not_operator \
+                    $tuple \
+                    $value_info_type \
+                    $value_info_value \
+                    $value_info_has_null_string \
+                    ]
             }
             "~" {
                 error "operator ! should not be matched"
             }
         }
+
+        set ev [lindex $op_tuple 0]
+        set op_buffer [lindex $op_tuple 1]
+        set operand_ev_types [lindex $op_tuple 2]
     } else {
         # Operator could not be evaluated at compile time
         # and no special inline logic was generated.
@@ -6817,6 +6831,126 @@ proc compileproc_expr_evaluate_emit_unary_operator { op_tuple } {
             set ev_types {int double}
         }
     }
+
+    return [list $ev $buffer $ev_types]
+}
+
+# Emit an inlined unary not operator. This method
+# is invoked only when inlined expr operators
+# are enabled and the operand has not been
+# evaluated as a compile time constant.
+# This method will generate an inlined operator
+# implementation that depends on the type
+# op the operand and will return a tuple of:
+#
+# {EXPRVALUE BUFFER EV_TYPES}
+#
+# EXPRVALUE : symbol of type ExprValue
+# BUFFER : Buffer that will evaluate EXPRVALUE
+# EV_TYPES : Type of operand to unary operator
+
+proc compileproc_expr_evaluate_emit_inlined_unary_not_operator {
+        value_tuple value_type value_symbol value_has_null_string } {
+
+#    set debug 0
+
+#    if {$debug} {
+#        puts "compileproc_expr_evaluate_emit_inlined_unary_not_operator\
+#            \{$value_tuple\} \"$value_type\" $value_symbol $value_has_null_string"
+#    }
+
+    set buffer ""
+
+    if {$value_type == "TclObject"} {
+        # Generate buffer that evaluates to a TclObject ref.
+
+        set eval_tuple [compileproc_expr_evaluate_emit_exprvalue \
+            $value_tuple {rtype TclObject}]
+        set tclobject_sym [lindex $eval_tuple 1]
+        append buffer [lindex $eval_tuple 2]
+
+        set ev [compileproc_tmpvar_next]
+        append buffer [compileproc_emit_exprvalue_get $ev "" ""]
+
+        # Note that TJC.exprUnaryNotOperatorKnownInt() will read
+        # the int value from a TclObject and set a new int
+        # value with a null string value. A double value
+        # will be read directly by TJC.exprUnaryNotOperator()
+        # and the string value will also be null.
+
+        append buffer \
+            [emitter_container_if_start "$tclobject_sym.isIntType()"] \
+            [emitter_statement \
+                "TJC.exprUnaryNotOperatorKnownInt($ev, $tclobject_sym)"] \
+            [emitter_container_if_else] \
+            [emitter_statement \
+                "TJC.exprUnaryNotOperator(interp, $ev, $tclobject_sym)"] \
+            [emitter_container_if_end]
+
+        # Type of TclObject operand not known at compile time
+        set ev_types {}
+    } else {
+        # Generate buffer that evaluates to an ExprValue.
+        # Pass {nostr 1} flag to indicate that a literal should
+        # be generated with a null string value. Certain
+        # literals like "0xFF" would have a string value
+        # but it would get thrown away by this operator.
+
+        set eval_tuple [compileproc_expr_evaluate_emit_exprvalue \
+            $value_tuple {nostr 1}]
+
+        set ev [lindex $eval_tuple 1]
+        append buffer [lindex $eval_tuple 2]
+        set result_info [lindex $eval_tuple 3]
+
+        # Types for ExprValue may be known at compile time
+        set ev_types [lindex $result_info 3]
+
+        # If we know that the ExprValue has no string value, then
+        # use an optimized implementation that avoids nulling
+        # out the string value.
+
+        if {!$value_has_null_string} {
+            set value_has_null_string [lindex $result_info 2]
+        }
+
+        # If operand type is known to be {int}, {boolean}, or {double},
+        # then skip emitting of conditional logic that depends on
+        # operand type.
+
+        if {$ev_types == {int} || $ev_types == {boolean}} {
+            if {$value_has_null_string} {
+                append buffer [emitter_statement "$ev.optIntUnaryNotNstr()"]
+            } else {
+                append buffer [emitter_statement "$ev.optIntUnaryNot()"]
+            }
+        } elseif {$ev_types == {double}} {
+            # The exprUnaryNotOperator() contains an optimized
+            # special case for double arguments.
+            append buffer \
+                [emitter_statement "TJC.exprUnaryNotOperator(interp, $ev)"]
+        } else {
+            # Type of operand not known at compile time.
+            # Emit generic code that will work with
+            # ExprValue of any type.
+
+            append buffer \
+                [emitter_container_if_start "$ev.isIntType()"]
+
+            if {$value_has_null_string} {
+                append buffer [emitter_statement "$ev.optIntUnaryNotNstr()"]
+            } else {
+                append buffer [emitter_statement "$ev.optIntUnaryNot()"]
+            }
+
+            append buffer \
+                [emitter_container_if_else] \
+                [emitter_statement "TJC.exprUnaryNotOperator(interp, $ev)"] \
+                [emitter_container_if_end]
+        }
+    }
+
+    # result tuple {EXPRVALUE BUFFER EV_TYPES}
 
     return [list $ev $buffer $ev_types]
 }
@@ -7942,6 +8076,12 @@ proc compileproc_expr_peek_operand { tuple } {
 #     rtype : Indicates the preferred result type. Type can
 #             be either ExprValue (the default) or TclObject.
 #
+#     nostr : Indicates that string value for an ExprValue should
+#             not be generated. For example, an int literal 0x1
+#             would normally have a value of 1 and a string
+#             value of "0x1". If nostr is set then the string
+#             value will be null.
+#
 # Return tuple {INFOSTR SYMBOL BUFFER RESULT_INFO}
 
 proc compileproc_expr_evaluate_emit_exprvalue { tuple {genflags {}} } {
@@ -7954,6 +8094,7 @@ proc compileproc_expr_evaluate_emit_exprvalue { tuple {genflags {}} } {
     # Examine genflags
 
     set no_exprvalue_for_tclobject 0
+    set no_str_for_exprvalue 0
     set gencode 1
 
     if {([llength $genflags] % 2) != 0} {
@@ -7968,6 +8109,11 @@ proc compileproc_expr_evaluate_emit_exprvalue { tuple {genflags {}} } {
                     set no_exprvalue_for_tclobject 1
                 } else {
                     error "unsupported rtype \"$value\""
+                }
+            }
+            "nostr" {
+                if {$value} {
+                    set no_str_for_exprvalue 1
                 }
             }
             "peek" {
@@ -8093,6 +8239,8 @@ proc compileproc_expr_evaluate_emit_exprvalue { tuple {genflags {}} } {
         {unary operator} {
             set infostr "()"
             set result_type "ExprValue"
+            # All unary operators null the string value
+            set srep "null"
 
             if {$gencode} {
                 set eval_tuple [compileproc_expr_evaluate_emit_unary_operator \
@@ -8220,6 +8368,9 @@ proc compileproc_expr_evaluate_emit_exprvalue { tuple {genflags {}} } {
             set type "double"
         }
         lappend ev_types $type
+        if {$no_str_for_exprvalue} {
+            set srep "null"
+        }
         if {$gencode} {
             append buffer \
                 [compileproc_emit_exprvalue_get $tmpsymbol $type $result_symbol $srep]

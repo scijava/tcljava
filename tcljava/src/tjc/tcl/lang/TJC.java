@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TJC.java,v 1.32 2006/06/17 20:48:11 mdejong Exp $ *
+ * RCS: @(#) $Id: TJC.java,v 1.33 2006/06/27 21:14:42 mdejong Exp $ *
  */
 
 // Runtime support for TJC compiler implementation.
@@ -1489,6 +1489,95 @@ public class TJC {
         } else if (value.isIntType()) {
             value.setDoubleValue( (double) value.getIntValue() );
         }
+    }
+
+    // Evaluate a unary not operator. This method accepts an
+    // ExprValue value and returns the result in the ExprValue.
+    // This method is invoked when an ExprValue is known
+    // at compile time to be a double or a string.
+    // This method should not be invoked when the ExprValue
+    // is known to be of type int (or boolean).
+
+    public static
+    void exprUnaryNotOperator(
+        final Interp interp,    // current interp, can't be null.
+        final ExprValue value)  // operand value
+            throws TclException
+    {
+        // Special case of int type should have been handled
+        // in inline code before this method is invoked.
+
+        if (value.isDoubleType()) {
+            value.setIntValue( value.getDoubleValue() == 0.0 );
+        } else {
+            Expression.evalUnaryOperator(interp, TJC.EXPR_OP_UNARY_NOT, value);
+        }
+    }
+
+    // Evaluate a unary not operator. This method accepts a
+    // TclObject value and returns the result in an ExprValue.
+
+    public static
+    void exprUnaryNotOperator(
+        final Interp interp,   // current interp, can't be null.
+        final ExprValue value, // where to store result of operator
+        final TclObject tobj)  // contains the value as a TclObject
+            throws TclException
+    {
+        // Special case of int type should have been handled
+        // in inline code before this method is invoked.
+
+        if (tobj.isDoubleType()) {
+            value.setIntValue( TJC.exprGetKnownDouble(tobj) == 0.0 );
+            return;
+        }
+
+        Expression.ExprParseString(interp, tobj, value);
+        if (value.isIntType()) {
+            // ExprValue is known to be an int, so
+            // invoke specific method that does not
+            // change the type.
+
+            value.optIntUnaryNot();
+        } else if (value.isDoubleType()) {
+            value.setIntValue( value.getDoubleValue() == 0.0 );
+        } else {
+            Expression.evalUnaryOperator(interp, EXPR_OP_UNARY_NOT, value);
+        }
+    }
+
+    // These methods are used when inlining a
+    // unary not operator. In the case where
+    // the operand is known to be of type int,
+    // these methods are used to inline the op.
+    // This impl executes about 4x faster than
+    // a exprUnaryNotOperator() that checks
+    // for a TclObject that contains an int.
+
+    public static
+    void exprUnaryNotOperatorKnownInt(
+        final ExprValue value, // where to store result of operator
+        final TclObject tobj)  // contains the value as a TclObject
+    {
+        // Invoking ExprValue.setInt(boolean) here is the most
+        // efficient implementation. Invoking TJC.exprGetKnownInt()
+        // and inlining the branching logic in calling code is slower.
+
+        value.setIntValue( tobj.ivalue == 0 );
+    }
+
+    public static
+    int exprUnaryNotOperatorKnownInt(
+        final TclObject tobj)  // contains the value as a TclObject
+    {
+        return ( tobj.ivalue == 0 ) ? 1 : 0;
+    }
+
+    public static
+    boolean exprUnaryNotOperatorKnownIntAsBoolean(
+        final TclObject tobj)  // contains the value as a TclObject
+    {
+        return ( tobj.ivalue == 0 );
     }
 
     // Implements inlined global command, this method

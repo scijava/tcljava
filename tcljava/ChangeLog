@@ -1,3 +1,27 @@
+2006-06-27  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/jacl/tcl/lang/ExprValue.java (optIntUnaryNot,
+        optIntUnaryNotNstr): Make inlined unary not methods
+        public so that they can be invoked from TJC code.
+        * src/tjc/tcl/lang/TJC.java (exprUnaryNotOperator,
+        exprUnaryNotOperatorKnownInt,
+        exprUnaryNotOperatorKnownIntAsBoolean): Add methods
+        to support compiled unary logical not operator.
+        These methods are invoked when +inline-expr is
+        enabled. The compiler will use compile time type
+        info and optimized runtime logic to handle TclObject
+        and ExprValue cases. This approach executes about
+        twice as fast as invoking TJC.exprUnaryOperator().
+        * src/tjc/tjc/library/compileproc.tcl:
+        Add compileproc_expr_evaluate_emit_inlined_unary_not_operator
+        and invoke it from compileproc_expr_evaluate_emit_unary_operator,
+        this method implements inlined logic for the unary
+        not operator. This operator will generate literals
+        with a null string rep and emit optimized code
+        that does not null the string rep in the ExprValue.
+        * tests/tjc/compileproc_9.test: Add a host of test
+        cases for inlined unary not.
+
 2006-06-26  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/tjc/tjc/library/compileproc.tcl:
