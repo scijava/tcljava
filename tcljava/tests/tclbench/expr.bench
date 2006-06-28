@@ -540,6 +540,75 @@ proc expr-unary-not-double-tclobject-parse {} {
     return
 }
 
+# These tests invoke the not operator inside
+# an if expression that evaluates to a boolean.
+
+proc expr-boolean-unary-not-int-literal {} {
+    set v 0
+
+    for {set i 1000} {$i} {incr i -1} {
+        if {!1} {
+            set v 0
+        } else {
+            set v 1
+        }
+    }
+    return
+}
+
+proc expr-boolean-unary-not-double-literal {} {
+    set v 0
+
+    for {set i 1000} {$i} {incr i -1} {
+        if {!1.0} {
+            set v 0
+        } else {
+            set v 1
+        }
+    }
+    return
+}
+
+proc expr-boolean-unary-not-int-literal-subexpr {} {
+    set v 0
+
+    for {set i 1000} {$i} {incr i -1} {
+        if {!(1 ? 1 : 0)} {
+            set v 0
+        } else {
+            set v 1
+        }
+    }
+    return
+}
+
+proc expr-boolean-unary-not-int-tclobject {} {
+    set v 0
+
+    for {set i 1000} {$i} {incr i -1} {
+        if {!$v} {
+            set v 0
+        } else {
+            set v 1
+        }
+    }
+    return
+}
+
+proc expr-boolean-unary-not-double-tclobject {} {
+    set v 0.0
+
+    for {set i 1000} {$i} {incr i -1} {
+        if {!$v} {
+            set v 0
+        } else {
+            set v 1
+        }
+    }
+    return
+}
+
+
 # Invoke each expr math func in a loop.
 
 proc expr-math-funcs {} {
@@ -689,6 +758,12 @@ bench -desc "expr-unary-not-string-tclobject" -body {expr-unary-not-string-tclob
 
 bench -desc "expr-unary-not-int-tclobject-parse" -body {expr-unary-not-int-tclobject-parse}
 bench -desc "expr-unary-not-double-tclobject-parse" -body {expr-unary-not-double-tclobject-parse}
+
+bench -desc "expr-boolean-unary-not-int-literal" -body {expr-boolean-unary-not-int-literal}
+bench -desc "expr-boolean-unary-not-double-literal" -body {expr-boolean-unary-not-double-literal}
+bench -desc "expr-boolean-unary-not-int-literal-subexpr" -body {expr-boolean-unary-not-int-literal-subexpr}
+bench -desc "expr-boolean-unary-not-int-tclobject" -body {expr-boolean-unary-not-int-tclobject}
+bench -desc "expr-boolean-unary-not-double-tclobject" -body {expr-boolean-unary-not-double-tclobject}
 
 bench -desc "expr-math-funcs" -body {expr-math-funcs}
 

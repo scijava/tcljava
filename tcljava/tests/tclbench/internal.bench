@@ -63,6 +63,12 @@ set tuples [list \
     {internal-result-expr-op-int-inlined-not-nstr-stack-value tcl.lang.TJCBench InternalExprOpIntInlinedNotNstrStackValueResult} \
     {internal-result-expr-op-int-inlined-not-nstr-stack-value-int tcl.lang.TJCBench InternalExprOpIntInlinedNotNstrStackValueIntResult} \
     {internal-result-expr-op-int-inlined-not-nstr-stack-value-boolean tcl.lang.TJCBench InternalExprOpIntInlinedNotNstrStackValueBooleanResult} \
+    {internal-result-expr-op-int-inlined-not-known-int tcl.lang.TJCBench InternalExprOpIntInlinedNotKnownIntResult} \
+    {internal-result-expr-op-int-inlined-not-known-int-inline tcl.lang.TJCBench InternalExprOpIntInlinedNotKnownIntInlineResult} \
+    {internal-result-expr-op-int-inlined-not-known-int-inline-boolean tcl.lang.TJCBench InternalExprOpIntInlinedNotKnownIntInlineBooleanResult} \
+    {internal-boolean-expr-op-int-inlined-not-nstr tcl.lang.TJCBench InternalExprOpIntInlinedNotNstrAsBoolean} \
+    {internal-boolean-expr-op-int-inlined-not-nstr-known-int tcl.lang.TJCBench InternalExprOpIntInlinedNotNstrKnownIntAsBoolean} \
+    {internal-boolean-expr-op-int-inlined-not-nstr-local tcl.lang.TJCBench InternalExprOpIntInlinedNotNstrLocalAsBoolean} \
     {internal-expr-op-int-plus tcl.lang.TJCBench InternalExprOpIntPlus} \
     {internal-result-expr-op-int-plus-grab-release tcl.lang.TJCBench InternalExprOpIntPlusGrabReleaseResult} \
     {internal-result-expr-op-int-plus-stack-value tcl.lang.TJCBench InternalExprOpIntPlusStackValueResult} \
@@ -76,6 +82,11 @@ set tuples [list \
     {internal-result-expr-op-inlined-logical-or tcl.lang.TJCBench InternalExprOpInlinedLogicalOrResult} \
     {internal-result-expr-op-inlined-int-logical-or tcl.lang.TJCBench InternalExprOpInlinedIntLogicalOrResult} \
     {internal-result-expr-op-inlined-noexpr-logical-or tcl.lang.TJCBench InternalExprOpInlinedNoExprLogicalOrResult} \
+    {internal-objv-invoke tcl.lang.TJCBench InternalObjvInvoke} \
+    {internal-objv-invoke-onstack tcl.lang.TJCBench InternalObjvInvokeOnStack} \
+    {internal-objv-invoke-onstack-assigned tcl.lang.TJCBench InternalObjvInvokeOnStackAssigned} \
+    {internal-objv-invoke-onstack-stack tcl.lang.TJCBench InternalObjvInvokeOnStackStack} \
+    {internal-objv-invoke-onstack-try-stack tcl.lang.TJCBench InternalObjvInvokeOnStackTryStack} \
     ]
 
 foreach tuple $tuples {

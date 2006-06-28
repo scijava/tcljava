@@ -1,5 +1,21 @@
 2006-06-27  Mo DeJong  <mdejong@users.sourceforge.net>
 
+        * src/tjc/tcl/lang/TJCBench.java: Add
+        not operator tests and invoke object tests.
+        * src/tjc/tjc/library/compileproc.tcl:
+        In compileproc_expr_evaluate_boolean_emit,
+        emit optimized boolean result logic when
+        the type of the ExprValue is known at
+        compile time.
+        * tests/tclbench/expr.bench: Add bench tests
+        for if statement that evaluates an expression
+        to a boolean value.
+        * tests/tclbench/internal.bench:
+        * tests/tjc/compileproc_9.test: Add output
+        tests for new boolean result logic.
+
+2006-06-27  Mo DeJong  <mdejong@users.sourceforge.net>
+
         * src/jacl/tcl/lang/ExprValue.java (optIntUnaryNot,
         optIntUnaryNotNstr): Make inlined unary not methods
         public so that they can be invoked from TJC code.

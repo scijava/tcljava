@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TJCBench.java,v 1.12 2006/06/24 00:30:42 mdejong Exp $
+ * RCS: @(#) $Id: TJCBench.java,v 1.13 2006/06/28 02:15:52 mdejong Exp $
  *
  */
 
@@ -134,6 +134,18 @@ public class TJCBench extends TJC.CompiledCommand {
              InternalExprOpIntInlinedNotNstrStackValueIntResult(interp);
         } else if (testname.equals("InternalExprOpIntInlinedNotNstrStackValueBooleanResult")) {
              InternalExprOpIntInlinedNotNstrStackValueBooleanResult(interp);
+        } else if (testname.equals("InternalExprOpIntInlinedNotKnownIntResult")) {
+             InternalExprOpIntInlinedNotKnownIntResult(interp);
+        } else if (testname.equals("InternalExprOpIntInlinedNotKnownIntInlineResult")) {
+             InternalExprOpIntInlinedNotKnownIntInlineResult(interp);
+        } else if (testname.equals("InternalExprOpIntInlinedNotKnownIntInlineBooleanResult")) {
+             InternalExprOpIntInlinedNotKnownIntInlineBooleanResult(interp);
+        } else if (testname.equals("InternalExprOpIntInlinedNotNstrAsBoolean")) {
+             InternalExprOpIntInlinedNotNstrAsBoolean(interp);
+        } else if (testname.equals("InternalExprOpIntInlinedNotNstrKnownIntAsBoolean")) {
+             InternalExprOpIntInlinedNotNstrKnownIntAsBoolean(interp);
+        } else if (testname.equals("InternalExprOpIntInlinedNotNstrLocalAsBoolean")) {
+             InternalExprOpIntInlinedNotNstrLocalAsBoolean(interp);
         } else if (testname.equals("InternalExprOpIntPlus")) {
              InternalExprOpIntPlus(interp);
         } else if (testname.equals("InternalExprOpIntPlusGrabReleaseResult")) {
@@ -160,6 +172,18 @@ public class TJCBench extends TJC.CompiledCommand {
              InternalExprOpInlinedIntLogicalOrResult(interp);
         } else if (testname.equals("InternalExprOpInlinedNoExprLogicalOrResult")) {
              InternalExprOpInlinedNoExprLogicalOrResult(interp);
+        } else if (testname.equals("InternalObjvInvoke")) {
+             InternalObjvInvoke(interp);
+        } else if (testname.equals("InternalObjvInvokeOnStack")) {
+             InternalObjvInvokeOnStack(interp);
+        } else if (testname.equals("InternalObjvInvokeOnStackAssigned")) {
+             InternalObjvInvokeOnStackAssigned(interp);
+        } else if (testname.equals("InternalObjvInvokeOnStackAssignedIndex")) {
+             InternalObjvInvokeOnStackAssignedIndex(interp);
+        } else if (testname.equals("InternalObjvInvokeOnStackStack")) {
+             InternalObjvInvokeOnStackStack(interp);
+        } else if (testname.equals("InternalObjvInvokeOnStackTryStack")) {
+             InternalObjvInvokeOnStackTryStack(interp);
         } else {
              throw new TclException(interp, "unknown test name \"" + testname + "\"");
         }
@@ -1094,6 +1118,187 @@ public class TJCBench extends TJC.CompiledCommand {
         RESULT_INT = TclInteger.get(interp, interp.getResult());
     }
 
+    // Invoke TJC.exprUnaryNotOperatorKnownInt() to set an
+    // ExprValue to the result of a not operation run
+    // on the contents of a TclObject known to be an
+    // int.
+
+    void InternalExprOpIntInlinedNotKnownIntResult(Interp interp)
+        throws TclException
+    {
+        // expr {!1}
+
+        ExprValue evs0 = TJC.exprGetValue(interp);
+        TclObject tobj = TclInteger.newInstance(1);
+
+        for (int i=0; i < 5000; i++) {
+            ExprValue tmp0 = evs0;
+            // Use optimized impl when TclObject is an int.
+            if ( tobj.isIntType() ) {
+                TJC.exprUnaryNotOperatorKnownInt(tmp0, tobj);
+            } else {
+                //TJC.exprUnaryOperator(interp, TJC.EXPR_OP_UNARY_NOT, tmp0);
+                throw new TclRuntimeError("else branch reached");
+            }
+            interp.setResult( (tmp0.getIntValue() != 0) );
+        }
+        RESULT_INT = TclInteger.get(interp, interp.getResult());
+    }
+
+    // Inline the logic found in exprUnaryNotOperatorKnownInt()
+    // to see if including the branch operations inline makes
+    // the code execute faster.
+
+    void InternalExprOpIntInlinedNotKnownIntInlineResult(Interp interp)
+        throws TclException
+    {
+        // expr {!1}
+
+        ExprValue evs0 = TJC.exprGetValue(interp);
+        TclObject tobj = TclInteger.newInstance(1);
+
+        for (int i=0; i < 5000; i++) {
+            ExprValue tmp0 = evs0;
+            // Use optimized impl when TclObject is an int.
+            if ( tobj.isIntType() ) {
+                //TJC.exprUnaryNotOperatorKnownInt(tmp0, tobj);
+                tmp0.setIntValue( (TJC.exprGetKnownInt(tobj) == 0) ? 1 : 0 );
+            } else {
+                //TJC.exprUnaryOperator(interp, TJC.EXPR_OP_UNARY_NOT, tmp0);
+                throw new TclRuntimeError("else branch reached");
+            }
+            interp.setResult( (tmp0.getIntValue() != 0) );
+        }
+        RESULT_INT = TclInteger.get(interp, interp.getResult());
+    }
+
+    // Inline the logic found in exprUnaryNotOperatorKnownInt()
+    // to see if including the branch operations inline makes
+    // the code execute faster.
+
+    void InternalExprOpIntInlinedNotKnownIntInlineBooleanResult(Interp interp)
+        throws TclException
+    {
+        // expr {!1}
+
+        ExprValue evs0 = TJC.exprGetValue(interp);
+        TclObject tobj = TclInteger.newInstance(1);
+
+        for (int i=0; i < 5000; i++) {
+            ExprValue tmp0 = evs0;
+            // Use optimized impl when TclObject is an int.
+            if ( tobj.isIntType() ) {
+                //TJC.exprUnaryNotOperatorKnownInt(tmp0, tobj);
+                tmp0.setIntValue( TJC.exprGetKnownInt(tobj) == 0 );
+            } else {
+                //TJC.exprUnaryOperator(interp, TJC.EXPR_OP_UNARY_NOT, tmp0);
+                throw new TclRuntimeError("else branch reached");
+            }
+            interp.setResult( (tmp0.getIntValue() != 0) );
+        }
+        RESULT_INT = TclInteger.get(interp, interp.getResult());
+    }
+
+    // Code emitted via +inline-expr with no specific
+    // optimizations to take advantage of the fact
+    // that the result will be a boolean condition.
+
+    void InternalExprOpIntInlinedNotNstrAsBoolean(Interp interp)
+        throws TclException
+    {
+        // if {!1} {}
+
+        ExprValue evs0 = TJC.exprGetValue(interp);
+
+        for (int i=0; i < 5000; i++) {
+            ExprValue tmp0 = evs0;
+            tmp0.setIntValue(1);
+            // ExprValue is known to be an int with no string value.
+            tmp0.optIntUnaryNotNstr();
+            // This call to getBooleanValue() does not take
+            // advantage of compile time info re ExprValue type.
+            boolean tmp1 = tmp0.getBooleanValue(interp);
+            if ( tmp1 ) {
+                RESULT_INT = 1;
+            } else {
+                RESULT_INT = 0;
+            }
+        }
+    }
+
+    // When an expression is evaluated to a boolean
+    // condition, inlined code can be emitted
+    // when the type of the expression is known
+    // at compile time. This test shows what type
+    // of speedup can be expected when the ExprValue
+    // is known to be an int at compile time.
+    // This implementation executes about 4x faster
+    // than InternalExprOpIntInlinedNotNstrAsBoolean.
+
+    void InternalExprOpIntInlinedNotNstrKnownIntAsBoolean(Interp interp)
+        throws TclException
+    {
+        // if {!1} {}
+
+        ExprValue evs0 = TJC.exprGetValue(interp);
+
+        for (int i=0; i < 5000; i++) {
+            ExprValue tmp0 = evs0;
+            tmp0.setIntValue(1);
+            // ExprValue is known to be an int with no string value.
+            tmp0.optIntUnaryNotNstr();
+            // ExprValue is known to be an int
+            boolean tmp1 = (tmp0.getIntValue() != 0);
+            if ( tmp1 ) {
+                RESULT_INT = 1;
+            } else {
+                RESULT_INT = 0;
+            }
+        }
+    }
+
+    // This implementation will declare a boolean condition
+    // at the start of the expr evaluation and use the
+    // local to implement the not operation. This local
+    // will then be read in the if block. This implementation
+    // is just slightly faster than
+    // InternalExprOpIntInlinedNotNstrKnownIntAsBoolean
+    // with -client but is about the same with -server.
+    // More testing is needed to see if it is worth it
+    // to muck around with declaring a local on a
+    // per-expr basis to support this implementation.
+    // This is the optimal implementation, putting the
+    // (tmp1.getIntValue() != 0) logic in an ExprValue
+    // method is actually a touch slower than just
+    // inlining the int->boolean conversion.
+
+    void InternalExprOpIntInlinedNotNstrLocalAsBoolean(Interp interp)
+        throws TclException
+    {
+        // if {!1} {}
+
+        ExprValue evs0 = TJC.exprGetValue(interp);
+
+        for (int i=0; i < 5000; i++) {
+            boolean result0;
+
+            ExprValue tmp1 = evs0;
+            tmp1.setIntValue(1);
+            // ExprValue is known to be an int with no string value.
+            result0 = (tmp1.getIntValue() != 0);
+
+            // Result now saved in boolean local, the code above
+            // implements the not operator. This ignores the
+            // string value completely.
+
+            if ( result0 ) {
+                RESULT_INT = 1;
+            } else {
+                RESULT_INT = 0;
+            }
+        }
+    }
+
     // Invoke binary + operator on a TclInteger.
     // This tests the execution time for just the
     // Expression.evalBinaryOperator() API.
@@ -1399,6 +1604,414 @@ public class TJCBench extends TJC.CompiledCommand {
             interp.setResult(tmp0);
         }
         RESULT_INT = TclInteger.get(interp, interp.getResult());
+    }
+
+    // This method will grab an objv array and fill it
+    // with values over and over again. This logic
+    // is executed when invoking a command.
+
+    void InternalObjvInvoke(Interp interp)
+        throws TclException
+    {
+        // objv[0]
+        TclObject const0 = TclString.newInstance("cmd");
+        // objv[1]
+        TclObject var1 = TclString.newInstance("value1");
+        var1.preserve();
+        // objv[2]
+        TclObject const1 = TclString.newInstance("const1");
+        // objv[3]
+        TclObject var2 = TclString.newInstance("value2");
+        var2.preserve();
+
+        for (int i=0; i < 5000; i++) {
+            TclObject[] objv0 = TJC.grabObjv(interp, 4);
+            TclObject tmp1;
+            try {
+                // Arg 0 constant: cmd
+                objv0[0] = const0;
+                // Arg 1 variable:
+                tmp1 = var1;
+                tmp1.preserve();
+                objv0[1] = tmp1;
+                // Arg 2 constant:
+                objv0[2] = const1;
+                // Arg 3 variable:
+                tmp1 = var2;
+                tmp1.preserve();
+                objv0[3] = tmp1;
+
+                //TJC.invoke(interp, null, objv0, 0);
+                RESULT_OBJ = objv0;
+            } finally {
+                tmp1 = objv0[1];
+                if ( tmp1 != null ) {
+                    tmp1.release();
+                }
+                tmp1 = objv0[3];
+                if ( tmp1 != null ) {
+                    tmp1.release();
+                }
+                TJC.releaseObjv(interp, objv0, 4);
+            }
+        }
+    }
+
+    // This optimized version of InternalObjvInvoke
+    // will use a TclObject[] saves on the stack
+    // much like ExprValue object are reused.
+    // This method will also inline logic to
+    // null out each element in the array.
+
+    void InternalObjvInvokeOnStack(Interp interp)
+        throws TclException
+    {
+        // Array ref saved in a local var, each
+        // element is known to be null.
+        TclObject[] objvOnStack = TJC.grabObjv(interp, 4);
+
+        // objv[0]
+        TclObject const0 = TclString.newInstance("cmd");
+        // objv[1]
+        TclObject var1 = TclString.newInstance("value1");
+        var1.preserve();
+        // objv[2]
+        TclObject const1 = TclString.newInstance("const1");
+        // objv[3]
+        TclObject var2 = TclString.newInstance("value2");
+        var2.preserve();
+
+
+        for (int i=0; i < 5000; i++) {
+            TclObject[] objv0 = objvOnStack;
+            TclObject tmp1;
+            try {
+                // Arg 0 constant: cmd
+                objv0[0] = const0;
+                // Arg 1 variable:
+                tmp1 = var1;
+                tmp1.preserve();
+                objv0[1] = tmp1;
+                // Arg 2 constant:
+                objv0[2] = const1;
+                // Arg 3 variable:
+                tmp1 = var2;
+                tmp1.preserve();
+                objv0[3] = tmp1;
+
+                //TJC.invoke(interp, null, objv0, 0);
+                RESULT_OBJ = objv0;
+            } finally {
+                objv0[0] = null;
+                tmp1 = objv0[1];
+                if ( tmp1 != null ) {
+                    tmp1.release();
+                }
+                objv0[1] = null;
+                objv0[2] = null;
+                tmp1 = objv0[3];
+                if ( tmp1 != null ) {
+                    tmp1.release();
+                }
+                objv0[3] = null;
+            }
+        }
+
+        TJC.releaseObjv(interp, objvOnStack, 4);
+    }
+
+    // This optimized version will save the
+    // objv array on the stack and also
+    // use logic to determine when all
+    // arguments were assigned.
+
+    void InternalObjvInvokeOnStackAssigned(Interp interp)
+        throws TclException
+    {
+        // Array ref saved in a local var, each
+        // element is known to be null.
+        TclObject[] objvOnStack = TJC.grabObjv(interp, 4);
+
+        // objv[0]
+        TclObject const0 = TclString.newInstance("cmd");
+        // objv[1]
+        TclObject var1 = TclString.newInstance("value1");
+        var1.preserve();
+        // objv[2]
+        TclObject const1 = TclString.newInstance("const1");
+        // objv[3]
+        TclObject var2 = TclString.newInstance("value2");
+        var2.preserve();
+
+        // Dummy ref
+        TclObject ASSIGNED = TclString.newInstance("");
+
+        for (int i=0; i < 5000; i++) {
+            TclObject[] objv0 = objvOnStack;
+            TclObject tmp1 = null;
+            try {
+                // Arg 0 constant: cmd
+                objv0[0] = const0;
+                // Arg 1 variable:
+                tmp1 = var1;
+                tmp1.preserve();
+                objv0[1] = tmp1;
+                // Arg 2 constant:
+                objv0[2] = const1;
+                // Arg 3 variable:
+                tmp1 = var2;
+                tmp1.preserve();
+                objv0[3] = tmp1;
+
+                tmp1 = ASSIGNED;
+                //TJC.invoke(interp, null, objv0, 0);
+                RESULT_OBJ = objv0;
+            } finally {
+                objv0[0] = null;
+                objv0[2] = null;
+
+                if (tmp1 != ASSIGNED) {
+                    // Exception before all arguments
+                    // were assigned. This could also
+                    // be a generic method invocation
+                    // that for loops over the array
+                    // instead of emitting this code.
+                    tmp1 = objv0[1];
+                    if ( tmp1 != null ) {
+                        tmp1.release();
+                    }
+                    objv0[1] = null;
+                    tmp1 = objv0[3];
+                    if ( tmp1 != null ) {
+                        tmp1.release();
+                    }
+                    objv0[3] = null;
+                } else {
+                    // No exception, we can be sure
+                    // that all non-const elements
+                    // were assigned values. Just
+                    // need to release the ones
+                    // that were preserved and null
+                    // the slots.
+                    objv0[1].release();
+                    objv0[1] = null;
+                    objv0[3].release();
+                    objv0[3] = null;
+                }
+            }
+        }
+
+        TJC.releaseObjv(interp, objvOnStack, 4);
+    }
+
+    // This optimized version will maintain an
+    // int index indicating how many arguments
+    // were assigned. In this way, only the
+    // values that were changed will get
+    // released in the exception case. If
+    // all arguments are assigned, then the
+    // ones that need it will be released and
+    // the array elements will not be reset to
+    // null in the loop.
+
+    void InternalObjvInvokeOnStackAssignedIndex(Interp interp)
+        throws TclException
+    {
+        // Array ref saved in a local var, each
+        // element is known to be null.
+        TclObject[] objvOnStack = TJC.grabObjv(interp, 4);
+
+        // objv[0]
+        TclObject const0 = TclString.newInstance("cmd");
+        // objv[1]
+        TclObject var1 = TclString.newInstance("value1");
+        var1.preserve();
+        // objv[2]
+        TclObject const1 = TclString.newInstance("const1");
+        // objv[3]
+        TclObject var2 = TclString.newInstance("value2");
+        var2.preserve();
+
+        // Dummy ref
+        TclObject ASSIGNED = TclString.newInstance("");
+
+        for (int i=0; i < 5000; i++) {
+            TclObject[] objv0 = objvOnStack;
+            TclObject tmp1;
+            int assignedIndex = -1;
+
+            try {
+                // Arg 0 constant: cmd
+                objv0[0] = const0;
+                assignedIndex = 0;
+                // Arg 1 variable:
+                tmp1 = var1;
+                tmp1.preserve();
+                objv0[1] = tmp1;
+                assignedIndex = 1;
+                // Arg 2 constant:
+                objv0[2] = const1;
+                assignedIndex = 2;
+                // Arg 3 variable:
+                tmp1 = var2;
+                tmp1.preserve();
+                objv0[3] = tmp1;
+                assignedIndex = 3;
+
+                //TJC.invoke(interp, null, objv0, 0);
+                RESULT_OBJ = objv0;
+            } finally {
+                if (assignedIndex < 3) {
+                    // Exception before all arguments
+                    // were assigned.
+
+                    objv0[0] = null;
+                    objv0[2] = null;
+
+                    for (int j=0; j <= assignedIndex; j++) {
+                        tmp1 = objv0[j];
+                        if ( tmp1 != null ) {
+                            tmp1.release();
+                        }
+                    }
+                } else {
+                    // No exception, all arguments assigned.
+                    objv0[1].release();
+                    objv0[3].release();
+                }
+            }
+        }
+
+        // This invocation will reset all the
+        // elements to null.
+        TJC.releaseObjv(interp, objvOnStack, 4);
+    }
+
+    // This optimized version will store TclObject
+    // pointers for incremented refrences on the
+    // stack. This seems to be the optimal implementation,
+    // putting values on the stack is not a big deal
+    // and it means we can skip nulling the array
+    // values in the loop body.
+
+    void InternalObjvInvokeOnStackStack(Interp interp)
+        throws TclException
+    {
+        // Array ref saved in a local var, each
+        // element is known to be null.
+        TclObject[] objv0 = TJC.grabObjv(interp, 4);
+
+        // objv[0]
+        TclObject const0 = TclString.newInstance("cmd");
+        // objv[1]
+        TclObject var1 = TclString.newInstance("value1");
+        var1.preserve();
+        // objv[2]
+        TclObject const1 = TclString.newInstance("const1");
+        // objv[3]
+        TclObject var2 = TclString.newInstance("value2");
+        var2.preserve();
+
+        for (int i=0; i < 5000; i++) {
+            TclObject tmp1 = null;
+            TclObject tmp2 = null;
+
+            try {
+                // Arg 0 constant: cmd
+                objv0[0] = const0;
+                // Arg 1 variable:
+                tmp1 = var1;
+                tmp1.preserve();
+                objv0[1] = tmp1;
+                // Arg 2 constant:
+                objv0[2] = const1;
+                // Arg 3 variable:
+                tmp2 = var2;
+                tmp2.preserve();
+                objv0[3] = tmp2;
+
+                //TJC.invoke(interp, null, objv0, 0);
+                RESULT_OBJ = objv0;
+            } finally {
+                if (tmp1 != null) {
+                    tmp1.release();
+                }
+                if (tmp2 != null) {
+                    tmp2.release();
+                }
+            }
+        }
+
+        // This invocation will reset all the
+        // elements to null.
+        TJC.releaseObjv(interp, objv0, 4);
+    }
+    
+    // Split into two try blocks. One for the arguments
+    // and one for the command itself. This approach
+    // is not much faster and it would be very complex
+    // in the generator layer.
+
+    void InternalObjvInvokeOnStackTryStack(Interp interp)
+        throws TclException
+    {
+        // Array ref saved in a local var, each
+        // element is known to be null.
+        TclObject[] objv0 = TJC.grabObjv(interp, 4);
+
+        // objv[0]
+        TclObject const0 = TclString.newInstance("cmd");
+        // objv[1]
+        TclObject var1 = TclString.newInstance("value1");
+        var1.preserve();
+        // objv[2]
+        TclObject const1 = TclString.newInstance("const1");
+        // objv[3]
+        TclObject var2 = TclString.newInstance("value2");
+        var2.preserve();
+
+        for (int i=0; i < 5000; i++) {
+            TclObject tmp1 = null;
+            TclObject tmp2 = null;
+
+            try {
+                // Arg 0 constant: cmd
+                objv0[0] = const0;
+                // Arg 1 variable:
+                tmp1 = var1;
+                tmp1.preserve();
+                objv0[1] = tmp1;
+                // Arg 2 constant:
+                objv0[2] = const1;
+                // Arg 3 variable:
+                tmp2 = var2;
+                tmp2.preserve();
+                objv0[3] = tmp2;
+            } finally {
+                if (tmp2 == null) {
+                    // Not all arguments were assigned, so
+                    // exception must have been raised.
+                    if (tmp1 != null) {
+                        tmp1.release();
+                    }
+                }
+            }
+
+            try {
+                // If the code makes it to here, then
+                // all arguments must have been assigned
+
+                //TJC.invoke(interp, null, objv0, 0);
+                RESULT_OBJ = objv0;
+            } finally {
+                tmp1.release();
+                tmp2.release();
+            }
+        }
+
+        // This invocation will reset all the
+        // elements to null.
+        TJC.releaseObjv(interp, objv0, 4);
     }
 
 } // end class TJCBench

@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: compileproc.tcl,v 1.32 2006/06/27 21:14:42 mdejong Exp $
+#  RCS: @(#) $Id: compileproc.tcl,v 1.33 2006/06/28 02:15:52 mdejong Exp $
 #
 #
 
@@ -4423,11 +4423,41 @@ proc compileproc_expr_evaluate_boolean_emit { key expr_index } {
         set infostr [lindex $eval_tuple 0]
         set ev [lindex $eval_tuple 1]
         append buffer [lindex $eval_tuple 2]
+        set ev_types [lindex $eval_tuple 3 3]
 
         set tmpsymbol [compileproc_tmpvar_next]
         append buffer \
             [emitter_indent] \
-            "boolean " $tmpsymbol " = " $ev ".getBooleanValue(interp)" \
+            "boolean " $tmpsymbol " = "
+
+        # If ExprValue result is known at compile time,
+        # then invoke optimized logic to convert this
+        # type to a boolean. This optimization avoids
+        # a method invocation and a switch, it can
+        # make the code execute 4x faster in some cases.
+
+        if {$_compileproc(options,expr_inline_set_result)} {
+            switch -- $ev_types {
+                {boolean} -
+                {int} {
+                    append buffer \
+                        "( " $ev ".getIntValue() != 0 )"
+                }
+                {double} {
+                    append buffer \
+                        "( " $ev ".getDoubleValue() != 0.0 )"
+                }
+                default {
+                    append buffer \
+                        $ev ".getBooleanValue(interp)"
+                }
+            }
+        } else {
+            append buffer \
+                $ev ".getBooleanValue(interp)"
+        }
+
+        append buffer \
             "\;\n" \
             [compileproc_emit_exprvalue_release $ev]
 
