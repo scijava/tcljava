@@ -271,7 +271,7 @@ PACKAGE_STRING=
 PACKAGE_BUGREPORT=
 
 ac_unique_file="ChangeLog"
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS THREAD_BIN_DIR JIKES JAVAC JAVA JAVA_G JAVAH JAR JDB DDD GDB CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT SHLIB_CFLAGS SHLIB_LD SHLIB_LD_LIBS SHLIB_PREFIX SHLIB_SUFFIX SHLIB_VERSION TCL_BUILD_LIB_SPEC TCL_CFLAGS TCL_DEFS TCL_LIBS TCL_VERSION TCL_SRC_DIR TCL_BIN_DIR TCL_LD_SEARCH_FLAGS TCL_DBGX TCLJAVA_DBGX JAVA_INCLUDE_FLAGS JAVA_LIB_FLAGS JAVA_LIB_RUNTIME_PATH TCLBLEND_LD_PRELOAD TCLBLEND_LD_BIND_NOW WISH TCLSH TCL_BIN_TCLSH TCL_INSTALL_LIB_DIR BUILD_DIR TOP_DIR TOP_DIR_NATIVE BUILD_DIR_NATIVE THREAD_BIN_DIR_NATIVE WIN32_HOST JAVA_CLASSPATH JAVA_FLAGS JAVAC_FLAGS JAVAC_D_FLAG JAVA_G_FLAGS JDB_ATTACH_FLAGS JAR_EXTRACT_FLAGS JAR_COMPRESS_FLAGS JAR_NOCOMPRESS_FLAGS TCLJAVA_VERSION TCLJAVA_NODOT_VERSION JAVA_NATIVE PREFIX_NATIVE EXEC_PREFIX_NATIVE TCLSH_NATIVE JAVA_CLASSPATH_NATIVE JAVA_LIB_RUNTIME_PATH_NATIVE TCLJAVA LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS THREAD_BIN_DIR JAVAC JAVA JAVA_G JAVAH JAR JDB DDD GDB CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT SHLIB_CFLAGS SHLIB_LD SHLIB_LD_LIBS SHLIB_PREFIX SHLIB_SUFFIX SHLIB_VERSION TCL_BUILD_LIB_SPEC TCL_CFLAGS TCL_DEFS TCL_LIBS TCL_VERSION TCL_SRC_DIR TCL_BIN_DIR TCL_LD_SEARCH_FLAGS TCL_DBGX TCLJAVA_DBGX JAVA_INCLUDE_FLAGS JAVA_LIB_FLAGS JAVA_LIB_RUNTIME_PATH TCLBLEND_LD_PRELOAD TCLBLEND_LD_BIND_NOW WISH TCLSH TCL_BIN_TCLSH TCL_INSTALL_LIB_DIR BUILD_DIR TOP_DIR TOP_DIR_NATIVE BUILD_DIR_NATIVE THREAD_BIN_DIR_NATIVE WIN32_HOST JAVA_CLASSPATH JAVA_FLAGS JAVAC_FLAGS JAVAC_D_FLAG JAVA_G_FLAGS JDB_ATTACH_FLAGS JAR_EXTRACT_FLAGS JAR_COMPRESS_FLAGS JAR_NOCOMPRESS_FLAGS TCLJAVA_VERSION TCLJAVA_NODOT_VERSION JAVA_NATIVE PREFIX_NATIVE EXEC_PREFIX_NATIVE TCLSH_NATIVE JAVA_CLASSPATH_NATIVE JAVA_LIB_RUNTIME_PATH_NATIVE TCLJAVA LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -807,8 +807,6 @@ Optional Packages:
   --with-tcl=DIR          build directory for Tcl 8.3.2 (or newer) source release from DIR
   --with-thread=DIR          build directory for Tcl Thread Extension
   --with-jdk=DIR          use Sun's JDK from DIR
-  --with-kaffe=DIR        use Kaffe Open JVM
-  --with-jikes=PROG       use jikes compiler given by PROG, if PROG is not given look for jikes on the PATH.
 
 Some influential environment variables:
   CC          C compiler command
@@ -1313,42 +1311,6 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 #------------------------------------------------------------------------
-# AC_JAVA_WITH_KAFFE
-#
-#	Check to see if the --with-kaffe command line option is given.
-#	If it was, then set ac_java_with_kaffe to the DIR argument.
-#
-# Arguments:
-#	NONE
-#
-# VARIABLES SET:
-#	ac_java_jvm_dir can be set to the directory where the kaffe lives
-#	ac_java_jvm_name cab be set to "kaffe"
-#------------------------------------------------------------------------
-
-
-
-#------------------------------------------------------------------------
-# AC_JAVA_WITH_JIKES
-#
-#	Check to see if the --with-jikes command line option is given.
-#	If it was, then set JAVAC to the jikes compiler. We default
-#	to using jikes if it can be found event if --with-jikes is not given.
-#
-#	If you want to use jikes as a cross compiler, you will need to
-#	use this macro before AC_JAVA_DETECT_JVM and set the CLASSPATH
-#	env variable before running configure.
-#
-# Arguments:
-#	NONE
-#
-# VARIABLES SET:
-#	JAVAC
-#------------------------------------------------------------------------
-
-
-
-#------------------------------------------------------------------------
 # AC_PROG_JAVAC
 #
 #	If JAVAC is not already defined, then search for "javac" on
@@ -1395,13 +1357,12 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 #
 # VARIABLES SET:
 #	JAVAC
-#	ac_java_jvm_version can be set to 1.1, 1.2, or 1.3
+#	ac_java_jvm_version can be set to 1.4, or 1.5
 #	ac_java_jvm_dir can be set to the jvm's root directory
 #
 # DEPENDS ON:
 #	This macro can depend on the values set by the following macros:
 #	AC_JAVA_WITH_JDK
-#	AC_JAVA_WITH_KAFFE
 #	AC_PROG_JAVAC
 #------------------------------------------------------------------------
 
@@ -1568,6 +1529,17 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
+
+#------------------------------------------------------------------------
+# Handle the --prefix=... option
+#------------------------------------------------------------------------
+
+if test "${prefix}" = "NONE"; then
+    prefix=/usr/local
+fi
+if test "${exec_prefix}" = "NONE"; then
+    exec_prefix=$prefix
+fi
 
 #--------------------------------------------------------------------
 # 	Version identification info (also set in source files)
@@ -2076,94 +2048,6 @@ echo "$as_me: error: --with-jdk=DIR option, must pass a valid DIR" >&2;}
     fi
 
 
-# See if --with-kaffe command line argument is given
-
-
-
-# Check whether --with-kaffe or --without-kaffe was given.
-if test "${with_kaffe+set}" = set; then
-  withval="$with_kaffe"
-  ok=$withval
-else
-  ok=no
-fi;
-    if test "$ok" = "no" ; then
-        NO=op
-    elif test "$ok" = "yes" || test ! -d "$ok"; then
-        { { echo "$as_me:$LINENO: error: --with-kaffe=DIR option, must pass a valid DIR" >&5
-echo "$as_me: error: --with-kaffe=DIR option, must pass a valid DIR" >&2;}
-   { (exit 1); exit 1; }; }
-    elif test "$ok" != "no" ; then
-        ac_java_jvm_dir=$ok
-        ac_java_jvm_name=kaffe
-    fi
-
-
-# Use the jikes Java compiler if it can be found
-
-
-
-# Check whether --with-jikes or --without-jikes was given.
-if test "${with_jikes+set}" = set; then
-  withval="$with_jikes"
-  ok=$withval
-else
-  ok=yes
-fi;
-    if test "$ok" = "no" ; then
-        JIKES=
-    else
-        if test "$ok" = "yes"; then
-            # Extract the first word of "jikes", so it can be a program name with args.
-set dummy jikes; ac_word=$2
-echo "$as_me:$LINENO: checking for $ac_word" >&5
-echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
-if test "${ac_cv_path_JIKES+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  case $JIKES in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_JIKES="$JIKES" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_JIKES="$as_dir/$ac_word$ac_exec_ext"
-    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-
-  test -z "$ac_cv_path_JIKES" && ac_cv_path_JIKES="$JAVAC"
-  ;;
-esac
-fi
-JIKES=$ac_cv_path_JIKES
-
-if test -n "$JIKES"; then
-  echo "$as_me:$LINENO: result: $JIKES" >&5
-echo "${ECHO_T}$JIKES" >&6
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-        else
-            JIKES=$ok
-        fi
-
-    echo Using JIKES=$JIKES >&5
-
-
-    fi
-
-
 # Try to detect the installed JVM, this could be controlled
 # by the above --with options
 
@@ -2247,11 +2131,6 @@ echo "$as_me: error: javac '$JAVAC' does not exist.
         ac_java_jvm_dir=$TMP
     fi
 
-    # If the user wanted to use jikes instead of javac, set that now
-    if test "x$JIKES" != "x" ; then
-        JAVAC=$JIKES
-    fi
-
     # Look for a setting for the CLASSPATH, we might need one to run JAVAC
 
     echo "$as_me:$LINENO: checking for zip or jar files to include on CLASSPATH" >&5
@@ -2265,101 +2144,8 @@ echo "$as_me: error: jvm directory not set" >&2;}
 
     # GNU gcj does not need to set the CLASSPATH.
 
-    # Kaffe 1.X
-    F=share/kaffe/Klasses.jar
-    if test "x$ac_java_classpath" = "x" ; then
-
-    echo Looking for $ac_java_jvm_dir/$F >&5
-
-
-        if test -f $ac_java_jvm_dir/$F ; then
-
-    echo Found $ac_java_jvm_dir/$F >&5
-
-
-            ac_java_classpath=$ac_java_jvm_dir/$F
-        fi
-    fi
-
-    # SGI IRIX 1.1
-    F=lib/rt.jar
-    if test "x$ac_java_classpath" = "x" ; then
-
-    echo Looking for $ac_java_jvm_dir/$F >&5
-
-
-        if test -f $ac_java_jvm_dir/$F ; then
-
-    echo Found $ac_java_jvm_dir/$F >&5
-
-
-            ac_java_classpath=$ac_java_jvm_dir/$F
-        fi
-    fi
-
-    # Sun JDK 1.1
-    F=lib/classes.zip
-    if test "x$ac_java_classpath" = "x" ; then
-
-    echo Looking for $ac_java_jvm_dir/$F >&5
-
-
-        if test -f $ac_java_jvm_dir/$F ; then
-
-    echo Found $ac_java_jvm_dir/$F >&5
-
-
-            ac_java_classpath=$ac_java_jvm_dir/$F
-        fi
-    fi
-
-    # Sun JDK 1.2
-    F=jre/lib/rt.jar
-    if test "x$ac_java_classpath" = "x" ; then
-
-    echo Looking for $ac_java_jvm_dir/$F >&5
-
-
-        if test -f $ac_java_jvm_dir/$F ; then
-
-    echo Found $ac_java_jvm_dir/$F >&5
-
-
-            ac_java_classpath=$ac_java_jvm_dir/$F
-        fi
-    fi
-
-    # IBM JDK 1.4
-    F=jre/lib/core.jar
-    if test "x$ac_java_classpath" = "x" ; then
-
-    echo Looking for $ac_java_jvm_dir/$F >&5
-
-
-        if test -f $ac_java_jvm_dir/$F ; then
-
-    echo Found $ac_java_jvm_dir/$F >&5
-
-
-            ac_java_classpath=$ac_java_jvm_dir/$F
-        fi
-    fi
-
-    # JDK 1.4 under Darwin
-    F=/System/Library/Frameworks/JavaVM.framework/Versions/CurrentJDK/Classes/classes.jar
-    if test "x$ac_java_classpath" = "x" ; then
-
-    echo Looking for $F >&5
-
-
-        if test -f $F ; then
-
-    echo Found $F >&5
-
-
-            ac_java_classpath=$F
-        fi
-    fi
+    # Assume that JDK 1.4 and newer systems will
+    # not need to explicitly set the CLASSPATH.
 
     # Append CLASSPATH if env var is set. Avoid append
     # under msys because CLASSPATH is in Win32 format
@@ -2389,7 +2175,7 @@ echo "${ECHO_T}$ac_java_classpath" >&6
 echo $ECHO_N "checking to see if the java compiler works... $ECHO_C" >&6
 
     cat << \EOF > conftest.java
-// #line 2392 "configure"
+// #line 2178 "configure"
 
 
 public class conftest {
@@ -2420,27 +2206,6 @@ echo "$as_me: error: Could not compile simple Java program with '$JAVAC'" >&2;}
    { (exit 1); exit 1; }; }
     fi
 
-    # Check for sickly javac delivered with JDK 1.1 on Win32.
-    # The specific bug we are interested in is an inability
-    # to handle paths with a / separator. We need to use a
-    # special helper script to deal with this issue when
-    # compiling under Win32.
-
-    if test "x$JIKES" = "x"; then
-        rm -f Test.class
-        echo "$as_me:$LINENO: checking to see if the java compiler accepts forward slashes" >&5
-echo $ECHO_N "checking to see if the java compiler accepts forward slashes... $ECHO_C" >&6
-        if ( $JAVAC $JAVAC_FLAGS $JAVAC_D_FLAG . $srcdir/src/Test.java \
-                1>&5 2>&5 ) && test -f Test.class ; then
-            echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-        else
-            echo "$as_me:$LINENO: result: no, using bsjavac.sh workaround" >&5
-echo "${ECHO_T}no, using bsjavac.sh workaround" >&6
-            JAVAC="sh $srcdir/bsjavac.sh $JAVAC"
-        fi
-    fi
-
 
     echo Using JAVAC=$JAVAC >&5
 
@@ -2460,34 +2225,7 @@ echo $ECHO_N "checking type of jvm... $ECHO_C" >&6
     if test "x$ac_java_jvm_name" = "x" ; then
 
     cat << \EOF > conftest.java
-// #line 2463 "configure"
-import kaffe.lang.Application;
-
-public class conftest {
-    public static void main(String[] argv) {
-
-    }
-}
-EOF
-
-    CLASSPATH=$ac_java_classpath
-    export CLASSPATH
-    cmd="$JAVAC ${JAVAC_FLAGS} conftest.java"
-    if (echo $cmd >&5 ; eval $cmd >&5 2>&5) ; then
-        echo "yes" >&5
-        ac_java_jvm_name=kaffe
-    else
-        echo "configure: failed program was:" >&5
-        cat conftest.java >&5
-        echo "configure: CLASSPATH was $CLASSPATH" >&5
-            fi
-
-    fi
-
-    if test "x$ac_java_jvm_name" = "x" ; then
-
-    cat << \EOF > conftest.java
-// #line 2490 "configure"
+// #line 2228 "configure"
 import gnu.java.io.EncodingManager;
 
 public class conftest {
@@ -2521,7 +2259,6 @@ echo "${ECHO_T}$ac_java_jvm_name" >&6
     case "$ac_java_jvm_name" in
         gcj) DO=nothing ;;
         jdk) DO=nothing ;;
-        kaffe) DO=nothing ;;
         *) { { echo "$as_me:$LINENO: error: '$ac_java_jvm_name' is not a supported JVM" >&5
 echo "$as_me: error: '$ac_java_jvm_name' is not a supported JVM" >&2;}
    { (exit 1); exit 1; }; } ;;
@@ -2532,12 +2269,12 @@ echo "$as_me: error: '$ac_java_jvm_name' is not a supported JVM" >&2;}
     echo "$as_me:$LINENO: checking java API version" >&5
 echo $ECHO_N "checking java API version... $ECHO_C" >&6
 
-    # The class java.lang.StrictMath is new to 1.3
+    # The class java.nio.charset.Charset is new to 1.4
 
 
     cat << \EOF > conftest.java
-// #line 2539 "configure"
-import java.lang.StrictMath;
+// #line 2276 "configure"
+import java.nio.charset.Charset;
 
 public class conftest {
     public static void main(String[] argv) {
@@ -2551,7 +2288,7 @@ EOF
     cmd="$JAVAC ${JAVAC_FLAGS} conftest.java"
     if (echo $cmd >&5 ; eval $cmd >&5 2>&5) ; then
         echo "yes" >&5
-        ac_java_jvm_version=1.3
+        ac_java_jvm_version=1.4
     else
         echo "configure: failed program was:" >&5
         cat conftest.java >&5
@@ -2559,13 +2296,12 @@ EOF
             fi
 
 
-    # The class java.lang.Package is new to 1.2
+    # The class java.lang.StringBuilder is new to 1.5
 
-    if test "x$ac_java_jvm_version" = "x" ; then
 
     cat << \EOF > conftest.java
-// #line 2567 "configure"
-import java.lang.Package;
+// #line 2303 "configure"
+import java.lang.StringBuilder;
 
 public class conftest {
     public static void main(String[] argv) {
@@ -2579,47 +2315,17 @@ EOF
     cmd="$JAVAC ${JAVAC_FLAGS} conftest.java"
     if (echo $cmd >&5 ; eval $cmd >&5 2>&5) ; then
         echo "yes" >&5
-        ac_java_jvm_version=1.2
+        ac_java_jvm_version=1.5
     else
         echo "configure: failed program was:" >&5
         cat conftest.java >&5
         echo "configure: CLASSPATH was $CLASSPATH" >&5
             fi
 
-    fi
-
-    # The class java.lang.reflect.Method is new to 1.1
 
     if test "x$ac_java_jvm_version" = "x" ; then
-
-    cat << \EOF > conftest.java
-// #line 2596 "configure"
-import java.lang.reflect.Method;
-
-public class conftest {
-    public static void main(String[] argv) {
-
-    }
-}
-EOF
-
-    CLASSPATH=$ac_java_classpath
-    export CLASSPATH
-    cmd="$JAVAC ${JAVAC_FLAGS} conftest.java"
-    if (echo $cmd >&5 ; eval $cmd >&5 2>&5) ; then
-        echo "yes" >&5
-        ac_java_jvm_version=1.1
-    else
-        echo "configure: failed program was:" >&5
-        cat conftest.java >&5
-        echo "configure: CLASSPATH was $CLASSPATH" >&5
-            fi
-
-    fi
-
-    if test "x$ac_java_jvm_version" = "x" ; then
-        { { echo "$as_me:$LINENO: error: Could not detect Java version 1.1 or newer" >&5
-echo "$as_me: error: Could not detect Java version 1.1 or newer" >&2;}
+        { { echo "$as_me:$LINENO: error: Could not detect Java version, 1.4 or newer is required" >&5
+echo "$as_me: error: Could not detect Java version, 1.4 or newer is required" >&2;}
    { (exit 1); exit 1; }; }
     fi
 
@@ -2819,9 +2525,6 @@ fi
     fi
 
     TOOL=javah
-    if test "$ac_java_jvm_name" = "kaffe" ; then
-        TOOL=kaffeh
-    fi
 
     if test "$cross_compiling" = "yes" ; then
         # Extract the first word of "$TOOL", so it can be a program name with args.
@@ -2913,7 +2616,6 @@ fi
 echo "$as_me: error: Cannot find $TOOL on $ac_java_jvm_dir/bin" >&2;}
    { (exit 1); exit 1; }; }
     fi
-
 
 
 
@@ -3101,11 +2803,7 @@ fi
 
 
     case "$ac_java_jvm_version" in
-        1.1|1.2)
-            JAVA_G_FLAGS=-debug
-            JDB_ATTACH_FLAGS="-host localhost -password \\\`cat tmp.password\\\`"
-            ;;
-        1.3)
+        *)
             # JDK on Win32 does not allow connection with suspend=n
             if test "$ac_cv_tcl_win32" = "yes"; then
                 suspend="y"
@@ -3113,7 +2811,7 @@ fi
                 suspend="n"
             fi
             JDB_ATTACH_FLAGS="-attach 8757"
-            JAVA_G_FLAGS="-Xdebug -Xrunjdwp:transport=dt_socket,address=8757,server=y,suspend=$suspend -Xbootclasspath/a:$ac_java_jvm_dir/lib/tools.jar"
+            JAVA_G_FLAGS="-Xdebug -Xrunjdwp:transport=dt_socket,address=8757,server=y,suspend=$suspend"
             JDB_ATTACH_FLAGS="-attach 8757"
             ;;
     esac
@@ -4101,18 +3799,10 @@ echo "$as_me: error: Could not locate Java's jni.h include file" >&2;}
     # we assume that there is only one arch subdirectory,
     # if that is not the case we would need to use $host
 
-    # FIXME: check to make sure this works in case the above else
-    # branch is taken, (a include subdir for an arch?)
     F=`ls $ac_java_jvm_dir/include/*/jni_md.h 2>/dev/null`
     if test -f "$F" ; then
         ac_java_jvm_jni_include_flags="$ac_java_jvm_jni_include_flags -I`dirname $F`"
-    else
-        F=`ls $ac_java_jvm_dir/include/kaffe/jtypes.h 2>/dev/null`
-        if test -f "$F" ; then
-            ac_java_jvm_jni_include_flags="$ac_java_jvm_jni_include_flags -I`dirname $F`"
-        fi
     fi
-
 
 
     echo Using the following JNI include flags $ac_java_jvm_jni_include_flags >&5
@@ -4202,213 +3892,11 @@ echo "${ECHO_T}$ac_java_jvm_jni_working" >&6
           ;;
     esac
 
-    if test "$ac_java_jvm_name" = "kaffe" ; then
-        # Kaffe JVM under Cygwin (untested, is -lpthread needed?)
-
-        F=lib/kaffevm.dll
-        if test "x$ac_java_jvm_jni_lib_flags" = "x" ; then
-
-    echo Looking for $ac_java_jvm_dir/$F >&5
-
-
-            if test -f $ac_java_jvm_dir/$F ; then
-
-    echo Found $ac_java_jvm_dir/$F >&5
-
-
-                D=`dirname $ac_java_jvm_dir/$F`
-                ac_java_jvm_jni_lib_runtime_path=$D
-                ac_java_jvm_jni_lib_flags="-lpthread -L$D -lkaffevm"
-            fi
-        fi
-
-        # Kaffe JVM under Unix
-
-        F=lib/libkaffevm.so
-        if test "x$ac_java_jvm_jni_lib_flags" = "x" ; then
-
-    echo Looking for $ac_java_jvm_dir/$F >&5
-
-
-            if test -f $ac_java_jvm_dir/$F ; then
-
-    echo Found $ac_java_jvm_dir/$F >&5
-
-
-                D=`dirname $ac_java_jvm_dir/$F`
-                ac_java_jvm_jni_lib_runtime_path=$D
-                ac_java_jvm_jni_lib_flags="-lpthread -L$D -lkaffevm -ldl"
-                # Kaffe requires lib/kaffe on the lib path or it fails to load
-                D=$ac_java_jvm_dir/lib/kaffe
-                ac_java_jvm_jni_lib_runtime_path="${ac_java_jvm_jni_lib_runtime_path}:$D"
-            else
-                F=jre/lib/$machine/libkaffevm.so
-
-    echo Looking for $ac_java_jvm_dir/$F >&5
-
-
-                if test -f $ac_java_jvm_dir/$F ; then
-
-    echo Found $ac_java_jvm_dir/$F >&5
-
-
-                    D=`dirname $ac_java_jvm_dir/$F`
-                    ac_java_jvm_jni_lib_runtime_path=$D
-                    ac_java_jvm_jni_lib_flags="-lpthread -L$D -lkaffevm -ldl"
-                    # Kaffe needs the machine dir on the lib path
-                    ac_java_jvm_jni_lib_runtime_path="${ac_java_jvm_jni_lib_runtime_path}:$D"
-                fi
-            fi
-        fi
-    fi
-
-
     # Check for known JDK installation layouts
 
     if test "$ac_java_jvm_name" = "jdk"; then
 
-        # IRIX 1.1 JDK (32 bit ABI)
-
-        F=lib32/sgi/native_threads/libjava.so
-        if test "x$ac_java_jvm_jni_lib_flags" = "x" ; then
-
-    echo Looking for $ac_java_jvm_dir/$F >&5
-
-
-            if test -f $ac_java_jvm_dir/$F ; then
-
-    echo Found $ac_java_jvm_dir/$F >&5
-
-
-                D=`dirname $ac_java_jvm_dir/$F`
-                ac_java_jvm_jni_lib_runtime_path=$D
-                ac_java_jvm_jni_lib_flags="-lpthread -L$D -ljava"
-                ac_java_jvm_ld_bind_now=1
-            fi
-        fi
-
-        # HP-UX 1.1 JDK on PA_RISC
-
-        F=lib/PA_RISC/native_threads/libjava.sl
-        if test "x$ac_java_jvm_jni_lib_flags" = "x" ; then
-
-    echo Looking for $ac_java_jvm_dir/$F >&5
-
-
-            if test -f $ac_java_jvm_dir/$F ; then
-
-    echo Found $ac_java_jvm_dir/$F >&5
-
-
-                D=`dirname $ac_java_jvm_dir/$F`
-                ac_java_jvm_jni_lib_runtime_path=$D
-                ac_java_jvm_jni_lib_flags="-lpthread -L$D -ljava"
-            fi
-        fi
-
-        # IBM JDK 1.1 for Linux
-
-        F=lib/linux/native_threads/libjava.so
-        if test "x$ac_java_jvm_jni_lib_flags" = "x" ; then
-
-    echo Looking for $ac_java_jvm_dir/$F >&5
-
-
-            if test -f $ac_java_jvm_dir/$F ; then
-
-    echo Found $ac_java_jvm_dir/$F >&5
-
-
-                D=`dirname $ac_java_jvm_dir/$F`
-                ac_java_jvm_jni_lib_runtime_path=$D
-                ac_java_jvm_jni_lib_flags="-lpthread -L$D -ljava"
-            fi
-        fi
-
-        # IBM JDK 1.3 for Linux
-
-        F=jre/bin/libjava.so
-        if test "x$ac_java_jvm_jni_lib_flags" = "x" ; then
-
-    echo Looking for $ac_java_jvm_dir/$F >&5
-
-
-            if test -f $ac_java_jvm_dir/$F ; then
-
-    echo Found $ac_java_jvm_dir/$F >&5
-
-
-                D=`dirname $ac_java_jvm_dir/$F`
-                ac_java_jvm_jni_lib_runtime_path=$D
-                ac_java_jvm_jni_lib_flags="-lpthread -L$D -ljava"
-                D=$ac_java_jvm_dir/jre/bin/classic
-                ac_java_jvm_jni_lib_runtime_path="${ac_java_jvm_jni_lib_runtime_path}:$D"
-                ac_java_jvm_jni_lib_flags="$ac_java_jvm_jni_lib_flags -L$D -ljvm -lhpi"
-            fi
-        fi
-
-        # Sun JDK 1.1 for Solaris
-
-        F=lib/sparc/native_threads/libjava.so
-        if test "x$ac_java_jvm_jni_lib_flags" = "x" ; then
-
-    echo Looking for $ac_java_jvm_dir/$F >&5
-
-
-            if test -f $ac_java_jvm_dir/$F ; then
-
-    echo Found $ac_java_jvm_dir/$F >&5
-
-
-                D=`dirname $ac_java_jvm_dir/$F`
-                ac_java_jvm_jni_lib_runtime_path=$D
-                ac_java_jvm_jni_lib_flags="-lthread -L$D -ljava"
-            fi
-        fi
-
-        # Sun JDK 1.2 for Solaris (groan, handle regular and production layout)
-
-        F=jre/lib/sparc/libjava.so
-        if test "x$ac_java_jvm_jni_lib_flags" = "x" ; then
-
-    echo Looking for $ac_java_jvm_dir/$F >&5
-
-
-            if test -f $ac_java_jvm_dir/$F ; then
-
-    echo Found $ac_java_jvm_dir/$F >&5
-
-
-                D=`dirname $ac_java_jvm_dir/$F`
-                ac_java_jvm_jni_lib_runtime_path=$D
-                ac_java_jvm_jni_lib_flags="-lthread -L$D -ljava"
-                D=$ac_java_jvm_dir/jre/lib/sparc/native_threads
-                if test -d $D ; then
-                    ac_java_jvm_jni_lib_flags="$ac_java_jvm_jni_lib_flags -L$D"
-                    ac_java_jvm_jni_lib_runtime_path="${ac_java_jvm_jni_lib_runtime_path}:$D"
-                fi
-                D=$ac_java_jvm_dir/jre/lib/sparc/classic
-                if test -d $D ; then
-                    ac_java_jvm_jni_lib_flags="$ac_java_jvm_jni_lib_flags -L$D"
-                    ac_java_jvm_jni_lib_runtime_path="${ac_java_jvm_jni_lib_runtime_path}:$D"
-                fi
-
-                ac_java_jvm_jni_lib_flags="$ac_java_jvm_jni_lib_flags -ljvm"
-
-                # Some Solaris Java installs have no -lhpi
-                F=jre/lib/sparc/libhpi.so
-                if test -f $ac_java_jvm_dir/$F ; then
-                    ac_java_jvm_jni_lib_flags="$ac_java_jvm_jni_lib_flags -lhpi"
-                fi
-            fi
-        fi
-
-        # Sun/Blackdown JDK 1.3 and 1.4 for Linux
-
-        # The "classic" vm is only supported in 1.3 and it core dumps
-        # when loading the java package. Use the "client" vm
-        # unless "classic" is the only one available.
-
+        # Sun/Blackdown 1.4 for Linux (client JVM)
 
         F=jre/lib/$machine/libjava.so
         if test "x$ac_java_jvm_jni_lib_flags" = "x" ; then
@@ -4425,14 +3913,6 @@ echo "${ECHO_T}$ac_java_jvm_jni_working" >&6
                 ac_java_jvm_jni_lib_runtime_path=$D
                 ac_java_jvm_jni_lib_flags="-L$D -ljava -lverify"
                 D=$ac_java_jvm_dir/jre/lib/$machine/client
-                if test ! -d $D ; then
-                    D=$ac_java_jvm_dir/jre/lib/$machine/classic
-                    if test ! -d $D ; then
-                        { { echo "$as_me:$LINENO: error: Unable to locate directory for -ljvm" >&5
-echo "$as_me: error: Unable to locate directory for -ljvm" >&2;}
-   { (exit 1); exit 1; }; }
-                    fi
-                fi
                 ac_java_jvm_jni_lib_runtime_path="${ac_java_jvm_jni_lib_runtime_path}:$D"
                 ac_java_jvm_jni_lib_flags="$ac_java_jvm_jni_lib_flags -L$D -ljvm"
                 D=$ac_java_jvm_dir/jre/lib/$machine/native_threads
@@ -4465,101 +3945,7 @@ echo "$as_me: error: Unable to locate directory for -ljvm" >&2;}
             fi
         fi
 
-        # Blackdown JDK 1.1 for Linux (this one can get a little wacky)
-
-        F=README.linux
-        if test "x$ac_java_jvm_jni_lib_flags" = "x" &&
-            test -f $ac_java_jvm_dir/$F ; then
-            # Figure out if it is 1.1.8 and not 1.1.7
-
-
-    echo grep in $ac_java_jvm_dir/$F for pattern '"JDK 1.1.8"' >&5
-
-
-    if (grep "JDK 1.1.8" $ac_java_jvm_dir/$F > /dev/null 2>&1) ; then
-
-    echo grep result : yes >&5
-
-
-        IS118=1
-    else
-
-    echo grep result : no >&5
-
-
-            fi
-
-
-            F=lib/`uname -m`/native_threads/libjava.so
-
-    echo Looking for $ac_java_jvm_dir/$F >&5
-
-
-            if test -f $ac_java_jvm_dir/$F ; then
-
-    echo Found $ac_java_jvm_dir/$F >&5
-
-
-                D=`dirname $ac_java_jvm_dir/$F`
-                ac_java_jvm_jni_lib_runtime_path=$D
-                ac_java_jvm_jni_lib_flags="-lpthread -L$D -ljava"
-
-                # We only want to use this scary hack with Blackdown 1.1.7
-                if test "x$IS118" = "x" ; then
-
-    echo Using AWT GUI components under Tcl Blend with the Linux port of the JDK 1.1.7 from Blackdown requires a special modification to jtclsh and the Makefile. See known_issues.txt for more info. >&5
-    echo Using AWT GUI components under Tcl Blend with the Linux port of the JDK 1.1.7 from Blackdown requires a special modification to jtclsh and the Makefile. See known_issues.txt for more info.
-
-                    ac_java_jvm_ld_preload="libpthread.so libjava.so"
-                    ac_java_jvm_ld_bind_now=1
-                fi
-            fi
-        fi
-
-        # Sun JDK 1.1 for Win32
-
-        F=lib/javai.lib
-        if test "x$ac_java_jvm_jni_lib_flags" = "x" ; then
-
-    echo Looking for $ac_java_jvm_dir/$F >&5
-
-
-            if test -f $ac_java_jvm_dir/$F ; then
-
-    echo Found $ac_java_jvm_dir/$F >&5
-
-
-                D=$ac_java_jvm_dir/bin
-                ac_java_jvm_jni_lib_runtime_path="${D}"
-                ac_java_jvm_jni_lib_flags="$ac_java_jvm_dir/$F"
-            fi
-        fi
-
-        # IBM JDK 1.3 for Win32
-
-        F=lib/jvm.lib
-        if test "x$ac_java_jvm_jni_lib_flags" = "x" ; then
-
-    echo Looking for $ac_java_jvm_dir/$F >&5
-
-
-            if test -f $ac_java_jvm_dir/$F ; then
-                # jre/bin/classic directory must contain jvm.dll
-                DLL=jre/bin/classic/jvm.dll
-                if test -f $ac_java_jvm_dir/$DLL ; then
-
-    echo Found $ac_java_jvm_dir/$F >&5
-
-
-                    D1=$ac_java_jvm_dir/jre/bin
-                    D2=$ac_java_jvm_dir/jre/bin/classic
-                    ac_java_jvm_jni_lib_runtime_path="${D1}:${D2}"
-                    ac_java_jvm_jni_lib_flags="$ac_java_jvm_dir/$F"
-                fi
-            fi
-        fi
-
-        # Sun JDK 1.3 and 1.4 for Win32
+        # Sun JDK 1.4 and 1.5 for Win32 (client JVM)
 
         F=lib/jvm.lib
         if test "x$ac_java_jvm_jni_lib_flags" = "x" ; then
@@ -4802,91 +4188,36 @@ if ( $JAVAC $JAVAC_FLAGS $JAVAC_D_FLAG . $srcdir/src/Test.java 1>&5 2>&5 ) &&
     echo "$as_me:$LINENO: result: the Java compiler works" >&5
 echo "${ECHO_T}the Java compiler works" >&6
 
-    echo "$as_me:$LINENO: checking the -native flag to the Java runtime" >&5
-echo $ECHO_N "checking the -native flag to the Java runtime... $ECHO_C" >&6
+    echo "$as_me:$LINENO: checking the the Java runtime" >&5
+echo $ECHO_N "checking the the Java runtime... $ECHO_C" >&6
 
-    CLASSPATH=$ac_java_classpath:.
+    if test "$ac_java_classpath" = ""; then
+        CLASSPATH=.
+    else
+        CLASSPATH=$ac_java_classpath:.
+    fi
     export CLASSPATH
 
     echo Using CLASSPATH=$CLASSPATH >&5
 
 
 
-    if test "$ac_java_jvm_name" = "jdk"; then
+    # Do basic runtime check
 
-    echo $JAVA -native Test >&5
-
-
-    fi
-    if test "$ac_java_jvm_name" = "jdk" &&
-	test "`$JAVA -native Test 2>&5`" = "OK"; then
-        JAVA_FLAGS=-native
-
-    echo the -native flag works >&5
-    echo the -native flag works
-
-
-        # -native does not work correctly under JDK 1.1.7 from Blackdown.
-        # The problem is related to IO from a shell script.
-        # Figure out if this is 1.1.8 and not 1.1.7
-
-        if test "`uname -s`" = "Linux" && test "$ac_java_jvm_version" = "1.1"; then
-
-
-    echo grep in $ac_java_jvm_dir/README.linux for pattern '"JDK 1.1.8"' >&5
-
-
-    if (grep "JDK 1.1.8" $ac_java_jvm_dir/README.linux > /dev/null 2>&1) ; then
-
-    echo grep result : yes >&5
-
-
-        IS118=1
+    if test "`$JAVA Test 2>&5`" = "OK"; then
+        JAVA_FLAGS=""
+        echo "$as_me:$LINENO: result: the Java runtime works" >&5
+echo "${ECHO_T}the Java runtime works" >&6
     else
-
-    echo grep result : no >&5
-
-
-            fi
-
-             if test "$IS118" != "1" ; then
-                 JAVA_FLAGS=""
-
-    echo skipping -native option because jacl has some problems running with native threads on linux with JDK 1.1.7 from Blackdown >&5
-    echo skipping -native option because jacl has some problems running with native threads on linux with JDK 1.1.7 from Blackdown
-
-             fi
-        fi
-    else
-        # If -native is not supported then run without it
-
-    echo $JAVA Test >&5
-
-
-	if test "`$JAVA Test 2>&5`" = "OK"; then
-            JAVA_FLAGS=""
-
-    echo the -native flag does not work >&5
-    echo the -native flag does not work
-
-        else
-            { { echo "$as_me:$LINENO: error: could not run simple test program Test.class with $JAVA, you need to check the Java runtime to make sure it is installed correctly" >&5
+        { { echo "$as_me:$LINENO: error: could not run simple test program Test.class with $JAVA, you need to check the Java runtime to make sure it is installed correctly" >&5
 echo "$as_me: error: could not run simple test program Test.class with $JAVA, you need to check the Java runtime to make sure it is installed correctly" >&2;}
    { (exit 1); exit 1; }; }
-        fi
     fi
 
     if test $TCLJAVA = "tclblend" || test $TCLJAVA = "both"; then
         #test out the javah program on our Test.class file and generate Test.h
         echo "$as_me:$LINENO: checking the Java header generation program" >&5
 echo $ECHO_N "checking the Java header generation program... $ECHO_C" >&6
-
-        CLASSPATH=$ac_java_classpath:.
-        export CLASSPATH
-
-    echo Using CLASSPATH=$CLASSPATH >&5
-
-
 
         JAVAH_FLAGS="-jni -o"
         rm -f Test.h
@@ -4967,13 +4298,6 @@ echo $ECHO_N "checking the Java archive program... $ECHO_C" >&6
     JAR_NOCOMPRESS_FLAGS=-cf0M
 
     # Use jar program to create an uncompressed archive
-
-    CLASSPATH=$ac_java_classpath
-    export CLASSPATH
-
-    echo Using CLASSPATH=$CLASSPATH >&5
-
-
 
     rm -f Test.jar
 
@@ -5061,14 +4385,6 @@ echo "$as_me: error: the jar program could not extract from a compressed archive
 
     echo "$as_me:$LINENO: checking that the jar program did not corrupt the test file" >&5
 echo $ECHO_N "checking that the jar program did not corrupt the test file... $ECHO_C" >&6
-
-    CLASSPATH=$ac_java_classpath:.
-    export CLASSPATH
-
-
-    echo Using CLASSPATH=$CLASSPATH >&5
-
-
 
 
     echo $JAVA Test >&5
@@ -5900,7 +5216,6 @@ s,@ECHO_N@,$ECHO_N,;t t
 s,@ECHO_T@,$ECHO_T,;t t
 s,@LIBS@,$LIBS,;t t
 s,@THREAD_BIN_DIR@,$THREAD_BIN_DIR,;t t
-s,@JIKES@,$JIKES,;t t
 s,@JAVAC@,$JAVAC,;t t
 s,@JAVA@,$JAVA,;t t
 s,@JAVA_G@,$JAVA_G,;t t

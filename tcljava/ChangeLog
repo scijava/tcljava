@@ -1,3 +1,25 @@
+2006-06-29  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        Require JDK 1.4 or newer to build Jacl or Tcl Blend.
+
+        * bsjavac.sh: Remove old shell script that worked
+        around buggy JDK 1.0/1.1 javac.
+        * configure: Regen.
+        * configure.in: Fixup default --prefix option,
+        it will now correctly default to /usr/local.
+        Remove AC_JAVA_WITH_KAFFE and AC_JAVA_WITH_JIKES.
+        Remove old tests that checked for -native option
+        to java, it existed only for old JDK 1.0/1.1.
+        * tcljava.m4 (AC_JAVA_WITH_KAFFE, AC_JAVA_WITH_JIKES,
+        AC_PROG_JAVAC, AC_JAVA_DETECT_JVM, AC_JAVA_CLASSPATH,
+        AC_JAVA_TOOLS, AC_JAVA_JNI_LIBS):
+        Remove ancient kaffe and jikes support. Detect
+        JDK version as 1.4 or 1.5. Remove old code to detect
+        CLASSPATH, this was only needed to work around
+        CLASSPATH related bugs in JDK 1.0/1.1 tools.
+        Remove old JNI lib search code, now depends on
+        JDK 1.4 or 1.5 style install paths.
+
 2006-06-28  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/jacl/tcl/lang/QSort.java (doDictionary):

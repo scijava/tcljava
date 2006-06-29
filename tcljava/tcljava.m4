@@ -180,65 +180,6 @@ AC_DEFUN([AC_JAVA_WITH_JDK], [
 ])
 
 #------------------------------------------------------------------------
-# AC_JAVA_WITH_KAFFE
-#
-#	Check to see if the --with-kaffe command line option is given.
-#	If it was, then set ac_java_with_kaffe to the DIR argument.
-#
-# Arguments:
-#	NONE
-#
-# VARIABLES SET:
-#	ac_java_jvm_dir can be set to the directory where the kaffe lives
-#	ac_java_jvm_name cab be set to "kaffe"
-#------------------------------------------------------------------------
-
-AC_DEFUN([AC_JAVA_WITH_KAFFE], [
-    AC_ARG_WITH(kaffe, [  --with-kaffe=DIR        use Kaffe Open JVM], ok=$withval, ok=no)
-    if test "$ok" = "no" ; then
-        NO=op
-    elif test "$ok" = "yes" || test ! -d "$ok"; then
-        AC_MSG_ERROR([--with-kaffe=DIR option, must pass a valid DIR])
-    elif test "$ok" != "no" ; then
-        ac_java_jvm_dir=$ok
-        ac_java_jvm_name=kaffe
-    fi
-])
-
-#------------------------------------------------------------------------
-# AC_JAVA_WITH_JIKES
-#
-#	Check to see if the --with-jikes command line option is given.
-#	If it was, then set JAVAC to the jikes compiler. We default
-#	to using jikes if it can be found event if --with-jikes is not given.
-#
-#	If you want to use jikes as a cross compiler, you will need to
-#	use this macro before AC_JAVA_DETECT_JVM and set the CLASSPATH
-#	env variable before running configure.
-#
-# Arguments:
-#	NONE
-#
-# VARIABLES SET:
-#	JAVAC
-#------------------------------------------------------------------------
-
-AC_DEFUN([AC_JAVA_WITH_JIKES], [
-    AC_ARG_WITH(jikes, [  --with-jikes=PROG       use jikes compiler given by PROG, if PROG is not given look for jikes on the PATH.],
-    ok=$withval, ok=yes)
-    if test "$ok" = "no" ; then
-        JIKES=
-    else
-        if test "$ok" = "yes"; then
-            AC_PATH_PROG(JIKES, jikes, $JAVAC)
-        else
-            JIKES=$ok
-        fi
-        AC_MSG_LOG([Using JIKES=$JIKES], 1)
-    fi
-])
-
-#------------------------------------------------------------------------
 # AC_PROG_JAVAC
 #
 #	If JAVAC is not already defined, then search for "javac" on
@@ -282,11 +223,6 @@ AC_DEFUN([AC_PROG_JAVAC], [
         ac_java_jvm_dir=$TMP
     fi
 
-    # If the user wanted to use jikes instead of javac, set that now
-    if test "x$JIKES" != "x" ; then
-        JAVAC=$JIKES
-    fi
-
     # Look for a setting for the CLASSPATH, we might need one to run JAVAC
     AC_JAVA_CLASSPATH
 
@@ -302,24 +238,6 @@ AC_DEFUN([AC_PROG_JAVAC], [
         AC_MSG_RESULT($works)
     else
         AC_MSG_ERROR([Could not compile simple Java program with '$JAVAC'])
-    fi
-
-    # Check for sickly javac delivered with JDK 1.1 on Win32.
-    # The specific bug we are interested in is an inability
-    # to handle paths with a / separator. We need to use a
-    # special helper script to deal with this issue when
-    # compiling under Win32.
-
-    if test "x$JIKES" = "x"; then
-        rm -f Test.class
-        AC_MSG_CHECKING([to see if the java compiler accepts forward slashes])
-        if ( $JAVAC $JAVAC_FLAGS $JAVAC_D_FLAG . $srcdir/src/Test.java \
-                1>&5 2>&5 ) && test -f Test.class ; then
-            AC_MSG_RESULT([yes])
-        else
-            AC_MSG_RESULT([no, using bsjavac.sh workaround])
-            JAVAC="sh $srcdir/bsjavac.sh $JAVAC"
-        fi
     fi
 
     AC_MSG_LOG([Using JAVAC=$JAVAC], 1)
@@ -380,13 +298,12 @@ EOF
 #
 # VARIABLES SET:
 #	JAVAC
-#	ac_java_jvm_version can be set to 1.1, 1.2, or 1.3
+#	ac_java_jvm_version can be set to 1.4, or 1.5
 #	ac_java_jvm_dir can be set to the jvm's root directory
 #
 # DEPENDS ON:
 #	This macro can depend on the values set by the following macros:
 #	AC_JAVA_WITH_JDK
-#	AC_JAVA_WITH_KAFFE
 #	AC_PROG_JAVAC
 #------------------------------------------------------------------------
 
@@ -408,10 +325,6 @@ AC_DEFUN([AC_JAVA_DETECT_JVM], [
     AC_MSG_CHECKING([type of jvm]) 
 
     if test "x$ac_java_jvm_name" = "x" ; then
-        AC_JAVA_TRY_COMPILE([import kaffe.lang.Application;],,ac_java_jvm_name=kaffe)
-    fi
-
-    if test "x$ac_java_jvm_name" = "x" ; then
         AC_JAVA_TRY_COMPILE([import gnu.java.io.EncodingManager;],,ac_java_jvm_name=gcj)
     fi
 
@@ -424,7 +337,6 @@ AC_DEFUN([AC_JAVA_DETECT_JVM], [
     case "$ac_java_jvm_name" in
         gcj) DO=nothing ;;
         jdk) DO=nothing ;;
-        kaffe) DO=nothing ;;
         *) AC_MSG_ERROR(['$ac_java_jvm_name' is not a supported JVM]) ;;
     esac
 
@@ -432,24 +344,16 @@ AC_DEFUN([AC_JAVA_DETECT_JVM], [
 
     AC_MSG_CHECKING([java API version])
 
-    # The class java.lang.StrictMath is new to 1.3
+    # The class java.nio.charset.Charset is new to 1.4
 
-    AC_JAVA_TRY_COMPILE([import java.lang.StrictMath;], , ac_java_jvm_version=1.3)
+    AC_JAVA_TRY_COMPILE([import java.nio.charset.Charset;], , ac_java_jvm_version=1.4)
 
-    # The class java.lang.Package is new to 1.2
+    # The class java.lang.StringBuilder is new to 1.5
 
-    if test "x$ac_java_jvm_version" = "x" ; then
-        AC_JAVA_TRY_COMPILE([import java.lang.Package;], , ac_java_jvm_version=1.2)
-    fi
-
-    # The class java.lang.reflect.Method is new to 1.1
+    AC_JAVA_TRY_COMPILE([import java.lang.StringBuilder;], , ac_java_jvm_version=1.5)
 
     if test "x$ac_java_jvm_version" = "x" ; then
-        AC_JAVA_TRY_COMPILE([import java.lang.reflect.Method;], , ac_java_jvm_version=1.1)
-    fi
-
-    if test "x$ac_java_jvm_version" = "x" ; then
-        AC_MSG_ERROR([Could not detect Java version 1.1 or newer])
+        AC_MSG_ERROR([Could not detect Java version, 1.4 or newer is required])
     fi
 
     AC_MSG_RESULT([$ac_java_jvm_version])
@@ -483,65 +387,8 @@ AC_DEFUN([AC_JAVA_CLASSPATH], [
 
     # GNU gcj does not need to set the CLASSPATH.
 
-    # Kaffe 1.X
-    F=share/kaffe/Klasses.jar
-    if test "x$ac_java_classpath" = "x" ; then
-        AC_MSG_LOG([Looking for $ac_java_jvm_dir/$F], 1)
-        if test -f $ac_java_jvm_dir/$F ; then
-            AC_MSG_LOG([Found $ac_java_jvm_dir/$F], 1)
-            ac_java_classpath=$ac_java_jvm_dir/$F
-        fi
-    fi
-
-    # SGI IRIX 1.1
-    F=lib/rt.jar
-    if test "x$ac_java_classpath" = "x" ; then
-        AC_MSG_LOG([Looking for $ac_java_jvm_dir/$F], 1)
-        if test -f $ac_java_jvm_dir/$F ; then
-            AC_MSG_LOG([Found $ac_java_jvm_dir/$F], 1)
-            ac_java_classpath=$ac_java_jvm_dir/$F
-        fi
-    fi
-
-    # Sun JDK 1.1
-    F=lib/classes.zip
-    if test "x$ac_java_classpath" = "x" ; then
-        AC_MSG_LOG([Looking for $ac_java_jvm_dir/$F], 1)
-        if test -f $ac_java_jvm_dir/$F ; then
-            AC_MSG_LOG([Found $ac_java_jvm_dir/$F], 1)
-            ac_java_classpath=$ac_java_jvm_dir/$F
-        fi
-    fi
-
-    # Sun JDK 1.2
-    F=jre/lib/rt.jar
-    if test "x$ac_java_classpath" = "x" ; then
-        AC_MSG_LOG([Looking for $ac_java_jvm_dir/$F], 1)
-        if test -f $ac_java_jvm_dir/$F ; then
-            AC_MSG_LOG([Found $ac_java_jvm_dir/$F], 1)
-            ac_java_classpath=$ac_java_jvm_dir/$F
-        fi
-    fi
-
-    # IBM JDK 1.4
-    F=jre/lib/core.jar
-    if test "x$ac_java_classpath" = "x" ; then
-        AC_MSG_LOG([Looking for $ac_java_jvm_dir/$F], 1)
-        if test -f $ac_java_jvm_dir/$F ; then
-            AC_MSG_LOG([Found $ac_java_jvm_dir/$F], 1)
-            ac_java_classpath=$ac_java_jvm_dir/$F
-        fi
-    fi
-
-    # JDK 1.4 under Darwin
-    F=/System/Library/Frameworks/JavaVM.framework/Versions/CurrentJDK/Classes/classes.jar
-    if test "x$ac_java_classpath" = "x" ; then
-        AC_MSG_LOG([Looking for $F], 1)
-        if test -f $F ; then
-            AC_MSG_LOG([Found $F], 1)
-            ac_java_classpath=$F
-        fi
-    fi
+    # Assume that JDK 1.4 and newer systems will
+    # not need to explicitly set the CLASSPATH.
 
     # Append CLASSPATH if env var is set. Avoid append
     # under msys because CLASSPATH is in Win32 format
@@ -589,11 +436,7 @@ AC_DEFUN([AC_JAVA_TOOLS], [
     fi
 
     TOOL=javah
-    if test "$ac_java_jvm_name" = "kaffe" ; then
-        TOOL=kaffeh
-    fi
     AC_JAVA_TOOLS_CHECK(JAVAH, $TOOL, $ac_java_jvm_dir/bin)  
-
 
     AC_JAVA_TOOLS_CHECK(JAR, jar, $ac_java_jvm_dir/bin)
 
@@ -601,11 +444,7 @@ AC_DEFUN([AC_JAVA_TOOLS], [
     AC_JAVA_TOOLS_CHECK(JDB, jdb, $ac_java_jvm_dir/bin, 1)
 
     case "$ac_java_jvm_version" in
-        1.1|1.2)
-            JAVA_G_FLAGS=-debug
-            JDB_ATTACH_FLAGS="-host localhost -password \\\`cat tmp.password\\\`"
-            ;;
-        1.3)
+        *)
             # JDK on Win32 does not allow connection with suspend=n
             if test "$ac_cv_tcl_win32" = "yes"; then
                 suspend="y"
@@ -613,7 +452,7 @@ AC_DEFUN([AC_JAVA_TOOLS], [
                 suspend="n"
             fi
             JDB_ATTACH_FLAGS="-attach 8757"
-            JAVA_G_FLAGS="-Xdebug -Xrunjdwp:transport=dt_socket,address=8757,server=y,suspend=$suspend -Xbootclasspath/a:$ac_java_jvm_dir/lib/tools.jar"
+            JAVA_G_FLAGS="-Xdebug -Xrunjdwp:transport=dt_socket,address=8757,server=y,suspend=$suspend"
             JDB_ATTACH_FLAGS="-attach 8757"
             ;;
     esac
@@ -688,18 +527,10 @@ AC_DEFUN([AC_JAVA_JNI_INCLUDE], [
     # we assume that there is only one arch subdirectory,
     # if that is not the case we would need to use $host
 
-    # FIXME: check to make sure this works in case the above else
-    # branch is taken, (a include subdir for an arch?)
     F=`ls $ac_java_jvm_dir/include/*/jni_md.h 2>/dev/null`
     if test -f "$F" ; then
         ac_java_jvm_jni_include_flags="$ac_java_jvm_jni_include_flags -I`dirname $F`"
-    else
-        F=`ls $ac_java_jvm_dir/include/kaffe/jtypes.h 2>/dev/null`
-        if test -f "$F" ; then
-            ac_java_jvm_jni_include_flags="$ac_java_jvm_jni_include_flags -I`dirname $F`"
-        fi
     fi
-
 
     AC_MSG_LOG([Using the following JNI include flags $ac_java_jvm_jni_include_flags])
 
@@ -754,159 +585,11 @@ AC_DEFUN([AC_JAVA_JNI_LIBS], [
           ;;
     esac
 
-    if test "$ac_java_jvm_name" = "kaffe" ; then
-        # Kaffe JVM under Cygwin (untested, is -lpthread needed?)
-
-        F=lib/kaffevm.dll
-        if test "x$ac_java_jvm_jni_lib_flags" = "x" ; then
-            AC_MSG_LOG([Looking for $ac_java_jvm_dir/$F], 1)
-            if test -f $ac_java_jvm_dir/$F ; then
-                AC_MSG_LOG([Found $ac_java_jvm_dir/$F], 1)
-                D=`dirname $ac_java_jvm_dir/$F`
-                ac_java_jvm_jni_lib_runtime_path=$D
-                ac_java_jvm_jni_lib_flags="-lpthread -L$D -lkaffevm"
-            fi
-        fi
-
-        # Kaffe JVM under Unix
-
-        F=lib/libkaffevm.so
-        if test "x$ac_java_jvm_jni_lib_flags" = "x" ; then
-            AC_MSG_LOG([Looking for $ac_java_jvm_dir/$F], 1)
-            if test -f $ac_java_jvm_dir/$F ; then
-                AC_MSG_LOG([Found $ac_java_jvm_dir/$F], 1)
-                D=`dirname $ac_java_jvm_dir/$F`
-                ac_java_jvm_jni_lib_runtime_path=$D
-                ac_java_jvm_jni_lib_flags="-lpthread -L$D -lkaffevm -ldl"
-                # Kaffe requires lib/kaffe on the lib path or it fails to load
-                D=$ac_java_jvm_dir/lib/kaffe
-                ac_java_jvm_jni_lib_runtime_path="${ac_java_jvm_jni_lib_runtime_path}:$D"
-            else
-                F=jre/lib/$machine/libkaffevm.so
-                AC_MSG_LOG([Looking for $ac_java_jvm_dir/$F], 1)
-                if test -f $ac_java_jvm_dir/$F ; then
-                    AC_MSG_LOG([Found $ac_java_jvm_dir/$F], 1)
-                    D=`dirname $ac_java_jvm_dir/$F`
-                    ac_java_jvm_jni_lib_runtime_path=$D
-                    ac_java_jvm_jni_lib_flags="-lpthread -L$D -lkaffevm -ldl"
-                    # Kaffe needs the machine dir on the lib path
-                    ac_java_jvm_jni_lib_runtime_path="${ac_java_jvm_jni_lib_runtime_path}:$D"
-                fi
-            fi
-        fi
-    fi
-
-
     # Check for known JDK installation layouts
 
     if test "$ac_java_jvm_name" = "jdk"; then
 
-        # IRIX 1.1 JDK (32 bit ABI)
-
-        F=lib32/sgi/native_threads/libjava.so
-        if test "x$ac_java_jvm_jni_lib_flags" = "x" ; then
-            AC_MSG_LOG([Looking for $ac_java_jvm_dir/$F], 1)
-            if test -f $ac_java_jvm_dir/$F ; then
-                AC_MSG_LOG([Found $ac_java_jvm_dir/$F], 1)
-                D=`dirname $ac_java_jvm_dir/$F`
-                ac_java_jvm_jni_lib_runtime_path=$D
-                ac_java_jvm_jni_lib_flags="-lpthread -L$D -ljava"
-                ac_java_jvm_ld_bind_now=1
-            fi
-        fi
-
-        # HP-UX 1.1 JDK on PA_RISC
-
-        F=lib/PA_RISC/native_threads/libjava.sl
-        if test "x$ac_java_jvm_jni_lib_flags" = "x" ; then
-            AC_MSG_LOG([Looking for $ac_java_jvm_dir/$F], 1)
-            if test -f $ac_java_jvm_dir/$F ; then
-                AC_MSG_LOG([Found $ac_java_jvm_dir/$F], 1)
-                D=`dirname $ac_java_jvm_dir/$F`
-                ac_java_jvm_jni_lib_runtime_path=$D
-                ac_java_jvm_jni_lib_flags="-lpthread -L$D -ljava"
-            fi
-        fi
-
-        # IBM JDK 1.1 for Linux
-
-        F=lib/linux/native_threads/libjava.so
-        if test "x$ac_java_jvm_jni_lib_flags" = "x" ; then
-            AC_MSG_LOG([Looking for $ac_java_jvm_dir/$F], 1)
-            if test -f $ac_java_jvm_dir/$F ; then
-                AC_MSG_LOG([Found $ac_java_jvm_dir/$F], 1)
-                D=`dirname $ac_java_jvm_dir/$F`
-                ac_java_jvm_jni_lib_runtime_path=$D
-                ac_java_jvm_jni_lib_flags="-lpthread -L$D -ljava"
-            fi
-        fi
-
-        # IBM JDK 1.3 for Linux
-
-        F=jre/bin/libjava.so
-        if test "x$ac_java_jvm_jni_lib_flags" = "x" ; then
-            AC_MSG_LOG([Looking for $ac_java_jvm_dir/$F], 1)
-            if test -f $ac_java_jvm_dir/$F ; then
-                AC_MSG_LOG([Found $ac_java_jvm_dir/$F], 1)
-                D=`dirname $ac_java_jvm_dir/$F`
-                ac_java_jvm_jni_lib_runtime_path=$D
-                ac_java_jvm_jni_lib_flags="-lpthread -L$D -ljava"
-                D=$ac_java_jvm_dir/jre/bin/classic
-                ac_java_jvm_jni_lib_runtime_path="${ac_java_jvm_jni_lib_runtime_path}:$D"
-                ac_java_jvm_jni_lib_flags="$ac_java_jvm_jni_lib_flags -L$D -ljvm -lhpi"
-            fi
-        fi
-
-        # Sun JDK 1.1 for Solaris
-
-        F=lib/sparc/native_threads/libjava.so
-        if test "x$ac_java_jvm_jni_lib_flags" = "x" ; then
-            AC_MSG_LOG([Looking for $ac_java_jvm_dir/$F], 1)
-            if test -f $ac_java_jvm_dir/$F ; then
-                AC_MSG_LOG([Found $ac_java_jvm_dir/$F], 1)
-                D=`dirname $ac_java_jvm_dir/$F`
-                ac_java_jvm_jni_lib_runtime_path=$D
-                ac_java_jvm_jni_lib_flags="-lthread -L$D -ljava"
-            fi
-        fi
-
-        # Sun JDK 1.2 for Solaris (groan, handle regular and production layout)
-
-        F=jre/lib/sparc/libjava.so
-        if test "x$ac_java_jvm_jni_lib_flags" = "x" ; then
-            AC_MSG_LOG([Looking for $ac_java_jvm_dir/$F], 1)
-            if test -f $ac_java_jvm_dir/$F ; then
-                AC_MSG_LOG([Found $ac_java_jvm_dir/$F], 1)
-                D=`dirname $ac_java_jvm_dir/$F`
-                ac_java_jvm_jni_lib_runtime_path=$D
-                ac_java_jvm_jni_lib_flags="-lthread -L$D -ljava"
-                D=$ac_java_jvm_dir/jre/lib/sparc/native_threads
-                if test -d $D ; then
-                    ac_java_jvm_jni_lib_flags="$ac_java_jvm_jni_lib_flags -L$D"
-                    ac_java_jvm_jni_lib_runtime_path="${ac_java_jvm_jni_lib_runtime_path}:$D"
-                fi
-                D=$ac_java_jvm_dir/jre/lib/sparc/classic
-                if test -d $D ; then
-                    ac_java_jvm_jni_lib_flags="$ac_java_jvm_jni_lib_flags -L$D"
-                    ac_java_jvm_jni_lib_runtime_path="${ac_java_jvm_jni_lib_runtime_path}:$D"
-                fi
-
-                ac_java_jvm_jni_lib_flags="$ac_java_jvm_jni_lib_flags -ljvm"
-
-                # Some Solaris Java installs have no -lhpi
-                F=jre/lib/sparc/libhpi.so
-                if test -f $ac_java_jvm_dir/$F ; then
-                    ac_java_jvm_jni_lib_flags="$ac_java_jvm_jni_lib_flags -lhpi"
-                fi
-            fi
-        fi
-
-        # Sun/Blackdown JDK 1.3 and 1.4 for Linux
-
-        # The "classic" vm is only supported in 1.3 and it core dumps
-        # when loading the java package. Use the "client" vm
-        # unless "classic" is the only one available.
-
+        # Sun/Blackdown 1.4 for Linux (client JVM)
 
         F=jre/lib/$machine/libjava.so
         if test "x$ac_java_jvm_jni_lib_flags" = "x" ; then
@@ -917,12 +600,6 @@ AC_DEFUN([AC_JAVA_JNI_LIBS], [
                 ac_java_jvm_jni_lib_runtime_path=$D
                 ac_java_jvm_jni_lib_flags="-L$D -ljava -lverify"
                 D=$ac_java_jvm_dir/jre/lib/$machine/client
-                if test ! -d $D ; then
-                    D=$ac_java_jvm_dir/jre/lib/$machine/classic
-                    if test ! -d $D ; then
-                        AC_MSG_ERROR([Unable to locate directory for -ljvm])
-                    fi
-                fi
                 ac_java_jvm_jni_lib_runtime_path="${ac_java_jvm_jni_lib_runtime_path}:$D"
                 ac_java_jvm_jni_lib_flags="$ac_java_jvm_jni_lib_flags -L$D -ljvm"
                 D=$ac_java_jvm_dir/jre/lib/$machine/native_threads
@@ -949,63 +626,7 @@ AC_DEFUN([AC_JAVA_JNI_LIBS], [
             fi
         fi
 
-        # Blackdown JDK 1.1 for Linux (this one can get a little wacky)
-
-        F=README.linux
-        if test "x$ac_java_jvm_jni_lib_flags" = "x" &&
-            test -f $ac_java_jvm_dir/$F ; then
-            # Figure out if it is 1.1.8 and not 1.1.7
-            AC_GREP_FILE([JDK 1.1.8], $ac_java_jvm_dir/$F, IS118=1)
-
-            F=lib/`uname -m`/native_threads/libjava.so
-            AC_MSG_LOG([Looking for $ac_java_jvm_dir/$F], 1)
-            if test -f $ac_java_jvm_dir/$F ; then
-                AC_MSG_LOG([Found $ac_java_jvm_dir/$F], 1)
-                D=`dirname $ac_java_jvm_dir/$F`
-                ac_java_jvm_jni_lib_runtime_path=$D
-                ac_java_jvm_jni_lib_flags="-lpthread -L$D -ljava"
-
-                # We only want to use this scary hack with Blackdown 1.1.7
-                if test "x$IS118" = "x" ; then
-                    AC_MSG_LOG([Using AWT GUI components under Tcl Blend with the Linux port of the JDK 1.1.7 from Blackdown requires a special modification to jtclsh and the Makefile. See known_issues.txt for more info.])
-                    ac_java_jvm_ld_preload="libpthread.so libjava.so"
-                    ac_java_jvm_ld_bind_now=1
-                fi
-            fi
-        fi
-
-        # Sun JDK 1.1 for Win32
-
-        F=lib/javai.lib
-        if test "x$ac_java_jvm_jni_lib_flags" = "x" ; then
-            AC_MSG_LOG([Looking for $ac_java_jvm_dir/$F], 1)
-            if test -f $ac_java_jvm_dir/$F ; then
-                AC_MSG_LOG([Found $ac_java_jvm_dir/$F], 1)
-                D=$ac_java_jvm_dir/bin
-                ac_java_jvm_jni_lib_runtime_path="${D}"
-                ac_java_jvm_jni_lib_flags="$ac_java_jvm_dir/$F"
-            fi
-        fi
-
-        # IBM JDK 1.3 for Win32
-
-        F=lib/jvm.lib
-        if test "x$ac_java_jvm_jni_lib_flags" = "x" ; then
-            AC_MSG_LOG([Looking for $ac_java_jvm_dir/$F], 1)
-            if test -f $ac_java_jvm_dir/$F ; then
-                # jre/bin/classic directory must contain jvm.dll
-                DLL=jre/bin/classic/jvm.dll
-                if test -f $ac_java_jvm_dir/$DLL ; then
-                    AC_MSG_LOG([Found $ac_java_jvm_dir/$F], 1)
-                    D1=$ac_java_jvm_dir/jre/bin
-                    D2=$ac_java_jvm_dir/jre/bin/classic
-                    ac_java_jvm_jni_lib_runtime_path="${D1}:${D2}"
-                    ac_java_jvm_jni_lib_flags="$ac_java_jvm_dir/$F"
-                fi
-            fi
-        fi
-
-        # Sun JDK 1.3 and 1.4 for Win32
+        # Sun JDK 1.4 and 1.5 for Win32 (client JVM)
 
         F=lib/jvm.lib
         if test "x$ac_java_jvm_jni_lib_flags" = "x" ; then
