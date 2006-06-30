@@ -1,5 +1,10 @@
 2006-06-29  Mo DeJong  <mdejong@users.sourceforge.net>
 
+        * tests/tcljava/FuncSig.test: Fixup signature
+        so that test passes under JDK 1.5
+
+2006-06-29  Mo DeJong  <mdejong@users.sourceforge.net>
+
         * README.jacl:
         * README.tclblend: Mention that Jacl and Tcl Blend
         are production ready and include URLs for build
