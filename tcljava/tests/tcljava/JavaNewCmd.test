@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: JavaNewCmd.test,v 1.8 2006/05/18 22:52:58 mdejong Exp $
+# RCS: @(#) $Id: JavaNewCmd.test,v 1.9 2006/06/30 00:30:52 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -319,32 +319,10 @@ test javaNewCmd-6.2 {cast static inner class to inner Interface} {
     } msg] $msg
 } {0 {tests.InnerTest.InnerClass2 tests.InnerTest.InnerInterface1}}
 
-test javaNewCmd-6.3 {toplevel class and static inner class with same name} {
-    # Test a situation that can't come up in compiled Java code.
-    # There is a toplevel class named tests.InnerTest.DupName
-    # that has the same name as a static inner class defined
-    # in the class tests.InnerTest. Compiling with javac would
-    # generate an error at compile time, the runtime logic will
-    # just choose the toplevel class over the static inner class.
-    # These two methods show that the generated .class files
-    # contain static constructor refrences to either the inner
-    # class or to the toplevel class. Also note that java::info
-    # converts the $ in inner class names to a . character.
-
-    list [catch {
-        set h1 [java::call tests.DupTest call]
-        set h2 [java::call tests.InnerTest.DupTest call]
-        set h3 [java::new tests.InnerTest.DupName]
-        list \
-            [[$h1 getClass] getName] \
-            [[$h2 getClass] getName] \
-            [[$h3 getClass] getName]
-    } msg] $msg
-} [list 0 \
-    [list {tests.InnerTest$DupName} \
-          tests.InnerTest.DupName \
-          tests.InnerTest.DupName \
-    ]]
+# Remove javaNewCmd-6.3 since JDK 1.5 compiler always raises an
+# error when compiling an inner class with a name that is the
+# same as a toplevel class. The runtime logic will always
+# choose the toplevel class in this case.
 
 test javaNewCmd-6.4 {static inner class} {
     # Get handle to static inner class.

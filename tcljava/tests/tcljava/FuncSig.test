@@ -5,7 +5,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: FuncSig.test,v 1.13 2006/05/15 22:14:23 mdejong Exp $
+# RCS: @(#) $Id: FuncSig.test,v 1.14 2006/06/30 00:30:52 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -203,7 +203,14 @@ test FuncSig-2.3 {getAccessibleInstanceMethods} {
     set list
 } $FuncSig2_3
 
+# Signature differs in JDK 1.4 and 1.5
+
 set FuncSig2_4 {copyValueOf copyValueOf valueOf valueOf valueOf valueOf valueOf valueOf valueOf valueOf valueOf}
+
+if {[info exists tcljava(java.version)] && \
+        [string match "1.5*" $tcljava(java.version)]} {
+    set FuncSig2_4 {copyValueOf copyValueOf format format valueOf valueOf valueOf valueOf valueOf valueOf valueOf valueOf valueOf}
+}
 
 test FuncSig-2.4 {getAccessibleStaticMethods} {
     set c [java::field String class]

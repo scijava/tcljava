@@ -227,11 +227,9 @@ if {0} {
 	    set shlibdir bin
 
 	    if {$debug_loadtclblend} {
-		puts "JDK 1.1 users should have a directory like\
-			C:\\jdk1.1.6\\bin in their PATH."
-		puts "JDK 1.2 users should have directories like\
-			C:\\jdk1.2\\jre\\bin and\
-			C:\\jdk1.2\\jre\\bin\\classic in their PATH."
+		puts "users should have directories like\
+			C:\\jdk1.4\\jre\\bin and\
+			C:\\jdk1.4\\jre\\bin\\client on the PATH."
 	    }
 	}
 	mac -

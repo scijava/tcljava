@@ -1,5 +1,27 @@
 2006-06-29  Mo DeJong  <mdejong@users.sourceforge.net>
 
+        Fixup build/tests with JDK 1.5. The DupTest class
+        does not even compile with JDK 1.5, so just
+        remove this strange edge case.
+
+        * Makefile.in:
+        * src/tcljava/tcl/lang/reflect/PkgInvoker.java
+        (getPkgInvoker): Check for null before invoking
+        loadClass, this makes the common fail case faster
+        when null is returned for the class loader.
+        * src/tests/tcljava/tests/DupTest.java:
+        * src/tests/tcljava/tests/InnerTest/DupName.java:
+        * src/tests/tcljava/tests/InnerTest/DupTest.java:
+        * src/xputils/xputils.tcl: Update error message
+        for JDK 1.4 or newer.
+        * tests/tcljava/FuncSig.test: Test JDK version
+        at runtime and match object signature so that
+        test passes in JDK 1.5.
+        * tests/tcljava/JavaNewCmd.test: Remove DupName
+        test since it does not compiled with JDK 1.5.
+
+2006-06-29  Mo DeJong  <mdejong@users.sourceforge.net>
+
         Require JDK 1.4 or newer to build Jacl or Tcl Blend.
 
         * bsjavac.sh: Remove old shell script that worked

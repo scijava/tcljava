@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: PkgInvoker.java,v 1.8 2006/04/13 07:36:50 mdejong Exp $
+ * RCS: @(#) $Id: PkgInvoker.java,v 1.9 2006/06/30 00:30:52 mdejong Exp $
  *
  */
 
@@ -224,14 +224,17 @@ getPkgInvoker(
     PkgInvoker invoker = (PkgInvoker) cachedInvokers.get(pkg);
     if (invoker == null) {
 	// Use the class loader that loaded the class
-	// in question.
+	// in question. The Class.getClassLoader()
+	// API can return null to indicate the
+	// bootstrap or system loader.
 
-	//ClassLoader cloader = this.class.getClassLoader();
 	ClassLoader cloader = cls.getClassLoader();
 
 	try {
-	    Class invCls = cloader.loadClass(pkg + ".TclPkgInvoker");
-	    invoker = (PkgInvoker) invCls.newInstance();
+	    if (cloader != null) {
+	        Class invCls = cloader.loadClass(pkg + ".TclPkgInvoker");
+	        invoker = (PkgInvoker) invCls.newInstance();
+	    }
 	} catch (Exception e) {
 	    // The package doesn't include a PkgInvoker class. We use
 	    // the default invoker, which means we can't invoke
