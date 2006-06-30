@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcljavaInterp.test,v 1.5 2006/06/08 07:44:51 mdejong Exp $
+# RCS: @(#) $Id: tcljavaInterp.test,v 1.6 2006/06/30 01:07:32 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -158,14 +158,27 @@ test javaInterp-1.8 {Use Interp.evalFile() API to source a Tcl file} {
     test_lengths
 } {1 1 1 1}
 
-test javaInterp-2.0 {TclObject memory sizes} {
-    testtclobjectmemory
-} {TclObject 40 bytes
+# Size of TclList differs in Jacl and Tcl Blend
+
+if {$tcljava(tcljava) == "jacl"} {
+    set memsizes \
+{TclObject 40 bytes
 TclString 16 bytes
 TclInteger 8 bytes
 TclDouble 16 bytes
 TclList 96 bytes}
+} else {
+    set memsizes \
+{TclObject 40 bytes
+TclString 16 bytes
+TclInteger 8 bytes
+TclDouble 16 bytes
+TclList 24 bytes}
+}
 
+test javaInterp-2.0 {TclObject memory sizes} {
+    testtclobjectmemory
+} $memsizes
 
 # cleanup
 

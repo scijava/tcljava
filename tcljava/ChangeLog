@@ -1,5 +1,10 @@
 2006-06-29  Mo DeJong  <mdejong@users.sourceforge.net>
 
+        * tests/tcljava/tcljavaInterp.test: Update memory
+        size test so that it passes in both Jacl and Tcl Blend.
+
+2006-06-29  Mo DeJong  <mdejong@users.sourceforge.net>
+
         Fixup build/tests with JDK 1.5. The DupTest class
         does not even compile with JDK 1.5, so just
         remove this strange edge case.
