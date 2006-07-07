@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclOutputStream.java,v 1.3 2005/07/24 02:14:45 mdejong Exp $
+ * RCS: @(#) $Id: TclOutputStream.java,v 1.4 2006/07/07 23:36:00 mdejong Exp $
  */
 
 // A TclOutputStream is a cross between a Java OutputStream and
@@ -16,15 +16,21 @@
 
 package tcl.lang;
 
-import sun.io.CharToByteConverter;
-import sun.io.ConversionBufferFullException;
-import sun.io.UnknownCharacterException;
-
 import java.io.IOException;
 import java.io.EOFException;
 import java.io.OutputStream;
 import java.io.FileOutputStream;
 import java.io.UnsupportedEncodingException;
+
+import java.nio.CharBuffer;
+import java.nio.ByteBuffer;
+
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
+import java.nio.charset.CoderResult;
+import java.nio.charset.IllegalCharsetNameException;
+import java.nio.charset.UnsupportedCharsetException;
+
 
 class TclOutputStream {
 
@@ -54,11 +60,11 @@ class TclOutputStream {
     protected String encoding;
 
     /**
-     * Current converter object. A null value means
+     * Charset encoder object. A null value means
      * that no conversions have been done yet.
      */
 
-    protected CharToByteConverter ctb = null;
+    protected CharsetEncoder cse = null;
 
     /**
      * Buffering
@@ -204,7 +210,6 @@ class TclOutputStream {
         if ((encoding != null) && (curOut != null)
                 /*&& (CheckChannelErrors(statePtr, TCL_WRITABLE) == 0)*/) {
             encodingEnd = true;
-            // FIXME : Make sure this flushes the CharToByteConverter
             char[] empty = new char[0];
             writeChars(empty, 0, 0);
         }
@@ -442,7 +447,7 @@ class TclOutputStream {
         // all interpreters.
 
         //if (CheckForDeadChannel(interp, statePtr)) return -1;
-    
+
         // Loop over the queued buffers and attempt to flush as
         // much as possible of the queued output to the channel.
 
@@ -478,7 +483,7 @@ class TclOutputStream {
             // If the output queue is still empty, break out of the while loop.
 
             if (buf == null) {
-                break;  // Out of the "while (1)".
+                break;  // Out of the "while (true)".
             }
 
             // Produce the output on the channel.
@@ -965,7 +970,13 @@ class TclOutputStream {
             throw new TclRuntimeError("unicodeToExternal called with null encoding");
         }
 
-        if (srcLen == 0) {
+        if (debug) {
+            System.out.println("unicodeToExternal(" + srcLen + " " + dstLen + ")");
+        }
+
+        // If encoder was flushed already then return 0.
+
+        if ((srcLen == 0) && !encodingEnd) {
             srcReadPtr.i = 0;
             if (dstWrotePtr != null)
                 dstWrotePtr.i = 0;
@@ -983,41 +994,68 @@ class TclOutputStream {
             System.out.println("encoded as " + encoding);
         }
 
-        if (ctb == null) {
-            try {
-                ctb = CharToByteConverter.getConverter(encoding);
-            } catch (UnsupportedEncodingException ex) {
-                // Valid encodings should be checked already
-                throw new TclRuntimeError("unsupported encoding \"" + encoding + "\"");
-            }
+        if (cse == null) {
+            // Note that UnsupportedCharsetException should never be raised
+            // here since EncodingCmd.isSupported() should have already
+            // returned true for this encoding.
+
+            Charset chrset = Charset.forName(encoding);
+            cse = chrset.newEncoder();
         }
 
         int chars_read, bytes_written;
+        int bytes_flushed = 0;
 
-        try {
-            int byte_index, bytes_flushed;
+        // A CharBuffer wraps the src char[] and
+        // handles buffer size issues. A ByteBuffer
+        // wraps the dst char[] and handles buffer
+        // size issues.
 
-            ctb.convertAny(src, srcOff, srcOff+srcLen,
-                    dst, dstOff, dstOff+dstLen);
-            chars_read = ctb.nextCharIndex() - srcOff;
-            byte_index = ctb.nextByteIndex();
-            bytes_written = byte_index - dstOff;
-            bytes_flushed = ctb.flushAny(dst, byte_index, dstOff+dstLen);
-            //int bytes_flushed = ctb.nextByteIndex() - byte_index;
-            if (bytes_flushed != 0) {
-                System.out.println("bytes flushed is " + bytes_flushed);
-                bytes_written += bytes_flushed;
+        CharBuffer srcb = CharBuffer.wrap(src, srcOff, srcLen);
+        ByteBuffer dstb = ByteBuffer.wrap(dst, dstOff, dstLen);
+
+        int srcbStartPos = srcb.position();
+        int dstbStartPos = dstb.position();
+
+        // Pass atEOF flag as true when encodingEnd flag
+        // was set to true in close().
+
+        boolean atEOF = encodingEnd;
+
+        CoderResult cresult = cse.encode(srcb, dstb, atEOF);
+
+        chars_read = srcb.position() - srcbStartPos;
+        bytes_written = dstb.position() - dstbStartPos;
+
+        if (debug) {
+            System.out.println("encoded " + bytes_written + " bytes from " +
+                chars_read + " chars (EOF flag was " + atEOF + ")");
+        }
+
+        // For the case where an encoder needs to write bytes
+        // at the end of the data, the close() method passes
+        // an empty char[] and sets encodingEnd.
+
+        if (atEOF) {
+            if (chars_read != 0 && bytes_written != 0) {
+                throw new TclRuntimeError("Should have encoded no chars at EOF, " +
+                    chars_read + " " + bytes_written);
             }
 
-            // This should never happen
-            if ((chars_read == 0) && (bytes_written == 0)) {
-                throw new TclRuntimeError("No characters converted");
+            cresult = cse.flush(dstb);
+
+            bytes_flushed = dstb.position() - dstbStartPos;
+            bytes_written += bytes_flushed;
+
+            if (debug) {
+                System.out.println("flushed " + bytes_flushed + " bytes at EOF");
             }
-        } catch (ConversionBufferFullException ex) {
-            // Not enough room in the dst buffer for
-            // the encoded bytes.
-            chars_read = ctb.nextCharIndex() - srcOff;
-            bytes_written = ctb.nextByteIndex() - dstOff;
+
+            encodingEnd = false;
+        }
+
+        if (!atEOF && (chars_read == 0) && (bytes_written == 0)) {
+            throw new TclRuntimeError("No characters converted");
         }
 
         srcReadPtr.i = chars_read;
@@ -1181,6 +1219,11 @@ class TclOutputStream {
     int writeChars(char[] srcArray, int srcOff, int srcLen)
             throws IOException
     {
+        final boolean debug = false;
+        if (debug) {
+            System.out.println("writeChars(" + srcLen + ")");
+        }
+
         //ChannelState *statePtr = chanPtr->state;	// state info for channel
         ChannelBuffer buf;
         char[] stageArray;
@@ -1203,7 +1246,7 @@ class TclOutputStream {
 
         // Write the terminated escape sequence even if srcLen is 0.
 
-        endEncoding = (encodingEnd ? 0 : 1);
+        endEncoding = (encodingEnd ? 1 : 0);
 
         // Loop over all characters in src, storing them in staging buffer
         // with proper EOL translation.
@@ -1249,6 +1292,11 @@ class TclOutputStream {
             src += toWrite.i;
             srcLen -= toWrite.i;
 
+            if (debug) {
+                System.out.println("moved " + stageLen.i +
+                    " chars to stageArray");
+            }
+
             // Loop over all characters in staging buffer, converting them
             // to external encoding, storing them in output buffer.
 
@@ -1275,12 +1323,15 @@ class TclOutputStream {
                     saved = 0;
                 }
 
+                if (debug) {
+                    System.out.println("invoking unicodeToExternal(" +
+                        stageLen.i + ")");
+                }
+
                 result = unicodeToExternal(stageArray, stage, stageLen.i,
                     dstArray, dst, dstLen+ChannelBuffer.BUFFER_PADDING,
                     stageRead, dstWrote, null);
 
-                // FIXME: Not clear how this condition is dealt with.
-                //
                 // Fix for SF #506297, reported by Martin Forssen
                 // <ruric@users.sourceforge.net>.
                 //

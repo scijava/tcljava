@@ -1,3 +1,37 @@
+2006-07-07  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        Reimplement IO and encoding commands using the
+        new java.nio.charset package. The previous
+        implementation made use of sun.* APIs which
+        were not officially supported.
+
+        * src/jacl/tcl/lang/Channel.java: Use braces
+        in if statement.
+        * src/jacl/tcl/lang/ChannelBuffer.java (toString):
+        Add toString() method for debug printout.
+        * src/jacl/tcl/lang/EncodingCmd.java:
+        Reimplement encoding command using java.nio APIs.
+        The default system encoding is now set by
+        reading the "file.encoding" property. This
+        logic will default to iso8859-1.
+        The encoding names command now returns only
+        those encodings that are supported at runtime.
+        * src/jacl/tcl/lang/FconfigureCmd.java:
+        Raise an error if -encoding argument to
+        fconfigure is not supported at runtime.
+        * src/jacl/tcl/lang/TclInputStream.java:
+        * src/jacl/tcl/lang/TclOutputStream.java:
+        Reimplement input/output decode/encode
+        operations using java.nio.charset package.
+        Some escape based encodings are still broken,
+        but most IO tests now pass.
+        * tests/jacl/ioEncodeDecode.test: Add Jacl
+        specific encoding tests. Not all tests pass.
+        * tests/tcl/encoding.test: Port encoding
+        tests from Tcl CVS.
+        * tests/tcl/io.test: Fixup tests, a syntax
+        error was causing many tests to not run.
+
 2006-06-29  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/jacl/tcl/lang/ExecCmd.java: Remove scary

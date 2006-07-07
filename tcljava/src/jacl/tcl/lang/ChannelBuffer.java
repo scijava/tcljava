@@ -56,4 +56,31 @@ class ChannelBuffer {
         bufLength = length + BUFFER_PADDING;
         next  = null;
     }
+
+    // Generate debug output that describes the contents
+    // of this ChannelBuffer object.
+
+    public String toString() {
+        int numBytes = nextAdded - nextRemoved;
+
+        StringBuffer sb = new StringBuffer(256);
+        sb.append("ChannelBuffer contains " + numBytes + " bytes" + "\n");
+
+        for (int i=0; i < numBytes; i++) {
+            int ival = buf[nextRemoved + i];
+            String srep;
+            if (((char) ival) == '\r') {
+                srep = "\\r";
+            } else if (((char) ival) == '\n') {
+                srep = "\\n";
+            } else {
+                srep = "" + ((char) ival);
+            }
+
+            sb.append("bytes[" + i + "] = '" + srep + "'" +
+                ", (int) " + ival + " , " +
+                "0x" + Integer.toHexString(ival) + "\n");
+        }
+        return sb.toString();
+    }
 }

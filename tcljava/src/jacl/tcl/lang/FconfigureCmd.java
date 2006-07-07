@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FconfigureCmd.java,v 1.12 2006/06/08 07:44:51 mdejong Exp $
+ * RCS: @(#) $Id: FconfigureCmd.java,v 1.13 2006/07/07 23:36:00 mdejong Exp $
  *
  */
 
@@ -301,6 +301,10 @@ class FconfigureCmd implements Command {
                         if (javaEncoding == null) {
                             throw new TclException(interp,
                                 "unknown encoding \"" + tclEncoding + "\"");
+                        }
+                        if (! EncodingCmd.isSupported(javaEncoding)) {
+                            throw new TclException(interp,
+                                "unsupported encoding \"" + tclEncoding + "\"");
                         }
                         chan.setEncoding(javaEncoding);
                     }

@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Channel.java,v 1.26 2005/07/24 02:14:45 mdejong Exp $
+ * RCS: @(#) $Id: Channel.java,v 1.27 2006/07/07 23:36:00 mdejong Exp $
  */
 
 package tcl.lang;
@@ -528,10 +528,11 @@ abstract class Channel {
 
     void setEncoding(String inEncoding) {
         encoding = inEncoding;
-        if (encoding == null)
+        if (encoding == null) {
             bytesPerChar = 1;
-        else
+        } else {
             bytesPerChar = EncodingCmd.getBytesPerChar(encoding);
+        }
 
         if (input != null)
             input.setEncoding(encoding);

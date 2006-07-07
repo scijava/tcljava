@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclInputStream.java,v 1.1 2003/03/08 03:42:44 mdejong Exp $
+ * RCS: @(#) $Id: TclInputStream.java,v 1.2 2006/07/07 23:36:00 mdejong Exp $
  */
 
 // A TclInputStream is a cross between a Java InputStream and
@@ -18,15 +18,20 @@
 
 package tcl.lang;
 
-import sun.io.ByteToCharConverter;
-import sun.io.ConversionBufferFullException;
-import sun.io.MalformedInputException;
-import sun.io.UnknownCharacterException;
-
 import java.io.IOException;
 import java.io.EOFException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+
+import java.nio.CharBuffer;
+import java.nio.ByteBuffer;
+
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CoderResult;
+import java.nio.charset.IllegalCharsetNameException;
+import java.nio.charset.UnsupportedCharsetException;
+
 
 class TclInputStream {
 
@@ -64,11 +69,11 @@ class TclInputStream {
     protected String encoding;
 
     /**
-     * Current converter object. A null value means
+     * Charset decoder object. A null value means
      * that no conversions have been done yet.
      */
 
-    protected ByteToCharConverter btc = null;
+    protected CharsetDecoder csd = null;
 
     /**
      * Buffering
@@ -340,8 +345,7 @@ class TclInputStream {
                                 IntPtr rawRead = new IntPtr();
 
                                 buf = gs.buf;
-                                // FIXME: We don't actually pass gs.state here, should we?
-                                //if (btc != null) btc.reset();
+                                // FIXME: Should gs.state be passed here?
                                 externalToUnicode(buf.buf, buf.nextRemoved, gs.rawRead.i,
                                         tmp, 0, 1,
                                         rawRead, null, null);
@@ -433,7 +437,6 @@ class TclInputStream {
 
             buf = gs.buf;
             encodingState = gs.state;
-            if (btc != null) btc.reset();
             externalToUnicode(buf.buf, buf.nextRemoved, gs.rawRead.i,
                     tmp, 0, linelen,
                     gs.rawRead, null, gs.charsWrote);
@@ -460,7 +463,6 @@ class TclInputStream {
             commonGetsCleanup();
 
             encodingState = oldState;
-            //if (btc != null) btc.reset(); // Not sure we want to reset encoder state here
             encodingStart = oldEncodingStart;
             encodingEnd = oldEncodingEnd;
             obj_sbuf.setLength(oldLength);
@@ -483,8 +485,9 @@ class TclInputStream {
 
         //done:
         // Reset original encoding in case it was set to binary
-        if (in_binary_encoding)
+        if (in_binary_encoding) {
             encoding = null;
+        }
 
         updateInterest();
 
@@ -533,6 +536,8 @@ class TclInputStream {
 
         boolean goto_read = false;        // Set to true when jumping to the read
                                           // label, used to simulate a goto.
+
+        final boolean debug = false;
 
         obj = gs.obj;
 
@@ -606,8 +611,32 @@ class TclInputStream {
                          gs.rawRead, /*gs.bytesWrote*/ null, gs.charsWrote);
         TclString.append(gs.obj, dst, 0, gs.charsWrote.i);
 
+        if (debug) {
+            System.out.println("filterBytes chars");
+
+            String srep = gs.obj.toString();
+            int len = srep.length();
+
+            for (int i=0; i < len; i++) {
+                char c = srep.charAt(i);
+                String prep;
+                if (c == '\r') {
+                    prep = "\\r";
+                } else if (c == '\n') {
+                    prep = "\\n";
+                } else {
+                    prep = "" + c;
+                }
+
+                System.out.println("filtered[" + i + "] = '" +
+                    prep +
+                    "'  (int) " + ((int) srep.charAt(i)) +
+                    " 0x" + Integer.toHexString((int) srep.charAt(i)));
+            }
+        }
+
         // Make sure that if we go through 'gets', that we reset the
-        // TCL_ENCODING_START flag still.
+        // TCL_ENCODING_START flag still. [Bug #523988]
 
         encodingStart = false;
 
@@ -616,9 +645,13 @@ class TclInputStream {
             // multibyte sequence.  If this buffer was full, then move them to
             // the next buffer so the bytes will be contiguous.  
 
+            if (debug) {
+                System.out.println("TCL_CONVERT_MULTIBYTE decode result found");
+            }
+
             ChannelBuffer next;
             int extra;
-	
+
             next = buf.next;
             if (buf.nextAdded < buf.bufLength) {
                 if (gs.rawRead.i > 0) {
@@ -644,15 +677,20 @@ class TclInputStream {
                     inQueueTail = next;
                 }
                 extra = rawLen - gs.rawRead.i;
-                System.arraycopy(raw, gs.rawRead.i,
+                System.arraycopy(raw, rawStart + gs.rawRead.i,
                         next.buf, buf.BUFFER_PADDING - extra, extra);
                 next.nextRemoved -= extra;
                 buf.nextAdded -= extra;
+
+                if (debug) {
+                    System.out.println("copied " + extra + " bytes to " +
+                        "next ChannelBuffer");
+                }
             }
         }
 
         break read; // End loop in the normal case
-    }
+    } // End read labeled while loop
 
         gs.buf = buf;
         return 0;
@@ -1081,6 +1119,8 @@ class TclInputStream {
 
     int readChars(TclObject obj, int charsToRead)
             throws IOException {
+        final boolean debug = false;
+
         int toRead, factor, spaceLeft, length, srcLen, dstNeeded;
         int srcOff, dstOff;
         IntPtr srcRead, numChars, dstRead, dstWrote;
@@ -1089,6 +1129,10 @@ class TclInputStream {
         char[] dst;
 
         Object oldState;
+
+        if (debug) {
+            System.out.println("readChars(tobj, " + charsToRead + ")");
+        }
 
         srcRead = new IntPtr();
         numChars = new IntPtr();
@@ -1103,6 +1147,10 @@ class TclInputStream {
         /* FIXME: Include final Tcl patch for srcLen == 0 case */
 
         if (srcLen == 0) {
+            if (debug) {
+                System.out.println("srcLen is zero, checking for needNL");
+            }
+
             if (needNL) {
                 TclString.append(obj, "\r");
                 return 1;
@@ -1146,11 +1194,7 @@ class TclInputStream {
                           dst, dstOff, dstNeeded,
                           srcRead, dstWrote, numChars);
 
-        // This block is disabled since the char converter does
-        // not inform us about partial chars, instead it silently
-        // stores the partial character internally.
-
-        if (false && srcRead.i == 0) {
+        if (srcRead.i == 0) {
             // Not enough bytes in src buffer to make a complete char.  Copy
             // the bytes to the next buffer to make a new contiguous string,
             // then tell the caller to fill the buffer with more bytes.
@@ -1164,6 +1208,8 @@ class TclInputStream {
                     // character, so we need to wait for more data before the next
                     // file event can be delivered.
                     //
+                    // SF #478856.
+                    //
                     // The exception to this is if the input buffer was
                     // completely empty before we tried to convert its
                     // contents. Nothing in, nothing out, and no incomplete
@@ -1173,6 +1219,21 @@ class TclInputStream {
                     needMoreData = true;
                 }
                 return -1;
+            }
+
+            // Space is made at the beginning of the buffer to copy the
+            // previous unused bytes there. Check first if the buffer we
+            // are using actually has enough space at its beginning for
+            // the data we are copying. Because if not we will write over the
+            // buffer management information, especially the 'nextPtr'.
+            //
+            // Note that the BUFFER_PADDING (See AllocChannelBuffer) is
+            // used to prevent exactly this situation. I.e. it should
+            // never happen. Therefore it is ok to panic should it happen
+            // despite the precautions.
+
+            if ((next.nextRemoved - srcLen) < 0) {
+                throw new TclRuntimeError("Buffer Underflow, BUFFER_PADDING not enough");
             }
             next.nextRemoved -= srcLen;
             System.arraycopy(src, srcOff, next.buf, next.nextRemoved, srcLen);
@@ -1192,7 +1253,6 @@ class TclInputStream {
                 return -1;
             }
             encodingState = oldState;
-            if (btc != null) btc.reset();
             externalToUnicode(src, srcOff, srcLen,
                               dst, dstOff, dstRead.i,
                               srcRead, dstWrote, numChars);
@@ -1211,7 +1271,6 @@ class TclInputStream {
             int eof;
             eof = toRead;
             encodingState = oldState;
-            if (btc != null) btc.reset();
             externalToUnicode(src, srcOff, srcLen,
                               dst, dstOff, (eof - dstOff),
                               srcRead, dstWrote, numChars);
@@ -1232,7 +1291,7 @@ class TclInputStream {
 
     // The following definitions are the error codes returned by externalToUnicode
     //
-    // TCL_OK:			All characters were converted.
+    // TCL.OK:			All characters were converted.
     //
     // TCL_CONVERT_NOSPACE:	The output buffer would not have been large
     //				enough for all of the converted data; as many
@@ -1294,20 +1353,25 @@ class TclInputStream {
                           char[] dst, int dstOff, int dstLen,
                           IntPtr srcReadPtr, IntPtr dstWrotePtr, IntPtr dstCharsPtr) {
         final boolean debug = false;
-        String encoding = this.encoding;
-        int result;
+        int result = TCL.OK;
         //Object state;
-        //String encoded_string;
 
         if (encoding == null) {
             // This should never happen
-            //encoding = Encoding.getJavaName("identity");
             throw new TclRuntimeError("externalToUnicode called with null encoding");
         }
 
-        // FIXME: This may no longer be needed after Tcl srcLen == 0 patch
+        if (debug) {
+            System.out.println("externalToUnicode( " + srcLen + " " + dstLen + " )");
+        }
 
-        if (srcLen == 0) {
+        // If decoder was flushed already then return 0.
+
+        if ((srcLen == 0) && !encodingEnd) {
+            if (debug) {
+                System.out.println("srcLen is zero and encodingEnd is false");
+            }
+
             srcReadPtr.i = 0;
             if (dstWrotePtr != null)
                 dstWrotePtr.i = 0;
@@ -1326,9 +1390,12 @@ class TclInputStream {
             System.out.println("now to decode byte array of length " + srcLen);
             System.out.println("srcOff is " + srcOff);
             for (int i=srcOff ; i < (srcOff+srcLen); i++) {
-                System.out.println("(byte) '" + ((char) src[i]) + "'");
+                System.out.println("(byte) '" + ((char) src[i]) + "'" +
+                    "  (int) " + ((int) src[i]) +
+                    "  (hex) 0x" + Integer.toHexString(src[i]) );
             }
             System.out.println("encoded as " + encoding);
+            System.out.println("eofCond is " + eofCond);
         }
 
         // FIXME: In the cases where we know that we don't actually want
@@ -1336,38 +1403,121 @@ class TclInputStream {
         // take advantage of encodings that had a one to one mapping
         // from bytes to chars (now need to copy then to find bytes used).
 
-        if (btc == null) {
-            try {
-                btc = ByteToCharConverter.getConverter(encoding);
-            } catch (UnsupportedEncodingException ex) {
-                // Valid encodings should be checked already
-                throw new TclRuntimeError("unsupported encoding \"" + encoding + "\"");
-            }
+        if (csd == null) {
+            // Note that UnsupportedCharsetException should never be raised
+            // here since EncodingCmd.isSupported() should have already
+            // returned true for this encoding.
+
+            Charset chrset = Charset.forName(encoding);
+            csd = chrset.newDecoder();
         }
 
         int bytes_read, chars_written;
 
-        try {
-            btc.convert(src, srcOff, srcOff+srcLen,
-                    dst, dstOff, dstOff+dstLen);
-            bytes_read = btc.nextByteIndex() - srcOff;
-            chars_written = btc.nextCharIndex() - dstOff;
-        } catch (ConversionBufferFullException ex) {
+        // A ByteBuffer wraps the src byte[] and
+        // handles buffer size issues. A CharBuffer
+        // wraps the dst char[] and handles buffer size.
+
+        ByteBuffer srcb = ByteBuffer.wrap(src, srcOff, srcLen);
+        CharBuffer dstb = CharBuffer.wrap(dst, dstOff, dstLen);
+
+        int srcbStartPos = srcb.position();
+        int dstbStartPos = dstb.position();
+        boolean atEOF = (eofCond && encodingEnd);
+
+        // Note that the default action on bad encoded
+        // input is to stop and and report the error.
+
+        CoderResult cresult = csd.decode(srcb, dstb, atEOF);
+
+        bytes_read = srcb.position() - srcbStartPos;
+        chars_written = dstb.position() - dstbStartPos;
+
+        if (debug) {
+            System.out.println("decoded " + chars_written + " chars from " +
+                bytes_read + " bytes");
+
+            for (int i=0 ; i < chars_written; i++) {
+                int ind = dstOff + i;
+                System.out.println("(char) '" + dst[ind] + "'" +
+                    "  (int) " + ((int) dst[ind]) +
+                    "  (hex) 0x" + Integer.toHexString(dst[ind]) );
+            }
+        }
+
+        if (cresult == CoderResult.UNDERFLOW) {
+            // Data from src has been decoded. If there are no more
+            // bytes then decode is finished. If there are more
+            // bytes then another decode operation may be needed.
+
+            if (debug) {
+                System.out.println("UNDERFLOW detected");
+            }
+
+            if (srcb.remaining() > 0) {
+                if (debug) {
+                    System.out.println("TCL_CONVERT_MULTIBYTE set");
+                }
+
+                result = TCL_CONVERT_MULTIBYTE;
+            }
+        } else if (cresult == CoderResult.OVERFLOW) {
             // The dst buffer is full. Often we need to
             // do a conversion with a known number of
             // chars so we can find out how many bytes
             // were consumed as a result.
 
-            bytes_read = btc.nextByteIndex() - srcOff;
-            chars_written = btc.nextCharIndex() - dstOff;
-        } catch (MalformedInputException ex) {
-            //ex.printStackTrace();
-            //bytes_read = chars_written = 0;
-            throw new TclRuntimeError("MalformedInputException");
-        } catch (UnknownCharacterException ex) {
-            //ex.printStackTrace();
-            //bytes_read = chars_written = 0;
-            throw new TclRuntimeError("UnknownCharacterException");
+            if (debug) {
+                System.out.println("OVERFLOW detected");
+            }
+
+            result = TCL_CONVERT_NOSPACE;
+        }
+
+        if (atEOF && (result == TCL.OK)) {
+            // When EOF is read from the input file, eof flag
+            // is passed to the decoder. Flush the decoder
+            // as long as the last decode did not fail.
+
+            cresult = csd.flush(dstb);
+
+            if (cresult == CoderResult.OVERFLOW) {
+                // The dst buffer is full. Often we need to
+                // do a conversion with a known number of
+                // chars so we can find out how many bytes
+                // were consumed as a result.
+
+                result = TCL_CONVERT_NOSPACE;
+            } else {
+                // A char may have been flushed, reset
+                // the decoder since the caller might
+                // attempt to invoke the decode operation
+                // again. The decoder should be stateless,
+                // so this should cause no harm.
+
+                csd.reset();
+
+                encodingEnd = false;
+            }
+
+            int chars_flushed = dstb.position() - chars_written;
+            chars_written += chars_flushed;
+
+            if (debug) {
+                System.out.println("flushed " + chars_flushed + " chars at EOF");
+            }
+
+            // If a partial character is followed by EOF, then
+            // set the result to TCL_CONVERT_MULTIBYTE. The
+            // earlier logic that checks for UNDERFLOW assumes
+            // that some data was decoded, but that does not
+            // hold in this case.
+
+            if ((bytes_read == 0) &&
+                    (chars_written == 0) &&
+                    (srcb.remaining() > 0)) {
+                result = TCL_CONVERT_MULTIBYTE;
+            }
         }
 
         srcReadPtr.i = bytes_read;
@@ -1375,9 +1525,6 @@ class TclInputStream {
             dstWrotePtr.i = chars_written;
         if (dstCharsPtr != null)
             dstCharsPtr.i = chars_written;
-
-        // FIXME: When do we return error codes?
-        result = 0;
 
         return result;
     }
@@ -1409,12 +1556,14 @@ class TclInputStream {
         ChannelBuffer buf = inQueueTail;
 
         if ((buf != null) && (buf.nextAdded < buf.bufLength)) {
-            if (debug)
+            if (debug) {
                 System.out.println("smaller than buffer");
+            }
             toRead = buf.bufLength - buf.nextAdded;
 	} else {
-            if (debug)
+            if (debug) {
                 System.out.println("fits in existing buffer");
+            }
 
             buf = saveInBuf;
             saveInBuf = null;
@@ -1428,8 +1577,9 @@ class TclInputStream {
                 buf = null;
             }
             if (buf == null) {
-                if (debug)
+                if (debug) {
                     System.out.println("allocated ChannelBuffer of size " + bufSize);
+                }
                 buf = new ChannelBuffer(bufSize);
             }
             buf.next = null;
@@ -1440,13 +1590,15 @@ class TclInputStream {
             // buffersize was changed between reads.
 
             toRead = buf.bufLength - buf.nextAdded;
-            if (debug)
+            if (debug) {
                 System.out.println("toRead set to " + toRead);
+            }
 
-            if (inQueueTail == null)
+            if (inQueueTail == null) {
                 inQueueHead = buf;
-            else
+            } else {
                 inQueueTail.next = buf;
+            }
 
             inQueueTail = buf;
         }
@@ -1455,8 +1607,9 @@ class TclInputStream {
         // platforms it is impossible to read from a device after EOF.
 
         if (eofCond) {
-            if (debug)
+            if (debug) {
                 System.out.println("eofCond was true, no error return");
+            }
             return 0;
         }
 
@@ -1476,15 +1629,17 @@ class TclInputStream {
                 nread = -1;
             } else {
                 try {
-                    if (debug)
+                    if (debug) {
                         System.out.println("now to read " + toRead + " bytes");
+                    }
 
                     nread = input.read(buf.buf, buf.nextAdded, toRead);
 
                     // read() returns -1 on EOF
                     if (nread == -1) {
-                        if (debug)
+                        if (debug) {
                             System.out.println("got EOF from read() call");
+                        }
                         nread = 0;
                     }
                 } catch (IOException ex) {
@@ -1497,8 +1652,9 @@ class TclInputStream {
         }
 
         if (nread > 0) {
-            if (debug)
+            if (debug) {
                 System.out.println("nread is " + nread);
+            }
             buf.nextAdded += nread;
 
             // should avoid calling the driver because on some platforms we
@@ -1509,13 +1665,15 @@ class TclInputStream {
                 blocked = true;
             }
         } else if (nread == 0) {
-            if (debug)
-                System.out.println("nread is zero");
             eofCond = true;
             encodingEnd = true;
+            if (debug) {
+                System.out.println("nread is zero, eofCond set, encodingEnd set");
+            }
         } else if (nread < 0) {
-            if (debug)
+            if (debug) {
                 System.out.println("nread is " + nread);
+            }
             if ((result == TclPosixException.EWOULDBLOCK) ||
                     (result == TclPosixException.EAGAIN)) {
                 blocked = true;
@@ -1525,8 +1683,9 @@ class TclInputStream {
             //Tcl_SetErrno(result);
             return result;
         }
-        if (debug)
+        if (debug) {
             System.out.println("no error return");
+        }
         return 0;
     }
 

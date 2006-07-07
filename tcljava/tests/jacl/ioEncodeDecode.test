@@ -1,0 +1,831 @@
+# The file tests the ioEncodeDecode.java file.
+#
+# This file contains tests related to encoding/decoding of
+# characters in the Jacl IO layer.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
+setupJavaPackage
+
+# javaWrite:
+#
+# Write data to filesystem using Java APIs, this bypasses
+# the Tcl file output layer. This is important since testing
+# of the input layer should not be effected by any bugs
+# in the output layer.
+
+proc javaWrite { filename encoding data } {
+    # Encode String and write to filesystem via Java API
+    set charset [java::call java.nio.charset.Charset forName $encoding]
+    set fos [java::new java.io.FileOutputStream $filename]
+    set osw [java::new java.io.OutputStreamWriter $fos $charset]
+
+    $osw write $data
+
+    # Make sure data is written to disk
+    $osw flush
+    [$fos getFD] sync
+    $osw close
+
+    return [file size $filename]
+}
+
+# tclRead:
+#
+# Read a buffer full of data using the Tcl input layer.
+# Note that the data is not considered line oriented.
+
+proc tclRead { filename encoding {buffersize {}} } {
+    # Java encoding name -> Tcl encoding name
+    set encoding [string tolower $encoding]
+    set fd [open $filename r]
+    fconfigure $fd -encoding $encoding
+    if {$buffersize != {}} {
+        if {$buffersize < 10} {
+            error "buffer size can't be less than 10"
+        }
+        fconfigure $fd -buffersize $buffersize
+        if {[fconfigure $fd -buffersize] != $buffersize} {
+            error "expected buffersize to be set to $buffersize,\
+                it was [fconfigure $fd -buffersize]"
+        }
+    }
+    set data [read -nonewline $fd]
+    close $fd
+    return $data
+}
+
+# tclReadLines:
+#
+# Read lines of data using the Tcl input layer
+# and the line oriented gets command. This exercises
+# the line oriented input logic which differs from
+# the buffer oriented logic invoked via read.
+
+proc tclReadLines { filename encoding {buffersize {}} } {
+    # Java encoding name -> Tcl encoding name
+    set encoding [string tolower $encoding]
+    set fd [open $filename r]
+    fconfigure $fd -encoding $encoding
+    if {$buffersize != {}} {
+        if {$buffersize < 10} {
+            error "buffer size can't be less than 10"
+        }
+        fconfigure $fd -buffersize $buffersize
+        if {[fconfigure $fd -buffersize] != $buffersize} {
+            error "expected buffersize to be set to $buffersize,\
+                it was [fconfigure $fd -buffersize]"
+        }
+    }
+    set lines [list]
+    while {! [eof $fd]} {
+        gets $fd line
+        lappend lines $line
+    }
+    close $fd
+    return $lines
+}
+
+
+# tclReadBytes
+#
+# Read bytes directly from file without any
+# decoding or line feed translation.
+
+proc tclReadBytes { filename } {
+    set fd [open $filename r]
+    fconfigure $fd -translation binary -encoding binary
+    set data [read -nonewline $fd]
+    close $fd
+    return $data
+}
+
+# tclWrite:
+#
+# Write data to a file using a given encoding and
+# puts with the -nonewline argument. The default
+# buffer size is used.
+
+proc tclWrite { filename encoding data } {
+    set fd [open $filename w]
+    fconfigure $fd -encoding $encoding
+    puts -nonewline $fd $data
+    close $fd
+    return [file size $filename]
+}
+
+
+
+tcltest::test ioencodedecode-1.0 {read data} {
+    set data "1234567890"
+    set encoding UTF-8
+    set byteswritten [javaWrite file1 $encoding $data]
+    set charsread [tclRead file1 $encoding]
+    list $byteswritten [string length $charsread] \
+        [string equal $data $charsread]
+} {10 10 1}
+
+tcltest::test ioencodedecode-1.1 {read data} {
+    # "1234567890 EURO_SIGN" (EURO_SIGN encoded as 3 bytes)
+    set data "1234567890 \u20AC"
+    set encoding UTF-8
+    set byteswritten [javaWrite file1 $encoding $data]
+    set charsread [tclRead file1 $encoding]
+    list $byteswritten [string length $charsread] \
+        [string equal $data $charsread]
+} {14 12 1}
+
+tcltest::test ioencodedecode-1.2 {read data} {
+    # "1234567890 EURO_SIGN" (EURO_SIGN encoded as 3 bytes)
+    # Input buffer size is 12 bytes, so EURO character
+    # is split on the buffer boundry.
+    set data "1234567890 \u20AC"
+    set encoding UTF-8
+    set byteswritten [javaWrite file1 $encoding $data]
+    set charsread [tclRead file1 $encoding 12]
+    list $byteswritten [string length $charsread] \
+        [string equal $data $charsread]
+} {14 12 1}
+
+tcltest::test ioencodedecode-1.3 {read data} {
+    # "1234567890 EURO_SIGN" (EURO_SIGN encoded as 3 bytes)
+    # Input buffer size is 13 bytes, so EURO character
+    # is split on the buffer boundry.
+    set data "1234567890 \u20AC"
+    set encoding UTF-8
+    set byteswritten [javaWrite file1 $encoding $data]
+    set charsread [tclRead file1 $encoding 13]
+    list $byteswritten [string length $charsread] \
+        [string equal $data $charsread]
+} {14 12 1}
+
+tcltest::test ioencodedecode-1.4 {read data} {
+    # "1234567890 EURO_SIGN" (EURO_SIGN encoded as 3 bytes)
+    # Input buffer size is 14 bytes, so EURO character
+    # goes up to the end of the buffer.
+    set data "1234567890 \u20AC"
+    set encoding UTF-8
+    set byteswritten [javaWrite file1 $encoding $data]
+    set charsread [tclRead file1 $encoding 14]
+    list $byteswritten [string length $charsread] \
+        [string equal $data $charsread]
+} {14 12 1}
+
+
+tcltest::test ioencodedecode-2.0 {read lines} {
+    set data "1234567890"
+    set encoding UTF-8
+    set byteswritten [javaWrite file1 $encoding $data]
+    set lines [tclReadLines file1 $encoding]
+    set charsread [lindex $lines 0]
+    list $byteswritten [string length $charsread] \
+        [string equal $data $charsread] \
+        [llength $lines]
+} {10 10 1 1}
+
+tcltest::test ioencodedecode-2.1 {read lines} {
+    # "1234567890 EURO_SIGN" (EURO_SIGN encoded as 3 bytes)
+    set data "1234567890 \u20AC"
+    set encoding UTF-8
+    set byteswritten [javaWrite file1 $encoding $data]
+    set lines [tclReadLines file1 $encoding]
+    set charsread [lindex $lines 0]
+    list $byteswritten [string length $charsread] \
+        [string equal $data $charsread] \
+        [llength $lines]
+} {14 12 1 1}
+
+tcltest::test ioencodedecode-2.2 {read lines} {
+    # "1234567890 EURO_SIGN" (EURO_SIGN encoded as 3 bytes)
+    # Input buffer size is 12 bytes, so EURO character
+    # is split on the buffer boundry.
+    set data "1234567890 \u20AC"
+    set encoding UTF-8
+    set byteswritten [javaWrite file1 $encoding $data]
+    set lines [tclReadLines file1 $encoding 12]
+    set charsread [lindex $lines 0]
+    list $byteswritten [string length $charsread] \
+        [string equal $data $charsread] \
+        [llength $lines]
+} {14 12 1 1}
+
+tcltest::test ioencodedecode-2.3 {read lines} {
+    # "1234567890 EURO_SIGN" (EURO_SIGN encoded as 3 bytes)
+    # Input buffer size is 13 bytes, so EURO character
+    # is split on the buffer boundry.
+    set data "1234567890 \u20AC"
+    set encoding UTF-8
+    set byteswritten [javaWrite file1 $encoding $data]
+    set lines [tclReadLines file1 $encoding 13]
+    set charsread [lindex $lines 0]
+    list $byteswritten [string length $charsread] \
+        [string equal $data $charsread] \
+        [llength $lines]
+} {14 12 1 1}
+
+tcltest::test ioencodedecode-2.4 {read lines} {
+    # "1234567890 EURO_SIGN" (EURO_SIGN encoded as 3 bytes)
+    # Input buffer size is 14 bytes, so EURO character
+    # goes up to the end of the buffer.
+    set data "1234567890 \u20AC"
+    set encoding UTF-8
+    set byteswritten [javaWrite file1 $encoding $data]
+    set lines [tclReadLines file1 $encoding 14]
+    set charsread [lindex $lines 0]
+    list $byteswritten [string length $charsread] \
+        [string equal $data $charsread] \
+        [llength $lines]
+} {14 12 1 1}
+
+
+tcltest::test ioencodedecode-3.0 {write iso2022-jp data} {
+    # Write String to in-memory buffer to check that
+    # the correct number of bytes is being generated.
+    set data "1234567890 [format %c 12399]"
+
+    set encoding ISO2022JP
+    set charset [java::call java.nio.charset.Charset forName $encoding]
+    set encoder [$charset newEncoder]
+
+    set b1 [java::call java.nio.ByteBuffer allocate 1024]
+    set b2 [java::call java.nio.ByteBuffer allocate 1024]
+    set b3 [java::call java.nio.ByteBuffer allocate 1024]
+
+    set dataStr [java::call -noconvert String valueOf $data]
+    set dataArray [$dataStr toCharArray]
+    set srcb [java::call java.nio.CharBuffer wrap $dataArray]
+
+    # Encode data and save in b1
+    $encoder encode $srcb $b1 0
+
+    # Encode no data, but pass EOF flag to encoder
+
+    set emptyStr [java::call -noconvert String valueOf ""]
+    set emptyArray [$emptyStr toCharArray]
+    set emptyb [java::call java.nio.CharBuffer wrap $emptyArray]
+
+    $encoder encode $emptyb $b2 1
+
+    # Flush the encoder after indicating EOF
+
+    $encoder flush $b3
+
+    list \
+        [$b1 position] \
+        [$b2 position] \
+        [$b3 position]
+} {16 0 3}
+
+tcltest::test ioencodedecode-3.1 {write iso2022-jp data} {
+    # Write string to file, this uses the default
+    # buffer size so the string and the trailing
+    # escape bytes will fit in one buffer.
+
+    set data "1234567890 [format %c 12399]"
+
+    set encoding iso2022-jp
+
+    set fd [open file1 w]
+    fconfigure $fd -encoding $encoding
+    puts -nonewline $fd $data
+    close $fd
+
+    set fdata [tclRead file1 $encoding]
+    list [file size file1] \
+        [string equal $data $fdata] \
+        [string length $data] \
+        [string length $fdata]
+} {19 1 12 12}
+
+tcltest::test ioencodedecode-3.2 {write iso2022-jp data} {
+    # Write string to a buffer of size 16, so that
+    # the string data fits in one buffer. The
+    # escape bytes will need to be moved to
+    # a second buffer during the close operation.
+
+    set data "1234567890 [format %c 12399]"
+
+    set encoding iso2022-jp
+
+    set fd [open file1 w]
+    fconfigure $fd -encoding $encoding -buffersize 16
+    puts -nonewline $fd $data
+    close $fd
+
+    set fdata [tclRead file1 $encoding]
+    list [file size file1] \
+        [string equal $data $fdata] \
+        [string length $data] \
+        [string length $fdata]
+} {19 1 12 12}
+
+tcltest::test ioencodedecode-3.3 {write iso2022-jp data} {
+    # Write string to a buffer of size 17, this
+    # is large enough to hold one byte of escaped
+    # data, the other two bytes will need to placed
+    # in another buffer.
+
+    set data "1234567890 [format %c 12399]"
+
+    set encoding iso2022-jp
+
+    set fd [open file1 w]
+    fconfigure $fd -encoding $encoding -buffersize 17
+    puts -nonewline $fd $data
+    close $fd
+
+    set fdata [tclRead file1 $encoding]
+    list [file size file1] \
+        [string equal $data $fdata] \
+        [string length $data] \
+        [string length $fdata]
+} {19 1 12 12}
+
+tcltest::test ioencodedecode-3.4 {write iso2022-jp data} {
+    # Write string to a buffer of size 18, this
+    # is large enough to hold two bytes of escape
+    # data. The final byte will need to be saved
+    # in another buffer.
+
+    set data "1234567890 [format %c 12399]"
+
+    set encoding iso2022-jp
+
+    set fd [open file1 w]
+    fconfigure $fd -encoding $encoding -buffersize 18
+    puts -nonewline $fd $data
+    close $fd
+
+    set fdata [tclRead file1 $encoding]
+    list [file size file1] \
+        [string equal $data $fdata] \
+        [string length $data] \
+        [string length $fdata]
+} {19 1 12 12}
+
+tcltest::test ioencodedecode-3.5 {write iso2022-jp data} {
+    # Write string to a buffer of size 19, this
+    # is large enough to hold all the bytes from
+    # the string plus the 3 escape bytes, so only
+    # one buffer is needed.
+
+    set data "1234567890 [format %c 12399]"
+
+    set encoding iso2022-jp
+
+    set fd [open file1 w]
+    fconfigure $fd -encoding $encoding -buffersize 19
+    puts -nonewline $fd $data
+    close $fd
+
+    set fdata [tclRead file1 $encoding]
+    list [file size file1] \
+        [string equal $data $fdata] \
+        [string length $data] \
+        [string length $fdata]
+} {19 1 12 12}
+
+tcltest::test ioencodedecode-3.6 {write iso2022-jp data} {
+    # This buffer contains only 8-bit characters,
+    # so no special escape bytes are added by
+    # the encoder. The buffer length is 14, so
+    # this string is split into two buffers.
+
+    set data "1234567890ABCDEF"
+
+    set encoding utf-8
+
+    set fd [open file1 w]
+    fconfigure $fd -encoding $encoding -buffersize 14
+    puts -nonewline $fd $data
+    close $fd
+
+    set fdata [tclRead file1 $encoding]
+    list [file size file1] \
+        [string equal $data $fdata] \
+        [string length $data] \
+        [string length $fdata]
+} {16 1 16 16}
+
+
+tcltest::test ioencodedecode-4.0 {write iso2022-jp data} {
+    # Encode data using Java API. This should generate
+    # a total of 18 bytes.
+
+    set data "\u79c1\n\uff1f"
+
+    set encoding ISO2022JP
+    set charset [java::call java.nio.charset.Charset forName $encoding]
+    set encoder [$charset newEncoder]
+
+    set b1 [java::call java.nio.ByteBuffer allocate 1024]
+    set b2 [java::call java.nio.ByteBuffer allocate 1024]
+    set b3 [java::call java.nio.ByteBuffer allocate 1024]
+
+    set dataStr [java::call -noconvert String valueOf $data]
+    set dataArray [$dataStr toCharArray]
+    set srcb [java::call java.nio.CharBuffer wrap $dataArray]
+
+    # Encode data and save in b1
+    $encoder encode $srcb $b1 0
+
+    # Encode no data, but pass EOF flag to encoder
+    set emptyArray [java::new {char[]} {0}]
+    set emptyb [java::call java.nio.CharBuffer wrap $emptyArray]
+    $encoder encode $emptyb $b2 1
+
+    # Flush the encoder after indicating EOF
+    $encoder flush $b3
+
+    list \
+        [string length $data] "chars" \
+        [$b1 position] \
+        [$b2 position] \
+        [$b3 position] "bytes"
+} {3 chars 15 0 3 bytes}
+
+tcltest::test ioencodedecode-4.1 {encode iso2022-jp data} {
+    # Encode data via encode command. This gets written
+    # to disk as 18 bytes.
+
+    set encoding iso2022-jp
+
+    # 3 unicode characters
+    set data "\u79c1\n\uff1f"
+
+    # Write unicode characters to file. This
+    # writes 18 bytes to the file.
+    tclWrite data1 $encoding $data
+} {18}
+
+tcltest::test ioencodedecode-4.2 {write iso2022-jp data} {
+    # Write iso2022-jp encoded data to a file using
+    # Java and Tcl IO APIs. Then compare both of
+    # these generated binary strings to the result
+    # of an in-memory conversion via the encoding command.
+    # This data string contains no spaces.
+
+    set encoding iso2022-jp
+    set jencoding ISO2022JP
+
+    set data "\u79c1\u3069\u3082\u3067\u306f\u3001\u30c1\u30c3\u30d7\u3054\u8cfc\u5165\u6642\u306b\u3054\u767b\u9332\u3044\u305f\u3060\u3044\u305f\u3054\u4f4f\u6240\u3092\u30ad\u30e3\u30c3\u30b7\u30e5\u30a2\u30a6\u30c8\u306e\u969b\u306e\u5c0f\u5207\u624b\u9001\u4ed8\u5148\u3068\u3057\u3066\u4f7f\u7528\u3057\u3066\u304a\u308a\u307e\u3059\u3002\u6050\u308c\u5165\u308a\u307e\u3059\u304c\u3001\u6b63\u3057\u3044\u4f4f\u6240\u3092\u3054\u767b\u9332\u3057\u306a\u304a\u304a\u9858\u3044\u3044\u305f\u3057\u307e\u3059\u3002\u307e\u305f\u3001\u5927\u5909\u6050\u7e2e\u3067\u3059\u304c\u3001\u4f4f\u6240\u5909\u66f4\u306e\u3042\u3068\u3001\u65e5\u672c\u8a9e\u30b5\u30fc\u30d3\u30b9\u90e8\uff08\u0063\u0061\u0073\u0069\u006e\u006f\u005f\u006a\u0061\u0070\u0061\u006e\u0065\u0073\u0065\u0040\u005f\u005f\u005f\u002e\u0063\u006f\u006d\u0020\uff09\u307e\u3067\u3054\u4f4f\u6240\u5909\u66f4\u6e08\u306e\u9023\u7d61\u3092\u3044\u305f\u3060\u3051\u306a\u3044\u3067\u3057\u3087\u3046\u304b\uff1f"
+
+    javaWrite data1 $jencoding $data
+    tclWrite data2 $encoding $data
+
+    set b1 [tclReadBytes data1]
+    set b2 [tclReadBytes data2]
+    set b3 [encoding convertto $encoding $data]
+
+    set c1 [tclRead data1 $encoding]
+    set c2 [tclRead data2 $encoding]
+    set c3 [encoding convertfrom $encoding $b3]
+
+    list \
+        [javaWrite data1 $jencoding $data] \
+        [tclWrite data2 $encoding $data] \
+        [string length $b3] \
+        [string equal $b1 $b2] \
+        [string equal $b1 $b3] \
+        [string equal $data $c1] \
+        [string equal $data $c2] \
+        [string equal $data $c3]
+} {310 310 310 1 1 1 1 1}
+
+tcltest::test ioencodedecode-4.3 {write iso2022-jp data} {
+    # Write iso2022-jp encoded data to a file using
+    # Java and Tcl IO APIs. Then compare both of
+    # these generated binary strings to the result
+    # of an in-memory conversion via the encoding command.
+    # This data string contains space/newline elements
+    # in the string literal.
+
+    set encoding iso2022-jp
+    set jencoding ISO2022JP
+
+    set data "\u79c1\u3069\u3082\u3067\u306f\u3001\u30c1\u30c3\u30d7\u3054\u8cfc\u5165\u6642\u306b\u3054\u767b\u9332\u3044\u305f\u3060\u3044\u305f\u3054\u4f4f\u6240\u3092\u30ad\u30e3\u30c3\u30b7\u30e5\u30a2\u30a6\u30c8\u306e\u969b\u306e
+\u5c0f\u5207\u624b\u9001\u4ed8\u5148\u3068\u3057\u3066\u4f7f\u7528\u3057\u3066\u304a\u308a\u307e\u3059\u3002\u6050\u308c\u5165\u308a\u307e\u3059\u304c\u3001\u6b63\u3057\u3044\u4f4f\u6240\u3092\u3054\u767b\u9332\u3057\u306a\u304a
+\u304a\u9858\u3044\u3044\u305f\u3057\u307e\u3059\u3002\u307e\u305f\u3001\u5927\u5909\u6050\u7e2e\u3067\u3059\u304c\u3001\u4f4f\u6240\u5909\u66f4\u306e\u3042\u3068\u3001\u65e5\u672c\u8a9e\u30b5\u30fc\u30d3\u30b9\u90e8\uff08
+\u0063\u0061\u0073\u0069\u006e\u006f\u005f\u006a\u0061\u0070\u0061\u006e\u0065\u0073\u0065\u0040\u005f\u005f\u005f\u002e\u0063\u006f\u006d\u0020\uff09\u307e\u3067\u3054\u4f4f\u6240\u5909\u66f4\u6e08\u306e\u9023\u7d61\u3092\u3044\u305f\u3060\u3051\u306a\u3044\u3067
+\u3057\u3087\u3046\u304b\uff1f"
+
+    set size1 [javaWrite data1 $jencoding $data]
+    set size2 [tclWrite data2 $encoding $data]
+
+    set b1 [tclReadBytes data1]
+    set b2 [tclReadBytes data2]
+    set b3 [encoding convertto $encoding $data]
+
+    set c1 [tclRead data1 $encoding]
+    set c2 [tclRead data2 $encoding]
+    set c3 [encoding convertfrom $encoding $b3]
+
+    list \
+        $size1 \
+        $size2 \
+        [string length $b3] \
+        [string equal $b1 $b2] \
+        [string equal $b1 $b3] \
+        [string equal $data $c1] \
+        [string equal $data $c2] \
+        [string equal $data $c3]
+} {336 336 336 1 1 1 1 1}
+
+tcltest::test ioencodedecode-4.4 {write iso2022-jp data} {
+    # Write iso2022-jp encoded data to a file using
+    # Java and Tcl IO APIs. Then compare both of
+    # these generated binary strings to the result
+    # of an in-memory conversion via the encoding command.
+    # This data string contains 2 non-ascii characters.
+
+    set encoding iso2022-jp
+    set jencoding ISO2022JP
+
+    set data "\u79c1\uff1f"
+
+    javaWrite data1 $jencoding $data
+    tclWrite data2 $encoding $data
+
+    set b1 [tclReadBytes data1]
+    set b2 [tclReadBytes data2]
+    set b3 [encoding convertto $encoding $data]
+
+    list \
+        [javaWrite data1 $jencoding $data] \
+        [tclWrite data2 $encoding $data] \
+        [string length $b3] \
+        [string equal $b1 $b2] \
+        [string equal $b1 $b3]
+} {10 10 10 1 1}
+
+tcltest::test ioencodedecode-4.5 {write iso2022-jp data} {
+    # Write iso2022-jp encoded data to a file using
+    # Java and Tcl IO APIs. Then compare both of
+    # these generated binary strings to the result
+    # of an in-memory conversion via the encoding command.
+    # This data string contains two non-ascii characters
+    # separated by a newline.
+
+    set encoding iso2022-jp
+    set jencoding ISO2022JP
+
+    set data "\u79c1\n\uff1f"
+
+    javaWrite data1 $jencoding $data
+    tclWrite data2 $encoding $data
+
+    set b1 [tclReadBytes data1]
+    set b2 [tclReadBytes data2]
+    set b3 [encoding convertto $encoding $data]
+
+    list \
+        [javaWrite data1 $jencoding $data] \
+        [tclWrite data2 $encoding $data] \
+        [string length $b3] \
+        [string equal $b1 $b2] \
+        [string equal $b1 $b3]
+} {18 18 18 1 1}
+
+
+
+tcltest::test ioencodedecode-5.0 {gets on iso2022-jp encoded input} {
+    set encoding iso2022-jp
+
+    set data "\u79c1\uff1f"
+
+    tclWrite data $encoding $data
+
+    set lines [list]
+
+    set fd [open data r]
+    fconfigure $fd -encoding $encoding
+    while {![eof $fd]} {
+        gets $fd var
+        lappend lines $var
+    }
+    close $fd
+
+    list \
+        [llength $lines] \
+        $lines
+} [list 1 "\u79c1\uff1f"]
+
+tcltest::test ioencodedecode-5.1 {gets on iso2022-jp encoded input} {
+    set encoding iso2022-jp
+
+    set data "\u79c1\n\uff1f"
+
+    tclWrite data $encoding $data
+
+    set lines [list]
+
+    set fd [open data r]
+    fconfigure $fd -encoding $encoding
+    while {![eof $fd]} {
+        gets $fd var
+        lappend lines $var
+    }
+    close $fd
+
+    list \
+        [llength $lines] \
+        $lines
+} [list 2 [list "\u79c1" "\uff1f"]]
+
+tcltest::test ioencodedecode-5.2 {gets on iso2022-jp encoded input} {
+    set encoding iso2022-jp
+
+    set data "\u79c1\u3069\u3082\u3067\u306f\u3001\u30c1\u30c3\u30d7\u3054\u8cfc\u5165\u6642\u306b\u3054\u767b\u9332\u3044\u305f\u3060\u3044\u305f\u3054\u4f4f\u6240\u3092\u30ad\u30e3\u30c3\u30b7\u30e5\u30a2\u30a6\u30c8\u306e\u969b\u306e\u5c0f\u5207\u624b\u9001\u4ed8\u5148\u3068\u3057\u3066\u4f7f\u7528\u3057\u3066\u304a\u308a\u307e\u3059\u3002\u6050\u308c\u5165\u308a\u307e\u3059\u304c\u3001\u6b63\u3057\u3044\u4f4f\u6240\u3092\u3054\u767b\u9332\u3057\u306a\u304a\u304a\u9858\u3044\u3044\u305f\u3057\u307e\u3059\u3002\u307e\u305f\u3001\u5927\u5909\u6050\u7e2e\u3067\u3059\u304c\u3001\u4f4f\u6240\u5909\u66f4\u306e\u3042\u3068\u3001\u65e5\u672c\u8a9e\u30b5\u30fc\u30d3\u30b9\u90e8\uff08\u0063\u0061\u0073\u0069\u006e\u006f\u005f\u006a\u0061\u0070\u0061\u006e\u0065\u0073\u0065\u0040\u005f\u005f\u005f\u002e\u0063\u006f\u006d\u0020\uff09\u307e\u3067\u3054\u4f4f\u6240\u5909\u66f4\u6e08\u306e\u9023\u7d61\u3092\u3044\u305f\u3060\u3051\u306a\u3044\u3067\u3057\u3087\u3046\u304b\uff1f"
+
+    tclWrite data $encoding $data
+
+    set lines [list]
+
+    set fd [open data r]
+    fconfigure $fd -encoding $encoding
+    while {![eof $fd]} {
+        gets $fd var
+        lappend lines $var
+    }
+    close $fd
+
+    list \
+        [llength $lines] \
+        $lines
+} [list 1 [list "\u79c1\u3069\u3082\u3067\u306f\u3001\u30c1\u30c3\u30d7\u3054\u8cfc\u5165\u6642\u306b\u3054\u767b\u9332\u3044\u305f\u3060\u3044\u305f\u3054\u4f4f\u6240\u3092\u30ad\u30e3\u30c3\u30b7\u30e5\u30a2\u30a6\u30c8\u306e\u969b\u306e\u5c0f\u5207\u624b\u9001\u4ed8\u5148\u3068\u3057\u3066\u4f7f\u7528\u3057\u3066\u304a\u308a\u307e\u3059\u3002\u6050\u308c\u5165\u308a\u307e\u3059\u304c\u3001\u6b63\u3057\u3044\u4f4f\u6240\u3092\u3054\u767b\u9332\u3057\u306a\u304a\u304a\u9858\u3044\u3044\u305f\u3057\u307e\u3059\u3002\u307e\u305f\u3001\u5927\u5909\u6050\u7e2e\u3067\u3059\u304c\u3001\u4f4f\u6240\u5909\u66f4\u306e\u3042\u3068\u3001\u65e5\u672c\u8a9e\u30b5\u30fc\u30d3\u30b9\u90e8\uff08\u0063\u0061\u0073\u0069\u006e\u006f\u005f\u006a\u0061\u0070\u0061\u006e\u0065\u0073\u0065\u0040\u005f\u005f\u005f\u002e\u0063\u006f\u006d\u0020\uff09\u307e\u3067\u3054\u4f4f\u6240\u5909\u66f4\u6e08\u306e\u9023\u7d61\u3092\u3044\u305f\u3060\u3051\u306a\u3044\u3067\u3057\u3087\u3046\u304b\uff1f"]]
+
+tcltest::test ioencodedecode-5.3 {gets on iso2022-jp encoded input} {
+    set encoding iso2022-jp
+
+    set data "\u79c1\u3069\u3082\u3067\u306f\u3001\u30c1\u30c3\u30d7\u3054\u8cfc\u5165\u6642\u306b\u3054\u767b\u9332\u3044\u305f\u3060\u3044\u305f\u3054\u4f4f\u6240\u3092\u30ad\u30e3\u30c3\u30b7\u30e5\u30a2\u30a6\u30c8\u306e\u969b\u306e\u5c0f\u5207\u624b\u9001\u4ed8\u5148\u3068\u3057\u3066\u4f7f\u7528\u3057\u3066\u304a\u308a\u307e\u3059\u3002\u6050\u308c\u5165\u308a\u307e\u3059\u304c\u3001\u6b63\u3057\u3044\u4f4f\u6240\u3092\u3054\u767b\u9332\u3057\u306a\u304a\u304a\u9858\u3044\u3044\u305f\u3057\u307e\u3059\u3002\u307e\u305f\u3001\u5927\u5909\u6050\u7e2e\u3067\u3059\u304c\u3001\u4f4f\u6240\u5909\u66f4\u306e\u3042\u3068\u3001\u65e5\u672c\u8a9e\u30b5\u30fc\u30d3\u30b9\u90e8\uff08\u0063\u0061\u0073\u0069\u006e\u006f\u005f\u006a\u0061\u0070\u0061\u006e\u0065\u0073\u0065\u0040\u005f\u005f\u005f\u002e\u0063\u006f\u006d\u0020\uff09\u307e\u3067\u3054\u4f4f\u6240\u5909\u66f4\u6e08\u306e\u9023\u7d61\u3092\u3044\u305f\u3060\u3051\u306a\u3044\u3067\u3057\u3087\u3046\u304b\uff1f"
+
+    tclWrite data $encoding $data
+
+    set lines [list]
+
+    set fd [open data r]
+    fconfigure $fd -encoding $encoding
+    while {![eof $fd]} {
+        gets $fd var
+        lappend lines $var
+    }
+    close $fd
+
+    list \
+        [llength $lines] \
+        $lines
+} [list 1 [list "\u79c1\u3069\u3082\u3067\u306f\u3001\u30c1\u30c3\u30d7\u3054\u8cfc\u5165\u6642\u306b\u3054\u767b\u9332\u3044\u305f\u3060\u3044\u305f\u3054\u4f4f\u6240\u3092\u30ad\u30e3\u30c3\u30b7\u30e5\u30a2\u30a6\u30c8\u306e\u969b\u306e\u5c0f\u5207\u624b\u9001\u4ed8\u5148\u3068\u3057\u3066\u4f7f\u7528\u3057\u3066\u304a\u308a\u307e\u3059\u3002\u6050\u308c\u5165\u308a\u307e\u3059\u304c\u3001\u6b63\u3057\u3044\u4f4f\u6240\u3092\u3054\u767b\u9332\u3057\u306a\u304a\u304a\u9858\u3044\u3044\u305f\u3057\u307e\u3059\u3002\u307e\u305f\u3001\u5927\u5909\u6050\u7e2e\u3067\u3059\u304c\u3001\u4f4f\u6240\u5909\u66f4\u306e\u3042\u3068\u3001\u65e5\u672c\u8a9e\u30b5\u30fc\u30d3\u30b9\u90e8\uff08\u0063\u0061\u0073\u0069\u006e\u006f\u005f\u006a\u0061\u0070\u0061\u006e\u0065\u0073\u0065\u0040\u005f\u005f\u005f\u002e\u0063\u006f\u006d\u0020\uff09\u307e\u3067\u3054\u4f4f\u6240\u5909\u66f4\u6e08\u306e\u9023\u7d61\u3092\u3044\u305f\u3060\u3051\u306a\u3044\u3067\u3057\u3087\u3046\u304b\uff1f"]]
+
+tcltest::test ioencodedecode-5.4 {gets on iso2022-jp encoded input} {
+    set encoding iso2022-jp
+
+    set data "\u79c1\u3069\u3082\u3067\u306f\u3001\u30c1\u30c3\u30d7\u3054\u8cfc\u5165\u6642\u306b\u3054\u767b\u9332\u3044\u305f\u3060\u3044\u305f\u3054\u4f4f\u6240\u3092\u30ad\u30e3\u30c3\u30b7\u30e5\u30a2\u30a6\u30c8\u306e\u969b\u306e
+\u5c0f\u5207\u624b\u9001\u4ed8\u5148\u3068\u3057\u3066\u4f7f\u7528\u3057\u3066\u304a\u308a\u307e\u3059\u3002\u6050\u308c\u5165\u308a\u307e\u3059\u304c\u3001\u6b63\u3057\u3044\u4f4f\u6240\u3092\u3054\u767b\u9332\u3057\u306a\u304a
+\u304a\u9858\u3044\u3044\u305f\u3057\u307e\u3059\u3002\u307e\u305f\u3001\u5927\u5909\u6050\u7e2e\u3067\u3059\u304c\u3001\u4f4f\u6240\u5909\u66f4\u306e\u3042\u3068\u3001\u65e5\u672c\u8a9e\u30b5\u30fc\u30d3\u30b9\u90e8\uff08
+\u0063\u0061\u0073\u0069\u006e\u006f\u005f\u006a\u0061\u0070\u0061\u006e\u0065\u0073\u0065\u0040\u005f\u005f\u005f\u002e\u0063\u006f\u006d\u0020\uff09\u307e\u3067\u3054\u4f4f\u6240\u5909\u66f4\u6e08\u306e\u9023\u7d61\u3092\u3044\u305f\u3060\u3051\u306a\u3044\u3067
+\u3057\u3087\u3046\u304b\uff1f"
+
+    tclWrite data $encoding $data
+
+    set lines [list]
+
+    set fd [open data r]
+    fconfigure $fd -encoding $encoding
+    while {![eof $fd]} {
+        gets $fd var
+        lappend lines $var
+    }
+    close $fd
+
+    list \
+        [llength $lines] \
+        $lines
+} [list 5 \
+    [list \
+        "\u79c1\u3069\u3082\u3067\u306f\u3001\u30c1\u30c3\u30d7\u3054\u8cfc\u5165\u6642\u306b\u3054\u767b\u9332\u3044\u305f\u3060\u3044\u305f\u3054\u4f4f\u6240\u3092\u30ad\u30e3\u30c3\u30b7\u30e5\u30a2\u30a6\u30c8\u306e\u969b\u306e" \
+        "\u5c0f\u5207\u624b\u9001\u4ed8\u5148\u3068\u3057\u3066\u4f7f\u7528\u3057\u3066\u304a\u308a\u307e\u3059\u3002\u6050\u308c\u5165\u308a\u307e\u3059\u304c\u3001\u6b63\u3057\u3044\u4f4f\u6240\u3092\u3054\u767b\u9332\u3057\u306a\u304a" \
+        "\u304a\u9858\u3044\u3044\u305f\u3057\u307e\u3059\u3002\u307e\u305f\u3001\u5927\u5909\u6050\u7e2e\u3067\u3059\u304c\u3001\u4f4f\u6240\u5909\u66f4\u306e\u3042\u3068\u3001\u65e5\u672c\u8a9e\u30b5\u30fc\u30d3\u30b9\u90e8\uff08" \
+        "\u0063\u0061\u0073\u0069\u006e\u006f\u005f\u006a\u0061\u0070\u0061\u006e\u0065\u0073\u0065\u0040\u005f\u005f\u005f\u002e\u0063\u006f\u006d\u0020\uff09\u307e\u3067\u3054\u4f4f\u6240\u5909\u66f4\u6e08\u306e\u9023\u7d61\u3092\u3044\u305f\u3060\u3051\u306a\u3044\u3067" \
+        "\u3057\u3087\u3046\u304b\uff1f" \
+    ] \
+   ]
+
+tcltest::test ioencodedecode-5.5 {gets on iso2022-jp encoded input} {
+    set encoding iso2022-jp
+
+    set data "\u306e
+\u304a
+\uff08
+\u3067
+\u304b\uff1f"
+
+    tclWrite data $encoding $data
+
+    set lines [list]
+
+    set fd [open data r]
+    fconfigure $fd -encoding $encoding
+    while {![eof $fd]} {
+        gets $fd var
+        lappend lines $var
+    }
+    close $fd
+
+    list \
+        [llength $lines] \
+        $lines
+} [list 5 \
+    [list \
+        "\u306e" \
+        "\u304a" \
+        "\uff08" \
+        "\u3067" \
+        "\u304b\uff1f" \
+    ] \
+   ]
+
+tcltest::test ioencodedecode-5.6 {gets on iso2022-jp encoded input} {
+    set encoding iso2022-jp
+
+    set data "\u002e\u0063\u006f\u006d\u0020\uff09\u307e\u3067\u3054\u4f4f\u6240\u5909\u66f4\u6e08\u306e\u9023\u7d61\u3092\u3044\u305f\u3060\u3051\u306a\u3044\u3067
+\uff1f"
+
+    tclWrite data $encoding $data
+
+    set lines [list]
+
+    set fd [open data r]
+    fconfigure $fd -encoding $encoding
+    while {![eof $fd]} {
+        gets $fd var
+        lappend lines $var
+    }
+    close $fd
+
+    list \
+        [llength $lines] \
+        $lines
+} [list 2 \
+    [list \
+        "\u002e\u0063\u006f\u006d\u0020\uff09\u307e\u3067\u3054\u4f4f\u6240\u5909\u66f4\u6e08\u306e\u9023\u7d61\u3092\u3044\u305f\u3060\u3051\u306a\u3044\u3067" \
+        "\uff1f" \
+    ] \
+   ]
+
+
+tcltest::test ioencodedecode-6.0 {read shiftjis encoded containing partial char at EOF} {
+    set results [list]
+
+    set encoding shiftjis
+
+    set data "1234567890123\x82\x4f\x82\x50\x82"
+
+    set fd [open data w]
+    fconfigure $fd -encoding binary
+    puts -nonewline $fd $data
+    close $fd
+
+    lappend results [file size data]
+
+    set fd [open data r]
+    fconfigure $fd -encoding $encoding
+    set cdata [read -nonewline $fd]
+    set toff [tell $fd]
+    close $fd
+
+    lappend results [string length $cdata]
+    lappend results $toff
+    set results
+} {18 15 17}
+
+tcltest::test ioencodedecode-6.1 {gets on shiftjis encoded containing partial char at EOF} {
+    set results [list]
+
+    set encoding shiftjis
+
+    set data "1234567890123\x82\x4f\x82\x50\x82"
+
+    set fd [open data w]
+    fconfigure $fd -encoding binary
+    puts -nonewline $fd $data
+    close $fd
+
+    lappend results [file size data]
+
+    set fd [open data r]
+    fconfigure $fd -encoding $encoding
+    gets $fd cdata
+    set toff [tell $fd]
+    close $fd
+
+    lappend results [string length $cdata]
+    lappend results $toff
+    set results
+} {18 15 18}
+
+
+# cleanup
+::tcltest::cleanupTests
+return
