@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.7 2006/07/07 23:36:00 mdejong Exp $
+# RCS: @(#) $Id: io.test,v 1.8 2006/07/09 01:55:44 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -959,7 +959,7 @@ test io-6.47 {Tcl_GetsObj: auto mode: \r at end of buffer, peek for \n} {testcha
     set x [list [gets $f] [testchannel inputbuffered $f]]
     close $f
     set x
-} [list "123456789012345" 15]    
+} [list "123456789012345" 15]
 test io-6.48 {Tcl_GetsObj: auto mode: \r at end of buffer, no more avail} {testchannel} {
     # PeekAhead() did not get any, so (eol >= dstEnd)
     

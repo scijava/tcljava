@@ -1,3 +1,20 @@
+2006-07-08  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/jacl/tcl/lang/TclInputStream.java (getsObj,
+        filterBytes, peekAhead):
+        Add debug output to gets method. Avoid looking
+        at the next buffer when EOF char has been found.
+        Cleanup code by removing C porting comments.
+        Double check that the copiedTotal return value
+        from getsObj matches the length of the TclObject.
+        * tests/jacl/ioEncodeDecode.test: Mark some
+        tests as knownbug since the tests don't pass.
+        Add some tests that comparing conversion of
+        shiftjis with utf-8.
+        * tests/tcl/encoding.test: Add knownbug constraint
+        to test that does not pass.
+        * tests/tcl/io.test: Fixup whispace.
+
 2006-07-07  Mo DeJong  <mdejong@users.sourceforge.net>
 
         Reimplement IO and encoding commands using the

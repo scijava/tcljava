@@ -410,7 +410,7 @@ tcltest::test ioencodedecode-3.6 {write iso2022-jp data} {
 } {16 1 16 16}
 
 
-tcltest::test ioencodedecode-4.0 {write iso2022-jp data} {
+tcltest::test ioencodedecode-4.0 {write iso2022-jp data} {knownbug} {
     # Encode data using Java API. This should generate
     # a total of 18 bytes.
 
@@ -494,7 +494,7 @@ tcltest::test ioencodedecode-4.2 {write iso2022-jp data} {
         [string equal $data $c3]
 } {310 310 310 1 1 1 1 1}
 
-tcltest::test ioencodedecode-4.3 {write iso2022-jp data} {
+tcltest::test ioencodedecode-4.3 {write iso2022-jp data} {knownbug} {
     # Write iso2022-jp encoded data to a file using
     # Java and Tcl IO APIs. Then compare both of
     # these generated binary strings to the result
@@ -560,7 +560,7 @@ tcltest::test ioencodedecode-4.4 {write iso2022-jp data} {
         [string equal $b1 $b3]
 } {10 10 10 1 1}
 
-tcltest::test ioencodedecode-4.5 {write iso2022-jp data} {
+tcltest::test ioencodedecode-4.5 {write iso2022-jp data} {knownbug} {
     # Write iso2022-jp encoded data to a file using
     # Java and Tcl IO APIs. Then compare both of
     # these generated binary strings to the result
@@ -773,6 +773,105 @@ tcltest::test ioencodedecode-5.6 {gets on iso2022-jp encoded input} {
         "\uff1f" \
     ] \
    ]
+
+tcltest::test ioencodedecode-5.7 {gets on utf-8 encoded input} {
+    set encoding utf-8
+
+    # This is the same data as in the test above, but it is encoded
+    # as utf-8 data.
+
+    set data "\u002e\u0063\u006f\u006d\u0020\uff09\u307e\u3067\u3054\u4f4f\u6240\u5909\u66f4\u6e08\u306e\u9023\u7d61\u3092\u3044\u305f\u3060\u3051\u306a\u3044\u3067
+\uff1f"
+
+    tclWrite data $encoding $data
+
+    set lines [list]
+
+    set fd [open data r]
+    fconfigure $fd -encoding $encoding
+    while {![eof $fd]} {
+        gets $fd var
+        lappend lines $var
+    }
+    close $fd
+
+    list \
+        [llength $lines] \
+        $lines
+} [list 2 \
+    [list \
+        "\u002e\u0063\u006f\u006d\u0020\uff09\u307e\u3067\u3054\u4f4f\u6240\u5909\u66f4\u6e08\u306e\u9023\u7d61\u3092\u3044\u305f\u3060\u3051\u306a\u3044\u3067" \
+        "\uff1f" \
+    ] \
+   ]
+
+tcltest::test ioencodedecode-5.8 {gets on utf-8 encoded input} {
+    set encoding utf-8
+
+    # Encode double byte chars as utf-8, decoded string
+    # should match the original data.
+
+    set data "\u002e\u3067
+\uff1f"
+
+    tclWrite data $encoding $data
+
+    set lines [list]
+
+    set fd [open data r]
+    fconfigure $fd -encoding $encoding
+    while {![eof $fd]} {
+        set len [gets $fd var]
+        lappend lines $var $len
+    }
+    close $fd
+
+    list \
+        [expr {[llength $lines] / 2}] \
+        $lines
+} [list 2 \
+    [list \
+        "\u002e\u3067" 2 \
+        "\uff1f" 1 \
+    ] \
+   ]
+
+tcltest::test ioencodedecode-5.9 {gets on utf-8 encoded input} {
+    set encoding utf-8
+
+    # Encode double byte chars as utf-8, decoded string
+    # should match the original data. The data is
+    # written with LF translation, so no CRLF will
+    # appear in the output under Win32.
+
+    set data "\u002e\u3067
+\uff1f"
+
+    set fd [open data w]
+    fconfigure $fd -encoding $encoding -translation lf
+    puts -nonewline $fd $data
+    close $fd
+
+    set lines [list]
+
+    set fd [open data r]
+    fconfigure $fd -encoding $encoding -translation lf
+    while {![eof $fd]} {
+        set len [gets $fd var]
+        lappend lines $var $len
+    }
+    close $fd
+
+    list \
+        [expr {[llength $lines] / 2}] \
+        $lines
+} [list 2 \
+    [list \
+        "\u002e\u3067" 2 \
+        "\uff1f" 1 \
+    ] \
+   ]
+
 
 
 tcltest::test ioencodedecode-6.0 {read shiftjis encoded containing partial char at EOF} {

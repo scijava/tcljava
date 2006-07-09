@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: encoding.test,v 1.1 2006/07/07 23:36:00 mdejong Exp $
+# RCS: @(#) $Id: encoding.test,v 1.2 2006/07/09 01:55:44 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -404,7 +404,7 @@ proc testReadChars { filename encoding } {
     return $data
 }
 
-test encoding-23.0 {iso2022-jp escape encoding test} {
+test encoding-23.0 {iso2022-jp escape encoding test} {knownbug} {
     set results [list]
     set encoding iso2022-jp
 

@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclInputStream.java,v 1.2 2006/07/07 23:36:00 mdejong Exp $
+ * RCS: @(#) $Id: TclInputStream.java,v 1.3 2006/07/09 01:55:44 mdejong Exp $
  */
 
 // A TclInputStream is a cross between a Java InputStream and
@@ -173,7 +173,7 @@ class TclInputStream {
      * return EOL in dst buffer.
      */
 
-    int getsObj(TclObject obj) {
+    int getsObj(TclObject tobj) {
         GetsState gs;
         ChannelBuffer buf;
         boolean oldEncodingStart, oldEncodingEnd;
@@ -208,14 +208,14 @@ class TclInputStream {
         }
 
         if (debug) {
-            System.out.println("getsObj encoding is " + encoding);
+            System.out.println("getsObj() : encoding is " + encoding);
         }
 
         // Object used by filterBytes to keep track of how much data has
         // been consumed from the channel buffers.
 
         gs = new GetsState();
-        gs.obj = obj;
+        gs.obj = tobj;
         //gs.dst = &dst;
         gs.encoding = encoding;
         gs.buf = buf;
@@ -229,8 +229,8 @@ class TclInputStream {
         // Cheat a bit and grab the StringBuffer out of
         // the TclString so we can query the data that
         // was just added to the buffer.
-        TclString.empty(obj);
-        StringBuffer obj_sbuf =  ((TclString) obj.getInternalRep()).sbuf;
+        TclString.empty(tobj);
+        StringBuffer obj_sbuf = ((TclString) tobj.getInternalRep()).sbuf;
 
         dst = 0;
         dstEnd = dst;
@@ -257,7 +257,11 @@ class TclInputStream {
                         restore = true;
                         break restore_or_goteol; //goto restore
                     }
-                    dstEnd += gs.charsWrote.i; // dstEnd = dst + gs.bytesWrote;
+                    if (debug) {
+                        System.out.println("advancing dstEnd by " +
+                            gs.charsWrote.i);
+                    }
+                    dstEnd += gs.charsWrote.i;
                 }
 
                 // Remember if EOF char is seen, then look for EOL anyhow, because
@@ -266,6 +270,10 @@ class TclInputStream {
                 if (inEofChar != '\0') {
                     for (eol = dst; eol < dstEnd; eol++) {
                         if (obj_sbuf.charAt(eol) == inEofChar) {
+                            if (debug) {
+                                System.out.println("found EOF char at " + eol);
+                            }
+
                             dstEnd = eol;
                             eof = eol;
                             break;
@@ -280,6 +288,10 @@ class TclInputStream {
                     case TclIO.TRANS_LF: {
                         for (eol = dst; eol < dstEnd; eol++) {
                             if (obj_sbuf.charAt(eol) == '\n') {
+                                if (debug) {
+                                    System.out.println("TRANS_LF: found EOL char at " + eol);
+                                }
+
                                 skip = 1;
                                 goteol = true;
                                 break restore_or_goteol; //goto goteol
@@ -290,6 +302,10 @@ class TclInputStream {
                     case TclIO.TRANS_CR: {
                         for (eol = dst; eol < dstEnd; eol++) {
                             if (obj_sbuf.charAt(eol) == '\r') {
+                                if (debug) {
+                                    System.out.println("TRANS_CR: found EOL char at " + eol);
+                                }
+
                                 skip = 1;
                                 goteol = true;
                                 break restore_or_goteol; //goto goteol
@@ -300,23 +316,30 @@ class TclInputStream {
                     case TclIO.TRANS_CRLF: {
                         for (eol = dst; eol < dstEnd; eol++) {
                             if (obj_sbuf.charAt(eol) == '\r') {
+                                if (debug) {
+                                    System.out.println("TRANS_CRLF: found EOL char at " + eol);
+                                }
+
                                 eol++;
 
                                 // If a CR is at the end of the buffer,
                                 // then check for a LF at the begining
-                                // of the next buffer.
+                                // of the next buffer, unless EOF char
+                                // was found already.
 
                                 if (eol >= dstEnd) {
-                                    //int offset;
-			    
-                                    //offset = eol - objPtr->bytes;
-                                    dst = dstEnd;
-                                    if (filterBytes(gs) != 0) {
-                                        restore = true;
-                                        break restore_or_goteol; //goto restore
+                                    if (eol != eof) {
+                                        if (debug) {
+                                            System.out.println("TRANS_CRLF: filterBytes for \\n");
+                                        }
+
+                                        dst = dstEnd;
+                                        if (filterBytes(gs) != 0) {
+                                            restore = true;
+                                            break restore_or_goteol; //goto restore
+                                        }
+                                        dstEnd += gs.charsWrote.i;
                                     }
-                                    dstEnd += gs.charsWrote.i; // dstEnd = dst + gs.bytesWrote
-                                    //eol = objPtr->bytes + offset;
                                     if (eol >= dstEnd) {
                                         skip = 0;
                                         goteol = true;
@@ -341,6 +364,10 @@ class TclInputStream {
                             if ((eol < dstEnd) && (obj_sbuf.charAt(eol) == '\n')) {
                                 // Skip the raw bytes that make up the '\n'.
 
+                                if (debug) {
+                                    System.out.println("TRANS_AUTO: found \\n at " + eol);
+                                }
+
                                 char[] tmp = new char[1];
                                 IntPtr rawRead = new IntPtr();
 
@@ -359,23 +386,24 @@ class TclInputStream {
                         }
                         for (eol = dst; eol < dstEnd; eol++) {
                             if (obj_sbuf.charAt(eol) == '\r') {
+                                if (debug) {
+                                    System.out.println("TRANS_AUTO: found \\r at " + eol);
+                                }
+
                                 eol++;
                                 if (eol == dstEnd) {
                                     // If buffer ended on \r, peek ahead to see if a
-                                    // \n is available.
+                                    // \n is available, unless EOF char was found already.
 
-                                    //int offset;
-                                    //IntPtr dstEndPtr = new IntPtr();
+                                    if (eol != eof) {
+                                        if (debug) {
+                                            System.out.println("TRANS_AUTO: peeking for \\n");
+                                        }
 
-                                    //offset = eol /* - objPtr->bytes*/;
-                                    dst = dstEnd;
-
-                                    // FIXME: Why does this peek in AUTO mode
-                                    // but filter in CRLF mode?
-                                    peekAhead(/*dstEndPtr,*/ gs);
-                                    //dstEnd = dstEndPtr.i;
-                                    dstEnd += gs.charsWrote.i;
-                                    //eol = /*objPtr->bytes + */ offset;
+                                        dst = dstEnd;
+                                        peekAhead(gs);
+                                        dstEnd += gs.charsWrote.i;
+                                    }
                                     if (eol >= dstEnd) {
                                         eol--;
                                         sawCR = true;
@@ -390,6 +418,10 @@ class TclInputStream {
                                 goteol = true; //goto goteol
                                 break restore_or_goteol;
                             } else if (obj_sbuf.charAt(eol) == '\n') {
+                                if (debug) {
+                                    System.out.println("TRANS_AUTO: found \\n at " + eol);
+                                }
+
                                 goteol = true;
                                 break restore_or_goteol; //goto goteol
                             }
@@ -409,7 +441,7 @@ class TclInputStream {
                 if (eofCond) {
                     skip = 0;
                     eol = dstEnd;
-                    if (eol == /*objPtr->bytes + */ oldLength) {
+                    if (eol == oldLength) {
                         // If we didn't append any bytes before encountering EOF,
                         // caller needs to see -1.
 
@@ -431,9 +463,21 @@ class TclInputStream {
             // the number of characters we want, plus how many raw bytes
             // correspond to the character(s) making up EOL (if any), so we can
             // remove the correct number of bytes from the channel buffer.
+            //
+            // At this point, dst is the index of the character in
+            // obj_sbuf that corresponds to the first byte in buf.
 
             int linelen = eol - dst + skip;
             char[] tmp = new char[linelen];
+
+            if (debug) {
+                System.out.println("goteol: linelen is " + linelen);
+                System.out.println("eol is " + eol);
+                System.out.println("dst is " + dst);
+                System.out.println("skip is " + skip);
+
+                System.out.println(gs.buf);
+            }
 
             buf = gs.buf;
             encodingState = gs.state;
@@ -442,12 +486,28 @@ class TclInputStream {
                     gs.rawRead, null, gs.charsWrote);
             buf.nextRemoved += gs.rawRead.i;
 
+            if (debug) {
+                System.out.println("advanced buf.nextRemoved by " + gs.rawRead.i);
+                System.out.println(buf);
+                System.out.println("gs.charsWrote.i was " + gs.charsWrote.i);
+            }
+
             // Recycle all the emptied buffers.
 
-            obj_sbuf.setLength(eol /* - objPtr->bytes*/);
+            obj_sbuf.setLength(eol);
+
+            if (debug) {
+                System.out.println("obj_sbuf.setLength(" + eol + ")");
+                System.out.println("srep \"" + obj_sbuf.toString() + "\"");
+            }
+
             commonGetsCleanup();
             blocked = false;
             copiedTotal = gs.totalChars + gs.charsWrote.i - skip;
+
+            if (debug) {
+                System.out.println("copiedTotal = " + copiedTotal);
+            }
         }
         if (restore) {
             // Couldn't get a complete line.  This only happens if we get a error
@@ -491,10 +551,26 @@ class TclInputStream {
 
         updateInterest();
 
-        // FIXME: copiedTotal seems to be returning incorrect values
-        // for some tests, need to make caller code use the return
-        // value instead of the length of the returned object before
-        // these errors can be detected by the test suite.
+        // Make sure tobj makes use of the string rep defined
+        // by obj_sbuf. It is possible that TclObject.toString()
+        // got called at some point during this method.
+
+        tobj.invalidateStringRep();
+        String srep = tobj.toString();
+
+        if (copiedTotal > 0) {
+            int len = srep.length();
+            if (len != copiedTotal) {
+                throw new TclRuntimeError("copiedTotal " + copiedTotal +
+                    " != " + len);
+            }
+        } else {
+            if (! srep.equals("")) {
+                throw new TclRuntimeError("expected empty TclObject result" +
+                    " since copiedTotal is " + copiedTotal);
+            }
+        }
+
         return copiedTotal;
     }
 
@@ -580,9 +656,9 @@ class TclInputStream {
         // Convert some of the bytes from the channel buffer to characters.
         // Space in obj's string rep is used to hold the characters.
 
-        rawStart = /* bufPtr->buf + */ buf.nextRemoved;
+        rawStart = buf.nextRemoved;
         raw = buf.buf;
-        rawEnd = /* bufPtr->buf + */ buf.nextAdded;
+        rawEnd = buf.nextAdded;
         rawLen = rawEnd - rawStart;
 
         //dst = *gsPtr->dstPtr;
@@ -746,9 +822,6 @@ class TclInputStream {
                     }
                 }
             }
-            //if (filterBytes(gs) == 0) {
-            //    dstEndPtr.i = gs.charsWrote.i; // *gsPtr->dstPtr + gs.bytesWrote.i
-            //}
             filterBytes(gs);
             //if (blockModeProc != NULL) {
             //    StackSetBlockMode(chanPtr, TCL_MODE_BLOCKING);
@@ -983,9 +1056,9 @@ class TclInputStream {
 
         if (debug) {
             System.out.println("returning copied = " + copied);
-            System.out.println("returning string \"" + obj + "\"");
+            System.out.println("returning string \"" + obj.toString() + "\"");
             obj.invalidateStringRep();
-            System.out.println("returning string \"" + obj + "\"");
+            System.out.println("returning string \"" + obj.toString() + "\"");
         }
 
         return copied;
@@ -1143,8 +1216,6 @@ class TclInputStream {
         src = buf.buf;
         srcOff =  buf.nextRemoved;
         srcLen = buf.nextAdded - buf.nextRemoved;
-
-        /* FIXME: Include final Tcl patch for srcLen == 0 case */
 
         if (srcLen == 0) {
             if (debug) {
