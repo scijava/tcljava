@@ -1,3 +1,22 @@
+2006-07-12  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/jacl/tcl/lang/TclInputStream.java (decodedNumBytes,
+        getsObj, filterBytes, doReadChars, readChars,
+        externalToUnicode):
+        Reimplement input decoding so that bytes are decoded
+        to chars in one pass. The previous implementation
+        assumed that a decode operation could be done twice,
+        but that is not possible in Java since the nio
+        decoders provide no way to save decoder state.
+        This new implementation will decode bytes into
+        chars one char at a time while saving a map that
+        is used later to determine how many bytes were
+        decoded for a given range of characters. These
+        chages fixes up support for stateful encodings
+        like shiftjis.
+        * tests/jacl/ioEncodeDecode.test: Add additional
+        test cases for input decoding issues.
+
 2006-07-11  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/jacl/tcl/lang/FileChannel.java (open):

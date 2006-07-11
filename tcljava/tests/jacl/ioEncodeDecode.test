@@ -925,6 +925,296 @@ tcltest::test ioencodedecode-6.1 {gets on shiftjis encoded containing partial ch
 } {18 15 18}
 
 
+tcltest::test ioencodedecode-7.0 {EOF char in utf-8 encoded input} {
+    set encoding utf-8
+
+    set data "\u002e\u3067\xFF"
+    set no_eof_data "\u002e\u3067"
+
+    set fd [open data w]
+    fconfigure $fd -translation lf -encoding $encoding
+    puts -nonewline $fd $data
+    close $fd
+
+    set fd [open data r]
+    fconfigure $fd -encoding $encoding -translation lf -eofchar \xFF
+    set rdata [read $fd]
+    set ateof [eof $fd]
+    close $fd
+
+    list \
+        [string length $data] \
+        [string length $rdata] \
+        [string length $no_eof_data] \
+        [string equal $no_eof_data $rdata] \
+        $ateof
+} {3 2 2 1 1}
+
+tcltest::test ioencodedecode-7.1 {EOF char in utf-8 encoded input} {
+    set encoding utf-8
+
+    set data "ab\ndef"
+    set no_eof_data "ab\nd"
+
+    set fd [open data w]
+    fconfigure $fd -translation lf -encoding $encoding
+    puts -nonewline $fd $data
+    close $fd
+
+    set fd [open data r]
+    fconfigure $fd -encoding $encoding -eofchar e
+    set rdata [read $fd]
+    set ateof [eof $fd]
+    close $fd
+
+    list \
+        [string length $data] \
+        [string length $rdata] \
+        [string length $no_eof_data] \
+        [string equal $no_eof_data $rdata] \
+        $ateof
+} {6 4 4 1 1}
+
+tcltest::test ioencodedecode-7.2 {EOF char in utf-8 encoded input} {
+    set encoding utf-8
+
+    set data "ab\r\ndef"
+    set no_eof_data "ab\nd"
+
+    set fd [open data w]
+    fconfigure $fd -translation lf -encoding $encoding
+    puts -nonewline $fd $data
+    close $fd
+
+    set fd [open data r]
+    fconfigure $fd -encoding $encoding -eofchar e
+    set rdata [read $fd]
+    set ateof [eof $fd]
+    close $fd
+
+    list \
+        [string length $data] \
+        [string length $rdata] \
+        [string length $no_eof_data] \
+        [string equal $no_eof_data $rdata] \
+        $ateof
+} {7 4 4 1 1}
+
+tcltest::test ioencodedecode-8.0 {utf-8 encoded input} {
+    set encoding utf-8
+
+    set data "ab\nd"
+    set no_eof_data "ab\nd"
+
+    set fd [open data w]
+    fconfigure $fd -translation lf -encoding $encoding
+    puts -nonewline $fd $data
+    close $fd
+
+    set fd [open data r]
+    fconfigure $fd -encoding $encoding
+    set rdata [read $fd]
+    set ateof [eof $fd]
+    close $fd
+
+    list \
+        [string length $data] \
+        [string length $rdata] \
+        [string length $no_eof_data] \
+        [string equal $no_eof_data $rdata] \
+        $ateof
+} {4 4 4 1 1}
+
+tcltest::test ioencodedecode-8.1 {utf-8 encoded input} {
+    set encoding utf-8
+
+    set data "ab\r\nd"
+    set no_eof_data "ab\nd"
+
+    set fd [open data w]
+    fconfigure $fd -translation lf -encoding $encoding
+    puts -nonewline $fd $data
+    close $fd
+
+    set fd [open data r]
+    fconfigure $fd -encoding $encoding
+    set rdata [read $fd]
+    set ateof [eof $fd]
+    close $fd
+
+    list \
+        [string length $data] \
+        [string length $rdata] \
+        [string length $no_eof_data] \
+        [string equal $no_eof_data $rdata] \
+        $ateof
+} {5 4 4 1 1}
+
+tcltest::test ioencodedecode-8.2 {utf-8 encoded input} {
+    set encoding utf-8
+
+    set data "ab\rd"
+    set no_eof_data "ab\nd"
+
+    set fd [open data w]
+    fconfigure $fd -translation cr -encoding $encoding
+    puts -nonewline $fd $data
+    close $fd
+
+    set fd [open data r]
+    fconfigure $fd -encoding $encoding
+    set rdata [read $fd]
+    set ateof [eof $fd]
+    close $fd
+
+    list \
+        [string length $data] \
+        [string length $rdata] \
+        [string length $no_eof_data] \
+        [string equal $no_eof_data $rdata] \
+        $ateof
+} {4 4 4 1 1}
+
+
+tcltest::test ioencodedecode-9.0 {utf-8 encoded input} {
+    set encoding utf-8
+
+    set data "1234567890"
+    set ex_data "12345"
+
+    set fd [open data w]
+    fconfigure $fd -translation cr -encoding $encoding
+    puts -nonewline $fd $data
+    close $fd
+
+    set fd [open data r]
+    fconfigure $fd -encoding $encoding
+    set rdata [read $fd 5]
+    set ateof [eof $fd]
+    close $fd
+
+    list \
+        [string length $data] \
+        [string length $rdata] \
+        [string equal $ex_data $rdata] \
+        $ateof
+} {10 5 1 0}
+
+tcltest::test ioencodedecode-9.1 {utf-8 encoded input} {
+    set encoding utf-8
+
+    set data "1234567890"
+
+    set fd [open data w]
+    fconfigure $fd -translation cr -encoding $encoding
+    puts -nonewline $fd $data
+    close $fd
+
+    set fd [open data r]
+    fconfigure $fd -encoding $encoding
+    set rdata [read $fd 15]
+    set ateof [eof $fd]
+    close $fd
+
+    list \
+        [string length $data] \
+        [string length $rdata] \
+        [string equal $data $rdata] \
+        $ateof
+} {10 10 1 1}
+
+tcltest::test ioencodedecode-9.2 {utf-8 encoded input} {
+    set encoding utf-8
+
+    set data "1234567890"
+
+    set fd [open data w]
+    fconfigure $fd -translation cr -encoding $encoding
+    puts -nonewline $fd $data
+    close $fd
+
+    set fd [open data r]
+    fconfigure $fd -encoding $encoding
+    set rdata [read $fd 0]
+    set ateof [eof $fd]
+    close $fd
+
+    list \
+        [string length $data] \
+        [string length $rdata] \
+        $ateof
+} {10 0 0}
+
+tcltest::test ioencodedecode-9.3 {utf-8 encoded input} {
+    set encoding utf-8
+
+    set data "1234567890"
+    set ex_data "1"
+
+    set fd [open data w]
+    fconfigure $fd -translation cr -encoding $encoding
+    puts -nonewline $fd $data
+    close $fd
+
+    set fd [open data r]
+    fconfigure $fd -encoding $encoding
+    set rdata [read $fd 1]
+    set ateof [eof $fd]
+    close $fd
+
+    list \
+        [string length $data] \
+        [string length $rdata] \
+        [string equal $ex_data $rdata] \
+        $ateof
+} {10 1 1 0}
+
+
+tcltest::test ioencodedecode-10.0 {CRLF across read buffer} {
+    set data "123456789012345\r\n"
+    set ex_data "123456789012345\n"
+
+    set fd [open data w]
+    fconfigure $fd -encoding binary -translation binary
+    puts -nonewline $fd $data
+    close $fd
+
+    set fd [open data r]
+    fconfigure $fd -buffersize 16 -encoding utf-8
+    set rdata [read $fd]
+    close $fd
+
+    list \
+        [file size data] \
+        [string length $data] \
+        [string length $rdata] \
+        [string equal $ex_data $rdata]
+} {17 17 16 1}
+
+tcltest::test ioencodedecode-10.1 {CRLF across read buffer} {
+    set data "123456789012345\r\n"
+    set ex_data "123456789012345\n"
+
+    set fd [open data w]
+    fconfigure $fd -encoding binary -translation binary
+    puts -nonewline $fd $data
+    close $fd
+
+    set fd [open data r]
+    fconfigure $fd -buffersize 16 -translation crlf \
+        -encoding utf-8
+    set rdata [read $fd]
+    close $fd
+
+    list \
+        [file size data] \
+        [string length $data] \
+        [string length $rdata] \
+        [string equal $ex_data $rdata]
+} {17 17 16 1}
+
+
 # cleanup
 ::tcltest::cleanupTests
 return
+
