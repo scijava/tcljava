@@ -1,4 +1,11 @@
-2006-07-12  Mo DeJong  <mdejong@users.sourceforge.net>
+2006-07-11  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * tests/inprogress/Unicode.test:
+        Remove comment output.
+        * tests/tjc/tjcthread.test: Add log match
+        output for race condition test.
+
+2006-07-11  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/jacl/tcl/lang/TclInputStream.java (decodedNumBytes,
         getsObj, filterBytes, doReadChars, readChars,

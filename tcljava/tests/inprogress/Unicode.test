@@ -21,9 +21,9 @@ test unicode-1.2 {unicode replacement} {
 } {}
 
 test unicode-2.0 {unicode substitution, 0 - 535} {
-    puts "doing unicode substitution/conversion test for range 0 - 535"
-    puts "this can take several minutes"
-    flush stdout
+    #puts "doing unicode substitution/conversion test for range 0 - 535"
+    #puts "this can take several minutes"
+    #flush stdout
 
     set max 535
 
@@ -42,9 +42,9 @@ test unicode-2.0 {unicode substitution, 0 - 535} {
 } 536
 
 test unicode-2.1 {unicode substitution, 536 - 65535} {
-    puts "doing unicode substitution/conversion test for range 536 - 65535"
-    puts "this can take several minutes"
-    flush stdout
+    #puts "doing unicode substitution/conversion test for range 536 - 65535"
+    #puts "this can take several minutes"
+    #flush stdout
 
     set min 536
     set max 65535 ; # aka pow(2,16) - 1

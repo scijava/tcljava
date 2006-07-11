@@ -441,7 +441,8 @@ tcltest::test tjcthread-1.6 {compile 2 test classes} {
     # There is a race condition having to do with if
     # the other thread runs between the first and
     # second call to compileJavaSource. Make the
-    # test pass either way.
+    # test pass if any of the following log output
+    # buffers are matched.
 
     set log1 \
 {thread create
@@ -485,6 +486,27 @@ thread terminate request
 thread terminated
 }
 
+    set log3 \
+{thread create
+thread start
+thread wait
+compileJavaSource Test.java
+notify in compileJavaSource
+thread wakeup
+process event
+Interp() and init
+process java source: Test.java
+compileJavaSource Test2.java
+notify in compileJavaSource
+process event
+process java source: Test2.java
+thread wait
+terminateThread
+notify in terminateThread
+thread terminate request
+thread terminated
+}
+
     set log [java::call tcl.lang.TJCThread getEventLog]
     set log_match 0
     if {$log == $log1} {
@@ -492,6 +514,9 @@ thread terminated
         set log_match 1
     } elseif {$log == $log2} {
         #puts "log 2 matched"
+        set log_match 1
+    } elseif {$log == $log3} {
+        #puts "log 3 matched"
         set log_match 1
     } else {
         puts "log match failed for log:\n$log"
