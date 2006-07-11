@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.8 2006/07/09 01:55:44 mdejong Exp $
+# RCS: @(#) $Id: io.test,v 1.9 2006/07/11 09:10:45 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -7186,6 +7186,74 @@ test io-60.1 {writing illegal utf sequences} {openpipe fileevent} {
 } {1 {gets {} catch {error writing "stdout": invalid argument}}}
 
 
+test io-61.0 {truncate on open} {
+    # The open command should truncate when opened "w",
+    # it should not matter if another handle to the
+    # same file is already open.
+
+    set results [list]
+
+    if {[file exists truncdata]} {
+        file delete truncdata
+    }
+
+    set data "1234567890"
+
+    set fd [open truncdata w]
+    fconfigure $fd -encoding binary
+    puts -nonewline $fd $data
+    close $fd
+
+    # File size should now be 10
+
+    lappend results [file size truncdata]
+
+    # Open a second time with "w" perms,
+    # this should truncate the data in
+    # the file.
+
+    set fd [open truncdata w]
+    fconfigure $fd -encoding binary
+    puts -nonewline $fd "12345"
+    close $fd
+
+    # File size should now be 5
+
+    lappend results [file size truncdata]
+
+    if {[file exists truncdata]} {
+        file delete truncdata
+    }
+
+    set data "1234567890"
+
+    set fd1 [open truncdata w]
+    fconfigure $fd1 -encoding binary
+    puts -nonewline $fd1 $data
+    flush $fd1
+    # Don't close first handle!
+    #close $fd1
+
+    # File size should now be 10
+
+    lappend results [file size truncdata]
+
+    # Open a second time with "w" perms,
+    # this should truncate the data in
+    # the file.
+
+    set fd2 [open truncdata w]
+    fconfigure $fd2 -encoding binary
+    puts -nonewline $fd2 "12345"
+    close $fd2
+
+    # File size should now be 5
+
+    lappend results [file size truncdata]
+    close $fd1
+
+    set results
+} {10 5 10 5}
 
 
 # cleanup

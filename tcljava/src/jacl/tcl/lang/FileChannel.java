@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FileChannel.java,v 1.21 2004/10/01 06:08:31 mdejong Exp $
+ * RCS: @(#) $Id: FileChannel.java,v 1.22 2006/07/11 09:10:44 mdejong Exp $
  *
  */
 
@@ -70,13 +70,6 @@ class FileChannel extends Channel {
 	    file.close();
 	}
 
-	// Truncate file to zero length if it exists.
-
-	if (((modeFlags & TclIO.TRUNC) != 0) && fileObj.exists()) {
-	    file = new RandomAccessFile(fileObj, "rw");
-	    file.close ();
-	}
-
 	if ((modeFlags & TclIO.RDWR) != 0) { 
 	    // Opens file (r+), error if file does not exist.
 
@@ -113,7 +106,7 @@ class FileChannel extends Channel {
 		throw new TclException(interp, "couldn't open \"" +
 			fileName + "\": illegal operation on a directory");
 	    }
-	    
+
 	    // Currently there is a limitation in the Java API.
 	    // A file can only be opened for read OR read-write.
 	    // Therefore if the file is write only, Java cannot
@@ -135,6 +128,15 @@ class FileChannel extends Channel {
 
 	if ((modeFlags & TclIO.APPEND) != 0) {
 	    file.seek(file.length());
+	}
+
+	// Truncate file to zero length, this has to be done after
+        // opening the file so that it will not fail even when another
+        // handle to this same file is also open.
+
+	if ((modeFlags & TclIO.TRUNC) != 0) {
+	    java.nio.channels.FileChannel chan = file.getChannel();
+            chan.truncate(0);
 	}
 
 	// In standard Tcl fashion, set the channelId to be "file" + the

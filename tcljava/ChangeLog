@@ -1,3 +1,14 @@
+2006-07-11  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/jacl/tcl/lang/FileChannel.java (open):
+        Truncate file after opening using new
+        Java nio channels package.
+        * src/jacl/tcl/lang/OpenCmd.java: Pass
+        TclIO.TRUNC instead of attempting to delete
+        the file. A file delete does not work when
+        another file descriptor to the same file is open.
+        * tests/tcl/io.test: Add file truncate test.
+
 2006-07-08  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/jacl/tcl/lang/TclInputStream.java (getsObj,
