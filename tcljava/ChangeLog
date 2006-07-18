@@ -1,5 +1,11 @@
 2006-07-18  Mo DeJong  <mdejong@users.sourceforge.net>
 
+        * src/janino/org/codehaus/janino/tools/JGrep.java:
+        Fixup import name clash that was causing compile
+        error with JDK 1.5.
+
+2006-07-18  Mo DeJong  <mdejong@users.sourceforge.net>
+
         * Makefile.in:
         * src/janino/README.TXT:
         * src/janino/org/codehaus/janino/AstGeneratorVisitor.java:

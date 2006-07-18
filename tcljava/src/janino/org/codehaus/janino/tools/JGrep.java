@@ -34,7 +34,10 @@
 
 package org.codehaus.janino.tools;
 
-import java.util.*;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Iterator;
+
 import java.io.*;
 
 import org.codehaus.janino.*;
