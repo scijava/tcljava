@@ -83,6 +83,7 @@ proc initJavaCompiler {} {
             if {[file exists $file]} {
                 set jar_file $file
                 set test_class net.sf.pizzacompiler.compiler.Main
+                set test_ctor net.sf.pizzacompiler.compiler.Main
                 set java_cmd pizzaCompile
                 break
             }
@@ -92,6 +93,7 @@ proc initJavaCompiler {} {
             if {[file exists $file]} {
                 set jar_file $file
                 set test_class org.codehaus.janino.SimpleCompiler
+                set test_ctor {org.codehaus.janino.SimpleCompiler boolean}
                 set java_cmd janinoCompile
                 break
             }
@@ -120,7 +122,7 @@ proc initJavaCompiler {} {
 
     if {$driver == "janino"} {
         # Hold ref to janino SimpleCompiler instance
-        set JAVA_HOLD_REF [java::new $test_class]
+        set JAVA_HOLD_REF [java::new $test_ctor 1]
     } else {
         # Hold ref to pizza class
         set JAVA_HOLD_REF $err

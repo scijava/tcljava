@@ -32,26 +32,31 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.codehaus.janino.util.resource;
+package org.codehaus.janino.util.iterator;
 
 import java.util.*;
 
-import org.codehaus.janino.util.iterator.IteratorCollection;
-
+import org.codehaus.janino.*;
 
 /**
- * A {@link org.codehaus.janino.util.resource.ResourceFinder} that examines a set
- * of {@link org.codehaus.janino.util.resource.ResourceFinder}s lazily as it
- * searches for resources.
- *
- * @see org.codehaus.janino.util.iterator.IteratorCollection
+ * An {@link java.util.Iterator} that iterates over scoped statements.
+ * This iterator is used to iterate over the objects that implement
+ * the Scope interface until there is no longer an enclosing scope.
  */
-public class LazyMultiResourceFinder extends MultiResourceFinder {
+public class ScopeIterator implements Iterator {
+    protected Java.Scope s;
 
-    /**
-     * @param resourceFinders delegate {@link ResourceFinder}s
-     */
-    public LazyMultiResourceFinder(Iterator resourceFinders) {
-        super(new IteratorCollection(resourceFinders));
-    }
+    // Create ScopeIterator starting with the Scope that encloses
+    // the given Statement.
+
+    public ScopeIterator(Java.Statement stmt) { s = stmt.getEnclosingScope(); }
+
+    // Create ScopeIterator starting with the given Scope.
+
+    public ScopeIterator(Java.Scope es) { s = es; }
+
+    public boolean hasNext() { return (s instanceof Java.Scope); }
+    public Object  next()    { return (s = s.getEnclosingScope()); }
+    public void    remove()  { throw new RuntimeException("unsupported remove()"); }
 }
+

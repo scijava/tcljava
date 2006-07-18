@@ -32,26 +32,44 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.codehaus.janino.util.resource;
+package org.codehaus.janino.util.iterator;
 
-import java.util.*;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 
-import org.codehaus.janino.util.iterator.IteratorCollection;
-
+import org.codehaus.janino.util.Producer;
 
 /**
- * A {@link org.codehaus.janino.util.resource.ResourceFinder} that examines a set
- * of {@link org.codehaus.janino.util.resource.ResourceFinder}s lazily as it
- * searches for resources.
+ * An {@link java.util.Iterator} that iterates over all the objects produced by a delegate
+ * {@link org.codehaus.janino.util.Producer}.
  *
- * @see org.codehaus.janino.util.iterator.IteratorCollection
+ * @see org.codehaus.janino.util.Producer
  */
-public class LazyMultiResourceFinder extends MultiResourceFinder {
+public class ProducerIterator implements Iterator {
+    private final Producer producer;
 
-    /**
-     * @param resourceFinders delegate {@link ResourceFinder}s
-     */
-    public LazyMultiResourceFinder(Iterator resourceFinders) {
-        super(new IteratorCollection(resourceFinders));
+    private static final Object UNKNOWN = new Object();
+    private static final Object AT_END = null;
+    private Object              nextElement = UNKNOWN;
+
+    public ProducerIterator(Producer producer) {
+        this.producer = producer;
+    }
+
+    public boolean hasNext() {
+        if (this.nextElement == UNKNOWN) this.nextElement = this.producer.produce();
+        return this.nextElement != AT_END;
+    }
+
+    public Object next() {
+        if (this.nextElement == UNKNOWN) this.nextElement = this.producer.produce();
+        if (this.nextElement == AT_END) throw new NoSuchElementException();
+        Object result = this.nextElement;
+        this.nextElement = UNKNOWN;
+        return result;
+    }
+
+    public void remove() {
+        throw new UnsupportedOperationException("remove");
     }
 }

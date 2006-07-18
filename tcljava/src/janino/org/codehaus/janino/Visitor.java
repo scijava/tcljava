@@ -43,8 +43,8 @@ public class Visitor {
     extends TypeDeclarationVisitor, TypeBodyDeclarationVisitor, BlockStatementVisitor, AtomVisitor {
     
         // ImportDeclaration-derived.
-        void visitSingleTypeImportDeclaration(Java.SingleTypeImportDeclaration stid);
-        void visitTypeImportOnDemandDeclaration(Java.TypeImportOnDemandDeclaration tiodd);
+        void visitSingleTypeImportDeclaration(Java.CompilationUnit.SingleTypeImportDeclaration stid);
+        void visitTypeImportOnDemandDeclaration(Java.CompilationUnit.TypeImportOnDemandDeclaration tiodd);
     }
     
     public interface TypeDeclarationVisitor {
@@ -85,15 +85,12 @@ public class Visitor {
         void visitContinueStatement(Java.ContinueStatement cs);
         void visitEmptyStatement(Java.EmptyStatement es);
         void visitLocalClassDeclarationStatement(Java.LocalClassDeclarationStatement lcds);
-    }
-    
-    public interface AtomVisitor extends RvalueVisitor, TypeVisitor, ConstructorInvocationVisitor {
-        void visitPackage(Java.Package p);
-    }
-    
-    public interface ConstructorInvocationVisitor {
         void visitAlternateConstructorInvocation(Java.AlternateConstructorInvocation aci);
         void visitSuperConstructorInvocation(Java.SuperConstructorInvocation sci);
+    }
+    
+    public interface AtomVisitor extends RvalueVisitor, TypeVisitor {
+        void visitPackage(Java.Package p);
     }
     
     public interface TypeVisitor {
@@ -105,7 +102,6 @@ public class Visitor {
     }
     
     public interface RvalueVisitor extends LvalueVisitor {
-        void visitArrayInitializer(Java.ArrayInitializer ai);
         void visitArrayLength(Java.ArrayLength al);
         void visitAssignment(Java.Assignment a);
         void visitUnaryOperation(Java.UnaryOperation uo);
@@ -121,6 +117,7 @@ public class Visitor {
         void visitLiteral(Java.Literal l);
         void visitNewAnonymousClassInstance(Java.NewAnonymousClassInstance naci);
         void visitNewArray(Java.NewArray na);
+        void visitNewInitializedArray(Java.NewInitializedArray nia);
         void visitNewClassInstance(Java.NewClassInstance nci);
         void visitParameterAccess(Java.ParameterAccess pa);
         void visitQualifiedThisReference(Java.QualifiedThisReference qtr);

@@ -62,21 +62,27 @@ public abstract class IClassLoader {
      * class is constructed.)
      */
     protected final void postConstruct() {
-        this.OBJECT            = this.loadIClass(Descriptor.OBJECT);
-        this.STRING            = this.loadIClass(Descriptor.STRING);
-        this.CLASS             = this.loadIClass(Descriptor.CLASS);
-        this.THROWABLE         = this.loadIClass(Descriptor.THROWABLE);
-        this.RUNTIME_EXCEPTION = this.loadIClass(Descriptor.RUNTIME_EXCEPTION);
-        this.ERROR             = this.loadIClass(Descriptor.ERROR);
-        this.CLONEABLE         = this.loadIClass(Descriptor.CLONEABLE);
-        this.SERIALIZABLE      = this.loadIClass(Descriptor.SERIALIZABLE);
+        try {
+            this.OBJECT            = this.loadIClass(Descriptor.OBJECT);
+            this.STRING            = this.loadIClass(Descriptor.STRING);
+            this.CLASS             = this.loadIClass(Descriptor.CLASS);
+            this.THROWABLE         = this.loadIClass(Descriptor.THROWABLE);
+            this.RUNTIME_EXCEPTION = this.loadIClass(Descriptor.RUNTIME_EXCEPTION);
+            this.ERROR             = this.loadIClass(Descriptor.ERROR);
+            this.CLONEABLE         = this.loadIClass(Descriptor.CLONEABLE);
+            this.SERIALIZABLE      = this.loadIClass(Descriptor.SERIALIZABLE);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException("Cannot load simple types");
+        }
     }
 
     /**
      * Get an {@link IClass} by field descriptor.
+     *
      * @return <code>null</code> if an {@link IClass} could not be loaded
+     * @throws {@link ClassNotFoundException} if an exception was raised while loading the {@link IClass}
      */
-    public final IClass loadIClass(String fieldDescriptor) {
+    public final IClass loadIClass(String fieldDescriptor) throws ClassNotFoundException {
         if (IClassLoader.DEBUG) System.out.println(this + ": Load type \"" + fieldDescriptor + "\"");
 
         if (Descriptor.isPrimitive(fieldDescriptor)) {
@@ -121,12 +127,8 @@ public abstract class IClassLoader {
                 );
                 if (componentIClass == null) return null;
 
-                // This may have defined the array type as a side effect.
-                IClass arrayIClass = (IClass) this.loadedIClasses.get(fieldDescriptor);
-                if (arrayIClass != null) return arrayIClass;
-
-                // Now create and define the array type.
-                arrayIClass = IClass.createArrayIClass(componentIClass, this.OBJECT);
+                // Now get and define the array type.
+                IClass arrayIClass = componentIClass.getArrayIClass(this.OBJECT);
                 this.loadedIClasses.put(fieldDescriptor, arrayIClass);
                 return arrayIClass;
             }
@@ -149,21 +151,10 @@ public abstract class IClassLoader {
     }
 
     /**
-     * Returns the type of an array of the class, interface, array or
-     * primitive.<br>
-     * Returns "null" for "void".
-     */
-    public final IClass loadArrayIClass(IClass componentType) {
-        IClass result = this.loadIClass('[' + componentType.getDescriptor());
-        if (result == null) throw new RuntimeException("S.N.O.: Cannot determine array type of \"" + componentType.toString() + "\"");
-        return result;
-    }
-
-    /**
      * Find a new {@link IClass} by descriptor; return <code>null</code> if a class
      * for that <code>descriptor</code> could not be found.
      * <p>
-     * Like <code>java.lang.ClassLoader.findClass(String)</code>, this method
+     * Similar {@link java.lang.ClassLoader#findClass(java.lang.String)}, this method
      * must
      * <ul>
      *   <li>Get an {@link IClass} object from somewhere for the given type
@@ -183,8 +174,11 @@ public abstract class IClassLoader {
      * <p>
      * Notice that this method is never called from more than one thread at a time.
      * In other words, implementations of this method need not be synchronized.
+     *
+     * @return <code>null</code> if a class with that descriptor could not be found
+     * @throws ClassNotFoundException if an exception was raised while loading the class
      */
-    protected abstract IClass findIClass(String descriptor);
+    protected abstract IClass findIClass(String descriptor) throws ClassNotFoundException;
 
     /**
      * Define an {@link IClass} in the context of this {@link IClassLoader}.

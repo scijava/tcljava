@@ -109,7 +109,7 @@ class ReflectionIClass extends IClass {
     protected String getDescriptor2() {
         return Descriptor.fromClassName(this.clazz.getName());
     }
-    public boolean isPublic()    { return Modifier.isPublic(this.clazz.getModifiers()); }
+    public Access  getAccess()   { return ReflectionIClass.modifiers2Access(this.clazz.getModifiers()); }
     public boolean isFinal()     { return Modifier.isFinal(this.clazz.getModifiers()); }
     public boolean isInterface() { return this.clazz.isInterface(); }
     public boolean isAbstract()  { return Modifier.isAbstract(this.clazz.getModifiers()); }
@@ -154,12 +154,7 @@ class ReflectionIClass extends IClass {
         // Implement IMember.
         public Access getAccess() {
             int mod = this.constructor.getModifiers();
-            return (
-                Modifier.isPrivate(mod)   ? Access.PRIVATE   :
-                Modifier.isProtected(mod) ? Access.PROTECTED :
-                Modifier.isPublic(mod)    ? Access.PUBLIC    :
-                Access.DEFAULT
-            );
+            return ReflectionIClass.modifiers2Access(mod);
         }
 
         // Implement "IConstructor".
@@ -179,6 +174,14 @@ class ReflectionIClass extends IClass {
 
             return parameterTypes;
         }
+        public String getDescriptor() {
+        	Class[] parameterTypes = this.constructor.getParameterTypes();
+        	String[] parameterDescriptors = new String[parameterTypes.length];
+        	for (int i = 0; i < parameterDescriptors.length; ++i) {
+        		parameterDescriptors[i] = Descriptor.fromClassName(parameterTypes[i].getName());
+        	}
+            return new MethodDescriptor(parameterDescriptors, Descriptor.VOID).toString();
+        }
         public IClass[] getThrownExceptions() {
             return ReflectionIClass.this.classesToIClasses(this.constructor.getExceptionTypes());
         }
@@ -190,16 +193,10 @@ class ReflectionIClass extends IClass {
 
         // Implement IMember.
         public Access getAccess() {
-            int mod = this.method.getModifiers();
-            return (
-                Modifier.isPrivate(mod)   ? Access.PRIVATE   :
-                Modifier.isProtected(mod) ? Access.PROTECTED :
-                Modifier.isPublic(mod)    ? Access.PUBLIC    :
-                Access.DEFAULT
-            );
+            return ReflectionIClass.modifiers2Access(this.method.getModifiers());
         }
 
-        // Implemnt "IMethod".
+        // Implement "IMethod".
         public String getName() { return this.method.getName(); }
         public IClass[] getParameterTypes() {
             return ReflectionIClass.this.classesToIClasses(this.method.getParameterTypes());
@@ -220,13 +217,7 @@ class ReflectionIClass extends IClass {
 
         // Implement IMember.
         public Access getAccess() {
-            int mod = this.field.getModifiers();
-            return (
-                Modifier.isPrivate(mod)   ? Access.PRIVATE   :
-                Modifier.isProtected(mod) ? Access.PROTECTED :
-                Modifier.isPublic(mod)    ? Access.PUBLIC    :
-                Access.DEFAULT
-            );
+            return ReflectionIClass.modifiers2Access(this.field.getModifiers());
         }
 
         // Implement "IField".
@@ -281,16 +272,32 @@ class ReflectionIClass extends IClass {
      * Load {@link Class} through {@link IClassLoader} to
      * ensure unique {@link IClass}es.
      */
-    /*private*/ IClass classToIClass(Class c) {
-        return this.iClassLoader.loadIClass(Descriptor.fromClassName(c.getName()));
+    private IClass classToIClass(Class c) {
+        IClass iClass;
+        try {
+            iClass = this.iClassLoader.loadIClass(Descriptor.fromClassName(c.getName()));
+        } catch (ClassNotFoundException ex) {
+            throw new RuntimeException("Loading IClass \"" + c.getName() + "\": " + ex);
+        }
+        if (iClass == null) throw new RuntimeException("Cannot load class \"" + c.getName() + "\" through the given ClassLoader");
+        return iClass;
     }
 
     /**
      * @see #classToIClass(Class)
      */
-    /*private*/ IClass[] classesToIClasses(Class[] cs) {
+    private IClass[] classesToIClasses(Class[] cs) {
         IClass[] result = new IClass[cs.length];
         for (int i = 0; i < cs.length; ++i) result[i] = this.classToIClass(cs[i]);
         return result;
+    }
+
+    private static Access modifiers2Access(int modifiers) {
+        return (
+            Modifier.isPrivate(modifiers)   ? Access.PRIVATE   :
+            Modifier.isProtected(modifiers) ? Access.PROTECTED :
+            Modifier.isPublic(modifiers)    ? Access.PUBLIC    :
+            Access.DEFAULT
+        );
     }
 }
