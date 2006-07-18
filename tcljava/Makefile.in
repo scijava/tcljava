@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.57 2006/06/30 00:30:52 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.58 2006/07/18 07:30:39 mdejong Exp $
 
 SHELL = /bin/sh
 
@@ -1087,6 +1087,7 @@ janino.build: janino.clean
 	$(JAVAC) $(JAVAC_FLAGS) \
 		$(JAVAC_D_FLAG) $(JANINO_BUILD_DIR) \
 		org/codehaus/janino/*.java \
+		org/codehaus/janino/tools/*.java \
 		org/codehaus/janino/util/*.java \
 		org/codehaus/janino/util/enumerator/*.java \
 		org/codehaus/janino/util/iterator/*.java \

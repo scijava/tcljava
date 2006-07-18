@@ -1,3 +1,69 @@
+2006-07-18  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * Makefile.in:
+        * src/janino/README.TXT:
+        * src/janino/org/codehaus/janino/AstGeneratorVisitor.java:
+        * src/janino/org/codehaus/janino/ByteArrayClassLoader.java:
+        * src/janino/org/codehaus/janino/CachingJavaSourceClassLoader.java:
+        * src/janino/org/codehaus/janino/ClassBodyEvaluator.java:
+        * src/janino/org/codehaus/janino/ClassFileIClass.java:
+        * src/janino/org/codehaus/janino/ClassLoaderIClassLoader.java:
+        * src/janino/org/codehaus/janino/CompileException.java:
+        * src/janino/org/codehaus/janino/Compiler.java:
+        * src/janino/org/codehaus/janino/Cookable.java:
+        * src/janino/org/codehaus/janino/Descriptor.java:
+        * src/janino/org/codehaus/janino/EvaluatorBase.java:
+        * src/janino/org/codehaus/janino/ExpressionEvaluator.java:
+        * src/janino/org/codehaus/janino/FilterWarningHandler.java:
+        * src/janino/org/codehaus/janino/IClass.java:
+        * src/janino/org/codehaus/janino/IClassLoader.java:
+        * src/janino/org/codehaus/janino/Java.java:
+        * src/janino/org/codehaus/janino/JavaSourceClassLoader.java:
+        * src/janino/org/codehaus/janino/JavaSourceIClassLoader.java:
+        * src/janino/org/codehaus/janino/MethodDescriptor.java:
+        * src/janino/org/codehaus/janino/Mod.java:
+        * src/janino/org/codehaus/janino/Parser.java:
+        * src/janino/org/codehaus/janino/ReflectionIClass.java:
+        * src/janino/org/codehaus/janino/ResourceFinderIClassLoader.java:
+        * src/janino/org/codehaus/janino/Scanner.java:
+        * src/janino/org/codehaus/janino/ScriptEvaluator.java:
+        * src/janino/org/codehaus/janino/SimpleCompiler.java:
+        * src/janino/org/codehaus/janino/UnitCompiler.java:
+        * src/janino/org/codehaus/janino/UnparseVisitor.java:
+        * src/janino/org/codehaus/janino/Visitor.java:
+        * src/janino/org/codehaus/janino/samples/ClassBodyDemo.java:
+        * src/janino/org/codehaus/janino/samples/DeclarationCounter.java:
+        * src/janino/org/codehaus/janino/samples/ExpressionDemo.java:
+        * src/janino/org/codehaus/janino/tools/Disassembler.java:
+        * src/janino/org/codehaus/janino/tools/JGrep.java:
+        * src/janino/org/codehaus/janino/util/CausedException.java:
+        * src/janino/org/codehaus/janino/util/ClassFile.java:
+        * src/janino/org/codehaus/janino/util/Producer.java:
+        * src/janino/org/codehaus/janino/util/ResourceFinderClassLoader.java:
+        * src/janino/org/codehaus/janino/util/StringPattern.java:
+        * src/janino/org/codehaus/janino/util/Traverser.java:
+        * src/janino/org/codehaus/janino/util/TunnelException.java:
+        * src/janino/org/codehaus/janino/util/enumerator/Enumerator.java:
+        * src/janino/org/codehaus/janino/util/enumerator/EnumeratorSet.java:
+        * src/janino/org/codehaus/janino/util/iterator/DirectoryIterator.java:
+        * src/janino/org/codehaus/janino/util/iterator/IteratorCollection.java:
+        * src/janino/org/codehaus/janino/util/iterator/MultiDimensionalIterator.java:
+        * src/janino/org/codehaus/janino/util/iterator/ProducerIterator.java:
+        * src/janino/org/codehaus/janino/util/iterator/ScopeIterator.java:
+        * src/janino/org/codehaus/janino/util/iterator/TraversingIterator.java:
+        * src/janino/org/codehaus/janino/util/resource/JarDirectoriesResourceFinder.java:
+        * src/janino/org/codehaus/janino/util/resource/LazyMultiResourceFinder.java:
+        * src/janino/org/codehaus/janino/util/resource/MapResourceCreator.java:
+        * src/janino/org/codehaus/janino/util/resource/MapResourceFinder.java:
+        * src/janino/org/codehaus/janino/util/resource/MultiResourceFinder.java:
+        * src/janino/org/codehaus/janino/util/resource/PathResourceFinder.java:
+        * src/janino/org/codehaus/janino/util/resource/Resource.java:
+        * src/janino/org/codehaus/janino/util/resource/ResourceCreator.java:
+        * src/janino/org/codehaus/janino/util/resource/ResourceFinder.java:
+        Update to Janino 2.4.5 with local mods.
+        * src/tjc/tjc/library/tjcthread.tcl: Update Tcl scritps so that
+        specific SimpleCompiler API is invoked.
+
 2006-07-11  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * tests/inprogress/Unicode.test:
