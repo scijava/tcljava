@@ -1,36 +1,29 @@
-This message is to announce the new 1.3.2 release of Jacl and
+This message is to announce the new 1.3.3 release of Jacl and
 Tcl Blend.  These releases are the result of efforts by Mo DeJong
 and the Jacl and Tcl Blend user community.
 
-The 1.3.2 release of Jacl and Tcl Blend are available for
+The 1.3.3 release of Jacl and Tcl Blend are available for
 downloading at the following URL:
 
     http://sourceforge.net/project/showfiles.php?group_id=13005
 
-The 1.3.2 version is a "production" ready release, it is
+The 1.3.3 version is a "production" ready release, it is
 considered stable enough to be used on an everyday basis.
 The code in this release is already being used by customers
 in production environments on a daily basis.
 
-What's New in the 1.3.2 Release?
+What's New in the 1.3.3 Release?
 ----------------------------------
 
-The 1.3.2 release includes a couple of minor new features
-and some important bug fixes. Tcl Blend now includes the
-file win/libjvm.dll.a, it is needed to build with some broken
-JDKs in a Windows environment. Running Jacl and Tcl Blend in
-a Windows environment is now easier as a batch file startup
-script is now installed as part of the default build.
-A pre-compiled Jacl release that includes only the files
-needed to run Jacl is now available. The jaclsh startup script
-now returns a non-zero exit status if some error was encountered
-while processing a script. IO support in the Interp class
-has been re-implemented so that it makes use of the new IO
-layer. Jacl and Tcl Blend can now be compiled in a JDK 1.5
-environment. A number of tricky expr command number parsing
-bugs have been fixed in Jacl. Also, the classloader issues that
-made it difficult to run Jacl in certain environments have
-been resolved.
+The 1.3.3 release includes only important bug fixes. Jacl's
+exec command has been fixed so that subprocess reading threads
+will not deadlock. Tcl Blend's Interp.evalFile() API
+has been implemented, it no longer raises an exception when
+invoked. The configure script has been fixed so that the
+--prefix option will default to /usr/local instead of
+generating path related errors. Jacl's lsort -dictionary
+command has been fixed so that sort order matches that
+of Tcl 8.4.
 
 See the new_features.txt and changes.txt files for more info.
 

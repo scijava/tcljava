@@ -267,3 +267,9 @@ unsupported command. The name of this command is unsupported::jdetachcall.
 It works just jike java::call except that it will not block and it
 will work for instance and static methods. This method should only
 be used for blocking AWT like calls!
+
+(Encodings with Jacl)
+
+Jacl does not support certain escape based multi-byte encodings like
+shiftjis, iso2022-jp, and related encodings.
+
