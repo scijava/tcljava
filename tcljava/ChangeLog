@@ -1,3 +1,36 @@
+2006-07-26  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/native/javaIdle.c:
+        * src/native/javaInterp.c (Java_tcl_lang_Interp_evalString,
+        Java_tcl_lang_Interp_evalTclObject, JavaCmdProc,
+        BTestCmd): Reimplement eval() methods and JavaCmdProc
+        so that a Java exception is never left pending when
+        invoked from Tcl. A Java exception can only be thrown
+        when invoked from a Java method. Return a Tcl status
+        from native eval methods.
+        * src/tclblend/tcl/lang/Interp.java (eval, evalString,
+        evalTclObject, callCommand, checkPendingException):
+        Replace propagateException field with pendingException.
+        Reimplement eval methods so that they make use of the
+        pendingException field and use an int result status
+        from the native eval methods. This new implementation
+        will never leave a Java exception pending in the JVM
+        when a Java method is invoked from Tcl. As the stack
+        is unwound, a Java method can rethrow the exception.
+        This new implementation maintains compatibility and
+        avoids an edge case that resulted in an assert because
+        of a pending exception.
+        * src/tests/tcljava/tcl/lang/JtestCmd.java:
+        Add "npe" and "tclexception" methods for use in tests.
+        * src/tests/tcljava/tests/TestExceptionPending.java:
+        Test methods that call eval from Java and check for
+        Exceptions.
+        * tests/tclblend/javaInterp.test: Add test cases
+        for assert due to pending exception bug. Use new
+        JNI exception pending test logic.
+        * tests/tcljava/tcljavaInterp.test: Add exception
+        handler test that work in both Jacl and Tcl Blend.
+
 2006-07-18  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/janino/org/codehaus/janino/tools/JGrep.java:

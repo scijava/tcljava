@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcljavaInterp.test,v 1.6 2006/06/30 01:07:32 mdejong Exp $
+# RCS: @(#) $Id: tcljavaInterp.test,v 1.7 2006/07/26 20:55:28 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -179,6 +179,104 @@ TclList 24 bytes}
 test javaInterp-2.0 {TclObject memory sizes} {
     testtclobjectmemory
 } $memsizes
+
+
+test javaInterp-3.1 {Exception Propagation} {
+    java::call tests.TestExceptionPending pending1
+} 1
+
+test javaInterp-3.2 {Exception Propagation} {
+    java::call tests.TestExceptionPending pending2 [java::getinterp]
+} 1
+
+test javaInterp-3.3 {Exception Propagation} {
+    java::call tests.TestExceptionPending pending3 [java::getinterp]
+} 1
+
+test javaInterp-3.4 {Exception Propagation} {
+    java::call tests.TestExceptionPending pending4 [java::getinterp]
+} 1
+
+test javaInterp-3.5 {Exception Propagation} {
+    java::call tests.TestExceptionPending pending5 [java::getinterp]
+} 1
+
+test javaInterp-4.0 {pending Exception} {
+    set script {
+        catch {jtest tclexception}
+    }
+    list [catch {eval $script} err] $err
+} {0 1}
+
+test javaInterp-4.1 {pending Exception} {
+    set script {
+        catch {jtest tclexception}
+        error "msg2"
+    }
+    list [catch {eval $script} err] $err
+} {1 msg2}
+
+test javaInterp-4.2 {pending Exception} {
+    set script {
+        catch {java::throw [java::new NullPointerException msg1]}
+        error "msg2"
+    }
+    list [catch {eval $script} err] $err
+} {1 msg2}
+
+test javaInterp-4.3 {pending Exception} {
+    set script {
+        catch {jtest npe}
+        error "msg2"
+    }
+    set caught 0
+    java::try {
+        eval $script
+    } catch {NullPointerException ex} {
+        set caught 1
+    }
+    set caught
+} {1}
+
+test javaInterp-4.4 {pending Exception} {
+    set script {
+        catch {jtest npe}
+        error "msg2"
+    }
+    set caught 0
+    java::try {
+        [java::getinterp] eval $script
+    } catch {NullPointerException ex} {
+        set caught 1
+    }
+    set caught
+} {1}
+
+test javaInterp-4.5 {pending Exception} {
+    set results [list]
+
+    lappend results [catch {
+        jtest tclexception
+    } err] $err
+
+    set errorInfo {}
+    lappend results [[java::getinterp] eval {set i 0}]
+    lappend results $errorInfo
+
+    set results
+} {1 msg {} {}}
+
+test javaInterp-5.0 {pending Exception} {
+    set errorInfo {}
+    after 0 "jtest tclexception"
+    after 10 "set done 1"
+    vwait done
+    set errorInfo
+} {msg
+    while executing
+"jtest tclexception"
+    ("after" script)}
+
 
 # cleanup
 

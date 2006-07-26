@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaIdle.c,v 1.6 2002/12/30 05:53:29 mdejong Exp $
+ * RCS: @(#) $Id: javaIdle.c,v 1.7 2006/07/26 20:55:27 mdejong Exp $
  */
 
 #include "java.h"
@@ -128,6 +128,10 @@ JavaIdleProc(
     JavaInfo* jcache = JavaGetCache();
     int fromJNIMethod = JavaNotifierInDoOneEvent();
 
+#ifdef TCLBLEND_DEBUG
+    fprintf(stderr, "TCLBLEND_DEBUG: JavaIdleProc : fromJNIMethod is %d\n", fromJNIMethod);
+#endif /* TCLBLEND_DEBUG */
+
     /*fprintf(stderr, "JavaIdleProc got global ref %x\n", gref);*/
 
     if ((*env)->ExceptionOccurred(env)) {
@@ -164,8 +168,13 @@ JavaIdleProc(
      */
 
     if (exception) {
-	 if (fromJNIMethod)
+	 if (fromJNIMethod) {
+#ifdef TCLBLEND_DEBUG
+    fprintf(stderr, "TCLBLEND_DEBUG: JavaIdleProc : rethrowing Exception\n");
+#endif /* TCLBLEND_DEBUG */
+
 	     (*env)->Throw(env, exception);
+	 }
 	 (*env)->DeleteLocalRef(env, exception);
     }
 }

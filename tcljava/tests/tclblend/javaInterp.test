@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: javaInterp.test,v 1.11 2006/02/08 23:53:47 mdejong Exp $
+# RCS: @(#) $Id: javaInterp.test,v 1.12 2006/07/26 20:55:28 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -668,6 +668,156 @@ test javaInterp-24.2 {callCommand completion code} {
 } 1234
 
 # JavaGetInterp is already tested by the rest of this file
+
+test javaInterp-25.1 {Interp.callCommand} {
+    # When Interp.callCommand is invoked for this call to
+    # java::throw, it does not propagate the Java exception.
+
+    list \
+        [catch {java::throw [java::new Exception myerr1]}] \
+        [btest isjniexceptionpending]
+} {1 0}
+
+test javaInterp-25.2 {Interp.callCommand} {
+    # The Interp.callCommand invoked by {$i eval ...}
+    # does not propagate the Java exception.
+
+    set i [java::getinterp]
+    set script {java::throw [java::new Exception myerr1]}
+
+    list \
+        [catch {$i eval $script}] \
+        [btest isjniexceptionpending]
+} {1 0}
+
+test javaInterp-25.3 {Interp.callCommand} {
+    # When Interp.callCommand is invoked via
+    # {$i eval ...} it would stop propagation
+    # of the exception. Unfortunatly, that is too
+    # late as the exception is propagated by
+    # the jtest invocation. Tcl's catch command
+    # in the script being evaluated does not
+    # know how to clear the JNI exception pending
+    # flag. The exception is propagated because
+    # the interp class thinks that Interp.eval()
+    # was invoked from Java code.
+
+    set i [java::getinterp]
+    set script {
+    set RESULT [list \
+        [catch {jtest tclexception}] \
+        [btest isjniexceptionpending] \
+    ]
+}
+
+    set RESULT {}
+    list [catch {$i eval $script}] $RESULT
+} {0 {1 0}}
+
+test javaInterp-25.4 {Interp.callCommand} {
+    # This test raises a NullPointerException
+    # in the implementation of the cmdProc()
+    # method. Unlike a NullPointerException
+    # thrown by the java::throw command, this
+    # code does not wrap the NullPointerException
+    # as a ReflectException, as a result it
+    # is should not be caught by the catch
+    # command. Trouble is, Tcl's catch command
+    # does not behave exactly like Jacl's catch
+    # command, it will try to catch a RuntimeException.
+    # Deal with this confusing case by throwing
+    # a class derived from RuntimeException at the
+    # end of a Java eval block. In the case where
+    # only a catch command is run, this exception
+    # would be caught. Jacl would unwind the stack
+    # until the java::try command caught the npe.
+
+    set i [java::getinterp]
+    set script {
+    set RESULT [list \
+        [catch {jtest npe}] \
+        [btest isjniexceptionpending] \
+    ]
+}
+
+    set RESULT {}
+    set caught 0
+    java::try {
+        $i eval $script
+    } catch {NullPointerException npe} {
+        set caught 1
+    }
+    list $caught $RESULT
+} {1 {1 0}}
+
+test javaInterp-25.5 {Interp.callCommand} {
+    # This test raises a NullPointerException
+    # using the java::throw command. This will
+    # wrap the NullPointerException as a
+    # ReflectException so that it can be
+    # caught with the catch command.
+
+    set i [java::getinterp]
+    set script {
+    set RESULT [list \
+        [catch {java::throw [java::new NullPointerException myerr1]}] \
+        [btest isjniexceptionpending] \
+    ]
+}
+
+    set RESULT {}
+    set caught 0
+    java::try {
+        $i eval $script
+    } catch {NullPointerException npe} {
+        set caught 1
+    }
+    list $caught $RESULT
+} {0 {1 0}}
+
+test javaInterp-25.6 {Interp.callCommand} {
+    # Invoking Interp.callCommand from Tcl code invoked
+    # by Java code causes the exception to be propataged,
+    # but that should not happen since the first command
+    # in the evaluation caught a Tcl error.
+
+    set i [java::getinterp]
+    set script {
+    set RESULT [list \
+        [catch {java::throw [java::new Exception myerr1]}] \
+        [btest isjniexceptionpending] \
+    ]
+}
+
+    set RESULT {}
+    set caught 0
+    java::try {
+        $i eval $script
+    } catch {Exception e} {
+        set caught 1
+    }
+    list $caught $RESULT
+} {0 {1 0}}
+
+test javaInterp-25.7 {Interp.callCommand} {
+    # If Tcl's catch command is used to catch a Java exception, then
+    # the JNI exception pending flag is not cleared. The result is
+    # that next call to a Java method (java::getinterp) will generate
+    # a panic since a JNI exception is pending. Once the problem is
+    # fixed in the Interp class and the JNI layer, this code will
+    # no longer generate a panic().
+
+    set i [java::getinterp]
+    set script {
+catch {java::throw [java::new Exception myerr1]}
+java::getinterp
+}
+
+    list \
+        [catch {$i {eval java.lang.String} $script} msg] \
+        $msg
+} {0 {}}
+
 
 # cleanup
 

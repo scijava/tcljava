@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: JtestCmd.java,v 1.4 2002/12/30 05:53:29 mdejong Exp $
+ * RCS: @(#) $Id: JtestCmd.java,v 1.5 2006/07/26 20:55:27 mdejong Exp $
  *
  */
 
@@ -23,13 +23,15 @@ import java.util.*;
  */
 
 class JtestCmd implements Command {
-    static final private String validCmds[] = {
+    static final private String[] validCmds = {
 	"compcode",
 	"equal",
 	"gc",
 	"getobject",
 	"refcount",
 	"type",
+	"tclexception",
+	"npe"
     };
 
     static final private int OPT_COMPCODE 	= 0;
@@ -38,26 +40,28 @@ class JtestCmd implements Command {
     static final private int OPT_GETOBJECT	= 3;
     static final private int OPT_REFCOUNT	= 4;
     static final private int OPT_TYPE 		= 5;
+    static final private int OPT_TCLEXCEPTION 	= 6;
+    static final private int OPT_NPE 		= 7;
 
-    public void cmdProc(Interp interp, TclObject argv[])
-	    throws TclException {
-	if (argv.length < 2) {
-	    throw new TclNumArgsException(interp, 1, argv, 
+    public void cmdProc(Interp interp, TclObject[] objv)
+	    throws TclException
+    {
+	if (objv.length < 2) {
+	    throw new TclNumArgsException(interp, 1, objv, 
 		    "option ?arg arg ...?");
 	}
-	int opt = TclIndex.get(interp, argv[1], validCmds, "option", 0);
+	int opt = TclIndex.get(interp, objv[1], validCmds, "option", 0);
 
 	switch (opt) {
-	case OPT_COMPCODE:
-	    /*
-	     * Returns a TclException completion code, or ""
-	     */
-	    if (argv.length != 3) {
+	case OPT_COMPCODE: {
+	    // Returns a TclException completion code, or ""
+
+	    if (objv.length != 3) {
 		throw new TclException(interp, "wrong # args: should be \"" +
-			argv[0] + " compcode script\"");
+			objv[0] + " compcode script\"");
 	    }
 
-	    TclObject obj = argv[2];
+	    TclObject obj = objv[2];
 	    obj.preserve();
 	    try {
 	        interp.eval(obj, TCL.EVAL_GLOBAL);
@@ -67,51 +71,47 @@ class JtestCmd implements Command {
 	        obj.release();
 	    }
 	    break;
+	}
+	case OPT_EQUAL: {
+	    // Returns if the two objects refer to the same Java object.
 
-	case OPT_EQUAL:
-	    /*
-	     * Returns if the two objects refer to the same Java object.
-	     */
-	    if (argv.length != 4) {
+	    if (objv.length != 4) {
 		throw new TclException(interp, "wrong # args: should be \"" +
-			argv[0] + " equal object1 object2\"");
+			objv[0] + " equal object1 object2\"");
 	    }
 
-	    TclObject obj1 = argv[2];
-	    TclObject obj2 = argv[3];
+	    TclObject obj1 = objv[2];
+	    TclObject obj2 = objv[3];
 
 	    interp.setResult(obj1 == obj2);
 	    break;
-
-	case OPT_GC:
+	}
+	case OPT_GC: {
 	    System.gc();
 	    break;
+	}
+	case OPT_GETOBJECT: {
+	    // Wraps a TclObject into a ReflectObject so that
+	    // it can be passed to methods that take TclObject's.
 
-	case OPT_GETOBJECT:
-	    /*
-	     * Wraps a TclObject into a ReflectObject so that
-	     * it can be passed to methods that take TclObject's.
-	     */
-
-	    if (argv.length != 3) {
-		throw new TclNumArgsException(interp, 2, argv, 
+	    if (objv.length != 3) {
+		throw new TclNumArgsException(interp, 2, objv, 
 		        "tclvalue");
 	    }
 	    interp.setResult(ReflectObject.newInstance(interp,
-					  TclObject.class, argv[2]));
+					  TclObject.class, objv[2]));
 	    break;
+	}
+	case OPT_REFCOUNT: {
+	    // Returns the reference count of an object.
+	    // E.g. jtest refcount $obj
 
-	case OPT_REFCOUNT:
-	    /*
-	     * Returns the reference count of an object.
-	     * E.g. jtest refcount $obj
-	     */
-	    if (argv.length != 3) {
+	    if (objv.length != 3) {
 		throw new TclException(interp, "wrong # args: should be \"" +
-			argv[0] + " type object\"");
+			objv[0] + " type object\"");
 	    }
 
-	    TclObject o = argv[2];
+	    TclObject o = objv[2];
 
 	    /*
 	     * The following script will return 1
@@ -124,21 +124,31 @@ class JtestCmd implements Command {
 	     */	    
 	    interp.setResult(o.getRefCount()-1);
 	    break;
+	}
+	case OPT_TYPE: {
+	    // Returns the Java class name of an object.
+	    // E.g. info type $a
 
-	case OPT_TYPE:
-	    /*
-	     * Returns the Java class name of an object.
-	     * E.g. info type $a
-	     */
-	    if (argv.length != 3) {
+	    if (objv.length != 3) {
 		throw new TclException(interp, "wrong # args: should be \"" +
-			argv[0] + " type object\"");
+			objv[0] + " type object\"");
 	    }
 
 	    interp.setResult(TclString.newInstance(
-		    argv[2].getInternalRep().getClass().getName()));
+		    objv[2].getInternalRep().getClass().getName()));
 	    break;
 	}
+	case OPT_TCLEXCEPTION: {
+	    // Raise a TclException
+
+	    throw new TclException(interp, "msg");
+	}
+	case OPT_NPE: {
+	    // Raise a NPE, it extends RuntimeException
+
+	    throw new NullPointerException();
+	}
+	} // end switch block
     }
 }
 

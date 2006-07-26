@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.37 2006/04/13 07:36:50 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.38 2006/07/26 20:55:27 mdejong Exp $
  *
  */
 
@@ -96,8 +96,11 @@ HashMap[] importTable = {new HashMap(), new HashMap()};
 // Used ONLY by CObject
 ArrayList cobjCleanup = new ArrayList();
 
-// True when callCommand should propagate exceptions
-boolean propagateException = false;
+// This field is set to a non-null value when
+// a Tcl command implemented as a Java
+// Command.cmdProc() raises an exception.
+
+Throwable pendingException = null;
 
 // Java thread this interp was created in. This is used
 // to check for user coding errors where the user tries
@@ -965,50 +968,33 @@ resetResult();
  *----------------------------------------------------------------------
  */
 
-private native void
+private native int
 evalString(
     String script,	// A script to evaluate.
-    int flags)		// Flags, either 0 or TCL.EVAL_GLOBAL.
-throws 
-    TclException; 	// A standard Tcl exception.
+    int flags);		// Flags, either 0 or TCL.EVAL_GLOBAL.
 
-private native void
+private native int
 evalTclObject(
     long objPtr,	// Tcl_Obj* from CObject
     String string,	// String to evaluate
-    int flags)		// Flags, either 0 or TCL.EVAL_GLOBAL.
-throws 
-    TclException; 	// A standard Tcl exception.
-
+    int flags);		// Flags, either 0 or TCL.EVAL_GLOBAL.
 
 public void
 eval(
     String script,	// A script to evaluate.
     int flags)		// Flags, either 0 or TCL.EVAL_GLOBAL.
-throws 
+throws
     TclException 	// A standard Tcl exception.
 {
-    boolean held = false;
-    if (!propagateException) {
-        propagateException = true;
-        held = true;
-    }
-    try {
-        evalString(script, flags);
-    } finally {
-        if (held) {
-            if (propagateException == false)
-                throw new TclRuntimeError("propagateException was false");
-            propagateException = false;
-        }
-    }
+    pendingException = null;
+    int ccode = evalString(script, flags);
+    checkPendingException(ccode);
 }
-
 
 public void 
 eval(
     String script)	// A script to evaluate.
-throws 
+throws
     TclException 	// A standard Tcl exception.
 {
     eval(script, 0);
@@ -1019,31 +1005,21 @@ public void
 eval(
     TclObject tobj,	// A Tcl object holding a script to evaluate.
     int flags)		// Flags, either 0 or TCL.EVAL_GLOBAL.
-throws 
+throws
     TclException 	// A standard Tcl exception.
 {
-    boolean held = false;
-    if (!propagateException) {
-        propagateException = true;
-        held = true;
-    }
-
     // Pass the Tcl_Obj ptr or the String object
     // directly to evalTclObject for efficiency
+
     long objPtr = tobj.getCObjectPtr();
     String str = null;
-    if (objPtr == 0)
+    if (objPtr == 0) {
         str = tobj.toString();
-
-    try {
-        evalTclObject(objPtr, str, flags);
-    } finally {
-        if (held) {
-            if (propagateException == false)
-                throw new TclRuntimeError("propagateException was false");
-            propagateException = false;
-        }
     }
+
+    pendingException = null;
+    int ccode = evalTclObject(objPtr, str, flags);
+    checkPendingException(ccode);
 }
 
 /*
@@ -1246,13 +1222,18 @@ closeInputStream(
  *
  * callCommand --
  *
- *	Invoke a Tcl command object and deal with any errors that result.
- *	This method may or may not let the exceptions propagate up
- *	to the caller, based on the propagateException flag. When
- *	invoked from Tcl, we would not want to leave a Java
- *	exception pending. When invoked from Java, we do want to
- *	propagate the exception up to the caller. This method is
- *	only ever invoked from function JavaCmdProc.
+ *	Invoke a Command object's cmdProc method and deal with any
+ *	errors that result. This method is only ever invoked from
+ *	the C function JavaCmdProc via JNI when a command is
+ *	evaluated in the Tcl interpreter. This method should never
+ *	throw an exception or fail to catch an exception raised
+ *	during the cmdProc method, since it is invoked from Tcl
+ *	and other JNI layer interactions are not well defined
+ *	when an exception is left pending. This method will
+ *	set the pendingException field inside the interp if
+ *	an exception in the cmdProc method was caught, the caller
+ *	should invoke checkPendingException from a Java method
+ *	that can throw an exception.
  *
  * Results:
  *	Returns the result code.
@@ -1266,33 +1247,127 @@ closeInputStream(
 private int
 callCommand(
     Command cmd,		// Command to invoke.
-    TclObject argv[])		// Argument array for command.
-        throws TclException
+    TclObject[] objv)		// Argument array for command.
 {
+    final boolean debug = false;
+
+    if (debug) {
+        System.err.println("Interp.callCommand()");
+        for (int i=0; i < objv.length; i++) {
+            System.err.println("objv[" + i + "] = " + objv[i]);
+        }
+    }
+
     try {
 	CObject.cleanupPush(this);
-	cmd.cmdProc(this, argv);
+	pendingException = null;
+	cmd.cmdProc(this, objv);
+
+	if (debug) {
+	    System.err.println("No Exception in Command.cmdProc() returning TCL.OK");
+	}
+
 	return TCL.OK;
     } catch (TclException e) {
-	if (propagateException)
-	    throw e;
-	else
-	    return e.getCompletionCode();
-    } catch (RuntimeException e) {
-	// This should not happen, if it does it means there is
-	// a bug somewhere in the implementation of a command.
-	if (propagateException) {
-	    throw e;
-	} else {
-	    ByteArrayOutputStream baos = new ByteArrayOutputStream(1000);
-	    PrintStream ps = new PrintStream(baos);
-	    ps.println("RuntimeException in Java command implementation");
-	    e.printStackTrace(ps);
-	    setResult(baos.toString());
-	    return TCL.ERROR;
+	if (debug) {
+	    System.err.println("caught TclException during Command.cmdProc()");
 	}
+
+	pendingException = e;
+	int ccode = e.getCompletionCode();
+
+	if (debug) {
+	    System.err.println("pendingException changed to : " +
+	        ((pendingException == null) ? null :
+	            "non-null : " + pendingException.toString()));
+	    System.err.println("returing ccode : " + ccode);
+	}
+
+	return ccode;
+    } catch (RuntimeException e) {
+	if (debug) {
+	    System.err.println("caught RuntimeException during Command.cmdProc()");
+	}
+
+	pendingException = e;
+
+	if (debug) {
+	    System.err.println("pendingException changed to : " +
+	        ((pendingException == null) ? null :
+	            "non-null : " + pendingException.toString()));
+	}
+
+	return TCL.ERROR;
     } finally {
 	CObject.cleanupPop(this);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * checkPendingException --
+ *
+ *	Invoked after Tcl code has been evaluated. This method
+ *	checks for a Java exception that might have been raised
+ *	during execution of the Tcl code. If there was no Java
+ *	exception pending and the result code from the evaluation
+ *	is not TCL.OK, then a TclException is raised. This method
+ *	will only ever raise a TclException or a RuntimeException.
+ *	This method is a no-op if there was no error.
+ *
+ *----------------------------------------------------------------------
+ */
+
+private void
+checkPendingException(int ccode)
+    throws TclException, RuntimeException
+{
+    final boolean debug = false;
+
+    if (debug) {
+        System.err.println("checkPendingException");
+        System.err.println("ccode is " + ccode);
+        System.err.println("pendingException is : " +
+                ((pendingException == null) ? null :
+                    ("non-null : " + pendingException.toString())));
+    }
+
+    if (pendingException != null) {
+        if (pendingException instanceof TclException) {
+            // If the Tcl layer indicated that the return
+            // result was not TCL.OK, then raise the pending
+            // exception now.
+
+            if (ccode != TCL.OK) {
+                TclException te = (TclException) pendingException;
+                pendingException = null;
+                throw te;
+            }
+        } else if (pendingException instanceof RuntimeException) {
+            // Note that a pending RuntimeException is always
+            // thrown even if the Tcl thinks that an error has
+            // been caught via Tcl's catch command.
+
+            RuntimeException re = (RuntimeException) pendingException;
+            pendingException = null;
+            throw re;
+        } else {
+            pendingException = null;
+            throw new TclRuntimeError("expected TclException or RuntimeException" +
+                " but got " + pendingException.getClass().getName() + ": " +
+                pendingException.getMessage());
+        }
+    }
+
+    if (ccode != TCL.OK) {
+        // If there was no pending exception, but Tcl returns
+        // an error code, then wrap the error code into a
+        // TclException and throw it. This logic is from
+        // the C method JavaThrowTclException().
+
+        String msg = getResult().toString();
+        throw new TclException(null, msg, ccode);
     }
 }
 

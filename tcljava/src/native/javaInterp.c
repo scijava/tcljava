@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaInterp.c,v 1.23 2005/07/19 07:14:21 mdejong Exp $
+ * RCS: @(#) $Id: javaInterp.c,v 1.24 2006/07/26 20:55:27 mdejong Exp $
  */
 
 #include "java.h"
@@ -74,6 +74,10 @@ ThrowNullPointerException(
     JNIEnv *env,		/* Java environment pointer. */
     char *msg)			/* Message to include in exception. */
 {
+#ifdef TCLBLEND_DEBUG
+    fprintf(stderr, "TCLBLEND_DEBUG: ThrowNullPointerException()\n");
+#endif /* TCLBLEND_DEBUG */
+
     jclass nullClass = (*env)->FindClass(env,
 	    "java/lang/NullPointerException");
     if (!msg) {
@@ -250,7 +254,7 @@ Java_tcl_lang_Interp_doDispose(
  *
  * Class:     tcl_lang_Interp
  * Method:    evalString
- * Signature: (Ljava/lang/String;I)V
+ * Signature: (Ljava/lang/String;I)I
  *
  * Results:
  *	A standard Tcl result.
@@ -261,17 +265,27 @@ Java_tcl_lang_Interp_doDispose(
  *----------------------------------------------------------------------
  */
 
-void JNICALL
+jint JNICALL
 Java_tcl_lang_Interp_evalString(
     JNIEnv *env,		/* Java environment. */
     jobject interpObj,		/* Handle to Interp object. */
     jstring string,		/* String to eval. */
     jint flags)			/* Evaluation flags. */
 {
-    Tcl_Interp *interp = JavaGetInterp(env, interpObj);
+    Tcl_Interp *interp;
     Tcl_Obj *objPtr;
     int result;
-    jobject exception;
+
+#ifdef TCLBLEND_DEBUG
+    fprintf(stderr, "TCLBLEND_DEBUG: Interp.evalString()\n");
+#endif /* TCLBLEND_DEBUG */
+
+    if ((*env)->ExceptionOccurred(env)) {
+	(*env)->ExceptionDescribe(env);
+	panic("Java_tcl_lang_Interp_evalString : unexpected pending exception");
+    }
+
+    interp = JavaGetInterp(env, interpObj);
 
     if (!interp) {
 	ThrowNullPointerException(env, NULL);
@@ -285,28 +299,28 @@ Java_tcl_lang_Interp_evalString(
     objPtr->bytes = JavaGetString(env, string, &objPtr->length);
     Tcl_IncrRefCount(objPtr);
 
+#ifdef TCLBLEND_DEBUG
+    fprintf(stderr, "TCLBLEND_DEBUG: cmd is : ->%s<-\n", objPtr->bytes);
+#endif /* TCLBLEND_DEBUG */
+
     if (!flags) {
 	result = Tcl_EvalObj(interp, objPtr);
     } else {
 	result = Tcl_GlobalEvalObj(interp, objPtr);
     }
 
-    exception = (*env)->ExceptionOccurred(env);
-    (*env)->ExceptionClear(env);
-    Tcl_DecrRefCount(objPtr);
-
     /*
-     * Check to see if an exception is being thrown.  If so, let it
-     * continue to propagate out to Java.  Otherwise convert a normal
-     * Tcl error into an exception.
+     * A Java exception can't be pending after Tcl code is eval'ed.
      */
 
-    if (exception) {
-	(*env)->Throw(env, exception);
-	(*env)->DeleteLocalRef(env, exception);
-    } else if (result != TCL_OK) {
-	JavaThrowTclException(env, interp, result);
+    if ((*env)->ExceptionOccurred(env)) {
+	(*env)->ExceptionDescribe(env);
+	panic("Java_tcl_lang_Interp_evalString : exception pending after eval");
     }
+
+    Tcl_DecrRefCount(objPtr);
+
+    return result;
 }
 
 /*
@@ -318,7 +332,7 @@ Java_tcl_lang_Interp_evalString(
  *
  * Class:     tcl_lang_Interp
  * Method:    evalTclObject
- * Signature: (JLjava/lang/String;I)V
+ * Signature: (JLjava/lang/String;I)I
  *
  * Results:
  *	A standard Tcl result.
@@ -329,7 +343,7 @@ Java_tcl_lang_Interp_evalString(
  *----------------------------------------------------------------------
  */
 
-void JNICALL
+jint JNICALL
 Java_tcl_lang_Interp_evalTclObject(
     JNIEnv *env,		/* Java environment. */
     jobject interpObj,		/* Handle to Interp object. */
@@ -337,10 +351,20 @@ Java_tcl_lang_Interp_evalTclObject(
     jstring string,		/* String */
     jint flags)			/* Evaluation flags. */
 {
-    Tcl_Interp *interp = JavaGetInterp(env, interpObj);
+    Tcl_Interp *interp;
     Tcl_Obj *objPtr;
     int result;
-    jobject exception;
+
+#ifdef TCLBLEND_DEBUG
+    fprintf(stderr, "TCLBLEND_DEBUG: Interp.evalTclObject()\n");
+#endif /* TCLBLEND_DEBUG */
+
+    if ((*env)->ExceptionOccurred(env)) {
+	(*env)->ExceptionDescribe(env);
+	panic("Java_tcl_lang_Interp_evalTclObject : unexpected pending exception");
+    }
+
+    interp = JavaGetInterp(env, interpObj);
 
     if (!interp) {
 	ThrowNullPointerException(env, NULL);
@@ -365,28 +389,28 @@ Java_tcl_lang_Interp_evalTclObject(
     }
     Tcl_IncrRefCount(objPtr);
 
+#ifdef TCLBLEND_DEBUG
+    fprintf(stderr, "TCLBLEND_DEBUG: cmd is : ->%s<-\n", objPtr->bytes);
+#endif /* TCLBLEND_DEBUG */
+
     if (!flags) {
 	result = Tcl_EvalObj(interp, objPtr);
     } else {
 	result = Tcl_GlobalEvalObj(interp, objPtr);
     }
 
-    exception = (*env)->ExceptionOccurred(env);
-    (*env)->ExceptionClear(env);
-    Tcl_DecrRefCount(objPtr);
-
     /*
-     * Check to see if an exception is being thrown.  If so, let it
-     * continue to propagate out to Java.  Otherwise convert a normal
-     * Tcl error into an exception.
+     * A Java exception can't be pending after Tcl code is eval'ed.
      */
 
-    if (exception) {
-	(*env)->Throw(env, exception);
-	(*env)->DeleteLocalRef(env, exception);
-    } else if (result != TCL_OK) {
-	JavaThrowTclException(env, interp, result);
+    if ((*env)->ExceptionOccurred(env)) {
+	(*env)->ExceptionDescribe(env);
+	panic("Java_tcl_lang_Interp_evalTclObject : exception pending after eval");
     }
+
+    Tcl_DecrRefCount(objPtr);
+
+    return result;
 }
 
 /*
@@ -1184,9 +1208,12 @@ JavaCmdDeleteProc(
  *
  * JavaCmdProc --
  *
- *	This routine is the wrapper for any Tcl command implemented in
- *	Java.  It converts the command arguments into TclObject values
- *	and then invokes the cmdProc method on the appropriate object.
+ *	This function is invoked by Tcl for any command that is
+ *	implemented by a Java object. This function converts
+ *	arguments from C Tcl_Obj refs to Java TclObject refs
+ *	and then invokes the Interp.callCommand() API to handle
+ *	the details of invoking the Java method and propagating
+ *	exceptions.
  *
  * Results:
  *	A standard Tcl result.
@@ -1217,6 +1244,10 @@ JavaCmdProc(
 	(*env)->ExceptionDescribe(env);
 	panic("JavaCmdProc : unexpected pending exception");
     }
+
+#ifdef TCLBLEND_DEBUG
+    fprintf(stderr, "TCLBLEND_DEBUG: JavaCmdProc()\n");
+#endif /* TCLBLEND_DEBUG */
 
     /*
      * Construct the argument array. Note that we invoke
@@ -1276,13 +1307,22 @@ JavaCmdProc(
 
     result = (*env)->CallIntMethod(env, interpObj,
 	    jcache->callCommand, cmd, args);
-    exception = (*env)->ExceptionOccurred(env);
 
-    if (exception) {
-	(*env)->ExceptionClear(env);
+    /*
+     * Interp.callCommand() takes special care to not allow
+     * a Java exception to be left pending. This is required
+     * since Tcl does not know how to clear a pending JNI
+     * exception using the catch command.
+     */
+
+    if ((*env)->ExceptionOccurred(env)) {
+	(*env)->ExceptionDescribe(env);
+	panic("JavaCmdProc : Interp.callCommand() raised an Exception");
     }
 
     /*
+     * Cleanup temp TclObject values saved in the objv
+     * array after clearing any pending exception.
      * Make sure none of the argument Tcl_Objs have
      * an invalid ref to a TclObject that has a
      * CObject or TclList internal rep. Decrement
@@ -1301,26 +1341,6 @@ JavaCmdProc(
     }
 
     (*env)->DeleteLocalRef(env, args);
-
-    /*
-     * We want to let a TclException or a RuntimeException
-     * propagate up to the caller from Interp.callCommand().
-     * Tricky part is, if the exception was thrown, then
-     * we need to return the result of a call to
-     * TclException.getCompletionCode().
-     */
-
-    if (exception) {
-	if ((*env)->IsInstanceOf(env, exception, jcache->TclException)
-	        == JNI_TRUE) {
-	    result = (*env)->CallIntMethod(env, exception,
-	            jcache->tclexceptionCcode);
-	} else {
-	    result = TCL_ERROR;
-	}
-	(*env)->Throw(env, exception);
-	(*env)->DeleteLocalRef(env, exception);
-    }
 
     return result;
 }
@@ -1840,10 +1860,19 @@ int BTestCmd(
 {
     int index;
     static CONST char *options[] = { 
-	"compcode", "isjobject", "refcount", "type", NULL 
+	"compcode",
+	"isjniexceptionpending",
+	"isjobject",
+	"refcount",
+	"type",
+	NULL 
     };
     enum options { 
-	BTEST_COMPCODE, BTEST_ISJOBJECT, BTEST_REFCOUNT, BTEST_TYPE
+	BTEST_COMPCODE,
+	BTEST_IS_JNI_EXCEPTION_PENDING,
+	BTEST_ISJOBJECT,
+	BTEST_REFCOUNT,
+	BTEST_TYPE
     };
 
     if (objc < 2) {
@@ -1869,6 +1898,20 @@ int BTestCmd(
 	    result = Tcl_GlobalEvalObj(interp, objPtr);
 	    Tcl_DecrRefCount(objPtr);
 	    Tcl_SetObjResult(interp, Tcl_NewIntObj(result));
+	    break;
+	}
+	case BTEST_IS_JNI_EXCEPTION_PENDING: {
+	    JNIEnv *env;
+	    if (objc != 2) {
+		Tcl_WrongNumArgs(interp, 2, objv, "");
+		return TCL_ERROR;
+	    }
+	    env = JavaGetEnv();
+	    jboolean pending = 0;
+	    if ((*env)->ExceptionOccurred(env)) {
+	        pending = 1;
+	    }
+	    Tcl_SetObjResult(interp, Tcl_NewIntObj(pending));
 	    break;
 	}
 	case BTEST_ISJOBJECT: {
