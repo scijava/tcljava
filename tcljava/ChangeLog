@@ -1,5 +1,11 @@
 2006-07-26  Mo DeJong  <mdejong@users.sourceforge.net>
 
+        * src/tclblend/tcl/lang/Interp.java (shlib_load):
+        Make shlib_load synchronized in case two threads
+        invoked the Interp constructor at the same time.
+
+2006-07-26  Mo DeJong  <mdejong@users.sourceforge.net>
+
         * Makefile.in: Update 'make dist' build rules
         to include new files and remove old ones.
         Include itcl and tjc files in Jacl dist.
