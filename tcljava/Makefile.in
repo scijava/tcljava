@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.58 2006/07/18 07:30:39 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.59 2006/07/26 23:20:50 mdejong Exp $
 
 SHELL = /bin/sh
 
@@ -1697,7 +1697,6 @@ tcljavaDist: Makefile
 	cp -p $(TOP_DIR)/configure \
 		$(TOP_DIR)/configure.in \
 		$(TOP_DIR)/Makefile.in \
-		$(TOP_DIR)/bsjavac.sh \
 		$(TOP_DIR)/mingw_path.sh \
 		$(TOP_DIR)/mingw_paths.sh \
 		$(TOP_DIR)/mingw_path.test \
@@ -1717,12 +1716,7 @@ tcljavaDist: Makefile
 		$(DISTDIR)/mkinstalldirs
 
 	mkdir -p $(DISTDIR)/unix
-	cp -p 	$(TOP_DIR)/license.terms \
-		$(DISTDIR)/unix
-
 	mkdir -p $(DISTDIR)/win
-	cp -p 	$(TOP_DIR)/license.terms \
-		$(DISTDIR)/win
 
 	@# Don't just blindly recursively copy, we are bound to pick up kruft.
 
@@ -1739,6 +1733,7 @@ tcljavaDist: Makefile
 
 	cp -p $(TOP_DIR)/src/empty/empty.jar \
 		$(TOP_DIR)/src/empty/README.txt \
+		$(TOP_DIR)/src/empty/empty.sh \
 		$(DISTDIR)/src/empty
 
 	mkdir -p $(DISTDIR)/src/tcljava/tcl/lang
@@ -1793,6 +1788,11 @@ tcljavaDist: Makefile
 	cp -p $(TOP_DIR)/src/tests/tcljava/pkg2/*.java \
 		$(DISTDIR)/src/tests/tcljava/pkg2
 
+	mkdir -p $(DISTDIR)/src/tests/tcljava/testext
+	cp -p $(TOP_DIR)/src/tests/tcljava/testext/*.java \
+		$(TOP_DIR)/src/tests/tcljava/testext/*.tcl \
+		$(DISTDIR)/src/tests/tcljava/testext
+
 	mkdir -p $(DISTDIR)/src/tests/tcljava/tcl/lang
 	cp -p $(TOP_DIR)/src/tests/tcljava/tcl/lang/*.java \
 		$(DISTDIR)/src/tests/tcljava/tcl/lang
@@ -1817,7 +1817,8 @@ tcljavaDist: Makefile
 		$(DISTDIR)/docs/Keywords \
 		$(DISTDIR)/docs/TclJava \
 		$(DISTDIR)/docs/TclJavaLib \
-		$(DISTDIR)/docs/website
+		$(DISTDIR)/docs/website \
+		$(DISTDIR)/docs/Topics
 
 	cp -p $(TOP_DIR)/docs/*.html \
 		$(DISTDIR)/docs
@@ -1831,7 +1832,9 @@ tcljavaDist: Makefile
 		$(DISTDIR)/docs/website
 	cp -p $(TOP_DIR)/docs/website/*.gif \
 		$(DISTDIR)/docs/website
-
+	cp -p $(TOP_DIR)/docs/Topics/*.html \
+		$(TOP_DIR)/docs/Topics/*.gif \
+		$(DISTDIR)/docs/Topics
 
 #----------------------------------------------------------------
 # tcljavaDemoDist --
@@ -1856,17 +1859,14 @@ tcljavaDemoDist: Makefile
 		$(TOP_DIR)/demos/gluepkg/*.tcl \
 		$(TOP_DIR)/demos/gluepkg/*.jar \
 		$(TOP_DIR)/demos/gluepkg/README \
-		$(TOP_DIR)/license.terms \
 		$(DISTDIR)/demos/gluepkg
 	cp -p $(TOP_DIR)/demos/simplepkg/*.java \
 		$(TOP_DIR)/demos/simplepkg/*.tcl \
 		$(TOP_DIR)/demos/simplepkg/README \
-		$(TOP_DIR)/license.terms \
 		$(DISTDIR)/demos/simplepkg
 	cp -p $(TOP_DIR)/demos/watchpkg/*.java \
 		$(TOP_DIR)/demos/watchpkg/*.tcl \
 		$(TOP_DIR)/demos/watchpkg/README \
-		$(TOP_DIR)/license.terms \
 		$(DISTDIR)/demos/watchpkg
 	cp -p $(TOP_DIR)/demos/gridDemo/*.tcl \
 		$(TOP_DIR)/demos/gridDemo/README \
@@ -1907,6 +1907,11 @@ jaclDist: Makefile
 # jaclDistSrc: Copy Jacl source files into JACL_DISTDIR
 
 jaclDistSrc:
+	cp -p \
+		$(TOP_DIR)/license.amd \
+		$(TOP_DIR)/license.itcl \
+		$(JACL_DISTDIR)
+
 	cp -p $(TOP_DIR)/README.jacl \
 		$(JACL_DISTDIR)/README
 
@@ -1926,16 +1931,25 @@ jaclDistSrc:
 
 	cp -p $(JACL_SRC_DIR)/tcl/lang/library/*.tcl \
 		$(JACL_SRC_DIR)/tcl/lang/library/tclIndex \
-		$(TOP_DIR)/license.terms \
 		$(JACL_DISTDIR)/src/jacl/tcl/lang/library
 
 	mkdir -p $(JACL_DISTDIR)/tests/jacl
 	cp -p $(TOP_DIR)/tests/jacl/*.test \
+		$(TOP_DIR)/tests/jacl/*.tcl \
 		$(JACL_DISTDIR)/tests/jacl
 
 	mkdir -p $(JACL_DISTDIR)/tests/tcl
 	cp -p $(TOP_DIR)/tests/tcl/*.test \
 		$(JACL_DISTDIR)/tests/tcl
+
+	mkdir -p $(JACL_DISTDIR)/tests/tclparser
+	cp -p $(TOP_DIR)/tests/tclparser/*.test \
+		$(JACL_DISTDIR)/tests/tclparser
+                
+	mkdir -p $(JACL_DISTDIR)/tests/tclbench
+	cp -p $(TOP_DIR)/tests/tclbench/*.bench \
+		$(TOP_DIR)/tests/tclbench/*.tcl \
+		$(JACL_DISTDIR)/tests/tclbench
 
 	cp -p $(TOP_DIR)/jaclsh.in \
 		$(TOP_DIR)/jaclsh.bat.in \
@@ -1966,7 +1980,6 @@ jaclDemoDist: Makefile
 		$(TOP_DIR)/demos/pyramidpkg/*.html \
 		$(TOP_DIR)/demos/pyramidpkg/changeDefs.tcl \
 		$(TOP_DIR)/demos/pyramidpkg/README \
-		$(TOP_DIR)/license.terms \
 		$(DISTDIR)/demos/pyramidpkg
 
 # Sanity check by building, installing, running tests
@@ -2085,16 +2098,56 @@ itclDistSrc:
 	mkdir -p $(JACL_DISTDIR)/src/itcl/itcl/lang/library
 	cp -p $(TOP_DIR)/src/itcl/itcl/lang/library/*.tcl \
 		$(JACL_DISTDIR)/src/itcl/itcl/lang/library
+	mkdir -p $(JACL_DISTDIR)/src/itcl/tcl
+	mkdir -p $(JACL_DISTDIR)/src/itcl/tcl/lang
+	cp -p $(TOP_DIR)/src/itcl/tcl/lang/*.java \
+		$(JACL_DISTDIR)/src/itcl/tcl/lang
+	mkdir -p $(JACL_DISTDIR)/tests/itcl
+	cp -p $(TOP_DIR)/tests/itcl/*.test \
+		$(JACL_DISTDIR)/tests/itcl
 
 # tjcDistSrc: Copy TJC for Jacl source files into JACL_DISTDIR
 
 tjcDistSrc:
+	cp -p $(TOP_DIR)/tjc.in \
+		$(TOP_DIR)/tjc.bat.in \
+		$(JACL_DISTDIR)
+	mkdir -p \
+		$(JACL_DISTDIR)/docs/TJC
+	cp -p $(TOP_DIR)/docs/TJC/*.html \
+		$(JACL_DISTDIR)/docs/TJC
 	mkdir -p $(JACL_DISTDIR)/src
 	mkdir -p $(JACL_DISTDIR)/src/tjc
 	mkdir -p $(JACL_DISTDIR)/src/tjc/tcl
 	mkdir -p $(JACL_DISTDIR)/src/tjc/tcl/lang
 	cp -p $(TOP_DIR)/src/tjc/tcl/lang/*.java \
 		$(JACL_DISTDIR)/src/tjc/tcl/lang
+	mkdir -p $(JACL_DISTDIR)/src/tjc/tjc
+	mkdir -p $(JACL_DISTDIR)/src/tjc/tjc/library
+	cp -p $(TOP_DIR)/src/tjc/tjc/library/*.tcl \
+		$(JACL_DISTDIR)/src/tjc/tjc/library
+	mkdir -p $(JACL_DISTDIR)/src/tests/tjc
+	cp -p $(TOP_DIR)/src/tests/tjc/*.java \
+		$(JACL_DISTDIR)/src/tests/tjc
+	mkdir -p $(JACL_DISTDIR)/src/tests/tjc/tcl
+	mkdir -p $(JACL_DISTDIR)/src/tests/tjc/tcl/lang
+	cp -p $(TOP_DIR)/src/tests/tjc/tcl/lang/*.java \
+		$(JACL_DISTDIR)/src/tests/tjc/tcl/lang
+	mkdir -p $(JACL_DISTDIR)/src/tests/tjc/test
+	mkdir -p $(JACL_DISTDIR)/src/tests/tjc/test/tjc
+	cp -p $(TOP_DIR)/src/tests/tjc/test/tjc/*.java \
+		$(JACL_DISTDIR)/src/tests/tjc/test/tjc
+	mkdir -p $(JACL_DISTDIR)/src/tests/tjc/test/tjcext
+	mkdir -p $(JACL_DISTDIR)/src/tests/tjc/test/tjcext/library
+	cp -p $(TOP_DIR)/src/tests/tjc/test/tjcext/*.java \
+		$(JACL_DISTDIR)/src/tests/tjc/test/tjcext
+	cp -p $(TOP_DIR)/src/tests/tjc/test/tjcext/library/*.tcl \
+		$(JACL_DISTDIR)/src/tests/tjc/test/tjcext/library
+	mkdir -p $(JACL_DISTDIR)/tests/tjc
+	cp -p $(TOP_DIR)/tests/tjc/*.test \
+		$(TOP_DIR)/tests/tjc/*.tcl \
+		$(JACL_DISTDIR)/tests/tjc
+
 
 # janinoDistSrc: Copy Janino for Jacl source files into JACL_DISTDIR
 
@@ -2111,6 +2164,8 @@ janinoDistSrc:
 	mkdir -p $(JACL_DISTDIR)/src/janino/org/codehaus/janino/util/enumerator
 	mkdir -p $(JACL_DISTDIR)/src/janino/org/codehaus/janino/util/iterator
 	mkdir -p $(JACL_DISTDIR)/src/janino/org/codehaus/janino/util/resource
+	cp -p $(TOP_DIR)/src/janino/README.TXT \
+		$(JACL_DISTDIR)/src/janino/
 	cp -p $(TOP_DIR)/src/janino/org/codehaus/janino/*.java \
 		$(JACL_DISTDIR)/src/janino/org/codehaus/janino
 	cp -p $(TOP_DIR)/src/janino/org/codehaus/janino/doc-files/*.txt \
