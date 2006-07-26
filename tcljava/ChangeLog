@@ -12,12 +12,6 @@
 
 2006-07-26  Mo DeJong  <mdejong@users.sourceforge.net>
 
-        * Makefile.in: Update 'make dist' build rules
-        to include new files and remove old ones.
-        Include itcl and tjc files in Jacl dist.
-
-2006-07-26  Mo DeJong  <mdejong@users.sourceforge.net>
-
         * src/native/javaIdle.c:
         * src/native/javaInterp.c (Java_tcl_lang_Interp_evalString,
         Java_tcl_lang_Interp_evalTclObject, JavaCmdProc,
