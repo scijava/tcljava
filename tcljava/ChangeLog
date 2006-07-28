@@ -1,3 +1,17 @@
+2006-07-28  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/native/javaInterp.c: Add deallocated
+        Tcl_Obj check.
+        * src/tclblend/tcl/lang/Interp.java (eval):
+        Call preserve()/release() around the
+        evalTclObject() invocation so that the
+        ref count of the TclObject wrapped around
+        the Tcl_Obj* is incremented. This avoids
+        a crash during the eval invocation.
+        * tests/tcljava/tcljavaInterp.test:
+        Add test case for evalFile() bug.
+        [Bug 1530631]
+
 2006-07-26  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/tclblend/tcl/lang/Interp.java (shlib_load):

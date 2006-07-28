@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: javaInterp.c,v 1.24 2006/07/26 20:55:27 mdejong Exp $
+ * RCS: @(#) $Id: javaInterp.c,v 1.25 2006/07/28 20:53:06 mdejong Exp $
  */
 
 #include "java.h"
@@ -378,6 +378,12 @@ Java_tcl_lang_Interp_evalTclObject(
 
     if (objRef != 0) {
 	objPtr = *(Tcl_Obj**)&objRef;
+
+#ifdef TCL_MEM_DEBUG
+    if (objPtr->refCount == 0x61616161) {
+	panic("Java_tcl_lang_Interp_evalTclObject : disposed object");
+    }
+#endif
     } else {
 	if (!string) {
 	    ThrowNullPointerException(env, "No string to evaluate.");

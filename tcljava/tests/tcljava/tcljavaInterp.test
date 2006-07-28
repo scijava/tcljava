@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcljavaInterp.test,v 1.7 2006/07/26 20:55:28 mdejong Exp $
+# RCS: @(#) $Id: tcljavaInterp.test,v 1.8 2006/07/28 20:53:06 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -157,6 +157,19 @@ test javaInterp-1.8 {Use Interp.evalFile() API to source a Tcl file} {
     [java::getinterp] evalFile tl.tcl
     test_lengths
 } {1 1 1 1}
+
+test javaInterp-1.9 {Use Interp.evalFile() API to source a Tcl file} {
+    # Invoke Interp.evalFile() on a file that contains
+    # no commands (it does not set the interp result).
+    # This triggers a bug in the eval(TclObject) API
+    # when the TclObject ref count was failing to be
+    # incremented before the eval operation. This
+    # code would assert if the bug was detected, TCL_MEM_DEBUG
+    # needs to be enabled to detect this problem.
+    close [open empty.tcl w]
+    [java::getinterp] evalFile empty.tcl
+} {}
+
 
 # Size of TclList differs in Jacl and Tcl Blend
 
