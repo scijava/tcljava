@@ -42,6 +42,7 @@
         JNI exception pending test logic.
         * tests/tcljava/tcljavaInterp.test: Add exception
         handler test that work in both Jacl and Tcl Blend.
+        [Bug 1525613]
 
 2006-07-18  Mo DeJong  <mdejong@users.sourceforge.net>
 
