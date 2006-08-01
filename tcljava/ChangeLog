@@ -1,3 +1,15 @@
+2006-07-31  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * docs/Topics/BuildJaclUnix.html:
+        * docs/Topics/BuildJaclWin.html:
+        * docs/Topics/BuildTclBlendUnix.html:
+        * docs/Topics/BuildTclBlendWin.html:
+        Add build instructions.
+        * docs/Topics/EventLoop.html:
+        * docs/Topics/SetInterrupted.html:
+        Replace CRLF with LF.
+        * docs/Topics/index.html:
+
 2006-07-28  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/native/javaInterp.c: Add deallocated
