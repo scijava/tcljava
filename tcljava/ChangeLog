@@ -1,10 +1,16 @@
 2006-07-31  Mo DeJong  <mdejong@users.sourceforge.net>
 
+        * README.jacl:
+        * README.tclblend: Update README files for
+        1.4.0 release.
+        * known_issues.txt: Remove old issue notes.
+        * docs/contents.html:
+        * docs/Topics/index.html:
         * docs/Topics/BuildJaclUnix.html:
         * docs/Topics/BuildJaclWin.html:
         * docs/Topics/BuildTclBlendUnix.html:
         * docs/Topics/BuildTclBlendWin.html:
-        Add build instructions.
+        Add build instructions for 1.4.0 release.
         * docs/Topics/EventLoop.html:
         * docs/Topics/SetInterrupted.html:
         Replace CRLF with LF.
