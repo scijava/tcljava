@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: EventuallyFreed.java,v 1.2 2001/06/03 21:19:46 mdejong Exp $
+ * RCS: @(#) $Id: EventuallyFreed.java,v 1.3 2006/08/03 23:24:02 mdejong Exp $
  */
 
 package tcl.lang;
@@ -32,6 +32,11 @@ boolean mustFree = false;
 // Procedure to call to dispose.
 
 abstract void eventuallyDispose();
+
+// Set to true when tracking down tricky refCount issues
+
+final boolean debug = false;
+
 
 /**
  *----------------------------------------------------------------------
@@ -58,6 +63,11 @@ preserve()
     // Just increment its reference count.
 
     refCount++;
+
+    if (debug) {
+        System.out.println("Incremented refCount to " + refCount +
+            " for " + this);
+    }
 }
 
 /*
@@ -84,9 +94,18 @@ void
 release()
 {
     refCount--;
-    if (refCount == 0) {
 
+    if (debug) {
+        System.out.println("Decremented refCount to " + refCount +
+            " for " + this);
+    }
+
+    if (refCount == 0) {
 	if (mustFree) {
+	    if (debug) {
+	        System.out.println("Invoking subclass dispose()");
+	    }
+
 	    dispose();
 	}
     }
@@ -114,6 +133,10 @@ release()
 public void
 dispose()
 {
+    if (debug) {
+        System.out.println("EventuallyFreed.dispose() for " + this);
+    }
+
     // See if there is a reference for this pointer.  If so, set its
     // "mustFree" flag (the flag had better not be set already!).
 
@@ -122,12 +145,23 @@ dispose()
 	    throw new TclRuntimeError("eventuallyDispose() called twice");
         }
         mustFree = true;
+
+        if (debug) {
+            System.out.println("set mustFree flag for " + this);
+            System.out.println("refCount was " + refCount);
+        }
+
         return;
     }
 
     // No reference for this block.  Free it now.
 
+    if (debug) {
+        System.out.println("Invoking EventuallyFreed.eventuallyDispose() for " + this);
+    }
+
     eventuallyDispose();
 }
 
 } // end EventuallyFreed
+

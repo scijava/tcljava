@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.85 2006/08/03 22:33:12 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.86 2006/08/03 23:24:02 mdejong Exp $
  *
  */
 
@@ -294,6 +294,7 @@ private final int m_charCommonMax = 128;
 // methods from another thread.
 
 private Thread cThread;
+private String cThreadName;
 
 // Used ONLY by PackageCmd.
 
@@ -519,6 +520,7 @@ Interp()
     noEval           = 0;
 
     cThread	     = Thread.currentThread();
+    cThreadName	     = cThread.getName();
     notifier	     = Notifier.getNotifierForThread(cThread);
     notifier.preserve();
 
@@ -601,14 +603,31 @@ Interp()
 	e.printStackTrace();
 	throw new TclRuntimeError("unexpected TclException: " + e);
     }
+
+    // Debug print interp info, this is handy when tracking
+    // down where an Interp that was not disposed of properly
+    // was allocated.
+
+    if (false) {
+        try {
+            throw new Exception();
+        } catch (Exception e) {
+            System.err.println("Interp() : " + this);
+            e.printStackTrace(System.err);
+        }
+    }
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * dispose --
+ * Tcl_DeleteInterp -> dispose
  *
  *	Invoked to indicate that the interp should be disposed of.
+ *	If there are no Tcl_Preserve calls in effect for this
+ *	interpreter, it is deleted immediately, otherwise the
+ *	interpreter is deleted when the last Tcl_Preserve is
+ *	matched by a call to Tcl_Release.
  *
  * Results:
  *	None.
@@ -621,17 +640,35 @@ Interp()
 
 public void
 dispose() {
+    final boolean debug = false;
+
+    if (debug) {
+        System.out.println("Invoked Interp.dispose() for " + this);
+    }
+
+    // Interp.dispose() must be invoked from thread that invoked Interp()
+
     if (Thread.currentThread() != cThread) {
         throw new TclRuntimeError(
             "Interp.dispose() invoked in thread other than the one it was created in");
     }
+
+    // Mark the interpreter as deleted. No further evals will be allowed.
+    // Note that EventuallyFreed.dispose() is invoked below even if
+    // this interpreter has already been marked as deleted since
+    // this method can be invoked via EventuallyFreed.release().
+
+    if (! deleted) {
+        deleted = true;
+    }
+
     super.dispose();
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * eventuallyDispose --
+ * DeleteInterpProc -> eventuallyDispose
  *
  *	This method cleans up the state of the interpreter so that
  *	it can be garbage collected safely. This routine needs to
@@ -639,7 +676,8 @@ dispose() {
  *	alive indefinitely.
  *
  *	This proc should never be called directly. Instead it is called
- *	by the dispose() method of the EventuallyFreed superclass.
+ *	via the EventuallyFreed superclass. This method will only
+ *	ever be invoked once.
  *
  * Results:
  *	None.
@@ -653,11 +691,18 @@ dispose() {
 public void
 eventuallyDispose()
 {
-    if (deleted) {
-	return;
+    final boolean debug = false;
+
+    if (debug) {
+        System.out.println("Invoked Interp.eventuallyDispose() for " + this);
     }
 
-    deleted = true;
+    // The interpreter should already be marked deleted; otherwise how did we
+    // get here?
+
+    if (! deleted) {
+        throw new TclRuntimeError("eventuallyDispose called on interpreter not marked deleted");
+    }
 
     if (nestLevel > 0) {
         throw new TclRuntimeError("dispose() called with active evals");
@@ -668,6 +713,12 @@ eventuallyDispose()
     if (notifier != null) {
 	notifier.release();
 	notifier = null;
+
+	if (debug) {
+	    System.out.println("notifier set to null for " + this);
+	}
+    } else {
+	throw new TclRuntimeError("eventuallyDispose() already invoked for " + this);
     }
 
     // Dismantle everything in the global namespace except for the
@@ -776,21 +827,27 @@ eventuallyDispose()
  *
  * finalize --
  *
- *	Interpreter finalization method.
+ *	Interpreter finalization method. We print a message to
+ *	stderr if the user neglected to dispose of an Interp
+ *	properly. The Interp should have been disposed of
+ *	in the thread that created it.
  *
  * Results:
- *	None.
+ *	Prints to stderr.
  *
  * Side effects:
- *	Calls dispose() to ensure everything has been cleaned up.
+ *	None.
  *
  *----------------------------------------------------------------------
  */
 
 protected void
-finalize()
+finalize() throws Throwable
 {
-    dispose();
+    if (notifier != null) {
+        System.err.println("finalized interp has not been disposed : " + this);
+    }
+    super.finalize();
 }
 
 /*
@@ -3925,7 +3982,7 @@ getArgLineNumber(
  *
  *-------------------------------------------------------------------------
  */
-	
+
 void
 transferResult(
     Interp sourceInterp,	// Interp whose result and error information
@@ -3939,12 +3996,7 @@ throws
     TclException
 {
     if (sourceInterp == this) {
-      return;
-    }
-
-    if (sourceInterp.deleted) {
-        // Can't interact with a deleted interp
-        throw new TclRuntimeError("sourceInterp is being deleted");
+        return;
     }
 
     if (result == TCL.ERROR) {
@@ -3959,9 +4011,9 @@ throws
 	    sourceInterp.addErrorInfo("");
         }
         sourceInterp.errAlreadyLogged = true;
-        
+
         resetResult();
-        
+
 	obj = sourceInterp.getVar("errorInfo", TCL.GLOBAL_ONLY);
 	setVar("errorInfo", obj, TCL.GLOBAL_ONLY);
 
@@ -4982,11 +5034,18 @@ public
 void
 setInterrupted()
 {
-    if (interruptedEvent != null) {
+    if (deleted || (interruptedEvent != null)) {
         // This interpreter was interrupted already. Do nothing and
         // return right away. This logic handles the case of an
         // interpreter that was already disposed of because of a
         // previous interrupted event.
+        //
+        // The disposed check avoids a race condition between a
+        // timeout thread that will interrupt an interp and the
+        // main thread that could interrupt and then dispose
+        // of the interp. The caller of this method has no way
+        // to check if the interp has been disposed of, so this
+        // method needs to no-op on an already deleted interp.
 
         return;
     }
@@ -5009,21 +5068,10 @@ setInterrupted()
     // the next time events from the Tcl event queue are processed.
     // If an eval returns and invokes checkInterrupted() before
     // the event loop is entered, then this event will be canceled.
-    // It is possible that getNotifier() could return 
+    // The getNotifier() method should never return null since
+    // the deleted flag was already checked above.
 
-    Notifier notifier = getNotifier();
-    if (notifier == null) {
-        // The Interp object was deleted via dispose() so there is
-        // no need to queue the interruptedEvent. The caller has
-        // no way to check for a deleted interp so this method needs
-        // to fail gracefully when the interp has been deleted.
-        // This avoids a race condition bettween a timeout thread
-        // that will interrupt the interp and the main thread that
-        // could interrupt and then dispose of the interp.
-
-        return;
-    }
-    notifier.queueEvent(interruptedEvent, TCL.QUEUE_TAIL);
+    getNotifier().queueEvent(interruptedEvent, TCL.QUEUE_TAIL);
 }
 
 /*
@@ -5168,6 +5216,37 @@ disposeInterrupted()
     }
 
     dispose();
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * toString --
+ *
+ *	Debug print info about the interpreter.
+ *
+ *----------------------------------------------------------------------
+ */
+
+public
+String toString()
+{
+    StringBuffer buffer = new StringBuffer();
+
+    String info = super.toString();
+
+    // Trim "tcl.lang.Interp@9b688e" to "Interp@9b688e"
+
+    if (info.startsWith("tcl.lang.Interp")) {
+        info = info.substring(9);
+    }
+
+    buffer.append(info);
+    buffer.append(' ');
+    buffer.append("allocated in \"" + cThreadName + "\"");
+
+    return buffer.toString();
 }
 
 } // end Interp

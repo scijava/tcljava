@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: InterpAliasCmd.java,v 1.5 2006/01/26 19:49:18 mdejong Exp $
+ * RCS: @(#) $Id: InterpAliasCmd.java,v 1.6 2006/08/03 23:24:02 mdejong Exp $
  *
  */
 
@@ -86,44 +86,48 @@ throws
     TclException 		// A standard Tcl exception.
 {
     targetInterp.preserve();
-    targetInterp.nestLevel++;
 
-    targetInterp.resetResult();
-    targetInterp.allowExceptions();
+    try {
+        targetInterp.nestLevel++;
 
-    // Append the arguments to the command prefix and invoke the command
-    // in the target interp's global namespace.
-     
-    TclObject[] prefv = TclList.getElements(interp, prefix);
-    TclObject cmd = TclList.newInstance();
-    cmd.preserve();
-    TclList.replace(interp, cmd, 0, 0, prefv, 0, prefv.length-1);
-    TclList.replace(interp, cmd, prefv.length, 0, argv, 1, argv.length-1);
-    TclObject[] cmdv = TclList.getElements(interp, cmd);
+        targetInterp.resetResult();
+        targetInterp.allowExceptions();
 
-    int result = targetInterp.invoke(cmdv, Interp.INVOKE_NO_TRACEBACK);
+        // Append the arguments to the command prefix and invoke the command
+        // in the target interp's global namespace.
 
-    cmd.release();
-    targetInterp.nestLevel--;
-    
-    // Check if we are at the bottom of the stack for the target interpreter.
-    // If so, check for special return codes.
+        TclObject[] prefv = TclList.getElements(interp, prefix);
+        TclObject cmd = TclList.newInstance();
+        cmd.preserve();
+        TclList.replace(interp, cmd, 0, 0, prefv, 0, prefv.length-1);
+        TclList.replace(interp, cmd, prefv.length, 0, argv, 1, argv.length-1);
+        TclObject[] cmdv = TclList.getElements(interp, cmd);
 
-    if (targetInterp.nestLevel == 0) {
-	if (result == TCL.RETURN) {
-	    result = targetInterp.updateReturnInfo();
-	}
-	if (result != TCL.OK && result != TCL.ERROR) {
-	    try {
-		targetInterp.processUnexpectedResult(result);
-	    } catch (TclException e) {
-		result = e.getCompletionCode();
-	    }
-	}
+        int result = targetInterp.invoke(cmdv, Interp.INVOKE_NO_TRACEBACK);
+
+        cmd.release();
+        targetInterp.nestLevel--;
+
+        // Check if we are at the bottom of the stack for the target interpreter.
+        // If so, check for special return codes.
+
+        if (targetInterp.nestLevel == 0) {
+            if (result == TCL.RETURN) {
+                result = targetInterp.updateReturnInfo();
+            }
+            if (result != TCL.OK && result != TCL.ERROR) {
+                try {
+                    targetInterp.processUnexpectedResult(result);
+                } catch (TclException e) {
+                    result = e.getCompletionCode();
+                }
+            }
+        }
+
+        interp.transferResult(targetInterp, result);
+    } finally {
+        targetInterp.release();
     }
-
-    interp.transferResult(targetInterp, result);
-    targetInterp.release();
 }
 
 /**

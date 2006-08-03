@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: InterpSlaveCmd.java,v 1.6 2006/03/01 00:03:28 mdejong Exp $
+ * RCS: @(#) $Id: InterpSlaveCmd.java,v 1.7 2006/08/03 23:24:03 mdejong Exp $
  *
  */
 
@@ -68,11 +68,15 @@ class InterpSlaveCmd implements CommandWithDispose, AssocData {
     // Interpreter object command.
 
     WrappedCommand interpCmd;
+
+    // Debug child interp alloc/dispose calls
+
+    static final boolean debug = false;
 
 /**
  *----------------------------------------------------------------------
  *
- * SlaveObjCmd -> cmdProc --
+ * SlaveObjCmd -> cmdProc
  *
  *	Command to manipulate an interpreter, e.g. to send commands to it
  *	to be evaluated. One such command exists for each slave interpreter.
@@ -212,7 +216,15 @@ disposeCmd()
     interpCmd = null;
 
     if (slaveInterp != null) {
+        if (debug) {
+            System.out.println("slaveInterp with path \"" + path +
+                "\" disposed of " + slaveInterp);
+        }
 	slaveInterp.dispose();
+    } else {
+        if (debug) {
+            System.out.println("slaveInterp with path \"" + path + "\" is null");
+        }
     }
 }
 
@@ -241,7 +253,7 @@ disposeAssocData(
     // There shouldn't be any commands left.
 
     if (!interp.slaveTable.isEmpty()) {
-	System.err.println("InterpInfoDeleteProc: still exist commands");
+        throw new TclRuntimeError("disposeAssocData: commands still exist");
     }
     interp.slaveTable = null;
 
@@ -282,7 +294,7 @@ disposeAssocData(
     // There shouldn't be any aliases left.
 
     if (!interp.aliasTable.isEmpty()) {
-	System.err.println("InterpInfoDeleteProc: still exist aliases");
+        throw new TclRuntimeError("disposeAssocData: aliases still exist");
     }
     interp.aliasTable = null;
 }
@@ -354,6 +366,11 @@ throws
 
     masterInterp.slaveTable.put(pathString, slaveInterp.slave);
 
+    if (debug) {
+        System.out.println("slaveTable entry for \"" + pathString +
+            "\" created (" + slaveInterp + ")");
+    }
+
     slaveInterp.setVar("tcl_interactive", "0", TCL.GLOBAL_ONLY);
     
     // Inherit the recursion limit.
@@ -402,27 +419,31 @@ throws
     int result;
 
     slaveInterp.preserve();
-    slaveInterp.allowExceptions();
 
     try {
-        if (objIx+1 == objv.length) {
-	    slaveInterp.eval(objv[objIx], 0);
-	} else {
-	    TclObject obj = TclList.newInstance();
-	    for (int ix = objIx; ix < objv.length; ix++) {
-	        TclList.append(interp, obj, objv[ix]);
-	    }
-	    obj.preserve();
-	    slaveInterp.eval(obj, 0);
-	    obj.release();
-	}
-	result = slaveInterp.returnCode;
-    } catch (TclException e) {
-        result = e.getCompletionCode();
-    }
+        slaveInterp.allowExceptions();
 
-    interp.transferResult(slaveInterp, result);
-    slaveInterp.release();
+        try {
+            if (objIx+1 == objv.length) {
+	        slaveInterp.eval(objv[objIx], 0);
+	    } else {
+	        TclObject obj = TclList.newInstance();
+	        for (int ix = objIx; ix < objv.length; ix++) {
+	            TclList.append(interp, obj, objv[ix]);
+	        }
+	        obj.preserve();
+	        slaveInterp.eval(obj, 0);
+	        obj.release();
+	    }
+	    result = slaveInterp.returnCode;
+        } catch (TclException e) {
+            result = e.getCompletionCode();
+        }
+
+        interp.transferResult(slaveInterp, result);
+    } finally {
+        slaveInterp.release();
+    }
 }
 
 /*
@@ -581,26 +602,30 @@ throws
     }
 
     slaveInterp.preserve();
-    slaveInterp.allowExceptions();
-    
-    TclObject localObjv[] = new TclObject[objv.length - objIx];
-    for (int i = 0; i < objv.length - objIx; i++) {
-	localObjv[i] = objv[i+objIx];
-    }
 
     try {
-	if (global) {
-	    slaveInterp.invokeGlobal(localObjv, Interp.INVOKE_HIDDEN);
-	} else {
-	    slaveInterp.invoke(localObjv, Interp.INVOKE_HIDDEN);
-	}
-	result = slaveInterp.returnCode;
-    } catch (TclException e) {
-        result = e.getCompletionCode();
-    }
+        slaveInterp.allowExceptions();
+    
+        TclObject localObjv[] = new TclObject[objv.length - objIx];
+        for (int i = 0; i < objv.length - objIx; i++) {
+	    localObjv[i] = objv[i+objIx];
+        }
 
-    interp.transferResult(slaveInterp, result);
-    slaveInterp.release();
+        try {
+	    if (global) {
+	        slaveInterp.invokeGlobal(localObjv, Interp.INVOKE_HIDDEN);
+	    } else {
+	        slaveInterp.invoke(localObjv, Interp.INVOKE_HIDDEN);
+	    }
+	    result = slaveInterp.returnCode;
+        } catch (TclException e) {
+            result = e.getCompletionCode();
+        }
+
+        interp.transferResult(slaveInterp, result);
+    } finally {
+        slaveInterp.release();
+    }
 }
 
 /*
@@ -725,5 +750,55 @@ throws
         TclIO.unregisterChannel(interp, chan);
     }
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_GetSlave, GetInterp -> getSlave
+ *
+ *	Finds a slave interpreter by its path name.
+ *
+ * Results:
+ *	Returns a Interp for the named interpreter or
+ *	raises a TclException if the interpreter is not found.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Interp
+getSlave(
+     Interp interp,		// Interpreter to start search from.
+     TclObject slavePath)	// Path of slave to find.
+throws
+    TclException
+{
+    Interp searchInterp;
+    final int len = TclList.getLength(interp, slavePath);
+
+    searchInterp = interp;
+    for (int i = 0; i < len; i++) {
+        TclObject slavePathIndex = TclList.index(interp, slavePath, i);
+        InterpSlaveCmd isc = (InterpSlaveCmd)
+            searchInterp.slaveTable.get(slavePathIndex.toString());
+        if (isc == null) {
+            searchInterp = null;
+            break;
+        }
+        searchInterp = isc.slaveInterp;
+        if (searchInterp == null) {
+            break;
+        }
+    }    
+    if (searchInterp == null) {
+	throw new TclException(interp, "could not find interpreter \"" +
+            slavePath +
+            "\"");
+    }
+    return searchInterp;
+}
 
 } // end InterpSlaveCmd
+

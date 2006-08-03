@@ -1,5 +1,33 @@
 2006-08-03  Mo DeJong  <mdejong@users.sourceforge.net>
 
+        * src/jacl/tcl/lang/EventuallyFreed.java:
+        Add debug statements.
+        * src/jacl/tcl/lang/Interp.java (Interp, dispose,
+        eventuallyDispose, finalize, transferResult,
+        invoke, setInterrupted, toString):
+        Reimplment dispose() and eventuallyDispose() so
+        that interp is marked as deleted in the same
+        way as Tcl 8.4. Print an error message to
+        stderr in finalize() if an interp that was not
+        deleted is finalized, the previous finalize
+        implementation did not work since it always
+        raised an exception. Don't error out in
+        transferResult if interp has been deleted.
+        Return Interp description in toString() method.
+        * src/jacl/tcl/lang/InterpAliasCmd.java (cmdProc):
+        * src/jacl/tcl/lang/InterpSlaveCmd.java (cmdProc):
+        Call Interp.release() in finally block so that
+        release is invoked even if an exception is raised.
+        This fixed a number of undeleted interp problems
+        in the interp.test file.
+        * src/tests/jacl/tcl/lang/JavaTestExtension.java:
+        Add testinterpdelete.
+        * src/tests/jacl/tcl/lang/TestInterpDeleteCmd.java:
+        Implement testinterpdelete command which enables
+        a series of tests in interp.test.
+
+2006-08-03  Mo DeJong  <mdejong@users.sourceforge.net>
+
         * src/jacl/tcl/lang/Interp.java (ready, invoke):
         Move interp ready check into ready() method.
         Invoke this method from invoke() like Tcl 8.4.
