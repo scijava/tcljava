@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TJC.java,v 1.33 2006/06/27 21:14:42 mdejong Exp $ *
+ * RCS: @(#) $Id: TJC.java,v 1.34 2006/08/03 22:33:13 mdejong Exp $ *
  */
 
 // Runtime support for TJC compiler implementation.
@@ -1013,24 +1013,10 @@ public class TJC {
 
         try {
             interp.preserve();
-            interp.resetResult();
             interp.allowExceptions();
 
-            // If the interpreter was deleted, return an error.
+            interp.ready();
 
-            if (interp.deleted){
-                interp.setResult("attempt to call eval in deleted interpreter");
-                interp.setErrorCode(TclString.newInstance(
-                    "CORE IDELETE {attempt to call eval in deleted interpreter}"));
-                throw new TclException(TCL.ERROR);
-            }
-
-            // Check depth of nested calls to eval:  if this gets too large,
-            // it's probably because of an infinite loop somewhere.
-
-            if (interp.nestLevel >= interp.maxNestingDepth) {
-                Parser.infiniteLoopException(interp);
-            }
             interp.nestLevel++;
             interp.cmdCount++;
 

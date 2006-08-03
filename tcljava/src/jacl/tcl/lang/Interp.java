@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.84 2006/06/24 00:30:42 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.85 2006/08/03 22:33:12 mdejong Exp $
  *
  */
 
@@ -791,6 +791,49 @@ protected void
 finalize()
 {
     dispose();
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclInterpReady -- ready
+ *
+ *	Check if an interpreter is ready to eval commands or scripts, i.e., if
+ *	it was not deleted and if the nesting level is not too high.
+ *
+ * Results:
+ *	Raises a TclExcetpion is the interp is not ready.
+ *
+ * Side effects:
+ *	The interpreters result is cleared.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+ready()
+    throws TclException
+{
+    // Reset the interpreter's result and clear out
+    // any previous error information.
+
+    resetResult();
+
+    // If the interpreter was deleted, return an error.
+
+    if (deleted){
+	setResult("attempt to call eval in deleted interpreter");
+	setErrorCode(TclString.newInstance(
+		"CORE IDELETE {attempt to call eval in deleted interpreter}"));
+	throw new TclException(TCL.ERROR);
+    }
+
+    // Check depth of nested calls to eval:  if this gets too large,
+    // it's probably because of an infinite loop somewhere.
+
+    if (nestLevel >= maxNestingDepth) {
+	Parser.infiniteLoopException(this);
+    }
 }
 
 /*
@@ -4248,6 +4291,8 @@ throws
     if ((objv.length < 1) || (objv == null)) {
 	throw new TclException(this, "illegal argument vector");
     }
+
+    ready();
 
     String cmdName = objv[0].toString();
     WrappedCommand cmd;

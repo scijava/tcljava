@@ -1,3 +1,13 @@
+2006-08-03  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/jacl/tcl/lang/Interp.java (ready, invoke):
+        Move interp ready check into ready() method.
+        Invoke this method from invoke() like Tcl 8.4.
+        * src/jacl/tcl/lang/Parser.java (evalObjv):
+        Invoke Interp.ready() before code evaluation.
+        * src/tjc/tcl/lang/TJC.java (invoke):
+        Invoke Interp.ready() before code evaluation.
+
 2006-07-31  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * README.jacl:

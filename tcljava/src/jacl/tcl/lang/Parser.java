@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Parser.java,v 1.29 2006/03/27 21:42:55 mdejong Exp $
+ * RCS: @(#) $Id: Parser.java,v 1.30 2006/08/03 22:33:12 mdejong Exp $
  */
 
 package tcl.lang;
@@ -737,7 +737,7 @@ parseTokens(
 /*
  *----------------------------------------------------------------------
  *
- * evalObjv --
+ * TclEvalObjvInternal -> evalObjv
  *
  *	This procedure evaluates a Tcl command that has already been
  *	parsed into words, with one TclObject holding each word.
@@ -776,26 +776,15 @@ throws
     CallFrame savedVarFrame;	// Saves old copy of interp.varFrame
 				// in case TCL.EVAL_GLOBAL was set.
 
-    interp.resetResult();
     if (objv.length == 0) {
+	interp.resetResult();
 	return;
     }
 
-    // If the interpreter was deleted, return an error.
+    // Reset result, check for deleted interp, and check nest level
 
-    if (interp.deleted){
-	interp.setResult("attempt to call eval in deleted interpreter");
-	interp.setErrorCode(TclString.newInstance(
-		"CORE IDELETE {attempt to call eval in deleted interpreter}"));
-	throw new TclException(TCL.ERROR);
-    }
+    interp.ready();
 
-    // Check depth of nested calls to eval:  if this gets too large,
-    // it's probably because of an infinite loop somewhere.
-
-    if (interp.nestLevel >= interp.maxNestingDepth) {
-	Parser.infiniteLoopException(interp);
-    }
     interp.nestLevel++;
     savedVarFrame = interp.varFrame;
 
