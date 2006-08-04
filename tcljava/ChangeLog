@@ -1,3 +1,16 @@
+2006-08-04  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/tcljava/tcl/lang/TclClassLoader.java:
+        Avoid throwing NullPointerException when
+        method can just return null.
+        * src/tjc/tcl/lang/TJCThread.java: Refactor
+        the TJCThread class so that state variables
+        become instance variables instead of static
+        ones. This makes it possible to start the
+        service again after it has been canceled
+        without having to wait for the previous
+        thread to die.
+
 2006-08-03  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/jacl/tcl/lang/EventuallyFreed.java:

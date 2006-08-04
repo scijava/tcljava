@@ -24,7 +24,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: TclClassLoader.java,v 1.13 2006/04/13 07:36:50 mdejong Exp $
+ * RCS: @(#) $Id: TclClassLoader.java,v 1.14 2006/08/04 23:11:14 mdejong Exp $
  */
 
 
@@ -820,8 +820,9 @@ getClassFromPath(
 		// the class inside a jar file.
 
 		classData = getClassFromJar(curDir, className);
+
 		if (classData != null) {
-		    return(classData);
+		    return classData;
 		}
 	    } catch (Exception e) {
 		// No error thrown, because the class may be found
@@ -863,12 +864,22 @@ getClassFromJar(
 throws IOException
 {
     byte[] result = null;         // The bytes that compose the class file.
-    String[] jarFiles;            // The list of files in the curDir.     
+    String[] jarFiles;            // The list of files in the curDir.
     JarFilenameFilter jarFilter;  // Filter the jarFiles list by only     
                                   // accepting ".jar" or ".zip"
 
+    File file = new File(curDir);
+
+    if (! file.isDirectory()) {
+        return null;
+    }
+
     jarFilter = new JarFilenameFilter();
-    jarFiles = (new File(curDir)).list(jarFilter);
+    jarFiles = file.list(jarFilter);
+
+    if (jarFiles == null) {
+        return null;
+    }
 
     for (int i = 0; i < jarFiles.length; i++) {
 	result = extractClassFromJar(
@@ -877,7 +888,7 @@ throws IOException
 	    break;
 	}
     }
-    return(result);
+    return result;
 }
 
 

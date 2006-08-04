@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TJCThread.java,v 1.2 2006/02/24 08:21:42 mdejong Exp $
+ * RCS: @(#) $Id: TJCThread.java,v 1.3 2006/08/04 23:11:14 mdejong Exp $
  *
  */
 
@@ -30,40 +30,41 @@ public class TJCThread
     public static final int STATUS_ERROR = 1;
 
     private static boolean debug = false;
+
     private static String debugSetup = "";
+
     private static String driver = null;
 
-    // Set after a request to compile a Tcl proc
+    // The TJCThread instance, it is possible that
+    // the thread could be terminated and then
+    // started again which would replace this instance.
 
+    private static TJCThread tinstance = null;
     private static Thread tmain = null;
-
-    // The one and only TJCThread instance
-
-    private static TJCThread tinstance = new TJCThread();
 
     // Set to true when the tmain thread should
     // terminate itself.
 
-    private static boolean tmain_terminate_request = false;
-    private static boolean tmain_terminated = false;
+    private boolean terminate_request = false;
+    private boolean terminated = false;
 
-    // Set to true when the tmain thread is ready to process
+    // Set to true when the thread is ready to process
     // events. This may not be set until the thread has started
     // up and possibly processed any events that were initially
     // added to the queue.
 
-    private static boolean tmain_ready = false;
+    private boolean ready = false;
 
     // Thread safe queue of events to process.
 
-    private static Vector queue = null;
+    private static Vector queue = new Vector();
 
     // Jacl interp used to process events. The
     // interp is created in the other thread.
     // it should never be accessed from the
     // caller thread.
 
-    private static Interp interp = null;
+    private Interp interp = null;
 
     // Event record. This is a buffer of line
     // oriented data that indicates what events
@@ -210,7 +211,7 @@ public class TJCThread
             }
         }
 
-        if (tmain_terminated) {
+        if (tinstance.terminated) {
             if (eventLog != null) {
                 eventLog.append("thread already terminated\n");
             }
@@ -221,7 +222,7 @@ public class TJCThread
             return;
         }
 
-        tmain_terminate_request = true;
+        tinstance.terminate_request = true;
 
         synchronized (tinstance) {
             if (eventLog != null) {
@@ -270,7 +271,7 @@ public class TJCThread
 
     public static synchronized
     boolean isThreadReady() {
-        return tmain_ready;
+        return tinstance.ready;
     }
 
     // Invoked to query the event log, if no event log
@@ -291,21 +292,28 @@ public class TJCThread
 
     public static synchronized
     void startThread() {
-        if (tmain_terminated) {
-            // Thread started and was terminated, start again
-            tmain_terminate_request = false;
-            tmain_terminated = false;
-        } else if (tmain != null) {
-            // Thread already started and is currently running
+        if (tinstance != null && !tinstance.terminate_request) {
+            // Thread already started, it is currently running,
+            // and a terminate request is not currently pending.
+
+            if (debug) {
+                System.out.println("thread currently running");
+            }
+
             return;
         }
 
-        queue = new Vector();
+        if (debug) {
+            System.out.println("creating new Thread()");
+        }
+
+        tinstance = new TJCThread();
         tmain = new Thread(tinstance);
         tmain.setDaemon(true);
 
         // Drop Priority of compile thread below that
         // of the calling thread.
+
         int priority = tmain.getPriority();
         if (priority > Thread.MIN_PRIORITY) {
             priority--;
@@ -338,7 +346,7 @@ public class TJCThread
         // added to the queue.
 
         while (true) {
-            if (tmain_terminate_request) {
+            if (terminate_request) {
                 break;
             }
 
@@ -366,13 +374,13 @@ public class TJCThread
                 processEvent(event);
 
                 // Bail out if thread should die
-                if (tmain_terminate_request) {
+                if (terminate_request) {
                     break;
                 }
             }
 
             // Bail out if thread should die
-            if (tmain_terminate_request) {
+            if (terminate_request) {
                 break;
             }
 
@@ -385,14 +393,14 @@ public class TJCThread
                         System.out.println("thread wait");
                     }
 
-	            tmain_ready = true;
-		    wait(); // wait for next service request
-	            tmain_ready = false;
+	            ready = true;
+		    this.wait(); // wait for next service request
+	            ready = false;
 	        }
 	    } catch (InterruptedException e) {
 	        e.printStackTrace();
 	    }
-            if (tmain_terminate_request) {
+            if (terminate_request) {
                 break;
             }
 
@@ -404,7 +412,7 @@ public class TJCThread
             }
         }
 
-        if (tmain_terminate_request) {
+        if (terminate_request) {
             if (eventLog != null) {
                 eventLog.append("thread terminate request\n");
             }
@@ -422,7 +430,7 @@ public class TJCThread
         if (debug) {
             System.out.println("thread terminated");
         }
-        tmain_terminated = true;
+        terminated = true;
 
         // Dispose of Jacl interp before leaving this
         // thread. It is critical that the Jacl interp
@@ -430,6 +438,10 @@ public class TJCThread
         // created in.
 
         if (interp != null) {
+            if (debug) {
+                System.out.println("Invoking interp.dispose()");
+            }
+
             interp.dispose();
             interp = null;
         }
@@ -676,6 +688,19 @@ public class TJCThread
         interp.resetResult();
 
         callback.compiled(proc_name, filename, java_source, class_names, class_data, 0, "");
+    }
+
+    // Invoked when TJCThread is garbage collected.
+
+    protected
+    void finalize()
+        throws Throwable
+    {
+        if (debug) {
+            System.out.println("TJCThread finalized");
+        }
+
+        super.finalize();
     }
 
 }
