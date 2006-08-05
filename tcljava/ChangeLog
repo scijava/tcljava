@@ -1,3 +1,9 @@
+2006-08-05  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * docs/TJC/index.html: Separate docs for
+        batch and runtime mode into two sections.
+        * docs/TJC/module.html: Add +inline-expr info.
+
 2006-08-04  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * Makefile.in: Remove new_features.txt.

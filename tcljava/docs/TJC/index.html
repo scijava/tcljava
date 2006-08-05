@@ -3,62 +3,110 @@
 <head>
 </head>
 <body>
-<div style="text-align: center;"><big><big><span
- style="font-weight: bold;">TJC Compiler Manual<br>
-</span></big></big><br>
-<div style="text-align: left;">Usage:<br>
-<div style="margin-left: 40px;"><span style="font-family: monospace;">tjc
-module.tjc ?module.tjc ...?<br>
-<br>
-</span></div>
-What is TJC:<br>
-<br>
+
+<center>
+<h2>
+<bold>
+TJC Compiler Manual
+</bold>
+</h2>
+</center>
+
+<p>
 TJC is a Tcl to Java converter and compiler. TJC accepts Tcl source
-code and translates to Java source code. TJC scans Tcl files looking
-for proc declarations and converts each proc declaration to a Java
-class
-that implements the equivalent
-operations. The generated Java source code
-is then compiled to Java class files and saved in a JAR file. This JAR
-file can easily be loaded into Jacl (Tcl interpreter written in Java).<br>
-<br>
-Alternatively, the TJC compiler can be used to compile a Tcl proc into
-a Java class at runtime. See <a href="tjcpkg.html#runtime">TJC package
-manual</a> for more info.<br>
-<br>
-How it works:<br>
-<br>
-The tjc compiler loads JDK configuration information from a file named <span
- style="font-family: monospace;">jdk.cfg</span>. This JDK configuration
-file must be saved in the <span style="font-family: monospace;">bin/</span>
-directory where tjc executable is installed. See <a href="jdkcfg.html">JDK
-Config File</a> for more info about the contents of a JDK config file.<br>
-<br>
-The user invokes the tjc executable and passes a .tjc module file on
-the command line. Processing a module file generates a pair of jar
-files. The first
-JAR file contains compiled Java
-class files and modified Tcl scripts. The second JAR file
-contains generated Java source code and unmodified Tcl scripts. For
-example, a module file <span style="font-family: monospace;">xyz.tjc</span>
-will generate <span style="font-family: monospace;">xyzsrc.jar</span>
-and <span style="font-family: monospace;">xyz.jar</span>. A TJC module
-file
-indicates which Tcl source files will be read and compiled by tjc. See <a
- href="module.html">Module File</a> for more info about the contents of
-a module file.<br>
-<br>
+code and translates <code>proc</code> declarations to Java source
+code. Generated Java source is then compiled to Java bytecode.
+The TJC compiler supports two operational modes, batch mode and runtime
+mode.
+</p>
+
+<h4>Batch Mode:</h4>
+
+<p>
+In batch mode, a user invokes the <code>tjc</code> executable
+on the command line and passes a <code>.tjc</code> module file name.
+TJC scans a set of <code>.tcl</code> files looking for proc declarations
+and then converts the discovered Tcl procs to Java source code
+that implements the equivalent operations. Generated Java source code is
+compiled with <code>javac</code>, then both the generated source code and
+bytecode are stored in a JAR file.
+</p>
+
+<code>
+Usage:
+</code>
+<blockquote>
+<code>
+tjc module.tjc ?module.tjc ...?
+</code>
+</blockquote>
+
+<p>
+The TJC compiler loads JDK configuration information from a file named
+<code>jdk.cfg</code>. This JDK configuration file must be saved in the
+<code>bin/</code> directory where tjc executable is installed.
+See <a href="jdkcfg.html">JDK Config File</a> for more info about
+the contents of a JDK config file.
+</p>
+
+<p>Processing a module file generates a pair of JAR
+files. The first JAR file contains compiled Java class files and
+modified Tcl scripts. The second JAR file contains generated
+Java source code and unmodified Tcl scripts.
+
+For example, a module file <code>xyz.tjc</code> will generate
+<code>xyzsrc.jar</code> and <code>xyz.jar</code>. A TJC module
+file indicates which Tcl source files will be read and compiled
+by <code>tjc</code>. See <a href="module.html">Module File</a>
+for more info about the contents of a module file.
+</p>
+
+<p>
 A set of Tcl scripts and compiled proc implementations packaged inside
-a JAR file is known as a tjc package. The <span
- style="font-family: monospace;">TJC::package</span> Tcl command is
-provided to load a TJC package into the Jacl shell. The <span
- style="font-family: monospace;">TJC::compile</span> Tcl command is
-also provided to support compilation of Tcl commands at runtime. See <a
- href="tjcpkg.html">TJC package manual</a> for more info.<br>
-<br>
+a JAR file is known as a tjc package. A tjc package is loaded into
+Jacl by adding a generated JAR file to the <code>CLASSPATH</code>
+and then invoking the <code>TJC::package</code> Tcl command to load compiled commands
+into the shell. See <A HREF="tjcpkg.html">TJC package manual</A> for more info.
+</p>
+
+<h4>Runtime Mode:</h4>
+
+<p>
+The TJC compiler supports a runtime mode that makes it easy to
+define a Tcl <code>proc</code> in an interpreter and compile
+directly to Java bytecode. The TJC compiler runs in a second
+thread, waiting for compile requests from the <code>TJC::compile</code>
+command. When a Tcl proc has been compiled, the original
+proc is relaced with the compiled implementation.
+
+TJC makes use of the excellent
+<A HREF="http://www.janino.net/">
+Janino</A>
+embedded Java compiler to convert generated Java source code
+to Java bytecode.
+</p>
+
+<p>
+In most cases, runtime mode is easier to use
+since one need not create a module file
+or modify the <code>CLASSPATH</code>. Batch
+mode may be preferrable when a large number of
+Tcl procs need to be compiled, since compiling
+a lot of Tcl procs can take some time.
+
+Users should note that Jacl does not compile
+Tcl procs into Java bytecode by default, the user must
+explicitly indicate which procs should be compiled.
+See the <a href="tjcpkg.html#runtime">TJC package manual</a>
+for more info.
+</p>
+
+<h4>Additional Info:</h4>
+
+<p>
 See <a href="example1.html">Simple Example</a> for a step by step walk
-through of using the TJC executable and TJC package to compile and use
-a compiled command.<br>
+through of using the TJC executable and TJC package to compile and load
+a compiled Tcl <code>proc</code>.<br>
 <br>
 See <a href="example2.html">Generated Code Example</a> for examples of
 Java source generated by the TJC compiler.<br>
@@ -70,9 +118,7 @@ preferred command usages.<br>
 See <a href="future.html">Future Improvements</a> for a description
 of&nbsp; features that could be implemented in a future release.<br>
 <br>
-<span style="font-weight: bold;"><span style="font-weight: bold;"><span
- style="font-weight: bold;"><span style="font-weight: bold;"></span></span></span></span><big><big><span
- style="font-weight: bold;"></span></big></big></div>
-</div>
+</p>
+
 </body>
 </html>
