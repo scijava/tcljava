@@ -1,5 +1,18 @@
 2006-08-04  Mo DeJong  <mdejong@users.sourceforge.net>
 
+        * Makefile.in: Remove new_features.txt.
+        * README.jacl:
+        * README.tclblend: Mention WhatsNew.html.
+        * new_features.txt: Removed.
+        * docs/Topics/WhatsNew.html: Create a
+        New Features HTML page containing new 1.4
+        features and importing the old entries
+        from new_features.txt.
+        * docs/Topics/index.html: Add link
+        to WhatsNew.html.
+
+2006-08-04  Mo DeJong  <mdejong@users.sourceforge.net>
+
         * src/tcljava/tcl/lang/TclClassLoader.java:
         Avoid throwing NullPointerException when
         method can just return null.

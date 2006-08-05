@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.59 2006/07/26 23:20:50 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.60 2006/08/05 01:50:11 mdejong Exp $
 
 SHELL = /bin/sh
 
@@ -1691,7 +1691,6 @@ tcljavaDist: Makefile
 		$(TOP_DIR)/ChangeLog \
 		$(TOP_DIR)/diffs.txt \
 		$(TOP_DIR)/known_issues.txt \
-		$(TOP_DIR)/new_features.txt \
 		$(DISTDIR)
 
 	cp -p $(TOP_DIR)/configure \

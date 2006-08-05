@@ -29,13 +29,17 @@ browser, or online at the following URL:
 
 http://tcljava.sourceforge.net
 
+The "New Features" page describes features and functionality
+added to a specific Tcl/Java release.
+
+docs/Topics/WhatsNew.html
+
 One can also find demos included in this release that provide
 examples of how to integrate Tcl and Java. The manual page
 at docs/website/manual.html provides a useful API reference.
+
 See the "diffs.txt" file in this directory for a list of
 Tcl features and the extent to which they are implemented in Jacl.
-The "new_features.txt" file describes features that have been
-added in each release.
 
 3. Requirements
 ---------------
