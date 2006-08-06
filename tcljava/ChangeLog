@@ -1,5 +1,19 @@
 2006-08-05  Mo DeJong  <mdejong@users.sourceforge.net>
 
+        * src/tjc/tcl/lang/TJCCompileCmd.java (TclCompile,
+        isClassDefined):
+        Add logic that detects the case where a Tcl proc
+        with the same name is compiled more than once.
+        This logic will generate a unique name so that
+        a ClassLoader error because of a duplicate
+        definition is avoided.
+        * tests/tjc/tjcthread.test: Add test case
+        for compilation of same proc in two different
+        interpreters. Add test case for recompilation
+        of Tcl proc with the same name.
+
+2006-08-05  Mo DeJong  <mdejong@users.sourceforge.net>
+
         * docs/TJC/index.html: Separate docs for
         batch and runtime mode into two sections.
         * docs/TJC/module.html: Add +inline-expr info.

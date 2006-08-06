@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TJCCompileCmd.java,v 1.3 2006/03/27 21:42:55 mdejong Exp $
+ * RCS: @(#) $Id: TJCCompileCmd.java,v 1.4 2006/08/06 00:38:58 mdejong Exp $
  *
  */
 
@@ -219,6 +219,8 @@ public void
                 pname.toString());
         }
 
+        // Generate Java class name for Tcl proc
+
         fullyQualifiedCmd = pname.toString();
 
         String upper = fullyQualifiedCmd;
@@ -240,6 +242,34 @@ public void
         }
         cname.append("Cmd");
         String javaClassName = cname.toString();
+
+        // Determine if a Tcl proc with this name
+        // was already compiled and loaded into
+        // the current ClassLoader. In this case,
+        // we need to make the Java class name
+        // unique so that the ClassLoader does not
+        // fail to load the class once it has
+        // been compiled.
+
+        if (isClassDefined(interp, javaClassName)) {
+            String prefix = cname.toString();
+            String suffix = null;
+
+            for ( i = 2 ; i < Integer.MAX_VALUE; i++) {
+                suffix = String.valueOf(i);
+
+                if (! isClassDefined(interp, prefix + suffix)) {
+                    break;
+                }
+            }
+            if (i == Integer.MAX_VALUE) {
+                // This should never happen
+                throw new TclRuntimeError("suffix integer overflow");
+            }
+
+            cname.append(suffix);
+            javaClassName = cname.toString();
+        }
 
         // Generate proc declaration
 
@@ -293,7 +323,46 @@ public void
             procList.toString(),
             ctobj);
     }
-}
+
+    // Return true if a Java class with the given name has
+    // already been defined in the ClassLoader for the
+    // given interp.
+
+    static
+    boolean isClassDefined(Interp interp, String javaClassName) {
+        final boolean debug = false;
+
+        TclClassLoader tclClassLoader = (TclClassLoader) interp.getClassLoader();
+        Class alreadyLoaded = null;
+
+        try {
+            if (debug) {
+                System.out.println("checking for duplicate class name : " +
+                    javaClassName);
+            }
+
+            alreadyLoaded = tclClassLoader.loadClass(javaClassName);
+        } catch (ClassNotFoundException e) {
+            // No-op
+        } catch (PackageNameException e) {
+            // Should not be possible to catch a PackageNameException
+            // since the Java class is not in the tcl.* or java.* packages.
+
+            throw new TclRuntimeError("unexpected PackageNameException :" +
+                e.getMessage());
+        }
+
+        boolean isDefined = (alreadyLoaded != null);
+
+        if (debug) {
+            System.out.println("class isDefined is " + isDefined);
+        }
+
+        return isDefined;
+    }
+
+} // end class TJCCompileCmd
+
 
 // Helper class to load compiled class into the
 // current thread and register a compiled command

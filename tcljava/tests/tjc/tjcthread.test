@@ -1062,13 +1062,154 @@ public class Test51 {
 } {{OK {Test51 {Test51$Inner}} {}} OK}
 
 
-# FIXME: class redefinition is not possible with the TclClassLoader.
-# There seems to be no API to support unloading a class
-# decl. Flushing the class cache does not remove the loaded
-# class. Perhaps the right fix would be to use a class loader
-# that delagates to the interp loader, that way it could be
-# tossed out when the class is loaded.
+tcltest::test tjcthread-6.0 {use TJC::compile command to compile
+        the same Tcl proc in two different interps, this test
+        checks that using the same Java class name in two different
+        ClassLoaders does not generate an error} {
 
+    set results [list]
+
+    set i1 [interp create]
+    set i2 [interp create]
+    
+    foreach i [list $i1 $i2] {
+        $i eval {
+            proc tjcthread_60_hello {} {
+                return HELLO
+            }
+
+            package require TJC
+            TJC::compile tjcthread_60_hello -readyvar __tjcthread_60_ready
+        }
+    }
+
+    # Wait for both compiles to finish
+
+    foreach i [list $i1 $i2] {
+        $i eval {
+            vwait __tjcthread_60_ready
+        }
+        lappend results [$i eval {set __tjcthread_60_ready}]
+    }
+
+    # Invoke compiled versions of the command
+
+    foreach i [list $i1 $i2] {
+        lappend results [$i eval {tjcthread_60_hello}]
+    }
+
+    interp delete $i1
+    interp delete $i2
+
+    set results
+} {{OK ::tjcthread_60_hello {}} {OK ::tjcthread_60_hello {}} HELLO HELLO}
+
+tcltest::test tjcthread-6.1 {use TJC::compile command to compile
+        a Tcl proc two times. The first compile will repace
+        the proc with the compiled version. Then, redefine the
+        original Tcl proc and try to compile it again. This tests
+        the TJC::compile command implementation, it should check
+        for an existing class via the TclClassLoader before starting
+        a compile job} {
+
+    set results [list]
+
+    proc tjcthread_61_hello {} {
+        return HELLO
+    }
+
+    TJC::compile tjcthread_61_hello -readyvar __tjcthread_61_ready
+    vwait __tjcthread_61_ready
+    lappend results $__tjcthread_61_ready
+    lappend results [tjcthread_61_hello]
+
+    lappend results [info procs tjcthread_61_hello]
+
+    # Replace the compiled version with the original proc.
+
+    proc tjcthread_61_hello {} {
+        return HELLO
+    }
+
+    lappend results [info procs tjcthread_61_hello]
+
+    # Attempt to compile proc a second time.
+    # This should not fail because the TclClassLoader
+    # sees a duplicate class declaration.
+
+    TJC::compile tjcthread_61_hello -readyvar __tjcthread_61_ready
+    vwait __tjcthread_61_ready
+
+    lappend results $__tjcthread_61_ready
+    lappend results [tjcthread_61_hello]
+    lappend results [info procs tjcthread_61_hello]
+
+    rename tjcthread_61_hello {}
+    set results
+} {{OK ::tjcthread_61_hello {}} HELLO {} tjcthread_61_hello {OK ::tjcthread_61_hello {}} HELLO {}}
+
+
+tcltest::test tjcthread-6.2 {use TJC::compile command to compile
+        a Tcl proc three times. This makes sure that multiple
+        declarations of the same class name are checked} {
+
+    set results [list]
+
+    proc tjcthread_62_hello {} {
+        return HELLO
+    }
+
+    TJC::compile tjcthread_62_hello -readyvar __tjcthread_62_ready
+    vwait __tjcthread_62_ready
+    lappend results $__tjcthread_62_ready
+    lappend results [tjcthread_62_hello]
+
+    lappend results [info procs tjcthread_62_hello]
+
+    # Replace the compiled version with the original proc.
+
+    proc tjcthread_62_hello {} {
+        return HELLO
+    }
+
+    lappend results [info procs tjcthread_62_hello]
+
+    # Attempt to compile proc a second time.
+    # This should not fail because the TclClassLoader
+    # sees a duplicate class declaration.
+
+    TJC::compile tjcthread_62_hello -readyvar __tjcthread_62_ready
+    vwait __tjcthread_62_ready
+
+    lappend results $__tjcthread_62_ready
+    lappend results [tjcthread_62_hello]
+    lappend results [info procs tjcthread_62_hello]
+
+    proc tjcthread_62_hello {} {
+        return HELLO
+    }
+
+    # Attempt to compile proc a third time.
+    # This should not fail because the TclClassLoader
+    # sees a duplicate class declaration.
+
+    TJC::compile tjcthread_62_hello -readyvar __tjcthread_62_ready
+    vwait __tjcthread_62_ready
+
+    lappend results $__tjcthread_62_ready
+    lappend results [tjcthread_62_hello]
+    lappend results [info procs tjcthread_62_hello]
+
+    rename tjcthread_62_hello {}
+    set results
+} {{OK ::tjcthread_62_hello {}} HELLO {} tjcthread_62_hello {OK ::tjcthread_62_hello {}} HELLO {} {OK ::tjcthread_62_hello {}} HELLO {}}
+
+
+# cleanup
+
+foreach i [interp slaves] {
+    interp delete $i
+}
 
 # Try to kill the TJCTread thread in case it is running
 java::call tcl.lang.TJCThread terminateThread
@@ -1077,5 +1218,4 @@ java::call tcl.lang.TJCThread terminateThread
 java::call tcl.lang.TJCThread debugSetup ""
 
 tcltest::cleanupTests
-
 
