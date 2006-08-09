@@ -1,6 +1,6 @@
 Jacl
 
-RCS: @(#) $Id: README.jacl,v 1.17.2.1 2006/06/30 04:48:38 mdejong Exp $
+RCS: @(#) $Id: README.jacl,v 1.17.2.2 2006/08/09 01:58:03 mdejong Exp $
 
 1. Introduction
 ---------------
@@ -41,13 +41,12 @@ added in each release.
 3. Requirements
 ---------------
 
-The Jacl distribution requires the Java Development Kit 1.1 or
+The Jacl distribution requires the Java Development Kit 1.2 or
 greater. Jacl has been tested on Win95, WinNT, Solaris, IRIX,
 and Linux. It should also work on other systems that
 have a correctly implemented Java VM.
 
-Jacl works under JDK1.2 and greater, see known_issues.txt for
-a list of known problems and bugs.
+See known_issues.txt for a list of known problems and bugs.
 
 4. Installation
 ---------------
