@@ -1,5 +1,9 @@
 2006-08-08  Mo DeJong  <mdejong@users.sourceforge.net>
 
+        * known_issues.txt: Mention gcc bug.
+
+2006-08-08  Mo DeJong  <mdejong@users.sourceforge.net>
+
         * README.jacl: Mention that JDK 1.2 or newer is
         required to build Jacl.
 

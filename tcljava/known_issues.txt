@@ -273,3 +273,8 @@ be used for blocking AWT like calls!
 Jacl does not support certain escape based multi-byte encodings like
 shiftjis, iso2022-jp, and related encodings.
 
+(Tcl Blend compiled with gcc 4.1.0)
+
+gcc 4.1.0 contains a bug that causes Tcl Blend to fail when
+compiled with -O2. Use another version of gcc or don't compile
+with -O2 to avoid this bug.
