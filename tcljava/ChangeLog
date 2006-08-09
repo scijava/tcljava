@@ -1,5 +1,9 @@
 2006-08-08  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* docs/website/index.html: Add 1.3.3 release info.
+
+2006-08-08  Mo DeJong  <mdejong@users.sourceforge.net>
+
         * known_issues.txt: Mention gcc bug.
 
 2006-08-08  Mo DeJong  <mdejong@users.sourceforge.net>
