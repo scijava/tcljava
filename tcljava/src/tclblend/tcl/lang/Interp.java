@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.30.2.1 2006/04/06 01:23:28 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.30.2.2 2006/08/09 04:29:32 mdejong Exp $
  *
  */
 
@@ -958,7 +958,7 @@ throws
     TclList.append(this, cmd,
         TclString.newInstance(s));
 
-    eval(cmd, 0);
+    eval(cmd.toString(), 0);
 }
 
 /*
