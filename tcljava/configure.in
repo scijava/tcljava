@@ -239,9 +239,9 @@ else
     AC_MSG_ERROR([Could not compile simple test program Test.java with $JAVAC])
 fi
 
+# Check for gcc bug(s) that cause Tcl Blend to fail
 
-
-
+AC_GCC_BUGS
 
 # Subst variables that are only used by Tcl Blend
 

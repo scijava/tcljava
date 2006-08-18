@@ -1028,3 +1028,49 @@ if test $TCLJAVA = "tclblend" || test $TCLJAVA = "both"; then
 fi
 
 ])
+
+#------------------------------------------------------------------------
+# AC_GCC_BUGS()
+#
+#	Check for specific GCC bug(s) that break Tcl Blend.
+#
+#------------------------------------------------------------------------
+
+AC_DEFUN([AC_GCC_BUGS], [
+    if test "$TCLJAVA" = "tclblend" || test "$TCLJAVA" = "both" ; then
+
+    AC_REQUIRE([AC_PROG_CC])
+
+    # GCC 4.1.0 compiled with -O2 contains an optimizer bug
+    # that causes pointer conversion from long long to fail.
+
+    AC_CACHE_CHECK(for GCC 4.1.0 optimizer bug,
+        ac_java_gcc_optimizer_bug,[
+        AC_LANG_PUSH(C)
+        ac_saved_cflags=$CFLAGS
+        CFLAGS="$CFLAGS -O2"
+        AC_TRY_COMPILE([],[
+            void * p= (void *) 0xcccccccc;
+            unsigned long long int x = 0;
+            *((void **)&x) = p;
+            if (x == 0xcccccccc) {
+                return 0;
+            } else {
+                return 1;
+            }
+	],
+        ac_java_gcc_optimizer_bug=no,
+        ac_java_gcc_optimizer_bug=yes)
+        AC_LANG_POP()
+        CFLAGS=$ac_saved_cflags
+    ])
+
+    if test "$ac_java_gcc_optimizer_bug" = "yes"; then
+        AC_MSG_ERROR([This gcc release contains an optimizer bug that breaks Tcl Blend, please use another version of gcc])
+    fi
+
+    fi
+])
+
+
+
