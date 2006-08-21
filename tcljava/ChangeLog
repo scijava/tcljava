@@ -1,5 +1,14 @@
 2006-08-21  Mo DeJong  <mdejong@users.sourceforge.net>
 
+        * src/tjc/tcl/lang/TJC.java: Fixup comments.
+        * src/tjc/tjc/library/compileproc.tcl:
+        Remove FIXME comments.
+        * tests/tjc/compileproc_7.test: Test lappend
+        to scoped variable name, this usage will
+        not init a scoped var slot.
+
+2006-08-21  Mo DeJong  <mdejong@users.sourceforge.net>
+
         * src/jacl/tcl/lang/Expression.java:
         Make expr pool default to 50 ExprValue objects.
 

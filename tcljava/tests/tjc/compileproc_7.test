@@ -4443,6 +4443,81 @@ public class Test1 extends TJC.CompiledCommand {
 } // end class Test1
 }}
 
+tcltest::test compileproc7-7.11 {inline lappend command} {
+    # An lappend to a scoped variable name does not init
+    # a compiled local slot for the scoped variable.
+    # It could, but this use case is not optimized.
+    set script {
+proc p {} {
+    lappend ::v 1
+}
+}
+
+    set test_compileproc_7_cache_variables 1
+    set test_compileproc_7_skip_constant_increment 1
+    set test_compileproc_7_inline_commands 1
+    set plist [compileproc_script_to_proc_list $script]
+    set buffer [compileproc_compile $plist testpkg.Test1 \
+        test_compileproc_7_set_flags]
+    if {[catch {
+    set ok [test_jdk_compile_buffer testpkg.Test1 $buffer]
+    }]} {
+    set ok NO
+    }
+    list $ok $buffer
+} {OK {// TJC implementation of procedure p
+package testpkg;
+import tcl.lang.*;
+
+public class Test1 extends TJC.CompiledCommand {
+    public void cmdProc(
+        Interp interp,
+        TclObject[] objv)
+            throws TclException
+    {
+        if (!initCmd) {
+            inlineCmds = true;
+            initCmd(interp);
+        }
+        CallFrame callFrame = TJC.pushLocalCallFrame(interp, wcmd.ns);
+        Var[] compiledLocals =
+            TJC.initCompiledLocals(callFrame, 1, compiledLocalsNames);
+        try {
+        if (objv.length != 1) {
+            throw new TclNumArgsException(interp, 1, objv, "");
+        }
+        { // Invoke: lappend ::v 1
+            TclObject[] objv0 = TJC.grabObjv(interp, 1);
+            TclObject tmp1;
+            try {
+                // Arg 2 constant: 1
+                objv0[0] = const0;
+                interp.resetResult();
+                tmp1 = lappendVarScalar(interp, "::v", objv0, compiledLocals, 0);
+                interp.setResult(tmp1);
+            } finally {
+                TJC.releaseObjv(interp, objv0, 1);
+            }
+        } // End Invoke: lappend
+        } catch (TclException te) {
+            TJC.checkTclException(interp, te, "p");
+        } finally {
+            TJC.popLocalCallFrame(interp, callFrame);
+        }
+    }
+
+    TclObject const0;
+
+    protected void initConstants(Interp interp) throws TclException {
+        const0 = TclInteger.newInstance(1);
+        const0.preserve(); const0.preserve();
+    }
+
+    String[] compiledLocalsNames = {
+        "::v"
+    };
+} // end class Test1
+}}
 
 
 tcltest::test compileproc7-8.0 {inline append command} {

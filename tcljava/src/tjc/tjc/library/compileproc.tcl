@@ -5,7 +5,7 @@
 #  redistribution of this file, and for a DISCLAIMER OF ALL
 #   WARRANTIES.
 #
-#  RCS: @(#) $Id: compileproc.tcl,v 1.33 2006/06/28 02:15:52 mdejong Exp $
+#  RCS: @(#) $Id: compileproc.tcl,v 1.34 2006/08/21 21:41:13 mdejong Exp $
 #
 #
 
@@ -9583,8 +9583,6 @@ proc compileproc_emit_lappend_call_impl { key arraysym tmpsymbol userdata } {
             set qp1 [emitter_double_quote_tcl_string $p1]
             set qp2 [emitter_double_quote_tcl_string $p2]
 
-# FIXME: Init scoped var
-
             append buffer \
                 [emitter_statement \
                     "${assign}lappendVarArray(interp, $qp1, $qp2,\
@@ -9593,8 +9591,6 @@ proc compileproc_emit_lappend_call_impl { key arraysym tmpsymbol userdata } {
             set qvarname [emitter_double_quote_tcl_string $varname]
             set cache_symbol [compileproc_variable_cache_lookup $varname]
             set cacheId [compileproc_get_variable_cache_id_from_symbol $cache_symbol]
-
-# FIXME: Init scoped var
 
             append buffer \
                 [emitter_statement \

@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TJC.java,v 1.34 2006/08/03 22:33:13 mdejong Exp $ *
+ * RCS: @(#) $Id: TJC.java,v 1.35 2006/08/21 21:41:13 mdejong Exp $ *
  */
 
 // Runtime support for TJC compiler implementation.
@@ -262,10 +262,10 @@ public class TJC {
         // The following methods are used in compiled commands
         // that make use of cached variable access.
 
-        // initVarScoped() is invoked for scoped variable
+        // initVarScoped() is invoked for a scoped variable
         // like "::myglobal". This method will create a local
-        // var linked to variable defined in another scope
-        // if that has not been done yet.
+        // var linked to a variable defined in another scope
+        // if the compiled local has not been initialized yet.
 
         protected final
         void initVarScoped(
@@ -287,8 +287,8 @@ public class TJC {
         }
 
         // getVarScalar() will get a variable value, if a
-        // cached variable is available then it will be used,
-        // otherwise the runtime getVar() will be invoked to get
+        // cached variable is available then it will be used.
+        // Otherwise the runtime getVar() will be invoked to get
         // the value. This method will raise a TclException
         // on error, it will never return null.
 
@@ -312,8 +312,8 @@ public class TJC {
         }
 
         // getVarArray() will get an array element value,
-        // if a cached variable is available then it will be used,
-        // otherwise the runtime getVar() will be invoked to get
+        // if a cached variable is available, then it will be used.
+        // Otherwise the runtime getVar() will be invoked to get
         // the value. This method will raise a TclException
         // on error, it will never return null.
 
