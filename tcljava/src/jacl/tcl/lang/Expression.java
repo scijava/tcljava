@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Expression.java,v 1.36 2006/06/20 01:48:23 mdejong Exp $
+ * RCS: @(#) $Id: Expression.java,v 1.37 2006/08/21 20:55:17 mdejong Exp $
  *
  */
 
@@ -125,10 +125,7 @@ class Expression {
 
     private ExprValue[] cachedExprValue;
     private int cachedExprIndex = 0;
-// FIXME: Likely need to make this 50 since each method invocation
-// could now hold 1 or 2 of these on average. Need some performance
-// number about usage of this pool.
-    private static final int cachedExprLength = 20;
+    private static final int cachedExprLength = 50;
 
     /**
      * Evaluate a Tcl expression and set the interp result to the value.
