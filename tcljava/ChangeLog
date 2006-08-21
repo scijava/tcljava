@@ -1,5 +1,13 @@
 2006-08-21  Mo DeJong  <mdejong@users.sourceforge.net>
 
+        * configure: Regen.
+        * tcljava.m4 (AC_GCC_BUGS):
+        Replace AC_TRY_COMPILE with AC_TRY_RUN so
+        that program is compiled and run on host system.
+	[Bug 1528278]
+
+2006-08-21  Mo DeJong  <mdejong@users.sourceforge.net>
+
         * src/tjc/tcl/lang/TJC.java: Fixup comments.
         * src/tjc/tjc/library/compileproc.tcl:
         Remove FIXME comments.

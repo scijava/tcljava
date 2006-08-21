@@ -1049,18 +1049,21 @@ AC_DEFUN([AC_GCC_BUGS], [
         AC_LANG_PUSH(C)
         ac_saved_cflags=$CFLAGS
         CFLAGS="$CFLAGS -O2"
-        AC_TRY_COMPILE([],[
-            void * p= (void *) 0xcccccccc;
-            unsigned long long int x = 0;
-            *((void **)&x) = p;
-            if (x == 0xcccccccc) {
+        AC_TRY_RUN([
+            int main(int argc, char **argv) {
+              void * p= (void *) 0xcccccccc;
+              unsigned long long int x = 0;
+              *((void **)&x) = p;
+              if (x == 0xcccccccc) {
                 return 0;
-            } else {
+              } else {
                 return 1;
+              }
             }
-	],
+        ],
         ac_java_gcc_optimizer_bug=no,
-        ac_java_gcc_optimizer_bug=yes)
+        ac_java_gcc_optimizer_bug=yes,
+        ac_java_gcc_optimizer_bug=no)
         AC_LANG_POP()
         CFLAGS=$ac_saved_cflags
     ])
