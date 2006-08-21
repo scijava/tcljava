@@ -1,5 +1,10 @@
 2006-08-21  Mo DeJong  <mdejong@users.sourceforge.net>
 
+        * announce: Update for 1.4.0 release.
+        * docs/Topics/WhatsNew.html: Mention setInterrupt API.
+
+2006-08-21  Mo DeJong  <mdejong@users.sourceforge.net>
+
         * configure: Regen.
         * tcljava.m4 (AC_GCC_BUGS):
         Replace AC_TRY_COMPILE with AC_TRY_RUN so

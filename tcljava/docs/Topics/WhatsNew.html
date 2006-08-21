@@ -133,6 +133,17 @@ path have been fixed and support for loading resources from
 the <code>env(TCL_CLASSPATH)</code> path has been added.
 </p>
 
+<H4>SetInterrupt API for Jacl</H4>
+
+<p>
+A new <code>Interp.setInterrupt()</code> makes it possible for
+the user to interrupt a running Jacl interpreter and unwind
+the stack. For example, this API could be used to implement
+a service thread that would timeout and cleanup after a
+certain amount of time. See the
+<A HREF="SetInterrupted.html">SetInterrupted</A> for more info.
+</p>
+
 <H4>JPDA debug support</H4>
 
 <p>
