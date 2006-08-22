@@ -2,6 +2,7 @@
 
         * announce: Update for 1.4.0 release.
         * docs/Topics/WhatsNew.html: Mention setInterrupt API.
+        * docs/website/index.html: Update for 1.4.0 release.
 
 2006-08-21  Mo DeJong  <mdejong@users.sourceforge.net>
 
