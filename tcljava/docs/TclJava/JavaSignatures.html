@@ -20,19 +20,18 @@ About:
 
 <DD>
 
-A <I>signature</I> is a list that specifies a class constructor,
-an instance method, or a static method, thereby distinguishing
-it from other constructors, instance methods, or static methods.
+A <I>signature</I> is a list that indicates a class constructor,
+an instance method, or a static method.
 
 <P>
 
 Two forms of signatures are accepted: simple and full. A <I>simple
 signature</I> is a single element list containing the name of the
 method or constructor. In most cases a simple signature is all that is
-needed as the Java method resolver is able to disambiguate overloaded
+needed, as the Java method resolver is able to disambiguate overloaded
 Java methods based on the types of Java object arguments. There are
 some cases where the Java method resolver is unable to determine
-which Java method you intended to invoke so you will need to use
+which Java method you intended to invoke, so you will need to use
 the <I>full signature</I> for the method or constructor.
 The <I>full signature</I> is used to distinguish between two or
 more methods or constructors that have the same number of arguments.
@@ -54,7 +53,7 @@ Examples:
 
 <DD>
 
-This command will create a Java String object and store a reference to
+This command will create a Java <code>String</code> object and store a reference to
 it in a Tcl variable.
 
 <P>
@@ -66,16 +65,15 @@ set jstr [java::new String "I am a Java string"]
 <P>
 
 There are a couple of things that you should note about this example.
-First, the constructor signature used here is a simple signature
-meaning a list containing a single element {String}. The system
-will automatically check to see if a class name that containes
-no dots is really in the <code>java.lang</code> package. In this
-case the class name <code>String</code> is found to exist in
-the <code>java.lang</code> package so an instance of the class
-<code>java.lang.String</code> will be allocated. The second thing
-you should notice about this example is that the Java method
-resolver is being used to disambiguate between overloaded
-constructors in the <code>String</code> class.
+First, the constructor signature used here is a simple signature,
+that is a list containing a single element <code>{String}</code>.
+The system will automatically check to see if a class name that contains
+no dots lives in the <code>java.lang</code> package. In this
+example, the class named <code>String</code> does exist in the
+<code>java.lang</code> package, so an instance of
+<code>java.lang.String</code> is allocated. The second thing
+to note about this example is that the Java method resolver
+is invoked to disambiguate an overloaded constructor signature.
 
 <P>
 
@@ -96,9 +94,8 @@ String(StringBuffer)
 
 <P>
 
-By default a Tcl string will be converted to a <code>java.lang.String</code>
-so in this case the method resolver picks the <code>String(String)</code>
-constructor.
+By default a Tcl string will be converted to a <code>java.lang.String</code>,
+so the method resolver picks the <code>String(String)</code> constructor.
 
 <P>
 
@@ -112,15 +109,15 @@ set jstr [java::new {String String} "I am a Java string"]
 
 <P>
 
-In this case the Tcl string is converted to a <code>java.lang.String</code>
+In this case, the Tcl string is converted to a <code>java.lang.String</code>
 and the <code>String(String)</code> constructor is invoked. The only
 difference is that the Java method resolver is not used when a full
 signature is provided.
 
 <P>
 
-Lets looks at another more compicated example. Assume that we are using
-a Java class which is defined like this.
+Let's examine a more complicated example, assume a method
+is to be invoked on the following Java class.
 
 <P>
 
@@ -153,9 +150,14 @@ H
 
 <P>
 
-There is also the possibility that the method resolver will not be able
-to choose a method to invoke based on the type(s) of the argument(s).
-If this occures, the method resolver will give up and return an error
+In the example above, the type of the argument object is
+known to be a <code>java.util.Hashtable</code>. The
+method resolver will automatically choose the correct
+overloaded <code>foo</code> method, ignoring the
+version of <code>foo</code> that accepts a <code>Vector</code>.
+In some cases, the method resolver is not able to choose a method to
+invoke based on the type(s) of the argument(s).
+If this occurs, the method resolver will give up and return an error
 message indicating which methods could not be disambiguated.
 
 <P>
@@ -165,6 +167,54 @@ message indicating which methods could not be disambiguated.
 % $A foo "a string"<br>
 ambiguous method signature, could not choose between {foo java.util.Hashtable} {foo java.util.Vector}
 </code>
+
+<P>
+
+In some cases, the method resolver will not be able to automatically
+resolve a method signature.
+
+<P>
+
+<code>
+<pre>
+import java.util.*;
+public class B {
+  public String foo(int i, Hashtable h) {return "IH";}
+  public String foo(char c, Vector v) {return "CV";}
+}
+</pre>
+</code>
+
+</P>
+
+<P>
+
+<code>
+<pre>
+% java::import java.util.Hashtable
+% set hash [java::new Hashtable]
+java0x1
+% set b [java::new B]
+java0x2
+% $b foo 0 $hash
+ambiguous method signature, could not choose between {foo char java.util.Vector} {foo int java.util.Hashtable}
+</pre>
+</code>
+
+A full signature is required in this case. The method name, the
+name of the primitive type, and the name of the class type should
+be passed in a list. Note that the imported class name <code>Hashtable</code>
+is passed here, the fully qualified class name need not be passed
+because the class was already imported via <code>java::import</code>.
+
+<code>
+<pre>
+% $b {foo int Hashtable} 0 $hash
+IH
+</pre>
+</code>
+
+</P>
 
 </DL>
 

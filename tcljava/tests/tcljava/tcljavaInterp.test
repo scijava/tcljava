@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcljavaInterp.test,v 1.8 2006/07/28 20:53:06 mdejong Exp $
+# RCS: @(#) $Id: tcljavaInterp.test,v 1.9 2006/09/11 20:45:30 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -169,6 +169,92 @@ test javaInterp-1.9 {Use Interp.evalFile() API to source a Tcl file} {
     close [open empty.tcl w]
     [java::getinterp] evalFile empty.tcl
 } {}
+
+test tcljavaInterp-1.10 {TCL_CLASSPATH not set} {
+    # loading class will fail since TCL_CLASSPATH is not set
+    set i1 [interp create]
+    set results [$i1 eval {
+        package require java
+        if {[info exists env(TCL_CLASSPATH)]} {
+            unset env(TCL_CLASSPATH)
+        }
+        list [catch {java::field testext.Dummy class} err] $err
+    }]
+    interp delete $i1
+    set results
+} {1 {unknown class or object "testext.Dummy"}}
+
+test tcljavaInterp-1.11 {TCL_CLASSPATH not set} {
+    # loading class will fail since TCL_CLASSPATH is set to ""
+    set i1 [interp create]
+    set results [$i1 eval {
+        package require java
+        set env(TCL_CLASSPATH) ""
+        list [catch {java::field testext.Dummy class} err] $err
+    }]
+    interp delete $i1
+    set results
+} {1 {unknown class or object "testext.Dummy"}}
+
+test tcljavaInterp-1.12 {TCL_CLASSPATH not set} {
+    # loading should work since jar is on TCL_CLASSPATH
+    set i1 [interp create]
+    set results [$i1 eval {
+        package require java
+        set env(TCL_CLASSPATH) [file join [pwd] testext.jar]
+        list [catch {java::field testext.Dummy class} err] $err
+    }]
+    interp delete $i1
+    set results
+} {0 java0x1}
+
+test tcljavaInterp-1.13 {TCL_CLASSPATH not set} {
+    # TCL_CLASSPATH initially not set, so loading
+    # fails. Then set it and load again to make
+    # sure that the search path is updated.
+    set i1 [interp create]
+    set results [$i1 eval {
+        set results [list]
+
+        package require java
+
+        set env(TCL_CLASSPATH) /whatever
+
+        lappend results [catch {java::field testext.Dummy class} err] $err
+
+        set env(TCL_CLASSPATH) [file join [pwd] testext.jar]
+
+        lappend results [catch {java::field testext.Dummy class} err] $err
+
+        set results
+    }]
+    interp delete $i1
+    set results
+} {1 {unknown class or object "testext.Dummy"} 0 java0x1}
+
+test tcljavaInterp-1.14 {TCL_CLASSPATH not set} {
+    # TCL_CLASSPATH initially not set, so loading
+    # fails. Then set it and load again to make
+    # sure that the search path is updated.
+    set i1 [interp create]
+    set results [$i1 eval {
+        set results [list]
+
+        package require java
+
+        set env(TCL_CLASSPATH) ""
+
+        lappend results [catch {java::field testext.Dummy class} err] $err
+
+        set env(TCL_CLASSPATH) [file join [pwd] testext.jar]
+
+        lappend results [catch {java::field testext.Dummy class} err] $err
+
+        set results
+    }]
+    interp delete $i1
+    set results
+} {1 {unknown class or object "testext.Dummy"} 0 java0x1}
 
 
 # Size of TclList differs in Jacl and Tcl Blend

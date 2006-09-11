@@ -1,3 +1,19 @@
+2006-09-11  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * docs/TclJava/ClassLoading.html: Update
+        class loading info, mention use of context
+        class loader and how env(TCL_CLASSPATH) should
+        be used at runtime.
+        * docs/TclJava/JavaSignatures.html: Update
+        signature docs, add full signature example.
+        * src/tcljava/tcl/lang/TclClassLoader.java (checkTclClasspath):
+        A bug was causing changes to env(TCL_CLASSPATH) to
+        be ignored in checkTclClasspath, fix it by using
+        || instead of && in the test expr.
+        * tests/tcljava/tcljavaInterp.test: Add
+        regression test cases for path bug.
+        [Bug 1556640]
+
 2006-08-21  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * announce: Update for 1.4.0 release.

@@ -7,7 +7,7 @@
  *      the class.  In order they are:
  *
  *          1) The unique cache, "classes", inside the TclClassLoader.
- *          2) Using the system class loader.
+ *          2) Using the system class loader (via the context class loader).
  *          3) Any paths passed into the constructor via the pathList variable.
  *          4) Any path in the interps env(TCL_CLASSPATH) variable.
  *
@@ -24,7 +24,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: TclClassLoader.java,v 1.14 2006/08/04 23:11:14 mdejong Exp $
+ * RCS: @(#) $Id: TclClassLoader.java,v 1.15 2006/09/11 20:45:30 mdejong Exp $
  */
 
 
@@ -193,6 +193,7 @@ private void checkTclClasspath() {
         }
 
         // env(TCL_CLASSPATH) is set to ""
+
         if (current_tclclasspath.length() == 0) {
             if (debug) {
                 System.out.println("env(TCL_CLASSPATH) is \"\"");
@@ -203,14 +204,25 @@ private void checkTclClasspath() {
             return;
         }
 
-        if ((cached_tclclasspath == null) &&
+        if (debug) {
+            System.out.println("comparing \"" + cached_tclclasspath +
+                "\" to \"" + current_tclclasspath + "\"");
+        }
+
+        if ((cached_tclclasspath == null) ||
                 !current_tclclasspath.equals(cached_tclclasspath)) {
             // env(TCL_CLASSPATH) has changed, reset cache and reparse
+
+	    if (debug) {
+	        System.out.println("resetting cache");
+	    }
+
 	    cached_tclclasspath = current_tclclasspath;
 	    elems = TclList.getElements(interp, tobj);
         }
     } catch (TclException e) {
 	// env(TCL_CLASSPATH) not set
+
 	if (debug) {
 	    System.out.println("env(TCL_CLASSPATH) not set, TclException was: " + e.getMessage());
 	}
@@ -223,12 +235,14 @@ private void checkTclClasspath() {
 
     if (elems == null) {
 	// env(TCL_CLASSPATH) is the same value it was before
+
 	if (debug) {
 	    System.out.println("env(TCL_CLASSPATH) unchanged");
 	}
 	return;
     } else {
 	// env(TCL_CLASSPATH) was changed, reparse path
+
 	if (debug) {
 	    System.out.println("env(TCL_CLASSPATH) changed, reparsing");
 	}
