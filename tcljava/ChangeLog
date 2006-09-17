@@ -1,3 +1,14 @@
+2006-09-16  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * docs/TJC/module.html: Mention that PACKAGE
+        statement is required in a module file.
+        * src/tjc/tjc/library/module.tcl:
+        Update module_parse_validate so that an
+        error will be generated when no PACKAGE
+        declaration is found in a module file.
+        * tests/tjc/module.test: Check for missing
+        PACKAGE statement.
+
 2006-09-11  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * docs/TclJava/ClassLoading.html: Update

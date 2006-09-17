@@ -3,9 +3,9 @@
 #
 #  See the file "license.amd" for information on usage and
 #  redistribution of this file, and for a DISCLAIMER OF ALL
-#   WARRANTIES.
+#  WARRANTIES.
 #
-#  RCS: @(#) $Id: module.tcl,v 1.9 2006/06/21 02:43:27 mdejong Exp $
+#  RCS: @(#) $Id: module.tcl,v 1.10 2006/09/17 00:57:34 mdejong Exp $
 #
 #
 
@@ -106,13 +106,13 @@ proc module_parse { data } {
     return $num_cmds
 }
 
-# Pase a single command line. Multiple input lines that were
+# Parse a single command line. Multiple input lines that were
 # continued would have already been compressed by module_parse.
 
 proc module_parse_command { cmdstr linenum } {
     global _module
 
-    # count of parsed arguments +1 for the command
+    # count of parsed arguments, +1 for the command
     set nparsed 0
 
     if {![regexp {^([A-Z|_]+)} $cmdstr whole sub1]} {
@@ -247,8 +247,8 @@ proc module_space_split { str } {
 
 }
 
-# Query current value and expand out path pattern into a
-# list of file names.
+# Query current value and expand path pattern out into
+# a list of file names.
 
 proc module_expand { cmd } {
     global _module
@@ -256,6 +256,7 @@ proc module_expand { cmd } {
     set debug 0
 
     # Already expanded source list, return it now
+
     set lower [string tolower $cmd]
     if {[info exists _module(expanded_$lower)]} {
         return $_module(expanded_$lower)
@@ -540,7 +541,7 @@ proc module_option_validate { op val index num_options options } {
         "inline-expr-value-stack-null" {
             # If +inline-expr-value-stack-null is found, then
             # +inline-expr must appear before it. Also,
-            # the -inline-expr-value-stack must not appear.
+            # -inline-expr-value-stack must not appear.
 
             if {!$val} {
                 error "only +inline-expr-value-stack-null is allowed"
@@ -731,11 +732,32 @@ proc module_option_replace_psudo_option { option enabled } {
     }
 }
 
-# Validate a module file data after all of the entries have
+# Validate module file data after all of the entries have
 # been parsed.
 
 proc module_parse_validate {} {
     global _module
+
+    # Check that PACKAGE exists, and that it does
+    # not contain a Java keyword.
+
+    set pkg [module_query PACKAGE]
+    if {$pkg == ""} {
+        error "PACKAGE statement not found"
+    }
+    set contains_keyword 0
+    foreach elem [split $pkg "."] {
+        if {[emitter_is_java_keyword $elem]} {
+            set contains_keyword 1
+        }
+    }
+    if {$pkg == "default"} {
+        # Don't raise error for default package
+        set contains_keyword 0
+    }
+    if {$contains_keyword} {
+        error "PACKAGE must not contain a Java keyword"
+    }
 
     if {![info exist _module(source)]} {
         error "No SOURCE declaration found in module config"
@@ -778,22 +800,6 @@ proc module_parse_validate {} {
         if {![info exists source_tails($tail)]} {
             error "INCLUDE_SOURCE file \"$tail\" does not appear in SOURCE declaration"
         }
-    }
-
-    # Check that PACKAGE does not contain a Java keyword
-    set pkg [module_query PACKAGE]
-    set contains_keyword 0
-    foreach elem [split $pkg "."] {
-        if {[emitter_is_java_keyword $elem]} {
-            set contains_keyword 1
-        }
-    }
-    if {$pkg == "default"} {
-        # Don't raise error for default package
-        set contains_keyword 0
-    }
-    if {$contains_keyword} {
-        error "PACKAGE must not be a Java keyword"
     }
 
     return

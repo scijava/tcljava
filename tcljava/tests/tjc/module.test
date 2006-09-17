@@ -87,6 +87,10 @@ tcltest::test module-package-2.1 {PACKAGE} {
     set _module(package)
 } {com.one_two}
 
+tcltest::test module-package-2.2 {PACKAGE} {
+    module_parse_command {PACKAGE default} 1
+    set _module(package)
+} {default}
 
 
 tcltest::test module-options-1.0 {OPTIONS} {
@@ -412,7 +416,7 @@ INIT_SOURCE one.tcl
     }
     module_parse $data
     list [catch {module_parse_validate} err] $err
-} {1 {PACKAGE must not be a Java keyword}}
+} {1 {PACKAGE must not contain a Java keyword}}
 
 tcltest::test module-4.7 {validate PACKAGE} {
     file delete -force t1
@@ -426,8 +430,21 @@ INIT_SOURCE one.tcl
     }
     module_parse $data
     list [catch {module_parse_validate} err] $err
-} {1 {PACKAGE must not be a Java keyword}}
+} {1 {PACKAGE must not contain a Java keyword}}
 
+tcltest::test module-4.8 {validate PACKAGE} {
+    file delete -force t1
+    file mkdir t1
+    tcltest::makeFile {} t1/one.tcl
+
+    set data {
+# no PACKAGE statement, signal an error
+SOURCE t1/one.tcl
+INIT_SOURCE one.tcl
+    }
+    module_parse $data
+    list [catch {module_parse_validate} err] $err
+} {1 {PACKAGE statement not found}}
 
 
 tcltest::test module-5.0 {query module info} {
@@ -482,6 +499,7 @@ tcltest::test module-5.4 {query module info} {
     tcltest::makeFile {} test_glob_1.tcl
 
     set data "
+PACKAGE default
 SOURCE [file join [pwd] *_glob_*.tcl]
 INIT_SOURCE test_glob_1.tcl
     "
@@ -496,6 +514,7 @@ tcltest::test module-5.5 {query module info} {
     tcltest::makeFile {} test_glob_1.tcl
 
     set data "
+PACKAGE default
 SOURCE [file join [pwd] *_glob_*.tcl]
 INIT_SOURCE test_glob_1.tcl
     "
