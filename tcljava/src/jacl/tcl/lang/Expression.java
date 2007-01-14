@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Expression.java,v 1.37 2006/08/21 20:55:17 mdejong Exp $
+ * RCS: @(#) $Id: Expression.java,v 1.38 2007/01/14 01:02:33 mdejong Exp $
  *
  */
 
@@ -2151,9 +2151,12 @@ abstract class NoArgMathFunction extends MathFunction {
 class Atan2Function extends BinaryMathFunction {
     void apply(Interp interp, ExprValue[] values)
 	    throws TclException {
-	values[0].setDoubleValue(Math.atan2(
-		values[0].getDoubleValue(),
-		values[1].getDoubleValue()));
+	double y = values[0].getDoubleValue();
+	double x = values[1].getDoubleValue();
+	if ((y == 0.0) && (x == 0.0)) {
+	    Expression.DomainError(interp);
+	}
+	values[0].setDoubleValue(Math.atan2(y, x));
     }
 }
 
@@ -2249,9 +2252,17 @@ class RoundFunction extends MathFunction {
 class PowFunction extends BinaryMathFunction {
     void apply(Interp interp, ExprValue[] values)
 	    throws TclException {
-	double d = Math.pow(
-		values[0].getDoubleValue(),
-		values[1].getDoubleValue());
+	double x = values[0].getDoubleValue();
+	double y = values[1].getDoubleValue();
+	if (x < 0.0) {
+	    // If x is negative then y must be an integer
+
+	    if (((double) ((int) y)) != y) {
+	        Expression.DomainError(interp);
+	    }
+	}
+
+	double d = Math.pow(x, y);
 	Expression.checkDoubleRange(interp, d);
 	values[0].setDoubleValue(d);
     }
@@ -2283,7 +2294,7 @@ class AcosFunction extends UnaryMathFunction {
 	    throws TclException {
 	ExprValue value = values[0];
 	double d = value.getDoubleValue();
-	if ((d < -1) || (d > 1)) {
+	if ((d < -1.0) || (d > 1.0)) {
 	    Expression.DomainError(interp);
 	}
 	value.setDoubleValue(Math.acos(d));
@@ -2294,7 +2305,11 @@ class AsinFunction extends UnaryMathFunction {
     void apply(Interp interp, ExprValue[] values)
 	    throws TclException {
 	ExprValue value = values[0];
-	value.setDoubleValue(Math.asin(value.getDoubleValue()));
+	double d = value.getDoubleValue();
+	if ((d < -1.0) || (d > 1.0)) {
+	    Expression.DomainError(interp);
+	}
+	value.setDoubleValue(Math.asin(d));
     }
 }
 
@@ -2302,7 +2317,11 @@ class AtanFunction extends UnaryMathFunction {
     void apply(Interp interp, ExprValue[] values)
 	    throws TclException {
 	ExprValue value = values[0];
-	value.setDoubleValue(Math.atan(value.getDoubleValue()));
+	double d = value.getDoubleValue();
+	if ((d < -Math.PI/2) || (d > Math.PI/2)) {
+	    Expression.DomainError(interp);
+	}
+	value.setDoubleValue(Math.atan(d));
     }
 }
 
@@ -2368,6 +2387,9 @@ class FmodFunction extends BinaryMathFunction {
 	    throws TclException {
 	double d1 = values[0].getDoubleValue();
 	double d2 = values[1].getDoubleValue();
+	if (d2 == 0.0) {
+	    Expression.DomainError(interp);
+	}
 	values[0].setDoubleValue(Math.IEEEremainder(d1, d2));
     }
 }
@@ -2386,7 +2408,11 @@ class LogFunction extends UnaryMathFunction {
     void apply(Interp interp, ExprValue[] values)
 	    throws TclException {
 	ExprValue value = values[0];
-	value.setDoubleValue(Math.log(value.getDoubleValue())); 
+	double d = value.getDoubleValue();
+	if (d < 0.0) {
+	    Expression.DomainError(interp);
+	}
+	value.setDoubleValue(Math.log(d));
     }
 }
 
@@ -2397,7 +2423,10 @@ class Log10Function extends UnaryMathFunction {
 	    throws TclException {
 	ExprValue value = values[0];
 	double d = value.getDoubleValue();
-	value.setDoubleValue(Math.log(d / log10)); 
+	if (d < 0.0) {
+	    Expression.DomainError(interp);
+	}
+	value.setDoubleValue(Math.log(d) / log10);
    }
 }
 
@@ -2433,7 +2462,11 @@ class SqrtFunction extends UnaryMathFunction {
     void apply(Interp interp, ExprValue[] values)
 	    throws TclException {
 	ExprValue value = values[0];
-	value.setDoubleValue(Math.sqrt(value.getDoubleValue()));
+	double x = value.getDoubleValue();
+	if (x < 0.0) {
+	    Expression.DomainError(interp);
+	}
+	value.setDoubleValue(Math.sqrt(x));
     }
 }
 

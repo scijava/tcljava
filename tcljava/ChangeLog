@@ -1,3 +1,13 @@
+2007-01-13  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/jacl/tcl/lang/Expression.java (Atan2Function,
+        PowFunction, AcosFunction, AsinFunction, AtanFunction
+        FmodFunction, LogFunction, Log10Function,
+        SqrtFunction):
+        Add valid input bounds checks to math functions.
+        Fix typo in log10() function that make it
+        return incorrect results.
+
 2006-09-16  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * docs/TJC/module.html: Mention that PACKAGE
