@@ -1,3 +1,10 @@
+2007-06-06  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * src/jacl/tcl/lang/SubstCmd.java (cmdProc):
+        Remove else branch that skipped \r characters since
+        this did not match the C implementation.
+        * tests/tcl/subst.test: Add test case for \r case.
+
 2007-01-13  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/jacl/tcl/lang/Expression.java (Atan2Function,

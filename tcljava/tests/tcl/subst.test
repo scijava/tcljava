@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: subst.test,v 1.2 2001/01/28 21:55:16 mdejong Exp $
+# RCS: @(#) $Id: subst.test,v 1.3 2007/06/07 02:35:26 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -38,6 +38,11 @@ test subst-2.3 {simple strings} {
 test subst-3.1 {backslash substitutions} {
     subst {\x\$x\[foo bar]\\}
 } "x\$x\[foo bar]\\"
+
+test subst-3.2 {backslash substitutions} {
+    string length [subst "Hello\rWorld\r"]
+} {12}
+
 
 test subst-4.1 {variable substitutions} {
     set a 44
