@@ -1,3 +1,15 @@
+2007-06-07  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * configure: Regen.
+        * configure.in:
+        * src/pkgIndex.tcl:
+        * src/jacl/tcl/lang/Interp.java:
+        * src/tcljava/tcl/lang/BlendExtension.java:
+        * unix/tools/vutil/current:
+        * unix/tools/vutil/vsub.sh:
+        * win/makefile.vc: Update to version 1.4.1.
+        Added release tag tcljava-141-2007-06-06.
+
 2007-06-06  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * src/jacl/tcl/lang/SubstCmd.java (cmdProc):

@@ -1,6 +1,8 @@
 #!/bin/sh
 
-TCLSH=tclsh
+if test "${TCLSH}" = ""; then
+    TCLSH=tclsh
+fi
 CUR=`pwd`/current
 RCSVER=`pwd`/rcsver.tcl
 FSUB=`pwd`/fsub.tcl

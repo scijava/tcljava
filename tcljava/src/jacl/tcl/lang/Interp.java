@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.86 2006/08/03 23:24:02 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.87 2007/06/07 20:52:15 mdejong Exp $
  *
  */
 
@@ -1011,7 +1011,7 @@ createCommands()
     Extension.loadOnDemand(this, "jaclloadjava", "tcl.lang.JaclLoadJavaCmd");
     
     try {
-        eval("package ifneeded java 1.4.0 jaclloadjava");
+        eval("package ifneeded java 1.4.1 jaclloadjava");
     } catch (TclException e) {
 	System.out.println(getResult());
 	e.printStackTrace();
