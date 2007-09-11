@@ -19,6 +19,10 @@ Java Package enables the user to script Java. Jacl also includes a
 compiler named TJC (Tcl to Java compiler) that converts Tcl to
 Java bytecode that is executed directly in the JVM.
 
+Jacl 1.4 is considered stable (only bug fixes will be applied
+going forward) and is considered ready for evaluation in production
+environments.
+
 2. Documentation
 ----------------
 

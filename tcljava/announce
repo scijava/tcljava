@@ -1,22 +1,23 @@
-This message is to announce the new 1.4.0 release of Jacl and
+This message is to announce the new 1.4.1 release of Jacl and
 Tcl Blend.  These releases are the result of efforts by Mo DeJong
 and the Jacl and Tcl Blend user community.
 
-The 1.4.0 release of Jacl and Tcl Blend are available for
+The 1.4.1 release of Jacl and Tcl Blend are available for
 downloading at the following URL:
 
     http://sourceforge.net/project/showfiles.php?group_id=13005
 
-Users should note that 1.4.0 is a development release, it is not
-considered production ready. This release has been in development
-for more than a year, it is well tested and should be bug free.
+The 1.4.1 release is considered stable and is now ready for evaluation
+in production environments. This release is well tested and should be
+bug free.
 
-What's New in the 1.4.0 Release?
+What's New in the 1.4.1 Release?
 ----------------------------------
 
-Jacl 1.4.0 includes a new compiler named TJC (Tcl to Java Compiler).
+Jacl 1.4.1 includes a new compiler named TJC (Tcl to Java Compiler).
 A Tcl proc compiled with TJC will execute from 10 to 30 times faster.
 TJC supports both a batch compile mode and a runtime compilation mode.
+Jacl's expression engine has also been significantly optimized.
 
 Itcl has been ported to Jacl, a user need only execute
 "package require Itcl" to load Itcl commands into a Jacl shell.

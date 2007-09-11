@@ -14,6 +14,10 @@ possible to invoke methods and access fields on arbitrary Java
 objects. Tcl Blend takes advantage of these capabilities to provide
 a dynamic interface to Java.
 
+Tcl Blend 1.4 is considered stable (only bug fixes will be applied
+going forward) and is considered ready for evaluation in production
+environments.
+
 2. Documentation
 ----------------
 

@@ -1,3 +1,12 @@
+2007-09-11  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * README.jacl:
+        * README.tclblend:
+        * announce:
+        * docs/website/index.html: Add notes indicating
+        that the 1.4 version is stable and ready for
+        evaluation in production environments.
+
 2007-06-07  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * configure: Regen.
