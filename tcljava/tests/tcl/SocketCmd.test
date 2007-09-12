@@ -18,7 +18,7 @@ proc wiki_get {host port path} {
 }
 
 test socket-1.1 {} {
-    set data [wiki_get wiki.tcl.tk 80 /2?Q=Jacl]
+    set data [wiki_get wiki.tcl.tk 80 /_search?S=Jacl]
     string equal [string first "Swank" $data] -1
 } 0
 

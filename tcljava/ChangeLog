@@ -1,3 +1,17 @@
+2007-09-12  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * known_issues.txt: Add note about test cases
+        that fail because the build/install directory
+        contains a space in the directory name.
+        * tests/jacl/ioEncodeDecode.test:
+        * tests/tcl/SocketCmd.test: Update WIKI url so that
+        search works as expected.
+        * tests/tcl/encoding.test:
+        * tests/tcl/io.test:
+        Mark each failing test that depends on the iso2022-jp
+        encoding with the knownbug constraint. Each JDK release
+        seems to break the iso2022-jp encoding is new ways.
+
 2007-09-11  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * README.jacl:
