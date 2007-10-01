@@ -1,40 +1,17 @@
-package tcl.lang;
-
-// We can not compile outside of the tcl.lang package
-// the perms inside jacl need to be fixed before this will work
-//import tcl.lang.*;
-
-import java.awt.*;
-import java.awt.event.*;
+import tcl.lang.*;
 
 import java.io.*;
 
-// we need to incluse swingempty.jar in CLASSPATH so we
-// can compile with swing 1.0 and 1.1
-
-import com.sun.java.swing.*;
-import com.sun.java.swing.text.*;
-import com.sun.java.swing.event.*;
+import java.awt.*;
+import java.awt.event.*;
 
 import javax.swing.*;
 import javax.swing.text.*;
 import javax.swing.event.*;
 
-
 public class GuiShell {
 
-  private static String pre_swing;
-
-  static {
-    Class c = UIManager.class;
-    String c_name = c.getName();
-
-    pre_swing = "com.sun.java.swing";
-    if (c_name.startsWith(pre_swing)) {
-        pre_swing = "javax.swing";
-    }
-
-  }
+  private static String pre_swing = "javax.swing";
 
   public GuiShell() {
 
@@ -54,7 +31,7 @@ public class GuiShell {
     
     
     
-    frame = new JFrame("Main");
+    frame = new JFrame("GuiShell");
     frame.setSize(500,350);
     frame.setLocation(100,100);
     frame.addWindowListener(closer);
@@ -68,7 +45,6 @@ public class GuiShell {
     doc = edit.getDocument();
 
     append("% ");
-
 
     JScrollPane scroller = new JScrollPane(edit,JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
@@ -85,28 +61,22 @@ public class GuiShell {
   public void setupInterp() {
 
     try {
-      interp.setVar("argv0", "tcl.lang.Shell", TCL.GLOBAL_ONLY);
-      interp.setVar("tcl_interactive", "1", TCL.GLOBAL_ONLY);
+      interp.setVar("argv0", TclString.newInstance("tcl.lang.Shell"), TCL.GLOBAL_ONLY);
+      interp.setVar("tcl_interactive", TclString.newInstance("1"), TCL.GLOBAL_ONLY);
 
       interp.setVar("argv", TclList.newInstance(),  TCL.GLOBAL_ONLY);
-      interp.setVar("argc", "0", TCL.GLOBAL_ONLY);
+      interp.setVar("argc", TclString.newInstance("0"), TCL.GLOBAL_ONLY);
 
     } catch (TclException e) {
 	throw new TclRuntimeError("unexpected TclException: " + e);
     }
 
-
     ThreadedTclEventLoop tsr = new ThreadedTclEventLoop();
-    Thread t = new Thread(tsr);    
+    Thread t = new Thread(tsr);
     t.setPriority(Thread.MIN_PRIORITY);
     t.setDaemon(true);
     t.start();
-
-
   }
-
-
-  
 
   public class ThreadedTclEventLoop implements Runnable {
     
@@ -121,53 +91,72 @@ public class GuiShell {
     
   }
 
-
-
-
-
   public void setupStreamReaders() {
 
     try {
-      stdout = System.out;
-      stderr = System.err;
-      pin  = new PipedInputStream();
-      pout = new PipedOutputStream(pin);
+      // Save original stdout and stderr
+      _stdout = System.out;
+      _stderr = System.err;
+
+      pout = new PipedOutputStream();
       ps = new PrintStream(pout);
-      System.setOut(ps);
-      System.setErr(ps);
+
+      // Connect the PipedInputStream to the PipedOutputStream,
+      // so that a read on the pin instance will read data
+      // from the pout instance.
+
+      pin  = new PipedInputStream();
+      pin.connect(pout);
+
+      // Use Jacl's IO redirection API to send stdout and stderr
+      // to the PipedOutputStream.
+
+      StdChannel.setOut(ps);
+      StdChannel.setErr(ps);
+
     } catch (java.io.IOException e) {
-      e.printStackTrace(stderr);
+      e.printStackTrace(_stderr);
     }
 
-    
     ThreadedStreamReader tsr = new ThreadedStreamReader();
-    Thread t = new Thread(tsr);    
+    Thread t = new Thread(tsr);
     //t.setPriority(Thread.MIN_PRIORITY);
     t.setDaemon(true);
     t.start();
-
   }
-
-
+  
+  // This class reads from a PipedInputStream, it is connected
+  // to a PipedOutputStream that has been set as the output
+  // channel for both stdout and stderr in the Jacl interpreter.
+  // The result is that a command like "puts HELLO" will result
+  // in the string "HELLO" being read by this method.
 
   public class ThreadedStreamReader implements Runnable {
-    
+
     public void run() {
+      final boolean debug = false;
+
+      if (debug) {
+          _stderr.println("Entered ThreadedStreamReader.run()");
+      }
+
       BufferedReader br =
 	new BufferedReader(new InputStreamReader(pin));
-      
+
       String nextline = null;
-      
+
       while (true) {
 	try {
-	nextline = br.readLine() + "\n";
-	doc.insertString(doc.getLength(), nextline, null);
-	edit.setCaretPosition(doc.getLength());
-	
+	  nextline = br.readLine() + "\n";
+          if (debug) {
+              _stderr.println("readLine() -> \"" + nextline + "\"");
+          }
+	  doc.insertString(doc.getLength(), nextline, null);
+	  edit.setCaretPosition(doc.getLength());
 	}  catch (IOException e) {
-	  e.printStackTrace(stderr);
+	  e.printStackTrace(_stderr);
 	} catch (BadLocationException e) {
-	  e.printStackTrace(stderr);
+	  e.printStackTrace(_stderr);
 	}
       }
 
@@ -203,9 +192,11 @@ public class GuiShell {
 
 
   public void processCommand() {
+    final boolean debug = false;
     
-    //System.out.println("now to process event");
-    
+    if (debug) {
+        System.out.println("now to process event");
+    }
 
     if (cmd_buff.length() == 0) {
       return;
@@ -240,15 +231,10 @@ public class GuiShell {
 	  append("command returned bad code: " + code + "\n");
       }
     }
-    
 
-    //System.out.println("done processing event");
-    
-
-    //try to read any data still floating around in stdout or stderr
-
-    System.out.flush();
-    System.err.flush();
+    if (debug) {
+        System.out.println("done processing event");
+    }    
 
     Thread.yield();
     Thread.yield();
@@ -282,47 +268,47 @@ public class GuiShell {
 
 
 
-  //append this string into the text widget
+  // append this string into the text widget
+
   public void append(String str) {
 
     try {
       doc.insertString(doc.getLength(),str,null);
+      edit.setCaretPosition(doc.getLength());
     } catch (BadLocationException e) {
       throw new RuntimeException(e.toString());
     }
 
   }
 
-
-  
   //delete char from the end of the widget
   public void removeLastChar() {
 
     try {
       doc.remove(doc.getLength()-1,1);
+      edit.setCaretPosition(doc.getLength());
     } catch (BadLocationException e) {
       throw new RuntimeException(e.toString());
     }
 
   }
-  
 
-
-  
 
   public class Editor extends JEditorPane {
-   
-    private final boolean debug = false; 
+
+    private static final boolean debug = false; 
 
     protected void processComponentKeyEvent(KeyEvent e) {
 
-      if (debug) {
-          //System.out.println("processing " + e);
+      if (false && debug) {
+          System.out.println("processComponentKeyEvent " + e);
       }
 
-      
       if (e.getKeyCode() != 0) {
-	return; //only process key typed commands
+        // Ignore KEY_PRESSED and KEY_RELEASED, only process KEY_TYPED
+        // events in this method.
+      
+	return;
       }
 
       char c = e.getKeyChar();
@@ -332,7 +318,7 @@ public class GuiShell {
       }
 
 
-      //if they pressed Return
+      // if they pressed Return
 
       if (c == KeyEvent.VK_ENTER) {
 
@@ -341,14 +327,14 @@ public class GuiShell {
         }
 
 	cmd_buff.append("\n");
-	append("\n");
+	//append("\n");
 
 	if (isCommandComplete()) {
 
 	  processCommand();
 
 	  cmd_buff.setLength(0);
-	  	  
+
 	  append("% ");
 
 	} else {
@@ -366,18 +352,17 @@ public class GuiShell {
       else if (c == KeyEvent.VK_BACK_SPACE ||
 	  c ==  KeyEvent.VK_DELETE) {
 
-	//letter deleted
+	// letter deleted
 
         if (debug) {
 	    System.out.println("letter deleted");
         }
 
-	//stop deleting at front of this line
+	// stop deleting at front of this line
 
 	if (cur_line_chars != 0) {
 	  cmd_buff.setLength(cmd_buff.length() - 1);
 	  cur_line_chars--;
-	  removeLastChar();
 	} else {
           if (debug) {
 	      System.out.println("begin of cur_line");
@@ -387,28 +372,18 @@ public class GuiShell {
       }
 
       else {
-	//for any other letter
-
 	cmd_buff.append(c);
 	cur_line_chars++;
-	append(String.valueOf(c));
-
       }
 
-
-
-      /*
       if (debug) {
           System.out.println("after event process");
           System.out.println("cmd_buff is \"" + cmd_buff + "\"");
           System.out.println("cmd_buff len is " + cmd_buff.length());
           System.out.println("cur_line_chars is " + cur_line_chars);
       }
-      */
-
 
       edit.setCaretPosition(doc.getLength());
-      
     }
 
   }
@@ -433,8 +408,8 @@ public class GuiShell {
   private transient PipedOutputStream pout  = null;
   private transient PrintStream ps          = null;
 
-  private transient PrintStream stdout      = null;
-  private transient PrintStream stderr      = null;
+  private transient PrintStream _stdout      = null;
+  private transient PrintStream _stderr      = null;
   private transient Thread messageThread    = null;
 
   private transient StringBuffer cmd_buff = new StringBuffer(200);

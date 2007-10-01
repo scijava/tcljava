@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.60 2006/08/05 01:50:11 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.61 2007/10/01 21:48:39 mdejong Exp $
 
 SHELL = /bin/sh
 
@@ -1959,7 +1959,6 @@ jaclDistSrc:
 	mkdir -p $(JACL_DISTDIR)/extras/GuiShell
 	cp -p $(TOP_DIR)/extras/GuiShell/GuiShell.java \
 		$(TOP_DIR)/extras/GuiShell/README \
-		$(TOP_DIR)/extras/GuiShell/swingempty.jar \
 		$(JACL_DISTDIR)/extras/GuiShell
 
 

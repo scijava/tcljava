@@ -3,20 +3,11 @@ a graphical user interface to a Jacl shell. It can be used instead
 of the tcl.lang.Shell class that ships with jacl. It is not included
 in the regular classes because it requires the Swing toolkit to work.
 
-To compile the GuiShell program you will need to make sure the
-swingempty.jar file is included on your CLASSPATH. You can then
-compile GuiShell.java with swing 1.0 or swing 1.1. You will need
-to include the created .class files on your CLASSPATH. Watch out
-becasue the GuiShell classes are in the tcl.lang package so
-you need to set up the directory structure correctly. The best way
-to do this is to use the -d argument to javac.
+To compile the GuiShell program, make sure the CLASSPATH is setup
+properly and includes the Jacl jar files. Then invoke javac like so:
 
-(build it, also make sure swingall.jar is in your CLASSPATH!)
+javac GuiShell.java
 
-setenv CLASSPATH ${CLASSPATH}:swingempty.jar:build
-mkdir build
-javac -d build GuiShell.java
+(and to run it)
 
-(run it)
-
-java tcl.lang.GuiShell
+java GuiShell

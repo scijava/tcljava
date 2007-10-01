@@ -1,3 +1,23 @@
+2007-10-01  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * Makefile.in: Remove swingempty.jar from dist rule.
+        * extras/GuiShell/GuiShell.java: Reimplement
+        GuiShell example so that it uses standard
+        swing package names and makes use of new
+        StdChannel.setOut() and StdChannel.setErr()
+        APIs to redirect output. The GuiShell example
+        now exists in the global package instead of
+        having to live in the tcl.lang package.
+        * extras/GuiShell/README:
+        * extras/GuiShell/swingempty.jar: Removed.
+        * src/jacl/tcl/lang/StdChannel.java (setIn,
+        setOut, setErr): Add new methods used to
+        set the stdin, stdout, and stderr streams
+        used by Jacl. This is more precise than just
+        resetting the streams used by Java since it
+        provides a way for an application to read
+        just the results of Tcl's puts command.
+
 2007-09-12  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * known_issues.txt: Add note about test cases
