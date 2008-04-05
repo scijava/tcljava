@@ -32,6 +32,10 @@ command provides a mapping to Java's enhanced for loop statement
 and provides a simplified way to loop over the elements of a
 Collection or array object. See the documentation for usage examples.
 
+A new binary release of Tcl Blend is now provided for Win32 systems.
+This binary release includes compiled versions of Tcl/Tk, Tcl Blend, and
+a full JDK 1.4.
+
 See the included documentation for more information about new
 features in this release.
 
