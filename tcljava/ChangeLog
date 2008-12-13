@@ -8,6 +8,7 @@
         * src/native/javaCmd.c (Tclblend_Init): Check that we can
         read a Tcl_Interp* back out of a jlong at runtime, so that
         a readable error is generated instead of a strange crash.
+        [Bug 1932060, Patch 2424551]
 
 2007-10-01  Mo DeJong  <mdejong@users.sourceforge.net>
 
