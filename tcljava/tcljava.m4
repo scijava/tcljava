@@ -1037,39 +1037,110 @@ fi
 #------------------------------------------------------------------------
 
 AC_DEFUN([AC_GCC_BUGS], [
+    ac_java_gcc_optimizer_check="no"
     if test "$TCLJAVA" = "tclblend" || test "$TCLJAVA" = "both" ; then
+        if test "$GCC" = "yes"; then
+            ac_java_gcc_optimizer_check="yes"
+        fi
+    fi
+
+    if test "$ac_java_gcc_optimizer_check" = "yes"; then
 
     AC_REQUIRE([AC_PROG_CC])
 
-    # GCC 4.1.0 compiled with -O2 contains an optimizer bug
-    # that causes pointer conversion from long long to fail.
+    # GCC 4.3.X compiled with -O2 enables strict aliasing, but
+    # this breaks TclBlend because storing a Tcl_Interp* inside
+    # a jlong does not work as expected. Need to pass the
+    # -fno-strict-aliasing flag to avoid this buggy code generation.
+    # Pass the flag when compiling without strict aliasing
+    # fails or when cross compiling.
 
-    AC_CACHE_CHECK(for GCC 4.1.0 optimizer bug,
+    AC_CACHE_CHECK(for GCC 4.X strict aliasing bug,
         ac_java_gcc_optimizer_bug,[
         AC_LANG_PUSH(C)
         ac_saved_cflags=$CFLAGS
-        CFLAGS="$CFLAGS -O2"
+        CFLAGS="$CFLAGS $TCL_CFLAGS -O2"
         AC_TRY_RUN([
+            typedef long long jlong;
+
+            typedef struct {
+              jlong ref;
+            } ContainerObj;
+
+            typedef struct {
+              int m1;
+            } ValueObj;
+
             int main(int argc, char **argv) {
-              void * p= (void *) 0xcccccccc;
-              unsigned long long int x = 0;
-              *((void **)&x) = p;
-              if (x == 0xcccccccc) {
-                return 0;
-              } else {
+              jlong lvalue;
+              ValueObj *ptr1 = (ValueObj *) 0xcccccccc;
+              ValueObj *ptr2;
+              ContainerObj cObj;
+
+              lvalue = 0;
+              *((ValueObj **)&lvalue) = ptr1;
+              cObj.ref = lvalue;
+
+              ptr2 = *((ValueObj**) &(cObj.ref));
+
+              if (ptr2 != ptr1) {
                 return 1;
               }
+
+              return 0;
             }
         ],
         ac_java_gcc_optimizer_bug=no,
         ac_java_gcc_optimizer_bug=yes,
-        ac_java_gcc_optimizer_bug=no)
+        ac_java_gcc_optimizer_bug=yes)
         AC_LANG_POP()
         CFLAGS=$ac_saved_cflags
     ])
 
-    if test "$ac_java_gcc_optimizer_bug" = "yes"; then
-        AC_MSG_ERROR([This gcc release contains an optimizer bug that breaks Tcl Blend, please use another version of gcc])
+    AC_CACHE_CHECK(for -fno-strict-aliasing fix for optimizer bug,
+        ac_java_gcc_no_strict_aliasing_fix,[
+        AC_LANG_PUSH(C)
+        ac_saved_cflags=$CFLAGS
+        CFLAGS="$CFLAGS $TCL_CFLAGS -O2 -fno-strict-aliasing"
+        AC_TRY_RUN([
+            typedef long long jlong;
+
+            typedef struct {
+              jlong ref;
+            } ContainerObj;
+
+            typedef struct {
+              int m1;
+            } ValueObj;
+
+            int main(int argc, char **argv) {
+              jlong lvalue;
+              ValueObj *ptr1 = (ValueObj *) 0xcccccccc;
+              ValueObj *ptr2;
+              ContainerObj cObj;
+
+              lvalue = 0;
+              *((ValueObj **)&lvalue) = ptr1;
+              cObj.ref = lvalue;
+
+              ptr2 = *((ValueObj**) &(cObj.ref));
+
+              if (ptr2 != ptr1) {
+                return 1;
+              }
+
+              return 0;
+            }
+        ],
+        ac_java_gcc_no_strict_aliasing_fix=yes,
+        ac_java_gcc_no_strict_aliasing_fix=no,
+        ac_java_gcc_no_strict_aliasing_fix=yes)
+        AC_LANG_POP()
+        CFLAGS=$ac_saved_cflags
+    ])
+
+    if test "$ac_java_gcc_optimizer_bug" = "yes" && test "$ac_java_gcc_no_strict_aliasing_fix" = "yes" ; then
+        TCL_CFLAGS="$TCL_CFLAGS -fno-strict-aliasing"
     fi
 
     fi

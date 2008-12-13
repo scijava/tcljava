@@ -1,3 +1,14 @@
+2008-12-13  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * configure: Regen.
+        * tcljava.m4 (AC_GCC_BUGS): Check to see if passing
+        -O2 -fno-strict-aliasing to gcc 4.X fixes a crash caused by
+        incorrect code generation in the optimizer. This was causing
+        a problem with storing a Tcl_Interp* in a jlong.
+        * src/native/javaCmd.c (Tclblend_Init): Check that we can
+        read a Tcl_Interp* back out of a jlong at runtime, so that
+        a readable error is generated instead of a strange crash.
+
 2007-10-01  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * Makefile.in: Remove swingempty.jar from dist rule.
