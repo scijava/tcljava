@@ -1,3 +1,9 @@
+2009-05-26  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	Created CVS branch named tcljava-14-branch
+	and tcljava-14-branchpoint for all future
+	1.4.X releases.
+
 2008-12-13  Mo DeJong  <mdejong@users.sourceforge.net>
 
         * configure: Regen.
