@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: StdChannel.java,v 1.20 2007/10/01 21:48:40 mdejong Exp $
+ * RCS: @(#) $Id: StdChannel.java,v 1.19 2003/03/08 03:42:44 mdejong Exp $
  *
  */
 
@@ -20,8 +20,8 @@ import java.io.*;
  * methods to perform read, write, open, close, etc on system stdio channels.
  */
 
-public class StdChannel extends Channel {
-
+class StdChannel extends Channel {
+  
     /**
      * stdType store which type, of the three below, this StdChannel is.
      */
@@ -35,39 +35,6 @@ public class StdChannel extends Channel {
     static final int STDIN    = 0;
     static final int STDOUT   = 1; 
     static final int STDERR   = 2; 
-
-    /**
-     * These static variables contain references to the actual
-     * in, out, and err streams that are read from or written
-     * to when the "stdin", "stdout", or "stderr" streams
-     * are read from or written to in Jacl. The user should
-     * invoke the setIn(), setOut(), and setErr() methods
-     * in this class to reassign to a specific Java stream.
-     */
-
-    static InputStream _in    = System.in;
-    static PrintStream _out   = System.out;
-    static PrintStream _err   = System.err;
-
-    /**
-     * Reassign the static variables that reference the
-     * in, out, and err streams used by Jacl. The user
-     * should note that these methods will change the
-     * underlying Java stream in use for all Jacl
-     * interpreters in the current process.
-     */
-
-    public static void setIn(InputStream in) {
-        _in = in;
-    }
-
-    public static void setOut(PrintStream out) {
-        _out = out;
-    }
-
-    public static void setErr(PrintStream err) {
-        _err = err;
-    }
 
     /**
      * Constructor that does nothing.  Open() must be called before
@@ -157,13 +124,13 @@ public class StdChannel extends Channel {
         checkWrite(interp);
 
         if (stdType == STDERR) {
-            _err.print(outData.toString());
+            System.err.print(outData.toString());
         } else {
             String s = outData.toString();
-            _out.print(s);
+            System.out.print(s);
             if (buffering == TclIO.BUFF_NONE ||
                     (buffering == TclIO.BUFF_LINE && s.endsWith("\n"))) {
-                _out.flush();
+                System.out.flush();
             }
         }
     }
@@ -177,7 +144,7 @@ public class StdChannel extends Channel {
         super.close();
 
         if (stdType == STDOUT)
-            _out.flush();
+            System.out.flush();
     }
 
     String getChanType() {
@@ -185,7 +152,7 @@ public class StdChannel extends Channel {
     }
 
     protected InputStream getInputStream() throws IOException {
-        return _in;
+        return System.in;
     }
 
     protected OutputStream getOutputStream() throws IOException {

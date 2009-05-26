@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: encoding.test,v 1.3 2007/09/12 23:37:59 mdejong Exp $
+# RCS: @(#) $Id: encoding.test,v 1.2 2006/07/09 01:55:44 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -467,7 +467,7 @@ test encoding-23.1 {iso2022-jp escape encoding test} {
         [string equal [testReadChars iso2022.txt iso2022-jp] $::iso2022uniData2]
 } {1 1}
 
-test encoding-23.2 {iso2022-jp escape encoding test} {knownbug} {
+test encoding-23.2 {iso2022-jp escape encoding test} {
     # This checks that 'gets' isn't resetting the encoding inappropriately.
     # [Bug #523988]
     set fid [open iso2022.txt r]

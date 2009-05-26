@@ -10,7 +10,7 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  *
- * RCS: @(#) $Id: javaCmd.c,v 1.27 2008/12/13 21:59:32 mdejong Exp $
+ * RCS: @(#) $Id: javaCmd.c,v 1.26 2005/10/14 09:11:29 mdejong Exp $
  */
 
 /*
@@ -240,45 +240,6 @@ EXPORT(int,Tclblend_Init)(
     }
     interpObj = (*env)->NewGlobalRef(env, local);
     (*env)->DeleteLocalRef(env, local);
-
-    /* Verify that the interp pointer can be retrieved from the
-     * Java interp object. This logic depends on storing a pointer
-     * inside a Java 64 bit jlong. This check fails for gcc 4.x
-     * versions that enable strict aliasing when compiled with -O2.
-     * Need to pass -fno-strict-aliasing when compiling with -O2.
-     */
-    {
-        Tcl_Interp *recovered = *(Tcl_Interp **)&lvalue;
-
-        if (recovered != interp) {
-	    Tcl_Obj *obj = Tcl_GetObjResult(interp);
-	    Tcl_AppendToObj(obj,
-	        "\nCould not read interp pointer from Java jlong, gcc 4.X strict aliasing bug", -1);
-	    (*env)->DeleteGlobalRef(env, interpObj);
-
-#ifdef TCLBLEND_DEBUG
-    fprintf(stderr, "TCLBLEND_DEBUG: returning TCL_ERROR because interp\n");
-    fprintf(stderr, "TCLBLEND_DEBUG: pointer could not be read from Java jlong, gcc 4.X strict aliasing bug\n");
-#endif /* TCLBLEND_DEBUG */
-
-	    return TCL_ERROR;
-        }
-
-        recovered = JavaGetInterp(env, interpObj);
-        if (recovered != interp) {
-	    Tcl_Obj *obj = Tcl_GetObjResult(interp);
-	    Tcl_AppendToObj(obj,
-	        "\nCould not read interp pointer from Java interp object, gcc 4.X strict aliasing bug", -1);
-	    (*env)->DeleteGlobalRef(env, interpObj);
-
-#ifdef TCLBLEND_DEBUG
-    fprintf(stderr, "TCLBLEND_DEBUG: returning TCL_ERROR because interp\n");
-    fprintf(stderr, "TCLBLEND_DEBUG: pointer could not be read from Java interp object, gcc 4.X strict aliasing bug\n");
-#endif /* TCLBLEND_DEBUG */
-
-	    return TCL_ERROR;
-        }
-    }
 
     result = JavaInitBlend(env, interp, interpObj);
 
