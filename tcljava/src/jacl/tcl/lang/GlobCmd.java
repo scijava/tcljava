@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: GlobCmd.java,v 1.7 2009/06/15 21:43:18 rszulgo Exp $
+ * RCS: @(#) $Id: GlobCmd.java,v 1.8 2009/06/15 23:03:01 rszulgo Exp $
  *
  */
 
@@ -66,9 +66,9 @@ class GlobCmd implements Command {
 			TclObject argv[]) // Args passed to the glob command.
 			throws TclException {
 		boolean noComplain = false; // If false, error msg will be returned
-		String arg;
-		String head;
-		String tail;
+		boolean join = false; //If true, args will be joined (see the user doc)
+		String head = "";
+		String tail = "";
 		int firstArg = 1; // index of the first non-switch arg
 		int i; // generic index
 		TclObject resultList; // list of files that match the pattern
@@ -109,16 +109,7 @@ class GlobCmd implements Command {
 				break;
 
 			case OPT_JOIN:
-				if (argv.length < 3) {
-					throw new TclNumArgsException(interp, 1, argv,
-							"?switches? name ?name ...?");
-				} else if (argv.length == 4) {
-					path = argv[++firstArg].toString();
-					String pattern = argv[++firstArg].toString();
-					sep = getSeparators(path);
-					matchFiles(interp, sep, path, pattern, pattern.length(),
-							resultList);
-				}
+				join = true;
 				break;
 
 			case OPT_LAST:
@@ -137,22 +128,42 @@ class GlobCmd implements Command {
         }
 
 		for (i = firstArg; i < argv.length; i++) {
+			String arg;	
+			String prevTail = "";
 			arg = argv[i].toString();
 			String sep = getSeparators(arg);
 			
 			// Perform tilde substitution, if needed.
 			if (arg.startsWith("~")) { // Find the first path
 				head = tildeSubst(interp, arg, sep, noComplain);
-				tail = arg.substring(1); // the remaining file path and pattern
+				prevTail = arg.substring(1); // the remaining file path and pattern
 			} else {
 				head = "";
-				tail = arg.substring(0);
+				prevTail = arg.substring(0);
 			}
 			
 			if (path != "") {
 				head = path.substring(0);
 			}
 			
+			// if join switch enabled, concat args
+			if (join) {
+				tail += prevTail + sep;
+				
+				// if there are some more args to join
+				if (i+1 < argv.length) {
+					continue;
+				} else {
+					// remove the last unnecessary separator
+					tail = tail.substring(0, tail.length()-1);
+					
+					// path is no longer needed (out of date as new path is set)
+					path = "";
+				}
+			} else {
+				tail = prevTail.substring(0);
+			}
+						
 			try {
 				doGlob(interp, sep, new StringBuffer(head), tail, resultList);
 			} catch (TclException e) {
