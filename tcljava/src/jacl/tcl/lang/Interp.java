@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.87 2007/06/07 20:52:15 mdejong Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.88 2009/06/18 17:29:17 rszulgo Exp $
  *
  */
 
@@ -56,8 +56,8 @@ private static final int MAX_ERR_LENGTH = 200;
 
 // We pretend this is Tcl 8.0, patch level 0.
 
-static final String TCL_VERSION     = "8.0";
-static final String TCL_PATCH_LEVEL = "8.0";
+static final String TCL_VERSION     = "8.4";
+static final String TCL_PATCH_LEVEL = "8.4.0";
 
 
 // Total number of times a command procedure
