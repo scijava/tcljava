@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: InterpSlaveCmd.java,v 1.7 2006/08/03 23:24:03 mdejong Exp $
+ * RCS: @(#) $Id: InterpSlaveCmd.java,v 1.8 2009/06/19 08:03:21 rszulgo Exp $
  *
  */
 
@@ -31,8 +31,8 @@ class InterpSlaveCmd implements CommandWithDispose, AssocData {
 
     static final private String options[] = {
         "alias",	"aliases",	"eval",		"expose",
-        "hide",		"hidden",	"issafe",	"invokehidden",
-        "marktrusted"
+        "hide",		"hidden",	"issafe",	"invokehidden", 
+        "marktrusted", "recursionlimit"
     };
     static final private int OPT_ALIAS		= 0;
     static final private int OPT_ALIASES	= 1;
@@ -43,6 +43,7 @@ class InterpSlaveCmd implements CommandWithDispose, AssocData {
     static final private int OPT_ISSAFE		= 6;
     static final private int OPT_INVOKEHIDDEN	= 7;
     static final private int OPT_MARKTRUSTED	= 8;
+    static final private int OPT_RECURSIONLMT	= 9;
 
     static final private String hiddenOptions[] = {
 	"-global",
@@ -181,7 +182,14 @@ throws
 	    }
 	    markTrusted(interp, slaveInterp);
 	    break;
-    }
+    
+	case OPT_RECURSIONLMT:
+	    if (objv.length != 2 && objv.length != 3) {
+	    	throw new TclNumArgsException(interp, 2, objv, "?newlimit?");
+	    }
+	    recursionLimit(interp, slaveInterp, objv.length - 2, objv);
+	    break;
+	}
 }
 /**
  *----------------------------------------------------------------------
@@ -352,7 +360,8 @@ throws
 
     Interp slaveInterp = new Interp();
     InterpSlaveCmd slave = new InterpSlaveCmd();
-
+    
+    slaveInterp.setMaxNestingDepth(masterInterp.getMaxNestingDepth());
     slaveInterp.slave = slave;
     slaveInterp.setAssocData("InterpSlaveCmd", slave);
 
@@ -660,6 +669,63 @@ throws
     slaveInterp.isSafe = false;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SlaveRecursionLimit --
+ *
+ *	Helper function to set/query the Recursion limit of an interp
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	When (objc == 1), slaveInterp will be set to a new recursion limit of
+ *	objv[0].
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void recursionLimit(
+		Interp interp, 
+		Interp slaveInterp,
+	    int objc,			// Set or Query,
+	    TclObject objv[])	// Argument objects.
+throws 
+	TclException
+{
+	int limit;
+	
+    if (objc != 0) {
+		if (interp.isSafe) {
+	    	throw new TclException(interp, "permission denied: "
+	    		      + "safe interpreter cannot change recursion limit");
+	    }
+		
+		try {
+			limit = TclInteger.get(interp, objv[objv.length - 1]);
+		} catch (TclException e) {
+			interp.transferResult(slaveInterp, e.getCompletionCode());
+			throw e;
+		}
+		
+		if (limit <= 0) {
+			throw new TclException(interp, "recursion limit must be > 0");
+		}
+		
+		slaveInterp.setMaxNestingDepth(limit);
+
+		if (interp == slaveInterp && interp.nestLevel > limit) {
+			throw new TclException(interp, "falling back due to new recursion limit");
+
+		}
+	    interp.setResult(objv[objv.length - 1]);
+    } else {
+    	limit = slaveInterp.setMaxNestingDepth(0);
+    	interp.setResult(TclInteger.newInstance(limit));
+    }
+}
 /*
  *----------------------------------------------------------------------
  *

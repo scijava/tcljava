@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.89 2009/06/18 18:16:37 rszulgo Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.90 2009/06/19 08:03:22 rszulgo Exp $
  *
  */
 
@@ -144,7 +144,7 @@ int nestLevel;
 
 // Used to catch infinite loops in Parser.eval2.
 
-final int maxNestingDepth = 1000;
+private int maxNestingDepth = 1000;
 
 // Flags used when evaluating a command.
 
@@ -5218,6 +5218,39 @@ disposeInterrupted()
     dispose();
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * setMaxNestingDepth --
+ *
+ *	Set new value for maxNestingDepth
+ *
+ *----------------------------------------------------------------------
+ */
+
+public int setMaxNestingDepth(int depth) {
+	int old = this.maxNestingDepth;
+	
+	if (depth > 0) {
+		this.maxNestingDepth = depth;
+	} 
+	
+	return old;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * setMaxNestingDepth --
+ *
+ *	Gets the value of maxNestingDepth
+ *
+ *----------------------------------------------------------------------
+ */
+
+public int getMaxNestingDepth() {
+	return maxNestingDepth;
+}
 
 /*
  *----------------------------------------------------------------------
