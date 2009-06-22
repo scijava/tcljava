@@ -12,7 +12,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ClockCmd.java,v 1.8 2009/06/08 22:44:43 rszulgo Exp $
+ * RCS: @(#) $Id: ClockCmd.java,v 1.9 2009/06/22 17:05:08 rszulgo Exp $
  *
  */
 
@@ -257,6 +257,7 @@ class ClockCmd implements Command {
 					fmt.format(date, result, fp);
 					break;
 				case 'b':
+					/* falls through */
 				case 'h': // Abbreviated month name (Jan,Feb,etc.).
 					fmt.applyPattern("MMM");
 					fmt.format(date, result, fp);
