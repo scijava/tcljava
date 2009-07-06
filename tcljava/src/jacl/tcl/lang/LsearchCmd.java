@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: LsearchCmd.java,v 1.3 2009/06/22 17:05:58 rszulgo Exp $
+ * RCS: @(#) $Id: LsearchCmd.java,v 1.4 2009/07/06 19:33:37 rszulgo Exp $
  *
  */
 
@@ -202,6 +202,7 @@ throws TclException
     if (start != null) {
     	try {
     		offset = Util.getIntForIndex(interp, start, listv.length - 1);
+    		start.release();
     	} catch (TclException e) {
     		throw e;
     	}
@@ -420,13 +421,13 @@ throws TclException
     if (allMatches) {
     	interp.setResult(resultList);
     } else if (!inlineReturn) {
-    	interp.getResult().setRecycledIntValue(index);
+    	interp.getResult().ivalue = index;
     } else if (index < 0) {
 		/*
 		 * Is this superfluous?  The result should be a blank object
 		 * by default...
 		 */
-    	interp.setResult(new TclObject(0));
+    	interp.resetResult();
     } else {
     	interp.setResult(listv[index]);
     }
