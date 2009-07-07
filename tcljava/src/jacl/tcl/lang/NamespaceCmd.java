@@ -15,7 +15,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: NamespaceCmd.java,v 1.21 2006/01/26 19:49:18 mdejong Exp $
+ * RCS: @(#) $Id: NamespaceCmd.java,v 1.22 2009/07/07 23:15:09 rszulgo Exp $
  */
 
 package tcl.lang;
@@ -47,6 +47,7 @@ public class NamespaceCmd implements InternalRep, Command {
      *	    namespace current
      *	    namespace delete ?name name...?
      *	    namespace eval name arg ?arg...?
+     *		namespace exists name
      *	    namespace export ?-clear? ?pattern pattern...?
      *	    namespace forget ?pattern pattern...?
      *	    namespace import ?-force? ?pattern pattern...?
@@ -74,6 +75,7 @@ public class NamespaceCmd implements InternalRep, Command {
 	"current",
 	"delete",
 	"eval",
+	"exists",
 	"export",
 	"forget",
 	"import",
@@ -90,15 +92,16 @@ public class NamespaceCmd implements InternalRep, Command {
     static final private int OPT_CURRENT        = 2;
     static final private int OPT_DELETE         = 3;
     static final private int OPT_EVAL           = 4;
-    static final private int OPT_EXPORT         = 5;
-    static final private int OPT_FORGET         = 6;
-    static final private int OPT_IMPORT         = 7;
-    static final private int OPT_INSCOPE        = 8;
-    static final private int OPT_ORIGIN         = 9;
-    static final private int OPT_PARENT         = 10;
-    static final private int OPT_QUALIFIERS     = 11;
-    static final private int OPT_TAIL           = 12;
-    static final private int OPT_WHICH          = 13;
+    static final private int OPT_EXTISTS		= 5;
+    static final private int OPT_EXPORT         = 6;
+    static final private int OPT_FORGET         = 7;
+    static final private int OPT_IMPORT         = 8;
+    static final private int OPT_INSCOPE        = 9;
+    static final private int OPT_ORIGIN         = 10;
+    static final private int OPT_PARENT         = 11;
+    static final private int OPT_QUALIFIERS     = 12;
+    static final private int OPT_TAIL           = 13;
+    static final private int OPT_WHICH          = 14;
 
 
     public void cmdProc(Interp interp, TclObject[] objv)
@@ -132,6 +135,10 @@ public class NamespaceCmd implements InternalRep, Command {
 	}
 	case OPT_EVAL: {
 	    evalCmd(interp, objv);
+	    return;
+	}
+	case OPT_EXTISTS: {
+	    existsCmd(interp, objv);
 	    return;
 	}
 	case OPT_EXPORT: {
@@ -174,8 +181,7 @@ public class NamespaceCmd implements InternalRep, Command {
 
     }
 
-
-    /*
+	/*
      *----------------------------------------------------------------------
      *
      * NamespaceChildrenCmd -> childrenCmd
@@ -548,6 +554,47 @@ public class NamespaceCmd implements InternalRep, Command {
 
 	return;
     }
+
+    /*
+     *----------------------------------------------------------------------
+     *
+     * NamespaceExistsCmd -> existsCmd
+     *
+     *	Invoked to implement the "namespace exists" command that returns 
+     *	true if the given namespace currently exists, and false otherwise.
+     *	Handles the following syntax:
+     *
+     *	    namespace exists name
+     *
+     * Results:
+     *	Returns if successful, raises TclException if something goes wrong.
+     *
+     * Side effects:
+     *	Returns a result in the interpreter's result object. If anything
+     *	goes wrong, the result is an error message.
+     *
+     *----------------------------------------------------------------------
+     */
+    private static void existsCmd(Interp interp, TclObject[] objv)
+	throws TclException {
+        Namespace namespace;
+
+        if (objv.length != 3) {
+    	    throw new TclNumArgsException(interp, 2, objv,
+			  "name");
+        }
+
+        /*
+         * Check whether the given namespace exists
+         */
+        try {
+        	namespace = getNamespaceFromObj(interp, objv[2]);
+        } catch (TclException e) {
+        	throw e;
+        }
+
+        interp.setResult(namespace != null);
+	}
 
 
     /*
