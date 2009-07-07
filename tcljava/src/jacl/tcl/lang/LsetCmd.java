@@ -10,11 +10,13 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: LsetCmd.java,v 1.1 2009/07/07 09:15:48 rszulgo Exp $
+ * RCS: @(#) $Id: LsetCmd.java,v 1.2 2009/07/07 10:54:03 rszulgo Exp $
  *
  */
 
 package tcl.lang;
+
+import java.awt.image.IndexColorModel;
 
 /*
  * This class implements the built-in "lset" command in Tcl.
@@ -141,197 +143,157 @@ class LsetCmd implements Command {
 			TclObject value) 	 /* Value arg to 'lset'. */
 		throws TclException {
 		
-		int index = 0;
-		int result; 
-		int len;
-		int currentIdx = 0;
-	    TclObject subList;
-	    TclObject retValue;
-	    TclObject chain;
-
+	    int duplicated;		/* Flag == 1 if the obj has been duplicated, 0 otherwise */
+	    TclObject retValue;	/* The list to be returned */
+	    int elemCount;		/* Length of one sublist being changed */
+	    TclObject[] elems;	/* The elements of a sublist */
+	    TclObject subList;	/* The current sublist */
+	    int result = 0;
+	    int index = 0;			/* Index of the element to replace in the current sublist */
+	    TclObject chain;	/* The enclosing list of the current sublist. */
+	    TclObject ptr2;
+	    
 	    /*
-	     * If there are no indices, simply return the new value.
-	     * (Without indices, [lset] is a synonym for [set].
+	     * If there are no indices, then simply return the new value,
+	     * counting the returned pointer as a reference
 	     */
 
-	    if (indexCount == 0) {
+	    if ( indexCount == 0 ) {
+	    	value.preserve();
 	    	return value;
 	    }
 	    
 	    /*
-	     * If the list is shared, make a copy we can modify (copy-on-write).
-	     * We use Tcl_DuplicateObj() instead of TclListObjCopy() for a few
-	     * reasons: 
-	     * 1) we have not yet confirmed listPtr is actually a list;
-	     * 2) We make a verbatim copy of any existing string rep, and when
-	     * we combine that with the delayed invalidation of string reps of
-	     * modified Tcl_Obj's implemented below, the outcome is that any
-	     * error condition that causes this routine to return NULL, will
-	     * leave the string rep of listPtr and all elements to be unchanged.
+	     * If the list is shared, make a private copy.
 	     */
 
-	    subList = list.isShared() ? list.duplicate() : list;
-
+	    if ( list.isShared() ) {
+	    	duplicated = 1;
+	    	list = list.duplicate();
+			list.preserve();
+	    } else {
+	    	duplicated = 0;
+	    }
+	    
 	    /*
 	     * Anchor the linked list of Tcl_Obj's whose string reps must be
 	     * invalidated if the operation succeeds.
 	     */
 
-	    retValue = subList;
+	    retValue = list;
 	    chain = null;
 	    
 	    /*
-	     * Loop through all the index arguments, and for each one dive
-	     * into the appropriate sublist.
+	     * Handle each index arg by diving into the appropriate sublist
 	     */
 
-	    do {
-			TclObject parentList;
-			TclObject[] elems;
-			
-			
-			/* Check for the possible error conditions... */
-			result = TCL.ERROR;
-			elems = TclList.getElements(interp, subList);
-			if (elems == null) {
-			    /* ...the sublist we're indexing into isn't a list at all. */
-			    break;
-			}
-	
-			try {
-				index = Util.getIntForIndex(interp, indexArray[currentIdx], elems.length - 1);
-			} catch (TclException e) {
-				currentIdx++;
-			    /* ...the index we're trying to use isn't an index at all. */
-				break;
-			}
-			
-			currentIdx++;
-			
-			if (index < 0 || index > elems.length) {
-			    /* ...the index points outside the sublist. */
-			    interp.setResult(TclString.newInstance("list index out of range"));
-			    break;
-			}
-
+	    for (int i = 0; ; ++i ) {
 			/*
-			 * No error conditions.  As long as we're not yet on the last
-			 * index, determine the next sublist for the next pass through
-			 * the loop, and take steps to make sure it is an unshared copy,
-			 * as we intend to modify it.
+			 * Take the sublist apart.
 			 */
-
-			result = TCL.OK;
-			if (--indexCount != 0) {
-			    parentList = subList;
-			    
-			    if (index == elems.length) {
-			    	subList = TclList.newInstance();
-			    } else {
-			    	subList = elems[index];
-			    }
-			    
-			    if (subList.isShared()) {
-			    	subList = subList.duplicate();
-			    }
-
-			    /*
-			     * Replace the original elemPtr[index] in parentList with a copy
-			     * we know to be unshared.  This call will also deal with the
-			     * situation where parentList shares its intrep with other
-			     * TclObject's.  Dealing with the shared intrep case can cause
-			     * subListPtr to become shared again, so detect that case and
-			     * make and store another copy.
-			     */
-
-			    if (index == elems.length) {
-			    	TclList.append(null, parentList, subList);
-			    } else {
-			    	TclList.setElement(null, parentList, index, subList);
-			    }
-			    
-			    if (subList.isShared()) {
-					subList = subList.duplicate();
-					TclList.setElement(null, parentList, index, subList);
-			    }
-
-			    /*
-			     * The TclListObjSetElement() calls do not spoil the string
-			     * rep of parentList, and that's fine for now, since all we've
-			     * done so far is replace a list element with an unshared copy.
-			     * The list value remains the same, so the string rep. is still
-			     * valid, and unchanged, which is good because if this whole
-			     * routine returns NULL, we'd like to leave no change to the
-			     * value of the lset variable.  Later on, when we set valuePtr
-			     * in its proper place, then all containing lists will have
-			     * their values changed, and will need their string reps spoiled.
-			     * We maintain a list of all those Tcl_Obj's (via a little intrep
-			     * surgery) so we can spoil them at that time.
-			     */
-			    
-			    if (chain != null) {
-			    	parentList.internalRep = chain.internalRep;
-			    } 
-			    chain = parentList;
-			}
-		    } while (indexCount > 0);
-	    
-	    /*
-	     * Either we've detected and error condition, and exited the loop
-	     * with result == TCL_ERROR, or we've successfully reached the last
-	     * index, and we're ready to store valuePtr.  In either case, we
-	     * need to clean up our string spoiling list of Tcl_Obj's.
-	     */
-
-	    
-	  //  while (chain != null) {
-	    	
-	    	chain.disposeObject();
-//	    	TclObject obj = chain;
-
-//	    	if (result == TCL.OK) {
-			    /*
-			     * We're going to store valuePtr, so spoil string reps
-			     * of all containing lists.
-			     */
-	
-//			    obj.invalidateStringRep();
-//	    	}
-
-	    	/* Clear away our intrep surgery mess */
-//	    	chain.internalRep = obj.internalRep;
-//	    	obj.internalRep = null;
-	 //   }
-	    
-	    
-	    if (result != TCL.OK) {
-			/*
-			 * Error return; message is already in interp. Clean up
-			 * any excess memory.
-			 */
-	    	if (retValue != list) {
-	    		retValue.release();
+	    	try {
+		    	elems = TclList.getElements(interp, list);
+				elemCount = elems.length;
+	    	} catch (TclException e) {
+	    		break;
 	    	}
 	    	
-	    	return null;
+	    	ptr2 = chain;
+	    	
+			/*
+			 * Determine the index of the requested element.
+			 */
+	    	
+	    	try {
+	    		index = Util.getIntForIndex(interp, indexArray[i], (elemCount - 1));
+			} catch (TclException e) {
+				break;
+			}
+		
+			/*
+			 * Check that the index is in range.
+			 */
+
+			if (index < 0 || index >= elemCount) {
+			    interp.setResult(TclString.newInstance("list index out of range"));
+			    result = TCL.ERROR;
+			    break;
+			}
+
+			/*
+			 * Break the loop after extracting the innermost sublist
+			 */
+	
+			if ( i >= indexCount-1 ) {
+			    result = TCL.OK;
+			    break;
+			}
+		
+			/*
+			 * Extract the appropriate sublist, and make sure that it is unshared.
+			 */
+	
+			subList = elems[index];
+			if (subList.isShared()) {
+			    subList = subList.duplicate();
+			    try {
+			    	TclList.setElement(interp, list, index, subList);
+			    } catch (TclException e) {
+				    /* 
+					 * We actually shouldn't be able to get here.
+					 * If we do, it would result in leaking subListPtr,
+					 * but everything's been validated already; the error
+					 * exit from TclList.setElement should never happen.
+					 */
+					break;
+			    }
+			}
+
+			/* 
+			 * Chain the current sublist onto the linked list of Tcl_Obj's
+			 * whose string reps must be spoilt.
+			 */
+	
+			chain = list;
+			list = subList;
+
+	    }
+	    
+	    /* Store the result in the list element */
+
+	    if (result == TCL.OK) {
+	    	try {
+	    		TclList.setElement(interp, list, index, value);
+	    		ptr2 = chain;
+	    		
+	    		/* Spoil all the string reps */
+	    		
+	    		while (list != null) {
+	    		    subList = ptr2;
+	    		    list.invalidateStringRep();
+	    		    ptr2 = null;
+	    		    list = subList;
+	    		}
+	    		
+	    		/* Return the new list if everything worked. */
+	    		
+	    		if (duplicated == 0) {
+	    		    retValue.preserve();
+	    		}
+	    		
+	    		return retValue;
+	    	} catch (TclException e) {
+	    		
+	    	}
 	    }
 
-	    //subList.release();
+	    /* Clean up the one dangling reference otherwise */
 
-	    /* Store valuePtr in proper sublist and return */
-	    len = TclList.getLength(null, subList);
-	    
-	    if (index == len) {
-	    	TclList.append(null, subList, value);
-	    } else {
-	    	TclList.setElement(null, subList, index, value);
+	    if (duplicated != 0) {
+	    	retValue.release();
 	    }
-
-	    retValue = subList;
-	    subList.invalidateStringRep();
-	    retValue.preserve();
 	    
-	    return retValue;
+	    return null;
 	}
 
 	/*
@@ -363,48 +325,221 @@ class LsetCmd implements Command {
 	TclObject value) /* Value arg to 'lset'. */
 	throws TclException {
 
-		TclObject[] indices = null;/* Vector of indices in the index list. */
-		TclObject retValue; /* The list to be returned. */
-		TclObject indexListCopy;
+		int indexCount;		/* Number of indices in the index list */
+	    TclObject[] indices;/* Vector of indices in the index list*/
+	    int duplicated;		/* Flag == 1 if the obj has been duplicated, 0 otherwise */
+	    TclObject retValue;	/* The list to be returned */
+	    int index = 0;			/* Current index in the list - discarded */
+	    int result = 0;		/* Status return from library calls */
+	    TclObject subList;	/* The current sublist */
+	    int elemCount;		/* Count of elements in the current sublist */
+	    TclObject[] elems;	/* Elements of current sublist  */
+	    TclObject chain;	/* The enclosing sublist of the current sublist */
+	    int i;
+	    TclObject ptr2;
+	    /*
+	     * Determine whether the index arg designates a list or a single
+	     * index.  We have to be careful about the order of the checks to
+	     * avoid repeated shimmering; see TIP #22 and #23 for details.
+	     */
+
+	    if (!indexArg.isListType()) {
+	    	try {
+	    		index = Util.getIntForIndex(null, indexArg, 0);
+	    		return flat( interp, list, 1, TclList.getElements(interp, indexArg), value );
+	    	} catch (TclException e) {
+	    		try {
+			    	indices = TclList.getElements(null, indexArg);
+			    	indexCount = indices.length;
+		    	} catch (TclException ex) {
+		    		/*
+		    		 * indexArgPtr designates something that is neither an index nor a
+		    		 * well formed list.  Report the error via TclLsetFlat.
+		    		 */
+		    		return flat( interp, list, 1, TclList.getElements(interp, indexArg), value );
+		    	}
+	    	}
+	    }
 
 		/*
-		 * Determine whether the index arg designates a list or a single index.
-		 * We have to be careful about the order of the checks to avoid repeated
-		 * shimmering; see TIP #22 and #23 for details.
+		 * indexArg designates a single index.
 		 */
+	    else {
+	    	try {
+		    	indices = TclList.getElements(null, indexArg);
+		    	indexCount = indices.length;
+	    	} catch (TclException e) {
+	    		/*
+	    		 * indexArgPtr designates something that is neither an index nor a
+	    		 * well formed list.  Report the error via TclLsetFlat.
+	    		 */
+	    		return flat( interp, list, 1, TclList.getElements(interp, indexArg), value );
+	    	}
+	    }
 
-		if (!indexArg.isListType()) {
+	    /*
+	     * At this point, we know that arg designates a well formed list,
+	     * and the 'else if' above has parsed it into indexCount and indices.
+	     * If there are no indices, simply return 'valuePtr', counting the
+	     * returned pointer as a reference.
+	     */
+
+	    if (indexCount == 0) {
+	    	value.preserve();
+	    	return value;
+	    }
+
+	    /*
+	     * Duplicate the list arg if necessary.
+	     */
+
+	    if (list.isShared()) {
+	    	duplicated = 1;
+	    	list = list.duplicate();
+	    	list.preserve();
+	    } else {
+	    	duplicated = 0;
+	    }
+
+	    /*
+	     * It would be tempting simply to go off to TclLsetFlat to finish the
+	     * processing.  Alas, it is also incorrect!  The problem is that
+	     * 'indexArgPtr' may designate a sublist of 'listPtr' whose value
+	     * is to be manipulated.  The fact that 'listPtr' is itself unshared
+	     * does not guarantee that no sublist is.  Therefore, it's necessary
+	     * to replicate all the work here, expanding the index list on each
+	     * trip through the loop.
+	     */
+
+	    /*
+	     * Anchor the linked list of Tcl_Obj's whose string reps must be
+	     * invalidated if the operation succeeds.
+	     */
+
+	    retValue = list;
+	    chain = null;
+
+	    /*
+	     * Handle each index arg by diving into the appropriate sublist
+	     */
+
+	    for (i = 0; ; ++i ) {
+
 			/*
-			 * indexArg designates a single index.
+			 * Take the sublist apart.
+			 */
+	    	try {
+	    		elems = TclList.getElements(interp, list);
+	    		elemCount = elems.length;
+	    	} catch (TclException e) {
+			    break;
+			}
+			
+	    	ptr2 = chain;
+
+			/*
+			 * Reconstitute the index array
+			 */
+
+			try {
+				indices = TclList.getElements(interp, indexArg);
+				indexCount = indices.length;
+			} catch (TclException e) {
+			    /* 
+			     * Shouldn't be able to get here, because we already
+			     * parsed the thing successfully once.
+			     */
+			    break;
+			}
+			
+			/*
+			 * Determine the index of the requested element.
 			 */
 			try {
-				Util.getIntForIndex(null, indexArg, 0);
-				return flat(interp, list, 1, TclList.getElements(interp, indexArg), value);
+				index = Util.getIntForIndex(interp, indices[i], (elemCount - 1));
 			} catch (TclException e) {
-				/* falls through */
+			    break;
 			}
-		}
-
-		indexListCopy = TclList.copy(interp, indexArg);
-
-		if (indexListCopy == null) {
+		
 			/*
-			 * indexArg designates something that is neither an index nor a
-			 * well formed list. Report the error via TclLsetFlat.
+			 * Check that the index is in range.
 			 */
+	
+			if (index < 0 || index >= elemCount) {
+			    interp.setResult(TclString.newInstance("list index out of range"));
+			    throw new TclException(interp, "list index out of range");
+			}
 
-			
-			return flat(interp, list, 1, TclList.getElements(interp, indexArg), value);
-		}
+			/*
+			 * Break the loop after extracting the innermost sublist
+			 */
+			if ( i >= indexCount-1 ) {
+			    result = TCL.OK;
+			    break;
+			}
+		
+			/*
+			 * Extract the appropriate sublist, and make sure that it is unshared.
+			 */
+			subList = elems[index];
+			if (subList.isShared()) {
+			    subList = subList.duplicate();
+			    try {
+			    	TclList.setElement(interp, list, index, subList);
+			    } catch (TclException e) {
+					/* 
+					 * We actually shouldn't be able to get here, because
+					 * we've already checked everything that TclListObjSetElement
+					 * checks. If we were to get here, it would result in leaking
+					 * subListPtr.
+					 */
+					break;
+			    }
+			}
 
-		indices = TclList.getElements(null, indexArg);
+			/* 
+			 * Chain the current sublist onto the linked list of Tcl_Obj's
+			 * whose string reps must be spoilt.
+			 */
+			chain = list;
+			list = subList;
+	    }
+	    
+	    /*
+	     * Store the new element into the correct slot in the innermost sublist.
+	     */
+	    if ( result == TCL.OK ) {
+	    	try {
+	    		TclList.setElement(interp, list, index, value);
+	    		ptr2 = chain;
+				
+				/* Spoil all the string reps */
+				while (list != null) {
+				    subList = ptr2;
+				    list.invalidateStringRep();
+				    ptr2 = null;
+				    list = subList;
+				}
 
-		/*
-		 * Let TclLsetFlat handle the actual lset'ting.
-		 */
+				/* Return the new list if everything worked. */
+				
+				if (duplicated == 0 ) {
+				    retValue.preserve();
+				}
+				
+				return retValue;
+				
+	    	} catch (TclException e) {
+	    		
+	    	}
+	    }
 
-		retValue = flat(interp, list, indices.length, indices, value);
+	    /* Clean up the one dangling reference otherwise */
 
-		return retValue;
+	    if (duplicated != 0) {
+	    	retValue.release();
+	    }
+	    
+	    return null;
 	}
 } // end LsearchCmd
