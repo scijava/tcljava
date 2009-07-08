@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclObjectBase.java,v 1.15 2009/07/08 14:14:54 rszulgo Exp $
+ * RCS: @(#) $Id: TclObjectBase.java,v 1.16 2009/07/08 22:24:33 rszulgo Exp $
  *
  */
 
@@ -67,20 +67,15 @@ abstract class TclObjectBase {
 
     int ivalue;
 
-    @Override
+    /* 
+     * Override of java.lang.Object#equals method. Needed in
+     * TclList#sort method to check if arraylist already 
+     * contains the same TclObjects.
+     * 
+     * @see java.lang.Object#equals(java.lang.Object)
+     */
     public boolean equals(Object obj) {
-    	if (this == obj) {
-    		return true;
-		}
-		if (obj == null || getClass() != obj.getClass()) {
-    		return false;
-		}
-		if (obj instanceof TclObject) {
-			TclObject o = (TclObject) obj;
-			return o.stringRep.equals(this.stringRep);
-		}
-
-		return false;
+    	return this.toString().equals(obj.toString());
     }
     
     // Note that the isIntType() and isDoubleType()
