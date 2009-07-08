@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: QSort.java,v 1.5 2009/07/08 14:12:35 rszulgo Exp $
+ * RCS: @(#) $Id: QSort.java,v 1.6 2009/07/08 22:15:54 rszulgo Exp $
  *
  */
 
@@ -207,9 +207,9 @@ final class QSort {
 			TclObject obj;
 			if (sortIndex < -1) { // take the offset from end
 				String end = sortCommand.replace("end", "");
-				int offset = Integer.valueOf(end.isEmpty() ? "0" : end);
+				Integer offset = Integer.valueOf(end.isEmpty() ? "0" : end);
 
-				index = TclList.getLength(sortInterp, obj1) + offset - 1;
+				index = TclList.getLength(sortInterp, obj1) + offset.intValue() - 1;
 			} else {
 				index = sortIndex;
 			}
@@ -223,9 +223,9 @@ final class QSort {
 
 			if (sortIndex < -1) { // take the offset from end
 				String end = sortCommand.replace("end", "");
-				int offset = Integer.valueOf(end.isEmpty() ? "0" : end);
+				Integer offset = Integer.valueOf(end.isEmpty() ? "0" : end);
 
-				index = TclList.getLength(sortInterp, obj2) + offset - 1;
+				index = TclList.getLength(sortInterp, obj2) + offset.intValue() - 1;
 			} else {
 				index = sortIndex;
 			}
