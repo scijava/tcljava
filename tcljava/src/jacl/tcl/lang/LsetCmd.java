@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: LsetCmd.java,v 1.3 2009/07/07 22:46:37 rszulgo Exp $
+ * RCS: @(#) $Id: LsetCmd.java,v 1.4 2009/07/08 22:43:30 rszulgo Exp $
  *
  */
 
@@ -222,6 +222,10 @@ class LsetCmd implements Command {
 				elems = TclList.getElements(interp, list);
 				elemCount = elems.length;
 			} catch (TclException e) {
+				/*
+				 * If we can't get elements of list, we break the loop
+				 * and then prepare for return from method.
+				 */
 				break;
 			}
 
@@ -234,6 +238,10 @@ class LsetCmd implements Command {
 				index = Util.getIntForIndex(interp, indexArray[i],
 						(elemCount - 1));
 			} catch (TclException e) {
+				/*
+				 * If we can't get index of indices table, we break the loop
+				 * and then prepare for return from method.
+				 */
 				break;
 			}
 
@@ -307,7 +315,14 @@ class LsetCmd implements Command {
 
 				return retValue;
 			} catch (TclException e) {
-
+				/*
+				 * Falls through!
+				 * 
+				 * Probably the TclList.setElement() threw an exception.
+				 * It's no sense to continue so we break this block and
+				 * continue execution cleaning up the retValue reference.
+				 * 
+				 */
 			}
 		}
 
@@ -485,6 +500,10 @@ class LsetCmd implements Command {
 				elems = TclList.getElements(interp, list);
 				elemCount = elems.length;
 			} catch (TclException e) {
+				/*
+				 * If we can't get elements of list, we break the loop
+				 * and then prepare for return from method.
+				 */
 				break;
 			}
 
@@ -511,6 +530,10 @@ class LsetCmd implements Command {
 				index = Util
 						.getIntForIndex(interp, indices[i], (elemCount - 1));
 			} catch (TclException e) {
+				/*
+				 * If we can't get index of indices table, we break the loop
+				 * and then prepare for return from method.
+				 */
 				break;
 			}
 
@@ -584,7 +607,13 @@ class LsetCmd implements Command {
 				return retValue;
 
 			} catch (TclException e) {
-
+				/*
+				 * Falls through!
+				 * 
+				 * Probably the TclList.setElement() threw an exception.
+				 * It's no sense to continue so we break this block and
+				 * continue execution cleaning up the retValue reference.
+				 */
 			}
 		}
 
