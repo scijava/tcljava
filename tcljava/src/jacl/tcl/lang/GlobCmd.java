@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: GlobCmd.java,v 1.8 2009/06/15 23:03:01 rszulgo Exp $
+ * RCS: @(#) $Id: GlobCmd.java,v 1.9 2009/07/10 14:35:39 rszulgo Exp $
  *
  */
 
@@ -35,19 +35,56 @@ class GlobCmd implements Command {
 	/*
 	 * Path of directory to search. Default is empty. 'directory' switch changes this value
 	 */
+	
 	private static String path = "";
+
+	/*
+	 * List of types to search. Default is null. 'types' switch adds values to this set
+	 */
+	
+	private static TreeSet typeList;	
+
+	/*
+	 * Types to the glob -types command.
+	 */
+
+	static final private String validTypes[] = { "b", "c", "d", "f", "l", "p", "s", "r", "w", "x", "readonly", "hidden", "macintosh" };
+
+	static final private int TYPE_B = 0;
+	static final private int TYPE_C = 1;
+	static final private int TYPE_D = 2;
+	static final private int TYPE_F = 3;
+	static final private int TYPE_L = 4;
+	static final private int TYPE_P = 5;
+	static final private int TYPE_S = 6;
+	static final private int TYPE_R = 7;
+	static final private int TYPE_W = 8;
+	static final private int TYPE_X = 9;
+	static final private int TYPE_READONLY = 10;
+	static final private int TYPE_HIDDEN = 11;
+	static final private int TYPE_MACINTOSH = 12;
+
+	/*
+	 * Macintosh opts for file types
+	 */
+	
+	static final private String MAC_TYPE = "type";
+	static final private String MAC_CREATOR = "creator";
 
 	/*
 	 * Options to the glob command.
 	 */
 
-	static final private String validOptions[] = { "-nocomplain", "-directory",
-			"-join", "--" };
+	static final private String validOptions[] = { "-directory", "-join", "-nocomplain", "-path", "-tails", 
+			 "-types", "--" };
 
-	static final private int OPT_NOCOMPLAIN = 0;
-	static final private int OPT_DIRECTORY = 1;
-	static final private int OPT_JOIN = 2;
-	static final private int OPT_LAST = 3;
+	static final private int OPT_DIRECTORY = 0;
+	static final private int OPT_JOIN = 1;
+	static final private int OPT_NOCOMPLAIN = 2;
+	static final private int OPT_PATH = 3;
+	static final private int OPT_TAILS = 4;
+	static final private int OPT_TYPES = 5;
+	static final private int OPT_LAST = 6;
 
 	/*
 	 * --------------------------------------------------------------------------
@@ -78,6 +115,8 @@ class GlobCmd implements Command {
 					"?switches? name ?name ...?");
 		}
 
+		typeList = new TreeSet();
+
 		resultList = TclList.newInstance();
 		resultList.preserve();
 
@@ -86,8 +125,10 @@ class GlobCmd implements Command {
 			if (!argv[firstArg].toString().startsWith("-")) {
 				break;
 			}
+
 			int opt = TclIndex.get(interp, argv[firstArg], validOptions,
-					"switch", 1);
+					"option", 0);
+
 			switch (opt) {
 			case OPT_NOCOMPLAIN:
 				noComplain = true;
@@ -110,6 +151,15 @@ class GlobCmd implements Command {
 
 			case OPT_JOIN:
 				join = true;
+				break;
+				
+			case OPT_TYPES:
+				if (argv.length < 3) {
+					throw new TclException(interp,
+							"missing argument to \"-types\"");
+				}
+				TclObject[] types = TclList.getElements(interp, argv[++firstArg]);
+				parseTypes(interp, types);
 				break;
 
 			case OPT_LAST:
@@ -601,14 +651,14 @@ class GlobCmd implements Command {
 
 		// Iterate over the directory's contents.
 
-		if (dirListing.length == 0) {
+//		if (dirListing.length == 0) {
 			// Strip off a trailing '/' if necessary, before reporting
 			// the error.
 
-			if (dirName.endsWith("/")) {
-				dirName = dirName.substring(0, (dirLen - 1));
-			}
-		}
+//			if (dirName.endsWith("/")) {
+//				dirName = dirName.substring(0, (dirLen - 1));
+//			}
+//		}
 
 		// Clean up the end of the pattern and the tail pointer. Leave
 		// the tail pointing to the first character after the path
@@ -714,12 +764,10 @@ class GlobCmd implements Command {
 		dirListing = dirObj.list();
 		arrayLen = Array.getLength(dirListing);
 
-		try {
-			fullListing = (String[]) Array.newInstance(String.class,
+		
+		fullListing = (String[]) Array.newInstance(String.class,
 					arrayLen + 2);
-		} catch (Exception e) {
-			return dirListing;
-		}
+
 		for (i = 0; i < arrayLen; i++) {
 			fullListing[i] = dirListing[i];
 		}
@@ -933,5 +981,46 @@ class GlobCmd implements Command {
 			index++;
 		}
 		return head;
+	}
+	
+	private static final void parseTypes(Interp interp, TclObject[] types) throws TclException {
+		
+		for (int i=0; i<types.length; i++) {
+			int opt = TclIndex.get(interp, types[i], validTypes,
+					"types", 1);
+			switch (opt) {
+			case TYPE_B:					
+			case TYPE_C:
+			case TYPE_D:
+			case TYPE_F:
+			case TYPE_L:
+			case TYPE_P:
+			case TYPE_S:
+			case TYPE_R:
+			case TYPE_W:
+			case TYPE_X:
+			case TYPE_READONLY:
+			case TYPE_HIDDEN:
+				typeList.add(validTypes[opt]);
+				break;
+			
+			case TYPE_MACINTOSH:
+				if (MAC_TYPE.equals(validTypes[opt + 1])) {
+					
+					i++;
+				} else if (MAC_CREATOR.equals(validTypes[opt + 1])) {
+					
+					i++;
+				}
+				break;
+			
+
+			default:
+				throw new TclException(interp, "bad argument to \"-types\": "
+						+ validTypes[opt]  );
+			}
+		}
+		
+		return;
 	}
 } // end GlobCmd class
