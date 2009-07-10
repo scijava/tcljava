@@ -351,7 +351,7 @@ public class Scanner {
         }
 
         public boolean isKeyword() { return true; }
-        public boolean isKeyword(String k) { return this.keyword == k; }
+        public boolean isKeyword(String k) { return this.keyword.equals(k); }
         public boolean isKeyword(String[] ks) {
             for (int i = 0; i < ks.length; ++i) {
                 if (this.keyword == ks[i]) return true;
