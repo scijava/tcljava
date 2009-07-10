@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TJCBench.java,v 1.13 2006/06/28 02:15:52 mdejong Exp $
+ * RCS: @(#) $Id: TJCBench.java,v 1.14 2009/07/10 14:09:09 rszulgo Exp $
  *
  */
 
@@ -1831,9 +1831,6 @@ public class TJCBench extends TJC.CompiledCommand {
         // objv[3]
         TclObject var2 = TclString.newInstance("value2");
         var2.preserve();
-
-        // Dummy ref
-        TclObject ASSIGNED = TclString.newInstance("");
 
         for (int i=0; i < 5000; i++) {
             TclObject[] objv0 = objvOnStack;
