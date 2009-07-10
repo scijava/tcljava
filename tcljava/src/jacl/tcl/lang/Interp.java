@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.90 2009/06/19 08:03:22 rszulgo Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.91 2009/07/10 13:21:41 rszulgo Exp $
  *
  */
 
@@ -958,6 +958,7 @@ createCommands()
     Extension.loadOnDemand(this, "lrange",  	  "tcl.lang.LrangeCmd");
     Extension.loadOnDemand(this, "lreplace",	  "tcl.lang.LreplaceCmd");
     Extension.loadOnDemand(this, "lsearch",  	  "tcl.lang.LsearchCmd");
+    Extension.loadOnDemand(this, "lset", 		  "tcl.lang.LsetCmd");
     Extension.loadOnDemand(this, "lsort",   	  "tcl.lang.LsortCmd");
     Extension.loadOnDemand(this, "namespace",	  "tcl.lang.NamespaceCmd");
     Extension.loadOnDemand(this, "open",    	  "tcl.lang.OpenCmd");
@@ -4855,7 +4856,7 @@ TclObject checkCommonBoolean(boolean value)
 final
 TclObject checkCommonString(String value)
 {
-    if ( value == null || value == "" || value.length() == 0 ) {
+    if ( value == null || "".equals(value) || value.length() == 0 ) {
         if (VALIDATE_SHARED_RESULTS) {
             if (!m_nullResult.isShared()) {
                 throw new TclRuntimeError("ref count error: " +
