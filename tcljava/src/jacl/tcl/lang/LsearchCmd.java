@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: LsearchCmd.java,v 1.4 2009/07/06 19:33:37 rszulgo Exp $
+ * RCS: @(#) $Id: LsearchCmd.java,v 1.5 2009/07/10 13:54:55 rszulgo Exp $
  *
  */
 
@@ -269,7 +269,7 @@ throws TclException
         int lower = offset - 1;
         int upper = listv.length;
         while (lower + 1 != upper) {
-            int i = (lower + upper) / 2;
+            int i = (lower + upper) >>> 1;
             switch (dataType) {
                 case ASCII: {
                     String bytes = listv[i].toString();

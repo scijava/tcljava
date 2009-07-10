@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: QSort.java,v 1.6 2009/07/08 22:15:54 rszulgo Exp $
+ * RCS: @(#) $Id: QSort.java,v 1.7 2009/07/10 13:56:07 rszulgo Exp $
  *
  */
 
@@ -93,7 +93,7 @@ final class QSort {
 		if (hi0 > lo0) {
 			// Arbitrarily establishing partition element as the midpoint of
 			// the array.
-			mid = a[(lo0 + hi0) / 2];
+			mid = a[(lo0 + hi0) >>> 1];
 
 			// loop through the array until indices cross
 			while (lo <= hi) {

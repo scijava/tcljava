@@ -23,7 +23,7 @@
  *           mmclennan@lucent.com
  *           http://www.tcltk.com/itcl
  *
- *     RCS:  $Id: Ensemble.java,v 1.3 2006/01/26 19:49:18 mdejong Exp $
+ *     RCS:  $Id: Ensemble.java,v 1.4 2009/07/10 13:56:07 rszulgo Exp $
  * ========================================================================
  *           Copyright (c) 1993-1998  Lucent Technologies, Inc.
  * ------------------------------------------------------------------------
@@ -1053,7 +1053,7 @@ FindEnsemblePart(
     nlen  = partName.length();
 
     while (last >= first) {
-        pos = (first+last)/2;
+        pos = (first + last) >>> 1;
         if (partName.charAt(0) == ensData.parts[pos].name.charAt(0)) {
             cmp = partName.substring(0, nlen).compareTo(
                 ensData.parts[pos].name);
@@ -1162,7 +1162,7 @@ FindEnsemblePartIndex(
     last  = ensData.numParts - 1;
 
     while (last >= first) {
-        pos = (first+last)/2;
+        pos = (first + last) >>> 1;
         if (partName.charAt(0) == ensData.parts[pos].name.charAt(0)) {
             cmp = partName.compareTo(ensData.parts[pos].name);
             if (cmp == 0) {
