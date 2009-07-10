@@ -16,7 +16,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: Namespace.java,v 1.6 2006/01/26 19:49:18 mdejong Exp $
+ * RCS: @(#) $Id: Namespace.java,v 1.7 2009/07/10 13:18:39 rszulgo Exp $
  */
 
 package tcl.lang;
@@ -1048,7 +1048,7 @@ public class Namespace {
 	        "unknown namespace in import pattern \"" + pattern + "\"");
 	}
 	if (importNs == ns) {
-	    if (pattern == simplePattern) {
+	    if (pattern.equals(simplePattern)) {
 		throw new TclException(interp,
 	            "no namespace specified in import pattern \"" + pattern + "\"");
 	    } else {
