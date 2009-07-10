@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclObjectBase.java,v 1.16 2009/07/08 22:24:33 rszulgo Exp $
+ * RCS: @(#) $Id: TclObjectBase.java,v 1.17 2009/07/10 15:36:27 rszulgo Exp $
  *
  */
 
@@ -70,12 +70,43 @@ abstract class TclObjectBase {
     /* 
      * Override of java.lang.Object#equals method. Needed in
      * TclList#sort method to check if arraylist already 
-     * contains the same TclObjects.
+     * contains the same TclObjects. We compare string 
+     * representation of objects.
      * 
      * @see java.lang.Object#equals(java.lang.Object)
      */
     public boolean equals(Object obj) {
-    	return this.toString().equals(obj.toString());
+        // Not strictly necessary, but often a good optimization
+    	if(this == obj)
+    		return true;
+    	if((obj == null) || (obj.getClass() != this.getClass()))
+    		return false;
+    	
+    	// object must be TclObjectBase at this point
+		TclObjectBase tob = (TclObjectBase)obj;
+		return (stringRep == tob.stringRep || (stringRep != null && stringRep.equals(tob.stringRep)));
+    }
+    
+    /*
+     * Override of java.lang.Object#hashCode method. 
+     * This method returns the hash code value for the object on 
+     * which this method is invoked. This method returns the hash 
+     * code value as an integer and is supported for the benefit of hashing 
+     * based collection classes such as Hashtable, HashMap, HashSet etc. 
+     * 
+     * This method must be overridden in every class that overrides the equals 
+     * method.
+     * 
+     * Since the equals method compares string reps of objects, hashCode gets
+     * hashCodes of string reps.
+     * 
+     * @see java.lang.Object#hashCode(java.lang.Object)
+     */
+    public int hashCode() {
+    	int hash = 7;
+    	hash = 31 * hash + (null == stringRep ? 0 : stringRep.hashCode());
+    	return hash;
+
     }
     
     // Note that the isIntType() and isDoubleType()
