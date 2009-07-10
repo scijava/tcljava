@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Util.java,v 1.26 2006/06/13 06:52:47 mdejong Exp $
+ * RCS: @(#) $Id: Util.java,v 1.27 2009/07/10 14:22:00 rszulgo Exp $
  */
 
 package tcl.lang;
@@ -632,7 +632,7 @@ strtod(
 	return;
     }
 
-    if (result == Double.NaN) {
+    if (Double.isNaN(result)) {
 	strtodResult.update(0, 0, TCL.INVALID_DOUBLE);
 	return;
     }
