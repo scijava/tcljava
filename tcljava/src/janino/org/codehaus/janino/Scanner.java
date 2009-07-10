@@ -478,7 +478,7 @@ public class Scanner {
         }
 
         public boolean isOperator() { return true; }
-        public boolean isOperator(String o) { return this.operator == o; }
+        public boolean isOperator(String o) { return this.operator.equals(o); }
         public boolean isOperator(String[] os) {
             for (int i = 0; i < os.length; ++i) {
                 if (this.operator == os[i]) return true;
