@@ -11,7 +11,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FileCmd.java,v 1.10 2005/11/07 07:41:51 mdejong Exp $
+ * RCS: @(#) $Id: FileCmd.java,v 1.11 2009/07/16 11:21:44 rszulgo Exp $
  *
  */
 
@@ -164,13 +164,10 @@ throws
 	    throw new TclNumArgsException(interp, 2, argv, "name");
 	}
 
-	// FIXME:  Currently returns the same thing as MTIME.
-	// Java does not support retrieval of access time.
+	// FIXME: Java does not support retrieval of access time.
 
-
-	fileObj = FileUtil.getNewFileObj(interp, argv[2].toString());
-	interp.setResult(getMtime(interp, argv[2].toString(), fileObj));
-	return;
+	throw new TclException(interp,
+	"sorry, \"file atime\" is not available due to Java restrictions.");
 
     case OPT_ATTRIBUTES:
         //FIXME:   not implemented yet
@@ -673,7 +670,7 @@ throws
 	TclObject mtimeObj = TclInteger.newInstance(mtime);
 	TclObject atimeObj = TclInteger.newInstance(mtime);
 	TclObject ctimeObj = TclInteger.newInstance(mtime);
-	interp.setVar(varName, "atime", atimeObj, 0);
+	//interp.setVar(varName, "atime", atimeObj, 0);
 	interp.setVar(varName, "ctime", ctimeObj, 0);
 	interp.setVar(varName, "mtime", mtimeObj, 0);
     } catch (SecurityException e) {
