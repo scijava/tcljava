@@ -11,7 +11,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FileCmd.java,v 1.12 2009/07/16 11:53:43 rszulgo Exp $
+ * RCS: @(#) $Id: FileCmd.java,v 1.13 2009/07/16 22:12:17 rszulgo Exp $
  *
  */
 
@@ -134,11 +134,17 @@ class FileCmd implements Command {
 			throw new TclException(interp,
 					"sorry, \"file attributes\" is not available due to JVM restrictions.");
 		case OPT_CHANNELS:
-			// FIXME: not implemented yet
-
-			throw new TclException(interp,
-					"sorry, \"file channels\" is not implemented yet");
-
+		    if (argv.length > 3) {
+				throw new TclNumArgsException(interp, 2, argv, "?pattern?");
+		    }
+		    try {
+		    	TclIO.getChannelNames(interp, argv.length == 2 ? null : TclString.newInstance(argv[2]));
+		    } catch (TclException e) {
+		    	throw new TclException(interp, "Could not get channel names.");
+		    }
+		    
+		    return;
+		    
 		case OPT_COPY:
 			fileCopyRename(interp, argv, true);
 			return;
