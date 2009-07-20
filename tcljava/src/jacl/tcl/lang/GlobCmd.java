@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: GlobCmd.java,v 1.9 2009/07/10 14:35:39 rszulgo Exp $
+ * RCS: @(#) $Id: GlobCmd.java,v 1.10 2009/07/20 08:50:56 rszulgo Exp $
  *
  */
 
@@ -36,13 +36,13 @@ class GlobCmd implements Command {
 	 * Path of directory to search. Default is empty. 'directory' switch changes this value
 	 */
 	
-	private static String path = "";
+	private String pathOrDir = null;
 
 	/*
 	 * List of types to search. Default is null. 'types' switch adds values to this set
 	 */
 	
-	private static TreeSet typeList;	
+	private static TreeSet typeList = new TreeSet();	
 
 	/*
 	 * Types to the glob -types command.
@@ -102,8 +102,11 @@ class GlobCmd implements Command {
 	public void cmdProc(Interp interp, // Current interp to eval the file cmd.
 			TclObject argv[]) // Args passed to the glob command.
 			throws TclException {
-		boolean noComplain = false; // If false, error msg will be returned
+		boolean noComplain = false; // If true, error msg * will not!* be returned
 		boolean join = false; //If true, args will be joined (see the user doc)
+		boolean tails = false; //If true, returns only the part of each file found which follows the last directory
+		Boolean dirMode = null; // If frue, 'directory' switch is on; if false, `path` switch is on
+		
 		String head = "";
 		String tail = "";
 		int firstArg = 1; // index of the first non-switch arg
@@ -115,7 +118,6 @@ class GlobCmd implements Command {
 					"?switches? name ?name ...?");
 		}
 
-		typeList = new TreeSet();
 
 		resultList = TclList.newInstance();
 		resultList.preserve();
@@ -140,11 +142,17 @@ class GlobCmd implements Command {
 							"missing argument to \"-directory\"");
 				} 
 				
-				path = argv[++firstArg].toString();
-				String sep = getSeparators(path);
+				if (!dirMode.booleanValue()) {
+					throw new TclException(interp,
+					"\"-directory\" cannot be used with \"-path\"");
+				}
 				
-				if (!path.endsWith(sep)) {
-					path += sep;
+				dirMode = Boolean.TRUE;
+				pathOrDir = argv[++firstArg].toString();
+				String sep = FileUtil.getSeparators(pathOrDir);
+				
+				if (!pathOrDir.endsWith(sep)) {
+					pathOrDir += sep;
 				}
 					
 				break;
@@ -152,9 +160,27 @@ class GlobCmd implements Command {
 			case OPT_JOIN:
 				join = true;
 				break;
+			case OPT_PATH:
+				if (firstArg == argv.length - 1) {
+					throw new TclException(interp,
+							"missing argument to \"-path\"");
+				}
 				
+				if (dirMode.booleanValue()) {
+					throw new TclException(interp,
+					"\"-path\" cannot be used with \"-directory\"");
+				}
+				
+				dirMode = Boolean.FALSE;
+				pathOrDir = argv[++firstArg].toString();
+
+				break;
+			
+			case OPT_TAILS:
+				tails = true;
+				break;
 			case OPT_TYPES:
-				if (argv.length < 3) {
+				if (firstArg == argv.length - 1) {
 					throw new TclException(interp,
 							"missing argument to \"-types\"");
 				}
@@ -176,12 +202,17 @@ class GlobCmd implements Command {
 	    	throw new TclNumArgsException(interp, 1, argv, 
 	    		"?switches? name ?name ...?");
         }
+	    
+	    if (tails && pathOrDir == null) {
+	    	throw new TclNumArgsException(interp, 1, argv, 
+	    		"\"-tails\" must be used with either \"-directory\" or \"-path\"");
+        }
 
 		for (i = firstArg; i < argv.length; i++) {
 			String arg;	
 			String prevTail = "";
 			arg = argv[i].toString();
-			String sep = getSeparators(arg);
+			String sep = FileUtil.getSeparators(arg);
 			
 			// Perform tilde substitution, if needed.
 			if (arg.startsWith("~")) { // Find the first path
@@ -189,11 +220,11 @@ class GlobCmd implements Command {
 				prevTail = arg.substring(1); // the remaining file path and pattern
 			} else {
 				head = "";
-				prevTail = arg.substring(0);
+				prevTail = arg.toString();
 			}
 			
-			if (path != "") {
-				head = path.substring(0);
+			if (pathOrDir != null) {
+				head = pathOrDir.toString();
 			}
 			
 			// if join switch enabled, concat args
@@ -208,10 +239,10 @@ class GlobCmd implements Command {
 					tail = tail.substring(0, tail.length()-1);
 					
 					// path is no longer needed (out of date as new path is set)
-					path = "";
+					pathOrDir = null;
 				}
 			} else {
-				tail = prevTail.substring(0);
+				tail = prevTail.toString();
 			}
 						
 			try {
@@ -318,7 +349,7 @@ class GlobCmd implements Command {
 	 * --------------------------------------------------------------------------
 	 */
 
-	private static final void doGlob(Interp interp, // Interpreter to use for
+	private final void doGlob(Interp interp, // Interpreter to use for
 			// error reporting
 			String separators, // String containing separator characters
 			StringBuffer headBuf, // Completely expanded prefix.
@@ -573,7 +604,7 @@ class GlobCmd implements Command {
 	 * ---
 	 */
 
-	private static final void matchFiles(Interp interp, // Interpreter to use
+	private final void matchFiles(Interp interp, // Interpreter to use
 			// for error reporting
 			String separators, // String containing separator characters
 			String dirName, // Path of directory to search.
@@ -597,8 +628,8 @@ class GlobCmd implements Command {
 			// accept backslashes. Also, ensure that the directory ends with
 			// a separator character.
 
-			if (path != "") {
-				dirBuf.append(path);
+			if (pathOrDir != "") {
+				dirBuf.append(pathOrDir);
 			} else if (dirLen == 0) {
 				dirBuf.append("./");
 			} else {
@@ -624,8 +655,8 @@ class GlobCmd implements Command {
 			// automatically. Keep the "" for use in generating file names,
 			// otherwise "glob foo.c" would return "./foo.c".
 
-			if (path != "") {
-				dirBuf.append(path);
+			if (pathOrDir != "") {
+				dirBuf.append(pathOrDir);
 			} else if (dirLen == 0) {
 				dirBuf.append(".");
 			} else {
@@ -878,42 +909,6 @@ class GlobCmd implements Command {
 		}
 
 		return FileUtil.getNewFileObj(interp, fileName);
-	}
-
-	/*
-	 * --------------------------------------------------------------------------
-	 * 
-	 * getSeparators --
-	 * 
-	 * Returns the platform separator. Note that the separator is
-	 * platform-dependent. On MACs separator depends on the given path ('/' or
-	 * ':')
-	 * 
-	 * Results: Returns separators of the specific platform.
-	 * 
-	 * Side effects: None.
-	 * 
-	 * --------------------------------------------------------------------------
-	 */
-	private static final String getSeparators(String arg) {
-		String separators;
-
-		switch (JACL.PLATFORM) {
-		case JACL.PLATFORM_WINDOWS:
-			separators = "/\\:";
-			break;
-		case JACL.PLATFORM_MAC:
-			if (arg.indexOf(':') == -1) {
-				separators = "/";
-			} else {
-				separators = ":";
-			}
-			break;
-		default:
-			separators = "/";
-		}
-
-		return separators;
 	}
 	
 	/*
