@@ -11,7 +11,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: FileCmd.java,v 1.13 2009/07/16 22:12:17 rszulgo Exp $
+ * RCS: @(#) $Id: FileCmd.java,v 1.14 2009/07/20 08:52:29 rszulgo Exp $
  *
  */
 
@@ -299,10 +299,20 @@ class FileCmd implements Command {
 			return;
 
 		case OPT_NORMALIZE:
-			// FIXME: Not yet implemented.
+		    TclObject fName = null;
 
-			throw new TclException(interp,
-					"sorry, \"file normalize\" is not implemented yet");
+		    if (argv.length != 3) {
+		    	throw new TclNumArgsException(interp, 2, argv, "filename");
+		    }
+
+		    fName = FileUtil.getNormalizedPath(interp, argv[2]);
+		    
+		    if (fName == null) {
+		    	throw new TclException(interp, "Cannot normalize this path!");
+		    }
+		    
+		    interp.setResult(fName);
+		    return;
 
 		case OPT_OWNED:
 			if (argv.length != 3) {
@@ -357,10 +367,20 @@ class FileCmd implements Command {
 			return;
 
 		case OPT_SEPARATOR:
-			// FIXME: Not yet implemented.
-
-			throw new TclException(interp,
-					"sorry, \"file separator\" is not implemented yet");
+			String arg;
+			if (argv.length > 3) {
+				throw new TclNumArgsException(interp, 2, argv, "name");
+		    }
+			
+			if (argv.length == 2) {
+				arg = null;
+			} else {
+				arg = argv[2].toString();
+			}
+			
+			String separator = FileUtil.getSeparators(arg);
+			interp.setResult(separator);
+			return;
 
 		case OPT_SIZE:
 			if (argv.length != 3) {
