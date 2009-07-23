@@ -9,15 +9,12 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Util.java,v 1.27 2009/07/10 14:22:00 rszulgo Exp $
+ * RCS: @(#) $Id: Util.java,v 1.28 2009/07/23 10:42:15 rszulgo Exp $
  */
 
 package tcl.lang;
 
 import sunlabs.brazil.util.regexp.Regexp;
-
-import java.io.*;
-import java.util.*;
 
 public class Util {
 
@@ -190,7 +187,7 @@ strtoul(
 	    if (i < len-1) {
 		i++;
 		c = s.charAt(i);
-		if (c == 'x' || c == 'X') {
+		if ((c == 'x' || c == 'X') && i < len -1) {
 		    i++;
 		    base = 16;
 		}
@@ -310,7 +307,44 @@ throws
 
     return (int) res.value;
 }
-
+
+static long getWideInt(Interp interp, String str) throws TclException	// If the string is not a valid Tcl integer.
+{
+    int len = str.length();
+    int i = 0;
+    char c;
+
+    StrtoulResult res;
+    if (interp == null) {
+        res = new StrtoulResult();
+    } else {
+        res = interp.strtoulResult;
+    }
+    Util.strtoul(str, i, 0, res);
+
+    if (res.errno < 0) {
+	if (res.errno == TCL.INTEGER_RANGE) {
+	    if (interp != null) {
+		interp.setErrorCode(TclString.newInstance(intTooBigCode));
+	    }
+	    throw new TclException(interp,
+		    "long value too large to represent");
+	} else {
+	    throw new TclException(interp, "expected long but got \"" +
+			  str + "\"" + checkBadOctal(interp, str));
+	}
+    } else if (res.index < len) {
+	for (i = res.index; i<len; i++) {
+	    if (((c = str.charAt(i)) != ' ') &&
+                    !Character.isWhitespace(c)) {
+		throw new TclException(interp, "expected long but got \"" +
+			      str + "\"" + checkBadOctal(interp, str));
+	    }
+	}
+    }
+
+    return (int) res.value;
+}
 /*
  *----------------------------------------------------------------------
  *
@@ -1996,7 +2030,6 @@ tryGetSystemProperty(
 	return defautlValue;
     }
 }
-
 } // end Util
 
 /* 
