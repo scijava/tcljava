@@ -4,6 +4,9 @@ empty implementation of Util used for compiling in multiple packages
 
 package tcl.lang;
 
+import tcl.lang.Interp;
+import tcl.lang.TclException;
+
 public class Util {
 
 static final boolean getBoolean(Interp interp, String s) throws TclException
@@ -45,6 +48,11 @@ isJacl() {
 static boolean
 looksLikeInt(String s) {
     return false;
+}
+
+static long getWideInt(Interp interp, String str) throws TclException
+{
+	return 0;
 }
 
 } // end Util
