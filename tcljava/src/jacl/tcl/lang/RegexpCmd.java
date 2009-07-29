@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: RegexpCmd.java,v 1.4 2009/07/29 12:00:21 rszulgo Exp $
+ * RCS: @(#) $Id: RegexpCmd.java,v 1.5 2009/07/29 15:45:48 rszulgo Exp $
  */
 
 package tcl.lang;
@@ -116,6 +116,8 @@ class RegexpCmd implements Command {
 					indices = true;
 					break;
 				case OPT_LINE:
+					flags |= Pattern.MULTILINE;
+					flags |= Pattern.UNIX_LINES;
 					break;
 				case OPT_LINESTOP:
 					break;
@@ -197,10 +199,10 @@ class RegexpCmd implements Command {
 
 				// if offset was changed via -start switch to non-zero value, and
 				// regex has '^', it will surely not match
-				if ((offset != 0)
+				if ((pattern.flags() & Pattern.MULTILINE) == 0 && (offset != 0)
 						&& (exp.startsWith(REGEX_START1)
-								|| exp.contains(REGEX_START2) || exp
-								.contains(REGEX_START3))) {
+								|| exp.indexOf(REGEX_START2) != -1 || exp
+								.indexOf(REGEX_START3) != -1)) {
 					matched = false;
 				} else {
 
