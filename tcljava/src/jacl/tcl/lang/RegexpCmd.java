@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: RegexpCmd.java,v 1.5 2009/07/29 15:45:48 rszulgo Exp $
+ * RCS: @(#) $Id: RegexpCmd.java,v 1.6 2009/08/07 12:37:35 rszulgo Exp $
  */
 
 package tcl.lang;
@@ -41,11 +41,6 @@ class RegexpCmd implements Command {
 	private static final int OPT_START = 9;
 	private static final int OPT_LAST = 10;
 
-	/* Expressions that indicate use of the boundary matcher '^' */
-	private static final String REGEX_START1 = "^";
-	private static final String REGEX_START2 = "|^";
-	private static final String REGEX_START3 = "(^";
-
 	/*
 	 * --------------------------------------------------------------------------
 	 * ---
@@ -61,8 +56,8 @@ class RegexpCmd implements Command {
 	 * 
 	 * Side effects: The regexp and regsub s]commands are now connected to the
 	 * CmdProc method of the RegexpCmd and RegsubCmd classes, respectively.
-	 * --------------------------------------------------------------------------
-	 * ---
+	 * ------
+	 * -------------------------------------------------------------------- ---
 	 */
 
 	static void init(Interp interp) // Current interpreter.
@@ -84,6 +79,7 @@ class RegexpCmd implements Command {
 	 * 
 	 * Side effects: See the user documentation.
 	 * 
+	 * 
 	 * --------------------------------------------------------------------------
 	 * ---
 	 */
@@ -93,35 +89,45 @@ class RegexpCmd implements Command {
 			throws TclException {
 		boolean indices = false;
 		boolean doinline = false;
+		boolean about = false;
+		boolean lineAnchor = false;
+		boolean lineStop = false;
+		boolean last = false;
 		int all = 0;
 		int flags = 0;
 		int offset = 0; // the index offset of the string to start matching the
 		int objc = 0;
-		int nsubs = 0;
 		// regular expression at
 		TclObject result;
 
+		flags |= Pattern.MULTILINE | Pattern.UNIX_LINES;
+		
 		try {
 			int i = 1;
-			opts: while (argv[i].toString().startsWith("-")) {
+			while (!last && argv[i].toString().startsWith("-")) {
 				int index = TclIndex.get(interp, argv[i], validOpts, "switch",
 						0);
 				i++;
 				switch (index) {
 				case OPT_ABOUT:
+					about = true;
 					break;
 				case OPT_EXPANDED:
+					flags |= Pattern.COMMENTS;
 					break;
 				case OPT_INDICES:
 					indices = true;
 					break;
 				case OPT_LINE:
-					flags |= Pattern.MULTILINE;
-					flags |= Pattern.UNIX_LINES;
+					flags |= Pattern.DOTALL;
 					break;
 				case OPT_LINESTOP:
+					flags |= Pattern.DOTALL;
+					lineStop = true;
 					break;
 				case OPT_LINEANCHOR:
+					flags |= Pattern.DOTALL;
+					lineAnchor = true;
 					break;
 				case OPT_NOCASE:
 					flags |= Pattern.CASE_INSENSITIVE;
@@ -151,7 +157,8 @@ class RegexpCmd implements Command {
 
 					break;
 				case OPT_LAST:
-					break opts;
+					last = true;
+					break;
 
 				}
 			}
@@ -169,11 +176,11 @@ class RegexpCmd implements Command {
 
 			String exp = argv[i++].toString();
 			String string = argv[i].toString();
-			Pattern pattern = null;
+			Regex reg;
 			result = TclInteger.newInstance(0);
 			
 			try {
-				pattern = Pattern.compile(exp, flags);
+				reg = new Regex(exp, string, offset, flags);
 			} catch (PatternSyntaxException ex) {
 				interp
 						.setResult("couldn't compile regular expression pattern: "
@@ -182,7 +189,13 @@ class RegexpCmd implements Command {
 				return;
 			}
 
-			Matcher matcher = pattern.matcher(string);
+			// If about switch was enabled, return info about regular expression
+			if (about) {
+				TclObject props = TclList.newInstance();
+				props = reg.getInfo(interp);
+				interp.appendElement(props.toString());
+				return;
+			}
 
 			boolean matched;
 
@@ -197,22 +210,8 @@ class RegexpCmd implements Command {
 			while (true) {
 				int group = 0;
 
-				// if offset was changed via -start switch to non-zero value, and
-				// regex has '^', it will surely not match
-				if ((pattern.flags() & Pattern.MULTILINE) == 0 && (offset != 0)
-						&& (exp.startsWith(REGEX_START1)
-								|| exp.indexOf(REGEX_START2) != -1 || exp
-								.indexOf(REGEX_START3) != -1)) {
-					matched = false;
-				} else {
-
-					// check if offset is in boundaries of string length
-					if (offset > string.length()) {
-						offset = string.length();
-					}
-
-					matched = matcher.find(offset);
-				}
+				matched = reg.match();
+				
 				if (!matched) {
 					/*
 					 * We want to set the value of the intepreter result only
@@ -225,7 +224,7 @@ class RegexpCmd implements Command {
 						 * w/ value 0.
 						 */
 						if (doinline) {
-								result = TclList.newInstance();			
+							result = TclList.newInstance();
 						} else {
 							TclInteger.set(result, 0);
 						}
@@ -237,15 +236,15 @@ class RegexpCmd implements Command {
 				}
 
 				if (doinline) {
-				    /*
-				     * It's the number of substitutions, plus one for the matchVar
-				     * at index 0
-				     */
-				    objc = matcher.groupCount() + 1;
+					/*
+					 * It's the number of substitutions, plus one for the
+					 * matchVar at index 0
+					 */
+					objc = reg.groupCount() + 1;
 				} else {
 					objc = argv.length - i - 1;
 				}
-				
+
 				// loop for each of a variable that stores the result
 				for (int j = 0; j < objc; j++) {
 					TclObject obj;
@@ -254,11 +253,11 @@ class RegexpCmd implements Command {
 							int start = -1;
 							int end = -1;
 
-							if (group <= matcher.groupCount()) {
-								start =  matcher.start(group);
-								end = matcher.end(group++);
+							if (group <= reg.groupCount()) {
+								start = reg.start(group);
+								end = reg.end(group++);
 
-								if (end >= offset) {
+								if (end >= reg.getOffset()) {
 									end--;
 								}
 							}
@@ -270,14 +269,16 @@ class RegexpCmd implements Command {
 							TclList.append(interp, obj, TclInteger
 									.newInstance(end));
 						} else {
-							if (matcher.groupCount() > 0) {
-								if (group <= matcher.groupCount()) {
-									obj = TclString.newInstance(matcher.group(group++));
+							if (reg.groupCount() > 0) {
+								if (group <= reg.groupCount()) {
+									obj = TclString.newInstance(reg
+											.group(group++));
 								} else {
 									obj = TclList.newInstance();
 								}
 							} else {
-								obj = TclString.newInstance(string.substring(matcher.start(), matcher.end()));
+								obj = TclString.newInstance(string.substring(
+										reg.start(), reg.end()));
 							}
 						}
 
@@ -294,7 +295,7 @@ class RegexpCmd implements Command {
 						}
 
 					} catch (IndexOutOfBoundsException e) {
-						//TODO: Handle exception
+						// TODO: Handle exception
 						return;
 					}
 				}
@@ -312,13 +313,14 @@ class RegexpCmd implements Command {
 				 * of the input string, we will loop indefinitely (because the
 				 * length of the match is 0, so offset never changes).
 				 */
-				if (matcher.end() - matcher.start() == 0) {
-					offset++;
+				if (reg.end() - reg.start() == 0) {
+					int temp = reg.getOffset();
+					reg.setOffset(temp++);
 				} else {
-					offset = matcher.end();
+					reg.setOffset(reg.end());
 				}
 				all++;
-				if (offset >= string.length()) {
+				if (reg.getOffset() >= string.length()) {
 					break;
 				}
 			}
@@ -331,7 +333,7 @@ class RegexpCmd implements Command {
 			 */
 
 			if (!doinline) {
-				//TclObject resultPtr = interp.getResult();
+				// TclObject resultPtr = interp.getResult();
 				TclInteger.set(result, (all != 0 ? all - 1 : 1));
 				interp.setResult(result);
 			}
