@@ -10,15 +10,13 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: LsearchCmd.java,v 1.5 2009/07/10 13:54:55 rszulgo Exp $
+ * RCS: @(#) $Id: LsearchCmd.java,v 1.6 2009/08/07 21:56:39 rszulgo Exp $
  *
  */
 
 package tcl.lang;
 
-import org.omg.CORBA.TCKind;
-
-import sunlabs.brazil.util.regexp.Regexp;
+import java.util.regex.PatternSyntaxException;
 
 /*
  * This class implements the built-in "lsearch" command in Tcl.
@@ -101,7 +99,7 @@ throws TclException
     TclObject start = null;
     TclObject[] listv;
     TclObject resultList = null;
-    Regexp regexp;
+    Regex regexp;
     
     if (objv.length < 3) {
         throw new TclNumArgsException(interp, 1, objv,
@@ -159,31 +157,6 @@ throws TclException
         		start = objv[i];
             	break;
         }
-    }
-
-    if (mode == REGEXP) {
-    	/*
-    	 * We can shimmer regexp/list if listv[i] == pattern, so get the
-    	 * regexp rep before the list rep. First time round, omit the interp
-    	 * and hope that the compilation will succeed. If it fails, we'll
-    	 * recompile in "expensive" mode with a place to put error messages.
-    	 */
-    	
-    	regexp = TclRegexp.compile(null, objv[objv.length - 1], nocase);
-    	
-    	if (regexp == null) {
-    		/*
-    	     * Failed to compile the RE. Try again without the TCL_REG_NOSUB
-    	     * flag in case the RE had sub-expressions in it [Bug 1366683]. If
-    	     * this fails, an error message will be left in the interpreter.
-    	     */
-    		
-        	regexp = TclRegexp.compile(interp, objv[objv.length - 1], nocase);
-    	}
-    	
-    	if (regexp == null) {
-    		throw new TclException(interp, "failed to get regexp");
-    	}
     }
     
     // Make sure the list argument is a list object and get its length and
@@ -385,8 +358,17 @@ throws TclException
                     break;
                 }
                 case REGEXP: {
-                    match = Util.regExpMatch(interp,
-                                listv[i].toString(), patObj);
+                    
+                    try {
+            			regexp = new Regex(patObj.toString(), listv[i].toString(), 0);
+            			match = regexp.match();
+            		} catch (PatternSyntaxException ex) {
+            			interp
+            					.setResult("couldn't compile regular expression pattern: "
+            							+ ex.getMessage());
+            			interp.setErrorCode(TclInteger.newInstance(TCL.ERROR));
+            			return;
+            		}
                     break;
                 }
             }
@@ -421,7 +403,7 @@ throws TclException
     if (allMatches) {
     	interp.setResult(resultList);
     } else if (!inlineReturn) {
-    	interp.getResult().ivalue = index;
+    	interp.setResult(index);
     } else if (index < 0) {
 		/*
 		 * Is this superfluous?  The result should be a blank object
