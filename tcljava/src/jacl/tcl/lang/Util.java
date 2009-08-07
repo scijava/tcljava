@@ -9,12 +9,12 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Util.java,v 1.28 2009/07/23 10:42:15 rszulgo Exp $
+ * RCS: @(#) $Id: Util.java,v 1.29 2009/08/07 22:00:36 rszulgo Exp $
  */
 
 package tcl.lang;
 
-import sunlabs.brazil.util.regexp.Regexp;
+import java.util.regex.PatternSyntaxException;
 
 public class Util {
 
@@ -1071,8 +1071,12 @@ regExpMatch(
     TclObject pattern)   		// The regular expression.
 throws TclException
 {
-    Regexp r = TclRegexp.compile(interp, pattern, false);
-    return r.match(string, (String[]) null);
+	 try {
+			Regex regexp = new Regex(pattern.toString(), string, 0);
+			return regexp.match();
+		} catch (PatternSyntaxException ex) {
+			throw ex;
+		}
 }
 
 /*
