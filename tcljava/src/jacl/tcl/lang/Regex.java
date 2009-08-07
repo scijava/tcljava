@@ -171,6 +171,11 @@ public class Regex {
 	 */
 	private static final String SUBS_GROUP = "(([^\\\\])?\\\\)([0-9])";
 
+	/* Expressions that indicate use of the boundary matcher '^' */
+	private static final String REGEX_START1 = "^";
+	private static final String REGEX_START2 = "|^";
+	private static final String REGEX_START3 = "(^";
+
 	/*
 	 * Pattern object
 	 */
@@ -269,6 +274,27 @@ public class Regex {
 		}
 
 		matcher = pattern.matcher(string.substring(offset));
+	}
+
+	public boolean match() {
+		// if offset is a non-zero value,
+		// and regex has '^', it will surely not match
+
+		if ((pattern.flags() & Pattern.MULTILINE) == 0
+				&& (offset != 0)
+				&& (regexp.startsWith(REGEX_START1)
+						|| regexp.indexOf(REGEX_START2) != -1 || regexp
+						.indexOf(REGEX_START3) != -1)) {
+			return false;
+		} else {
+
+			// check if offset is in boundaries of string length
+			if (offset > string.length()) {
+				offset = string.length();
+			}
+
+			return matcher.find(offset);
+		}
 	}
 
 	/**
@@ -454,6 +480,93 @@ public class Regex {
 	}
 
 	/**
+	 * Returns the number of capturing groups in this matcher's pattern.
+	 * 
+	 * @return Returns the number of capturing groups in this matcher's pattern.
+	 * @see java.util.regex.Matcher#groupCount()
+	 * 
+	 */
+	public int groupCount() {
+		return matcher.groupCount();
+	}
+
+	/**
+	 * Returns the start index of the previous match.
+	 * 
+	 * @return The index of the first character matched
+	 * @see java.util.regex.Matcher#start()
+	 * 
+	 */
+	public int start() {
+		return matcher.start();
+	}
+
+	/**
+	 * Returns the start index of the subsequence captured by the given group
+	 * during the previous match operation.
+	 * 
+	 * @param group
+	 *            The index of a capturing group in this matcher's pattern
+	 * @return The index of the first character matched
+	 * @see java.util.regex.Matcher#start(int)
+	 * 
+	 */
+	public int start(int group) {
+		return matcher.start(group);
+	}
+
+	/**
+	 * Returns the index of the last character matched, plus one.
+	 * 
+	 * @return The index of the last character matched, plus one
+	 * @see java.util.regex.Matcher#end()
+	 */
+	public int end() {
+		return matcher.end();
+	}
+
+	/**
+	 * Returns the index of the last character, plus one, of the subsequence
+	 * captured by the given group during the previous match operation.
+	 * 
+	 * @param group
+	 *            The index of a capturing group in this matcher's pattern
+	 * @return The index of the last character captured by the group, plus one,
+	 *         or -1 if the match was successful but the group itself did not
+	 *         match anything
+	 * @see java.util.regex.Matcher#end(int)
+	 */
+	public int end(int group) {
+		return matcher.end(group);
+	}
+
+	/**
+	 * Returns the input subsequence matched by the previous match.
+	 * 
+	 * @return The (possibly empty) subsequence matched by the previous match,
+	 *         in string form
+	 * @see java.util.regex.Matcher#group()
+	 */
+	public String group() {
+		return matcher.group();
+	}
+
+	/**
+	 * Returns the input subsequence captured by the given group during the
+	 * previous match operation.
+	 * 
+	 * @param group
+	 *            The index of a capturing group in this matcher's pattern
+	 * @return The (possibly empty) subsequence captured by the group during the
+	 *         previous match, or null if the group failed to match part of the
+	 *         input
+	 * @see java.util.regex.Matcher#group(int)
+	 */
+	public String group(int group) {
+		return matcher.group(group);
+	}
+
+	/**
 	 * @return the pattern object
 	 */
 	public Pattern getPattern() {
@@ -489,7 +602,9 @@ public class Regex {
 	}
 
 	/**
-	 * @return the count of correctly matched subseqences of the input string
+	 * Returns the count of correctly matched subsequences of the input string
+	 * 
+	 * @return the count of correctly matched subsequences of the input string
 	 */
 	public int getCount() {
 		return count;
@@ -503,11 +618,17 @@ public class Regex {
 	}
 
 	/**
+	 * @param offset
+	 *            the offset to set
+	 */
+	public void setOffset(int offset) {
+		this.offset = offset;
+	}
+
+	/**
 	 * @param args
 	 */
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
-
 	}
-
 }
