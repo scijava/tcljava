@@ -10,123 +10,14 @@ import java.util.regex.PatternSyntaxException;
  * <p>
  * Regular expressions are handled by java.util.regex package.
  * <hr>
- * REGULAR EXPRESSIONS
- * <p>
- * A regular expression is zero or more <code>branches</code>, separated by "|".
- * It matches anything that matches one of the branches.
- * <p>
- * A branch is zero or more <code>pieces</code>, concatenated. It matches a
- * match for the first piece, followed by a match for the second piece, etc.
- * <p>
- * A piece is an <code>atom</code>, possibly followed by "*", "+", or "?".
- * <ul>
- * <li>An atom followed by "*" matches a sequence of 0 or more matches of the
- * atom.
- * <li>An atom followed by "+" matches a sequence of 1 or more matches of the
- * atom.
- * <li>An atom followed by "?" matches either 0 or 1 matches of the atom.
- * </ul>
- * <p>
- * An atom is
- * <ul>
- * <li>a regular expression in parentheses (matching a match for the regular
- * expression)
- * <li>a <code>range</code> (see below)
- * <li>"." (matching any single character)
- * <li>"^" (matching the null string at the beginning of the input string)
- * <li>"$" (matching the null string at the end of the input string)
- * <li>a "\" followed by a single character (matching that character)
- * <li>a single character with no other significance (matching that character).
- * </ul>
- * <p>
- * A <code>range</code> is a sequence of characters enclosed in "[]". The range
- * normally matches any single character from the sequence. If the sequence
- * begins with "^", the range matches any single character <b>not</b> from the
- * rest of the sequence. If two characters in the sequence are separated by "-",
- * this is shorthand for the full list of characters between them (e.g. "[0-9]"
- * matches any decimal digit). To include a literal "]" in the sequence, make it
- * the first character (following a possible "^"). To include a literal "-",
- * make it the first or last character.
- * <p>
- * In general there may be more than one way to match a regular expression to an
- * input string. For example, consider the command
- * 
- * <pre>
- * String[] match = new String[2];
- * Regexp.match(&quot;(a*)b*&quot;, &quot;aabaaabb&quot;, match);
- * </pre>
- * 
- * Considering only the rules given so far, <code>match[0]</code> and
- * <code>match[1]</code> could end up with the values
- * <ul>
- * <li>"aabb" and "aa"
- * <li>"aaab" and "aaa"
- * <li>"ab" and "a"
- * </ul>
- * or any of several other combinations. To resolve this potential ambiguity,
- * Regexp chooses among alternatives using the rule "first then longest". In
- * other words, it considers the possible matches in order working from left to
- * right across the input string and the pattern, and it attempts to match
- * longer pieces of the input string before shorter ones. More specifically, the
- * following rules apply in decreasing order of priority:
- * <ol>
- * <li>If a regular expression could match two different parts of an input
- * string then it will match the one that begins earliest.
- * <li>If a regular expression contains "|" operators then the leftmost matching
- * sub-expression is chosen.
- * <li>In "*", "+", and "?" constructs, longer matches are chosen in preference
- * to shorter ones.
- * <li>
- * In sequences of expression components the components are considered from left
- * to right.
- * </ol>
- * <p>
- * In the example from above, "(a*)b*" therefore matches exactly "aab"; the
- * "(a*)" portion of the pattern is matched first and it consumes the leading
- * "aa", then the "b*" portion of the pattern consumes the next "b". Or,
- * consider the following example:
- * 
- * <pre>
- * String match = new String[3];
- * Regexp.match(&quot;(ab|a)(b*)c&quot;, &quot;abc&quot;, match);
- * </pre>
- * 
- * After this command, <code>match[0]</code> will be "abc",
- * <code>match[1]</code> will be "ab", and <code>match[2]</code> will be an
- * empty string. Rule 4 specifies that the "(ab|a)" component gets first shot at
- * the input string and Rule 2 specifies that the "ab" sub-expression is checked
- * before the "a" sub-expression. Thus the "b" has already been claimed before
- * the "(b*)" component is checked and therefore "(b*)" must match an empty
- * string.
- * <hr>
- * <a name=regsub></a> REGULAR EXPRESSION SUBSTITUTION
- * <p>
- * Regular expression substitution matches a string against a regular
- * expression, transforming the string by replacing the matched region(s) with
- * new substring(s).
- * <p>
- * What gets substituted into the result is controlled by a <code>subspec</code>
- * . The subspec is a formatting string that specifies what portions of the
- * matched region should be substituted into the result.
- * <ul>
- * <li>"&" or "\0" is replaced with a copy of the entire matched region.
- * <li>"\<code>n</code>", where <code>n</code> is a digit from 1 to 9, is
- * replaced with a copy of the <code>n</code><i>th</i> subexpression.
- * <li>"\&" or "\\" are replaced with just "&" or "\" to escape their special
- * meaning.
- * <li>any other character is passed through.
- * </ul>
- * In the above, strings like "\2" represents the two characters
- * <code>backslash</code> and "2", not the Unicode character 0002.
- * <hr>
- * Here is an example of how to use Regexp
+ * Here is an example of how to use Regex Engine
  * 
  * <pre>
  * 
  * public static void main(String[] args) throws Exception {
- * 	Regexp re;
- * 	String[] matches;
+ * 	Regex re;
  * 	String s;
+ *  int group = 1;
  * 	/*
  * 	 * A regular expression to match the first line of a HTTP request.
  * 	 *
@@ -139,25 +30,31 @@ import java.util.regex.PatternSyntaxException;
  * 	 * 7. $		      - end of string - no chars left.
  * 	 &#42;/
  * 	s = &quot;GET http://a.b.com:1234/index.html HTTP/1.1&quot;;
- * 	re = new Regexp(&quot;&circ;([A-Z]+)[ \t]+([&circ; \t]+)[ \t]+(HTTP/1\\.[01])$&quot;);
- * 	matches = new String[4];
- * 	if (re.match(s, matches)) {
- * 		System.out.println(&quot;METHOD  &quot; + matches[1]);
- * 		System.out.println(&quot;URL     &quot; + matches[2]);
- * 		System.out.println(&quot;VERSION &quot; + matches[3]);
+ *  
+ *  // Get the Regex object - compiled and matched	
+ *  re = new Regex(&quot;&circ;([A-Z]+)[ \t]+([&circ; \t]+)[ \t]+(HTTP/1\\.[01])$&quot;, s, 0, 0);
+ * 	
+ *  while (re.match() {
+ * 	if (group <= re.groupCount()) {
+ * 		System.out.println(&quot;METHOD  &quot; + re.group(group++));
+ * 		System.out.println(&quot;URL     &quot; + re.group(group++));
+ * 		System.out.println(&quot;VERSION &quot; + re.group(group++));
  * 	}
  * 	/*
  * 	 * A regular expression to extract some simple comma-separated data,
  * 	 * reorder some of the columns, and discard column 2.
  * 	 &#42;/
  * 	s = &quot;abc,def,ghi,klm,nop,pqr&quot;;
- * 	re = new Regexp(&quot;&circ;([&circ;,]+),([&circ;,]+),([&circ;,]+),(.*)&quot;);
- * 	System.out.println(re.sub(s, &quot;\\3,\\1,\\4&quot;));
+ * 	re = new Regexp(&quot;&circ;([&circ;,]+),([&circ;,]+),([&circ;,]+),(.*)&quot;, s, 0, 0);
+ * 	System.out.println(re.replaceFist(&quot;$3,$1,$4&quot;));
  * }
  * </pre>
  * 
  * @author Radoslaw Szulgo (radoslaw@szulgo.pl)
  * @version 1.0, 2009/08/05
+ * 
+ * @see java.util.regex.Matcher
+ * @see java.util.regex.Pattern
  */
 public class Regex {
 
@@ -242,7 +139,7 @@ public class Regex {
 			throw ex;
 		}
 
-		matcher = pattern.matcher(string.substring(offset));
+		matcher = pattern.matcher(string);
 	}
 
 	/**
@@ -273,9 +170,13 @@ public class Regex {
 			throw ex;
 		}
 
-		matcher = pattern.matcher(string.substring(offset));
+		matcher = pattern.matcher(string);
 	}
 
+	/**
+	 * 
+	 * @return
+	 */
 	public boolean match() {
 		// if offset is a non-zero value,
 		// and regex has '^', it will surely not match
@@ -311,7 +212,9 @@ public class Regex {
 		String result;
 
 		boolean matches = matcher.find();
-		result = matcher.replaceFirst(subSpec);
+		
+		// we replace first matched occurence in the substring of the input string
+		result = pattern.matcher(string.substring(offset)).replaceFirst(subSpec);
 
 		// if offset is set then we must join the substring that was
 		// removed ealier (during matching)
@@ -350,18 +253,24 @@ public class Regex {
 	public String replaceAll(String subSpec) {
 		String result = null;
 		StringBuffer sb = new StringBuffer();
-
-		while (matcher.find()) {
+		int i = offset;
+		// we replace first matched occurence in the substring of the input string
+		Matcher tempMatcher = pattern.matcher(string.substring(offset));
+		while (tempMatcher.find()) {
 			count++;
-			matcher.appendReplacement(sb, subSpec);
+			tempMatcher.appendReplacement(sb, subSpec);
+			i += tempMatcher.end();
+			tempMatcher = pattern.matcher(string.substring(i));
 		}
 
-		matcher.appendTail(sb);
+		tempMatcher.appendTail(sb);
 
 		// if offset is set then we must join the substring that was
 		// removed ealier (during matching)
 		if (offset != 0) {
 			result = string.substring(0, offset) + sb.toString();
+		} else {
+			result = sb.toString();
 		}
 
 		return result;
@@ -623,12 +532,5 @@ public class Regex {
 	 */
 	public void setOffset(int offset) {
 		this.offset = offset;
-	}
-
-	/**
-	 * @param args
-	 */
-	public static void main(String[] args) {
-		// TODO Auto-generated method stub
 	}
 }
