@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: RegexpCmd.java,v 1.6 2009/08/07 12:37:35 rszulgo Exp $
+ * RCS: @(#) $Id: RegexpCmd.java,v 1.7 2009/08/11 12:41:15 rszulgo Exp $
  */
 
 package tcl.lang;
@@ -100,7 +100,7 @@ class RegexpCmd implements Command {
 		// regular expression at
 		TclObject result;
 
-		flags |= Pattern.MULTILINE | Pattern.UNIX_LINES;
+		flags |= Pattern.MULTILINE;
 		
 		try {
 			int i = 1;
@@ -271,8 +271,8 @@ class RegexpCmd implements Command {
 						} else {
 							if (reg.groupCount() > 0) {
 								if (group <= reg.groupCount()) {
-									obj = TclString.newInstance(reg
-											.group(group++));
+									obj = TclString.newInstance(string.substring(reg.start(group), reg.end(group)));
+									group++;
 								} else {
 									obj = TclList.newInstance();
 								}
@@ -315,7 +315,7 @@ class RegexpCmd implements Command {
 				 */
 				if (reg.end() - reg.start() == 0) {
 					int temp = reg.getOffset();
-					reg.setOffset(temp++);
+					reg.setOffset(++temp);
 				} else {
 					reg.setOffset(reg.end());
 				}
