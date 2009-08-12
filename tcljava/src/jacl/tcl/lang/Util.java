@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Util.java,v 1.29 2009/08/07 22:00:36 rszulgo Exp $
+ * RCS: @(#) $Id: Util.java,v 1.30 2009/08/12 12:07:00 rszulgo Exp $
  */
 
 package tcl.lang;
@@ -1412,8 +1412,10 @@ throws
     }
 
     c = string.charAt(i);
-    if ((c == '{') || (c == '"') || (c == '\0')) {
-	flags |= USE_BRACES;
+    
+    // The first character of a non-empty string can legitimately be \0
+    if ((c == '{') || (c == '"') || (c == '\0' && len == 1)) {
+    	flags |= USE_BRACES;
     }
     for ( ; i < len; i++) {
 	if (debug) {
@@ -1502,7 +1504,8 @@ convertElement(
     // See the comment block at the beginning of the ScanElement
     // code for details of how this works.
 
-    if ((s == null) || (s.length() == 0) || (s.charAt(0) == '\0')) {
+    // The first character of a non-empty string can legitimately be \0
+    if ((s == null) || (s.length() == 0) || (s.charAt(0) == '\0' && len == 1)) {
 	sbuf.append("{}");
 	return;
     }
