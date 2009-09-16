@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclIO.java,v 1.11 2009/07/16 22:12:18 rszulgo Exp $
+ * RCS: @(#) $Id: TclIO.java,v 1.12 2009/09/16 21:49:18 mdejong Exp $
  *
  */
 
@@ -68,33 +68,6 @@ class TclIO {
         return((Channel) getInterpChanTable(interp).get(chanName));
     }
 
-	static void getChannelNames(Interp interp, TclObject pattern) throws TclException {
-		HashMap ht = getInterpChanTable(interp);
-		Iterator it = ht.keySet().iterator();
-		
-		while (it.hasNext()) {
-			String chanName = (String) it.next();
-			StdChannel chan = (StdChannel) ht.get(chanName);
-			
-			if (chan == stdinChan) {
-				chanName = "stdin";
-			} else if (chan == stdoutChan) {
-				chanName = "stdout";
-			} else if (chan == stderrChan) {
-				chanName = "stderr";
-			} 
-			
-			try {
-				if (pattern == null) {
-					interp.appendElement(chanName);
-				} else if (Util.stringMatch(chanName, pattern.toString())){
-					interp.appendElement(chanName);
-				}
-			} catch (TclException e) {
-				throw e;
-			}
-		}
-	}
 
     static void registerChannel(Interp interp, Channel chan) {
 
@@ -142,8 +115,6 @@ class TclIO {
 	
 	return interp.interpChanTable;
     }
-    
-    
 
 
     static Channel getStdChannel(int type) {
@@ -274,8 +245,5 @@ class TclIO {
         else
             return -1;
     }
-
-
-
 
 }

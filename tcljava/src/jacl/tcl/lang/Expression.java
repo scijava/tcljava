@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Expression.java,v 1.40 2009/07/10 14:22:00 rszulgo Exp $
+ * RCS: @(#) $Id: Expression.java,v 1.41 2009/09/16 21:49:18 mdejong Exp $
  *
  */
 
@@ -94,7 +94,7 @@ class Expression {
 	"-", "+", "!", "~"
     };
 
-    public HashMap mathFuncTable;
+    HashMap mathFuncTable;
 
     /**
      * The entire expression, as originally passed to eval et al.
@@ -210,7 +210,6 @@ class Expression {
 	registerMathFunction("abs", new AbsFunction());
 	registerMathFunction("double", new DoubleFunction());
 	registerMathFunction("int", new IntFunction());
-	registerMathFunction("wide", new WideFunction());
 	registerMathFunction("round", new RoundFunction());
 
 	m_expr = null;
@@ -1981,8 +1980,9 @@ class Expression {
     }
 
     static void checkDoubleRange(Interp interp, double d) throws TclException {
-	if (Double.isNaN(d) ||
-		Double.isInfinite(d)) {
+	if ((d == Double.NaN) ||
+		(d == Double.NEGATIVE_INFINITY) ||
+		(d == Double.POSITIVE_INFINITY)) {
 	    Expression.DoubleTooLarge(interp);
 	}
     }
@@ -2219,23 +2219,6 @@ class IntFunction extends MathFunction {
     }
 }
 
-class WideFunction extends MathFunction {
-    WideFunction() {
-	argTypes = new int[1];
-	argTypes[0] = EITHER;
-    }
-
-    void apply(Interp interp, ExprValue[] values)
-	    throws TclException {
-	ExprValue value = values[0];
-	if (!value.isIntType()) {
-	    double d = value.getDoubleValue();
-	    Expression.checkIntegerRange(interp, d);
-	    value.setIntValue( (int) d );
-	}
-	}
-}
-
 class RoundFunction extends MathFunction {
     RoundFunction() {
 	argTypes = new int[1];
@@ -2380,9 +2363,9 @@ class ExpFunction extends UnaryMathFunction {
 	    throws TclException {
 	ExprValue value = values[0];
 	double d = Math.exp(value.getDoubleValue());
-	if ((Double.isNaN(d)) ||
-		Double.isInfinite(d)
-	) {
+	if ((d == Double.NaN) ||
+		(d == Double.NEGATIVE_INFINITY) ||
+		(d == Double.POSITIVE_INFINITY)) {
 	    Expression.DoubleTooLarge(interp);
 	}
 	value.setDoubleValue(d);

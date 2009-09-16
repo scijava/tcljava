@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Interp.java,v 1.91 2009/07/10 13:21:41 rszulgo Exp $
+ * RCS: @(#) $Id: Interp.java,v 1.92 2009/09/16 21:49:18 mdejong Exp $
  *
  */
 
@@ -54,10 +54,10 @@ HashMap reflectConflictTable = new HashMap();
 private static final int MAX_ERR_LENGTH = 200;
 
 
-// We pretend this is Tcl 8.4, patch level 0.
+// We pretend this is Tcl 8.0, patch level 0.
 
-static final String TCL_VERSION     = "8.4";
-static final String TCL_PATCH_LEVEL = "8.4.0";
+static final String TCL_VERSION     = "8.0";
+static final String TCL_PATCH_LEVEL = "8.0";
 
 
 // Total number of times a command procedure
@@ -144,7 +144,7 @@ int nestLevel;
 
 // Used to catch infinite loops in Parser.eval2.
 
-private int maxNestingDepth = 1000;
+final int maxNestingDepth = 1000;
 
 // Flags used when evaluating a command.
 
@@ -769,7 +769,7 @@ eventuallyDispose()
 	    errorCodeObj.release();
 	}
     } catch (TclException e) {
-	// Ignore it -- same behavior as Tcl 8.4
+	// Ignore it -- same behavior as Tcl 8.0.
     }
 
     // Tear down the math function table.
@@ -958,7 +958,6 @@ createCommands()
     Extension.loadOnDemand(this, "lrange",  	  "tcl.lang.LrangeCmd");
     Extension.loadOnDemand(this, "lreplace",	  "tcl.lang.LreplaceCmd");
     Extension.loadOnDemand(this, "lsearch",  	  "tcl.lang.LsearchCmd");
-    Extension.loadOnDemand(this, "lset", 		  "tcl.lang.LsetCmd");
     Extension.loadOnDemand(this, "lsort",   	  "tcl.lang.LsortCmd");
     Extension.loadOnDemand(this, "namespace",	  "tcl.lang.NamespaceCmd");
     Extension.loadOnDemand(this, "open",    	  "tcl.lang.OpenCmd");
@@ -3606,7 +3605,7 @@ updateReturnInfo()
 	} catch (TclException e) {
 	    // An error may happen during a trace to errorCode. We ignore it.
 	    // This may leave error messages inside Interp.result (which
-	    // is compatible with Tcl 8.4 behavior.
+	    // is compatible with Tcl 8.0 behavior.
 	}
 	errCodeSet = true;
 
@@ -3616,7 +3615,7 @@ updateReturnInfo()
 	    } catch (TclException e) {
 		// An error may happen during a trace to errorInfo. We
 		// ignore it.  This may leave error messages inside
-		// Interp.result (which is compatible with Tcl 8.4
+		// Interp.result (which is compatible with Tcl 8.0
 		// behavior.
 	    }
 	    errInProgress = true;
@@ -4856,7 +4855,7 @@ TclObject checkCommonBoolean(boolean value)
 final
 TclObject checkCommonString(String value)
 {
-    if ( value == null || "".equals(value) || value.length() == 0 ) {
+    if ( value == null || value == "" || value.length() == 0 ) {
         if (VALIDATE_SHARED_RESULTS) {
             if (!m_nullResult.isShared()) {
                 throw new TclRuntimeError("ref count error: " +
@@ -5219,39 +5218,6 @@ disposeInterrupted()
     dispose();
 }
 
-/*
- *----------------------------------------------------------------------
- *
- * setMaxNestingDepth --
- *
- *	Set new value for maxNestingDepth
- *
- *----------------------------------------------------------------------
- */
-
-public int setMaxNestingDepth(int depth) {
-	int old = this.maxNestingDepth;
-	
-	if (depth > 0) {
-		this.maxNestingDepth = depth;
-	} 
-	
-	return old;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * setMaxNestingDepth --
- *
- *	Gets the value of maxNestingDepth
- *
- *----------------------------------------------------------------------
- */
-
-public int getMaxNestingDepth() {
-	return maxNestingDepth;
-}
 
 /*
  *----------------------------------------------------------------------

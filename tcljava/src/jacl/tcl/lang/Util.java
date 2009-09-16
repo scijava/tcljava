@@ -9,12 +9,15 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Util.java,v 1.30 2009/08/12 12:07:00 rszulgo Exp $
+ * RCS: @(#) $Id: Util.java,v 1.31 2009/09/16 21:49:18 mdejong Exp $
  */
 
 package tcl.lang;
 
-import java.util.regex.PatternSyntaxException;
+import sunlabs.brazil.util.regexp.Regexp;
+
+import java.io.*;
+import java.util.*;
 
 public class Util {
 
@@ -187,7 +190,7 @@ strtoul(
 	    if (i < len-1) {
 		i++;
 		c = s.charAt(i);
-		if ((c == 'x' || c == 'X') && i < len -1) {
+		if (c == 'x' || c == 'X') {
 		    i++;
 		    base = 16;
 		}
@@ -307,44 +310,7 @@ throws
 
     return (int) res.value;
 }
-
-static long getWideInt(Interp interp, String str) throws TclException	// If the string is not a valid Tcl integer.
-{
-    int len = str.length();
-    int i = 0;
-    char c;
-
-    StrtoulResult res;
-    if (interp == null) {
-        res = new StrtoulResult();
-    } else {
-        res = interp.strtoulResult;
-    }
-    Util.strtoul(str, i, 0, res);
-
-    if (res.errno < 0) {
-	if (res.errno == TCL.INTEGER_RANGE) {
-	    if (interp != null) {
-		interp.setErrorCode(TclString.newInstance(intTooBigCode));
-	    }
-	    throw new TclException(interp,
-		    "long value too large to represent");
-	} else {
-	    throw new TclException(interp, "expected long but got \"" +
-			  str + "\"" + checkBadOctal(interp, str));
-	}
-    } else if (res.index < len) {
-	for (i = res.index; i<len; i++) {
-	    if (((c = str.charAt(i)) != ' ') &&
-                    !Character.isWhitespace(c)) {
-		throw new TclException(interp, "expected long but got \"" +
-			      str + "\"" + checkBadOctal(interp, str));
-	    }
-	}
-    }
-
-    return (int) res.value;
-}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -666,7 +632,7 @@ strtod(
 	return;
     }
 
-    if (Double.isNaN(result)) {
+    if (result == Double.NaN) {
 	strtodResult.update(0, 0, TCL.INVALID_DOUBLE);
 	return;
     }
@@ -1071,12 +1037,8 @@ regExpMatch(
     TclObject pattern)   		// The regular expression.
 throws TclException
 {
-	 try {
-			Regex regexp = new Regex(pattern.toString(), string, 0);
-			return regexp.match();
-		} catch (PatternSyntaxException ex) {
-			throw ex;
-		}
+    Regexp r = TclRegexp.compile(interp, pattern, false);
+    return r.match(string, (String[]) null);
 }
 
 /*
@@ -1412,10 +1374,8 @@ throws
     }
 
     c = string.charAt(i);
-    
-    // The first character of a non-empty string can legitimately be \0
-    if ((c == '{') || (c == '"') || (c == '\0' && len == 1)) {
-    	flags |= USE_BRACES;
+    if ((c == '{') || (c == '"') || (c == '\0')) {
+	flags |= USE_BRACES;
     }
     for ( ; i < len; i++) {
 	if (debug) {
@@ -1504,8 +1464,7 @@ convertElement(
     // See the comment block at the beginning of the ScanElement
     // code for details of how this works.
 
-    // The first character of a non-empty string can legitimately be \0
-    if ((s == null) || (s.length() == 0) || (s.charAt(0) == '\0' && len == 1)) {
+    if ((s == null) || (s.length() == 0) || (s.charAt(0) == '\0')) {
 	sbuf.append("{}");
 	return;
     }
@@ -2037,6 +1996,7 @@ tryGetSystemProperty(
 	return defautlValue;
     }
 }
+
 } // end Util
 
 /* 

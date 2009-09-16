@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: OpenCmd.java,v 1.7 2009/06/18 15:17:03 rszulgo Exp $
+ * RCS: @(#) $Id: OpenCmd.java,v 1.8 2009/09/16 21:49:18 mdejong Exp $
  *
  */
 
@@ -140,23 +140,15 @@ class OpenCmd implements Command {
 	 * Open the file or create a process pipeline.
 	 */
 
-	String fileName = argv[1].toString();
 	if (!pipeline) {
 	    try {
-		if (fileName.startsWith("resource:/")) {
-	            ResourceChannel resource = new ResourceChannel();
-		    resource.open(interp, fileName.substring(9), modeFlags);
-		    TclIO.registerChannel(interp, resource);
-		    interp.setResult(resource.getChanName());
-		} else {
-	            FileChannel file = new FileChannel();
-		    file.open(interp, fileName, modeFlags);
-		    TclIO.registerChannel(interp, file);
-		    interp.setResult(file.getChanName());
-		}
+	        FileChannel file = new FileChannel();
+		file.open(interp, argv[1].toString(), modeFlags);
+		TclIO.registerChannel(interp, file);
+		interp.setResult(file.getChanName());
 	    } catch (IOException e) {
 		throw new TclException(interp, "cannot open file: " + 
-                        fileName);
+                        argv[1].toString());
 	    }
 	} else {
 	    /*

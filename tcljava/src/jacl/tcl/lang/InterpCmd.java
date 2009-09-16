@@ -9,7 +9,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: InterpCmd.java,v 1.4 2009/06/19 08:03:22 rszulgo Exp $
+ * RCS: @(#) $Id: InterpCmd.java,v 1.5 2009/09/16 21:49:18 mdejong Exp $
  *
  */
 
@@ -27,8 +27,7 @@ class InterpCmd implements Command {
         "alias",	"aliases",	"create",	"delete", 
 	"eval",		"exists",	"expose",	"hide", 
 	"hidden",	"issafe",	"invokehidden",	"marktrusted", 
-	"recursionlimit", "slaves",	"share",	"target",	
-	"transfer"
+	"slaves",	"share",	"target",	"transfer"
     };
     static final private int OPT_ALIAS		= 0;
     static final private int OPT_ALIASES	= 1;
@@ -42,11 +41,10 @@ class InterpCmd implements Command {
     static final private int OPT_ISSAFE		= 9;
     static final private int OPT_INVOKEHIDDEN	= 10;
     static final private int OPT_MARKTRUSTED	= 11;
-    static final private int OPT_RECURSIONLMT = 12;
-    static final private int OPT_SLAVES		= 13;
-    static final private int OPT_SHARE		= 14;
-    static final private int OPT_TARGET		= 15;
-    static final private int OPT_TRANSFER	= 16;
+    static final private int OPT_SLAVES		= 12;
+    static final private int OPT_SHARE		= 13;
+    static final private int OPT_TARGET		= 14;
+    static final private int OPT_TRANSFER	= 15;
 
     static final private String createOptions[] = {
 	"-safe",
@@ -265,14 +263,6 @@ throws
 	    }
 	    Interp slaveInterp = getInterp(interp, objv[2]);
 	    InterpSlaveCmd.markTrusted(interp, slaveInterp);
-	    break;
-	}
-	case OPT_RECURSIONLMT: {
-	    if (objv.length != 3 && objv.length != 4) {
-		throw new TclNumArgsException(interp, 2, objv, "path ?newlimit?");
-	    }
-	    Interp slaveInterp = getInterp(interp, objv[2]);
-	    InterpSlaveCmd.recursionLimit(interp, slaveInterp, objv.length-3, objv);
 	    break;
 	}
 	case OPT_SLAVES: {

@@ -5,7 +5,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TJC.java,v 1.36 2009/07/10 13:17:43 rszulgo Exp $ *
+ * RCS: @(#) $Id: TJC.java,v 1.37 2009/09/16 21:49:18 mdejong Exp $ *
  */
 
 // Runtime support for TJC compiler implementation.
@@ -1420,7 +1420,7 @@ public class TJC {
             // TclObject already has a string rep, check if it is a
             // ref to the interned empty string or if the len is 0.
             String s = obj.toString();
-            isEmptyString = ("".equals(s) || s.length() == 0 );
+            isEmptyString = ( s == "" || s.length() == 0 );
         }
         if (negate) {
             isEmptyString = !isEmptyString;

@@ -10,13 +10,11 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: LsearchCmd.java,v 1.6 2009/08/07 21:56:39 rszulgo Exp $
+ * RCS: @(#) $Id: LsearchCmd.java,v 1.7 2009/09/16 21:49:18 mdejong Exp $
  *
  */
 
 package tcl.lang;
-
-import java.util.regex.PatternSyntaxException;
 
 /*
  * This class implements the built-in "lsearch" command in Tcl.
@@ -25,35 +23,27 @@ import java.util.regex.PatternSyntaxException;
 class LsearchCmd implements Command {
   
 static final private String[] options = {
-	"-all",
     "-ascii",
     "-decreasing",
     "-dictionary",
     "-exact",
-    "-glob",
-    "-increasing",
-    "-inline",
+    "-increasing", 
     "-integer",
-    "-not",
+    "-glob",
     "-real",
     "-regexp",
-    "-sorted",
-    "-start"
+    "-sorted"
 };
-static final int LSEARCH_ALL	        = 0;
-static final int LSEARCH_ASCII          = 1;
-static final int LSEARCH_DECREASING     = 2;
-static final int LSEARCH_DICTIONARY     = 3;
-static final int LSEARCH_EXACT          = 4;
-static final int LSEARCH_GLOB           = 5;
-static final int LSEARCH_INCREASING     = 6;
-static final int LSEARCH_INLINE         = 7;
-static final int LSEARCH_INTEGER        = 8;
-static final int LSEARCH_NOT	        = 9;
-static final int LSEARCH_REAL           = 10;
-static final int LSEARCH_REGEXP         = 11;
-static final int LSEARCH_SORTED         = 12;
-static final int LSEARCH_START	        = 13;
+static final int LSEARCH_ASCII          = 0;
+static final int LSEARCH_DECREASING     = 1;
+static final int LSEARCH_DICTIONARY     = 2;
+static final int LSEARCH_EXACT          = 3;
+static final int LSEARCH_INCREASING     = 4;
+static final int LSEARCH_INTEGER        = 5;
+static final int LSEARCH_GLOB           = 6;
+static final int LSEARCH_REAL           = 7;
+static final int LSEARCH_REGEXP         = 8;
+static final int LSEARCH_SORTED         = 9;
 
 static final int ASCII          = 0;
 static final int DICTIONARY     = 1;
@@ -90,28 +80,17 @@ throws TclException
 {
     int mode = GLOB;
     int dataType = ASCII;
-    int offset = 0;
     boolean isIncreasing = true;
-    boolean nocase = true;
-    boolean allMatches = false;
-    boolean inlineReturn = false;
-    boolean negatedMatch = false;
-    TclObject start = null;
-    TclObject[] listv;
-    TclObject resultList = null;
-    Regex regexp;
-    
+    TclObject pattern = null;
+    TclObject list = null;
+
     if (objv.length < 3) {
         throw new TclNumArgsException(interp, 1, objv,
                       "?options? list pattern");
     }
 
     for (int i = 1; i < objv.length-2; i++) {
-    	int opt = TclIndex.get(interp, objv[i], options, "option", 0);
-        switch (opt) {
-        	case LSEARCH_ALL:           // -all
-        		allMatches = true;
-        		break;
+        switch (TclIndex.get(interp, objv[i], options, "option", 0)) {
             case LSEARCH_ASCII:         // -ascii
                 dataType = ASCII;
                 break;
@@ -124,20 +103,14 @@ throws TclException
             case LSEARCH_EXACT:         // -increasing
                 mode = EXACT;
                 break;
-            case LSEARCH_GLOB:          // -glob
-                mode = GLOB;
-                break;
             case LSEARCH_INCREASING:    // -increasing
                 isIncreasing = true;
-                break;
-            case LSEARCH_INLINE:    	// -inline
-                inlineReturn = true;
                 break;
             case LSEARCH_INTEGER:       // -integer
                 dataType = INTEGER;
                 break;
-            case LSEARCH_NOT:       // -integer
-                negatedMatch = true;
+            case LSEARCH_GLOB:          // -glob
+                mode = GLOB;
                 break;
             case LSEARCH_REAL:          // -real
                 dataType = REAL;
@@ -148,59 +121,14 @@ throws TclException
             case LSEARCH_SORTED:        // -sorted
                 mode = SORTED;
                 break;
-            case LSEARCH_START:			// - start
-            	if (i > objv.length - 4) {
-					throw new TclException(interp,
-					"missing starting index");
-            	}
-            	i++;
-        		start = objv[i];
-            	break;
         }
     }
-    
+
     // Make sure the list argument is a list object and get its length and
     // a pointer to its array of element pointers.
-    
-    try {
-    	listv = TclList.getElements(interp, objv[objv.length - 2]);
-    } catch (TclException e) {
-        throw e;
-    }
-    
-    /*
-     * Get the user-specified start offset.
-     */
 
-    if (start != null) {
-    	try {
-    		offset = Util.getIntForIndex(interp, start, listv.length - 1);
-    		start.release();
-    	} catch (TclException e) {
-    		throw e;
-    	}
-    	
-    	if (offset < 0) {
-    	    offset = 0;
-    	}
+    TclObject[] listv = TclList.getElements(interp, objv[objv.length - 2]);
 
-    	/*
-    	 * If the search started past the end of the list, we just return a
-    	 * "did not match anything at all" result straight away. [Bug 1374778]
-    	 */
-
-    	if (offset > listv.length - 1) {
-    	    if (allMatches || inlineReturn) {
-    	    	interp.resetResult();
-    	    } else {
-    	    	interp.setResult(TclInteger.newInstance(-1));
-    	    }
-    	    return;
-    	}
-    }
-    
-    
-    
     TclObject patObj = objv[objv.length - 1];
     String patternBytes = null;
     int patInt = 0;
@@ -230,19 +158,13 @@ throws TclException
     // value.
 
     int index = -1;
-    if (mode == SORTED && !allMatches && !negatedMatch) {
-    	/*
-    	 * If the data is sorted, we can do a more intelligent search.
-    	 * Note that there is no point in being smart when -all was
-    	 * specified; in that case, we have to look at all items anyway,
-    	 * and there is no sense in doing this when the match sense is
-    	 * inverted.
-    	 */
+    if (mode == SORTED) {
+        // If the data is sorted, we can do a more intelligent search.
         int match = 0;
-        int lower = offset - 1;
+        int lower = -1;
         int upper = listv.length;
         while (lower + 1 != upper) {
-            int i = (lower + upper) >>> 1;
+            int i = (lower + upper)/2;
             switch (dataType) {
                 case ASCII: {
                     String bytes = listv[i].toString();
@@ -307,22 +229,10 @@ throws TclException
             }
         }
     } else {
-    	/*
-    	 * We need to do a linear search, because (at least one) of:
-    	 *   - our matcher can only tell equal vs. not equal
-    	 *   - our matching sense is negated
-    	 *   - we're building a list of all matched items
-    	 */
-
-    	if (allMatches) {
-    	    resultList = TclList.newInstance();
-    	}
-    	
-        for (int i = offset; i < listv.length; i++) {
+        for (int i = 0; i < listv.length; i++) {
             boolean match = false;
             switch (mode) {
                 case SORTED:
-                	 /* falls through */
                 case EXACT: {
                     switch (dataType) {
                         case ASCII: {
@@ -358,61 +268,18 @@ throws TclException
                     break;
                 }
                 case REGEXP: {
-                    
-                    try {
-            			regexp = new Regex(patObj.toString(), listv[i].toString(), 0);
-            			match = regexp.match();
-            		} catch (PatternSyntaxException ex) {
-            			interp
-            					.setResult("couldn't compile regular expression pattern: "
-            							+ ex.getMessage());
-            			interp.setErrorCode(TclInteger.newInstance(TCL.ERROR));
-            			return;
-            		}
+                    match = Util.regExpMatch(interp,
+                                listv[i].toString(), patObj);
                     break;
                 }
             }
-            
-            /*
-    	     * Invert match condition for -not.
-    	     */
-
-    	    if (negatedMatch) {
-    	    	match = !match;
-    	    }
-    	    
-    	    if (match) {
-    			if (!allMatches) {
-    			    index = i;
-    			    break;
-    			} else if (inlineReturn) {
-    			    /*
-    			     * Note that these appends are not expected to fail.
-    			     */
-    			    TclList.append(interp, resultList, listv[i]);
-    			} else {
-    			    TclList.append(interp, resultList, TclInteger.newInstance(i));
-    			}
-			}
+            if (match) {
+                index = i;
+                break;
+            }
         }
     }
-    
-    /*
-     * Return everything or a single value.
-     */
-    if (allMatches) {
-    	interp.setResult(resultList);
-    } else if (!inlineReturn) {
-    	interp.setResult(index);
-    } else if (index < 0) {
-		/*
-		 * Is this superfluous?  The result should be a blank object
-		 * by default...
-		 */
-    	interp.resetResult();
-    } else {
-    	interp.setResult(listv[index]);
-    }
+    interp.setResult(index);
 }
 
 /*

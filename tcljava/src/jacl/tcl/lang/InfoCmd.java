@@ -8,17 +8,15 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: InfoCmd.java,v 1.16 2009/06/18 18:16:05 rszulgo Exp $
+ * RCS: @(#) $Id: InfoCmd.java,v 1.17 2009/09/16 21:49:18 mdejong Exp $
  *
  */
 
 package tcl.lang;
 
+import java.util.*;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * This class implements the built-in "info" command in Tcl.
@@ -33,7 +31,6 @@ class InfoCmd implements Command {
 	"complete",	
 	"default",
 	"exists",
-	"functions",
 	"globals",
 	"hostname",
 	"level",
@@ -56,20 +53,19 @@ class InfoCmd implements Command {
     static final int OPT_COMPLETE		= 4;
     static final int OPT_DEFAULT		= 5;
     static final int OPT_EXISTS			= 6;
-    static final int OPT_FUNCTIONS		= 7;
-    static final int OPT_GLOBALS		= 8;
-    static final int OPT_HOSTNAME		= 9;
-    static final int OPT_LEVEL			= 10;
-    static final int OPT_LIBRARY		= 11;
-    static final int OPT_LOADED			= 12;
-    static final int OPT_LOCALS			= 13;
-    static final int OPT_NAMEOFEXECUTABLE	= 14;
-    static final int OPT_PATCHLEVEL		= 15;
-    static final int OPT_PROCS			= 16;
-    static final int OPT_SCRIPT			= 17;
-    static final int OPT_SHAREDLIBEXTENSION	= 18;
-    static final int OPT_TCLVERSION		= 19;
-    static final int OPT_VARS			= 20;
+    static final int OPT_GLOBALS		= 7;
+    static final int OPT_HOSTNAME		= 8;
+    static final int OPT_LEVEL			= 9;
+    static final int OPT_LIBRARY		= 10;
+    static final int OPT_LOADED			= 11;
+    static final int OPT_LOCALS			= 12;
+    static final int OPT_NAMEOFEXECUTABLE	= 13;
+    static final int OPT_PATCHLEVEL		= 14;
+    static final int OPT_PROCS			= 15;
+    static final int OPT_SCRIPT			= 16;
+    static final int OPT_SHAREDLIBEXTENSION	= 17;
+    static final int OPT_TCLVERSION		= 18;
+    static final int OPT_VARS			= 19;
 
     /**
      * Tcl_InfoObjCmd -> InfoCmd.cmdProc
@@ -113,9 +109,6 @@ class InfoCmd implements Command {
 	    case OPT_EXISTS:
 		InfoExistsCmd(interp, objv);
 		break;
-	    case OPT_FUNCTIONS:
-	    InfoFunctionsCmd(interp, objv);
-	    break;
 	    case OPT_GLOBALS:
 		InfoGlobalsCmd(interp, objv);
 		break;
@@ -159,7 +152,7 @@ class InfoCmd implements Command {
 	return;
     }
 
-	/*
+    /*
      *----------------------------------------------------------------------
      *
      * InfoArgsCmd --
@@ -524,61 +517,6 @@ class InfoCmd implements Command {
 	return;
     }
 
-    /*
-     *----------------------------------------------------------------------
-     *
-     *  InfoFunctionsCmd --
-     *
-     *      Called to implement the "info functions" command that returns the list
-     *      of math functions currently defined matching an optional pattern. Handles the
-     *      following syntax:
-     *
-     *          info functions ?pattern?*
-     *
-     * Results:
-     *      Returns if successful, raises TclException otherwise.
-     *
-     * Side effects:
-     *      Returns a result in the interpreter's result object.
-     *
-     *----------------------------------------------------------------------
-     */
-    
-    private void InfoFunctionsCmd(Interp interp, TclObject[] objv) throws TclException {
-    	String varName, pattern;
-    	Expression mathFns = new Expression();
-    	Var var;
-    	TclObject list;
-
-    	if (objv.length == 2) {
-    	    pattern = null;
-    	} else if (objv.length == 3) {
-    	    pattern = objv[2].toString();
-    	} else {
-    	    throw new TclNumArgsException(interp, 2, objv, "?pattern?");
-    	}
-
-    	// Scan through the global :: namespace's variable table and create a
-    	// list of all global variables that match the pattern.
-
-    	list = TclList.newInstance();
-
-    	Set set = mathFns.mathFuncTable.entrySet();
-        Iterator it = set.iterator();
-
-        while(it.hasNext()) {
-    	      Map.Entry entry = (Map.Entry)it.next();
-    	      varName = (String) entry.getKey();
-
-    	      if ((pattern == null) || Util.stringMatch(varName, pattern)) {
-    	    	  TclList.append(interp, list, TclString.newInstance(varName));
-    	      }
-    	}
-
-    	interp.setResult(list);
-    	return;
-	}
-    
     /*
      *----------------------------------------------------------------------
      *

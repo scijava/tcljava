@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
- * RCS: @(#) $Id: JavaInvoke.java,v 1.26 2009/07/10 14:22:00 rszulgo Exp $
+ * RCS: @(#) $Id: JavaInvoke.java,v 1.27 2009/09/16 21:49:18 mdejong Exp $
  *
  */
 
@@ -1193,7 +1193,7 @@ throws
 	    double jdouble = TclDouble.get(interp, tclObj);
 	    float jfloat = (float) jdouble;
 
-	    if ((Double.isNaN(jdouble)) ||
+	    if ((jdouble == Double.NaN) ||
 	           (jdouble == Double.NEGATIVE_INFINITY) ||
 	           (jdouble == Double.POSITIVE_INFINITY)) {
 	        // No-op

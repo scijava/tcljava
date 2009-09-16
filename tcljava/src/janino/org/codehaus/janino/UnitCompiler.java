@@ -4295,14 +4295,14 @@ public class UnitCompiler {
         String   operator
     ) throws CompileException {
         if (
-            "|".equals(operator) ||
-            "^".equals(operator) ||
-            "&".equals(operator)
+            operator == "|" ||
+            operator == "^" ||
+            operator == "&"
         ) {
             final int iopcode = (
-               "&".equals(operator) ? Opcode.IAND :
-                "|".equals(operator) ? Opcode.IOR  :
-                "^".equals(operator) ? Opcode.IXOR : Integer.MAX_VALUE
+                operator == "&" ? Opcode.IAND :
+                operator == "|" ? Opcode.IOR  :
+                operator == "^" ? Opcode.IXOR : Integer.MAX_VALUE
             );
 
             do {
@@ -4347,18 +4347,18 @@ public class UnitCompiler {
         }
 
         if (
-            "*".equals(operator) ||
-            "/".equals(operator) ||
-            "%".equals(operator) ||
-            "+".equals(operator) ||
-            "-".equals(operator)
+            operator == "*"   ||
+            operator == "/"   ||
+            operator == "%"   ||
+            operator == "+"   ||
+            operator == "-"
         ) {
             final int iopcode = (
-                "*".equals(operator) ? Opcode.IMUL  :
-                "/".equals(operator) ? Opcode.IDIV  :
-                "%".equals(operator) ? Opcode.IREM  :
-                "+".equals(operator) ? Opcode.IADD  :
-                "-".equals(operator) ? Opcode.ISUB  : Integer.MAX_VALUE
+                operator == "*"   ? Opcode.IMUL  :
+                operator == "/"   ? Opcode.IDIV  :
+                operator == "%"   ? Opcode.IREM  :
+                operator == "+"   ? Opcode.IADD  :
+                operator == "-"   ? Opcode.ISUB  : Integer.MAX_VALUE
             );
 
             do {
@@ -4368,7 +4368,7 @@ public class UnitCompiler {
                 IClassLoader icl = this.iClassLoader;
 
                 // String concatenation?
-                if ("+".equals(operator) && (type == icl.STRING || operandType == icl.STRING)) {
+                if (operator == "+" && (type == icl.STRING || operandType == icl.STRING)) {
 
                     if (type != null) this.stringConversion(located, type);
 
@@ -4448,14 +4448,14 @@ public class UnitCompiler {
         }
 
         if (
-            "<<".equals(operator) ||
-            ">>".equals(operator) ||
-            ">>>".equals(operator)
+            operator == "<<"  ||
+            operator == ">>"  ||
+            operator == ">>>"
         ) {
             final int iopcode = (
-                "<<".equals(operator) ? Opcode.ISHL  :
-                ">>".equals(operator) ? Opcode.ISHR  :
-                ">>>".equals(operator) ? Opcode.IUSHR : Integer.MAX_VALUE
+                operator == "<<"  ? Opcode.ISHL  :
+                operator == ">>"  ? Opcode.ISHR  :
+                operator == ">>>" ? Opcode.IUSHR : Integer.MAX_VALUE
             );
 
             do {

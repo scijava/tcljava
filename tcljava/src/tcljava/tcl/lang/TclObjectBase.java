@@ -7,7 +7,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: TclObjectBase.java,v 1.18 2009/07/29 16:50:27 rszulgo Exp $
+ * RCS: @(#) $Id: TclObjectBase.java,v 1.19 2009/09/16 21:49:18 mdejong Exp $
  *
  */
 
@@ -67,48 +67,6 @@ abstract class TclObjectBase {
 
     int ivalue;
 
-    /* 
-     * Override of java.lang.Object#equals method. Needed in
-     * TclList#sort method to check if arraylist already 
-     * contains the same TclObjects. We compare string 
-     * representation of objects.
-     * 
-     * @see java.lang.Object#equals(java.lang.Object)
-     */
-    public boolean equals(Object obj) {
-        // Not strictly necessary, but often a good optimization
-    	if(this == obj)
-    		return true;
-    	if((obj == null) || (obj.getClass() != this.getClass()))
-    		return false;
-    	
-    	// object must be TclObjectBase at this point
-		TclObjectBase tob = (TclObjectBase)obj;
-		return (stringRep == tob.stringRep || (stringRep != null && stringRep.equals(tob.stringRep)));
-    }
-    
-    /*
-     * Override of java.lang.Object#hashCode method. 
-     * This method returns the hash code value for the object on 
-     * which this method is invoked. This method returns the hash 
-     * code value as an integer and is supported for the benefit of hashing 
-     * based collection classes such as Hashtable, HashMap, HashSet etc. 
-     * 
-     * This method must be overridden in every class that overrides the equals 
-     * method.
-     * 
-     * Since the equals method compares string reps of objects, hashCode gets
-     * hashCodes of string reps.
-     * 
-     * @see java.lang.Object#hashCode(java.lang.Object)
-     */
-    public int hashCode() {
-    	int hash = 7;
-    	hash = 31 * hash + (null == stringRep ? 0 : stringRep.hashCode());
-    	return hash;
-
-    }
-    
     // Note that the isIntType() and isDoubleType()
     // methods are public because they need to be
     // invoked by TJC compiled code. User code
@@ -136,13 +94,6 @@ abstract class TclObjectBase {
         return (internalRep instanceof TclDouble);
     }
 
-    // Return true if the TclObject contains a TclWideInteger.
-
-	public final 
-	boolean isWideIntType() {
-		return (internalRep instanceof TclWideInteger);
-	}
-	
     // Return true if the TclObject contains a TclList.
 
     final

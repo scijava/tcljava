@@ -351,7 +351,7 @@ public class Scanner {
         }
 
         public boolean isKeyword() { return true; }
-        public boolean isKeyword(String k) { return this.keyword.equals(k); }
+        public boolean isKeyword(String k) { return this.keyword == k; }
         public boolean isKeyword(String[] ks) {
             for (int i = 0; i < ks.length; ++i) {
                 if (this.keyword == ks[i]) return true;
@@ -478,7 +478,7 @@ public class Scanner {
         }
 
         public boolean isOperator() { return true; }
-        public boolean isOperator(String o) { return this.operator.equals(o); }
+        public boolean isOperator(String o) { return this.operator == o; }
         public boolean isOperator(String[] os) {
             for (int i = 0; i < os.length; ++i) {
                 if (this.operator == os[i]) return true;
