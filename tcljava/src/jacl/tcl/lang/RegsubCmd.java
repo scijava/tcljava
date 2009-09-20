@@ -10,13 +10,13 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: RegsubCmd.java,v 1.6 2009/09/16 21:49:18 mdejong Exp $
+ * RCS: @(#) $Id: RegsubCmd.java,v 1.7 2009/09/20 00:09:44 mdejong Exp $
  */
 
 package tcl.lang;
 
-import sunlabs.brazil.util.regexp.Regexp;
-import sunlabs.brazil.util.regexp.Regsub;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 /**
  * This class implements the built-in "regsub" command in Tcl.
@@ -24,14 +24,24 @@ import sunlabs.brazil.util.regexp.Regsub;
 
 class RegsubCmd implements Command {
 
-static final private String validOpts[] = {
+private static final String validOpts[] = {
     "-all",
     "-nocase",
-    "--"
-};
-static final private int OPT_ALL	= 0;
-static final private int OPT_NOCASE   	= 1;
-static final private int OPT_LAST 	= 2;
+    "-expanded",
+    "-line",
+    "-linestop",
+    "-lineanchor",
+    "-start",
+    "--" };
+
+private static final int OPT_ALL = 0;
+private static final int OPT_NOCASE = 1;
+private static final int OPT_EXPANDED = 2;
+private static final int OPT_LINE = 3;
+private static final int OPT_LINESTOP = 4;
+private static final int OPT_LINEANCHOR = 5;
+private static final int OPT_START = 6;
+private static final int OPT_LAST = 7;
 
 /*
  *-----------------------------------------------------------------------------
@@ -57,72 +67,129 @@ cmdProc(
 throws TclException 
 {
     boolean all = false;
-    boolean nocase = false;
+    boolean last = false;
+    int flags = 0;
+    int offset = 0;
+    String result;
+
+    // default flags
+    flags |= Pattern.MULTILINE | Pattern.UNIX_LINES;
 
     try {
-	int i = 1;
-opts:
-	while (argv[i].toString().startsWith("-")) {
-	    int index = TclIndex.get(interp, argv[i], validOpts, "switch", 0);
-	    i++;
-	    switch (index) {
-		case OPT_ALL: {
-		    all = true;
-		    break;
-		}
-		case OPT_NOCASE: {
-		    nocase = true;
-		    break;
-		}
-		case OPT_LAST: {
-		    break opts;
-		}
-	    }
-	}
+        int i = 1;
+        while (!last && argv[i].toString().startsWith("-")) {
+            int index = TclIndex.get(interp, argv[i], validOpts, "switch", 0);
 
-	TclObject exp = argv[i++];
-	String string = argv[i++].toString();
-	String subSpec = argv[i++].toString();
-	String varName = argv[i++].toString();
-	if (i != argv.length) {
-	    throw new IndexOutOfBoundsException();
-	}
+            i++;
+            switch (index) {
+                case OPT_ALL: 
+                    all = true;
+                    break;	
+                case OPT_EXPANDED:
+                    flags |= Pattern.COMMENTS;
+                    break;
+                case OPT_LINE:
+                    // Falls through!
+                case OPT_LINESTOP:
+                    // Falls through!
+                case OPT_LINEANCHOR:
+                    flags |= Pattern.DOTALL;
+                    break;
+                case OPT_NOCASE:
+                    flags |= Pattern.CASE_INSENSITIVE;
+                    break;
+                case OPT_START:
+                    if (i >= argv.length) {
+                        // break the switch, the index out of bounds exception
+                        // will be caught later
 
-	Regexp r = TclRegexp.compile(interp, exp, nocase);
+                        break;
+                    }
 
-	int count = 0;
-	String result;
+                    try {
+                        offset = TclInteger.get(interp, argv[i++]);
+                    } catch (TclException e) {
+                        throw e;
+                    }
 
-	if (all == false) {
-	    result = r.sub(string, subSpec);
-	    if (result == null) {
-		result = string;
-	    } else {
-		count++;
-	    } 
-	} else {
-	    StringBuffer sb = new StringBuffer();
-	    Regsub s = new Regsub(r, string);
-	    while (s.nextMatch()) {
-		count++;
-		sb.append(s.skipped());
-		Regexp.applySubspec(s, subSpec, sb);
-	    }
-	    sb.append(s.rest());
-	    result = sb.toString();
-	}
+                    if (offset < 0) {
+                        offset = 0;
+                    }
+                    break;
+                case OPT_LAST:
+                    last = true;
+                    break;
+            }
+        }
 
-	TclObject obj = TclString.newInstance(result);
-	try {
-	    interp.setVar(varName, obj, 0);
-	} catch (TclException e) {
-	    throw new TclException(interp,
-		    "couldn't set variable \"" + varName + "\"");
-	}
-	interp.setResult(count);
+        // get cmd's params
+
+        TclObject exp = argv[i++];
+        String string = argv[i++].toString();
+        String subSpec = argv[i++].toString();
+        String varName = null;
+
+        if (argv.length - i > 0) {
+            varName = argv[i++].toString();
+        }
+
+        if (i != argv.length) {
+            throw new IndexOutOfBoundsException();
+        }
+
+        Regex reg;
+        try {
+            // we use the substring of string at the specified offset
+            reg = new Regex(exp.toString(), string, offset, flags);
+        } catch (PatternSyntaxException ex) {
+            throw new TclException(interp,
+                Regex.getPatternSyntaxMessage(ex));
+        }
+
+        // Parse a subSpec param from Tcl's to Java's form. 
+        // 
+        // If subSpec contains a ``&'' or ``\0'', then it is replaced 
+        // in the substitution with the portion of string that matched exp. 
+        // 
+        // If subSpec contains a ``\n'', where n is a digit between 1 and 9, 
+        // then it is replaced in the substitution with the portion of string 
+        // that matched the n-th parenthesized subexpression of exp. Additional 
+        // backslashes may be used in subSpec to prevent special interpretation 
+        // of ``&'' or ``\0'' or ``\n'' or backslash.
+        // 
+        // In Java instead of '&' there is '$0' and instead of '\0' or '\1'
+        // there is '$0' and '$1', respectively.
+
+        subSpec = Regex.parseSubSpec(subSpec);
+
+        // do the replacement process
+
+        if (!all) {
+            result = reg.replaceFirst(subSpec);
+        } else {
+            result = reg.replaceAll(subSpec);
+        }
+
+        // set results
+
+        TclObject obj = TclString.newInstance(result);
+
+        try {
+            if (varName != null) {
+                interp.setResult(reg.getCount());
+                interp.setVar(varName, obj, 0);
+            } else {
+                interp.setResult(obj);
+            }
+        } catch (TclException e) {
+            throw new TclException(interp, "couldn't set variable \""
+                + varName + "\"");
+        }
     } catch (IndexOutOfBoundsException e) {
-	throw new TclNumArgsException(interp, 1, argv,
-		"?switches? exp string subSpec varName");
+        throw new TclNumArgsException(interp, 1, argv,
+            "?switches? exp string subSpec ?varName?");
     }
 }
-} // end RegsubCmd
+
+} // end class RegsubCmd
+

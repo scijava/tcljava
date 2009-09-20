@@ -12,7 +12,7 @@
 
 package tcl.lang;
 
-import sunlabs.brazil.util.regexp.Regexp;
+import java.util.regex.PatternSyntaxException;
 
 public class TclRegexp 
 {
@@ -21,21 +21,15 @@ public class TclRegexp
     {
     }
 
-    public static Regexp
-    compile(Interp interp, TclObject exp, boolean nocase)
+    public static Regex
+    compile(Interp interp, TclObject exp, String str)
 	throws TclException
     {
 	try {
-	    return new Regexp(exp.toString(), nocase);
-	} catch (IllegalArgumentException e) {
-	    String msg = e.getMessage();
-	    if (msg.equals("missing )")) {
-		msg = "unmatched ()";
-	    } else if (msg.equals("missing ]")) {
-		msg = "unmatched []";
-	    }
-	    msg = "couldn't compile regular expression pattern: " + msg;
-	    throw new TclException(interp, msg);
+	    return new Regex(exp.toString(), str, 0);
+        } catch (PatternSyntaxException ex) {
+            throw new TclException(interp,
+                Regex.getPatternSyntaxMessage(ex));
 	}
     }
 }

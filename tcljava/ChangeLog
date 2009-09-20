@@ -1,5 +1,21 @@
 2009-09-16  Mo DeJong  <mdejong@users.sourceforge.net>
 
+        Checkin reworked Java regexp module.
+
+	* Makefile.in: Remove build rules for sunlabs classes.
+	* src/jacl/sunlabs/brazil/util/regexp/Regexp.java: Removed
+	* src/jacl/sunlabs/brazil/util/regexp/Regsub.java: Removed
+	* src/jacl/tcl/lang/Regex.java: Add regexp module that
+	makes use of Java native regexp classes.
+	* src/jacl/tcl/lang/RegexpCmd.java:
+	* src/jacl/tcl/lang/RegsubCmd.java:
+	* src/jacl/tcl/lang/TclRegexp.java:
+	* src/jacl/tcl/lang/Util.java: Use new regexp module.
+	* tests/tcl/RegexpCmd.test: Removed
+	* tests/tcl/regexp.test: Update to Tcl 8.4 test cases.
+
+2009-09-16  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	tcljava-15-reformatting-checkpoint-2009-09-16
 	to mark state of the HEAD before reverting recent
 	changes back to tcljava-14-branchpoint.

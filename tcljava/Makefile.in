@@ -1,6 +1,6 @@
 # Unix makefile for tclblend and jacl
 #
-# RCS: @(#) $Id: Makefile.in,v 1.61 2007/10/01 21:48:39 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.62 2009/09/20 00:09:44 mdejong Exp $
 
 SHELL = /bin/sh
 
@@ -574,8 +574,7 @@ jacl.build: jacl.clean tcljava.check
 	CLASSPATH=$(JACL_CLASSPATH) \
 	$(JAVAC) $(JAVAC_FLAGS) \
 		$(JAVAC_D_FLAG) $(JACL_BUILD_DIR) \
-		tcl/lang/*.java \
-		sunlabs/brazil/util/regexp/*.java
+		tcl/lang/*.java
 	mkdir $(JACL_BUILD_DIR)/tcl/lang/library
 	cp -f $(JACL_SRC_DIR)/tcl/lang/library/*.tcl \
 		$(JACL_BUILD_DIR)/tcl/lang/library
@@ -597,14 +596,14 @@ jacl.fastbuild:
 	CLASSPATH=$(JACL_CLASSPATH) \
 	$(JAVAC) $(JAVAC_FLAGS) \
 		$(JAVAC_D_FLAG) $(JACL_BUILD_DIR) \
-                tcl/lang/*.java sunlabs/brazil/util/regexp/*.java
+                tcl/lang/*.java
 
 # jacl.jar needs to depend on jacl.build so that the
 # classfiles get rebuilt each time the jar is built
 jacl.jar: jacl.build
 	cd $(JACL_BUILD_DIR) ;\
 	CLASSPATH=$(JAVA_CLASSPATH) \
-	$(JAR) $(JAR_NOCOMPRESS_FLAGS) $(BUILD_DIR)/jacl.jar tcl sunlabs
+	$(JAR) $(JAR_NOCOMPRESS_FLAGS) $(BUILD_DIR)/jacl.jar tcl
 
 
 #
@@ -1918,10 +1917,6 @@ jaclDistSrc:
 	cp -p $(TOP_DIR)/src/tests/jacl/tcl/lang/*.java \
 		$(JACL_DISTDIR)/src/tests/jacl/tcl/lang
 
-	mkdir -p $(JACL_DISTDIR)/src/jacl/sunlabs/brazil/util/regexp
-	cp -p $(TOP_DIR)/src/jacl/sunlabs/brazil/util/regexp/*.java \
-		$(JACL_DISTDIR)/src/jacl/sunlabs/brazil/util/regexp
-
 	mkdir -p $(JACL_DISTDIR)/src/jacl/tcl/lang
 	cp -p $(TOP_DIR)/src/jacl/tcl/lang/*.java \
 		$(JACL_DISTDIR)/src/jacl/tcl/lang
@@ -2351,7 +2346,7 @@ tcljavasrc.jar:
 jaclsrc.jar:
 	cd $(JACL_SRC_DIR) ; \
 	$(JAR) $(JAR_COMPRESS_FLAGS) $(BUILD_DIR)/jaclsrc.jar \
-	    tcl/lang/*.java sunlabs/brazil/util/regexp/*.java
+	    tcl/lang/*.java
 
 tclblendsrc.jar:
 	cd $(TCLBLEND_SRC_DIR) ; \
