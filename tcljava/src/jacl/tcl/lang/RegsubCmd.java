@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: RegsubCmd.java,v 1.7 2009/09/20 00:09:44 mdejong Exp $
+ * RCS: @(#) $Id: RegsubCmd.java,v 1.8 2009/09/21 21:40:38 mdejong Exp $
  */
 
 package tcl.lang;
@@ -124,7 +124,7 @@ throws TclException
 
         // get cmd's params
 
-        TclObject exp = argv[i++];
+        String exp = argv[i++].toString();
         String string = argv[i++].toString();
         String subSpec = argv[i++].toString();
         String varName = null;
@@ -140,7 +140,7 @@ throws TclException
         Regex reg;
         try {
             // we use the substring of string at the specified offset
-            reg = new Regex(exp.toString(), string, offset, flags);
+            reg = new Regex(exp, string, offset, flags);
         } catch (PatternSyntaxException ex) {
             throw new TclException(interp,
                 Regex.getPatternSyntaxMessage(ex));

@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Regex.java,v 1.5 2009/09/20 00:09:44 mdejong Exp $
+ * RCS: @(#) $Id: Regex.java,v 1.6 2009/09/21 21:40:38 mdejong Exp $
  */
 
 package tcl.lang;
@@ -78,7 +78,7 @@ class Regex {
 
 private static final String SUBS_MATCHED = "^&|([^\\\\])&|&$";
 
-// Regular expression of the '\n', where n is a digit between 1 and 9
+// Regular expression of the '\n', where n is a digit between 0 and 9
 
 private static final String SUBS_GROUP = "(([^\\\\])?\\\\)([0-9])";
 
@@ -299,23 +299,20 @@ replaceFirst(
 
     // we replace first matched occurence in the substring of the input string
 
-    result = pattern.matcher(string.substring(offset)).replaceFirst(subSpec);
+    String temp = string;
+
+    if (offset > 0) {
+      temp = string.substring(offset);
+    }
+
+    matcher = pattern.matcher(temp);
+    result = matcher.replaceFirst(subSpec);
 
     // if offset is set then we must join the substring that was
     // removed ealier (during matching)
 
-    if (offset != 0) {
+    if (offset > 0) {
         result = string.substring(0, offset) + result;
-    }
-
-    // hack for Java's backslash interpretation e.g. '\\' is printed
-    // as '\' - we don't want that
-
-    if (result.indexOf("\\") != -1) {
-        int start = result.indexOf("\\");
-        String prefix = result.substring(0, start);
-        String suffix = result.substring(start + 1, result.length());
-        result = prefix + "\\\\" + suffix;
     }
 
     if ((result == null) || (result.length() == 0) || !matches) {
@@ -499,24 +496,38 @@ parseSubSpec(
 {
     Pattern pattern = Pattern.compile(SUBS_MATCHED);
     Matcher matcher = pattern.matcher(subSpec);
-    StringBuffer sb = new StringBuffer();
 
+    // Replace & with \$0 -> $0
+
+    StringBuffer sb = new StringBuffer();
     while (matcher.find()) {
         String temp = matcher.group(1);
-        matcher.appendReplacement(sb, (temp != null ? temp : "") + "\\$0");
+        if (temp == null) {
+            temp = "\\$0";
+        } else {
+            temp = temp + "\\$0";
+        }
+        matcher.appendReplacement(sb, temp);
     }
     matcher.appendTail(sb);
     pattern = Pattern.compile(SUBS_GROUP);
     matcher = pattern.matcher(sb.toString());
-    sb = new StringBuffer();
 
+    // Replace \0 with \$0 -> $0 (N in range 0 to 9)
+
+    sb = new StringBuffer();
     while (matcher.find()) {
         String temp = matcher.group(2);
-        matcher.appendReplacement(sb, (temp != null ? temp : "") + "\\$"
-            + matcher.group(3));
+        if (temp == null) {
+            temp = "\\$" + matcher.group(3);
+        } else {
+            temp = temp + "\\$" + matcher.group(3);
+        }
+        matcher.appendReplacement(sb, temp);
     }
-
     matcher.appendTail(sb);
+
+    // Result of append operations now stored in sb
 
     return sb.toString();
 }
