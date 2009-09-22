@@ -1,5 +1,16 @@
 2009-09-22  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/jacl/tcl/lang/Regex.java (replaceFirst, replaceAll):
+        Fixup support for the empty string as the string
+        argument to regsub by removing the MULTILINE flag when
+        an empty string is detected.
+	* src/jacl/tcl/lang/RegsubCmd.java (cmdProc):
+        Remove comments.
+	* tests/tcl/regexp.test: Add additional test cases
+        for regsub edge cases involving the empty string.
+
+2009-09-22  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/jacl/tcl/lang/Regex.java (parseSubSpec):
 	Rewrite parseSubSpec to simplify and properly
 	support Tcl escape chars and to escape Java

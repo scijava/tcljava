@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: RegsubCmd.java,v 1.8 2009/09/21 21:40:38 mdejong Exp $
+ * RCS: @(#) $Id: RegsubCmd.java,v 1.9 2009/09/22 21:43:40 mdejong Exp $
  */
 
 package tcl.lang;
@@ -147,18 +147,6 @@ throws TclException
         }
 
         // Parse a subSpec param from Tcl's to Java's form. 
-        // 
-        // If subSpec contains a ``&'' or ``\0'', then it is replaced 
-        // in the substitution with the portion of string that matched exp. 
-        // 
-        // If subSpec contains a ``\n'', where n is a digit between 1 and 9, 
-        // then it is replaced in the substitution with the portion of string 
-        // that matched the n-th parenthesized subexpression of exp. Additional 
-        // backslashes may be used in subSpec to prevent special interpretation 
-        // of ``&'' or ``\0'' or ``\n'' or backslash.
-        // 
-        // In Java instead of '&' there is '$0' and instead of '\0' or '\1'
-        // there is '$0' and '$1', respectively.
 
         subSpec = Regex.parseSubSpec(subSpec);
 

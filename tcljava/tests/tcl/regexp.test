@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: regexp.test,v 1.7 2009/09/22 19:47:06 mdejong Exp $
+# RCS: @(#) $Id: regexp.test,v 1.8 2009/09/22 21:43:40 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -676,6 +676,33 @@ test regexp-21.13 {multiple matches handle newlines} {
     regexp -all -inline -indices -line -- ^ "a\nb\nc"
 } {{0 -1} {2 1} {4 3}}
 
+test regexp-21.14 {regsub works with empty string} {
+    regsub -- ^ {} &
+} {}
+
+test regexp-21.15 {regsub works with empty string} {
+    regsub -- ^ {} foo&
+} {foo}
+
+test regexp-21.16 {regsub works with empty string} {
+    regsub -all -- ^ {} foo&
+} {foo}
+
+test regexp-21.17 {regsub works with empty string} {
+    regsub -- ^ {} {foo\0}
+} {foo}
+
+test regexp-21.18 {regsub works with empty string} {
+    regsub -- ^.* {} {foo$0}
+} {foo$0}
+
+test regexp-21.19 {regsub works with empty string} {
+    regsub -- ^ {input} {}
+} {input}
+
+test regexp-21.20 {regsub works with empty string} {
+    regsub -- x {} {foo}
+} {}
 
 test regexp-22.1 {Bug 1810038} {
     regexp ($|^X)* {}
