@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: regexp.test,v 1.6 2009/09/21 21:40:38 mdejong Exp $
+# RCS: @(#) $Id: regexp.test,v 1.7 2009/09/22 19:47:06 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -286,12 +286,39 @@ test regexp-7.17 {regsub utf compliance} {
 test regexp-7.18 {basic regsub replacement} {
     list [regsub a+ aaa {&} foo] $foo
 } {1 aaa}
-test regexp-7.19 {basic regsub backslash replacement} {
+test regexp-7.19 {basic regsub replacement} {
+    list [regsub a+ aaa {\&} foo] $foo
+} {1 &}
+test regexp-7.20 {basic regsub replacement} {
+    list [regsub a+ aaa {\\&} foo] $foo
+} {1 {\aaa}}
+test regexp-7.21 {basic regsub replacement} {
+    list [regsub a+ aaa {\\\&} foo] $foo
+} {1 {\&}}
+test regexp-7.22 {basic regsub backslash replacement} {
     list [regsub a+ aaa {\0} foo] $foo
 } {1 aaa}
-test regexp-7.20 {basic regsub backslash replacement} {
+test regexp-7.23 {basic regsub backslash replacement} {
+    list [regsub a+ aaa {\\0} foo] $foo
+} {1 {\0}}
+test regexp-7.24 {basic regsub backslash replacement} {
     list [regsub a+ aaa {\\\0} foo] $foo
 } {1 {\aaa}}
+test regexp-7.25 {basic regsub backslash replacement} {
+    list [regsub a+ aaa {\\\\0} foo] $foo
+} {1 {\\0}}
+test regexp-7.26 {Java regexp characters must be escaped} {
+    list [regsub a+ aaa {$0} foo] $foo
+} {1 {$0}}
+test regexp-7.27 {Java regexp characters must be escaped} {
+    list [regsub a+ aaa {\0$0} foo] $foo
+} {1 {aaa$0}}
+test regexp-7.28 {Java regexp characters must be escaped} {
+    list [regsub a+ aaa {\$0} foo] $foo
+} {1 {\$0}}
+test regexp-7.29 {Java regexp characters must be escaped} {
+    list [regsub a+ aaa {\\} foo] $foo
+} {1 \\}
 
 test regexp-8.1 {case conversion in regsub} {
     list [regsub -nocase a(a+) xaAAaAAay & foo] $foo

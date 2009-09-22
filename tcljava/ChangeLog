@@ -1,15 +1,24 @@
+2009-09-22  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/jacl/tcl/lang/Regex.java (parseSubSpec):
+	Rewrite parseSubSpec to simplify and properly
+	support Tcl escape chars and to escape Java
+	regexp characters.
+	* tests/tcl/regexp.test: Add simplified escape
+	processing tests for regsub.
+
 2009-09-21  Mo DeJong  <mdejong@users.sourceforge.net>
 
-        * src/jacl/tcl/lang/Regex.java (replaceFirst, parseSubSpec):
-        Fixup comments, make logic more readable.
-        Remove code block that replaced \ with \\ in replaceFirst.
-        * src/jacl/tcl/lang/RegsubCmd.java (cmdProc):
-        Add comments, rewrite block logic.
-        * tests/tcl/regexp.test: Added simple regsub tests.
+	* src/jacl/tcl/lang/Regex.java (replaceFirst, parseSubSpec):
+	Fixup comments, make logic more readable.
+	Remove code block that replaced \ with \\ in replaceFirst.
+	* src/jacl/tcl/lang/RegsubCmd.java (cmdProc):
+	Add comments, rewrite block logic.
+	* tests/tcl/regexp.test: Added simple regsub tests.
 
 2009-09-19  Mo DeJong  <mdejong@users.sourceforge.net>
 
-        Checkin reworked Java regexp module.
+	Checkin reworked Java regexp module.
 
 	* Makefile.in: Remove build rules for sunlabs classes.
 	* src/jacl/sunlabs/brazil/util/regexp/Regexp.java: Removed

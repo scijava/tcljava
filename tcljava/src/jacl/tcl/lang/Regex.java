@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Regex.java,v 1.6 2009/09/21 21:40:38 mdejong Exp $
+ * RCS: @(#) $Id: Regex.java,v 1.7 2009/09/22 19:47:06 mdejong Exp $
  */
 
 package tcl.lang;
@@ -73,14 +73,6 @@ import java.util.regex.PatternSyntaxException;
  */
  
 class Regex {
-
-// Regular expression of the '&' character
-
-private static final String SUBS_MATCHED = "^&|([^\\\\])&|&$";
-
-// Regular expression of the '\n', where n is a digit between 0 and 9
-
-private static final String SUBS_GROUP = "(([^\\\\])?\\\\)([0-9])";
 
 // Expressions that indicate use of the boundary matcher '^'
 
@@ -463,8 +455,9 @@ throws TclException
  * parseSubSpec --
  *
  *	Parses the replacement string (subSpec param) which is in Tcl's form.
- *	This method replaces Tcl's '&' and '\n' where 'n' is a number 0-9. to
- *	Java's reference characters:
+ *	This method replaces Tcl's '&' and '\N' where 'N' is a number 0-9. to
+ *	Java's reference characters. This method also quotes any characters
+ *	that have special meaning to Java's regular expression APIs.
  *
  *	The replacement string (subSpec param) may contain references to
  *	subsequences captured during the previous match: Each occurrence of $g
@@ -494,40 +487,69 @@ static String
 parseSubSpec(
     String subSpec)
 {
-    Pattern pattern = Pattern.compile(SUBS_MATCHED);
-    Matcher matcher = pattern.matcher(subSpec);
-
-    // Replace & with \$0 -> $0
+    boolean escaped = false;
 
     StringBuffer sb = new StringBuffer();
-    while (matcher.find()) {
-        String temp = matcher.group(1);
-        if (temp == null) {
-            temp = "\\$0";
+    final int len = subSpec.length();
+
+    for (int i = 0; i < len; i++) {
+        char c = subSpec.charAt(i);
+
+        if (c == '&') {
+            // & indicates a whole match spec
+
+            if (escaped) {
+                sb.append(c);
+                escaped = false;
+            } else {
+                sb.append("$0");
+            }
+        } else if (escaped && (c == '0')) {
+            // \0 indicates a whole match spec
+
+            escaped = false;
+            sb.append("$0");
+        } else if (escaped && (c >= '1' && c <= '9')) {
+            // \N indicates a sub match spec
+
+            escaped = false;
+            sb.append('$');
+            sb.append(c);
+        } else if (c == '$') {
+            // Dollar sign literal in the Tcl subst
+            // spec must be escaped so that $0 is
+            // not seen as a replacement spec by
+            // the Java regexp API
+
+            if (escaped) {
+                sb.append("\\\\");
+                escaped = false;
+            }
+
+            sb.append("\\$");
+        } else if (c == '\\') {
+            if (escaped) {
+                sb.append("\\\\");
+                escaped = false;
+            } else {
+                escaped = true;
+            }
         } else {
-            temp = temp + "\\$0";
+            if (escaped) {
+                // The previous character was an escape, so
+                // emit it now before appending this char
+
+                sb.append("\\\\");
+                escaped = false;
+            }
+
+            sb.append(c);
         }
-        matcher.appendReplacement(sb, temp);
     }
-    matcher.appendTail(sb);
-    pattern = Pattern.compile(SUBS_GROUP);
-    matcher = pattern.matcher(sb.toString());
-
-    // Replace \0 with \$0 -> $0 (N in range 0 to 9)
-
-    sb = new StringBuffer();
-    while (matcher.find()) {
-        String temp = matcher.group(2);
-        if (temp == null) {
-            temp = "\\$" + matcher.group(3);
-        } else {
-            temp = temp + "\\$" + matcher.group(3);
-        }
-        matcher.appendReplacement(sb, temp);
+    if (escaped) {
+        // The last character was an escape
+        sb.append("\\\\");
     }
-    matcher.appendTail(sb);
-
-    // Result of append operations now stored in sb
 
     return sb.toString();
 }
