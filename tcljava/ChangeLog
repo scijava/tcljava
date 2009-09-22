@@ -4,6 +4,8 @@
         Fixup support for the empty string as the string
         argument to regsub by removing the MULTILINE flag when
         an empty string is detected.
+	* src/jacl/tcl/lang/RegexpCmd.java (cmdProc): Fixup
+        support for empty string as string argument.
 	* src/jacl/tcl/lang/RegsubCmd.java (cmdProc):
         Remove comments.
 	* tests/tcl/regexp.test: Add additional test cases
