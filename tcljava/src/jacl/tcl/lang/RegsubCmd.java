@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: RegsubCmd.java,v 1.9 2009/09/22 21:43:40 mdejong Exp $
+ * RCS: @(#) $Id: RegsubCmd.java,v 1.10 2009/09/26 21:09:34 mdejong Exp $
  */
 
 package tcl.lang;
@@ -68,12 +68,15 @@ throws TclException
 {
     boolean all = false;
     boolean last = false;
-    int flags = 0;
+    int flags;
     int offset = 0;
     String result;
 
-    // default flags
-    flags |= Pattern.MULTILINE | Pattern.UNIX_LINES;
+    // Default regexp behavior is to assume that '.' will match newline
+    // characters and that only \n is seen as a newline. Support for
+    // newline sensitive matching must be enabled, it is off by default.
+
+    flags = Pattern.DOTALL | Pattern.UNIX_LINES;
 
     try {
         int i = 1;
@@ -88,12 +91,15 @@ throws TclException
                 case OPT_EXPANDED:
                     flags |= Pattern.COMMENTS;
                     break;
-                case OPT_LINE:
-                    // Falls through!
                 case OPT_LINESTOP:
-                    // Falls through!
+                    flags &= ~Pattern.DOTALL; // Don't match . to newline character
+                    break;
                 case OPT_LINEANCHOR:
-                    flags |= Pattern.DOTALL;
+                    flags |= Pattern.MULTILINE; // Use line sensitive matching
+                    break;
+                case OPT_LINE:
+                    flags |= Pattern.MULTILINE; // Use line sensitive matching
+                    flags &= ~Pattern.DOTALL; // Don't match . to newline character
                     break;
                 case OPT_NOCASE:
                     flags |= Pattern.CASE_INSENSITIVE;
@@ -106,11 +112,7 @@ throws TclException
                         break;
                     }
 
-                    try {
-                        offset = TclInteger.get(interp, argv[i++]);
-                    } catch (TclException e) {
-                        throw e;
-                    }
+                    offset = TclInteger.get(interp, argv[i++]);
 
                     if (offset < 0) {
                         offset = 0;

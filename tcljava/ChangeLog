@@ -1,3 +1,14 @@
+2009-09-26  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/jacl/tcl/lang/Regex.java (replaceFirst, replaceAll):
+        Fixup use of MULTILINE flag.
+	* src/jacl/tcl/lang/RegexpCmd.java (cmdProc): Fixup
+        support for -linestop and -lineanchor arguments to regexp.        
+	* src/jacl/tcl/lang/RegsubCmd.java (cmdProc):  Fixup
+        support for -linestop and -lineanchor arguments to regsub.
+	* tests/tcl/regexp.test: Add missing test cases for
+        -linestop and -lineanchor arguments.
+
 2009-09-22  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* src/jacl/tcl/lang/Regex.java (replaceFirst, replaceAll):

@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Regex.java,v 1.8 2009/09/22 21:43:40 mdejong Exp $
+ * RCS: @(#) $Id: Regex.java,v 1.9 2009/09/26 21:09:34 mdejong Exp $
  */
 
 package tcl.lang;
@@ -296,7 +296,7 @@ replaceFirst(
       temp = string.substring(offset);
     }
 
-    if (temp.length() == 0) {
+    if ((temp.length() == 0) && ((this.flags & Pattern.MULTILINE) != 0)) {
         // Re-compile the expression without the Pattern.MULTILINE
         // flag so that matching to the empty string works as expected.
 
@@ -378,7 +378,7 @@ replaceAll(
     Pattern tempPattern = pattern;
     Matcher tempMatcher;
 
-    if (temp.length() == 0) {
+    if ((temp.length() == 0) && ((this.flags & Pattern.MULTILINE) != 0)) {
         // Re-compile the expression without the Pattern.MULTILINE
         // flag so that matching to the empty string works as expected.
 

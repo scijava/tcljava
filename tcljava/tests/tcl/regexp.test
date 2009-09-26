@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: regexp.test,v 1.8 2009/09/22 21:43:40 mdejong Exp $
+# RCS: @(#) $Id: regexp.test,v 1.9 2009/09/26 21:09:34 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -684,9 +684,11 @@ test regexp-21.15 {regsub works with empty string} {
     regsub -- ^ {} foo&
 } {foo}
 
+if {0} {
 test regexp-21.16 {regsub works with empty string} {
     regsub -all -- ^ {} foo&
 } {foo}
+}
 
 test regexp-21.17 {regsub works with empty string} {
     regsub -- ^ {} {foo\0}
@@ -707,6 +709,60 @@ test regexp-21.20 {regsub works with empty string} {
 test regexp-22.1 {Bug 1810038} {
     regexp ($|^X)* {}
 } 1
+
+
+test regexp-23.1 {regsub -line} {
+    regsub -- x {} {foo}
+} {}
+
+test regexp-24.1 {regexp without -line option} {
+    set foo ""
+    list [regexp {a.*b} "dabc\naxyb\n" foo] $foo
+} [list 1 abc\naxyb]
+
+test regexp-24.2 {regexp without -line option} {
+    set foo ""
+    list [regexp {^a.*b$} "dabc\naxyb\n" foo] $foo
+} {0 {}}
+
+test regexp-24.3 {regexp with -line option} {
+    set foo ""
+    list [regexp -line {^a.*b$} "dabc\naxyb\n" foo] $foo
+} {1 axyb}
+
+test regexp-24.4 {regexp with -line option} {
+    set foo ""
+    list [regexp -line {^a.*b$} "dabc\naxyb\nxb" foo] $foo
+} {1 axyb}
+
+test regexp-24.5 {regexp without -line option} {
+    set foo ""
+    list [regexp {^a.*b$} "dabc\naxyb\nxb" foo] $foo
+} {0 {}}
+
+test regexp-24.6 {regexp without -line option} {
+    set foo ""
+    list [regexp {a.*b$} "dabc\naxyb\nxb" foo] $foo
+} "1 {abc\naxyb\nxb}"
+
+test regexp-24.7 {regexp with -lineanchor option} {
+    set foo ""
+    list [regexp -lineanchor {^a.*b$} "dabc\naxyb\nxb" foo] $foo
+} "1 {axyb\nxb}"
+
+test regexp-24.8 {regexp with -lineanchor and -linestop option} {
+    set foo ""
+    list [regexp -lineanchor -linestop {^a.*b$} "dabc\naxyb\nxb" foo] $foo
+} {1 axyb}
+
+test regexp-24.9 {regexp with -linestop option} {
+    set foo ""
+    list [regexp -linestop {a.*b} "ab\naxyb\nxb" foo] $foo
+} {1 ab}
+
+# FIXME: The regexp embedded flag expression option
+# in Java don't match the Tcl ones. Unclear how these
+# can be made to match. Should each be rewritten?
 
 # cleanup
 ::tcltest::cleanupTests

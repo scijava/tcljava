@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: RegexpCmd.java,v 1.10 2009/09/22 21:55:35 mdejong Exp $
+ * RCS: @(#) $Id: RegexpCmd.java,v 1.11 2009/09/26 21:09:34 mdejong Exp $
  */
 
 package tcl.lang;
@@ -107,17 +107,19 @@ throws TclException
     boolean indices = false;
     boolean doinline = false;
     boolean about = false;
-    boolean lineAnchor = false;
-    boolean lineStop = false;
     boolean last = false;
     int all = 0;
-    int flags = 0;
+    int flags;
     int offset = 0; // the index offset of the string to start matching the
     int objc = 0;
     // regular expression at
     TclObject result;
 
-    flags |= Pattern.MULTILINE;
+    // Default regexp behavior is to assume that '.' will match newline
+    // characters and that only \n is seen as a newline. Support for
+    // newline sensitive matching must be enabled, it is off by default.
+
+    flags = Pattern.DOTALL | Pattern.UNIX_LINES;
 
     try {
         int i = 1;
@@ -135,16 +137,15 @@ throws TclException
                 case OPT_INDICES:
                     indices = true;
                     break;
-                case OPT_LINE:
-                    flags |= Pattern.DOTALL;
-                    break;
                 case OPT_LINESTOP:
-                    flags |= Pattern.DOTALL;
-                    lineStop = true;
+                    flags &= ~Pattern.DOTALL; // Don't match . to newline character
                     break;
                 case OPT_LINEANCHOR:
-                    flags |= Pattern.DOTALL;
-                    lineAnchor = true;
+                    flags |= Pattern.MULTILINE; // Use line sensitive matching
+                    break;
+                case OPT_LINE:
+                    flags |= Pattern.MULTILINE; // Use line sensitive matching
+                    flags &= ~Pattern.DOTALL; // Don't match . to newline character
                     break;
                 case OPT_NOCASE:
                     flags |= Pattern.CASE_INSENSITIVE;
@@ -162,11 +163,7 @@ throws TclException
                         break;
                     }
 
-                    try {
-                        offset = TclInteger.get(interp, argv[i++]);
-                    } catch (TclException e) {
-                        throw e;
-                    }
+                    offset = TclInteger.get(interp, argv[i++]);
 
                     if (offset < 0) {
                         offset = 0;
@@ -199,7 +196,7 @@ throws TclException
             Regex reg;
             result = TclInteger.newInstance(0);
 
-            if (string.length() == 0) {
+            if ((string.length() == 0) && ((flags & Pattern.MULTILINE) != 0)) {
                 // Compile the expression without the Pattern.MULTILINE flag
                 // so that matching to the empty string works as expected.
 
