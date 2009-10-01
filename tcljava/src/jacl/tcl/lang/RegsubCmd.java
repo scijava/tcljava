@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: RegsubCmd.java,v 1.10 2009/09/26 21:09:34 mdejong Exp $
+ * RCS: @(#) $Id: RegsubCmd.java,v 1.11 2009/10/01 03:29:08 mdejong Exp $
  */
 
 package tcl.lang;
@@ -131,7 +131,7 @@ throws TclException
         String subSpec = argv[i++].toString();
         String varName = null;
 
-        if (argv.length - i > 0) {
+        if ((argv.length - i) > 0) {
             varName = argv[i++].toString();
         }
 

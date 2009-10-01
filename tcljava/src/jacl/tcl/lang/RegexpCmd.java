@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: RegexpCmd.java,v 1.12 2009/10/01 02:31:57 mdejong Exp $
+ * RCS: @(#) $Id: RegexpCmd.java,v 1.13 2009/10/01 03:29:08 mdejong Exp $
  */
 
 package tcl.lang;
@@ -267,7 +267,7 @@ throws TclException
                 for (int j = 0; j < objc; j++) {
                     TclObject obj;
 
-                    try {
+                    { // FIXME: Remove extra indented block on rewrite
                         if (indices) {
                             int start;
                             int end;
@@ -292,12 +292,24 @@ throws TclException
                                 TclInteger.newInstance(end));
                         } else {
                             if (group <= groupCount) {
-                                // group 0 is the whole match, the
-                                // groups 1 to objc indicate submatches
+                                // group 0 is the whole match, the groups
+                                // 1 to groupCount indicate submatches
+                                // but note that the number of variables
+                                // could be more than the number of matches.
+                                // Also, optional matches groups might not
+                                // match a range in the input string.
 
-                                String substr = string.substring(
-                                    reg.start(group), reg.end(group));
-                                obj = TclString.newInstance(substr);
+                                int start = reg.start(group);
+
+                                if (start == -1) {
+                                    // Optional group did not match input
+                                    obj = TclList.newInstance();
+                                } else {
+                                    int end = reg.end(group);
+                                    String substr = string.substring(start, end);
+                                    obj = TclString.newInstance(substr);
+                                }
+
                                 group++;
                             } else {
                                 obj = TclList.newInstance();
@@ -316,9 +328,6 @@ throws TclException
                                         + "\"");
                             }
                         }
-                    } catch (IndexOutOfBoundsException e) {
-                        // TODO: Handle exception
-                        return;
                     }
                 } // end of for loop
 

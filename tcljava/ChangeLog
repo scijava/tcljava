@@ -1,5 +1,12 @@
 2009-09-30  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* src/jacl/tcl/lang/RegexpCmd.java (cmdProc): Fixup
+        failing tests related to optional subgroups.
+	* src/jacl/tcl/lang/RegsubCmd.java (cmdProc):
+        Minor paren fix, no function changes.
+
+2009-09-30  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* src/jacl/tcl/lang/RegexpCmd.java (cmdProc): Rework
         logic related to match result groups.
 	* tests/tcl/regexp.test: Add missing test cases for
