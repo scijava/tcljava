@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: regexp.test,v 1.9 2009/09/26 21:09:34 mdejong Exp $
+# RCS: @(#) $Id: regexp.test,v 1.10 2009/10/01 02:31:57 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -94,6 +94,28 @@ test regexp-2.10 {getting substrings back from regexp} {
     set f2 {}
     list [regexp f\352te(b*)c eff\352tebbbbc foo f2] $foo $f2
 } [list 1 f\352tebbbbc bbbb]
+test regexp-2.11 {non-capturing subgroup} {
+    set foo {}
+    set f2 {}
+    list [regexp {str(?:a+)} straa foo f2] $foo $f2
+} [list 1 straa {}]
+test regexp-2.12 {non-capturing subgroup with -inline} {
+    regexp -inline {str(?:a+)} straa
+} {straa}
+test regexp-2.13 {non-capturing and capturing subgroups} {
+    set foo {}
+    set f2 {}
+    set f3 {}
+    list [regexp {str(?:a+)(c+)} straacc foo f2 f3] $foo $f2 $f3
+} [list 1 straacc cc {}]
+test regexp-2.14 {non-capturing and capturing subgroups} {
+    regexp -inline {str(?:a+)(c+)} straacc
+} {straacc cc}
+test regexp-2.15 {getting substrings back from regexp} {
+    set foo NA
+    set f2 NA
+    list [regexp {str(?:a+)} straa foo f2] $foo $f2
+} [list 1 straa {}]
 
 test regexp-3.1 {-indices option to regexp} {
     set foo {}
@@ -759,6 +781,9 @@ test regexp-24.9 {regexp with -linestop option} {
     set foo ""
     list [regexp -linestop {a.*b} "ab\naxyb\nxb" foo] $foo
 } {1 ab}
+
+# Does -linestop flag control [] subexpression in addition to the .
+# rules? Not clear if this is tested anywhere.
 
 # FIXME: The regexp embedded flag expression option
 # in Java don't match the Tcl ones. Unclear how these

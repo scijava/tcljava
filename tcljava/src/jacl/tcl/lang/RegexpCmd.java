@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: RegexpCmd.java,v 1.11 2009/09/26 21:09:34 mdejong Exp $
+ * RCS: @(#) $Id: RegexpCmd.java,v 1.12 2009/10/01 02:31:57 mdejong Exp $
  */
 
 package tcl.lang;
@@ -228,8 +228,6 @@ throws TclException
             // is past the end of the string.
 
             while (true) {
-                int group = 0;
-
                 matched = reg.match();
 
                 if (!matched) {
@@ -242,8 +240,7 @@ throws TclException
                         // object w/ value 0.
 
                         if (doinline) {
-                            result = TclList.newInstance();
-                            interp.setResult(result);
+                            interp.resetResult();
                         } else {
                             interp.setResult(0);
                         }
@@ -253,11 +250,14 @@ throws TclException
                     break;
                 }
 
+                int groupCount = reg.groupCount();
+                int group = 0;
+
                 if (doinline) {
                     // It's the number of substitutions, plus one for the
                     //  matchVar at index 0
 
-                    objc = reg.groupCount() + 1;
+                    objc = groupCount + 1;
                 } else {
                     objc = argv.length - i - 1;
                 }
@@ -266,18 +266,23 @@ throws TclException
 
                 for (int j = 0; j < objc; j++) {
                     TclObject obj;
+
                     try {
                         if (indices) {
-                            int start = -1;
-                            int end = -1;
+                            int start;
+                            int end;
 
-                            if (group <= reg.groupCount()) {
+                            if (group <= groupCount) {
                                 start = reg.start(group);
-                                end = reg.end(group++);
+                                end = reg.end(group);
+                                group++;
 
                                 if (end >= reg.getOffset()) {
                                     end--;
                                 }
+                            } else {
+                                start = -1;
+                                end = -1;
                             }
 
                             obj = TclList.newInstance();
@@ -286,29 +291,28 @@ throws TclException
                             TclList.append(interp, obj,
                                 TclInteger.newInstance(end));
                         } else {
-                            if (reg.groupCount() > 0) {
-                                if (group <= reg.groupCount()) {
-                                    obj = TclString.newInstance(
-                                        string.substring(
-                                            reg.start(group), reg.end(group)));
-                                    group++;
-                                } else {
-                                    obj = TclList.newInstance();
-                                }
+                            if (group <= groupCount) {
+                                // group 0 is the whole match, the
+                                // groups 1 to objc indicate submatches
+
+                                String substr = string.substring(
+                                    reg.start(group), reg.end(group));
+                                obj = TclString.newInstance(substr);
+                                group++;
                             } else {
-                                obj = TclString.newInstance(string.substring(
-                                    reg.start(), reg.end()));
+                                obj = TclList.newInstance();
                             }
                         }
 
                         if (doinline) {
                             interp.appendElement(obj.toString());
                         } else {
+                            String varName = argv[++i].toString();
                             try {
-                                interp.setVar(argv[++i].toString(), obj, 0);
+                                interp.setVar(varName, obj, 0);
                             } catch (TclException e) {
                                 throw new TclException(interp,
-                                    "couldn't set variable \"" + argv[i]
+                                    "couldn't set variable \"" + varName
                                         + "\"");
                             }
                         }
@@ -331,7 +335,7 @@ throws TclException
                 // indefinitely (because the length of the match is 0, so
                 // the offset never changes).
 
-                if (reg.end() - reg.start() == 0) {
+                if ((reg.end() - reg.start()) == 0) {
                     int temp = reg.getOffset();
                     reg.setOffset(++temp);
                 } else {
@@ -350,7 +354,7 @@ throws TclException
             // [Patch #558324] (watson).
 
             if (!doinline) {
-                interp.setResult(all != 0 ? all - 1 : 1);
+                interp.setResult((all != 0) ? (all - 1) : 1);
             }
         } catch (IndexOutOfBoundsException e) {
             throw new TclNumArgsException(interp, 1, argv,
