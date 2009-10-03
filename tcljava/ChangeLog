@@ -1,3 +1,15 @@
+2009-10-03  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/jacl/tcl/lang/Regex.java (replaceFirst, replaceAll):
+        Fix regsub -all crash because offset was not getting
+        advanced by 1 on a match of length zero.
+        Fixup -start argument support with and without -all
+        in the case where the offset was larger than the
+        length of the string.
+	* tests/tcl/regexp.test: Add additional test cases.
+        Enable regsub test cases that were getting caught
+        in an infinite loop.
+
 2009-09-30  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* src/jacl/tcl/lang/RegexpCmd.java (cmdProc): Fixup

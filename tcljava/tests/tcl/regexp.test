@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: regexp.test,v 1.10 2009/10/01 02:31:57 mdejong Exp $
+# RCS: @(#) $Id: regexp.test,v 1.11 2009/10/03 23:11:10 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -388,13 +388,10 @@ test regexp-9.5 {-all option to regsub} {
     list [regsub -all node "node node more" yy foo] $foo
 } {2 {yy yy more}}
 
-if {0} {
-# FIXME: causes out of memory error!
 test regexp-9.6 {-all option to regsub} {
     set foo xxx
     list [regsub -all ^ xxx 123 foo] $foo
 } {1 123xxx}
-}
 
 test regexp-10.1 {expanded syntax in regsub} {
     set foo xxx
@@ -552,6 +549,50 @@ test regexp-16.4 {regsub -start, \A behavior} {
     lappend out [regsub -start 0 -all {\A(\w)} {abcde} {/\1} x] $x
     lappend out [regsub -start 2 -all {\A(\w)} {abcde} {/\1} x] $x
 } {5 /a/b/c/d/e 3 ab/c/d/e}
+test regexp-16.5 {regsub -start and -all} {
+    set foo {}
+    list [regsub -start 0 -all x+ axxxbxx |&| foo] $foo
+} {2 a|xxx|b|xx|}
+test regexp-16.6 {regsub -start and -all} {
+    set foo {}
+    list [regsub -start 1 -all x+ axxxbxx |&| foo] $foo
+} {2 a|xxx|b|xx|}
+test regexp-16.7 {regsub -start and -all} {
+    set foo {}
+    list [regsub -start 4 -all x+ axxxbxx |&| foo] $foo
+} {1 axxxb|xx|}
+test regexp-16.8 {regsub -start} {
+    set foo {}
+    list [regsub -start 4 x+ axxxbxx |&| foo] $foo
+} {1 axxxb|xx|}
+test regexp-16.9 {regsub -start and -all} {
+    set foo {}
+    list [regsub -start 1 -all a+ "" & foo] $foo
+} {0 {}}
+test regexp-16.10 {regsub -start} {
+    set foo {}
+    list [regsub -start 1 a+ "" & foo] $foo
+} {0 {}}
+test regexp-16.11 {regsub -start and -all} {
+    set foo {}
+    list [regsub -start 2 -all a+ "xy" & foo] $foo
+} {0 xy}
+test regexp-16.12 {regsub -start} {
+    set foo {}
+    list [regsub -start 2 a+ "xy" & foo] $foo
+} {0 xy}
+test regexp-16.13 {regsub -start and -all} {
+    set foo {}
+    list [regsub -start 1 -all y+ "xy" & foo] $foo
+} {1 xy}
+test regexp-16.14 {regsub -start} {
+    set foo {}
+    list [regsub -start 1 y+ "xy" & foo] $foo
+} {1 xy}
+test regexp-16.15 {regsub -start} {
+    set foo {}
+    list [regsub -start -1 a+ "" & foo] $foo
+} {0 {}}
 
 test regexp-17.1 {regexp -inline} {
     regexp -inline b ababa
@@ -683,8 +724,6 @@ test regexp-21.10 {multiple matches handle newlines} {
     regsub -all -lineanchor -- {^#[^\n]*\n} "#one\n#two\n#three\n" foo\n
 } "foo\nfoo\nfoo\n"
 
-if {0} {
-# FIXME: causes out of memory error!
 test regexp-21.11 {multiple matches handle newlines} {
     regsub -all -line -- ^ "a\nb\nc" \#
 } "\#a\n\#b\n\#c"
@@ -692,7 +731,6 @@ test regexp-21.11 {multiple matches handle newlines} {
 test regexp-21.12 {multiple matches handle newlines} {
     regsub -all -line -- ^ "\n\n" \#
 } "\#\n\#\n\#"
-}
 
 test regexp-21.13 {multiple matches handle newlines} {
     regexp -all -inline -indices -line -- ^ "a\nb\nc"
@@ -706,11 +744,9 @@ test regexp-21.15 {regsub works with empty string} {
     regsub -- ^ {} foo&
 } {foo}
 
-if {0} {
 test regexp-21.16 {regsub works with empty string} {
     regsub -all -- ^ {} foo&
 } {foo}
-}
 
 test regexp-21.17 {regsub works with empty string} {
     regsub -- ^ {} {foo\0}

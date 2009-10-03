@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Regex.java,v 1.9 2009/09/26 21:09:34 mdejong Exp $
+ * RCS: @(#) $Id: Regex.java,v 1.10 2009/10/03 23:11:10 mdejong Exp $
  */
 
 package tcl.lang;
@@ -293,7 +293,18 @@ replaceFirst(
     String temp = string;
 
     if (offset > 0) {
-      temp = string.substring(offset);
+      if (offset >= string.length()) {
+          // -start larger than the last index indicates an empty
+          // sring will be used as the input.
+
+          offset = string.length();
+      }
+
+      if (offset == string.length()) {
+          temp = "";
+      } else {
+          temp = string.substring(offset);
+      }
     }
 
     if ((temp.length() == 0) && ((this.flags & Pattern.MULTILINE) != 0)) {
@@ -363,16 +374,32 @@ String
 replaceAll(
     String subSpec)
 {
-    String result = null;
+    int inputStringOffset = offset;
     StringBuffer sb = new StringBuffer();
-    int i = offset;
 
-    // we replace first matched occurence in the substring of the input string
-    
+    // we replace first matched occurence in the substring of the input string.
+    // If matching starts at an offset other than 0, append literal text from
+    // the input string before we doing the match logic.
+
     String temp = string;
 
     if (offset > 0) {
-      temp = string.substring(offset);
+      if (offset >= string.length()) {
+          // -start larger than the last index indicates an empty
+          // sring will be used as the input.
+
+          offset = string.length();
+          inputStringOffset = offset;
+      }
+
+      String strBeforeOffset = string.substring(0, offset);
+      sb.append(strBeforeOffset);
+
+      if (offset == string.length()) {
+          temp = "";
+      } else {
+          temp = string.substring(offset);
+      }
     }
 
     Pattern tempPattern = pattern;
@@ -399,20 +426,34 @@ replaceAll(
     while (tempMatcher.find()) {
         count++;
         tempMatcher.appendReplacement(sb, subSpec);
-        i += tempMatcher.end();
-        tempMatcher = pattern.matcher(string.substring(i));
+
+        // Advance index in original string by the number
+        // of characters up to the start of the match.
+
+        inputStringOffset += tempMatcher.start();
+
+        // Advance index in original string by the number
+        // of characters in the match text, if the pattern
+        // matches no characters then always advance by 1.
+
+        int matchLen = tempMatcher.end() - tempMatcher.start();
+        if (matchLen == 0) {
+            inputStringOffset++;
+        } else {
+            inputStringOffset += matchLen;
+        }
+
+        if (inputStringOffset >= string.length()) {
+            break;
+        }
+
+        String substr = string.substring(inputStringOffset);
+        tempMatcher = pattern.matcher(substr);
     }
 
     tempMatcher.appendTail(sb);
 
-    // if offset is set then we must join the substring that was
-    // removed ealier (during matching)
-
-    if (offset != 0) {
-        result = string.substring(0, offset) + sb.toString();
-    } else {
-        result = sb.toString();
-    }
+    String result = sb.toString();
 
     return result;
 }
