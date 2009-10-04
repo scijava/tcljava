@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Regex.java,v 1.10 2009/10/03 23:11:10 mdejong Exp $
+ * RCS: @(#) $Id: Regex.java,v 1.11 2009/10/04 20:50:04 mdejong Exp $
  */
 
 package tcl.lang;
@@ -146,6 +146,11 @@ throws PatternSyntaxException
     count = 0;
     this.regexp = regexp;
     this.string = string;
+
+    // Record the offset in the string where a matching op should
+    // begin, it is possible that the passed in offset is larger
+    // than the actual length of the string.
+
     this.offset = offset;
 
     try {
@@ -210,6 +215,11 @@ throws PatternSyntaxException
     count = 0;
     this.regexp = regexp;
     this.string = string;
+
+    // Record the offset in the string where a matching op should
+    // begin, it is possible that the passed in offset is larger
+    // than the actual length of the string.
+
     this.offset = offset;
 
     try {
@@ -239,23 +249,32 @@ throws PatternSyntaxException
  */
 
 boolean match() {
+    int fromOffset = offset;
+
+    if (fromOffset > string.length()) {
+        fromOffset = string.length();
+    }
+
+    return _match(matcher, fromOffset, offset);
+}
+
+private
+boolean _match(Matcher thisMatcher, int substringOffset, int entireStringOffset) {
     // if offset is a non-zero value, and regex
     // has '^', it will surely not match
 
     if (((pattern.flags() & Pattern.MULTILINE) == 0)
-        && (offset != 0)
+        && (entireStringOffset != 0)
         && (regexp.startsWith(REGEX_START1)
             || regexp.indexOf(REGEX_START2) != -1
             || regexp.indexOf(REGEX_START3) != -1)) {
         return false;
     } else {
-        // check if offset is in boundaries of string length
-
-        if (offset > string.length()) {
-            offset = string.length();
+        if (substringOffset == 0) {
+            return thisMatcher.find();
+        } else {
+            return thisMatcher.find(substringOffset);
         }
-
-        return matcher.find(offset);
     }
 }
 
@@ -291,19 +310,20 @@ replaceFirst(
     // we replace first matched occurence in the substring of the input string
 
     String temp = string;
+    int thisOffset = offset;
 
-    if (offset > 0) {
-      if (offset >= string.length()) {
+    if (thisOffset > 0) {
+      if (thisOffset >= string.length()) {
           // -start larger than the last index indicates an empty
           // sring will be used as the input.
 
-          offset = string.length();
+          thisOffset = string.length();
       }
 
-      if (offset == string.length()) {
+      if (thisOffset == string.length()) {
           temp = "";
       } else {
-          temp = string.substring(offset);
+          temp = string.substring(thisOffset);
       }
     }
 
@@ -321,19 +341,19 @@ replaceFirst(
         }
 
         matcher = pattern.matcher("");
-        matches = matcher.find();
+        matches = _match(matcher, 0, thisOffset);
         result = matcher.replaceFirst(subSpec);
     } else {
         matcher = pattern.matcher(temp);
-        matches = matcher.find();
+        matches = _match(matcher, 0, thisOffset);
         result = matcher.replaceFirst(subSpec);
     }
 
     // if offset is set then we must join the substring that was
     // removed ealier (during matching)
 
-    if (offset > 0) {
-        result = string.substring(0, offset) + result;
+    if (thisOffset > 0) {
+        result = string.substring(0, thisOffset) + result;
     }
 
     if ((result == null) || (result.length() == 0) || !matches) {
@@ -374,7 +394,6 @@ String
 replaceAll(
     String subSpec)
 {
-    int inputStringOffset = offset;
     StringBuffer sb = new StringBuffer();
 
     // we replace first matched occurence in the substring of the input string.
@@ -382,23 +401,23 @@ replaceAll(
     // the input string before we doing the match logic.
 
     String temp = string;
+    int inputStringOffset = offset;
 
-    if (offset > 0) {
-      if (offset >= string.length()) {
+    if (inputStringOffset > 0) {
+      if (inputStringOffset >= string.length()) {
           // -start larger than the last index indicates an empty
           // sring will be used as the input.
 
-          offset = string.length();
-          inputStringOffset = offset;
+          inputStringOffset = string.length();
       }
 
-      String strBeforeOffset = string.substring(0, offset);
+      String strBeforeOffset = string.substring(0, inputStringOffset);
       sb.append(strBeforeOffset);
 
-      if (offset == string.length()) {
+      if (inputStringOffset == string.length()) {
           temp = "";
       } else {
-          temp = string.substring(offset);
+          temp = string.substring(inputStringOffset);
       }
     }
 
@@ -423,7 +442,7 @@ replaceAll(
         tempMatcher = tempPattern.matcher(temp);
     }
 
-    while (tempMatcher.find()) {
+    while (_match(tempMatcher, 0, inputStringOffset)) {
         count++;
         tempMatcher.appendReplacement(sb, subSpec);
 
@@ -438,6 +457,16 @@ replaceAll(
 
         int matchLen = tempMatcher.end() - tempMatcher.start();
         if (matchLen == 0) {
+            // Matched, but length of match is zero characters,
+            // so this might be a match to the start of a line.
+            // Need to always advance one character to avoid
+            // an infinite loop.
+
+            if (inputStringOffset < string.length()) {
+                char c = string.charAt(inputStringOffset);
+                sb.append(c);
+            }
+
             inputStringOffset++;
         } else {
             inputStringOffset += matchLen;

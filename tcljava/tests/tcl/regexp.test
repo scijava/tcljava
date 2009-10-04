@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: regexp.test,v 1.11 2009/10/03 23:11:10 mdejong Exp $
+# RCS: @(#) $Id: regexp.test,v 1.12 2009/10/04 20:50:05 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -387,10 +387,13 @@ test regexp-9.5 {-all option to regsub} {
     set foo xxx
     list [regsub -all node "node node more" yy foo] $foo
 } {2 {yy yy more}}
-
 test regexp-9.6 {-all option to regsub} {
     set foo xxx
     list [regsub -all ^ xxx 123 foo] $foo
+} {1 123xxx}
+test regexp-9.7 {no -all option to regsub} {
+    set foo xxx
+    list [regsub ^ xxx 123 foo] $foo
 } {1 123xxx}
 
 test regexp-10.1 {expanded syntax in regsub} {
@@ -531,6 +534,10 @@ test regexp-15.5 {regexp -start, over end of string} {
 test regexp-15.6 {regexp -start, loss of ^$ behavior} {
     list [regexp -start 2 {^$} {}]
 } {0}
+test regexp-15.7 {regexp -start, over end of string} {
+    set x NA
+    list [regexp -start 2 {.*} ab x] $x
+} {1 {}}
 
 test regexp-16.1 {regsub -start} {
     catch {unset x}
@@ -593,6 +600,18 @@ test regexp-16.15 {regsub -start} {
     set foo {}
     list [regsub -start -1 a+ "" & foo] $foo
 } {0 {}}
+test regexp-16.16 {regsub -start, loss of ^$ behavior} {
+    set foo NA
+    list [regsub -start 1 {^$} {} & foo] $foo
+} {0 {}}
+test regexp-16.17 {regsub -start, loss of ^$ behavior} {
+    set foo NA
+    list [regsub -start 1 {^.*$} abc & foo] $foo
+} {0 abc}
+test regexp-16.18 {regsub -start, loss of ^$ behavior} {
+    set foo NA
+    list [regsub -all -start 1 {^.*$} abc & foo] $foo
+} {0 abc}
 
 test regexp-17.1 {regexp -inline} {
     regexp -inline b ababa
