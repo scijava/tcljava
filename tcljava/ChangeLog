@@ -1,3 +1,11 @@
+2009-10-04  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/jacl/tcl/lang/RegexpCmd.java (cmdProc):
+	* src/jacl/tcl/lang/RegsubCmd.java (cmdProc):
+        Rewrite argument processing logic to avoid using
+        IndexOutOfBoundsException to deal with an incorrect
+        number of arguments.
+
 2009-10-03  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* src/jacl/tcl/lang/Regex.java (replaceFirst, replaceAll):

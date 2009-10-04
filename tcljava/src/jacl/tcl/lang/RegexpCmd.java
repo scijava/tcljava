@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: RegexpCmd.java,v 1.13 2009/10/01 03:29:08 mdejong Exp $
+ * RCS: @(#) $Id: RegexpCmd.java,v 1.14 2009/10/04 20:08:56 mdejong Exp $
  */
 
 package tcl.lang;
@@ -101,7 +101,7 @@ init(
 public void
 cmdProc(
     Interp interp,   			// Current interpreter. 
-    TclObject argv[])			// Arguments to "regexp" command.
+    TclObject[] objv)			// Arguments to "regexp" command.
 throws TclException
 {
     boolean indices = false;
@@ -114,6 +114,7 @@ throws TclException
     int objc = 0;
     // regular expression at
     TclObject result;
+    int i;
 
     // Default regexp behavior is to assume that '.' will match newline
     // characters and that only \n is seen as a newline. Support for
@@ -121,255 +122,263 @@ throws TclException
 
     flags = Pattern.DOTALL | Pattern.UNIX_LINES;
 
-    try {
-        int i = 1;
-        while ((i < argv.length) && !last && argv[i].toString().startsWith("-")) {
-            int index = TclIndex.get(interp, argv[i], validOpts, "switch", 0);
+    for (i = 1; i < objv.length; i++) {
+        if (last) {
+            break;
+        }
 
-            i++;
-            switch (index) {
-                case OPT_ABOUT:
-                    about = true;
-                    break;
-                case OPT_EXPANDED:
-                    flags |= Pattern.COMMENTS;
-                    break;
-                case OPT_INDICES:
-                    indices = true;
-                    break;
-                case OPT_LINESTOP:
-                    flags &= ~Pattern.DOTALL; // Don't match . to newline character
-                    break;
-                case OPT_LINEANCHOR:
-                    flags |= Pattern.MULTILINE; // Use line sensitive matching
-                    break;
-                case OPT_LINE:
-                    flags |= Pattern.MULTILINE; // Use line sensitive matching
-                    flags &= ~Pattern.DOTALL; // Don't match . to newline character
-                    break;
-                case OPT_NOCASE:
-                    flags |= Pattern.CASE_INSENSITIVE;
-                    break;
-                case OPT_ALL:
-                    all = 1;
-                    break;
-                case OPT_INLINE:
-                    doinline = true;
-                    break;
-                case OPT_START:
-                    if (i >= argv.length) {
-                        // break the switch, the index out of bounds exception
-                        // will be caught later
-                        break;
-                    }
+        TclObject obj = objv[i];
 
-                    offset = TclInteger.get(interp, argv[i++]);
+        if ((obj.toString().length() == 0) ||
+            (obj.toString().charAt(0) != '-')) {
+            // Not an option
+            break;
+        }
 
-                    if (offset < 0) {
-                        offset = 0;
-                    }
+        int index = TclIndex.get(interp, obj, validOpts, "switch", 0);
 
-                    break;
-                case OPT_LAST:
-                    last = true;
+        switch (index) {
+            case OPT_ABOUT:
+                about = true;
+                break;
+            case OPT_EXPANDED:
+                flags |= Pattern.COMMENTS;
+                break;
+            case OPT_INDICES:
+                indices = true;
+                break;
+            case OPT_LINESTOP:
+                flags &= ~Pattern.DOTALL; // Don't match . to newline character
+                break;
+            case OPT_LINEANCHOR:
+                flags |= Pattern.MULTILINE; // Use line sensitive matching
+                break;
+            case OPT_LINE:
+                flags |= Pattern.MULTILINE; // Use line sensitive matching
+                flags &= ~Pattern.DOTALL; // Don't match . to newline character
+                break;
+            case OPT_NOCASE:
+                flags |= Pattern.CASE_INSENSITIVE;
+                break;
+            case OPT_ALL:
+                all = 1;
+                break;
+            case OPT_INLINE:
+                doinline = true;
+                break;
+            case OPT_START:
+                if (++i >= objv.length) {
+                    // break the switch, the index out of bounds exception
+                    // will be caught later
                     break;
                 }
-            } // end of switch block
 
-            if (doinline && ((argv.length - i - 2) != 0)) {
-                // User requested -inline, but specified match variables - a
-                // no-no.
+                offset = TclInteger.get(interp, objv[i]);
 
-                throw new TclException(interp,
-                    "regexp match variables not allowed when using -inline");
-            }
+                if (offset < 0) {
+                    offset = 0;
+                }
 
-            String exp = argv[i++].toString();
-            String string;
+                break;
+            case OPT_LAST:
+                last = true;
+                break;
+        } // end of switch block
+    } // end of for loop
 
-            if (about) {
-                string = "";
-            } else {
-                string = argv[i].toString();
-            }
+    if ((objv.length - i) < (2 - (about ? 1 : 0))) {
+        throw new TclNumArgsException(interp, 1, objv,
+            "?switches? exp string ?matchVar?" +
+            " ?subMatchVar subMatchVar ...?");
+    }
 
-            Regex reg;
-            result = TclInteger.newInstance(0);
+    if (doinline && ((objv.length - i - 2) != 0)) {
+        // User requested -inline, but specified match variables - a
+        // no-no.
 
-            if ((string.length() == 0) && ((flags & Pattern.MULTILINE) != 0)) {
-                // Compile the expression without the Pattern.MULTILINE flag
-                // so that matching to the empty string works as expected.
+        throw new TclException(interp,
+            "regexp match variables not allowed when using -inline");
+    }
 
-                flags &= ~Pattern.MULTILINE;
-            }
+    String exp = objv[i++].toString();
 
-            try {
-                reg = new Regex(exp, string, offset, flags);
-            } catch (PatternSyntaxException ex) {
-                throw new TclException(interp,
-                    Regex.getPatternSyntaxMessage(ex));
-            }
+    String string;
 
-            // If about switch was enabled, return info about regexp
+    if (about) {
+        string = "";
+    } else {
+        string = objv[i++].toString();
+    }
 
-            if (about) {
-                TclObject props = TclList.newInstance();
-                props = reg.getInfo(interp);
-                interp.appendElement(props.toString());
+    Regex reg;
+    result = TclInteger.newInstance(0);
+
+    if ((string.length() == 0) && ((flags & Pattern.MULTILINE) != 0)) {
+        // Compile the expression without the Pattern.MULTILINE flag
+        // so that matching to the empty string works as expected.
+
+        flags &= ~Pattern.MULTILINE;
+    }
+
+    try {
+        reg = new Regex(exp, string, offset, flags);
+    } catch (PatternSyntaxException ex) {
+        throw new TclException(interp,
+            Regex.getPatternSyntaxMessage(ex));
+    }
+
+    // If about switch was enabled, return info about regexp
+
+    if (about) {
+        TclObject props = TclList.newInstance();
+        props = reg.getInfo(interp);
+        interp.appendElement(props.toString());
+        return;
+    }
+
+    boolean matched;
+
+    // The following loop is to handle multiple matches within the
+    // same source string; each iteration handles one match. If
+    // "-all" hasn't been specified then the loop body only gets
+    // executed once. We terminate the loop when the starting offset
+    // is past the end of the string.
+
+    while (true) {
+        matched = reg.match();
+
+        if (!matched) {
+            // We want to set the value of the intepreter result only
+            // when this is the first time through the loop.
+
+            if (all <= 1) {
+                // If inlining, set the interpreter's object result
+                // to an empty list, otherwise set it to an integer
+                // object w/ value 0.
+
+                if (doinline) {
+                    interp.resetResult();
+                } else {
+                    interp.setResult(0);
+                }
                 return;
             }
 
-            boolean matched;
-
-            // The following loop is to handle multiple matches within the
-            // same source string; each iteration handles one match. If
-            // "-all" hasn't been specified then the loop body only gets
-            // executed once. We terminate the loop when the starting offset
-            // is past the end of the string.
-
-            while (true) {
-                matched = reg.match();
-
-                if (!matched) {
-                    // We want to set the value of the intepreter result only
-                    // when this is the first time through the loop.
-
-                    if (all <= 1) {
-                        // If inlining, set the interpreter's object result
-                        // to an empty list, otherwise set it to an integer
-                        // object w/ value 0.
-
-                        if (doinline) {
-                            interp.resetResult();
-                        } else {
-                            interp.setResult(0);
-                        }
-                        return;
-                    }
-
-                    break;
-                }
-
-                int groupCount = reg.groupCount();
-                int group = 0;
-
-                if (doinline) {
-                    // It's the number of substitutions, plus one for the
-                    //  matchVar at index 0
-
-                    objc = groupCount + 1;
-                } else {
-                    objc = argv.length - i - 1;
-                }
-
-                // loop for each of a variable that stores the result
-
-                for (int j = 0; j < objc; j++) {
-                    TclObject obj;
-
-                    { // FIXME: Remove extra indented block on rewrite
-                        if (indices) {
-                            int start;
-                            int end;
-
-                            if (group <= groupCount) {
-                                start = reg.start(group);
-                                end = reg.end(group);
-                                group++;
-
-                                if (end >= reg.getOffset()) {
-                                    end--;
-                                }
-                            } else {
-                                start = -1;
-                                end = -1;
-                            }
-
-                            obj = TclList.newInstance();
-                            TclList.append(interp, obj,
-                                TclInteger.newInstance(start));
-                            TclList.append(interp, obj,
-                                TclInteger.newInstance(end));
-                        } else {
-                            if (group <= groupCount) {
-                                // group 0 is the whole match, the groups
-                                // 1 to groupCount indicate submatches
-                                // but note that the number of variables
-                                // could be more than the number of matches.
-                                // Also, optional matches groups might not
-                                // match a range in the input string.
-
-                                int start = reg.start(group);
-
-                                if (start == -1) {
-                                    // Optional group did not match input
-                                    obj = TclList.newInstance();
-                                } else {
-                                    int end = reg.end(group);
-                                    String substr = string.substring(start, end);
-                                    obj = TclString.newInstance(substr);
-                                }
-
-                                group++;
-                            } else {
-                                obj = TclList.newInstance();
-                            }
-                        }
-
-                        if (doinline) {
-                            interp.appendElement(obj.toString());
-                        } else {
-                            String varName = argv[++i].toString();
-                            try {
-                                interp.setVar(varName, obj, 0);
-                            } catch (TclException e) {
-                                throw new TclException(interp,
-                                    "couldn't set variable \"" + varName
-                                        + "\"");
-                            }
-                        }
-                    }
-                } // end of for loop
-
-                if (all == 0) {
-                    break;
-                }
-
-                // Adjust the offset to the character just after the last one
-                // in the matchVar and increment all to count how many times
-                // we are making a match. We always increment the offset by
-                // at least one to prevent endless looping (as in the case:
-                // regexp -all {a*} a). Otherwise, when we match the NULL
-                // string at the end of the input string, we will loop
-                // indefinitely (because the length of the match is 0, so
-                // the offset never changes).
-
-                if ((reg.end() - reg.start()) == 0) {
-                    int temp = reg.getOffset();
-                    reg.setOffset(++temp);
-                } else {
-                    reg.setOffset(reg.end());
-                }
-                all++;
-                if (reg.getOffset() >= string.length()) {
-                    break;
-                }
-            } // eof of while loop
-
-            // Set the interpreter's object result to an integer object with
-            // value 1 if -all wasn't specified, otherwise it's all-1 (the
-            // number of times through the while - 1). Get the resultPtr again
-            // as the Tcl_ObjSetVar2 above may have cause the result to change.
-            // [Patch #558324] (watson).
-
-            if (!doinline) {
-                interp.setResult((all != 0) ? (all - 1) : 1);
-            }
-        } catch (IndexOutOfBoundsException e) {
-            throw new TclNumArgsException(interp, 1, argv,
-                "?switches? exp string ?matchVar?" +
-                " ?subMatchVar subMatchVar ...?");
+            break;
         }
-}
+
+        int groupCount = reg.groupCount();
+        int group = 0;
+
+        if (doinline) {
+            // It's the number of substitutions, plus one for the
+            // matchVar at index 0
+
+            objc = groupCount + 1;
+        } else {
+            objc = objv.length - i;
+        }
+
+        // loop for each variable or list element that stores a result
+
+        for (int j = 0; j < objc; j++) {
+            TclObject obj;
+
+            if (indices) {
+                int start;
+                int end;
+
+                if (group <= groupCount) {
+                    start = reg.start(group);
+                    end = reg.end(group);
+                    group++;
+
+                    if (end >= reg.getOffset()) {
+                        end--;
+                    }
+                } else {
+                    start = -1;
+                    end = -1;
+                }
+
+                obj = TclList.newInstance();
+                TclList.append(interp, obj,
+                    TclInteger.newInstance(start));
+                TclList.append(interp, obj,
+                    TclInteger.newInstance(end));
+            } else {
+                if (group <= groupCount) {
+                    // group 0 is the whole match, the groups
+                    // 1 to groupCount indicate submatches
+                    // but note that the number of variables
+                    // could be more than the number of matches.
+                    // Also, optional matches groups might not
+                    // match a range in the input string.
+
+                    int start = reg.start(group);
+
+                    if (start == -1) {
+                        // Optional group did not match input
+                        obj = TclList.newInstance();
+                    } else {
+                        int end = reg.end(group);
+                        String substr = string.substring(start, end);
+                        obj = TclString.newInstance(substr);
+                    }
+
+                    group++;
+                } else {
+                    obj = TclList.newInstance();
+                }
+            }
+
+            if (doinline) {
+                interp.appendElement(obj.toString());
+            } else {
+                String varName = objv[i+j].toString();
+                try {
+                    interp.setVar(varName, obj, 0);
+                } catch (TclException e) {
+                    throw new TclException(interp,
+                        "couldn't set variable \"" + varName + "\"");
+                }
+            }
+        } // end of for loop
+
+        if (all == 0) {
+            break;
+        }
+
+        // Adjust the offset to the character just after the last one
+        // in the matchVar and increment all to count how many times
+        // we are making a match. We always increment the offset by
+        // at least one to prevent endless looping (as in the case:
+        // regexp -all {a*} a). Otherwise, when we match the NULL
+        // string at the end of the input string, we will loop
+        // indefinitely (because the length of the match is 0, so
+        // the offset never changes).
+
+        if ((reg.end() - reg.start()) == 0) {
+            int temp = reg.getOffset();
+            reg.setOffset(++temp);
+        } else {
+            reg.setOffset(reg.end());
+        }
+        all++;
+        if (reg.getOffset() >= string.length()) {
+            break;
+        }
+    } // end of while loop
+
+    // Set the interpreter's object result to an integer object with
+    // value 1 if -all wasn't specified, otherwise it's all-1 (the
+    // number of times through the while - 1). Get the resultPtr again
+    // as the Tcl_ObjSetVar2 above may have cause the result to change.
+    // [Patch #558324] (watson).
+
+    if (!doinline) {
+        interp.setResult((all != 0) ? (all - 1) : 1);
+    }
+} // end cmdProc
 } // end RegexpCmd
 

@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: RegsubCmd.java,v 1.11 2009/10/01 03:29:08 mdejong Exp $
+ * RCS: @(#) $Id: RegsubCmd.java,v 1.12 2009/10/04 20:08:56 mdejong Exp $
  */
 
 package tcl.lang;
@@ -63,9 +63,10 @@ private static final int OPT_LAST = 7;
 public void
 cmdProc(
     Interp interp,   			// Current interpreter. 
-    TclObject argv[])			// Arguments to "regsub" command.
+    TclObject[] objv)			// Arguments to "regsub" command.
 throws TclException 
 {
+    int idx;
     boolean all = false;
     boolean last = false;
     int flags;
@@ -78,106 +79,108 @@ throws TclException
 
     flags = Pattern.DOTALL | Pattern.UNIX_LINES;
 
-    try {
-        int i = 1;
-        while (!last && argv[i].toString().startsWith("-")) {
-            int index = TclIndex.get(interp, argv[i], validOpts, "switch", 0);
-
-            i++;
-            switch (index) {
-                case OPT_ALL: 
-                    all = true;
-                    break;	
-                case OPT_EXPANDED:
-                    flags |= Pattern.COMMENTS;
-                    break;
-                case OPT_LINESTOP:
-                    flags &= ~Pattern.DOTALL; // Don't match . to newline character
-                    break;
-                case OPT_LINEANCHOR:
-                    flags |= Pattern.MULTILINE; // Use line sensitive matching
-                    break;
-                case OPT_LINE:
-                    flags |= Pattern.MULTILINE; // Use line sensitive matching
-                    flags &= ~Pattern.DOTALL; // Don't match . to newline character
-                    break;
-                case OPT_NOCASE:
-                    flags |= Pattern.CASE_INSENSITIVE;
-                    break;
-                case OPT_START:
-                    if (i >= argv.length) {
-                        // break the switch, the index out of bounds exception
-                        // will be caught later
-
-                        break;
-                    }
-
-                    offset = TclInteger.get(interp, argv[i++]);
-
-                    if (offset < 0) {
-                        offset = 0;
-                    }
-                    break;
-                case OPT_LAST:
-                    last = true;
-                    break;
-            }
+    for (idx = 1; idx < objv.length; idx++) {
+        if (last) {
+            break;
         }
 
-        // get cmd's params
+        TclObject obj = objv[idx];
 
-        String exp = argv[i++].toString();
-        String string = argv[i++].toString();
-        String subSpec = argv[i++].toString();
-        String varName = null;
-
-        if ((argv.length - i) > 0) {
-            varName = argv[i++].toString();
+        if ((obj.toString().length() == 0) ||
+            (obj.toString().charAt(0) != '-')) {
+            // Not an option
+            break;
         }
 
-        if (i != argv.length) {
-            throw new IndexOutOfBoundsException();
+        int index = TclIndex.get(interp, obj, validOpts, "switch", 0);
+
+        switch (index) {
+            case OPT_ALL: 
+                all = true;
+                break;
+            case OPT_EXPANDED:
+                flags |= Pattern.COMMENTS;
+                break;
+            case OPT_LINESTOP:
+                flags &= ~Pattern.DOTALL; // Don't match . to newline character
+                break;
+            case OPT_LINEANCHOR:
+                flags |= Pattern.MULTILINE; // Use line sensitive matching
+                break;
+            case OPT_LINE:
+                flags |= Pattern.MULTILINE; // Use line sensitive matching
+                flags &= ~Pattern.DOTALL; // Don't match . to newline character
+                break;
+            case OPT_NOCASE:
+                flags |= Pattern.CASE_INSENSITIVE;
+                break;
+            case OPT_START:
+                if (++idx == objv.length) {
+                    // break the switch, the index out of bounds exception
+                    // will be caught later
+
+                    break;
+                }
+
+                offset = TclInteger.get(interp, objv[idx]);
+
+                if (offset < 0) {
+                    offset = 0;
+                }
+                break;
+            case OPT_LAST:
+                last = true;
+                break;
         }
-
-        Regex reg;
-        try {
-            // we use the substring of string at the specified offset
-            reg = new Regex(exp, string, offset, flags);
-        } catch (PatternSyntaxException ex) {
-            throw new TclException(interp,
-                Regex.getPatternSyntaxMessage(ex));
-        }
-
-        // Parse a subSpec param from Tcl's to Java's form. 
-
-        subSpec = Regex.parseSubSpec(subSpec);
-
-        // do the replacement process
-
-        if (!all) {
-            result = reg.replaceFirst(subSpec);
-        } else {
-            result = reg.replaceAll(subSpec);
-        }
-
-        // set results
-
-        TclObject obj = TclString.newInstance(result);
-
-        try {
-            if (varName != null) {
-                interp.setResult(reg.getCount());
-                interp.setVar(varName, obj, 0);
-            } else {
-                interp.setResult(obj);
-            }
-        } catch (TclException e) {
-            throw new TclException(interp, "couldn't set variable \""
-                + varName + "\"");
-        }
-    } catch (IndexOutOfBoundsException e) {
-        throw new TclNumArgsException(interp, 1, argv,
+    } // end options for loop
+    
+    if (objv.length-idx < 3 || objv.length-idx > 4) {
+        throw new TclNumArgsException(interp, 1, objv,
             "?switches? exp string subSpec ?varName?");
+    }
+
+    // get cmd's params
+
+    String exp = objv[idx++].toString();
+    String string = objv[idx++].toString();
+    String subSpec = objv[idx++].toString();
+    String varName = null;
+
+    if ((objv.length - idx) > 0) {
+        varName = objv[idx++].toString();
+    }
+
+    Regex reg;
+    try {
+        // we use the substring of string at the specified offset
+        reg = new Regex(exp, string, offset, flags);
+    } catch (PatternSyntaxException ex) {
+        throw new TclException(interp,
+            Regex.getPatternSyntaxMessage(ex));
+    }
+
+    // Parse a subSpec param from Tcl's to Java's form. 
+
+    subSpec = Regex.parseSubSpec(subSpec);
+
+    // do the replacement process
+
+    if (!all) {
+        result = reg.replaceFirst(subSpec);
+    } else {
+        result = reg.replaceAll(subSpec);
+    }
+
+    try {
+        if (varName != null) {
+            interp.setResult(reg.getCount());
+            interp.setVar(varName, result, 0);
+        } else {
+            interp.setResult(result);
+        }
+    } catch (TclException e) {
+        throw new TclException(interp, "couldn't set variable \""
+            + varName + "\"");
     }
 }
 
