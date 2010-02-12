@@ -344,11 +344,11 @@ test EventAdaptor-5.2 {EventAdaptor._return_char} {
     java::bind $x tcl.lang.Tester1Listener.method_char {
 	return blah
     }
-    set msg [list [catch {$x fire_char [java::null]} msg] $msg]
+    set msg [list [catch {$x fire_char [java::null]} msg] [string equal $msg "\0"]]
     update
     list [lindex $info 0] [lindex $info 2] $msg
 } {{expecting character but got "blah"} {expecting character but got "blah"
-    (attempting to return character from binding)} {0 {}}}
+    (attempting to return character from binding)} {0 1}}
 
 test EventAdaptor-5.3 {EventAdaptor._return_char} {
     set x [java::new tcl.lang.TesterBean]
@@ -356,11 +356,11 @@ test EventAdaptor-5.3 {EventAdaptor._return_char} {
     java::bind $x tcl.lang.Tester1Listener.method_char {
 	return ""
     }
-    set msg [list [catch {$x fire_char [java::null]} msg] $msg]
+    set msg [list [catch {$x fire_char [java::null]} msg] [string equal $msg "\0"]]
     update
     list [lindex $info 0] [lindex $info 2] $msg
 } {{expecting character but got ""} {expecting character but got ""
-    (attempting to return character from binding)} {0 {}}}
+    (attempting to return character from binding)} {0 1}}
 
 # exception -- call bgerror and return "undefined value"
 
@@ -370,13 +370,13 @@ test EventAdaptor-5.4 {EventAdaptor._return_char} {
     java::bind $x tcl.lang.Tester1Listener.method_char {
 	error blah
     }
-    set msg [list [catch {$x fire_char [java::null]} msg] $msg]
+    set msg [list [catch {$x fire_char [java::null]} msg] [string equal $msg "\0"]]
     update
     list [lindex $info 0] [lindex $info 2] $msg
 } {blah {blah
     while executing
 "error blah"
-    (command bound to event)} {0 {}}}
+    (command bound to event)} {0 1}}
 
 #
 # DOUBLE

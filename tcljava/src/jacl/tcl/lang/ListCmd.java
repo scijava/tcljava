@@ -8,7 +8,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: ListCmd.java,v 1.2 2006/01/13 03:40:11 mdejong Exp $
+ * RCS: @(#) $Id: ListCmd.java,v 1.3 2010/02/12 03:43:50 mdejong Exp $
  *
  */
 
@@ -22,13 +22,13 @@ class ListCmd implements Command {
     /**
      * See Tcl user documentation for details.
      */
-    public void cmdProc(Interp interp, TclObject argv[])
+    public void cmdProc(Interp interp, TclObject[] objv)
 	    throws TclException {
 	TclObject list = TclList.newInstance();
 
 	try {
-	    for (int i = 1; i<argv.length; i++) {
-		TclList.append(interp, list, argv[i]);
+	    for (int i = 1; i < objv.length; i++) {
+		TclList.append(interp, list, objv[i]);
 	    }
 	    interp.setResult(list);
         } catch (TclException te) {

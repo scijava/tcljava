@@ -1,3 +1,17 @@
+2010-02-11  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	Patch 2946118
+
+	* src/jacl/tcl/lang/ListCmd.java: Minor style reformat.
+	* src/jacl/tcl/lang/Util.java (scanElement, convertElement):
+	Remove crusty old code that treated backslash zero
+	as the end of the line. That logic was removed from
+	C Tcl long ago.
+	* tests/inprogress/EventAdaptor.test: Fixup tests
+	that depended on backslash zero quirks.
+	* tests/tcl/list.test: Add test cases for backslash zero
+	as argument to list command.
+
 2009-10-04  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* src/jacl/tcl/lang/Regex.java (match, _match,

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Util.java,v 1.32 2009/09/20 00:09:44 mdejong Exp $
+ * RCS: @(#) $Id: Util.java,v 1.33 2010/02/12 03:43:50 mdejong Exp $
  */
 
 package tcl.lang;
@@ -1308,7 +1308,7 @@ findElement(
 static int 
 scanElement(
     Interp interp, 	// The current interpreter.
-    String string) 	// The String to scan.
+    String string) 	// The String to scan. (could be null)
 throws 
     TclException
 {
@@ -1355,25 +1355,23 @@ throws
     flags = 0;
 
     i = 0;
-    len = string.length();
-    if (len == 0) {
-	string = String.valueOf('\0');
-
-	// FIXME : pizza compiler workaround
-	// We really should be able to use the "\0" form but there
-	// is a nasty bug in the pizza compiler shipped with kaffe
-	// that causes "\0" to be read as the empty string.
-
-	//string = "\0";
+    if (string == null) {
+      string = "";
     }
+    len = string.length();
 
     if (debug) {
 	System.out.println("scanElement string is \"" + string + "\"");
     }
 
-    c = string.charAt(i);
-    if ((c == '{') || (c == '"') || (c == '\0')) {
+    if (i == len) {
+	// string length is zero
 	flags |= USE_BRACES;
+    } else {
+        c = string.charAt(i);
+        if ((c == '{') || (c == '"')) {
+	    flags |= USE_BRACES;
+        }
     }
     for ( ; i < len; i++) {
 	if (debug) {
@@ -1409,7 +1407,7 @@ throws
 	    flags |= USE_BRACES;
 	    break;
 	case '\\':
-	    if ((i >= len-1) || (string.charAt(i+1)== '\n')) {
+	    if ((i >= len-1) || (string.charAt(i+1) == '\n')) {
 		flags = TCL_DONT_USE_BRACES|BRACES_UNMATCHED;
 	    } else {
 		BackSlashResult bs = Interp.backslash(string, i, len);
@@ -1457,12 +1455,12 @@ convertElement(
 {
     int i = 0;
     char c;
-    int len = s.length();
+    final int len = (s == null ? 0 : s.length());
 
     // See the comment block at the beginning of the ScanElement
     // code for details of how this works.
 
-    if ((s == null) || (s.length() == 0) || (s.charAt(0) == '\0')) {
+    if (len == 0) {
 	sbuf.append("{}");
 	return;
     }
