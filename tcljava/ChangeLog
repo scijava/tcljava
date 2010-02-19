@@ -1,3 +1,13 @@
+2010-02-18  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        Incorporate fix/tests from Tcl head on 2010-02-11,
+        aka was Tcl [Bug 2826551, Patch 2948425].
+
+	* src/jacl/tcl/lang/RegexpCmd.java (cmdProc):
+        Fixup increment index on zero length match issue.
+	* tests/tcl/regexp.test: Back port of new regexp tests,
+        some tests marked with {endIndex} due to lack of impl.
+
 2010-02-11  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	Patch 2946118

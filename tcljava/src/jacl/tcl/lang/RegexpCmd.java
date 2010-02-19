@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: RegexpCmd.java,v 1.14 2009/10/04 20:08:56 mdejong Exp $
+ * RCS: @(#) $Id: RegexpCmd.java,v 1.15 2010/02/19 06:19:00 mdejong Exp $
  */
 
 package tcl.lang;
@@ -358,16 +358,27 @@ throws TclException
         // indefinitely (because the length of the match is 0, so
         // the offset never changes).
 
-        if ((reg.end() - reg.start()) == 0) {
-            int temp = reg.getOffset();
-            reg.setOffset(++temp);
-        } else {
-            reg.setOffset(reg.end());
+        offset = reg.getOffset();
+
+        int matchStart = reg.start();
+        int matchEnd = reg.end();
+        int matchLength = (matchEnd - matchStart);
+
+        // FIXME: Does not match Tcl impl here, how does Tcl C version work?
+        //offset += matchEnd;
+        offset += (matchStart - offset) + matchLength;
+
+        // A match of length zero could happen for {^} {$} or {.*} and in
+        // these cases we always want to bump the index up one.
+
+        if (matchLength == 0) {
+            offset++;
         }
         all++;
-        if (reg.getOffset() >= string.length()) {
+        if (offset >= string.length()) {
             break;
         }
+        reg.setOffset(offset);
     } // end of while loop
 
     // Set the interpreter's object result to an integer object with
