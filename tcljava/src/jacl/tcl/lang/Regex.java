@@ -10,7 +10,7 @@
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  * 
- * RCS: @(#) $Id: Regex.java,v 1.11 2009/10/04 20:50:04 mdejong Exp $
+ * RCS: @(#) $Id: Regex.java,v 1.12 2010/02/21 18:30:44 mdejong Exp $
  */
 
 package tcl.lang;
@@ -468,11 +468,45 @@ replaceAll(
             }
 
             inputStringOffset++;
+
+            if (inputStringOffset == string.length()) {
+              // Zero length match at the last character
+              // in the string, this loop will exit and
+              // append any remaining characters, but we
+              // just appended a character by default.
+              // Create an empty matcher so that the
+              // call to appendTail() at the end of this
+              // loop does not append this same char again.
+              tempMatcher = tempPattern.matcher("");
+            }
         } else {
             inputStringOffset += matchLen;
         }
+        
+        if ((inputStringOffset == string.length()) &&
+                ((this.flags & Pattern.MULTILINE) != 0) &&
+                (string.charAt(inputStringOffset - 1) == '\n')) {
+            // Re-compile the expression without the Pattern.MULTILINE
+            // flag so that matching to the empty string works as expected.
 
-        if (inputStringOffset >= string.length()) {
+            int nomlFlags = this.flags & ~Pattern.MULTILINE;
+
+            try {
+                tempPattern = Pattern.compile(regexp, nomlFlags);
+            } catch (PatternSyntaxException ex) {
+                throw new TclRuntimeError(
+                    "regexp pattern could not be recompiled");
+            }
+
+            tempMatcher = tempPattern.matcher("");
+
+            if (_match(tempMatcher, 0, 0)) {
+                count++;
+                tempMatcher.appendReplacement(sb, subSpec);
+            }
+            
+            break;
+        } else if (inputStringOffset >= string.length()) {
             break;
         }
 

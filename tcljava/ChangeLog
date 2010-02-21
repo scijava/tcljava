@@ -1,3 +1,12 @@
+2010-02-21  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* src/jacl/tcl/lang/Regex.java (replaceAll):
+	Fixup regsub -all logic so 5 more tests pass.
+	The replaceAll() logic is broken because it depends
+	on matching substrings instead of using an index
+	into the larger string and Java's regexp library
+	uses this to calculate line starts in multiline mode.
+
 2010-02-18  Mo DeJong  <mdejong@users.sourceforge.net>
 
         Incorporate fix/tests from Tcl head on 2010-02-11,
