@@ -1,3 +1,9 @@
+2010-02-26  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* tests/tcl/regexp.test: Add test case for
+        escaped - character in regexp command.
+        [Bug 2012389]
+
 2010-02-21  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* src/jacl/tcl/lang/Regex.java (replaceAll):
